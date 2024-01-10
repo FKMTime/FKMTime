@@ -1,0 +1,83 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model Account {
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
+  password  String
+  name      String?
+  role      Role?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Person {
+  id           Int      @id @default(autoincrement())
+  registrantId Int
+  name         String
+  wcaId        String?
+  countryIso2  String?
+  gender       String
+  Result       Result[]
+}
+
+model Competition {
+  id             Int     @id @default(autoincrement())
+  wcaId          String
+  name           String
+  shortName      String
+  countryIso2    String?
+  currentRoundId Int?
+  currentRound   Round?  @relation(fields: [currentRoundId], references: [id])
+}
+
+model CompetitionEvent {
+  id            Int     @id @default(autoincrement())
+  competitionId Int
+  eventId       String
+  Round         Round[]
+}
+
+model Round {
+  id                 Int               @id @default(autoincrement())
+  wcaId              String
+  competitionEventId Int?
+  competitionEvent   CompetitionEvent? @relation(fields: [competitionEventId], references: [id])
+  Competition        Competition[]
+  Result             Result[]
+}
+
+model Result {
+  id        Int       @id @default(autoincrement())
+  personId  Int?
+  person    Person?   @relation(fields: [personId], references: [id])
+  roundId   Int?
+  round     Round?    @relation(fields: [roundId], references: [id])
+  best      Int?
+  average   Int?
+  Attempt   Attempt[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+}
+
+model Attempt {
+  id            Int      @id @default(autoincrement())
+  resultId      Int?
+  result        Result?  @relation(fields: [resultId], references: [id])
+  attemptNumber Int
+  isExtra       Boolean  @default(false)
+  value         Int
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+enum Role {
+  ADMIN
+  DELEGATE
+}
