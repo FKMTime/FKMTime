@@ -1,6 +1,6 @@
 import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
-import { Injectable } from '@nestjs/common';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtAuthDto } from '../dto/jwt-auth.dto';
 
 const { SECRET = 'secret' } = process.env;
@@ -14,8 +14,13 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     });
   }
 
-  async validate(jwtAuthDto: JwtAuthDto): Promise<any> {
-    console.log('validation successful, jwtAuthDto: ', jwtAuthDto);
-    return jwtAuthDto;
+  async validate(payload: any): Promise<JwtAuthDto> {
+    const { userId, role } = payload;
+
+    if (!userId || !role) {
+      throw new UnauthorizedException('Invalid token payload');
+    }
+
+    return { userId, role };
   }
 }

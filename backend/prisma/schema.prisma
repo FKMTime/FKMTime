@@ -18,23 +18,27 @@ model Account {
 }
 
 model Person {
-  id           Int      @id @default(autoincrement())
+  id           Int         @id @default(autoincrement())
   registrantId Int
   name         String
   wcaId        String?
   countryIso2  String?
   gender       String
+  cardId       String?
   Result       Result[]
+  Attempt      Attempt[]
+  Assigment    Assigment[]
 }
 
 model Competition {
-  id             Int     @id @default(autoincrement())
-  wcaId          String
-  name           String
-  shortName      String
-  countryIso2    String?
-  currentRoundId Int?
-  currentRound   Round?  @relation(fields: [currentRoundId], references: [id])
+  id               Int     @id @default(autoincrement())
+  wcaId            String
+  name             String
+  shortName        String
+  countryIso2      String?
+  currentRoundId   Int?
+  currentRound     Round?  @relation(fields: [currentRoundId], references: [id])
+  scoretakingToken String?
 }
 
 model CompetitionEvent {
@@ -51,6 +55,29 @@ model Round {
   competitionEvent   CompetitionEvent? @relation(fields: [competitionEventId], references: [id])
   Competition        Competition[]
   Result             Result[]
+  Group              Group[]
+}
+
+model Group {
+  id        Int         @id @default(autoincrement())
+  roundId   Int?
+  round     Round?      @relation(fields: [roundId], references: [id])
+  name      String
+  wcaId     String?
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+  Assigment Assigment[]
+}
+
+model Assigment {
+  id        Int      @id @default(autoincrement())
+  personId  Int?
+  person    Person?  @relation(fields: [personId], references: [id])
+  groupId   Int?
+  group     Group?   @relation(fields: [groupId], references: [id])
+  activity  Activity
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model Result {
@@ -73,11 +100,28 @@ model Attempt {
   attemptNumber Int
   isExtra       Boolean  @default(false)
   value         Int
+  judgeId       Int?
+  judge         Person?  @relation(fields: [judgeId], references: [id])
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
+}
+
+model Station {
+  id        Int      @id @default(autoincrement())
+  name      String
+  espId     String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 enum Role {
   ADMIN
   DELEGATE
+}
+
+enum Activity {
+  COMPETITOR
+  JUDGE
+  RUNNER
+  SCRAMBLER
 }

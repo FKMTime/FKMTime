@@ -35,7 +35,6 @@
     "class-validator": "^0.14.0",
     "dotenv": "^16.3.1",
     "js-sha512": "^0.8.0",
-    "nanoid": "^5.0.4",
     "passport-jwt": "^4.0.1",
     "prisma": "^5.8.0",
     "reflect-metadata": "^0.1.13",

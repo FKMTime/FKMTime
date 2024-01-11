@@ -1,17 +1,11 @@
 import { MailerService } from '@nestjs-modules/mailer';
-import {
-  ForbiddenException,
-  HttpException,
-  HttpStatus,
-  Injectable,
-} from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { DbService } from '../db/db.service';
 import { RegisterDto } from './dto/register.dto';
 import { JwtAuthDto } from './dto/jwt-auth.dto';
 import { JwtService } from '@nestjs/jwt';
 import { LoginDto } from './dto/login.dto';
 import { sha512 } from 'js-sha512';
-import { nanoid } from 'nanoid';
 
 @Injectable()
 export class AuthService {
@@ -30,14 +24,15 @@ export class AuthService {
 
   async registerAccount(dto: RegisterDto): Promise<object> {
     if (await this.isTaken(dto.username)) {
-      throw new ForbiddenException('Credentials taken!');
+      throw new HttpException('Username is already taken!', 400);
     }
-    const randomString = nanoid(10);
+    const randomString = this.generateRandomString(8);
     await this.prisma.account.create({
       data: {
         password: sha512(randomString),
         username: dto.username,
         email: dto.email,
+        role: dto.role,
       },
     });
 
@@ -52,7 +47,7 @@ export class AuthService {
   `;
     await this.mailerService.sendMail({
       to: dto.email,
-      from: process.env.MAIL_FROM,
+      from: process.env.EMAIL_FROM,
       subject: 'Your SLSTime account',
       html: emailHTML,
     });
@@ -123,5 +118,18 @@ export class AuthService {
       },
     });
     return 'Password changed';
+  }
+
+  private generateRandomString(length: number) {
+    let result = '';
+    const characters =
+      'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    const charactersLength = characters.length;
+    let counter = 0;
+    while (counter < length) {
+      result += characters.charAt(Math.floor(Math.random() * charactersLength));
+      counter += 1;
+    }
+    return result;
   }
 }
