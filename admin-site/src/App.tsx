@@ -5,6 +5,7 @@ import Layout from "./Layout/Layout";
 import Home from "./Pages/Home/Home";
 import Accounts from "./Pages/Accounts/Accounts";
 import Competition from "./Pages/Competition/Competition";
+import Persons from "./Pages/Persons/Persons";
 
 const App = (): JSX.Element => {
   const router = createBrowserRouter([
@@ -27,6 +28,10 @@ const App = (): JSX.Element => {
         {
           path: "competition",
           element: <Competition />,
+        },
+        {
+          path: "persons",
+          element: <Persons />,
         }
       ]
     }

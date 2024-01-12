@@ -25,3 +25,13 @@ export interface Competition {
     createdAt?: Date;
     updatedAt?: Date;
 }
+
+export interface Person {
+    id: number;
+    registrantId: number;
+    name: string;
+    wcaId?: string;
+    countryIso2?: string;
+    gender: string;
+    cardId?: string;
+}

@@ -4,6 +4,7 @@ import { AuthModule } from './auth/auth.module';
 import { DbModule } from './db/db.module';
 import { AccountModule } from './account/account.module';
 import { CompetitionModule } from './competition/competition.module';
+import { PersonModule } from './person/person.module';
 
 @Module({
   imports: [
@@ -26,6 +27,7 @@ import { CompetitionModule } from './competition/competition.module';
     }),
     AccountModule,
     CompetitionModule,
+    PersonModule,
   ],
 })
 export class AppModule {}
