@@ -11,3 +11,17 @@ export interface Account {
     createdAt?: Date;
     updatedAt?: Date;
 }
+
+export interface Competition {
+    id: number;
+    wcaId: string;
+    name: string;
+    shortName: string;
+    countryIso2: string;
+    currentGroupId?: string;
+    scoretakingToken?: string;
+    //eslint-disable-next-line
+    wcif: any;
+    createdAt?: Date;
+    updatedAt?: Date;
+}

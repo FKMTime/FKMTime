@@ -4,6 +4,7 @@ import Login from "./Pages/Auth/Login/Login";
 import Layout from "./Layout/Layout";
 import Home from "./Pages/Home/Home";
 import Accounts from "./Pages/Accounts/Accounts";
+import Competition from "./Pages/Competition/Competition";
 
 const App = (): JSX.Element => {
   const router = createBrowserRouter([
@@ -22,6 +23,10 @@ const App = (): JSX.Element => {
         {
           path: "accounts",
           element: <Accounts />,
+        },
+        {
+          path: "competition",
+          element: <Competition />,
         }
       ]
     }

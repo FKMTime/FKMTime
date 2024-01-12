@@ -18,7 +18,7 @@ model Account {
 }
 
 model Person {
-  id           Int         @id @default(autoincrement())
+  id           Int       @id @default(autoincrement())
   registrantId Int
   name         String
   wcaId        String?
@@ -27,7 +27,6 @@ model Person {
   cardId       String?
   Result       Result[]
   Attempt      Attempt[]
-  Assigment    Assigment[]
 }
 
 model Competition {
@@ -36,56 +35,18 @@ model Competition {
   name             String
   shortName        String
   countryIso2      String?
-  currentRoundId   Int?
-  currentRound     Round?  @relation(fields: [currentRoundId], references: [id])
+  currentGroupId   String?
+  wcif             Json?
   scoretakingToken String?
-}
-
-model CompetitionEvent {
-  id            Int     @id @default(autoincrement())
-  competitionId Int
-  eventId       String
-  Round         Round[]
-}
-
-model Round {
-  id                 Int               @id @default(autoincrement())
-  wcaId              String
-  competitionEventId Int?
-  competitionEvent   CompetitionEvent? @relation(fields: [competitionEventId], references: [id])
-  Competition        Competition[]
-  Result             Result[]
-  Group              Group[]
-}
-
-model Group {
-  id        Int         @id @default(autoincrement())
-  roundId   Int?
-  round     Round?      @relation(fields: [roundId], references: [id])
-  name      String
-  wcaId     String?
-  createdAt DateTime    @default(now())
-  updatedAt DateTime    @updatedAt
-  Assigment Assigment[]
-}
-
-model Assigment {
-  id        Int      @id @default(autoincrement())
-  personId  Int?
-  person    Person?  @relation(fields: [personId], references: [id])
-  groupId   Int?
-  group     Group?   @relation(fields: [groupId], references: [id])
-  activity  Activity
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
 }
 
 model Result {
   id        Int       @id @default(autoincrement())
   personId  Int?
   person    Person?   @relation(fields: [personId], references: [id])
-  roundId   Int?
-  round     Round?    @relation(fields: [roundId], references: [id])
+  eventId   String
+  roundId   String
+  groupId   String
   best      Int?
   average   Int?
   Attempt   Attempt[]
@@ -102,16 +63,19 @@ model Attempt {
   value         Int
   judgeId       Int?
   judge         Person?  @relation(fields: [judgeId], references: [id])
+  stationId     Int?
+  station       Station? @relation(fields: [stationId], references: [id])
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 }
 
 model Station {
-  id        Int      @id @default(autoincrement())
+  id        Int       @id @default(autoincrement())
   name      String
   espId     String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  Attempt   Attempt[]
 }
 
 enum Role {

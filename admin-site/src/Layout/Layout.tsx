@@ -1,4 +1,4 @@
-import { Outlet } from "react-router-dom";
+import { Outlet, useNavigate } from "react-router-dom";
 import Sidebar from "./Sidebar";
 import { Box } from "@chakra-ui/react";
 import { getUserInfo } from "../logic/auth";
@@ -6,6 +6,10 @@ import { getUserInfo } from "../logic/auth";
 const Layout = (): JSX.Element => {
 
     const userInfo = getUserInfo();
+    const navigate = useNavigate();
+    if (!userInfo) {
+        navigate('/auth/login');
+    }
 
     return (
         <Box display="flex">
