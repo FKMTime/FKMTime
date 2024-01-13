@@ -3,20 +3,22 @@ import { Person } from "../../../logic/interfaces";
 import { FaAddressCard } from "react-icons/fa";
 import { MdDone } from "react-icons/md";
 import { prettyGender, regionNameByIso2 } from "../../../logic/utils";
+import { useState } from "react";
+import AssignCardModal from "../../Modal/AssignCardModal";
 
 interface PersonRowProps {
     person: Person;
     fetchData: () => void;
 }
 
-const PersonRow: React.FC<PersonRowProps> = ({ person }): JSX.Element => {
+const PersonRow: React.FC<PersonRowProps> = ({ person, fetchData }): JSX.Element => {
 
-    //    const [isOpenAssignCardModal, setIsOpenEditPersonModal] = useState<boolean>(false);
+       const [isOpenAssignCardModal, setIsOpenAssignCardModal] = useState<boolean>(false);
 
-    //     const handleCloseAssignCardModal = async () => {
-    //         await fetchData();
-    //         setIsOpenEditPersonModal(false);
-    //     };
+        const handleCloseAssignCardModal = async () => {
+            await fetchData();
+            setIsOpenAssignCardModal(false);
+        };
 
     return (
         <>
@@ -32,11 +34,11 @@ const PersonRow: React.FC<PersonRowProps> = ({ person }): JSX.Element => {
                         background: "none",
                         color: "gray.400"
                     }}
-                    // onClick={() => setIsOpenEditPersonModal(true)}
+                    onClick={() => setIsOpenAssignCardModal(true)}
                     />
                 </Td>
             </Tr>
-
+            <AssignCardModal isOpen={isOpenAssignCardModal} onClose={handleCloseAssignCardModal} person={person} />
         </>
     )
 };
