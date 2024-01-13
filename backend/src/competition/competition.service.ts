@@ -2,7 +2,7 @@ import { DbService } from './../db/db.service';
 import { HttpException, Injectable } from '@nestjs/common';
 import { UpdateCompetitionDto } from './dto/updateCompetition.dto';
 
-const WCA_ORIGIN = 'http://localhost:3001/api/v0/competitions/';
+const WCA_ORIGIN = `${process.env.WCA_ORIGIN}/api/v0/competitions/`;
 @Injectable()
 export class CompetitionService {
   constructor(private readonly prisma: DbService) {}

@@ -21,7 +21,9 @@ export class PersonService {
   async updatePerson(id: number, data: UpdatePersonDto) {
     return await this.prisma.person.update({
       where: { id },
-      data,
+      data: {
+        cardId: data.cardId.toString(),
+      },
     });
   }
 }

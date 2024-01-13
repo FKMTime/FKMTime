@@ -24,7 +24,7 @@ model Person {
   wcaId        String?
   countryIso2  String?
   gender       String
-  cardId       String?
+  cardId       String?   @db.LongText()
   Result       Result[]
   Attempt      Attempt[]
 }
@@ -47,32 +47,36 @@ model Result {
   eventId   String
   roundId   String
   groupId   String
-  best      Int?
-  average   Int?
   Attempt   Attempt[]
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
 }
 
 model Attempt {
-  id            Int      @id @default(autoincrement())
-  resultId      Int?
-  result        Result?  @relation(fields: [resultId], references: [id])
-  attemptNumber Int
-  isExtra       Boolean  @default(false)
-  value         Int
-  judgeId       Int?
-  judge         Person?  @relation(fields: [judgeId], references: [id])
-  stationId     Int?
-  station       Station? @relation(fields: [stationId], references: [id])
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id             Int       @id @default(autoincrement())
+  resultId       Int?
+  result         Result?   @relation(fields: [resultId], references: [id])
+  attemptNumber  Int
+  replacedBy     Int?
+  isDelegate     Boolean   @default(false)
+  extraGiven     Boolean   @default(false)
+  isResolved     Boolean?  @default(false)
+  penalty        Int?
+  isExtraAttempt Boolean   @default(false)
+  value          Int
+  judgeId        Int?
+  judge          Person?   @relation(fields: [judgeId], references: [id])
+  stationId      Int?
+  station        Station?  @relation(fields: [stationId], references: [id])
+  solvedAt       DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
 }
 
 model Station {
   id        Int       @id @default(autoincrement())
   name      String
-  espId     String
+  espId     String?   @db.LongText()
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
   Attempt   Attempt[]

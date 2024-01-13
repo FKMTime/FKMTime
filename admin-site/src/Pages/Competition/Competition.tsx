@@ -31,7 +31,6 @@ const Competition = (): JSX.Element => {
                 const sliced = response.data.currentGroupId.split("-");
                 setCurrentEvent(sliced[0]);
                 setCurrentRound(sliced[0] + "-" + sliced[1]);
-                console.log(sliced);
             }
         }
         else if (response.status === 404) {
