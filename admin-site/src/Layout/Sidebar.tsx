@@ -24,7 +24,7 @@ const Sidebar: React.FC<SidebarProps> = ({ user }): JSX.Element => {
                 </>
             )}
             <SidebarElement name='Persons' icon={<MdPerson />} link='/persons' />
-            <SidebarElement name='Times' icon={<MdTimer />} link='/times' />
+            <SidebarElement name='Results' icon={<MdTimer />} link='/results' />
             <SidebarElement name='Settings' icon={<MdSettings />} link='/settings' />
         </Box>
     )

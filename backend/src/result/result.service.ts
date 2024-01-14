@@ -7,11 +7,38 @@ const WCA_LIVE_API_ORIGIN = process.env.WCA_LIVE_API_ORIGIN;
 export class ResultService {
   constructor(private readonly prisma: DbService) {}
 
-  async getAllResultsByRound(roundId: string) {
+  async getAllResultsByRound(roundId: string, search?: string) {
+    const whereParams = {
+      roundId: roundId,
+    };
+
+    if (search) {
+      whereParams['OR'] = [
+        {
+          person: {
+            name: {
+              contains: search,
+            },
+          },
+        },
+        {
+          person: {
+            wcaId: {
+              contains: search,
+            },
+          },
+        },
+      ];
+      if (!isNaN(parseInt(search))) {
+        whereParams['OR'].push({
+          person: {
+            registrantId: parseInt(search),
+          },
+        });
+      }
+    }
     const results = await this.prisma.result.findMany({
-      where: {
-        roundId: roundId,
-      },
+      where: whereParams,
       select: {
         id: true,
         eventId: true,
@@ -22,22 +49,31 @@ export class ResultService {
         person: {
           select: {
             id: true,
+            registrantId: true,
+            gender: true,
             name: true,
+            wcaId: true,
           },
         },
         Attempt: {
           select: {
             id: true,
+            resultId: true,
             attemptNumber: true,
             replacedBy: true,
             isDelegate: true,
             isResolved: true,
             penalty: true,
             isExtraAttempt: true,
+            extraGiven: true,
             value: true,
+            solvedAt: true,
+            createdAt: true,
             judge: {
               select: {
                 id: true,
+                registrantId: true,
+                gender: true,
                 name: true,
               },
             },
@@ -57,13 +93,19 @@ export class ResultService {
         person: {
           id: result.person.id,
           name: result.person.name,
+          registrantId: result.person.registrantId,
+          gender: result.person.registrantId,
+          wcaId: result.person.wcaId,
         },
         attempts: result.Attempt.map((attempt) => {
           return {
             ...attempt,
+            solvedAt: attempt.solvedAt ? attempt.solvedAt : attempt.createdAt,
             judge: {
               id: attempt.judge.id,
               name: attempt.judge.name,
+              registrantId: attempt.judge.registrantId,
+              gender: attempt.judge.gender,
             },
             station: {
               id: attempt.station.id,
@@ -71,6 +113,7 @@ export class ResultService {
             },
           };
         }),
+        Attempt: undefined,
       };
     });
   }
@@ -101,7 +144,10 @@ export class ResultService {
             isDelegate: true,
             isResolved: true,
             penalty: true,
+            solvedAt: true,
+            createdAt: true,
             isExtraAttempt: true,
+            extraGiven: true,
             value: true,
             judge: {
               select: {
@@ -129,6 +175,7 @@ export class ResultService {
         attempts: result.Attempt.map((attempt) => {
           return {
             ...attempt,
+            solvedAt: attempt.solvedAt ? attempt.solvedAt : attempt.createdAt,
             judge: {
               id: attempt.judge.id,
               name: attempt.judge.name,
@@ -141,6 +188,81 @@ export class ResultService {
         }),
       };
     });
+  }
+
+  async getResultById(id: number) {
+    const result = await this.prisma.result.findUnique({
+      where: {
+        id: id,
+      },
+      select: {
+        id: true,
+        eventId: true,
+        roundId: true,
+        groupId: true,
+        createdAt: true,
+        updatedAt: true,
+        person: {
+          select: {
+            id: true,
+            name: true,
+            registrantId: true,
+            wcaId: true,
+            gender: true,
+            countryIso2: true,
+          },
+        },
+        Attempt: {
+          select: {
+            id: true,
+            attemptNumber: true,
+            replacedBy: true,
+            isDelegate: true,
+            isResolved: true,
+            penalty: true,
+            solvedAt: true,
+            createdAt: true,
+            isExtraAttempt: true,
+            extraGiven: true,
+            value: true,
+            judge: {
+              select: {
+                id: true,
+                name: true,
+                registrantId: true,
+                gender: true,
+              },
+            },
+            station: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
+          },
+        },
+      },
+    });
+    return {
+      ...result,
+      attempts: result.Attempt.map((attempt) => {
+        return {
+          ...attempt,
+          solvedAt: attempt.solvedAt ? attempt.solvedAt : attempt.createdAt,
+          judge: {
+            id: attempt.judge.id,
+            name: attempt.judge.name,
+            registrantId: attempt.judge.registrantId,
+            gender: attempt.judge.gender,
+          },
+          station: {
+            id: attempt.station.id,
+            name: attempt.station.name,
+          },
+        };
+      }),
+      Attempt: undefined,
+    };
   }
 
   async enterAttempt(data: EnterAttemptDto) {
@@ -325,6 +447,7 @@ export class ResultService {
         },
       });
       if (data.isDelegate) {
+        //TODO: Send notification to delegate
         return {
           message: 'Delegate was notified',
         };
