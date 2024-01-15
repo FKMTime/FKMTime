@@ -67,3 +67,11 @@ export interface Station {
   id: number;
   name: string;
 }
+
+export interface Settings {
+  username: string;
+  email: string;
+  role: string;
+  createdAt: Date;
+  updatedAt: Date;
+}

@@ -8,6 +8,7 @@ import Competition from "./Pages/Competition/Competition";
 import Persons from "./Pages/Persons/Persons";
 import Results from "./Pages/Results/Results";
 import SingleResult from "./Pages/Results/SingleResult";
+import Settings from "./Pages/Settings/Settings";
 
 const App = (): JSX.Element => {
   const router = createBrowserRouter([
@@ -42,7 +43,11 @@ const App = (): JSX.Element => {
         {
           path: "results/:id",
           element: <SingleResult />,
-        }
+        },
+        {
+          path: "settings",
+          element: <Settings />,
+        },
       ]
     }
   ]);
