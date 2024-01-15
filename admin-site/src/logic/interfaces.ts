@@ -66,6 +66,9 @@ export interface Attempt {
 export interface Station {
   id: number;
   name: string;
+  espId: string;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 export interface Settings {

@@ -9,6 +9,7 @@ import Persons from "./Pages/Persons/Persons";
 import Results from "./Pages/Results/Results";
 import SingleResult from "./Pages/Results/SingleResult";
 import Settings from "./Pages/Settings/Settings";
+import Stations from "./Pages/Stations/Stations";
 
 const App = (): JSX.Element => {
   const router = createBrowserRouter([
@@ -48,6 +49,10 @@ const App = (): JSX.Element => {
           path: "settings",
           element: <Settings />,
         },
+        {
+          path: "stations",
+          element: <Stations />,
+        }
       ]
     }
   ]);
