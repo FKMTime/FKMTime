@@ -322,7 +322,7 @@ export class ResultService {
     });
 
     const timeToEnterAttemptToWcaLive =
-      data.penalty === -1 ? -1 : data.penalty * 1000 + data.value;
+      data.penalty === -1 ? -1 : data.penalty * 100 + data.value;
 
     if (!resultFromDb) {
       await this.prisma.result.create({

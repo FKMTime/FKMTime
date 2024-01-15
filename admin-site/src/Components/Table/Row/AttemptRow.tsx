@@ -60,7 +60,7 @@ const AttemptRow: React.FC<AttemptRowProps> = ({ attempt, showExtraColumns = fal
             <Tr key={attempt.id}>
                 <Td>{no}</Td>
                 <Td>{attempt.isExtraAttempt ? `Extra ${attempt.attemptNumber}` : attempt.attemptNumber}</Td>
-                <Td>{attempt.penalty < 2 ? resultToString(attempt.value) : (`${resultToString(attempt.value)} + ${attempt.penalty} = ${resultToString((attempt.value + (attempt.penalty * 2000)))}`)}</Td>
+                <Td>{attempt.penalty < 2 ? resultToString(attempt.value) : (`${resultToString(attempt.value)} + ${attempt.penalty} = ${resultToString((attempt.value + (attempt.penalty * 200)))}`)}</Td>
                 {showExtraColumns && (
                     <>
                         <Td>{attempt.replacedBy && `Extra ${attempt.replacedBy}`}</Td>
