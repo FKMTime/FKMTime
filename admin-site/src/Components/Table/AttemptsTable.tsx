@@ -5,21 +5,21 @@ import AttemptRow from "./Row/AttemptRow";
 interface AttemptsTableProps {
     attempts: Attempt[];
     showExtraColumns?: boolean;
+    fetchData: () => void;
 }
 
-const AttemptsTable: React.FC<AttemptsTableProps> = ({ attempts, showExtraColumns = false }): JSX.Element => {
-    console.log(attempts);
+const AttemptsTable: React.FC<AttemptsTableProps> = ({ attempts, showExtraColumns = false, fetchData }): JSX.Element => {
     return (
         <TableContainer>
             <Table variant='simple'>
                 <Thead>
                     <Tr bg='gray.400'>
+                        <Th>No</Th>
                         <Th>Attempt number</Th>
                         <Th>Time</Th>
-                        <Th>Is extra attempt</Th>
                         {showExtraColumns && (
                             <>
-                        <Th>Replaced by/Replacement of</Th>
+                        <Th>Replaced by</Th>
                         <Th>Case</Th>
                         </>
                         )}
@@ -30,8 +30,8 @@ const AttemptsTable: React.FC<AttemptsTableProps> = ({ attempts, showExtraColumn
                     </Tr>
                 </Thead>
                 <Tbody>
-                    {attempts.map((attempt: Attempt) => (
-                        <AttemptRow key={attempt.id} attempt={attempt} showExtraColumns={showExtraColumns} />
+                    {attempts.map((attempt: Attempt, i: number) => (
+                        <AttemptRow key={attempt.id} attempt={attempt} showExtraColumns={showExtraColumns} fetchData={fetchData} no={i + 1} />
                     ))}
                 </Tbody>
             </Table>

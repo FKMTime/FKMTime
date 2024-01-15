@@ -11,7 +11,7 @@ interface SidebarProps {
 
 const Sidebar: React.FC<SidebarProps> = ({ user }): JSX.Element => {
     return (
-        <Box height="100vh" backgroundColor="gray.600" width="20vh" alignItems="center" padding="5" display="flex" flexDirection="column" gap="5">
+        <Box height="100vw" backgroundColor="gray.600" width="20vh" alignItems="center" padding="5" display="flex" flexDirection="column" gap="5">
             <Heading color="white">Panel</Heading>
             <Text color="white">Hello {user.username}!</Text>
             <Text color="white">Logged in as {user.role.toLowerCase()}</Text>

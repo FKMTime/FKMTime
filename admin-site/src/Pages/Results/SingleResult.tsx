@@ -3,7 +3,7 @@ import { useParams } from "react-router-dom";
 import { getResultById } from "../../logic/results";
 import LoadingPage from "../../Components/LoadingPage";
 import { Attempt, Result } from "../../logic/interfaces";
-import { Box, Heading, Text } from "@chakra-ui/react";
+import { Box, Button, Heading, Text } from "@chakra-ui/react";
 import regions from "../../logic/regions";
 import AttemptsTable from "../../Components/Table/AttemptsTable";
 
@@ -63,22 +63,33 @@ const SingleResult = (): JSX.Element => {
             <Text fontSize="xl">
                 Representing: {regions.find(region => region.iso2 === result.person.countryIso2)?.name}
             </Text>
+            <Button colorScheme="yellow" w="20%">
+                Resubmit scorecard to WCA Live
+            </Button>
             <Heading mt={3}>
                 Attempts
             </Heading>
             <Heading size="md">
                 List of attempts submitted to WCA Live
             </Heading>
-            {submittedAttempts.length === 0 ? <Text>No attempts submitted to WCA Live</Text> : <AttemptsTable attempts={submittedAttempts as never} />}
+            {submittedAttempts.length === 0 ? <Text>No attempts submitted to WCA Live</Text> : <AttemptsTable attempts={submittedAttempts as never} fetchData={fetchData} />}
             <Heading size="md">
                 Standard
             </Heading>
-            {standardAttempts.length === 0 ? <Text>No attempts</Text> : <AttemptsTable attempts={standardAttempts} showExtraColumns />}
+            {standardAttempts.length === 0 ? <Text>No attempts</Text> : <AttemptsTable attempts={standardAttempts} showExtraColumns fetchData={fetchData} />}
             <Heading size="md">
                 Extra
             </Heading>
-            {extraAttempts.length === 0 ? <Text>No extra attempts</Text> : <AttemptsTable attempts={extraAttempts} />}
+            {extraAttempts.length === 0 ? <Text>No extra attempts</Text> : <AttemptsTable attempts={extraAttempts} fetchData={fetchData} />}
+
+            <Heading mt={3}>
+                Important information
+            </Heading>
+            <Text fontSize="xl">
+                Extra attempts should NEVER have an case set to true - we don't replace extra attempts by next extra, we only replace the original one.
+            </Text>
         </Box>
+
     )
 };
 

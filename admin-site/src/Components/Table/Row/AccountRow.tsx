@@ -21,7 +21,6 @@ const AccountRow: React.FC<AccountRowProps> = ({ account, fetchData }): JSX.Elem
         setOpenConfirmation(true);
     };
 
-
     const handleCancel = () => {
         setOpenConfirmation(false);
     };
@@ -30,6 +29,7 @@ const AccountRow: React.FC<AccountRowProps> = ({ account, fetchData }): JSX.Elem
         await fetchData();
         setIsOpenEditAccountModal(false);
     };
+
     const handleConfirm = async () => {
         setOpenConfirmation(false);
         const status = await deleteAccount(account.id);

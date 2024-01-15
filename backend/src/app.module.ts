@@ -6,6 +6,7 @@ import { AccountModule } from './account/account.module';
 import { CompetitionModule } from './competition/competition.module';
 import { PersonModule } from './person/person.module';
 import { ResultModule } from './result/result.module';
+import { AttemptModule } from './attempt/attempt.module';
 
 @Module({
   imports: [
@@ -30,6 +31,7 @@ import { ResultModule } from './result/result.module';
     CompetitionModule,
     PersonModule,
     ResultModule,
+    AttemptModule,
   ],
 })
 export class AppModule {}

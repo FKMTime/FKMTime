@@ -12,6 +12,9 @@ export const resultToString = (result: number) => {
   if (result === -1) {
     return "DNF";
   }
+  if (result === -2) {
+    return "DNS";
+  }
   return centisecondsToClockFormat(result).toString();
 };
 
