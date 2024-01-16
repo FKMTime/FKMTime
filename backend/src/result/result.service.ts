@@ -559,4 +559,65 @@ export class ResultService {
     });
     return response.status;
   }
+
+  async enterWholeScorecardToWcaLive(resultId: number) {
+    const result = await this.getResultById(resultId);
+    const competition = await this.prisma.competition.findFirst();
+    const sliced = competition.currentGroupId.split('-');
+    const currentRoundId = sliced[0] + '-' + sliced[1];
+    const attemptsToReturn = [];
+    result.attempts.forEach((attempt) => {
+      if (
+        attempt.replacedBy === null &&
+        !attempt.extraGiven &&
+        !attemptsToReturn.some((a) => a.id === attempt.id) &&
+        !attempt.isExtraAttempt
+      )
+        attemptsToReturn.push(attempt);
+      if (attempt.replacedBy !== null && attempt.extraGiven) {
+        const extraAttempt = result.attempts.find(
+          (a) =>
+            a.attemptNumber === attempt.replacedBy && a.isExtraAttempt === true,
+        );
+        if (
+          extraAttempt &&
+          !attemptsToReturn.some((a) => a.id === extraAttempt.id)
+        ) {
+          attemptsToReturn.push(extraAttempt);
+        }
+      }
+    });
+
+    const timesToSubmit = attemptsToReturn.map((attempt) => {
+      return {
+        result:
+          attempt.penalty === -1 ? -1 : attempt.penalty * 100 + attempt.value,
+      };
+    });
+    const response = await fetch(`${WCA_LIVE_API_ORIGIN}/api/enter-results`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${competition.scoretakingToken}`,
+      },
+      body: JSON.stringify({
+        competitionWcaId: competition.wcaId,
+        eventId: currentRoundId.split('-')[0],
+        roundNumber: parseInt(currentRoundId.split('-r')[1]),
+        results: [
+          {
+            registrantId: result.person.registrantId,
+            attempts: timesToSubmit,
+          },
+        ],
+      }),
+    });
+    if (response.status !== 200) {
+      throw new HttpException('WCA Live error', 500);
+    } else {
+      return {
+        message: 'Scorecard submitted',
+      };
+    }
+  }
 }

@@ -1,15 +1,16 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useParams } from "react-router-dom";
-import { getResultById } from "../../logic/results";
+import { getResultById, reSubmitScorecardToWcaLive } from "../../logic/results";
 import LoadingPage from "../../Components/LoadingPage";
 import { Attempt, Result } from "../../logic/interfaces";
-import { Box, Button, Heading, Text } from "@chakra-ui/react";
+import { Box, Button, Heading, Text, useToast } from "@chakra-ui/react";
 import regions from "../../logic/regions";
 import AttemptsTable from "../../Components/Table/AttemptsTable";
 
 
 const SingleResult = (): JSX.Element => {
     const { id } = useParams<{ id: string }>();
+    const toast = useToast();
     const [result, setResult] = useState<Result | null>(null);
     const standardAttempts = useMemo(() => {
         if (!result) return [];
@@ -40,6 +41,28 @@ const SingleResult = (): JSX.Element => {
         setResult(data);
     }, [id]);
 
+    const handleResubmit = async () => {
+        if (!result) return;
+        const status = await reSubmitScorecardToWcaLive(result.id);
+        if (status === 200) {
+            toast({
+                title: "Success",
+                description: "Scorecard resubmitted to WCA Live",
+                status: "success",
+                duration: 5000,
+                isClosable: true,
+            });
+        } else {
+            toast({
+                title: "Error",
+                description: "Something went wrong",
+                status: "error",
+                duration: 5000,
+                isClosable: true,
+            });
+        }
+    };
+
     useEffect(() => {
         fetchData();
     }, [fetchData]);
@@ -63,7 +86,7 @@ const SingleResult = (): JSX.Element => {
             <Text fontSize="xl">
                 Representing: {regions.find(region => region.iso2 === result.person.countryIso2)?.name}
             </Text>
-            <Button colorScheme="yellow" w="20%">
+            <Button colorScheme="yellow" w="20%" onClick={handleResubmit}>
                 Resubmit scorecard to WCA Live
             </Button>
             <Heading mt={3}>

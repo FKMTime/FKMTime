@@ -21,17 +21,22 @@ export class ResultController {
     @Param('roundId') roundId: string,
     @Query('search') search: string,
   ) {
-    return this.resultService.getAllResultsByRound(roundId, search);
+    return await this.resultService.getAllResultsByRound(roundId, search);
   }
 
   @UseGuards(AdminOrDelegateGuard)
   @Get(':id')
   async getResultById(@Param('id') id: number) {
-    return this.resultService.getResultById(id);
+    return await this.resultService.getResultById(id);
   }
 
   @Post('enter')
   async enterAttempt(@Body() data: EnterAttemptDto) {
-    return this.resultService.enterAttempt(data);
+    return await this.resultService.enterAttempt(data);
+  }
+
+  @Get(':id/enter')
+  async enterWholeScorecardToWcaLive(@Param('id') id: number) {
+    return await this.resultService.enterWholeScorecardToWcaLive(id);
   }
 }

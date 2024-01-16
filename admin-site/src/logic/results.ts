@@ -25,3 +25,8 @@ export const getResultById = async (id: number) => {
   const response = await backendRequest(`result/${id}`, "GET", true);
   return await response.json();
 };
+
+export const reSubmitScorecardToWcaLive = async (id: number) => {
+  const response = await backendRequest(`result/${id}/enter`, "GET", true);
+  return response.status;
+}
