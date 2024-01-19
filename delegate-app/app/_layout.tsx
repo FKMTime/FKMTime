@@ -5,6 +5,7 @@ import { SplashScreen, Stack } from 'expo-router';
 import { useEffect } from 'react';
 import { useColorScheme } from 'react-native';
 import { AuthProvider } from '../context/AuthProvider';
+import Toast from "react-native-toast-message";
 
 export {
   // Catch any errors thrown by the Layout component.
@@ -53,6 +54,7 @@ function RootLayoutNav() {
           <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
           <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
         </Stack>
+        <Toast />
       </ThemeProvider>
     </AuthProvider>
   );

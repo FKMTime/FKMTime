@@ -8,21 +8,8 @@ export const login = async (
     username: username,
     password: password,
   });
-  return await response.json();
-};
-
-export const logout = async () => {
-  localStorage.removeItem("token");
-};
-
-export const isUserLoggedIn = () => {
-  return localStorage.getItem("token") !== null;
-};
-
-export const getUserInfo = () => {
-  const userInfo = localStorage.getItem("userInfo");
-  if (userInfo === null) {
-    return null;
-  }
-  return JSON.parse(userInfo);
+  return {
+    status: response.status,
+    data: await response.json(),
+  };
 };

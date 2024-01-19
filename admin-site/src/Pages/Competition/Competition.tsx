@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Box, Button, FormControl, FormLabel, Heading, Input, Select, useToast } from "@chakra-ui/react";
+import { Box, Button, FormControl, FormLabel, Heading, IconButton, Input, Select, Text, useToast } from "@chakra-ui/react";
 import { getCompetitionInfo, importCompetition, syncCompetition, updateCompetition } from "../../logic/competition";
 import { Competition as CompetitionInterface } from "../../logic/interfaces";
 import events from "../../logic/events";
 import { Activity, Event, Round } from "@wca/helpers";
 import LoadingPage from "../../Components/LoadingPage";
+import { IoMdEye, IoMdEyeOff } from "react-icons/io";
 
 const Competition = (): JSX.Element => {
 
@@ -13,6 +14,7 @@ const Competition = (): JSX.Element => {
     const [competition, setCompetition] = useState<CompetitionInterface | null>(null);
     const [currentEvent, setCurrentEvent] = useState<string>("");
     const [currentRound, setCurrentRound] = useState<string>("");
+    const [showScoretakingToken, setShowScoretakingToken] = useState<boolean>(false);
     const idRef: React.RefObject<HTMLInputElement> = useRef<HTMLInputElement>(null);
     const toast = useToast();
     const groups = useMemo(() => {
@@ -141,9 +143,12 @@ const Competition = (): JSX.Element => {
                 <Button colorScheme="yellow" onClick={handleSync}>Sync</Button>
             </Box>
             <Box display="flex" flexDirection="column" gap="5" width="20%" as="form" onSubmit={handleSubmit}>
-                <FormControl>
-                    <FormLabel>Scoretaking token</FormLabel>
-                    <Input placeholder="Scoretaking token" _placeholder={{ color: "white" }} value={competition?.scoretakingToken} onChange={(event) => setCompetition({ ...competition, scoretakingToken: event?.target.value })} />
+                <FormControl display="flex" flexDirection="column" gap="2">
+                    <FormLabel display="flex" flexDirection="row" alignItems="center" gap="2">
+                        <IconButton aria-label="Show" icon={showScoretakingToken ? <IoMdEyeOff /> : <IoMdEye />} onClick={() => setShowScoretakingToken(!showScoretakingToken)} background="none" color="white" _hover={{ background: "none", opacity: 0.5 }} />
+                        <Text>Scoretaking token</Text>
+                    </FormLabel>
+                    <Input type={showScoretakingToken ? "text" : "password"} placeholder="Scoretaking token" _placeholder={{ color: "white" }} value={competition?.scoretakingToken} onChange={(event) => setCompetition({ ...competition, scoretakingToken: event?.target.value })} />
                 </FormControl>
                 <FormControl>
                     <FormLabel>Current event</FormLabel>

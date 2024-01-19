@@ -2,6 +2,7 @@ import {
   Body,
   Controller,
   Delete,
+  Get,
   HttpCode,
   HttpStatus,
   Param,
@@ -16,6 +17,11 @@ import { UpdateAttemptDto } from './dto/updateAttempt.dto';
 @Controller('attempt')
 export class AttemptController {
   constructor(private readonly attemptService: AttemptService) {}
+
+  @Get('unresolved')
+  async getUnresolvedAttempts() {
+    return await this.attemptService.getUnresolvedAttempts();
+  }
 
   @Put(':id')
   async updateAttempt(@Param('id') id: number, @Body() data: UpdateAttemptDto) {
