@@ -23,10 +23,16 @@ export class AttemptController {
     return await this.attemptService.getUnresolvedAttempts();
   }
 
+  @Get(':id')
+  async getAttemptById(@Param('id') id: number) {
+    return await this.attemptService.getAttemptById(id);
+  }
+
   @Put(':id')
   async updateAttempt(@Param('id') id: number, @Body() data: UpdateAttemptDto) {
     return await this.attemptService.updateAttempt(id, data);
   }
+
   @HttpCode(HttpStatus.NO_CONTENT)
   @Delete(':id')
   async deleteAttempt(@Param('id') id: number) {

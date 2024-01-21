@@ -288,7 +288,7 @@ export class ResultService {
         cardId: data.judgeId.toString(),
       },
     });
-    if (!judge) {
+    if (!judge && !data.isDelegate) {
       throw new HttpException('Judge not found', 404);
     }
     const competition = await this.prisma.competition.findFirst();
@@ -360,11 +360,13 @@ export class ResultService {
           isResolved: false,
           penalty: data.penalty,
           value: data.value,
-          judge: {
-            connect: {
-              id: judge.id,
-            },
-          },
+          judge: judge
+            ? {
+                connect: {
+                  id: judge.id,
+                },
+              }
+            : undefined,
           station: {
             connect: {
               id: station.id,
@@ -429,11 +431,13 @@ export class ResultService {
           isResolved: false,
           penalty: data.penalty,
           value: data.value,
-          judge: {
-            connect: {
-              id: judge.id,
-            },
-          },
+          judge: judge
+            ? {
+                connect: {
+                  id: judge.id,
+                },
+              }
+            : undefined,
           station: {
             connect: {
               id: station.id,
@@ -494,11 +498,13 @@ export class ResultService {
         isResolved: false,
         penalty: data.penalty,
         value: data.value,
-        judge: {
-          connect: {
-            id: judge.id,
-          },
-        },
+        judge: judge
+          ? {
+              connect: {
+                id: judge.id,
+              },
+            }
+          : undefined,
         station: {
           connect: {
             id: station.id,

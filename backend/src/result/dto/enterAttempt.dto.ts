@@ -17,7 +17,8 @@ export class EnterAttemptDto {
   espId: number;
 
   @IsInt()
-  judgeId: number;
+  @IsOptional()
+  judgeId?: number;
 
   @IsInt()
   competitorId: number;

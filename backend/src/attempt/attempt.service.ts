@@ -18,6 +18,56 @@ export class AttemptService {
     });
   }
 
+  async getAttemptById(id: number) {
+    return await this.prisma.attempt.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        resultId: true,
+        attemptNumber: true,
+        replacedBy: true,
+        isDelegate: true,
+        isResolved: true,
+        penalty: true,
+        isExtraAttempt: true,
+        extraGiven: true,
+        value: true,
+        solvedAt: true,
+        createdAt: true,
+        judge: {
+          select: {
+            id: true,
+            registrantId: true,
+            gender: true,
+            name: true,
+          },
+        },
+        station: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+        result: {
+          select: {
+            id: true,
+            eventId: true,
+            roundId: true,
+            groupId: true,
+            createdAt: true,
+            updatedAt: true,
+            person: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
+          },
+        },
+      },
+    });
+  }
+
   async getUnresolvedAttempts() {
     return await this.prisma.attempt.findMany({
       where: { isDelegate: true, isResolved: false },

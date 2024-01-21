@@ -1,4 +1,5 @@
-const BACKEND_URL = "http://10.119.71.68:5000/";
+//const BACKEND_URL = "http://10.119.71.68:5000/";
+const BACKEND_URL = "http://192.168.2.39:5000/";
 
 export const backendRequest = (
   path: string,

@@ -32,8 +32,9 @@ export default function TabOneScreen() {
       <View style={styles.casesContainer}>
       <Text style={styles.title}>Unresolved delegate cases:</Text>
         {attempts.map((attempt: Attempt) => (
-          <Case attempt={attempt} />
+          <Case attempt={attempt} key={attempt.id} />
         ))}
+        {attempts.length === 0 && <Text>No unresolved cases!</Text>}
       </View>
     </View>
   );

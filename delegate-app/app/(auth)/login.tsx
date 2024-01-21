@@ -3,8 +3,6 @@ import { useAuth } from "../../context/AuthProvider";
 import { login } from "../../lib/auth";
 import { useState } from "react";
 import { placeholderTextColor, cursorColor } from "../../constants/Colors";
-import { inputClasses, successButtonClasses } from "../../constants/classes";
-import Toast from "react-native-toast-message";
 
 export default function Login() {
     const { setUser } = useAuth();
@@ -13,15 +11,7 @@ export default function Login() {
     const handleLogin = async () => {
         const response = await login(formData.username, formData.password);
         if (response.status === 403) {
-            Toast.show({
-                type: 'error',
-                text1: 'Error',
-                text2: 'Invalid username or password',
-                visibilityTime: 4000,
-                autoHide: true,
-                topOffset: 30,
-                bottomOffset: 40,
-            });
+            alert('Invalid username or password');
         }
         setUser({
             username: response.data.userInfo.username,
