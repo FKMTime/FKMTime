@@ -152,7 +152,10 @@ const Competition = (): JSX.Element => {
                 </FormControl>
                 <FormControl>
                     <FormLabel>Current event</FormLabel>
-                    <Select placeholder="Select event" _placeholder={{ color: "white" }} value={currentEvent} onChange={(event) => setCurrentEvent(event?.target.value)}>
+                    <Select placeholder="Select event" _placeholder={{ color: "white" }} value={currentEvent} onChange={(event) => {
+                        setCurrentEvent(event?.target.value);
+                        setCurrentRound(event?.target.value + "-r1");
+                    }}>
                         {competition.wcif.events.map((event: Event) => (
                             <option key={event.id} value={event.id}>{events.find((e) => e.id === event.id)?.name}</option>
                         ))}

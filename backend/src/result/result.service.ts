@@ -562,7 +562,11 @@ export class ResultService {
     const timesToSubmit = attemptsToReturn.map((attempt) => {
       return {
         result:
-          attempt.penalty === -1 ? -1 : attempt.penalty * 100 + attempt.value,
+          attempt.penalty === -2
+            ? -2
+            : attempt.penalty === -1
+              ? -1
+              : attempt.penalty * 100 + attempt.value,
       };
     });
     const response = await fetch(`${WCA_LIVE_API_ORIGIN}/api/enter-results`, {
@@ -670,19 +674,17 @@ export class ResultService {
     });
     let timeToEnterToWcaLive: any = null;
 
-    if (submittedAttempts.length > 0) {
-      if (wcifRoundInfo.timeLimit.cumulativeRoundIds.length > 0) {
-        if (
-          !this.checkCumulativeLimit(wcifRoundInfo.timeLimit.centiseconds, [
-            ...submittedAttempts,
-            newAttemptData,
-          ])
-        ) {
-          limitPassed = false;
-          dataToReturn.penalty = -1;
-          dataToReturn.dnsOther = true;
-          timeToEnterToWcaLive = -1;
-        }
+    if (wcifRoundInfo.timeLimit.cumulativeRoundIds.length > 0) {
+      if (
+        !this.checkCumulativeLimit(wcifRoundInfo.timeLimit.centiseconds, [
+          ...submittedAttempts,
+          newAttemptData,
+        ])
+      ) {
+        limitPassed = false;
+        dataToReturn.penalty = -1;
+        dataToReturn.dnsOther = true;
+        timeToEnterToWcaLive = -1;
       }
     }
     if (wcifRoundInfo.timeLimit.centiseconds > 0) {

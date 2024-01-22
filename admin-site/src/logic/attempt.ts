@@ -1,7 +1,11 @@
 import { Attempt } from "./interfaces";
 import { backendRequest } from "./request"
 
-export const updateAttempt = async (data: Attempt) => {
+interface UpdateAttemptData extends Attempt {
+    shouldResubmitToWcaLive: boolean;
+}
+
+export const updateAttempt = async (data: UpdateAttemptData) => {
     const response = await backendRequest(`attempt/${data.id}`, "PUT", true, data);
     return response.status;
 };

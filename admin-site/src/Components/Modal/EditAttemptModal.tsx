@@ -15,12 +15,16 @@ const EditAttemptModal: React.FC<EditAttemptModalProps> = ({ isOpen, onClose, at
     const toast = useToast();
     const [isLoading, setIsLoading] = useState(false);
     const [editedAttempt, setEditedAttempt] = useState<Attempt>(attempt);
+    const [shouldResubmitToWcaLive, setShouldResubmitToWcaLive] = useState<boolean>(false);
 
     const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
         setIsLoading(true);
         event.preventDefault();
 
-        const status = await updateAttempt(editedAttempt);
+        const status = await updateAttempt({
+            ...editedAttempt,
+            shouldResubmitToWcaLive,
+        });
         if (status === 200) {
             toast({
                 title: "Successfully updated account.",
@@ -78,6 +82,7 @@ const EditAttemptModal: React.FC<EditAttemptModalProps> = ({ isOpen, onClose, at
                         <Checkbox isChecked={editedAttempt.extraGiven} onChange={(e) => setEditedAttempt({ ...editedAttempt, extraGiven: e.target.checked })}>Extra given</Checkbox>
                     </>
                 )}
+                <Checkbox isChecked={shouldResubmitToWcaLive} onChange={(e) => setShouldResubmitToWcaLive(e.target.checked)}>Resubmit to WCA Live</Checkbox>
                 <Box display="flex" flexDirection="row" justifyContent="end" gap="5">
                     {!isLoading && (
                         <Button colorScheme='red' onClick={onClose}>

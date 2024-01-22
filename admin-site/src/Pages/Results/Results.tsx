@@ -1,6 +1,6 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Competition, Result } from "../../logic/interfaces";
-import { Box, IconButton, Input, Select } from "@chakra-ui/react";
+import { Box, IconButton, Input, Select, Text } from "@chakra-ui/react";
 import { getResultsByRoundId } from "../../logic/results";
 import { getCompetitionInfo } from "../../logic/competition";
 import { useNavigate } from "react-router-dom";
@@ -8,6 +8,7 @@ import LoadingPage from "../../Components/LoadingPage";
 import EventIcon from "../../Components/Icons/EventIcon";
 import { Event, Round } from "@wca/helpers";
 import ResultsTable from "../../Components/Table/ResultsTable";
+import { resultToString } from "../../logic/resultFormatters";
 
 interface ResultsFilters {
     eventId: string;
@@ -21,6 +22,18 @@ const Results = (): JSX.Element => {
         roundId: "",
     });
     const [search, setSearch] = useState<string>("");
+    const cutoff = useMemo(() => {
+        if (!competition) {
+            return null;
+        }
+        return competition.wcif.events.find((event: Event) => event.id === filters.eventId)?.rounds.find((round: Round) => round.id === filters.roundId)?.cutoff || null;
+    }, [competition, filters.eventId, filters.roundId]);
+    const limit = useMemo(() => {
+        if (!competition) {
+            return null;
+        }
+        return competition.wcif.events.find((event: Event) => event.id === filters.eventId)?.rounds.find((round: Round) => round.id === filters.roundId)?.timeLimit || null;
+    }, [competition, filters.eventId, filters.roundId]);
 
     const navigate = useNavigate();
 
@@ -37,7 +50,7 @@ const Results = (): JSX.Element => {
         }
         setCompetition(response.data);
         const roundId = response.data.wcif.events[0].rounds[0].id;
-        setFilters({ roundId: roundId, eventId: response.data.wcif.events[0].id  });
+        setFilters({ roundId: roundId, eventId: response.data.wcif.events[0].id });
     }, [navigate]);
 
     const handleEventChange = async (id: string) => {
@@ -82,6 +95,10 @@ const Results = (): JSX.Element => {
                     ))}
                 </Select>
                 <Input placeholder="Search" _placeholder={{ color: "white" }} width="20%" value={search} onChange={handleSearch} />
+            </Box>
+            <Box display="flex" flexDirection="column" gap="5">
+                <Text>Cutoff: {cutoff ? `${resultToString(cutoff.attemptResult)} (${cutoff.numberOfAttempts} attempts)` : "None"}</Text>
+                <Text>Limit: {limit ? `${resultToString(limit.centiseconds)} ${limit.cumulativeRoundIds.length > 0 ? "(cumulative)" : ""}` : "None"}</Text>
             </Box>
             <ResultsTable results={results} />
         </Box>

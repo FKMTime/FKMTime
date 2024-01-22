@@ -6,7 +6,6 @@ import { calculateTotalPages } from "../../logic/utils";
 import PersonsTable from "../../Components/Table/PersonsTable";
 
 const Persons = (): JSX.Element => {
-
     const [persons, setPersons] = useState<Person[]>([]);
     const [page, setPage] = useState<number>(1);
     const [totalPages, setTotalPages] = useState<number>(1);
