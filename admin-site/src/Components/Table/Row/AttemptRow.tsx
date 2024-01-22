@@ -63,15 +63,15 @@ const AttemptRow: React.FC<AttemptRowProps> = ({ attempt, showExtraColumns = fal
             <Tr key={attempt.id}>
                 <Td>{no}</Td>
                 <Td>{attempt.isExtraAttempt ? `Extra ${attempt.attemptNumber}` : attempt.attemptNumber}</Td>
-                <Td>{attempt.penalty === -1 ? `DNF(${resultToString(attempt.value)})` : resultToString(attemptValueWithPenalty)}</Td>                    
+                <Td>{attempt.penalty === -2 ? "DNS" : attempt.penalty === -1 ? `DNF(${resultToString(attempt.value)})` : resultToString(attemptValueWithPenalty)}</Td>                    
                 {showExtraColumns && (
                     <>
                         <Td>{attempt.replacedBy && `Extra ${attempt.replacedBy}`}</Td>
                         <Td>{attempt.isDelegate ? attempt.isResolved ? "Resolved" : "Not resolved" : null}</Td>
                     </>
                 )}
-                <Td>{`${attempt.judge.name} (${attempt.judge.registrantId})`} </Td>
-                <Td>{attempt.station.name}</Td>
+                <Td>{attempt.judge && `${attempt.judge.name} (${attempt.judge.registrantId})`} </Td>
+                <Td>{attempt.station && attempt.station.name}</Td>
                 <Td>{new Date(attempt.solvedAt).toLocaleString()}</Td>
                 <Td>
                     <IconButton icon={<MdEdit />} aria-label="Edit" bg="none" color="white" _hover={{

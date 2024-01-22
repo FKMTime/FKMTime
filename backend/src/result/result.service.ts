@@ -101,13 +101,13 @@ export class ResultService {
           return {
             ...attempt,
             solvedAt: attempt.solvedAt ? attempt.solvedAt : attempt.createdAt,
-            judge: {
+            judge: attempt.judge && {
               id: attempt.judge.id,
               name: attempt.judge.name,
               registrantId: attempt.judge.registrantId,
               gender: attempt.judge.gender,
             },
-            station: {
+            station: attempt.station && {
               id: attempt.station.id,
               name: attempt.station.name,
             },
@@ -176,11 +176,11 @@ export class ResultService {
           return {
             ...attempt,
             solvedAt: attempt.solvedAt ? attempt.solvedAt : attempt.createdAt,
-            judge: {
+            judge: attempt.judge && {
               id: attempt.judge.id,
               name: attempt.judge.name,
             },
-            station: {
+            station: attempt.station && {
               id: attempt.station.id,
               name: attempt.station.name,
             },
@@ -249,13 +249,13 @@ export class ResultService {
         return {
           ...attempt,
           solvedAt: attempt.solvedAt ? attempt.solvedAt : attempt.createdAt,
-          judge: {
+          judge: attempt.judge && {
             id: attempt.judge.id,
             name: attempt.judge.name,
             registrantId: attempt.judge.registrantId,
             gender: attempt.judge.gender,
           },
-          station: {
+          station: attempt.station && {
             id: attempt.station.id,
             name: attempt.station.name,
           },
@@ -411,7 +411,9 @@ export class ResultService {
         throw new HttpException('WCA Live error', 500);
       }
       return {
-        message: 'Attempt entered',
+        message: finalData.limitPassed
+          ? 'Attempt entered'
+          : 'Attempt entered, but replaced to DNF',
       };
     }
     let attemptNumber = 1;
@@ -467,8 +469,38 @@ export class ResultService {
     if (status !== 200) {
       throw new HttpException('WCA Live error', 500);
     }
+    if (finalData.dnsOther) {
+      for (let i = 0; i < maxAttempts - attemptNumber; i++) {
+        await this.prisma.attempt.create({
+          data: {
+            attemptNumber: attemptNumber + i + 1,
+            isDelegate: false,
+            isExtraAttempt: false,
+            isResolved: false,
+            penalty: -2,
+            value: 0,
+            result: {
+              connect: {
+                id: result.id,
+              },
+            },
+          },
+        });
+        await this.enterAttemptToWcaLive(
+          competition.wcaId,
+          competition.scoretakingToken,
+          currentRoundId.split('-')[0],
+          parseInt(currentRoundId.split('-r')[1]),
+          competitor.registrantId,
+          attemptNumber + i + 1,
+          -2,
+        );
+      }
+    }
     return {
-      message: 'Attempt entered',
+      message: finalData.limitPassed
+        ? 'Attempt entered'
+        : 'Attempt entered, but replaced to DNF',
     };
   }
 
@@ -638,16 +670,17 @@ export class ResultService {
     });
     let timeToEnterToWcaLive: any = null;
 
-    if (attempts.length > 0) {
+    if (submittedAttempts.length > 0) {
       if (wcifRoundInfo.timeLimit.cumulativeRoundIds.length > 0) {
         if (
-          !this.checkCumulativeLimit(
-            wcifRoundInfo.timeLimit.cumulativeLimit,
-            submittedAttempts,
-          )
+          !this.checkCumulativeLimit(wcifRoundInfo.timeLimit.centiseconds, [
+            ...submittedAttempts,
+            newAttemptData,
+          ])
         ) {
           limitPassed = false;
           dataToReturn.penalty = -1;
+          dataToReturn.dnsOther = true;
           timeToEnterToWcaLive = -1;
         }
       }
@@ -667,10 +700,9 @@ export class ResultService {
     if (wcifRoundInfo.cutoff) {
       if (
         !this.checkCutoff(
-          newAttemptData.value,
+          submittedAttempts,
           wcifRoundInfo.cutoff.attemptResult,
           wcifRoundInfo.cutoff.numberOfAttempts,
-          submittedAttempts,
         )
       ) {
         cutoffPassed = false;
@@ -695,7 +727,9 @@ export class ResultService {
   private checkCumulativeLimit(limit: number, submittedAttempts: any[]) {
     let sum = 0;
     submittedAttempts.forEach((attempt) => {
-      sum += attempt.value;
+      if (attempt.penalty !== -1) {
+        sum += attempt.value + attempt.penalty * 100;
+      }
     });
     return sum < limit;
   }
@@ -704,17 +738,19 @@ export class ResultService {
     return time < limit;
   }
 
-  private checkCutoff(
-    timeToCheck: number,
-    cutoff: number,
-    attemptsNumber: number,
-    submittedAttempts: any[],
-  ) {
-    if (attemptsNumber === 0) return true;
-    if (submittedAttempts.length < attemptsNumber) return true;
+  private checkCutoff(attempts: any[], cutoff: number, attemptsNumber: number) {
+    if (attempts.length < attemptsNumber) return true;
     else {
-      if (timeToCheck < cutoff) return true;
-      else return false;
+      if (
+        attempts.some(
+          (attempt) =>
+            attempt.penalty !== -1 &&
+            attempt.value + attempt.penalty * 100 < cutoff,
+        )
+      ) {
+        return true;
+      }
+      return false;
     }
   }
 
