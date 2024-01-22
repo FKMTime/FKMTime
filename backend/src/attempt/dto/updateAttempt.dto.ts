@@ -24,4 +24,8 @@ export class UpdateAttemptDto {
 
   @IsInt()
   value: number;
+
+  @IsOptional()
+  @IsBoolean()
+  submitToWcaLive: boolean;
 }

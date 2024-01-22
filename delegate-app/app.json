@@ -19,6 +19,11 @@
       "supportsTablet": true
     },
     "android": {
+      "package": "com.slstime.delegateapp",
+      "googleServicesFile": "./google-services.json",
+      "defaultConfig": {
+        "applicationId": "com.slstime.delegateapp"
+      },
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#2d2d2d"
@@ -30,10 +35,19 @@
       "favicon": "./assets/images/favicon.png"
     },
     "plugins": [
-      "expo-router"
+      "expo-router",
+      "@react-native-firebase/app"
     ],
     "experiments": {
       "typedRoutes": true
+    },
+    "extra": {
+      "router": {
+        "origin": false
+      },
+      "eas": {
+        "projectId": "b4e1c9e6-91cd-4ea1-8885-5624b5cb1f6c"
+      }
     }
   }
 }

@@ -266,7 +266,6 @@ export class ResultService {
   }
 
   async enterAttempt(data: EnterAttemptDto) {
-    //TODO: Simplify this code
     const station = await this.prisma.station.findFirst({
       where: {
         espId: data.espId.toString(),
@@ -298,18 +297,21 @@ export class ResultService {
     const wcif = JSON.parse(JSON.stringify(competition.wcif));
     const sliced = competition.currentGroupId.split('-');
     const currentRoundId = sliced[0] + '-' + sliced[1];
-    const currentGroup = wcif.schedule.venues[0].rooms[0].activities
-      .find((activity) => activity.activityCode === currentRoundId)
-      .childActivities.find(
-        (activity) => activity.activityCode === competition.currentGroupId,
-      );
+    const currentGroup = this.getGroupFromWcif(
+      wcif,
+      currentRoundId,
+      competition.currentGroupId,
+    );
+    const eventInfo = wcif.events.find((event) => event.id === sliced[0]);
+    const roundInfo = eventInfo.rounds.find(
+      (round) => round.id === currentRoundId,
+    );
     const competitorWcifInfo = wcif.persons.find(
       (person) => person.registrantId === competitor.registrantId,
     );
-    const isCompetitorInThisGroup = competitorWcifInfo.assignments.some(
-      (assignment) =>
-        assignment.activityId === currentGroup.id &&
-        assignment.assignmentCode === 'competitor',
+    const isCompetitorInThisGroup = this.isCompetitorInThisGroup(
+      competitorWcifInfo,
+      currentGroup.id,
     );
     if (!isCompetitorInThisGroup) {
       throw new HttpException('Competitor is not in this group', 400);
@@ -320,9 +322,6 @@ export class ResultService {
         roundId: currentRoundId,
       },
     });
-
-    const timeToEnterAttemptToWcaLive =
-      data.penalty === -1 ? -1 : data.penalty * 100 + data.value;
 
     if (!resultFromDb) {
       await this.prisma.result.create({
@@ -338,6 +337,7 @@ export class ResultService {
         },
       });
     }
+
     const result = await this.prisma.result.findFirst({
       where: {
         personId: competitor.id,
@@ -351,57 +351,12 @@ export class ResultService {
       },
     });
 
-    if (attempts.length === 0) {
-      await this.prisma.attempt.create({
-        data: {
-          attemptNumber: 1,
-          isDelegate: data.isDelegate,
-          isExtraAttempt: false,
-          isResolved: false,
-          penalty: data.penalty,
-          value: data.value,
-          judge: judge
-            ? {
-                connect: {
-                  id: judge.id,
-                },
-              }
-            : undefined,
-          station: {
-            connect: {
-              id: station.id,
-            },
-          },
-          result: {
-            connect: {
-              id: result.id,
-            },
-          },
-        },
-      });
-      if (data.isDelegate) {
-        return {
-          message: 'Delegate was notified',
-        };
-        //TODO: Send notification to delegate
-      } else {
-        const status = await this.enterAttemptToWcaLive(
-          competition.wcaId,
-          competition.scoretakingToken,
-          currentRoundId.split('-')[0],
-          parseInt(currentRoundId.split('-r')[1]),
-          competitor.registrantId,
-          1,
-          timeToEnterAttemptToWcaLive,
-        );
-        if (status !== 200) {
-          throw new HttpException('WCA Live error', 500);
-        }
-        return {
-          message: 'Attempt entered',
-        };
-      }
+    const finalData = this.getValidatedData(roundInfo, attempts, data);
+
+    if (!finalData.cutoffPassed) {
+      throw new HttpException('Cutoff not passed', 400);
     }
+
     const sortedAttempts = attempts
       .filter((attempt) => attempt.isExtraAttempt === false)
       .sort((a, b) => a.attemptNumber - b.attemptNumber);
@@ -423,55 +378,34 @@ export class ResultService {
           (attempt.replacedBy === 0 || attempt.replacedBy === null),
       );
 
-      const extraAttempt = await this.prisma.attempt.create({
-        data: {
-          attemptNumber: lastExtra + 1,
-          isDelegate: data.isDelegate,
-          isExtraAttempt: true,
-          isResolved: false,
-          penalty: data.penalty,
-          value: data.value,
-          judge: judge
-            ? {
-                connect: {
-                  id: judge.id,
-                },
-              }
-            : undefined,
-          station: {
-            connect: {
-              id: station.id,
-            },
+      const attemptNumber =
+        await this.createAnExtraAttemptAnReplaceTheOriginalOne(
+          {
+            ...finalData,
+            station,
+            judge,
+            competitor,
+            result,
+            attemptNumber: lastExtra + 1,
           },
-          result: {
-            connect: {
-              id: result.id,
-            },
-          },
-        },
-      });
-      if (data.isDelegate) {
+          lastAttemptToReplace.id,
+        );
+
+      if (attemptNumber === -1) {
         //TODO: Send notification to delegate
         return {
           message: 'Delegate was notified',
         };
       }
-      const attempt = await this.prisma.attempt.update({
-        where: {
-          id: lastAttemptToReplace.id,
-        },
-        data: {
-          replacedBy: extraAttempt.attemptNumber,
-        },
-      });
+
       const status = await this.enterAttemptToWcaLive(
         competition.wcaId,
         competition.scoretakingToken,
         currentRoundId.split('-')[0],
         parseInt(currentRoundId.split('-r')[1]),
         competitor.registrantId,
-        attempt.attemptNumber,
-        timeToEnterAttemptToWcaLive,
+        attemptNumber,
+        finalData.timeToEnter,
       );
       if (status !== 200) {
         throw new HttpException('WCA Live error', 500);
@@ -480,24 +414,23 @@ export class ResultService {
         message: 'Attempt entered',
       };
     }
-
+    let attemptNumber = 1;
     const lastAttempt = sortedAttempts[sortedAttempts.length - 1];
-    const wcifEventInfo = wcif.events.find(
-      (event) => event.id === currentRoundId.split('-')[0],
-    );
-    const maxAttempts = wcifEventInfo.format === 'a' ? 5 : 3;
+    const maxAttempts = roundInfo.format === 'a' ? 5 : 3;
     if (lastAttempt && lastAttempt.attemptNumber === maxAttempts) {
       throw new HttpException('No attempts left', 400);
     }
-
+    if (lastAttempt) {
+      attemptNumber = lastAttempt.attemptNumber + 1;
+    }
     await this.prisma.attempt.create({
       data: {
-        attemptNumber: lastAttempt.attemptNumber + 1,
-        isDelegate: data.isDelegate,
+        attemptNumber: attemptNumber,
+        isDelegate: finalData.isDelegate,
         isExtraAttempt: false,
         isResolved: false,
-        penalty: data.penalty,
-        value: data.value,
+        penalty: finalData.penalty,
+        value: finalData.value,
         judge: judge
           ? {
               connect: {
@@ -528,8 +461,8 @@ export class ResultService {
       currentRoundId.split('-')[0],
       parseInt(currentRoundId.split('-r')[1]),
       competitor.registrantId,
-      lastAttempt.attemptNumber + 1,
-      timeToEnterAttemptToWcaLive,
+      attemptNumber,
+      finalData.timeToEnter,
     );
     if (status !== 200) {
       throw new HttpException('WCA Live error', 500);
@@ -539,7 +472,7 @@ export class ResultService {
     };
   }
 
-  private async enterAttemptToWcaLive(
+  async enterAttemptToWcaLive(
     competitionId: string,
     scoretakingToken: string,
     eventId: string,
@@ -625,5 +558,183 @@ export class ResultService {
         message: 'Scorecard submitted',
       };
     }
+  }
+
+  async createAnExtraAttemptAnReplaceTheOriginalOne(
+    data: any,
+    originalId: number,
+  ) {
+    const extraAttempt = await this.prisma.attempt.create({
+      data: {
+        attemptNumber: data.attemptNumber,
+        isDelegate: data.isDelegate,
+        isExtraAttempt: true,
+        isResolved: false,
+        penalty: data.penalty,
+        value: data.value,
+        judge: data.judge
+          ? {
+              connect: {
+                id: data.judge.id,
+              },
+            }
+          : undefined,
+        station: {
+          connect: {
+            id: data.station.id,
+          },
+        },
+        result: {
+          connect: {
+            id: data.result.id,
+          },
+        },
+      },
+    });
+
+    if (!data.isDelegate) {
+      const attempt = await this.prisma.attempt.update({
+        where: {
+          id: originalId,
+        },
+        data: {
+          replacedBy: extraAttempt.attemptNumber,
+        },
+      });
+      return attempt.attemptNumber;
+    }
+    return -1;
+  }
+
+  private getValidatedData(
+    wcifRoundInfo: any,
+    attempts: any[],
+    newAttemptData: any,
+  ) {
+    const submittedAttempts = [];
+    const dataToReturn: any = newAttemptData;
+    let limitPassed = true;
+    let cutoffPassed = true;
+    attempts.forEach((attempt) => {
+      if (
+        attempt.replacedBy === null &&
+        !attempt.extraGiven &&
+        !submittedAttempts.some((a) => a.id === attempt.id) &&
+        !attempt.isExtraAttempt
+      )
+        submittedAttempts.push(attempt);
+      if (attempt.replacedBy !== null && attempt.extraGiven) {
+        const extraAttempt = attempts.find(
+          (a) =>
+            a.attemptNumber === attempt.replacedBy && a.isExtraAttempt === true,
+        );
+        if (
+          extraAttempt &&
+          !submittedAttempts.some((a) => a.id === extraAttempt.id)
+        ) {
+          submittedAttempts.push(extraAttempt);
+        }
+      }
+    });
+    let timeToEnterToWcaLive: any = null;
+
+    if (attempts.length > 0) {
+      if (wcifRoundInfo.timeLimit.cumulativeRoundIds.length > 0) {
+        if (
+          !this.checkCumulativeLimit(
+            wcifRoundInfo.timeLimit.cumulativeLimit,
+            submittedAttempts,
+          )
+        ) {
+          limitPassed = false;
+          dataToReturn.penalty = -1;
+          timeToEnterToWcaLive = -1;
+        }
+      }
+    }
+    if (wcifRoundInfo.timeLimit.centiseconds > 0) {
+      if (
+        !this.checkAttemptLimit(
+          newAttemptData.value,
+          wcifRoundInfo.timeLimit.centiseconds,
+        )
+      ) {
+        limitPassed = false;
+        timeToEnterToWcaLive = -1;
+        dataToReturn.penalty = -1;
+      }
+    }
+    if (wcifRoundInfo.cutoff) {
+      if (
+        !this.checkCutoff(
+          newAttemptData.value,
+          wcifRoundInfo.cutoff.attemptResult,
+          wcifRoundInfo.cutoff.numberOfAttempts,
+          submittedAttempts,
+        )
+      ) {
+        cutoffPassed = false;
+        timeToEnterToWcaLive = 0;
+        dataToReturn.penalty = 0;
+      }
+    }
+
+    return {
+      ...dataToReturn,
+      timeToEnter: timeToEnterToWcaLive
+        ? timeToEnterToWcaLive
+        : newAttemptData.penalty === -1
+          ? -1
+          : newAttemptData.penalty * 100 + newAttemptData.value,
+      limitPassed: limitPassed,
+      cutoffPassed: cutoffPassed,
+      attemptNumber: submittedAttempts.length + 1,
+    };
+  }
+
+  private checkCumulativeLimit(limit: number, submittedAttempts: any[]) {
+    let sum = 0;
+    submittedAttempts.forEach((attempt) => {
+      sum += attempt.value;
+    });
+    return sum < limit;
+  }
+
+  private checkAttemptLimit(time: number, limit: number) {
+    return time < limit;
+  }
+
+  private checkCutoff(
+    timeToCheck: number,
+    cutoff: number,
+    attemptsNumber: number,
+    submittedAttempts: any[],
+  ) {
+    if (attemptsNumber === 0) return true;
+    if (submittedAttempts.length < attemptsNumber) return true;
+    else {
+      if (timeToCheck < cutoff) return true;
+      else return false;
+    }
+  }
+
+  private isCompetitorInThisGroup(competitorWcif: any, currentGroupId: number) {
+    return competitorWcif.assignments.some(
+      (assignment) =>
+        assignment.activityId === currentGroupId &&
+        assignment.assignmentCode === 'competitor',
+    );
+  }
+
+  private getGroupFromWcif(
+    wcif: any,
+    currentRoundId: string,
+    currentGroupId: string,
+  ) {
+    return wcif.schedule.venues[0].rooms[0].activities
+      .find((activity) => activity.activityCode === currentRoundId)
+      .childActivities.find(
+        (activity) => activity.activityCode === currentGroupId,
+      );
   }
 }

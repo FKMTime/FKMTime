@@ -1,17 +1,59 @@
+import { ResultService } from './../result/result.service';
 import { DbService } from '../db/db.service';
-import { Injectable } from '@nestjs/common';
+import { HttpException, Injectable } from '@nestjs/common';
 import { UpdateAttemptDto } from './dto/updateAttempt.dto';
 
 @Injectable()
 export class AttemptService {
-  constructor(private readonly prisma: DbService) {}
+  constructor(
+    private readonly prisma: DbService,
+    private readonly resultService: ResultService,
+  ) {}
 
   async updateAttempt(id: number, data: UpdateAttemptDto) {
-    return await this.prisma.attempt.update({
+    if (!data.extraGiven) {
+      data.replacedBy = null;
+    }
+    const attempt = await this.prisma.attempt.update({
       where: { id: id },
       data: data,
+      select: {
+        id: true,
+        result: {
+          select: {
+            person: {
+              select: {
+                registrantId: true,
+              },
+            },
+          },
+        },
+      },
     });
+    if (!attempt) {
+      throw new HttpException('Attempt not found', 404);
+    }
+    if (data.submitToWcaLive && !data.extraGiven && !data.replacedBy) {
+      const competition = await this.prisma.competition.findFirst();
+      const sliced = competition.currentGroupId.split('-');
+      const currentRoundId = sliced[0] + '-' + sliced[1];
+      const timeToEnterAttemptToWcaLive =
+        data.penalty === -1 ? -1 : data.penalty * 100 + data.value;
+      const status = await this.resultService.enterAttemptToWcaLive(
+        competition.wcaId,
+        competition.scoretakingToken,
+        currentRoundId.split('-')[0],
+        parseInt(currentRoundId.split('-r')[1]),
+        attempt.result.person.registrantId,
+        data.attemptNumber,
+        timeToEnterAttemptToWcaLive,
+      );
+      if (status === 200) {
+        return attempt;
+      }
+    }
   }
+
   async deleteAttempt(id: number) {
     return await this.prisma.attempt.delete({
       where: { id: id },

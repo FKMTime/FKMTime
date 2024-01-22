@@ -33,7 +33,7 @@ const AttemptRow: React.FC<AttemptRowProps> = ({ attempt, showExtraColumns = fal
         const status = await deleteAttempt(attempt.id);
         if (status === 204) {
             toast({
-                title: "Successfully deleted account.",
+                title: "Successfully deleted attempt.",
                 status: "success",
                 duration: 9000,
                 isClosable: true,
@@ -55,12 +55,15 @@ const AttemptRow: React.FC<AttemptRowProps> = ({ attempt, showExtraColumns = fal
         setIsOpenEditAttemptModal(false);
     };
 
+    const attemptValueWithPenalty = attempt.value + (attempt.penalty * 100);
+
+
     return (
         <>
             <Tr key={attempt.id}>
                 <Td>{no}</Td>
                 <Td>{attempt.isExtraAttempt ? `Extra ${attempt.attemptNumber}` : attempt.attemptNumber}</Td>
-                <Td>{attempt.penalty < 2 ? resultToString(attempt.value) : (`${resultToString(attempt.value)} + ${attempt.penalty} = ${resultToString((attempt.value + (attempt.penalty * 200)))}`)}</Td>
+                <Td>{attempt.penalty === -1 ? `DNF(${resultToString(attempt.value)})` : resultToString(attemptValueWithPenalty)}</Td>                    
                 {showExtraColumns && (
                     <>
                         <Td>{attempt.replacedBy && `Extra ${attempt.replacedBy}`}</Td>
