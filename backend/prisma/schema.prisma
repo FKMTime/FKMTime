@@ -12,6 +12,7 @@ model Account {
   password  String
   email     String
   username  String?  @unique
+  notificationToken String?
   role      Role?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

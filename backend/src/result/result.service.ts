@@ -1,6 +1,7 @@
 import { HttpException, Injectable } from '@nestjs/common';
 import { DbService } from 'src/db/db.service';
 import { EnterAttemptDto } from './dto/enterAttempt.dto';
+import Expo from 'expo-server-sdk';
 
 const WCA_LIVE_API_ORIGIN = process.env.WCA_LIVE_API_ORIGIN;
 @Injectable()
@@ -392,7 +393,7 @@ export class ResultService {
         );
 
       if (attemptNumber === -1) {
-        //TODO: Send notification to delegate
+        await this.sendNotificationAboutIncident(station.name, competitor.name);
         return {
           message: 'Delegate was notified',
         };
@@ -453,6 +454,7 @@ export class ResultService {
       },
     });
     if (data.isDelegate) {
+      await this.sendNotificationAboutIncident(station.name, competitor.name);
       return {
         message: 'Delegate was notified',
       };
@@ -640,6 +642,33 @@ export class ResultService {
       return attempt.attemptNumber;
     }
     return -1;
+  }
+
+  async sendNotificationAboutIncident(
+    stationName: string,
+    competitorName: string,
+  ) {
+    const expo = new Expo();
+    const messages = [];
+    const accounts = await this.prisma.account.findMany({
+      where: {
+        notificationToken: {
+          not: null,
+        },
+      },
+    });
+    for (const account of accounts) {
+      if (!Expo.isExpoPushToken(account.notificationToken)) {
+        continue;
+      }
+      messages.push({
+        to: account.notificationToken,
+        sound: 'default',
+        title: `New incident at station ${stationName}`,
+        body: `Competitor ${competitorName} has a problem`,
+      });
+    }
+    await expo.sendPushNotificationsAsync(messages);
   }
 
   private getValidatedData(
