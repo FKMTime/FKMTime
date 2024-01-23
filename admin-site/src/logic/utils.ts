@@ -18,3 +18,10 @@ export const prettyGender = (gender: string) => {
 export const regionNameByIso2 = (iso2: string) => {
     return regions.find(region => region.iso2 === iso2)?.name;
 };
+
+export const formatTime = (dateString: string) => {
+  const date = new Date(dateString);
+  const hours = date.getHours() < 10 ? `0${date.getHours()}` : date.getHours();
+  const minutes = date.getMinutes() < 10 ? `0${date.getMinutes()}` : date.getMinutes();
+  return `${hours}:${minutes}`;
+};

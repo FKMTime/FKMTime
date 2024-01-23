@@ -49,8 +49,10 @@ const Results = (): JSX.Element => {
             navigate("/competition");
         }
         setCompetition(response.data);
-        const roundId = response.data.wcif.events[0].rounds[0].id;
-        setFilters({ roundId: roundId, eventId: response.data.wcif.events[0].id });
+        const currentEventId = response.data.currentGroupId.split("-")[0] || response.data.wcif.events[0].id;
+        console.log(currentEventId);
+        const roundId = currentEventId + "-r1"; 
+        setFilters({ roundId: roundId, eventId: currentEventId || response.data.wcif.events[0].id });
     }, [navigate]);
 
     const handleEventChange = async (id: string) => {

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Box, Button, FormControl, FormLabel, Heading, IconButton, Input, Select, Text, useToast } from "@chakra-ui/react";
+import { Alert, AlertIcon, Box, Button, FormControl, FormLabel, Heading, IconButton, Input, Select, Text, useToast } from "@chakra-ui/react";
 import { getCompetitionInfo, importCompetition, syncCompetition, updateCompetition } from "../../logic/competition";
 import { Competition as CompetitionInterface } from "../../logic/interfaces";
 import events from "../../logic/events";
@@ -139,6 +139,18 @@ const Competition = (): JSX.Element => {
     return (
         <Box display="flex" flexDirection="column" gap="5">
             <Heading size="lg">{competition?.name}</Heading>
+            <Box display="flex" flexDirection="column" gap="5">
+                <Alert status='warning' borderRadius="md" color="black" width="20%">
+                    <AlertIcon />
+                    Remember to open round in WCA Live
+                </Alert>
+                {competition.scoretakingToken === "" || !competition.scoretakingToken && (
+                    <Alert status='error' borderRadius="md" color="black" width="40%">
+                        <AlertIcon />
+                        You need to set the scoretaking token taken from WCA Live before the competition
+                    </Alert>
+                )}
+            </Box>
             <Box display="flex" flexDirection="column" gap="5" width="20%">
                 <Button colorScheme="yellow" onClick={handleSync}>Sync</Button>
             </Box>

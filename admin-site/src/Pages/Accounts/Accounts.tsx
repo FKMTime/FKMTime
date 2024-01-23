@@ -27,11 +27,11 @@ const Accounts = (): JSX.Element => {
 
     return (
         <Box display="flex" flexDirection="column" gap="5">
-            <IconButton icon={<MdAdd />} aria-label="Add" bg="white" color="black" rounded="20" width="5" height="10"  _hover={{
+            <IconButton icon={<MdAdd />} aria-label="Add" bg="white" color="black" rounded="20" width="5" height="10" _hover={{
                 background: "white",
                 color: "gray.700"
             }}
-            onClick={() => setIsOpenCreateAccountModal(true)}
+                onClick={() => setIsOpenCreateAccountModal(true)}
             />
             <AccountsTable accounts={accounts} fetchData={fetchData} />
             <CreateAccountModal isOpen={isOpenCreateAccountModal} onClose={handleCloseCreateAccountModal} />
