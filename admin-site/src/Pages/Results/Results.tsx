@@ -89,7 +89,7 @@ const Results = (): JSX.Element => {
         <Box display="flex" flexDirection="column" gap="5">
             <Box display="flex" flexDirection="row" gap="5">
                 {competition.wcif.events.map((event: Event) => (
-                    <IconButton key={event.id} aria-label={event.id} icon={<EventIcon eventId={event.id} selected={filters.eventId === event.id} />} onClick={() => handleEventChange(event.id)} />
+                    <IconButton key={event.id} aria-label={event.id} icon={<EventIcon eventId={event.id} selected={filters.eventId === event.id} size={20} />} onClick={() => handleEventChange(event.id)} justifyContent="center" alignItems="center" />
                 ))}
                 <Select placeholder="Select round" _placeholder={{ color: "white" }} value={filters.roundId} onChange={(event) => setFilters({ ...filters, roundId: event.target.value })} width="5%">
                     {competition.wcif.events.find((event: Event) => event.id === filters.eventId)?.rounds.map((round: Round, i: number) => (

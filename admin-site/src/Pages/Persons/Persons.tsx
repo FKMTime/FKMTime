@@ -1,11 +1,13 @@
 import { useEffect, useState } from "react";
-import { Person } from "../../logic/interfaces";
+import { Competition, Person } from "../../logic/interfaces";
 import { Box } from "@chakra-ui/react";
 import { getAllPersons } from "../../logic/persons";
 import { calculateTotalPages } from "../../logic/utils";
 import PersonsTable from "../../Components/Table/PersonsTable";
+import { getCompetitionInfo } from "../../logic/competition";
 
 const Persons = (): JSX.Element => {
+    const [competition, setCompetition] = useState<Competition | undefined>();
     const [persons, setPersons] = useState<Person[]>([]);
     const [page, setPage] = useState<number>(1);
     const [totalPages, setTotalPages] = useState<number>(1);
@@ -13,6 +15,8 @@ const Persons = (): JSX.Element => {
 
     const fetchData = async (page = 1, pageSize = 10) => {
         const response = await getAllPersons(page, pageSize);
+        const competitionResponse = await getCompetitionInfo();
+        setCompetition(competitionResponse.data);
         setPersons(response.data);
         const totalPagesCalculation = calculateTotalPages(response.count, pageSize);
         setTotalPages(totalPagesCalculation);
@@ -34,7 +38,7 @@ const Persons = (): JSX.Element => {
 
     return (
         <Box display="flex" flexDirection="column" gap="5">
-            <PersonsTable persons={persons} fetchData={fetchData} changePageSize={changePageSize} handlePageChange={handlePageChange} page={page} totalPages={totalPages} pageSize={pageSize} />
+            <PersonsTable persons={persons} competition={competition} fetchData={fetchData} changePageSize={changePageSize} handlePageChange={handlePageChange} page={page} totalPages={totalPages} pageSize={pageSize} />
         </Box>
     )
 };

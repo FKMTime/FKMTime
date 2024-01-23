@@ -1,3 +1,4 @@
+import { Competition } from "@wca/helpers";
 import regions from "./regions";
 
 export const calculateTotalPages = (count: number, pageSize: number) => {
@@ -24,4 +25,8 @@ export const formatTime = (dateString: string) => {
   const hours = date.getHours() < 10 ? `0${date.getHours()}` : date.getHours();
   const minutes = date.getMinutes() < 10 ? `0${date.getMinutes()}` : date.getMinutes();
   return `${hours}:${minutes}`;
+};
+
+export const getPersonFromWcif = (registrantId: number, wcif: Competition) => {
+  return wcif.persons.find(person => person.registrantId === registrantId);
 };

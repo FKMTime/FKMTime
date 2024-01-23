@@ -1,10 +1,12 @@
 import { Table, TableContainer, Tbody, Th, Thead, Tr } from "@chakra-ui/react";
-import { Person } from "../../logic/interfaces";
+import { Competition, Person } from "../../logic/interfaces";
 import Pagination from "./Pagination";
 import PersonRow from "./Row/PersonRow";
+import { getPersonFromWcif } from "../../logic/utils";
 
 interface PersonsTableProps {
     persons: Person[];
+    competition?: Competition;
     fetchData: () => void;
     changePageSize: (pageSize: number) => void;
     handlePageChange: (page: number) => void;
@@ -13,7 +15,7 @@ interface PersonsTableProps {
     pageSize: number;
 }
 
-const PersonsTable: React.FC<PersonsTableProps> = ({ persons, fetchData, changePageSize, handlePageChange, page, totalPages, pageSize }): JSX.Element => {
+const PersonsTable: React.FC<PersonsTableProps> = ({ persons, competition, fetchData, changePageSize, handlePageChange, page, totalPages, pageSize }): JSX.Element => {
     return (
         <>
             <TableContainer>
@@ -25,13 +27,14 @@ const PersonsTable: React.FC<PersonsTableProps> = ({ persons, fetchData, changeP
                             <Th>WCA ID</Th>
                             <Th>Representing</Th>
                             <Th>Gender</Th>
+                            <Th>Events</Th>
                             <Th>Card assigned</Th>
                             <Th>Actions</Th>
                         </Tr>
                     </Thead>
                     <Tbody>
                         {persons.map((person: Person) => (
-                            <PersonRow key={person.id} person={person} fetchData={fetchData} />
+                            <PersonRow wcifInfo={getPersonFromWcif(person.registrantId, competition?.wcif)} key={person.id} person={person} fetchData={fetchData} />
                         ))}
                     </Tbody>
                 </Table>
