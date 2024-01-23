@@ -31,6 +31,7 @@ Notifications.setNotificationHandler({
   }),
 });
 
+
 async function registerForPushNotificationsAsync() {
   let token;
 
@@ -87,10 +88,11 @@ export default function RootLayout() {
   }, [loaded]);
 
   useEffect(() => {
-    registerForPushNotificationsAsync().then(token => setExpoPushToken(token ?? ''));
-  
-    notificationListener.current = Notifications.addNotificationReceivedListener(notification => {
-      setNotification(notification);
+    registerForPushNotificationsAsync().then(token => setExpoPushToken(token!));
+
+    notificationListener.current = Notifications.addNotificationReceivedListener(notificationParam => {
+      console.log(notificationParam);
+      setNotification(notificationParam);
     });
   
     responseListener.current = Notifications.addNotificationResponseReceivedListener(response => {

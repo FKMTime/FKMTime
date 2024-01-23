@@ -352,7 +352,7 @@ export class ResultService {
       },
     });
 
-    const finalData = this.getValidatedData(roundInfo, attempts, data);
+    const finalData = await this.getValidatedData(roundInfo, attempts, data);
 
     if (!finalData.cutoffPassed) {
       throw new HttpException('Cutoff not passed', 400);
@@ -671,7 +671,7 @@ export class ResultService {
     await expo.sendPushNotificationsAsync(messages);
   }
 
-  private getValidatedData(
+  private async getValidatedData(
     wcifRoundInfo: any,
     attempts: any[],
     newAttemptData: any,
@@ -705,10 +705,10 @@ export class ResultService {
 
     if (wcifRoundInfo.timeLimit.cumulativeRoundIds.length > 0) {
       if (
-        !this.checkCumulativeLimit(wcifRoundInfo.timeLimit.centiseconds, [
+        !(await this.checkCumulativeLimit(wcifRoundInfo.timeLimit, [
           ...submittedAttempts,
           newAttemptData,
-        ])
+        ]))
       ) {
         limitPassed = false;
         dataToReturn.penalty = -1;
@@ -755,11 +755,46 @@ export class ResultService {
     };
   }
 
-  private checkCumulativeLimit(limit: number, submittedAttempts: any[]) {
+  private async checkCumulativeLimit(limit: any, submittedAttempts: any[]) {
+    if (limit.cumulativeRoundIds.length === 0) return true;
+    if (limit.cumulativeRoundIds.length === 1) {
+      let sum = 0;
+      submittedAttempts.forEach((attempt) => {
+        if (attempt.penalty !== -1) {
+          sum += attempt.value + attempt.penalty * 100;
+        } else {
+          sum += attempt.value;
+        }
+      });
+      return sum < limit.centiseconds;
+    }
+    if (limit.cumulativeRoundIds.length > 1) {
+      return await this.checkCumulativeLimitForMultipleRounds(
+        limit.cumulativeRoundIds,
+        limit.centiseconds,
+      );
+    }
+  }
+
+  private async checkCumulativeLimitForMultipleRounds(
+    roundsIds: string[],
+    limit: number,
+  ) {
+    const attempts = await this.prisma.attempt.findMany({
+      where: {
+        result: {
+          roundId: {
+            in: roundsIds,
+          },
+        },
+      },
+    });
     let sum = 0;
-    submittedAttempts.forEach((attempt) => {
+    attempts.forEach((attempt) => {
       if (attempt.penalty !== -1) {
         sum += attempt.value + attempt.penalty * 100;
+      } else {
+        sum += attempt.value;
       }
     });
     return sum < limit;
