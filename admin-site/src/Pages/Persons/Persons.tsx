@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Competition, Person } from "../../logic/interfaces";
-import { Box } from "@chakra-ui/react";
+import { Alert, AlertIcon, Box } from "@chakra-ui/react";
 import { getAllPersons } from "../../logic/persons";
 import { calculateTotalPages } from "../../logic/utils";
 import PersonsTable from "../../Components/Table/PersonsTable";
@@ -38,6 +38,10 @@ const Persons = (): JSX.Element => {
 
     return (
         <Box display="flex" flexDirection="column" gap="5">
+            <Alert status='info' color="black">
+                <AlertIcon />
+                Currently it is not possible to add a person during the competition. It is not recommended to have on the spot registration allowed.
+            </Alert>
             <PersonsTable persons={persons} competition={competition} fetchData={fetchData} changePageSize={changePageSize} handlePageChange={handlePageChange} page={page} totalPages={totalPages} pageSize={pageSize} />
         </Box>
     )

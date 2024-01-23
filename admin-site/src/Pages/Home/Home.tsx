@@ -2,9 +2,11 @@ import { useEffect, useMemo, useState } from "react";
 import { Competition } from "../../logic/interfaces";
 import { getCompetitionInfo } from "../../logic/competition";
 import LoadingPage from "../../Components/LoadingPage";
-import { Box, FormControl, FormLabel, Heading, Select } from "@chakra-ui/react";
-import { Activity, Room, Venue } from "@wca/helpers";
+import { Box, FormControl, FormLabel, Heading, Select, Text } from "@chakra-ui/react";
+import { Activity, Event, Room, Venue } from "@wca/helpers";
 import ScheduleTable from "../../Components/Table/ScheduleTable";
+import { getPrettyCompetitionEndDate } from "../../logic/utils";
+import EventIcon from "../../Components/Icons/EventIcon";
 
 const Home = (): JSX.Element => {
   const [competition, setCompetition] = useState<Competition | null>(null);
@@ -42,9 +44,24 @@ const Home = (): JSX.Element => {
   if (!competition) {
     return <LoadingPage />;
   }
+
   return (
     <Box display="flex" flexDirection="column" gap="5">
       <Heading size="lg">{competition?.name}</Heading>
+      {competition.wcif.schedule.numberOfDays === 1 ? (
+        <>Date: {new Date(competition.wcif.schedule.startDate).toLocaleDateString()}</>
+      ) : (
+        <>
+          <Text>Start date: {new Date(competition.wcif.schedule.startDate).toLocaleDateString()}</Text>
+          <Text>End date: {getPrettyCompetitionEndDate(competition.wcif.schedule.startDate, competition.wcif.schedule.numberOfDays)}</Text>
+        </>
+      )}
+      <Text>Competitor limit: {competition.wcif.competitorLimit}</Text>
+      <Box display="flex" flexDirection="row" gap="5" width="20%">
+        {competition.wcif.events.map((event: Event) => (
+          <EventIcon key={event.id} eventId={event.id} selected={true} size={25} />
+        ))}
+      </Box>
       <Box display="flex" flexDirection="row" gap="5" width="20%">
         <FormControl>
           <FormLabel>Venue</FormLabel>
@@ -69,7 +86,7 @@ const Home = (): JSX.Element => {
             ))}
         </FormControl>
       </Box>
-      <ScheduleTable activities={orderedActivities} />
+      <ScheduleTable activities={orderedActivities} events={competition.wcif.events} />
     </Box>
   )
 };

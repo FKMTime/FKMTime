@@ -30,3 +30,9 @@ export const formatTime = (dateString: string) => {
 export const getPersonFromWcif = (registrantId: number, wcif: Competition) => {
   return wcif.persons.find(person => person.registrantId === registrantId);
 };
+
+export const getPrettyCompetitionEndDate = (startDate: string, numberOfDays: number) => {
+  const date = new Date(startDate);
+  date.setDate(date.getDate() + numberOfDays - 1);
+  return date.toLocaleDateString();
+};
