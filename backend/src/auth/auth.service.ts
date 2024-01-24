@@ -83,6 +83,10 @@ export class AuthService {
     return this.jwtService.sign(payload);
   }
 
+  async validateJwt(token: string): Promise<JwtAuthDto> {
+    return await this.jwtService.verifyAsync(token);
+  }
+
   async getUserPublicInfo(username: string): Promise<object | null> {
     return this.prisma.account.findUnique({
       where: {

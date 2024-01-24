@@ -1,36 +1,33 @@
-import { AuthService } from './../auth/auth.service';
 import { Body, Controller, Get, Param, Put, UseGuards } from '@nestjs/common';
 import { CompetitionService } from './competition.service';
 import { UpdateCompetitionDto } from './dto/updateCompetition.dto';
 import { AuthGuard } from '@nestjs/passport';
-import { GetUser } from 'src/auth/decorator/getUser.decorator';
-import { JwtAuthDto } from 'src/auth/dto/jwt-auth.dto';
+import { AdminGuard } from 'src/auth/guards/admin.guard';
 
-@UseGuards(AuthGuard('jwt'))
 @Controller('competition')
 export class CompetitionController {
-  constructor(
-    private readonly competitionService: CompetitionService,
-    private readonly authService: AuthService,
-  ) {}
+  constructor(private readonly competitionService: CompetitionService) {}
 
+  @UseGuards(AuthGuard('jwt'))
   @Get()
   async getCompetitionInfo() {
     return await this.competitionService.getCompetitionInfo();
   }
 
+  @UseGuards(AdminGuard)
+  @Get('settings')
+  async getCompetitionSettings() {
+    return await this.competitionService.getCompetitionSettings();
+  }
+
+  @UseGuards(AdminGuard)
   @Get('import/:id')
-  async importCompetition(
-    @Param('id') id: string,
-    @GetUser() user: JwtAuthDto,
-  ) {
-    await this.authService.requireAdminRole(user.userId);
+  async importCompetition(@Param('id') id: string) {
     return await this.competitionService.importCompetition(id);
   }
 
   @Get('sync/:id')
-  async syncCompetition(@Param('id') id: string, @GetUser() user: JwtAuthDto) {
-    await this.authService.requireAdminRole(user.userId);
+  async syncCompetition(@Param('id') id: string) {
     return await this.competitionService.updateWcif(id);
   }
 
@@ -38,9 +35,7 @@ export class CompetitionController {
   async updateCompetition(
     @Param('id') id: number,
     @Body() dto: UpdateCompetitionDto,
-    @GetUser() user: JwtAuthDto,
   ) {
-    await this.authService.requireAdminRole(user.userId);
     return await this.competitionService.updateCompetition(+id, dto);
   }
 }

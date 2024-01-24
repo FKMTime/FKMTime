@@ -46,6 +46,24 @@ export class CompetitionService {
   }
 
   async getCompetitionInfo() {
+    const competition = await this.prisma.competition.findFirst({
+      select: {
+        id: true,
+        name: true,
+        shortName: true,
+        wcaId: true,
+        countryIso2: true,
+        wcif: true,
+        currentGroupId: true,
+      },
+    });
+    if (!competition) {
+      throw new HttpException('Competition not found', 404);
+    }
+    return competition;
+  }
+
+  async getCompetitionSettings() {
     const competition = await this.prisma.competition.findFirst();
     if (!competition) {
       throw new HttpException('Competition not found', 404);
