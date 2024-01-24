@@ -9,13 +9,13 @@ import {
 } from '@nestjs/common';
 import { EnterAttemptDto } from './dto/enterAttempt.dto';
 import { ResultService } from './result.service';
-import { AdminOrDelegateGuard } from 'src/auth/guards/adminOrDelegate.guard';
+import { AuthGuard } from '@nestjs/passport';
 
 @Controller('result')
 export class ResultController {
   constructor(private readonly resultService: ResultService) {}
 
-  @UseGuards(AdminOrDelegateGuard)
+  @UseGuards(AuthGuard('jwt'))
   @Get('round/:roundId')
   async getAllResultsByRoundId(
     @Param('roundId') roundId: string,
@@ -24,7 +24,7 @@ export class ResultController {
     return await this.resultService.getAllResultsByRound(roundId, search);
   }
 
-  @UseGuards(AdminOrDelegateGuard)
+  @UseGuards(AuthGuard('jwt'))
   @Get(':id')
   async getResultById(@Param('id') id: number) {
     return await this.resultService.getResultById(id);
@@ -35,6 +35,7 @@ export class ResultController {
     return await this.resultService.enterAttempt(data);
   }
 
+  @UseGuards(AuthGuard('jwt'))
   @Get(':id/enter')
   async enterWholeScorecardToWcaLive(@Param('id') id: number) {
     return await this.resultService.enterWholeScorecardToWcaLive(id);

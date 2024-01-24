@@ -9,11 +9,11 @@ import {
   Put,
   UseGuards,
 } from '@nestjs/common';
-import { AdminOrDelegateGuard } from 'src/auth/guards/adminOrDelegate.guard';
 import { AttemptService } from './attempt.service';
 import { UpdateAttemptDto } from './dto/updateAttempt.dto';
+import { AuthGuard } from '@nestjs/passport';
 
-@UseGuards(AdminOrDelegateGuard)
+@UseGuards(AuthGuard('jwt'))
 @Controller('attempt')
 export class AttemptController {
   constructor(private readonly attemptService: AttemptService) {}

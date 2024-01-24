@@ -52,4 +52,12 @@ export class PersonService {
       },
     });
   }
+
+  async getPersonInfo(cardId: string) {
+    return await this.prisma.person.findFirst({
+      where: {
+        cardId,
+      },
+    });
+  }
 }

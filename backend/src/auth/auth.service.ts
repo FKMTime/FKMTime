@@ -132,4 +132,15 @@ export class AuthService {
     }
     return result;
   }
+
+  async requireAdminRole(userId: number) {
+    const user = await this.prisma.account.findFirst({
+      where: {
+        id: userId,
+      },
+    });
+    if (user.role !== 'ADMIN') {
+      throw new HttpException('Forbidden resource', 403);
+    }
+  }
 }
