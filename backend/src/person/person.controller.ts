@@ -20,8 +20,9 @@ export class PersonController {
   async getAllPersons(
     @Query('page') page = 1,
     @Query('pageSize') pageSize = 10,
+    @Query('search') search?: string,
   ) {
-    return await this.personService.getAllPersons(+page, +pageSize);
+    return await this.personService.getAllPersons(+page, +pageSize, search);
   }
 
   @Put(':id')

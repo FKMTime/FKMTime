@@ -6,10 +6,36 @@ import { UpdatePersonDto } from './dto/updatePerson.dto';
 export class PersonService {
   constructor(private readonly prisma: DbService) {}
 
-  async getAllPersons(page: number, pageSize: number) {
+  async getAllPersons(page: number, pageSize: number, search?: string) {
+    const whereParams = {};
+    if (search) {
+      whereParams['OR'] = [
+        {
+          name: {
+            contains: search,
+          },
+        },
+        {
+          wcaId: {
+            contains: search,
+          },
+        },
+        {
+          cardId: {
+            equals: search,
+          },
+        },
+      ];
+      if (!isNaN(parseInt(search))) {
+        whereParams['OR'].push({
+          registrantId: parseInt(search),
+        });
+      }
+    }
     const persons = await this.prisma.person.findMany({
       skip: (page - 1) * pageSize,
       take: pageSize,
+      where: whereParams,
     });
     const totalPersons = await this.prisma.person.count();
     return {
