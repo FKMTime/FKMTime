@@ -1,6 +1,6 @@
 import { Tr, Td } from "@chakra-ui/react";
 import { Activity, Event, Round } from "@wca/helpers";
-import { formatTime } from "../../../logic/utils";
+import { formatTime, prettyRoundFormat } from "../../../logic/utils";
 import { resultToString } from "../../../logic/resultFormatters";
 
 interface ScheduleRowProps {
@@ -17,7 +17,7 @@ const ScheduleRow: React.FC<ScheduleRowProps> = ({ activity, events }): JSX.Elem
         <Tr key={activity.id}>
             <Td>{formatTime(activity.startTime)} - {formatTime(activity.endTime)}</Td>
             <Td>{activity.name}</Td>
-            <Td>{round?.format}</Td>
+            <Td>{round && round.format && prettyRoundFormat(round?.format, round?.cutoff?.numberOfAttempts)}</Td>
             <Td>{round?.timeLimit && resultToString(round?.timeLimit?.centiseconds || 0)} {round?.timeLimit?.cumulativeRoundIds?.length || 0 > 1 ? "(cumulative)" : ""}</Td>
             <Td>{round?.cutoff && resultToString(round?.cutoff?.attemptResult)}</Td>
             <Td>{round?.advancementCondition && `Top ${round.advancementCondition.level}${round?.advancementCondition?.type === "percent" ? "%" : ""}`}</Td>

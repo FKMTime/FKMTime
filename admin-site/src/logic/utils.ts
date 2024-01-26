@@ -55,3 +55,21 @@ export const getNumberOfAttemptsForRound = (round: Round): number => {
       return 3;
   }
 };
+
+export const prettyRoundFormat = (format: string, cutoffAttempts?: number) => {
+  switch (format) {
+    case "1":
+      return "Best of 1";
+    case "2":
+      return "Best of 2";
+    case "3":
+      return "Best of 3";
+    case "a":
+      if (!cutoffAttempts) {
+        return `Average of 5`;
+      }
+      return `Best of ${cutoffAttempts} / Average of 5`;
+    case "m":
+      return "Mean of 3";
+  }
+};
