@@ -1,4 +1,4 @@
-import { Box, Button, Heading, Text } from "@chakra-ui/react";
+import { Box, Button, Image, Text } from "@chakra-ui/react";
 import { MdBook, MdHome, MdLogout, MdPerson, MdPersonAdd, MdSettings, MdTimer } from "react-icons/md";
 import SidebarElement from "../Components/SidebarElement";
 import { IoMdTrophy } from "react-icons/io";
@@ -7,6 +7,7 @@ import { UserInfo } from "../logic/interfaces";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@chakra-ui/react";
 import { logout } from "../logic/auth";
+import logo from "../assets/logo.svg";
 
 interface SidebarProps {
     user: UserInfo;
@@ -30,7 +31,7 @@ const Sidebar: React.FC<SidebarProps> = ({ user }): JSX.Element => {
 
     return (
         <Box height="100vw" backgroundColor="gray.600" width="20vh" alignItems="center" padding="5" display="flex" flexDirection="column" gap="5">
-            <Heading color="white">Panel</Heading>
+            <Image src={logo} alt="Logo" width="100%" />
             <Text color="white">Hello {user.username}!</Text>
             <Text color="white">Logged in as {user.role.toLowerCase()}</Text>
             <SidebarElement name='Home' icon={<MdHome />} link='/' />
