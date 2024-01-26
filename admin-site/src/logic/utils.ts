@@ -1,5 +1,6 @@
-import { Competition, Round } from "@wca/helpers";
+import { Competition } from "@wca/helpers";
 import regions from "./regions";
+import { Attempt } from "./interfaces";
 
 export const calculateTotalPages = (count: number, pageSize: number) => {
   return Math.ceil(count / pageSize);
@@ -32,6 +33,30 @@ export const getPersonFromWcif = (registrantId: number, wcif: Competition) => {
   return wcif.persons.find((person) => person.registrantId === registrantId);
 };
 
+export const getEventIdFromRoundId = (roundId: string) => {
+  return roundId.split("-")[0];
+};
+
+export const getRoundIdFromGroupId = (groupId: string) => {
+  return groupId.split("-")[0];
+};
+
+export const getRoundInfoFromWcif = (roundId: string, wcif: Competition) => {
+  const eventId = getEventIdFromRoundId(roundId);
+  const event = wcif.events.find((event) => event.id === eventId);
+  return event?.rounds.find((round) => round.id === roundId);
+};
+
+export const getCutoffByRoundId = (roundId: string, wcif: Competition) => {
+  const round = getRoundInfoFromWcif(roundId, wcif);
+  return round?.cutoff || null;
+};
+
+export const getLimitByRoundId = (roundId: string, wcif: Competition) => {
+  const round = getRoundInfoFromWcif(roundId, wcif);
+  return round?.timeLimit || null;
+};
+
 export const getPrettyCompetitionEndDate = (
   startDate: string,
   numberOfDays: number
@@ -41,7 +66,12 @@ export const getPrettyCompetitionEndDate = (
   return date.toLocaleDateString();
 };
 
-export const getNumberOfAttemptsForRound = (round: Round): number => {
+export const getNumberOfAttemptsForRound = (
+  roundId: string,
+  wcif: Competition
+): number => {
+  const round = getRoundInfoFromWcif(roundId, wcif);
+  if (!round) return 0;
   switch (round.format) {
     case "1":
       return 1;
@@ -72,4 +102,30 @@ export const prettyRoundFormat = (format: string, cutoffAttempts?: number) => {
     case "m":
       return "Mean of 3";
   }
+};
+
+export const getSubmittedAttempts = (attempts: Attempt[]) => {
+  const attemptsToReturn: Attempt[] = [];
+  attempts.forEach((attempt) => {
+    if (
+      attempt.replacedBy === null &&
+      !attempt.extraGiven &&
+      !attemptsToReturn.some((a) => a.id === attempt.id) &&
+      !attempt.isExtraAttempt
+    )
+      attemptsToReturn.push(attempt);
+    if (attempt.replacedBy !== null && attempt.extraGiven) {
+      const extraAttempt = attempts.find(
+        (a) =>
+          a.attemptNumber === attempt.replacedBy && a.isExtraAttempt === true
+      );
+      if (
+        extraAttempt &&
+        !attemptsToReturn.some((a) => a.id === extraAttempt.id)
+      ) {
+        attemptsToReturn.push(extraAttempt);
+      }
+    }
+  });
+  return attemptsToReturn;
 };

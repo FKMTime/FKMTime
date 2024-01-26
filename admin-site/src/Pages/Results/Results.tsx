@@ -9,7 +9,7 @@ import EventIcon from "../../Components/Icons/EventIcon";
 import { Event, Round } from "@wca/helpers";
 import ResultsTable from "../../Components/Table/ResultsTable";
 import { resultToString } from "../../logic/resultFormatters";
-import { getNumberOfAttemptsForRound } from "../../logic/utils";
+import { getCutoffByRoundId, getLimitByRoundId, getNumberOfAttemptsForRound } from "../../logic/utils";
 
 interface ResultsFilters {
     eventId: string;
@@ -27,22 +27,21 @@ const Results = (): JSX.Element => {
         if (!competition) {
             return null;
         }
-        return competition.wcif.events.find((event: Event) => event.id === filters.eventId)?.rounds.find((round: Round) => round.id === filters.roundId)?.cutoff || null;
-    }, [competition, filters.eventId, filters.roundId]);
+        return getCutoffByRoundId(filters.roundId, competition.wcif);
+    }, [competition, filters.roundId]);
     const limit = useMemo(() => {
         if (!competition) {
             return null;
         }
-        return competition.wcif.events.find((event: Event) => event.id === filters.eventId)?.rounds.find((round: Round) => round.id === filters.roundId)?.timeLimit || null;
-    }, [competition, filters.eventId, filters.roundId]);
+        return getLimitByRoundId(filters.roundId, competition.wcif);
+    }, [competition, filters.roundId]);
 
     const maxAttempts = useMemo(() => {
         if (!competition) {
             return 0;
         }
-        const roundInfo = competition.wcif.events.find((event: Event) => event.id === filters.eventId)?.rounds.find((round: Round) => round.id === filters.roundId);
-        return getNumberOfAttemptsForRound(roundInfo);
-    }, [competition, filters.eventId, filters.roundId]);
+        return getNumberOfAttemptsForRound(filters.roundId, competition.wcif);
+    }, [competition, filters.roundId]);
 
     const navigate = useNavigate();
 

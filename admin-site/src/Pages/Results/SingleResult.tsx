@@ -2,10 +2,11 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useParams } from "react-router-dom";
 import { getResultById, reSubmitScorecardToWcaLive } from "../../logic/results";
 import LoadingPage from "../../Components/LoadingPage";
-import { Attempt, Result } from "../../logic/interfaces";
+import { Result } from "../../logic/interfaces";
 import { Alert, AlertIcon, Box, Button, Heading, Text, useToast } from "@chakra-ui/react";
 import regions from "../../logic/regions";
 import AttemptsTable from "../../Components/Table/AttemptsTable";
+import { getSubmittedAttempts } from "../../logic/utils";
 
 
 const SingleResult = (): JSX.Element => {
@@ -22,17 +23,7 @@ const SingleResult = (): JSX.Element => {
     }, [result]);
     const submittedAttempts = useMemo(() => {
         if (!result) return [];
-        const attemptsToReturn: Attempt[] = [];
-        result.attempts.forEach((attempt) => {
-            if (attempt.replacedBy === null && !attempt.extraGiven && !attemptsToReturn.some((a) => a.id === attempt.id) && !attempt.isExtraAttempt) attemptsToReturn.push(attempt);
-            if (attempt.replacedBy !== null && attempt.extraGiven) {
-                const extraAttempt = result.attempts.find(a => a.attemptNumber === attempt.replacedBy && a.isExtraAttempt === true);
-                if (extraAttempt && !attemptsToReturn.some(a => a.id === extraAttempt.id)) {
-                    attemptsToReturn.push(extraAttempt);
-                }
-            }
-        });
-        return attemptsToReturn;
+        return getSubmittedAttempts(result.attempts);
     }, [result]);
 
     const fetchData = useCallback(async () => {
