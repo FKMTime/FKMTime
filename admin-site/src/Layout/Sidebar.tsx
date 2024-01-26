@@ -1,5 +1,5 @@
 import { Box, Button, Heading, Text } from "@chakra-ui/react";
-import { MdHome, MdLogout, MdPerson, MdPersonAdd, MdSettings, MdTimer } from "react-icons/md";
+import { MdBook, MdHome, MdLogout, MdPerson, MdPersonAdd, MdSettings, MdTimer } from "react-icons/md";
 import SidebarElement from "../Components/SidebarElement";
 import { IoMdTrophy } from "react-icons/io";
 import React from "react";
@@ -44,6 +44,7 @@ const Sidebar: React.FC<SidebarProps> = ({ user }): JSX.Element => {
             <SidebarElement name='Persons' icon={<MdPerson />} link='/persons' />
             <SidebarElement name='Results' icon={<MdTimer />} link='/results' />
             <SidebarElement name='Settings' icon={<MdSettings />} link='/settings' />
+            <SidebarElement name='Tutorial' icon={<MdBook />} link='/tutorial' />
             <Button leftIcon={<MdLogout />} colorScheme='teal' variant='solid' rounded="20" width="100%" textAlign="center" onClick={handleLogout}>
                 Logout
             </Button>

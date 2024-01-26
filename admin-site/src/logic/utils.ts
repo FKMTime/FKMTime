@@ -1,4 +1,4 @@
-import { Competition } from "@wca/helpers";
+import { Competition, Round } from "@wca/helpers";
 import regions from "./regions";
 
 export const calculateTotalPages = (count: number, pageSize: number) => {
@@ -17,22 +17,41 @@ export const prettyGender = (gender: string) => {
 };
 
 export const regionNameByIso2 = (iso2: string) => {
-    return regions.find(region => region.iso2 === iso2)?.name;
+  return regions.find((region) => region.iso2 === iso2)?.name;
 };
 
 export const formatTime = (dateString: string) => {
   const date = new Date(dateString);
   const hours = date.getHours() < 10 ? `0${date.getHours()}` : date.getHours();
-  const minutes = date.getMinutes() < 10 ? `0${date.getMinutes()}` : date.getMinutes();
+  const minutes =
+    date.getMinutes() < 10 ? `0${date.getMinutes()}` : date.getMinutes();
   return `${hours}:${minutes}`;
 };
 
 export const getPersonFromWcif = (registrantId: number, wcif: Competition) => {
-  return wcif.persons.find(person => person.registrantId === registrantId);
+  return wcif.persons.find((person) => person.registrantId === registrantId);
 };
 
-export const getPrettyCompetitionEndDate = (startDate: string, numberOfDays: number) => {
+export const getPrettyCompetitionEndDate = (
+  startDate: string,
+  numberOfDays: number
+) => {
   const date = new Date(startDate);
   date.setDate(date.getDate() + numberOfDays - 1);
   return date.toLocaleDateString();
+};
+
+export const getNumberOfAttemptsForRound = (round: Round): number => {
+  switch (round.format) {
+    case "1":
+      return 1;
+    case "2":
+      return 2;
+    case "3":
+      return 3;
+    case "a":
+      return 5;
+    case "m":
+      return 3;
+  }
 };

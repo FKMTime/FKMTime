@@ -10,6 +10,7 @@ import Results from "./Pages/Results/Results";
 import SingleResult from "./Pages/Results/SingleResult";
 import Settings from "./Pages/Settings/Settings";
 import Stations from "./Pages/Stations/Stations";
+import Tutorial from "./Pages/Tutorial/Tutorial";
 
 const App = (): JSX.Element => {
   const router = createBrowserRouter([
@@ -52,6 +53,10 @@ const App = (): JSX.Element => {
         {
           path: "stations",
           element: <Stations />,
+        },
+        {
+          path: "tutorial",
+          element: <Tutorial />,
         }
       ]
     }

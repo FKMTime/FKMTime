@@ -3,7 +3,7 @@ import { useParams } from "react-router-dom";
 import { getResultById, reSubmitScorecardToWcaLive } from "../../logic/results";
 import LoadingPage from "../../Components/LoadingPage";
 import { Attempt, Result } from "../../logic/interfaces";
-import { Box, Button, Heading, Text, useToast } from "@chakra-ui/react";
+import { Alert, AlertIcon, Box, Button, Heading, Text, useToast } from "@chakra-ui/react";
 import regions from "../../logic/regions";
 import AttemptsTable from "../../Components/Table/AttemptsTable";
 
@@ -108,9 +108,10 @@ const SingleResult = (): JSX.Element => {
             <Heading mt={3}>
                 Important information
             </Heading>
-            <Text fontSize="xl">
+            <Alert status='info' color="black">
+                <AlertIcon />
                 Extra attempts should NEVER have an case set to true - we don't replace extra attempts by next extra, we only replace the original one.
-            </Text>
+            </Alert>
         </Box>
 
     )

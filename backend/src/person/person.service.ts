@@ -38,9 +38,26 @@ export class PersonService {
       where: whereParams,
     });
     const totalPersons = await this.prisma.person.count();
+    const personsWithoutCardAssigned = await this.prisma.person.count({
+      where: {
+        OR: [
+          {
+            cardId: {
+              equals: null,
+            },
+          },
+          {
+            cardId: {
+              equals: '',
+            },
+          },
+        ],
+      },
+    });
     return {
       data: persons,
       count: totalPersons,
+      personsWithoutCardAssigned,
     };
   }
 

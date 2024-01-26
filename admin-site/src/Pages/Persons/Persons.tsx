@@ -13,12 +13,14 @@ const Persons = (): JSX.Element => {
     const [totalPages, setTotalPages] = useState<number>(1);
     const [pageSize, setPageSize] = useState<number>(10);
     const [search, setSearch] = useState<string>("");
+    const [personsWithoutCardAssigned, setPersonsWithoutCardAssigned] = useState<number>(0);
 
     const fetchData = async (page = 1, pageSize = 10, search?: string) => {
         const response = await getAllPersons(page, pageSize, search);
         const competitionResponse = await getCompetitionInfo();
         setCompetition(competitionResponse.data);
         setPersons(response.data);
+        setPersonsWithoutCardAssigned(response.personsWithoutCardAssigned);
         const totalPagesCalculation = calculateTotalPages(response.count, pageSize);
         setTotalPages(totalPagesCalculation);
     };
@@ -48,6 +50,12 @@ const Persons = (): JSX.Element => {
                 <AlertIcon />
                 Currently it is not possible to add a person during the competition. It is not recommended to have on the spot registration allowed.
             </Alert>
+            {personsWithoutCardAssigned !== 0 && (
+                <Alert status='error' color="black">
+                    <AlertIcon />
+                    There are {personsWithoutCardAssigned} persons without a card assigned. Please assign a card to them.
+                </Alert>
+            )}
             <Input placeholder="Search" _placeholder={{ color: "white" }} value={search} onChange={handleSearch} />
             <PersonsTable persons={persons} competition={competition} fetchData={fetchData} changePageSize={changePageSize} handlePageChange={handlePageChange} page={page} totalPages={totalPages} pageSize={pageSize} />
         </Box>

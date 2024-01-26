@@ -9,6 +9,7 @@ import EventIcon from "../../Components/Icons/EventIcon";
 import { Event, Round } from "@wca/helpers";
 import ResultsTable from "../../Components/Table/ResultsTable";
 import { resultToString } from "../../logic/resultFormatters";
+import { getNumberOfAttemptsForRound } from "../../logic/utils";
 
 interface ResultsFilters {
     eventId: string;
@@ -35,6 +36,14 @@ const Results = (): JSX.Element => {
         return competition.wcif.events.find((event: Event) => event.id === filters.eventId)?.rounds.find((round: Round) => round.id === filters.roundId)?.timeLimit || null;
     }, [competition, filters.eventId, filters.roundId]);
 
+    const maxAttempts = useMemo(() => {
+        if (!competition) {
+            return 0;
+        }
+        const roundInfo = competition.wcif.events.find((event: Event) => event.id === filters.eventId)?.rounds.find((round: Round) => round.id === filters.roundId);
+        return getNumberOfAttemptsForRound(roundInfo);
+    }, [competition, filters.eventId, filters.roundId]);
+
     const navigate = useNavigate();
 
     const fetchData = async (roundId: string, search?: string, groupId?: string) => {
@@ -50,15 +59,13 @@ const Results = (): JSX.Element => {
         }
         setCompetition(response.data);
         const currentEventId = response.data.currentGroupId.split("-")[0] || response.data.wcif.events[0].id;
-        console.log(currentEventId);
-        const roundId = currentEventId + "-r1"; 
+        const roundId = currentEventId + "-r1";
         setFilters({ roundId: roundId, eventId: currentEventId || response.data.wcif.events[0].id });
     }, [navigate]);
 
     const handleEventChange = async (id: string) => {
         const roundId = id + "-r1";
         setFilters(prevFilters => ({ ...prevFilters, roundId: roundId, eventId: id, groupId: `${roundId}-g1` }));
-        console.log(roundId);
         await fetchData(roundId);
     };
 
@@ -101,6 +108,7 @@ const Results = (): JSX.Element => {
             <Box display="flex" flexDirection="column" gap="5">
                 <Text>Cutoff: {cutoff ? `${resultToString(cutoff.attemptResult)} (${cutoff.numberOfAttempts} attempts)` : "None"}</Text>
                 <Text>Limit: {limit ? `${resultToString(limit.centiseconds)} ${limit.cumulativeRoundIds.length > 0 ? "(cumulative)" : ""}` : "None"}</Text>
+                <Text>Attempts: {maxAttempts}</Text>
             </Box>
             <ResultsTable results={results} />
         </Box>
