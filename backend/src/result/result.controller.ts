@@ -6,6 +6,8 @@ import {
   Get,
   UseGuards,
   Query,
+  HttpCode,
+  HttpStatus,
 } from '@nestjs/common';
 import { EnterAttemptDto } from './dto/enterAttempt.dto';
 import { ResultService } from './result.service';
@@ -28,6 +30,13 @@ export class ResultController {
   @Get(':id')
   async getResultById(@Param('id') id: number) {
     return await this.resultService.getResultById(id);
+  }
+
+  @HttpCode(HttpStatus.OK)
+  @UseGuards(AuthGuard('jwt'))
+  @Post('round/:roundId/enter')
+  async enterAllAttemptsByRoundId(@Param('roundId') roundId: string) {
+    return await this.resultService.enterRoundToWcaLive(roundId);
   }
 
   @Post('enter')

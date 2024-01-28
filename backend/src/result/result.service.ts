@@ -536,10 +536,72 @@ export class ResultService {
   async enterWholeScorecardToWcaLive(resultId: number) {
     const result = await this.getResultById(resultId);
     const competition = await this.prisma.competition.findFirst();
-    const sliced = competition.currentGroupId.split('-');
-    const currentRoundId = sliced[0] + '-' + sliced[1];
+    const { competitionId, eventId, roundNumber, scoretakingToken, results } =
+      await this.getAttemptsToEnterToWcaLive(result, competition);
+    const response = await fetch(`${WCA_LIVE_API_ORIGIN}/api/enter-results`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${scoretakingToken}`,
+      },
+      body: JSON.stringify({
+        competitionWcaId: competitionId,
+        eventId: eventId,
+        roundNumber: roundNumber,
+        results: results,
+      }),
+    });
+    if (response.status !== 200) {
+      throw new HttpException('WCA Live error', 500);
+    } else {
+      return {
+        message: 'Scorecard submitted',
+      };
+    }
+  }
+
+  async enterRoundToWcaLive(roundId: string) {
+    const results = await this.getAllResultsByRound(roundId);
+    const competition = await this.prisma.competition.findFirst();
+    const eventIdToSubmit = results[0].eventId;
+    const roundNumberToSubmit = +results[0].roundId.split('-r')[1];
+
+    const resultsToSubmit = [];
+    for (const result of results) {
+      const { results } = await this.getAttemptsToEnterToWcaLive(
+        result,
+        competition,
+      );
+      resultsToSubmit.push(...results);
+    }
+    const response = await fetch(`${WCA_LIVE_API_ORIGIN}/api/enter-results`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${competition.scoretakingToken}`,
+      },
+      body: JSON.stringify({
+        competitionWcaId: competition.wcaId,
+        eventId: eventIdToSubmit,
+        roundNumber: roundNumberToSubmit,
+        results: resultsToSubmit,
+      }),
+    });
+    if (response.status !== 200) {
+      throw new HttpException('WCA Live error', 500);
+    } else {
+      return {
+        message: 'Round resubmitted',
+      };
+    }
+  }
+
+  async getAttemptsToEnterToWcaLive(result: any, competition: any) {
     const attemptsToReturn = [];
-    result.attempts.forEach((attempt) => {
+    const sortedAttempts = result.attempts.sort(
+      (a, b) => a.attemptNumber - b.attemptNumber,
+    );
+    sortedAttempts.forEach((attempt) => {
       if (
         attempt.replacedBy === null &&
         !attempt.extraGiven &&
@@ -571,31 +633,18 @@ export class ResultService {
               : attempt.penalty * 100 + attempt.value,
       };
     });
-    const response = await fetch(`${WCA_LIVE_API_ORIGIN}/api/enter-results`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${competition.scoretakingToken}`,
-      },
-      body: JSON.stringify({
-        competitionWcaId: competition.wcaId,
-        eventId: currentRoundId.split('-')[0],
-        roundNumber: parseInt(currentRoundId.split('-r')[1]),
-        results: [
-          {
-            registrantId: result.person.registrantId,
-            attempts: timesToSubmit,
-          },
-        ],
-      }),
-    });
-    if (response.status !== 200) {
-      throw new HttpException('WCA Live error', 500);
-    } else {
-      return {
-        message: 'Scorecard submitted',
-      };
-    }
+    return {
+      competitionId: competition.wcaId,
+      scoretakingToken: competition.scoretakingToken,
+      eventId: result.eventId,
+      roundNumber: parseInt(result.roundId.split('-r')[1]),
+      results: [
+        {
+          registrantId: result.person.registrantId,
+          attempts: timesToSubmit,
+        },
+      ],
+    };
   }
 
   async createAnExtraAttemptAnReplaceTheOriginalOne(

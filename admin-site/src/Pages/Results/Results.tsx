@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Competition, Result } from "../../logic/interfaces";
-import { Box, IconButton, Input, Select, Text } from "@chakra-ui/react";
-import { getResultsByRoundId } from "../../logic/results";
+import { Box, Button, IconButton, Input, Select, Text, useToast } from "@chakra-ui/react";
+import { getResultsByRoundId, reSubmitRoundToWcaLive } from "../../logic/results";
 import { getCompetitionInfo } from "../../logic/competition";
 import { useNavigate } from "react-router-dom";
 import LoadingPage from "../../Components/LoadingPage";
@@ -10,12 +10,15 @@ import { Event, Round } from "@wca/helpers";
 import ResultsTable from "../../Components/Table/ResultsTable";
 import { resultToString } from "../../logic/resultFormatters";
 import { getCutoffByRoundId, getLimitByRoundId, getNumberOfAttemptsForRound } from "../../logic/utils";
+import Alert from "../../Components/Alert";
 
 interface ResultsFilters {
     eventId: string;
     roundId: string;
 }
 const Results = (): JSX.Element => {
+    const toast = useToast();
+    const [openConfirmation, setOpenConfirmation] = useState<boolean>(false);
     const [competition, setCompetition] = useState<Competition | null>(null);
     const [results, setResults] = useState<Result[]>([]);
     const [filters, setFilters] = useState<ResultsFilters>({
@@ -73,6 +76,35 @@ const Results = (): JSX.Element => {
         setSearch(event.target.value);
     };
 
+    const handleResubmitRound = () => {
+        setOpenConfirmation(true);
+    };
+
+    const handleCancel = () => {
+        setOpenConfirmation(false);
+    };
+
+    const handleConfirm = async () => {
+        setOpenConfirmation(false);
+        const status = await reSubmitRoundToWcaLive(filters.roundId);
+        if (status === 204) {
+            toast({
+                title: "Successfully resubmitted round results to WCA Live.",
+                status: "success",
+                duration: 9000,
+                isClosable: true,
+            });
+        } else {
+            toast({
+                title: "Error",
+                description: "Something went wrong",
+                status: "error",
+                duration: 9000,
+                isClosable: true,
+            });
+        }
+    };
+
     useEffect(() => {
         fetchCompetition();
     }, [fetchCompetition]);
@@ -108,8 +140,12 @@ const Results = (): JSX.Element => {
                 <Text>Cutoff: {cutoff ? `${resultToString(cutoff.attemptResult)} (${cutoff.numberOfAttempts} attempts)` : "None"}</Text>
                 <Text>Limit: {limit ? `${resultToString(limit.centiseconds)} ${limit.cumulativeRoundIds.length > 0 ? "(cumulative)" : ""}` : "None"}</Text>
                 <Text>Attempts: {maxAttempts}</Text>
+                <Button colorScheme="yellow" w="20%" onClick={handleResubmitRound}>
+                    Resubmit round results to WCA Live
+                </Button>
             </Box>
             <ResultsTable results={results} />
+            <Alert isOpen={openConfirmation} onCancel={handleCancel} onConfirm={handleConfirm} title="Resubmit results" description="Are you sure you want to override results from WCA Live?" />
         </Box>
     )
 };

@@ -29,4 +29,14 @@ export const getResultById = async (id: number) => {
 export const reSubmitScorecardToWcaLive = async (id: number) => {
   const response = await backendRequest(`result/${id}/enter`, "GET", true);
   return response.status;
-}
+};
+
+export const reSubmitRoundToWcaLive = async (roundId: string) => {
+  const response = await backendRequest(
+    `result/round/${roundId}/enter`,
+    "POST",
+    true
+  );
+  return response.status;
+};
+  
