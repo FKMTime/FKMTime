@@ -23,7 +23,7 @@ const AssignCardModal: React.FC<AssignCardModalProps> = ({ isOpen, onClose, pers
         const status = await updatePerson(editedPerson);
         if (status === 200) {
             toast({
-                title: "Successfully updated account.",
+                title: "Successfully updated person.",
                 status: "success",
                 duration: 9000,
                 isClosable: true,

@@ -10,6 +10,15 @@ export const getCompetitionInfo = async () => {
   };
 };
 
+export const getCompetitionSettings = async () => {
+  const response = await backendRequest("competition/settings", "GET", true);
+  const data = await response.json();
+  return {
+    status: response.status,
+    data,
+  };
+}
+
 export const importCompetition = async (id: string) => {
   const response = await backendRequest(
     `competition/import/${id}`,

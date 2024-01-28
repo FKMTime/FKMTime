@@ -459,17 +459,20 @@ export class ResultService {
         message: 'Delegate was notified',
       };
     }
-    const status = await this.enterAttemptToWcaLive(
-      competition.wcaId,
-      competition.scoretakingToken,
-      currentRoundId.split('-')[0],
-      parseInt(currentRoundId.split('-r')[1]),
-      competitor.registrantId,
-      attemptNumber,
-      finalData.timeToEnter,
-    );
-    if (status !== 200) {
-      throw new HttpException('WCA Live error', 500);
+    try {
+      await this.enterAttemptToWcaLive(
+        competition.wcaId,
+        competition.scoretakingToken,
+        currentRoundId.split('-')[0],
+        parseInt(currentRoundId.split('-r')[1]),
+        competitor.registrantId,
+        attemptNumber,
+        finalData.timeToEnter,
+      );
+    } catch (e) {
+      return {
+        message: 'Attempt entered to FKM, but there is a problem with WCA Live',
+      };
     }
     if (finalData.dnsOther) {
       for (let i = 0; i < maxAttempts - attemptNumber; i++) {

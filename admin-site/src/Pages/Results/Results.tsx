@@ -87,7 +87,7 @@ const Results = (): JSX.Element => {
     const handleConfirm = async () => {
         setOpenConfirmation(false);
         const status = await reSubmitRoundToWcaLive(filters.roundId);
-        if (status === 204) {
+        if (status === 200) {
             toast({
                 title: "Successfully resubmitted round results to WCA Live.",
                 status: "success",

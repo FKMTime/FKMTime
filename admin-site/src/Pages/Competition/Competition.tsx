@@ -1,6 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Alert, AlertIcon, Box, Button, FormControl, FormLabel, Heading, IconButton, Input, Select, Text, useToast } from "@chakra-ui/react";
-import { getCompetitionInfo, importCompetition, syncCompetition, updateCompetition } from "../../logic/competition";
+import {
+    getCompetitionSettings,
+    importCompetition,
+    syncCompetition,
+    updateCompetition,
+} from "../../logic/competition";
 import { Competition as CompetitionInterface } from "../../logic/interfaces";
 import events from "../../logic/events";
 import { Activity, Event, Round } from "@wca/helpers";
@@ -25,7 +30,7 @@ const Competition = (): JSX.Element => {
     }, [competition, currentRound]);
 
     const fetchData = async () => {
-        const response = await getCompetitionInfo();
+        const response = await getCompetitionSettings();
         if (response.status === 200) {
             setCompetitionImported(true);
             setCompetition(response.data);
