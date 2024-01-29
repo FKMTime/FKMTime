@@ -72,6 +72,7 @@ const AttemptRow: React.FC<AttemptRowProps> = ({ attempt, showExtraColumns = fal
                 )}
                 <Td>{attempt.judge && `${attempt.judge.name} (${attempt.judge.registrantId})`} </Td>
                 <Td>{attempt.station && attempt.station.name}</Td>
+                <Td>{attempt.comment}</Td>
                 <Td>{new Date(attempt.solvedAt).toLocaleString()}</Td>
                 <Td>
                     <IconButton icon={<MdEdit />} aria-label="Edit" bg="none" color="white" _hover={{

@@ -25,6 +25,7 @@ const AttemptsTable: React.FC<AttemptsTableProps> = ({ attempts, showExtraColumn
                         )}
                         <Th>Judge</Th>
                         <Th>Station</Th>
+                        <Th>Comment</Th>
                         <Th>Solved at</Th>
                         <Th>Actions</Th>
                     </Tr>

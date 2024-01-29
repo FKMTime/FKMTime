@@ -222,6 +222,7 @@ export class ResultService {
             isResolved: true,
             penalty: true,
             solvedAt: true,
+            comment: true,
             createdAt: true,
             isExtraAttempt: true,
             extraGiven: true,

@@ -26,7 +26,7 @@ const EditAttemptModal: React.FC<EditAttemptModalProps> = ({ isOpen, onClose, at
         });
         if (status === 200) {
             toast({
-                title: "Successfully updated account.",
+                title: "Successfully updated attempt.",
                 status: "success",
                 duration: 9000,
                 isClosable: true,
@@ -45,7 +45,7 @@ const EditAttemptModal: React.FC<EditAttemptModalProps> = ({ isOpen, onClose, at
     };
 
     return (
-        <Modal isOpen={isOpen} onClose={onClose} title="Create Account">
+        <Modal isOpen={isOpen} onClose={onClose} title="Edit attempt">
             <Box display="flex" flexDirection="column" gap="5" as="form" onSubmit={handleSubmit}>
                 <FormControl isRequired>
                     <FormLabel>Attempt number</FormLabel>
