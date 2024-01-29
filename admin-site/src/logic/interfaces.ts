@@ -1,3 +1,5 @@
+import { Competition as WCIF } from "@wca/helpers";
+
 export interface UserInfo {
   username: string;
   role: string;
@@ -20,8 +22,7 @@ export interface Competition {
   countryIso2: string;
   currentGroupId?: string;
   scoretakingToken?: string;
-  //eslint-disable-next-line
-  wcif: any;
+  wcif: WCIF;
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -51,6 +52,7 @@ export interface Attempt {
   id: number;
   resultId: number;
   attemptNumber: number;
+  comment?: string;
   replacedBy: number;
   isDelegate: boolean;
   isResolved: boolean;

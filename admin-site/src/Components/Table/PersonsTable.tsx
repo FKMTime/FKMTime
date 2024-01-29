@@ -33,7 +33,7 @@ const PersonsTable: React.FC<PersonsTableProps> = ({ persons, competition, fetch
                         </Tr>
                     </Thead>
                     <Tbody>
-                        {persons.map((person: Person) => (
+                        {competition && persons.map((person: Person) => (
                             <PersonRow wcifInfo={getPersonFromWcif(person.registrantId, competition?.wcif)} key={person.id} person={person} fetchData={fetchData} />
                         ))}
                     </Tbody>

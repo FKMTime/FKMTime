@@ -11,7 +11,7 @@ export class AttemptService {
   ) {}
 
   async updateAttempt(id: number, data: UpdateAttemptDto) {
-    if (!data.extraGiven) {
+    if (!data.extraGiven || data.replacedBy === 0) {
       data.replacedBy = null;
     }
     const attempt = await this.prisma.attempt.update({

@@ -13,7 +13,6 @@ import LoadingPage from "../../Components/LoadingPage";
 import { IoMdEye, IoMdEyeOff } from "react-icons/io";
 
 const Competition = (): JSX.Element => {
-
     const [isLoading, setIsLoading] = useState<boolean>(true);
     const [competitionImported, setCompetitionImported] = useState<boolean>(false);
     const [competition, setCompetition] = useState<CompetitionInterface | null>(null);
@@ -23,9 +22,11 @@ const Competition = (): JSX.Element => {
     const idRef: React.RefObject<HTMLInputElement> = useRef<HTMLInputElement>(null);
     const toast = useToast();
     const groups = useMemo(() => {
-        if (!competition || !currentRound) {
+        if (!competition || !currentRound || !competition.wcif.schedule.venues[0].rooms[0].activities) {
             return [];
         }
+        //eslint-disable-next-line
+        //@ts-ignore
         return competition.wcif.schedule.venues[0].rooms[0].activities.find((activity: Activity) => activity.activityCode === currentRound).childActivities;
     }, [competition, currentRound]);
 

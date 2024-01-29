@@ -59,6 +59,7 @@ model Attempt {
   result         Result?   @relation(fields: [resultId], references: [id])
   attemptNumber  Int
   replacedBy     Int?
+  comment        String?
   isDelegate     Boolean   @default(false)
   extraGiven     Boolean   @default(false)
   isResolved     Boolean?  @default(false)

@@ -86,7 +86,8 @@ const Home = (): JSX.Element => {
             ))}
         </FormControl>
       </Box>
-      <ScheduleTable activities={orderedActivities} events={competition.wcif.events} />
+      {orderedActivities && orderedActivities.length > 0 ?
+        <ScheduleTable activities={orderedActivities} events={competition.wcif.events} /> : <Text>No activities in this room</Text>}
     </Box>
   )
 };

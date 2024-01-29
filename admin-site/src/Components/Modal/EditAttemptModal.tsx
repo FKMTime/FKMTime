@@ -11,7 +11,6 @@ interface EditAttemptModalProps {
 }
 
 const EditAttemptModal: React.FC<EditAttemptModalProps> = ({ isOpen, onClose, attempt }): JSX.Element => {
-
     const toast = useToast();
     const [isLoading, setIsLoading] = useState(false);
     const [editedAttempt, setEditedAttempt] = useState<Attempt>(attempt);
@@ -56,19 +55,26 @@ const EditAttemptModal: React.FC<EditAttemptModalProps> = ({ isOpen, onClose, at
                     <FormLabel>Time</FormLabel>
                     <Input placeholder='Time' _placeholder={{ color: "white" }} value={editedAttempt.value} disabled={isLoading} onChange={(e) => setEditedAttempt({ ...editedAttempt, value: +e.target.value })} />
                 </FormControl>
-                <Select placeholder='Select penalty' _placeholder={{ color: "white" }} value={editedAttempt.penalty} disabled={isLoading} onChange={(e) => setEditedAttempt({ ...editedAttempt, penalty: +e.target.value })}>
-                    <option value={0}>No penalty</option>
-                    <option value={2}>+2</option>
-                    <option value={-1}>DNF</option>
-                    <option value={-2}>DNS</option>
-                    <option value={4}>+4</option>
-                    <option value={6}>+6</option>
-                    <option value={8}>+8</option>
-                    <option value={10}>+10</option>
-                    <option value={12}>+12</option>
-                    <option value={14}>+14</option>
-                    <option value={16}>+16</option>
-                </Select>
+                <FormControl>
+                    <FormLabel>Comment</FormLabel>
+                    <Input placeholder='Comment' _placeholder={{ color: "white" }} value={editedAttempt.comment} disabled={isLoading} onChange={(e) => setEditedAttempt({ ...editedAttempt, comment: e.target.value })} />
+                </FormControl>
+                <FormControl>
+                    <FormLabel>Penalty</FormLabel>
+                    <Select placeholder='Select penalty' _placeholder={{ color: "white" }} value={editedAttempt.penalty} disabled={isLoading} onChange={(e) => setEditedAttempt({ ...editedAttempt, penalty: +e.target.value })}>
+                        <option value={0}>No penalty</option>
+                        <option value={2}>+2</option>
+                        <option value={-1}>DNF</option>
+                        <option value={-2}>DNS</option>
+                        <option value={4}>+4</option>
+                        <option value={6}>+6</option>
+                        <option value={8}>+8</option>
+                        <option value={10}>+10</option>
+                        <option value={12}>+12</option>
+                        <option value={14}>+14</option>
+                        <option value={16}>+16</option>
+                    </Select>
+                </FormControl>
                 {editedAttempt.extraGiven && (
                     <FormControl>
                         <FormLabel>Replaced by</FormLabel>

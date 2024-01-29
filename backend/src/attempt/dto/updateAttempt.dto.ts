@@ -1,4 +1,4 @@
-import { IsBoolean, IsInt, IsOptional, Min } from 'class-validator';
+import { IsBoolean, IsInt, IsOptional, IsString, Min } from 'class-validator';
 
 export class UpdateAttemptDto {
   @IsInt()
@@ -7,7 +7,6 @@ export class UpdateAttemptDto {
 
   @IsOptional()
   @IsInt()
-  @Min(1)
   replacedBy: number;
 
   @IsBoolean()
@@ -24,6 +23,10 @@ export class UpdateAttemptDto {
 
   @IsInt()
   value: number;
+
+  @IsString()
+  @IsOptional()
+  comment: string;
 
   @IsOptional()
   @IsBoolean()
