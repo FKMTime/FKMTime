@@ -1,18 +1,24 @@
 import { Box, Button, Checkbox, FormControl, FormLabel, Input, Select, useToast } from "@chakra-ui/react";
 import { Modal } from "./Modal";
 import { useState } from "react";
-import { Attempt } from "../../logic/interfaces";
+import { Attempt, Result } from "../../logic/interfaces";
 import { updateAttempt } from "../../logic/attempt";
+import { useAtomValue } from "jotai";
+import { competitionAtom } from "../../logic/atoms";
+import { checkTimeLimit } from "../../logic/results";
 
 interface EditAttemptModalProps {
     isOpen: boolean;
     onClose: () => void;
     attempt: Attempt;
+    result: Result;
 }
 
-const EditAttemptModal: React.FC<EditAttemptModalProps> = ({ isOpen, onClose, attempt }): JSX.Element => {
+const EditAttemptModal: React.FC<EditAttemptModalProps> = ({ isOpen, onClose, attempt, result }): JSX.Element => {
     const toast = useToast();
     const [isLoading, setIsLoading] = useState(false);
+    const competition = useAtomValue(competitionAtom);
+
     const [editedAttempt, setEditedAttempt] = useState<Attempt>(attempt);
     const [shouldResubmitToWcaLive, setShouldResubmitToWcaLive] = useState<boolean>(false);
 
@@ -53,7 +59,27 @@ const EditAttemptModal: React.FC<EditAttemptModalProps> = ({ isOpen, onClose, at
                 </FormControl>
                 <FormControl isRequired>
                     <FormLabel>Time</FormLabel>
-                    <Input placeholder='Time' _placeholder={{ color: "white" }} value={editedAttempt.value} disabled={isLoading} onChange={(e) => setEditedAttempt({ ...editedAttempt, value: +e.target.value })} />
+                    <Input placeholder='Time' _placeholder={{ color: "white" }} value={editedAttempt.value} disabled={isLoading} onChange={(e) => {
+
+                        if (!competition) {
+                            setEditedAttempt({ ...editedAttempt, value: +e.target.value });
+                            return;
+                        }
+                        const isLimitPassed = checkTimeLimit(+e.target.value, competition?.wcif, result.roundId);
+                        console.log(isLimitPassed);
+                        if (!isLimitPassed) {
+                            toast({
+                                title: "This attempt not passed time limit.",
+                                description: "This time is DNF.",
+                                status: "error",
+                                duration: 9000,
+                                isClosable: true,
+                            });
+                            setEditedAttempt({ ...editedAttempt, value: +e.target.value, penalty: -1 });
+                            return;
+                        }
+                        setEditedAttempt({ ...editedAttempt, value: +e.target.value });
+                    }} />
                 </FormControl>
                 <FormControl>
                     <FormLabel>Comment</FormLabel>
@@ -101,5 +127,4 @@ const EditAttemptModal: React.FC<EditAttemptModalProps> = ({ isOpen, onClose, at
         </Modal>
     )
 };
-
 export default EditAttemptModal;

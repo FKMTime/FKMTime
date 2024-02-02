@@ -129,3 +129,18 @@ export const getSubmittedAttempts = (attempts: Attempt[]) => {
   });
   return attemptsToReturn;
 };
+
+export const getRoundNameById = (roundId: string, wcif?: Competition) => {
+  if (!wcif) return "";
+  let roundName = "";
+  wcif.schedule?.venues.forEach((venue) => {
+    venue.rooms.forEach((room) => {
+      room.activities.forEach((activity) => {
+        if (activity.activityCode === roundId) {
+          roundName = activity.name;
+        }
+      });
+    });
+  });
+  return roundName;
+};

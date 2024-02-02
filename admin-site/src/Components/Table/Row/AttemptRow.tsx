@@ -1,5 +1,5 @@
 import { Tr, Td, IconButton, useToast } from "@chakra-ui/react";
-import { Attempt } from "../../../logic/interfaces";
+import { Attempt, Result } from "../../../logic/interfaces";
 import { resultToString } from "../../../logic/resultFormatters";
 import { MdDelete, MdEdit } from "react-icons/md";
 import { useState } from "react";
@@ -9,12 +9,13 @@ import EditAttemptModal from "../../Modal/EditAttemptModal";
 
 interface AttemptRowProps {
     attempt: Attempt;
+    result: Result;
     showExtraColumns?: boolean;
     fetchData: () => void;
     no: number;
 }
 
-const AttemptRow: React.FC<AttemptRowProps> = ({ attempt, showExtraColumns = false, fetchData, no }): JSX.Element => {
+const AttemptRow: React.FC<AttemptRowProps> = ({ attempt, showExtraColumns = false, fetchData, no, result }): JSX.Element => {
 
     const toast = useToast();
     const [openConfirmation, setOpenConfirmation] = useState<boolean>(false);
@@ -90,7 +91,7 @@ const AttemptRow: React.FC<AttemptRowProps> = ({ attempt, showExtraColumns = fal
                 </Td>
             </Tr>
             <Alert isOpen={openConfirmation} onCancel={handleCancel} onConfirm={handleConfirm} title="Delete attempt" description="Are you sure you want to delete this attempt? This action cannot be undone" />
-            <EditAttemptModal isOpen={isOpenEditAttemptModal} onClose={handleCloseEditModal} attempt={attempt} />
+            <EditAttemptModal isOpen={isOpenEditAttemptModal} onClose={handleCloseEditModal} attempt={attempt} result={result} />
         </>
     )
 };

@@ -6,11 +6,15 @@ import { Result } from "../../logic/interfaces";
 import { Alert, AlertIcon, Box, Button, Heading, Text, useToast } from "@chakra-ui/react";
 import regions from "../../logic/regions";
 import AttemptsTable from "../../Components/Table/AttemptsTable";
-import { getSubmittedAttempts } from "../../logic/utils";
+import { getCutoffByRoundId, getLimitByRoundId, getNumberOfAttemptsForRound, getRoundNameById, getSubmittedAttempts } from "../../logic/utils";
+import { useAtomValue } from "jotai";
+import { competitionAtom } from "../../logic/atoms";
+import { resultToString } from "../../logic/resultFormatters";
 
 
 const SingleResult = (): JSX.Element => {
     const { id } = useParams<{ id: string }>();
+    const competition = useAtomValue(competitionAtom);
     const toast = useToast();
     const [result, setResult] = useState<Result | null>(null);
     const standardAttempts = useMemo(() => {
@@ -25,6 +29,27 @@ const SingleResult = (): JSX.Element => {
         if (!result) return [];
         return getSubmittedAttempts(result.attempts);
     }, [result]);
+
+    const cutoff = useMemo(() => {
+        if (!competition || !result) {
+            return null;
+        }
+        return getCutoffByRoundId(result.roundId, competition.wcif);
+    }, [competition, result]);
+    const limit = useMemo(() => {
+        if (!competition || !result) {
+            return null;
+        }
+        return getLimitByRoundId(result.roundId, competition.wcif);
+    }, [competition, result]);
+
+    const maxAttempts = useMemo(() => {
+        if (!competition || !result) {
+            return 0;
+        }
+        return getNumberOfAttemptsForRound(result.roundId, competition.wcif);
+    }, [competition, result]);
+
 
     const fetchData = useCallback(async () => {
         if (!id) return;
@@ -81,20 +106,26 @@ const SingleResult = (): JSX.Element => {
                 Resubmit scorecard to WCA Live
             </Button>
             <Heading mt={3}>
+                Limits for {getRoundNameById(result.roundId, competition?.wcif)}
+            </Heading>
+            <Text fontSize="xl">Cutoff: {cutoff ? `${resultToString(cutoff.attemptResult)} (${cutoff.numberOfAttempts} attempts)` : "None"}</Text>
+            <Text fontSize="xl">Limit: {limit ? `${resultToString(limit.centiseconds)} ${limit.cumulativeRoundIds.length > 0 ? "(cumulative)" : ""}` : "None"}</Text>
+            <Text fontSize="xl">Attempts: {maxAttempts}</Text>
+            <Heading mt={3}>
                 Attempts
             </Heading>
             <Heading size="md">
                 List of attempts submitted to WCA Live
             </Heading>
-            {submittedAttempts.length === 0 ? <Text>No attempts submitted to WCA Live</Text> : <AttemptsTable attempts={submittedAttempts as never} fetchData={fetchData} />}
+            {submittedAttempts.length === 0 ? <Text>No attempts submitted to WCA Live</Text> : <AttemptsTable attempts={submittedAttempts as never} fetchData={fetchData} result={result} />}
             <Heading size="md">
                 Standard
             </Heading>
-            {standardAttempts.length === 0 ? <Text>No attempts</Text> : <AttemptsTable attempts={standardAttempts} showExtraColumns fetchData={fetchData} />}
+            {standardAttempts.length === 0 ? <Text>No attempts</Text> : <AttemptsTable attempts={standardAttempts} showExtraColumns fetchData={fetchData} result={result} />}
             <Heading size="md">
                 Extra
             </Heading>
-            {extraAttempts.length === 0 ? <Text>No extra attempts</Text> : <AttemptsTable attempts={extraAttempts} fetchData={fetchData} />}
+            {extraAttempts.length === 0 ? <Text>No extra attempts</Text> : <AttemptsTable attempts={extraAttempts} fetchData={fetchData} result={result} />}
 
             <Heading mt={3}>
                 Important information

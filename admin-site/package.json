@@ -13,6 +13,7 @@
     "@chakra-ui/react": "^2.8.2",
     "@cubing/icons": "^1.1.2",
     "@wca/helpers": "^1.1.5",
+    "jotai": "^2.6.4",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-icons": "^5.0.1",

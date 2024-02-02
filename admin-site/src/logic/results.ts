@@ -1,4 +1,6 @@
+import { Competition } from "@wca/helpers";
 import { backendRequest } from "./request";
+import { getLimitByRoundId } from "./utils";
 
 export const getResultsByRoundId = async (
   roundId: string,
@@ -40,3 +42,13 @@ export const reSubmitRoundToWcaLive = async (roundId: string) => {
   return response.status;
 };
   
+export const checkTimeLimit = (time: number, wcif: Competition, roundId: string) => {
+  const timeLimit = getLimitByRoundId(roundId, wcif);
+  if (!timeLimit) {
+    return true;
+  }
+  if (time > timeLimit.centiseconds) {
+    return false;
+  }
+  return true;
+};

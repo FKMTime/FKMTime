@@ -1,14 +1,15 @@
 import { Table, TableContainer, Tbody, Th, Thead, Tr } from "@chakra-ui/react";
-import { Attempt } from "../../logic/interfaces";
+import { Attempt, Result } from "../../logic/interfaces";
 import AttemptRow from "./Row/AttemptRow";
 
 interface AttemptsTableProps {
     attempts: Attempt[];
+    result: Result;
     showExtraColumns?: boolean;
     fetchData: () => void;
 }
 
-const AttemptsTable: React.FC<AttemptsTableProps> = ({ attempts, showExtraColumns = false, fetchData }): JSX.Element => {
+const AttemptsTable: React.FC<AttemptsTableProps> = ({ attempts, showExtraColumns = false, fetchData, result }): JSX.Element => {
     return (
         <TableContainer>
             <Table variant='simple'>
@@ -32,7 +33,7 @@ const AttemptsTable: React.FC<AttemptsTableProps> = ({ attempts, showExtraColumn
                 </Thead>
                 <Tbody>
                     {attempts.map((attempt: Attempt, i: number) => (
-                        <AttemptRow key={attempt.id} attempt={attempt} showExtraColumns={showExtraColumns} fetchData={fetchData} no={i + 1} />
+                        <AttemptRow key={attempt.id} attempt={attempt} showExtraColumns={showExtraColumns} fetchData={fetchData} no={i + 1} result={result} />
                     ))}
                 </Tbody>
             </Table>

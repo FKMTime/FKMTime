@@ -1,5 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
-import { Competition } from "../../logic/interfaces";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { getCompetitionInfo } from "../../logic/competition";
 import LoadingPage from "../../Components/LoadingPage";
 import { Box, FormControl, FormLabel, Heading, Select, Text } from "@chakra-ui/react";
@@ -7,9 +6,11 @@ import { Activity, Event, Room, Venue } from "@wca/helpers";
 import ScheduleTable from "../../Components/Table/ScheduleTable";
 import { getPrettyCompetitionEndDate } from "../../logic/utils";
 import EventIcon from "../../Components/Icons/EventIcon";
+import { useAtom } from "jotai";
+import { competitionAtom } from "../../logic/atoms";
 
 const Home = (): JSX.Element => {
-  const [competition, setCompetition] = useState<Competition | null>(null);
+  const [competition, setCompetition] = useAtom(competitionAtom);
   const [selectedVenue, setSelectedVenue] = useState<number>(0);
   const [selectedRoom, setSelectedRoom] = useState<number>(0);
   const orderedActivities = useMemo(() => {
@@ -30,16 +31,16 @@ const Home = (): JSX.Element => {
       });
   }, [competition, selectedVenue, selectedRoom]);
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     const response = await getCompetitionInfo();
     setCompetition(response.data);
     setSelectedVenue(response.data.wcif.schedule.venues[0].id);
     setSelectedRoom(response.data.wcif.schedule.venues[0].rooms[0].id);
-  };
+  }, [setCompetition]);
 
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [fetchData]);
 
   if (!competition) {
     return <LoadingPage />;
