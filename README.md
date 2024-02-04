@@ -91,3 +91,6 @@ Admin panel will be accessible at localhost:5173
 
 You have to run WCA and WCA Live locally in order to import competition to the system and be able to enter results.
 
+## Production
+
+The system is designed to be configured from scratch for each competition. It is recommended to run the server on a computer located at the competition venue.
