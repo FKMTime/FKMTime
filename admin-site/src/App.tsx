@@ -11,6 +11,7 @@ import SingleResult from "./Pages/Results/SingleResult";
 import Settings from "./Pages/Settings/Settings";
 import Stations from "./Pages/Stations/Stations";
 import Tutorial from "./Pages/Tutorial/Tutorial";
+import AssignCards from "./Pages/AssignCards/AssignCards";
 
 const App = (): JSX.Element => {
   const router = createBrowserRouter([
@@ -37,6 +38,10 @@ const App = (): JSX.Element => {
         {
           path: "persons",
           element: <Persons />,
+        },
+        {
+          path: "cards",
+          element: <AssignCards />,
         },
         {
           path: "results",

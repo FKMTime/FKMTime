@@ -1,6 +1,7 @@
 import { DbService } from './../db/db.service';
 import { Injectable } from '@nestjs/common';
 import { UpdatePersonDto } from './dto/updatePerson.dto';
+import { AssignManyCardsDto } from './dto/assignManyCards.dto';
 
 @Injectable()
 export class PersonService {
@@ -59,6 +60,37 @@ export class PersonService {
       count: totalPersons,
       personsWithoutCardAssigned,
     };
+  }
+
+  async getPersonsWithoutCardAssigned() {
+    return await this.prisma.person.findMany({
+      where: {
+        OR: [
+          {
+            cardId: {
+              equals: null,
+            },
+          },
+          {
+            cardId: {
+              equals: '',
+            },
+          },
+        ],
+      },
+    });
+  }
+
+  async assignManyCards(data: AssignManyCardsDto) {
+    const transactions = data.persons.map((person) => {
+      return this.prisma.person.update({
+        where: { id: person.id },
+        data: {
+          cardId: person.cardId.toString(),
+        },
+      });
+    });
+    return await this.prisma.$transaction(transactions);
   }
 
   async updatePerson(id: number, data: UpdatePersonDto) {

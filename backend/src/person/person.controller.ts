@@ -10,6 +10,7 @@ import {
 import { PersonService } from './person.service';
 import { UpdatePersonDto } from './dto/updatePerson.dto';
 import { AuthGuard } from '@nestjs/passport';
+import { AssignManyCardsDto } from './dto/assignManyCards.dto';
 
 @Controller('person')
 export class PersonController {
@@ -23,6 +24,18 @@ export class PersonController {
     @Query('search') search?: string,
   ) {
     return await this.personService.getAllPersons(+page, +pageSize, search);
+  }
+
+  @UseGuards(AuthGuard('jwt'))
+  @Get('without-card')
+  async getPersonsWithoutCardAssigned() {
+    return await this.personService.getPersonsWithoutCardAssigned();
+  }
+
+  @UseGuards(AuthGuard('jwt'))
+  @Put('card/assign-many')
+  async assignManyCards(@Body() data: AssignManyCardsDto) {
+    return await this.personService.assignManyCards(data);
   }
 
   @Get('card/:cardId')
