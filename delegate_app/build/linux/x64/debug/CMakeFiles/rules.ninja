@@ -61,7 +61,7 @@ rule CXX_SHARED_LIBRARY_LINKER__flutter_secure_storage_linux_plugin_Debug
 # Rule for re-running cmake.
 
 rule RERUN_CMAKE
-  command = /usr/bin/cmake --regenerate-during-build -S/home/bstrama/Projects/FKMTime/delegate_app/linux -B/home/bstrama/Projects/FKMTime/delegate_app/build/linux/x64/debug
+  command = /usr/bin/cmake --regenerate-during-build -S/home/mgala/Projects/SLSTimes/delegate_app/linux -B/home/mgala/Projects/SLSTimes/delegate_app/build/linux/x64/debug
   description = Re-running CMake...
   generator = 1
 

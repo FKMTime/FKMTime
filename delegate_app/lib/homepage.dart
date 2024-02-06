@@ -17,9 +17,6 @@ class _HomePageState extends State<HomePage> {
   Widget build(BuildContext context) {
     return FutureBuilder(
       future: () async {
-        //var storage = const FlutterSecureStorage();
-        //await storage.deleteAll();
-
         widget.isUserLoggedIn = await User.getToken() != null;
         if (widget.isUserLoggedIn) {
           return Attempt.fetchAll();
@@ -46,10 +43,33 @@ class _HomePageState extends State<HomePage> {
     List<Widget> cards = [];
 
     for (Attempt incident in snapshot.data) {
-      cards.add(Incident(incidentName: incident.id.toString()));
+      final String eventName = events.getById(incident.result.eventId).name;
+      cards.add(Incident(
+        eventName: '$eventName round ${incident.result.roundId.split("-r").last}',
+        competitorName: incident.result.person.name,
+        attemptNumber: incident.attemptNumber.toString(),
+        value: incident.value,
+        stationName: incident.station.name,
+        judgeName: incident.judge.name,
+      ));
     }
-
+  // add logout button
     return Scaffold(
+      appBar: AppBar(
+        title: const Text('FKM Time'),
+        actions: [
+          IconButton(
+            onPressed: () async {
+              var storage = const FlutterSecureStorage();
+              await storage.deleteAll();
+              setState(() {
+                widget.isUserLoggedIn = false;
+              });
+            },
+            icon: const Icon(Icons.logout),
+          ),
+        ],
+      ),
       body: SingleChildScrollView(
         child: Center(
           child: Padding(
@@ -65,9 +85,16 @@ class _HomePageState extends State<HomePage> {
 }
 
 class Incident extends StatelessWidget {
-  const Incident({super.key, required this.incidentName});
+  const Incident({super.key, required this.eventName, required this.attemptNumber, required this.value, required this.stationName, required this.judgeName, required this.competitorName});
 
-  final String incidentName;
+  final String eventName;
+  final String attemptNumber;
+  final int value;
+  final String stationName;
+  final String competitorName;
+  final String judgeName;
+
+
 
   @override
   Widget build(BuildContext context) {
@@ -78,8 +105,54 @@ class Incident extends StatelessWidget {
           decoration: BoxDecoration(
               color: Colors.teal, borderRadius: BorderRadius.circular(7)),
           width: 300,
-          height: 100,
-          child: Text(incidentName),
+          height: 200,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
+              Text(
+                eventName,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 20,
+                ),
+              ),
+              Text (
+                "Competitor: $competitorName",
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 15,
+                ),
+              ),
+              Text(
+                "Attempt: $attemptNumber",
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 15,
+                ),
+              ),
+              Text(
+                "Value: $value",
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 15,
+                ),
+              ),
+              Text(
+                "Station: $stationName",
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 15,
+                ),
+              ),
+              Text(
+                "Judge: $judgeName",
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 15,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

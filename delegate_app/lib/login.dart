@@ -31,6 +31,7 @@ class LoginPage extends StatelessWidget {
                   hintText: "Password",
                   border: OutlineInputBorder(),
                 ),
+                obscureText: true,
                 controller: passwordController,
               ),
               const SizedBox(height: 20),

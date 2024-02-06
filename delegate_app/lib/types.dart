@@ -22,7 +22,7 @@ class Attempt {
   int penalty;
   bool isExtraAttempt;
   bool extraGiven;
-  DateTime? solvedAt;
+  DateTime createdAt;
   int value;
   Person judge;
   Station station;
@@ -38,7 +38,7 @@ class Attempt {
     required this.penalty,
     required this.isExtraAttempt,
     required this.extraGiven,
-    required this.solvedAt,
+    required this.createdAt,
     required this.value,
     required this.judge,
     required this.station,
@@ -66,8 +66,7 @@ class Attempt {
   }
 
   static Future<Attempt> fetchById(int id) async {
-    //TODO: JWT
-    final jwt = "";
+    final String jwt = (await User.getToken())!;
     final res = await http.get(Uri.parse('$BACKEND_ORIGIN/attempt/$id'), headers: {
        HttpHeaders.authorizationHeader: 'Bearer $jwt',
     });
@@ -79,8 +78,7 @@ class Attempt {
   }
 
   Future<Attempt> update() async {
-    //TODO: JWT
-    final jwt = "";
+    final String jwt = (await User.getToken())!;
     final res = await http.put(Uri.parse('$BACKEND_ORIGIN/attempt/$id'), headers: {
        HttpHeaders.authorizationHeader: 'Bearer $jwt',
     }, body: {
@@ -90,7 +88,6 @@ class Attempt {
       'penalty': penalty.toString(),
       'isExtraAttempt': isExtraAttempt.toString(),
       'extraGiven': extraGiven.toString(),
-      'solvedAt': solvedAt?.toIso8601String(),
       'value': value.toString(),
       'judgeId': judge.id.toString(),
       'stationId': station.id.toString(),
@@ -115,7 +112,7 @@ class Attempt {
       penalty: json['penalty'],
       isExtraAttempt: json['isExtraAttempt'],
       extraGiven: json['extraGiven'],
-      solvedAt: DateTime.parse(json['solvedAt']),
+      createdAt: DateTime.parse(json['createdAt']),
       value: json['value'],
       judge: Person.fromDynamic(json['judge']),
       station: Station.fromDynamic(json['station']),
@@ -127,25 +124,16 @@ class Attempt {
 class Station {
   int id;
   String name;
-  String espId;
-  DateTime createdAt;
-  DateTime updatedAt;
 
   Station({
     required this.id,
     required this.name,
-    required this.espId,
-    required this.createdAt,
-    required this.updatedAt,
   });
 
   static Station fromDynamic(dynamic json) {
     return Station(
       id: json['id'],
       name: json['name'],
-      espId: json['espId'],
-      createdAt: DateTime.parse(json['createdAt']),
-      updatedAt: DateTime.parse(json['updatedAt']),
     );
   }
 }

@@ -39,7 +39,7 @@ include CMakeFiles/rules.ninja
 #############################################
 # Logical path to working directory; prefix for absolute paths.
 
-cmake_ninja_workdir = /home/bstrama/Projects/FKMTime/delegate_app/build/linux/x64/debug/
+cmake_ninja_workdir = /home/mgala/Projects/SLSTimes/delegate_app/build/linux/x64/debug/
 # =============================================================================
 # Object build statements for EXECUTABLE target delegate_app
 
@@ -49,27 +49,27 @@ cmake_ninja_workdir = /home/bstrama/Projects/FKMTime/delegate_app/build/linux/x6
 
 build cmake_object_order_depends_target_delegate_app: phony || cmake_object_order_depends_target_flutter_secure_storage_linux_plugin flutter/flutter_assemble
 
-build CMakeFiles/delegate_app.dir/main.cc.o: CXX_COMPILER__delegate_app_unscanned_Debug /home/bstrama/Projects/FKMTime/delegate_app/linux/main.cc || cmake_object_order_depends_target_delegate_app
+build CMakeFiles/delegate_app.dir/main.cc.o: CXX_COMPILER__delegate_app_unscanned_Debug /home/mgala/Projects/SLSTimes/delegate_app/linux/main.cc || cmake_object_order_depends_target_delegate_app
   DEFINES = -DAPPLICATION_ID=\"com.fkmtime.delegate_app.delegate_app\"
   DEP_FILE = CMakeFiles/delegate_app.dir/main.cc.o.d
   FLAGS = -g -Wall -Werror -pthread
-  INCLUDES = -I/home/bstrama/Projects/FKMTime/delegate_app/linux/flutter/ephemeral -I/home/bstrama/Projects/FKMTime/delegate_app/linux/flutter/ephemeral/.plugin_symlinks/flutter_secure_storage_linux/linux/include -isystem /usr/include/gtk-3.0 -isystem /usr/include/pango-1.0 -isystem /usr/include/cairo -isystem /usr/include/gdk-pixbuf-2.0 -isystem /usr/include/atk-1.0 -isystem /usr/include/freetype2 -isystem /usr/include/harfbuzz -isystem /usr/include/glib-2.0 -isystem /usr/lib/glib-2.0/include -isystem /usr/include/cloudproviders -isystem /usr/include/at-spi2-atk/2.0 -isystem /usr/include/at-spi-2.0 -isystem /usr/include/dbus-1.0 -isystem /usr/lib/dbus-1.0/include -isystem /usr/include/fribidi -isystem /usr/include/pixman-1 -isystem /usr/include/libpng16 -isystem /usr/include/gio-unix-2.0 -isystem /usr/include/libmount -isystem /usr/include/blkid -isystem /usr/include/sysprof-6
+  INCLUDES = -I/home/mgala/Projects/SLSTimes/delegate_app/linux/flutter/ephemeral -I/home/mgala/Projects/SLSTimes/delegate_app/linux/flutter/ephemeral/.plugin_symlinks/flutter_secure_storage_linux/linux/include -isystem /usr/include/gtk-3.0 -isystem /usr/include/pango-1.0 -isystem /usr/include/cairo -isystem /usr/include/gdk-pixbuf-2.0 -isystem /usr/include/atk-1.0 -isystem /usr/include/freetype2 -isystem /usr/include/harfbuzz -isystem /usr/include/glib-2.0 -isystem /usr/lib/glib-2.0/include -isystem /usr/include/cloudproviders -isystem /usr/include/at-spi2-atk/2.0 -isystem /usr/include/at-spi-2.0 -isystem /usr/include/dbus-1.0 -isystem /usr/lib/dbus-1.0/include -isystem /usr/include/fribidi -isystem /usr/include/pixman-1 -isystem /usr/include/libpng16 -isystem /usr/include/gio-unix-2.0 -isystem /usr/include/libmount -isystem /usr/include/blkid -isystem /usr/include/sysprof-6
   OBJECT_DIR = CMakeFiles/delegate_app.dir
   OBJECT_FILE_DIR = CMakeFiles/delegate_app.dir
 
-build CMakeFiles/delegate_app.dir/my_application.cc.o: CXX_COMPILER__delegate_app_unscanned_Debug /home/bstrama/Projects/FKMTime/delegate_app/linux/my_application.cc || cmake_object_order_depends_target_delegate_app
+build CMakeFiles/delegate_app.dir/my_application.cc.o: CXX_COMPILER__delegate_app_unscanned_Debug /home/mgala/Projects/SLSTimes/delegate_app/linux/my_application.cc || cmake_object_order_depends_target_delegate_app
   DEFINES = -DAPPLICATION_ID=\"com.fkmtime.delegate_app.delegate_app\"
   DEP_FILE = CMakeFiles/delegate_app.dir/my_application.cc.o.d
   FLAGS = -g -Wall -Werror -pthread
-  INCLUDES = -I/home/bstrama/Projects/FKMTime/delegate_app/linux/flutter/ephemeral -I/home/bstrama/Projects/FKMTime/delegate_app/linux/flutter/ephemeral/.plugin_symlinks/flutter_secure_storage_linux/linux/include -isystem /usr/include/gtk-3.0 -isystem /usr/include/pango-1.0 -isystem /usr/include/cairo -isystem /usr/include/gdk-pixbuf-2.0 -isystem /usr/include/atk-1.0 -isystem /usr/include/freetype2 -isystem /usr/include/harfbuzz -isystem /usr/include/glib-2.0 -isystem /usr/lib/glib-2.0/include -isystem /usr/include/cloudproviders -isystem /usr/include/at-spi2-atk/2.0 -isystem /usr/include/at-spi-2.0 -isystem /usr/include/dbus-1.0 -isystem /usr/lib/dbus-1.0/include -isystem /usr/include/fribidi -isystem /usr/include/pixman-1 -isystem /usr/include/libpng16 -isystem /usr/include/gio-unix-2.0 -isystem /usr/include/libmount -isystem /usr/include/blkid -isystem /usr/include/sysprof-6
+  INCLUDES = -I/home/mgala/Projects/SLSTimes/delegate_app/linux/flutter/ephemeral -I/home/mgala/Projects/SLSTimes/delegate_app/linux/flutter/ephemeral/.plugin_symlinks/flutter_secure_storage_linux/linux/include -isystem /usr/include/gtk-3.0 -isystem /usr/include/pango-1.0 -isystem /usr/include/cairo -isystem /usr/include/gdk-pixbuf-2.0 -isystem /usr/include/atk-1.0 -isystem /usr/include/freetype2 -isystem /usr/include/harfbuzz -isystem /usr/include/glib-2.0 -isystem /usr/lib/glib-2.0/include -isystem /usr/include/cloudproviders -isystem /usr/include/at-spi2-atk/2.0 -isystem /usr/include/at-spi-2.0 -isystem /usr/include/dbus-1.0 -isystem /usr/lib/dbus-1.0/include -isystem /usr/include/fribidi -isystem /usr/include/pixman-1 -isystem /usr/include/libpng16 -isystem /usr/include/gio-unix-2.0 -isystem /usr/include/libmount -isystem /usr/include/blkid -isystem /usr/include/sysprof-6
   OBJECT_DIR = CMakeFiles/delegate_app.dir
   OBJECT_FILE_DIR = CMakeFiles/delegate_app.dir
 
-build CMakeFiles/delegate_app.dir/flutter/generated_plugin_registrant.cc.o: CXX_COMPILER__delegate_app_unscanned_Debug /home/bstrama/Projects/FKMTime/delegate_app/linux/flutter/generated_plugin_registrant.cc || cmake_object_order_depends_target_delegate_app
+build CMakeFiles/delegate_app.dir/flutter/generated_plugin_registrant.cc.o: CXX_COMPILER__delegate_app_unscanned_Debug /home/mgala/Projects/SLSTimes/delegate_app/linux/flutter/generated_plugin_registrant.cc || cmake_object_order_depends_target_delegate_app
   DEFINES = -DAPPLICATION_ID=\"com.fkmtime.delegate_app.delegate_app\"
   DEP_FILE = CMakeFiles/delegate_app.dir/flutter/generated_plugin_registrant.cc.o.d
   FLAGS = -g -Wall -Werror -pthread
-  INCLUDES = -I/home/bstrama/Projects/FKMTime/delegate_app/linux/flutter/ephemeral -I/home/bstrama/Projects/FKMTime/delegate_app/linux/flutter/ephemeral/.plugin_symlinks/flutter_secure_storage_linux/linux/include -isystem /usr/include/gtk-3.0 -isystem /usr/include/pango-1.0 -isystem /usr/include/cairo -isystem /usr/include/gdk-pixbuf-2.0 -isystem /usr/include/atk-1.0 -isystem /usr/include/freetype2 -isystem /usr/include/harfbuzz -isystem /usr/include/glib-2.0 -isystem /usr/lib/glib-2.0/include -isystem /usr/include/cloudproviders -isystem /usr/include/at-spi2-atk/2.0 -isystem /usr/include/at-spi-2.0 -isystem /usr/include/dbus-1.0 -isystem /usr/lib/dbus-1.0/include -isystem /usr/include/fribidi -isystem /usr/include/pixman-1 -isystem /usr/include/libpng16 -isystem /usr/include/gio-unix-2.0 -isystem /usr/include/libmount -isystem /usr/include/blkid -isystem /usr/include/sysprof-6
+  INCLUDES = -I/home/mgala/Projects/SLSTimes/delegate_app/linux/flutter/ephemeral -I/home/mgala/Projects/SLSTimes/delegate_app/linux/flutter/ephemeral/.plugin_symlinks/flutter_secure_storage_linux/linux/include -isystem /usr/include/gtk-3.0 -isystem /usr/include/pango-1.0 -isystem /usr/include/cairo -isystem /usr/include/gdk-pixbuf-2.0 -isystem /usr/include/atk-1.0 -isystem /usr/include/freetype2 -isystem /usr/include/harfbuzz -isystem /usr/include/glib-2.0 -isystem /usr/lib/glib-2.0/include -isystem /usr/include/cloudproviders -isystem /usr/include/at-spi2-atk/2.0 -isystem /usr/include/at-spi-2.0 -isystem /usr/include/dbus-1.0 -isystem /usr/lib/dbus-1.0/include -isystem /usr/include/fribidi -isystem /usr/include/pixman-1 -isystem /usr/include/libpng16 -isystem /usr/include/gio-unix-2.0 -isystem /usr/include/libmount -isystem /usr/include/blkid -isystem /usr/include/sysprof-6
   OBJECT_DIR = CMakeFiles/delegate_app.dir
   OBJECT_FILE_DIR = CMakeFiles/delegate_app.dir/flutter
 
@@ -81,9 +81,9 @@ build CMakeFiles/delegate_app.dir/flutter/generated_plugin_registrant.cc.o: CXX_
 #############################################
 # Link the executable intermediates_do_not_run/delegate_app
 
-build intermediates_do_not_run/delegate_app: CXX_EXECUTABLE_LINKER__delegate_app_Debug CMakeFiles/delegate_app.dir/main.cc.o CMakeFiles/delegate_app.dir/my_application.cc.o CMakeFiles/delegate_app.dir/flutter/generated_plugin_registrant.cc.o | plugins/flutter_secure_storage_linux/libflutter_secure_storage_linux_plugin.so /home/bstrama/Projects/FKMTime/delegate_app/linux/flutter/ephemeral/libflutter_linux_gtk.so /usr/lib/libgtk-3.so /usr/lib/libgdk-3.so /usr/lib/libz.so /usr/lib/libpangocairo-1.0.so /usr/lib/libpango-1.0.so /usr/lib/libharfbuzz.so /usr/lib/libatk-1.0.so /usr/lib/libcairo-gobject.so /usr/lib/libcairo.so /usr/lib/libgdk_pixbuf-2.0.so /usr/lib/libgio-2.0.so /usr/lib/libgobject-2.0.so /usr/lib/libglib-2.0.so || flutter/flutter_assemble plugins/flutter_secure_storage_linux/libflutter_secure_storage_linux_plugin.so
+build intermediates_do_not_run/delegate_app: CXX_EXECUTABLE_LINKER__delegate_app_Debug CMakeFiles/delegate_app.dir/main.cc.o CMakeFiles/delegate_app.dir/my_application.cc.o CMakeFiles/delegate_app.dir/flutter/generated_plugin_registrant.cc.o | plugins/flutter_secure_storage_linux/libflutter_secure_storage_linux_plugin.so /home/mgala/Projects/SLSTimes/delegate_app/linux/flutter/ephemeral/libflutter_linux_gtk.so /usr/lib/libgtk-3.so /usr/lib/libgdk-3.so /usr/lib/libz.so /usr/lib/libpangocairo-1.0.so /usr/lib/libpango-1.0.so /usr/lib/libharfbuzz.so /usr/lib/libatk-1.0.so /usr/lib/libcairo-gobject.so /usr/lib/libcairo.so /usr/lib/libgdk_pixbuf-2.0.so /usr/lib/libgio-2.0.so /usr/lib/libgobject-2.0.so /usr/lib/libglib-2.0.so || flutter/flutter_assemble plugins/flutter_secure_storage_linux/libflutter_secure_storage_linux_plugin.so
   FLAGS = -g
-  LINK_LIBRARIES = -Wl,-rpath,/home/bstrama/Projects/FKMTime/delegate_app/build/linux/x64/debug/plugins/flutter_secure_storage_linux:/home/bstrama/Projects/FKMTime/delegate_app/linux/flutter/ephemeral:  plugins/flutter_secure_storage_linux/libflutter_secure_storage_linux_plugin.so  /home/bstrama/Projects/FKMTime/delegate_app/linux/flutter/ephemeral/libflutter_linux_gtk.so  /usr/lib/libgtk-3.so  /usr/lib/libgdk-3.so  /usr/lib/libz.so  /usr/lib/libpangocairo-1.0.so  /usr/lib/libpango-1.0.so  /usr/lib/libharfbuzz.so  /usr/lib/libatk-1.0.so  /usr/lib/libcairo-gobject.so  /usr/lib/libcairo.so  /usr/lib/libgdk_pixbuf-2.0.so  /usr/lib/libgio-2.0.so  /usr/lib/libgobject-2.0.so  /usr/lib/libglib-2.0.so
+  LINK_LIBRARIES = -Wl,-rpath,/home/mgala/Projects/SLSTimes/delegate_app/build/linux/x64/debug/plugins/flutter_secure_storage_linux:/home/mgala/Projects/SLSTimes/delegate_app/linux/flutter/ephemeral:  plugins/flutter_secure_storage_linux/libflutter_secure_storage_linux_plugin.so  /home/mgala/Projects/SLSTimes/delegate_app/linux/flutter/ephemeral/libflutter_linux_gtk.so  /usr/lib/libgtk-3.so  /usr/lib/libgdk-3.so  /usr/lib/libz.so  /usr/lib/libpangocairo-1.0.so  /usr/lib/libpango-1.0.so  /usr/lib/libharfbuzz.so  /usr/lib/libatk-1.0.so  /usr/lib/libcairo-gobject.so  /usr/lib/libcairo.so  /usr/lib/libgdk_pixbuf-2.0.so  /usr/lib/libgio-2.0.so  /usr/lib/libgobject-2.0.so  /usr/lib/libglib-2.0.so
   OBJECT_DIR = CMakeFiles/delegate_app.dir
   POST_BUILD = :
   PRE_LINK = :
@@ -95,7 +95,7 @@ build intermediates_do_not_run/delegate_app: CXX_EXECUTABLE_LINKER__delegate_app
 # Utility command for edit_cache
 
 build CMakeFiles/edit_cache.util: CUSTOM_COMMAND
-  COMMAND = cd /home/bstrama/Projects/FKMTime/delegate_app/build/linux/x64/debug && /usr/bin/ccmake -S/home/bstrama/Projects/FKMTime/delegate_app/linux -B/home/bstrama/Projects/FKMTime/delegate_app/build/linux/x64/debug
+  COMMAND = cd /home/mgala/Projects/SLSTimes/delegate_app/build/linux/x64/debug && /usr/bin/ccmake -S/home/mgala/Projects/SLSTimes/delegate_app/linux -B/home/mgala/Projects/SLSTimes/delegate_app/build/linux/x64/debug
   DESC = Running CMake cache editor...
   pool = console
   restat = 1
@@ -107,7 +107,7 @@ build edit_cache: phony CMakeFiles/edit_cache.util
 # Utility command for rebuild_cache
 
 build CMakeFiles/rebuild_cache.util: CUSTOM_COMMAND
-  COMMAND = cd /home/bstrama/Projects/FKMTime/delegate_app/build/linux/x64/debug && /usr/bin/cmake --regenerate-during-build -S/home/bstrama/Projects/FKMTime/delegate_app/linux -B/home/bstrama/Projects/FKMTime/delegate_app/build/linux/x64/debug
+  COMMAND = cd /home/mgala/Projects/SLSTimes/delegate_app/build/linux/x64/debug && /usr/bin/cmake --regenerate-during-build -S/home/mgala/Projects/SLSTimes/delegate_app/linux -B/home/mgala/Projects/SLSTimes/delegate_app/build/linux/x64/debug
   DESC = Running CMake to regenerate build system...
   pool = console
   restat = 1
@@ -125,7 +125,7 @@ build list_install_components: phony
 # Utility command for install
 
 build CMakeFiles/install.util: CUSTOM_COMMAND all
-  COMMAND = cd /home/bstrama/Projects/FKMTime/delegate_app/build/linux/x64/debug && /usr/bin/cmake -P cmake_install.cmake
+  COMMAND = cd /home/mgala/Projects/SLSTimes/delegate_app/build/linux/x64/debug && /usr/bin/cmake -P cmake_install.cmake
   DESC = Install the project...
   pool = console
   restat = 1
@@ -137,7 +137,7 @@ build install: phony CMakeFiles/install.util
 # Utility command for install/local
 
 build CMakeFiles/install/local.util: CUSTOM_COMMAND all
-  COMMAND = cd /home/bstrama/Projects/FKMTime/delegate_app/build/linux/x64/debug && /usr/bin/cmake -DCMAKE_INSTALL_LOCAL_ONLY=1 -P cmake_install.cmake
+  COMMAND = cd /home/mgala/Projects/SLSTimes/delegate_app/build/linux/x64/debug && /usr/bin/cmake -DCMAKE_INSTALL_LOCAL_ONLY=1 -P cmake_install.cmake
   DESC = Installing only the local directory...
   pool = console
   restat = 1
@@ -149,7 +149,7 @@ build install/local: phony CMakeFiles/install/local.util
 # Utility command for install/strip
 
 build CMakeFiles/install/strip.util: CUSTOM_COMMAND all
-  COMMAND = cd /home/bstrama/Projects/FKMTime/delegate_app/build/linux/x64/debug && /usr/bin/cmake -DCMAKE_INSTALL_DO_STRIP=1 -P cmake_install.cmake
+  COMMAND = cd /home/mgala/Projects/SLSTimes/delegate_app/build/linux/x64/debug && /usr/bin/cmake -DCMAKE_INSTALL_DO_STRIP=1 -P cmake_install.cmake
   DESC = Installing the project stripped...
   pool = console
   restat = 1
@@ -158,21 +158,21 @@ build install/strip: phony CMakeFiles/install/strip.util
 
 # =============================================================================
 # Write statements declared in CMakeLists.txt:
-# /home/bstrama/Projects/FKMTime/delegate_app/linux/CMakeLists.txt
+# /home/mgala/Projects/SLSTimes/delegate_app/linux/CMakeLists.txt
 # =============================================================================
 
 
 #############################################
 # Utility command for flutter_assemble
 
-build flutter/flutter_assemble: phony flutter/CMakeFiles/flutter_assemble /home/bstrama/Projects/FKMTime/delegate_app/linux/flutter/ephemeral/libflutter_linux_gtk.so /home/bstrama/Projects/FKMTime/delegate_app/linux/flutter/ephemeral/flutter_linux/fl_basic_message_channel.h /home/bstrama/Projects/FKMTime/delegate_app/linux/flutter/ephemeral/flutter_linux/fl_binary_codec.h /home/bstrama/Projects/FKMTime/delegate_app/linux/flutter/ephemeral/flutter_linux/fl_binary_messenger.h /home/bstrama/Projects/FKMTime/delegate_app/linux/flutter/ephemeral/flutter_linux/fl_dart_project.h /home/bstrama/Projects/FKMTime/delegate_app/linux/flutter/ephemeral/flutter_linux/fl_engine.h /home/bstrama/Projects/FKMTime/delegate_app/linux/flutter/ephemeral/flutter_linux/fl_json_message_codec.h /home/bstrama/Projects/FKMTime/delegate_app/linux/flutter/ephemeral/flutter_linux/fl_json_method_codec.h /home/bstrama/Projects/FKMTime/delegate_app/linux/flutter/ephemeral/flutter_linux/fl_message_codec.h /home/bstrama/Projects/FKMTime/delegate_app/linux/flutter/ephemeral/flutter_linux/fl_method_call.h /home/bstrama/Projects/FKMTime/delegate_app/linux/flutter/ephemeral/flutter_linux/fl_method_channel.h /home/bstrama/Projects/FKMTime/delegate_app/linux/flutter/ephemeral/flutter_linux/fl_method_codec.h /home/bstrama/Projects/FKMTime/delegate_app/linux/flutter/ephemeral/flutter_linux/fl_method_response.h /home/bstrama/Projects/FKMTime/delegate_app/linux/flutter/ephemeral/flutter_linux/fl_plugin_registrar.h /home/bstrama/Projects/FKMTime/delegate_app/linux/flutter/ephemeral/flutter_linux/fl_plugin_registry.h /home/bstrama/Projects/FKMTime/delegate_app/linux/flutter/ephemeral/flutter_linux/fl_standard_message_codec.h /home/bstrama/Projects/FKMTime/delegate_app/linux/flutter/ephemeral/flutter_linux/fl_standard_method_codec.h /home/bstrama/Projects/FKMTime/delegate_app/linux/flutter/ephemeral/flutter_linux/fl_string_codec.h /home/bstrama/Projects/FKMTime/delegate_app/linux/flutter/ephemeral/flutter_linux/fl_value.h /home/bstrama/Projects/FKMTime/delegate_app/linux/flutter/ephemeral/flutter_linux/fl_view.h /home/bstrama/Projects/FKMTime/delegate_app/linux/flutter/ephemeral/flutter_linux/flutter_linux.h flutter/_phony_
+build flutter/flutter_assemble: phony flutter/CMakeFiles/flutter_assemble /home/mgala/Projects/SLSTimes/delegate_app/linux/flutter/ephemeral/libflutter_linux_gtk.so /home/mgala/Projects/SLSTimes/delegate_app/linux/flutter/ephemeral/flutter_linux/fl_basic_message_channel.h /home/mgala/Projects/SLSTimes/delegate_app/linux/flutter/ephemeral/flutter_linux/fl_binary_codec.h /home/mgala/Projects/SLSTimes/delegate_app/linux/flutter/ephemeral/flutter_linux/fl_binary_messenger.h /home/mgala/Projects/SLSTimes/delegate_app/linux/flutter/ephemeral/flutter_linux/fl_dart_project.h /home/mgala/Projects/SLSTimes/delegate_app/linux/flutter/ephemeral/flutter_linux/fl_engine.h /home/mgala/Projects/SLSTimes/delegate_app/linux/flutter/ephemeral/flutter_linux/fl_json_message_codec.h /home/mgala/Projects/SLSTimes/delegate_app/linux/flutter/ephemeral/flutter_linux/fl_json_method_codec.h /home/mgala/Projects/SLSTimes/delegate_app/linux/flutter/ephemeral/flutter_linux/fl_message_codec.h /home/mgala/Projects/SLSTimes/delegate_app/linux/flutter/ephemeral/flutter_linux/fl_method_call.h /home/mgala/Projects/SLSTimes/delegate_app/linux/flutter/ephemeral/flutter_linux/fl_method_channel.h /home/mgala/Projects/SLSTimes/delegate_app/linux/flutter/ephemeral/flutter_linux/fl_method_codec.h /home/mgala/Projects/SLSTimes/delegate_app/linux/flutter/ephemeral/flutter_linux/fl_method_response.h /home/mgala/Projects/SLSTimes/delegate_app/linux/flutter/ephemeral/flutter_linux/fl_plugin_registrar.h /home/mgala/Projects/SLSTimes/delegate_app/linux/flutter/ephemeral/flutter_linux/fl_plugin_registry.h /home/mgala/Projects/SLSTimes/delegate_app/linux/flutter/ephemeral/flutter_linux/fl_standard_message_codec.h /home/mgala/Projects/SLSTimes/delegate_app/linux/flutter/ephemeral/flutter_linux/fl_standard_method_codec.h /home/mgala/Projects/SLSTimes/delegate_app/linux/flutter/ephemeral/flutter_linux/fl_string_codec.h /home/mgala/Projects/SLSTimes/delegate_app/linux/flutter/ephemeral/flutter_linux/fl_value.h /home/mgala/Projects/SLSTimes/delegate_app/linux/flutter/ephemeral/flutter_linux/fl_view.h /home/mgala/Projects/SLSTimes/delegate_app/linux/flutter/ephemeral/flutter_linux/flutter_linux.h flutter/_phony_
 
 
 #############################################
 # Utility command for edit_cache
 
 build flutter/CMakeFiles/edit_cache.util: CUSTOM_COMMAND
-  COMMAND = cd /home/bstrama/Projects/FKMTime/delegate_app/build/linux/x64/debug/flutter && /usr/bin/ccmake -S/home/bstrama/Projects/FKMTime/delegate_app/linux -B/home/bstrama/Projects/FKMTime/delegate_app/build/linux/x64/debug
+  COMMAND = cd /home/mgala/Projects/SLSTimes/delegate_app/build/linux/x64/debug/flutter && /usr/bin/ccmake -S/home/mgala/Projects/SLSTimes/delegate_app/linux -B/home/mgala/Projects/SLSTimes/delegate_app/build/linux/x64/debug
   DESC = Running CMake cache editor...
   pool = console
   restat = 1
@@ -184,7 +184,7 @@ build flutter/edit_cache: phony flutter/CMakeFiles/edit_cache.util
 # Utility command for rebuild_cache
 
 build flutter/CMakeFiles/rebuild_cache.util: CUSTOM_COMMAND
-  COMMAND = cd /home/bstrama/Projects/FKMTime/delegate_app/build/linux/x64/debug/flutter && /usr/bin/cmake --regenerate-during-build -S/home/bstrama/Projects/FKMTime/delegate_app/linux -B/home/bstrama/Projects/FKMTime/delegate_app/build/linux/x64/debug
+  COMMAND = cd /home/mgala/Projects/SLSTimes/delegate_app/build/linux/x64/debug/flutter && /usr/bin/cmake --regenerate-during-build -S/home/mgala/Projects/SLSTimes/delegate_app/linux -B/home/mgala/Projects/SLSTimes/delegate_app/build/linux/x64/debug
   DESC = Running CMake to regenerate build system...
   pool = console
   restat = 1
@@ -202,7 +202,7 @@ build flutter/list_install_components: phony
 # Utility command for install
 
 build flutter/CMakeFiles/install.util: CUSTOM_COMMAND flutter/all
-  COMMAND = cd /home/bstrama/Projects/FKMTime/delegate_app/build/linux/x64/debug/flutter && /usr/bin/cmake -P cmake_install.cmake
+  COMMAND = cd /home/mgala/Projects/SLSTimes/delegate_app/build/linux/x64/debug/flutter && /usr/bin/cmake -P cmake_install.cmake
   DESC = Install the project...
   pool = console
   restat = 1
@@ -214,7 +214,7 @@ build flutter/install: phony flutter/CMakeFiles/install.util
 # Utility command for install/local
 
 build flutter/CMakeFiles/install/local.util: CUSTOM_COMMAND flutter/all
-  COMMAND = cd /home/bstrama/Projects/FKMTime/delegate_app/build/linux/x64/debug/flutter && /usr/bin/cmake -DCMAKE_INSTALL_LOCAL_ONLY=1 -P cmake_install.cmake
+  COMMAND = cd /home/mgala/Projects/SLSTimes/delegate_app/build/linux/x64/debug/flutter && /usr/bin/cmake -DCMAKE_INSTALL_LOCAL_ONLY=1 -P cmake_install.cmake
   DESC = Installing only the local directory...
   pool = console
   restat = 1
@@ -226,7 +226,7 @@ build flutter/install/local: phony flutter/CMakeFiles/install/local.util
 # Utility command for install/strip
 
 build flutter/CMakeFiles/install/strip.util: CUSTOM_COMMAND flutter/all
-  COMMAND = cd /home/bstrama/Projects/FKMTime/delegate_app/build/linux/x64/debug/flutter && /usr/bin/cmake -DCMAKE_INSTALL_DO_STRIP=1 -P cmake_install.cmake
+  COMMAND = cd /home/mgala/Projects/SLSTimes/delegate_app/build/linux/x64/debug/flutter && /usr/bin/cmake -DCMAKE_INSTALL_DO_STRIP=1 -P cmake_install.cmake
   DESC = Installing the project stripped...
   pool = console
   restat = 1
@@ -237,20 +237,20 @@ build flutter/install/strip: phony flutter/CMakeFiles/install/strip.util
 #############################################
 # Phony custom command for flutter/CMakeFiles/flutter_assemble
 
-build flutter/CMakeFiles/flutter_assemble | ${cmake_ninja_workdir}flutter/CMakeFiles/flutter_assemble: phony /home/bstrama/Projects/FKMTime/delegate_app/linux/flutter/ephemeral/libflutter_linux_gtk.so /home/bstrama/Projects/FKMTime/delegate_app/linux/flutter/ephemeral/flutter_linux/fl_basic_message_channel.h /home/bstrama/Projects/FKMTime/delegate_app/linux/flutter/ephemeral/flutter_linux/fl_binary_codec.h /home/bstrama/Projects/FKMTime/delegate_app/linux/flutter/ephemeral/flutter_linux/fl_binary_messenger.h /home/bstrama/Projects/FKMTime/delegate_app/linux/flutter/ephemeral/flutter_linux/fl_dart_project.h /home/bstrama/Projects/FKMTime/delegate_app/linux/flutter/ephemeral/flutter_linux/fl_engine.h /home/bstrama/Projects/FKMTime/delegate_app/linux/flutter/ephemeral/flutter_linux/fl_json_message_codec.h /home/bstrama/Projects/FKMTime/delegate_app/linux/flutter/ephemeral/flutter_linux/fl_json_method_codec.h /home/bstrama/Projects/FKMTime/delegate_app/linux/flutter/ephemeral/flutter_linux/fl_message_codec.h /home/bstrama/Projects/FKMTime/delegate_app/linux/flutter/ephemeral/flutter_linux/fl_method_call.h /home/bstrama/Projects/FKMTime/delegate_app/linux/flutter/ephemeral/flutter_linux/fl_method_channel.h /home/bstrama/Projects/FKMTime/delegate_app/linux/flutter/ephemeral/flutter_linux/fl_method_codec.h /home/bstrama/Projects/FKMTime/delegate_app/linux/flutter/ephemeral/flutter_linux/fl_method_response.h /home/bstrama/Projects/FKMTime/delegate_app/linux/flutter/ephemeral/flutter_linux/fl_plugin_registrar.h /home/bstrama/Projects/FKMTime/delegate_app/linux/flutter/ephemeral/flutter_linux/fl_plugin_registry.h /home/bstrama/Projects/FKMTime/delegate_app/linux/flutter/ephemeral/flutter_linux/fl_standard_message_codec.h /home/bstrama/Projects/FKMTime/delegate_app/linux/flutter/ephemeral/flutter_linux/fl_standard_method_codec.h /home/bstrama/Projects/FKMTime/delegate_app/linux/flutter/ephemeral/flutter_linux/fl_string_codec.h /home/bstrama/Projects/FKMTime/delegate_app/linux/flutter/ephemeral/flutter_linux/fl_value.h /home/bstrama/Projects/FKMTime/delegate_app/linux/flutter/ephemeral/flutter_linux/fl_view.h /home/bstrama/Projects/FKMTime/delegate_app/linux/flutter/ephemeral/flutter_linux/flutter_linux.h
+build flutter/CMakeFiles/flutter_assemble | ${cmake_ninja_workdir}flutter/CMakeFiles/flutter_assemble: phony /home/mgala/Projects/SLSTimes/delegate_app/linux/flutter/ephemeral/libflutter_linux_gtk.so /home/mgala/Projects/SLSTimes/delegate_app/linux/flutter/ephemeral/flutter_linux/fl_basic_message_channel.h /home/mgala/Projects/SLSTimes/delegate_app/linux/flutter/ephemeral/flutter_linux/fl_binary_codec.h /home/mgala/Projects/SLSTimes/delegate_app/linux/flutter/ephemeral/flutter_linux/fl_binary_messenger.h /home/mgala/Projects/SLSTimes/delegate_app/linux/flutter/ephemeral/flutter_linux/fl_dart_project.h /home/mgala/Projects/SLSTimes/delegate_app/linux/flutter/ephemeral/flutter_linux/fl_engine.h /home/mgala/Projects/SLSTimes/delegate_app/linux/flutter/ephemeral/flutter_linux/fl_json_message_codec.h /home/mgala/Projects/SLSTimes/delegate_app/linux/flutter/ephemeral/flutter_linux/fl_json_method_codec.h /home/mgala/Projects/SLSTimes/delegate_app/linux/flutter/ephemeral/flutter_linux/fl_message_codec.h /home/mgala/Projects/SLSTimes/delegate_app/linux/flutter/ephemeral/flutter_linux/fl_method_call.h /home/mgala/Projects/SLSTimes/delegate_app/linux/flutter/ephemeral/flutter_linux/fl_method_channel.h /home/mgala/Projects/SLSTimes/delegate_app/linux/flutter/ephemeral/flutter_linux/fl_method_codec.h /home/mgala/Projects/SLSTimes/delegate_app/linux/flutter/ephemeral/flutter_linux/fl_method_response.h /home/mgala/Projects/SLSTimes/delegate_app/linux/flutter/ephemeral/flutter_linux/fl_plugin_registrar.h /home/mgala/Projects/SLSTimes/delegate_app/linux/flutter/ephemeral/flutter_linux/fl_plugin_registry.h /home/mgala/Projects/SLSTimes/delegate_app/linux/flutter/ephemeral/flutter_linux/fl_standard_message_codec.h /home/mgala/Projects/SLSTimes/delegate_app/linux/flutter/ephemeral/flutter_linux/fl_standard_method_codec.h /home/mgala/Projects/SLSTimes/delegate_app/linux/flutter/ephemeral/flutter_linux/fl_string_codec.h /home/mgala/Projects/SLSTimes/delegate_app/linux/flutter/ephemeral/flutter_linux/fl_value.h /home/mgala/Projects/SLSTimes/delegate_app/linux/flutter/ephemeral/flutter_linux/fl_view.h /home/mgala/Projects/SLSTimes/delegate_app/linux/flutter/ephemeral/flutter_linux/flutter_linux.h
 
 
 #############################################
-# Custom command for /home/bstrama/Projects/FKMTime/delegate_app/linux/flutter/ephemeral/libflutter_linux_gtk.so
+# Custom command for /home/mgala/Projects/SLSTimes/delegate_app/linux/flutter/ephemeral/libflutter_linux_gtk.so
 
-build /home/bstrama/Projects/FKMTime/delegate_app/linux/flutter/ephemeral/libflutter_linux_gtk.so /home/bstrama/Projects/FKMTime/delegate_app/linux/flutter/ephemeral/flutter_linux/fl_basic_message_channel.h /home/bstrama/Projects/FKMTime/delegate_app/linux/flutter/ephemeral/flutter_linux/fl_binary_codec.h /home/bstrama/Projects/FKMTime/delegate_app/linux/flutter/ephemeral/flutter_linux/fl_binary_messenger.h /home/bstrama/Projects/FKMTime/delegate_app/linux/flutter/ephemeral/flutter_linux/fl_dart_project.h /home/bstrama/Projects/FKMTime/delegate_app/linux/flutter/ephemeral/flutter_linux/fl_engine.h /home/bstrama/Projects/FKMTime/delegate_app/linux/flutter/ephemeral/flutter_linux/fl_json_message_codec.h /home/bstrama/Projects/FKMTime/delegate_app/linux/flutter/ephemeral/flutter_linux/fl_json_method_codec.h /home/bstrama/Projects/FKMTime/delegate_app/linux/flutter/ephemeral/flutter_linux/fl_message_codec.h /home/bstrama/Projects/FKMTime/delegate_app/linux/flutter/ephemeral/flutter_linux/fl_method_call.h /home/bstrama/Projects/FKMTime/delegate_app/linux/flutter/ephemeral/flutter_linux/fl_method_channel.h /home/bstrama/Projects/FKMTime/delegate_app/linux/flutter/ephemeral/flutter_linux/fl_method_codec.h /home/bstrama/Projects/FKMTime/delegate_app/linux/flutter/ephemeral/flutter_linux/fl_method_response.h /home/bstrama/Projects/FKMTime/delegate_app/linux/flutter/ephemeral/flutter_linux/fl_plugin_registrar.h /home/bstrama/Projects/FKMTime/delegate_app/linux/flutter/ephemeral/flutter_linux/fl_plugin_registry.h /home/bstrama/Projects/FKMTime/delegate_app/linux/flutter/ephemeral/flutter_linux/fl_standard_message_codec.h /home/bstrama/Projects/FKMTime/delegate_app/linux/flutter/ephemeral/flutter_linux/fl_standard_method_codec.h /home/bstrama/Projects/FKMTime/delegate_app/linux/flutter/ephemeral/flutter_linux/fl_string_codec.h /home/bstrama/Projects/FKMTime/delegate_app/linux/flutter/ephemeral/flutter_linux/fl_value.h /home/bstrama/Projects/FKMTime/delegate_app/linux/flutter/ephemeral/flutter_linux/fl_view.h /home/bstrama/Projects/FKMTime/delegate_app/linux/flutter/ephemeral/flutter_linux/flutter_linux.h flutter/_phony_ | ${cmake_ninja_workdir}flutter/_phony_: CUSTOM_COMMAND
-  COMMAND = cd /home/bstrama/Projects/FKMTime/delegate_app/build/linux/x64/debug/flutter && /usr/bin/cmake -E env FLUTTER_ROOT=/opt/flutter PROJECT_DIR=/home/bstrama/Projects/FKMTime/delegate_app DART_DEFINES=Zmx1dHRlci5pbnNwZWN0b3Iuc3RydWN0dXJlZEVycm9ycz10cnVl,RkxVVFRFUl9XRUJfQVVUT19ERVRFQ1Q9dHJ1ZQ==,RkxVVFRFUl9XRUJfQ0FOVkFTS0lUX1VSTD1odHRwczovL3d3dy5nc3RhdGljLmNvbS9mbHV0dGVyLWNhbnZhc2tpdC9mNDBlOTc2YmVkZmY1N2U2OWUxYjNkODlhN2MyYTNjNjE3YTAzZGFkLw== DART_OBFUSCATION=false TRACK_WIDGET_CREATION=true TREE_SHAKE_ICONS=false PACKAGE_CONFIG=/home/bstrama/Projects/FKMTime/delegate_app/.dart_tool/package_config.json FLUTTER_TARGET=/home/bstrama/Projects/FKMTime/delegate_app/lib/main.dart /opt/flutter/packages/flutter_tools/bin/tool_backend.sh linux-x64 Debug
-  DESC = Generating /home/bstrama/Projects/FKMTime/delegate_app/linux/flutter/ephemeral/libflutter_linux_gtk.so, /home/bstrama/Projects/FKMTime/delegate_app/linux/flutter/ephemeral/flutter_linux/fl_basic_message_channel.h, /home/bstrama/Projects/FKMTime/delegate_app/linux/flutter/ephemeral/flutter_linux/fl_binary_codec.h, /home/bstrama/Projects/FKMTime/delegate_app/linux/flutter/ephemeral/flutter_linux/fl_binary_messenger.h, /home/bstrama/Projects/FKMTime/delegate_app/linux/flutter/ephemeral/flutter_linux/fl_dart_project.h, /home/bstrama/Projects/FKMTime/delegate_app/linux/flutter/ephemeral/flutter_linux/fl_engine.h, /home/bstrama/Projects/FKMTime/delegate_app/linux/flutter/ephemeral/flutter_linux/fl_json_message_codec.h, /home/bstrama/Projects/FKMTime/delegate_app/linux/flutter/ephemeral/flutter_linux/fl_json_method_codec.h, /home/bstrama/Projects/FKMTime/delegate_app/linux/flutter/ephemeral/flutter_linux/fl_message_codec.h, /home/bstrama/Projects/FKMTime/delegate_app/linux/flutter/ephemeral/flutter_linux/fl_method_call.h, /home/bstrama/Projects/FKMTime/delegate_app/linux/flutter/ephemeral/flutter_linux/fl_method_channel.h, /home/bstrama/Projects/FKMTime/delegate_app/linux/flutter/ephemeral/flutter_linux/fl_method_codec.h, /home/bstrama/Projects/FKMTime/delegate_app/linux/flutter/ephemeral/flutter_linux/fl_method_response.h, /home/bstrama/Projects/FKMTime/delegate_app/linux/flutter/ephemeral/flutter_linux/fl_plugin_registrar.h, /home/bstrama/Projects/FKMTime/delegate_app/linux/flutter/ephemeral/flutter_linux/fl_plugin_registry.h, /home/bstrama/Projects/FKMTime/delegate_app/linux/flutter/ephemeral/flutter_linux/fl_standard_message_codec.h, /home/bstrama/Projects/FKMTime/delegate_app/linux/flutter/ephemeral/flutter_linux/fl_standard_method_codec.h, /home/bstrama/Projects/FKMTime/delegate_app/linux/flutter/ephemeral/flutter_linux/fl_string_codec.h, /home/bstrama/Projects/FKMTime/delegate_app/linux/flutter/ephemeral/flutter_linux/fl_value.h, /home/bstrama/Projects/FKMTime/delegate_app/linux/flutter/ephemeral/flutter_linux/fl_view.h, /home/bstrama/Projects/FKMTime/delegate_app/linux/flutter/ephemeral/flutter_linux/flutter_linux.h, _phony_
+build /home/mgala/Projects/SLSTimes/delegate_app/linux/flutter/ephemeral/libflutter_linux_gtk.so /home/mgala/Projects/SLSTimes/delegate_app/linux/flutter/ephemeral/flutter_linux/fl_basic_message_channel.h /home/mgala/Projects/SLSTimes/delegate_app/linux/flutter/ephemeral/flutter_linux/fl_binary_codec.h /home/mgala/Projects/SLSTimes/delegate_app/linux/flutter/ephemeral/flutter_linux/fl_binary_messenger.h /home/mgala/Projects/SLSTimes/delegate_app/linux/flutter/ephemeral/flutter_linux/fl_dart_project.h /home/mgala/Projects/SLSTimes/delegate_app/linux/flutter/ephemeral/flutter_linux/fl_engine.h /home/mgala/Projects/SLSTimes/delegate_app/linux/flutter/ephemeral/flutter_linux/fl_json_message_codec.h /home/mgala/Projects/SLSTimes/delegate_app/linux/flutter/ephemeral/flutter_linux/fl_json_method_codec.h /home/mgala/Projects/SLSTimes/delegate_app/linux/flutter/ephemeral/flutter_linux/fl_message_codec.h /home/mgala/Projects/SLSTimes/delegate_app/linux/flutter/ephemeral/flutter_linux/fl_method_call.h /home/mgala/Projects/SLSTimes/delegate_app/linux/flutter/ephemeral/flutter_linux/fl_method_channel.h /home/mgala/Projects/SLSTimes/delegate_app/linux/flutter/ephemeral/flutter_linux/fl_method_codec.h /home/mgala/Projects/SLSTimes/delegate_app/linux/flutter/ephemeral/flutter_linux/fl_method_response.h /home/mgala/Projects/SLSTimes/delegate_app/linux/flutter/ephemeral/flutter_linux/fl_plugin_registrar.h /home/mgala/Projects/SLSTimes/delegate_app/linux/flutter/ephemeral/flutter_linux/fl_plugin_registry.h /home/mgala/Projects/SLSTimes/delegate_app/linux/flutter/ephemeral/flutter_linux/fl_standard_message_codec.h /home/mgala/Projects/SLSTimes/delegate_app/linux/flutter/ephemeral/flutter_linux/fl_standard_method_codec.h /home/mgala/Projects/SLSTimes/delegate_app/linux/flutter/ephemeral/flutter_linux/fl_string_codec.h /home/mgala/Projects/SLSTimes/delegate_app/linux/flutter/ephemeral/flutter_linux/fl_value.h /home/mgala/Projects/SLSTimes/delegate_app/linux/flutter/ephemeral/flutter_linux/fl_view.h /home/mgala/Projects/SLSTimes/delegate_app/linux/flutter/ephemeral/flutter_linux/flutter_linux.h flutter/_phony_ | ${cmake_ninja_workdir}flutter/_phony_: CUSTOM_COMMAND
+  COMMAND = cd /home/mgala/Projects/SLSTimes/delegate_app/build/linux/x64/debug/flutter && /usr/bin/cmake -E env FLUTTER_ROOT=/home/mgala/development/flutter PROJECT_DIR=/home/mgala/Projects/SLSTimes/delegate_app DART_DEFINES=RkxVVFRFUl9XRUJfQVVUT19ERVRFQ1Q9dHJ1ZQ==,RkxVVFRFUl9XRUJfQ0FOVkFTS0lUX1VSTD1odHRwczovL3d3dy5nc3RhdGljLmNvbS9mbHV0dGVyLWNhbnZhc2tpdC9mNDBlOTc2YmVkZmY1N2U2OWUxYjNkODlhN2MyYTNjNjE3YTAzZGFkLw== DART_OBFUSCATION=false TRACK_WIDGET_CREATION=true TREE_SHAKE_ICONS=false PACKAGE_CONFIG=/home/mgala/Projects/SLSTimes/delegate_app/.dart_tool/package_config.json FLUTTER_TARGET=/home/mgala/Projects/SLSTimes/delegate_app/lib/main.dart /home/mgala/development/flutter/packages/flutter_tools/bin/tool_backend.sh linux-x64 Debug
+  DESC = Generating /home/mgala/Projects/SLSTimes/delegate_app/linux/flutter/ephemeral/libflutter_linux_gtk.so, /home/mgala/Projects/SLSTimes/delegate_app/linux/flutter/ephemeral/flutter_linux/fl_basic_message_channel.h, /home/mgala/Projects/SLSTimes/delegate_app/linux/flutter/ephemeral/flutter_linux/fl_binary_codec.h, /home/mgala/Projects/SLSTimes/delegate_app/linux/flutter/ephemeral/flutter_linux/fl_binary_messenger.h, /home/mgala/Projects/SLSTimes/delegate_app/linux/flutter/ephemeral/flutter_linux/fl_dart_project.h, /home/mgala/Projects/SLSTimes/delegate_app/linux/flutter/ephemeral/flutter_linux/fl_engine.h, /home/mgala/Projects/SLSTimes/delegate_app/linux/flutter/ephemeral/flutter_linux/fl_json_message_codec.h, /home/mgala/Projects/SLSTimes/delegate_app/linux/flutter/ephemeral/flutter_linux/fl_json_method_codec.h, /home/mgala/Projects/SLSTimes/delegate_app/linux/flutter/ephemeral/flutter_linux/fl_message_codec.h, /home/mgala/Projects/SLSTimes/delegate_app/linux/flutter/ephemeral/flutter_linux/fl_method_call.h, /home/mgala/Projects/SLSTimes/delegate_app/linux/flutter/ephemeral/flutter_linux/fl_method_channel.h, /home/mgala/Projects/SLSTimes/delegate_app/linux/flutter/ephemeral/flutter_linux/fl_method_codec.h, /home/mgala/Projects/SLSTimes/delegate_app/linux/flutter/ephemeral/flutter_linux/fl_method_response.h, /home/mgala/Projects/SLSTimes/delegate_app/linux/flutter/ephemeral/flutter_linux/fl_plugin_registrar.h, /home/mgala/Projects/SLSTimes/delegate_app/linux/flutter/ephemeral/flutter_linux/fl_plugin_registry.h, /home/mgala/Projects/SLSTimes/delegate_app/linux/flutter/ephemeral/flutter_linux/fl_standard_message_codec.h, /home/mgala/Projects/SLSTimes/delegate_app/linux/flutter/ephemeral/flutter_linux/fl_standard_method_codec.h, /home/mgala/Projects/SLSTimes/delegate_app/linux/flutter/ephemeral/flutter_linux/fl_string_codec.h, /home/mgala/Projects/SLSTimes/delegate_app/linux/flutter/ephemeral/flutter_linux/fl_value.h, /home/mgala/Projects/SLSTimes/delegate_app/linux/flutter/ephemeral/flutter_linux/fl_view.h, /home/mgala/Projects/SLSTimes/delegate_app/linux/flutter/ephemeral/flutter_linux/flutter_linux.h, _phony_
   restat = 1
 
 # =============================================================================
 # Write statements declared in CMakeLists.txt:
-# /home/bstrama/Projects/FKMTime/delegate_app/linux/flutter/generated_plugins.cmake
+# /home/mgala/Projects/SLSTimes/delegate_app/linux/flutter/generated_plugins.cmake
 # =============================================================================
 
 # =============================================================================
@@ -262,11 +262,11 @@ build /home/bstrama/Projects/FKMTime/delegate_app/linux/flutter/ephemeral/libflu
 
 build cmake_object_order_depends_target_flutter_secure_storage_linux_plugin: phony || flutter/flutter_assemble
 
-build plugins/flutter_secure_storage_linux/CMakeFiles/flutter_secure_storage_linux_plugin.dir/flutter_secure_storage_linux_plugin.cc.o: CXX_COMPILER__flutter_secure_storage_linux_plugin_unscanned_Debug /home/bstrama/Projects/FKMTime/delegate_app/linux/flutter/ephemeral/.plugin_symlinks/flutter_secure_storage_linux/linux/flutter_secure_storage_linux_plugin.cc || cmake_object_order_depends_target_flutter_secure_storage_linux_plugin
+build plugins/flutter_secure_storage_linux/CMakeFiles/flutter_secure_storage_linux_plugin.dir/flutter_secure_storage_linux_plugin.cc.o: CXX_COMPILER__flutter_secure_storage_linux_plugin_unscanned_Debug /home/mgala/Projects/SLSTimes/delegate_app/linux/flutter/ephemeral/.plugin_symlinks/flutter_secure_storage_linux/linux/flutter_secure_storage_linux_plugin.cc || cmake_object_order_depends_target_flutter_secure_storage_linux_plugin
   DEFINES = -DAPPLICATION_ID=\"com.fkmtime.delegate_app.delegate_app\" -DFLUTTER_PLUGIN_IMPL -Dflutter_secure_storage_linux_plugin_EXPORTS
   DEP_FILE = plugins/flutter_secure_storage_linux/CMakeFiles/flutter_secure_storage_linux_plugin.dir/flutter_secure_storage_linux_plugin.cc.o.d
   FLAGS = -g -fPIC -fvisibility=hidden -Wall -Werror -pthread
-  INCLUDES = -I/home/bstrama/Projects/FKMTime/delegate_app/linux/flutter/ephemeral -isystem /usr/include/libsecret-1 -isystem /usr/include/gio-unix-2.0 -isystem /usr/include/glib-2.0 -isystem /usr/lib/glib-2.0/include -isystem /usr/include/libmount -isystem /usr/include/blkid -isystem /usr/include/sysprof-6 -isystem /usr/include/tss2 -isystem /usr/include/gtk-3.0 -isystem /usr/include/pango-1.0 -isystem /usr/include/cairo -isystem /usr/include/gdk-pixbuf-2.0 -isystem /usr/include/atk-1.0 -isystem /usr/include/freetype2 -isystem /usr/include/harfbuzz -isystem /usr/include/cloudproviders -isystem /usr/include/at-spi2-atk/2.0 -isystem /usr/include/at-spi-2.0 -isystem /usr/include/dbus-1.0 -isystem /usr/lib/dbus-1.0/include -isystem /usr/include/fribidi -isystem /usr/include/pixman-1 -isystem /usr/include/libpng16
+  INCLUDES = -I/home/mgala/Projects/SLSTimes/delegate_app/linux/flutter/ephemeral -isystem /usr/include/libsecret-1 -isystem /usr/include/gio-unix-2.0 -isystem /usr/include/glib-2.0 -isystem /usr/lib/glib-2.0/include -isystem /usr/include/libmount -isystem /usr/include/blkid -isystem /usr/include/sysprof-6 -isystem /usr/include/tss2 -isystem /usr/include/gtk-3.0 -isystem /usr/include/pango-1.0 -isystem /usr/include/cairo -isystem /usr/include/gdk-pixbuf-2.0 -isystem /usr/include/atk-1.0 -isystem /usr/include/freetype2 -isystem /usr/include/harfbuzz -isystem /usr/include/cloudproviders -isystem /usr/include/at-spi2-atk/2.0 -isystem /usr/include/at-spi-2.0 -isystem /usr/include/dbus-1.0 -isystem /usr/lib/dbus-1.0/include -isystem /usr/include/fribidi -isystem /usr/include/pixman-1 -isystem /usr/include/libpng16
   OBJECT_DIR = plugins/flutter_secure_storage_linux/CMakeFiles/flutter_secure_storage_linux_plugin.dir
   OBJECT_FILE_DIR = plugins/flutter_secure_storage_linux/CMakeFiles/flutter_secure_storage_linux_plugin.dir
 
@@ -278,9 +278,9 @@ build plugins/flutter_secure_storage_linux/CMakeFiles/flutter_secure_storage_lin
 #############################################
 # Link the shared library plugins/flutter_secure_storage_linux/libflutter_secure_storage_linux_plugin.so
 
-build plugins/flutter_secure_storage_linux/libflutter_secure_storage_linux_plugin.so: CXX_SHARED_LIBRARY_LINKER__flutter_secure_storage_linux_plugin_Debug plugins/flutter_secure_storage_linux/CMakeFiles/flutter_secure_storage_linux_plugin.dir/flutter_secure_storage_linux_plugin.cc.o | /home/bstrama/Projects/FKMTime/delegate_app/linux/flutter/ephemeral/libflutter_linux_gtk.so /usr/lib/libgtk-3.so /usr/lib/libgdk-3.so /usr/lib/libz.so /usr/lib/libpangocairo-1.0.so /usr/lib/libpango-1.0.so /usr/lib/libharfbuzz.so /usr/lib/libatk-1.0.so /usr/lib/libcairo-gobject.so /usr/lib/libcairo.so /usr/lib/libgdk_pixbuf-2.0.so /usr/lib/libsecret-1.so /usr/lib/libgio-2.0.so /usr/lib/libgobject-2.0.so /usr/lib/libglib-2.0.so || flutter/flutter_assemble
+build plugins/flutter_secure_storage_linux/libflutter_secure_storage_linux_plugin.so: CXX_SHARED_LIBRARY_LINKER__flutter_secure_storage_linux_plugin_Debug plugins/flutter_secure_storage_linux/CMakeFiles/flutter_secure_storage_linux_plugin.dir/flutter_secure_storage_linux_plugin.cc.o | /home/mgala/Projects/SLSTimes/delegate_app/linux/flutter/ephemeral/libflutter_linux_gtk.so /usr/lib/libgtk-3.so /usr/lib/libgdk-3.so /usr/lib/libz.so /usr/lib/libpangocairo-1.0.so /usr/lib/libpango-1.0.so /usr/lib/libharfbuzz.so /usr/lib/libatk-1.0.so /usr/lib/libcairo-gobject.so /usr/lib/libcairo.so /usr/lib/libgdk_pixbuf-2.0.so /usr/lib/libsecret-1.so /usr/lib/libgio-2.0.so /usr/lib/libgobject-2.0.so /usr/lib/libglib-2.0.so || flutter/flutter_assemble
   LANGUAGE_COMPILE_FLAGS = -g
-  LINK_LIBRARIES = -Wl,-rpath,/home/bstrama/Projects/FKMTime/delegate_app/linux/flutter/ephemeral  /home/bstrama/Projects/FKMTime/delegate_app/linux/flutter/ephemeral/libflutter_linux_gtk.so  /usr/lib/libgtk-3.so  /usr/lib/libgdk-3.so  /usr/lib/libz.so  /usr/lib/libpangocairo-1.0.so  /usr/lib/libpango-1.0.so  /usr/lib/libharfbuzz.so  /usr/lib/libatk-1.0.so  /usr/lib/libcairo-gobject.so  /usr/lib/libcairo.so  /usr/lib/libgdk_pixbuf-2.0.so  /usr/lib/libsecret-1.so  /usr/lib/libgio-2.0.so  /usr/lib/libgobject-2.0.so  /usr/lib/libglib-2.0.so
+  LINK_LIBRARIES = -Wl,-rpath,/home/mgala/Projects/SLSTimes/delegate_app/linux/flutter/ephemeral  /home/mgala/Projects/SLSTimes/delegate_app/linux/flutter/ephemeral/libflutter_linux_gtk.so  /usr/lib/libgtk-3.so  /usr/lib/libgdk-3.so  /usr/lib/libz.so  /usr/lib/libpangocairo-1.0.so  /usr/lib/libpango-1.0.so  /usr/lib/libharfbuzz.so  /usr/lib/libatk-1.0.so  /usr/lib/libcairo-gobject.so  /usr/lib/libcairo.so  /usr/lib/libgdk_pixbuf-2.0.so  /usr/lib/libsecret-1.so  /usr/lib/libgio-2.0.so  /usr/lib/libgobject-2.0.so  /usr/lib/libglib-2.0.so
   OBJECT_DIR = plugins/flutter_secure_storage_linux/CMakeFiles/flutter_secure_storage_linux_plugin.dir
   POST_BUILD = :
   PRE_LINK = :
@@ -294,7 +294,7 @@ build plugins/flutter_secure_storage_linux/libflutter_secure_storage_linux_plugi
 # Utility command for edit_cache
 
 build plugins/flutter_secure_storage_linux/CMakeFiles/edit_cache.util: CUSTOM_COMMAND
-  COMMAND = cd /home/bstrama/Projects/FKMTime/delegate_app/build/linux/x64/debug/plugins/flutter_secure_storage_linux && /usr/bin/ccmake -S/home/bstrama/Projects/FKMTime/delegate_app/linux -B/home/bstrama/Projects/FKMTime/delegate_app/build/linux/x64/debug
+  COMMAND = cd /home/mgala/Projects/SLSTimes/delegate_app/build/linux/x64/debug/plugins/flutter_secure_storage_linux && /usr/bin/ccmake -S/home/mgala/Projects/SLSTimes/delegate_app/linux -B/home/mgala/Projects/SLSTimes/delegate_app/build/linux/x64/debug
   DESC = Running CMake cache editor...
   pool = console
   restat = 1
@@ -306,7 +306,7 @@ build plugins/flutter_secure_storage_linux/edit_cache: phony plugins/flutter_sec
 # Utility command for rebuild_cache
 
 build plugins/flutter_secure_storage_linux/CMakeFiles/rebuild_cache.util: CUSTOM_COMMAND
-  COMMAND = cd /home/bstrama/Projects/FKMTime/delegate_app/build/linux/x64/debug/plugins/flutter_secure_storage_linux && /usr/bin/cmake --regenerate-during-build -S/home/bstrama/Projects/FKMTime/delegate_app/linux -B/home/bstrama/Projects/FKMTime/delegate_app/build/linux/x64/debug
+  COMMAND = cd /home/mgala/Projects/SLSTimes/delegate_app/build/linux/x64/debug/plugins/flutter_secure_storage_linux && /usr/bin/cmake --regenerate-during-build -S/home/mgala/Projects/SLSTimes/delegate_app/linux -B/home/mgala/Projects/SLSTimes/delegate_app/build/linux/x64/debug
   DESC = Running CMake to regenerate build system...
   pool = console
   restat = 1
@@ -324,7 +324,7 @@ build plugins/flutter_secure_storage_linux/list_install_components: phony
 # Utility command for install
 
 build plugins/flutter_secure_storage_linux/CMakeFiles/install.util: CUSTOM_COMMAND plugins/flutter_secure_storage_linux/all
-  COMMAND = cd /home/bstrama/Projects/FKMTime/delegate_app/build/linux/x64/debug/plugins/flutter_secure_storage_linux && /usr/bin/cmake -P cmake_install.cmake
+  COMMAND = cd /home/mgala/Projects/SLSTimes/delegate_app/build/linux/x64/debug/plugins/flutter_secure_storage_linux && /usr/bin/cmake -P cmake_install.cmake
   DESC = Install the project...
   pool = console
   restat = 1
@@ -336,7 +336,7 @@ build plugins/flutter_secure_storage_linux/install: phony plugins/flutter_secure
 # Utility command for install/local
 
 build plugins/flutter_secure_storage_linux/CMakeFiles/install/local.util: CUSTOM_COMMAND plugins/flutter_secure_storage_linux/all
-  COMMAND = cd /home/bstrama/Projects/FKMTime/delegate_app/build/linux/x64/debug/plugins/flutter_secure_storage_linux && /usr/bin/cmake -DCMAKE_INSTALL_LOCAL_ONLY=1 -P cmake_install.cmake
+  COMMAND = cd /home/mgala/Projects/SLSTimes/delegate_app/build/linux/x64/debug/plugins/flutter_secure_storage_linux && /usr/bin/cmake -DCMAKE_INSTALL_LOCAL_ONLY=1 -P cmake_install.cmake
   DESC = Installing only the local directory...
   pool = console
   restat = 1
@@ -348,7 +348,7 @@ build plugins/flutter_secure_storage_linux/install/local: phony plugins/flutter_
 # Utility command for install/strip
 
 build plugins/flutter_secure_storage_linux/CMakeFiles/install/strip.util: CUSTOM_COMMAND plugins/flutter_secure_storage_linux/all
-  COMMAND = cd /home/bstrama/Projects/FKMTime/delegate_app/build/linux/x64/debug/plugins/flutter_secure_storage_linux && /usr/bin/cmake -DCMAKE_INSTALL_DO_STRIP=1 -P cmake_install.cmake
+  COMMAND = cd /home/mgala/Projects/SLSTimes/delegate_app/build/linux/x64/debug/plugins/flutter_secure_storage_linux && /usr/bin/cmake -DCMAKE_INSTALL_DO_STRIP=1 -P cmake_install.cmake
   DESC = Installing the project stripped...
   pool = console
   restat = 1
@@ -372,21 +372,21 @@ build libflutter_secure_storage_linux_plugin.so: phony plugins/flutter_secure_st
 # =============================================================================
 
 #############################################
-# Folder: /home/bstrama/Projects/FKMTime/delegate_app/build/linux/x64/debug
+# Folder: /home/mgala/Projects/SLSTimes/delegate_app/build/linux/x64/debug
 
 build all: phony intermediates_do_not_run/delegate_app flutter/all plugins/flutter_secure_storage_linux/all
 
 # =============================================================================
 
 #############################################
-# Folder: /home/bstrama/Projects/FKMTime/delegate_app/build/linux/x64/debug/flutter
+# Folder: /home/mgala/Projects/SLSTimes/delegate_app/build/linux/x64/debug/flutter
 
 build flutter/all: phony
 
 # =============================================================================
 
 #############################################
-# Folder: /home/bstrama/Projects/FKMTime/delegate_app/build/linux/x64/debug/plugins/flutter_secure_storage_linux
+# Folder: /home/mgala/Projects/SLSTimes/delegate_app/build/linux/x64/debug/plugins/flutter_secure_storage_linux
 
 build plugins/flutter_secure_storage_linux/all: phony plugins/flutter_secure_storage_linux/libflutter_secure_storage_linux_plugin.so
 
@@ -397,14 +397,14 @@ build plugins/flutter_secure_storage_linux/all: phony plugins/flutter_secure_sto
 #############################################
 # Re-run CMake if any of its inputs changed.
 
-build build.ninja: RERUN_CMAKE | /home/bstrama/Projects/FKMTime/delegate_app/linux/CMakeLists.txt /home/bstrama/Projects/FKMTime/delegate_app/linux/flutter/CMakeLists.txt /home/bstrama/Projects/FKMTime/delegate_app/linux/flutter/ephemeral/.plugin_symlinks/flutter_secure_storage_linux/linux/CMakeLists.txt /home/bstrama/Projects/FKMTime/delegate_app/linux/flutter/ephemeral/generated_config.cmake /home/bstrama/Projects/FKMTime/delegate_app/linux/flutter/generated_plugins.cmake /usr/share/cmake/Modules/CMakeCXXInformation.cmake /usr/share/cmake/Modules/CMakeCommonLanguageInclude.cmake /usr/share/cmake/Modules/CMakeGenericSystem.cmake /usr/share/cmake/Modules/CMakeInitializeConfigs.cmake /usr/share/cmake/Modules/CMakeLanguageInformation.cmake /usr/share/cmake/Modules/CMakeSystemSpecificInformation.cmake /usr/share/cmake/Modules/CMakeSystemSpecificInitialize.cmake /usr/share/cmake/Modules/Compiler/CMakeCommonCompilerMacros.cmake /usr/share/cmake/Modules/Compiler/Clang-CXX.cmake /usr/share/cmake/Modules/Compiler/Clang.cmake /usr/share/cmake/Modules/Compiler/GNU.cmake /usr/share/cmake/Modules/FindPackageHandleStandardArgs.cmake /usr/share/cmake/Modules/FindPackageMessage.cmake /usr/share/cmake/Modules/FindPkgConfig.cmake /usr/share/cmake/Modules/Platform/Linux-Clang-CXX.cmake /usr/share/cmake/Modules/Platform/Linux-GNU-CXX.cmake /usr/share/cmake/Modules/Platform/Linux-GNU.cmake /usr/share/cmake/Modules/Platform/Linux-Initialize.cmake /usr/share/cmake/Modules/Platform/Linux.cmake /usr/share/cmake/Modules/Platform/UnixPaths.cmake CMakeCache.txt CMakeFiles/3.28.2/CMakeCXXCompiler.cmake CMakeFiles/3.28.2/CMakeSystem.cmake
+build build.ninja: RERUN_CMAKE | /home/mgala/Projects/SLSTimes/delegate_app/linux/CMakeLists.txt /home/mgala/Projects/SLSTimes/delegate_app/linux/flutter/CMakeLists.txt /home/mgala/Projects/SLSTimes/delegate_app/linux/flutter/ephemeral/.plugin_symlinks/flutter_secure_storage_linux/linux/CMakeLists.txt /home/mgala/Projects/SLSTimes/delegate_app/linux/flutter/ephemeral/generated_config.cmake /home/mgala/Projects/SLSTimes/delegate_app/linux/flutter/generated_plugins.cmake /usr/share/cmake/Modules/CMakeCXXInformation.cmake /usr/share/cmake/Modules/CMakeCommonLanguageInclude.cmake /usr/share/cmake/Modules/CMakeGenericSystem.cmake /usr/share/cmake/Modules/CMakeInitializeConfigs.cmake /usr/share/cmake/Modules/CMakeLanguageInformation.cmake /usr/share/cmake/Modules/CMakeSystemSpecificInformation.cmake /usr/share/cmake/Modules/CMakeSystemSpecificInitialize.cmake /usr/share/cmake/Modules/Compiler/CMakeCommonCompilerMacros.cmake /usr/share/cmake/Modules/Compiler/Clang-CXX.cmake /usr/share/cmake/Modules/Compiler/Clang.cmake /usr/share/cmake/Modules/Compiler/GNU.cmake /usr/share/cmake/Modules/FindPackageHandleStandardArgs.cmake /usr/share/cmake/Modules/FindPackageMessage.cmake /usr/share/cmake/Modules/FindPkgConfig.cmake /usr/share/cmake/Modules/Platform/Linux-Clang-CXX.cmake /usr/share/cmake/Modules/Platform/Linux-GNU-CXX.cmake /usr/share/cmake/Modules/Platform/Linux-GNU.cmake /usr/share/cmake/Modules/Platform/Linux-Initialize.cmake /usr/share/cmake/Modules/Platform/Linux.cmake /usr/share/cmake/Modules/Platform/UnixPaths.cmake CMakeCache.txt CMakeFiles/3.28.3/CMakeCXXCompiler.cmake CMakeFiles/3.28.3/CMakeSystem.cmake
   pool = console
 
 
 #############################################
 # A missing CMake input file is not an error.
 
-build /home/bstrama/Projects/FKMTime/delegate_app/linux/CMakeLists.txt /home/bstrama/Projects/FKMTime/delegate_app/linux/flutter/CMakeLists.txt /home/bstrama/Projects/FKMTime/delegate_app/linux/flutter/ephemeral/.plugin_symlinks/flutter_secure_storage_linux/linux/CMakeLists.txt /home/bstrama/Projects/FKMTime/delegate_app/linux/flutter/ephemeral/generated_config.cmake /home/bstrama/Projects/FKMTime/delegate_app/linux/flutter/generated_plugins.cmake /usr/share/cmake/Modules/CMakeCXXInformation.cmake /usr/share/cmake/Modules/CMakeCommonLanguageInclude.cmake /usr/share/cmake/Modules/CMakeGenericSystem.cmake /usr/share/cmake/Modules/CMakeInitializeConfigs.cmake /usr/share/cmake/Modules/CMakeLanguageInformation.cmake /usr/share/cmake/Modules/CMakeSystemSpecificInformation.cmake /usr/share/cmake/Modules/CMakeSystemSpecificInitialize.cmake /usr/share/cmake/Modules/Compiler/CMakeCommonCompilerMacros.cmake /usr/share/cmake/Modules/Compiler/Clang-CXX.cmake /usr/share/cmake/Modules/Compiler/Clang.cmake /usr/share/cmake/Modules/Compiler/GNU.cmake /usr/share/cmake/Modules/FindPackageHandleStandardArgs.cmake /usr/share/cmake/Modules/FindPackageMessage.cmake /usr/share/cmake/Modules/FindPkgConfig.cmake /usr/share/cmake/Modules/Platform/Linux-Clang-CXX.cmake /usr/share/cmake/Modules/Platform/Linux-GNU-CXX.cmake /usr/share/cmake/Modules/Platform/Linux-GNU.cmake /usr/share/cmake/Modules/Platform/Linux-Initialize.cmake /usr/share/cmake/Modules/Platform/Linux.cmake /usr/share/cmake/Modules/Platform/UnixPaths.cmake CMakeCache.txt CMakeFiles/3.28.2/CMakeCXXCompiler.cmake CMakeFiles/3.28.2/CMakeSystem.cmake: phony
+build /home/mgala/Projects/SLSTimes/delegate_app/linux/CMakeLists.txt /home/mgala/Projects/SLSTimes/delegate_app/linux/flutter/CMakeLists.txt /home/mgala/Projects/SLSTimes/delegate_app/linux/flutter/ephemeral/.plugin_symlinks/flutter_secure_storage_linux/linux/CMakeLists.txt /home/mgala/Projects/SLSTimes/delegate_app/linux/flutter/ephemeral/generated_config.cmake /home/mgala/Projects/SLSTimes/delegate_app/linux/flutter/generated_plugins.cmake /usr/share/cmake/Modules/CMakeCXXInformation.cmake /usr/share/cmake/Modules/CMakeCommonLanguageInclude.cmake /usr/share/cmake/Modules/CMakeGenericSystem.cmake /usr/share/cmake/Modules/CMakeInitializeConfigs.cmake /usr/share/cmake/Modules/CMakeLanguageInformation.cmake /usr/share/cmake/Modules/CMakeSystemSpecificInformation.cmake /usr/share/cmake/Modules/CMakeSystemSpecificInitialize.cmake /usr/share/cmake/Modules/Compiler/CMakeCommonCompilerMacros.cmake /usr/share/cmake/Modules/Compiler/Clang-CXX.cmake /usr/share/cmake/Modules/Compiler/Clang.cmake /usr/share/cmake/Modules/Compiler/GNU.cmake /usr/share/cmake/Modules/FindPackageHandleStandardArgs.cmake /usr/share/cmake/Modules/FindPackageMessage.cmake /usr/share/cmake/Modules/FindPkgConfig.cmake /usr/share/cmake/Modules/Platform/Linux-Clang-CXX.cmake /usr/share/cmake/Modules/Platform/Linux-GNU-CXX.cmake /usr/share/cmake/Modules/Platform/Linux-GNU.cmake /usr/share/cmake/Modules/Platform/Linux-Initialize.cmake /usr/share/cmake/Modules/Platform/Linux.cmake /usr/share/cmake/Modules/Platform/UnixPaths.cmake CMakeCache.txt CMakeFiles/3.28.3/CMakeCXXCompiler.cmake CMakeFiles/3.28.3/CMakeSystem.cmake: phony
 
 
 #############################################

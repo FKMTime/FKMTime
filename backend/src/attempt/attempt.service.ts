@@ -131,7 +131,7 @@ export class AttemptService {
           select: {
             id: true,
             registrantId: true,
-            gender: true,
+            wcaId: true,
             name: true,
           },
         },
@@ -153,6 +153,8 @@ export class AttemptService {
               select: {
                 id: true,
                 name: true,
+                wcaId: true,
+                registrantId: true,
               },
             },
           },
