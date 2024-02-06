@@ -55,13 +55,11 @@ class Attempt {
        throw "Failed to fetch cases";
     }
     var json = jsonDecode(res.body);
-    print("object ${res.body}");
 
     List<Attempt> attempts = [];
     for (int i = 0; i < json.length; i++) {
       attempts.add(fromDynamic(json[i]));
     }
-    print("TEST END");
     return attempts;
   }
 

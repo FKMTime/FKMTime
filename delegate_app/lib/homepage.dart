@@ -2,6 +2,7 @@ import 'package:delegate_app/login.dart';
 import 'package:delegate_app/types.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:go_router/go_router.dart';
 
 class HomePage extends StatefulWidget {
   HomePage({super.key});
@@ -45,6 +46,7 @@ class _HomePageState extends State<HomePage> {
     for (Attempt incident in snapshot.data) {
       final String eventName = events.getById(incident.result.eventId).name;
       cards.add(Incident(
+        id: incident.id,
         eventName: '$eventName round ${incident.result.roundId.split("-r").last}',
         competitorName: incident.result.person.name,
         attemptNumber: incident.attemptNumber.toString(),
@@ -85,73 +87,80 @@ class _HomePageState extends State<HomePage> {
 }
 
 class Incident extends StatelessWidget {
-  const Incident({super.key, required this.eventName, required this.attemptNumber, required this.value, required this.stationName, required this.judgeName, required this.competitorName});
-
+  const Incident({super.key, required this.eventName, required this.attemptNumber, required this.value, required this.stationName, required this.judgeName, required this.competitorName, required this.id
+  });
   final String eventName;
   final String attemptNumber;
   final int value;
   final String stationName;
   final String competitorName;
   final String judgeName;
-
+  final int id;
 
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(5),
-        child: Container(
-          decoration: BoxDecoration(
-              color: Colors.teal, borderRadius: BorderRadius.circular(7)),
-          width: 300,
-          height: 200,
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: [
-              Text(
-                eventName,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 20,
+    return GestureDetector(
+      onTap: () {
+        context.go('/incidents/$id');
+      },
+      child: Card(
+        child: Padding(
+          padding: const EdgeInsets.all(5),
+          child: Container(
+            decoration: BoxDecoration(
+              color: Colors.teal,
+              borderRadius: BorderRadius.circular(7),
+            ),
+            width: 300,
+            height: 200,
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                Text(
+                  eventName,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 20,
+                  ),
                 ),
-              ),
-              Text (
-                "Competitor: $competitorName",
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 15,
+                Text(
+                  "Competitor: $competitorName",
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 15,
+                  ),
                 ),
-              ),
-              Text(
-                "Attempt: $attemptNumber",
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 15,
+                Text(
+                  "Attempt: $attemptNumber",
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 15,
+                  ),
                 ),
-              ),
-              Text(
-                "Value: $value",
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 15,
+                Text(
+                  "Value: $value",
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 15,
+                  ),
                 ),
-              ),
-              Text(
-                "Station: $stationName",
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 15,
+                Text(
+                  "Station: $stationName",
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 15,
+                  ),
                 ),
-              ),
-              Text(
-                "Judge: $judgeName",
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 15,
+                Text(
+                  "Judge: $judgeName",
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 15,
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

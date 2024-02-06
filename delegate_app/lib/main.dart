@@ -3,6 +3,8 @@ import 'package:delegate_app/login.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import 'incident.dart';
+
 void main() {
   runApp(const MyApp());
 }
@@ -30,11 +32,7 @@ class MyApp extends StatelessWidget {
 final routes = [
   GoRoute(
     path: "/",
-    pageBuilder: (context, state) => defaultTransitionPage(
-      context,
-      state,
-      HomePage(),
-    ),
+    builder: (context, state) => HomePage(),
   ),
   GoRoute(
     path: "/login",
@@ -42,6 +40,14 @@ final routes = [
       context,
       state,
       LoginPage(),
+    ),
+  ),
+  GoRoute(
+    path: "/incidents/:caseId",
+    pageBuilder: (context, state) => defaultTransitionPage(
+      context,
+      state,
+      IncidentPage(caseId: state.pathParameters['caseId']!),
     ),
   ),
 ];
