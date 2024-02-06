@@ -1,0 +1,13 @@
+/home/bstrama/Projects/FKMTime/delegate_app/build/linux/x64/debug/bundle/delegate_app
+/home/bstrama/Projects/FKMTime/delegate_app/build/linux/x64/debug/bundle/data/icudtl.dat
+/home/bstrama/Projects/FKMTime/delegate_app/build/linux/x64/debug/bundle/lib/libflutter_linux_gtk.so
+/home/bstrama/Projects/FKMTime/delegate_app/build/linux/x64/debug/bundle/lib/libflutter_secure_storage_linux_plugin.so
+/home/bstrama/Projects/FKMTime/delegate_app/build/linux/x64/debug/bundle/data/flutter_assets/version.json
+/home/bstrama/Projects/FKMTime/delegate_app/build/linux/x64/debug/bundle/data/flutter_assets/packages/cupertino_icons/assets/CupertinoIcons.ttf
+/home/bstrama/Projects/FKMTime/delegate_app/build/linux/x64/debug/bundle/data/flutter_assets/shaders/ink_sparkle.frag
+/home/bstrama/Projects/FKMTime/delegate_app/build/linux/x64/debug/bundle/data/flutter_assets/fonts/MaterialIcons-Regular.otf
+/home/bstrama/Projects/FKMTime/delegate_app/build/linux/x64/debug/bundle/data/flutter_assets/AssetManifest.bin
+/home/bstrama/Projects/FKMTime/delegate_app/build/linux/x64/debug/bundle/data/flutter_assets/FontManifest.json
+/home/bstrama/Projects/FKMTime/delegate_app/build/linux/x64/debug/bundle/data/flutter_assets/AssetManifest.json
+/home/bstrama/Projects/FKMTime/delegate_app/build/linux/x64/debug/bundle/data/flutter_assets/kernel_blob.bin
+/home/bstrama/Projects/FKMTime/delegate_app/build/linux/x64/debug/bundle/data/flutter_assets/NOTICES.Z

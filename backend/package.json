@@ -18,7 +18,8 @@
     "test:watch": "jest --watch",
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
-    "test:e2e": "jest --config ./test/jest-e2e.json"
+    "test:e2e": "jest --config ./test/jest-e2e.json",
+    "prisma-seed": "ts-node prisma/seed.ts"
   },
   "prisma": {
     "seed": "ts-node prisma/seed.ts"
@@ -37,6 +38,7 @@
     "dotenv": "^16.3.1",
     "expo-server-sdk": "^3.7.0",
     "js-sha512": "^0.8.0",
+    "passport": "^0.7.0",
     "passport-jwt": "^4.0.1",
     "prisma": "^5.8.0",
     "reflect-metadata": "^0.1.13",
