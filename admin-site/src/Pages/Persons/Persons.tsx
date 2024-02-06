@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Competition, Person } from "../../logic/interfaces";
 import { Alert, AlertIcon, Box, Button, Input } from "@chakra-ui/react";
 import { getAllPersons } from "../../logic/persons";
@@ -17,19 +17,23 @@ const Persons = (): JSX.Element => {
     const [search, setSearch] = useState<string>("");
     const [personsWithoutCardAssigned, setPersonsWithoutCardAssigned] = useState<number>(0);
 
-    const fetchData = async (page = 1, pageSize = 10, search?: string) => {
-        const response = await getAllPersons(page, pageSize, search);
+    const fetchData = useCallback(async (pageParam = 1, pageSizeParam = 10, searchParam?: string) => {
+        const response = await getAllPersons(pageParam, pageSizeParam, searchParam);
         const competitionResponse = await getCompetitionInfo();
         setCompetition(competitionResponse.data);
         setPersons(response.data);
         setPersonsWithoutCardAssigned(response.personsWithoutCardAssigned);
-        const totalPagesCalculation = calculateTotalPages(response.count, pageSize);
+        const totalPagesCalculation = calculateTotalPages(response.count, pageSizeParam);
         setTotalPages(totalPagesCalculation);
-    };
+    }, []);
 
     const handlePageChange = (pageParam: number) => {
         setPage(pageParam);
         fetchData(pageParam);
+    };
+
+    const handleCloseEditModal = async () => {
+        await fetchData(page, pageSize, search);
     };
 
     const changePageSize = (pageSizeParam: number) => {
@@ -38,13 +42,13 @@ const Persons = (): JSX.Element => {
     };
 
     const handleSearch = (event: React.ChangeEvent<HTMLInputElement>) => {
-        fetchData(1, pageSize, event.target.value);
         setSearch(event.target.value);
+        fetchData(1, pageSize, event.target.value);
     };
 
     useEffect(() => {
         fetchData();
-    }, []);
+    }, [fetchData]);
 
     return (
         <Box display="flex" flexDirection="column" gap="5">
@@ -67,7 +71,7 @@ const Persons = (): JSX.Element => {
                 </>
             )}
             <Input placeholder="Search" _placeholder={{ color: "white" }} value={search} onChange={handleSearch} />
-            <PersonsTable persons={persons} competition={competition} fetchData={fetchData} changePageSize={changePageSize} handlePageChange={handlePageChange} page={page} totalPages={totalPages} pageSize={pageSize} />
+            <PersonsTable persons={persons} competition={competition} handleCloseEditModal={handleCloseEditModal} changePageSize={changePageSize} handlePageChange={handlePageChange} page={page} totalPages={totalPages} pageSize={pageSize} />
         </Box>
     )
 };

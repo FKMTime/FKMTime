@@ -11,15 +11,15 @@ import EventIcon from "../../Icons/EventIcon";
 interface PersonRowProps {
     person: Person;
     wcifInfo?: WcifPerson;
-    fetchData: () => void;
+    handleCloseEditModal: () => void;
 }
 
-const PersonRow: React.FC<PersonRowProps> = ({ person, wcifInfo, fetchData }): JSX.Element => {
+const PersonRow: React.FC<PersonRowProps> = ({ person, wcifInfo, handleCloseEditModal }): JSX.Element => {
 
     const [isOpenAssignCardModal, setIsOpenAssignCardModal] = useState<boolean>(false);
 
     const handleCloseAssignCardModal = async () => {
-        await fetchData();
+        await handleCloseEditModal();
         setIsOpenAssignCardModal(false);
     };
 

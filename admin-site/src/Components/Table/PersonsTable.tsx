@@ -7,7 +7,7 @@ import { getPersonFromWcif } from "../../logic/utils";
 interface PersonsTableProps {
     persons: Person[];
     competition?: Competition;
-    fetchData: () => void;
+    handleCloseEditModal: () => void;
     changePageSize: (pageSize: number) => void;
     handlePageChange: (page: number) => void;
     page: number;
@@ -15,7 +15,7 @@ interface PersonsTableProps {
     pageSize: number;
 }
 
-const PersonsTable: React.FC<PersonsTableProps> = ({ persons, competition, fetchData, changePageSize, handlePageChange, page, totalPages, pageSize }): JSX.Element => {
+const PersonsTable: React.FC<PersonsTableProps> = ({ persons, competition, handleCloseEditModal, changePageSize, handlePageChange, page, totalPages, pageSize }): JSX.Element => {
     return (
         <>
             <TableContainer>
@@ -34,7 +34,7 @@ const PersonsTable: React.FC<PersonsTableProps> = ({ persons, competition, fetch
                     </Thead>
                     <Tbody>
                         {competition && persons.map((person: Person) => (
-                            <PersonRow wcifInfo={getPersonFromWcif(person.registrantId, competition?.wcif)} key={person.id} person={person} fetchData={fetchData} />
+                            <PersonRow wcifInfo={getPersonFromWcif(person.registrantId, competition?.wcif)} key={person.id} person={person} handleCloseEditModal={handleCloseEditModal} />
                         ))}
                     </Tbody>
                 </Table>
