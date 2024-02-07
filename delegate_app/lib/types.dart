@@ -3,7 +3,7 @@ import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
-const BACKEND_ORIGIN = 'http://localhost:5000';
+const BACKEND_ORIGIN = 'http://10.119.70.139:5000';
 
 extension IsOk on http.Response {
   bool get ok {
@@ -229,6 +229,21 @@ class User {
     }
     var json = jsonDecode(res.body);
     return fromDynamic(json);
+  }
+
+  static Future<void> updateNotificationToken(String? token) async {
+    final String jwt = (await getToken())!;
+    final res =
+        await http.put(Uri.parse('$BACKEND_ORIGIN/user/notification-token'),
+            headers: {
+              HttpHeaders.contentTypeHeader: "application/json",
+              HttpHeaders.authorizationHeader: 'Bearer $jwt',
+            },
+            body: jsonEncode({'token': token}));
+
+    if (!res.ok) {
+      throw "Failed to update notification token";
+    }
   }
 
   static User fromDynamic(dynamic json) {

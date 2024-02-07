@@ -35,4 +35,13 @@ export class AccountService {
       where: { id: id },
     });
   }
+
+  async updateNotificationToken(userId: number, token: string) {
+    return await this.prisma.account.update({
+      where: { id: userId },
+      data: {
+        notificationToken: token,
+      },
+    });
+  }
 }

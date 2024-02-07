@@ -1,11 +1,23 @@
 import 'package:delegate_app/homepage.dart';
 import 'package:delegate_app/login.dart';
+import 'package:delegate_app/types.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-
 import 'incident.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'firebase_options.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 
-void main() {
+void main() async {
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
+  await FirebaseMessaging.instance.setAutoInitEnabled(true);
+  final fcmToken = await FirebaseMessaging.instance.getToken();
+  final isUserLoggedIn = await User.getToken() != null;
+  if (isUserLoggedIn && fcmToken != null) {
+    await User.updateNotificationToken(fcmToken);
+  }
   runApp(const MyApp());
 }
 
