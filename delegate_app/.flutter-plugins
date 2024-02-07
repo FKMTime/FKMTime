@@ -1,0 +1,15 @@
+# This is a generated file; do not edit or check into version control.
+firebase_core=/home/mgala/.pub-cache/hosted/pub.dev/firebase_core-2.25.4/
+firebase_core_web=/home/mgala/.pub-cache/hosted/pub.dev/firebase_core_web-2.11.4/
+firebase_messaging=/home/mgala/.pub-cache/hosted/pub.dev/firebase_messaging-14.7.15/
+firebase_messaging_web=/home/mgala/.pub-cache/hosted/pub.dev/firebase_messaging_web-3.6.4/
+flutter_secure_storage=/home/mgala/.pub-cache/hosted/pub.dev/flutter_secure_storage-9.0.0/
+flutter_secure_storage_linux=/home/mgala/.pub-cache/hosted/pub.dev/flutter_secure_storage_linux-1.2.0/
+flutter_secure_storage_macos=/home/mgala/.pub-cache/hosted/pub.dev/flutter_secure_storage_macos-3.0.1/
+flutter_secure_storage_web=/home/mgala/.pub-cache/hosted/pub.dev/flutter_secure_storage_web-1.1.2/
+flutter_secure_storage_windows=/home/mgala/.pub-cache/hosted/pub.dev/flutter_secure_storage_windows-3.0.0/
+path_provider=/home/mgala/.pub-cache/hosted/pub.dev/path_provider-2.1.2/
+path_provider_android=/home/mgala/.pub-cache/hosted/pub.dev/path_provider_android-2.2.2/
+path_provider_foundation=/home/mgala/.pub-cache/hosted/pub.dev/path_provider_foundation-2.3.2/
+path_provider_linux=/home/mgala/.pub-cache/hosted/pub.dev/path_provider_linux-2.2.1/
+path_provider_windows=/home/mgala/.pub-cache/hosted/pub.dev/path_provider_windows-2.2.1/

@@ -1,0 +1,163 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="AndroidLayouts">
+    <shared>
+      <config />
+    </shared>
+  </component>
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="NONE" />
+  </component>
+  <component name="ChangeListManager">
+    <list default="true" id="6e86ba51-82bd-4c8f-8a69-4dfc41805241" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/.dart_tool/extension_discovery/README.md" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.dart_tool/extension_discovery/devtools.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.dart_tool/flutter_build/a3f40e6612f3b16343a89ab94baee1ee/.filecache" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.dart_tool/flutter_build/a3f40e6612f3b16343a89ab94baee1ee/app.dill" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.dart_tool/flutter_build/a3f40e6612f3b16343a89ab94baee1ee/debug_bundle_linux-x64_assets.stamp" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.dart_tool/flutter_build/a3f40e6612f3b16343a89ab94baee1ee/flutter_assets.d" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.dart_tool/flutter_build/a3f40e6612f3b16343a89ab94baee1ee/gen_dart_plugin_registrant.stamp" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.dart_tool/flutter_build/a3f40e6612f3b16343a89ab94baee1ee/gen_localizations.stamp" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.dart_tool/flutter_build/a3f40e6612f3b16343a89ab94baee1ee/kernel_snapshot.d" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.dart_tool/flutter_build/a3f40e6612f3b16343a89ab94baee1ee/kernel_snapshot.stamp" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.dart_tool/flutter_build/a3f40e6612f3b16343a89ab94baee1ee/linux_engine_sources.d" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.dart_tool/flutter_build/a3f40e6612f3b16343a89ab94baee1ee/native_assets.d" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.dart_tool/flutter_build/a3f40e6612f3b16343a89ab94baee1ee/native_assets.stamp" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.dart_tool/flutter_build/a3f40e6612f3b16343a89ab94baee1ee/native_assets.yaml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.dart_tool/flutter_build/a3f40e6612f3b16343a89ab94baee1ee/outputs.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.dart_tool/flutter_build/a3f40e6612f3b16343a89ab94baee1ee/unpack_linux.stamp" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.dart_tool/package_config.json" beforeDir="false" afterPath="$PROJECT_DIR$/.dart_tool/package_config.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.flutter-plugins-dependencies" beforeDir="false" afterPath="$PROJECT_DIR$/.flutter-plugins-dependencies" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Flutter_Plugins.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/libraries/Flutter_Plugins.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/android/local.properties" beforeDir="false" afterPath="$PROJECT_DIR$/android/local.properties" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/build/.last_build_id" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/build/flutter_assets/AssetManifest.bin" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/build/flutter_assets/AssetManifest.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/build/flutter_assets/FontManifest.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/build/flutter_assets/NOTICES.Z" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/build/flutter_assets/fonts/MaterialIcons-Regular.otf" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/build/flutter_assets/kernel_blob.bin" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/build/flutter_assets/packages/cupertino_icons/assets/CupertinoIcons.ttf" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/build/flutter_assets/shaders/ink_sparkle.frag" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/build/flutter_assets/version.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/build/linux/x64/debug/.ninja_deps" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/build/linux/x64/debug/.ninja_log" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/build/linux/x64/debug/CMakeCache.txt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/build/linux/x64/debug/CMakeFiles/CMakeConfigureLog.yaml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/build/linux/x64/debug/CMakeFiles/TargetDirectories.txt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/build/linux/x64/debug/CMakeFiles/cmake.check_cache" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/build/linux/x64/debug/CMakeFiles/delegate_app.dir/flutter/generated_plugin_registrant.cc.o" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/build/linux/x64/debug/CMakeFiles/delegate_app.dir/main.cc.o" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/build/linux/x64/debug/CMakeFiles/delegate_app.dir/my_application.cc.o" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/build/linux/x64/debug/CMakeFiles/rules.ninja" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/build/linux/x64/debug/build.ninja" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/build/linux/x64/debug/bundle/data/flutter_assets/AssetManifest.bin" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/build/linux/x64/debug/bundle/data/flutter_assets/AssetManifest.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/build/linux/x64/debug/bundle/data/flutter_assets/FontManifest.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/build/linux/x64/debug/bundle/data/flutter_assets/NOTICES.Z" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/build/linux/x64/debug/bundle/data/flutter_assets/fonts/MaterialIcons-Regular.otf" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/build/linux/x64/debug/bundle/data/flutter_assets/kernel_blob.bin" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/build/linux/x64/debug/bundle/data/flutter_assets/packages/cupertino_icons/assets/CupertinoIcons.ttf" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/build/linux/x64/debug/bundle/data/flutter_assets/shaders/ink_sparkle.frag" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/build/linux/x64/debug/bundle/data/flutter_assets/version.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/build/linux/x64/debug/bundle/data/icudtl.dat" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/build/linux/x64/debug/bundle/delegate_app" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/build/linux/x64/debug/bundle/lib/libflutter_linux_gtk.so" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/build/linux/x64/debug/bundle/lib/libflutter_secure_storage_linux_plugin.so" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/build/linux/x64/debug/cmake_install.cmake" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/build/linux/x64/debug/flutter/cmake_install.cmake" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/build/linux/x64/debug/install_manifest.txt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/build/linux/x64/debug/intermediates_do_not_run/delegate_app" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/build/linux/x64/debug/plugins/flutter_secure_storage_linux/CMakeFiles/flutter_secure_storage_linux_plugin.dir/flutter_secure_storage_linux_plugin.cc.o" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/build/linux/x64/debug/plugins/flutter_secure_storage_linux/cmake_install.cmake" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/build/linux/x64/debug/plugins/flutter_secure_storage_linux/libflutter_secure_storage_linux_plugin.so" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/main.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/main.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/linux/flutter/ephemeral/flutter_linux/fl_basic_message_channel.h" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/linux/flutter/ephemeral/flutter_linux/fl_binary_codec.h" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/linux/flutter/ephemeral/flutter_linux/fl_binary_messenger.h" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/linux/flutter/ephemeral/flutter_linux/fl_dart_project.h" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/linux/flutter/ephemeral/flutter_linux/fl_engine.h" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/linux/flutter/ephemeral/flutter_linux/fl_event_channel.h" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/linux/flutter/ephemeral/flutter_linux/fl_json_message_codec.h" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/linux/flutter/ephemeral/flutter_linux/fl_json_method_codec.h" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/linux/flutter/ephemeral/flutter_linux/fl_message_codec.h" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/linux/flutter/ephemeral/flutter_linux/fl_method_call.h" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/linux/flutter/ephemeral/flutter_linux/fl_method_channel.h" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/linux/flutter/ephemeral/flutter_linux/fl_method_codec.h" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/linux/flutter/ephemeral/flutter_linux/fl_method_response.h" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/linux/flutter/ephemeral/flutter_linux/fl_pixel_buffer_texture.h" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/linux/flutter/ephemeral/flutter_linux/fl_plugin_registrar.h" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/linux/flutter/ephemeral/flutter_linux/fl_plugin_registry.h" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/linux/flutter/ephemeral/flutter_linux/fl_standard_message_codec.h" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/linux/flutter/ephemeral/flutter_linux/fl_standard_method_codec.h" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/linux/flutter/ephemeral/flutter_linux/fl_string_codec.h" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/linux/flutter/ephemeral/flutter_linux/fl_texture.h" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/linux/flutter/ephemeral/flutter_linux/fl_texture_gl.h" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/linux/flutter/ephemeral/flutter_linux/fl_texture_registrar.h" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/linux/flutter/ephemeral/flutter_linux/fl_value.h" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/linux/flutter/ephemeral/flutter_linux/fl_view.h" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/linux/flutter/ephemeral/flutter_linux/flutter_linux.h" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/linux/flutter/ephemeral/generated_config.cmake" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/linux/flutter/ephemeral/icudtl.dat" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/linux/flutter/ephemeral/libflutter_linux_gtk.so" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/pubspec.lock" beforeDir="false" afterPath="$PROJECT_DIR$/pubspec.lock" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pubspec.yaml" beforeDir="false" afterPath="$PROJECT_DIR$/pubspec.yaml" afterDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="ClangdSettings">
+    <option name="formatViaClangd" value="false" />
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$/.." />
+  </component>
+  <component name="MarkdownSettingsMigration">
+    <option name="stateVersion" value="1" />
+  </component>
+  <component name="ProjectId" id="2blgpi8OXLzs5UO2ZQO8UuEmAoS" />
+  <component name="ProjectLevelVcsManager">
+    <ConfirmationsSetting value="2" id="Add" />
+  </component>
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "RunOnceActivity.OpenProjectViewOnStart": "true",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.cidr.known.project.marker": "true",
+    "cf.first.check.clang-format": "false",
+    "cidr.known.project.marker": "true",
+    "com.android.tools.idea.devicemanager.tab": "Physical",
+    "com.google.services.firebase.aqiPopupShown": "true",
+    "dart.analysis.tool.window.visible": "false",
+    "git-widget-placeholder": "flutter-client",
+    "io.flutter.reload.alreadyRun": "true",
+    "last_opened_file_path": "/opt/dart-sdk",
+    "settings.editor.selected.configurable": "AndroidSdkUpdater",
+    "show.migrate.to.gradle.popup": "false"
+  }
+}]]></component>
+  <component name="RunManager">
+    <configuration name="main.dart" type="FlutterRunConfigurationType" factoryName="Flutter">
+      <option name="filePath" value="$PROJECT_DIR$/lib/main.dart" />
+      <method v="2" />
+    </configuration>
+  </component>
+  <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="6e86ba51-82bd-4c8f-8a69-4dfc41805241" name="Changes" comment="" />
+      <created>1706795271269</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1706795271269</updated>
+    </task>
+    <servers />
+  </component>
+</project>
