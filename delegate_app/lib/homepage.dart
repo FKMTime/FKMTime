@@ -55,7 +55,7 @@ class _HomePageState extends State<HomePage> {
         judgeName: incident.judge.name,
       ));
     }
-  // add logout button
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('FKM Time'),
@@ -77,14 +77,28 @@ class _HomePageState extends State<HomePage> {
           child: Padding(
             padding: const EdgeInsets.symmetric(vertical: 50),
             child: Wrap(
-              children: cards,
+              children: [
+                incidents(cards, snapshot),
+              ],
             ),
           ),
         ),
       ),
     );
   }
+
+  Widget incidents(List<Widget> cards, AsyncSnapshot snapshot) {
+    if (cards.isEmpty) {
+      return const Text("No incidents", style: TextStyle(fontSize: 20));
+    } else {
+      return Wrap(
+        children: cards,
+      );
+    }
+  }
 }
+
+
 
 class Incident extends StatelessWidget {
   const Incident({super.key, required this.eventName, required this.attemptNumber, required this.value, required this.stationName, required this.judgeName, required this.competitorName, required this.id

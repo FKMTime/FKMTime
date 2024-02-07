@@ -48,11 +48,12 @@ class Attempt {
   // Do not invoke if user is not logged in!!!
   static Future<List<Attempt>> fetchAll() async {
     final String jwt = (await User.getToken())!;
-    final res = await http.get(Uri.parse('$BACKEND_ORIGIN/attempt/unresolved'), headers: {
-       HttpHeaders.authorizationHeader: 'Bearer $jwt',
+    final res = await http
+        .get(Uri.parse('$BACKEND_ORIGIN/attempt/unresolved'), headers: {
+      HttpHeaders.authorizationHeader: 'Bearer $jwt',
     });
     if (!res.ok) {
-       throw "Failed to fetch cases";
+      throw "Failed to fetch cases";
     }
     var json = jsonDecode(res.body);
 
@@ -65,41 +66,49 @@ class Attempt {
 
   static Future<Attempt> fetchById(int id) async {
     final String jwt = (await User.getToken())!;
-    final res = await http.get(Uri.parse('$BACKEND_ORIGIN/attempt/$id'), headers: {
-       HttpHeaders.authorizationHeader: 'Bearer $jwt',
+    final res =
+        await http.get(Uri.parse('$BACKEND_ORIGIN/attempt/$id'), headers: {
+      HttpHeaders.authorizationHeader: 'Bearer $jwt',
     });
     if (!res.ok) {
-       throw "Failed to fetch case";
+      throw "Failed to fetch case";
     }
     var json = jsonDecode(res.body);
     return fromDynamic(json);
   }
 
-  Future<Attempt> update() async {
+  Future<bool> update(bool resubmitToWcaLive) async {
     final String jwt = (await User.getToken())!;
-    final res = await http.put(Uri.parse('$BACKEND_ORIGIN/attempt/$id'), headers: {
-       HttpHeaders.authorizationHeader: 'Bearer $jwt',
-    }, body: {
+    final replacedBy = this.replacedBy ?? 0;
+    final body = {
       'replacedBy': replacedBy.toString(),
-      'isDelegate': isDelegate.toString(),
-      'isResolved': isResolved.toString(),
+      'isDelegate': isDelegate,
+      'isResolved': isResolved,
       'penalty': penalty.toString(),
-      'isExtraAttempt': isExtraAttempt.toString(),
-      'extraGiven': extraGiven.toString(),
+      'attemptNumber': attemptNumber.toString(),
+      'isExtraAttempt': isExtraAttempt,
+      'extraGiven': extraGiven,
       'value': value.toString(),
       'judgeId': judge.id.toString(),
       'stationId': station.id.toString(),
       'resultId': result.id.toString(),
-    });
+      'submitToWcaLive': resubmitToWcaLive,
+    };
+
+    final res = await http.put(Uri.parse('$BACKEND_ORIGIN/attempt/$id'),
+        headers: {
+          HttpHeaders.contentTypeHeader: "application/json",
+          HttpHeaders.authorizationHeader: 'Bearer $jwt',
+        },
+        body: jsonEncode(body));
+
     if (!res.ok) {
-       throw "Failed to update case";
+      throw "Failed to update case";
     }
-    var json = jsonDecode(res.body);
-    return fromDynamic(json);
+    return true;
   }
 
   static Attempt fromDynamic(dynamic json) {
-
     return Attempt(
       id: json['id'],
       resultId: json['resultId'],
@@ -192,8 +201,7 @@ class Result {
 }
 
 class User {
-  
-  String token; 
+  String token;
   UserInfo? info;
 
   User({
@@ -217,7 +225,7 @@ class User {
       'password': password,
     });
     if (!res.ok) {
-       throw "Failed to login";
+      throw "Failed to login";
     }
     var json = jsonDecode(res.body);
     return fromDynamic(json);
@@ -282,6 +290,3 @@ final List<Event> events = [
   Event(id: "555bf", name: "5x5x5 Blindfolded"),
   Event(id: "333mbf", name: "3x3x3 Multi-Blind"),
 ];
-
-
-

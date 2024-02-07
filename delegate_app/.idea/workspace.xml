@@ -10,10 +10,15 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="6e86ba51-82bd-4c8f-8a69-4dfc41805241" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/lib/incident.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../backend/src/attempt/attempt.service.ts" beforeDir="false" afterPath="$PROJECT_DIR$/../backend/src/attempt/attempt.service.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.flutter-plugins-dependencies" beforeDir="false" afterPath="$PROJECT_DIR$/.flutter-plugins-dependencies" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/build/flutter_assets/kernel_blob.bin" beforeDir="false" afterPath="$PROJECT_DIR$/build/flutter_assets/kernel_blob.bin" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/build/linux/x64/debug/.ninja_deps" beforeDir="false" afterPath="$PROJECT_DIR$/build/linux/x64/debug/.ninja_deps" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/build/linux/x64/debug/.ninja_log" beforeDir="false" afterPath="$PROJECT_DIR$/build/linux/x64/debug/.ninja_log" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/build/linux/x64/debug/bundle/data/flutter_assets/kernel_blob.bin" beforeDir="false" afterPath="$PROJECT_DIR$/build/linux/x64/debug/bundle/data/flutter_assets/kernel_blob.bin" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/lib/homepage.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/homepage.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lib/main.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/main.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/incident.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/incident.dart" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/lib/types.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/types.dart" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />

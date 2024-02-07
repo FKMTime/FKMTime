@@ -16,7 +16,16 @@ export class AttemptService {
     }
     const attempt = await this.prisma.attempt.update({
       where: { id: id },
-      data: data,
+      data: {
+        replacedBy: data.replacedBy,
+        isDelegate: data.isDelegate,
+        isResolved: data.isResolved,
+        penalty: data.penalty,
+        isExtraAttempt: data.extraGiven,
+        extraGiven: data.extraGiven,
+        value: data.value,
+        comment: data.comment,
+      },
       select: {
         id: true,
         result: {
@@ -71,7 +80,6 @@ export class AttemptService {
         isDelegate: true,
         isResolved: true,
         penalty: true,
-        comment: true,
         isExtraAttempt: true,
         extraGiven: true,
         value: true,
@@ -81,7 +89,7 @@ export class AttemptService {
           select: {
             id: true,
             registrantId: true,
-            gender: true,
+            wcaId: true,
             name: true,
           },
         },
@@ -103,6 +111,8 @@ export class AttemptService {
               select: {
                 id: true,
                 name: true,
+                wcaId: true,
+                registrantId: true,
               },
             },
           },
