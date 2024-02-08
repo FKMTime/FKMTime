@@ -52,6 +52,10 @@ class Attempt {
         .get(Uri.parse('$BACKEND_ORIGIN/attempt/unresolved'), headers: {
       HttpHeaders.authorizationHeader: 'Bearer $jwt',
     });
+    if (res.statusCode == 401) {
+      var storage = const FlutterSecureStorage();
+      await storage.deleteAll();
+    }
     if (!res.ok) {
       throw "Failed to fetch cases";
     }

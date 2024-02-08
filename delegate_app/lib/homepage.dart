@@ -62,6 +62,12 @@ class _HomePageState extends State<HomePage> {
         actions: [
           IconButton(
             onPressed: () async {
+              setState(() {});
+            },
+            icon: const Icon(Icons.refresh),
+          ),
+          IconButton(
+            onPressed: () async {
               var storage = const FlutterSecureStorage();
               await storage.deleteAll();
               setState(() {
