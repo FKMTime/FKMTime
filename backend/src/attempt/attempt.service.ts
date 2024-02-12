@@ -21,7 +21,7 @@ export class AttemptService {
         isDelegate: data.isDelegate,
         isResolved: data.isResolved,
         penalty: data.penalty,
-        isExtraAttempt: data.extraGiven,
+        isExtraAttempt: data.isExtraAttempt,
         extraGiven: data.extraGiven,
         value: data.value,
         comment: data.comment,

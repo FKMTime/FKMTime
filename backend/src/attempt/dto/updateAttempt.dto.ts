@@ -13,6 +13,9 @@ export class UpdateAttemptDto {
   isDelegate: boolean;
 
   @IsBoolean()
+  isExtraAttempt: boolean;
+
+  @IsBoolean()
   extraGiven: boolean;
 
   @IsBoolean()

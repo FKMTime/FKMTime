@@ -57,6 +57,7 @@ const EditAttemptModal: React.FC<EditAttemptModalProps> = ({ isOpen, onClose, at
                     <FormLabel>Attempt number</FormLabel>
                     <Input placeholder='Attempt number' _placeholder={{ color: "white" }} value={editedAttempt.attemptNumber} disabled={isLoading} onChange={(e) => setEditedAttempt({ ...editedAttempt, attemptNumber: +e.target.value })} />
                 </FormControl>
+                <Checkbox isChecked={editedAttempt.isExtraAttempt} onChange={(e) => setEditedAttempt({ ...editedAttempt, isExtraAttempt: e.target.checked })}>Is extra attempt</Checkbox>
                 <FormControl isRequired>
                     <FormLabel>Time</FormLabel>
                     <Input placeholder='Time' _placeholder={{ color: "white" }} value={editedAttempt.value} disabled={isLoading} onChange={(e) => {
