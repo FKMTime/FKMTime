@@ -107,6 +107,14 @@ export class PersonService {
       where: {
         cardId,
       },
+      select: {
+        id: true,
+        registrantId: true,
+        wcaId: true,
+        name: true,
+        countryIso2: true,
+        gender: true,
+      },
     });
   }
 }
