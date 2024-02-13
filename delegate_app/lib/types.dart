@@ -3,7 +3,7 @@ import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
-const BACKEND_ORIGIN = 'http://10.119.70.139:5000';
+const BACKEND_ORIGIN = 'http://localhost:5000';
 
 extension IsOk on http.Response {
   bool get ok {
@@ -24,6 +24,7 @@ class Attempt {
   bool extraGiven;
   DateTime createdAt;
   int value;
+  String? comment;
   Person judge;
   Station station;
   Result result;
@@ -43,6 +44,7 @@ class Attempt {
     required this.judge,
     required this.station,
     required this.result,
+    required this.comment,
   });
 
   // Do not invoke if user is not logged in!!!
@@ -92,6 +94,7 @@ class Attempt {
       'attemptNumber': attemptNumber.toString(),
       'isExtraAttempt': isExtraAttempt,
       'extraGiven': extraGiven,
+      'comment': comment ?? '',
       'value': value.toString(),
       'judgeId': judge.id.toString(),
       'stationId': station.id.toString(),
@@ -123,6 +126,7 @@ class Attempt {
       penalty: json['penalty'],
       isExtraAttempt: json['isExtraAttempt'],
       extraGiven: json['extraGiven'],
+      comment: json['comment'],
       createdAt: DateTime.parse(json['createdAt']),
       value: json['value'],
       judge: Person.fromDynamic(json['judge']),

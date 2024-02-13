@@ -2,6 +2,8 @@ import 'package:delegate_app/types.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+const List<String> commentOptions = ['none', 'a7g', 'other'];
+
 class IncidentPage extends StatefulWidget {
   final String caseId;
 
@@ -150,7 +152,19 @@ class _IncidentPageState extends State<IncidentPage> {
             ),
             const SizedBox(height: 10),
 
-            // Checkbox for isResolved
+            const Text(
+              'Comment',
+              style: TextStyle(fontSize: 18, color: Colors.white),
+            ),
+            TextFormField(
+              initialValue: attempt.comment,
+              onChanged: (value) => attempt.comment = value,
+              style: const TextStyle(color: Colors.white),
+              decoration: const InputDecoration(
+                hintText: 'Comment',
+                hintStyle: TextStyle(color: Colors.white),
+              ),
+            ),
             Row(
               children: [
                 Checkbox(

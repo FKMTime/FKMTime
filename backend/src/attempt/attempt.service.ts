@@ -80,6 +80,7 @@ export class AttemptService {
         isDelegate: true,
         isResolved: true,
         penalty: true,
+        comment: true,
         isExtraAttempt: true,
         extraGiven: true,
         value: true,
