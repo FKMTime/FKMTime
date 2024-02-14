@@ -7,6 +7,7 @@ FKMTime is a system for running speedcubing competitions without scorecards! Thi
 ## Important information
 **FKMTime is currently in the testing phase. For now, in accordance with WCA regulations, scorecards are still used in parallel with the system.**
 
+Source code for FKM devices is available [here](https://github.com/filipton/fkm-timer)
 ## Development
 
 ### Requirements
