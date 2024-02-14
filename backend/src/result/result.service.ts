@@ -2,6 +2,7 @@ import { HttpException, Injectable } from '@nestjs/common';
 import { DbService } from 'src/db/db.service';
 import { EnterAttemptDto } from './dto/enterAttempt.dto';
 import Expo from 'expo-server-sdk';
+import { en, pl } from 'src/translations';
 
 const WCA_LIVE_API_ORIGIN = process.env.WCA_LIVE_API_ORIGIN;
 @Injectable()
@@ -281,20 +282,35 @@ export class ResultService {
         cardId: data.competitorId.toString(),
       },
     });
+    let locale = competitor.countryIso2;
     if (!competitor) {
-      throw new HttpException('Competitor not found', 404);
+      throw new HttpException(
+        locale === 'PL' ? pl['competitorNotFound'] : en['competitorNotFound'],
+        404,
+      );
     }
     const judge = await this.prisma.person.findFirst({
       where: {
         cardId: data.judgeId.toString(),
       },
     });
+    if (judge.countryIso2 === 'PL' && competitor.countryIso2 === 'PL') {
+      locale = 'PL';
+    } else {
+      locale = 'EN';
+    }
     if (!judge && !data.isDelegate) {
-      throw new HttpException('Judge not found', 404);
+      throw new HttpException(
+        locale === 'PL' ? pl['judgeNotFound'] : en['judgeNotFound'],
+        404,
+      );
     }
     const competition = await this.prisma.competition.findFirst();
     if (!competition) {
-      throw new HttpException('Competition not found', 404);
+      throw new HttpException(
+        locale === 'PL' ? pl['competitionNotFound'] : en['competitionNotFound'],
+        404,
+      );
     }
     const wcif = JSON.parse(JSON.stringify(competition.wcif));
     const sliced = competition.currentGroupId.split('-');
@@ -316,7 +332,12 @@ export class ResultService {
       currentGroup.id,
     );
     if (!isCompetitorInThisGroup) {
-      throw new HttpException('Competitor is not in this group', 400);
+      throw new HttpException(
+        locale === 'PL'
+          ? pl['competitorIsNotInThisGroup']
+          : en['competitorIsNotInThisGroup'],
+        400,
+      );
     }
     const resultFromDb = await this.prisma.result.findFirst({
       where: {
@@ -356,7 +377,10 @@ export class ResultService {
     const finalData = await this.getValidatedData(roundInfo, attempts, data);
 
     if (!finalData.cutoffPassed) {
-      throw new HttpException('Cutoff not passed', 400);
+      throw new HttpException(
+        locale === 'PL' ? pl['cutoffNotPassed'] : en['cutoffNotPassed'],
+        400,
+      );
     }
 
     const sortedAttempts = attempts
@@ -396,11 +420,14 @@ export class ResultService {
       if (attemptNumber === -1) {
         await this.sendNotificationAboutIncident(station.name, competitor.name);
         return {
-          message: 'Delegate was notified',
+          message:
+            locale === 'PL'
+              ? pl['delegateWasNotified']
+              : en['delegateWasNotified'],
         };
       }
 
-      const status = await this.enterAttemptToWcaLive(
+      await this.enterAttemptToWcaLive(
         competition.wcaId,
         competition.scoretakingToken,
         currentRoundId.split('-')[0],
@@ -409,20 +436,24 @@ export class ResultService {
         attemptNumber,
         finalData.timeToEnter,
       );
-      if (status !== 200) {
-        throw new HttpException('WCA Live error', 500);
-      }
       return {
         message: finalData.limitPassed
-          ? 'Attempt entered'
-          : 'Attempt entered, but replaced to DNF',
+          ? locale === 'PL'
+            ? pl['attemptEntered']
+            : en['attemptEntered']
+          : locale === 'PL'
+            ? pl['attemptEnteredButReplacedToDnf']
+            : en['attemptEnteredButReplacedToDnf'],
       };
     }
     let attemptNumber = 1;
     const lastAttempt = sortedAttempts[sortedAttempts.length - 1];
     const maxAttempts = roundInfo.format === 'a' ? 5 : 3;
     if (lastAttempt && lastAttempt.attemptNumber === maxAttempts) {
-      throw new HttpException('No attempts left', 400);
+      throw new HttpException(
+        locale === 'PL' ? pl['noAttemptsLeft'] : en['noAttemptsLeft'],
+        400,
+      );
     }
     if (lastAttempt) {
       attemptNumber = lastAttempt.attemptNumber + 1;
@@ -457,7 +488,10 @@ export class ResultService {
     if (data.isDelegate) {
       await this.sendNotificationAboutIncident(station.name, competitor.name);
       return {
-        message: 'Delegate was notified',
+        message:
+          locale === 'PL'
+            ? pl['delegateWasNotified']
+            : en['delegateWasNotified'],
       };
     }
     try {
@@ -472,7 +506,7 @@ export class ResultService {
       );
     } catch (e) {
       return {
-        message: 'Attempt entered to FKM, but there is a problem with WCA Live',
+        message: locale === 'PL' ? pl['attemptEntered'] : en['attemptEntered'],
       };
     }
     if (finalData.dnsOther) {
@@ -505,8 +539,12 @@ export class ResultService {
     }
     return {
       message: finalData.limitPassed
-        ? 'Attempt entered'
-        : 'Attempt entered, but replaced to DNF',
+        ? locale === 'PL'
+          ? pl['attemptEntered']
+          : en['attemptEntered']
+        : locale === 'PL'
+          ? pl['attemptEnteredButReplacedToDnf']
+          : en['attemptEnteredButReplacedToDnf'],
     };
   }
 
