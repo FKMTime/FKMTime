@@ -7,14 +7,15 @@ import { Alert, AlertIcon, Box, Button, Heading, Text, useToast } from "@chakra-
 import regions from "../../logic/regions";
 import AttemptsTable from "../../Components/Table/AttemptsTable";
 import { getCutoffByRoundId, getLimitByRoundId, getNumberOfAttemptsForRound, getRoundNameById, getSubmittedAttempts } from "../../logic/utils";
-import { useAtomValue } from "jotai";
+import { useAtom } from "jotai";
 import { competitionAtom } from "../../logic/atoms";
 import { resultToString } from "../../logic/resultFormatters";
+import { getCompetitionInfo } from "../../logic/competition";
 
 
 const SingleResult = (): JSX.Element => {
     const { id } = useParams<{ id: string }>();
-    const competition = useAtomValue(competitionAtom);
+    const [competition, setCompetition] = useAtom(competitionAtom);
     const toast = useToast();
     const [result, setResult] = useState<Result | null>(null);
     const standardAttempts = useMemo(() => {
@@ -29,6 +30,19 @@ const SingleResult = (): JSX.Element => {
         if (!result) return [];
         return getSubmittedAttempts(result.attempts);
     }, [result]);
+
+    const isDiffrenceBetweenResults = useMemo(() => {
+        if (!result) return false;
+        const resultsFromWcaLive =  competition?.wcif.events.find(event => event.id === result?.eventId)?.rounds.find(round => round.id === result?.roundId)?.results.find(wcifResult => wcifResult.personId === result.person.registrantId);
+        if (!resultsFromWcaLive) return false;
+        if (submittedAttempts.length !== resultsFromWcaLive.attempts.length) return true;
+        console.log(submittedAttempts, resultsFromWcaLive.attempts);
+        for (let i = 0; i < submittedAttempts.length; i++) {
+            const submittedValue = submittedAttempts[i].penalty === -1 ? -1 : submittedAttempts[i].value + submittedAttempts[i].penalty * 100;
+            console.log(submittedValue, resultsFromWcaLive.attempts[i].result, submittedValue !== resultsFromWcaLive.attempts[i].result)
+            if (submittedValue !== resultsFromWcaLive.attempts[i].result) return true;
+        }
+    }, [competition?.wcif.events, result, submittedAttempts]);
 
     const cutoff = useMemo(() => {
         if (!competition || !result) {
@@ -53,9 +67,13 @@ const SingleResult = (): JSX.Element => {
 
     const fetchData = useCallback(async () => {
         if (!id) return;
+        if (!competition) {
+            const competitionData = await getCompetitionInfo();
+            setCompetition(competitionData.data);
+        }
         const data = await getResultById(+id);
         setResult(data);
-    }, [id]);
+    }, [competition, id, setCompetition]);
 
     const handleResubmit = async () => {
         if (!result) return;
@@ -105,6 +123,10 @@ const SingleResult = (): JSX.Element => {
             <Button colorScheme="yellow" w="20%" onClick={handleResubmit}>
                 Resubmit scorecard to WCA Live
             </Button>
+            {isDiffrenceBetweenResults && <Alert status="error" color="black">
+                <AlertIcon />
+                There is a diffrence between results in WCA Live and FKM. Please check it manually, fix in FKM and resubmit scorecard to WCA Live.
+            </Alert>}
             <Heading mt={3}>
                 Limits for {getRoundNameById(result.roundId, competition?.wcif)}
             </Heading>

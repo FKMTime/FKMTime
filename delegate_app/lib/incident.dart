@@ -95,7 +95,6 @@ class _IncidentPageState extends State<IncidentPage> {
           mainAxisAlignment: MainAxisAlignment.start,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Existing content
             Text(
               '${events.firstWhere((event) => event.id == attempt.result.eventId)?.name} Round $roundNumber',
               style: const TextStyle(
@@ -111,7 +110,6 @@ class _IncidentPageState extends State<IncidentPage> {
                 style: const TextStyle(fontSize: 18, color: Colors.white)),
             const SizedBox(height: 20),
 
-            // New form
             const Text(
               'Time',
               style: TextStyle(fontSize: 18, color: Colors.white),
@@ -121,6 +119,7 @@ class _IncidentPageState extends State<IncidentPage> {
               keyboardType: TextInputType.number,
               initialValue: attempt.value.toString(),
               onChanged: (value) {
+                print(value);
                 attempt.value = int.parse(value);
               },
             ),

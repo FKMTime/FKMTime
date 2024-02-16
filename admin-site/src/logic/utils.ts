@@ -127,7 +127,7 @@ export const getSubmittedAttempts = (attempts: Attempt[]) => {
       }
     }
   });
-  return attemptsToReturn;
+  return attemptsToReturn.sort((a, b) => a.attemptNumber - b.attemptNumber);
 };
 
 export const getRoundNameById = (roundId: string, wcif?: Competition) => {
