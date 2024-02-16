@@ -1,6 +1,6 @@
 import { Competition } from "@wca/helpers";
 import regions from "./regions";
-import { Attempt } from "./interfaces";
+import { Attempt, Result } from "./interfaces";
 
 export const calculateTotalPages = (count: number, pageSize: number) => {
   return Math.ceil(count / pageSize);
@@ -143,4 +143,28 @@ export const getRoundNameById = (roundId: string, wcif?: Competition) => {
     });
   });
   return roundName;
+};
+
+export const isThereADiffrenceBetweenResults = (
+  result: Result,
+  submittedAttempts: Attempt[],
+  wcif: Competition
+) => {
+  const resultsFromWcaLive = wcif.events
+    .find((event) => event.id === result?.eventId)
+    ?.rounds.find((round) => round.id === result?.roundId)
+    ?.results.find(
+      (wcifResult) => wcifResult.personId === result.person.registrantId
+    );
+  if (!resultsFromWcaLive) return false;
+  if (submittedAttempts.length !== resultsFromWcaLive.attempts.length)
+    return true;
+  for (let i = 0; i < submittedAttempts.length; i++) {
+    const submittedValue =
+      submittedAttempts[i].penalty === -1
+        ? -1
+        : submittedAttempts[i].value + submittedAttempts[i].penalty * 100;
+    if (submittedValue !== resultsFromWcaLive.attempts[i].result) return true;
+  }
+  return false;
 };

@@ -6,7 +6,7 @@ import { Result } from "../../logic/interfaces";
 import { Alert, AlertIcon, Box, Button, Heading, Text, useToast } from "@chakra-ui/react";
 import regions from "../../logic/regions";
 import AttemptsTable from "../../Components/Table/AttemptsTable";
-import { getCutoffByRoundId, getLimitByRoundId, getNumberOfAttemptsForRound, getRoundNameById, getSubmittedAttempts } from "../../logic/utils";
+import { getCutoffByRoundId, getLimitByRoundId, getNumberOfAttemptsForRound, getRoundNameById, getSubmittedAttempts, isThereADiffrenceBetweenResults } from "../../logic/utils";
 import { useAtom } from "jotai";
 import { competitionAtom } from "../../logic/atoms";
 import { resultToString } from "../../logic/resultFormatters";
@@ -32,17 +32,9 @@ const SingleResult = (): JSX.Element => {
     }, [result]);
 
     const isDiffrenceBetweenResults = useMemo(() => {
-        if (!result) return false;
-        const resultsFromWcaLive =  competition?.wcif.events.find(event => event.id === result?.eventId)?.rounds.find(round => round.id === result?.roundId)?.results.find(wcifResult => wcifResult.personId === result.person.registrantId);
-        if (!resultsFromWcaLive) return false;
-        if (submittedAttempts.length !== resultsFromWcaLive.attempts.length) return true;
-        console.log(submittedAttempts, resultsFromWcaLive.attempts);
-        for (let i = 0; i < submittedAttempts.length; i++) {
-            const submittedValue = submittedAttempts[i].penalty === -1 ? -1 : submittedAttempts[i].value + submittedAttempts[i].penalty * 100;
-            console.log(submittedValue, resultsFromWcaLive.attempts[i].result, submittedValue !== resultsFromWcaLive.attempts[i].result)
-            if (submittedValue !== resultsFromWcaLive.attempts[i].result) return true;
-        }
-    }, [competition?.wcif.events, result, submittedAttempts]);
+        if (!result || !competition) return false;
+        return isThereADiffrenceBetweenResults(result, submittedAttempts, competition.wcif);
+    }, [competition, result, submittedAttempts]);
 
     const cutoff = useMemo(() => {
         if (!competition || !result) {
