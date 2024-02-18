@@ -20,12 +20,13 @@ const CreateAccountModal: React.FC<CreateAccountModalProps> = ({ isOpen, onClose
         const username = data.get("username") as string;
         const email = data.get("email") as string;
         const role = data.get("role") as string;
+        const password = data.get("password") as string;
 
-        const response = await createAccount(email, username, role);
+        const response = await createAccount(email, username, role, password);
         if (response.status === 201) {
             toast({
-                title: "Successfully created account.",
-                description: "Password has been sent to the user's email.",
+                title: "Success",
+                description: "Account has been created successfully.",
                 status: "success",
                 duration: 9000,
                 isClosable: true,
@@ -53,6 +54,10 @@ const CreateAccountModal: React.FC<CreateAccountModalProps> = ({ isOpen, onClose
                 <FormControl isRequired>
                     <FormLabel>Email</FormLabel>
                     <Input placeholder='Email' type="email" _placeholder={{ color: "white" }} name="email" disabled={isLoading} />
+                </FormControl>
+                <FormControl isRequired>
+                    <FormLabel>Password</FormLabel>
+                    <Input placeholder='Password' type="password" _placeholder={{ color: "white" }} name="password" disabled={isLoading} />
                 </FormControl>
                 <FormControl isRequired>
                     <FormLabel>Role</FormLabel>
