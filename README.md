@@ -4,16 +4,16 @@
 
 FKMTime is a system for running speedcubing competitions without scorecards! This repository contains the entire code for the web, mobile, and backend applications. 
 
+Source code for FKM devices is available [here](https://github.com/filipton/fkm-timer)
+
 ## Important information
 **FKMTime is currently in the testing phase. For now, in accordance with WCA regulations, scorecards are still used in parallel with the system.**
 
-Source code for FKM devices is available [here](https://github.com/filipton/fkm-timer)
 ## Development
 
 ### Requirements
 - NodeJS (version 19.0.0 or later)
 - MariaDB
-
 
 ### Setup database
 
@@ -95,3 +95,11 @@ You have to run WCA and WCA Live locally in order to import competition to the s
 ## Production
 
 The system is designed to be configured from scratch for each competition. It is recommended to run the server on a computer located at the competition venue.
+
+We use Docker for production. Just run
+
+```bash
+docker compose up
+```
+
+This will start backend, database and admin-site. 
