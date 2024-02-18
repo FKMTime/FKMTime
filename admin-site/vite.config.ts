@@ -19,7 +19,4 @@ export default defineConfig({
     viteTsconfigPaths(),
     svgrPlugin(),
   ],
-  build: {
-    outDir: "build",
-  },
 });

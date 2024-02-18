@@ -8,8 +8,10 @@ import { getPrettyCompetitionEndDate } from "../../logic/utils";
 import EventIcon from "../../Components/Icons/EventIcon";
 import { useAtom } from "jotai";
 import { competitionAtom } from "../../logic/atoms";
+import { useNavigate } from "react-router-dom";
 
 const Home = (): JSX.Element => {
+  const navigate = useNavigate();
   const [competition, setCompetition] = useAtom(competitionAtom);
   const [selectedVenue, setSelectedVenue] = useState<number>(0);
   const [selectedRoom, setSelectedRoom] = useState<number>(0);
@@ -33,10 +35,13 @@ const Home = (): JSX.Element => {
 
   const fetchData = useCallback(async () => {
     const response = await getCompetitionInfo();
+    if (response.status === 404) {
+      navigate('/competition');
+    }
     setCompetition(response.data);
     setSelectedVenue(response.data.wcif.schedule.venues[0].id);
     setSelectedRoom(response.data.wcif.schedule.venues[0].rooms[0].id);
-  }, [setCompetition]);
+  }, [navigate, setCompetition]);
 
   useEffect(() => {
     fetchData();
@@ -49,7 +54,7 @@ const Home = (): JSX.Element => {
   return (
     <Box display="flex" flexDirection="column" gap="5">
       <Heading size="lg">{competition?.name}</Heading>
-      {competition.wcif.schedule.numberOfDays === 1 ? (
+      {competition.wcif?.schedule.numberOfDays === 1 ? (
         <>Date: {new Date(competition.wcif.schedule.startDate).toLocaleDateString()}</>
       ) : (
         <>

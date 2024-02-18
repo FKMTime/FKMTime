@@ -1,0 +1,52 @@
+version: '3'
+
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: fkmtime-backend
+    ports:
+      - '5000:5000'
+    restart: unless-stopped
+    depends_on:
+      - database
+
+  database:
+    image: mariadb:latest
+    container_name: fkmtime-database
+    ports:
+      - '3306:3306'
+    restart: unless-stopped 
+    environment:
+      - MARIADB_ALLOW_EMPTY_ROOT_PASSWORD=1
+      - MARIADB_DATABASE="fkm_time" 
+    volumes:
+      - ./backend/init.sql:/docker-entrypoint-initdb.d/init.sql
+
+  admin-site:
+    build:
+      context: ./admin-site
+      dockerfile: Dockerfile
+    container_name: fkmtime-frontend
+    volumes:
+      - frontend_dist:/app/dist
+    depends_on:
+      - backend
+
+  nginx:
+    build:
+      context: ./nginx
+      dockerfile: Dockerfile
+    container_name: fkmtime-nginx
+    ports:
+      - '80:80'
+    volumes:
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf
+      - frontend_dist:/frontend
+    depends_on:
+      - admin-site
+
+
+volumes:
+  frontend_dist:

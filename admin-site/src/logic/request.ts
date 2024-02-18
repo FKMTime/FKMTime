@@ -1,4 +1,4 @@
-const BACKEND_URL = import.meta.env.PROD ? "" : "http://localhost:5000/";
+const BACKEND_URL = import.meta.env.PROD ? "/api/" : "http://localhost:5000/";
 
 export const backendRequest = (
   path: string,
