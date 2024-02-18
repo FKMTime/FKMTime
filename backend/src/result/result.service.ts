@@ -282,29 +282,31 @@ export class ResultService {
         cardId: data.competitorId.toString(),
       },
     });
-    let locale = competitor.countryIso2;
+    let locale = 'PL';
     if (!competitor) {
       throw new HttpException(
         locale === 'PL' ? pl['competitorNotFound'] : en['competitorNotFound'],
         404,
       );
     }
+    locale = competitor.countryIso2;
     const judge = await this.prisma.person.findFirst({
       where: {
         cardId: data.judgeId.toString(),
       },
     });
-    if (judge.countryIso2 === 'PL' && competitor.countryIso2 === 'PL') {
-      locale = 'PL';
-    } else {
-      locale = 'EN';
-    }
     if (!judge && !data.isDelegate) {
       throw new HttpException(
         locale === 'PL' ? pl['judgeNotFound'] : en['judgeNotFound'],
         404,
       );
     }
+    if (judge.countryIso2 === 'PL' && competitor.countryIso2 === 'PL') {
+      locale = 'PL';
+    } else {
+      locale = 'EN';
+    }
+
     const competition = await this.prisma.competition.findFirst();
     if (!competition) {
       throw new HttpException(

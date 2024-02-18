@@ -42,7 +42,7 @@ const AssignCardModal: React.FC<AssignCardModalProps> = ({ isOpen, onClose, pers
     };
 
     return (
-        <Modal isOpen={isOpen} onClose={onClose} title="Create Account">
+        <Modal isOpen={isOpen} onClose={onClose} title="Assign card">
             <Box display="flex" flexDirection="column" gap="5" as="form" onSubmit={handleSubmit}>
                 <FormControl>
                     <FormLabel>Card</FormLabel>

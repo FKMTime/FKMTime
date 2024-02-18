@@ -8,12 +8,15 @@ import CreateStationModal from "../../Components/Modal/CreateStationModal";
 import StationsTable from "../../Components/Table/StationsTable";
 
 const Stations = (): JSX.Element => {
+    const [isLoading, setIsLoading] = useState<boolean>(true);
     const [stations, setStations] = useState<Station[]>([]);
     const [isOpenCreateStationModal, setIsOpenCreateStationModal] = useState<boolean>(false);
 
     const fetchData = async () => {
+        setIsLoading(true);
         const data = await getAllStations();
         setStations(data);
+        setIsLoading(false);
     };
 
     const handleCloseCreateStationModal = async () => {
@@ -25,7 +28,7 @@ const Stations = (): JSX.Element => {
         fetchData();
     }, []);
 
-    if (stations.length === 0) return <LoadingPage />
+    if (isLoading) return <LoadingPage />
 
     return (
         <Box display="flex" flexDirection="column" gap="5">

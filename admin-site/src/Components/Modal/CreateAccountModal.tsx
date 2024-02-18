@@ -45,7 +45,7 @@ const CreateAccountModal: React.FC<CreateAccountModalProps> = ({ isOpen, onClose
     };
 
     return (
-        <Modal isOpen={isOpen} onClose={onClose} title="Create Account">
+        <Modal isOpen={isOpen} onClose={onClose} title="Create account">
             <Box display="flex" flexDirection="column" gap="5" as="form" onSubmit={handleSubmit}>
                 <FormControl isRequired>
                     <FormLabel>Username</FormLabel>

@@ -23,7 +23,7 @@ const Tutorial = (): JSX.Element => {
                         Import a competition from the WCA Website (after creating groups)
                     </ListItem>
                     <ListItem>
-                        Create an account for the delegate (password will be sent to the delegate's email)
+                        Create an account for the delegate
                     </ListItem>
                     <ListItem>
                         Assign RFID cards to the competitors in the <RouterLink style={{
