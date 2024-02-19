@@ -15,6 +15,7 @@ import { UpdateAccountDto } from './dto/updateAccount.dto';
 import { AdminGuard } from 'src/auth/guards/admin.guard';
 import { AuthGuard } from '@nestjs/passport';
 import { GetUser } from 'src/auth/decorator/getUser.decorator';
+import { UpdatePasswordDto } from './dto/updatePassword.dto';
 
 @Controller('account')
 export class AccountController {
@@ -24,6 +25,15 @@ export class AccountController {
   @Get()
   async getAllAccounts() {
     return await this.accountService.getAllAccounts();
+  }
+
+  @UseGuards(AdminGuard)
+  @Put(':id/password')
+  async updatePassword(
+    @Param('id') id: number,
+    @Body() data: UpdatePasswordDto,
+  ) {
+    return await this.accountService.updatePassword(id, data.password);
   }
 
   @UseGuards(AdminGuard)

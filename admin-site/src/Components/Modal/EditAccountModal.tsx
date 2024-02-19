@@ -42,7 +42,7 @@ const EditAccountModal: React.FC<EditAccountModalProps> = ({ isOpen, onClose, ac
     };
 
     return (
-        <Modal isOpen={isOpen} onClose={onClose} title="Create Account">
+        <Modal isOpen={isOpen} onClose={onClose} title="Edit account">
             <Box display="flex" flexDirection="column" gap="5" as="form" onSubmit={handleSubmit}>
                 <FormControl isRequired>
                     <FormLabel>Username</FormLabel>

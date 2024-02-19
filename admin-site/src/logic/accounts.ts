@@ -30,3 +30,8 @@ export const deleteAccount = async (id: number) => {
   const response = await backendRequest(`account/${id}`, "DELETE", true);
   return response.status;
 };
+
+export const updateAccountPassword = async (id: number, password: string) => {
+  const response = await backendRequest(`account/${id}/password`, "PUT", true, { password });
+  return response.status;
+};

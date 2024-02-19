@@ -1,6 +1,7 @@
 import { DbService } from './../db/db.service';
 import { Injectable } from '@nestjs/common';
 import { UpdateAccountDto } from './dto/updateAccount.dto';
+import { sha512 } from 'js-sha512';
 
 @Injectable()
 export class AccountService {
@@ -26,6 +27,15 @@ export class AccountService {
         username: data.username,
         email: data.email,
         role: data.role,
+      },
+    });
+  }
+
+  async updatePassword(id: number, password: string) {
+    return await this.prisma.account.update({
+      where: { id: id },
+      data: {
+        password: sha512(password),
       },
     });
   }
