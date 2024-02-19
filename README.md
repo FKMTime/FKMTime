@@ -49,10 +49,6 @@ npm install
 PORT=5000
 DATABASE_URL=mysql://root@127.0.0.1:3306/fkm_time
 SECRET=jwt_secret
-SMTP_HOST=smtp.gmail.com
-SMTP_USER=youremail@gmail.com
-SMTP_PASS=password
-EMAIL_FROM="FKMTime <youremail@gmail.com"
 WCA_LIVE_API_ORIGIN=http://localhost:4000
 WCA_ORIGIN=http://localhost:3001
 ```
