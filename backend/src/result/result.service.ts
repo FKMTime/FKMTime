@@ -275,7 +275,13 @@ export class ResultService {
       },
     });
     if (!station) {
-      throw new HttpException('Station not found', 404);
+      throw new HttpException(
+        {
+          message: 'Station not found',
+          shouldResetTime: false,
+        },
+        404,
+      );
     }
     const competitor = await this.prisma.person.findFirst({
       where: {
@@ -285,7 +291,13 @@ export class ResultService {
     let locale = 'PL';
     if (!competitor) {
       throw new HttpException(
-        locale === 'PL' ? pl['competitorNotFound'] : en['competitorNotFound'],
+        {
+          message:
+            locale === 'PL'
+              ? pl['competitorNotFound']
+              : en['competitorNotFound'],
+          shouldResetTime: true,
+        },
         404,
       );
     }
@@ -297,20 +309,30 @@ export class ResultService {
     });
     if (!judge && !data.isDelegate) {
       throw new HttpException(
-        locale === 'PL' ? pl['judgeNotFound'] : en['judgeNotFound'],
+        {
+          message: locale === 'PL' ? pl['judgeNotFound'] : en['judgeNotFound'],
+          shouldResetTime: false,
+        },
         404,
       );
     }
-    if (judge.countryIso2 === 'PL' && competitor.countryIso2 === 'PL') {
-      locale = 'PL';
-    } else {
-      locale = 'EN';
+    if (judge) {
+      if (judge.countryIso2 === 'PL' && competitor.countryIso2 === 'PL') {
+        locale = 'PL';
+      } else {
+        locale = 'EN';
+      }
     }
-
     const competition = await this.prisma.competition.findFirst();
     if (!competition) {
       throw new HttpException(
-        locale === 'PL' ? pl['competitionNotFound'] : en['competitionNotFound'],
+        {
+          message:
+            locale === 'PL'
+              ? pl['competitionNotFound']
+              : en['competitionNotFound'],
+          shouldResetTime: true,
+        },
         404,
       );
     }
@@ -335,9 +357,13 @@ export class ResultService {
     );
     if (!isCompetitorInThisGroup) {
       throw new HttpException(
-        locale === 'PL'
-          ? pl['competitorIsNotInThisGroup']
-          : en['competitorIsNotInThisGroup'],
+        {
+          message:
+            locale === 'PL'
+              ? pl['competitorIsNotInThisGroup']
+              : en['competitorIsNotInThisGroup'],
+          shouldResetTime: true,
+        },
         400,
       );
     }
@@ -380,7 +406,11 @@ export class ResultService {
 
     if (!finalData.cutoffPassed) {
       throw new HttpException(
-        locale === 'PL' ? pl['cutoffNotPassed'] : en['cutoffNotPassed'],
+        {
+          message:
+            locale === 'PL' ? pl['cutoffNotPassed'] : en['cutoffNotPassed'],
+          shouldResetTime: true,
+        },
         400,
       );
     }
@@ -453,7 +483,11 @@ export class ResultService {
     const maxAttempts = roundInfo.format === 'a' ? 5 : 3;
     if (lastAttempt && lastAttempt.attemptNumber === maxAttempts) {
       throw new HttpException(
-        locale === 'PL' ? pl['noAttemptsLeft'] : en['noAttemptsLeft'],
+        {
+          message:
+            locale === 'PL' ? pl['noAttemptsLeft'] : en['noAttemptsLeft'],
+          shouldResetTime: true,
+        },
         400,
       );
     }

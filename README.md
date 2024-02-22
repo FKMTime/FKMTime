@@ -44,7 +44,7 @@ cd backend
 npm install
 ```
 
-- Create .env file and enter database URL, JWT secret and WCA and WCA Live URL (and if you want, SMTP details)
+- Create .env file and enter database URL, JWT secret and WCA and WCA Live URL
 ```
 PORT=5000
 DATABASE_URL=mysql://root@127.0.0.1:3306/fkm_time
