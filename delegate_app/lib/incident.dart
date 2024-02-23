@@ -89,12 +89,35 @@ class _IncidentPageState extends State<IncidentPage> {
           ),
         ],
       ),
-      body: Container(
-        padding: const EdgeInsets.all(20),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(10),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.start,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            const Text(
+              "Quick actions",
+              style: TextStyle(
+                fontSize: 30,
+                color: Colors.white,
+              ),
+            ),
+            const SizedBox(
+              height: 10,
+            ),
+            ElevatedButton(
+              onPressed: () {
+                setState(() {
+                  attempt.isResolved = true;
+                  attempt.extraGiven = true;
+                });
+                handleSubmit();
+              },
+              child: const Text('A7G'),
+            ),
+            const SizedBox(
+              height: 10,
+            ),
             Text(
               '${events.firstWhere((event) => event.id == attempt.result.eventId)?.name} Round $roundNumber',
               style: const TextStyle(
@@ -119,7 +142,6 @@ class _IncidentPageState extends State<IncidentPage> {
               keyboardType: TextInputType.number,
               initialValue: attempt.value.toString(),
               onChanged: (value) {
-                print(value);
                 attempt.value = int.parse(value);
               },
             ),

@@ -52,6 +52,11 @@ export class PersonService {
               equals: '',
             },
           },
+          {
+            cardId: {
+              equals: '0',
+            },
+          },
         ],
       },
     });
@@ -74,6 +79,11 @@ export class PersonService {
           {
             cardId: {
               equals: '',
+            },
+          },
+          {
+            cardId: {
+              equals: '0',
             },
           },
         ],

@@ -87,8 +87,6 @@ class Attempt {
       attempts.add(fromDynamic(json[i]));
     }
 
-    print(attempts);
-
     return attempts;
   }
 
