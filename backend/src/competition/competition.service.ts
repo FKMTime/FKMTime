@@ -98,6 +98,40 @@ export class CompetitionService {
     return rounds;
   }
 
+  async getAllGroups() {
+    const competition = await this.prisma.competition.findFirst();
+    const wcif = JSON.parse(JSON.stringify(competition.wcif));
+    const groups = [];
+    wcif.events.forEach((event) => {
+      event.rounds.forEach((round) => {
+        const roundGroups = wcif.schedule.venues[0].rooms[0].activities.find(
+          (activity) => activity.activityCode === round.id,
+        ).childActivities;
+        roundGroups.forEach((group) => {
+          groups.push({
+            name: group.name,
+            groupId: group.activityCode,
+            eventId: event.id,
+            roundId: round.id,
+            isCurrent: competition.currentGroupId === group.activityCode,
+          });
+        });
+      });
+    });
+    return groups;
+  }
+
+  async updateCurrentGroup(groupId: string) {
+    await this.prisma.competition.updateMany({
+      data: {
+        currentGroupId: groupId,
+      },
+    });
+    return {
+      message: 'Current group updated successfully',
+    };
+  }
+
   async updateCompetition(id: number, dto: UpdateCompetitionDto) {
     return await this.prisma.competition.update({
       where: {

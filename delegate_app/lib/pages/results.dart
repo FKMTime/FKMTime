@@ -1,8 +1,8 @@
-import 'package:delegate_app/types.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-
-import 'loading.dart';
+import 'package:delegate_app/api/result.dart';
+import 'package:delegate_app/api/user.dart';
+import 'package:delegate_app/components/loading.dart';
 
 class ResultsPage extends StatefulWidget {
   final String roundId;

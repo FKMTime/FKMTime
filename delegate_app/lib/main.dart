@@ -1,11 +1,13 @@
-import 'package:delegate_app/homepage.dart';
-import 'package:delegate_app/login.dart';
-import 'package:delegate_app/result.dart';
-import 'package:delegate_app/results.dart';
-import 'package:delegate_app/rounds.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'incident.dart';
+import 'package:delegate_app/pages/settings.dart';
+import 'package:delegate_app/pages/homepage.dart';
+import 'package:delegate_app/pages/incident.dart';
+import 'package:delegate_app/pages/login.dart';
+import 'package:delegate_app/pages/results.dart';
+import 'package:delegate_app/pages/rounds.dart';
+import 'package:delegate_app/pages/result.dart';
+
 
 void main() async {
   runApp(const MyApp());
@@ -50,6 +52,14 @@ final routes = [
       context,
       state,
       RoundsPage(),
+    ),
+  ),
+    GoRoute(
+    path: "/settings",
+    pageBuilder: (context, state) => defaultTransitionPage(
+      context,
+      state,
+      const SettingsPage(),
     ),
   ),
   GoRoute(

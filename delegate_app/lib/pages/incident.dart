@@ -1,8 +1,8 @@
-import 'package:delegate_app/types.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-
-const List<String> commentOptions = ['none', 'a7g', 'other'];
+import 'package:delegate_app/api/attempt.dart';
+import 'package:delegate_app/api/event.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 
 class IncidentPage extends StatefulWidget {
   final String caseId;
@@ -33,48 +33,20 @@ class _IncidentPageState extends State<IncidentPage> {
     final ok = await attempt.update(reSubmitToWcaLive);
     if (ok) {
       context.go('/');
-      showDialog(
-        context: context,
-        builder: (context) => AlertDialog(
-          content: const Text('Saved!'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('OK'),
-            ),
-          ],
-        ),
-      );
     } else {
-      showDialog(
-        context: context,
-        builder: (context) => AlertDialog(
-          content: const Text('Something went wrong!'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('OK'),
-            ),
-          ],
-        ),
-      );
+      Fluttertoast.showToast(
+          msg: "Something went wrong!",
+          toastLength: Toast.LENGTH_SHORT,
+          gravity: ToastGravity.CENTER,
+          timeInSecForIosWeb: 1,
+          backgroundColor: Colors.red,
+          textColor: Colors.white,
+          fontSize: 16.0);
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    if (attempt == null) {
-      return const Scaffold(
-        body: Center(
-          child: Text(
-            'Loading...',
-            style: TextStyle(
-                fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white),
-          ),
-        ),
-      );
-    }
-
     final roundNumber = attempt.result.roundId.split('-r')[1];
 
     return Scaffold(
@@ -147,7 +119,6 @@ class _IncidentPageState extends State<IncidentPage> {
             ),
             const SizedBox(height: 10),
 
-            // Dropdown for penalty
             const Text(
               'Penalty',
               style: TextStyle(fontSize: 18, color: Colors.white),

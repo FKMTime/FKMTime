@@ -1,28 +1,27 @@
-import 'package:delegate_app/login.dart';
-import 'package:delegate_app/types.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:go_router/go_router.dart';
-import 'incident_card.dart';
-import 'loading.dart';
+import 'package:delegate_app/components/loading.dart';
+import 'package:delegate_app/api/round.dart';
+import 'package:delegate_app/api/user.dart';
 
-class HomePage extends StatefulWidget {
-  HomePage({super.key});
+class RoundsPage extends StatefulWidget {
+  RoundsPage({super.key});
 
   bool isUserLoggedIn = true;
 
   @override
-  State<HomePage> createState() => _HomePageState();
+  State<RoundsPage> createState() => _RoundsPageState();
 }
 
-class _HomePageState extends State<HomePage> {
+class _RoundsPageState extends State<RoundsPage> {
   @override
   Widget build(BuildContext context) {
     return FutureBuilder(
       future: () async {
         widget.isUserLoggedIn = await User.getToken() != null;
         if (widget.isUserLoggedIn) {
-          return Attempt.fetchAll();
+          return Round.fetchAll();
         } else {
           return [];
         }
@@ -40,22 +39,15 @@ class _HomePageState extends State<HomePage> {
       return const Loading();
     }
     if (!widget.isUserLoggedIn) {
-      return LoginPage();
+      context.go('/login');
     }
 
     List<Widget> cards = [];
 
-    for (Attempt incident in snapshot.data) {
-      final String eventName = events.getById(incident.result.eventId).name;
-      cards.add(IncidentCard(
-        id: incident.id,
-        eventName:
-            '$eventName round ${incident.result.roundId.split("-r").last}',
-        competitorName: incident.result.person.name,
-        attemptNumber: incident.attemptNumber.toString(),
-        value: incident.value,
-        stationName: incident.station.name,
-        judgeName: incident.judge.name,
+    for (Round round in snapshot.data) {
+      cards.add(RoundCard(
+        id: round.id,
+        name: round.name,
       ));
     }
 
@@ -65,15 +57,9 @@ class _HomePageState extends State<HomePage> {
         actions: [
           IconButton(
             onPressed: () async {
-              context.go('/rounds');
+              context.go('/');
             },
-            icon: const Icon(Icons.bar_chart_sharp),
-          ),
-          IconButton(
-            onPressed: () async {
-              setState(() {});
-            },
-            icon: const Icon(Icons.refresh),
+            icon: const Icon(Icons.home),
           ),
           IconButton(
             onPressed: () async {
@@ -93,7 +79,7 @@ class _HomePageState extends State<HomePage> {
             padding: const EdgeInsets.symmetric(vertical: 50),
             child: Wrap(
               children: [
-                incidents(cards, snapshot),
+                rounds(cards, snapshot),
               ],
             ),
           ),
@@ -102,13 +88,53 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Widget incidents(List<Widget> cards, AsyncSnapshot snapshot) {
+  Widget rounds(List<Widget> cards, AsyncSnapshot snapshot) {
     if (cards.isEmpty) {
-      return const Text("No incidents", style: TextStyle(fontSize: 20));
+      return const Text("No rounds", style: TextStyle(fontSize: 20));
     } else {
       return Wrap(
         children: cards,
       );
     }
+  }
+}
+
+class RoundCard extends StatelessWidget {
+  const RoundCard({super.key, required this.id, required this.name});
+  final String id;
+  final String name;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: () {
+        context.go('/rounds/$id');
+      },
+      child: Card(
+        child: Padding(
+          padding: const EdgeInsets.all(5),
+          child: Container(
+            decoration: BoxDecoration(
+              color: Colors.teal,
+              borderRadius: BorderRadius.circular(7),
+            ),
+            width: 300,
+            height: 50,
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                Text(
+                  name,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 20,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
   }
 }

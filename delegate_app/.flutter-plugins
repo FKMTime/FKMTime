@@ -8,6 +8,7 @@ flutter_secure_storage_linux=/home/mgala/.pub-cache/hosted/pub.dev/flutter_secur
 flutter_secure_storage_macos=/home/mgala/.pub-cache/hosted/pub.dev/flutter_secure_storage_macos-3.0.1/
 flutter_secure_storage_web=/home/mgala/.pub-cache/hosted/pub.dev/flutter_secure_storage_web-1.1.2/
 flutter_secure_storage_windows=/home/mgala/.pub-cache/hosted/pub.dev/flutter_secure_storage_windows-3.0.0/
+fluttertoast=/home/mgala/.pub-cache/hosted/pub.dev/fluttertoast-8.2.4/
 path_provider=/home/mgala/.pub-cache/hosted/pub.dev/path_provider-2.1.2/
 path_provider_android=/home/mgala/.pub-cache/hosted/pub.dev/path_provider_android-2.2.2/
 path_provider_foundation=/home/mgala/.pub-cache/hosted/pub.dev/path_provider_foundation-2.3.2/

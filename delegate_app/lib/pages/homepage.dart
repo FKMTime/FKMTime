@@ -1,28 +1,29 @@
-import 'package:delegate_app/login.dart';
-import 'package:delegate_app/types.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:go_router/go_router.dart';
+import 'package:delegate_app/components/incident_card.dart';
+import 'package:delegate_app/components/loading.dart';
+import 'package:delegate_app/api/attempt.dart';
+import 'package:delegate_app/api/user.dart';
+import 'package:delegate_app/api/event.dart';
 
-import 'loading.dart';
-
-class RoundsPage extends StatefulWidget {
-  RoundsPage({super.key});
+class HomePage extends StatefulWidget {
+  HomePage({super.key});
 
   bool isUserLoggedIn = true;
 
   @override
-  State<RoundsPage> createState() => _RoundsPageState();
+  State<HomePage> createState() => _HomePageState();
 }
 
-class _RoundsPageState extends State<RoundsPage> {
+class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     return FutureBuilder(
       future: () async {
         widget.isUserLoggedIn = await User.getToken() != null;
         if (widget.isUserLoggedIn) {
-          return Round.fetchAll();
+          return Attempt.fetchAll();
         } else {
           return [];
         }
@@ -40,15 +41,22 @@ class _RoundsPageState extends State<RoundsPage> {
       return const Loading();
     }
     if (!widget.isUserLoggedIn) {
-      return LoginPage();
+      context.go('/login');
     }
 
     List<Widget> cards = [];
 
-    for (Round round in snapshot.data) {
-      cards.add(RoundCard(
-        id: round.id,
-        name: round.name,
+    for (Attempt incident in snapshot.data) {
+      final String eventName = events.getById(incident.result.eventId).name;
+      cards.add(IncidentCard(
+        id: incident.id,
+        eventName:
+            '$eventName round ${incident.result.roundId.split("-r").last}',
+        competitorName: incident.result.person.name,
+        attemptNumber: incident.attemptNumber.toString(),
+        value: incident.value,
+        stationName: incident.station.name,
+        judgeName: incident.judge.name,
       ));
     }
 
@@ -58,9 +66,21 @@ class _RoundsPageState extends State<RoundsPage> {
         actions: [
           IconButton(
             onPressed: () async {
-              context.go('/');
+              context.go('/rounds');
             },
-            icon: const Icon(Icons.home),
+            icon: const Icon(Icons.bar_chart_sharp),
+          ),
+          IconButton(
+            onPressed: () async {
+              context.go('/settings');
+            },
+            icon: const Icon(Icons.settings),
+          ),
+          IconButton(
+            onPressed: () async {
+              setState(() {});
+            },
+            icon: const Icon(Icons.refresh),
           ),
           IconButton(
             onPressed: () async {
@@ -80,7 +100,7 @@ class _RoundsPageState extends State<RoundsPage> {
             padding: const EdgeInsets.symmetric(vertical: 50),
             child: Wrap(
               children: [
-                rounds(cards, snapshot),
+                incidents(cards, snapshot),
               ],
             ),
           ),
@@ -89,53 +109,13 @@ class _RoundsPageState extends State<RoundsPage> {
     );
   }
 
-  Widget rounds(List<Widget> cards, AsyncSnapshot snapshot) {
+  Widget incidents(List<Widget> cards, AsyncSnapshot snapshot) {
     if (cards.isEmpty) {
-      return const Text("No rounds", style: TextStyle(fontSize: 20));
+      return const Text("No incidents", style: TextStyle(fontSize: 20));
     } else {
       return Wrap(
         children: cards,
       );
     }
-  }
-}
-
-class RoundCard extends StatelessWidget {
-  const RoundCard({super.key, required this.id, required this.name});
-  final String id;
-  final String name;
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: () {
-        context.go('/rounds/$id');
-      },
-      child: Card(
-        child: Padding(
-          padding: const EdgeInsets.all(5),
-          child: Container(
-            decoration: BoxDecoration(
-              color: Colors.teal,
-              borderRadius: BorderRadius.circular(7),
-            ),
-            width: 300,
-            height: 50,
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                Text(
-                  name,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 20,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
   }
 }

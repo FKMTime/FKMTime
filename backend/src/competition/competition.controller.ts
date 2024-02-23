@@ -20,6 +20,18 @@ export class CompetitionController {
     return await this.competitionService.getRoundsInfo();
   }
 
+  @UseGuards(AuthGuard('jwt'))
+  @Get('groups')
+  async getCompetitionGroups() {
+    return await this.competitionService.getAllGroups();
+  }
+
+  @UseGuards(AuthGuard('jwt'))
+  @Get('groups/:id')
+  async updateCurrentGroup(@Param('id') id: string) {
+    return await this.competitionService.updateCurrentGroup(id);
+  }
+
   @UseGuards(AdminGuard)
   @Get('settings')
   async getCompetitionSettings() {

@@ -152,6 +152,12 @@
       "languageVersion": "3.2"
     },
     {
+      "name": "fluttertoast",
+      "rootUri": "file:///home/mgala/.pub-cache/hosted/pub.dev/fluttertoast-8.2.4",
+      "packageUri": "lib/",
+      "languageVersion": "2.12"
+    },
+    {
       "name": "go_router",
       "rootUri": "file:///home/mgala/.pub-cache/hosted/pub.dev/go_router-13.1.0",
       "packageUri": "lib/",
@@ -338,7 +344,7 @@
       "languageVersion": "3.2"
     }
   ],
-  "generated": "2024-02-07T16:31:38.344515Z",
+  "generated": "2024-02-23T21:40:52.295858Z",
   "generator": "pub",
   "generatorVersion": "3.2.6"
 }

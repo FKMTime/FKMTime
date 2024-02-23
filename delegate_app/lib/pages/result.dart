@@ -1,8 +1,9 @@
-import 'package:delegate_app/types.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'attempt_card.dart';
-import 'loading.dart';
+import 'package:delegate_app/api/attempt.dart';
+import 'package:delegate_app/api/user.dart';
+import 'package:delegate_app/components/attempt_card.dart';
+import 'package:delegate_app/components/loading.dart';
 
 class ResultPage extends StatefulWidget {
   final String resultId;
