@@ -2,6 +2,8 @@ import 'package:delegate_app/types.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import 'loading.dart';
+
 class ResultsPage extends StatefulWidget {
   final String roundId;
 
@@ -33,7 +35,7 @@ class _ResultsPageState extends State<ResultsPage> {
       return Scaffold(body: Text('An error occurred $err'));
     }
     if (!snapshot.hasData) {
-      return const Text("Loading...");
+      return const Loading();
     }
 
     List<Widget> cards = [];

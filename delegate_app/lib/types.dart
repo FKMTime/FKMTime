@@ -4,7 +4,7 @@ import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
-const BACKEND_ORIGIN = 'http://localhost:5000';
+const BACKEND_ORIGIN = 'http://192.168.2.39:5000';
 
 extension IsOk on http.Response {
   bool get ok {

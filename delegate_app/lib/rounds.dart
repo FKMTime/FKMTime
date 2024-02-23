@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:go_router/go_router.dart';
 
+import 'loading.dart';
+
 class RoundsPage extends StatefulWidget {
   RoundsPage({super.key});
 
@@ -35,7 +37,7 @@ class _RoundsPageState extends State<RoundsPage> {
       return Scaffold(body: Text('An error occurred $err'));
     }
     if (!snapshot.hasData) {
-      return const Text("Loading...");
+      return const Loading();
     }
     if (!widget.isUserLoggedIn) {
       return LoginPage();
