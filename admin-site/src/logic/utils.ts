@@ -104,8 +104,11 @@ export const prettyRoundFormat = (format: string, cutoffAttempts?: number) => {
   }
 };
 
+interface AttemptWithNumber extends Attempt {
+  number: number;
+}
 export const getSubmittedAttempts = (attempts: Attempt[]) => {
-  const attemptsToReturn: Attempt[] = [];
+  const attemptsToReturn: AttemptWithNumber[] = [];
   attempts.forEach((attempt) => {
     if (
       attempt.replacedBy === null &&
@@ -113,7 +116,10 @@ export const getSubmittedAttempts = (attempts: Attempt[]) => {
       !attemptsToReturn.some((a) => a.id === attempt.id) &&
       !attempt.isExtraAttempt
     )
-      attemptsToReturn.push(attempt);
+      attemptsToReturn.push({
+        ...attempt,
+        number: attemptsToReturn.length + 1,
+      });
     if (attempt.replacedBy !== null && attempt.extraGiven) {
       const extraAttempt = attempts.find(
         (a) =>
@@ -123,11 +129,16 @@ export const getSubmittedAttempts = (attempts: Attempt[]) => {
         extraAttempt &&
         !attemptsToReturn.some((a) => a.id === extraAttempt.id)
       ) {
-        attemptsToReturn.push(extraAttempt);
+        attemptsToReturn.push({
+          ...extraAttempt,
+          number: attempt.attemptNumber,
+        });
       }
     }
   });
-  return attemptsToReturn.sort((a, b) => a.attemptNumber - b.attemptNumber);
+  return attemptsToReturn
+    .sort((a, b) => a.number - b.number)
+    .map((a) => a as Attempt);
 };
 
 export const getRoundNameById = (roundId: string, wcif?: Competition) => {
