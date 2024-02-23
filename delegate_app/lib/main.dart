@@ -1,9 +1,11 @@
 import 'package:delegate_app/homepage.dart';
 import 'package:delegate_app/login.dart';
+import 'package:delegate_app/result.dart';
+import 'package:delegate_app/results.dart';
+import 'package:delegate_app/rounds.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'incident.dart';
-
 
 void main() async {
   runApp(const MyApp());
@@ -40,6 +42,30 @@ final routes = [
       context,
       state,
       LoginPage(),
+    ),
+  ),
+  GoRoute(
+    path: "/rounds",
+    pageBuilder: (context, state) => defaultTransitionPage(
+      context,
+      state,
+      RoundsPage(),
+    ),
+  ),
+  GoRoute(
+    path: "/rounds/:roundId",
+    pageBuilder: (context, state) => defaultTransitionPage(
+      context,
+      state,
+      ResultsPage(roundId: state.pathParameters['roundId']!),
+    ),
+  ),
+  GoRoute(
+    path: "/results/:resultId",
+    pageBuilder: (context, state) => defaultTransitionPage(
+      context,
+      state,
+      ResultPage(resultId: state.pathParameters['resultId']!),
     ),
   ),
   GoRoute(

@@ -268,6 +268,65 @@ export class ResultService {
     };
   }
 
+  async getAttemptsByResultId(resultId: number) {
+    const attempts = await this.prisma.attempt.findMany({
+      where: {
+        result: {
+          id: resultId,
+        },
+      },
+      select: {
+        id: true,
+        resultId: true,
+        attemptNumber: true,
+        replacedBy: true,
+        isDelegate: true,
+        isResolved: true,
+        penalty: true,
+        comment: true,
+        isExtraAttempt: true,
+        extraGiven: true,
+        value: true,
+        solvedAt: true,
+        createdAt: true,
+        judge: {
+          select: {
+            id: true,
+            registrantId: true,
+            wcaId: true,
+            name: true,
+          },
+        },
+        station: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+        result: {
+          select: {
+            id: true,
+            eventId: true,
+            roundId: true,
+            groupId: true,
+            createdAt: true,
+            updatedAt: true,
+            person: {
+              select: {
+                id: true,
+                name: true,
+                wcaId: true,
+                registrantId: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    return attempts.sort((a, b) => a.attemptNumber - b.attemptNumber);
+  }
+
   async enterAttempt(data: EnterAttemptDto) {
     const station = await this.prisma.station.findFirst({
       where: {

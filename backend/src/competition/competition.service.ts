@@ -1,6 +1,7 @@
 import { DbService } from './../db/db.service';
 import { HttpException, Injectable } from '@nestjs/common';
 import { UpdateCompetitionDto } from './dto/updateCompetition.dto';
+import { eventsData } from 'src/events';
 
 const WCA_ORIGIN = `${process.env.WCA_ORIGIN}/api/v0/competitions/`;
 @Injectable()
@@ -69,6 +70,32 @@ export class CompetitionService {
       throw new HttpException('Competition not found', 404);
     }
     return competition;
+  }
+
+  async getRoundsInfo() {
+    const competition = await this.prisma.competition.findFirst();
+    if (!competition) {
+      throw new HttpException('Competition not found', 404);
+    }
+    const wcif = JSON.parse(JSON.stringify(competition.wcif));
+
+    const rounds = [];
+    wcif.events.forEach((event) => {
+      event.rounds.forEach((round) => {
+        const eventName = eventsData.find((e) => e.id === event.id).name;
+        rounds.push({
+          id: round.id,
+          number: round.id.split('-r')[1],
+          name: `${eventName} - Round ${round.id.split('-r')[1]}`,
+          eventId: event.id,
+          format: round.format,
+          timeLimit: round.timeLimit,
+          cutoff: round.cutoff,
+          advancementCondition: round.advancementCondition,
+        });
+      });
+    });
+    return rounds;
   }
 
   async updateCompetition(id: number, dto: UpdateCompetitionDto) {

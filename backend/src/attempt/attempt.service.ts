@@ -2,6 +2,7 @@ import { ResultService } from './../result/result.service';
 import { DbService } from '../db/db.service';
 import { HttpException, Injectable } from '@nestjs/common';
 import { UpdateAttemptDto } from './dto/updateAttempt.dto';
+import { CreateAttemptDto } from './dto/createAttempt.dto';
 
 @Injectable()
 export class AttemptService {
@@ -9,6 +10,38 @@ export class AttemptService {
     private readonly prisma: DbService,
     private readonly resultService: ResultService,
   ) {}
+
+  async createAttempt(resultId: number, data: CreateAttemptDto) {
+    return await this.prisma.attempt.create({
+      data: {
+        attemptNumber: data.attemptNumber,
+        value: data.value,
+        penalty: data.penalty,
+        solvedAt: new Date(),
+        station: {
+          connect: {
+            id: data.stationId,
+          },
+        },
+        judge: {
+          connect: {
+            id: data.judgeId,
+          },
+        },
+        replacedBy: data.replacedBy,
+        isDelegate: data.isDelegate,
+        isResolved: data.isResolved,
+        comment: data.comment,
+        isExtraAttempt: data.isExtraAttempt,
+        extraGiven: data.extraGiven,
+        result: {
+          connect: {
+            id: resultId,
+          },
+        },
+      },
+    });
+  }
 
   async updateAttempt(id: number, data: UpdateAttemptDto) {
     if (!data.extraGiven || data.replacedBy === 0) {

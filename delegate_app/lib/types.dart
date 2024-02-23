@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:ffi';
 import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -67,6 +68,27 @@ class Attempt {
     for (int i = 0; i < json.length; i++) {
       attempts.add(fromDynamic(json[i]));
     }
+    return attempts;
+  }
+
+  static Future<List<Attempt>> fetchAttemptsByResultId(int id) async {
+    final String jwt = (await User.getToken())!;
+    final res = await http
+        .get(Uri.parse('$BACKEND_ORIGIN/result/$id/attempts'), headers: {
+      HttpHeaders.authorizationHeader: 'Bearer $jwt',
+    });
+
+    if (!res.ok) {
+      throw "Failed to fetch result";
+    }
+    var json = jsonDecode(res.body);
+    List<Attempt> attempts = [];
+    for (int i = 0; i < json.length; i++) {
+      attempts.add(fromDynamic(json[i]));
+    }
+
+    print(attempts);
+
     return attempts;
   }
 
@@ -195,6 +217,28 @@ class Result {
     required this.person,
   });
 
+  static Future<List<Result>> fetchResultsFromRound(String id) async {
+    final String jwt = (await User.getToken())!;
+    final res =
+        await http.get(Uri.parse('$BACKEND_ORIGIN/result/round/$id'), headers: {
+      HttpHeaders.authorizationHeader: 'Bearer $jwt',
+    });
+    if (res.statusCode == 401) {
+      var storage = const FlutterSecureStorage();
+      await storage.deleteAll();
+    }
+    if (!res.ok) {
+      throw "Failed to fetch results";
+    }
+    var json = jsonDecode(res.body);
+
+    List<Result> results = [];
+    for (int i = 0; i < json.length; i++) {
+      results.add(fromDynamic(json[i]));
+    }
+    return results;
+  }
+
   static Result fromDynamic(dynamic json) {
     return Result(
       id: json['id'],
@@ -276,6 +320,45 @@ class UserInfo {
     required this.username,
     required this.role,
   });
+}
+
+class Round {
+  final String id;
+  final String name;
+
+  Round({
+    required this.id,
+    required this.name,
+  });
+
+  static Future<List<Round>> fetchAll() async {
+    final String jwt = (await User.getToken())!;
+    final res = await http
+        .get(Uri.parse('$BACKEND_ORIGIN/competition/rounds'), headers: {
+      HttpHeaders.authorizationHeader: 'Bearer $jwt',
+    });
+    if (res.statusCode == 401) {
+      var storage = const FlutterSecureStorage();
+      await storage.deleteAll();
+    }
+    if (!res.ok) {
+      throw "Failed to fetch rounds";
+    }
+    var json = jsonDecode(res.body);
+
+    List<Round> rounds = [];
+    for (int i = 0; i < json.length; i++) {
+      rounds.add(fromDynamic(json[i]));
+    }
+    return rounds;
+  }
+
+  static Round fromDynamic(dynamic json) {
+    return Round(
+      id: json['id'],
+      name: json['name'],
+    );
+  }
 }
 
 class Event {

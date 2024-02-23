@@ -79,7 +79,7 @@ class _IncidentPageState extends State<IncidentPage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Incident'),
+        title: const Text('Edit attempt'),
         actions: [
           IconButton(
             onPressed: () async {
