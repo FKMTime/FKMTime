@@ -7,7 +7,7 @@ import { AssignManyCardsDto } from './dto/assignManyCards.dto';
 export class PersonService {
   constructor(private readonly prisma: DbService) {}
 
-  async getAllPersons(page: number, pageSize: number, search?: string) {
+  async getPersons(page: number, pageSize: number, search?: string) {
     const whereParams = {};
     if (search) {
       whereParams['OR'] = [
@@ -65,6 +65,10 @@ export class PersonService {
       count: totalPersons,
       personsWithoutCardAssigned,
     };
+  }
+
+  async getAllPersons() {
+    return await this.prisma.person.findMany();
   }
 
   async getPersonsWithoutCardAssigned() {

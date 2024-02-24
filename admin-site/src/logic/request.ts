@@ -1,3 +1,5 @@
+import { getToken } from "./auth";
+
 const BACKEND_URL = import.meta.env.PROD ? "/api/" : "http://localhost:5000/";
 
 export const backendRequest = (
@@ -6,7 +8,7 @@ export const backendRequest = (
   useAuth: boolean,
   body?: unknown,
 ) => {
-  const token = localStorage.getItem("token");
+  const token = getToken();
   const headers = new Headers();
   headers.append("Content-Type", "application/json");
   if (token && useAuth) {

@@ -47,18 +47,28 @@ export class AttemptService {
     if (!data.extraGiven || data.replacedBy === 0) {
       data.replacedBy = null;
     }
+    const dataToUpdate = {
+      replacedBy: data.replacedBy,
+      isDelegate: data.isDelegate,
+      isResolved: data.isResolved,
+      penalty: data.penalty,
+      isExtraAttempt: data.isExtraAttempt,
+      extraGiven: data.extraGiven,
+      value: data.value,
+      comment: data.comment,
+    };
+    if (data.judgeId) {
+      dataToUpdate['judge'] = {
+        connect: {
+          id: data.judgeId,
+        },
+      };
+    } else {
+      dataToUpdate['judgeId'] = null;
+    }
     const attempt = await this.prisma.attempt.update({
       where: { id: id },
-      data: {
-        replacedBy: data.replacedBy,
-        isDelegate: data.isDelegate,
-        isResolved: data.isResolved,
-        penalty: data.penalty,
-        isExtraAttempt: data.isExtraAttempt,
-        extraGiven: data.extraGiven,
-        value: data.value,
-        comment: data.comment,
-      },
+      data: dataToUpdate,
       select: {
         id: true,
         result: {

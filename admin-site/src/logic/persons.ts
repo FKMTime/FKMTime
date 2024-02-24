@@ -1,7 +1,7 @@
 import { Person } from "./interfaces";
 import { backendRequest } from "./request";
 
-export const getAllPersons = async (
+export const getPersons = async (
   page = 1,
   pageSize = 10,
   search?: string
@@ -10,6 +10,11 @@ export const getAllPersons = async (
     search ? `&search=${search}` : ""
   }`;
   const response = await backendRequest(query, "GET", true);
+  return await response.json();
+};
+
+export const getAllPersons = async () => {
+  const response = await backendRequest("person/all", "GET", true);
   return await response.json();
 };
 

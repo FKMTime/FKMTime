@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { Competition, Person } from "../../logic/interfaces";
 import { Alert, AlertIcon, Box, Button, Input } from "@chakra-ui/react";
-import { getAllPersons } from "../../logic/persons";
+import { getPersons } from "../../logic/persons";
 import { calculateTotalPages } from "../../logic/utils";
 import PersonsTable from "../../Components/Table/PersonsTable";
 import { getCompetitionInfo } from "../../logic/competition";
@@ -18,7 +18,7 @@ const Persons = (): JSX.Element => {
     const [personsWithoutCardAssigned, setPersonsWithoutCardAssigned] = useState<number>(0);
 
     const fetchData = useCallback(async (pageParam = 1, pageSizeParam = 10, searchParam?: string) => {
-        const response = await getAllPersons(pageParam, pageSizeParam, searchParam);
+        const response = await getPersons(pageParam, pageSizeParam, searchParam);
         const competitionResponse = await getCompetitionInfo();
         setCompetition(competitionResponse.data);
         setPersons(response.data);

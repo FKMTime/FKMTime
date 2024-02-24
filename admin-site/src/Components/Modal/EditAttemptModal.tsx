@@ -1,11 +1,12 @@
 import { Box, Button, Checkbox, FormControl, FormLabel, Input, Select, useToast } from "@chakra-ui/react";
 import { Modal } from "./Modal";
-import { useState } from "react";
-import { Attempt, Result } from "../../logic/interfaces";
+import { useEffect, useState } from "react";
+import { Attempt, Person, Result } from "../../logic/interfaces";
 import { updateAttempt } from "../../logic/attempt";
 import { useAtomValue } from "jotai";
 import { competitionAtom } from "../../logic/atoms";
 import { checkTimeLimit } from "../../logic/results";
+import { getAllPersons } from "../../logic/persons";
 
 interface EditAttemptModalProps {
     isOpen: boolean;
@@ -18,6 +19,7 @@ const EditAttemptModal: React.FC<EditAttemptModalProps> = ({ isOpen, onClose, at
     const toast = useToast();
     const [isLoading, setIsLoading] = useState(false);
     const competition = useAtomValue(competitionAtom);
+    const [persons, setPersons] = useState<Person[]>([]);
 
     const [editedAttempt, setEditedAttempt] = useState<Attempt>(attempt);
     const [shouldResubmitToWcaLive, setShouldResubmitToWcaLive] = useState<boolean>(false);
@@ -50,6 +52,14 @@ const EditAttemptModal: React.FC<EditAttemptModalProps> = ({ isOpen, onClose, at
         setIsLoading(false);
     };
 
+    useEffect(() => {
+        const fetchPersonsData = async () => {
+            const data = await getAllPersons();
+            setPersons(data);
+        };
+        fetchPersonsData();
+    }, []);
+
     return (
         <Modal isOpen={isOpen} onClose={onClose} title="Edit attempt">
             <Box display="flex" flexDirection="column" gap="5" as="form" onSubmit={handleSubmit}>
@@ -67,7 +77,6 @@ const EditAttemptModal: React.FC<EditAttemptModalProps> = ({ isOpen, onClose, at
                             return;
                         }
                         const isLimitPassed = checkTimeLimit(+e.target.value, competition?.wcif, result.roundId);
-                        console.log(isLimitPassed);
                         if (!isLimitPassed) {
                             toast({
                                 title: "This attempt not passed time limit.",
@@ -81,6 +90,14 @@ const EditAttemptModal: React.FC<EditAttemptModalProps> = ({ isOpen, onClose, at
                         }
                         setEditedAttempt({ ...editedAttempt, value: +e.target.value });
                     }} />
+                </FormControl>
+                <FormControl>
+                    <FormLabel>Judge</FormLabel>
+                    <Select placeholder='Select judge' _placeholder={{ color: "white" }} value={editedAttempt.judgeId} disabled={isLoading} onChange={(e) => setEditedAttempt({ ...editedAttempt, judgeId: +e.target.value })}>
+                        {persons.map((person) => (
+                            <option key={person.id} value={person.id}>{person.name} ({person.registrantId})</option>
+                        ))}
+                    </Select>
                 </FormControl>
                 <FormControl>
                     <FormLabel>Comment</FormLabel>

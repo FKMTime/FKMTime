@@ -228,6 +228,7 @@ export class ResultService {
             isExtraAttempt: true,
             extraGiven: true,
             value: true,
+            judgeId: true,
             judge: {
               select: {
                 id: true,

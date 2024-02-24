@@ -9,6 +9,9 @@ export class UpdateAttemptDto {
   @IsInt()
   replacedBy: number;
 
+  @IsInt()
+  judgeId: number;
+
   @IsBoolean()
   isDelegate: boolean;
 

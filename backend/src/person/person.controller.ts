@@ -18,12 +18,18 @@ export class PersonController {
 
   @UseGuards(AuthGuard('jwt'))
   @Get()
-  async getAllPersons(
+  async getPersons(
     @Query('page') page = 1,
     @Query('pageSize') pageSize = 10,
     @Query('search') search?: string,
   ) {
-    return await this.personService.getAllPersons(+page, +pageSize, search);
+    return await this.personService.getPersons(+page, +pageSize, search);
+  }
+
+  @UseGuards(AuthGuard('jwt'))
+  @Get('all')
+  async getAllPersons() {
+    return await this.personService.getAllPersons();
   }
 
   @UseGuards(AuthGuard('jwt'))

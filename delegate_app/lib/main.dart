@@ -8,7 +8,6 @@ import 'package:delegate_app/pages/results.dart';
 import 'package:delegate_app/pages/rounds.dart';
 import 'package:delegate_app/pages/result.dart';
 
-
 void main() async {
   runApp(const MyApp());
 }

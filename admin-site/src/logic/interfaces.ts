@@ -61,6 +61,7 @@ export interface Attempt {
   extraGiven: boolean;
   solvedAt: Date;
   value: number;
+  judgeId: number;
   judge: Person;
   station: Station;
 }
