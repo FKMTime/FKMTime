@@ -9,11 +9,12 @@ services:
     ports:
       - '5000:5000'
     restart: unless-stopped
+    environment:
+      - DATABASE_URL=mysql://root@database:3306/fkm_time
     depends_on:
       - database
 
   database:
-    image: mariadb:latest
     container_name: fkmtime-database
     ports:
       - '3306:3306'
@@ -21,8 +22,11 @@ services:
     environment:
       - MARIADB_ALLOW_EMPTY_ROOT_PASSWORD=1
       - MARIADB_DATABASE="fkm_time" 
+    build:
+      context: ./
+      dockerfile: db/Dockerfile
     volumes:
-      - ./backend/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - database:/var/lib/mysql
 
   admin-site:
     build:
@@ -49,4 +53,5 @@ services:
 
 
 volumes:
+  database:
   frontend_dist:

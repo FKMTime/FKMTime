@@ -1,0 +1,2 @@
+CREATE DATABASE IF NOT EXISTS fkm_time;
+USE fkm_time;
