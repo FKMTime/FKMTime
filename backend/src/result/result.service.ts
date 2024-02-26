@@ -5,6 +5,8 @@ import Expo from 'expo-server-sdk';
 import { en, pl } from 'src/translations';
 
 const WCA_LIVE_API_ORIGIN = process.env.WCA_LIVE_API_ORIGIN;
+const WCA_LIVE_DEV_API_ORIGIN = process.env.WCA_LIVE_DEV_API_ORIGIN;
+
 @Injectable()
 export class ResultService {
   constructor(private readonly prisma: DbService) {}
@@ -676,7 +678,10 @@ export class ResultService {
     const competition = await this.prisma.competition.findFirst();
     const { competitionId, eventId, roundNumber, scoretakingToken, results } =
       await this.getAttemptsToEnterToWcaLive(result, competition);
-    const response = await fetch(`${WCA_LIVE_API_ORIGIN}/api/enter-results`, {
+    const url = competition.usesWcaProduction
+      ? WCA_LIVE_API_ORIGIN
+      : WCA_LIVE_DEV_API_ORIGIN;
+    const response = await fetch(`${url}/api/enter-results`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -712,7 +717,10 @@ export class ResultService {
       );
       resultsToSubmit.push(...results);
     }
-    const response = await fetch(`${WCA_LIVE_API_ORIGIN}/api/enter-results`, {
+    const url = competition.usesWcaProduction
+      ? WCA_LIVE_API_ORIGIN
+      : WCA_LIVE_DEV_API_ORIGIN;
+    const response = await fetch(`${url}/api/enter-results`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

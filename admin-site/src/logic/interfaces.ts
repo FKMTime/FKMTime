@@ -18,6 +18,7 @@ export interface Competition {
   id: number;
   wcaId: string;
   name: string;
+  usesWcaProduction: boolean;
   shortName: string;
   countryIso2: string;
   currentGroupId?: string;

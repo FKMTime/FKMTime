@@ -11,6 +11,9 @@ services:
     restart: unless-stopped
     environment:
       - DATABASE_URL=mysql://root@database:3306/fkm_time
+      - WCA_LIVE_API_ORIGIN=https://live.worldcubeassociation.org/api
+      - WCA_ORIGIN=https://www.worldcubeassociation.org
+      - WCA_LIVE_DEV_API_ORIGIN=http://0.0.0.0:4000/api
     depends_on:
       - database
 

@@ -33,6 +33,7 @@ model Person {
 model Competition {
   id               Int     @id @default(autoincrement())
   wcaId            String
+  usesWcaProduction Boolean @default(true)
   name             String
   shortName        String
   countryIso2      String?

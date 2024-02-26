@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Alert, AlertIcon, Box, Button, FormControl, FormLabel, Heading, IconButton, Input, Select, Text, useToast } from "@chakra-ui/react";
+import { Alert, AlertIcon, Box, Button, Checkbox, FormControl, FormLabel, Heading, IconButton, Input, Select, Text, useToast } from "@chakra-ui/react";
 import {
     getCompetitionSettings,
     importCompetition,
@@ -199,6 +199,9 @@ const Competition = (): JSX.Element => {
                         </Select>
                     </FormControl>
                 )}
+                <FormControl display="flex" flexDirection="column" gap="2">
+                    <Checkbox defaultChecked={competition.usesWcaProduction} onChange={(event) => setCompetition({ ...competition, usesWcaProduction: event?.target.checked })}>Uses WCA Live production</Checkbox>
+                </FormControl>
                 <Button type="submit" colorScheme="green">Save</Button>
             </Box>
         </Box>

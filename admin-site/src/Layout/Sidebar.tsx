@@ -1,4 +1,4 @@
-import { Box, Button, Image, Text } from "@chakra-ui/react";
+import { Box, Button, Icon, Image, Link, Text } from "@chakra-ui/react";
 import { MdBook, MdHome, MdLogout, MdPerson, MdPersonAdd, MdSettings, MdTimer } from "react-icons/md";
 import SidebarElement from "../Components/SidebarElement";
 import { IoMdTrophy } from "react-icons/io";
@@ -8,6 +8,7 @@ import { useNavigate } from "react-router-dom";
 import { useToast } from "@chakra-ui/react";
 import { logout } from "../logic/auth";
 import logo from "../assets/logo.svg";
+import { FaGithub } from "react-icons/fa";
 
 interface SidebarProps {
     user: UserInfo;
@@ -49,6 +50,9 @@ const Sidebar: React.FC<SidebarProps> = ({ user }): JSX.Element => {
             <Button leftIcon={<MdLogout />} colorScheme='teal' variant='solid' rounded="20" width="100%" textAlign="center" onClick={handleLogout}>
                 Logout
             </Button>
+            <Link href="https://github.com/maxidragon/FKMTime" isExternal>
+                <Icon as={FaGithub} color="white" boxSize="10" _hover={{ opacity: 0.8 }} />
+            </Link>
         </Box>
     )
 };

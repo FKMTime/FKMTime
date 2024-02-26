@@ -140,6 +140,7 @@ export class CompetitionService {
       data: {
         scoretakingToken: dto.scoretakingToken,
         currentGroupId: dto.currentGroupId,
+        usesWcaProduction: dto.usesWcaProduction,
       },
     });
   }
