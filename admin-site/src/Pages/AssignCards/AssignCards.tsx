@@ -57,7 +57,7 @@ const AssignCards = (): JSX.Element => {
             <Heading size="lg">There are {personsWithoutCard.length} persons without card assigned</Heading>
             <Text>Registrant ID: {currentPerson?.registrantId}</Text>
             <Text>Name: {currentPerson?.name}</Text>
-            <Input placeholder="Card ID" value={cardId} onChange={(e) => setCardId(e.target.value)} width="20%" onKeyDown={(e) => e.key === "Enter" && nextPerson()} />
+            <Input placeholder="Card ID" value={cardId} onChange={(e) => setCardId(e.target.value)} width="20%" onKeyDown={(e) => e.key === "Enter" && nextPerson()} autoFocus />
             <Button onClick={nextPerson}>Next</Button>
         </Box>
     )
