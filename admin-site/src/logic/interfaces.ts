@@ -82,3 +82,9 @@ export interface Settings {
   createdAt: Date;
   updatedAt: Date;
 }
+
+export interface GroupAssigment {
+  groupId: number;
+  groupName: string;
+  activityName: string;
+}

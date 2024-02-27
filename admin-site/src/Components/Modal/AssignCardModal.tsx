@@ -46,9 +46,8 @@ const AssignCardModal: React.FC<AssignCardModalProps> = ({ isOpen, onClose, pers
             <Box display="flex" flexDirection="column" gap="5" as="form" onSubmit={handleSubmit}>
                 <FormControl>
                     <FormLabel>Card</FormLabel>
-                    <Input placeholder='Card' _placeholder={{ color: "white" }} value={editedPerson.cardId} disabled={isLoading} onChange={(e) => setEditedPerson({ ...editedPerson, cardId: e.target.value })} />
+                    <Input placeholder='Card' _placeholder={{ color: "white" }} value={editedPerson.cardId} disabled={isLoading} onChange={(e) => setEditedPerson({ ...editedPerson, cardId: e.target.value })} autoFocus />
                 </FormControl>
-                <Button colorScheme='yellow' onClick={() => {}}>Scan card</Button>
                 <Box display="flex" flexDirection="row" justifyContent="end" gap="5">
                     {!isLoading && (
                         <Button colorScheme='red' onClick={onClose}>

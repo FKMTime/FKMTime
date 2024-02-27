@@ -655,7 +655,11 @@ export class ResultService {
     attemptNumber: number,
     attemptResult: number,
   ) {
-    const response = await fetch(`${WCA_LIVE_API_ORIGIN}/api/enter-attempt`, {
+    const competition = await this.prisma.competition.findFirst();
+    const url = competition.usesWcaProduction
+      ? WCA_LIVE_API_ORIGIN
+      : WCA_LIVE_DEV_API_ORIGIN;
+    const response = await fetch(`${url}/api/enter-attempt`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

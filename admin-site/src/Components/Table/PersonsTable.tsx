@@ -34,7 +34,7 @@ const PersonsTable: React.FC<PersonsTableProps> = ({ persons, competition, handl
                     </Thead>
                     <Tbody>
                         {competition && persons.map((person: Person) => (
-                            <PersonRow wcifInfo={getPersonFromWcif(person.registrantId, competition?.wcif)} key={person.id} person={person} handleCloseEditModal={handleCloseEditModal} />
+                            <PersonRow wcifInfo={getPersonFromWcif(person.registrantId, competition?.wcif)} wcif={competition.wcif} key={person.id} person={person} handleCloseEditModal={handleCloseEditModal} />
                         ))}
                     </Tbody>
                 </Table>

@@ -1,22 +1,25 @@
 import { Tr, Td, IconButton, Box } from "@chakra-ui/react";
 import { Person } from "../../../logic/interfaces";
-import { Person as WcifPerson } from "@wca/helpers";
+import { Competition, Person as WcifPerson } from "@wca/helpers";
 import { FaAddressCard } from "react-icons/fa";
-import { MdDone } from "react-icons/md";
+import { MdAssignment, MdDone } from "react-icons/md";
 import { prettyGender, regionNameByIso2 } from "../../../logic/utils";
 import { useState } from "react";
 import AssignCardModal from "../../Modal/AssignCardModal";
 import EventIcon from "../../Icons/EventIcon";
+import DisplayGroupsModal from "../../Modal/DisplayGroupsModal";
 
 interface PersonRowProps {
     person: Person;
+    wcif: Competition;
     wcifInfo?: WcifPerson;
     handleCloseEditModal: () => void;
 }
 
-const PersonRow: React.FC<PersonRowProps> = ({ person, wcifInfo, handleCloseEditModal }): JSX.Element => {
+const PersonRow: React.FC<PersonRowProps> = ({ person, wcif, wcifInfo, handleCloseEditModal }): JSX.Element => {
 
     const [isOpenAssignCardModal, setIsOpenAssignCardModal] = useState<boolean>(false);
+    const [isOpenDisplayGroupsModal, setIsOpenDisplayGroupsModal] = useState<boolean>(false);
 
     const handleCloseAssignCardModal = async () => {
         await handleCloseEditModal();
@@ -40,15 +43,22 @@ const PersonRow: React.FC<PersonRowProps> = ({ person, wcifInfo, handleCloseEdit
                 </Td>
                 <Td>{person.cardId && <MdDone />}</Td>
                 <Td>
-                    <IconButton icon={<FaAddressCard />} aria-label="Delete" bg="none" color="white" _hover={{
+                    <IconButton icon={<FaAddressCard />} aria-label="Card" bg="none" color="white" _hover={{
                         background: "none",
                         color: "gray.400"
                     }}
                         onClick={() => setIsOpenAssignCardModal(true)}
                     />
+                    <IconButton icon={<MdAssignment />} aria-label="Groups" bg="none" color="white" _hover={{
+                        background: "none",
+                        color: "gray.400"
+                    }}
+                        onClick={() => setIsOpenDisplayGroupsModal(true)}
+                    />
                 </Td>
             </Tr>
             <AssignCardModal isOpen={isOpenAssignCardModal} onClose={handleCloseAssignCardModal} person={person} />
+            <DisplayGroupsModal isOpen={isOpenDisplayGroupsModal} onClose={() => setIsOpenDisplayGroupsModal(false)} wcif={wcif} registrationId={person.registrantId} />
         </>
     )
 };
