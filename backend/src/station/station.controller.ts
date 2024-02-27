@@ -1,4 +1,12 @@
-import { Body, Controller, Get, Post, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  Post,
+  Put,
+  UseGuards,
+} from '@nestjs/common';
 import { StationService } from './station.service';
 import { StationDto } from './dto/station.dto';
 import { AdminGuard } from 'src/auth/guards/admin.guard';
@@ -16,5 +24,10 @@ export class StationController {
   @Post()
   async createStation(@Body() data: StationDto) {
     return await this.stationService.createStation(data);
+  }
+
+  @Put(':id')
+  async updateStation(@Param('id') id: number, @Body() data: StationDto) {
+    return await this.stationService.updateStation(id, data);
   }
 }

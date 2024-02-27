@@ -63,7 +63,7 @@ const StationRow: React.FC<StationRowProps> = ({ station, fetchData }): JSX.Elem
                         background: "none",
                         color: "gray.400"
                     }}
-                        onClick={() => {}}
+                        onClick={() => setIsOpenEditStationModal(true)}
                     />
                     <IconButton icon={<MdDelete />} aria-label="Delete" bg="none" color="white" _hover={{
                         background: "none",

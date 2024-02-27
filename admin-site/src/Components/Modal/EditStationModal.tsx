@@ -21,7 +21,7 @@ const EditStationModal: React.FC<EditStationModalProps> = ({ isOpen, onClose, st
         setIsLoading(true);
 
         const status = await updateStation(editedStation);
-        if (status === 201) {
+        if (status === 200) {
             toast({
                 title: "Successfully updated this station.",
                 status: "success",
