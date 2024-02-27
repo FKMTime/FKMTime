@@ -38,7 +38,9 @@ export class PersonService {
       take: pageSize,
       where: whereParams,
     });
-    const totalPersons = await this.prisma.person.count();
+    const totalPersons = await this.prisma.person.count({
+      where: whereParams,
+    });
     const personsWithoutCardAssigned = await this.prisma.person.count({
       where: {
         OR: [

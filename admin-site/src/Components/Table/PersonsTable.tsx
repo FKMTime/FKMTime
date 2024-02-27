@@ -1,4 +1,4 @@
-import { Table, TableContainer, Tbody, Th, Thead, Tr } from "@chakra-ui/react";
+import { Box, Table, TableContainer, Tbody, Text, Th, Thead, Tr } from "@chakra-ui/react";
 import { Competition, Person } from "../../logic/interfaces";
 import Pagination from "./Pagination";
 import PersonRow from "./Row/PersonRow";
@@ -16,6 +16,13 @@ interface PersonsTableProps {
 }
 
 const PersonsTable: React.FC<PersonsTableProps> = ({ persons, competition, handleCloseEditModal, changePageSize, handlePageChange, page, totalPages, pageSize }): JSX.Element => {
+    if (!persons || persons.length === 0) {
+        return (
+            <Box textAlign="center">
+                <Text>No persons found</Text>
+            </Box>
+        );
+    }
     return (
         <>
             <TableContainer>
