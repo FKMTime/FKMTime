@@ -31,16 +31,17 @@ model Person {
 }
 
 model Competition {
-  id                Int     @id @default(autoincrement())
-  wcaId             String
-  usesWcaProduction Boolean @default(true)
-  name              String
-  shortName         String
-  countryIso2       String?
-  currentGroupId    String?
-  shouldCheckGroup  Boolean @default(false)
-  wcif              Json?
-  scoretakingToken  String?
+  id                  Int     @id @default(autoincrement())
+  wcaId               String
+  usesWcaProduction   Boolean @default(true)
+  name                String
+  shortName           String
+  countryIso2         String?
+  currentGroupId      String?
+  shouldCheckGroup    Boolean @default(false)
+  shouldUpdateDevices Boolean @default(false)
+  wcif                Json?
+  scoretakingToken    String?
 }
 
 model Result {

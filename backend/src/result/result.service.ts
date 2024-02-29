@@ -413,6 +413,22 @@ export class ResultService {
     const competitorWcifInfo = wcif.persons.find(
       (person) => person.registrantId === competitor.registrantId,
     );
+    const isCompetitorSignedInForEvent = this.isCompetitorSignedInForEvent(
+      competitorWcifInfo,
+      currentRoundId.split('-')[0],
+    );
+    if (!isCompetitorSignedInForEvent) {
+      throw new HttpException(
+        {
+          message:
+            locale === 'PL'
+              ? pl['competitorIsNotSignedInForEvent']
+              : en['competitorIsNotSignedInForEvent'],
+          shouldResetTime: true,
+        },
+        400,
+      );
+    }
     const isCompetitorInThisGroup = this.isCompetitorInThisGroup(
       competitorWcifInfo,
       currentGroup.id,
@@ -952,6 +968,13 @@ export class ResultService {
       cutoffPassed: cutoffPassed,
       attemptNumber: submittedAttempts.length + 1,
     };
+  }
+
+  private isCompetitorSignedInForEvent(
+    competitorWcif: any,
+    currentEventId: string,
+  ) {
+    return competitorWcif.registration.eventIds.includes(currentEventId);
   }
 
   private async checkCumulativeLimit(limit: any, submittedAttempts: any[]) {

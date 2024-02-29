@@ -20,6 +20,7 @@ export interface Competition {
   name: string;
   usesWcaProduction: boolean;
   shouldCheckGroup: boolean;
+  shouldUpdateDevices: boolean;
   shortName: string;
   countryIso2: string;
   currentGroupId?: string;

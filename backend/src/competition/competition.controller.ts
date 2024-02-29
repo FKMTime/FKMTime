@@ -20,6 +20,11 @@ export class CompetitionController {
     return await this.competitionService.getRoundsInfo();
   }
 
+  @Get('should-update')
+  async shouldUpdateDevices() {
+    return await this.competitionService.shouldUpdateDevices();
+  }
+
   @UseGuards(AuthGuard('jwt'))
   @Get('groups')
   async getCompetitionGroups() {

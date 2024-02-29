@@ -14,4 +14,7 @@ export class UpdateCompetitionDto {
 
   @IsBoolean()
   shouldCheckGroup: boolean;
+
+  @IsBoolean()
+  shouldUpdateDevices: boolean;
 }

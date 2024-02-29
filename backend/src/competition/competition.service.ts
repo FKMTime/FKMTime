@@ -132,6 +132,16 @@ export class CompetitionService {
     };
   }
 
+  async shouldUpdateDevices() {
+    const competition = await this.prisma.competition.findFirst();
+    if (!competition) {
+      throw new HttpException('Competition not found', 404);
+    }
+    return {
+      shouldUpdate: competition.shouldUpdateDevices,
+    };
+  }
+
   async updateCompetition(id: number, dto: UpdateCompetitionDto) {
     return this.prisma.competition.update({
       where: {
@@ -142,6 +152,7 @@ export class CompetitionService {
         currentGroupId: dto.currentGroupId,
         usesWcaProduction: dto.usesWcaProduction,
         shouldCheckGroup: dto.shouldCheckGroup,
+        shouldUpdateDevices: dto.shouldUpdateDevices,
       },
     });
   }
