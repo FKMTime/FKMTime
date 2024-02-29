@@ -3,14 +3,14 @@ import { getAssigmentsList } from "../../logic/activities";
 import { Modal } from "./Modal";
 import { Competition } from "@wca/helpers";
 
-interface DisplayGroupsModalProops {
+interface DisplayGroupsModalProps {
     isOpen: boolean;
     onClose: () => void;
     registrationId: number;
     wcif: Competition;
 }
 
-const DisplayGroupsModal: React.FC<DisplayGroupsModalProops> = ({ isOpen, onClose, wcif, registrationId }): JSX.Element => {
+const DisplayGroupsModal: React.FC<DisplayGroupsModalProps> = ({ isOpen, onClose, wcif, registrationId }): JSX.Element => {
 
     const assigments = getAssigmentsList(registrationId, wcif);
 
