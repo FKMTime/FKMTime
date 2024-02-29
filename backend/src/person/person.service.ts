@@ -110,7 +110,7 @@ export class PersonService {
   }
 
   async updatePerson(id: number, data: UpdatePersonDto) {
-    return await this.prisma.person.update({
+    return this.prisma.person.update({
       where: { id },
       data: {
         cardId: data.cardId.toString(),
@@ -119,7 +119,7 @@ export class PersonService {
   }
 
   async getPersonInfo(cardId: string) {
-    return await this.prisma.person.findFirst({
+    const person = await this.prisma.person.findFirst({
       where: {
         cardId,
       },
@@ -132,5 +132,60 @@ export class PersonService {
         gender: true,
       },
     });
+    return {
+      ...person,
+      name: this.convertPolishToLatin(person.name),
+    };
+  }
+
+  private convertPolishToLatin(text: string) {
+    const letters = [
+      'ą',
+      'ć',
+      'ę',
+      'ł',
+      'ń',
+      'ó',
+      'ś',
+      'ź',
+      'ż',
+      'Ą',
+      'Ć',
+      'Ę',
+      'Ł',
+      'Ń',
+      'Ó',
+      'Ś',
+      'Ź',
+      'Ż',
+    ];
+    const replacement = [
+      'a',
+      'c',
+      'e',
+      'l',
+      'n',
+      'o',
+      's',
+      'z',
+      'z',
+      'A',
+      'C',
+      'E',
+      'L',
+      'N',
+      'O',
+      'S',
+      'Z',
+      'Z',
+    ];
+
+    let result = text;
+
+    for (let i = 0; i < letters.length; ++i) {
+      result = result.replaceAll(letters[i], replacement[i]);
+    }
+
+    return result;
   }
 }
