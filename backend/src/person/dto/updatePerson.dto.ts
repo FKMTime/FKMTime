@@ -1,7 +1,6 @@
-import { IsInt, IsOptional } from 'class-validator';
+import { IsString } from 'class-validator';
 
 export class UpdatePersonDto {
-  @IsInt()
-  @IsOptional()
-  cardId: number;
+  @IsString()
+  cardId: string;
 }
