@@ -12,7 +12,7 @@ export class AttemptService {
   ) {}
 
   async createAttempt(resultId: number, data: CreateAttemptDto) {
-    return await this.prisma.attempt.create({
+    return this.prisma.attempt.create({
       data: {
         attemptNumber: data.attemptNumber,
         value: data.value,
@@ -107,13 +107,13 @@ export class AttemptService {
   }
 
   async deleteAttempt(id: number) {
-    return await this.prisma.attempt.delete({
+    return this.prisma.attempt.delete({
       where: { id: id },
     });
   }
 
   async getAttemptById(id: number) {
-    return await this.prisma.attempt.findUnique({
+    return this.prisma.attempt.findUnique({
       where: { id },
       select: {
         id: true,
@@ -166,7 +166,7 @@ export class AttemptService {
   }
 
   async getUnresolvedAttempts() {
-    return await this.prisma.attempt.findMany({
+    return this.prisma.attempt.findMany({
       where: { isDelegate: true, isResolved: false },
       select: {
         id: true,

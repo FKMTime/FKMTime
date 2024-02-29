@@ -11,4 +11,7 @@ export class UpdateCompetitionDto {
 
   @IsBoolean()
   usesWcaProduction: boolean;
+
+  @IsBoolean()
+  shouldCheckGroup: boolean;
 }

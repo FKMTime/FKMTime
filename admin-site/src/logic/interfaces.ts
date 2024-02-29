@@ -19,6 +19,7 @@ export interface Competition {
   wcaId: string;
   name: string;
   usesWcaProduction: boolean;
+  shouldCheckGroup: boolean;
   shortName: string;
   countryIso2: string;
   currentGroupId?: string;

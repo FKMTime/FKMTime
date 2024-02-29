@@ -1,5 +1,5 @@
-import { DbService } from './../db/db.service';
-import { Injectable } from '@nestjs/common';
+import { DbService } from '../db/db.service';
+import { HttpException, Injectable } from '@nestjs/common';
 import { UpdatePersonDto } from './dto/updatePerson.dto';
 import { AssignManyCardsDto } from './dto/assignManyCards.dto';
 
@@ -70,11 +70,11 @@ export class PersonService {
   }
 
   async getAllPersons() {
-    return await this.prisma.person.findMany();
+    return this.prisma.person.findMany();
   }
 
   async getPersonsWithoutCardAssigned() {
-    return await this.prisma.person.findMany({
+    return this.prisma.person.findMany({
       where: {
         OR: [
           {
@@ -106,7 +106,7 @@ export class PersonService {
         },
       });
     });
-    return await this.prisma.$transaction(transactions);
+    return this.prisma.$transaction(transactions);
   }
 
   async updatePerson(id: number, data: UpdatePersonDto) {
@@ -132,6 +132,15 @@ export class PersonService {
         gender: true,
       },
     });
+    if (!person) {
+      throw new HttpException(
+        {
+          message: 'Competitor not found',
+          shouldResetTime: false,
+        },
+        404,
+      );
+    }
     return {
       ...person,
       name: this.convertPolishToLatin(person.name),

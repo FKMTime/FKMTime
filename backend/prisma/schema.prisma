@@ -8,14 +8,14 @@ datasource db {
 }
 
 model Account {
-  id        Int      @id @default(autoincrement())
-  password  String
-  email     String
-  username  String?  @unique
+  id                Int      @id @default(autoincrement())
+  password          String
+  email             String
+  username          String?  @unique
   notificationToken String?
-  role      Role?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  role              Role?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
 }
 
 model Person {
@@ -31,15 +31,16 @@ model Person {
 }
 
 model Competition {
-  id               Int     @id @default(autoincrement())
-  wcaId            String
+  id                Int     @id @default(autoincrement())
+  wcaId             String
   usesWcaProduction Boolean @default(true)
-  name             String
-  shortName        String
-  countryIso2      String?
-  currentGroupId   String?
-  wcif             Json?
-  scoretakingToken String?
+  name              String
+  shortName         String
+  countryIso2       String?
+  currentGroupId    String?
+  shouldCheckGroup  Boolean @default(false)
+  wcif              Json?
+  scoretakingToken  String?
 }
 
 model Result {

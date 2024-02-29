@@ -417,7 +417,7 @@ export class ResultService {
       competitorWcifInfo,
       currentGroup.id,
     );
-    if (!isCompetitorInThisGroup) {
+    if (!isCompetitorInThisGroup && competition.shouldCheckGroup) {
       throw new HttpException(
         {
           message:

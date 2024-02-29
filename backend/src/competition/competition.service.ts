@@ -133,7 +133,7 @@ export class CompetitionService {
   }
 
   async updateCompetition(id: number, dto: UpdateCompetitionDto) {
-    return await this.prisma.competition.update({
+    return this.prisma.competition.update({
       where: {
         id: id,
       },
@@ -141,6 +141,7 @@ export class CompetitionService {
         scoretakingToken: dto.scoretakingToken,
         currentGroupId: dto.currentGroupId,
         usesWcaProduction: dto.usesWcaProduction,
+        shouldCheckGroup: dto.shouldCheckGroup,
       },
     });
   }

@@ -202,6 +202,9 @@ const Competition = (): JSX.Element => {
                 <FormControl display="flex" flexDirection="column" gap="2">
                     <Checkbox defaultChecked={competition.usesWcaProduction} onChange={(event) => setCompetition({ ...competition, usesWcaProduction: event?.target.checked })}>Uses WCA Live production</Checkbox>
                 </FormControl>
+                <FormControl display="flex" flexDirection="column" gap="2">
+                    <Checkbox defaultChecked={competition.shouldCheckGroup} onChange={(event) => setCompetition({ ...competition, shouldCheckGroup: event?.target.checked })}>Check whether the competitor is in current group when entering attempt</Checkbox>
+                </FormControl>
                 <Button type="submit" colorScheme="green">Save</Button>
             </Box>
         </Box>
