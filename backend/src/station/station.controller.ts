@@ -1,7 +1,7 @@
 import {
   Body,
-  Controller,
-  Get,
+  Controller, Delete,
+  Get, HttpCode, HttpStatus,
   Param,
   Post,
   Put,
@@ -29,5 +29,11 @@ export class StationController {
   @Put(':id')
   async updateStation(@Param('id') id: number, @Body() data: StationDto) {
     return await this.stationService.updateStation(id, data);
+  }
+
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @Delete(':id')
+  async deleteStation(@Param('id') id: number) {
+    return await this.stationService.deleteStation(id);
   }
 }
