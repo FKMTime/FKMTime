@@ -1,6 +1,7 @@
 import { Account } from "./interfaces";
 import { backendRequest } from "./request";
 
+export const HAS_WRITE_ACCESS = ["ADMIN", "DELEGATE"];
 export const getAllAccounts = async (): Promise<Account[]> => {
   const response = await backendRequest("account", "GET", true);
   const data = await response.json();

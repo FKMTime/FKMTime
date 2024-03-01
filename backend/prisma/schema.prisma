@@ -90,6 +90,7 @@ model Station {
 enum Role {
   ADMIN
   DELEGATE
+  STAFF
 }
 
 enum Activity {

@@ -3,6 +3,8 @@ import { Modal } from "./Modal";
 import { useState } from "react";
 import { Person } from "../../logic/interfaces";
 import { updatePerson } from "../../logic/persons";
+import {getUserInfo} from "../../logic/auth.ts";
+import {HAS_WRITE_ACCESS} from "../../logic/accounts.ts";
 
 interface AssignCardModalProps {
     isOpen: boolean;
@@ -13,6 +15,7 @@ interface AssignCardModalProps {
 const AssignCardModal: React.FC<AssignCardModalProps> = ({ isOpen, onClose, person }): JSX.Element => {
 
     const toast = useToast();
+    const userInfo = getUserInfo();
     const [isLoading, setIsLoading] = useState(false);
     const [editedPerson, setEditedPerson] = useState<Person>(person);
 
@@ -46,7 +49,7 @@ const AssignCardModal: React.FC<AssignCardModalProps> = ({ isOpen, onClose, pers
             <Box display="flex" flexDirection="column" gap="5" as="form" onSubmit={handleSubmit}>
                 <FormControl>
                     <FormLabel>Card</FormLabel>
-                    <Input placeholder='Card' _placeholder={{ color: "white" }} value={editedPerson.cardId} disabled={isLoading} onChange={(e) => setEditedPerson({ ...editedPerson, cardId: e.target.value })} autoFocus />
+                    <Input placeholder='Card' isReadOnly={!userInfo.role.includes(HAS_WRITE_ACCESS)} _placeholder={{ color: "white" }} value={editedPerson.cardId} disabled={isLoading} onChange={(e) => setEditedPerson({ ...editedPerson, cardId: e.target.value })} autoFocus />
                 </FormControl>
                 <Box display="flex" flexDirection="row" justifyContent="end" gap="5">
                     {!isLoading && (
@@ -54,7 +57,11 @@ const AssignCardModal: React.FC<AssignCardModalProps> = ({ isOpen, onClose, pers
                             Cancel
                         </Button>
                     )}
-                    <Button colorScheme='green' type="submit" isLoading={isLoading}>Save</Button>
+                    {userInfo.role.includes(HAS_WRITE_ACCESS) && (
+                        <Button colorScheme='green' type="submit" isLoading={isLoading}>
+                            Save
+                        </Button>
+                    )}
                 </Box>
             </Box>
         </Modal >

@@ -3,6 +3,7 @@ import { CompetitionService } from './competition.service';
 import { UpdateCompetitionDto } from './dto/updateCompetition.dto';
 import { AuthGuard } from '@nestjs/passport';
 import { AdminGuard } from 'src/auth/guards/admin.guard';
+import { AdminOrDelegateGuard } from '../auth/guards/adminOrDelegate.guard';
 
 @Controller('competition')
 export class CompetitionController {
@@ -31,7 +32,7 @@ export class CompetitionController {
     return await this.competitionService.getAllGroups();
   }
 
-  @UseGuards(AuthGuard('jwt'))
+  @UseGuards(AuthGuard('jwt'), AdminOrDelegateGuard)
   @Get('groups/:id')
   async updateCurrentGroup(@Param('id') id: string) {
     return await this.competitionService.updateCurrentGroup(id);
@@ -49,11 +50,13 @@ export class CompetitionController {
     return await this.competitionService.importCompetition(id);
   }
 
+  @UseGuards(AuthGuard('jwt'), AdminOrDelegateGuard)
   @Get('sync/:id')
   async syncCompetition(@Param('id') id: string) {
     return await this.competitionService.updateWcif(id);
   }
 
+  @UseGuards(AuthGuard('jwt'), AdminOrDelegateGuard)
   @Put('update/:id')
   async updateCompetition(
     @Param('id') id: number,

@@ -11,6 +11,7 @@ import { PersonService } from './person.service';
 import { UpdatePersonDto } from './dto/updatePerson.dto';
 import { AuthGuard } from '@nestjs/passport';
 import { AssignManyCardsDto } from './dto/assignManyCards.dto';
+import { AdminOrDelegateGuard } from '../auth/guards/adminOrDelegate.guard';
 
 @Controller('person')
 export class PersonController {
@@ -29,16 +30,16 @@ export class PersonController {
   @UseGuards(AuthGuard('jwt'))
   @Get('all')
   async getAllPersons() {
-    return await this.personService.getAllPersons();
+    return this.personService.getAllPersons();
   }
 
   @UseGuards(AuthGuard('jwt'))
   @Get('without-card')
   async getPersonsWithoutCardAssigned() {
-    return await this.personService.getPersonsWithoutCardAssigned();
+    return this.personService.getPersonsWithoutCardAssigned();
   }
 
-  @UseGuards(AuthGuard('jwt'))
+  @UseGuards(AuthGuard('jwt'), AdminOrDelegateGuard)
   @Put('card/assign-many')
   async assignManyCards(@Body() data: AssignManyCardsDto) {
     return await this.personService.assignManyCards(data);
@@ -49,7 +50,7 @@ export class PersonController {
     return await this.personService.getPersonInfo(cardId);
   }
 
-  @UseGuards(AuthGuard('jwt'))
+  @UseGuards(AuthGuard('jwt'), AdminOrDelegateGuard)
   @Put(':id')
   async updatePerson(@Param('id') id: number, @Body() data: UpdatePersonDto) {
     return await this.personService.updatePerson(+id, data);

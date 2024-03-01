@@ -12,17 +12,18 @@ import {
 } from '@nestjs/common';
 import { AttemptService } from './attempt.service';
 import { UpdateAttemptDto } from './dto/updateAttempt.dto';
-import { AuthGuard } from '@nestjs/passport';
 import { CreateAttemptDto } from './dto/createAttempt.dto';
+import { AdminOrDelegateGuard } from '../auth/guards/adminOrDelegate.guard';
+import { AuthGuard } from '@nestjs/passport';
 
-@UseGuards(AuthGuard('jwt'))
+@UseGuards(AuthGuard('jwt'), AdminOrDelegateGuard)
 @Controller('attempt')
 export class AttemptController {
   constructor(private readonly attemptService: AttemptService) {}
 
   @Get('unresolved')
   async getUnresolvedAttempts() {
-    return await this.attemptService.getUnresolvedAttempts();
+    return this.attemptService.getUnresolvedAttempts();
   }
 
   @Post(':resultId')

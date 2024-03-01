@@ -16,6 +16,7 @@ import { AdminGuard } from 'src/auth/guards/admin.guard';
 import { AuthGuard } from '@nestjs/passport';
 import { GetUser } from 'src/auth/decorator/getUser.decorator';
 import { UpdatePasswordDto } from './dto/updatePassword.dto';
+import { AdminOrDelegateGuard } from '../auth/guards/adminOrDelegate.guard';
 
 @Controller('account')
 export class AccountController {
@@ -42,7 +43,7 @@ export class AccountController {
     return await this.accountService.updateAccount(id, data);
   }
 
-  @UseGuards(AuthGuard('jwt'))
+  @UseGuards(AuthGuard('jwt'), AdminOrDelegateGuard)
   @Post('notification-token')
   async updateNotificationToken(
     @GetUser('id') userId: number,

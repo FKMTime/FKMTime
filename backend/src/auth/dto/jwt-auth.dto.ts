@@ -7,6 +7,6 @@ export class JwtAuthDto {
 
   @IsNotEmpty()
   @IsString()
-  @IsIn(['ADMIN', 'DELEGATE'])
-  role: 'ADMIN' | 'DELEGATE';
+  @IsIn(['ADMIN', 'DELEGATE', 'STAFF'])
+  role: 'ADMIN' | 'DELEGATE' | 'STAFF';
 }

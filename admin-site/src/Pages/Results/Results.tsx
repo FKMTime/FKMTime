@@ -1,16 +1,18 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { Competition, Result } from "../../logic/interfaces";
-import { Box, Button, IconButton, Input, Select, Text, useToast } from "@chakra-ui/react";
-import { getResultsByRoundId, reSubmitRoundToWcaLive } from "../../logic/results";
-import { getCompetitionInfo } from "../../logic/competition";
-import { useNavigate } from "react-router-dom";
+import {useCallback, useEffect, useMemo, useState} from "react";
+import {Competition, Result} from "../../logic/interfaces";
+import {Box, Button, IconButton, Input, Select, Text, useToast} from "@chakra-ui/react";
+import {getResultsByRoundId, reSubmitRoundToWcaLive} from "../../logic/results";
+import {getCompetitionInfo} from "../../logic/competition";
+import {useNavigate} from "react-router-dom";
 import LoadingPage from "../../Components/LoadingPage";
 import EventIcon from "../../Components/Icons/EventIcon";
-import { Event, Round } from "@wca/helpers";
+import {Event, Round} from "@wca/helpers";
 import ResultsTable from "../../Components/Table/ResultsTable";
-import { resultToString } from "../../logic/resultFormatters";
-import { getCutoffByRoundId, getLimitByRoundId, getNumberOfAttemptsForRound } from "../../logic/utils";
+import {resultToString} from "../../logic/resultFormatters";
+import {getCutoffByRoundId, getLimitByRoundId, getNumberOfAttemptsForRound} from "../../logic/utils";
 import Alert from "../../Components/Alert";
+import {getUserInfo} from "../../logic/auth.ts";
+import {HAS_WRITE_ACCESS} from "../../logic/accounts.ts";
 
 interface ResultsFilters {
     eventId: string;
@@ -18,6 +20,7 @@ interface ResultsFilters {
 }
 const Results = (): JSX.Element => {
     const toast = useToast();
+    const userInfo = getUserInfo();
     const [openConfirmation, setOpenConfirmation] = useState<boolean>(false);
     const [competition, setCompetition] = useState<Competition | null>(null);
     const [results, setResults] = useState<Result[]>([]);
@@ -140,9 +143,11 @@ const Results = (): JSX.Element => {
                 <Text>Cutoff: {cutoff ? `${resultToString(cutoff.attemptResult)} (${cutoff.numberOfAttempts} attempts)` : "None"}</Text>
                 <Text>Limit: {limit ? `${resultToString(limit.centiseconds)} ${limit.cumulativeRoundIds.length > 0 ? "(cumulative)" : ""}` : "None"}</Text>
                 <Text>Attempts: {maxAttempts}</Text>
+                {userInfo.roles?.includes(HAS_WRITE_ACCESS) && (
                 <Button colorScheme="yellow" w="20%" onClick={handleResubmitRound}>
                     Resubmit round results to WCA Live
                 </Button>
+                )}
             </Box>
             <ResultsTable results={results} />
             <Alert isOpen={openConfirmation} onCancel={handleCancel} onConfirm={handleConfirm} title="Resubmit results" description="Are you sure you want to override results from WCA Live?" />

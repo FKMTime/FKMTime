@@ -1,14 +1,17 @@
-import { useCallback, useEffect, useState } from "react";
-import { Competition, Person } from "../../logic/interfaces";
-import { Alert, AlertIcon, Box, Button, Input } from "@chakra-ui/react";
-import { getPersons } from "../../logic/persons";
-import { calculateTotalPages } from "../../logic/utils";
+import {useCallback, useEffect, useState} from "react";
+import {Competition, Person} from "../../logic/interfaces";
+import {Alert, AlertIcon, Box, Button, Input} from "@chakra-ui/react";
+import {getPersons} from "../../logic/persons";
+import {calculateTotalPages} from "../../logic/utils";
 import PersonsTable from "../../Components/Table/PersonsTable";
-import { getCompetitionInfo } from "../../logic/competition";
-import { useNavigate } from "react-router-dom";
+import {getCompetitionInfo} from "../../logic/competition";
+import {useNavigate} from "react-router-dom";
+import {getUserInfo} from "../../logic/auth.ts";
+import {HAS_WRITE_ACCESS} from "../../logic/accounts.ts";
 
 const Persons = (): JSX.Element => {
     const navigate = useNavigate();
+    const userInfo = getUserInfo();
     const [competition, setCompetition] = useState<Competition | undefined>();
     const [persons, setPersons] = useState<Person[]>([]);
     const [page, setPage] = useState<number>(1);
@@ -52,26 +55,30 @@ const Persons = (): JSX.Element => {
 
     return (
         <Box display="flex" flexDirection="column" gap="5">
-            <Alert status='info' color="black">
-                <AlertIcon />
-                Currently it is not possible to add a person during the competition. It is not recommended to have on the spot registration allowed.
-            </Alert>
-            {personsWithoutCardAssigned !== 0 && (
+            {userInfo.role.includes(HAS_WRITE_ACCESS) && personsWithoutCardAssigned !== 0 && (
                 <>
+                    <Alert status='info' color="black">
+                        <AlertIcon/>
+                        Currently it is not possible to add a person during the competition. It is not recommended to
+                        have on the spot registration allowed.
+                    </Alert>
                     <Alert status='error' color="black">
-                        <AlertIcon />
-                        There are {personsWithoutCardAssigned} persons without a card assigned. Please assign a card to them.
+                        <AlertIcon/>
+                        There are {personsWithoutCardAssigned} persons without a card assigned. Please assign a card to
+                        them.
                     </Alert>
                     <Button onClick={() => {
                         navigate("/cards");
                     }}
-                    colorScheme="yellow"
-                    width="20%"
+                            colorScheme="yellow"
+                            width="20%"
                     >Assign cards</Button>
                 </>
             )}
-            <Input placeholder="Search" _placeholder={{ color: "white" }} value={search} onChange={handleSearch} />
-            <PersonsTable persons={persons} competition={competition} handleCloseEditModal={handleCloseEditModal} changePageSize={changePageSize} handlePageChange={handlePageChange} page={page} totalPages={totalPages} pageSize={pageSize} />
+            <Input placeholder="Search" _placeholder={{color: "white"}} value={search} onChange={handleSearch}/>
+            <PersonsTable persons={persons} competition={competition} handleCloseEditModal={handleCloseEditModal}
+                          changePageSize={changePageSize} handlePageChange={handlePageChange} page={page}
+                          totalPages={totalPages} pageSize={pageSize}/>
         </Box>
     )
 };
