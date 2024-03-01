@@ -73,6 +73,43 @@ export class PersonService {
     return this.prisma.person.findMany();
   }
 
+  async collectGiftpack(personId: number) {
+    await this.prisma.person.update({
+      where: { id: personId },
+      data: {
+        giftpackCollectedAt: new Date(),
+      },
+    });
+    const collectedGiftpacksCount = await this.prisma.person.count({
+      where: {
+        giftpackCollectedAt: {
+          not: null,
+        },
+      },
+    });
+    const totalPersonsCount = await this.prisma.person.count();
+    return {
+      message: 'Giftpack collected',
+      collectedGiftpacksCount,
+      totalPersonsCount,
+    };
+  }
+
+  async giftpackCount() {
+    const collectedGiftpacksCount = await this.prisma.person.count({
+      where: {
+        giftpackCollectedAt: {
+          not: null,
+        },
+      },
+    });
+    const totalPersonsCount = await this.prisma.person.count();
+    return {
+      collectedGiftpacksCount,
+      totalPersonsCount,
+    };
+  }
+
   async getPersonsWithoutCardAssigned() {
     return this.prisma.person.findMany({
       where: {

@@ -12,6 +12,7 @@ import Settings from "./Pages/Settings/Settings";
 import Stations from "./Pages/Stations/Stations";
 import Tutorial from "./Pages/Tutorial/Tutorial";
 import AssignCards from "./Pages/AssignCards/AssignCards";
+import Giftpacks from "./Pages/Giftpacks/GIftpacks.tsx";
 
 const App = (): JSX.Element => {
   const router = createBrowserRouter([
@@ -62,7 +63,11 @@ const App = (): JSX.Element => {
         {
           path: "tutorial",
           element: <Tutorial />,
-        }
+        },
+        {
+          path: "giftpacks",
+          element: <Giftpacks />,
+        },
       ]
     }
   ]);

@@ -50,6 +50,18 @@ export class PersonController {
     return await this.personService.getPersonInfo(cardId);
   }
 
+  @UseGuards(AuthGuard('jwt'))
+  @Get('giftpack/:id')
+  async collectGiftpack(@Param('id') id: number) {
+    return await this.personService.collectGiftpack(+id);
+  }
+
+  @UseGuards(AuthGuard('jwt'))
+  @Get('giftpack')
+  async giftpackCount() {
+    return await this.personService.giftpackCount();
+  }
+
   @UseGuards(AuthGuard('jwt'), AdminOrDelegateGuard)
   @Put(':id')
   async updatePerson(@Param('id') id: number, @Body() data: UpdatePersonDto) {

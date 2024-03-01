@@ -1,14 +1,13 @@
-import { Box, Button, Icon, Image, Link, Text } from "@chakra-ui/react";
-import { MdBook, MdHome, MdLogout, MdPerson, MdPersonAdd, MdSettings, MdTimer } from "react-icons/md";
+import {Box, Button, Icon, Image, Link, Text, useToast} from "@chakra-ui/react";
+import {MdBook, MdHome, MdLogout, MdPerson, MdPersonAdd, MdSettings, MdTimer} from "react-icons/md";
 import SidebarElement from "../Components/SidebarElement";
-import { IoMdTrophy } from "react-icons/io";
+import {IoMdTrophy} from "react-icons/io";
 import React from "react";
-import { UserInfo } from "../logic/interfaces";
-import { useNavigate } from "react-router-dom";
-import { useToast } from "@chakra-ui/react";
-import { logout } from "../logic/auth";
+import {UserInfo} from "../logic/interfaces";
+import {useNavigate} from "react-router-dom";
+import {logout} from "../logic/auth";
 import logo from "../assets/logo.svg";
-import { FaGithub } from "react-icons/fa";
+import {FaGift, FaGithub} from "react-icons/fa";
 
 interface SidebarProps {
     user: UserInfo;
@@ -34,7 +33,6 @@ const Sidebar: React.FC<SidebarProps> = ({ user }): JSX.Element => {
         <Box height="100vw" backgroundColor="gray.600" width="20vh" alignItems="center" padding="5" display="flex" flexDirection="column" gap="5">
             <Image src={logo} alt="Logo" width="100%" />
             <Text color="white">Hello {user.username}!</Text>
-            <Text color="white">Logged in as {user.role.toLowerCase()}</Text>
             <SidebarElement name='Home' icon={<MdHome />} link='/' />
             {user.role === "ADMIN" && (
                 <>
@@ -44,6 +42,7 @@ const Sidebar: React.FC<SidebarProps> = ({ user }): JSX.Element => {
                 </>
             )}
             <SidebarElement name='Persons' icon={<MdPerson />} link='/persons' />
+            <SidebarElement name='Giftpacks' icon={<FaGift />}  link='/giftpacks' />
             <SidebarElement name='Results' icon={<MdTimer />} link='/results' />
             <SidebarElement name='Settings' icon={<MdSettings />} link='/settings' />
             <SidebarElement name='Tutorial' icon={<MdBook />} link='/tutorial' />

@@ -22,7 +22,7 @@ export const getToken = () => {
   return localStorage.getItem(TOKEN_NAME);
 };
 
-export const logout = async () => {
+export const logout = () => {
   localStorage.removeItem(TOKEN_NAME);
   localStorage.removeItem(USER_INFO_NAME);
 };

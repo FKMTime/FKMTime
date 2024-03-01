@@ -19,15 +19,16 @@ model Account {
 }
 
 model Person {
-  id           Int       @id @default(autoincrement())
-  registrantId Int
-  name         String
-  wcaId        String?
-  countryIso2  String?
-  gender       String
-  cardId       String?   @db.LongText()
-  Result       Result[]
-  Attempt      Attempt[]
+  id                  Int       @id @default(autoincrement())
+  registrantId        Int
+  name                String
+  wcaId               String?
+  countryIso2         String?
+  gender              String
+  giftpackCollectedAt DateTime?
+  cardId              String?   @db.LongText()
+  Result              Result[]
+  Attempt             Attempt[]
 }
 
 model Competition {
