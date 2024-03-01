@@ -1,7 +1,7 @@
 import { Outlet, useNavigate } from "react-router-dom";
 import Sidebar from "./Sidebar";
 import { Box } from "@chakra-ui/react";
-import { getUserInfo } from "../logic/auth";
+import {getToken, getUserInfo} from "../logic/auth";
 import { useEffect } from "react";
 
 const Layout = (): JSX.Element => {
@@ -10,7 +10,7 @@ const Layout = (): JSX.Element => {
     const navigate = useNavigate();
 
     useEffect(() => {
-        const token = localStorage.getItem('token');
+        const token = getToken();
         if (!token) {
             navigate('/auth/login');
         }
