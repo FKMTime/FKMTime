@@ -41,6 +41,15 @@ services:
     depends_on:
       - backend
 
+  delegate_app:
+    build:
+      context: ./delegate_app
+      dockerfile: Dockerfile
+    container_name: fkmtime-delegate-app
+    restart: unless-stopped
+    volumes:
+      - delegate_app_build:/app/build/web
+
   nginx:
     build:
       context: ./nginx
@@ -51,10 +60,13 @@ services:
     volumes:
       - ./nginx/default.conf:/etc/nginx/conf.d/default.conf
       - frontend_dist:/frontend
+      - delegate_app_build:/delegate
     depends_on:
       - admin-site
+      - delegate_app
 
 
 volumes:
   database:
   frontend_dist:
+  delegate_app_build:

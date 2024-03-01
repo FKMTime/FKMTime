@@ -18,7 +18,9 @@ const ResultsTable: React.FC<ResultsTableProps> = ({ results }): JSX.Element => 
                         <Th>Registrant ID</Th>
                         <Th>Name</Th>
                         <Th>WCA ID</Th>
-                        {HAS_WRITE_ACCESS.includes(userInfo.role) && <Th>Attempts</Th>}
+                        <Th>Average</Th>
+                        <Th>Best</Th>
+                        {HAS_WRITE_ACCESS.includes(userInfo.role) && <Th>Actions</Th>}
                     </Tr>
                 </Thead>
                 <Tbody>
