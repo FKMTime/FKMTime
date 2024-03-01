@@ -55,7 +55,7 @@ const Persons = (): JSX.Element => {
 
     return (
         <Box display="flex" flexDirection="column" gap="5">
-            {userInfo.role.includes(HAS_WRITE_ACCESS) && personsWithoutCardAssigned !== 0 && (
+            {HAS_WRITE_ACCESS.includes(userInfo.role) && personsWithoutCardAssigned !== 0 && (
                 <>
                     <Alert status='info' color="black">
                         <AlertIcon/>

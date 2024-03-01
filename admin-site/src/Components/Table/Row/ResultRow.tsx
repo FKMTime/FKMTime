@@ -19,7 +19,7 @@ const ResultRow: React.FC<ResultRowProps> = ({result}): JSX.Element => {
                 <Td>{result.person.registrantId}</Td>
                 <Td>{result.person.name}</Td>
                 <Td>{result.person.wcaId}</Td>
-                {userInfo.role.includes(HAS_WRITE_ACCESS) && (
+                {HAS_WRITE_ACCESS.includes(userInfo.role) && (
                     <Td>
                         <IconButton icon={<FaList/>} aria-label="List" bg="none" color="white" _hover={{
                             background: "none",

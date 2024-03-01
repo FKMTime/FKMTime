@@ -49,7 +49,7 @@ const AssignCardModal: React.FC<AssignCardModalProps> = ({ isOpen, onClose, pers
             <Box display="flex" flexDirection="column" gap="5" as="form" onSubmit={handleSubmit}>
                 <FormControl>
                     <FormLabel>Card</FormLabel>
-                    <Input placeholder='Card' isReadOnly={!userInfo.role.includes(HAS_WRITE_ACCESS)} _placeholder={{ color: "white" }} value={editedPerson.cardId} disabled={isLoading} onChange={(e) => setEditedPerson({ ...editedPerson, cardId: e.target.value })} autoFocus />
+                    <Input placeholder='Card' isReadOnly={!HAS_WRITE_ACCESS.includes(userInfo.role)} _placeholder={{ color: "white" }} value={editedPerson.cardId} disabled={isLoading} onChange={(e) => setEditedPerson({ ...editedPerson, cardId: e.target.value })} autoFocus />
                 </FormControl>
                 <Box display="flex" flexDirection="row" justifyContent="end" gap="5">
                     {!isLoading && (
@@ -57,7 +57,7 @@ const AssignCardModal: React.FC<AssignCardModalProps> = ({ isOpen, onClose, pers
                             Cancel
                         </Button>
                     )}
-                    {userInfo.role.includes(HAS_WRITE_ACCESS) && (
+                    {HAS_WRITE_ACCESS.includes(userInfo.role) && (
                         <Button colorScheme='green' type="submit" isLoading={isLoading}>
                             Save
                         </Button>

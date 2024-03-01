@@ -143,7 +143,7 @@ const Results = (): JSX.Element => {
                 <Text>Cutoff: {cutoff ? `${resultToString(cutoff.attemptResult)} (${cutoff.numberOfAttempts} attempts)` : "None"}</Text>
                 <Text>Limit: {limit ? `${resultToString(limit.centiseconds)} ${limit.cumulativeRoundIds.length > 0 ? "(cumulative)" : ""}` : "None"}</Text>
                 <Text>Attempts: {maxAttempts}</Text>
-                {userInfo.roles?.includes(HAS_WRITE_ACCESS) && (
+                {HAS_WRITE_ACCESS.includes(userInfo.role) && (
                 <Button colorScheme="yellow" w="20%" onClick={handleResubmitRound}>
                     Resubmit round results to WCA Live
                 </Button>
