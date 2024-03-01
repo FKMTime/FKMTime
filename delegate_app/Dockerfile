@@ -23,5 +23,5 @@ COPY . .
 
 RUN flutter clean
 RUN flutter pub get
-
-CMD ["flutter", "build", "web"]
+RUN flutter pub upgrade
+RUN flutter build web
