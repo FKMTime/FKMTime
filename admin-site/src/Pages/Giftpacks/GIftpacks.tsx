@@ -82,7 +82,7 @@ const Giftpacks = () => {
             <Text>Scan the card of the competitor</Text>
             <FormControl display="flex" flexDirection="column" gap="2" width="20%">
                 <FormLabel display="flex" flexDirection="row" alignItems="center" gap="2">
-                    <Text>Scoretaking token</Text>
+                    <Text>Card</Text>
                 </FormLabel>
                 <Input placeholder="Card" autoFocus _placeholder={{color: "white"}} value={scannedCard}
                        onChange={(event) => setScannedCard(event.target.value)}

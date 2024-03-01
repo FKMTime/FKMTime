@@ -1,9 +1,9 @@
-import { useState } from "react";
-import { Tr, Td, IconButton, useToast } from "@chakra-ui/react";
-import { MdEdit, MdDelete } from "react-icons/md";
-import { Station } from "../../../logic/interfaces";
+import {useState} from "react";
+import {Tr, Td, IconButton, useToast} from "@chakra-ui/react";
+import {MdEdit, MdDelete} from "react-icons/md";
+import {Station} from "../../../logic/interfaces";
 import Alert from "../../Alert"
-import { deleteStation } from "../../../logic/station";
+import {deleteStation} from "../../../logic/station";
 import EditStationModal from "../../Modal/EditStationModal";
 
 interface StationRowProps {
@@ -11,7 +11,7 @@ interface StationRowProps {
     fetchData: () => void;
 }
 
-const StationRow: React.FC<StationRowProps> = ({ station, fetchData }): JSX.Element => {
+const StationRow: React.FC<StationRowProps> = ({station, fetchData}): JSX.Element => {
 
     const toast = useToast();
     const [openConfirmation, setOpenConfirmation] = useState<boolean>(false);
@@ -59,23 +59,26 @@ const StationRow: React.FC<StationRowProps> = ({ station, fetchData }): JSX.Elem
                 <Td>{station.name}</Td>
                 <Td>{station.espId}</Td>
                 <Td>
-                    <IconButton icon={<MdEdit />} aria-label="Edit" bg="none" color="white" _hover={{
+                    <IconButton icon={<MdEdit/>} aria-label="Edit" bg="none" color="white" _hover={{
                         background: "none",
                         color: "gray.400"
                     }}
-                        onClick={() => setIsOpenEditStationModal(true)}
+                                title="Edit"
+                                onClick={() => setIsOpenEditStationModal(true)}
                     />
-                    <IconButton icon={<MdDelete />} aria-label="Delete" bg="none" color="white" _hover={{
+                    <IconButton icon={<MdDelete/>} aria-label="Delete" bg="none" color="white" _hover={{
                         background: "none",
                         color: "gray.400"
                     }}
-                        onClick={handleDelete}
+                                title="Delete"
+                                onClick={handleDelete}
                     />
 
                 </Td>
             </Tr>
-            <Alert isOpen={openConfirmation} onCancel={handleCancel} onConfirm={handleConfirm} title="Delete station" description="Are you sure?" />
-            <EditStationModal isOpen={isOpenEditStationModal} onClose={handleCloseEditStationModal} station={station} />
+            <Alert isOpen={openConfirmation} onCancel={handleCancel} onConfirm={handleConfirm} title="Delete station"
+                   description="Are you sure?"/>
+            <EditStationModal isOpen={isOpenEditStationModal} onClose={handleCloseEditStationModal} station={station}/>
         </>
     )
 };

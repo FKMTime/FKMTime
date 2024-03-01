@@ -1,9 +1,9 @@
-import { Tr, Td, IconButton, useToast } from "@chakra-ui/react";
-import { Attempt, Result } from "../../../logic/interfaces";
-import { resultToString } from "../../../logic/resultFormatters";
-import { MdDelete, MdEdit } from "react-icons/md";
-import { useState } from "react";
-import { deleteAttempt } from "../../../logic/attempt";
+import {Tr, Td, IconButton, useToast} from "@chakra-ui/react";
+import {Attempt, Result} from "../../../logic/interfaces";
+import {resultToString} from "../../../logic/resultFormatters";
+import {MdDelete, MdEdit} from "react-icons/md";
+import {useState} from "react";
+import {deleteAttempt} from "../../../logic/attempt";
 import Alert from "../../Alert";
 import EditAttemptModal from "../../Modal/EditAttemptModal";
 
@@ -15,7 +15,13 @@ interface AttemptRowProps {
     no: number;
 }
 
-const AttemptRow: React.FC<AttemptRowProps> = ({ attempt, showExtraColumns = false, fetchData, no, result }): JSX.Element => {
+const AttemptRow: React.FC<AttemptRowProps> = ({
+                                                   attempt,
+                                                   showExtraColumns = false,
+                                                   fetchData,
+                                                   no,
+                                                   result
+                                               }): JSX.Element => {
 
     const toast = useToast();
     const [openConfirmation, setOpenConfirmation] = useState<boolean>(false);
@@ -64,7 +70,7 @@ const AttemptRow: React.FC<AttemptRowProps> = ({ attempt, showExtraColumns = fal
             <Tr key={attempt.id}>
                 <Td>{no}</Td>
                 <Td>{attempt.isExtraAttempt ? `Extra ${attempt.attemptNumber}` : attempt.attemptNumber}</Td>
-                <Td>{attempt.penalty === -2 ? "DNS" : attempt.penalty === -1 ? `DNF(${resultToString(attempt.value)})` : resultToString(attemptValueWithPenalty)}</Td>                    
+                <Td>{attempt.penalty === -2 ? "DNS" : attempt.penalty === -1 ? `DNF(${resultToString(attempt.value)})` : resultToString(attemptValueWithPenalty)}</Td>
                 {showExtraColumns && (
                     <>
                         <Td>{attempt.replacedBy && `Extra ${attempt.replacedBy}`}</Td>
@@ -76,22 +82,26 @@ const AttemptRow: React.FC<AttemptRowProps> = ({ attempt, showExtraColumns = fal
                 <Td>{attempt.comment}</Td>
                 <Td>{new Date(attempt.solvedAt).toLocaleString()}</Td>
                 <Td>
-                    <IconButton icon={<MdEdit />} aria-label="Edit" bg="none" color="white" _hover={{
+                    <IconButton icon={<MdEdit/>} aria-label="Edit" bg="none" color="white" _hover={{
                         background: "none",
                         color: "gray.400"
                     }}
-                        onClick={() => setIsOpenEditAttemptModal(true)}
+                                title="Edit attempt"
+                                onClick={() => setIsOpenEditAttemptModal(true)}
                     />
-                    <IconButton icon={<MdDelete />} aria-label="Delete" bg="none" color="white" _hover={{
+                    <IconButton icon={<MdDelete/>} aria-label="Delete" bg="none" color="white" _hover={{
                         background: "none",
                         color: "gray.400"
                     }}
-                        onClick={handleDelete}
+                                title="Delete attempt"
+                                onClick={handleDelete}
                     />
                 </Td>
             </Tr>
-            <Alert isOpen={openConfirmation} onCancel={handleCancel} onConfirm={handleConfirm} title="Delete attempt" description="Are you sure you want to delete this attempt? This action cannot be undone" />
-            <EditAttemptModal isOpen={isOpenEditAttemptModal} onClose={handleCloseEditModal} attempt={attempt} result={result} />
+            <Alert isOpen={openConfirmation} onCancel={handleCancel} onConfirm={handleConfirm} title="Delete attempt"
+                   description="Are you sure you want to delete this attempt? This action cannot be undone"/>
+            <EditAttemptModal isOpen={isOpenEditAttemptModal} onClose={handleCloseEditModal} attempt={attempt}
+                              result={result}/>
         </>
     )
 };

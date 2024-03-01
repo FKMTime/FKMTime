@@ -33,6 +33,7 @@ const ResultRow: React.FC<ResultRowProps> = ({result}): JSX.Element => {
                             background: "none",
                             color: "gray.400"
                         }}
+                                    title="View attempts"
                                     onClick={() => navigate(`/results/${result.id}`)}
                         />
                     </Td>
