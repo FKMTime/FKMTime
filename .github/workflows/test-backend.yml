@@ -1,0 +1,36 @@
+name: Test
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+    paths:
+      - 'backend/**'
+
+jobs:
+   test_backend:
+      name: Backend
+      runs-on: ubuntu-latest
+      strategy:
+        matrix:
+          node-version: [19.x]
+      steps:
+        - uses: actions/checkout@v4
+        - name: Use Node.js ${{ matrix.node-version }}
+          uses: actions/setup-node@v4
+          with:
+            node-version: ${{ matrix.node-version }}
+            cache-dependency-path: "backend"
+        - name: Install dependencies
+          working-directory: 'backend'
+          run: npm install
+        - name: Run ESlint
+          working-directory: 'backend'
+          run: npm run lint
+        - name: Check formatting
+          working-directory: 'backend'
+          run: npm run format:check
+        - name: Build backend
+          working-directory: 'backend'
+          run: npm run build
