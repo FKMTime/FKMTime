@@ -9,6 +9,7 @@ import 'package:delegate_app/pages/rounds.dart';
 import 'package:delegate_app/pages/result.dart';
 
 void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
   runApp(const MyApp());
 }
 

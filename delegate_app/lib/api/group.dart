@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:http/http.dart' as http;
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:session_storage/session_storage.dart';
 import 'api.dart';
 import 'user.dart';
 
@@ -27,8 +27,8 @@ class Group {
       HttpHeaders.authorizationHeader: 'Bearer $jwt',
     });
     if (res.statusCode == 401) {
-      var storage = const FlutterSecureStorage();
-      await storage.deleteAll();
+      final session = SessionStorage();
+      session.clear();
     }
     if (!res.ok) {
       throw "Failed to fetch groups";
@@ -51,8 +51,8 @@ class Group {
       },
     );
     if (res.statusCode == 401) {
-      var storage = const FlutterSecureStorage();
-      await storage.deleteAll();
+      final session = SessionStorage();
+      session.clear();
     }
     if (!res.ok) {
       throw "Failed to update current group";

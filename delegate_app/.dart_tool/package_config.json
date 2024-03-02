@@ -50,12 +50,6 @@
       "languageVersion": "2.12"
     },
     {
-      "name": "ffi",
-      "rootUri": "file:///home/mgala/.pub-cache/hosted/pub.dev/ffi-2.1.0",
-      "packageUri": "lib/",
-      "languageVersion": "3.0"
-    },
-    {
       "name": "firebase_core",
       "rootUri": "file:///home/mgala/.pub-cache/hosted/pub.dev/firebase_core-2.25.4",
       "packageUri": "lib/",
@@ -102,42 +96,6 @@
       "rootUri": "file:///home/mgala/.pub-cache/hosted/pub.dev/flutter_lints-2.0.3",
       "packageUri": "lib/",
       "languageVersion": "2.19"
-    },
-    {
-      "name": "flutter_secure_storage",
-      "rootUri": "file:///home/mgala/.pub-cache/hosted/pub.dev/flutter_secure_storage-9.0.0",
-      "packageUri": "lib/",
-      "languageVersion": "2.12"
-    },
-    {
-      "name": "flutter_secure_storage_linux",
-      "rootUri": "file:///home/mgala/.pub-cache/hosted/pub.dev/flutter_secure_storage_linux-1.2.0",
-      "packageUri": "lib/",
-      "languageVersion": "2.12"
-    },
-    {
-      "name": "flutter_secure_storage_macos",
-      "rootUri": "file:///home/mgala/.pub-cache/hosted/pub.dev/flutter_secure_storage_macos-3.0.1",
-      "packageUri": "lib/",
-      "languageVersion": "2.12"
-    },
-    {
-      "name": "flutter_secure_storage_platform_interface",
-      "rootUri": "file:///home/mgala/.pub-cache/hosted/pub.dev/flutter_secure_storage_platform_interface-1.0.2",
-      "packageUri": "lib/",
-      "languageVersion": "2.12"
-    },
-    {
-      "name": "flutter_secure_storage_web",
-      "rootUri": "file:///home/mgala/.pub-cache/hosted/pub.dev/flutter_secure_storage_web-1.1.2",
-      "packageUri": "lib/",
-      "languageVersion": "2.12"
-    },
-    {
-      "name": "flutter_secure_storage_windows",
-      "rootUri": "file:///home/mgala/.pub-cache/hosted/pub.dev/flutter_secure_storage_windows-3.0.0",
-      "packageUri": "lib/",
-      "languageVersion": "2.12"
     },
     {
       "name": "flutter_test",
@@ -218,52 +176,16 @@
       "languageVersion": "2.12"
     },
     {
-      "name": "path_provider",
-      "rootUri": "file:///home/mgala/.pub-cache/hosted/pub.dev/path_provider-2.1.2",
-      "packageUri": "lib/",
-      "languageVersion": "3.0"
-    },
-    {
-      "name": "path_provider_android",
-      "rootUri": "file:///home/mgala/.pub-cache/hosted/pub.dev/path_provider_android-2.2.2",
-      "packageUri": "lib/",
-      "languageVersion": "3.0"
-    },
-    {
-      "name": "path_provider_foundation",
-      "rootUri": "file:///home/mgala/.pub-cache/hosted/pub.dev/path_provider_foundation-2.3.2",
-      "packageUri": "lib/",
-      "languageVersion": "3.0"
-    },
-    {
-      "name": "path_provider_linux",
-      "rootUri": "file:///home/mgala/.pub-cache/hosted/pub.dev/path_provider_linux-2.2.1",
-      "packageUri": "lib/",
-      "languageVersion": "2.19"
-    },
-    {
-      "name": "path_provider_platform_interface",
-      "rootUri": "file:///home/mgala/.pub-cache/hosted/pub.dev/path_provider_platform_interface-2.1.2",
-      "packageUri": "lib/",
-      "languageVersion": "3.0"
-    },
-    {
-      "name": "path_provider_windows",
-      "rootUri": "file:///home/mgala/.pub-cache/hosted/pub.dev/path_provider_windows-2.2.1",
-      "packageUri": "lib/",
-      "languageVersion": "2.19"
-    },
-    {
-      "name": "platform",
-      "rootUri": "file:///home/mgala/.pub-cache/hosted/pub.dev/platform-3.1.4",
-      "packageUri": "lib/",
-      "languageVersion": "3.0"
-    },
-    {
       "name": "plugin_platform_interface",
       "rootUri": "file:///home/mgala/.pub-cache/hosted/pub.dev/plugin_platform_interface-2.1.8",
       "packageUri": "lib/",
       "languageVersion": "3.0"
+    },
+    {
+      "name": "session_storage",
+      "rootUri": "file:///home/mgala/.pub-cache/hosted/pub.dev/session_storage-0.0.1",
+      "packageUri": "lib/",
+      "languageVersion": "2.18"
     },
     {
       "name": "sky_engine",
@@ -326,25 +248,13 @@
       "languageVersion": "3.2"
     },
     {
-      "name": "win32",
-      "rootUri": "file:///home/mgala/.pub-cache/hosted/pub.dev/win32-5.2.0",
-      "packageUri": "lib/",
-      "languageVersion": "3.2"
-    },
-    {
-      "name": "xdg_directories",
-      "rootUri": "file:///home/mgala/.pub-cache/hosted/pub.dev/xdg_directories-1.0.4",
-      "packageUri": "lib/",
-      "languageVersion": "3.0"
-    },
-    {
       "name": "delegate_app",
       "rootUri": "../",
       "packageUri": "lib/",
       "languageVersion": "3.2"
     }
   ],
-  "generated": "2024-03-01T11:07:22.482449Z",
+  "generated": "2024-03-02T13:08:31.473113Z",
   "generator": "pub",
   "generatorVersion": "3.2.6"
 }

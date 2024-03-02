@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:http/http.dart' as http;
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:session_storage/session_storage.dart';
 import 'api.dart';
 
 class User {
@@ -14,13 +14,13 @@ class User {
   });
 
   Future<void> saveToken() async {
-    const storage = FlutterSecureStorage();
-    await storage.write(key: 'token', value: token);
+    final session = SessionStorage();
+    session['token'] = token;
   }
 
   static Future<String?> getToken() async {
-    const storage = FlutterSecureStorage();
-    return await storage.read(key: 'token');
+    final session = SessionStorage();
+    return session['token'];
   }
 
   static Future<User> login(String username, String password) async {

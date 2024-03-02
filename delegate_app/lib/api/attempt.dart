@@ -1,12 +1,12 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:http/http.dart' as http;
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'api.dart';
 import 'person.dart';
 import 'station.dart';
 import 'result.dart';
 import 'user.dart';
+import 'package:session_storage/session_storage.dart';
 
 class Attempt {
   int id;
@@ -51,8 +51,8 @@ class Attempt {
       HttpHeaders.authorizationHeader: 'Bearer $jwt',
     });
     if (res.statusCode == 401) {
-      var storage = const FlutterSecureStorage();
-      await storage.deleteAll();
+      final session = SessionStorage();
+      session.clear();
     }
     if (!res.ok) {
       throw "Failed to fetch cases";

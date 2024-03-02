@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:go_router/go_router.dart';
 import 'package:delegate_app/components/incident_card.dart';
 import 'package:delegate_app/components/loading.dart';
 import 'package:delegate_app/api/attempt.dart';
 import 'package:delegate_app/api/user.dart';
 import 'package:delegate_app/api/event.dart';
+import 'package:session_storage/session_storage.dart';
 
 class HomePage extends StatefulWidget {
   HomePage({super.key});
@@ -25,7 +25,7 @@ class _HomePageState extends State<HomePage> {
         if (widget.isUserLoggedIn) {
           return Attempt.fetchAll();
         } else {
-          return [];
+          context.go('/login');
         }
       }(),
       builder: _build,
@@ -84,8 +84,8 @@ class _HomePageState extends State<HomePage> {
           ),
           IconButton(
             onPressed: () async {
-              var storage = const FlutterSecureStorage();
-              await storage.deleteAll();
+              final session = SessionStorage();
+              session.clear();
               setState(() {
                 widget.isUserLoggedIn = false;
               });

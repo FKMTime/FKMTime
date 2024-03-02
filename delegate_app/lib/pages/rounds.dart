@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:go_router/go_router.dart';
 import 'package:delegate_app/components/loading.dart';
 import 'package:delegate_app/api/round.dart';
@@ -60,16 +59,6 @@ class _RoundsPageState extends State<RoundsPage> {
               context.go('/');
             },
             icon: const Icon(Icons.home),
-          ),
-          IconButton(
-            onPressed: () async {
-              var storage = const FlutterSecureStorage();
-              await storage.deleteAll();
-              setState(() {
-                widget.isUserLoggedIn = false;
-              });
-            },
-            icon: const Icon(Icons.logout),
           ),
         ],
       ),
