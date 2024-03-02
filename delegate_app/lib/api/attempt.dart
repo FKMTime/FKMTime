@@ -95,6 +95,7 @@ class Attempt {
       throw "Failed to fetch case";
     }
     var json = jsonDecode(res.body);
+    print(json);
     return fromDynamic(json);
   }
 
