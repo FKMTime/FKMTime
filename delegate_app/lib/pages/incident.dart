@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:delegate_app/api/attempt.dart';
 import 'package:delegate_app/api/event.dart';
-import 'package:fluttertoast/fluttertoast.dart';
 
 class IncidentPage extends StatefulWidget {
   final String caseId;
@@ -34,14 +33,18 @@ class _IncidentPageState extends State<IncidentPage> {
     if (ok) {
       context.go('/');
     } else {
-      Fluttertoast.showToast(
-          msg: "Something went wrong!",
-          toastLength: Toast.LENGTH_SHORT,
-          gravity: ToastGravity.CENTER,
-          timeInSecForIosWeb: 1,
-          backgroundColor: Colors.red,
-          textColor: Colors.white,
-          fontSize: 16.0);
+      AlertDialog(
+        title: const Text('Error'),
+        content: const Text('Failed to update attempt'),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+            },
+            child: const Text('OK'),
+          ),
+        ],
+      );
     }
   }
 

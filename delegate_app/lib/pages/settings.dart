@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:delegate_app/api/user.dart';
 import 'package:delegate_app/components/loading.dart';
-import 'package:fluttertoast/fluttertoast.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});
@@ -20,14 +19,17 @@ class _SettingsPage extends State<SettingsPage> {
     if (ok) {
       context.go('/');
     } else {
-        Fluttertoast.showToast(
-        msg: "Something went wrong!",
-        toastLength: Toast.LENGTH_SHORT,
-        gravity: ToastGravity.CENTER,
-        timeInSecForIosWeb: 1,
-        backgroundColor: Colors.red,
-        textColor: Colors.white,
-        fontSize: 16.0
+      AlertDialog(
+        title: const Text('Error'),
+        content: const Text('Failed to update current group'),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+            },
+            child: const Text('OK'),
+          ),
+        ],
       );
     }
   }
