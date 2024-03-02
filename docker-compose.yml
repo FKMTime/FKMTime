@@ -31,43 +31,16 @@ services:
     volumes:
       - database:/var/lib/mysql
 
-  admin-site:
-    build:
-      context: ./admin-site
-      dockerfile: Dockerfile
-    container_name: fkmtime-frontend
-    volumes:
-      - frontend_dist:/app/dist
-    depends_on:
-      - backend
-
-  delegate_app:
-    build:
-      context: ./delegate_app
-      dockerfile: Dockerfile
-    container_name: fkmtime-delegate-app
-    restart: unless-stopped
-    volumes:
-      - delegate_app_build:/app/build/web
-
   nginx:
     build:
-      context: ./nginx
-      dockerfile: Dockerfile
+      context: ./
+      dockerfile: nginx.Dockerfile
     container_name: fkmtime-nginx
     ports:
       - '80:80'
       - '443:443'
     volumes:
       - ./nginx/default.conf:/etc/nginx/conf.d/default.conf
-      - frontend_dist:/frontend
-      - delegate_app_build:/delegate
-    depends_on:
-      - admin-site
-      - delegate_app
-
 
 volumes:
   database:
-  frontend_dist:
-  delegate_app_build:
