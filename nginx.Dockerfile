@@ -18,8 +18,7 @@ RUN flutter doctor -v
 WORKDIR /app
 COPY ./delegate_app .
 
-RUN echo "BACKEND_ORIGIN=http://fkm.lan/api" > .env
-
+RUN touch .env
 RUN flutter pub get
 RUN flutter build web
 ## END BUILD ##
@@ -52,5 +51,6 @@ COPY --from=frontend-app-builder /app/dist /frontend
 EXPOSE 80
 COPY ./nginx/ssl-params.conf /etc/nginx/snippets/ssl-params.conf
 COPY ./nginx/default.conf /etc/nginx/conf.d/default.conf
+COPY ./nginx/entrypoint.sh /entrypoint.sh
 
-CMD ["nginx", "-g", "daemon off;"]
+CMD ["/entrypoint.sh"]
