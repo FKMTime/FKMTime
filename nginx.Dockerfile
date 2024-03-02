@@ -13,10 +13,12 @@ RUN git clone --branch master --single-branch https://github.com/flutter/flutter
 
 ENV PATH="/usr/local/flutter/bin:/usr/local/flutter/bin/cache/dart-sdk/bin:${PATH}"
 
+RUN flutter doctor -v
+
 WORKDIR /app
 COPY ./delegate_app .
 
-RUN flutter clean
+#RUN flutter clean
 RUN flutter pub get
 RUN flutter build web
 ## END BUILD ##
