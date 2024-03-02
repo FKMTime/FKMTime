@@ -17,13 +17,12 @@ RUN flutter doctor -v
 
 WORKDIR /app
 COPY ./delegate_app .
+g
+RUN echo "BACKEND_ORIGIN=http://fkm.lan/api" > .env
 
-#RUN flutter clean
 RUN flutter pub get
 RUN flutter build web
 ## END BUILD ##
-
-
 
 ## BUILD FRONTEND ##
 FROM node:18 AS frontend-app-builder
