@@ -36,11 +36,15 @@ services:
       context: ./
       dockerfile: nginx.Dockerfile
     container_name: fkmtime-nginx
+    environment:
+      - BACKEND_ORIGIN=http://fkm.lan/api
     ports:
       - '80:80'
       - '443:443'
     volumes:
       - ./nginx/default.conf:/etc/nginx/conf.d/default.conf
+    depends_on:
+      - backend
 
 volumes:
   database:
