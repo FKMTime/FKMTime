@@ -37,7 +37,7 @@ services:
       dockerfile: nginx.Dockerfile
     container_name: fkmtime-nginx
     environment:
-      - BACKEND_ORIGIN=http://fkm.lan/api
+      - BACKEND_ORIGIN=https://fkm.lan/api
     ports:
       - '80:80'
       - '443:443'
