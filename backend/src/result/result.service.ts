@@ -326,8 +326,21 @@ export class ResultService {
         },
       },
     });
-
-    return attempts.sort((a, b) => a.attemptNumber - b.attemptNumber);
+    return attempts
+      .map((attempt) => {
+        return {
+          ...attempt,
+          judge: attempt.judge
+            ? attempt.judge
+            : {
+                id: 0,
+                registrantId: 0,
+                wcaId: '',
+                name: 'None',
+              },
+        };
+      })
+      .sort((a, b) => a.attemptNumber - b.attemptNumber);
   }
 
   async enterAttempt(data: EnterAttemptDto) {
