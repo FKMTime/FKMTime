@@ -18,7 +18,7 @@ RUN flutter doctor -v
 WORKDIR /app
 COPY ./delegate_app .
 
-RUN echo "BACKEND_ORIGIN=http://fkm.lan/api" > .env
+RUN echo "BACKEND_ORIGIN=https://fkm.lan/api" > .env
 
 RUN flutter pub get
 RUN flutter build web
