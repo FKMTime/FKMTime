@@ -41,6 +41,7 @@ model Competition {
   currentGroupId      String?
   shouldCheckGroup    Boolean @default(false)
   shouldUpdateDevices Boolean @default(false)
+  useStableReleases   Boolean @default(true)
   wcif                Json?
   scoretakingToken    String?
 }

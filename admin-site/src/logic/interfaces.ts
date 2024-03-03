@@ -21,6 +21,7 @@ export interface Competition {
   usesWcaProduction: boolean;
   shouldCheckGroup: boolean;
   shouldUpdateDevices: boolean;
+  useStableReleases: boolean;
   shortName: string;
   countryIso2: string;
   currentGroupId?: string;

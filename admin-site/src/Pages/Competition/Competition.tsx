@@ -208,6 +208,9 @@ const Competition = (): JSX.Element => {
                 <FormControl display="flex" flexDirection="column" gap="2">
                     <Checkbox defaultChecked={competition.shouldUpdateDevices} onChange={(event) => setCompetition({ ...competition, shouldUpdateDevices: event?.target.checked })}>Update devices (turn it off if competition is in progress)</Checkbox>
                 </FormControl>
+                <FormControl display="flex" flexDirection="column" gap="2">
+                    <Checkbox defaultChecked={competition.useStableReleases} onChange={(event) => setCompetition({ ...competition, useStableReleases: event?.target.checked })}>Use stable releases</Checkbox>
+                </FormControl>
                 <Button type="submit" colorScheme="green">Save</Button>
             </Box>
         </Box>

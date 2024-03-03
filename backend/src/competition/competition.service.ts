@@ -139,6 +139,7 @@ export class CompetitionService {
     }
     return {
       shouldUpdate: competition.shouldUpdateDevices,
+      useStableReleases: competition.useStableReleases,
     };
   }
 
@@ -153,6 +154,7 @@ export class CompetitionService {
         usesWcaProduction: dto.usesWcaProduction,
         shouldCheckGroup: dto.shouldCheckGroup,
         shouldUpdateDevices: dto.shouldUpdateDevices,
+        useStableReleases: dto.useStableReleases,
       },
     });
   }

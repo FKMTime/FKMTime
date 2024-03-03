@@ -17,4 +17,7 @@ export class UpdateCompetitionDto {
 
   @IsBoolean()
   shouldUpdateDevices: boolean;
+
+  @IsBoolean()
+  useStableReleases: boolean;
 }
