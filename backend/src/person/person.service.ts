@@ -167,6 +167,7 @@ export class PersonService {
         name: true,
         countryIso2: true,
         gender: true,
+        giftpackCollectedAt: true,
       },
     });
     if (!person) {

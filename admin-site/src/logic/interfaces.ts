@@ -38,6 +38,7 @@ export interface Person {
   countryIso2?: string;
   gender: string;
   cardId?: string;
+  giftpackCollectedAt?: Date;
 }
 
 export interface Result {

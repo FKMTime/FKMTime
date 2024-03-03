@@ -17,6 +17,18 @@ const Giftpacks = () => {
     const handleSubmitCard = async () => {
         const res = await getPersonInfoByCardId(scannedCard);
         if (res.status === 200) {
+            if (res.data.giftpackCollectedAt) {
+                toast({
+                    title: "Giftpack already collected",
+                    description: "This competitor already collected the giftpack",
+                    status: "warning",
+                    duration: 9000,
+                    isClosable: true,
+                });
+                setScannedCard("");
+                cardInputRef.current?.focus();
+                return;
+            }
             setPersonData(res.data);
         } else if (res.status === 404) {
             toast({
@@ -74,7 +86,7 @@ const Giftpacks = () => {
     }, []);
 
     if (totalPersons === 0) {
-        return <LoadingPage />;
+        return <LoadingPage/>;
     }
     return (
         <Box display="flex" flexDirection="column" gap="5">
@@ -112,9 +124,16 @@ const Giftpacks = () => {
                     <Text fontSize="xl">
                         Representing: {regions.find(region => region.iso2 === personData.countryIso2)?.name}
                     </Text>
-                    <Button colorScheme="green" width="20%" onClick={handleCollectGiftpack}>
-                        Mark giftpack as collected
-                    </Button>
+                    {personData.giftpackCollectedAt ? (
+                        <Alert status='success' borderRadius="md" color="black" width="25%">
+                            <AlertIcon/>
+                            Giftpack already collected
+                        </Alert>
+                    ) : (
+                        <Button colorScheme="green" width="20%" onClick={handleCollectGiftpack}>
+                            Mark giftpack as collected
+                        </Button>
+                    )}
                 </>
             )}
         </Box>
