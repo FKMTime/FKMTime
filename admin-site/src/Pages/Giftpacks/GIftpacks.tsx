@@ -1,7 +1,11 @@
 import {useEffect, useRef, useState} from "react";
 import {Alert, AlertIcon, Box, Button, FormControl, FormLabel, Heading, Input, Text, useToast} from "@chakra-ui/react";
 import {Person} from "../../logic/interfaces.ts";
-import {collectGfitpack, getPersonInfoByCardId, giftpackCount} from "../../logic/persons.ts";
+import {
+    collectGfitpack,
+    getPersonInfoByCardIdWithSensitiveData,
+    giftpackCount
+} from "../../logic/persons.ts";
 import regions from "../../logic/regions.ts";
 import LoadingPage from "../../Components/LoadingPage.tsx";
 
@@ -15,7 +19,7 @@ const Giftpacks = () => {
     const [personData, setPersonData] = useState<Person | null>();
 
     const handleSubmitCard = async () => {
-        const res = await getPersonInfoByCardId(scannedCard);
+        const res = await getPersonInfoByCardIdWithSensitiveData(scannedCard);
         if (res.status === 200) {
             if (res.data.giftpackCollectedAt) {
                 toast({
@@ -121,6 +125,11 @@ const Giftpacks = () => {
                     <Text fontSize="xl">
                         WCA ID: {personData.wcaId ? personData.wcaId : "Newcomer"}
                     </Text>
+                    {personData.birthdate && (
+                        <Text fontSize="xl">
+                            Birthdate: {new Date(personData.birthdate).toLocaleDateString()}
+                        </Text>
+                    )}
                     <Text fontSize="xl">
                         Representing: {regions.find(region => region.iso2 === personData.countryIso2)?.name}
                     </Text>

@@ -38,6 +38,7 @@ export interface Person {
   wcaId?: string;
   countryIso2?: string;
   gender: string;
+  birthdate?: Date;
   cardId?: string;
   giftpackCollectedAt?: Date;
 }

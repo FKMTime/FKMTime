@@ -25,6 +25,7 @@ model Person {
   wcaId               String?
   countryIso2         String?
   gender              String
+  birthdate           DateTime?
   giftpackCollectedAt DateTime?
   cardId              String?   @db.LongText()
   Result              Result[]

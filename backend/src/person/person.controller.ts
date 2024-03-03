@@ -51,6 +51,12 @@ export class PersonController {
   }
 
   @UseGuards(AuthGuard('jwt'))
+  @Get('card/:cardId/sensitive')
+  async getPersonInfoSensitive(@Param('cardId') cardId: string) {
+    return await this.personService.getPersonInfoWithSensitiveData(cardId);
+  }
+
+  @UseGuards(AuthGuard('jwt'))
   @Get('giftpack/:id')
   async collectGiftpack(@Param('id') id: number) {
     return await this.personService.collectGiftpack(+id);

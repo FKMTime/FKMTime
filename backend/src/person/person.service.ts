@@ -185,6 +185,22 @@ export class PersonService {
     };
   }
 
+  async getPersonInfoWithSensitiveData(cardId: string) {
+    return this.prisma.person.findFirst({
+      where: {
+        cardId,
+      },
+      select: {
+        id: true,
+        registrantId: true,
+        wcaId: true,
+        name: true,
+        countryIso2: true,
+        birthdate: true,
+      },
+    });
+  }
+
   private convertPolishToLatin(text: string) {
     const letters = [
       'ą',

@@ -13,13 +13,14 @@ export const getPersons = async (
     return await response.json();
 };
 
-export const getPersonInfoByCardId = async (cardId: string) => {
-    const response = await backendRequest(`person/card/${cardId}`, "GET", true);
+export const getPersonInfoByCardIdWithSensitiveData = async (cardId: string) => {
+    const response = await backendRequest(`person/card/${cardId}/sensitive`, "GET", true);
     return {
         data: await response.json(),
         status: response.status,
     };
 };
+
 
 export const collectGfitpack = async (id: number) => {
     const response = await backendRequest(`person/giftpack/${id}`, "GET", true);
