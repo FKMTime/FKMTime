@@ -15,7 +15,8 @@ services:
       - WCA_ORIGIN=https://www.worldcubeassociation.org
       - WCA_LIVE_DEV_API_ORIGIN=http://0.0.0.0:4000/api
     depends_on:
-      - database
+      database:
+        condition: service_healthy
 
   database:
     container_name: fkmtime-database
@@ -30,6 +31,11 @@ services:
       dockerfile: db/Dockerfile
     volumes:
       - database:/var/lib/mysql
+    healthcheck:
+      test: "/usr/bin/mariadb --user=root --execute \"SELECT * FROM fkm_time.Account;\""
+      interval: 5s
+      timeout: 20s
+      retries: 50
 
   nginx:
     build:
