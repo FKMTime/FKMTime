@@ -591,6 +591,7 @@ export class ResultService {
         isDelegate: finalData.isDelegate,
         isExtraAttempt: false,
         isResolved: false,
+        solvedAt: data.solvedAt,
         penalty: finalData.penalty,
         value: finalData.value,
         judge: judge
@@ -835,6 +836,7 @@ export class ResultService {
         attemptNumber: data.attemptNumber,
         isDelegate: data.isDelegate,
         isExtraAttempt: true,
+        solvedAt: data.solvedAt,
         isResolved: false,
         penalty: data.penalty,
         value: data.value,
