@@ -105,9 +105,23 @@ export class PersonService {
       },
     });
     const totalPersonsCount = await this.prisma.person.count();
+    const personsWithoutGiftpackCollected = await this.prisma.person.findMany({
+      where: {
+        giftpackCollectedAt: {
+          equals: null,
+        },
+      },
+      select: {
+        id: true,
+        name: true,
+        registrantId: true,
+        wcaId: true,
+      },
+    });
     return {
       collectedGiftpacksCount,
       totalPersonsCount,
+      personsWithoutGiftpackCollected,
     };
   }
 
@@ -197,7 +211,7 @@ export class PersonService {
   }
 
   async getPersonInfoWithSensitiveData(cardId: string) {
-    return this.prisma.person.findFirst({
+    const person = await this.prisma.person.findFirst({
       where: {
         cardId,
       },
@@ -211,6 +225,16 @@ export class PersonService {
         giftpackCollectedAt: true,
       },
     });
+    if (!person) {
+      throw new HttpException(
+        {
+          message: 'Competitor not found',
+          shouldResetTime: false,
+        },
+        404,
+      );
+    }
+    return person;
   }
 
   private convertPolishToLatin(text: string) {

@@ -14,6 +14,7 @@ const Giftpacks = () => {
     const [scannedCard, setScannedCard] = useState<string>("");
     const [totalPersons, setTotalPersons] = useState<number>(0);
     const [collectedGiftpacks, setCollectedGiftpacks] = useState<number>(0);
+    const [personsWhoNotCollectedGitpackYet, setPersonsWhoNotCollectedGitpackYet] = useState<Person[]>([]);
     //eslint-disable-next-line @typescript-eslint/no-explicit-any
     const cardInputRef: any = useRef();
     const [personData, setPersonData] = useState<Person | null>();
@@ -64,8 +65,7 @@ const Giftpacks = () => {
                 duration: 9000,
                 isClosable: true,
             });
-            setCollectedGiftpacks(res.data.collectedGiftpacksCount);
-            setTotalPersons(res.data.totalPersonsCount);
+            await fetchData();
         } else {
             toast({
                 title: "Error",
@@ -80,12 +80,13 @@ const Giftpacks = () => {
         cardInputRef.current?.focus();
     };
 
+    const fetchData = async () => {
+        const data = await giftpackCount();
+        setCollectedGiftpacks(data.collectedGiftpacksCount);
+        setTotalPersons(data.totalPersonsCount);
+        setPersonsWhoNotCollectedGitpackYet(data.personsWithoutGiftpackCollected);
+    };
     useEffect(() => {
-        const fetchData = async () => {
-            const data = await giftpackCount();
-            setCollectedGiftpacks(data.collectedGiftpacksCount);
-            setTotalPersons(data.totalPersonsCount);
-        };
         fetchData();
     }, []);
 
@@ -93,59 +94,68 @@ const Giftpacks = () => {
         return <LoadingPage/>;
     }
     return (
-        <Box display="flex" flexDirection="column" gap="5">
-            <Heading size="lg">Giftpacks {`${collectedGiftpacks}/${totalPersons}`}</Heading>
-            <Text>Scan the card of the competitor</Text>
-            <FormControl display="flex" flexDirection="column" gap="2" width="20%">
-                <FormLabel display="flex" flexDirection="row" alignItems="center" gap="2">
-                    <Text>Card</Text>
-                </FormLabel>
-                <Input placeholder="Card" autoFocus _placeholder={{color: "white"}} value={scannedCard}
-                       onChange={(event) => setScannedCard(event.target.value)}
-                       ref={cardInputRef}
-                       onKeyDown={(event: React.KeyboardEvent<HTMLInputElement>) => event.key === "Enter" && handleSubmitCard()}/>
-            </FormControl>
-            {personData && (
-                <>
-                    {(!personData.wcaId || personData.wcaId === "") && (
-                        <Alert status='warning' borderRadius="md" color="black" width="25%">
-                            <AlertIcon/>
-                            Remember to check competitor's ID card
-                        </Alert>
-                    )}
-                    <Text fontSize="2xl" fontWeight="bold">
-                        Competitor information
-                    </Text>
-                    <Text fontSize="xl">
-                        Name: {personData.name}
-                    </Text>
-                    <Text fontSize="xl">
-                        Registrant ID: {personData.registrantId}
-                    </Text>
-                    <Text fontSize="xl">
-                        WCA ID: {personData.wcaId ? personData.wcaId : "Newcomer"}
-                    </Text>
-                    {personData.birthdate && (
-                        <Text fontSize="xl">
-                            Birthdate: {new Date(personData.birthdate).toLocaleDateString()}
+        <Box display="flex" justifyContent="space-between" gap="5">
+            <Box display="flex" flexDirection="column" gap="5">
+                <Heading size="lg">Giftpacks {`${collectedGiftpacks}/${totalPersons}`}</Heading>
+                <Text>Scan the card of the competitor</Text>
+                <FormControl display="flex" flexDirection="column" gap="2" width="100%">
+                    <FormLabel display="flex" flexDirection="row" alignItems="center" gap="2">
+                        <Text>Card</Text>
+                    </FormLabel>
+                    <Input placeholder="Card" autoFocus _placeholder={{color: "white"}} value={scannedCard}
+                           onChange={(event) => setScannedCard(event.target.value)}
+                           ref={cardInputRef}
+                           onKeyDown={(event: React.KeyboardEvent<HTMLInputElement>) => event.key === "Enter" && handleSubmitCard()}/>
+                </FormControl>
+                {personData && (
+                    <>
+                        {(!personData.wcaId || personData.wcaId === "") && (
+                            <Alert status='warning' borderRadius="md" color="black">
+                                <AlertIcon/>
+                                Remember to check competitor's ID card
+                            </Alert>
+                        )}
+                        <Text fontSize="2xl" fontWeight="bold">
+                            Competitor information
                         </Text>
-                    )}
-                    <Text fontSize="xl">
-                        Representing: {regions.find(region => region.iso2 === personData.countryIso2)?.name}
-                    </Text>
-                    {personData.giftpackCollectedAt ? (
-                        <Alert status='success' borderRadius="md" color="black" width="25%">
-                            <AlertIcon/>
-                            Giftpack already collected
-                        </Alert>
-                    ) : (
-                        <Button colorScheme="green" width="20%" onClick={handleCollectGiftpack}>
-                            Mark giftpack as collected
-                        </Button>
-                    )}
-                </>
-            )}
+                        <Text fontSize="xl">
+                            Name: {personData.name}
+                        </Text>
+                        <Text fontSize="xl">
+                            Registrant ID: {personData.registrantId}
+                        </Text>
+                        <Text fontSize="xl">
+                            WCA ID: {personData.wcaId ? personData.wcaId : "Newcomer"}
+                        </Text>
+                        {personData.birthdate && (
+                            <Text fontSize="xl">
+                                Birthdate: {new Date(personData.birthdate).toLocaleDateString()}
+                            </Text>
+                        )}
+                        <Text fontSize="xl">
+                            Representing: {regions.find(region => region.iso2 === personData.countryIso2)?.name}
+                        </Text>
+                        {personData.giftpackCollectedAt ? (
+                            <Alert status='success' borderRadius="md" color="black">
+                                <AlertIcon/>
+                                Giftpack already collected
+                            </Alert>
+                        ) : (
+                            <Button colorScheme="green" onClick={handleCollectGiftpack}>
+                                Mark giftpack as collected
+                            </Button>
+                        )}
+                    </>
+                )}
+            </Box>
+            <Box>
+                <Heading size="lg">Persons who not collected giftpack yet</Heading>
+                {personsWhoNotCollectedGitpackYet.map(person => (
+                    <Text key={person.id}>{person.name} ({person.registrantId})</Text>
+                ))}
+            </Box>
         </Box>
+
     )
 };
 
