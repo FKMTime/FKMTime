@@ -23,6 +23,11 @@ export const getResultsByRoundId = async (
     return await response.json();
 };
 
+export const getAllResultsByPersonId = async (id: number) => {
+    const response = await backendRequest(`result/person/${id}`, "GET", true);
+    return await response.json();
+}
+
 export const getResultById = async (id: number) => {
     const response = await backendRequest(`result/${id}`, "GET", true);
     return await response.json();

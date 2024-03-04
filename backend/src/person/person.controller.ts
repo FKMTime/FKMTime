@@ -77,6 +77,12 @@ export class PersonController {
     return await this.personService.giftpackCount();
   }
 
+  @UseGuards(AuthGuard('jwt'))
+  @Get(':id')
+  async getPersonById(@Param('id') id: number) {
+    return await this.personService.getPersonById(+id);
+  }
+
   @UseGuards(AuthGuard('jwt'), AdminOrDelegateGuard)
   @Put(':id')
   async updatePerson(@Param('id') id: number, @Body() data: UpdatePersonDto) {

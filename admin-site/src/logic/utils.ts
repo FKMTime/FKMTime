@@ -1,6 +1,6 @@
-import { Competition } from "@wca/helpers";
+import {Competition} from "@wca/helpers";
 import regions from "./regions";
-import { Attempt, Result } from "./interfaces";
+import {Attempt, Result} from "./interfaces";
 
 export const calculateTotalPages = (count: number, pageSize: number) => {
     return Math.ceil(count / pageSize);

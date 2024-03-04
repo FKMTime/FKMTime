@@ -27,6 +27,12 @@ export class ResultController {
     return await this.resultService.getAllResultsByRound(roundId, search);
   }
 
+  @UseGuards(AuthGuard('jwt'))
+  @Get('person/:id')
+  async getAllResultsByPersonId(@Param('id') id: number) {
+    return await this.resultService.getAllResultsByPerson(+id);
+  }
+
   @UseGuards(AuthGuard('jwt'), AdminOrDelegateGuard)
   @Get(':id')
   async getResultById(@Param('id') id: number) {

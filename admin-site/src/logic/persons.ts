@@ -9,6 +9,11 @@ export const getPersons = async (page = 1, pageSize = 10, search?: string) => {
     return await response.json();
 };
 
+export const getPersonById = async (id: number) => {
+    const response = await backendRequest(`person/${id}`, "GET", true);
+    return await response.json();
+};
+
 export const getPersonInfoByCardIdWithSensitiveData = async (
     cardId: string
 ) => {

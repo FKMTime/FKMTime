@@ -107,6 +107,7 @@ const Persons = (): JSX.Element => {
                 display="flex"
                 flexDirection="row"
                 justifyContent="space-between"
+                marginRight="5"
             >
                 <Input
                     placeholder="Search"
@@ -129,6 +130,7 @@ const Persons = (): JSX.Element => {
                     }}
                     onClick={() => setIsOpenAddStaffMemberModal(true)}
                 />
+
             </Box>
             <PersonsTable
                 persons={persons}

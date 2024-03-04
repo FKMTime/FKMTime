@@ -13,6 +13,7 @@ import Stations from "./Pages/Stations/Stations";
 import Tutorial from "./Pages/Tutorial/Tutorial";
 import AssignCards from "./Pages/AssignCards/AssignCards";
 import Giftpacks from "./Pages/Giftpacks/GIftpacks.tsx";
+import PersonResults from "./Pages/Persons/PersonResults.tsx";
 
 const App = (): JSX.Element => {
     const router = createBrowserRouter([
@@ -39,6 +40,10 @@ const App = (): JSX.Element => {
                 {
                     path: "persons",
                     element: <Persons />,
+                },
+                {
+                    path: "persons/:id/results",
+                    element: <PersonResults />,
                 },
                 {
                     path: "cards",

@@ -170,6 +170,23 @@ export class PersonService {
     });
   }
 
+  async getPersonById(id: number) {
+    return this.prisma.person.findFirst({
+      where: {
+        id,
+      },
+      select: {
+        id: true,
+        registrantId: true,
+        wcaId: true,
+        name: true,
+        countryIso2: true,
+        gender: true,
+        canCompete: true,
+      },
+    });
+  }
+
   async getPersonInfo(cardId: string) {
     const person = await this.prisma.person.findFirst({
       where: {
