@@ -21,7 +21,13 @@ export const getPersonInfoByCardIdWithSensitiveData = async (cardId: string) => 
     };
 };
 
-
+export const addStaffMember = async (name: string, gender: string) => {
+    const response = await backendRequest("person/staff", "POST", true, {
+        name,
+        gender
+    });
+    return response.status;
+}
 export const collectGfitpack = async (id: number) => {
     const response = await backendRequest(`person/giftpack/${id}`, "GET", true);
     return {

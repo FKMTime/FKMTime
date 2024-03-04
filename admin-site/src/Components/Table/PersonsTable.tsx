@@ -1,8 +1,7 @@
-import { Box, Table, TableContainer, Tbody, Text, Th, Thead, Tr } from "@chakra-ui/react";
-import { Competition, Person } from "../../logic/interfaces";
+import {Box, Table, TableContainer, Tbody, Text, Th, Thead, Tr} from "@chakra-ui/react";
+import {Competition, Person} from "../../logic/interfaces";
 import Pagination from "./Pagination";
 import PersonRow from "./Row/PersonRow";
-import { getPersonFromWcif } from "../../logic/utils";
 
 interface PersonsTableProps {
     persons: Person[];
@@ -36,12 +35,14 @@ const PersonsTable: React.FC<PersonsTableProps> = ({ persons, competition, handl
                             <Th>Gender</Th>
                             <Th>Events</Th>
                             <Th>Card assigned</Th>
+                            <Th>Giftpack</Th>
+                            <Th>Can compete</Th>
                             <Th>Actions</Th>
                         </Tr>
                     </Thead>
                     <Tbody>
                         {competition && persons.map((person: Person) => (
-                            <PersonRow wcifInfo={getPersonFromWcif(person.registrantId, competition?.wcif)} wcif={competition.wcif} key={person.id} person={person} handleCloseEditModal={handleCloseEditModal} />
+                            <PersonRow wcif={competition.wcif} key={person.id} person={person} handleCloseEditModal={handleCloseEditModal} />
                         ))}
                     </Tbody>
                 </Table>

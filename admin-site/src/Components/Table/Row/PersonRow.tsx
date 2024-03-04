@@ -1,9 +1,9 @@
-import {Tr, Td, IconButton, Box} from "@chakra-ui/react";
+import {Box, IconButton, Td, Tr} from "@chakra-ui/react";
 import {Person} from "../../../logic/interfaces";
-import {Competition, Person as WcifPerson} from "@wca/helpers";
+import {Competition} from "@wca/helpers";
 import {FaAddressCard} from "react-icons/fa";
 import {MdAssignment, MdDone} from "react-icons/md";
-import {prettyGender, regionNameByIso2} from "../../../logic/utils";
+import {getPersonFromWcif, prettyGender, regionNameByIso2} from "../../../logic/utils";
 import {useState} from "react";
 import AssignCardModal from "../../Modal/AssignCardModal";
 import EventIcon from "../../Icons/EventIcon";
@@ -12,17 +12,17 @@ import DisplayGroupsModal from "../../Modal/DisplayGroupsModal";
 interface PersonRowProps {
     person: Person;
     wcif: Competition;
-    wcifInfo?: WcifPerson;
     handleCloseEditModal: () => void;
 }
 
-const PersonRow: React.FC<PersonRowProps> = ({person, wcif, wcifInfo, handleCloseEditModal}): JSX.Element => {
+const PersonRow: React.FC<PersonRowProps> = ({person, wcif, handleCloseEditModal}) => {
 
     const [isOpenAssignCardModal, setIsOpenAssignCardModal] = useState<boolean>(false);
     const [isOpenDisplayGroupsModal, setIsOpenDisplayGroupsModal] = useState<boolean>(false);
+    const wcifInfo = person.registrantId ? getPersonFromWcif(person.registrantId, wcif) : null;
 
     const handleCloseAssignCardModal = async () => {
-        await handleCloseEditModal();
+        handleCloseEditModal();
         setIsOpenAssignCardModal(false);
     };
 
@@ -42,6 +42,8 @@ const PersonRow: React.FC<PersonRowProps> = ({person, wcif, wcifInfo, handleClos
                     </Box>
                 </Td>
                 <Td>{person.cardId && <MdDone/>}</Td>
+                <Td>{person.giftpackCollectedAt && <MdDone/>}</Td>
+                <Td>{person.canCompete && <MdDone/>}</Td>
                 <Td>
                     <IconButton icon={<FaAddressCard/>} aria-label="Card" bg="none" color="white" _hover={{
                         background: "none",
@@ -50,18 +52,22 @@ const PersonRow: React.FC<PersonRowProps> = ({person, wcif, wcifInfo, handleClos
                                 title="Assign card"
                                 onClick={() => setIsOpenAssignCardModal(true)}
                     />
-                    <IconButton icon={<MdAssignment/>} aria-label="Groups" bg="none" color="white" _hover={{
-                        background: "none",
-                        color: "gray.400"
-                    }}
-                                title="Display groups"
-                                onClick={() => setIsOpenDisplayGroupsModal(true)}
-                    />
+                    {person.registrantId && person.registrantId !== 0 && (
+                        <IconButton icon={<MdAssignment/>} aria-label="Groups" bg="none" color="white" _hover={{
+                            background: "none",
+                            color: "gray.400"
+                        }}
+                                    title="Display groups"
+                                    onClick={() => setIsOpenDisplayGroupsModal(true)}
+                        />
+                    )}
                 </Td>
             </Tr>
             <AssignCardModal isOpen={isOpenAssignCardModal} onClose={handleCloseAssignCardModal} person={person}/>
-            <DisplayGroupsModal isOpen={isOpenDisplayGroupsModal} onClose={() => setIsOpenDisplayGroupsModal(false)}
-                                wcif={wcif} registrationId={person.registrantId}/>
+            {person.registrantId && person.registrantId !== 0 && (
+                <DisplayGroupsModal isOpen={isOpenDisplayGroupsModal} onClose={() => setIsOpenDisplayGroupsModal(false)}
+                                    wcif={wcif} registrationId={person.registrantId}/>
+            )}
         </>
     )
 };

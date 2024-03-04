@@ -33,7 +33,8 @@ export interface Competition {
 
 export interface Person {
   id: number;
-  registrantId: number;
+  registrantId?: number;
+  canCompete: boolean;
   name: string;
   wcaId?: string;
   countryIso2?: string;

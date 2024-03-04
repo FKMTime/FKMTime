@@ -1,6 +1,6 @@
 import {useCallback, useEffect, useState} from "react";
 import {Competition, Person} from "../../logic/interfaces";
-import {Alert, AlertIcon, Box, Button, Input} from "@chakra-ui/react";
+import {Alert, AlertIcon, Box, Button, IconButton, Input} from "@chakra-ui/react";
 import {getPersons} from "../../logic/persons";
 import {calculateTotalPages} from "../../logic/utils";
 import PersonsTable from "../../Components/Table/PersonsTable";
@@ -8,6 +8,8 @@ import {getCompetitionInfo} from "../../logic/competition";
 import {useNavigate} from "react-router-dom";
 import {getUserInfo} from "../../logic/auth.ts";
 import {HAS_WRITE_ACCESS} from "../../logic/accounts.ts";
+import {MdAdd} from "react-icons/md";
+import AddStaffMemberModal from "../../Components/Modal/AddStaffMemberModal.tsx";
 
 const Persons = (): JSX.Element => {
     const navigate = useNavigate();
@@ -19,6 +21,7 @@ const Persons = (): JSX.Element => {
     const [pageSize, setPageSize] = useState<number>(10);
     const [search, setSearch] = useState<string>("");
     const [personsWithoutCardAssigned, setPersonsWithoutCardAssigned] = useState<number>(0);
+    const [isOpenAddStaffMemberModal, setIsOpenAddStaffMemberModal] = useState<boolean>(false);
 
     const fetchData = useCallback(async (pageParam = 1, pageSizeParam = 10, searchParam?: string) => {
         const response = await getPersons(pageParam, pageSizeParam, searchParam);
@@ -75,10 +78,20 @@ const Persons = (): JSX.Element => {
                     >Assign cards</Button>
                 </>
             )}
-            <Input placeholder="Search" _placeholder={{color: "white"}} value={search} onChange={handleSearch}/>
+            <Box display="flex" flexDirection="row" justifyContent="space-between">
+                <Input placeholder="Search" _placeholder={{color: "white"}} value={search} onChange={handleSearch} width="40%"/>
+                <IconButton icon={<MdAdd/>} aria-label="Add" bg="white" color="black" rounded="20" width="5" height="10"
+                            _hover={{
+                                background: "white",
+                                color: "gray.700"
+                            }}
+                            onClick={() => setIsOpenAddStaffMemberModal(true)}
+                />
+            </Box>
             <PersonsTable persons={persons} competition={competition} handleCloseEditModal={handleCloseEditModal}
                           changePageSize={changePageSize} handlePageChange={handlePageChange} page={page}
                           totalPages={totalPages} pageSize={pageSize}/>
+            {isOpenAddStaffMemberModal && <AddStaffMemberModal isOpen={isOpenAddStaffMemberModal} onClose={() => setIsOpenAddStaffMemberModal(false)}/>}
         </Box>
     )
 };

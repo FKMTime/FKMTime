@@ -2,6 +2,7 @@ import { DbService } from '../db/db.service';
 import { HttpException, Injectable } from '@nestjs/common';
 import { UpdatePersonDto } from './dto/updatePerson.dto';
 import { AssignManyCardsDto } from './dto/assignManyCards.dto';
+import { AddStaffMemberDto } from './dto/addStaffMember.dto';
 
 @Injectable()
 export class PersonService {
@@ -167,7 +168,7 @@ export class PersonService {
         name: true,
         countryIso2: true,
         gender: true,
-        giftpackCollectedAt: true,
+        canCompete: true,
       },
     });
     if (!person) {
@@ -185,6 +186,16 @@ export class PersonService {
     };
   }
 
+  async addStaffMember(data: AddStaffMemberDto) {
+    return this.prisma.person.create({
+      data: {
+        name: data.name,
+        gender: data.gender,
+        canCompete: false,
+      },
+    });
+  }
+
   async getPersonInfoWithSensitiveData(cardId: string) {
     return this.prisma.person.findFirst({
       where: {
@@ -197,6 +208,7 @@ export class PersonService {
         name: true,
         countryIso2: true,
         birthdate: true,
+        giftpackCollectedAt: true,
       },
     });
   }
