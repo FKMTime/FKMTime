@@ -1,4 +1,11 @@
-import { Box, Button, FormControl, FormLabel, Input, useToast } from "@chakra-ui/react";
+import {
+    Box,
+    Button,
+    FormControl,
+    FormLabel,
+    Input,
+    useToast,
+} from "@chakra-ui/react";
 import { Modal } from "./Modal";
 import { updateAccountPassword } from "../../logic/accounts";
 import { useState } from "react";
@@ -10,8 +17,11 @@ interface EditAccountPasswordModalProps {
     account: Account;
 }
 
-const EditAccountPasswordModal: React.FC<EditAccountPasswordModalProps> = ({ isOpen, onClose, account }): JSX.Element => {
-
+const EditAccountPasswordModal: React.FC<EditAccountPasswordModalProps> = ({
+    isOpen,
+    onClose,
+    account,
+}): JSX.Element => {
     const toast = useToast();
     const [isLoading, setIsLoading] = useState(false);
 
@@ -43,22 +53,45 @@ const EditAccountPasswordModal: React.FC<EditAccountPasswordModalProps> = ({ isO
 
     return (
         <Modal isOpen={isOpen} onClose={onClose} title="Change password">
-            <Box display="flex" flexDirection="column" gap="5" as="form" onSubmit={handleSubmit}>
+            <Box
+                display="flex"
+                flexDirection="column"
+                gap="5"
+                as="form"
+                onSubmit={handleSubmit}
+            >
                 <FormControl isRequired>
                     <FormLabel>New password</FormLabel>
-                    <Input placeholder='New password' _placeholder={{ color: "white" }} disabled={isLoading} type="password" name="password" />
+                    <Input
+                        placeholder="New password"
+                        _placeholder={{ color: "white" }}
+                        disabled={isLoading}
+                        type="password"
+                        name="password"
+                    />
                 </FormControl>
-                <Box display="flex" flexDirection="row" justifyContent="end" gap="5">
+                <Box
+                    display="flex"
+                    flexDirection="row"
+                    justifyContent="end"
+                    gap="5"
+                >
                     {!isLoading && (
-                        <Button colorScheme='red' onClick={onClose}>
+                        <Button colorScheme="red" onClick={onClose}>
                             Cancel
                         </Button>
                     )}
-                    <Button colorScheme='green' type="submit" isLoading={isLoading}>Save</Button>
+                    <Button
+                        colorScheme="green"
+                        type="submit"
+                        isLoading={isLoading}
+                    >
+                        Save
+                    </Button>
                 </Box>
             </Box>
-        </Modal >
-    )
+        </Modal>
+    );
 };
 
 export default EditAccountPasswordModal;

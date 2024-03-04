@@ -1,5 +1,5 @@
-import {Competition} from "./interfaces";
-import {backendRequest} from "./request";
+import { Competition } from "./interfaces";
+import { backendRequest } from "./request";
 
 export const getCompetitionInfo = async () => {
     const response = await backendRequest("competition", "GET", true);
@@ -17,7 +17,7 @@ export const getCompetitionSettings = async () => {
         status: response.status,
         data,
     };
-}
+};
 
 export const importCompetition = async (id: string) => {
     const response = await backendRequest(
@@ -33,14 +33,18 @@ export const importCompetition = async (id: string) => {
 };
 
 export const syncCompetition = async (id: string) => {
-    const response = await backendRequest(`competition/sync/${id}`, "GET", true);
+    const response = await backendRequest(
+        `competition/sync/${id}`,
+        "GET",
+        true
+    );
     return response.status;
 };
 
 export const updateCompetition = async (id: number, data: Competition) => {
     const competition = {
         ...data,
-        wcif: undefined
+        wcif: undefined,
     };
     const response = await backendRequest(
         `competition/update/${id}`,
@@ -50,5 +54,3 @@ export const updateCompetition = async (id: number, data: Competition) => {
     );
     return response.status;
 };
-
-

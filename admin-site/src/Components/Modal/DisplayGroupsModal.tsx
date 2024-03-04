@@ -1,4 +1,13 @@
-import { Box, TableContainer, Table, Thead, Tr, Th, Tbody, Td } from "@chakra-ui/react";
+import {
+    Box,
+    TableContainer,
+    Table,
+    Thead,
+    Tr,
+    Th,
+    Tbody,
+    Td,
+} from "@chakra-ui/react";
 import { getAssigmentsList } from "../../logic/activities";
 import { Modal } from "./Modal";
 import { Competition } from "@wca/helpers";
@@ -10,17 +19,21 @@ interface DisplayGroupsModalProps {
     wcif: Competition;
 }
 
-const DisplayGroupsModal: React.FC<DisplayGroupsModalProps> = ({ isOpen, onClose, wcif, registrationId }): JSX.Element => {
-
+const DisplayGroupsModal: React.FC<DisplayGroupsModalProps> = ({
+    isOpen,
+    onClose,
+    wcif,
+    registrationId,
+}): JSX.Element => {
     const assigments = getAssigmentsList(registrationId, wcif);
 
     return (
         <Modal isOpen={isOpen} onClose={onClose} title="Groups">
             <Box display="flex" flexDirection="column" gap="5">
                 <TableContainer>
-                    <Table variant='simple'>
+                    <Table variant="simple">
                         <Thead>
-                            <Tr bg='gray.400'>
+                            <Tr bg="gray.400">
                                 <Th>Group</Th>
                                 <Th>Activity</Th>
                             </Tr>
@@ -37,7 +50,7 @@ const DisplayGroupsModal: React.FC<DisplayGroupsModalProps> = ({ isOpen, onClose
                 </TableContainer>
             </Box>
         </Modal>
-    )
+    );
 };
 
 export default DisplayGroupsModal;

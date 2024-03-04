@@ -7,12 +7,15 @@ interface AccountsTableProps {
     fetchData: () => void;
 }
 
-const AccountsTable: React.FC<AccountsTableProps> = ({ accounts, fetchData }): JSX.Element => {
+const AccountsTable: React.FC<AccountsTableProps> = ({
+    accounts,
+    fetchData,
+}): JSX.Element => {
     return (
         <TableContainer>
-            <Table variant='simple'>
+            <Table variant="simple">
                 <Thead>
-                    <Tr bg='gray.400'>
+                    <Tr bg="gray.400">
                         <Th>ID</Th>
                         <Th>Email</Th>
                         <Th>Username</Th>
@@ -22,12 +25,16 @@ const AccountsTable: React.FC<AccountsTableProps> = ({ accounts, fetchData }): J
                 </Thead>
                 <Tbody>
                     {accounts.map((account) => (
-                        <AccountRow key={account.id} account={account} fetchData={fetchData} />
+                        <AccountRow
+                            key={account.id}
+                            account={account}
+                            fetchData={fetchData}
+                        />
                     ))}
                 </Tbody>
             </Table>
         </TableContainer>
-    )
+    );
 };
 
 export default AccountsTable;

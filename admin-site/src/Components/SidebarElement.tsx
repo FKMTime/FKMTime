@@ -7,11 +7,22 @@ interface SidebarElementProps {
     link: string;
 }
 
-const SidebarElement: React.FC<SidebarElementProps> = ({ name, icon, link }): JSX.Element => {
-
+const SidebarElement: React.FC<SidebarElementProps> = ({
+    name,
+    icon,
+    link,
+}): JSX.Element => {
     const navigate = useNavigate();
     return (
-        <Button leftIcon={icon} colorScheme='teal' variant='solid' rounded="20" width="100%" textAlign="center" onClick={() => navigate(link)}>
+        <Button
+            leftIcon={icon}
+            colorScheme="teal"
+            variant="solid"
+            rounded="20"
+            width="100%"
+            textAlign="center"
+            onClick={() => navigate(link)}
+        >
             {name}
         </Button>
     );

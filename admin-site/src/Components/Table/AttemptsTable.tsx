@@ -9,20 +9,25 @@ interface AttemptsTableProps {
     fetchData: () => void;
 }
 
-const AttemptsTable: React.FC<AttemptsTableProps> = ({ attempts, showExtraColumns = false, fetchData, result }): JSX.Element => {
+const AttemptsTable: React.FC<AttemptsTableProps> = ({
+    attempts,
+    showExtraColumns = false,
+    fetchData,
+    result,
+}): JSX.Element => {
     return (
         <TableContainer>
-            <Table variant='simple'>
+            <Table variant="simple">
                 <Thead>
-                    <Tr bg='gray.400'>
+                    <Tr bg="gray.400">
                         <Th>No</Th>
                         <Th>Attempt number</Th>
                         <Th>Time</Th>
                         {showExtraColumns && (
                             <>
-                        <Th>Replaced by</Th>
-                        <Th>Case</Th>
-                        </>
+                                <Th>Replaced by</Th>
+                                <Th>Case</Th>
+                            </>
                         )}
                         <Th>Judge</Th>
                         <Th>Station</Th>
@@ -33,12 +38,19 @@ const AttemptsTable: React.FC<AttemptsTableProps> = ({ attempts, showExtraColumn
                 </Thead>
                 <Tbody>
                     {attempts.map((attempt: Attempt, i: number) => (
-                        <AttemptRow key={attempt.id} attempt={attempt} showExtraColumns={showExtraColumns} fetchData={fetchData} no={i + 1} result={result} />
+                        <AttemptRow
+                            key={attempt.id}
+                            attempt={attempt}
+                            showExtraColumns={showExtraColumns}
+                            fetchData={fetchData}
+                            no={i + 1}
+                            result={result}
+                        />
                     ))}
                 </Tbody>
             </Table>
         </TableContainer>
-    )
+    );
 };
 
 export default AttemptsTable;

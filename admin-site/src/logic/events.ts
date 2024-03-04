@@ -2,7 +2,7 @@ const events: {
     id: string;
     name: string;
     icon: string;
-  }[] = [
+}[] = [
     { id: "333", name: "3x3x3 Cube", icon: "event-333" },
     { id: "222", name: "2x2x2 Cube", icon: "event-222" },
     { id: "444", name: "4x4x4 Cube", icon: "event-444" },
@@ -20,7 +20,6 @@ const events: {
     { id: "444bf", name: "4x4x4 Blindfolded", icon: "event-444bf" },
     { id: "555bf", name: "5x5x5 Blindfolded", icon: "event-555bf" },
     { id: "333mbf", name: "3x3x3 Multi-Blind", icon: "event-333mbf" },
-  ];
-  
-  export default events;
-  
+];
+
+export default events;

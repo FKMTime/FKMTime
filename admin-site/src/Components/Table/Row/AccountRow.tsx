@@ -3,7 +3,7 @@ import { Tr, Td, IconButton, useToast } from "@chakra-ui/react";
 import { MdEdit, MdDelete, MdLock } from "react-icons/md";
 import { Account } from "../../../logic/interfaces";
 import { deleteAccount } from "../../../logic/accounts";
-import Alert from "../../Alert"
+import Alert from "../../Alert";
 import EditAccountModal from "../../Modal/EditAccountModal";
 import EditAccountPasswordModal from "../../Modal/EditAccountPasswordModal";
 
@@ -12,12 +12,16 @@ interface AccountRowProps {
     fetchData: () => void;
 }
 
-const AccountRow: React.FC<AccountRowProps> = ({ account, fetchData }): JSX.Element => {
-
+const AccountRow: React.FC<AccountRowProps> = ({
+    account,
+    fetchData,
+}): JSX.Element => {
     const toast = useToast();
     const [openConfirmation, setOpenConfirmation] = useState<boolean>(false);
-    const [isOpenEditAccountModal, setIsOpenEditAccountModal] = useState<boolean>(false);
-    const [isOpenChangePasswordModal, setIsOpenChangePasswordModal] = useState<boolean>(false);
+    const [isOpenEditAccountModal, setIsOpenEditAccountModal] =
+        useState<boolean>(false);
+    const [isOpenChangePasswordModal, setIsOpenChangePasswordModal] =
+        useState<boolean>(false);
 
     const handleDelete = async () => {
         setOpenConfirmation(true);
@@ -60,34 +64,68 @@ const AccountRow: React.FC<AccountRowProps> = ({ account, fetchData }): JSX.Elem
                 <Td>{account.id}</Td>
                 <Td>{account.email}</Td>
                 <Td>{account.username}</Td>
-                <Td>{account.role.charAt(0).toUpperCase() + account.role.slice(1).toLowerCase()}</Td>
                 <Td>
-                    <IconButton icon={<MdEdit />} title="Edit" aria-label="Edit" bg="none" color="white" _hover={{
-                        background: "none",
-                        color: "gray.400"
-                    }}
+                    {account.role.charAt(0).toUpperCase() +
+                        account.role.slice(1).toLowerCase()}
+                </Td>
+                <Td>
+                    <IconButton
+                        icon={<MdEdit />}
+                        title="Edit"
+                        aria-label="Edit"
+                        bg="none"
+                        color="white"
+                        _hover={{
+                            background: "none",
+                            color: "gray.400",
+                        }}
                         onClick={() => setIsOpenEditAccountModal(true)}
                     />
-                    <IconButton icon={<MdLock />} title="Change password" aria-label="Change password" bg="none" color="white" _hover={{
-                        background: "none",
-                        color: "gray.400"
-                    }}
+                    <IconButton
+                        icon={<MdLock />}
+                        title="Change password"
+                        aria-label="Change password"
+                        bg="none"
+                        color="white"
+                        _hover={{
+                            background: "none",
+                            color: "gray.400",
+                        }}
                         onClick={() => setIsOpenChangePasswordModal(true)}
                     />
-                    <IconButton icon={<MdDelete />} title="Delete" aria-label="Delete" bg="none" color="white" _hover={{
-                        background: "none",
-                        color: "gray.400"
-                    }}
+                    <IconButton
+                        icon={<MdDelete />}
+                        title="Delete"
+                        aria-label="Delete"
+                        bg="none"
+                        color="white"
+                        _hover={{
+                            background: "none",
+                            color: "gray.400",
+                        }}
                         onClick={handleDelete}
                     />
-
                 </Td>
             </Tr>
-            <Alert isOpen={openConfirmation} onCancel={handleCancel} onConfirm={handleConfirm} title="Delete Account" description="Are you sure?" />
-            <EditAccountModal isOpen={isOpenEditAccountModal} onClose={handleCloseEditAccountModal} account={account} />
-            <EditAccountPasswordModal isOpen={isOpenChangePasswordModal} onClose={() => setIsOpenChangePasswordModal(false)} account={account} />
+            <Alert
+                isOpen={openConfirmation}
+                onCancel={handleCancel}
+                onConfirm={handleConfirm}
+                title="Delete Account"
+                description="Are you sure?"
+            />
+            <EditAccountModal
+                isOpen={isOpenEditAccountModal}
+                onClose={handleCloseEditAccountModal}
+                account={account}
+            />
+            <EditAccountPasswordModal
+                isOpen={isOpenChangePasswordModal}
+                onClose={() => setIsOpenChangePasswordModal(false)}
+                account={account}
+            />
         </>
-    )
+    );
 };
 
 export default AccountRow;

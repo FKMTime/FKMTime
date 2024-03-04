@@ -1,10 +1,17 @@
-import { Box, Button, FormControl, FormLabel, Input, useToast } from "@chakra-ui/react";
+import {
+    Box,
+    Button,
+    FormControl,
+    FormLabel,
+    Input,
+    useToast,
+} from "@chakra-ui/react";
 import { Modal } from "./Modal";
 import { useState } from "react";
 import { Person } from "../../logic/interfaces";
 import { updatePerson } from "../../logic/persons";
-import {getUserInfo} from "../../logic/auth.ts";
-import {HAS_WRITE_ACCESS} from "../../logic/accounts.ts";
+import { getUserInfo } from "../../logic/auth.ts";
+import { HAS_WRITE_ACCESS } from "../../logic/accounts.ts";
 
 interface AssignCardModalProps {
     isOpen: boolean;
@@ -12,8 +19,11 @@ interface AssignCardModalProps {
     person: Person;
 }
 
-const AssignCardModal: React.FC<AssignCardModalProps> = ({ isOpen, onClose, person }): JSX.Element => {
-
+const AssignCardModal: React.FC<AssignCardModalProps> = ({
+    isOpen,
+    onClose,
+    person,
+}): JSX.Element => {
     const toast = useToast();
     const userInfo = getUserInfo();
     const [isLoading, setIsLoading] = useState(false);
@@ -22,7 +32,7 @@ const AssignCardModal: React.FC<AssignCardModalProps> = ({ isOpen, onClose, pers
     const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
         setIsLoading(true);
         event.preventDefault();
-    
+
         const status = await updatePerson(editedPerson);
         if (status === 200) {
             toast({
@@ -46,26 +56,54 @@ const AssignCardModal: React.FC<AssignCardModalProps> = ({ isOpen, onClose, pers
 
     return (
         <Modal isOpen={isOpen} onClose={onClose} title="Assign card">
-            <Box display="flex" flexDirection="column" gap="5" as="form" onSubmit={handleSubmit}>
+            <Box
+                display="flex"
+                flexDirection="column"
+                gap="5"
+                as="form"
+                onSubmit={handleSubmit}
+            >
                 <FormControl>
                     <FormLabel>Card</FormLabel>
-                    <Input placeholder='Card' isReadOnly={!HAS_WRITE_ACCESS.includes(userInfo.role)} _placeholder={{ color: "white" }} value={editedPerson.cardId} disabled={isLoading} onChange={(e) => setEditedPerson({ ...editedPerson, cardId: e.target.value })} autoFocus />
+                    <Input
+                        placeholder="Card"
+                        isReadOnly={!HAS_WRITE_ACCESS.includes(userInfo.role)}
+                        _placeholder={{ color: "white" }}
+                        value={editedPerson.cardId}
+                        disabled={isLoading}
+                        onChange={(e) =>
+                            setEditedPerson({
+                                ...editedPerson,
+                                cardId: e.target.value,
+                            })
+                        }
+                        autoFocus
+                    />
                 </FormControl>
-                <Box display="flex" flexDirection="row" justifyContent="end" gap="5">
+                <Box
+                    display="flex"
+                    flexDirection="row"
+                    justifyContent="end"
+                    gap="5"
+                >
                     {!isLoading && (
-                        <Button colorScheme='red' onClick={onClose}>
+                        <Button colorScheme="red" onClick={onClose}>
                             Cancel
                         </Button>
                     )}
                     {HAS_WRITE_ACCESS.includes(userInfo.role) && (
-                        <Button colorScheme='green' type="submit" isLoading={isLoading}>
+                        <Button
+                            colorScheme="green"
+                            type="submit"
+                            isLoading={isLoading}
+                        >
                             Save
                         </Button>
                     )}
                 </Box>
             </Box>
-        </Modal >
-    )
+        </Modal>
+    );
 };
 
 export default AssignCardModal;

@@ -1,4 +1,4 @@
-import {Attempt} from "./interfaces.ts";
+import { Attempt } from "./interfaces.ts";
 
 export const average = (attempts: Attempt[]) => {
     switch (attempts.length) {
@@ -31,7 +31,9 @@ function meanOf3(times: Attempt[]) {
 }
 
 function mean(values: Attempt[]) {
-    const times = values.map((time: Attempt) => time.value + time.penalty * 100);
+    const times = values.map(
+        (time: Attempt) => time.value + time.penalty * 100
+    );
     const sum = times.reduce((x, y) => x + y, 0);
     return Math.round(sum / values.length);
 }

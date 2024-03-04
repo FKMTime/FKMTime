@@ -1,11 +1,7 @@
-import {Person} from "./interfaces";
-import {backendRequest} from "./request";
+import { Person } from "./interfaces";
+import { backendRequest } from "./request";
 
-export const getPersons = async (
-    page = 1,
-    pageSize = 10,
-    search?: string
-) => {
+export const getPersons = async (page = 1, pageSize = 10, search?: string) => {
     const query = `person?page=${page}&pageSize=${pageSize}${
         search ? `&search=${search}` : ""
     }`;
@@ -13,8 +9,14 @@ export const getPersons = async (
     return await response.json();
 };
 
-export const getPersonInfoByCardIdWithSensitiveData = async (cardId: string) => {
-    const response = await backendRequest(`person/card/${cardId}/sensitive`, "GET", true);
+export const getPersonInfoByCardIdWithSensitiveData = async (
+    cardId: string
+) => {
+    const response = await backendRequest(
+        `person/card/${cardId}/sensitive`,
+        "GET",
+        true
+    );
     return {
         data: await response.json(),
         status: response.status,
@@ -24,10 +26,10 @@ export const getPersonInfoByCardIdWithSensitiveData = async (cardId: string) => 
 export const addStaffMember = async (name: string, gender: string) => {
     const response = await backendRequest("person/staff", "POST", true, {
         name,
-        gender
+        gender,
     });
     return response.status;
-}
+};
 export const collectGfitpack = async (id: number) => {
     const response = await backendRequest(`person/giftpack/${id}`, "GET", true);
     return {
@@ -52,13 +54,23 @@ export const getPersonsWithoutCardAssigned = async () => {
 };
 
 export const updatePerson = async (data: Person) => {
-    const response = await backendRequest(`person/${data.id}`, "PUT", true, data);
+    const response = await backendRequest(
+        `person/${data.id}`,
+        "PUT",
+        true,
+        data
+    );
     return response.status;
 };
 
 export const assignManyCards = async (data: Person[]) => {
-    const response = await backendRequest("person/card/assign-many", "PUT", true, {
-        persons: data,
-    });
+    const response = await backendRequest(
+        "person/card/assign-many",
+        "PUT",
+        true,
+        {
+            persons: data,
+        }
+    );
     return response.status;
-}
+};

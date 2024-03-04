@@ -1,4 +1,12 @@
-import { Box, Button, FormControl, FormLabel, Input, Select, useToast } from "@chakra-ui/react";
+import {
+    Box,
+    Button,
+    FormControl,
+    FormLabel,
+    Input,
+    Select,
+    useToast,
+} from "@chakra-ui/react";
 import { Modal } from "./Modal";
 import { createAccount } from "../../logic/accounts";
 import { useState } from "react";
@@ -8,8 +16,10 @@ interface CreateAccountModalProps {
     onClose: () => void;
 }
 
-const CreateAccountModal: React.FC<CreateAccountModalProps> = ({ isOpen, onClose }): JSX.Element => {
-
+const CreateAccountModal: React.FC<CreateAccountModalProps> = ({
+    isOpen,
+    onClose,
+}): JSX.Element => {
     const toast = useToast();
     const [isLoading, setIsLoading] = useState(false);
 
@@ -46,37 +56,76 @@ const CreateAccountModal: React.FC<CreateAccountModalProps> = ({ isOpen, onClose
 
     return (
         <Modal isOpen={isOpen} onClose={onClose} title="Create account">
-            <Box display="flex" flexDirection="column" gap="5" as="form" onSubmit={handleSubmit}>
+            <Box
+                display="flex"
+                flexDirection="column"
+                gap="5"
+                as="form"
+                onSubmit={handleSubmit}
+            >
                 <FormControl isRequired>
                     <FormLabel>Username</FormLabel>
-                    <Input placeholder='Username' _placeholder={{ color: "white" }} name="username" disabled={isLoading} />
+                    <Input
+                        placeholder="Username"
+                        _placeholder={{ color: "white" }}
+                        name="username"
+                        disabled={isLoading}
+                    />
                 </FormControl>
                 <FormControl isRequired>
                     <FormLabel>Email</FormLabel>
-                    <Input placeholder='Email' type="email" _placeholder={{ color: "white" }} name="email" disabled={isLoading} />
+                    <Input
+                        placeholder="Email"
+                        type="email"
+                        _placeholder={{ color: "white" }}
+                        name="email"
+                        disabled={isLoading}
+                    />
                 </FormControl>
                 <FormControl isRequired>
                     <FormLabel>Password</FormLabel>
-                    <Input placeholder='Password' type="password" _placeholder={{ color: "white" }} name="password" disabled={isLoading} />
+                    <Input
+                        placeholder="Password"
+                        type="password"
+                        _placeholder={{ color: "white" }}
+                        name="password"
+                        disabled={isLoading}
+                    />
                 </FormControl>
                 <FormControl isRequired>
                     <FormLabel>Role</FormLabel>
-                    <Select placeholder='Select role' _placeholder={{ color: "white" }} name="role" disabled={isLoading}>
-                        <option value='DELEGATE'>Delegate</option>
-                        <option value='ADMIN'>Admin</option>
+                    <Select
+                        placeholder="Select role"
+                        _placeholder={{ color: "white" }}
+                        name="role"
+                        disabled={isLoading}
+                    >
+                        <option value="DELEGATE">Delegate</option>
+                        <option value="ADMIN">Admin</option>
                     </Select>
                 </FormControl>
-                <Box display="flex" flexDirection="row" justifyContent="end" gap="5">
+                <Box
+                    display="flex"
+                    flexDirection="row"
+                    justifyContent="end"
+                    gap="5"
+                >
                     {!isLoading && (
-                        <Button colorScheme='red' onClick={onClose}>
+                        <Button colorScheme="red" onClick={onClose}>
                             Cancel
                         </Button>
                     )}
-                    <Button colorScheme='green' type="submit" isLoading={isLoading}>Submit</Button>
+                    <Button
+                        colorScheme="green"
+                        type="submit"
+                        isLoading={isLoading}
+                    >
+                        Submit
+                    </Button>
                 </Box>
             </Box>
-        </Modal >
-    )
+        </Modal>
+    );
 };
 
 export default CreateAccountModal;

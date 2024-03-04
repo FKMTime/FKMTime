@@ -1,4 +1,13 @@
-import { Box, Button, Checkbox, FormControl, FormLabel, Input, Select, useToast } from "@chakra-ui/react";
+import {
+    Box,
+    Button,
+    Checkbox,
+    FormControl,
+    FormLabel,
+    Input,
+    Select,
+    useToast,
+} from "@chakra-ui/react";
 import { Modal } from "./Modal";
 import { useEffect, useState } from "react";
 import { Attempt, Person, Result } from "../../logic/interfaces";
@@ -15,14 +24,20 @@ interface EditAttemptModalProps {
     result: Result;
 }
 
-const EditAttemptModal: React.FC<EditAttemptModalProps> = ({ isOpen, onClose, attempt, result }): JSX.Element => {
+const EditAttemptModal: React.FC<EditAttemptModalProps> = ({
+    isOpen,
+    onClose,
+    attempt,
+    result,
+}): JSX.Element => {
     const toast = useToast();
     const [isLoading, setIsLoading] = useState(false);
     const competition = useAtomValue(competitionAtom);
     const [persons, setPersons] = useState<Person[]>([]);
 
     const [editedAttempt, setEditedAttempt] = useState<Attempt>(attempt);
-    const [shouldResubmitToWcaLive, setShouldResubmitToWcaLive] = useState<boolean>(false);
+    const [shouldResubmitToWcaLive, setShouldResubmitToWcaLive] =
+        useState<boolean>(false);
 
     const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
         setIsLoading(true);
@@ -62,50 +77,131 @@ const EditAttemptModal: React.FC<EditAttemptModalProps> = ({ isOpen, onClose, at
 
     return (
         <Modal isOpen={isOpen} onClose={onClose} title="Edit attempt">
-            <Box display="flex" flexDirection="column" gap="5" as="form" onSubmit={handleSubmit}>
+            <Box
+                display="flex"
+                flexDirection="column"
+                gap="5"
+                as="form"
+                onSubmit={handleSubmit}
+            >
                 <FormControl isRequired>
                     <FormLabel>Attempt number</FormLabel>
-                    <Input placeholder='Attempt number' _placeholder={{ color: "white" }} value={editedAttempt.attemptNumber} disabled={isLoading} onChange={(e) => setEditedAttempt({ ...editedAttempt, attemptNumber: +e.target.value })} />
+                    <Input
+                        placeholder="Attempt number"
+                        _placeholder={{ color: "white" }}
+                        value={editedAttempt.attemptNumber}
+                        disabled={isLoading}
+                        onChange={(e) =>
+                            setEditedAttempt({
+                                ...editedAttempt,
+                                attemptNumber: +e.target.value,
+                            })
+                        }
+                    />
                 </FormControl>
-                <Checkbox isChecked={editedAttempt.isExtraAttempt} onChange={(e) => setEditedAttempt({ ...editedAttempt, isExtraAttempt: e.target.checked })}>Is extra attempt</Checkbox>
+                <Checkbox
+                    isChecked={editedAttempt.isExtraAttempt}
+                    onChange={(e) =>
+                        setEditedAttempt({
+                            ...editedAttempt,
+                            isExtraAttempt: e.target.checked,
+                        })
+                    }
+                >
+                    Is extra attempt
+                </Checkbox>
                 <FormControl isRequired>
                     <FormLabel>Time</FormLabel>
-                    <Input placeholder='Time' _placeholder={{ color: "white" }} value={editedAttempt.value} disabled={isLoading} onChange={(e) => {
-
-                        if (!competition) {
-                            setEditedAttempt({ ...editedAttempt, value: +e.target.value });
-                            return;
-                        }
-                        const isLimitPassed = checkTimeLimit(+e.target.value, competition?.wcif, result.roundId);
-                        if (!isLimitPassed) {
-                            toast({
-                                title: "This attempt not passed time limit.",
-                                description: "This time is DNF.",
-                                status: "error",
-                                duration: 9000,
-                                isClosable: true,
+                    <Input
+                        placeholder="Time"
+                        _placeholder={{ color: "white" }}
+                        value={editedAttempt.value}
+                        disabled={isLoading}
+                        onChange={(e) => {
+                            if (!competition) {
+                                setEditedAttempt({
+                                    ...editedAttempt,
+                                    value: +e.target.value,
+                                });
+                                return;
+                            }
+                            const isLimitPassed = checkTimeLimit(
+                                +e.target.value,
+                                competition?.wcif,
+                                result.roundId
+                            );
+                            if (!isLimitPassed) {
+                                toast({
+                                    title: "This attempt not passed time limit.",
+                                    description: "This time is DNF.",
+                                    status: "error",
+                                    duration: 9000,
+                                    isClosable: true,
+                                });
+                                setEditedAttempt({
+                                    ...editedAttempt,
+                                    value: +e.target.value,
+                                    penalty: -1,
+                                });
+                                return;
+                            }
+                            setEditedAttempt({
+                                ...editedAttempt,
+                                value: +e.target.value,
                             });
-                            setEditedAttempt({ ...editedAttempt, value: +e.target.value, penalty: -1 });
-                            return;
-                        }
-                        setEditedAttempt({ ...editedAttempt, value: +e.target.value });
-                    }} />
+                        }}
+                    />
                 </FormControl>
                 <FormControl>
                     <FormLabel>Judge</FormLabel>
-                    <Select placeholder='Select judge' _placeholder={{ color: "white" }} value={editedAttempt.judgeId} disabled={isLoading} onChange={(e) => setEditedAttempt({ ...editedAttempt, judgeId: +e.target.value })}>
+                    <Select
+                        placeholder="Select judge"
+                        _placeholder={{ color: "white" }}
+                        value={editedAttempt.judgeId}
+                        disabled={isLoading}
+                        onChange={(e) =>
+                            setEditedAttempt({
+                                ...editedAttempt,
+                                judgeId: +e.target.value,
+                            })
+                        }
+                    >
                         {persons.map((person) => (
-                            <option key={person.id} value={person.id}>{person.name} ({person.registrantId})</option>
+                            <option key={person.id} value={person.id}>
+                                {person.name} ({person.registrantId})
+                            </option>
                         ))}
                     </Select>
                 </FormControl>
                 <FormControl>
                     <FormLabel>Comment</FormLabel>
-                    <Input placeholder='Comment' _placeholder={{ color: "white" }} value={editedAttempt.comment} disabled={isLoading} onChange={(e) => setEditedAttempt({ ...editedAttempt, comment: e.target.value })} />
+                    <Input
+                        placeholder="Comment"
+                        _placeholder={{ color: "white" }}
+                        value={editedAttempt.comment}
+                        disabled={isLoading}
+                        onChange={(e) =>
+                            setEditedAttempt({
+                                ...editedAttempt,
+                                comment: e.target.value,
+                            })
+                        }
+                    />
                 </FormControl>
                 <FormControl>
                     <FormLabel>Penalty</FormLabel>
-                    <Select placeholder='Select penalty' _placeholder={{ color: "white" }} value={editedAttempt.penalty} disabled={isLoading} onChange={(e) => setEditedAttempt({ ...editedAttempt, penalty: +e.target.value })}>
+                    <Select
+                        placeholder="Select penalty"
+                        _placeholder={{ color: "white" }}
+                        value={editedAttempt.penalty}
+                        disabled={isLoading}
+                        onChange={(e) =>
+                            setEditedAttempt({
+                                ...editedAttempt,
+                                penalty: +e.target.value,
+                            })
+                        }
+                    >
                         <option value={0}>No penalty</option>
                         <option value={2}>+2</option>
                         <option value={-1}>DNF</option>
@@ -122,27 +218,86 @@ const EditAttemptModal: React.FC<EditAttemptModalProps> = ({ isOpen, onClose, at
                 {editedAttempt.extraGiven && (
                     <FormControl>
                         <FormLabel>Replaced by</FormLabel>
-                        <Input placeholder='Replaced by' _placeholder={{ color: "white" }} value={editedAttempt.replacedBy} disabled={isLoading} onChange={(e) => setEditedAttempt({ ...editedAttempt, replacedBy: +e.target.value })} />
+                        <Input
+                            placeholder="Replaced by"
+                            _placeholder={{ color: "white" }}
+                            value={editedAttempt.replacedBy}
+                            disabled={isLoading}
+                            onChange={(e) =>
+                                setEditedAttempt({
+                                    ...editedAttempt,
+                                    replacedBy: +e.target.value,
+                                })
+                            }
+                        />
                     </FormControl>
                 )}
-                <Checkbox isChecked={editedAttempt.isDelegate} onChange={(e) => setEditedAttempt({ ...editedAttempt, isDelegate: e.target.checked })}>Is delegate case</Checkbox>
+                <Checkbox
+                    isChecked={editedAttempt.isDelegate}
+                    onChange={(e) =>
+                        setEditedAttempt({
+                            ...editedAttempt,
+                            isDelegate: e.target.checked,
+                        })
+                    }
+                >
+                    Is delegate case
+                </Checkbox>
                 {editedAttempt.isDelegate && (
                     <>
-                        <Checkbox isChecked={editedAttempt.isResolved} onChange={(e) => setEditedAttempt({ ...editedAttempt, isResolved: e.target.checked })}>Is resolved</Checkbox>
-                        <Checkbox isChecked={editedAttempt.extraGiven} onChange={(e) => setEditedAttempt({ ...editedAttempt, extraGiven: e.target.checked })}>Extra given</Checkbox>
+                        <Checkbox
+                            isChecked={editedAttempt.isResolved}
+                            onChange={(e) =>
+                                setEditedAttempt({
+                                    ...editedAttempt,
+                                    isResolved: e.target.checked,
+                                })
+                            }
+                        >
+                            Is resolved
+                        </Checkbox>
+                        <Checkbox
+                            isChecked={editedAttempt.extraGiven}
+                            onChange={(e) =>
+                                setEditedAttempt({
+                                    ...editedAttempt,
+                                    extraGiven: e.target.checked,
+                                })
+                            }
+                        >
+                            Extra given
+                        </Checkbox>
                     </>
                 )}
-                <Checkbox isChecked={shouldResubmitToWcaLive} onChange={(e) => setShouldResubmitToWcaLive(e.target.checked)}>Resubmit to WCA Live</Checkbox>
-                <Box display="flex" flexDirection="row" justifyContent="end" gap="5">
+                <Checkbox
+                    isChecked={shouldResubmitToWcaLive}
+                    onChange={(e) =>
+                        setShouldResubmitToWcaLive(e.target.checked)
+                    }
+                >
+                    Resubmit to WCA Live
+                </Checkbox>
+                <Box
+                    display="flex"
+                    flexDirection="row"
+                    justifyContent="end"
+                    gap="5"
+                >
                     {!isLoading && (
-                        <Button colorScheme='red' onClick={onClose}>
+                        <Button colorScheme="red" onClick={onClose}>
                             Cancel
                         </Button>
                     )}
-                    <Button colorScheme='green' type="submit" isLoading={isLoading}>Save</Button>
+                    <Button
+                        colorScheme="green"
+                        type="submit"
+                        isLoading={isLoading}
+                    >
+                        Save
+                    </Button>
                 </Box>
             </Box>
         </Modal>
-    )
+    );
 };
 export default EditAttemptModal;

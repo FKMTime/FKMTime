@@ -28,6 +28,9 @@ jobs:
       - name: Run ESlint
         working-directory: 'admin-site'
         run: npm run lint
+      - name: Check formatting
+        working-directory: 'admin-site'
+        run: npm run format:check
       - name: Build frontend
         working-directory: 'admin-site' 
         run: npm run build

@@ -7,12 +7,15 @@ interface ScheduleTableProps {
     events: Event[];
 }
 
-const ScheduleTable: React.FC<ScheduleTableProps> = ({ activities, events }): JSX.Element => {
+const ScheduleTable: React.FC<ScheduleTableProps> = ({
+    activities,
+    events,
+}): JSX.Element => {
     return (
         <TableContainer>
-            <Table variant='simple'>
+            <Table variant="simple">
                 <Thead textAlign="center">
-                    <Tr bg='gray.400'>
+                    <Tr bg="gray.400">
                         <Th>Time</Th>
                         <Th>Name</Th>
                         <Th>Format</Th>
@@ -24,12 +27,16 @@ const ScheduleTable: React.FC<ScheduleTableProps> = ({ activities, events }): JS
                 </Thead>
                 <Tbody>
                     {activities.map((activity: Activity) => (
-                        <ScheduleRow key={activity.id} activity={activity} events={events} />
+                        <ScheduleRow
+                            key={activity.id}
+                            activity={activity}
+                            events={events}
+                        />
                     ))}
                 </Tbody>
             </Table>
         </TableContainer>
-    )
+    );
 };
 
 export default ScheduleTable;

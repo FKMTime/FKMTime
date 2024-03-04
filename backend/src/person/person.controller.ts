@@ -1,19 +1,20 @@
 import {
-    Body,
-    Controller,
-    Get,
-    Param, Post,
-    Put,
-    Query,
-    UseGuards,
+  Body,
+  Controller,
+  Get,
+  Param,
+  Post,
+  Put,
+  Query,
+  UseGuards,
 } from '@nestjs/common';
 import { PersonService } from './person.service';
 import { UpdatePersonDto } from './dto/updatePerson.dto';
 import { AuthGuard } from '@nestjs/passport';
 import { AssignManyCardsDto } from './dto/assignManyCards.dto';
 import { AdminOrDelegateGuard } from '../auth/guards/adminOrDelegate.guard';
-import {AdminGuard} from "../auth/guards/admin.guard";
-import {AddStaffMemberDto} from "./dto/addStaffMember.dto";
+import { AdminGuard } from '../auth/guards/admin.guard';
+import { AddStaffMemberDto } from './dto/addStaffMember.dto';
 
 @Controller('person')
 export class PersonController {

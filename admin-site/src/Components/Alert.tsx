@@ -1,15 +1,29 @@
 import { useRef } from "react";
-import { AlertDialog, AlertDialogOverlay, AlertDialogContent, AlertDialogHeader, AlertDialogBody, AlertDialogFooter, Button } from "@chakra-ui/react";
+import {
+    AlertDialog,
+    AlertDialogOverlay,
+    AlertDialogContent,
+    AlertDialogHeader,
+    AlertDialogBody,
+    AlertDialogFooter,
+    Button,
+} from "@chakra-ui/react";
 
 interface AlertProps {
     isOpen: boolean;
     onCancel: () => void;
-    onConfirm: () => void;    
+    onConfirm: () => void;
     title: string;
     description: string;
 }
 
-const Alert: React.FC<AlertProps> = ({ isOpen, onCancel, onConfirm, title, description }): JSX.Element => {
+const Alert: React.FC<AlertProps> = ({
+    isOpen,
+    onCancel,
+    onConfirm,
+    title,
+    description,
+}): JSX.Element => {
     return (
         <AlertDialog
             isOpen={isOpen}
@@ -18,7 +32,7 @@ const Alert: React.FC<AlertProps> = ({ isOpen, onCancel, onConfirm, title, descr
         >
             <AlertDialogOverlay>
                 <AlertDialogContent backgroundColor="gray.700" color="white">
-                    <AlertDialogHeader fontSize='lg' fontWeight='bold'>
+                    <AlertDialogHeader fontSize="lg" fontWeight="bold">
                         {title}
                     </AlertDialogHeader>
 
@@ -27,10 +41,8 @@ const Alert: React.FC<AlertProps> = ({ isOpen, onCancel, onConfirm, title, descr
                     </AlertDialogBody>
 
                     <AlertDialogFooter>
-                        <Button onClick={onCancel}>
-                            Cancel
-                        </Button>
-                        <Button colorScheme='red' onClick={onConfirm} ml={3}>
+                        <Button onClick={onCancel}>Cancel</Button>
+                        <Button colorScheme="red" onClick={onConfirm} ml={3}>
                             Confirm
                         </Button>
                     </AlertDialogFooter>

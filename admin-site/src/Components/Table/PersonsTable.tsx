@@ -1,5 +1,14 @@
-import {Box, Table, TableContainer, Tbody, Text, Th, Thead, Tr} from "@chakra-ui/react";
-import {Competition, Person} from "../../logic/interfaces";
+import {
+    Box,
+    Table,
+    TableContainer,
+    Tbody,
+    Text,
+    Th,
+    Thead,
+    Tr,
+} from "@chakra-ui/react";
+import { Competition, Person } from "../../logic/interfaces";
 import Pagination from "./Pagination";
 import PersonRow from "./Row/PersonRow";
 
@@ -14,7 +23,16 @@ interface PersonsTableProps {
     pageSize: number;
 }
 
-const PersonsTable: React.FC<PersonsTableProps> = ({ persons, competition, handleCloseEditModal, changePageSize, handlePageChange, page, totalPages, pageSize }): JSX.Element => {
+const PersonsTable: React.FC<PersonsTableProps> = ({
+    persons,
+    competition,
+    handleCloseEditModal,
+    changePageSize,
+    handlePageChange,
+    page,
+    totalPages,
+    pageSize,
+}): JSX.Element => {
     if (!persons || persons.length === 0) {
         return (
             <Box textAlign="center">
@@ -25,9 +43,9 @@ const PersonsTable: React.FC<PersonsTableProps> = ({ persons, competition, handl
     return (
         <>
             <TableContainer>
-                <Table variant='simple'>
+                <Table variant="simple">
                     <Thead>
-                        <Tr bg='gray.400'>
+                        <Tr bg="gray.400">
                             <Th>Registrant ID</Th>
                             <Th>Name</Th>
                             <Th>WCA ID</Th>
@@ -41,16 +59,27 @@ const PersonsTable: React.FC<PersonsTableProps> = ({ persons, competition, handl
                         </Tr>
                     </Thead>
                     <Tbody>
-                        {competition && persons.map((person: Person) => (
-                            <PersonRow wcif={competition.wcif} key={person.id} person={person} handleCloseEditModal={handleCloseEditModal} />
-                        ))}
+                        {competition &&
+                            persons.map((person: Person) => (
+                                <PersonRow
+                                    wcif={competition.wcif}
+                                    key={person.id}
+                                    person={person}
+                                    handleCloseEditModal={handleCloseEditModal}
+                                />
+                            ))}
                     </Tbody>
                 </Table>
             </TableContainer>
-            <Pagination page={page} totalPages={totalPages} handlePageChange={handlePageChange} changePageSize={changePageSize} pageSize={pageSize} />
+            <Pagination
+                page={page}
+                totalPages={totalPages}
+                handlePageChange={handlePageChange}
+                changePageSize={changePageSize}
+                pageSize={pageSize}
+            />
         </>
     );
-
 };
 
 export default PersonsTable;

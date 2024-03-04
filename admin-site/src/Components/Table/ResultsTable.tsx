@@ -1,26 +1,30 @@
 import { Table, TableContainer, Tbody, Th, Thead, Tr } from "@chakra-ui/react";
 import { Result } from "../../logic/interfaces";
 import ResultRow from "./Row/ResultRow";
-import {getUserInfo} from "../../logic/auth.ts";
-import {HAS_WRITE_ACCESS} from "../../logic/accounts.ts";
+import { getUserInfo } from "../../logic/auth.ts";
+import { HAS_WRITE_ACCESS } from "../../logic/accounts.ts";
 
 interface ResultsTableProps {
     results: Result[];
 }
 
-const ResultsTable: React.FC<ResultsTableProps> = ({ results }): JSX.Element => {
+const ResultsTable: React.FC<ResultsTableProps> = ({
+    results,
+}): JSX.Element => {
     const userInfo = getUserInfo();
     return (
         <TableContainer>
-            <Table variant='simple'>
+            <Table variant="simple">
                 <Thead>
-                    <Tr bg='gray.400'>
+                    <Tr bg="gray.400">
                         <Th>Registrant ID</Th>
                         <Th>Name</Th>
                         <Th>WCA ID</Th>
                         <Th>Average</Th>
                         <Th>Best</Th>
-                        {HAS_WRITE_ACCESS.includes(userInfo.role) && <Th>Actions</Th>}
+                        {HAS_WRITE_ACCESS.includes(userInfo.role) && (
+                            <Th>Actions</Th>
+                        )}
                     </Tr>
                 </Thead>
                 <Tbody>
@@ -30,7 +34,7 @@ const ResultsTable: React.FC<ResultsTableProps> = ({ results }): JSX.Element => 
                 </Tbody>
             </Table>
         </TableContainer>
-    )
+    );
 };
 
 export default ResultsTable;

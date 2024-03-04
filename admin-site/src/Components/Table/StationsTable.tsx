@@ -7,12 +7,15 @@ interface StationsTableProps {
     fetchData: () => void;
 }
 
-const StationsTable: React.FC<StationsTableProps> = ({ stations, fetchData }): JSX.Element => {
+const StationsTable: React.FC<StationsTableProps> = ({
+    stations,
+    fetchData,
+}): JSX.Element => {
     return (
         <TableContainer>
-            <Table variant='simple'>
+            <Table variant="simple">
                 <Thead>
-                    <Tr bg='gray.400'>
+                    <Tr bg="gray.400">
                         <Th>ID</Th>
                         <Th>Name</Th>
                         <Th>ESP ID</Th>
@@ -21,12 +24,16 @@ const StationsTable: React.FC<StationsTableProps> = ({ stations, fetchData }): J
                 </Thead>
                 <Tbody>
                     {stations.map((station) => (
-                        <StationRow key={station.id} station={station} fetchData={fetchData} />
+                        <StationRow
+                            key={station.id}
+                            station={station}
+                            fetchData={fetchData}
+                        />
                     ))}
                 </Tbody>
             </Table>
         </TableContainer>
-    )
+    );
 };
 
 export default StationsTable;

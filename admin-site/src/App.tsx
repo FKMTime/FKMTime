@@ -15,68 +15,68 @@ import AssignCards from "./Pages/AssignCards/AssignCards";
 import Giftpacks from "./Pages/Giftpacks/GIftpacks.tsx";
 
 const App = (): JSX.Element => {
-  const router = createBrowserRouter([
-    {
-      path: "/auth/login",
-      element: <Login />,
-    },
-    {
-      path: "/",
-      element: <Layout />,
-      children: [
+    const router = createBrowserRouter([
         {
-          path: "",
-          element: <Home />,
+            path: "/auth/login",
+            element: <Login />,
         },
         {
-          path: "accounts",
-          element: <Accounts />,
+            path: "/",
+            element: <Layout />,
+            children: [
+                {
+                    path: "",
+                    element: <Home />,
+                },
+                {
+                    path: "accounts",
+                    element: <Accounts />,
+                },
+                {
+                    path: "competition",
+                    element: <Competition />,
+                },
+                {
+                    path: "persons",
+                    element: <Persons />,
+                },
+                {
+                    path: "cards",
+                    element: <AssignCards />,
+                },
+                {
+                    path: "results",
+                    element: <Results />,
+                },
+                {
+                    path: "results/:id",
+                    element: <SingleResult />,
+                },
+                {
+                    path: "settings",
+                    element: <Settings />,
+                },
+                {
+                    path: "stations",
+                    element: <Stations />,
+                },
+                {
+                    path: "tutorial",
+                    element: <Tutorial />,
+                },
+                {
+                    path: "giftpacks",
+                    element: <Giftpacks />,
+                },
+            ],
         },
-        {
-          path: "competition",
-          element: <Competition />,
-        },
-        {
-          path: "persons",
-          element: <Persons />,
-        },
-        {
-          path: "cards",
-          element: <AssignCards />,
-        },
-        {
-          path: "results",
-          element: <Results />,
-        },
-        {
-          path: "results/:id",
-          element: <SingleResult />,
-        },
-        {
-          path: "settings",
-          element: <Settings />,
-        },
-        {
-          path: "stations",
-          element: <Stations />,
-        },
-        {
-          path: "tutorial",
-          element: <Tutorial />,
-        },
-        {
-          path: "giftpacks",
-          element: <Giftpacks />,
-        },
-      ]
-    }
-  ]);
+    ]);
 
-  return (
-    <ChakraProvider>
-      <RouterProvider router={router}></RouterProvider>
-    </ChakraProvider>
-  );
+    return (
+        <ChakraProvider>
+            <RouterProvider router={router}></RouterProvider>
+        </ChakraProvider>
+    );
 };
 
 export default App;

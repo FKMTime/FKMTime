@@ -14,20 +14,22 @@ interface ModalProps {
     children: React.ReactNode;
 }
 
-
-export const Modal: React.FC<ModalProps> = ({ onClose, isOpen, title, children }) => {
+export const Modal: React.FC<ModalProps> = ({
+    onClose,
+    isOpen,
+    title,
+    children,
+}) => {
     return (
         <>
             <ChakraModal isOpen={isOpen} onClose={onClose}>
                 <ModalOverlay />
-                <ModalContent bg='gray.700' color='white' pb="3">
+                <ModalContent bg="gray.700" color="white" pb="3">
                     <ModalHeader>{title}</ModalHeader>
                     <ModalCloseButton />
-                    <ModalBody>
-                        {children}
-                    </ModalBody>
+                    <ModalBody>{children}</ModalBody>
                 </ModalContent>
             </ChakraModal>
         </>
-    )
-}
+    );
+};

@@ -11,7 +11,13 @@ export const updateSettings = async (data: Settings) => {
     return response.status;
 };
 
-export const changePassword = async (oldPassword: string, newPassword: string) => {
-    const response = await backendRequest(`auth/password/change`, "PUT", true, {oldPassword, newPassword});
+export const changePassword = async (
+    oldPassword: string,
+    newPassword: string
+) => {
+    const response = await backendRequest(`auth/password/change`, "PUT", true, {
+        oldPassword,
+        newPassword,
+    });
     return response.status;
 };

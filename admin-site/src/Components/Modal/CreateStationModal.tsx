@@ -1,4 +1,11 @@
-import { Box, Button, FormControl, FormLabel, Input, useToast } from "@chakra-ui/react";
+import {
+    Box,
+    Button,
+    FormControl,
+    FormLabel,
+    Input,
+    useToast,
+} from "@chakra-ui/react";
 import { Modal } from "./Modal";
 import { useState } from "react";
 import { createStation } from "../../logic/station";
@@ -8,8 +15,10 @@ interface CreateStationModalProps {
     onClose: () => void;
 }
 
-const CreateStationModal: React.FC<CreateStationModalProps> = ({ isOpen, onClose }): JSX.Element => {
-
+const CreateStationModal: React.FC<CreateStationModalProps> = ({
+    isOpen,
+    onClose,
+}): JSX.Element => {
     const toast = useToast();
     const [isLoading, setIsLoading] = useState(false);
 
@@ -43,26 +52,54 @@ const CreateStationModal: React.FC<CreateStationModalProps> = ({ isOpen, onClose
 
     return (
         <Modal isOpen={isOpen} onClose={onClose} title="Create station">
-            <Box display="flex" flexDirection="column" gap="5" as="form" onSubmit={handleSubmit}>
+            <Box
+                display="flex"
+                flexDirection="column"
+                gap="5"
+                as="form"
+                onSubmit={handleSubmit}
+            >
                 <FormControl isRequired>
                     <FormLabel>Name</FormLabel>
-                    <Input placeholder='Name' _placeholder={{ color: "white" }} name="name" disabled={isLoading} />
+                    <Input
+                        placeholder="Name"
+                        _placeholder={{ color: "white" }}
+                        name="name"
+                        disabled={isLoading}
+                    />
                 </FormControl>
                 <FormControl isRequired>
                     <FormLabel>ESP ID</FormLabel>
-                    <Input placeholder='ESP ID' type="text" _placeholder={{ color: "white" }} name="espId" disabled={isLoading} />
+                    <Input
+                        placeholder="ESP ID"
+                        type="text"
+                        _placeholder={{ color: "white" }}
+                        name="espId"
+                        disabled={isLoading}
+                    />
                 </FormControl>
-                <Box display="flex" flexDirection="row" justifyContent="end" gap="5">
+                <Box
+                    display="flex"
+                    flexDirection="row"
+                    justifyContent="end"
+                    gap="5"
+                >
                     {!isLoading && (
-                        <Button colorScheme='red' onClick={onClose}>
+                        <Button colorScheme="red" onClick={onClose}>
                             Cancel
                         </Button>
                     )}
-                    <Button colorScheme='green' type="submit" isLoading={isLoading}>Create</Button>
+                    <Button
+                        colorScheme="green"
+                        type="submit"
+                        isLoading={isLoading}
+                    >
+                        Create
+                    </Button>
                 </Box>
             </Box>
         </Modal>
-    )
+    );
 };
 
 export default CreateStationModal;

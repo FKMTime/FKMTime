@@ -1,6 +1,9 @@
 import { useEffect, useState } from "react";
 import { Person } from "../../logic/interfaces";
-import { assignManyCards, getPersonsWithoutCardAssigned } from "../../logic/persons";
+import {
+    assignManyCards,
+    getPersonsWithoutCardAssigned,
+} from "../../logic/persons";
 import { Box, Button, Heading, Input, Text, useToast } from "@chakra-ui/react";
 import { useNavigate } from "react-router-dom";
 
@@ -24,8 +27,16 @@ const AssignCards = (): JSX.Element => {
     const nextPerson = async () => {
         const index = personsWithoutCard.indexOf(currentPerson as Person);
         if (index < personsWithoutCard.length - 1) {
-            setPersonsWithoutCard(personsWithoutCard.filter((person) => person.registrantId !== currentPerson?.registrantId));
-            setPersonsToSubmit([...personsToSubmit, { ...currentPerson as Person, cardId }]);
+            setPersonsWithoutCard(
+                personsWithoutCard.filter(
+                    (person) =>
+                        person.registrantId !== currentPerson?.registrantId
+                )
+            );
+            setPersonsToSubmit([
+                ...personsToSubmit,
+                { ...(currentPerson as Person), cardId },
+            ]);
             setCurrentPerson(personsWithoutCard[index + 1]);
             setCardId("");
         } else {
@@ -53,14 +64,30 @@ const AssignCards = (): JSX.Element => {
     };
 
     return (
-        <Box display="flex" flexDirection="column" gap="5" alignItems="center" justifyContent="center">
-            <Heading size="lg">There are {personsWithoutCard.length} persons without card assigned</Heading>
+        <Box
+            display="flex"
+            flexDirection="column"
+            gap="5"
+            alignItems="center"
+            justifyContent="center"
+        >
+            <Heading size="lg">
+                There are {personsWithoutCard.length} persons without card
+                assigned
+            </Heading>
             <Text>Registrant ID: {currentPerson?.registrantId}</Text>
             <Text>Name: {currentPerson?.name}</Text>
-            <Input placeholder="Card ID" value={cardId} onChange={(e) => setCardId(e.target.value)} width="20%" onKeyDown={(e) => e.key === "Enter" && nextPerson()} autoFocus />
+            <Input
+                placeholder="Card ID"
+                value={cardId}
+                onChange={(e) => setCardId(e.target.value)}
+                width="20%"
+                onKeyDown={(e) => e.key === "Enter" && nextPerson()}
+                autoFocus
+            />
             <Button onClick={nextPerson}>Next</Button>
         </Box>
-    )
+    );
 };
 
 export default AssignCards;
