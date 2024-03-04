@@ -85,10 +85,25 @@ class _IncidentPageState extends State<IncidentPage> {
                 setState(() {
                   attempt.isResolved = true;
                   attempt.extraGiven = true;
+                  attempt.comment = "A7G";
                 });
                 handleSubmit();
               },
               child: const Text('A7G'),
+            ),
+            const SizedBox(
+              height: 5,
+            ),
+            ElevatedButton(
+              onPressed: () {
+                setState(() {
+                  attempt.isResolved = true;
+                  attempt.extraGiven = true;
+                  attempt.comment = "Judge fault";
+                });
+                handleSubmit();
+              },
+              child: const Text('Judge fault'),
             ),
             const SizedBox(
               height: 10,
