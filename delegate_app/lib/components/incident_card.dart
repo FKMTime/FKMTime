@@ -1,3 +1,4 @@
+import 'package:delegate_app/utils/result_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
@@ -60,7 +61,7 @@ class IncidentCard extends StatelessWidget {
                   ),
                 ),
                 Text(
-                  "Value: $value",
+                  "Time: ${ResultUtils.resultToString(value)}",
                   style: const TextStyle(
                     color: Colors.white,
                     fontSize: 15,
