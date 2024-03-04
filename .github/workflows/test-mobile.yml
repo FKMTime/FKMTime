@@ -7,6 +7,7 @@ on:
       - main
     paths:
       - 'delegate_app/**'
+      - '.github/workflows/test-mobile.yml'
 
 jobs:
   test_mobile:
@@ -22,7 +23,9 @@ jobs:
           channel: 'beta'
       - name: Install dependencies
         run: flutter pub get
-        working-directory: 'delegate_app' 
+        working-directory: 'delegate_app'
+      - name: Run
+        run: touch .env
       - name: Build apk
         run: flutter build apk
         working-directory: 'delegate_app' 

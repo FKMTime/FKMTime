@@ -7,6 +7,7 @@ on:
       - main
     paths:
       - 'admin-site/**'
+      - '.github/workflows/test-frontend.yml'
 
 jobs:
   test_frontend:
@@ -14,7 +15,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        node-version: [18.x]
+        node-version: [ 18.x ]
     steps:
       - uses: actions/checkout@v4
       - name: Use Node.js ${{ matrix.node-version }}
@@ -23,7 +24,7 @@ jobs:
           node-version: ${{ matrix.node-version }}
           cache-dependency-path: "admin-site"
       - name: Install dependencies
-        working-directory: 'admin-site' 
+        working-directory: 'admin-site'
         run: npm ci
       - name: Run ESlint
         working-directory: 'admin-site'
@@ -32,5 +33,5 @@ jobs:
         working-directory: 'admin-site'
         run: npm run format:check
       - name: Build frontend
-        working-directory: 'admin-site' 
+        working-directory: 'admin-site'
         run: npm run build
