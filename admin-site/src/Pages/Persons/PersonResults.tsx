@@ -1,18 +1,18 @@
-import {Box, Heading, Text} from "@chakra-ui/react";
-import {useEffect, useState} from "react";
-import {Person, Result} from "../../logic/interfaces.ts";
+import { Box, Heading, Text } from "@chakra-ui/react";
+import { useEffect, useState } from "react";
+import { Person, Result } from "../../logic/interfaces.ts";
 import LoadingPage from "../../Components/LoadingPage.tsx";
-import {getAllResultsByPersonId} from "../../logic/results.ts";
-import {useParams} from "react-router-dom";
+import { getAllResultsByPersonId } from "../../logic/results.ts";
+import { useParams } from "react-router-dom";
 import PersonResultsTable from "../../Components/Table/PersonResultsTable.tsx";
-import {getPersonById} from "../../logic/persons.ts";
+import { getPersonById } from "../../logic/persons.ts";
 import regions from "../../logic/regions.ts";
-import {useAtom} from "jotai";
-import {competitionAtom} from "../../logic/atoms.ts";
-import {getCompetitionInfo} from "../../logic/competition.ts";
+import { useAtom } from "jotai";
+import { competitionAtom } from "../../logic/atoms.ts";
+import { getCompetitionInfo } from "../../logic/competition.ts";
 
 const PersonResults = () => {
-    const {id} = useParams<{ id: string }>();
+    const { id } = useParams<{ id: string }>();
     const [results, setResults] = useState<Result[]>([]);
     const [person, setPerson] = useState<Person | null>();
     const [competition, setCompetition] = useAtom(competitionAtom);
@@ -39,7 +39,7 @@ const PersonResults = () => {
     }, [id, competition, setCompetition]);
 
     if (!results || !person || !competition) {
-        return <LoadingPage/>;
+        return <LoadingPage />;
     }
 
     return (
@@ -62,13 +62,18 @@ const PersonResults = () => {
                     </Text>
                 </>
             )}
-            {results.length > 0 ? <PersonResultsTable results={results} wcif={competition?.wcif}/> : (
+            {results.length > 0 ? (
+                <PersonResultsTable
+                    results={results}
+                    wcif={competition?.wcif}
+                />
+            ) : (
                 <Box display="flex" alignItems="center" justifyContent="center">
                     <Text fontSize="3xl">No results found</Text>
                 </Box>
             )}
         </Box>
-    )
+    );
 };
 
 export default PersonResults;

@@ -4,17 +4,23 @@ import { FaList } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 import { getUserInfo } from "../../../logic/auth.ts";
 import { HAS_WRITE_ACCESS } from "../../../logic/accounts.ts";
-import {getRoundNameById, getSubmittedAttempts} from "../../../logic/utils.ts";
+import {
+    getRoundNameById,
+    getSubmittedAttempts,
+} from "../../../logic/utils.ts";
 import { average, best } from "../../../logic/average.ts";
 import { resultToString } from "../../../logic/resultFormatters.ts";
-import {Competition} from "@wca/helpers";
+import { Competition } from "@wca/helpers";
 
 interface PersonResultRowProps {
     result: Result;
     wcif: Competition;
 }
 
-const PersonResultRow: React.FC<PersonResultRowProps> = ({ result, wcif }): JSX.Element => {
+const PersonResultRow: React.FC<PersonResultRowProps> = ({
+    result,
+    wcif,
+}): JSX.Element => {
     const navigate = useNavigate();
     const userInfo = getUserInfo();
 

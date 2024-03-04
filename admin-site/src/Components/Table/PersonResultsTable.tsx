@@ -1,9 +1,9 @@
-import {Table, TableContainer, Tbody, Th, Thead, Tr} from "@chakra-ui/react";
-import {Result} from "../../logic/interfaces";
-import {getUserInfo} from "../../logic/auth.ts";
-import {HAS_WRITE_ACCESS} from "../../logic/accounts.ts";
+import { Table, TableContainer, Tbody, Th, Thead, Tr } from "@chakra-ui/react";
+import { Result } from "../../logic/interfaces";
+import { getUserInfo } from "../../logic/auth.ts";
+import { HAS_WRITE_ACCESS } from "../../logic/accounts.ts";
 import PersonResultRow from "./Row/PersonResultRow.tsx";
-import {Competition} from "@wca/helpers";
+import { Competition } from "@wca/helpers";
 
 interface PersonResultsTableProps {
     results: Result[];
@@ -30,7 +30,11 @@ const PersonResultsTable: React.FC<PersonResultsTableProps> = ({
                 </Thead>
                 <Tbody>
                     {results.map((result: Result) => (
-                        <PersonResultRow key={result.id} result={result} wcif={wcif} />
+                        <PersonResultRow
+                            key={result.id}
+                            result={result}
+                            wcif={wcif}
+                        />
                     ))}
                 </Tbody>
             </Table>

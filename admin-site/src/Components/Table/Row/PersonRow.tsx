@@ -2,7 +2,7 @@ import { Box, IconButton, Td, Tr } from "@chakra-ui/react";
 import { Person } from "../../../logic/interfaces";
 import { Competition } from "@wca/helpers";
 import { FaAddressCard } from "react-icons/fa";
-import {MdAssignment, MdBarChart, MdDone} from "react-icons/md";
+import { MdAssignment, MdBarChart, MdDone } from "react-icons/md";
 import {
     getPersonFromWcif,
     prettyGender,
@@ -12,7 +12,7 @@ import { useState } from "react";
 import AssignCardModal from "../../Modal/AssignCardModal";
 import EventIcon from "../../Icons/EventIcon";
 import DisplayGroupsModal from "../../Modal/DisplayGroupsModal";
-import {useNavigate} from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 
 interface PersonRowProps {
     person: Person;
@@ -79,18 +79,20 @@ const PersonRow: React.FC<PersonRowProps> = ({
                     />
                     {person.registrantId && person.registrantId !== 0 && (
                         <>
-                        <IconButton
-                            icon={<MdAssignment />}
-                            aria-label="Groups"
-                            bg="none"
-                            color="white"
-                            _hover={{
-                                background: "none",
-                                color: "gray.400",
-                            }}
-                            title="Display groups"
-                            onClick={() => setIsOpenDisplayGroupsModal(true)}
-                        />
+                            <IconButton
+                                icon={<MdAssignment />}
+                                aria-label="Groups"
+                                bg="none"
+                                color="white"
+                                _hover={{
+                                    background: "none",
+                                    color: "gray.400",
+                                }}
+                                title="Display groups"
+                                onClick={() =>
+                                    setIsOpenDisplayGroupsModal(true)
+                                }
+                            />
                             <IconButton
                                 icon={<MdBarChart />}
                                 aria-label="Results"
@@ -101,7 +103,9 @@ const PersonRow: React.FC<PersonRowProps> = ({
                                     color: "gray.400",
                                 }}
                                 title="Display all results for this person"
-                                onClick={() => navigate(`/persons/${person.id}/results`)}
+                                onClick={() =>
+                                    navigate(`/persons/${person.id}/results`)
+                                }
                             />
                         </>
                     )}

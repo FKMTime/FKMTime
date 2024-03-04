@@ -130,7 +130,6 @@ const Persons = (): JSX.Element => {
                     }}
                     onClick={() => setIsOpenAddStaffMemberModal(true)}
                 />
-
             </Box>
             <PersonsTable
                 persons={persons}
