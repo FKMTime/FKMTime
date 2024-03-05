@@ -2,6 +2,7 @@ version: '3'
 
 services:
   backend:
+    image: filipton/fkmtime-backend:latest
     build:
       context: ./backend
       dockerfile: Dockerfile
@@ -19,6 +20,7 @@ services:
         condition: service_healthy
 
   database:
+    image: filipton/fkmtime-database:latest
     container_name: fkmtime-database
     ports:
       - '3306:3306'
@@ -38,6 +40,7 @@ services:
       retries: 50
 
   nginx:
+    image: filipton/fkmtime-nginx:latest
     build:
       context: ./
       dockerfile: nginx.Dockerfile
