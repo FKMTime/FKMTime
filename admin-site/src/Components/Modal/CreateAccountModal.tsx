@@ -101,6 +101,7 @@ const CreateAccountModal: React.FC<CreateAccountModalProps> = ({
                         disabled={isLoading}
                     >
                         <option value="DELEGATE">Delegate</option>
+                        <option value="STAFF">Staff</option>
                         <option value="ADMIN">Admin</option>
                     </Select>
                 </FormControl>

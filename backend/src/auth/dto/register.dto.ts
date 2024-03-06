@@ -3,6 +3,7 @@ import { IsEmail, IsEnum, IsNotEmpty, IsString } from 'class-validator';
 enum Role {
   ADMIN = 'ADMIN',
   DELEGATE = 'DELEGATE',
+  STAFF = 'STAFF',
 }
 
 export class RegisterDto {
