@@ -695,6 +695,7 @@ export class ResultService {
     console.log('roundNumber: ', roundNumber);
     console.log('competitionId: ', competitionId);
     console.log('attemptNumber: ', attemptNumber);
+    console.log('registratnId: ', registrantId);
     console.log('attemptResult: ', attemptResult);
     const response = await fetch(`${url}/api/enter-attempt`, {
       method: 'POST',
