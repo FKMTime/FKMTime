@@ -697,7 +697,7 @@ export class ResultService {
     console.log('attemptNumber: ', attemptNumber);
     console.log('registratnId: ', registrantId);
     console.log('attemptResult: ', attemptResult);
-    const response = await fetch(`${url}/api/enter-attempt`, {
+    const response = await fetch(`${url}/enter-attempt`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
