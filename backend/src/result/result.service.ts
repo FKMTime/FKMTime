@@ -344,6 +344,11 @@ export class ResultService {
   }
 
   async enterAttempt(data: EnterAttemptDto) {
+    console.log('-----------------');
+    console.log(new Date().toISOString());
+    console.log('Entering attempt from FKM');
+    console.log('Data: ', data);
+    console.log('-----------------');
     const station = await this.prisma.station.findFirst({
       where: {
         espId: data.espId.toString(),
@@ -686,16 +691,15 @@ export class ResultService {
     attemptResult: number,
   ) {
     const competition = await this.prisma.competition.findFirst();
-    console.log(competition.scoretakingToken);
     const url = competition.usesWcaProduction
       ? WCA_LIVE_API_ORIGIN
       : WCA_LIVE_DEV_API_ORIGIN;
-    console.log('URL: ', url);
-    console.log('eventId: ', eventId);
-    console.log('roundNumber: ', roundNumber);
-    console.log('competitionId: ', competitionId);
+    console.log('-----------------');
+    console.log(new Date().toISOString());
+    console.log('Sending attempt to WCA Live');
+    console.log(`Round: ${eventId}-r${roundNumber}`);
     console.log('attemptNumber: ', attemptNumber);
-    console.log('registratnId: ', registrantId);
+    console.log('registrantId: ', registrantId);
     console.log('attemptResult: ', attemptResult);
     const response = await fetch(`${url}/enter-attempt`, {
       method: 'POST',
@@ -712,9 +716,10 @@ export class ResultService {
         attemptResult: attemptResult,
       }),
     });
-    console.log(response.status);
+    console.log('WCA Live response: ', response.status);
     const data = await response.json();
-    console.log(data);
+    console.log('WCA Live response data: ', data);
+    console.log('-----------------');
     return response.status;
   }
 
@@ -726,7 +731,12 @@ export class ResultService {
     const url = competition.usesWcaProduction
       ? WCA_LIVE_API_ORIGIN
       : WCA_LIVE_DEV_API_ORIGIN;
-    const response = await fetch(`${url}/api/enter-results`, {
+    console.log('-----------------');
+    console.log(new Date().toISOString());
+    console.log('Sending scorecard to WCA Live');
+    console.log(`Round: ${eventId}-r${roundNumber}`);
+    console.log('results: ', results);
+    const response = await fetch(`${url}/enter-results`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -739,6 +749,10 @@ export class ResultService {
         results: results,
       }),
     });
+    console.log('WCA Live response: ', response.status);
+    const data = await response.json();
+    console.log('WCA Live response data: ', data);
+    console.log('-----------------');
     if (response.status !== 200) {
       throw new HttpException('WCA Live error', 500);
     } else {
@@ -765,7 +779,11 @@ export class ResultService {
     const url = competition.usesWcaProduction
       ? WCA_LIVE_API_ORIGIN
       : WCA_LIVE_DEV_API_ORIGIN;
-    const response = await fetch(`${url}/api/enter-results`, {
+    console.log('-----------------');
+    console.log(new Date().toISOString());
+    console.log('Sending round to WCA Live');
+    console.log(`Round: ${eventIdToSubmit}-r${roundNumberToSubmit}`);
+    const response = await fetch(`${url}/enter-results`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -778,6 +796,10 @@ export class ResultService {
         results: resultsToSubmit,
       }),
     });
+    console.log('WCA Live response: ', response.status);
+    const data = await response.json();
+    console.log('WCA Live response data: ', data);
+    console.log('-----------------');
     if (response.status !== 200) {
       throw new HttpException('WCA Live error', 500);
     } else {
