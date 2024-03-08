@@ -686,9 +686,16 @@ export class ResultService {
     attemptResult: number,
   ) {
     const competition = await this.prisma.competition.findFirst();
+    console.log(competition.scoretakingToken);
     const url = competition.usesWcaProduction
       ? WCA_LIVE_API_ORIGIN
       : WCA_LIVE_DEV_API_ORIGIN;
+    console.log('URL: ', url);
+    console.log('eventId: ', eventId);
+    console.log('roundNumber: ', roundNumber);
+    console.log('competitionId: ', competitionId);
+    console.log('attemptNumber: ', attemptNumber);
+    console.log('attemptResult: ', attemptResult);
     const response = await fetch(`${url}/api/enter-attempt`, {
       method: 'POST',
       headers: {
@@ -704,6 +711,9 @@ export class ResultService {
         attemptResult: attemptResult,
       }),
     });
+    console.log(response.status);
+    const data = await response.json();
+    console.log(data);
     return response.status;
   }
 
