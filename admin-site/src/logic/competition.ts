@@ -41,7 +41,7 @@ export const syncCompetition = async (id: string) => {
     return response.status;
 };
 
-export const updateCompetition = async (id: number, data: Competition) => {
+export const updateCompetition = async (id: string, data: Competition) => {
     const competition = {
         ...data,
         wcif: undefined,

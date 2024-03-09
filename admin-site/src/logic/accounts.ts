@@ -1,11 +1,10 @@
-import { Account } from "./interfaces";
-import { backendRequest } from "./request";
+import {Account} from "./interfaces";
+import {backendRequest} from "./request";
 
 export const HAS_WRITE_ACCESS = ["ADMIN", "DELEGATE"];
 export const getAllAccounts = async (): Promise<Account[]> => {
     const response = await backendRequest("account", "GET", true);
-    const data = await response.json();
-    return data;
+    return await response.json();
 };
 
 export const createAccount = async (
@@ -37,12 +36,12 @@ export const updateAccount = async (account: Account) => {
     return response.status;
 };
 
-export const deleteAccount = async (id: number) => {
+export const deleteAccount = async (id: string) => {
     const response = await backendRequest(`account/${id}`, "DELETE", true);
     return response.status;
 };
 
-export const updateAccountPassword = async (id: number, password: string) => {
+export const updateAccountPassword = async (id: string, password: string) => {
     const response = await backendRequest(
         `account/${id}/password`,
         "PUT",

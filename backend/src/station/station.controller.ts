@@ -21,7 +21,7 @@ export class StationController {
 
   @Get()
   async getAllStations() {
-    return await this.stationService.getAllStations();
+    return this.stationService.getAllStations();
   }
 
   @Post()
@@ -30,13 +30,13 @@ export class StationController {
   }
 
   @Put(':id')
-  async updateStation(@Param('id') id: number, @Body() data: StationDto) {
+  async updateStation(@Param('id') id: string, @Body() data: StationDto) {
     return await this.stationService.updateStation(id, data);
   }
 
   @HttpCode(HttpStatus.NO_CONTENT)
   @Delete(':id')
-  async deleteStation(@Param('id') id: number) {
+  async deleteStation(@Param('id') id: string) {
     return await this.stationService.deleteStation(id);
   }
 }

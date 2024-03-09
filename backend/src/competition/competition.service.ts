@@ -1,4 +1,4 @@
-import { DbService } from './../db/db.service';
+import { DbService } from '../db/db.service';
 import { HttpException, Injectable } from '@nestjs/common';
 import { UpdateCompetitionDto } from './dto/updateCompetition.dto';
 import { eventsData } from 'src/events';
@@ -143,7 +143,7 @@ export class CompetitionService {
     };
   }
 
-  async updateCompetition(id: number, dto: UpdateCompetitionDto) {
+  async updateCompetition(id: string, dto: UpdateCompetitionDto) {
     return this.prisma.competition.update({
       where: {
         id: id,

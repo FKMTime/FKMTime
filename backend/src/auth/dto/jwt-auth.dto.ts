@@ -1,9 +1,9 @@
-import { IsIn, IsInt, IsNotEmpty, IsString } from 'class-validator';
+import {IsIn, IsNotEmpty, IsString} from 'class-validator';
 
 export class JwtAuthDto {
   @IsNotEmpty()
-  @IsInt()
-  userId: number;
+  @IsString()
+  userId: string;
 
   @IsNotEmpty()
   @IsString()

@@ -1,4 +1,4 @@
-import { IsBoolean, IsInt, IsOptional, IsString } from 'class-validator';
+import {IsBoolean, IsInt, IsNotEmpty, IsOptional, IsString} from 'class-validator';
 
 export class CreateAttemptDto {
   @IsInt()
@@ -10,12 +10,13 @@ export class CreateAttemptDto {
   @IsInt()
   penalty: number;
 
-  @IsInt()
-  stationId: number;
+  @IsString()
+  @IsNotEmpty()
+  stationId: string;
 
-  @IsInt()
+  @IsString()
   @IsOptional()
-  judgeId?: number;
+  judgeId?: string;
 
   @IsInt()
   @IsOptional()

@@ -20,12 +20,12 @@ const PersonResults = () => {
     useEffect(() => {
         const fetchData = async () => {
             if (!id) return;
-            const data = await getAllResultsByPersonId(+id);
+            const data = await getAllResultsByPersonId(id);
             setResults(data);
         };
         const fetchPersonData = async () => {
             if (!id) return;
-            const data = await getPersonById(+id);
+            const data = await getPersonById(id);
             setPerson(data);
         };
         const fetchCompetitionData = async () => {

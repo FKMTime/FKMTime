@@ -28,25 +28,25 @@ export class AttemptController {
 
   @Post(':resultId')
   async createAttempt(
-    @Param('resultId') resultId: number,
+    @Param('resultId') resultId: string,
     @Body() data: CreateAttemptDto,
   ) {
     return await this.attemptService.createAttempt(resultId, data);
   }
 
   @Get(':id')
-  async getAttemptById(@Param('id') id: number) {
+  async getAttemptById(@Param('id') id: string) {
     return await this.attemptService.getAttemptById(id);
   }
 
   @Put(':id')
-  async updateAttempt(@Param('id') id: number, @Body() data: UpdateAttemptDto) {
+  async updateAttempt(@Param('id') id: string, @Body() data: UpdateAttemptDto) {
     return await this.attemptService.updateAttempt(id, data);
   }
 
   @HttpCode(HttpStatus.NO_CONTENT)
   @Delete(':id')
-  async deleteAttempt(@Param('id') id: number) {
+  async deleteAttempt(@Param('id') id: string) {
     return await this.attemptService.deleteAttempt(id);
   }
 }

@@ -88,7 +88,7 @@ const SingleResult = (): JSX.Element => {
             const competitionData = await getCompetitionInfo();
             setCompetition(competitionData.data);
         }
-        const data = await getResultById(+id);
+        const data = await getResultById(id);
         setResult(data);
     }, [competition, id, setCompetition]);
 

@@ -15,7 +15,7 @@ export const updateAttempt = async (data: UpdateAttemptData) => {
     return response.status;
 };
 
-export const deleteAttempt = async (id: number) => {
+export const deleteAttempt = async (id: string) => {
     const response = await backendRequest(`attempt/${id}`, "DELETE", true);
     return response.status;
 };

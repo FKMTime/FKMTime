@@ -23,17 +23,17 @@ export const getResultsByRoundId = async (
     return await response.json();
 };
 
-export const getAllResultsByPersonId = async (id: number) => {
+export const getAllResultsByPersonId = async (id: string) => {
     const response = await backendRequest(`result/person/${id}`, "GET", true);
     return await response.json();
 };
 
-export const getResultById = async (id: number) => {
+export const getResultById = async (id: string) => {
     const response = await backendRequest(`result/${id}`, "GET", true);
     return await response.json();
 };
 
-export const reSubmitScorecardToWcaLive = async (id: number) => {
+export const reSubmitScorecardToWcaLive = async (id: string) => {
     const response = await backendRequest(`result/${id}/enter`, "GET", true);
     return response.status;
 };

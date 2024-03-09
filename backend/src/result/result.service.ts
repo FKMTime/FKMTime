@@ -122,7 +122,7 @@ export class ResultService {
     });
   }
 
-  async getAllResultsByPerson(personId: number) {
+  async getAllResultsByPerson(personId: string) {
     const results = await this.prisma.result.findMany({
       where: {
         personId: personId,
@@ -194,7 +194,7 @@ export class ResultService {
     });
   }
 
-  async getResultById(id: number) {
+  async getResultById(id: string) {
     const result = await this.prisma.result.findUnique({
       where: {
         id: id,
@@ -271,7 +271,7 @@ export class ResultService {
     };
   }
 
-  async getAttemptsByResultId(resultId: number) {
+  async getAttemptsByResultId(resultId: string) {
     const attempts = await this.prisma.attempt.findMany({
       where: {
         result: {
@@ -723,7 +723,7 @@ export class ResultService {
     return response.status;
   }
 
-  async enterWholeScorecardToWcaLive(resultId: number) {
+  async enterWholeScorecardToWcaLive(resultId: string) {
     const result = await this.getResultById(resultId);
     const competition = await this.prisma.competition.findFirst();
     const { competitionId, eventId, roundNumber, scoretakingToken, results } =
@@ -862,7 +862,7 @@ export class ResultService {
 
   async createAnExtraAttemptAnReplaceTheOriginalOne(
     data: any,
-    originalId: number,
+    originalId: string,
   ) {
     const extraAttempt = await this.prisma.attempt.create({
       data: {
@@ -1077,16 +1077,11 @@ export class ResultService {
   private checkCutoff(attempts: any[], cutoff: number, attemptsNumber: number) {
     if (attempts.length < attemptsNumber) return true;
     else {
-      if (
-        attempts.some(
-          (attempt) =>
-            attempt.penalty !== -1 &&
-            attempt.value + attempt.penalty * 100 < cutoff,
-        )
-      ) {
-        return true;
-      }
-      return false;
+      return attempts.some(
+        (attempt) =>
+          attempt.penalty !== -1 &&
+          attempt.value + attempt.penalty * 100 < cutoff,
+      );
     }
   }
 

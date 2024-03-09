@@ -49,7 +49,7 @@ model Competition {
 }
 
 model Result {
-  id        Int       @id @default(autoincrement())
+  id        String    @id @default(cuid())
   personId  String
   person    Person    @relation(fields: [personId], references: [id])
   eventId   String
@@ -62,7 +62,7 @@ model Result {
 
 model Attempt {
   id             String    @id @default(cuid())
-  resultId       Int?
+  resultId       String
   result         Result?   @relation(fields: [resultId], references: [id])
   attemptNumber  Int
   replacedBy     Int?

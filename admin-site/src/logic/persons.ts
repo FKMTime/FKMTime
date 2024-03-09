@@ -9,7 +9,7 @@ export const getPersons = async (page = 1, pageSize = 10, search?: string) => {
     return await response.json();
 };
 
-export const getPersonById = async (id: number) => {
+export const getPersonById = async (id: string) => {
     const response = await backendRequest(`person/${id}`, "GET", true);
     return await response.json();
 };
@@ -35,7 +35,7 @@ export const addStaffMember = async (name: string, gender: string) => {
     });
     return response.status;
 };
-export const collectGfitpack = async (id: number) => {
+export const collectGfitpack = async (id: string) => {
     const response = await backendRequest(`person/giftpack/${id}`, "GET", true);
     return {
         data: await response.json(),

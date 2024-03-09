@@ -7,7 +7,7 @@ export class AssignManyCardsDto {
 
 class Person {
   @IsInt()
-  id: number;
+  id: string;
 
   @IsString()
   cardId: string;

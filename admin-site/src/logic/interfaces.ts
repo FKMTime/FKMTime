@@ -6,7 +6,7 @@ export interface UserInfo {
 }
 
 export interface Account {
-    id: number;
+    id: string;
     username: string;
     role: string;
     email: string;
@@ -15,7 +15,7 @@ export interface Account {
 }
 
 export interface Competition {
-    id: number;
+    id: string;
     wcaId: string;
     name: string;
     usesWcaProduction: boolean;
@@ -32,7 +32,7 @@ export interface Competition {
 }
 
 export interface Person {
-    id: number;
+    id: string;
     registrantId?: number;
     canCompete: boolean;
     name: string;
@@ -45,7 +45,7 @@ export interface Person {
 }
 
 export interface Result {
-    id: number;
+    id: string;
     eventId: string;
     roundId: string;
     groupId: string;
@@ -56,7 +56,7 @@ export interface Result {
 }
 
 export interface Attempt {
-    id: number;
+    id: string;
     resultId: number;
     attemptNumber: number;
     comment?: string;
@@ -74,7 +74,7 @@ export interface Attempt {
 }
 
 export interface Station {
-    id: number;
+    id: string;
     name: string;
     espId: string;
     createdAt: Date;

@@ -59,9 +59,9 @@ export class CompetitionController {
   @UseGuards(AuthGuard('jwt'), AdminOrDelegateGuard)
   @Put('update/:id')
   async updateCompetition(
-    @Param('id') id: number,
+    @Param('id') id: string,
     @Body() dto: UpdateCompetitionDto,
   ) {
-    return await this.competitionService.updateCompetition(+id, dto);
+    return await this.competitionService.updateCompetition(id, dto);
   }
 }

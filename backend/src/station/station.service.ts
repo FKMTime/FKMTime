@@ -7,11 +7,11 @@ export class StationService {
   constructor(private readonly prisma: DbService) {}
 
   async getAllStations() {
-    return await this.prisma.station.findMany();
+    return this.prisma.station.findMany();
   }
 
   async createStation(data: StationDto) {
-    return await this.prisma.station.create({
+    return this.prisma.station.create({
       data: {
         name: data.name,
         espId: data.espId,
@@ -19,8 +19,8 @@ export class StationService {
     });
   }
 
-  async updateStation(id: number, data: StationDto) {
-    return await this.prisma.station.update({
+  async updateStation(id: string, data: StationDto) {
+    return this.prisma.station.update({
       where: { id },
       data: {
         name: data.name,
@@ -29,8 +29,8 @@ export class StationService {
     });
   }
 
-  async deleteStation(id: number) {
-    return await this.prisma.station.delete({
+  async deleteStation(id: string) {
+    return this.prisma.station.delete({
       where: { id },
     });
   }

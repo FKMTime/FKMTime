@@ -29,19 +29,19 @@ export class ResultController {
 
   @UseGuards(AuthGuard('jwt'))
   @Get('person/:id')
-  async getAllResultsByPersonId(@Param('id') id: number) {
-    return await this.resultService.getAllResultsByPerson(+id);
+  async getAllResultsByPersonId(@Param('id') id: string) {
+    return await this.resultService.getAllResultsByPerson(id);
   }
 
   @UseGuards(AuthGuard('jwt'), AdminOrDelegateGuard)
   @Get(':id')
-  async getResultById(@Param('id') id: number) {
+  async getResultById(@Param('id') id: string) {
     return await this.resultService.getResultById(id);
   }
 
   @UseGuards(AuthGuard('jwt'), AdminOrDelegateGuard)
   @Get(':id/attempts')
-  async getAttemptsByResultId(@Param('id') id: number) {
+  async getAttemptsByResultId(@Param('id') id: string) {
     return await this.resultService.getAttemptsByResultId(id);
   }
 
@@ -59,7 +59,7 @@ export class ResultController {
 
   @UseGuards(AuthGuard('jwt'), AdminOrDelegateGuard)
   @Get(':id/enter')
-  async enterWholeScorecardToWcaLive(@Param('id') id: number) {
+  async enterWholeScorecardToWcaLive(@Param('id') id: string) {
     return await this.resultService.enterWholeScorecardToWcaLive(id);
   }
 }

@@ -6,9 +6,9 @@ import { UpdateSettingsDto } from './dto/updateSettings.dto';
 export class SettingsService {
   constructor(private readonly prisma: DbService) {}
 
-  async getSettings(accountId: number) {
-    return await this.prisma.account.findFirst({
-      where: { id: accountId },
+  async getSettings(accountId: string) {
+    return this.prisma.account.findFirst({
+      where: {id: accountId},
       select: {
         username: true,
         email: true,
@@ -18,9 +18,9 @@ export class SettingsService {
       },
     });
   }
-  async updateSettings(accountId: number, data: UpdateSettingsDto) {
-    return await this.prisma.account.update({
-      where: { id: accountId },
+  async updateSettings(accountId: string, data: UpdateSettingsDto) {
+    return this.prisma.account.update({
+      where: {id: accountId},
       data: data,
       select: {
         username: true,

@@ -67,8 +67,8 @@ export class PersonController {
 
   @UseGuards(AuthGuard('jwt'))
   @Get('giftpack/:id')
-  async collectGiftpack(@Param('id') id: number) {
-    return await this.personService.collectGiftpack(+id);
+  async collectGiftpack(@Param('id') id: string) {
+    return await this.personService.collectGiftpack(id);
   }
 
   @UseGuards(AuthGuard('jwt'))
@@ -79,13 +79,13 @@ export class PersonController {
 
   @UseGuards(AuthGuard('jwt'))
   @Get(':id')
-  async getPersonById(@Param('id') id: number) {
-    return await this.personService.getPersonById(+id);
+  async getPersonById(@Param('id') id: string) {
+    return await this.personService.getPersonById(id);
   }
 
   @UseGuards(AuthGuard('jwt'), AdminOrDelegateGuard)
   @Put(':id')
-  async updatePerson(@Param('id') id: number, @Body() data: UpdatePersonDto) {
-    return await this.personService.updatePerson(+id, data);
+  async updatePerson(@Param('id') id: string, @Body() data: UpdatePersonDto) {
+    return await this.personService.updatePerson(id, data);
   }
 }

@@ -74,7 +74,7 @@ export class PersonService {
     return this.prisma.person.findMany();
   }
 
-  async collectGiftpack(personId: number) {
+  async collectGiftpack(personId: string) {
     await this.prisma.person.update({
       where: { id: personId },
       data: {
@@ -161,7 +161,7 @@ export class PersonService {
     return this.prisma.$transaction(transactions);
   }
 
-  async updatePerson(id: number, data: UpdatePersonDto) {
+  async updatePerson(id: string, data: UpdatePersonDto) {
     return this.prisma.person.update({
       where: { id },
       data: {
@@ -170,7 +170,7 @@ export class PersonService {
     });
   }
 
-  async getPersonById(id: number) {
+  async getPersonById(id: string) {
     return this.prisma.person.findFirst({
       where: {
         id,

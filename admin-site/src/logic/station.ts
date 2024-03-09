@@ -24,7 +24,7 @@ export const updateStation = async (data: Station) => {
     return response.status;
 };
 
-export const deleteStation = async (id: number) => {
+export const deleteStation = async (id: string) => {
     const response = await backendRequest(`station/${id}`, "DELETE", true);
     return response.status;
 };

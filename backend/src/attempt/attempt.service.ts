@@ -1,4 +1,4 @@
-import { ResultService } from './../result/result.service';
+import { ResultService } from '../result/result.service';
 import { DbService } from '../db/db.service';
 import { HttpException, Injectable } from '@nestjs/common';
 import { UpdateAttemptDto } from './dto/updateAttempt.dto';
@@ -11,7 +11,7 @@ export class AttemptService {
     private readonly resultService: ResultService,
   ) {}
 
-  async createAttempt(resultId: number, data: CreateAttemptDto) {
+  async createAttempt(resultId: string, data: CreateAttemptDto) {
     return this.prisma.attempt.create({
       data: {
         attemptNumber: data.attemptNumber,
@@ -43,7 +43,7 @@ export class AttemptService {
     });
   }
 
-  async updateAttempt(id: number, data: UpdateAttemptDto) {
+  async updateAttempt(id: string, data: UpdateAttemptDto) {
     if (!data.extraGiven || data.replacedBy === 0) {
       data.replacedBy = null;
     }
@@ -106,13 +106,13 @@ export class AttemptService {
     }
   }
 
-  async deleteAttempt(id: number) {
+  async deleteAttempt(id: string) {
     return this.prisma.attempt.delete({
       where: { id: id },
     });
   }
 
-  async getAttemptById(id: number) {
+  async getAttemptById(id: string) {
     const attempt = await this.prisma.attempt.findUnique({
       where: { id },
       select: {

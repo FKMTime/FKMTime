@@ -25,13 +25,13 @@ export class AccountController {
   @UseGuards(AdminGuard)
   @Get()
   async getAllAccounts() {
-    return await this.accountService.getAllAccounts();
+    return this.accountService.getAllAccounts();
   }
 
   @UseGuards(AdminGuard)
   @Put(':id/password')
   async updatePassword(
-    @Param('id') id: number,
+    @Param('id') id: string,
     @Body() data: UpdatePasswordDto,
   ) {
     return await this.accountService.updatePassword(id, data.password);
@@ -39,14 +39,14 @@ export class AccountController {
 
   @UseGuards(AdminGuard)
   @Put(':id')
-  async updateAccount(@Param('id') id: number, @Body() data: UpdateAccountDto) {
+  async updateAccount(@Param('id') id: string, @Body() data: UpdateAccountDto) {
     return await this.accountService.updateAccount(id, data);
   }
 
   @UseGuards(AuthGuard('jwt'), AdminOrDelegateGuard)
   @Post('notification-token')
   async updateNotificationToken(
-    @GetUser('id') userId: number,
+    @GetUser('id') userId: string,
     @Body('token') token: string,
   ) {
     return await this.accountService.updateNotificationToken(userId, token);
@@ -55,7 +55,7 @@ export class AccountController {
   @UseGuards(AdminGuard)
   @HttpCode(HttpStatus.NO_CONTENT)
   @Delete(':id')
-  async deleteAccount(@Param('id') id: number) {
+  async deleteAccount(@Param('id') id: string) {
     return await this.accountService.deleteAccount(id);
   }
 }
