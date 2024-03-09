@@ -22,7 +22,7 @@ export class AccountService {
 
   async updateAccount(id: string, data: UpdateAccountDto) {
     return this.prisma.account.update({
-      where: {id: id},
+      where: { id: id },
       data: {
         username: data.username,
         email: data.email,
@@ -42,13 +42,13 @@ export class AccountService {
 
   async deleteAccount(id: string) {
     return this.prisma.account.delete({
-      where: {id: id},
+      where: { id: id },
     });
   }
 
   async updateNotificationToken(userId: string, token: string) {
     return this.prisma.account.update({
-      where: {id: userId},
+      where: { id: userId },
       data: {
         notificationToken: token,
       },

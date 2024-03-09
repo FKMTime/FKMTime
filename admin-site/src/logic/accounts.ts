@@ -1,5 +1,5 @@
-import {Account} from "./interfaces";
-import {backendRequest} from "./request";
+import { Account } from "./interfaces";
+import { backendRequest } from "./request";
 
 export const HAS_WRITE_ACCESS = ["ADMIN", "DELEGATE"];
 export const getAllAccounts = async (): Promise<Account[]> => {

@@ -8,7 +8,7 @@ export class SettingsService {
 
   async getSettings(accountId: string) {
     return this.prisma.account.findFirst({
-      where: {id: accountId},
+      where: { id: accountId },
       select: {
         username: true,
         email: true,
@@ -20,7 +20,7 @@ export class SettingsService {
   }
   async updateSettings(accountId: string, data: UpdateSettingsDto) {
     return this.prisma.account.update({
-      where: {id: accountId},
+      where: { id: accountId },
       data: data,
       select: {
         username: true,
