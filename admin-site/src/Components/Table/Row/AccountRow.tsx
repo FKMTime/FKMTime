@@ -61,7 +61,6 @@ const AccountRow: React.FC<AccountRowProps> = ({
     return (
         <>
             <Tr key={account.id}>
-                <Td>{account.id}</Td>
                 <Td>{account.email}</Td>
                 <Td>{account.username}</Td>
                 <Td>

@@ -76,7 +76,6 @@ const Results = (): JSX.Element => {
         setFilters((prevFilters) => ({
             ...prevFilters,
             roundId: roundId,
-            groupId: `${roundId}-g1`,
         }));
     };
 
@@ -89,10 +88,13 @@ const Results = (): JSX.Element => {
         const currentEventId =
             response.data.currentGroupId.split("-")[0] ||
             response.data.wcif.events[0].id;
-        const roundId = currentEventId + "-r1";
+        const currentRoundId =
+            response.data.currentGroupId.split("-")[0] +
+            "-" +
+            response.data.currentGroupId.split("-")[1];
         setFilters({
-            roundId: roundId,
-            eventId: currentEventId || response.data.wcif.events[0].id,
+            roundId: currentRoundId,
+            eventId: currentEventId,
         });
     }, [navigate]);
 
