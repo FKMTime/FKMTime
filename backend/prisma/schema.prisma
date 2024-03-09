@@ -3,12 +3,12 @@ generator client {
 }
 
 datasource db {
-  provider = "mysql"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
 model Account {
-  id                Int      @id @default(autoincrement())
+  id                String   @id @default(cuid())
   password          String
   email             String
   username          String?  @unique
@@ -19,7 +19,7 @@ model Account {
 }
 
 model Person {
-  id                  Int       @id @default(autoincrement())
+  id                  String    @id @default(cuid())
   registrantId        Int?
   name                String
   wcaId               String?
@@ -28,13 +28,13 @@ model Person {
   canCompete          Boolean   @default(true)
   birthdate           DateTime?
   giftpackCollectedAt DateTime?
-  cardId              String?   @db.LongText()
+  cardId              String?   @unique
   Result              Result[]
   Attempt             Attempt[]
 }
 
 model Competition {
-  id                  Int     @id @default(autoincrement())
+  id                  String  @id @default(cuid())
   wcaId               String
   usesWcaProduction   Boolean @default(true)
   name                String
@@ -50,8 +50,8 @@ model Competition {
 
 model Result {
   id        Int       @id @default(autoincrement())
-  personId  Int?
-  person    Person?   @relation(fields: [personId], references: [id])
+  personId  String
+  person    Person    @relation(fields: [personId], references: [id])
   eventId   String
   roundId   String
   groupId   String
@@ -61,7 +61,7 @@ model Result {
 }
 
 model Attempt {
-  id             Int       @id @default(autoincrement())
+  id             String    @id @default(cuid())
   resultId       Int?
   result         Result?   @relation(fields: [resultId], references: [id])
   attemptNumber  Int
@@ -73,9 +73,9 @@ model Attempt {
   penalty        Int?
   isExtraAttempt Boolean   @default(false)
   value          Int
-  judgeId        Int?
+  judgeId        String?
   judge          Person?   @relation(fields: [judgeId], references: [id])
-  stationId      Int?
+  stationId      String?
   station        Station?  @relation(fields: [stationId], references: [id])
   solvedAt       DateTime?
   createdAt      DateTime  @default(now())
@@ -83,9 +83,9 @@ model Attempt {
 }
 
 model Station {
-  id        Int       @id @default(autoincrement())
+  id        String    @id @default(cuid())
   name      String
-  espId     String?   @db.LongText()
+  espId     String?   @db.Text()
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
   Attempt   Attempt[]
