@@ -58,7 +58,7 @@ const AttemptRow: React.FC<AttemptRowProps> = ({
     };
 
     const handleCloseEditModal = async () => {
-        await fetchData();
+        fetchData();
         setIsOpenEditAttemptModal(false);
     };
 
@@ -96,8 +96,9 @@ const AttemptRow: React.FC<AttemptRowProps> = ({
                     </>
                 )}
                 <Td>
-                    {attempt.judge &&
-                        `${attempt.judge.name} (${attempt.judge.registrantId})`}{" "}
+                    {attempt.judge && attempt.judge.name}
+                    {attempt.judge.registrantId &&
+                        ` (${attempt.judge.registrantId})`}
                 </Td>
                 <Td>{attempt.station && attempt.station.name}</Td>
                 <Td>{attempt.comment}</Td>
