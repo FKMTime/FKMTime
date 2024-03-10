@@ -1,6 +1,7 @@
 import { Competition } from "@wca/helpers";
 import regions from "./regions";
 import { Attempt, Result } from "./interfaces";
+import events from "./events.ts";
 
 export const calculateTotalPages = (count: number, pageSize: number) => {
     return Math.ceil(count / pageSize);
@@ -38,8 +39,18 @@ export const getEventIdFromRoundId = (roundId: string) => {
     return roundId.split("-")[0];
 };
 
-export const getRoundIdFromGroupId = (groupId: string) => {
-    return groupId.split("-")[0];
+export const getAllRounds = (wcif: Competition) => {
+    const rounds: { id: string; name: string }[] = [];
+    wcif.events.forEach((event) => {
+        const eventInfo = events.find((e) => e.id === event.id);
+        event.rounds.forEach((round) => {
+            rounds.push({
+                id: round.id,
+                name: `${eventInfo?.name} Round ${round.id.split("-r")[1]}`,
+            });
+        });
+    });
+    return rounds;
 };
 
 export const getRoundInfoFromWcif = (roundId: string, wcif: Competition) => {

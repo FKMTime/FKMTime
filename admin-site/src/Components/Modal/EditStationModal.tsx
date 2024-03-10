@@ -4,12 +4,14 @@ import {
     FormControl,
     FormLabel,
     Input,
+    Select,
     useToast,
 } from "@chakra-ui/react";
 import { Modal } from "./Modal";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { updateStation } from "../../logic/station";
-import { Station } from "../../logic/interfaces";
+import { Room, Station } from "../../logic/interfaces";
+import { getAllRooms } from "../../logic/rooms.ts";
 
 interface EditStationModalProps {
     isOpen: boolean;
@@ -25,6 +27,7 @@ const EditStationModal: React.FC<EditStationModalProps> = ({
     const toast = useToast();
     const [isLoading, setIsLoading] = useState(false);
     const [editedStation, setEditedStation] = useState<Station>(station);
+    const [rooms, setRooms] = useState<Room[]>([]);
 
     const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault();
@@ -50,6 +53,12 @@ const EditStationModal: React.FC<EditStationModalProps> = ({
         }
         setIsLoading(false);
     };
+
+    useEffect(() => {
+        getAllRooms().then((rooms: Room[]) => {
+            setRooms(rooms);
+        });
+    }, []);
 
     return (
         <Modal isOpen={isOpen} onClose={onClose} title="Create station">
@@ -90,6 +99,26 @@ const EditStationModal: React.FC<EditStationModalProps> = ({
                             })
                         }
                     />
+                </FormControl>
+                <FormControl isRequired>
+                    <FormLabel>Room</FormLabel>
+                    <Select
+                        placeholder="Select room"
+                        disabled={isLoading}
+                        value={editedStation.roomId}
+                        onChange={(e) =>
+                            setEditedStation({
+                                ...editedStation,
+                                roomId: e.target.value,
+                            })
+                        }
+                    >
+                        {rooms.map((room: Room) => (
+                            <option key={room.id} value={room.id}>
+                                {room.name}
+                            </option>
+                        ))}
+                    </Select>
                 </FormControl>
                 <Box
                     display="flex"

@@ -13,6 +13,7 @@ import {
     MdLogout,
     MdPerson,
     MdPersonAdd,
+    MdRoom,
     MdSettings,
     MdTimer,
 } from "react-icons/md";
@@ -24,6 +25,7 @@ import { useNavigate } from "react-router-dom";
 import { logout } from "../logic/auth";
 import logo from "../assets/logo.svg";
 import { FaGift, FaGithub } from "react-icons/fa";
+import { HAS_WRITE_ACCESS } from "../logic/accounts.ts";
 
 interface SidebarProps {
     user: UserInfo;
@@ -75,6 +77,15 @@ const Sidebar: React.FC<SidebarProps> = ({ user }): JSX.Element => {
                         name="Competition"
                         icon={<IoMdTrophy />}
                         link="/competition"
+                    />
+                </>
+            )}
+            {HAS_WRITE_ACCESS.includes(user.role) && (
+                <>
+                    <SidebarElement
+                        name="Rooms"
+                        icon={<MdRoom />}
+                        link="/rooms"
                     />
                 </>
             )}

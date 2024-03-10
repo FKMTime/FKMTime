@@ -2,6 +2,7 @@ import { DbService } from '../db/db.service';
 import { HttpException, Injectable } from '@nestjs/common';
 import { UpdateCompetitionDto } from './dto/updateCompetition.dto';
 import { eventsData } from 'src/events';
+import { UpdateCurrentRoundDto } from './dto/updateCurrentRound.dto';
 
 const WCA_ORIGIN = `${process.env.WCA_ORIGIN}/api/v0/competitions/`;
 @Injectable()
@@ -29,6 +30,19 @@ export class CompetitionService {
         countryIso2: person.countryIso2,
       })),
     });
+    const rooms = [];
+
+    for (const venue of wcif.schedule.venues) {
+      for (const room of venue.rooms) {
+        rooms.push({
+          name: room.name,
+          color: room.color,
+        });
+      }
+    }
+    await this.prisma.room.createMany({
+      data: rooms,
+    });
     return competition;
   }
 
@@ -55,13 +69,33 @@ export class CompetitionService {
         wcaId: true,
         countryIso2: true,
         wcif: true,
-        currentGroupId: true,
       },
     });
     if (!competition) {
       throw new HttpException('Competition not found', 404);
     }
     return competition;
+  }
+
+  async getAllRooms() {
+    return this.prisma.room.findMany();
+  }
+
+  async updateCurrentRound(data: UpdateCurrentRoundDto) {
+    const transactions = [];
+    for (const room of data.rooms) {
+      transactions.push(
+        this.prisma.room.update({
+          where: {
+            id: room.id,
+          },
+          data: {
+            currentRoundId: room.currentRoundId,
+          },
+        }),
+      );
+    }
+    return this.prisma.$transaction(transactions);
   }
 
   async getCompetitionSettings() {
@@ -98,40 +132,6 @@ export class CompetitionService {
     return rounds;
   }
 
-  async getAllGroups() {
-    const competition = await this.prisma.competition.findFirst();
-    const wcif = JSON.parse(JSON.stringify(competition.wcif));
-    const groups = [];
-    wcif.events.forEach((event) => {
-      event.rounds.forEach((round) => {
-        const roundGroups = wcif.schedule.venues[0].rooms[0].activities.find(
-          (activity) => activity.activityCode === round.id,
-        ).childActivities;
-        roundGroups.forEach((group) => {
-          groups.push({
-            name: group.name,
-            groupId: group.activityCode,
-            eventId: event.id,
-            roundId: round.id,
-            isCurrent: competition.currentGroupId === group.activityCode,
-          });
-        });
-      });
-    });
-    return groups;
-  }
-
-  async updateCurrentGroup(groupId: string) {
-    await this.prisma.competition.updateMany({
-      data: {
-        currentGroupId: groupId,
-      },
-    });
-    return {
-      message: 'Current group updated successfully',
-    };
-  }
-
   async shouldUpdateDevices() {
     const competition = await this.prisma.competition.findFirst();
     if (!competition) {
@@ -150,9 +150,7 @@ export class CompetitionService {
       },
       data: {
         scoretakingToken: dto.scoretakingToken,
-        currentGroupId: dto.currentGroupId,
         usesWcaProduction: dto.usesWcaProduction,
-        shouldCheckGroup: dto.shouldCheckGroup,
         shouldUpdateDevices: dto.shouldUpdateDevices,
         useStableReleases: dto.useStableReleases,
       },

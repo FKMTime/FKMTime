@@ -122,20 +122,20 @@ const Home = (): JSX.Element => {
                 </FormControl>
                 <FormControl>
                     <FormLabel>Room</FormLabel>
-                    {competition?.wcif.schedule.venues
-                        .find((venue: Venue) => venue.id === selectedVenue)
-                        ?.rooms.map((room: Room) => (
-                            <Select
-                                onChange={(e) =>
-                                    setSelectedRoom(parseInt(e.target.value))
-                                }
-                                value={selectedRoom}
-                            >
+                    <Select
+                        onChange={(e) =>
+                            setSelectedRoom(parseInt(e.target.value))
+                        }
+                        value={selectedRoom}
+                    >
+                        {competition?.wcif.schedule.venues
+                            .find((venue: Venue) => venue.id === selectedVenue)
+                            ?.rooms.map((room: Room) => (
                                 <option key={room.id} value={room.id}>
                                     {room.name}
                                 </option>
-                            </Select>
-                        ))}
+                            ))}
+                    </Select>
                 </FormControl>
             </Box>
             {orderedActivities && orderedActivities.length > 0 ? (

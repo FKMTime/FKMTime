@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
     Alert,
     AlertIcon,
@@ -10,7 +10,6 @@ import {
     Heading,
     IconButton,
     Input,
-    Select,
     Text,
     useToast,
 } from "@chakra-ui/react";
@@ -21,50 +20,27 @@ import {
     updateCompetition,
 } from "../../logic/competition";
 import { Competition as CompetitionInterface } from "../../logic/interfaces";
-import events from "../../logic/events";
-import { Activity, Event, Round } from "@wca/helpers";
 import LoadingPage from "../../Components/LoadingPage";
 import { IoMdEye, IoMdEyeOff } from "react-icons/io";
 
-const Competition = (): JSX.Element => {
+const Competition = () => {
     const [isLoading, setIsLoading] = useState<boolean>(true);
     const [competitionImported, setCompetitionImported] =
         useState<boolean>(false);
     const [competition, setCompetition] = useState<CompetitionInterface | null>(
         null
     );
-    const [currentEvent, setCurrentEvent] = useState<string>("");
-    const [currentRound, setCurrentRound] = useState<string>("");
     const [showScoretakingToken, setShowScoretakingToken] =
         useState<boolean>(false);
     const idRef: React.RefObject<HTMLInputElement> =
         useRef<HTMLInputElement>(null);
     const toast = useToast();
-    const groups = useMemo(() => {
-        if (
-            !competition ||
-            !currentRound ||
-            !competition.wcif.schedule.venues[0].rooms[0].activities
-        ) {
-            return [];
-        }
-        //eslint-disable-next-line
-        //@ts-ignore
-        return competition.wcif.schedule.venues[0].rooms[0].activities.find(
-            (activity: Activity) => activity.activityCode === currentRound
-        ).childActivities;
-    }, [competition, currentRound]);
 
     const fetchData = async () => {
         const response = await getCompetitionSettings();
         if (response.status === 200) {
             setCompetitionImported(true);
             setCompetition(response.data);
-            if (response.data.currentGroupId) {
-                const sliced = response.data.currentGroupId.split("-");
-                setCurrentEvent(sliced[0]);
-                setCurrentRound(sliced[0] + "-" + sliced[1]);
-            }
         } else if (response.status === 404) {
             setCompetitionImported(false);
         }
@@ -248,72 +224,6 @@ const Competition = (): JSX.Element => {
                         }
                     />
                 </FormControl>
-                <FormControl>
-                    <FormLabel>Current event</FormLabel>
-                    <Select
-                        placeholder="Select event"
-                        _placeholder={{ color: "white" }}
-                        value={currentEvent}
-                        onChange={(event) => {
-                            setCurrentEvent(event?.target.value);
-                            setCurrentRound(event?.target.value + "-r1");
-                        }}
-                    >
-                        {competition.wcif.events.map((event: Event) => (
-                            <option key={event.id} value={event.id}>
-                                {events.find((e) => e.id === event.id)?.name}
-                            </option>
-                        ))}
-                    </Select>
-                </FormControl>
-                {currentEvent && (
-                    <FormControl>
-                        <FormLabel>Current round</FormLabel>
-                        <Select
-                            placeholder="Select round"
-                            _placeholder={{ color: "white" }}
-                            value={currentRound}
-                            onChange={(event) =>
-                                setCurrentRound(event?.target.value)
-                            }
-                        >
-                            {competition.wcif.events
-                                .find(
-                                    (event: Event) => event.id === currentEvent
-                                )
-                                ?.rounds.map((round: Round, i: number) => (
-                                    <option key={round.id} value={round.id}>
-                                        {i + 1}
-                                    </option>
-                                ))}
-                        </Select>
-                    </FormControl>
-                )}
-                {currentRound && (
-                    <FormControl>
-                        <FormLabel>Current group</FormLabel>
-                        <Select
-                            placeholder="Select group"
-                            _placeholder={{ color: "white" }}
-                            value={competition.currentGroupId}
-                            onChange={(event) =>
-                                setCompetition({
-                                    ...competition,
-                                    currentGroupId: event?.target.value,
-                                })
-                            }
-                        >
-                            {groups.map((group: Activity, i: number) => (
-                                <option
-                                    key={group.activityCode}
-                                    value={group.activityCode}
-                                >
-                                    {i + 1}
-                                </option>
-                            ))}
-                        </Select>
-                    </FormControl>
-                )}
                 <FormControl display="flex" flexDirection="column" gap="2">
                     <Checkbox
                         defaultChecked={competition.usesWcaProduction}
@@ -325,20 +235,6 @@ const Competition = (): JSX.Element => {
                         }
                     >
                         Uses WCA Live production
-                    </Checkbox>
-                </FormControl>
-                <FormControl display="flex" flexDirection="column" gap="2">
-                    <Checkbox
-                        defaultChecked={competition.shouldCheckGroup}
-                        onChange={(event) =>
-                            setCompetition({
-                                ...competition,
-                                shouldCheckGroup: event?.target.checked,
-                            })
-                        }
-                    >
-                        Check whether the competitor is in current group when
-                        entering attempt
                     </Checkbox>
                 </FormControl>
                 <FormControl display="flex" flexDirection="column" gap="2">

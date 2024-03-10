@@ -19,16 +19,26 @@ export interface Competition {
     wcaId: string;
     name: string;
     usesWcaProduction: boolean;
-    shouldCheckGroup: boolean;
     shouldUpdateDevices: boolean;
     useStableReleases: boolean;
     shortName: string;
     countryIso2: string;
-    currentGroupId?: string;
     scoretakingToken?: string;
     wcif: WCIF;
     createdAt?: Date;
     updatedAt?: Date;
+}
+
+export interface Room {
+    id: string;
+    name: string;
+    currentRoundId: string;
+    color: string;
+}
+
+export interface Round {
+    id: string;
+    name: string;
 }
 
 export interface Person {
@@ -77,6 +87,8 @@ export interface Station {
     id: string;
     name: string;
     espId: string;
+    roomId: string;
+    room: Room;
     createdAt: Date;
     updatedAt: Date;
 }

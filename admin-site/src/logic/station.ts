@@ -6,10 +6,15 @@ export const getAllStations = async () => {
     return await response.json();
 };
 
-export const createStation = async (name: string, espId: string) => {
+export const createStation = async (
+    name: string,
+    espId: string,
+    roomId: string
+) => {
     const response = await backendRequest("station", "POST", true, {
         name,
         espId,
+        roomId,
     });
     return response.status;
 };

@@ -59,6 +59,7 @@ const StationRow: React.FC<StationRowProps> = ({
         <>
             <Tr key={station.id}>
                 <Td>{station.name}</Td>
+                <Td>{station.room.name}</Td>
                 <Td>{station.espId}</Td>
                 <Td>
                     <IconButton

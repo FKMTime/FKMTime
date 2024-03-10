@@ -7,7 +7,11 @@ export class StationService {
   constructor(private readonly prisma: DbService) {}
 
   async getAllStations() {
-    return this.prisma.station.findMany();
+    return this.prisma.station.findMany({
+      include: {
+        room: true,
+      },
+    });
   }
 
   async createStation(data: StationDto) {
@@ -15,6 +19,11 @@ export class StationService {
       data: {
         name: data.name,
         espId: data.espId,
+        room: {
+          connect: {
+            id: data.roomId,
+          },
+        },
       },
     });
   }
@@ -25,6 +34,11 @@ export class StationService {
       data: {
         name: data.name,
         espId: data.espId,
+        room: {
+          connect: {
+            id: data.roomId,
+          },
+        },
       },
     });
   }

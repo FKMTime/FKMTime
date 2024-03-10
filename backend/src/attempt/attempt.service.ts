@@ -80,6 +80,18 @@ export class AttemptService {
             },
           },
         },
+        station: {
+          select: {
+            id: true,
+            name: true,
+            room: {
+              select: {
+                id: true,
+                currentRoundId: true,
+              },
+            },
+          },
+        },
       },
     });
     if (!attempt) {
@@ -87,8 +99,7 @@ export class AttemptService {
     }
     if (data.submitToWcaLive && !data.extraGiven && !data.replacedBy) {
       const competition = await this.prisma.competition.findFirst();
-      const sliced = competition.currentGroupId.split('-');
-      const currentRoundId = sliced[0] + '-' + sliced[1];
+      const currentRoundId = attempt.station.room.currentRoundId;
       const timeToEnterAttemptToWcaLive =
         data.penalty === -1 ? -1 : data.penalty * 100 + data.value;
       const status = await this.resultService.enterAttemptToWcaLive(
@@ -148,7 +159,6 @@ export class AttemptService {
             id: true,
             eventId: true,
             roundId: true,
-            groupId: true,
             createdAt: true,
             updatedAt: true,
             person: {
@@ -211,7 +221,6 @@ export class AttemptService {
             id: true,
             eventId: true,
             roundId: true,
-            groupId: true,
             createdAt: true,
             updatedAt: true,
             person: {

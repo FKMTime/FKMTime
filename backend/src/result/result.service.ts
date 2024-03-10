@@ -47,7 +47,6 @@ export class ResultService {
         id: true,
         eventId: true,
         roundId: true,
-        groupId: true,
         createdAt: true,
         updatedAt: true,
         person: {
@@ -131,7 +130,6 @@ export class ResultService {
         id: true,
         eventId: true,
         roundId: true,
-        groupId: true,
         createdAt: true,
         updatedAt: true,
         person: {
@@ -203,7 +201,6 @@ export class ResultService {
         id: true,
         eventId: true,
         roundId: true,
-        groupId: true,
         createdAt: true,
         updatedAt: true,
         person: {
@@ -311,7 +308,6 @@ export class ResultService {
             id: true,
             eventId: true,
             roundId: true,
-            groupId: true,
             createdAt: true,
             updatedAt: true,
             person: {
@@ -353,6 +349,17 @@ export class ResultService {
       where: {
         espId: data.espId.toString(),
       },
+      select: {
+        id: true,
+        espId: true,
+        name: true,
+        room: {
+          select: {
+            id: true,
+            currentRoundId: true,
+          },
+        },
+      },
     });
     if (!station) {
       throw new HttpException(
@@ -361,6 +368,15 @@ export class ResultService {
           shouldResetTime: false,
         },
         404,
+      );
+    }
+    if (!station.room.currentRoundId) {
+      throw new HttpException(
+        {
+          message: 'No round in this room',
+          shouldResetTime: false,
+        },
+        400,
       );
     }
     const competitor = await this.prisma.person.findFirst({
@@ -438,14 +454,10 @@ export class ResultService {
       );
     }
     const wcif = JSON.parse(JSON.stringify(competition.wcif));
-    const sliced = competition.currentGroupId.split('-');
-    const currentRoundId = sliced[0] + '-' + sliced[1];
-    const currentGroup = this.getGroupFromWcif(
-      wcif,
-      currentRoundId,
-      competition.currentGroupId,
+    const currentRoundId = station.room.currentRoundId;
+    const eventInfo = wcif.events.find(
+      (event) => event.id === currentRoundId.split('-')[0],
     );
-    const eventInfo = wcif.events.find((event) => event.id === sliced[0]);
     const roundInfo = eventInfo.rounds.find(
       (round) => round.id === currentRoundId,
     );
@@ -468,22 +480,6 @@ export class ResultService {
         400,
       );
     }
-    const isCompetitorInThisGroup = this.isCompetitorInThisGroup(
-      competitorWcifInfo,
-      currentGroup.id,
-    );
-    if (!isCompetitorInThisGroup && competition.shouldCheckGroup) {
-      throw new HttpException(
-        {
-          message:
-            locale === 'PL'
-              ? pl['competitorIsNotInThisGroup']
-              : en['competitorIsNotInThisGroup'],
-          shouldResetTime: true,
-        },
-        400,
-      );
-    }
     const resultFromDb = await this.prisma.result.findFirst({
       where: {
         personId: competitor.id,
@@ -501,7 +497,6 @@ export class ResultService {
           },
           eventId: currentRoundId.split('-')[0],
           roundId: currentRoundId,
-          groupId: competition.currentGroupId,
         },
       });
     }
@@ -1106,25 +1101,5 @@ export class ResultService {
           attempt.value + attempt.penalty * 100 < cutoff,
       );
     }
-  }
-
-  private isCompetitorInThisGroup(competitorWcif: any, currentGroupId: number) {
-    return competitorWcif.assignments.some(
-      (assignment) =>
-        assignment.activityId === currentGroupId &&
-        assignment.assignmentCode === 'competitor',
-    );
-  }
-
-  private getGroupFromWcif(
-    wcif: any,
-    currentRoundId: string,
-    currentGroupId: string,
-  ) {
-    return wcif.schedule.venues[0].rooms[0].activities
-      .find((activity) => activity.activityCode === currentRoundId)
-      .childActivities.find(
-        (activity) => activity.activityCode === currentGroupId,
-      );
   }
 }

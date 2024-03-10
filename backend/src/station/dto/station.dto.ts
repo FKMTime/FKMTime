@@ -8,4 +8,8 @@ export class StationDto {
   @IsString()
   @IsNotEmpty()
   espId: string;
+
+  @IsString()
+  @IsNotEmpty()
+  roomId: string;
 }

@@ -4,11 +4,14 @@ import {
     FormControl,
     FormLabel,
     Input,
+    Select,
     useToast,
 } from "@chakra-ui/react";
 import { Modal } from "./Modal";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { createStation } from "../../logic/station";
+import { Room } from "../../logic/interfaces.ts";
+import { getAllRooms } from "../../logic/rooms.ts";
 
 interface CreateStationModalProps {
     isOpen: boolean;
@@ -21,6 +24,7 @@ const CreateStationModal: React.FC<CreateStationModalProps> = ({
 }): JSX.Element => {
     const toast = useToast();
     const [isLoading, setIsLoading] = useState(false);
+    const [rooms, setRooms] = useState<Room[]>([]);
 
     const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
         setIsLoading(true);
@@ -28,8 +32,9 @@ const CreateStationModal: React.FC<CreateStationModalProps> = ({
         const data = new FormData(event.currentTarget);
         const name = data.get("name") as string;
         const espId = data.get("espId") as string;
+        const roomId = data.get("roomId") as string;
 
-        const status = await createStation(name, espId);
+        const status = await createStation(name, espId, roomId);
         if (status === 201) {
             toast({
                 title: "Successfully created new station.",
@@ -49,6 +54,12 @@ const CreateStationModal: React.FC<CreateStationModalProps> = ({
         }
         setIsLoading(false);
     };
+
+    useEffect(() => {
+        getAllRooms().then((rooms: Room[]) => {
+            setRooms(rooms);
+        });
+    }, []);
 
     return (
         <Modal isOpen={isOpen} onClose={onClose} title="Create station">
@@ -77,6 +88,20 @@ const CreateStationModal: React.FC<CreateStationModalProps> = ({
                         name="espId"
                         disabled={isLoading}
                     />
+                </FormControl>
+                <FormControl isRequired>
+                    <FormLabel>Room</FormLabel>
+                    <Select
+                        placeholder="Select room"
+                        name="roomId"
+                        disabled={isLoading}
+                    >
+                        {rooms.map((room: Room) => (
+                            <option key={room.id} value={room.id}>
+                                {room.name}
+                            </option>
+                        ))}
+                    </Select>
                 </FormControl>
                 <Box
                     display="flex"

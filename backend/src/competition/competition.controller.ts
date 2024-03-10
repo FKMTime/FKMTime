@@ -4,6 +4,7 @@ import { UpdateCompetitionDto } from './dto/updateCompetition.dto';
 import { AuthGuard } from '@nestjs/passport';
 import { AdminGuard } from 'src/auth/guards/admin.guard';
 import { AdminOrDelegateGuard } from '../auth/guards/adminOrDelegate.guard';
+import { UpdateCurrentRoundDto } from './dto/updateCurrentRound.dto';
 
 @Controller('competition')
 export class CompetitionController {
@@ -26,18 +27,6 @@ export class CompetitionController {
     return await this.competitionService.shouldUpdateDevices();
   }
 
-  @UseGuards(AuthGuard('jwt'))
-  @Get('groups')
-  async getCompetitionGroups() {
-    return await this.competitionService.getAllGroups();
-  }
-
-  @UseGuards(AuthGuard('jwt'), AdminOrDelegateGuard)
-  @Get('groups/:id')
-  async updateCurrentGroup(@Param('id') id: string) {
-    return await this.competitionService.updateCurrentGroup(id);
-  }
-
   @UseGuards(AdminGuard)
   @Get('settings')
   async getCompetitionSettings() {
@@ -54,6 +43,18 @@ export class CompetitionController {
   @Get('sync/:id')
   async syncCompetition(@Param('id') id: string) {
     return await this.competitionService.updateWcif(id);
+  }
+
+  @UseGuards(AuthGuard('jwt'), AdminOrDelegateGuard)
+  @Get('rooms')
+  async getAllRooms() {
+    return this.competitionService.getAllRooms();
+  }
+
+  @UseGuards(AuthGuard('jwt'), AdminOrDelegateGuard)
+  @Put('rooms')
+  async updateCurrentRound(@Body() dto: UpdateCurrentRoundDto) {
+    return this.competitionService.updateCurrentRound(dto);
   }
 
   @UseGuards(AuthGuard('jwt'), AdminOrDelegateGuard)

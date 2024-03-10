@@ -14,6 +14,7 @@ import Tutorial from "./Pages/Tutorial/Tutorial";
 import AssignCards from "./Pages/AssignCards/AssignCards";
 import Giftpacks from "./Pages/Giftpacks/GIftpacks.tsx";
 import PersonResults from "./Pages/Persons/PersonResults.tsx";
+import Rooms from "./Pages/Rooms/Rooms.tsx";
 
 const App = (): JSX.Element => {
     const router = createBrowserRouter([
@@ -48,6 +49,10 @@ const App = (): JSX.Element => {
                 {
                     path: "cards",
                     element: <AssignCards />,
+                },
+                {
+                    path: "rooms",
+                    element: <Rooms />,
                 },
                 {
                     path: "results",
