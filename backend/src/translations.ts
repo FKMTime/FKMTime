@@ -10,6 +10,7 @@ export const en = {
   attemptEnteredButReplacedToDnf: 'Attempt entered but replaced to DNF',
   noAttemptsLeft: 'No attempts left',
   competitorIsNotSignedInForEvent: 'You are not signed for this event',
+  attemptAlreadyEntered: 'This attempt has already been entered',
 };
 
 export const pl = {
@@ -25,4 +26,5 @@ export const pl = {
     "Ulozenie zostalo wprowadzona, ale zastąpione DNF'em",
   noAttemptsLeft: 'Wykonales juz wszystkie ulozenia',
   competitorIsNotSignedInForEvent: 'Nie jestes zapisany na ta konkurencje',
+  attemptAlreadyEntered: 'To ulozenie zostalo juz wprowadzone',
 };

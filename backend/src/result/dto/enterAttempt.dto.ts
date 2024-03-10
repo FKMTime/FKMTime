@@ -1,4 +1,10 @@
-import { IsBoolean, IsDate, IsInt, IsOptional } from 'class-validator';
+import {
+  IsBoolean,
+  IsDate,
+  IsInt,
+  IsOptional,
+  IsString,
+} from 'class-validator';
 
 export class EnterAttemptDto {
   @IsInt()
@@ -26,4 +32,7 @@ export class EnterAttemptDto {
   @IsBoolean()
   @IsOptional()
   isDelegate: boolean;
+
+  @IsString()
+  sessionId: string;
 }

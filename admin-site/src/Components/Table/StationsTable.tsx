@@ -16,7 +16,6 @@ const StationsTable: React.FC<StationsTableProps> = ({
             <Table variant="simple">
                 <Thead>
                     <Tr bg="gray.400">
-                        <Th>ID</Th>
                         <Th>Name</Th>
                         <Th>ESP ID</Th>
                         <Th>Actions</Th>

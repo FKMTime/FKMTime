@@ -38,6 +38,9 @@ export class PersonService {
       skip: (page - 1) * pageSize,
       take: pageSize,
       where: whereParams,
+      orderBy: {
+        registrantId: 'asc',
+      },
     });
     const totalPersons = await this.prisma.person.count({
       where: whereParams,

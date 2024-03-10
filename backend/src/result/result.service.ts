@@ -382,6 +382,27 @@ export class ResultService {
       );
     }
     locale = competitor.countryIso2;
+
+    const previousAttemptWithSameSessionId =
+      await this.prisma.attempt.findFirst({
+        where: {
+          sessionId: data.sessionId,
+          stationId: station.id,
+        },
+      });
+    if (previousAttemptWithSameSessionId) {
+      throw new HttpException(
+        {
+          message:
+            locale === 'PL'
+              ? pl['attemptAlreadyEntered']
+              : en['attemptAlreadyEntered'],
+          shouldResetTime: false,
+        },
+        400,
+      );
+    }
+
     const judge = await this.prisma.person.findFirst({
       where: {
         cardId: data.judgeId.toString(),
@@ -593,6 +614,7 @@ export class ResultService {
     await this.prisma.attempt.create({
       data: {
         attemptNumber: attemptNumber,
+        sessionId: data.sessionId,
         isDelegate: finalData.isDelegate,
         isExtraAttempt: false,
         isResolved: false,
@@ -867,6 +889,7 @@ export class ResultService {
     const extraAttempt = await this.prisma.attempt.create({
       data: {
         attemptNumber: data.attemptNumber,
+        sessionId: data.sessionId,
         isDelegate: data.isDelegate,
         isExtraAttempt: true,
         solvedAt: data.solvedAt,

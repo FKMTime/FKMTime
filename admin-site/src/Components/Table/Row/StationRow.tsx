@@ -58,7 +58,6 @@ const StationRow: React.FC<StationRowProps> = ({
     return (
         <>
             <Tr key={station.id}>
-                <Td>{station.id}</Td>
                 <Td>{station.name}</Td>
                 <Td>{station.espId}</Td>
                 <Td>
