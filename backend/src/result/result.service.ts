@@ -3,6 +3,8 @@ import { DbService } from 'src/db/db.service';
 import { EnterAttemptDto } from './dto/enterAttempt.dto';
 import Expo from 'expo-server-sdk';
 import { en, pl } from 'src/translations';
+import { Event, Person, Round } from '@wca/helpers';
+import { Attempt, Competition } from '@prisma/client';
 
 const WCA_LIVE_API_ORIGIN = process.env.WCA_LIVE_API_ORIGIN;
 const WCA_LIVE_DEV_API_ORIGIN = process.env.WCA_LIVE_DEV_API_ORIGIN;
@@ -456,13 +458,13 @@ export class ResultService {
     const wcif = JSON.parse(JSON.stringify(competition.wcif));
     const currentRoundId = station.room.currentRoundId;
     const eventInfo = wcif.events.find(
-      (event) => event.id === currentRoundId.split('-')[0],
+      (event: Event) => event.id === currentRoundId.split('-')[0],
     );
     const roundInfo = eventInfo.rounds.find(
-      (round) => round.id === currentRoundId,
+      (round: Round) => round.id === currentRoundId,
     );
     const competitorWcifInfo = wcif.persons.find(
-      (person) => person.registrantId === competitor.registrantId,
+      (person: Person) => person.registrantId === competitor.registrantId,
     );
     const isCompetitorSignedInForEvent = this.isCompetitorSignedInForEvent(
       competitorWcifInfo,
@@ -826,12 +828,12 @@ export class ResultService {
     }
   }
 
-  async getAttemptsToEnterToWcaLive(result: any, competition: any) {
+  async getAttemptsToEnterToWcaLive(result: any, competition: Competition) {
     const attemptsToReturn = [];
     const sortedAttempts = result.attempts.sort(
-      (a, b) => a.attemptNumber - b.attemptNumber,
+      (a: Attempt, b: Attempt) => a.attemptNumber - b.attemptNumber,
     );
-    sortedAttempts.forEach((attempt) => {
+    sortedAttempts.forEach((attempt: Attempt) => {
       if (
         attempt.replacedBy === null &&
         !attempt.extraGiven &&
@@ -841,7 +843,7 @@ export class ResultService {
         attemptsToReturn.push(attempt);
       if (attempt.replacedBy !== null && attempt.extraGiven) {
         const extraAttempt = result.attempts.find(
-          (a) =>
+          (a: Attempt) =>
             a.attemptNumber === attempt.replacedBy && a.isExtraAttempt === true,
         );
         if (

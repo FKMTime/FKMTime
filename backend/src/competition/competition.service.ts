@@ -3,6 +3,7 @@ import { HttpException, Injectable } from '@nestjs/common';
 import { UpdateCompetitionDto } from './dto/updateCompetition.dto';
 import { eventsData } from 'src/events';
 import { UpdateCurrentRoundDto } from './dto/updateCurrentRound.dto';
+import { Event, Person } from '@wca/helpers';
 
 const WCA_ORIGIN = `${process.env.WCA_ORIGIN}/api/v0/competitions/`;
 @Injectable()
@@ -22,7 +23,7 @@ export class CompetitionService {
       },
     });
     await this.prisma.person.createMany({
-      data: wcif.persons.map((person) => ({
+      data: wcif.persons.map((person: Person) => ({
         wcaId: person.wcaId,
         name: person.name,
         registrantId: person.registrantId,
@@ -114,7 +115,7 @@ export class CompetitionService {
     const wcif = JSON.parse(JSON.stringify(competition.wcif));
 
     const rounds = [];
-    wcif.events.forEach((event) => {
+    wcif.events.forEach((event: Event) => {
       event.rounds.forEach((round) => {
         const eventName = eventsData.find((e) => e.id === event.id).name;
         rounds.push({
