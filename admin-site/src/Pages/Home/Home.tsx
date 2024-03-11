@@ -5,7 +5,7 @@ import {
     Box,
     FormControl,
     FormLabel,
-    Heading,
+    Heading, Input,
     Select,
     Text,
 } from "@chakra-ui/react";
@@ -22,6 +22,7 @@ const Home = (): JSX.Element => {
     const [competition, setCompetition] = useAtom(competitionAtom);
     const [selectedVenue, setSelectedVenue] = useState<number>(0);
     const [selectedRoom, setSelectedRoom] = useState<number>(0);
+    const [selectedDate, setSelectedDate] = useState<Date>(new Date());
     const orderedActivities = useMemo(() => {
         if (!competition) {
             return [];
@@ -29,7 +30,11 @@ const Home = (): JSX.Element => {
         return competition.wcif.schedule.venues
             .find((venue: Venue) => venue.id === selectedVenue)
             ?.rooms.find((room: Room) => room.id === selectedRoom)
-            ?.activities.sort((a: Activity, b: Activity) => {
+            ?.activities.filter((a: Activity) => {
+                if (new Date(a.startTime).getDay() === selectedDate.getDay()) {
+                    return true;
+                }
+            }).sort((a: Activity, b: Activity) => {
                 if (
                     new Date(a.startTime).getTime() <
                     new Date(b.startTime).getTime()
@@ -44,7 +49,7 @@ const Home = (): JSX.Element => {
                 }
                 return 0;
             });
-    }, [competition, selectedVenue, selectedRoom]);
+    }, [competition, selectedVenue, selectedRoom, selectedDate]);
 
     const fetchData = useCallback(async () => {
         const response = await getCompetitionInfo();
@@ -53,6 +58,11 @@ const Home = (): JSX.Element => {
         }
         setCompetition(response.data);
         setSelectedVenue(response.data.wcif.schedule.venues[0].id);
+        if (new Date(response.data.wcif.schedule.startDate).getTime() > new Date().getTime()) {
+            setSelectedDate(new Date(response.data.wcif.schedule.startDate));
+        } else {
+            setSelectedDate(new Date());
+        }
         setSelectedRoom(response.data.wcif.schedule.venues[0].rooms[0].id);
     }, [navigate, setCompetition]);
 
@@ -102,8 +112,12 @@ const Home = (): JSX.Element => {
                     />
                 ))}
             </Box>
-            <Box display="flex" flexDirection="row" gap="5" width="20%">
-                <FormControl>
+            <Box display="flex" flexDirection="row" gap="5">
+                <FormControl width="fit-content">
+                    <FormLabel>Date</FormLabel>
+                    <Input type="date" onChange={(e) => setSelectedDate(new Date(e.target.value))} value={selectedDate.toISOString().split('T')[0]} />
+                </FormControl>
+                <FormControl width="fit-content">
                     <FormLabel>Venue</FormLabel>
                     <Select
                         onChange={(e) =>
@@ -120,7 +134,7 @@ const Home = (): JSX.Element => {
                         )}
                     </Select>
                 </FormControl>
-                <FormControl>
+                <FormControl width="fit-content">
                     <FormLabel>Room</FormLabel>
                     <Select
                         onChange={(e) =>
@@ -144,7 +158,7 @@ const Home = (): JSX.Element => {
                     events={competition.wcif.events}
                 />
             ) : (
-                <Text>No activities in this room</Text>
+                <Text>No activities</Text>
             )}
         </Box>
     );
