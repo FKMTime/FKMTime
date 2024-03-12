@@ -20,7 +20,7 @@ const Pagination: React.FC<PaginationProps> = ({
     handlePageChange,
     changePageSize,
     pageSize,
-}): JSX.Element => {
+}) => {
     const handlePageChangeWrapper = (page: number) => {
         if (page < 1) {
             handlePageChange(1);
@@ -49,13 +49,13 @@ const Pagination: React.FC<PaginationProps> = ({
                 >
                     <IconButton
                         icon={<FaAngleDoubleLeft />}
-                        onClick={() => handlePageChangeWrapper(page - 1)}
+                        onClick={() => handlePageChangeWrapper(1)}
                         aria-label="Previous page"
                         isDisabled={page === 1}
                     />
                     <IconButton
                         icon={<FaAngleLeft />}
-                        onClick={() => handlePageChangeWrapper(1)}
+                        onClick={() => handlePageChangeWrapper(page - 1)}
                         aria-label="First page"
                         isDisabled={page === 1}
                     />
