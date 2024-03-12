@@ -32,7 +32,7 @@ export interface Competition {
 export interface Room {
     id: string;
     name: string;
-    currentRoundId: string;
+    currentGroupId: string;
     color: string;
 }
 

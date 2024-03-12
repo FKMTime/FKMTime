@@ -2,7 +2,7 @@ import { DbService } from '../db/db.service';
 import { HttpException, Injectable } from '@nestjs/common';
 import { UpdateCompetitionDto } from './dto/updateCompetition.dto';
 import { eventsData } from 'src/events';
-import { UpdateCurrentRoundDto } from './dto/updateCurrentRound.dto';
+import { UpdateRoomsDto } from './dto/updateCurrentRound.dto';
 import { Event, Person } from '@wca/helpers';
 
 const WCA_ORIGIN = `${process.env.WCA_ORIGIN}/api/v0/competitions/`;
@@ -82,7 +82,7 @@ export class CompetitionService {
     return this.prisma.room.findMany();
   }
 
-  async updateCurrentRound(data: UpdateCurrentRoundDto) {
+  async updateRooms(data: UpdateRoomsDto) {
     const transactions = [];
     for (const room of data.rooms) {
       transactions.push(
@@ -91,7 +91,7 @@ export class CompetitionService {
             id: room.id,
           },
           data: {
-            currentRoundId: room.currentRoundId,
+            currentGroupId: room.currentGroupId,
           },
         }),
       );

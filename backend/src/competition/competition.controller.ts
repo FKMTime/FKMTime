@@ -4,7 +4,7 @@ import { UpdateCompetitionDto } from './dto/updateCompetition.dto';
 import { AuthGuard } from '@nestjs/passport';
 import { AdminGuard } from 'src/auth/guards/admin.guard';
 import { AdminOrDelegateGuard } from '../auth/guards/adminOrDelegate.guard';
-import { UpdateCurrentRoundDto } from './dto/updateCurrentRound.dto';
+import { UpdateRoomsDto } from './dto/updateCurrentRound.dto';
 
 @Controller('competition')
 export class CompetitionController {
@@ -53,8 +53,8 @@ export class CompetitionController {
 
   @UseGuards(AuthGuard('jwt'), AdminOrDelegateGuard)
   @Put('rooms')
-  async updateCurrentRound(@Body() dto: UpdateCurrentRoundDto) {
-    return this.competitionService.updateCurrentRound(dto);
+  async updateRooms(@Body() dto: UpdateRoomsDto) {
+    return this.competitionService.updateRooms(dto);
   }
 
   @UseGuards(AuthGuard('jwt'), AdminOrDelegateGuard)

@@ -358,7 +358,7 @@ export class ResultService {
         room: {
           select: {
             id: true,
-            currentRoundId: true,
+            currentGroupId: true,
           },
         },
       },
@@ -372,10 +372,10 @@ export class ResultService {
         404,
       );
     }
-    if (!station.room.currentRoundId) {
+    if (!station.room.currentGroupId) {
       throw new HttpException(
         {
-          message: 'No round in this room',
+          message: 'No group in this room',
           shouldResetTime: false,
         },
         400,
@@ -456,7 +456,7 @@ export class ResultService {
       );
     }
     const wcif = JSON.parse(JSON.stringify(competition.wcif));
-    const currentRoundId = station.room.currentRoundId;
+    const currentRoundId = station.room.currentGroupId.split('-g')[0];
     const eventInfo = wcif.events.find(
       (event: Event) => event.id === currentRoundId.split('-')[0],
     );

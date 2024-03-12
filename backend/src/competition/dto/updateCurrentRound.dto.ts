@@ -1,15 +1,15 @@
 import { IsArray, IsNotEmpty, IsString } from 'class-validator';
 
-export class UpdateCurrentRoundDto {
+export class UpdateRoomsDto {
   @IsArray()
-  rooms: RoundDto[];
+  rooms: RoomDto[];
 }
 
-class RoundDto {
+class RoomDto {
   @IsString()
   @IsNotEmpty()
   id: string;
 
   @IsString()
-  currentRoundId: string;
+  currentGroupId: string;
 }

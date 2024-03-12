@@ -73,21 +73,10 @@ export class AttemptService {
         id: true,
         result: {
           select: {
+            roundId: true,
             person: {
               select: {
                 registrantId: true,
-              },
-            },
-          },
-        },
-        station: {
-          select: {
-            id: true,
-            name: true,
-            room: {
-              select: {
-                id: true,
-                currentRoundId: true,
               },
             },
           },
@@ -99,14 +88,14 @@ export class AttemptService {
     }
     if (data.submitToWcaLive && !data.extraGiven && !data.replacedBy) {
       const competition = await this.prisma.competition.findFirst();
-      const currentRoundId = attempt.station.room.currentRoundId;
+      const roundId = attempt.result.roundId;
       const timeToEnterAttemptToWcaLive =
         data.penalty === -1 ? -1 : data.penalty * 100 + data.value;
       const status = await this.resultService.enterAttemptToWcaLive(
         competition.wcaId,
         competition.scoretakingToken,
-        currentRoundId.split('-')[0],
-        parseInt(currentRoundId.split('-r')[1]),
+        roundId.split('-')[0],
+        parseInt(roundId.split('-r')[1]),
         attempt.result.person.registrantId,
         data.attemptNumber,
         timeToEnterAttemptToWcaLive,
