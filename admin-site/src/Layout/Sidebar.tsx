@@ -69,9 +69,9 @@ const Sidebar: React.FC<SidebarProps> = ({ user }): JSX.Element => {
                         link="/accounts"
                     />
                     <SidebarElement
-                        name="Stations"
+                        name="Devices"
                         icon={<MdSettings />}
-                        link="/stations"
+                        link="/devices"
                     />
                     <SidebarElement
                         name="Competition"

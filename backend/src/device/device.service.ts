@@ -1,24 +1,25 @@
-import { DbService } from './../db/db.service';
 import { Injectable } from '@nestjs/common';
-import { StationDto } from './dto/station.dto';
+import { DbService } from '../db/db.service';
+import { DeviceDto } from './dto/device.dto';
 
 @Injectable()
-export class StationService {
+export class DeviceService {
   constructor(private readonly prisma: DbService) {}
 
-  async getAllStations() {
-    return this.prisma.station.findMany({
+  async getAllDevices() {
+    return this.prisma.device.findMany({
       include: {
         room: true,
       },
     });
   }
 
-  async createStation(data: StationDto) {
-    return this.prisma.station.create({
+  async createDevice(data: DeviceDto) {
+    return this.prisma.device.create({
       data: {
         name: data.name,
         espId: data.espId,
+        type: data.type,
         room: {
           connect: {
             id: data.roomId,
@@ -28,12 +29,13 @@ export class StationService {
     });
   }
 
-  async updateStation(id: string, data: StationDto) {
-    return this.prisma.station.update({
+  async updateDevice(id: string, data: DeviceDto) {
+    return this.prisma.device.update({
       where: { id },
       data: {
         name: data.name,
         espId: data.espId,
+        type: data.type,
         room: {
           connect: {
             id: data.roomId,
@@ -43,8 +45,8 @@ export class StationService {
     });
   }
 
-  async deleteStation(id: string) {
-    return this.prisma.station.delete({
+  async deleteDevice(id: string) {
+    return this.prisma.device.delete({
       where: { id },
     });
   }

@@ -1,16 +1,13 @@
 import { Table, TableContainer, Tbody, Th, Thead, Tr } from "@chakra-ui/react";
-import { Station } from "../../logic/interfaces";
-import StationRow from "./Row/StationRow";
+import { Device } from "../../logic/interfaces";
+import DeviceRow from "./Row/DeviceRow.tsx";
 
-interface StationsTableProps {
-    stations: Station[];
+interface DevicesTableProps {
+    devices: Device[];
     fetchData: () => void;
 }
 
-const StationsTable: React.FC<StationsTableProps> = ({
-    stations,
-    fetchData,
-}): JSX.Element => {
+const DevicesTable: React.FC<DevicesTableProps> = ({ devices, fetchData }) => {
     return (
         <TableContainer>
             <Table variant="simple">
@@ -19,14 +16,15 @@ const StationsTable: React.FC<StationsTableProps> = ({
                         <Th>Name</Th>
                         <Th>Room</Th>
                         <Th>ESP ID</Th>
+                        <Th>Type</Th>
                         <Th>Actions</Th>
                     </Tr>
                 </Thead>
                 <Tbody>
-                    {stations.map((station) => (
-                        <StationRow
-                            key={station.id}
-                            station={station}
+                    {devices.map((device) => (
+                        <DeviceRow
+                            key={device.id}
+                            device={device}
                             fetchData={fetchData}
                         />
                     ))}
@@ -36,4 +34,4 @@ const StationsTable: React.FC<StationsTableProps> = ({
     );
 };
 
-export default StationsTable;
+export default DevicesTable;

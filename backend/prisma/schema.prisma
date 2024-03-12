@@ -47,13 +47,13 @@ model Competition {
 }
 
 model Room {
-  id             String    @id @default(uuid())
+  id             String   @id @default(uuid())
   name           String
   color          String
   currentGroupId String?
-  createdAt      DateTime  @default(now())
-  updatedAt      DateTime  @updatedAt
-  stations       Station[]
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  devices        Device[]
 }
 
 model Result {
@@ -83,33 +83,32 @@ model Attempt {
   value          Int
   judgeId        String?
   judge          Person?   @relation(fields: [judgeId], references: [id])
-  stationId      String?
-  station        Station?  @relation(fields: [stationId], references: [id])
+  deviceId       String?
+  device         Device?   @relation(fields: [deviceId], references: [id])
   solvedAt       DateTime?
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
 }
 
-model Station {
-  id        String    @id @default(uuid())
+model Device {
+  id        String     @id @default(uuid())
   name      String
-  espId     String?   @db.Text()
+  espId     String?    @db.Text()
+  type      DeviceType
   roomId    String
-  room      Room      @relation(fields: [roomId], references: [id])
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
+  room      Room       @relation(fields: [roomId], references: [id])
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
   Attempt   Attempt[]
+}
+
+enum DeviceType {
+  STATION
+  ATTENDANCE
 }
 
 enum Role {
   ADMIN
   DELEGATE
   STAFF
-}
-
-enum Activity {
-  COMPETITOR
-  JUDGE
-  RUNNER
-  SCRAMBLER
 }

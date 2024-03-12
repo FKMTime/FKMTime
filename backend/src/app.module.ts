@@ -7,7 +7,7 @@ import { PersonModule } from './person/person.module';
 import { ResultModule } from './result/result.module';
 import { AttemptModule } from './attempt/attempt.module';
 import { SettingsModule } from './settings/settings.module';
-import { StationModule } from './station/station.module';
+import { DeviceModule } from './device/device.module';
 
 @Module({
   imports: [
@@ -19,7 +19,7 @@ import { StationModule } from './station/station.module';
     ResultModule,
     AttemptModule,
     SettingsModule,
-    StationModule,
+    DeviceModule,
   ],
 })
 export class AppModule {}

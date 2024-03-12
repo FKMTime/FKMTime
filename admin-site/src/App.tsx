@@ -9,7 +9,7 @@ import Persons from "./Pages/Persons/Persons";
 import Results from "./Pages/Results/Results";
 import SingleResult from "./Pages/Results/SingleResult";
 import Settings from "./Pages/Settings/Settings";
-import Stations from "./Pages/Stations/Stations";
+import Devices from "./Pages/Devices/Devices.tsx";
 import Tutorial from "./Pages/Tutorial/Tutorial";
 import AssignCards from "./Pages/AssignCards/AssignCards";
 import Giftpacks from "./Pages/Giftpacks/GIftpacks.tsx";
@@ -67,8 +67,8 @@ const App = (): JSX.Element => {
                     element: <Settings />,
                 },
                 {
-                    path: "stations",
-                    element: <Stations />,
+                    path: "devices",
+                    element: <Devices />,
                 },
                 {
                     path: "tutorial",

@@ -1,23 +1,20 @@
 import { useState } from "react";
-import { Tr, Td, IconButton, useToast } from "@chakra-ui/react";
-import { MdEdit, MdDelete } from "react-icons/md";
-import { Station } from "../../../logic/interfaces";
+import { IconButton, Td, Tr, useToast } from "@chakra-ui/react";
+import { MdDelete, MdEdit } from "react-icons/md";
+import { Device } from "../../../logic/interfaces";
 import Alert from "../../Alert";
-import { deleteStation } from "../../../logic/station";
-import EditStationModal from "../../Modal/EditStationModal";
+import EditDeviceModal from "../../Modal/EditDeviceModal";
+import { deleteDevice } from "../../../logic/devices.ts";
 
-interface StationRowProps {
-    station: Station;
+interface deviceRowProps {
+    device: Device;
     fetchData: () => void;
 }
 
-const StationRow: React.FC<StationRowProps> = ({
-    station,
-    fetchData,
-}): JSX.Element => {
+const DeviceRow: React.FC<deviceRowProps> = ({ device, fetchData }) => {
     const toast = useToast();
     const [openConfirmation, setOpenConfirmation] = useState<boolean>(false);
-    const [isOpenEditStationModal, setIsOpenEditStationModal] =
+    const [isOpenEditDeviceModal, setIsOpenEditDeviceModal] =
         useState<boolean>(false);
 
     const handleDelete = async () => {
@@ -28,17 +25,17 @@ const StationRow: React.FC<StationRowProps> = ({
         setOpenConfirmation(false);
     };
 
-    const handleCloseEditStationModal = async () => {
-        await fetchData();
-        setIsOpenEditStationModal(false);
+    const handleCloseEditDeviceModal = async () => {
+        fetchData();
+        setIsOpenEditDeviceModal(false);
     };
 
     const handleConfirm = async () => {
         setOpenConfirmation(false);
-        const status = await deleteStation(station.id);
+        const status = await deleteDevice(device.id);
         if (status === 204) {
             toast({
-                title: "Successfully deleted station.",
+                title: "Successfully deleted device.",
                 status: "success",
                 duration: 9000,
                 isClosable: true,
@@ -57,10 +54,14 @@ const StationRow: React.FC<StationRowProps> = ({
 
     return (
         <>
-            <Tr key={station.id}>
-                <Td>{station.name}</Td>
-                <Td>{station.room.name}</Td>
-                <Td>{station.espId}</Td>
+            <Tr key={device.id}>
+                <Td>{device.name}</Td>
+                <Td>{device.room.name}</Td>
+                <Td>{device.espId}</Td>
+                <Td>
+                    {device.type[0].toUpperCase() +
+                        device.type.slice(1).toLowerCase()}
+                </Td>
                 <Td>
                     <IconButton
                         icon={<MdEdit />}
@@ -72,7 +73,7 @@ const StationRow: React.FC<StationRowProps> = ({
                             color: "gray.400",
                         }}
                         title="Edit"
-                        onClick={() => setIsOpenEditStationModal(true)}
+                        onClick={() => setIsOpenEditDeviceModal(true)}
                     />
                     <IconButton
                         icon={<MdDelete />}
@@ -92,16 +93,16 @@ const StationRow: React.FC<StationRowProps> = ({
                 isOpen={openConfirmation}
                 onCancel={handleCancel}
                 onConfirm={handleConfirm}
-                title="Delete station"
+                title="Delete device"
                 description="Are you sure?"
             />
-            <EditStationModal
-                isOpen={isOpenEditStationModal}
-                onClose={handleCloseEditStationModal}
-                station={station}
+            <EditDeviceModal
+                isOpen={isOpenEditDeviceModal}
+                onClose={handleCloseEditDeviceModal}
+                device={device}
             />
         </>
     );
 };
 
-export default StationRow;
+export default DeviceRow;

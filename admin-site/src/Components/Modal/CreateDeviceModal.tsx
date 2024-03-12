@@ -9,16 +9,16 @@ import {
 } from "@chakra-ui/react";
 import { Modal } from "./Modal";
 import { useEffect, useState } from "react";
-import { createStation } from "../../logic/station";
+import { createDevice } from "../../logic/devices.ts";
 import { Room } from "../../logic/interfaces.ts";
 import { getAllRooms } from "../../logic/rooms.ts";
 
-interface CreateStationModalProps {
+interface CreateDeviceModalProps {
     isOpen: boolean;
     onClose: () => void;
 }
 
-const CreateStationModal: React.FC<CreateStationModalProps> = ({
+const CreateDeviceModal: React.FC<CreateDeviceModalProps> = ({
     isOpen,
     onClose,
 }): JSX.Element => {
@@ -33,11 +33,12 @@ const CreateStationModal: React.FC<CreateStationModalProps> = ({
         const name = data.get("name") as string;
         const espId = data.get("espId") as string;
         const roomId = data.get("roomId") as string;
+        const type = data.get("type") as string;
 
-        const status = await createStation(name, espId, roomId);
+        const status = await createDevice(name, espId, type, roomId);
         if (status === 201) {
             toast({
-                title: "Successfully created new station.",
+                title: "Successfully created new device.",
                 status: "success",
                 duration: 9000,
                 isClosable: true,
@@ -62,7 +63,7 @@ const CreateStationModal: React.FC<CreateStationModalProps> = ({
     }, []);
 
     return (
-        <Modal isOpen={isOpen} onClose={onClose} title="Create station">
+        <Modal isOpen={isOpen} onClose={onClose} title="Create device">
             <Box
                 display="flex"
                 flexDirection="column"
@@ -103,6 +104,17 @@ const CreateStationModal: React.FC<CreateStationModalProps> = ({
                         ))}
                     </Select>
                 </FormControl>
+                <FormControl isRequired>
+                    <FormLabel>Type</FormLabel>
+                    <Select
+                        placeholder="Select type"
+                        name="type"
+                        disabled={isLoading}
+                    >
+                        <option value="STATION">Station</option>
+                        <option value="ATTENDANCE">Attendance device</option>
+                    </Select>
+                </FormControl>
                 <Box
                     display="flex"
                     flexDirection="row"
@@ -127,4 +139,4 @@ const CreateStationModal: React.FC<CreateStationModalProps> = ({
     );
 };
 
-export default CreateStationModal;
+export default CreateDeviceModal;

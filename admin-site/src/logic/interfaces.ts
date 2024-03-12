@@ -80,17 +80,23 @@ export interface Attempt {
     value: number;
     judgeId: number;
     judge: Person;
-    station: Station;
+    device: Device;
 }
 
-export interface Station {
+export interface Device {
     id: string;
     name: string;
     espId: string;
+    type: DeviceType;
     roomId: string;
     room: Room;
     createdAt: Date;
     updatedAt: Date;
+}
+
+export enum DeviceType {
+    STATION = "STATION",
+    ATTENDANCE = "ATTENDANCE",
 }
 
 export interface Settings {

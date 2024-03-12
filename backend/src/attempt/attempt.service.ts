@@ -18,9 +18,9 @@ export class AttemptService {
         value: data.value,
         penalty: data.penalty,
         solvedAt: new Date(),
-        station: {
+        device: {
           connect: {
-            id: data.stationId,
+            id: data.deviceId,
           },
         },
         judge: {
@@ -137,7 +137,7 @@ export class AttemptService {
             name: true,
           },
         },
-        station: {
+        device: {
           select: {
             id: true,
             name: true,
@@ -199,7 +199,7 @@ export class AttemptService {
             name: true,
           },
         },
-        station: {
+        device: {
           select: {
             id: true,
             name: true,

@@ -1,28 +1,28 @@
 import { useEffect, useState } from "react";
-import { getAllStations } from "../../logic/station";
+import { getAllDevices } from "../../logic/devices.ts";
 import LoadingPage from "../../Components/LoadingPage";
-import { Station } from "../../logic/interfaces";
+import { Device } from "../../logic/interfaces";
 import { Box, IconButton } from "@chakra-ui/react";
 import { MdAdd } from "react-icons/md";
-import CreateStationModal from "../../Components/Modal/CreateStationModal";
-import StationsTable from "../../Components/Table/StationsTable";
+import CreateDeviceModal from "../../Components/Modal/CreateDeviceModal.tsx";
+import DevicesTable from "../../Components/Table/DevicesTable.tsx";
 
-const Stations = (): JSX.Element => {
+const Devices = (): JSX.Element => {
     const [isLoading, setIsLoading] = useState<boolean>(true);
-    const [stations, setStations] = useState<Station[]>([]);
-    const [isOpenCreateStationModal, setIsOpenCreateStationModal] =
+    const [devices, setDevices] = useState<Device[]>([]);
+    const [isOpenCreateDeviceModal, setIsOpenCreateDeviceModal] =
         useState<boolean>(false);
 
     const fetchData = async () => {
         setIsLoading(true);
-        const data = await getAllStations();
-        setStations(data);
+        const data = await getAllDevices();
+        setDevices(data);
         setIsLoading(false);
     };
 
-    const handleCloseCreateStationModal = async () => {
+    const handleCloseCreateDeviceModal = async () => {
         await fetchData();
-        setIsOpenCreateStationModal(false);
+        setIsOpenCreateDeviceModal(false);
     };
 
     useEffect(() => {
@@ -45,15 +45,15 @@ const Stations = (): JSX.Element => {
                     background: "white",
                     color: "gray.700",
                 }}
-                onClick={() => setIsOpenCreateStationModal(true)}
+                onClick={() => setIsOpenCreateDeviceModal(true)}
             />
-            <StationsTable stations={stations} fetchData={fetchData} />
-            <CreateStationModal
-                isOpen={isOpenCreateStationModal}
-                onClose={handleCloseCreateStationModal}
+            <DevicesTable devices={devices} fetchData={fetchData} />
+            <CreateDeviceModal
+                isOpen={isOpenCreateDeviceModal}
+                onClose={handleCloseCreateDeviceModal}
             />
         </Box>
     );
 };
 
-export default Stations;
+export default Devices;

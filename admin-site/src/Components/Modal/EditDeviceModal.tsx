@@ -9,34 +9,34 @@ import {
 } from "@chakra-ui/react";
 import { Modal } from "./Modal";
 import { useEffect, useState } from "react";
-import { updateStation } from "../../logic/station";
-import { Room, Station } from "../../logic/interfaces";
+import { updateDevice } from "../../logic/devices.ts";
+import { Device, DeviceType, Room } from "../../logic/interfaces";
 import { getAllRooms } from "../../logic/rooms.ts";
 
-interface EditStationModalProps {
+interface EditDeviceModalProps {
     isOpen: boolean;
     onClose: () => void;
-    station: Station;
+    device: Device;
 }
 
-const EditStationModal: React.FC<EditStationModalProps> = ({
+const EditDeviceModal: React.FC<EditDeviceModalProps> = ({
     isOpen,
     onClose,
-    station,
-}): JSX.Element => {
+    device,
+}) => {
     const toast = useToast();
     const [isLoading, setIsLoading] = useState(false);
-    const [editedStation, setEditedStation] = useState<Station>(station);
+    const [editedDevice, setEditedDevice] = useState<Device>(device);
     const [rooms, setRooms] = useState<Room[]>([]);
 
     const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault();
         setIsLoading(true);
 
-        const status = await updateStation(editedStation);
+        const status = await updateDevice(editedDevice);
         if (status === 200) {
             toast({
-                title: "Successfully updated this station.",
+                title: "Successfully updated this device.",
                 status: "success",
                 duration: 9000,
                 isClosable: true,
@@ -61,7 +61,7 @@ const EditStationModal: React.FC<EditStationModalProps> = ({
     }, []);
 
     return (
-        <Modal isOpen={isOpen} onClose={onClose} title="Create station">
+        <Modal isOpen={isOpen} onClose={onClose} title="Create device">
             <Box
                 display="flex"
                 flexDirection="column"
@@ -75,10 +75,10 @@ const EditStationModal: React.FC<EditStationModalProps> = ({
                         placeholder="Name"
                         _placeholder={{ color: "white" }}
                         disabled={isLoading}
-                        value={editedStation.name}
+                        value={editedDevice.name}
                         onChange={(e) =>
-                            setEditedStation({
-                                ...editedStation,
+                            setEditedDevice({
+                                ...editedDevice,
                                 name: e.target.value,
                             })
                         }
@@ -91,10 +91,10 @@ const EditStationModal: React.FC<EditStationModalProps> = ({
                         type="text"
                         _placeholder={{ color: "white" }}
                         disabled={isLoading}
-                        value={editedStation.espId}
+                        value={editedDevice.espId}
                         onChange={(e) =>
-                            setEditedStation({
-                                ...editedStation,
+                            setEditedDevice({
+                                ...editedDevice,
                                 espId: e.target.value,
                             })
                         }
@@ -105,10 +105,10 @@ const EditStationModal: React.FC<EditStationModalProps> = ({
                     <Select
                         placeholder="Select room"
                         disabled={isLoading}
-                        value={editedStation.roomId}
+                        value={editedDevice.roomId}
                         onChange={(e) =>
-                            setEditedStation({
-                                ...editedStation,
+                            setEditedDevice({
+                                ...editedDevice,
                                 roomId: e.target.value,
                             })
                         }
@@ -118,6 +118,23 @@ const EditStationModal: React.FC<EditStationModalProps> = ({
                                 {room.name}
                             </option>
                         ))}
+                    </Select>
+                </FormControl>
+                <FormControl isRequired>
+                    <FormLabel>Type</FormLabel>
+                    <Select
+                        placeholder="Select type"
+                        disabled={isLoading}
+                        value={editedDevice.type}
+                        onChange={(e) =>
+                            setEditedDevice({
+                                ...editedDevice,
+                                type: e.target.value as DeviceType,
+                            })
+                        }
+                    >
+                        <option value="STATION">Station</option>
+                        <option value="ATTENDANCE">Attendance device</option>
                     </Select>
                 </FormControl>
                 <Box
@@ -144,4 +161,4 @@ const EditStationModal: React.FC<EditStationModalProps> = ({
     );
 };
 
-export default EditStationModal;
+export default EditDeviceModal;

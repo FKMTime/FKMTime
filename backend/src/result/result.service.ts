@@ -82,7 +82,7 @@ export class ResultService {
                 name: true,
               },
             },
-            station: {
+            device: {
               select: {
                 id: true,
                 name: true,
@@ -112,9 +112,9 @@ export class ResultService {
               registrantId: attempt.judge.registrantId,
               gender: attempt.judge.gender,
             },
-            station: attempt.station && {
-              id: attempt.station.id,
-              name: attempt.station.name,
+            device: attempt.device && {
+              id: attempt.device.id,
+              name: attempt.device.name,
             },
           };
         }),
@@ -159,7 +159,7 @@ export class ResultService {
                 name: true,
               },
             },
-            station: {
+            device: {
               select: {
                 id: true,
                 name: true,
@@ -184,9 +184,9 @@ export class ResultService {
               id: attempt.judge.id,
               name: attempt.judge.name,
             },
-            station: attempt.station && {
-              id: attempt.station.id,
-              name: attempt.station.name,
+            device: attempt.device && {
+              id: attempt.device.id,
+              name: attempt.device.name,
             },
           };
         }),
@@ -238,7 +238,7 @@ export class ResultService {
                 gender: true,
               },
             },
-            station: {
+            device: {
               select: {
                 id: true,
                 name: true,
@@ -260,9 +260,9 @@ export class ResultService {
             registrantId: attempt.judge.registrantId,
             gender: attempt.judge.gender,
           },
-          station: attempt.station && {
-            id: attempt.station.id,
-            name: attempt.station.name,
+          device: attempt.device && {
+            id: attempt.device.id,
+            name: attempt.device.name,
           },
         };
       }),
@@ -299,7 +299,7 @@ export class ResultService {
             name: true,
           },
         },
-        station: {
+        device: {
           select: {
             id: true,
             name: true,
@@ -347,9 +347,10 @@ export class ResultService {
     console.log('Entering attempt from FKM');
     console.log('Data: ', data);
     console.log('-----------------');
-    const station = await this.prisma.station.findFirst({
+    const device = await this.prisma.device.findFirst({
       where: {
         espId: data.espId.toString(),
+        type: 'STATION',
       },
       select: {
         id: true,
@@ -363,7 +364,7 @@ export class ResultService {
         },
       },
     });
-    if (!station) {
+    if (!device) {
       throw new HttpException(
         {
           message: 'Station not found',
@@ -372,7 +373,7 @@ export class ResultService {
         404,
       );
     }
-    if (!station.room.currentGroupId) {
+    if (!device.room.currentGroupId) {
       throw new HttpException(
         {
           message: 'No group in this room',
@@ -405,7 +406,7 @@ export class ResultService {
       await this.prisma.attempt.findFirst({
         where: {
           sessionId: data.sessionId,
-          stationId: station.id,
+          deviceId: device.id,
         },
       });
     if (previousAttemptWithSameSessionId) {
@@ -456,7 +457,7 @@ export class ResultService {
       );
     }
     const wcif = JSON.parse(JSON.stringify(competition.wcif));
-    const currentRoundId = station.room.currentGroupId.split('-g')[0];
+    const currentRoundId = device.room.currentGroupId.split('-g')[0];
     const eventInfo = wcif.events.find(
       (event: Event) => event.id === currentRoundId.split('-')[0],
     );
@@ -554,7 +555,7 @@ export class ResultService {
         await this.createAnExtraAttemptAnReplaceTheOriginalOne(
           {
             ...finalData,
-            station,
+            device,
             judge,
             competitor,
             result,
@@ -564,7 +565,7 @@ export class ResultService {
         );
 
       if (attemptNumber === -1) {
-        await this.sendNotificationAboutIncident(station.name, competitor.name);
+        await this.sendNotificationAboutIncident(device.name, competitor.name);
         return {
           message:
             locale === 'PL'
@@ -625,9 +626,9 @@ export class ResultService {
               },
             }
           : undefined,
-        station: {
+        device: {
           connect: {
-            id: station.id,
+            id: device.id,
           },
         },
         result: {
@@ -638,7 +639,7 @@ export class ResultService {
       },
     });
     if (data.isDelegate) {
-      await this.sendNotificationAboutIncident(station.name, competitor.name);
+      await this.sendNotificationAboutIncident(device.name, competitor.name);
       return {
         message:
           locale === 'PL'
@@ -900,9 +901,9 @@ export class ResultService {
               },
             }
           : undefined,
-        station: {
+        device: {
           connect: {
-            id: data.station.id,
+            id: data.device.id,
           },
         },
         result: {

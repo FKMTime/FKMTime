@@ -100,7 +100,7 @@ const AttemptRow: React.FC<AttemptRowProps> = ({
                     {attempt.judge.registrantId &&
                         ` (${attempt.judge.registrantId})`}
                 </Td>
-                <Td>{attempt.station && attempt.station.name}</Td>
+                <Td>{attempt.device && attempt.device.name}</Td>
                 <Td>{attempt.comment}</Td>
                 <Td>{new Date(attempt.solvedAt).toLocaleString()}</Td>
                 <Td>

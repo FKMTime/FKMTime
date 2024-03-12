@@ -18,7 +18,7 @@ export class CreateAttemptDto {
 
   @IsString()
   @IsNotEmpty()
-  stationId: string;
+  deviceId: string;
 
   @IsString()
   @IsOptional()
