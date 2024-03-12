@@ -1,9 +1,5 @@
 import { IsEnum, IsNotEmpty, IsString } from 'class-validator';
-
-enum DeviceType {
-  STATION = 'STATION',
-  ATTENDANCE = 'ATTENDANCE',
-}
+import { DeviceType } from '@prisma/client';
 
 export class DeviceDto {
   @IsString()

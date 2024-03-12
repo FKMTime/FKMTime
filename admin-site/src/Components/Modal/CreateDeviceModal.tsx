@@ -112,7 +112,8 @@ const CreateDeviceModal: React.FC<CreateDeviceModalProps> = ({
                         disabled={isLoading}
                     >
                         <option value="STATION">Station</option>
-                        <option value="ATTENDANCE">Attendance device</option>
+                        <option value="ATTENDANCE_SCRAMBLER">Attendance device for scramblers</option>
+                        <option value="ATTENDANCE_RUNNER">Attendance device for runners</option>
                     </Select>
                 </FormControl>
                 <Box

@@ -15,6 +15,7 @@ import AssignCards from "./Pages/AssignCards/AssignCards";
 import Giftpacks from "./Pages/Giftpacks/GIftpacks.tsx";
 import PersonResults from "./Pages/Persons/PersonResults.tsx";
 import Rooms from "./Pages/Rooms/Rooms.tsx";
+import Attendance from "./Pages/Attendance/Attendance.tsx";
 
 const App = (): JSX.Element => {
     const router = createBrowserRouter([
@@ -69,6 +70,10 @@ const App = (): JSX.Element => {
                 {
                     path: "devices",
                     element: <Devices />,
+                },
+                {
+                    path: "attendance",
+                    element: <Attendance />,
                 },
                 {
                     path: "tutorial",

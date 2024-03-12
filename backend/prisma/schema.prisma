@@ -19,18 +19,31 @@ model Account {
 }
 
 model Person {
-  id                  String    @id @default(uuid())
+  id                  String       @id @default(uuid())
   registrantId        Int?
   name                String
   wcaId               String?
   countryIso2         String?
   gender              String
-  canCompete          Boolean   @default(true)
+  canCompete          Boolean      @default(true)
   birthdate           DateTime?
   giftpackCollectedAt DateTime?
-  cardId              String?   @unique
+  cardId              String?      @unique
   Result              Result[]
   Attempt             Attempt[]
+  Attendance          Attendance[]
+}
+
+model Attendance {
+  id        String    @id @default(uuid())
+  personId  String
+  person    Person    @relation(fields: [personId], references: [id])
+  deviceId  String
+  device    Device    @relation(fields: [deviceId], references: [id])
+  groupId   String
+  role      StaffRole
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
 }
 
 model Competition {
@@ -91,24 +104,32 @@ model Attempt {
 }
 
 model Device {
-  id        String     @id @default(uuid())
-  name      String
-  espId     String?    @db.Text()
-  type      DeviceType
-  roomId    String
-  room      Room       @relation(fields: [roomId], references: [id])
-  createdAt DateTime   @default(now())
-  updatedAt DateTime   @updatedAt
-  Attempt   Attempt[]
+  id         String       @id @default(uuid())
+  name       String
+  espId      String?      @db.Text()
+  type       DeviceType
+  roomId     String
+  room       Room         @relation(fields: [roomId], references: [id])
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime     @updatedAt
+  Attempt    Attempt[]
+  Attendance Attendance[]
 }
 
 enum DeviceType {
   STATION
-  ATTENDANCE
+  ATTENDANCE_SCRAMBLER
+  ATTENDANCE_RUNNER
 }
 
 enum Role {
   ADMIN
   DELEGATE
   STAFF
+}
+
+enum StaffRole {
+  JUDGE
+  RUNNER
+  SCRAMBLER
 }

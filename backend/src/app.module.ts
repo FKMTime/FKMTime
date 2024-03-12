@@ -8,6 +8,7 @@ import { ResultModule } from './result/result.module';
 import { AttemptModule } from './attempt/attempt.module';
 import { SettingsModule } from './settings/settings.module';
 import { DeviceModule } from './device/device.module';
+import { AttendanceModule } from './attendance/attendance.module';
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { DeviceModule } from './device/device.module';
     AttemptModule,
     SettingsModule,
     DeviceModule,
+    AttendanceModule,
   ],
 })
 export class AppModule {}

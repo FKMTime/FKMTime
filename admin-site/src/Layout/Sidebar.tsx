@@ -18,20 +18,20 @@ import {
     MdTimer,
 } from "react-icons/md";
 import SidebarElement from "../Components/SidebarElement";
-import { IoMdTrophy } from "react-icons/io";
+import {IoMdTrophy} from "react-icons/io";
 import React from "react";
-import { UserInfo } from "../logic/interfaces";
-import { useNavigate } from "react-router-dom";
-import { logout } from "../logic/auth";
+import {UserInfo} from "../logic/interfaces";
+import {useNavigate} from "react-router-dom";
+import {logout} from "../logic/auth";
 import logo from "../assets/logo.svg";
-import { FaGift, FaGithub } from "react-icons/fa";
-import { HAS_WRITE_ACCESS } from "../logic/accounts.ts";
+import {FaClipboardList, FaGift, FaGithub} from "react-icons/fa";
+import {HAS_WRITE_ACCESS} from "../logic/accounts.ts";
 
 interface SidebarProps {
     user: UserInfo;
 }
 
-const Sidebar: React.FC<SidebarProps> = ({ user }): JSX.Element => {
+const Sidebar: React.FC<SidebarProps> = ({user}): JSX.Element => {
     const navigate = useNavigate();
     const toast = useToast();
 
@@ -58,24 +58,24 @@ const Sidebar: React.FC<SidebarProps> = ({ user }): JSX.Element => {
             flexDirection="column"
             gap="5"
         >
-            <Image src={logo} alt="Logo" width="100%" />
+            <Image src={logo} alt="Logo" width="100%"/>
             <Text color="white">Hello {user.username}!</Text>
-            <SidebarElement name="Home" icon={<MdHome />} link="/" />
+            <SidebarElement name="Home" icon={<MdHome/>} link="/"/>
             {user.role === "ADMIN" && (
                 <>
                     <SidebarElement
                         name="Accounts"
-                        icon={<MdPersonAdd />}
+                        icon={<MdPersonAdd/>}
                         link="/accounts"
                     />
                     <SidebarElement
                         name="Devices"
-                        icon={<MdSettings />}
+                        icon={<MdSettings/>}
                         link="/devices"
                     />
                     <SidebarElement
                         name="Competition"
-                        icon={<IoMdTrophy />}
+                        icon={<IoMdTrophy/>}
                         link="/competition"
                     />
                 </>
@@ -84,34 +84,39 @@ const Sidebar: React.FC<SidebarProps> = ({ user }): JSX.Element => {
                 <>
                     <SidebarElement
                         name="Rooms"
-                        icon={<MdRoom />}
+                        icon={<MdRoom/>}
                         link="/rooms"
                     />
                 </>
             )}
             <SidebarElement
                 name="Persons"
-                icon={<MdPerson />}
+                icon={<MdPerson/>}
                 link="/persons"
             />
             <SidebarElement
+                name="Attendance"
+                icon={<FaClipboardList/>}
+                link="/attendance"
+            />
+            <SidebarElement
                 name="Giftpacks"
-                icon={<FaGift />}
+                icon={<FaGift/>}
                 link="/giftpacks"
             />
-            <SidebarElement name="Results" icon={<MdTimer />} link="/results" />
+            <SidebarElement name="Results" icon={<MdTimer/>} link="/results"/>
             <SidebarElement
                 name="Settings"
-                icon={<MdSettings />}
+                icon={<MdSettings/>}
                 link="/settings"
             />
             <SidebarElement
                 name="Tutorial"
-                icon={<MdBook />}
+                icon={<MdBook/>}
                 link="/tutorial"
             />
             <Button
-                leftIcon={<MdLogout />}
+                leftIcon={<MdLogout/>}
                 colorScheme="teal"
                 variant="solid"
                 rounded="20"
@@ -126,7 +131,7 @@ const Sidebar: React.FC<SidebarProps> = ({ user }): JSX.Element => {
                     as={FaGithub}
                     color="white"
                     boxSize="10"
-                    _hover={{ opacity: 0.8 }}
+                    _hover={{opacity: 0.8}}
                 />
             </Link>
         </Box>

@@ -1,7 +1,18 @@
-import {Body, Controller, Delete, Get, HttpCode, HttpStatus, Param, Post, Put, UseGuards} from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  HttpCode,
+  HttpStatus,
+  Param,
+  Post,
+  Put,
+  UseGuards,
+} from '@nestjs/common';
 import { AdminGuard } from '../auth/guards/admin.guard';
 import { DeviceService } from './device.service';
-import {DeviceDto} from "./dto/device.dto";
+import { DeviceDto } from './dto/device.dto';
 
 @UseGuards(AdminGuard)
 @Controller('device')

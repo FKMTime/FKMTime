@@ -54,6 +54,16 @@ export interface Person {
     giftpackCollectedAt?: Date;
 }
 
+export interface Attendance {
+    id: string;
+    groupId: string;
+    person: Person;
+    role: string;
+    device: Device;
+    createdAt: Date;
+    updatedAt: Date;
+}
+
 export interface Result {
     id: string;
     eventId: string;

@@ -1,7 +1,6 @@
-import { Competition } from "@wca/helpers";
+import {Competition} from "@wca/helpers";
 import regions from "./regions";
-import { Attempt, Result } from "./interfaces";
-import events from "./events.ts";
+import {Attempt, Attendance, Result} from "./interfaces";
 
 export const calculateTotalPages = (count: number, pageSize: number) => {
     return Math.ceil(count / pageSize);
@@ -37,20 +36,6 @@ export const getPersonFromWcif = (registrantId: number, wcif: Competition) => {
 
 export const getEventIdFromRoundId = (roundId: string) => {
     return roundId.split("-")[0];
-};
-
-export const getAllRounds = (wcif: Competition) => {
-    const rounds: { id: string; name: string }[] = [];
-    wcif.events.forEach((event) => {
-        const eventInfo = events.find((e) => e.id === event.id);
-        event.rounds.forEach((round) => {
-            rounds.push({
-                id: round.id,
-                name: `${eventInfo?.name} Round ${round.id.split("-r")[1]}`,
-            });
-        });
-    });
-    return rounds;
 };
 
 export const getRoundInfoFromWcif = (roundId: string, wcif: Competition) => {
@@ -116,9 +101,44 @@ export const prettyRoundFormat = (format: string, cutoffAttempts?: number) => {
     }
 };
 
+export const prettyDeviceType = (type: string) => {
+    switch (type) {
+        case "STATION":
+            return "Station";
+        case "ATTENDANCE_SCRAMBLER":
+            return "Attendance device for scramblers";
+        case "ATTENDANCE_RUNNER":
+            return "Attendance device for runners";
+        default:
+            return "Unknown";
+    }
+};
+
+export const getAbsentPeople = (wcif: Competition, presentPeople: Attendance[], roomName: string, groupId: string, role: string) => {
+    const activity = wcif.schedule?.venues[0].rooms.find((room) => room.name === roomName)?.activities.find((activity) => activity.activityCode === groupId.split("-g")[0])?.childActivities.find((activity) => activity.activityCode === groupId);
+    if (!activity) return [];
+    const wcifRole = attendanceRoleToWcif(role);
+    return wcif.persons.filter((person) => {
+        if (person.assignments?.some((assignment) => assignment.activityId === activity.id && assignment.assignmentCode === wcifRole) && !presentPeople.some((p) => p.person.registrantId === person.registrantId)) {
+            return person;
+        }
+    });
+};
+
+export const attendanceRoleToWcif = (role: string) => {
+    switch (role) {
+        case "SCRAMBLER":
+            return "staff-scrambler";
+        case "RUNNER":
+            return "staff-runner";
+        case "JUDGE":
+            return "staff-judge";
+    }
+}
 interface AttemptWithNumber extends Attempt {
     number: number;
 }
+
 export const getSubmittedAttempts = (attempts: Attempt[]) => {
     const attemptsToReturn: AttemptWithNumber[] = [];
     attempts.forEach((attempt) => {
@@ -136,7 +156,7 @@ export const getSubmittedAttempts = (attempts: Attempt[]) => {
             const extraAttempt = attempts.find(
                 (a) =>
                     a.attemptNumber === attempt.replacedBy &&
-                    a.isExtraAttempt === true
+                    a.isExtraAttempt
             );
             if (
                 extraAttempt &&
@@ -169,7 +189,7 @@ export const getRoundNameById = (roundId: string, wcif?: Competition) => {
     return roundName;
 };
 
-export const isThereADiffrenceBetweenResults = (
+export const isThereADifferenceBetweenResults = (
     result: Result,
     submittedAttempts: Attempt[],
     wcif: Competition

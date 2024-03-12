@@ -5,6 +5,7 @@ import { Device } from "../../../logic/interfaces";
 import Alert from "../../Alert";
 import EditDeviceModal from "../../Modal/EditDeviceModal";
 import { deleteDevice } from "../../../logic/devices.ts";
+import {prettyDeviceType} from "../../../logic/utils.ts";
 
 interface deviceRowProps {
     device: Device;
@@ -59,8 +60,7 @@ const DeviceRow: React.FC<deviceRowProps> = ({ device, fetchData }) => {
                 <Td>{device.room.name}</Td>
                 <Td>{device.espId}</Td>
                 <Td>
-                    {device.type[0].toUpperCase() +
-                        device.type.slice(1).toLowerCase()}
+                    {prettyDeviceType(device.type)}
                 </Td>
                 <Td>
                     <IconButton
