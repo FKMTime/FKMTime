@@ -1,6 +1,6 @@
-import {Competition} from "@wca/helpers";
+import { Competition } from "@wca/helpers";
 import regions from "./regions";
-import {Attempt, Attendance, Result} from "./interfaces";
+import { Attempt, Attendance, Result } from "./interfaces";
 
 export const calculateTotalPages = (count: number, pageSize: number) => {
     return Math.ceil(count / pageSize);
@@ -114,12 +114,32 @@ export const prettyDeviceType = (type: string) => {
     }
 };
 
-export const getAbsentPeople = (wcif: Competition, presentPeople: Attendance[], roomName: string, groupId: string, role: string) => {
-    const activity = wcif.schedule?.venues[0].rooms.find((room) => room.name === roomName)?.activities.find((activity) => activity.activityCode === groupId.split("-g")[0])?.childActivities.find((activity) => activity.activityCode === groupId);
+export const getAbsentPeople = (
+    wcif: Competition,
+    presentPeople: Attendance[],
+    roomName: string,
+    groupId: string,
+    role: string
+) => {
+    const activity = wcif.schedule?.venues[0].rooms
+        .find((room) => room.name === roomName)
+        ?.activities.find(
+            (activity) => activity.activityCode === groupId.split("-g")[0]
+        )
+        ?.childActivities.find((activity) => activity.activityCode === groupId);
     if (!activity) return [];
     const wcifRole = attendanceRoleToWcif(role);
     return wcif.persons.filter((person) => {
-        if (person.assignments?.some((assignment) => assignment.activityId === activity.id && assignment.assignmentCode === wcifRole) && !presentPeople.some((p) => p.person.registrantId === person.registrantId)) {
+        if (
+            person.assignments?.some(
+                (assignment) =>
+                    assignment.activityId === activity.id &&
+                    assignment.assignmentCode === wcifRole
+            ) &&
+            !presentPeople.some(
+                (p) => p.person.registrantId === person.registrantId
+            )
+        ) {
             return person;
         }
     });
@@ -134,7 +154,7 @@ export const attendanceRoleToWcif = (role: string) => {
         case "JUDGE":
             return "staff-judge";
     }
-}
+};
 interface AttemptWithNumber extends Attempt {
     number: number;
 }
@@ -155,8 +175,7 @@ export const getSubmittedAttempts = (attempts: Attempt[]) => {
         if (attempt.replacedBy !== null && attempt.extraGiven) {
             const extraAttempt = attempts.find(
                 (a) =>
-                    a.attemptNumber === attempt.replacedBy &&
-                    a.isExtraAttempt
+                    a.attemptNumber === attempt.replacedBy && a.isExtraAttempt
             );
             if (
                 extraAttempt &&

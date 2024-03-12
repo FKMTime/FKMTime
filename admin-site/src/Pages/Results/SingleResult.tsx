@@ -1,9 +1,17 @@
-import {useCallback, useEffect, useMemo, useState} from "react";
-import {useParams} from "react-router-dom";
-import {getResultById, reSubmitScorecardToWcaLive} from "../../logic/results";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { useParams } from "react-router-dom";
+import { getResultById, reSubmitScorecardToWcaLive } from "../../logic/results";
 import LoadingPage from "../../Components/LoadingPage";
-import {Result} from "../../logic/interfaces";
-import {Alert, AlertIcon, Box, Button, Heading, Text, useToast,} from "@chakra-ui/react";
+import { Result } from "../../logic/interfaces";
+import {
+    Alert,
+    AlertIcon,
+    Box,
+    Button,
+    Heading,
+    Text,
+    useToast,
+} from "@chakra-ui/react";
 import regions from "../../logic/regions";
 import AttemptsTable from "../../Components/Table/AttemptsTable";
 import {
@@ -14,10 +22,10 @@ import {
     getSubmittedAttempts,
     isThereADifferenceBetweenResults,
 } from "../../logic/utils";
-import {useAtom} from "jotai";
-import {competitionAtom} from "../../logic/atoms";
-import {resultToString} from "../../logic/resultFormatters";
-import {getCompetitionInfo} from "../../logic/competition";
+import { useAtom } from "jotai";
+import { competitionAtom } from "../../logic/atoms";
+import { resultToString } from "../../logic/resultFormatters";
+import { getCompetitionInfo } from "../../logic/competition";
 
 const SingleResult = () => {
     const { id } = useParams<{ id: string }>();
@@ -27,17 +35,13 @@ const SingleResult = () => {
     const standardAttempts = useMemo(() => {
         if (!result) return [];
         return (
-            result.attempts.filter(
-                (attempt) => !attempt.isExtraAttempt
-            ) || []
+            result.attempts.filter((attempt) => !attempt.isExtraAttempt) || []
         );
     }, [result]);
     const extraAttempts = useMemo(() => {
         if (!result) return [];
         return (
-            result.attempts.filter(
-                (attempt) => attempt.isExtraAttempt
-            ) || []
+            result.attempts.filter((attempt) => attempt.isExtraAttempt) || []
         );
     }, [result]);
     const submittedAttempts = useMemo(() => {

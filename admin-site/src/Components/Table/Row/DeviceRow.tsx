@@ -5,7 +5,7 @@ import { Device } from "../../../logic/interfaces";
 import Alert from "../../Alert";
 import EditDeviceModal from "../../Modal/EditDeviceModal";
 import { deleteDevice } from "../../../logic/devices.ts";
-import {prettyDeviceType} from "../../../logic/utils.ts";
+import { prettyDeviceType } from "../../../logic/utils.ts";
 
 interface deviceRowProps {
     device: Device;
@@ -59,9 +59,7 @@ const DeviceRow: React.FC<deviceRowProps> = ({ device, fetchData }) => {
                 <Td>{device.name}</Td>
                 <Td>{device.room.name}</Td>
                 <Td>{device.espId}</Td>
-                <Td>
-                    {prettyDeviceType(device.type)}
-                </Td>
+                <Td>{prettyDeviceType(device.type)}</Td>
                 <Td>
                     <IconButton
                         icon={<MdEdit />}

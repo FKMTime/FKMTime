@@ -1,15 +1,23 @@
-import {useEffect, useMemo, useState} from "react";
-import {Attendance as AttendanceType, Room} from "../../logic/interfaces";
-import {Box, FormControl, FormLabel, Heading, ListItem, Select, UnorderedList} from "@chakra-ui/react";
-import {Activity, Event, Room as WCIFRoom, Round} from "@wca/helpers";
-import {getCompetitionInfo} from "../../logic/competition.ts";
-import {competitionAtom} from "../../logic/atoms.ts";
-import {useAtom} from "jotai";
+import { useEffect, useMemo, useState } from "react";
+import { Attendance as AttendanceType, Room } from "../../logic/interfaces";
+import {
+    Box,
+    FormControl,
+    FormLabel,
+    Heading,
+    ListItem,
+    Select,
+    UnorderedList,
+} from "@chakra-ui/react";
+import { Activity, Event, Room as WCIFRoom, Round } from "@wca/helpers";
+import { getCompetitionInfo } from "../../logic/competition.ts";
+import { competitionAtom } from "../../logic/atoms.ts";
+import { useAtom } from "jotai";
 import events from "../../logic/events.ts";
 import LoadingPage from "../../Components/LoadingPage.tsx";
-import {getAllRooms} from "../../logic/rooms.ts";
-import {getAttendanceByGroupId} from "../../logic/attendance.ts";
-import {getAbsentPeople} from "../../logic/utils.ts";
+import { getAllRooms } from "../../logic/rooms.ts";
+import { getAttendanceByGroupId } from "../../logic/attendance.ts";
+import { getAbsentPeople } from "../../logic/utils.ts";
 
 const Attendance = () => {
     const [competition, setCompetition] = useAtom(competitionAtom);
@@ -51,17 +59,35 @@ const Attendance = () => {
 
     const absentScramblers = useMemo(() => {
         if (!competition) return [];
-        return getAbsentPeople(competition.wcif, presentScramblers, selectedRoom?.name || "", selectedGroup, "SCRAMBLER");
+        return getAbsentPeople(
+            competition.wcif,
+            presentScramblers,
+            selectedRoom?.name || "",
+            selectedGroup,
+            "SCRAMBLER"
+        );
     }, [competition, presentScramblers, selectedRoom?.name, selectedGroup]);
 
     const absentRunners = useMemo(() => {
         if (!competition) return [];
-        return getAbsentPeople(competition.wcif, presentRunners, selectedRoom?.name || "", selectedGroup, "RUNNER");
+        return getAbsentPeople(
+            competition.wcif,
+            presentRunners,
+            selectedRoom?.name || "",
+            selectedGroup,
+            "RUNNER"
+        );
     }, [competition, presentRunners, selectedRoom?.name, selectedGroup]);
 
     const absentJudges = useMemo(() => {
         if (!competition) return [];
-        return getAbsentPeople(competition.wcif, presentJudges, selectedRoom?.name || "", selectedGroup, "JUDGE");
+        return getAbsentPeople(
+            competition.wcif,
+            presentJudges,
+            selectedRoom?.name || "",
+            selectedGroup,
+            "JUDGE"
+        );
     }, [competition, presentJudges, selectedRoom?.name, selectedGroup]);
 
     useEffect(() => {
@@ -78,14 +104,16 @@ const Attendance = () => {
         }
     }, [competition, setCompetition]);
 
-    const handleGroupChange = async (event: React.ChangeEvent<HTMLSelectElement>) => {
+    const handleGroupChange = async (
+        event: React.ChangeEvent<HTMLSelectElement>
+    ) => {
         setSelectedGroup(event.target.value);
         const data = await getAttendanceByGroupId(event.target.value);
         setAttendance(data);
-    }
+    };
 
     if (!competition) {
-        return <LoadingPage/>;
+        return <LoadingPage />;
     }
 
     return (
@@ -96,11 +124,13 @@ const Attendance = () => {
                     <FormLabel>Room</FormLabel>
                     <Select
                         placeholder="Select room"
-                        _placeholder={{color: "white"}}
+                        _placeholder={{ color: "white" }}
                         value={selectedRoom?.id}
                         onChange={(event) => {
                             setSelectedRoom(
-                                rooms.find((room) => room.id === event?.target.value) || null
+                                rooms.find(
+                                    (room) => room.id === event?.target.value
+                                ) || null
                             );
                         }}
                     >
@@ -117,16 +147,22 @@ const Attendance = () => {
                             <FormLabel>Event</FormLabel>
                             <Select
                                 placeholder="Select event"
-                                _placeholder={{color: "white"}}
+                                _placeholder={{ color: "white" }}
                                 value={selectedEvent}
                                 onChange={(event) => {
                                     setSelectedEvent(event?.target.value);
-                                    setSelectedRound(event?.target.value + "-r1");
+                                    setSelectedRound(
+                                        event?.target.value + "-r1"
+                                    );
                                 }}
                             >
                                 {competition.wcif.events.map((event: Event) => (
                                     <option key={event.id} value={event.id}>
-                                        {events.find((e) => e.id === event.id)?.name}
+                                        {
+                                            events.find(
+                                                (e) => e.id === event.id
+                                            )?.name
+                                        }
                                     </option>
                                 ))}
                             </Select>
@@ -136,19 +172,27 @@ const Attendance = () => {
                                 <FormLabel>Round</FormLabel>
                                 <Select
                                     placeholder="Select round"
-                                    _placeholder={{color: "white"}}
+                                    _placeholder={{ color: "white" }}
                                     value={selectedRound}
                                     onChange={(event) =>
                                         setSelectedRound(event?.target.value)
                                     }
                                 >
                                     {competition.wcif.events
-                                        .find((event: Event) => event.id === selectedEvent)
-                                        ?.rounds.map((round: Round, i: number) => (
-                                            <option key={round.id} value={round.id}>
-                                                {i + 1}
-                                            </option>
-                                        ))}
+                                        .find(
+                                            (event: Event) =>
+                                                event.id === selectedEvent
+                                        )
+                                        ?.rounds.map(
+                                            (round: Round, i: number) => (
+                                                <option
+                                                    key={round.id}
+                                                    value={round.id}
+                                                >
+                                                    {i + 1}
+                                                </option>
+                                            )
+                                        )}
                                 </Select>
                             </FormControl>
                         )}
@@ -157,18 +201,20 @@ const Attendance = () => {
                                 <FormLabel>Group</FormLabel>
                                 <Select
                                     placeholder="Select group"
-                                    _placeholder={{color: "white"}}
+                                    _placeholder={{ color: "white" }}
                                     value={selectedGroup}
                                     onChange={handleGroupChange}
                                 >
-                                    {groups.map((group: Activity, i: number) => (
-                                        <option
-                                            key={group.activityCode}
-                                            value={group.activityCode}
-                                        >
-                                            {i + 1}
-                                        </option>
-                                    ))}
+                                    {groups.map(
+                                        (group: Activity, i: number) => (
+                                            <option
+                                                key={group.activityCode}
+                                                value={group.activityCode}
+                                            >
+                                                {i + 1}
+                                            </option>
+                                        )
+                                    )}
                                 </Select>
                             </FormControl>
                         )}
@@ -188,7 +234,9 @@ const Attendance = () => {
                         <Heading size="md">Absent</Heading>
                         <UnorderedList>
                             {absentScramblers.map((s) => (
-                                <ListItem key={s.registrantId}>{s.name}</ListItem>
+                                <ListItem key={s.registrantId}>
+                                    {s.name}
+                                </ListItem>
                             ))}
                         </UnorderedList>
                     </Box>
@@ -203,7 +251,9 @@ const Attendance = () => {
                         <Heading size="md">Absent</Heading>
                         <UnorderedList>
                             {absentRunners.map((s) => (
-                                <ListItem key={s.registrantId}>{s.name}</ListItem>
+                                <ListItem key={s.registrantId}>
+                                    {s.name}
+                                </ListItem>
                             ))}
                         </UnorderedList>
                     </Box>
@@ -212,13 +262,17 @@ const Attendance = () => {
                         <Heading size="md">Present</Heading>
                         <UnorderedList>
                             {presentJudges.map((s) => (
-                                <ListItem key={s.id}>{s.person.name} - station {s.device.name}</ListItem>
+                                <ListItem key={s.id}>
+                                    {s.person.name} - station {s.device.name}
+                                </ListItem>
                             ))}
                         </UnorderedList>
                         <Heading size="md">Absent</Heading>
                         <UnorderedList>
                             {absentJudges.map((s) => (
-                                <ListItem key={s.registrantId}>{s.name}</ListItem>
+                                <ListItem key={s.registrantId}>
+                                    {s.name}
+                                </ListItem>
                             ))}
                         </UnorderedList>
                     </Box>
