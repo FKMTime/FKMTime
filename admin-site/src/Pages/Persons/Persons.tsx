@@ -80,12 +80,6 @@ const Persons = (): JSX.Element => {
             {HAS_WRITE_ACCESS.includes(userInfo.role) &&
                 personsWithoutCardAssigned !== 0 && (
                     <>
-                        <Alert status="info" color="black">
-                            <AlertIcon />
-                            Currently it is not possible to add a person during
-                            the competition. It is not recommended to have on
-                            the spot registration allowed.
-                        </Alert>
                         <Alert status="error" color="black">
                             <AlertIcon />
                             There are {personsWithoutCardAssigned} persons

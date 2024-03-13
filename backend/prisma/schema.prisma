@@ -20,7 +20,7 @@ model Account {
 
 model Person {
   id                  String       @id @default(uuid())
-  registrantId        Int?
+  registrantId        Int?         @unique
   name                String
   wcaId               String?
   countryIso2         String?

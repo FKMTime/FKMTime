@@ -50,6 +50,31 @@ export class CompetitionService {
   async updateWcif(wcaId: string) {
     const wcifRes = await fetch(`${WCA_ORIGIN}${wcaId}/wcif/public`);
     const wcif = await wcifRes.json();
+    const transactions = [];
+
+    wcif.persons.forEach((person: Person) => {
+      transactions.push(
+        this.prisma.person.upsert({
+          where: {
+            registrantId: person.registrantId,
+          },
+          update: {
+            name: person.name,
+            wcaId: person.wcaId,
+            gender: person.gender,
+            countryIso2: person.countryIso2,
+          },
+          create: {
+            name: person.name,
+            wcaId: person.wcaId,
+            registrantId: person.registrantId,
+            gender: person.gender,
+            countryIso2: person.countryIso2,
+          },
+        }),
+      );
+    });
+    await this.prisma.$transaction(transactions);
     await this.prisma.competition.updateMany({
       where: { wcaId },
       data: {
