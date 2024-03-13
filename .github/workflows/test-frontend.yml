@@ -11,7 +11,7 @@ on:
 
 jobs:
   test_frontend:
-    name: Admin site frontend
+    name: Frontend
     runs-on: ubuntu-latest
     strategy:
       matrix:
