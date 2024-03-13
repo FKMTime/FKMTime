@@ -82,7 +82,7 @@ export class AttemptService {
     });
 
     if (data.submitToWcaLive) {
-        console.log("a");
+      console.log('a');
       const competition = await this.prisma.competition.findFirst();
       await this.resultService.enterAttemptToWcaLive(
         competition.wcaId,

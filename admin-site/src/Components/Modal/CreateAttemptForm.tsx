@@ -1,11 +1,20 @@
-import {Modal} from "./Modal.tsx";
-import {Box, Button, Checkbox, FormControl, FormLabel, Input, Select, useToast,} from "@chakra-ui/react";
-import {Device, Person} from "../../logic/interfaces.ts";
-import {useEffect, useState} from "react";
-import {getAllPersons} from "../../logic/persons.ts";
-import {createAttempt} from "../../logic/attempt.ts";
-import {getAllDevices} from "../../logic/devices.ts";
-import {TimeLimit} from "@wca/helpers";
+import { Modal } from "./Modal.tsx";
+import {
+    Box,
+    Button,
+    Checkbox,
+    FormControl,
+    FormLabel,
+    Input,
+    Select,
+    useToast,
+} from "@chakra-ui/react";
+import { Device, Person } from "../../logic/interfaces.ts";
+import { useEffect, useState } from "react";
+import { getAllPersons } from "../../logic/persons.ts";
+import { createAttempt } from "../../logic/attempt.ts";
+import { getAllDevices } from "../../logic/devices.ts";
+import { TimeLimit } from "@wca/helpers";
 
 interface CreateAttemptModalModalProps {
     isOpen: boolean;
@@ -20,15 +29,16 @@ const CreateAttemptModal: React.FC<CreateAttemptModalModalProps> = ({
     onClose,
     roundId,
     competitorId,
-    timeLimit
+    timeLimit,
 }) => {
     const toast = useToast();
     const [persons, setPersons] = useState<Person[]>([]);
     const [devices, setDevices] = useState<Device[]>([]);
     const [isLoading, setIsLoading] = useState<boolean>(false);
     const [selectedJudgeId, setSelectedJudgeId] = useState<string>("");
-    const [selectedCompetitorId, setSelectedCompetitorId] =
-        useState<string>(competitorId || "");
+    const [selectedCompetitorId, setSelectedCompetitorId] = useState<string>(
+        competitorId || ""
+    );
     const [isDelegate, setIsDelegate] = useState<boolean>(false);
     const [extraGiven, setExtraGiven] = useState<boolean>(false);
     const [isResolved, setIsResolved] = useState<boolean>(false);
@@ -40,7 +50,9 @@ const CreateAttemptModal: React.FC<CreateAttemptModalModalProps> = ({
             setPersons(data);
         });
         getAllDevices().then((data) => {
-            setDevices(data.filter((device: Device) => device.type === "STATION"));
+            setDevices(
+                data.filter((device: Device) => device.type === "STATION")
+            );
         });
     }, []);
 
@@ -58,11 +70,19 @@ const CreateAttemptModal: React.FC<CreateAttemptModalModalProps> = ({
             competitorId: selectedCompetitorId,
             judgeId: selectedJudgeId,
             deviceId: formData.get("deviceId") as string,
-            attemptNumber: formData.get("attemptNumber") ? parseInt(formData.get("attemptNumber") as string) : 0,
-            value: formData.get("value") ? parseInt(formData.get("value") as string) : 0,
-            penalty: formData.get("penalty") ? parseInt(formData.get("penalty") as string) : 0,
+            attemptNumber: formData.get("attemptNumber")
+                ? parseInt(formData.get("attemptNumber") as string)
+                : 0,
+            value: formData.get("value")
+                ? parseInt(formData.get("value") as string)
+                : 0,
+            penalty: formData.get("penalty")
+                ? parseInt(formData.get("penalty") as string)
+                : 0,
             comment: formData.get("comment") as string,
-            replacedBy: formData.get("replacedBy") ? parseInt(formData.get("replacedBy") as string) : 0,
+            replacedBy: formData.get("replacedBy")
+                ? parseInt(formData.get("replacedBy") as string)
+                : 0,
         };
         if (timeLimit) {
             if (data.value + data.penalty * 100 > timeLimit.centiseconds) {
@@ -98,7 +118,13 @@ const CreateAttemptModal: React.FC<CreateAttemptModalModalProps> = ({
 
     return (
         <Modal isOpen={isOpen} onClose={onClose} title="Create account">
-            <Box display="flex" flexDirection="column" gap="5" as="form" onSubmit={handleSubmit}>
+            <Box
+                display="flex"
+                flexDirection="column"
+                gap="5"
+                as="form"
+                onSubmit={handleSubmit}
+            >
                 <FormControl isRequired>
                     <FormLabel>Competitor</FormLabel>
                     <Select
@@ -131,7 +157,9 @@ const CreateAttemptModal: React.FC<CreateAttemptModalModalProps> = ({
                 <Checkbox
                     isChecked={isExtraAttempt}
                     onChange={(e) => setIsExtraAttempt(e.target.checked)}
-                >Is extra attempt</Checkbox>
+                >
+                    Is extra attempt
+                </Checkbox>
                 <FormControl isRequired>
                     <FormLabel>Time</FormLabel>
                     <Input
@@ -224,7 +252,9 @@ const CreateAttemptModal: React.FC<CreateAttemptModalModalProps> = ({
                         <Checkbox
                             isChecked={isResolved}
                             onChange={(e) => setIsResolved(e.target.checked)}
-                        >Is resolved</Checkbox>
+                        >
+                            Is resolved
+                        </Checkbox>
                         <Checkbox
                             isChecked={extraGiven}
                             onChange={(e) => setExtraGiven(e.target.checked)}
@@ -236,7 +266,9 @@ const CreateAttemptModal: React.FC<CreateAttemptModalModalProps> = ({
                 <Checkbox
                     isChecked={submitToWcaLive}
                     onChange={(e) => setSubmitToWcaLive(e.target.checked)}
-                >Submit to WCA Live</Checkbox>
+                >
+                    Submit to WCA Live
+                </Checkbox>
                 <Box
                     display="flex"
                     flexDirection="row"

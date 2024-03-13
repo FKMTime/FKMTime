@@ -27,9 +27,7 @@ export class AttemptController {
   }
 
   @Post('')
-  async createAttempt(
-    @Body() data: CreateAttemptDto,
-  ) {
+  async createAttempt(@Body() data: CreateAttemptDto) {
     return await this.attemptService.createAttempt(data);
   }
 

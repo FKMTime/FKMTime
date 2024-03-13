@@ -161,34 +161,37 @@ interface AttemptWithNumber extends Attempt {
 
 export const getSubmittedAttempts = (attempts: Attempt[]) => {
     const attemptsToReturn: AttemptWithNumber[] = [];
-    attempts.sort((a, b) => a.attemptNumber - b.attemptNumber).forEach((attempt) => {
-        if (
-            attempt.replacedBy === null &&
-            !attempt.isDelegate &&
-            !attempt.extraGiven &&
-            !attemptsToReturn.some((a) => a.id === attempt.id) &&
-            !attempt.isExtraAttempt
-        )
-            attemptsToReturn.push({
-                ...attempt,
-                number: attemptsToReturn.length + 1,
-            });
-        if (attempt.replacedBy !== null && attempt.extraGiven) {
-            const extraAttempt = attempts.find(
-                (a) =>
-                    a.attemptNumber === attempt.replacedBy && a.isExtraAttempt
-            );
+    attempts
+        .sort((a, b) => a.attemptNumber - b.attemptNumber)
+        .forEach((attempt) => {
             if (
-                extraAttempt &&
-                !attemptsToReturn.some((a) => a.id === extraAttempt.id)
-            ) {
+                attempt.replacedBy === null &&
+                !attempt.isDelegate &&
+                !attempt.extraGiven &&
+                !attemptsToReturn.some((a) => a.id === attempt.id) &&
+                !attempt.isExtraAttempt
+            )
                 attemptsToReturn.push({
-                    ...extraAttempt,
-                    number: attempt.attemptNumber,
+                    ...attempt,
+                    number: attemptsToReturn.length + 1,
                 });
+            if (attempt.replacedBy !== null && attempt.extraGiven) {
+                const extraAttempt = attempts.find(
+                    (a) =>
+                        a.attemptNumber === attempt.replacedBy &&
+                        a.isExtraAttempt
+                );
+                if (
+                    extraAttempt &&
+                    !attemptsToReturn.some((a) => a.id === extraAttempt.id)
+                ) {
+                    attemptsToReturn.push({
+                        ...extraAttempt,
+                        number: attempt.attemptNumber,
+                    });
+                }
             }
-        }
-    });
+        });
     return attemptsToReturn
         .sort((a, b) => a.number - b.number)
         .map((a) => a as Attempt);
