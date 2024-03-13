@@ -134,7 +134,7 @@ const Competition = () => {
         return (
             <Box display="flex" flexDirection="column" gap="5">
                 <Heading size="lg">Competition</Heading>
-                <Box display="flex" flexDirection="column" gap="5" width="20%">
+                <Box display="flex" flexDirection="column" gap="5">
                     <Input placeholder="Competition ID" ref={idRef} />
                     <Button onClick={handleImportCompetition}>Import</Button>
                 </Box>
@@ -154,7 +154,7 @@ const Competition = () => {
                     status="warning"
                     borderRadius="md"
                     color="black"
-                    width="20%"
+                    width={{ base: "100%", md: "20%" }}
                 >
                     <AlertIcon />
                     Remember to open round in WCA Live
@@ -165,7 +165,7 @@ const Competition = () => {
                             status="error"
                             borderRadius="md"
                             color="black"
-                            width="40%"
+                            width={{ base: "100%", md: "20%" }}
                         >
                             <AlertIcon />
                             You need to set the scoretaking token taken from WCA
@@ -173,7 +173,12 @@ const Competition = () => {
                         </Alert>
                     ))}
             </Box>
-            <Box display="flex" flexDirection="column" gap="5" width="20%">
+            <Box
+                display="flex"
+                flexDirection="column"
+                gap="5"
+                width={{ base: "100%", md: "20%" }}
+            >
                 <Button colorScheme="yellow" onClick={handleSync}>
                     Sync
                 </Button>
@@ -182,7 +187,7 @@ const Competition = () => {
                 display="flex"
                 flexDirection="column"
                 gap="5"
-                width="20%"
+                width={{ base: "100%", md: "20%" }}
                 as="form"
                 onSubmit={handleSubmit}
             >

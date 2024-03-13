@@ -144,7 +144,11 @@ const SingleResult = () => {
                     )?.name
                 }
             </Text>
-            <Button colorScheme="yellow" w="20%" onClick={handleResubmit}>
+            <Button
+                colorScheme="yellow"
+                width={{ base: "100%", md: "20%" }}
+                onClick={handleResubmit}
+            >
                 Resubmit scorecard to WCA Live
             </Button>
             {isDifferenceBetweenResults && (

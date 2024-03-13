@@ -3,6 +3,7 @@ import react from "@vitejs/plugin-react";
 import viteTsconfigPaths from "vite-tsconfig-paths";
 import svgrPlugin from "vite-plugin-svgr";
 import checker from "vite-plugin-checker";
+import {VitePWA} from "vite-plugin-pwa";
 
 export default defineConfig({
   plugins: [
@@ -16,5 +17,12 @@ export default defineConfig({
     }),
     viteTsconfigPaths(),
     svgrPlugin(),
+    VitePWA({ registerType: 'autoUpdate',
+      manifest: {
+        name: 'FKMTime',
+        short_name: 'FKMTime',
+        description: 'FKMTime',
+        theme_color: '#ffffff',
+      }})
   ],
 });

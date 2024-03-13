@@ -13,7 +13,7 @@ import LoadingPage from "../../Components/LoadingPage";
 import { getSettings, updateSettings } from "../../logic/settings";
 import ChangePasswordModal from "../../Components/Modal/ChangePasswordModal";
 
-const Settings = (): JSX.Element => {
+const Settings = () => {
     const toast = useToast();
     const [settings, setSettings] = useState<SettingsInterface | null>(null);
     const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -65,7 +65,7 @@ const Settings = (): JSX.Element => {
                 flexDirection="column"
                 gap={3}
                 as="form"
-                width="20%"
+                width={{ base: "100%", md: "20%" }}
                 mt={5}
                 onSubmit={handleSubmit}
             >

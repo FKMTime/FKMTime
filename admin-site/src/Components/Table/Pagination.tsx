@@ -77,7 +77,7 @@ const Pagination: React.FC<PaginationProps> = ({
                 </Box>
             )}
             {totalPages !== 0 && (
-                <Box width="5%" margin="auto" mt="5">
+                <Box width={{ base: "30%", md: "5%" }} margin="auto" mt="5">
                     <Select
                         value={pageSize}
                         onChange={handlePageSizeChange}

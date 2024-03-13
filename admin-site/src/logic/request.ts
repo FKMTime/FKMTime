@@ -1,6 +1,8 @@
 import { getToken } from "./auth";
 
-const BACKEND_URL = import.meta.env.PROD ? "/api/" : "http://localhost:5000/";
+const BACKEND_URL = import.meta.env.PROD
+    ? "/api/"
+    : "http://192.168.2.39:5000/";
 
 export const backendRequest = (
     path: string,

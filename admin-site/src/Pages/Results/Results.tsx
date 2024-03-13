@@ -166,23 +166,29 @@ const Results = (): JSX.Element => {
 
     return (
         <Box display="flex" flexDirection="column" gap="5">
-            <Box display="flex" flexDirection="row" gap="5">
-                {competition.wcif.events.map((event: Event) => (
-                    <IconButton
-                        key={event.id}
-                        aria-label={event.id}
-                        icon={
-                            <EventIcon
-                                eventId={event.id}
-                                selected={filters.eventId === event.id}
-                                size={20}
-                            />
-                        }
-                        onClick={() => handleEventChange(event.id)}
-                        justifyContent="center"
-                        alignItems="center"
-                    />
-                ))}
+            <Box
+                display="flex"
+                flexDirection={{ base: "column", md: "row" }}
+                gap="5"
+            >
+                <Box display="flex" flexDirection="row" gap="5">
+                    {competition.wcif.events.map((event: Event) => (
+                        <IconButton
+                            key={event.id}
+                            aria-label={event.id}
+                            icon={
+                                <EventIcon
+                                    eventId={event.id}
+                                    selected={filters.eventId === event.id}
+                                    size={20}
+                                />
+                            }
+                            onClick={() => handleEventChange(event.id)}
+                            justifyContent="center"
+                            alignItems="center"
+                        />
+                    ))}
+                </Box>
                 <Select
                     placeholder="Select round"
                     _placeholder={{ color: "white" }}
@@ -190,7 +196,7 @@ const Results = (): JSX.Element => {
                     onChange={(event) =>
                         setFilters({ ...filters, roundId: event.target.value })
                     }
-                    width="5%"
+                    width={{ base: "100%", md: "5%" }}
                 >
                     {competition.wcif.events
                         .find((event: Event) => event.id === filters.eventId)
@@ -203,7 +209,7 @@ const Results = (): JSX.Element => {
                 <Input
                     placeholder="Search"
                     _placeholder={{ color: "white" }}
-                    width="20%"
+                    width={{ base: "100%", md: "20%" }}
                     value={search}
                     onChange={handleSearch}
                 />
@@ -240,7 +246,7 @@ const Results = (): JSX.Element => {
                     {HAS_WRITE_ACCESS.includes(userInfo.role) && (
                         <Button
                             colorScheme="yellow"
-                            w="20%"
+                            width={{ base: "100%", md: "20%" }}
                             onClick={handleResubmitRound}
                         >
                             Resubmit round results to WCA Live

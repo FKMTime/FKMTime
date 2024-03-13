@@ -1,31 +1,19 @@
 import {
     Box,
-    Button,
-    Icon,
-    Image,
-    Link,
-    Text,
+    Circle,
+    Drawer,
+    DrawerBody,
+    DrawerCloseButton,
+    DrawerContent,
+    DrawerOverlay,
     useToast,
 } from "@chakra-ui/react";
-import {
-    MdBook,
-    MdHome,
-    MdLogout,
-    MdPerson,
-    MdPersonAdd,
-    MdRoom,
-    MdSettings,
-    MdTimer,
-} from "react-icons/md";
-import SidebarElement from "../Components/SidebarElement";
-import { IoMdTrophy } from "react-icons/io";
-import React from "react";
+import React, { useState } from "react";
 import { UserInfo } from "../logic/interfaces";
 import { useNavigate } from "react-router-dom";
 import { logout } from "../logic/auth";
-import logo from "../assets/logo.svg";
-import { FaClipboardList, FaGift, FaGithub } from "react-icons/fa";
-import { HAS_WRITE_ACCESS } from "../logic/accounts.ts";
+import SidebarContent from "./SidebarContent.tsx";
+import { MdMenu } from "react-icons/md";
 
 interface SidebarProps {
     user: UserInfo;
@@ -34,6 +22,7 @@ interface SidebarProps {
 const Sidebar: React.FC<SidebarProps> = ({ user }): JSX.Element => {
     const navigate = useNavigate();
     const toast = useToast();
+    const [isDrawerOpen, setDrawerOpen] = useState<boolean>(false);
 
     const handleLogout = () => {
         logout();
@@ -46,95 +35,53 @@ const Sidebar: React.FC<SidebarProps> = ({ user }): JSX.Element => {
         });
         navigate("/auth/login");
     };
+    const toggleDrawer = () => {
+        setDrawerOpen(!isDrawerOpen);
+    };
 
     return (
-        <Box
-            height="100vw"
-            backgroundColor="gray.600"
-            width="20vh"
-            alignItems="center"
-            padding="5"
-            display="flex"
-            flexDirection="column"
-            gap="5"
-        >
-            <Image src={logo} alt="Logo" width="100%" />
-            <Text color="white">Hello {user.username}!</Text>
-            <SidebarElement name="Home" icon={<MdHome />} link="/" />
-            {user.role === "ADMIN" && (
-                <>
-                    <SidebarElement
-                        name="Accounts"
-                        icon={<MdPersonAdd />}
-                        link="/accounts"
-                    />
-                    <SidebarElement
-                        name="Devices"
-                        icon={<MdSettings />}
-                        link="/devices"
-                    />
-                    <SidebarElement
-                        name="Competition"
-                        icon={<IoMdTrophy />}
-                        link="/competition"
-                    />
-                </>
-            )}
-            {HAS_WRITE_ACCESS.includes(user.role) && (
-                <>
-                    <SidebarElement
-                        name="Rooms"
-                        icon={<MdRoom />}
-                        link="/rooms"
-                    />
-                </>
-            )}
-            <SidebarElement
-                name="Persons"
-                icon={<MdPerson />}
-                link="/persons"
-            />
-            <SidebarElement
-                name="Attendance"
-                icon={<FaClipboardList />}
-                link="/attendance"
-            />
-            <SidebarElement
-                name="Giftpacks"
-                icon={<FaGift />}
-                link="/giftpacks"
-            />
-            <SidebarElement name="Results" icon={<MdTimer />} link="/results" />
-            <SidebarElement
-                name="Settings"
-                icon={<MdSettings />}
-                link="/settings"
-            />
-            <SidebarElement
-                name="Tutorial"
-                icon={<MdBook />}
-                link="/tutorial"
-            />
-            <Button
-                leftIcon={<MdLogout />}
-                colorScheme="teal"
-                variant="solid"
-                rounded="20"
-                width="100%"
-                textAlign="center"
-                onClick={handleLogout}
+        <>
+            <Circle
+                position="fixed"
+                display={{ base: "block", md: "none" }}
+                top="1"
+                right="1"
+                backgroundColor="teal.500"
+                fontSize="3rem"
+                color="white"
+                p={2}
+                size="4rem"
+                zIndex={100}
+                onClick={toggleDrawer}
+                cursor="pointer"
             >
-                Logout
-            </Button>
-            <Link href="https://github.com/maxidragon/FKMTime" isExternal>
-                <Icon
-                    as={FaGithub}
-                    color="white"
-                    boxSize="10"
-                    _hover={{ opacity: 0.8 }}
-                />
-            </Link>
-        </Box>
+                <MdMenu />
+            </Circle>
+            <Box
+                height="100vh"
+                width={{ base: "100%", md: "20vh" }}
+                display={{ base: "none", md: "flex" }}
+            >
+                <SidebarContent user={user} handleLogout={handleLogout} />
+            </Box>
+            <Drawer
+                isOpen={isDrawerOpen}
+                placement="left"
+                onClose={toggleDrawer}
+            >
+                <DrawerOverlay />
+                <DrawerContent backgroundColor="gray.600" width="100vh">
+                    <DrawerCloseButton color="white" />
+                    <DrawerBody>
+                        <SidebarContent
+                            user={user}
+                            handleLogout={handleLogout}
+                            toggleDrawer={toggleDrawer}
+                        />
+                    </DrawerBody>
+                </DrawerContent>
+            </Drawer>
+        </>
     );
 };
 

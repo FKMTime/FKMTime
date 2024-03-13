@@ -5,13 +5,15 @@ interface SidebarElementProps {
     name: string;
     icon: React.ReactElement;
     link: string;
+    onClick?: () => void;
 }
 
 const SidebarElement: React.FC<SidebarElementProps> = ({
     name,
     icon,
     link,
-}): JSX.Element => {
+    onClick,
+}) => {
     const navigate = useNavigate();
     return (
         <Button
@@ -21,7 +23,12 @@ const SidebarElement: React.FC<SidebarElementProps> = ({
             rounded="20"
             width="100%"
             textAlign="center"
-            onClick={() => navigate(link)}
+            onClick={() => {
+                if (onClick) {
+                    onClick();
+                }
+                navigate(link);
+            }}
         >
             {name}
         </Button>

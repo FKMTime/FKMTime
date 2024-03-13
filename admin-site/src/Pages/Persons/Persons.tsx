@@ -80,7 +80,11 @@ const Persons = (): JSX.Element => {
             {HAS_WRITE_ACCESS.includes(userInfo.role) &&
                 personsWithoutCardAssigned !== 0 && (
                     <>
-                        <Alert status="error" color="black">
+                        <Alert
+                            status="error"
+                            color="black"
+                            width={{ base: "100%", md: "40%" }}
+                        >
                             <AlertIcon />
                             There are {personsWithoutCardAssigned} persons
                             without a card assigned. Please assign a card to
@@ -91,7 +95,7 @@ const Persons = (): JSX.Element => {
                                 navigate("/cards");
                             }}
                             colorScheme="yellow"
-                            width="20%"
+                            width={{ base: "100%", md: "20%" }}
                         >
                             Assign cards
                         </Button>
@@ -102,13 +106,14 @@ const Persons = (): JSX.Element => {
                 flexDirection="row"
                 justifyContent="space-between"
                 marginRight="5"
+                gap="5"
             >
                 <Input
                     placeholder="Search"
                     _placeholder={{ color: "white" }}
                     value={search}
                     onChange={handleSearch}
-                    width="40%"
+                    width={{ base: "100%", md: "40%" }}
                 />
                 <IconButton
                     icon={<MdAdd />}
