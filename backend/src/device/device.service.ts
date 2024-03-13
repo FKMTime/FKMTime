@@ -7,11 +7,27 @@ export class DeviceService {
   constructor(private readonly prisma: DbService) {}
 
   async getAllDevices() {
-    return this.prisma.device.findMany({
+    const devices = await this.prisma.device.findMany({
       include: {
         room: true,
       },
     });
+    const transactions = [];
+
+    for (const device of devices) {
+      transactions.push(
+        this.prisma.attempt.count({
+          where: {
+            deviceId: device.id,
+          },
+        }),
+      );
+    }
+    const counts = await Promise.all(transactions);
+    return devices.map((device, index) => ({
+      ...device,
+      count: counts[index],
+    }));
   }
 
   async createDevice(data: DeviceDto) {

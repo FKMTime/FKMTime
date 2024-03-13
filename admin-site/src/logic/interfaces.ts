@@ -100,6 +100,7 @@ export interface Device {
     type: DeviceType;
     roomId: string;
     room: Room;
+    count?: number;
     createdAt: Date;
     updatedAt: Date;
 }

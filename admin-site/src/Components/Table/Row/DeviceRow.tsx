@@ -60,6 +60,7 @@ const DeviceRow: React.FC<deviceRowProps> = ({ device, fetchData }) => {
                 <Td>{device.room.name}</Td>
                 <Td>{device.espId}</Td>
                 <Td>{prettyDeviceType(device.type)}</Td>
+                <Td>{device.count}</Td>
                 <Td>
                     <IconButton
                         icon={<MdEdit />}
