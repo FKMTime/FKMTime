@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { getCompetitionInfo } from "../../logic/competition";
 import LoadingPage from "../../Components/LoadingPage";
 import {
-    Box,
+    Box, Button,
     FormControl,
     FormLabel,
     Heading,
@@ -117,6 +117,9 @@ const Home = (): JSX.Element => {
                     />
                 ))}
             </Box>
+            <Button colorScheme="yellow" onClick={() => navigate("/incidents")} width={{base: "100%", md: "20%"}}>
+                Incidents
+            </Button>
             <Box display="flex" flexDirection="row" gap="5">
                 <FormControl width="fit-content">
                     <FormLabel>Date</FormLabel>

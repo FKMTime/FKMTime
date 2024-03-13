@@ -185,6 +185,7 @@ export class AttemptService {
         value: true,
         solvedAt: true,
         createdAt: true,
+        judgeId: true,
         judge: {
           select: {
             id: true,

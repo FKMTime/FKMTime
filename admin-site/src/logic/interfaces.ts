@@ -93,6 +93,11 @@ export interface Attempt {
     device: Device;
 }
 
+export interface Incident extends Attempt {
+    result: Result;
+    shouldResubmitToWcaLive: boolean;
+}
+
 export interface Device {
     id: string;
     name: string;

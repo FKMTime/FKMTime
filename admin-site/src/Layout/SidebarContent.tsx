@@ -11,7 +11,7 @@ import {
     MdSettings,
     MdTimer,
 } from "react-icons/md";
-import { IoMdTrophy } from "react-icons/io";
+import { IoMdTrophy, IoMdWarning } from "react-icons/io";
 import { HAS_WRITE_ACCESS } from "../logic/accounts.ts";
 import { FaClipboardList, FaGift, FaGithub } from "react-icons/fa";
 import { UserInfo } from "../logic/interfaces.ts";
@@ -44,6 +44,9 @@ const SidebarContent: React.FC<Props> = ({
                 link="/"
                 onClick={toggleDrawer}
             />
+            {HAS_WRITE_ACCESS.includes(user.role) && (
+                <SidebarElement name="Incidents" icon={<IoMdWarning />} link="/incidents" onClick={toggleDrawer} />
+            )}
             {user.role === "ADMIN" && (
                 <>
                     <SidebarElement
