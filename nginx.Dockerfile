@@ -1,40 +1,12 @@
-## BUILD FLUTTER ##
-FROM debian:latest AS delegate-app-builder
-
-RUN apt-get update
-RUN apt-get install -y curl git wget unzip libgconf-2-4 gdb libstdc++6 libglu1-mesa fonts-droid-fallback python3
-RUN apt-get clean
-
-ENV DEBIAN_FRONTEND=dialog
-ENV PUB_HOSTED_URL=https://pub.flutter-io.cn
-ENV FLUTTER_STORAGE_BASE_URL=https://storage.flutter-io.cn
-
-RUN git clone --branch master --single-branch https://github.com/flutter/flutter.git /usr/local/flutter
-
-ENV PATH="/usr/local/flutter/bin:/usr/local/flutter/bin/cache/dart-sdk/bin:${PATH}"
-
-RUN flutter doctor -v
-
-WORKDIR /app
-COPY ./delegate_app .
-
-RUN touch .env
-
-RUN flutter pub get
-RUN flutter build web
-## END BUILD ##
-
 ## BUILD FRONTEND ##
 FROM node:18 AS frontend-app-builder
 
 WORKDIR /app
-COPY ./admin-site/package*.json ./
+COPY frontend/package*.json ./
 RUN npm install
-COPY ./admin-site .
+COPY frontend .
 RUN npm run build
 ## END BUILD ##
-
-
 
 ## NGINX ##
 FROM nginx:alpine
@@ -46,7 +18,6 @@ RUN openssl dhparam -out /etc/ssl/certs/dhparam.pem 2048
 
 RUN mkdir -p /etc/nginx/snippets
 
-COPY --from=delegate-app-builder /app/build/web /delegate
 COPY --from=frontend-app-builder /app/dist /frontend
 
 EXPOSE 80

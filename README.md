@@ -69,7 +69,7 @@ The server will be accessible at localhost:5000
 
 - Navigate into admin-site directory
 ```bash
-cd admin-site
+cd frontend
 ```
 
 - Install dependencies

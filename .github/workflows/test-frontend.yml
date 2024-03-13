@@ -6,7 +6,7 @@ on:
     branches:
       - main
     paths:
-      - 'admin-site/**'
+      - 'frontend/**'
       - '.github/workflows/test-frontend.yml'
 
 jobs:
@@ -22,16 +22,16 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node-version }}
-          cache-dependency-path: "admin-site"
+          cache-dependency-path: "frontend"
       - name: Install dependencies
-        working-directory: 'admin-site'
+        working-directory: 'frontend'
         run: npm ci
       - name: Run ESlint
-        working-directory: 'admin-site'
+        working-directory: 'frontend'
         run: npm run lint
       - name: Check formatting
-        working-directory: 'admin-site'
+        working-directory: 'frontend'
         run: npm run format:check
       - name: Build frontend
-        working-directory: 'admin-site'
+        working-directory: 'frontend'
         run: npm run build
