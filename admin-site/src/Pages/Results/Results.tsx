@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { Competition, Result } from "../../logic/interfaces";
+import {useCallback, useEffect, useMemo, useState} from "react";
+import {Competition, Result} from "../../logic/interfaces";
 import {
     Box,
     Button,
@@ -13,26 +13,29 @@ import {
     getResultsByRoundId,
     reSubmitRoundToWcaLive,
 } from "../../logic/results";
-import { getCompetitionInfo } from "../../logic/competition";
-import { useNavigate } from "react-router-dom";
+import {getCompetitionInfo} from "../../logic/competition";
+import {useNavigate} from "react-router-dom";
 import LoadingPage from "../../Components/LoadingPage";
 import EventIcon from "../../Components/Icons/EventIcon";
-import { Event, Round } from "@wca/helpers";
+import {Event, Round} from "@wca/helpers";
 import ResultsTable from "../../Components/Table/ResultsTable";
-import { resultToString } from "../../logic/resultFormatters";
+import {resultToString} from "../../logic/resultFormatters";
 import {
     getCutoffByRoundId,
     getLimitByRoundId,
     getNumberOfAttemptsForRound,
 } from "../../logic/utils";
 import Alert from "../../Components/Alert";
-import { getUserInfo } from "../../logic/auth.ts";
-import { HAS_WRITE_ACCESS } from "../../logic/accounts.ts";
+import {getUserInfo} from "../../logic/auth.ts";
+import {HAS_WRITE_ACCESS} from "../../logic/accounts.ts";
+import {MdAdd} from "react-icons/md";
+import CreateAttemptModal from "../../Components/Modal/CreateAttemptForm.tsx";
 
 interface ResultsFilters {
     eventId: string;
     roundId: string;
 }
+
 const Results = (): JSX.Element => {
     const toast = useToast();
     const userInfo = getUserInfo();
@@ -43,6 +46,7 @@ const Results = (): JSX.Element => {
         eventId: "",
         roundId: "",
     });
+    const [isOpenCreateAttemptModal, setIsOpenCreateAttemptModal] = useState<boolean>(false);
     const [search, setSearch] = useState<string>("");
     const cutoff = useMemo(() => {
         if (!competition) {
@@ -143,6 +147,11 @@ const Results = (): JSX.Element => {
         }
     };
 
+    const handleCloseCreateAttemptModal = () => {
+        fetchData(filters.roundId);
+        setIsOpenCreateAttemptModal(false);
+    };
+
     useEffect(() => {
         fetchCompetition();
     }, [fetchCompetition]);
@@ -158,7 +167,7 @@ const Results = (): JSX.Element => {
     }, [competition, filters.roundId]);
 
     if (!competition || !results) {
-        return <LoadingPage />;
+        return <LoadingPage/>;
     }
 
     return (
@@ -182,10 +191,10 @@ const Results = (): JSX.Element => {
                 ))}
                 <Select
                     placeholder="Select round"
-                    _placeholder={{ color: "white" }}
+                    _placeholder={{color: "white"}}
                     value={filters.roundId}
                     onChange={(event) =>
-                        setFilters({ ...filters, roundId: event.target.value })
+                        setFilters({...filters, roundId: event.target.value})
                     }
                     width="5%"
                 >
@@ -199,37 +208,53 @@ const Results = (): JSX.Element => {
                 </Select>
                 <Input
                     placeholder="Search"
-                    _placeholder={{ color: "white" }}
+                    _placeholder={{color: "white"}}
                     width="20%"
                     value={search}
                     onChange={handleSearch}
                 />
             </Box>
-            <Box display="flex" flexDirection="column" gap="5">
-                <Text>
-                    Cutoff:{" "}
-                    {cutoff
-                        ? `${resultToString(cutoff.attemptResult)} (${cutoff.numberOfAttempts} attempts)`
-                        : "None"}
-                </Text>
-                <Text>
-                    Limit:{" "}
-                    {limit
-                        ? `${resultToString(limit.centiseconds)} ${limit.cumulativeRoundIds.length > 0 ? "(cumulative)" : ""}`
-                        : "None"}
-                </Text>
-                <Text>Attempts: {maxAttempts}</Text>
-                {HAS_WRITE_ACCESS.includes(userInfo.role) && (
-                    <Button
-                        colorScheme="yellow"
-                        w="20%"
-                        onClick={handleResubmitRound}
-                    >
-                        Resubmit round results to WCA Live
-                    </Button>
-                )}
-            </Box>
-            <ResultsTable results={results} />
+            {filters.roundId && (
+                <Box display="flex" flexDirection="column" gap="5">
+                    <IconButton
+                        icon={<MdAdd/>}
+                        aria-label="Add"
+                        bg="white"
+                        color="black"
+                        rounded="20"
+                        width="5"
+                        height="10"
+                        _hover={{
+                            background: "white",
+                            color: "gray.700",
+                        }}
+                        onClick={() => setIsOpenCreateAttemptModal(true)}
+                    />
+                    <Text>
+                        Cutoff:{" "}
+                        {cutoff
+                            ? `${resultToString(cutoff.attemptResult)} (${cutoff.numberOfAttempts} attempts)`
+                            : "None"}
+                    </Text>
+                    <Text>
+                        Limit:{" "}
+                        {limit
+                            ? `${resultToString(limit.centiseconds)} ${limit.cumulativeRoundIds.length > 0 ? "(cumulative)" : ""}`
+                            : "None"}
+                    </Text>
+                    <Text>Attempts: {maxAttempts}</Text>
+                    {HAS_WRITE_ACCESS.includes(userInfo.role) && (
+                        <Button
+                            colorScheme="yellow"
+                            w="20%"
+                            onClick={handleResubmitRound}
+                        >
+                            Resubmit round results to WCA Live
+                        </Button>
+                    )}
+                </Box>
+            )}
+            <ResultsTable results={results}/>
             <Alert
                 isOpen={openConfirmation}
                 onCancel={handleCancel}
@@ -237,6 +262,8 @@ const Results = (): JSX.Element => {
                 title="Resubmit results"
                 description="Are you sure you want to override results from WCA Live?"
             />
+            <CreateAttemptModal isOpen={isOpenCreateAttemptModal} onClose={handleCloseCreateAttemptModal}
+                                roundId={filters.roundId} timeLimit={limit!}/>
         </Box>
     );
 };

@@ -11,8 +11,47 @@ export class AttemptService {
     private readonly resultService: ResultService,
   ) {}
 
-  async createAttempt(resultId: string, data: CreateAttemptDto) {
-    return this.prisma.attempt.create({
+  async createAttempt(data: CreateAttemptDto) {
+    const resultFromDb = await this.prisma.result.findFirst({
+      where: {
+        personId: data.competitorId,
+        roundId: data.roundId,
+      },
+      select: {
+        id: true,
+        roundId: true,
+      },
+    });
+    if (!resultFromDb) {
+      await this.prisma.result.create({
+        data: {
+          person: {
+            connect: {
+              id: data.competitorId,
+            },
+          },
+          eventId: data.roundId.split('-')[0],
+          roundId: data.roundId,
+        },
+      });
+    }
+
+    const result = await this.prisma.result.findFirst({
+      where: {
+        personId: data.competitorId,
+        roundId: data.roundId,
+      },
+      select: {
+        id: true,
+        person: {
+          select: {
+            registrantId: true,
+          },
+        },
+      },
+    });
+
+    await this.prisma.attempt.create({
       data: {
         attemptNumber: data.attemptNumber,
         value: data.value,
@@ -28,7 +67,7 @@ export class AttemptService {
             id: data.judgeId,
           },
         },
-        replacedBy: data.replacedBy,
+        replacedBy: data.replacedBy ? data.replacedBy : null,
         isDelegate: data.isDelegate,
         isResolved: data.isResolved,
         comment: data.comment,
@@ -36,11 +75,28 @@ export class AttemptService {
         extraGiven: data.extraGiven,
         result: {
           connect: {
-            id: resultId,
+            id: result.id,
           },
         },
       },
     });
+
+    if (data.submitToWcaLive) {
+        console.log("a");
+      const competition = await this.prisma.competition.findFirst();
+      await this.resultService.enterAttemptToWcaLive(
+        competition.wcaId,
+        competition.scoretakingToken,
+        data.roundId.split('-')[0],
+        parseInt(data.roundId.split('-r')[1]),
+        result.person.registrantId,
+        data.attemptNumber,
+        data.penalty * 100 + data.value,
+      );
+    }
+    return {
+      message: 'Attempt created successfully',
+    };
   }
 
   async updateAttempt(id: string, data: UpdateAttemptDto) {

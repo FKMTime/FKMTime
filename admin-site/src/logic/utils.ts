@@ -161,9 +161,10 @@ interface AttemptWithNumber extends Attempt {
 
 export const getSubmittedAttempts = (attempts: Attempt[]) => {
     const attemptsToReturn: AttemptWithNumber[] = [];
-    attempts.forEach((attempt) => {
+    attempts.sort((a, b) => a.attemptNumber - b.attemptNumber).forEach((attempt) => {
         if (
             attempt.replacedBy === null &&
+            !attempt.isDelegate &&
             !attempt.extraGiven &&
             !attemptsToReturn.some((a) => a.id === attempt.id) &&
             !attempt.isExtraAttempt

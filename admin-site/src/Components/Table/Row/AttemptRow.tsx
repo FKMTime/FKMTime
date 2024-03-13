@@ -78,7 +78,9 @@ const AttemptRow: React.FC<AttemptRowProps> = ({
                         ? "DNS"
                         : attempt.penalty === -1
                           ? `DNF(${resultToString(attempt.value)})`
-                          : resultToString(attemptValueWithPenalty)}
+                          : attempt.value === 0
+                            ? "None"
+                            : resultToString(attemptValueWithPenalty)}
                 </Td>
                 {showExtraColumns && (
                     <>
@@ -97,7 +99,8 @@ const AttemptRow: React.FC<AttemptRowProps> = ({
                 )}
                 <Td>
                     {attempt.judge && attempt.judge.name}
-                    {attempt.judge.registrantId &&
+                    {attempt.judge &&
+                        attempt.judge.registrantId &&
                         ` (${attempt.judge.registrantId})`}
                 </Td>
                 <Td>{attempt.device && attempt.device.name}</Td>

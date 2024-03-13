@@ -18,6 +18,10 @@ export class CreateAttemptDto {
 
   @IsString()
   @IsNotEmpty()
+  roundId: string;
+
+  @IsString()
+  @IsNotEmpty()
   deviceId: string;
 
   @IsString()
@@ -31,8 +35,8 @@ export class CreateAttemptDto {
   @IsBoolean()
   isDelegate: boolean;
 
-  @IsInt()
-  competitorId: number;
+  @IsString()
+  competitorId: string;
 
   @IsBoolean()
   isExtraAttempt: boolean;
@@ -46,4 +50,8 @@ export class CreateAttemptDto {
   @IsString()
   @IsOptional()
   comment: string;
+
+  @IsBoolean()
+  @IsOptional()
+  submitToWcaLive: boolean;
 }

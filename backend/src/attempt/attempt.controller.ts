@@ -26,12 +26,11 @@ export class AttemptController {
     return this.attemptService.getUnresolvedAttempts();
   }
 
-  @Post(':resultId')
+  @Post('')
   async createAttempt(
-    @Param('resultId') resultId: string,
     @Body() data: CreateAttemptDto,
   ) {
-    return await this.attemptService.createAttempt(resultId, data);
+    return await this.attemptService.createAttempt(data);
   }
 
   @Get(':id')

@@ -1,14 +1,14 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { useParams } from "react-router-dom";
-import { getResultById, reSubmitScorecardToWcaLive } from "../../logic/results";
+import {useCallback, useEffect, useMemo, useState} from "react";
+import {useParams} from "react-router-dom";
+import {getResultById, reSubmitScorecardToWcaLive} from "../../logic/results";
 import LoadingPage from "../../Components/LoadingPage";
-import { Result } from "../../logic/interfaces";
+import {Result} from "../../logic/interfaces";
 import {
     Alert,
     AlertIcon,
     Box,
     Button,
-    Heading,
+    Heading, IconButton,
     Text,
     useToast,
 } from "@chakra-ui/react";
@@ -22,20 +22,23 @@ import {
     getSubmittedAttempts,
     isThereADifferenceBetweenResults,
 } from "../../logic/utils";
-import { useAtom } from "jotai";
-import { competitionAtom } from "../../logic/atoms";
-import { resultToString } from "../../logic/resultFormatters";
-import { getCompetitionInfo } from "../../logic/competition";
+import {useAtom} from "jotai";
+import {competitionAtom} from "../../logic/atoms";
+import {resultToString} from "../../logic/resultFormatters";
+import {getCompetitionInfo} from "../../logic/competition";
+import {MdAdd} from "react-icons/md";
+import CreateAttemptModal from "../../Components/Modal/CreateAttemptForm.tsx";
 
 const SingleResult = () => {
-    const { id } = useParams<{ id: string }>();
+    const {id} = useParams<{ id: string }>();
     const [competition, setCompetition] = useAtom(competitionAtom);
     const toast = useToast();
     const [result, setResult] = useState<Result | null>(null);
+    const [isOpenCreateAttemptModal, setIsOpenCreateAttemptModal] = useState<boolean>(false);
     const standardAttempts = useMemo(() => {
         if (!result) return [];
         return (
-            result.attempts.filter((attempt) => !attempt.isExtraAttempt) || []
+            result.attempts.filter((attempt) => !attempt.isExtraAttempt).sort((a, b) => a.attemptNumber - b.attemptNumber) || []
         );
     }, [result]);
     const extraAttempts = useMemo(() => {
@@ -110,11 +113,16 @@ const SingleResult = () => {
         }
     };
 
+    const handleCloseCreateAttemptModal = () => {
+        fetchData();
+        setIsOpenCreateAttemptModal(false);
+    };
+
     useEffect(() => {
         fetchData();
     }, [fetchData]);
 
-    if (!result) return <LoadingPage />;
+    if (!result) return <LoadingPage/>;
 
     return (
         <Box display="flex" flexDirection="column" gap={3}>
@@ -137,7 +145,7 @@ const SingleResult = () => {
             </Button>
             {isDifferenceBetweenResults && (
                 <Alert status="error" color="black">
-                    <AlertIcon />
+                    <AlertIcon/>
                     There is a difference between results in WCA Live and FKM.
                     Please check it manually, fix in FKM and resubmit scorecard
                     to WCA Live.
@@ -159,7 +167,23 @@ const SingleResult = () => {
                     : "None"}
             </Text>
             <Text fontSize="xl">Attempts: {maxAttempts}</Text>
-            <Heading mt={3}>Attempts</Heading>
+            <Box display="flex" gap="5" alignItems="center" >
+                <Heading mt={3}>Attempts</Heading>
+                <IconButton
+                    icon={<MdAdd/>}
+                    aria-label="Add"
+                    bg="white"
+                    color="black"
+                    rounded="20"
+                    width="5"
+                    height="10"
+                    _hover={{
+                        background: "white",
+                        color: "gray.700",
+                    }}
+                    onClick={() => setIsOpenCreateAttemptModal(true)}
+                />
+            </Box>
             <Heading size="md">List of attempts submitted to WCA Live</Heading>
             {submittedAttempts.length === 0 ? (
                 <Text>No attempts submitted to WCA Live</Text>
@@ -194,11 +218,13 @@ const SingleResult = () => {
 
             <Heading mt={3}>Important information</Heading>
             <Alert status="info" color="black">
-                <AlertIcon />
+                <AlertIcon/>
                 Extra attempts should NEVER have an case set to true - we don't
                 replace extra attempts by next extra, we only replace the
                 original one.
             </Alert>
+            <CreateAttemptModal isOpen={isOpenCreateAttemptModal} onClose={handleCloseCreateAttemptModal}
+                                roundId={result.roundId} competitorId={result.person.id} timeLimit={limit!} />
         </Box>
     );
 };

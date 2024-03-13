@@ -11,6 +11,7 @@ export const average = (attempts: Attempt[]) => {
 
 export const best = (attempts: Attempt[]) => {
     const sorted = attempts.slice().sort(compareAttemptResults);
+    if (sorted.length === 0) return 0;
     return sorted[0].value;
 };
 

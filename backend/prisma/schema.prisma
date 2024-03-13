@@ -78,6 +78,8 @@ model Result {
   Attempt   Attempt[]
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
+
+  @@unique([personId, roundId])
 }
 
 model Attempt {

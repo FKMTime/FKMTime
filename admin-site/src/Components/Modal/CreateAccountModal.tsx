@@ -19,7 +19,7 @@ interface CreateAccountModalProps {
 const CreateAccountModal: React.FC<CreateAccountModalProps> = ({
     isOpen,
     onClose,
-}): JSX.Element => {
+}) => {
     const toast = useToast();
     const [isLoading, setIsLoading] = useState(false);
 
