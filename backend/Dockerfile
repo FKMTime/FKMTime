@@ -1,4 +1,5 @@
 FROM node:18-alpine AS build
+RUN npm install -g @nestjs/cli
 
 WORKDIR /app
 ENV NODE_ENV production
