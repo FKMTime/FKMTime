@@ -29,6 +29,7 @@ import { resultToString } from "../../logic/resultFormatters";
 import { getCompetitionInfo } from "../../logic/competition";
 import { MdAdd } from "react-icons/md";
 import CreateAttemptModal from "../../Components/Modal/CreateAttemptForm.tsx";
+import SwapAttemptsModal from "../../Components/Modal/SwapAttemptsModal.tsx";
 
 const SingleResult = () => {
     const { id } = useParams<{ id: string }>();
@@ -36,6 +37,8 @@ const SingleResult = () => {
     const toast = useToast();
     const [result, setResult] = useState<Result | null>(null);
     const [isOpenCreateAttemptModal, setIsOpenCreateAttemptModal] =
+        useState<boolean>(false);
+    const [isOpenSwapAttemptsModal, setIsOpenSwapAttemptsModal] =
         useState<boolean>(false);
     const standardAttempts = useMemo(() => {
         if (!result) return [];
@@ -117,9 +120,10 @@ const SingleResult = () => {
         }
     };
 
-    const handleCloseCreateAttemptModal = () => {
+    const handleCloseModal = () => {
         fetchData();
         setIsOpenCreateAttemptModal(false);
+        setIsOpenSwapAttemptsModal(false);
     };
 
     useEffect(() => {
@@ -203,6 +207,13 @@ const SingleResult = () => {
                 />
             )}
             <Heading size="md">Standard</Heading>
+            <Button
+                colorScheme="yellow"
+                onClick={() => setIsOpenSwapAttemptsModal(true)}
+                width={{ base: "100%", md: "20%" }}
+            >
+                Swap attempts
+            </Button>
             {standardAttempts.length === 0 ? (
                 <Text>No attempts</Text>
             ) : (
@@ -233,10 +244,15 @@ const SingleResult = () => {
             </Alert>
             <CreateAttemptModal
                 isOpen={isOpenCreateAttemptModal}
-                onClose={handleCloseCreateAttemptModal}
+                onClose={handleCloseModal}
                 roundId={result.roundId}
                 competitorId={result.person.id}
                 timeLimit={limit!}
+            />
+            <SwapAttemptsModal
+                isOpen={isOpenSwapAttemptsModal}
+                onClose={handleCloseModal}
+                attempts={standardAttempts}
             />
         </Box>
     );

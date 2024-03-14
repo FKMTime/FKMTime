@@ -15,6 +15,7 @@ import { UpdateAttemptDto } from './dto/updateAttempt.dto';
 import { CreateAttemptDto } from './dto/createAttempt.dto';
 import { AdminOrDelegateGuard } from '../auth/guards/adminOrDelegate.guard';
 import { AuthGuard } from '@nestjs/passport';
+import { SwapAttemptsDto } from './dto/swapAttempts.dto';
 
 @UseGuards(AuthGuard('jwt'), AdminOrDelegateGuard)
 @Controller('attempt')
@@ -29,6 +30,14 @@ export class AttemptController {
   @Post('')
   async createAttempt(@Body() data: CreateAttemptDto) {
     return await this.attemptService.createAttempt(data);
+  }
+
+  @Put('swap')
+  async swapAttempts(@Body() data: SwapAttemptsDto) {
+    return await this.attemptService.swapAttempts(
+      data.firstAttemptId,
+      data.secondAttemptId,
+    );
   }
 
   @Get(':id')

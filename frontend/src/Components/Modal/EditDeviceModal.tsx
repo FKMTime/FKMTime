@@ -61,7 +61,7 @@ const EditDeviceModal: React.FC<EditDeviceModalProps> = ({
     }, []);
 
     return (
-        <Modal isOpen={isOpen} onClose={onClose} title="Create device">
+        <Modal isOpen={isOpen} onClose={onClose} title="Edit device">
             <Box
                 display="flex"
                 flexDirection="column"

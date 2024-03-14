@@ -35,6 +35,17 @@ export const getIncidentById = async (id: string): Promise<Incident> => {
     return await response.json();
 };
 
+export const swapAttempts = async (
+    firstAttemptId: string,
+    secondAttemptId: string
+) => {
+    const response = await backendRequest("attempt/swap", "PUT", true, {
+        firstAttemptId,
+        secondAttemptId,
+    });
+    return response.status;
+};
+
 export const updateAttempt = async (data: UpdateAttemptData) => {
     const response = await backendRequest(
         `attempt/${data.id}`,

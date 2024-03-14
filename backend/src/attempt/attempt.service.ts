@@ -99,11 +99,37 @@ export class AttemptService {
     };
   }
 
+  async swapAttempts(attemptId: string, secondAttemptId: string) {
+    const firstAttempt = await this.prisma.attempt.findUnique({
+      where: { id: attemptId },
+    });
+    const secondAttempt = await this.prisma.attempt.findUnique({
+      where: { id: secondAttemptId },
+    });
+
+    await this.prisma.attempt.update({
+      where: { id: attemptId },
+      data: {
+        attemptNumber: secondAttempt.attemptNumber,
+      },
+    });
+    await this.prisma.attempt.update({
+      where: { id: secondAttemptId },
+      data: {
+        attemptNumber: firstAttempt.attemptNumber,
+      },
+    });
+    return {
+      message: 'Attempts swapped successfully',
+    };
+  }
+
   async updateAttempt(id: string, data: UpdateAttemptDto) {
     if (!data.extraGiven || data.replacedBy === 0) {
       data.replacedBy = null;
     }
     const dataToUpdate = {
+      attemptNumber: data.attemptNumber,
       replacedBy: data.replacedBy,
       isDelegate: data.isDelegate,
       isResolved: data.isResolved,
