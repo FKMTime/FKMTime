@@ -168,9 +168,14 @@ export class CompetitionService {
         devices: true,
       },
     });
+    const allDevices = [];
+    rooms.forEach((room) => {
+      allDevices.push(...room.devices);
+    });
     return {
       shouldUpdate: competition.shouldUpdateDevices,
       releaseChannel: competition.releaseChannel,
+      devices: allDevices.map((d) => d.espId),
       rooms: rooms
         .filter((r) => r.currentGroupId)
         .map((room) => {
@@ -182,7 +187,9 @@ export class CompetitionService {
             id: room.id,
             name: room.name,
             useInspection: useInspection,
-            devices: room.devices.filter((d) => d.type === "STATION").map((device) => device.espId),
+            devices: room.devices
+              .filter((d) => d.type === 'STATION')
+              .map((device) => device.espId),
           };
         }),
     };

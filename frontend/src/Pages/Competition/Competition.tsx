@@ -9,7 +9,8 @@ import {
     FormLabel,
     Heading,
     IconButton,
-    Input, Select,
+    Input,
+    Select,
     Text,
     useToast,
 } from "@chakra-ui/react";
@@ -19,7 +20,10 @@ import {
     syncCompetition,
     updateCompetition,
 } from "../../logic/competition";
-import {Competition as CompetitionInterface, ReleaseChannel} from "../../logic/interfaces";
+import {
+    Competition as CompetitionInterface,
+    ReleaseChannel,
+} from "../../logic/interfaces";
 import LoadingPage from "../../Components/LoadingPage";
 import { IoMdEye, IoMdEyeOff } from "react-icons/io";
 
@@ -271,12 +275,16 @@ const Competition = () => {
                 </FormControl>
                 <FormControl display="flex" flexDirection="column" gap="2">
                     <FormLabel>Release channel</FormLabel>
-                    <Select value={competition.releaseChannel} onChange={(event) => {
-                        setCompetition({
-                            ...competition,
-                            releaseChannel: event?.target.value as ReleaseChannel,
-                        })
-                    }}>
+                    <Select
+                        value={competition.releaseChannel}
+                        onChange={(event) => {
+                            setCompetition({
+                                ...competition,
+                                releaseChannel: event?.target
+                                    .value as ReleaseChannel,
+                            });
+                        }}
+                    >
                         <option value="STABLE">Stable</option>
                         <option value="PRE_RELEASE">Pre-release</option>
                     </Select>
