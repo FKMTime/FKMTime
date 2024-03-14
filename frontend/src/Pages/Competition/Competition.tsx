@@ -172,6 +172,18 @@ const Competition = () => {
                             Live before the competition
                         </Alert>
                     ))}
+                {competition.scoretakingTokenUpdatedAt && new Date(competition.scoretakingTokenUpdatedAt).getTime() <
+                    new Date().getTime() - 7 * 24 * 60 * 60 * 1000 && (
+                    <Alert
+                        status="error"
+                        borderRadius="md"
+                        color="black"
+                        width={{ base: "100%", md: "20%" }}
+                    >
+                        <AlertIcon />
+                        The scoretaking token may have expired
+                    </Alert>
+                )}
             </Box>
             <Box
                 display="flex"

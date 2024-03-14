@@ -170,12 +170,21 @@ export class CompetitionService {
   }
 
   async updateCompetition(id: string, dto: UpdateCompetitionDto) {
+    const competition = await this.prisma.competition.findFirst({
+      where: {
+        id: id,
+      },
+    });
     return this.prisma.competition.update({
       where: {
         id: id,
       },
       data: {
         scoretakingToken: dto.scoretakingToken,
+        scoretakingTokenUpdatedAt:
+          competition.scoretakingToken !== dto.scoretakingToken
+            ? new Date()
+            : competition.scoretakingTokenUpdatedAt,
         usesWcaProduction: dto.usesWcaProduction,
         shouldUpdateDevices: dto.shouldUpdateDevices,
         useStableReleases: dto.useStableReleases,

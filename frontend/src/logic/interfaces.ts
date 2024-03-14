@@ -24,6 +24,7 @@ export interface Competition {
     shortName: string;
     countryIso2: string;
     scoretakingToken?: string;
+    scoretakingTokenUpdatedAt?: Date;
     wcif: WCIF;
     createdAt?: Date;
     updatedAt?: Date;

@@ -47,16 +47,17 @@ model Attendance {
 }
 
 model Competition {
-  id                  String  @id @default(uuid())
-  wcaId               String
-  usesWcaProduction   Boolean @default(true)
-  name                String
-  shortName           String
-  countryIso2         String?
-  shouldUpdateDevices Boolean @default(false)
-  useStableReleases   Boolean @default(true)
-  wcif                Json?
-  scoretakingToken    String?
+  id                        String    @id @default(uuid())
+  wcaId                     String
+  usesWcaProduction         Boolean   @default(true)
+  name                      String
+  shortName                 String
+  countryIso2               String?
+  shouldUpdateDevices       Boolean   @default(false)
+  useStableReleases         Boolean   @default(true)
+  wcif                      Json?
+  scoretakingToken          String?
+  scoretakingTokenUpdatedAt DateTime?
 }
 
 model Room {
