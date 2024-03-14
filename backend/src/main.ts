@@ -6,9 +6,42 @@ import * as passport from 'passport';
 
 dotenv.config();
 
+import { PrismaClient } from '@prisma/client';
+import { sha512 } from 'js-sha512';
+
+async function initDb() {
+  const prisma = new PrismaClient();
+
+  try {
+    const existingData = await prisma.account.findMany();
+
+    if (existingData.length === 0) {
+      console.log('Seeding database...');
+      const adminPassword = sha512('admin');
+      await prisma.account.upsert({
+        where: { username: 'admin' },
+        update: {},
+        create: {
+          email: 'admin@fkm.lan',
+          username: 'admin',
+          role: 'ADMIN',
+          password: adminPassword,
+        },
+      });
+    } else {
+      console.log('Database already seeded');
+    }
+  } catch (error) {
+    console.error(error);
+  } finally {
+    await prisma.$disconnect();
+  }
+}
+
 const { PORT = 5000 } = process.env;
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+  await initDb();
   app.use(passport.initialize());
   app.useGlobalPipes(
     new ValidationPipe({
