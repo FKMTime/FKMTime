@@ -11,7 +11,7 @@ services:
       - '5000:5000'
     restart: unless-stopped
     environment:
-      - DATABASE_URL=mysql://root@database:3306/fkm_time
+      - DATABASE_URL=postgres://root:password@database:5432/fkm_time
       - WCA_LIVE_API_ORIGIN=https://live.worldcubeassociation.org/api
       - WCA_ORIGIN=https://www.worldcubeassociation.org
       - WCA_LIVE_DEV_API_ORIGIN=http://0.0.0.0:4000/api
@@ -20,21 +20,19 @@ services:
         condition: service_healthy
 
   database:
-    image: filipton/fkmtime-database:latest
+    image: postgres:16
     container_name: fkmtime-database
     ports:
-      - '3306:3306'
+      - '5432:5432'
     restart: unless-stopped 
     environment:
-      - MARIADB_ALLOW_EMPTY_ROOT_PASSWORD=1
-      - MARIADB_DATABASE="fkm_time" 
-    build:
-      context: ./
-      dockerfile: db/Dockerfile
+      - POSTGRES_USER=root
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=fkm_time
     volumes:
-      - database:/var/lib/mysql
+      - database:/var/lib/postgresql/data
     healthcheck:
-      test: "/usr/bin/mariadb --user=root --execute \"SELECT * FROM fkm_time.Account;\""
+      test: [ "CMD-SHELL", "pg_isready -d postgres" ]
       interval: 5s
       timeout: 20s
       retries: 50
