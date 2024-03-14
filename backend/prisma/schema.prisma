@@ -47,14 +47,14 @@ model Attendance {
 }
 
 model Competition {
-  id                        String    @id @default(uuid())
+  id                        String         @id @default(uuid())
   wcaId                     String
-  usesWcaProduction         Boolean   @default(true)
+  usesWcaProduction         Boolean        @default(true)
   name                      String
   shortName                 String
   countryIso2               String?
-  shouldUpdateDevices       Boolean   @default(false)
-  useStableReleases         Boolean   @default(true)
+  shouldUpdateDevices       Boolean        @default(false)
+  releaseChannel            ReleaseChannel @default(STABLE)
   wcif                      Json?
   scoretakingToken          String?
   scoretakingTokenUpdatedAt DateTime?
@@ -123,6 +123,11 @@ enum DeviceType {
   STATION
   ATTENDANCE_SCRAMBLER
   ATTENDANCE_RUNNER
+}
+
+enum ReleaseChannel {
+  STABLE
+  PRE_RELEASE
 }
 
 enum Role {

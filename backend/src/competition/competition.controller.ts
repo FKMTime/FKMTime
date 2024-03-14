@@ -22,9 +22,9 @@ export class CompetitionController {
     return await this.competitionService.getRoundsInfo();
   }
 
-  @Get('should-update')
+  @Get('status')
   async shouldUpdateDevices() {
-    return await this.competitionService.shouldUpdateDevices();
+    return await this.competitionService.serverStatus();
   }
 
   @UseGuards(AdminGuard)

@@ -1,4 +1,5 @@
-import { IsBoolean, IsNotEmpty, IsString } from 'class-validator';
+import { IsBoolean, IsEnum, IsNotEmpty, IsString } from 'class-validator';
+import { ReleaseChannel } from '@prisma/client';
 
 export class UpdateCompetitionDto {
   @IsString()
@@ -11,6 +12,6 @@ export class UpdateCompetitionDto {
   @IsBoolean()
   shouldUpdateDevices: boolean;
 
-  @IsBoolean()
-  useStableReleases: boolean;
+  @IsEnum(ReleaseChannel)
+  releaseChannel: ReleaseChannel;
 }

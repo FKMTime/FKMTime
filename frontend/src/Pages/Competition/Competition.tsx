@@ -9,7 +9,7 @@ import {
     FormLabel,
     Heading,
     IconButton,
-    Input,
+    Input, Select,
     Text,
     useToast,
 } from "@chakra-ui/react";
@@ -19,7 +19,7 @@ import {
     syncCompetition,
     updateCompetition,
 } from "../../logic/competition";
-import { Competition as CompetitionInterface } from "../../logic/interfaces";
+import {Competition as CompetitionInterface, ReleaseChannel} from "../../logic/interfaces";
 import LoadingPage from "../../Components/LoadingPage";
 import { IoMdEye, IoMdEyeOff } from "react-icons/io";
 
@@ -270,17 +270,16 @@ const Competition = () => {
                     </Checkbox>
                 </FormControl>
                 <FormControl display="flex" flexDirection="column" gap="2">
-                    <Checkbox
-                        defaultChecked={competition.useStableReleases}
-                        onChange={(event) =>
-                            setCompetition({
-                                ...competition,
-                                useStableReleases: event?.target.checked,
-                            })
-                        }
-                    >
-                        Use stable releases
-                    </Checkbox>
+                    <FormLabel>Release channel</FormLabel>
+                    <Select value={competition.releaseChannel} onChange={(event) => {
+                        setCompetition({
+                            ...competition,
+                            releaseChannel: event?.target.value as ReleaseChannel,
+                        })
+                    }}>
+                        <option value="STABLE">Stable</option>
+                        <option value="PRE_RELEASE">Pre-release</option>
+                    </Select>
                 </FormControl>
                 <Button type="submit" colorScheme="green">
                     Save

@@ -20,7 +20,7 @@ export interface Competition {
     name: string;
     usesWcaProduction: boolean;
     shouldUpdateDevices: boolean;
-    useStableReleases: boolean;
+    releaseChannel: ReleaseChannel;
     shortName: string;
     countryIso2: string;
     scoretakingToken?: string;
@@ -28,6 +28,11 @@ export interface Competition {
     wcif: WCIF;
     createdAt?: Date;
     updatedAt?: Date;
+}
+
+export enum ReleaseChannel {
+    STABLE = "STABLE",
+    PRE_RELEASE = "PRE_RELEASE",
 }
 
 export interface Room {

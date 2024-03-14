@@ -158,14 +158,33 @@ export class CompetitionService {
     return rounds;
   }
 
-  async shouldUpdateDevices() {
+  async serverStatus() {
     const competition = await this.prisma.competition.findFirst();
     if (!competition) {
       throw new HttpException('Competition not found', 404);
     }
+    const rooms = await this.prisma.room.findMany({
+      include: {
+        devices: true,
+      },
+    });
     return {
       shouldUpdate: competition.shouldUpdateDevices,
-      useStableReleases: competition.useStableReleases,
+      releaseChannel: competition.releaseChannel,
+      rooms: rooms
+        .filter((r) => r.currentGroupId)
+        .map((room) => {
+          const eventId = room.currentGroupId.split('-')[0];
+          const useInspection = eventsData.find(
+            (e) => e.id === eventId,
+          ).useInspection;
+          return {
+            id: room.id,
+            name: room.name,
+            useInspection: useInspection,
+            devices: room.devices.filter((d) => d.type === "STATION").map((device) => device.espId),
+          };
+        }),
     };
   }
 
@@ -187,7 +206,7 @@ export class CompetitionService {
             : competition.scoretakingTokenUpdatedAt,
         usesWcaProduction: dto.usesWcaProduction,
         shouldUpdateDevices: dto.shouldUpdateDevices,
-        useStableReleases: dto.useStableReleases,
+        releaseChannel: dto.releaseChannel,
       },
     });
   }
