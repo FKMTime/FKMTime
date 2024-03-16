@@ -1,23 +1,14 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { getCompetitionInfo } from "../../logic/competition";
+import {useCallback, useEffect, useMemo, useState} from "react";
+import {getCompetitionInfo} from "../../logic/competition";
 import LoadingPage from "../../Components/LoadingPage";
-import {
-    Box,
-    Button,
-    FormControl,
-    FormLabel,
-    Heading,
-    Input,
-    Select,
-    Text,
-} from "@chakra-ui/react";
-import { Activity, Event, Room, Venue } from "@wca/helpers";
+import {Box, Button, FormControl, FormLabel, Heading, Input, Select, Text,} from "@chakra-ui/react";
+import {Activity, Event, Room, Venue} from "@wca/helpers";
 import ScheduleTable from "../../Components/Table/ScheduleTable";
-import { getPrettyCompetitionEndDate } from "../../logic/utils";
 import EventIcon from "../../Components/Icons/EventIcon";
-import { useAtom } from "jotai";
-import { competitionAtom } from "../../logic/atoms";
-import { useNavigate } from "react-router-dom";
+import {useAtom} from "jotai";
+import {competitionAtom} from "../../logic/atoms";
+import {useNavigate} from "react-router-dom";
+import MobileSchedule from "../../Components/Schedule/MobileSchedule.tsx";
 
 const Home = (): JSX.Element => {
     const navigate = useNavigate();
@@ -77,37 +68,12 @@ const Home = (): JSX.Element => {
     }, [fetchData]);
 
     if (!competition) {
-        return <LoadingPage />;
+        return <LoadingPage/>;
     }
 
     return (
         <Box display="flex" flexDirection="column" gap="5">
             <Heading size="lg">{competition?.name}</Heading>
-            {competition.wcif?.schedule.numberOfDays === 1 ? (
-                <>
-                    Date:{" "}
-                    {new Date(
-                        competition.wcif.schedule.startDate
-                    ).toLocaleDateString()}
-                </>
-            ) : (
-                <>
-                    <Text>
-                        Start date:{" "}
-                        {new Date(
-                            competition.wcif.schedule.startDate
-                        ).toLocaleDateString()}
-                    </Text>
-                    <Text>
-                        End date:{" "}
-                        {getPrettyCompetitionEndDate(
-                            competition.wcif.schedule.startDate,
-                            competition.wcif.schedule.numberOfDays
-                        )}
-                    </Text>
-                </>
-            )}
-            <Text>Competitor limit: {competition.wcif.competitorLimit}</Text>
             <Box display="flex" flexDirection="row" gap="5" width="20%">
                 {competition.wcif.events.map((event: Event) => (
                     <EventIcon
@@ -121,7 +87,7 @@ const Home = (): JSX.Element => {
             <Button
                 colorScheme="yellow"
                 onClick={() => navigate("/incidents")}
-                width={{ base: "100%", md: "20%" }}
+                width={{base: "100%", md: "20%"}}
             >
                 Incidents
             </Button>
@@ -172,10 +138,17 @@ const Home = (): JSX.Element => {
                 </FormControl>
             </Box>
             {orderedActivities && orderedActivities.length > 0 ? (
-                <ScheduleTable
-                    activities={orderedActivities}
-                    events={competition.wcif.events}
-                />
+                <>
+                    <Box display={{base: "none", md: "block"}}>
+                        <ScheduleTable
+                            activities={orderedActivities}
+                            events={competition.wcif.events}
+                        />
+                    </Box>
+                    <Box display={{base: "block", md: "none"}}>
+                        <MobileSchedule activities={orderedActivities}/>
+                    </Box>
+                </>
             ) : (
                 <Text>No activities</Text>
             )}
