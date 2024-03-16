@@ -1,11 +1,8 @@
-FROM node:18
-
-RUN apt update && apt upgrade -y
-RUN apt install openssl -y
+FROM node:18-alpine AS build
+RUN npm install -g @nestjs/cli
 
 WORKDIR /app
 ENV NODE_ENV production
-RUN npm install -g @nestjs/cli
 
 COPY package*.json ./
 RUN npm install
@@ -13,6 +10,16 @@ RUN npm install
 COPY . .
 RUN npx prisma generate
 RUN npm run build
-EXPOSE 5000
 
+FROM node:18-alpine
+RUN npm install -g @nestjs/cli
+
+WORKDIR /app
+COPY --from=build /app/dist/src /app
+COPY --from=build /app/node_modules /app/node_modules
+COPY --from=build /app/prisma /app/prisma
+COPY --from=build /app/package.json /app/package.json
+COPY --from=build /app/entrypoint.sh /app/entrypoint.sh
+
+EXPOSE 5000
 CMD [ "/app/entrypoint.sh" ]
