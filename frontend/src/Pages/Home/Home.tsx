@@ -1,13 +1,22 @@
-import {useCallback, useEffect, useMemo, useState} from "react";
-import {getCompetitionInfo} from "../../logic/competition";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { getCompetitionInfo } from "../../logic/competition";
 import LoadingPage from "../../Components/LoadingPage";
-import {Box, Button, FormControl, FormLabel, Heading, Input, Select, Text,} from "@chakra-ui/react";
-import {Activity, Event, Room, Venue} from "@wca/helpers";
+import {
+    Box,
+    Button,
+    FormControl,
+    FormLabel,
+    Heading,
+    Input,
+    Select,
+    Text,
+} from "@chakra-ui/react";
+import { Activity, Event, Room, Venue } from "@wca/helpers";
 import ScheduleTable from "../../Components/Table/ScheduleTable";
 import EventIcon from "../../Components/Icons/EventIcon";
-import {useAtom} from "jotai";
-import {competitionAtom} from "../../logic/atoms";
-import {useNavigate} from "react-router-dom";
+import { useAtom } from "jotai";
+import { competitionAtom } from "../../logic/atoms";
+import { useNavigate } from "react-router-dom";
 import MobileSchedule from "../../Components/Schedule/MobileSchedule.tsx";
 
 const Home = (): JSX.Element => {
@@ -68,7 +77,7 @@ const Home = (): JSX.Element => {
     }, [fetchData]);
 
     if (!competition) {
-        return <LoadingPage/>;
+        return <LoadingPage />;
     }
 
     return (
@@ -87,7 +96,7 @@ const Home = (): JSX.Element => {
             <Button
                 colorScheme="yellow"
                 onClick={() => navigate("/incidents")}
-                width={{base: "100%", md: "20%"}}
+                width={{ base: "100%", md: "20%" }}
             >
                 Incidents
             </Button>
@@ -139,14 +148,14 @@ const Home = (): JSX.Element => {
             </Box>
             {orderedActivities && orderedActivities.length > 0 ? (
                 <>
-                    <Box display={{base: "none", md: "block"}}>
+                    <Box display={{ base: "none", md: "block" }}>
                         <ScheduleTable
                             activities={orderedActivities}
                             events={competition.wcif.events}
                         />
                     </Box>
-                    <Box display={{base: "block", md: "none"}}>
-                        <MobileSchedule activities={orderedActivities}/>
+                    <Box display={{ base: "block", md: "none" }}>
+                        <MobileSchedule activities={orderedActivities} />
                     </Box>
                 </>
             ) : (

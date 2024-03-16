@@ -18,11 +18,11 @@ export class AttendanceService {
     });
   }
 
-  async getAttendanceByPerson(cardId: string) {
+  async getAttendanceByPerson(id: string) {
     return this.prisma.attendance.findMany({
       where: {
         person: {
-          cardId: cardId,
+          id: id,
         },
       },
       include: {

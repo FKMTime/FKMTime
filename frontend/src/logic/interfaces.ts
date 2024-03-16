@@ -131,6 +131,7 @@ export interface Settings {
 
 export interface GroupAssigment {
     groupId: number;
+    activityCode: string;
     groupName: string;
     activityName: string;
 }

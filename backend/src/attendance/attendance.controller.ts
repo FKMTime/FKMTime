@@ -20,8 +20,8 @@ export class AttendanceController {
   }
 
   @UseGuards(AuthGuard('jwt'), AdminOrDelegateGuard)
-  @Get('person/:cardId')
-  async getAttendanceByPerson(@Param('cardId') cardId: string) {
-    return this.attendanceService.getAttendanceByPerson(cardId);
+  @Get('person/:id')
+  async getAttendanceByPerson(@Param('id') id: string) {
+    return this.attendanceService.getAttendanceByPerson(id);
   }
 }

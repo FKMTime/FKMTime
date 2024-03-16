@@ -121,7 +121,7 @@ const PersonRow: React.FC<PersonRowProps> = ({
                     isOpen={isOpenDisplayGroupsModal}
                     onClose={() => setIsOpenDisplayGroupsModal(false)}
                     wcif={wcif}
-                    registrationId={person.registrantId}
+                    person={person}
                 />
             )}
         </>
