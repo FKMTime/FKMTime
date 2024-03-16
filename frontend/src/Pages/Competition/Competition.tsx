@@ -248,15 +248,16 @@ const Competition = () => {
                 </FormControl>
                 <FormControl display="flex" flexDirection="column" gap="2">
                     <Checkbox
-                        defaultChecked={competition.usesWcaProduction}
+                        defaultChecked={competition.sendResultsToWcaLive}
                         onChange={(event) =>
                             setCompetition({
                                 ...competition,
-                                usesWcaProduction: event?.target.checked,
+                                sendResultsToWcaLive: event?.target.checked,
                             })
                         }
                     >
-                        Uses WCA Live production
+                        Send results to WCA Live (disable it only during
+                        tutorial)
                     </Checkbox>
                 </FormControl>
                 <FormControl display="flex" flexDirection="column" gap="2">

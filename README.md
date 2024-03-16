@@ -2,7 +2,7 @@
 
 ## What is FKMTime?
 
-FKMTime is a system for running speedcubing competitions without scorecards! This repository contains the entire code for the web, mobile, and backend applications. 
+FKMTime is a system for running speedcubing competitions without scorecards! This repository contains the entire code for the web and backend applications. 
 
 Source code for FKM devices is available [here](https://github.com/filipton/fkm-timer)
 
@@ -13,16 +13,13 @@ Source code for FKM devices is available [here](https://github.com/filipton/fkm-
 
 ### Requirements
 - NodeJS (version 19.0.0 or later)
-- MariaDB
+- PostgreSQL
 
 ### Setup database
 
-- Set root password to empty
-```
-ALTER USER 'root'@'localhost' IDENTIFIED BY '';
-```
-- Create new database
-```
+- Install PostgreSQL
+- Create a database
+```sql
 CREATE DATABASE fkm_time;
 ```
 
@@ -47,7 +44,7 @@ npm install
 - Create .env file and enter database URL, JWT secret and WCA and WCA Live URL
 ```
 PORT=5000
-DATABASE_URL=mysql://root@127.0.0.1:3306/fkm_time
+DATABASE_URL=postgres://postgres@localhost:5432/fkm_time
 SECRET=jwt_secret
 WCA_LIVE_API_ORIGIN=http://localhost:4000
 WCA_ORIGIN=http://localhost:3001
@@ -65,9 +62,9 @@ npm run start:dev
 
 The server will be accessible at localhost:5000
 
-### Admin panel
+### Frontend
 
-- Navigate into admin-site directory
+- Navigate into frontend directory
 ```bash
 cd frontend
 ```
@@ -98,4 +95,4 @@ We use Docker for production. Just run
 docker compose up
 ```
 
-This will start backend, database and admin-site. 
+This will start backend, database and frontend. 

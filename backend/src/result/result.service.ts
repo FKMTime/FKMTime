@@ -7,7 +7,6 @@ import { Event, Person, Round } from '@wca/helpers';
 import { Attempt, Competition } from '@prisma/client';
 
 const WCA_LIVE_API_ORIGIN = process.env.WCA_LIVE_API_ORIGIN;
-const WCA_LIVE_DEV_API_ORIGIN = process.env.WCA_LIVE_DEV_API_ORIGIN;
 
 @Injectable()
 export class ResultService {
@@ -711,9 +710,10 @@ export class ResultService {
     attemptResult: number,
   ) {
     const competition = await this.prisma.competition.findFirst();
-    const url = competition.usesWcaProduction
-      ? WCA_LIVE_API_ORIGIN
-      : WCA_LIVE_DEV_API_ORIGIN;
+    if (!competition.sendResultsToWcaLive) {
+      return;
+    }
+    const url = WCA_LIVE_API_ORIGIN;
     console.log('-----------------');
     console.log(new Date().toISOString());
     console.log('Sending attempt to WCA Live');
@@ -748,9 +748,10 @@ export class ResultService {
     const competition = await this.prisma.competition.findFirst();
     const { competitionId, eventId, roundNumber, scoretakingToken, results } =
       await this.getAttemptsToEnterToWcaLive(result, competition);
-    const url = competition.usesWcaProduction
-      ? WCA_LIVE_API_ORIGIN
-      : WCA_LIVE_DEV_API_ORIGIN;
+    const url = WCA_LIVE_API_ORIGIN;
+    if (!competition.sendResultsToWcaLive) {
+      return;
+    }
     console.log('-----------------');
     console.log(new Date().toISOString());
     console.log('Sending scorecard to WCA Live');
@@ -796,9 +797,10 @@ export class ResultService {
       );
       resultsToSubmit.push(...results);
     }
-    const url = competition.usesWcaProduction
-      ? WCA_LIVE_API_ORIGIN
-      : WCA_LIVE_DEV_API_ORIGIN;
+    const url = WCA_LIVE_API_ORIGIN;
+    if (!competition.sendResultsToWcaLive) {
+      return;
+    }
     console.log('-----------------');
     console.log(new Date().toISOString());
     console.log('Sending round to WCA Live');

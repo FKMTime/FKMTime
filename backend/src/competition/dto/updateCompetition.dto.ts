@@ -7,7 +7,7 @@ export class UpdateCompetitionDto {
   scoretakingToken: string;
 
   @IsBoolean()
-  usesWcaProduction: boolean;
+  sendResultsToWcaLive: boolean;
 
   @IsBoolean()
   shouldUpdateDevices: boolean;

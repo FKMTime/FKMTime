@@ -18,7 +18,7 @@ export interface Competition {
     id: string;
     wcaId: string;
     name: string;
-    usesWcaProduction: boolean;
+    sendResultsToWcaLive: boolean;
     shouldUpdateDevices: boolean;
     releaseChannel: ReleaseChannel;
     shortName: string;

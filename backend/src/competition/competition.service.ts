@@ -211,7 +211,7 @@ export class CompetitionService {
           competition.scoretakingToken !== dto.scoretakingToken
             ? new Date()
             : competition.scoretakingTokenUpdatedAt,
-        usesWcaProduction: dto.usesWcaProduction,
+        sendResultsToWcaLive: dto.sendResultsToWcaLive,
         shouldUpdateDevices: dto.shouldUpdateDevices,
         releaseChannel: dto.releaseChannel,
       },

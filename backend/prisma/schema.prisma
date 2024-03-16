@@ -49,7 +49,7 @@ model Attendance {
 model Competition {
   id                        String         @id @default(uuid())
   wcaId                     String
-  usesWcaProduction         Boolean        @default(true)
+  sendResultsToWcaLive      Boolean        @default(true)
   name                      String
   shortName                 String
   countryIso2               String?
