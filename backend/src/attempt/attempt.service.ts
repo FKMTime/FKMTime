@@ -3,12 +3,14 @@ import { DbService } from '../db/db.service';
 import { HttpException, Injectable } from '@nestjs/common';
 import { UpdateAttemptDto } from './dto/updateAttempt.dto';
 import { CreateAttemptDto } from './dto/createAttempt.dto';
+import { IncidentsGateway } from './incidents.gateway';
 
 @Injectable()
 export class AttemptService {
   constructor(
     private readonly prisma: DbService,
     private readonly resultService: ResultService,
+    private readonly incidentsGateway: IncidentsGateway,
   ) {}
 
   async createAttempt(data: CreateAttemptDto) {
@@ -165,6 +167,7 @@ export class AttemptService {
         },
       },
     });
+    this.incidentsGateway.handleAttemptUpdated();
     if (!attempt) {
       throw new HttpException('Attempt not found', 404);
     }

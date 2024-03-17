@@ -7,16 +7,45 @@ import { useAtom } from "jotai";
 import { getCompetitionInfo } from "../../logic/competition.ts";
 import { competitionAtom } from "../../logic/atoms.ts";
 import LoadingPage from "../../Components/LoadingPage.tsx";
+import io from "socket.io-client";
+import { INCIDENTS_WEBSOCKET_URL } from "../../logic/request.ts";
+import { getToken } from "../../logic/auth.ts";
 
 const Incidents = () => {
     const [incidents, setIncidents] = useState<Incident[]>([]);
     const [competition, setCompetition] = useAtom(competitionAtom);
+    const [socket] = useState(
+        io(INCIDENTS_WEBSOCKET_URL, {
+            transports: ["websocket"],
+            extraHeaders: {
+                Authorization: `Bearer ${getToken()}`,
+            },
+            auth: {
+                token: getToken(),
+            },
+        })
+    );
 
+    const fetchData = async () => {
+        const data = await getUnresolvedAttempts();
+        setIncidents(data);
+    };
     useEffect(() => {
-        getUnresolvedAttempts().then((data) => {
-            setIncidents(data);
+        fetchData();
+        socket.emit("join");
+
+        socket.on("newIncident", () => {
+            fetchData();
         });
-    }, []);
+
+        socket.on("attemptUpdated", () => {
+            fetchData();
+        });
+
+        return () => {
+            socket.emit("leave");
+        };
+    }, [socket]);
 
     useEffect(() => {
         if (!competition) {

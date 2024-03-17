@@ -1,6 +1,12 @@
 import { getToken } from "./auth";
 
-const BACKEND_URL = import.meta.env.PROD ? "/api/" : "http://localhost:5000/";
+const DEV_BACKEND_URL = import.meta.env.VITE_BACKEND_ORIGIN
+    ? import.meta.env.VITE_BACKEND_ORIGIN
+    : "http://localhost:5000/";
+const BACKEND_URL = import.meta.env.PROD ? "/api/" : DEV_BACKEND_URL;
+export const INCIDENTS_WEBSOCKET_URL = import.meta.env.PROD
+    ? "/api/incidents"
+    : `${DEV_BACKEND_URL}incidents`;
 
 export const backendRequest = (
     path: string,

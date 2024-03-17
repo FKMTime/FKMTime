@@ -166,7 +166,7 @@ export const getSubmittedAttempts = (attempts: Attempt[]) => {
         .forEach((attempt) => {
             if (
                 attempt.replacedBy === null &&
-                !attempt.isDelegate &&
+                !(attempt.isDelegate && !attempt.isResolved) &&
                 !attempt.extraGiven &&
                 !attemptsToReturn.some((a) => a.id === attempt.id) &&
                 !attempt.isExtraAttempt

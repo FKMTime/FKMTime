@@ -5,12 +5,16 @@ import Expo from 'expo-server-sdk';
 import { en, pl } from 'src/translations';
 import { Event, Person, Round } from '@wca/helpers';
 import { Attempt, Competition } from '@prisma/client';
+import { IncidentsGateway } from '../attempt/incidents.gateway';
 
 const WCA_LIVE_API_ORIGIN = process.env.WCA_LIVE_API_ORIGIN;
 
 @Injectable()
 export class ResultService {
-  constructor(private readonly prisma: DbService) {}
+  constructor(
+    private readonly prisma: DbService,
+    private readonly incidentsGateway: IncidentsGateway,
+  ) {}
 
   async getAllResultsByRound(roundId: string, search?: string) {
     const whereParams = {
@@ -934,6 +938,7 @@ export class ResultService {
     stationName: string,
     competitorName: string,
   ) {
+    this.incidentsGateway.handleNewIncident();
     const expo = new Expo();
     const messages = [];
     const accounts = await this.prisma.account.findMany({
