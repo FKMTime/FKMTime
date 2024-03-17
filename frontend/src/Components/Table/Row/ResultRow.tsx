@@ -21,7 +21,8 @@ const ResultRow: React.FC<ResultRowProps> = ({ result, maxAttempts }) => {
     const userInfo = getUserInfo();
 
     const submittedAttempts = getSubmittedAttempts(result.attempts);
-    const calculatedAverage = average(submittedAttempts);
+    const calculatedAverage =
+        submittedAttempts.length === maxAttempts && average(submittedAttempts);
 
     return (
         <>
@@ -37,9 +38,7 @@ const ResultRow: React.FC<ResultRowProps> = ({ result, maxAttempts }) => {
                     </Td>
                 ))}
                 <Td>
-                    {calculatedAverage
-                        ? resultToString(calculatedAverage)
-                        : "No average"}
+                    {calculatedAverage ? resultToString(calculatedAverage) : ""}
                 </Td>
                 <Td>{resultToString(best(submittedAttempts))}</Td>
                 {HAS_WRITE_ACCESS.includes(userInfo.role) && (
