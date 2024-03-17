@@ -350,11 +350,6 @@ export class ResultService {
   }
 
   async enterAttempt(data: EnterAttemptDto) {
-    console.log('-----------------');
-    console.log(new Date().toISOString());
-    console.log('Entering attempt from FKM');
-    console.log('Data: ', data);
-    console.log('-----------------');
     const device = await this.prisma.device.findFirst({
       where: {
         espId: data.espId.toString(),
