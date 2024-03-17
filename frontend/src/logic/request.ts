@@ -10,6 +10,9 @@ export const INCIDENTS_WEBSOCKET_URL = import.meta.env.PROD
 export const DEVICES_WEBSOCKET_URL = import.meta.env.PROD
     ? "/api/device"
     : `${DEV_BACKEND_URL}device`;
+export const RESULTS_WEBSOCKET_URL = import.meta.env.PROD
+    ? "/api/result"
+    : `${DEV_BACKEND_URL}result`;
 
 export const backendRequest = (
     path: string,

@@ -27,13 +27,15 @@ import {
     getRoundNameById,
 } from "../../logic/utils";
 import Alert from "../../Components/Alert";
-import { getUserInfo } from "../../logic/auth.ts";
+import { getToken, getUserInfo } from "../../logic/auth.ts";
 import { HAS_WRITE_ACCESS } from "../../logic/accounts.ts";
 import { MdAdd } from "react-icons/md";
 import CreateAttemptModal from "../../Components/Modal/CreateAttemptForm.tsx";
 import { competitionAtom } from "../../logic/atoms.ts";
 import { useAtom } from "jotai";
 import { getAllRooms } from "../../logic/rooms.ts";
+import io from "socket.io-client";
+import { RESULTS_WEBSOCKET_URL } from "../../logic/request.ts";
 
 const Results = (): JSX.Element => {
     const { id } = useParams<{ id: string }>();
@@ -45,6 +47,15 @@ const Results = (): JSX.Element => {
     };
     const toast = useToast();
     const userInfo = getUserInfo();
+    const [socket] = useState(
+        io(RESULTS_WEBSOCKET_URL, {
+            transports: ["websocket"],
+            auth: {
+                token: getToken(),
+            },
+        })
+    );
+
     const [openConfirmation, setOpenConfirmation] = useState<boolean>(false);
     const [competition, setCompetition] = useAtom(competitionAtom);
     const [results, setResults] = useState<Result[]>([]);
@@ -145,7 +156,17 @@ const Results = (): JSX.Element => {
                 navigate(`/results/round/${currentRounds[0]}`);
             }
         }
-    }, [currentRounds, filters.roundId, navigate]);
+
+        socket.emit("join", { roundId: filters.roundId });
+
+        socket.on("resultEntered", () => {
+            fetchData(filters.roundId);
+        });
+
+        return () => {
+            socket.emit("leave", { roundId: filters.roundId });
+        };
+    }, [currentRounds, filters.roundId, navigate, socket]);
 
     useEffect(() => {
         getAllRooms().then((rooms: Room[]) => {
@@ -265,7 +286,7 @@ const Results = (): JSX.Element => {
                     )}
                 </Box>
             )}
-            <ResultsTable results={results} />
+            <ResultsTable results={results} maxAttempts={maxAttempts} />
             <Alert
                 isOpen={openConfirmation}
                 onCancel={handleCancel}

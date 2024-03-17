@@ -6,13 +6,17 @@ import { getUserInfo } from "../../../logic/auth.ts";
 import { HAS_WRITE_ACCESS } from "../../../logic/accounts.ts";
 import { getSubmittedAttempts } from "../../../logic/utils.ts";
 import { average, best } from "../../../logic/average.ts";
-import { resultToString } from "../../../logic/resultFormatters.ts";
+import {
+    attemptWithPenaltyToString,
+    resultToString,
+} from "../../../logic/resultFormatters.ts";
 
 interface ResultRowProps {
     result: Result;
+    maxAttempts: number;
 }
 
-const ResultRow: React.FC<ResultRowProps> = ({ result }): JSX.Element => {
+const ResultRow: React.FC<ResultRowProps> = ({ result, maxAttempts }) => {
     const navigate = useNavigate();
     const userInfo = getUserInfo();
 
@@ -22,9 +26,16 @@ const ResultRow: React.FC<ResultRowProps> = ({ result }): JSX.Element => {
     return (
         <>
             <Tr key={result.id}>
-                <Td>{result.person.registrantId}</Td>
-                <Td>{result.person.name}</Td>
-                <Td>{result.person.wcaId}</Td>
+                <Td>
+                    {result.person.name} ({result.person.registrantId})
+                </Td>
+                {Array.from({ length: maxAttempts }, (_, i) => (
+                    <Td key={i}>
+                        {submittedAttempts.length > i
+                            ? attemptWithPenaltyToString(submittedAttempts[i])
+                            : ""}
+                    </Td>
+                ))}
                 <Td>
                     {calculatedAverage
                         ? resultToString(calculatedAverage)

@@ -6,6 +6,7 @@ import { en, pl } from 'src/translations';
 import { Event, Person, Round } from '@wca/helpers';
 import { Attempt, Competition } from '@prisma/client';
 import { IncidentsGateway } from '../attempt/incidents.gateway';
+import { ResultGateway } from './result.gateway';
 
 const WCA_LIVE_API_ORIGIN = process.env.WCA_LIVE_API_ORIGIN;
 
@@ -14,6 +15,7 @@ export class ResultService {
   constructor(
     private readonly prisma: DbService,
     private readonly incidentsGateway: IncidentsGateway,
+    private readonly resultGateway: ResultGateway,
   ) {}
 
   async getAllResultsByRound(roundId: string, search?: string) {
@@ -728,6 +730,7 @@ export class ResultService {
     console.log('attemptNumber: ', attemptNumber);
     console.log('registrantId: ', registrantId);
     console.log('attemptResult: ', attemptResult);
+    this.resultGateway.handleResultEntered(`${eventId}-r${roundNumber}`);
     const response = await fetch(`${url}/enter-attempt`, {
       method: 'POST',
       headers: {

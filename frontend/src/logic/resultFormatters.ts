@@ -1,3 +1,5 @@
+import { Attempt } from "./interfaces.ts";
+
 export const resultToString = (result: number) => {
     if (result === -1) {
         return "DNF";
@@ -24,4 +26,18 @@ export const toInt = (string: string) => {
     const number = parseInt(string, 10);
     if (Number.isNaN(number)) return null;
     return number;
+};
+
+export const attemptWithPenaltyToString = (attempt: Attempt) => {
+    if (attempt.penalty === -1) {
+        return "DNF";
+    }
+    if (attempt.penalty === -2) {
+        return "DNS";
+    }
+    if (attempt.penalty === 0) {
+        return resultToString(attempt.value);
+    } else {
+        return resultToString(attempt.value * attempt.penalty * 100);
+    }
 };
