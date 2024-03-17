@@ -45,7 +45,7 @@ export class CompetitionController {
     return await this.competitionService.updateWcif(id);
   }
 
-  @UseGuards(AuthGuard('jwt'), AdminOrDelegateGuard)
+  @UseGuards(AuthGuard('jwt'))
   @Get('rooms')
   async getAllRooms() {
     return this.competitionService.getAllRooms();

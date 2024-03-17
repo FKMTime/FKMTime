@@ -115,20 +115,22 @@ const Persons = (): JSX.Element => {
                     onChange={handleSearch}
                     width={{ base: "100%", md: "40%" }}
                 />
-                <IconButton
-                    icon={<MdAdd />}
-                    aria-label="Add"
-                    bg="white"
-                    color="black"
-                    rounded="20"
-                    width="5"
-                    height="10"
-                    _hover={{
-                        background: "white",
-                        color: "gray.700",
-                    }}
-                    onClick={() => setIsOpenAddStaffMemberModal(true)}
-                />
+                {HAS_WRITE_ACCESS.includes(userInfo.role) && (
+                    <IconButton
+                        icon={<MdAdd />}
+                        aria-label="Add"
+                        bg="white"
+                        color="black"
+                        rounded="20"
+                        width="5"
+                        height="10"
+                        _hover={{
+                            background: "white",
+                            color: "gray.700",
+                        }}
+                        onClick={() => setIsOpenAddStaffMemberModal(true)}
+                    />
+                )}
             </Box>
             <PersonsTable
                 persons={persons}

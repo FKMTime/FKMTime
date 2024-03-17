@@ -225,20 +225,22 @@ const Results = (): JSX.Element => {
             </Box>
             {filters.roundId && (
                 <Box display="flex" flexDirection="column" gap="5">
-                    <IconButton
-                        icon={<MdAdd />}
-                        aria-label="Add"
-                        bg="white"
-                        color="black"
-                        rounded="20"
-                        width="5"
-                        height="10"
-                        _hover={{
-                            background: "white",
-                            color: "gray.700",
-                        }}
-                        onClick={() => setIsOpenCreateAttemptModal(true)}
-                    />
+                    {HAS_WRITE_ACCESS.includes(userInfo.role) && (
+                        <IconButton
+                            icon={<MdAdd />}
+                            aria-label="Add"
+                            bg="white"
+                            color="black"
+                            rounded="20"
+                            width="5"
+                            height="10"
+                            _hover={{
+                                background: "white",
+                                color: "gray.700",
+                            }}
+                            onClick={() => setIsOpenCreateAttemptModal(true)}
+                        />
+                    )}
                     <Text>
                         Cutoff:{" "}
                         {cutoff

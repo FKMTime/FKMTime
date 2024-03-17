@@ -3,7 +3,6 @@ import { getCompetitionInfo } from "../../logic/competition";
 import LoadingPage from "../../Components/LoadingPage";
 import {
     Box,
-    Button,
     FormControl,
     FormLabel,
     Heading,
@@ -20,10 +19,13 @@ import { useNavigate } from "react-router-dom";
 import MobileSchedule from "../../Components/Schedule/MobileSchedule.tsx";
 import { Room } from "../../logic/interfaces.ts";
 import { getAllRooms } from "../../logic/rooms.ts";
-import { getActivityNameByCode, getRoundNameById } from "../../logic/utils.ts";
+import { HAS_WRITE_ACCESS } from "../../logic/accounts.ts";
+import HomeShortcuts from "../../Components/HomeShortcuts.tsx";
+import { getUserInfo } from "../../logic/auth.ts";
 
 const Home = (): JSX.Element => {
     const navigate = useNavigate();
+    const userInfo = getUserInfo();
     const [competition, setCompetition] = useAtom(competitionAtom);
     const [rooms, setRooms] = useState<Room[]>([]);
     const [currentRounds, setCurrentRounds] = useState<string[]>([]);
@@ -110,46 +112,13 @@ const Home = (): JSX.Element => {
                     />
                 ))}
             </Box>
-            <Button
-                colorScheme="yellow"
-                onClick={() => navigate("/incidents")}
-                width={{ base: "100%", md: "20%" }}
-            >
-                Incidents
-            </Button>
-            <Heading size="lg">Attendance</Heading>
-            <Box display="flex" gap="2">
-                {rooms
-                    .filter((r) => r.currentGroupId)
-                    .map((room: Room) => (
-                        <Button
-                            key={room.id}
-                            colorScheme="blue"
-                            onClick={() => {
-                                navigate(`/attendance/${room.currentGroupId}`);
-                            }}
-                        >
-                            {getActivityNameByCode(
-                                room.currentGroupId,
-                                competition.wcif
-                            )}
-                        </Button>
-                    ))}
-            </Box>
-            <Heading size="lg">Results</Heading>
-            <Box display="flex" gap="2">
-                {currentRounds.map((roundId) => (
-                    <Button
-                        key={roundId}
-                        colorScheme="blue"
-                        onClick={() => {
-                            navigate(`/results/round/${roundId}`);
-                        }}
-                    >
-                        {getRoundNameById(roundId, competition.wcif)}
-                    </Button>
-                ))}
-            </Box>
+            {HAS_WRITE_ACCESS.includes(userInfo.role) && (
+                <HomeShortcuts
+                    rooms={rooms}
+                    currentRounds={currentRounds}
+                    competition={competition}
+                />
+            )}
             <Box display="flex" flexDirection="row" gap="5">
                 <FormControl width="fit-content">
                     <FormLabel>Date</FormLabel>

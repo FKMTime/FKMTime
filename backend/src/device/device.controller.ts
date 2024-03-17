@@ -13,27 +13,32 @@ import {
 import { AdminGuard } from '../auth/guards/admin.guard';
 import { DeviceService } from './device.service';
 import { DeviceDto } from './dto/device.dto';
+import { AuthGuard } from '@nestjs/passport';
+import { AdminOrDelegateGuard } from '../auth/guards/adminOrDelegate.guard';
 
-@UseGuards(AdminGuard)
 @Controller('device')
 export class DeviceController {
   constructor(private readonly deviceService: DeviceService) {}
 
-  @Get('')
+  @UseGuards(AuthGuard('jwt'), AdminOrDelegateGuard)
+  @Get()
   async getAllDevices() {
     return this.deviceService.getAllDevices();
   }
 
+  @UseGuards(AdminGuard)
   @Post('')
   async createDevice(@Body() data: DeviceDto) {
     return this.deviceService.createDevice(data);
   }
 
+  @UseGuards(AdminGuard)
   @Put(':id')
   async updateDevice(@Param('id') id: string, @Body() data: DeviceDto) {
     return this.deviceService.updateDevice(id, data);
   }
 
+  @UseGuards(AdminGuard)
   @HttpCode(HttpStatus.NO_CONTENT)
   @Delete(':id')
   async deleteDevice(@Param('id') id: string) {

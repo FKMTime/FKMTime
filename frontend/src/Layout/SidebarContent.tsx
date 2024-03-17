@@ -90,12 +90,14 @@ const SidebarContent: React.FC<Props> = ({
                 link="/persons"
                 onClick={toggleDrawer}
             />
-            <SidebarElement
-                name="Attendance"
-                icon={<FaClipboardList />}
-                link="/attendance"
-                onClick={toggleDrawer}
-            />
+            {HAS_WRITE_ACCESS.includes(user.role) && (
+                <SidebarElement
+                    name="Attendance"
+                    icon={<FaClipboardList />}
+                    link="/attendance"
+                    onClick={toggleDrawer}
+                />
+            )}
             <SidebarElement
                 name="Giftpacks"
                 icon={<FaGift />}
