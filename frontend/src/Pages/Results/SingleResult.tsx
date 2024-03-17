@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { getResultById, reSubmitScorecardToWcaLive } from "../../logic/results";
 import LoadingPage from "../../Components/LoadingPage";
 import { Result } from "../../logic/interfaces";
@@ -33,8 +33,9 @@ import SwapAttemptsModal from "../../Components/Modal/SwapAttemptsModal.tsx";
 
 const SingleResult = () => {
     const { id } = useParams<{ id: string }>();
-    const [competition, setCompetition] = useAtom(competitionAtom);
+    const navigate = useNavigate();
     const toast = useToast();
+    const [competition, setCompetition] = useAtom(competitionAtom);
     const [result, setResult] = useState<Result | null>(null);
     const [isOpenCreateAttemptModal, setIsOpenCreateAttemptModal] =
         useState<boolean>(false);
@@ -94,9 +95,19 @@ const SingleResult = () => {
             const competitionData = await getCompetitionInfo();
             setCompetition(competitionData.data);
         }
-        const data = await getResultById(id);
-        setResult(data);
-    }, [competition, id, setCompetition]);
+        const response = await getResultById(id);
+        if (response.status === 404) {
+            toast({
+                title: "Error",
+                description: "Result not found",
+                status: "error",
+                duration: 5000,
+                isClosable: true,
+            });
+            navigate("/results");
+        }
+        setResult(response.data);
+    }, [competition, id, navigate, setCompetition, toast]);
 
     const handleResubmit = async () => {
         if (!result) return;

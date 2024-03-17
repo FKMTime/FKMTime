@@ -30,7 +30,10 @@ export const getAllResultsByPersonId = async (id: string) => {
 
 export const getResultById = async (id: string) => {
     const response = await backendRequest(`result/${id}`, "GET", true);
-    return await response.json();
+    return {
+        data: await response.json(),
+        status: response.status,
+    };
 };
 
 export const reSubmitScorecardToWcaLive = async (id: string) => {

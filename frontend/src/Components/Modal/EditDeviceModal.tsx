@@ -55,10 +55,11 @@ const EditDeviceModal: React.FC<EditDeviceModalProps> = ({
     };
 
     useEffect(() => {
+        if (!isOpen) return;
         getAllRooms().then((rooms: Room[]) => {
             setRooms(rooms);
         });
-    }, []);
+    }, [isOpen]);
 
     return (
         <Modal isOpen={isOpen} onClose={onClose} title="Edit device">

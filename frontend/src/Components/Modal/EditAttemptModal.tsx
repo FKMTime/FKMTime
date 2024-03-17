@@ -72,8 +72,10 @@ const EditAttemptModal: React.FC<EditAttemptModalProps> = ({
             const data = await getAllPersons();
             setPersons(data);
         };
-        fetchPersonsData();
-    }, []);
+        if (isOpen) {
+            fetchPersonsData();
+        }
+    }, [isOpen]);
 
     return (
         <Modal isOpen={isOpen} onClose={onClose} title="Edit attempt">

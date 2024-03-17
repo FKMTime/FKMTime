@@ -251,6 +251,9 @@ export class ResultService {
         },
       },
     });
+    if (!result) {
+      throw new HttpException('Result not found', 404);
+    }
     return {
       ...result,
       attempts: result.Attempt.map((attempt) => {

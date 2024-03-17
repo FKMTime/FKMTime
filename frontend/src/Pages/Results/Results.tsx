@@ -1,53 +1,39 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { Result } from "../../logic/interfaces";
-import {
-    Box,
-    Button,
-    IconButton,
-    Input,
-    Select,
-    Text,
-    useToast,
-} from "@chakra-ui/react";
-import {
-    getResultsByRoundId,
-    reSubmitRoundToWcaLive,
-} from "../../logic/results";
-import { getCompetitionInfo } from "../../logic/competition";
-import { useNavigate } from "react-router-dom";
+import {useCallback, useEffect, useMemo, useState} from "react";
+import {Result, Room} from "../../logic/interfaces";
+import {Box, Button, IconButton, Input, Select, Text, useToast,} from "@chakra-ui/react";
+import {getResultsByRoundId, reSubmitRoundToWcaLive,} from "../../logic/results";
+import {getCompetitionInfo} from "../../logic/competition";
+import {useNavigate, useParams} from "react-router-dom";
 import LoadingPage from "../../Components/LoadingPage";
 import EventIcon from "../../Components/Icons/EventIcon";
-import { Event, Round } from "@wca/helpers";
+import {Event, Round} from "@wca/helpers";
 import ResultsTable from "../../Components/Table/ResultsTable";
-import { resultToString } from "../../logic/resultFormatters";
-import {
-    getCutoffByRoundId,
-    getLimitByRoundId,
-    getNumberOfAttemptsForRound,
-} from "../../logic/utils";
+import {resultToString} from "../../logic/resultFormatters";
+import {getCutoffByRoundId, getLimitByRoundId, getNumberOfAttemptsForRound, getRoundNameById,} from "../../logic/utils";
 import Alert from "../../Components/Alert";
-import { getUserInfo } from "../../logic/auth.ts";
-import { HAS_WRITE_ACCESS } from "../../logic/accounts.ts";
-import { MdAdd } from "react-icons/md";
+import {getUserInfo} from "../../logic/auth.ts";
+import {HAS_WRITE_ACCESS} from "../../logic/accounts.ts";
+import {MdAdd} from "react-icons/md";
 import CreateAttemptModal from "../../Components/Modal/CreateAttemptForm.tsx";
-import { competitionAtom } from "../../logic/atoms.ts";
-import { useAtom } from "jotai";
-
-interface ResultsFilters {
-    eventId: string;
-    roundId: string;
-}
+import {competitionAtom} from "../../logic/atoms.ts";
+import {useAtom} from "jotai";
+import {getAllRooms} from "../../logic/rooms.ts";
 
 const Results = (): JSX.Element => {
+    const { id } = useParams<{ id: string }>();
+    const navigate = useNavigate();
+
+    const filters = {
+        eventId: id?.split("-")[0] || "",
+        roundId: id || "",
+    };
     const toast = useToast();
     const userInfo = getUserInfo();
     const [openConfirmation, setOpenConfirmation] = useState<boolean>(false);
     const [competition, setCompetition] = useAtom(competitionAtom);
     const [results, setResults] = useState<Result[]>([]);
-    const [filters, setFilters] = useState<ResultsFilters>({
-        eventId: "",
-        roundId: "",
-    });
+    const [currentRounds, setCurrentRounds] = useState<string[]>([]);
+
     const [isOpenCreateAttemptModal, setIsOpenCreateAttemptModal] =
         useState<boolean>(false);
     const [search, setSearch] = useState<string>("");
@@ -71,8 +57,6 @@ const Results = (): JSX.Element => {
         return getNumberOfAttemptsForRound(filters.roundId, competition.wcif);
     }, [competition, filters.roundId]);
 
-    const navigate = useNavigate();
-
     const fetchData = async (
         roundId: string,
         search?: string,
@@ -80,10 +64,6 @@ const Results = (): JSX.Element => {
     ) => {
         const data = await getResultsByRoundId(roundId, search, groupId);
         setResults(data);
-        setFilters((prevFilters) => ({
-            ...prevFilters,
-            roundId: roundId,
-        }));
     };
 
     const fetchCompetition = useCallback(async () => {
@@ -96,12 +76,7 @@ const Results = (): JSX.Element => {
 
     const handleEventChange = async (id: string) => {
         const roundId = id + "-r1";
-        setFilters((prevFilters) => ({
-            ...prevFilters,
-            roundId: roundId,
-            eventId: id,
-            groupId: `${roundId}-g1`,
-        }));
+        navigate(`/results/round/${roundId}`);
         await fetchData(roundId);
     };
 
@@ -151,14 +126,21 @@ const Results = (): JSX.Element => {
     }, [competition, fetchCompetition]);
 
     useEffect(() => {
-        const fetchDefaultResults = async () => {
-            if (competition && filters.roundId) {
-                await fetchData(filters.roundId);
+        if (filters.roundId) {
+            fetchData(filters.roundId);
+        } else {
+            if (currentRounds.length === 1) {
+                navigate(`/results/round/${currentRounds[0]}`);
             }
-        };
+        }
+    }, [currentRounds, filters.roundId, navigate]);
 
-        fetchDefaultResults();
-    }, [competition, filters.roundId]);
+    useEffect(() => {
+        getAllRooms().then((rooms: Room[]) => {
+            const ids = new Set<string>(rooms.filter((r) => r.currentGroupId).map((room) => room.currentGroupId.split("-g")[0]));
+            setCurrentRounds([...ids]);
+        });
+    }, []);
 
     if (!competition || !results) {
         return <LoadingPage />;
@@ -190,11 +172,10 @@ const Results = (): JSX.Element => {
                     ))}
                 </Box>
                 <Select
-                    placeholder="Select round"
-                    _placeholder={{ color: "white" }}
+                    defaultValue={filters.roundId}
                     value={filters.roundId}
                     onChange={(event) =>
-                        setFilters({ ...filters, roundId: event.target.value })
+                        navigate(`/results/round/${event.target.value}`)
                     }
                     width={{ base: "100%", md: "5%" }}
                 >
@@ -213,6 +194,18 @@ const Results = (): JSX.Element => {
                     value={search}
                     onChange={handleSearch}
                 />
+
+                    {currentRounds.map((roundId) => (
+                        <Button
+                            key={roundId}
+                            colorScheme="blue"
+                            onClick={() => {
+                                navigate(`/results/round/${roundId}`);
+                            }}
+                        >
+                            {getRoundNameById(roundId, competition.wcif)}
+                        </Button>
+                    ))}
             </Box>
             {filters.roundId && (
                 <Box display="flex" flexDirection="column" gap="5">

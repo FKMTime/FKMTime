@@ -1,4 +1,4 @@
-import { Competition } from "@wca/helpers";
+import {Activity, Competition} from "@wca/helpers";
 import regions from "./regions";
 import { Attempt, Attendance, Result } from "./interfaces";
 
@@ -52,15 +52,6 @@ export const getCutoffByRoundId = (roundId: string, wcif: Competition) => {
 export const getLimitByRoundId = (roundId: string, wcif: Competition) => {
     const round = getRoundInfoFromWcif(roundId, wcif);
     return round?.timeLimit || null;
-};
-
-export const getPrettyCompetitionEndDate = (
-    startDate: string,
-    numberOfDays: number
-) => {
-    const date = new Date(startDate);
-    date.setDate(date.getDate() + numberOfDays - 1);
-    return date.toLocaleDateString();
 };
 
 export const getNumberOfAttemptsForRound = (
@@ -117,23 +108,29 @@ export const prettyDeviceType = (type: string) => {
 export const getAbsentPeople = (
     wcif: Competition,
     presentPeople: Attendance[],
-    roomName: string,
     groupId: string,
     role: string
 ) => {
-    const activity = wcif.schedule?.venues[0].rooms
-        .find((room) => room.name === roomName)
-        ?.activities.find(
-            (activity) => activity.activityCode === groupId.split("-g")[0]
-        )
-        ?.childActivities.find((activity) => activity.activityCode === groupId);
-    if (!activity) return [];
+    const activities: Activity[] = [];
+    wcif.schedule?.venues[0].rooms
+        .forEach((room) => {
+            room.activities.forEach((a) => {
+                a.childActivities.forEach((ca) => {
+                    if (ca.activityCode === groupId) {
+                        activities.push(ca);
+                    }
+                });
+            })
+        });
+    if (activities.length === 0) return [];
     const wcifRole = attendanceRoleToWcif(role);
     return wcif.persons.filter((person) => {
         if (
             person.assignments?.some(
                 (assignment) =>
-                    assignment.activityId === activity.id &&
+                    activities.some(
+                        (a) => a.id === assignment.activityId
+                    ) &&
                     assignment.assignmentCode === wcifRole
             ) &&
             !presentPeople.some(
@@ -236,4 +233,23 @@ export const isThereADifferenceBetweenResults = (
             return true;
     }
     return false;
+};
+
+export const getActivityNameByCode = (code: string, wcif: Competition) => {
+    let activityName = "";
+    wcif.schedule.venues.forEach((venue) => {
+        venue.rooms.forEach((room) => {
+            room.activities.forEach((activity) => {
+                if (activity.activityCode === code) {
+                    activityName = activity.name;
+                }
+                activity.childActivities.forEach((childActivity) => {
+                    if (childActivity.activityCode === code) {
+                        activityName = childActivity.name;
+                    }
+                });
+            });
+        });
+    });
+    return activityName;
 };

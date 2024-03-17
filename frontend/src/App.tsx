@@ -70,6 +70,10 @@ const App = (): JSX.Element => {
                     element: <Results />,
                 },
                 {
+                    path: "results/round/:id",
+                    element: <Results />,
+                },
+                {
                     path: "results/:id",
                     element: <SingleResult />,
                 },
@@ -83,6 +87,10 @@ const App = (): JSX.Element => {
                 },
                 {
                     path: "attendance",
+                    element: <Attendance />,
+                },
+                {
+                    path: "attendance/:id",
                     element: <Attendance />,
                 },
                 {

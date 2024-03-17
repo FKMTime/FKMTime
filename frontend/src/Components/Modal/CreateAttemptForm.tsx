@@ -46,6 +46,7 @@ const CreateAttemptModal: React.FC<CreateAttemptModalModalProps> = ({
     const [isExtraAttempt, setIsExtraAttempt] = useState<boolean>(false);
 
     useEffect(() => {
+        if (!isOpen) return;
         getAllPersons().then((data) => {
             setPersons(data);
         });
@@ -54,7 +55,7 @@ const CreateAttemptModal: React.FC<CreateAttemptModalModalProps> = ({
                 data.filter((device: Device) => device.type === "STATION")
             );
         });
-    }, []);
+    }, [isOpen]);
 
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();

@@ -57,10 +57,11 @@ const CreateDeviceModal: React.FC<CreateDeviceModalProps> = ({
     };
 
     useEffect(() => {
+        if (!isOpen) return;
         getAllRooms().then((rooms: Room[]) => {
             setRooms(rooms);
         });
-    }, []);
+    }, [isOpen]);
 
     return (
         <Modal isOpen={isOpen} onClose={onClose} title="Create device">
