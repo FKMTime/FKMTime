@@ -15,6 +15,7 @@ import { DeviceService } from './device.service';
 import { DeviceDto } from './dto/device.dto';
 import { AuthGuard } from '@nestjs/passport';
 import { AdminOrDelegateGuard } from '../auth/guards/adminOrDelegate.guard';
+import { UpdateBatteryPercentageDto } from './dto/updateBatteryPercentage.dto';
 
 @Controller('device')
 export class DeviceController {
@@ -27,9 +28,14 @@ export class DeviceController {
   }
 
   @UseGuards(AdminGuard)
-  @Post('')
+  @Post()
   async createDevice(@Body() data: DeviceDto) {
     return this.deviceService.createDevice(data);
+  }
+
+  @Post('battery')
+  async updateBatteryPercentage(@Body() data: UpdateBatteryPercentageDto) {
+    return this.deviceService.updateBatteryPercentage(data);
   }
 
   @UseGuards(AdminGuard)

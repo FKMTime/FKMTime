@@ -7,6 +7,9 @@ const BACKEND_URL = import.meta.env.PROD ? "/api/" : DEV_BACKEND_URL;
 export const INCIDENTS_WEBSOCKET_URL = import.meta.env.PROD
     ? "/api/incidents"
     : `${DEV_BACKEND_URL}incidents`;
+export const DEVICES_WEBSOCKET_URL = import.meta.env.PROD
+    ? "/api/device"
+    : `${DEV_BACKEND_URL}device`;
 
 export const backendRequest = (
     path: string,

@@ -107,16 +107,17 @@ model Attempt {
 }
 
 model Device {
-  id         String       @id @default(uuid())
-  name       String
-  espId      String?      @db.Text()
-  type       DeviceType
-  roomId     String
-  room       Room         @relation(fields: [roomId], references: [id])
-  createdAt  DateTime     @default(now())
-  updatedAt  DateTime     @updatedAt
-  Attempt    Attempt[]
-  Attendance Attendance[]
+  id                String       @id @default(uuid())
+  name              String
+  espId             String?      @unique @db.Text()
+  type              DeviceType
+  batteryPercentage Int?
+  roomId            String
+  room              Room         @relation(fields: [roomId], references: [id])
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+  Attempt           Attempt[]
+  Attendance        Attendance[]
 }
 
 enum DeviceType {

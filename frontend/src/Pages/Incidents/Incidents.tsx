@@ -17,9 +17,6 @@ const Incidents = () => {
     const [socket] = useState(
         io(INCIDENTS_WEBSOCKET_URL, {
             transports: ["websocket"],
-            extraHeaders: {
-                Authorization: `Bearer ${getToken()}`,
-            },
             auth: {
                 token: getToken(),
             },

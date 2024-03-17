@@ -6,12 +6,23 @@ import { Box, IconButton } from "@chakra-ui/react";
 import { MdAdd } from "react-icons/md";
 import CreateDeviceModal from "../../Components/Modal/CreateDeviceModal.tsx";
 import DevicesTable from "../../Components/Table/DevicesTable.tsx";
+import io from "socket.io-client";
+import { DEVICES_WEBSOCKET_URL } from "../../logic/request.ts";
+import { getToken } from "../../logic/auth.ts";
 
 const Devices = (): JSX.Element => {
     const [isLoading, setIsLoading] = useState<boolean>(true);
     const [devices, setDevices] = useState<Device[]>([]);
     const [isOpenCreateDeviceModal, setIsOpenCreateDeviceModal] =
         useState<boolean>(false);
+    const [socket] = useState(
+        io(DEVICES_WEBSOCKET_URL, {
+            transports: ["websocket"],
+            auth: {
+                token: getToken(),
+            },
+        })
+    );
 
     const fetchData = async () => {
         setIsLoading(true);
@@ -27,7 +38,16 @@ const Devices = (): JSX.Element => {
 
     useEffect(() => {
         fetchData();
-    }, []);
+        socket.emit("join");
+
+        socket.on("deviceUpdated", () => {
+            fetchData();
+        });
+
+        return () => {
+            socket.emit("leave");
+        };
+    }, [socket]);
 
     if (isLoading) return <LoadingPage />;
 

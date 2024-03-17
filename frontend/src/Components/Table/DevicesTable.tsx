@@ -16,6 +16,7 @@ const DevicesTable: React.FC<DevicesTableProps> = ({ devices, fetchData }) => {
                         <Th>Name</Th>
                         <Th>Room</Th>
                         <Th>ESP ID</Th>
+                        <Th>Battery</Th>
                         <Th>Type</Th>
                         <Th>Solves</Th>
                         <Th>Actions</Th>

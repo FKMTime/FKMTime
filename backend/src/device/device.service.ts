@@ -1,10 +1,15 @@
 import { Injectable } from '@nestjs/common';
 import { DbService } from '../db/db.service';
 import { DeviceDto } from './dto/device.dto';
+import { UpdateBatteryPercentageDto } from './dto/updateBatteryPercentage.dto';
+import { DeviceGateway } from './device.gateway';
 
 @Injectable()
 export class DeviceService {
-  constructor(private readonly prisma: DbService) {}
+  constructor(
+    private readonly prisma: DbService,
+    private readonly deviceGateway: DeviceGateway,
+  ) {}
 
   async getAllDevices() {
     const devices = await this.prisma.device.findMany({
@@ -59,6 +64,19 @@ export class DeviceService {
         },
       },
     });
+  }
+
+  async updateBatteryPercentage(data: UpdateBatteryPercentageDto) {
+    await this.prisma.device.update({
+      where: { espId: data.espId },
+      data: {
+        batteryPercentage: data.batteryPercentage,
+      },
+    });
+    this.deviceGateway.handleDeviceUpdated();
+    return {
+      message: 'Battery percentage updated',
+    };
   }
 
   async deleteDevice(id: string) {

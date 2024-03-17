@@ -109,6 +109,7 @@ export interface Device {
     name: string;
     espId: string;
     type: DeviceType;
+    batteryPercentage?: number;
     roomId: string;
     room: Room;
     count?: number;

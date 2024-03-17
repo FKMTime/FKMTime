@@ -59,6 +59,9 @@ const DeviceRow: React.FC<deviceRowProps> = ({ device, fetchData }) => {
                 <Td>{device.name}</Td>
                 <Td>{device.room.name}</Td>
                 <Td>{device.espId}</Td>
+                <Td>
+                    {device.batteryPercentage && `${device.batteryPercentage}%`}
+                </Td>
                 <Td>{prettyDeviceType(device.type)}</Td>
                 <Td>{device.count}</Td>
                 <Td>
