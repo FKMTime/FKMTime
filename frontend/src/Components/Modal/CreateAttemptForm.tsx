@@ -1,5 +1,7 @@
 import { Modal } from "./Modal.tsx";
 import {
+    Alert,
+    AlertIcon,
     Box,
     Button,
     Checkbox,
@@ -7,6 +9,7 @@ import {
     FormLabel,
     Input,
     Select,
+    Text,
     useToast,
 } from "@chakra-ui/react";
 import { Device, Person } from "../../logic/interfaces.ts";
@@ -15,6 +18,7 @@ import { getAllPersons } from "../../logic/persons.ts";
 import { createAttempt } from "../../logic/attempt.ts";
 import { getAllDevices } from "../../logic/devices.ts";
 import { TimeLimit } from "@wca/helpers";
+import { resultToString } from "../../logic/resultFormatters.ts";
 
 interface CreateAttemptModalModalProps {
     isOpen: boolean;
@@ -44,6 +48,7 @@ const CreateAttemptModal: React.FC<CreateAttemptModalModalProps> = ({
     const [isResolved, setIsResolved] = useState<boolean>(false);
     const [submitToWcaLive, setSubmitToWcaLive] = useState<boolean>(false);
     const [isExtraAttempt, setIsExtraAttempt] = useState<boolean>(false);
+    const [value, setValue] = useState<string>("");
 
     useEffect(() => {
         if (!isOpen) return;
@@ -161,6 +166,15 @@ const CreateAttemptModal: React.FC<CreateAttemptModalModalProps> = ({
                 >
                     Is extra attempt
                 </Checkbox>
+                {value.length > 0 && (
+                    <Text>Time: {resultToString(+value)}</Text>
+                )}
+                {timeLimit && +value >= timeLimit.centiseconds && (
+                    <Alert status="warning" color="black">
+                        <AlertIcon />
+                        Time limit not passed, time should be replaced to DNF
+                    </Alert>
+                )}
                 <FormControl isRequired>
                     <FormLabel>Time</FormLabel>
                     <Input
@@ -168,6 +182,8 @@ const CreateAttemptModal: React.FC<CreateAttemptModalModalProps> = ({
                         _placeholder={{ color: "white" }}
                         disabled={isLoading}
                         name="value"
+                        value={value}
+                        onChange={(e) => setValue(e.target.value)}
                     />
                 </FormControl>
                 <FormControl>

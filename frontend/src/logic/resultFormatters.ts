@@ -1,13 +1,3 @@
-export const inputToAttemptResult = (input: string) => {
-    const num = toInt(input.replace(/\D/g, "")) || 0;
-    return (
-        Math.floor(num / 1000000) * 360000 +
-        Math.floor((num % 1000000) / 10000) * 6000 +
-        Math.floor((num % 10000) / 100) * 100 +
-        (num % 100)
-    );
-};
-
 export const resultToString = (result: number) => {
     if (result === -1) {
         return "DNF";

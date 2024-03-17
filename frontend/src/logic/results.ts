@@ -2,22 +2,10 @@ import { Competition } from "@wca/helpers";
 import { backendRequest } from "./request";
 import { getLimitByRoundId } from "./utils";
 
-export const getResultsByRoundId = async (
-    roundId: string,
-    search?: string,
-    groupId?: string
-) => {
+export const getResultsByRoundId = async (roundId: string, search?: string) => {
     let route = `result/round/${roundId}`;
-    const params = [];
-    if (search && search.length > 0) {
-        params.push(`search=${search}`);
-    }
-    if (groupId) {
-        params.push(`groupId=${groupId}`);
-    }
-    const paramsString = params.join("&");
-    if (paramsString.length > 0) {
-        route += `?${paramsString}`;
+    if (search) {
+        route += `?search=${search}`;
     }
     const response = await backendRequest(route, "GET", true);
     return await response.json();
@@ -59,8 +47,5 @@ export const checkTimeLimit = (
     if (!timeLimit) {
         return true;
     }
-    if (time > timeLimit.centiseconds) {
-        return false;
-    }
-    return true;
+    return time <= timeLimit.centiseconds;
 };

@@ -73,12 +73,8 @@ const Results = (): JSX.Element => {
         return getNumberOfAttemptsForRound(filters.roundId, competition.wcif);
     }, [competition, filters.roundId]);
 
-    const fetchData = async (
-        roundId: string,
-        search?: string,
-        groupId?: string
-    ) => {
-        const data = await getResultsByRoundId(roundId, search, groupId);
+    const fetchData = async (roundId: string, search?: string) => {
+        const data = await getResultsByRoundId(roundId, search);
         setResults(data);
     };
 
