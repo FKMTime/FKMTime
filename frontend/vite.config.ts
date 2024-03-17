@@ -5,6 +5,21 @@ import svgrPlugin from "vite-plugin-svgr";
 import checker from "vite-plugin-checker";
 import {VitePWA} from "vite-plugin-pwa";
 
+const manifestForPlugIn = {
+  registerType:"prompt",
+  manifest:{
+    name:"FKMTime",
+    short_name:"FKMTime",
+    description:"I am a simple vite app",
+    theme_color:'#2D3748',
+    background_color:'#2D3748',
+    display:"standalone",
+    scope:'/',
+    start_url:"/",
+    orientation:'portrait'
+  }
+};
+
 export default defineConfig({
   plugins: [
     react(),
@@ -17,12 +32,8 @@ export default defineConfig({
     }),
     viteTsconfigPaths(),
     svgrPlugin(),
-    VitePWA({ registerType: 'autoUpdate',
-      manifest: {
-        name: 'FKMTime',
-        short_name: 'FKMTime',
-        description: 'FKMTime',
-        theme_color: '#ffffff',
-      }})
+    //eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
+    VitePWA(manifestForPlugIn),
   ],
 });
