@@ -11,17 +11,22 @@ import {
     Select,
     Text,
 } from "@chakra-ui/react";
-import { Activity, Event, Room, Venue } from "@wca/helpers";
+import { Activity, Event, Room as WCIFRoom, Venue } from "@wca/helpers";
 import ScheduleTable from "../../Components/Table/ScheduleTable";
 import EventIcon from "../../Components/Icons/EventIcon";
 import { useAtom } from "jotai";
 import { competitionAtom } from "../../logic/atoms";
 import { useNavigate } from "react-router-dom";
 import MobileSchedule from "../../Components/Schedule/MobileSchedule.tsx";
+import { Room } from "../../logic/interfaces.ts";
+import { getAllRooms } from "../../logic/rooms.ts";
+import { getActivityNameByCode, getRoundNameById } from "../../logic/utils.ts";
 
 const Home = (): JSX.Element => {
     const navigate = useNavigate();
     const [competition, setCompetition] = useAtom(competitionAtom);
+    const [rooms, setRooms] = useState<Room[]>([]);
+    const [currentRounds, setCurrentRounds] = useState<string[]>([]);
     const [selectedVenue, setSelectedVenue] = useState<number>(0);
     const [selectedRoom, setSelectedRoom] = useState<number>(0);
     const [selectedDate, setSelectedDate] = useState<Date>(new Date());
@@ -31,7 +36,7 @@ const Home = (): JSX.Element => {
         }
         return competition.wcif.schedule.venues
             .find((venue: Venue) => venue.id === selectedVenue)
-            ?.rooms.find((room: Room) => room.id === selectedRoom)
+            ?.rooms.find((room: WCIFRoom) => room.id === selectedRoom)
             ?.activities.filter((a: Activity) => {
                 if (new Date(a.startTime).getDay() === selectedDate.getDay()) {
                     return true;
@@ -76,7 +81,19 @@ const Home = (): JSX.Element => {
         fetchData();
     }, [fetchData]);
 
-    if (!competition) {
+    useEffect(() => {
+        getAllRooms().then((data) => {
+            setRooms(data);
+            const ids = new Set<string>(
+                data
+                    .filter((room: Room) => room.currentGroupId)
+                    .map((room: Room) => room.currentGroupId.split("-g")[0])
+            );
+            setCurrentRounds([...ids]);
+        });
+    }, []);
+
+    if (!competition || !rooms) {
         return <LoadingPage />;
     }
 
@@ -100,6 +117,39 @@ const Home = (): JSX.Element => {
             >
                 Incidents
             </Button>
+            <Heading size="lg">Attendance</Heading>
+            <Box display="flex" gap="2">
+                {rooms
+                    .filter((r) => r.currentGroupId)
+                    .map((room: Room) => (
+                        <Button
+                            key={room.id}
+                            colorScheme="blue"
+                            onClick={() => {
+                                navigate(`/attendance/${room.currentGroupId}`);
+                            }}
+                        >
+                            {getActivityNameByCode(
+                                room.currentGroupId,
+                                competition.wcif
+                            )}
+                        </Button>
+                    ))}
+            </Box>
+            <Heading size="lg">Results</Heading>
+            <Box display="flex" gap="2">
+                {currentRounds.map((roundId) => (
+                    <Button
+                        key={roundId}
+                        colorScheme="blue"
+                        onClick={() => {
+                            navigate(`/results/round/${roundId}`);
+                        }}
+                    >
+                        {getRoundNameById(roundId, competition.wcif)}
+                    </Button>
+                ))}
+            </Box>
             <Box display="flex" flexDirection="row" gap="5">
                 <FormControl width="fit-content">
                     <FormLabel>Date</FormLabel>
@@ -138,7 +188,7 @@ const Home = (): JSX.Element => {
                     >
                         {competition?.wcif.schedule.venues
                             .find((venue: Venue) => venue.id === selectedVenue)
-                            ?.rooms.map((room: Room) => (
+                            ?.rooms.map((room: WCIFRoom) => (
                                 <option key={room.id} value={room.id}>
                                     {room.name}
                                 </option>

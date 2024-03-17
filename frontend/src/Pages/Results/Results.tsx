@@ -1,23 +1,39 @@
-import {useCallback, useEffect, useMemo, useState} from "react";
-import {Result, Room} from "../../logic/interfaces";
-import {Box, Button, IconButton, Input, Select, Text, useToast,} from "@chakra-ui/react";
-import {getResultsByRoundId, reSubmitRoundToWcaLive,} from "../../logic/results";
-import {getCompetitionInfo} from "../../logic/competition";
-import {useNavigate, useParams} from "react-router-dom";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { Result, Room } from "../../logic/interfaces";
+import {
+    Box,
+    Button,
+    IconButton,
+    Input,
+    Select,
+    Text,
+    useToast,
+} from "@chakra-ui/react";
+import {
+    getResultsByRoundId,
+    reSubmitRoundToWcaLive,
+} from "../../logic/results";
+import { getCompetitionInfo } from "../../logic/competition";
+import { useNavigate, useParams } from "react-router-dom";
 import LoadingPage from "../../Components/LoadingPage";
 import EventIcon from "../../Components/Icons/EventIcon";
-import {Event, Round} from "@wca/helpers";
+import { Event, Round } from "@wca/helpers";
 import ResultsTable from "../../Components/Table/ResultsTable";
-import {resultToString} from "../../logic/resultFormatters";
-import {getCutoffByRoundId, getLimitByRoundId, getNumberOfAttemptsForRound, getRoundNameById,} from "../../logic/utils";
+import { resultToString } from "../../logic/resultFormatters";
+import {
+    getCutoffByRoundId,
+    getLimitByRoundId,
+    getNumberOfAttemptsForRound,
+    getRoundNameById,
+} from "../../logic/utils";
 import Alert from "../../Components/Alert";
-import {getUserInfo} from "../../logic/auth.ts";
-import {HAS_WRITE_ACCESS} from "../../logic/accounts.ts";
-import {MdAdd} from "react-icons/md";
+import { getUserInfo } from "../../logic/auth.ts";
+import { HAS_WRITE_ACCESS } from "../../logic/accounts.ts";
+import { MdAdd } from "react-icons/md";
 import CreateAttemptModal from "../../Components/Modal/CreateAttemptForm.tsx";
-import {competitionAtom} from "../../logic/atoms.ts";
-import {useAtom} from "jotai";
-import {getAllRooms} from "../../logic/rooms.ts";
+import { competitionAtom } from "../../logic/atoms.ts";
+import { useAtom } from "jotai";
+import { getAllRooms } from "../../logic/rooms.ts";
 
 const Results = (): JSX.Element => {
     const { id } = useParams<{ id: string }>();
@@ -137,7 +153,11 @@ const Results = (): JSX.Element => {
 
     useEffect(() => {
         getAllRooms().then((rooms: Room[]) => {
-            const ids = new Set<string>(rooms.filter((r) => r.currentGroupId).map((room) => room.currentGroupId.split("-g")[0]));
+            const ids = new Set<string>(
+                rooms
+                    .filter((room) => room.currentGroupId)
+                    .map((room) => room.currentGroupId.split("-g")[0])
+            );
             setCurrentRounds([...ids]);
         });
     }, []);
@@ -195,17 +215,17 @@ const Results = (): JSX.Element => {
                     onChange={handleSearch}
                 />
 
-                    {currentRounds.map((roundId) => (
-                        <Button
-                            key={roundId}
-                            colorScheme="blue"
-                            onClick={() => {
-                                navigate(`/results/round/${roundId}`);
-                            }}
-                        >
-                            {getRoundNameById(roundId, competition.wcif)}
-                        </Button>
-                    ))}
+                {currentRounds.map((roundId) => (
+                    <Button
+                        key={roundId}
+                        colorScheme="blue"
+                        onClick={() => {
+                            navigate(`/results/round/${roundId}`);
+                        }}
+                    >
+                        {getRoundNameById(roundId, competition.wcif)}
+                    </Button>
+                ))}
             </Box>
             {filters.roundId && (
                 <Box display="flex" flexDirection="column" gap="5">

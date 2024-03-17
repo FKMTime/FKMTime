@@ -1,4 +1,4 @@
-import {Activity, Competition} from "@wca/helpers";
+import { Activity, Competition } from "@wca/helpers";
 import regions from "./regions";
 import { Attempt, Attendance, Result } from "./interfaces";
 
@@ -112,25 +112,22 @@ export const getAbsentPeople = (
     role: string
 ) => {
     const activities: Activity[] = [];
-    wcif.schedule?.venues[0].rooms
-        .forEach((room) => {
-            room.activities.forEach((a) => {
-                a.childActivities.forEach((ca) => {
-                    if (ca.activityCode === groupId) {
-                        activities.push(ca);
-                    }
-                });
-            })
+    wcif.schedule?.venues[0].rooms.forEach((room) => {
+        room.activities.forEach((a) => {
+            a.childActivities.forEach((ca) => {
+                if (ca.activityCode === groupId) {
+                    activities.push(ca);
+                }
+            });
         });
+    });
     if (activities.length === 0) return [];
     const wcifRole = attendanceRoleToWcif(role);
     return wcif.persons.filter((person) => {
         if (
             person.assignments?.some(
                 (assignment) =>
-                    activities.some(
-                        (a) => a.id === assignment.activityId
-                    ) &&
+                    activities.some((a) => a.id === assignment.activityId) &&
                     assignment.assignmentCode === wcifRole
             ) &&
             !presentPeople.some(

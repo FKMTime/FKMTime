@@ -1,19 +1,28 @@
-import {useEffect, useMemo, useState} from "react";
-import {Attendance as AttendanceType, Room} from "../../logic/interfaces";
-import {Box, Button, FormControl, FormLabel, Heading, ListItem, Select, UnorderedList,} from "@chakra-ui/react";
-import {Activity, Event, Room as WCIFRoom, Round} from "@wca/helpers";
-import {getCompetitionInfo} from "../../logic/competition.ts";
-import {competitionAtom} from "../../logic/atoms.ts";
-import {useAtom} from "jotai";
+import { useEffect, useMemo, useState } from "react";
+import { Attendance as AttendanceType, Room } from "../../logic/interfaces";
+import {
+    Box,
+    Button,
+    FormControl,
+    FormLabel,
+    Heading,
+    ListItem,
+    Select,
+    UnorderedList,
+} from "@chakra-ui/react";
+import { Activity, Event, Room as WCIFRoom, Round } from "@wca/helpers";
+import { getCompetitionInfo } from "../../logic/competition.ts";
+import { competitionAtom } from "../../logic/atoms.ts";
+import { useAtom } from "jotai";
 import events from "../../logic/events.ts";
 import LoadingPage from "../../Components/LoadingPage.tsx";
-import {getAllRooms} from "../../logic/rooms.ts";
-import {getAttendanceByGroupId} from "../../logic/attendance.ts";
-import {getAbsentPeople, getActivityNameByCode} from "../../logic/utils.ts";
-import {useNavigate, useParams} from "react-router-dom";
+import { getAllRooms } from "../../logic/rooms.ts";
+import { getAttendanceByGroupId } from "../../logic/attendance.ts";
+import { getAbsentPeople, getActivityNameByCode } from "../../logic/utils.ts";
+import { useNavigate, useParams } from "react-router-dom";
 
 const Attendance = () => {
-    const {id} = useParams<{ id: string }>();
+    const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
     const selectedGroup = id ? id : "";
     const [competition, setCompetition] = useAtom(competitionAtom);
@@ -37,11 +46,10 @@ const Attendance = () => {
         let activitiesToReturn: Activity[] = [];
         competition.wcif.schedule.venues[0].rooms.forEach((room: WCIFRoom) => {
             room.activities.forEach((activity: Activity) => {
-                    if (activity.activityCode === selectedRound) {
-                        activitiesToReturn = activity.childActivities;
-                    }
+                if (activity.activityCode === selectedRound) {
+                    activitiesToReturn = activity.childActivities;
                 }
-            )
+            });
         });
         return activitiesToReturn;
     }, [competition, selectedRound, selectedEvent]);
@@ -117,7 +125,7 @@ const Attendance = () => {
     }, [rooms, selectedGroup]);
 
     if (!competition) {
-        return <LoadingPage/>;
+        return <LoadingPage />;
     }
 
     return (
@@ -125,26 +133,35 @@ const Attendance = () => {
             <Heading size="lg">Attendance</Heading>
             <Heading size="md">Current groups</Heading>
             <Box display="flex" gap="2">
-                {rooms.filter(r => r.currentGroupId).map((room: Room) => (
-                    <Button
-                        key={room.id}
-                        colorScheme="blue"
-                        onClick={() => {
-                            setSelectedEvent(room.currentGroupId.split("-")[0]);
-                            setSelectedRound(room.currentGroupId.split("-g")[0]);
-                            handleGroupChange(room.currentGroupId)
-                        }}
-                    >
-                        {getActivityNameByCode(room.currentGroupId, competition.wcif)}
-                    </Button>
-                ))}
+                {rooms
+                    .filter((r) => r.currentGroupId)
+                    .map((room: Room) => (
+                        <Button
+                            key={room.id}
+                            colorScheme="blue"
+                            onClick={() => {
+                                setSelectedEvent(
+                                    room.currentGroupId.split("-")[0]
+                                );
+                                setSelectedRound(
+                                    room.currentGroupId.split("-g")[0]
+                                );
+                                handleGroupChange(room.currentGroupId);
+                            }}
+                        >
+                            {getActivityNameByCode(
+                                room.currentGroupId,
+                                competition.wcif
+                            )}
+                        </Button>
+                    ))}
             </Box>
 
             <FormControl width="fit-content">
                 <FormLabel>Event</FormLabel>
                 <Select
                     placeholder="Select event"
-                    _placeholder={{color: "white"}}
+                    _placeholder={{ color: "white" }}
                     value={selectedEvent}
                     onChange={(event) => {
                         setSelectedEvent(event?.target.value);
@@ -154,10 +171,7 @@ const Attendance = () => {
                 >
                     {competition.wcif.events.map((event: Event) => (
                         <option key={event.id} value={event.id}>
-                            {
-                                events.find((e) => e.id === event.id)
-                                    ?.name
-                            }
+                            {events.find((e) => e.id === event.id)?.name}
                         </option>
                     ))}
                 </Select>
@@ -167,18 +181,15 @@ const Attendance = () => {
                     <FormLabel>Round</FormLabel>
                     <Select
                         placeholder="Select round"
-                        _placeholder={{color: "white"}}
+                        _placeholder={{ color: "white" }}
                         value={selectedRound}
-                        onChange={(event) =>  {
+                        onChange={(event) => {
                             setSelectedRound(event?.target.value);
                             setAttendance([]);
                         }}
                     >
                         {competition.wcif.events
-                            .find(
-                                (event: Event) =>
-                                    event.id === selectedEvent
-                            )
+                            .find((event: Event) => event.id === selectedEvent)
                             ?.rounds.map((round: Round, i: number) => (
                                 <option key={round.id} value={round.id}>
                                     {i + 1}
@@ -192,7 +203,7 @@ const Attendance = () => {
                     <FormLabel>Group</FormLabel>
                     <Select
                         placeholder="Select group"
-                        _placeholder={{color: "white"}}
+                        _placeholder={{ color: "white" }}
                         value={selectedGroup}
                         onChange={(event) =>
                             handleGroupChange(event?.target.value)
