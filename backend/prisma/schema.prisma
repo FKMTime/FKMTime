@@ -44,6 +44,8 @@ model Attendance {
   role      StaffRole
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
+
+  @@unique([personId, groupId, role])
 }
 
 model Competition {
