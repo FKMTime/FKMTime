@@ -1,9 +1,8 @@
-import { IsInt, IsNotEmpty, IsString, Max, Min } from 'class-validator';
+import { IsInt, Max, Min } from 'class-validator';
 
 export class UpdateBatteryPercentageDto {
-  @IsNotEmpty()
-  @IsString()
-  readonly espId: string;
+  @IsInt()
+  espId: number;
 
   @IsInt()
   @Min(0)

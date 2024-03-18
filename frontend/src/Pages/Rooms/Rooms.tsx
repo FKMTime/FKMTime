@@ -1,10 +1,10 @@
-import { Box, Button, Heading, useToast } from "@chakra-ui/react";
-import { useCallback, useEffect, useState } from "react";
-import { Room } from "../../logic/interfaces.ts";
-import { getAllRooms, updateCurrentRound } from "../../logic/rooms.ts";
-import { useAtom } from "jotai";
-import { competitionAtom } from "../../logic/atoms.ts";
-import { getCompetitionInfo } from "../../logic/competition.ts";
+import {Box, Button, Heading, useToast} from "@chakra-ui/react";
+import {useCallback, useEffect, useState} from "react";
+import {Room} from "../../logic/interfaces.ts";
+import {getAllRooms, updateCurrentRound} from "../../logic/rooms.ts";
+import {useAtom} from "jotai";
+import {competitionAtom} from "../../logic/atoms.ts";
+import {getCompetitionInfo} from "../../logic/competition.ts";
 import RoomCard from "../../Components/RoomCard.tsx";
 import LoadingPage from "../../Components/LoadingPage.tsx";
 
@@ -61,22 +61,24 @@ const Rooms = () => {
     };
 
     if (!competition) {
-        return <LoadingPage />;
+        return <LoadingPage/>;
     }
 
     return (
-        <Box display="flex" flexDirection="column" gap="5">
+        <Box display="flex" flexDirection="column" gap="5" width="fit-content">
             <Heading size="lg">Rooms</Heading>
-            {rooms.map((room: Room) => (
-                <RoomCard
-                    room={room}
-                    key={room.id}
-                    competition={competition}
-                    updateCurrentGroup={updateCurrentGroup}
-                    currentGroupId={room.currentGroupId}
-                />
-            ))}
-            <Button onClick={handleSubmit} colorScheme="green" width="20%">
+            <Box display="flex" flexWrap="wrap" gap="5">
+                {rooms.map((room: Room) => (
+                    <RoomCard
+                        room={room}
+                        key={room.id}
+                        competition={competition}
+                        updateCurrentGroup={updateCurrentGroup}
+                        currentGroupId={room.currentGroupId}
+                    />
+                ))}
+            </Box>
+            <Button onClick={handleSubmit} colorScheme="green" width="100%">
                 Save
             </Button>
         </Box>
