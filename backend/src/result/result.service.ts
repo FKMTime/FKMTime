@@ -1,8 +1,8 @@
-import { HttpException, Injectable } from '@nestjs/common';
+import { HttpException, Injectable, Logger } from '@nestjs/common';
 import { DbService } from 'src/db/db.service';
 import { EnterAttemptDto } from './dto/enterAttempt.dto';
 import Expo from 'expo-server-sdk';
-import { en, pl } from 'src/translations';
+import { getTranslation, isLocaleAvailable } from 'src/translations';
 import { Event, Person, Round } from '@wca/helpers';
 import { Attempt, Competition } from '@prisma/client';
 import { IncidentsGateway } from '../attempt/incidents.gateway';
@@ -17,6 +17,8 @@ export class ResultService {
     private readonly incidentsGateway: IncidentsGateway,
     private readonly resultGateway: ResultGateway,
   ) {}
+
+  private logger = new Logger(`WCA-Live`);
 
   async getAllResultsByRound(roundId: string, search?: string) {
     const whereParams = {
@@ -427,10 +429,7 @@ export class ResultService {
     if (!competitor) {
       throw new HttpException(
         {
-          message:
-            locale === 'PL'
-              ? pl['competitorNotFound']
-              : en['competitorNotFound'],
+          message: getTranslation('competitorNotFound', locale),
           shouldResetTime: true,
         },
         404,
@@ -448,10 +447,7 @@ export class ResultService {
     if (previousAttemptWithSameSessionId) {
       throw new HttpException(
         {
-          message:
-            locale === 'PL'
-              ? pl['attemptAlreadyEntered']
-              : en['attemptAlreadyEntered'],
+          message: getTranslation('attemptAlreadyEntered', locale),
           shouldResetTime: false,
         },
         400,
@@ -466,7 +462,7 @@ export class ResultService {
     if (!judge && !data.isDelegate) {
       throw new HttpException(
         {
-          message: locale === 'PL' ? pl['judgeNotFound'] : en['judgeNotFound'],
+          message: getTranslation('judgeNotFound', locale),
           shouldResetTime: false,
         },
         404,
@@ -478,20 +474,19 @@ export class ResultService {
         device.room.currentGroupId,
         device.id,
       );
-      if (judge.countryIso2 === 'PL' && competitor.countryIso2 === 'PL') {
-        locale = 'PL';
+      if (judge.countryIso2 === competitor.countryIso2) {
+        if (isLocaleAvailable(judge.countryIso2.toLowerCase())) {
+          locale = judge.countryIso2.toLowerCase();
+        }
       } else {
-        locale = 'EN';
+        locale = 'en';
       }
     }
     const competition = await this.prisma.competition.findFirst();
     if (!competition) {
       throw new HttpException(
         {
-          message:
-            locale === 'PL'
-              ? pl['competitionNotFound']
-              : en['competitionNotFound'],
+          message: getTranslation('competitionNotFound', locale),
           shouldResetTime: true,
         },
         404,
@@ -515,11 +510,8 @@ export class ResultService {
     if (!isCompetitorSignedInForEvent) {
       throw new HttpException(
         {
-          message:
-            locale === 'PL'
-              ? pl['competitorIsNotSignedInForEvent']
-              : en['competitorIsNotSignedInForEvent'],
-          shouldResetTime: true,
+          message: getTranslation('competitorIsNotSignedInForEvent', locale),
+          shouldResetTime: false,
         },
         400,
       );
@@ -563,8 +555,7 @@ export class ResultService {
     if (!finalData.cutoffPassed) {
       throw new HttpException(
         {
-          message:
-            locale === 'PL' ? pl['cutoffNotPassed'] : en['cutoffNotPassed'],
+          message: getTranslation('cutoffNotPassed', locale),
           shouldResetTime: true,
         },
         400,
@@ -608,10 +599,8 @@ export class ResultService {
       if (attemptNumber === -1) {
         await this.sendNotificationAboutIncident(device.name, competitor.name);
         return {
-          message:
-            locale === 'PL'
-              ? pl['delegateWasNotified']
-              : en['delegateWasNotified'],
+          message: getTranslation('delegateWasNotified', locale),
+          shouldResetTime: true,
         };
       }
 
@@ -626,12 +615,8 @@ export class ResultService {
       );
       return {
         message: finalData.limitPassed
-          ? locale === 'PL'
-            ? pl['attemptEntered']
-            : en['attemptEntered']
-          : locale === 'PL'
-            ? pl['attemptEnteredButReplacedToDnf']
-            : en['attemptEnteredButReplacedToDnf'],
+          ? getTranslation('attemptEntered', locale)
+          : getTranslation('attemptEnteredButReplacedToDnf', locale),
       };
     }
     let attemptNumber = 1;
@@ -640,8 +625,7 @@ export class ResultService {
     if (lastAttempt && lastAttempt.attemptNumber === maxAttempts) {
       throw new HttpException(
         {
-          message:
-            locale === 'PL' ? pl['noAttemptsLeft'] : en['noAttemptsLeft'],
+          message: getTranslation('noAttemptsLeft', locale),
           shouldResetTime: true,
         },
         400,
@@ -682,10 +666,8 @@ export class ResultService {
     if (data.isDelegate) {
       await this.sendNotificationAboutIncident(device.name, competitor.name);
       return {
-        message:
-          locale === 'PL'
-            ? pl['delegateWasNotified']
-            : en['delegateWasNotified'],
+        message: getTranslation('delegateWasNotified', locale),
+        shouldResetTime: true,
       };
     }
     try {
@@ -700,7 +682,7 @@ export class ResultService {
       );
     } catch (e) {
       return {
-        message: locale === 'PL' ? pl['attemptEntered'] : en['attemptEntered'],
+        message: getTranslation('attemptEntered', locale),
       };
     }
     if (finalData.dnsOther) {
@@ -733,12 +715,8 @@ export class ResultService {
     }
     return {
       message: finalData.limitPassed
-        ? locale === 'PL'
-          ? pl['attemptEntered']
-          : en['attemptEntered']
-        : locale === 'PL'
-          ? pl['attemptEnteredButReplacedToDnf']
-          : en['attemptEnteredButReplacedToDnf'],
+        ? getTranslation('attemptEntered', locale)
+        : getTranslation('attemptEnteredButReplacedToDnf', locale),
     };
   }
 
@@ -756,13 +734,6 @@ export class ResultService {
       return;
     }
     const url = WCA_LIVE_API_ORIGIN;
-    console.log('-----------------');
-    console.log(new Date().toISOString());
-    console.log('Sending attempt to WCA Live');
-    console.log(`Round: ${eventId}-r${roundNumber}`);
-    console.log('attemptNumber: ', attemptNumber);
-    console.log('registrantId: ', registrantId);
-    console.log('attemptResult: ', attemptResult);
     this.resultGateway.handleResultEntered(`${eventId}-r${roundNumber}`);
     const response = await fetch(`${url}/enter-attempt`, {
       method: 'POST',
@@ -779,10 +750,10 @@ export class ResultService {
         attemptResult: attemptResult,
       }),
     });
-    console.log('WCA Live response: ', response.status);
     const data = await response.json();
-    console.log('WCA Live response data: ', data);
-    console.log('-----------------');
+    this.logger.log(
+      `Sending attempt to WCA Live: ${eventId}-r${roundNumber} competitorId: ${registrantId} attemptNumber: ${attemptNumber} attemptResult: ${attemptResult} status ${response.status} data ${JSON.stringify(data)}`,
+    );
     return response.status;
   }
 
@@ -795,11 +766,6 @@ export class ResultService {
     if (!competition.sendResultsToWcaLive) {
       return;
     }
-    console.log('-----------------');
-    console.log(new Date().toISOString());
-    console.log('Sending scorecard to WCA Live');
-    console.log(`Round: ${eventId}-r${roundNumber}`);
-    console.log('results: ', results);
     const response = await fetch(`${url}/enter-results`, {
       method: 'POST',
       headers: {
@@ -813,10 +779,10 @@ export class ResultService {
         results: results,
       }),
     });
-    console.log('WCA Live response: ', response.status);
     const data = await response.json();
-    console.log('WCA Live response data: ', data);
-    console.log('-----------------');
+    this.logger.log(
+      `Sending scorecard to WCA Live: ${eventId}-r${roundNumber} status ${response.status} data ${JSON.stringify(data)}`,
+    );
     if (response.status !== 200) {
       throw new HttpException('WCA Live error', 500);
     } else {
@@ -844,10 +810,6 @@ export class ResultService {
     if (!competition.sendResultsToWcaLive) {
       return;
     }
-    console.log('-----------------');
-    console.log(new Date().toISOString());
-    console.log('Sending round to WCA Live');
-    console.log(`Round: ${eventIdToSubmit}-r${roundNumberToSubmit}`);
     const response = await fetch(`${url}/enter-results`, {
       method: 'POST',
       headers: {
@@ -861,10 +823,10 @@ export class ResultService {
         results: resultsToSubmit,
       }),
     });
-    console.log('WCA Live response: ', response.status);
     const data = await response.json();
-    console.log('WCA Live response data: ', data);
-    console.log('-----------------');
+    this.logger.log(
+      `Sending round to WCA Live: ${eventIdToSubmit}-r${roundNumberToSubmit} status ${response.status} data ${JSON.stringify(data)}`,
+    );
     if (response.status !== 200) {
       throw new HttpException('WCA Live error', 500);
     } else {
