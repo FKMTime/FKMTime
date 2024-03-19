@@ -18,6 +18,7 @@ import Rooms from "./Pages/Rooms/Rooms.tsx";
 import Attendance from "./Pages/Attendance/Attendance.tsx";
 import Incidents from "./Pages/Incidents/Incidents.tsx";
 import IncidentPage from "./Pages/Incidents/IncidentPage.tsx";
+import NotFound from "./Pages/NotFound/NotFound.tsx";
 
 const App = (): JSX.Element => {
     const router = createBrowserRouter([
@@ -103,6 +104,10 @@ const App = (): JSX.Element => {
                 },
             ],
         },
+        {
+            path: "*",
+            element: <NotFound />,
+        }
     ]);
 
     return (
