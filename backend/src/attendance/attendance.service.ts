@@ -1,6 +1,7 @@
 import { HttpException, Injectable } from '@nestjs/common';
 import { DbService } from '../db/db.service';
 import { CreateAttendaceDto } from './dto/createAttendance.dto';
+import { MarkAsPresentDto } from './dto/markAsPresent.dto';
 
 @Injectable()
 export class AttendanceService {
@@ -27,6 +28,20 @@ export class AttendanceService {
       },
       include: {
         device: true,
+      },
+    });
+  }
+
+  async markAsPresent(data: MarkAsPresentDto) {
+    return this.prisma.attendance.create({
+      data: {
+        groupId: data.groupId,
+        role: data.role,
+        person: {
+          connect: {
+            registrantId: data.registrantId,
+          },
+        },
       },
     });
   }

@@ -38,8 +38,8 @@ model Attendance {
   id        String    @id @default(uuid())
   personId  String
   person    Person    @relation(fields: [personId], references: [id])
-  deviceId  String
-  device    Device    @relation(fields: [deviceId], references: [id])
+  deviceId  String?
+  device    Device?   @relation(fields: [deviceId], references: [id])
   groupId   String
   role      StaffRole
   createdAt DateTime  @default(now())

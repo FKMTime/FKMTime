@@ -107,7 +107,7 @@ const App = (): JSX.Element => {
         {
             path: "*",
             element: <NotFound />,
-        }
+        },
     ]);
 
     return (

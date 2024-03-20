@@ -6,9 +6,8 @@ import {
     FormControl,
     FormLabel,
     Heading,
-    ListItem,
     Select,
-    UnorderedList,
+    useToast,
 } from "@chakra-ui/react";
 import { Activity, Event, Room as WCIFRoom, Round } from "@wca/helpers";
 import { getCompetitionInfo } from "../../logic/competition.ts";
@@ -17,13 +16,19 @@ import { useAtom } from "jotai";
 import events from "../../logic/events.ts";
 import LoadingPage from "../../Components/LoadingPage.tsx";
 import { getAllRooms } from "../../logic/rooms.ts";
-import { getAttendanceByGroupId } from "../../logic/attendance.ts";
+import {
+    getAttendanceByGroupId,
+    markAsPresent,
+} from "../../logic/attendance.ts";
 import { getAbsentPeople, getActivityNameByCode } from "../../logic/utils.ts";
 import { useNavigate, useParams } from "react-router-dom";
+import AbsentPeopleList from "../../Components/AbsentPeopleList.tsx";
+import PresentPeopleList from "../../Components/PresentPeopleList.tsx";
 
 const Attendance = () => {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
+    const toast = useToast();
     const selectedGroup = id ? id : "";
     const [competition, setCompetition] = useAtom(competitionAtom);
     const [attendance, setAttendance] = useState<AttendanceType[]>([]);
@@ -114,6 +119,28 @@ const Attendance = () => {
 
     const handleGroupChange = (groupId: string) => {
         navigate(`/attendance/${groupId}`);
+    };
+
+    const handleMarkAsPresent = async (registrantId: number, role: string) => {
+        const status = await markAsPresent(selectedGroup, registrantId, role);
+        if (status === 201) {
+            toast({
+                title: "Success",
+                description: "Marked as present",
+                status: "success",
+                duration: 3000,
+                isClosable: true,
+            });
+            fetchAttendanceData(selectedGroup);
+        } else {
+            toast({
+                title: "Error",
+                description: "Something went wrong",
+                status: "error",
+                duration: 3000,
+                isClosable: true,
+            });
+        }
     };
 
     useEffect(() => {
@@ -222,59 +249,61 @@ const Attendance = () => {
             )}
             {selectedGroup && (
                 <>
-                    <Box gap="5" display="flex" flexDirection="column">
-                        <Heading>Scramblers</Heading>
-                        <Heading size="md">Present</Heading>
-                        <UnorderedList>
-                            {presentScramblers.map((s) => (
-                                <ListItem key={s.id}>{s.person.name}</ListItem>
-                            ))}
-                        </UnorderedList>
-                        <Heading size="md">Absent</Heading>
-                        <UnorderedList>
-                            {absentScramblers.map((s) => (
-                                <ListItem key={s.registrantId}>
-                                    {s.name}
-                                </ListItem>
-                            ))}
-                        </UnorderedList>
-                    </Box>
-                    <Box gap="5" display="flex" flexDirection="column">
-                        <Heading>Runners</Heading>
-                        <Heading size="md">Present</Heading>
-                        <UnorderedList>
-                            {presentRunners.map((s) => (
-                                <ListItem key={s.id}>{s.person.name}</ListItem>
-                            ))}
-                        </UnorderedList>
-                        <Heading size="md">Absent</Heading>
-                        <UnorderedList>
-                            {absentRunners.map((s) => (
-                                <ListItem key={s.registrantId}>
-                                    {s.name}
-                                </ListItem>
-                            ))}
-                        </UnorderedList>
-                    </Box>
-                    <Box gap="5" display="flex" flexDirection="column">
-                        <Heading>Judges</Heading>
-                        <Heading size="md">Present</Heading>
-                        <UnorderedList>
-                            {presentJudges.map((s) => (
-                                <ListItem key={s.id}>
-                                    {s.person.name} - station {s.device.name}
-                                </ListItem>
-                            ))}
-                        </UnorderedList>
-                        <Heading size="md">Absent</Heading>
-                        <UnorderedList>
-                            {absentJudges.map((s) => (
-                                <ListItem key={s.registrantId}>
-                                    {s.name}
-                                </ListItem>
-                            ))}
-                        </UnorderedList>
-                    </Box>
+                    {absentScramblers.length === 0 &&
+                    presentScramblers.length === 0 ? (
+                        <Heading size="md">No scramblers in this group</Heading>
+                    ) : (
+                        <Box gap="5" display="flex" flexDirection="column">
+                            <Heading>Scramblers</Heading>
+                            {presentScramblers.length > 0 && (
+                                <PresentPeopleList
+                                    persons={presentScramblers}
+                                />
+                            )}
+                            {absentScramblers.length > 0 && (
+                                <AbsentPeopleList
+                                    persons={absentScramblers}
+                                    handleMarkAsPresent={handleMarkAsPresent}
+                                    role="SCRAMBLER"
+                                />
+                            )}
+                        </Box>
+                    )}
+                    {absentRunners.length === 0 &&
+                    presentRunners.length === 0 ? (
+                        <Heading size="md">No runners in this group</Heading>
+                    ) : (
+                        <Box gap="5" display="flex" flexDirection="column">
+                            <Heading>Runners</Heading>
+                            {presentRunners.length > 0 && (
+                                <PresentPeopleList persons={presentRunners} />
+                            )}
+                            {absentRunners.length > 0 && (
+                                <AbsentPeopleList
+                                    persons={absentRunners}
+                                    handleMarkAsPresent={handleMarkAsPresent}
+                                    role="RUNNER"
+                                />
+                            )}
+                        </Box>
+                    )}
+                    {absentJudges.length === 0 && presentJudges.length === 0 ? (
+                        <Heading size="md">No judges in this group</Heading>
+                    ) : (
+                        <Box gap="5" display="flex" flexDirection="column">
+                            <Heading>Judges</Heading>
+                            {presentJudges.length > 0 && (
+                                <PresentPeopleList persons={presentJudges} />
+                            )}
+                            {absentJudges.length > 0 && (
+                                <AbsentPeopleList
+                                    persons={absentJudges}
+                                    handleMarkAsPresent={handleMarkAsPresent}
+                                    role="JUDGE"
+                                />
+                            )}
+                        </Box>
+                    )}
                 </>
             )}
         </Box>

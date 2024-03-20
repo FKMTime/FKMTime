@@ -3,6 +3,7 @@ import { AttendanceService } from './attendance.service';
 import { CreateAttendaceDto } from './dto/createAttendance.dto';
 import { AuthGuard } from '@nestjs/passport';
 import { AdminOrDelegateGuard } from '../auth/guards/adminOrDelegate.guard';
+import { MarkAsPresentDto } from './dto/markAsPresent.dto';
 
 @Controller('attendance')
 export class AttendanceController {
@@ -23,5 +24,11 @@ export class AttendanceController {
   @Get('person/:id')
   async getAttendanceByPerson(@Param('id') id: string) {
     return this.attendanceService.getAttendanceByPerson(id);
+  }
+
+  @UseGuards(AuthGuard('jwt'), AdminOrDelegateGuard)
+  @Post('mark-as-present')
+  async markAsPresent(@Body() data: MarkAsPresentDto) {
+    return this.attendanceService.markAsPresent(data);
   }
 }

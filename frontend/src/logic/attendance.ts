@@ -21,6 +21,24 @@ export const getAttendanceByPersonId = async (id: string) => {
     return await response.json();
 };
 
+export const markAsPresent = async (
+    groupId: string,
+    registrantId: number,
+    role: string
+) => {
+    const response = await backendRequest(
+        `attendance/mark-as-present`,
+        "POST",
+        true,
+        {
+            groupId,
+            registrantId,
+            role,
+        }
+    );
+    return response.status;
+};
+
 export const wasPresent = (
     attendance: Attendance[],
     activityCode: string,
