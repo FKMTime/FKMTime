@@ -1,0 +1,47 @@
+version: '3'
+
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.dev
+    container_name: fkmtime-dev-backend
+    network_mode: "host"
+    restart: unless-stopped
+    environment:
+      - DATABASE_URL=postgres://root:password@127.0.0.1:5432/fkm_time
+      - WCA_LIVE_API_ORIGIN=http://0.0.0.0:3001/api
+      - WCA_ORIGIN=http://0.0.0.0:3000/
+    depends_on:
+      database:
+        condition: service_healthy
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
+    container_name: fkmtime-dev-frontend
+    ports:
+      - '5173:5173'
+    restart: unless-stopped
+
+  database:
+    image: postgres:16
+    container_name: fkmtime-dev-database
+    ports:
+      - '5432:5432'
+    restart: unless-stopped 
+    environment:
+      - POSTGRES_USER=root
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=fkm_time
+    volumes:
+      - database:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -d postgres" ]
+      interval: 5s
+      timeout: 20s
+      retries: 50
+
+volumes:
+  database:

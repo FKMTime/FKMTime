@@ -11,11 +11,26 @@ Source code for FKM devices is available [here](https://github.com/filipton/fkm-
 
 ## Development
 
-### Requirements
+You can run FKMTime in development mode in 2 ways:
+- Using Docker
+- Running backend and frontend separately
+
+### Docker
+Run the following command in the root directory of the project
+```bash
+docker compose -f docker-compose.dev.yml up
+```
+
+Frontend will be accessible at localhost:5173, backend at localhost:5000, database at localhost:5432
+
+
+###  Running backend and frontend separately
+
+#### Requirements
 - NodeJS (version 19.0.0 or later)
 - PostgreSQL
 
-### Setup database
+#### Setup database
 
 - Install PostgreSQL
 - Create a database
@@ -23,7 +38,7 @@ Source code for FKM devices is available [here](https://github.com/filipton/fkm-
 CREATE DATABASE fkm_time;
 ```
 
-### Backend
+#### Backend
 
 Clone this repo and navigate into it
 ```bash
@@ -62,7 +77,7 @@ npm run start:dev
 
 The server will be accessible at localhost:5000
 
-### Frontend
+#### Frontend
 
 - Navigate into frontend directory
 ```bash
