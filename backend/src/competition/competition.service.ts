@@ -260,7 +260,7 @@ export class CompetitionService {
       let currentGroupIdInSchedule = '';
       wcif.schedule.venues.forEach((venue: Venue) => {
         venue.rooms.forEach((r: WCIFRoom) => {
-          if (r.name === room.name) {
+          if (r.name === room.name && room.currentGroupId) {
             r.activities.forEach((activity: Activity) => {
               activity.childActivities.forEach((childActivity: Activity) => {
                 const startTime = new Date(childActivity.startTime).getTime();
@@ -271,7 +271,10 @@ export class CompetitionService {
                 }
               });
             });
-            if (currentGroupIdInSchedule !== room.currentGroupId) {
+            if (
+              currentGroupIdInSchedule !== room.currentGroupId &&
+              currentGroupIdInSchedule !== ''
+            ) {
               this.competitionGateway.server
                 .to(`competition`)
                 .emit('groupShouldBeChanged', {
