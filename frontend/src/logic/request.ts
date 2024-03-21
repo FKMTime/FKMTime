@@ -5,16 +5,16 @@ const DEV_BACKEND_URL = import.meta.env.VITE_BACKEND_ORIGIN
     : "http://localhost:5000/";
 const BACKEND_URL = import.meta.env.PROD ? "/api/" : DEV_BACKEND_URL;
 export const INCIDENTS_WEBSOCKET_URL = import.meta.env.PROD
-    ? "/api/incidents"
+    ? "/incidents"
     : `${DEV_BACKEND_URL}incidents`;
 export const DEVICES_WEBSOCKET_URL = import.meta.env.PROD
-    ? "/api/device"
+    ? "/device"
     : `${DEV_BACKEND_URL}device`;
 export const RESULTS_WEBSOCKET_URL = import.meta.env.PROD
-    ? "/api/result"
+    ? "/result"
     : `${DEV_BACKEND_URL}result`;
 export const COMPETITION_WEBSOCKET_URL = import.meta.env.PROD
-    ? "/api/competition"
+    ? "/competition"
     : `${DEV_BACKEND_URL}competition`;
 
 export const backendRequest = (
