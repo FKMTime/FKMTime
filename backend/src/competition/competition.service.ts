@@ -3,13 +3,19 @@ import { HttpException, Injectable } from '@nestjs/common';
 import { UpdateCompetitionDto } from './dto/updateCompetition.dto';
 import { eventsData } from 'src/events';
 import { UpdateRoomsDto } from './dto/updateCurrentRound.dto';
-import { Event, Person } from '@wca/helpers';
+import { Activity, Event, Person, Room as WCIFRoom, Venue } from '@wca/helpers';
 import { UpdateDevicesSettingsDto } from './dto/updateDevicesSettings.dto';
+import { Room } from '@prisma/client';
+import { CompetitionGateway } from './competition.gateway';
+import { Cron, CronExpression } from '@nestjs/schedule';
 
 const WCA_ORIGIN = `${process.env.WCA_ORIGIN}/api/v0/competitions/`;
 @Injectable()
 export class CompetitionService {
-  constructor(private readonly prisma: DbService) {}
+  constructor(
+    private readonly prisma: DbService,
+    private readonly competitionGateway: CompetitionGateway,
+  ) {}
 
   async importCompetition(wcaId: string) {
     const wcifRes = await fetch(`${WCA_ORIGIN}${wcaId}/wcif/public`);
@@ -54,26 +60,28 @@ export class CompetitionService {
     const transactions = [];
 
     wcif.persons.forEach((person: Person) => {
-      transactions.push(
-        this.prisma.person.upsert({
-          where: {
-            registrantId: person.registrantId,
-          },
-          update: {
-            name: person.name,
-            wcaId: person.wcaId,
-            gender: person.gender,
-            countryIso2: person.countryIso2,
-          },
-          create: {
-            name: person.name,
-            wcaId: person.wcaId,
-            registrantId: person.registrantId,
-            gender: person.gender,
-            countryIso2: person.countryIso2,
-          },
-        }),
-      );
+      if (person.registrantId) {
+        transactions.push(
+          this.prisma.person.upsert({
+            where: {
+              registrantId: person.registrantId,
+            },
+            update: {
+              name: person.name,
+              wcaId: person.wcaId,
+              gender: person.gender,
+              countryIso2: person.countryIso2,
+            },
+            create: {
+              name: person.name,
+              wcaId: person.wcaId,
+              registrantId: person.registrantId,
+              gender: person.gender,
+              countryIso2: person.countryIso2,
+            },
+          }),
+        );
+      }
     });
     await this.prisma.$transaction(transactions);
     await this.prisma.competition.updateMany({
@@ -236,6 +244,43 @@ export class CompetitionService {
         shouldUpdateDevices: dto.shouldUpdateDevices,
         releaseChannel: dto.releaseChannel,
       },
+    });
+  }
+
+  @Cron(CronExpression.EVERY_5_MINUTES)
+  async checkIfGroupShouldBeChanged() {
+    const competition = await this.prisma.competition.findFirst();
+    const wcif = JSON.parse(JSON.stringify(competition.wcif));
+    const rooms = await this.prisma.room.findMany({
+      include: {
+        devices: true,
+      },
+    });
+    rooms.forEach((room: Room) => {
+      let currentGroupIdInSchedule = '';
+      wcif.schedule.venues.forEach((venue: Venue) => {
+        venue.rooms.forEach((r: WCIFRoom) => {
+          if (r.name === room.name) {
+            r.activities.forEach((activity: Activity) => {
+              activity.childActivities.forEach((childActivity: Activity) => {
+                const startTime = new Date(childActivity.startTime).getTime();
+                const endTime = new Date(childActivity.endTime).getTime();
+                const now = new Date().getTime();
+                if (startTime <= now && now <= endTime) {
+                  currentGroupIdInSchedule = childActivity.activityCode;
+                }
+              });
+            });
+            if (currentGroupIdInSchedule !== room.currentGroupId) {
+              this.competitionGateway.server
+                .to(`competition`)
+                .emit('groupShouldBeChanged', {
+                  message: `Group in room ${room.name} should be changed`,
+                });
+            }
+          }
+        });
+      });
     });
   }
 }

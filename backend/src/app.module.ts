@@ -10,10 +10,12 @@ import { SettingsModule } from './settings/settings.module';
 import { DeviceModule } from './device/device.module';
 import { AttendanceModule } from './attendance/attendance.module';
 import { LoggerMiddleware } from './middleware/logger.middleware';
+import { ScheduleModule } from '@nestjs/schedule';
 
 @Module({
   imports: [
     DbModule,
+    ScheduleModule.forRoot(),
     AuthModule,
     AccountModule,
     CompetitionModule,

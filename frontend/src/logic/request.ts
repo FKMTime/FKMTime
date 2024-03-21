@@ -13,6 +13,9 @@ export const DEVICES_WEBSOCKET_URL = import.meta.env.PROD
 export const RESULTS_WEBSOCKET_URL = import.meta.env.PROD
     ? "/api/result"
     : `${DEV_BACKEND_URL}result`;
+export const COMPETITION_WEBSOCKET_URL = import.meta.env.PROD
+    ? "/api/competition"
+    : `${DEV_BACKEND_URL}competition`;
 
 export const backendRequest = (
     path: string,

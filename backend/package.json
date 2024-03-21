@@ -33,6 +33,7 @@
     "@nestjs/passport": "^10.0.3",
     "@nestjs/platform-express": "^10.0.0",
     "@nestjs/platform-socket.io": "^10.3.3",
+    "@nestjs/schedule": "^4.0.1",
     "@nestjs/websockets": "^10.3.3",
     "@prisma/client": "^5.8.0",
     "@wca/helpers": "^1.1.5",
