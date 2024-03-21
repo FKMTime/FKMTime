@@ -8,10 +8,13 @@ import {
     COMPETITION_WEBSOCKET_URL,
     INCIDENTS_WEBSOCKET_URL,
 } from "../logic/request.ts";
+import { useAtomValue } from "jotai";
+import { showSidebarAtom } from "../logic/atoms.ts";
 
 const Layout = (): JSX.Element => {
     const userInfo = getUserInfo();
     const navigate = useNavigate();
+    const showSidebar = useAtomValue(showSidebarAtom);
     const [incidentsSocket] = useState(
         io(INCIDENTS_WEBSOCKET_URL, {
             transports: ["websocket"],
@@ -73,7 +76,7 @@ const Layout = (): JSX.Element => {
     }
     return (
         <Box display="flex">
-            <Sidebar user={userInfo} />
+            {showSidebar && <Sidebar user={userInfo} />}
             <Box width="100%" padding="5" color="white">
                 <Outlet />
             </Box>

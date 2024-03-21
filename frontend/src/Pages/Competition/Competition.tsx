@@ -12,7 +12,7 @@ import {
     Text,
     useToast,
 } from "@chakra-ui/react";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { IoMdEye, IoMdEyeOff } from "react-icons/io";
 import LoadingPage from "../../Components/LoadingPage";
 import {
@@ -22,11 +22,14 @@ import {
     updateCompetitionSettings,
 } from "../../logic/competition";
 import { Competition as CompetitionInterface } from "../../logic/interfaces";
+import { showSidebarAtom } from "../../logic/atoms.ts";
+import { useSetAtom } from "jotai";
 
 const Competition = () => {
     const [isLoading, setIsLoading] = useState<boolean>(true);
     const [competitionImported, setCompetitionImported] =
         useState<boolean>(false);
+    const setShowSidebar = useSetAtom(showSidebarAtom);
     const [competition, setCompetition] = useState<CompetitionInterface | null>(
         null
     );
@@ -36,16 +39,17 @@ const Competition = () => {
         useRef<HTMLInputElement>(null);
     const toast = useToast();
 
-    const fetchData = async () => {
+    const fetchData = useCallback(async () => {
         const response = await getCompetitionSettings();
         if (response.status === 200) {
             setCompetitionImported(true);
             setCompetition(response.data);
         } else if (response.status === 404) {
             setCompetitionImported(false);
+            setShowSidebar(false);
         }
         setIsLoading(false);
-    };
+    }, [setShowSidebar]);
 
     const handleImportCompetition = async () => {
         if (
@@ -69,6 +73,7 @@ const Competition = () => {
         const response = await importCompetition(id);
         if (response.status === 200) {
             setCompetitionImported(true);
+            setShowSidebar(true);
             setCompetition(response.data);
         }
     };
@@ -127,7 +132,7 @@ const Competition = () => {
 
     useEffect(() => {
         fetchData();
-    }, []);
+    }, [fetchData]);
 
     if (isLoading || (!competition && competitionImported)) {
         return <LoadingPage />;
