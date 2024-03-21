@@ -41,16 +41,44 @@ export const syncCompetition = async (id: string) => {
     return response.status;
 };
 
-export const updateCompetition = async (id: string, data: Competition) => {
+export const updateCompetitionSettings = async (
+    id: string,
+    data: Competition
+) => {
     const competition = {
         ...data,
         wcif: undefined,
     };
     const response = await backendRequest(
-        `competition/update/${id}`,
+        `competition/settings/${id}`,
         "PUT",
         true,
         competition
+    );
+    return response.status;
+};
+
+export const getDevicesSettings = async () => {
+    const response = await backendRequest(
+        "competition/settings/devices",
+        "GET",
+        true
+    );
+    return await response.json();
+};
+
+export const updateDevicesSettings = async (
+    id: string,
+    data: {
+        shouldUpdateDevices: boolean;
+        releaseChannel: string;
+    }
+) => {
+    const response = await backendRequest(
+        `competition/settings/${id}/devices/`,
+        "PUT",
+        true,
+        data
     );
     return response.status;
 };

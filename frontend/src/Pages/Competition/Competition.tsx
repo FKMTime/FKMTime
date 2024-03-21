@@ -1,4 +1,3 @@
-import { useEffect, useRef, useState } from "react";
 import {
     Alert,
     AlertIcon,
@@ -10,22 +9,19 @@ import {
     Heading,
     IconButton,
     Input,
-    Select,
     Text,
     useToast,
 } from "@chakra-ui/react";
+import { useEffect, useRef, useState } from "react";
+import { IoMdEye, IoMdEyeOff } from "react-icons/io";
+import LoadingPage from "../../Components/LoadingPage";
 import {
     getCompetitionSettings,
     importCompetition,
     syncCompetition,
-    updateCompetition,
+    updateCompetitionSettings,
 } from "../../logic/competition";
-import {
-    Competition as CompetitionInterface,
-    ReleaseChannel,
-} from "../../logic/interfaces";
-import LoadingPage from "../../Components/LoadingPage";
-import { IoMdEye, IoMdEyeOff } from "react-icons/io";
+import { Competition as CompetitionInterface } from "../../logic/interfaces";
 
 const Competition = () => {
     const [isLoading, setIsLoading] = useState<boolean>(true);
@@ -82,7 +78,10 @@ const Competition = () => {
         if (!competition) {
             return;
         }
-        const status = await updateCompetition(competition.id, competition);
+        const status = await updateCompetitionSettings(
+            competition.id,
+            competition
+        );
         if (status === 200) {
             toast({
                 title: "Success",
@@ -259,36 +258,6 @@ const Competition = () => {
                         Send results to WCA Live (disable it only during
                         tutorial)
                     </Checkbox>
-                </FormControl>
-                <FormControl display="flex" flexDirection="column" gap="2">
-                    <Checkbox
-                        defaultChecked={competition.shouldUpdateDevices}
-                        onChange={(event) =>
-                            setCompetition({
-                                ...competition,
-                                shouldUpdateDevices: event?.target.checked,
-                            })
-                        }
-                    >
-                        Update devices (turn it off if competition is in
-                        progress)
-                    </Checkbox>
-                </FormControl>
-                <FormControl display="flex" flexDirection="column" gap="2">
-                    <FormLabel>Release channel</FormLabel>
-                    <Select
-                        value={competition.releaseChannel}
-                        onChange={(event) => {
-                            setCompetition({
-                                ...competition,
-                                releaseChannel: event?.target
-                                    .value as ReleaseChannel,
-                            });
-                        }}
-                    >
-                        <option value="STABLE">Stable</option>
-                        <option value="PRE_RELEASE">Pre-release</option>
-                    </Select>
                 </FormControl>
                 <Button type="submit" colorScheme="green">
                     Save

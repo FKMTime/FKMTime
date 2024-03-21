@@ -4,6 +4,7 @@ import { UpdateCompetitionDto } from './dto/updateCompetition.dto';
 import { eventsData } from 'src/events';
 import { UpdateRoomsDto } from './dto/updateCurrentRound.dto';
 import { Event, Person } from '@wca/helpers';
+import { UpdateDevicesSettingsDto } from './dto/updateDevicesSettings.dto';
 
 const WCA_ORIGIN = `${process.env.WCA_ORIGIN}/api/v0/competitions/`;
 @Injectable()
@@ -212,6 +213,26 @@ export class CompetitionService {
             ? new Date()
             : competition.scoretakingTokenUpdatedAt,
         sendResultsToWcaLive: dto.sendResultsToWcaLive,
+      },
+    });
+  }
+
+  async getDevicesSettings() {
+    return this.prisma.competition.findFirst({
+      select: {
+        id: true,
+        shouldUpdateDevices: true,
+        releaseChannel: true,
+      },
+    });
+  }
+
+  async updateDevicesSettings(id: string, dto: UpdateDevicesSettingsDto) {
+    return this.prisma.competition.update({
+      where: {
+        id: id,
+      },
+      data: {
         shouldUpdateDevices: dto.shouldUpdateDevices,
         releaseChannel: dto.releaseChannel,
       },

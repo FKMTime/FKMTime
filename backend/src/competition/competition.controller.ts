@@ -5,6 +5,7 @@ import { AuthGuard } from '@nestjs/passport';
 import { AdminGuard } from 'src/auth/guards/admin.guard';
 import { AdminOrDelegateGuard } from '../auth/guards/adminOrDelegate.guard';
 import { UpdateRoomsDto } from './dto/updateCurrentRound.dto';
+import { UpdateDevicesSettingsDto } from './dto/updateDevicesSettings.dto';
 
 @Controller('competition')
 export class CompetitionController {
@@ -58,11 +59,26 @@ export class CompetitionController {
   }
 
   @UseGuards(AuthGuard('jwt'), AdminOrDelegateGuard)
-  @Put('update/:id')
+  @Put('settings/:id')
   async updateCompetition(
     @Param('id') id: string,
     @Body() dto: UpdateCompetitionDto,
   ) {
     return await this.competitionService.updateCompetition(id, dto);
+  }
+
+  @UseGuards(AuthGuard('jwt'), AdminGuard)
+  @Get('settings/:id/devices')
+  async getDevicesSettings() {
+    return await this.competitionService.getDevicesSettings();
+  }
+
+  @UseGuards(AuthGuard('jwt'), AdminGuard)
+  @Put('settings/:id/devices')
+  async updateDevicesSettings(
+    @Param('id') id: string,
+    @Body() dto: UpdateDevicesSettingsDto,
+  ) {
+    return await this.competitionService.updateDevicesSettings(id, dto);
   }
 }

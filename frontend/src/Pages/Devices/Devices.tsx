@@ -3,18 +3,23 @@ import { getAllDevices } from "../../logic/devices.ts";
 import LoadingPage from "../../Components/LoadingPage";
 import { Device } from "../../logic/interfaces";
 import { Box, IconButton } from "@chakra-ui/react";
-import { MdAdd } from "react-icons/md";
+import { MdAdd, MdSettings } from "react-icons/md";
 import CreateDeviceModal from "../../Components/Modal/CreateDeviceModal.tsx";
 import DevicesTable from "../../Components/Table/DevicesTable.tsx";
 import io from "socket.io-client";
 import { DEVICES_WEBSOCKET_URL } from "../../logic/request.ts";
 import { getToken } from "../../logic/auth.ts";
+import UpdateDevicesSettingsModal from "../../Components/Modal/UpdateDevicesSettingsModal.tsx";
 
 const Devices = (): JSX.Element => {
     const [isLoading, setIsLoading] = useState<boolean>(true);
     const [devices, setDevices] = useState<Device[]>([]);
     const [isOpenCreateDeviceModal, setIsOpenCreateDeviceModal] =
         useState<boolean>(false);
+    const [
+        isOpenUpdateDevicesSettingsModal,
+        setIsOpenUpdateDevicesSettingsModal,
+    ] = useState<boolean>(false);
     const [socket] = useState(
         io(DEVICES_WEBSOCKET_URL, {
             transports: ["websocket"],
@@ -53,24 +58,44 @@ const Devices = (): JSX.Element => {
 
     return (
         <Box display="flex" flexDirection="column" gap="5">
-            <IconButton
-                icon={<MdAdd />}
-                aria-label="Add"
-                bg="white"
-                color="black"
-                rounded="20"
-                width="5"
-                height="10"
-                _hover={{
-                    background: "white",
-                    color: "gray.700",
-                }}
-                onClick={() => setIsOpenCreateDeviceModal(true)}
-            />
+            <Box display="flex" gap="2">
+                <IconButton
+                    icon={<MdAdd />}
+                    aria-label="Add"
+                    bg="white"
+                    color="black"
+                    rounded="20"
+                    width="5"
+                    height="10"
+                    _hover={{
+                        background: "white",
+                        color: "gray.700",
+                    }}
+                    onClick={() => setIsOpenCreateDeviceModal(true)}
+                />
+                <IconButton
+                    icon={<MdSettings />}
+                    aria-label="Add"
+                    bg="white"
+                    color="black"
+                    rounded="20"
+                    width="5"
+                    height="10"
+                    _hover={{
+                        background: "white",
+                        color: "gray.700",
+                    }}
+                    onClick={() => setIsOpenUpdateDevicesSettingsModal(true)}
+                />
+            </Box>
             <DevicesTable devices={devices} fetchData={fetchData} />
             <CreateDeviceModal
                 isOpen={isOpenCreateDeviceModal}
                 onClose={handleCloseCreateDeviceModal}
+            />
+            <UpdateDevicesSettingsModal
+                isOpen={isOpenUpdateDevicesSettingsModal}
+                onClose={() => setIsOpenUpdateDevicesSettingsModal(false)}
             />
         </Box>
     );
