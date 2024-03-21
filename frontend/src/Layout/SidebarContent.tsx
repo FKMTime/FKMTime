@@ -2,7 +2,6 @@ import { Box, Button, Icon, Image, Link, Text } from "@chakra-ui/react";
 import logo from "../assets/logo.svg";
 import SidebarElement from "../Components/SidebarElement.tsx";
 import {
-    MdBook,
     MdHome,
     MdLogout,
     MdPerson,
@@ -114,12 +113,6 @@ const SidebarContent: React.FC<Props> = ({
                 name="Settings"
                 icon={<MdSettings />}
                 link="/settings"
-                onClick={toggleDrawer}
-            />
-            <SidebarElement
-                name="Tutorial"
-                icon={<MdBook />}
-                link="/tutorial"
                 onClick={toggleDrawer}
             />
             <Button

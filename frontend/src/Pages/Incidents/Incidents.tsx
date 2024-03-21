@@ -29,9 +29,17 @@ const Incidents = () => {
     };
     useEffect(() => {
         fetchData();
+        Notification.requestPermission();
         socket.emit("join");
 
-        socket.on("newIncident", () => {
+        socket.on("newIncident", (data) => {
+            Notification.requestPermission().then((permission) => {
+                if (permission === "granted") {
+                    new Notification("New incident", {
+                        body: `Competitor ${data.competitorName}  on station ${data.deviceName}`,
+                    });
+                }
+            });
             fetchData();
         });
 

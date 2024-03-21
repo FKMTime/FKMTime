@@ -43,8 +43,11 @@ export class IncidentsGateway {
   }
 
   @SubscribeMessage('newIncident')
-  handleNewIncident() {
-    this.server.to(`incidents`).emit('newIncident');
+  handleNewIncident(deviceName: string, competitorName: string) {
+    this.server.to(`incidents`).emit('newIncident', {
+      deviceName,
+      competitorName,
+    });
   }
 
   @SubscribeMessage('attemptUpdated')

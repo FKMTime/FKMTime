@@ -1,7 +1,6 @@
 import { HttpException, Injectable, Logger } from '@nestjs/common';
 import { DbService } from 'src/db/db.service';
 import { EnterAttemptDto } from './dto/enterAttempt.dto';
-import Expo from 'expo-server-sdk';
 import { getTranslation, isLocaleAvailable } from 'src/translations';
 import { Event, Person, Round } from '@wca/helpers';
 import { Attempt, Competition } from '@prisma/client';
@@ -52,6 +51,9 @@ export class ResultService {
     }
     const results = await this.prisma.result.findMany({
       where: whereParams,
+      orderBy: {
+        updatedAt: 'desc',
+      },
       select: {
         id: true,
         eventId: true,
@@ -384,11 +386,10 @@ export class ResultService {
     });
   }
 
-  async enterAttempt(data: EnterAttemptDto) {
-    const device = await this.prisma.device.findFirst({
+  async getStationOrThrow(espId: string) {
+    const station = await this.prisma.device.findFirst({
       where: {
-        espId: data.espId.toString(),
-        type: 'STATION',
+        espId: espId,
       },
       select: {
         id: true,
@@ -402,16 +403,10 @@ export class ResultService {
         },
       },
     });
-    if (!device) {
-      throw new HttpException(
-        {
-          message: 'Station not found',
-          shouldResetTime: false,
-        },
-        404,
-      );
+    if (!station) {
+      throw new HttpException('Station not found', 404);
     }
-    if (!device.room.currentGroupId) {
+    if (!station.room.currentGroupId) {
       throw new HttpException(
         {
           message: 'No group in this room',
@@ -420,6 +415,11 @@ export class ResultService {
         400,
       );
     }
+    return station;
+  }
+
+  async enterAttempt(data: EnterAttemptDto) {
+    const device = await this.getStationOrThrow(data.espId.toString());
     const competitor = await this.prisma.person.findFirst({
       where: {
         cardId: data.competitorId.toString(),
@@ -597,7 +597,7 @@ export class ResultService {
         );
 
       if (attemptNumber === -1) {
-        await this.sendNotificationAboutIncident(device.name, competitor.name);
+        this.incidentsGateway.handleNewIncident(device.name, competitor.name);
         return {
           message: getTranslation('delegateWasNotified', locale),
           shouldResetTime: true,
@@ -664,7 +664,7 @@ export class ResultService {
       },
     });
     if (data.isDelegate) {
-      await this.sendNotificationAboutIncident(device.name, competitor.name);
+      this.incidentsGateway.handleNewIncident(device.name, competitor.name);
       return {
         message: getTranslation('delegateWasNotified', locale),
         shouldResetTime: true,
@@ -933,34 +933,6 @@ export class ResultService {
       return attempt.attemptNumber;
     }
     return -1;
-  }
-
-  async sendNotificationAboutIncident(
-    stationName: string,
-    competitorName: string,
-  ) {
-    this.incidentsGateway.handleNewIncident();
-    const expo = new Expo();
-    const messages = [];
-    const accounts = await this.prisma.account.findMany({
-      where: {
-        notificationToken: {
-          not: null,
-        },
-      },
-    });
-    for (const account of accounts) {
-      if (!Expo.isExpoPushToken(account.notificationToken)) {
-        continue;
-      }
-      messages.push({
-        to: account.notificationToken,
-        sound: 'default',
-        title: `New incident at station ${stationName}`,
-        body: `Competitor ${competitorName} has a problem`,
-      });
-    }
-    await expo.sendPushNotificationsAsync(messages);
   }
 
   private async getValidatedData(

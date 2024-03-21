@@ -1,4 +1,4 @@
-import { RouterProvider, createBrowserRouter } from "react-router-dom";
+import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import { ChakraProvider } from "@chakra-ui/react";
 import Login from "./Pages/Auth/Login/Login";
 import Layout from "./Layout/Layout";
@@ -10,7 +10,6 @@ import Results from "./Pages/Results/Results";
 import SingleResult from "./Pages/Results/SingleResult";
 import Settings from "./Pages/Settings/Settings";
 import Devices from "./Pages/Devices/Devices.tsx";
-import Tutorial from "./Pages/Tutorial/Tutorial";
 import AssignCards from "./Pages/AssignCards/AssignCards";
 import Giftpacks from "./Pages/Giftpacks/GIftpacks.tsx";
 import PersonResults from "./Pages/Persons/PersonResults.tsx";
@@ -93,10 +92,6 @@ const App = (): JSX.Element => {
                 {
                     path: "attendance/:id",
                     element: <Attendance />,
-                },
-                {
-                    path: "tutorial",
-                    element: <Tutorial />,
                 },
                 {
                     path: "giftpacks",
