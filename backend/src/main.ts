@@ -22,7 +22,6 @@ async function initDb() {
         where: { username: 'admin' },
         update: {},
         create: {
-          email: 'admin@fkm.lan',
           username: 'admin',
           role: 'ADMIN',
           password: adminPassword,

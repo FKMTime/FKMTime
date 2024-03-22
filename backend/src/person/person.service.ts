@@ -3,6 +3,7 @@ import { HttpException, Injectable } from '@nestjs/common';
 import { UpdatePersonDto } from './dto/updatePerson.dto';
 import { AssignManyCardsDto } from './dto/assignManyCards.dto';
 import { AddStaffMemberDto } from './dto/addStaffMember.dto';
+import { convertPolishToLatin } from '../translations';
 
 @Injectable()
 export class PersonService {
@@ -216,7 +217,7 @@ export class PersonService {
     }
     return {
       ...person,
-      name: this.convertPolishToLatin(person.name),
+      name: convertPolishToLatin(person.name),
     };
   }
 
@@ -255,56 +256,5 @@ export class PersonService {
       );
     }
     return person;
-  }
-
-  private convertPolishToLatin(text: string) {
-    const letters = [
-      'ą',
-      'ć',
-      'ę',
-      'ł',
-      'ń',
-      'ó',
-      'ś',
-      'ź',
-      'ż',
-      'Ą',
-      'Ć',
-      'Ę',
-      'Ł',
-      'Ń',
-      'Ó',
-      'Ś',
-      'Ź',
-      'Ż',
-    ];
-    const replacement = [
-      'a',
-      'c',
-      'e',
-      'l',
-      'n',
-      'o',
-      's',
-      'z',
-      'z',
-      'A',
-      'C',
-      'E',
-      'L',
-      'N',
-      'O',
-      'S',
-      'Z',
-      'Z',
-    ];
-
-    let result = text;
-
-    for (let i = 0; i < letters.length; ++i) {
-      result = result.replaceAll(letters[i], replacement[i]);
-    }
-
-    return result;
   }
 }

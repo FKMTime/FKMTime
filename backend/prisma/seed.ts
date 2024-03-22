@@ -8,7 +8,6 @@ async function main() {
     where: { username: 'admin' },
     update: {},
     create: {
-      email: 'admin@mailinator.com',
       username: 'admin',
       role: 'ADMIN',
       password: adminPassword,

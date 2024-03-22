@@ -6,17 +6,13 @@ import {
   HttpCode,
   HttpStatus,
   Param,
-  Post,
   Put,
   UseGuards,
 } from '@nestjs/common';
 import { AccountService } from './account.service';
 import { UpdateAccountDto } from './dto/updateAccount.dto';
 import { AdminGuard } from 'src/auth/guards/admin.guard';
-import { AuthGuard } from '@nestjs/passport';
-import { GetUser } from 'src/auth/decorator/getUser.decorator';
 import { UpdatePasswordDto } from './dto/updatePassword.dto';
-import { AdminOrDelegateGuard } from '../auth/guards/adminOrDelegate.guard';
 
 @Controller('account')
 export class AccountController {
@@ -41,15 +37,6 @@ export class AccountController {
   @Put(':id')
   async updateAccount(@Param('id') id: string, @Body() data: UpdateAccountDto) {
     return await this.accountService.updateAccount(id, data);
-  }
-
-  @UseGuards(AuthGuard('jwt'), AdminOrDelegateGuard)
-  @Post('notification-token')
-  async updateNotificationToken(
-    @GetUser('id') userId: string,
-    @Body('token') token: string,
-  ) {
-    return await this.accountService.updateNotificationToken(userId, token);
   }
 
   @UseGuards(AdminGuard)

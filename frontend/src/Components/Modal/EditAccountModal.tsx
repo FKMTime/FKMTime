@@ -22,7 +22,7 @@ const EditAccountModal: React.FC<EditAccountModalProps> = ({
     isOpen,
     onClose,
     account,
-}): JSX.Element => {
+}) => {
     const toast = useToast();
     const [isLoading, setIsLoading] = useState(false);
     const [editedAccount, setEditedAccount] = useState<Account>(account);
@@ -72,22 +72,6 @@ const EditAccountModal: React.FC<EditAccountModalProps> = ({
                             setEditedAccount({
                                 ...editedAccount,
                                 username: e.target.value,
-                            })
-                        }
-                    />
-                </FormControl>
-                <FormControl isRequired>
-                    <FormLabel>Email</FormLabel>
-                    <Input
-                        placeholder="Email"
-                        type="email"
-                        _placeholder={{ color: "white" }}
-                        value={editedAccount.email}
-                        disabled={isLoading}
-                        onChange={(e) =>
-                            setEditedAccount({
-                                ...editedAccount,
-                                email: e.target.value,
                             })
                         }
                     />

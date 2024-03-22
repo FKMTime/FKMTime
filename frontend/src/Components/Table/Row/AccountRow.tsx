@@ -12,10 +12,7 @@ interface AccountRowProps {
     fetchData: () => void;
 }
 
-const AccountRow: React.FC<AccountRowProps> = ({
-    account,
-    fetchData,
-}): JSX.Element => {
+const AccountRow: React.FC<AccountRowProps> = ({ account, fetchData }) => {
     const toast = useToast();
     const [openConfirmation, setOpenConfirmation] = useState<boolean>(false);
     const [isOpenEditAccountModal, setIsOpenEditAccountModal] =
@@ -61,7 +58,6 @@ const AccountRow: React.FC<AccountRowProps> = ({
     return (
         <>
             <Tr key={account.id}>
-                <Td>{account.email}</Td>
                 <Td>{account.username}</Td>
                 <Td>
                     {account.role.charAt(0).toUpperCase() +

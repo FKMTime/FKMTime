@@ -13,7 +13,6 @@ export class AccountService {
         id: true,
         username: true,
         role: true,
-        email: true,
         createdAt: true,
         updatedAt: true,
       },
@@ -25,7 +24,6 @@ export class AccountService {
       where: { id: id },
       data: {
         username: data.username,
-        email: data.email,
         role: data.role,
       },
     });
@@ -43,15 +41,6 @@ export class AccountService {
   async deleteAccount(id: string) {
     return this.prisma.account.delete({
       where: { id: id },
-    });
-  }
-
-  async updateNotificationToken(userId: string, token: string) {
-    return this.prisma.account.update({
-      where: { id: userId },
-      data: {
-        notificationToken: token,
-      },
     });
   }
 }

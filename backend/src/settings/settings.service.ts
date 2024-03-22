@@ -11,7 +11,6 @@ export class SettingsService {
       where: { id: accountId },
       select: {
         username: true,
-        email: true,
         role: true,
         createdAt: true,
         updatedAt: true,
@@ -24,7 +23,6 @@ export class SettingsService {
       data: data,
       select: {
         username: true,
-        email: true,
         role: true,
         createdAt: true,
         updatedAt: true,

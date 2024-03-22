@@ -9,7 +9,6 @@ export interface Account {
     id: string;
     username: string;
     role: string;
-    email: string;
     createdAt?: Date;
     updatedAt?: Date;
 }

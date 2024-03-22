@@ -28,7 +28,6 @@ export class AuthService {
       data: {
         password: sha512(dto.password),
         username: dto.username,
-        email: dto.email,
         role: dto.role,
       },
     });

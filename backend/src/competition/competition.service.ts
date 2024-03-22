@@ -8,6 +8,8 @@ import { UpdateDevicesSettingsDto } from './dto/updateDevicesSettings.dto';
 import { Room } from '@prisma/client';
 import { CompetitionGateway } from './competition.gateway';
 import { Cron, CronExpression } from '@nestjs/schedule';
+import { sha512 } from 'js-sha512';
+import { convertPolishToLatin } from '../translations';
 
 const WCA_ORIGIN = `${process.env.WCA_ORIGIN}/api/v0/competitions/`;
 @Injectable()
@@ -38,6 +40,26 @@ export class CompetitionService {
         countryIso2: person.countryIso2,
       })),
     });
+    const delegates = wcif.persons.filter((person: Person) =>
+      person.roles.includes('delegate'),
+    );
+    const organizers = wcif.persons.filter((person: Person) =>
+      person.roles.includes('organizer'),
+    );
+    await this.prisma.account.createMany({
+      data: [
+        ...delegates.map((delegate: Person) => ({
+          username: this.getUsername(delegate.name),
+          password: sha512('123456'),
+          role: 'DELEGATE',
+        })),
+        ...organizers.map((organizer: Person) => ({
+          username: this.getUsername(organizer.name),
+          password: sha512('123456'),
+          role: 'ADMIN',
+        })),
+      ],
+    });
     const rooms = [];
 
     for (const venue of wcif.schedule.venues) {
@@ -52,6 +74,12 @@ export class CompetitionService {
       data: rooms,
     });
     return competition;
+  }
+
+  getUsername(fullName: string) {
+    return convertPolishToLatin(
+      (fullName[0] + fullName.split(' ')[1]).toLowerCase(),
+    );
   }
 
   async updateWcif(wcaId: string) {
