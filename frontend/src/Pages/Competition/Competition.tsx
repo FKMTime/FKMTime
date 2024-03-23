@@ -16,16 +16,18 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { IoMdEye, IoMdEyeOff } from "react-icons/io";
 import LoadingPage from "../../Components/LoadingPage";
 import {
+    getCompetitionInfo,
     getCompetitionSettings,
     importCompetition,
     syncCompetition,
     updateCompetitionSettings,
 } from "../../logic/competition";
 import { Competition as CompetitionInterface } from "../../logic/interfaces";
-import { showSidebarAtom } from "../../logic/atoms.ts";
+import { competitionAtom, showSidebarAtom } from "../../logic/atoms.ts";
 import { useSetAtom } from "jotai";
 
 const Competition = () => {
+    const setCompetitionAtom = useSetAtom(competitionAtom);
     const [isLoading, setIsLoading] = useState<boolean>(true);
     const [competitionImported, setCompetitionImported] =
         useState<boolean>(false);
@@ -72,6 +74,7 @@ const Competition = () => {
         }
         const response = await importCompetition(id);
         if (response.status === 200) {
+            await fetchCompetitionDataAndSetAtom();
             setCompetitionImported(true);
             setShowSidebar(true);
             setCompetition(response.data);
@@ -128,6 +131,11 @@ const Competition = () => {
                 isClosable: true,
             });
         }
+    };
+
+    const fetchCompetitionDataAndSetAtom = async () => {
+        const response = await getCompetitionInfo();
+        setCompetitionAtom(response.data);
     };
 
     useEffect(() => {
