@@ -34,6 +34,7 @@ const Layout = (): JSX.Element => {
 
     useEffect(() => {
         if (!userInfo) return;
+        navigator.serviceWorker.register("sw.js");
         Notification.requestPermission();
         incidentsSocket.emit("join");
         competitionSocket.emit("join");
@@ -41,8 +42,10 @@ const Layout = (): JSX.Element => {
         incidentsSocket.on("newIncident", (data) => {
             Notification.requestPermission().then((permission) => {
                 if (permission === "granted") {
-                    new Notification("New incident", {
-                        body: `Competitor ${data.competitorName}  on station ${data.deviceName}`,
+                    navigator.serviceWorker.ready.then((registration) => {
+                        registration.showNotification("New incident", {
+                            body: `Competitor ${data.competitorName}  on station ${data.deviceName}`,
+                        });
                     });
                 }
             });
@@ -51,8 +54,13 @@ const Layout = (): JSX.Element => {
         competitionSocket.on("groupShouldBeChanged", (data) => {
             Notification.requestPermission().then((permission) => {
                 if (permission === "granted") {
-                    new Notification("Group should be changed", {
-                        body: data.message,
+                    navigator.serviceWorker.ready.then((registration) => {
+                        registration.showNotification(
+                            "Group should be changed",
+                            {
+                                body: data.message,
+                            }
+                        );
                     });
                 }
             });
