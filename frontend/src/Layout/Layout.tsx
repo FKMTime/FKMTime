@@ -10,6 +10,7 @@ import {
 } from "../logic/request.ts";
 import { useAtomValue } from "jotai";
 import { showSidebarAtom } from "../logic/atoms.ts";
+import {isMobile} from "../logic/utils.ts";
 
 const Layout = (): JSX.Element => {
     const userInfo = getUserInfo();
@@ -34,7 +35,9 @@ const Layout = (): JSX.Element => {
 
     useEffect(() => {
         if (!userInfo) return;
-        navigator.serviceWorker.register("sw.js");
+        if (import.meta.env.PROD && isMobile()) {
+            navigator.serviceWorker.register("sw.js");
+        }
         Notification.requestPermission();
         incidentsSocket.emit("join");
         competitionSocket.emit("join");
@@ -42,11 +45,17 @@ const Layout = (): JSX.Element => {
         incidentsSocket.on("newIncident", (data) => {
             Notification.requestPermission().then((permission) => {
                 if (permission === "granted") {
-                    navigator.serviceWorker.ready.then((registration) => {
-                        registration.showNotification("New incident", {
+                    if (isMobile()) {
+                        navigator.serviceWorker.ready.then((registration) => {
+                            registration.showNotification("New incident", {
+                                body: `Competitor ${data.competitorName}  on station ${data.deviceName}`,
+                            });
+                        });
+                    } else {
+                        new Notification("New incident", {
                             body: `Competitor ${data.competitorName}  on station ${data.deviceName}`,
                         });
-                    });
+                    }
                 }
             });
         });
@@ -54,14 +63,20 @@ const Layout = (): JSX.Element => {
         competitionSocket.on("groupShouldBeChanged", (data) => {
             Notification.requestPermission().then((permission) => {
                 if (permission === "granted") {
-                    navigator.serviceWorker.ready.then((registration) => {
-                        registration.showNotification(
-                            "Group should be changed",
-                            {
-                                body: data.message,
-                            }
-                        );
-                    });
+                    if (isMobile()) {
+                        navigator.serviceWorker.ready.then((registration) => {
+                            registration.showNotification(
+                                "Group should be changed",
+                                {
+                                    body: data.message,
+                                }
+                            );
+                        });
+                    } else {
+                        new Notification("Group should be changed", {
+                            body: data.message,
+                        });
+                    }
                 }
             });
         });
