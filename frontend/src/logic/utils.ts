@@ -252,6 +252,7 @@ export const getActivityNameByCode = (code: string, wcif: Competition) => {
 };
 
 export const isMobile = () => {
-    const regex = /Mobi|Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i;
+    const regex =
+        /Mobi|Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i;
     return regex.test(navigator.userAgent);
-}
+};

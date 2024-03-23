@@ -7,16 +7,29 @@ import {VitePWA} from "vite-plugin-pwa";
 
 const manifestForPlugIn = {
   registerType:"prompt",
+  includeAssets: ['favicon.ico', 'apple-touch-icon.png'],
   manifest:{
     name:"FKMTime",
     short_name:"FKMTime",
-    description:"I am a simple vite app",
+    description:"FKMTime app",
     theme_color:'#2D3748',
     background_color:'#2D3748',
     display:"standalone",
     scope:'/',
     start_url:"/",
-    orientation:'portrait'
+    orientation:'portrait',
+    icons: [
+      {
+        src: 'logo192.png',
+        sizes: '192x192',
+        type: 'image/png'
+      },
+      {
+        src: 'logo512.png',
+        sizes: '512x512',
+        type: 'image/png'
+      }
+    ]
   }
 };
 

@@ -10,7 +10,7 @@ import {
 } from "../logic/request.ts";
 import { useAtomValue } from "jotai";
 import { showSidebarAtom } from "../logic/atoms.ts";
-import {isMobile} from "../logic/utils.ts";
+import { isMobile } from "../logic/utils.ts";
 
 const Layout = (): JSX.Element => {
     const userInfo = getUserInfo();
