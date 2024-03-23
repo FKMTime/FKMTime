@@ -16,6 +16,9 @@ export class EnterAttemptDto {
   @IsInt()
   penalty: number;
 
+  @IsInt()
+  inspectionTime: number;
+
   @IsDate()
   solvedAt: Date;
 

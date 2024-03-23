@@ -604,15 +604,21 @@ export class ResultService {
         };
       }
 
-      await this.enterAttemptToWcaLive(
-        competition.wcaId,
-        competition.scoretakingToken,
-        currentRoundId.split('-')[0],
-        parseInt(currentRoundId.split('-r')[1]),
-        competitor.registrantId,
-        attemptNumber,
-        finalData.timeToEnter,
-      );
+      try {
+        await this.enterAttemptToWcaLive(
+          competition.wcaId,
+          competition.scoretakingToken,
+          currentRoundId.split('-')[0],
+          parseInt(currentRoundId.split('-r')[1]),
+          competitor.registrantId,
+          attemptNumber,
+          finalData.timeToEnter,
+        );
+      } catch (e) {
+        return {
+          message: getTranslation('attemptEntered', locale),
+        };
+      }
       return {
         message: finalData.limitPassed
           ? getTranslation('attemptEntered', locale)
@@ -644,6 +650,10 @@ export class ResultService {
         solvedAt: data.solvedAt,
         penalty: finalData.penalty,
         value: finalData.value,
+        comment:
+          finalData.inspectionTime >= 15000
+            ? `+2 penalty - inspection ${this.msToString(finalData.inspectionTime)}`
+            : '',
         judge: judge
           ? {
               connect: {
@@ -896,6 +906,10 @@ export class ResultService {
         attemptNumber: data.attemptNumber,
         sessionId: data.sessionId,
         isDelegate: data.isDelegate,
+        comment:
+          data.inspectionTime >= 15000
+            ? `+2 penalty - inspection ${this.msToString(data.inspectionTime)}`
+            : '',
         isExtraAttempt: true,
         solvedAt: data.solvedAt,
         isResolved: false,
@@ -1084,5 +1098,12 @@ export class ResultService {
           attempt.value + attempt.penalty * 100 < cutoff,
       );
     }
+  }
+
+  private msToString(ms: number) {
+    const minutes = Math.floor(ms / 60000);
+    const seconds = ((ms % 60000) / 1000).toFixed(2);
+    if (minutes === 0) return `${+seconds < 10 ? '0' : ''}${seconds}`;
+    return `${minutes}:${+seconds < 10 ? '0' : ''}${seconds}`;
   }
 }
