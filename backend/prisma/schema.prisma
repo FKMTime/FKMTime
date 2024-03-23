@@ -109,7 +109,7 @@ model Attempt {
 model Device {
   id                String       @id @default(uuid())
   name              String
-  espId             String?      @unique @db.Text()
+  espId             Int?         @unique
   type              DeviceType
   batteryPercentage Int?
   roomId            String

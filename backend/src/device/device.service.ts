@@ -68,7 +68,7 @@ export class DeviceService {
 
   async updateBatteryPercentage(data: UpdateBatteryPercentageDto) {
     await this.prisma.device.update({
-      where: { espId: data.espId.toString() },
+      where: { espId: data.espId },
       data: {
         batteryPercentage: data.batteryPercentage,
       },

@@ -96,7 +96,7 @@ const EditDeviceModal: React.FC<EditDeviceModalProps> = ({
                         onChange={(e) =>
                             setEditedDevice({
                                 ...editedDevice,
-                                espId: e.target.value,
+                                espId: +e.target.value,
                             })
                         }
                     />

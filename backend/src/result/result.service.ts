@@ -386,7 +386,7 @@ export class ResultService {
     });
   }
 
-  async getStationOrThrow(espId: string) {
+  async getStationOrThrow(espId: number) {
     const station = await this.prisma.device.findFirst({
       where: {
         espId: espId,
@@ -419,7 +419,7 @@ export class ResultService {
   }
 
   async enterAttempt(data: EnterAttemptDto) {
-    const device = await this.getStationOrThrow(data.espId.toString());
+    const device = await this.getStationOrThrow(data.espId);
     const competitor = await this.prisma.person.findFirst({
       where: {
         cardId: data.competitorId.toString(),

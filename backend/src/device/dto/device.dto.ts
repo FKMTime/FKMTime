@@ -1,4 +1,4 @@
-import { IsEnum, IsNotEmpty, IsString } from 'class-validator';
+import { IsEnum, IsInt, IsNotEmpty, IsString } from 'class-validator';
 import { DeviceType } from '@prisma/client';
 
 export class DeviceDto {
@@ -6,9 +6,8 @@ export class DeviceDto {
   @IsNotEmpty()
   name: string;
 
-  @IsString()
-  @IsNotEmpty()
-  espId: string;
+  @IsInt()
+  espId: number;
 
   @IsString()
   @IsNotEmpty()

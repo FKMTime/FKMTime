@@ -49,7 +49,7 @@ export class AttendanceService {
   async createAttendance(data: CreateAttendaceDto) {
     const device = await this.prisma.device.findFirst({
       where: {
-        espId: data.espId.toString(),
+        espId: data.espId,
       },
       include: {
         room: true,

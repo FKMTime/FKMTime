@@ -106,7 +106,7 @@ export interface Incident extends Attempt {
 export interface Device {
     id: string;
     name: string;
-    espId: string;
+    espId: number;
     type: DeviceType;
     batteryPercentage?: number;
     roomId: string;
