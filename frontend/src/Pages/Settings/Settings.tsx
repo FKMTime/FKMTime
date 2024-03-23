@@ -84,18 +84,6 @@ const Settings = () => {
                         }
                     />
                 </FormControl>
-                <FormControl isRequired>
-                    <FormLabel>Email</FormLabel>
-                    <Input
-                        placeholder="Email"
-                        _placeholder={{ color: "white" }}
-                        value={settings.email}
-                        disabled={isLoading}
-                        onChange={(e) =>
-                            setSettings({ ...settings, email: e.target.value })
-                        }
-                    />
-                </FormControl>
                 <Button colorScheme="green" isLoading={isLoading} type="submit">
                     Save
                 </Button>

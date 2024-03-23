@@ -3,6 +3,7 @@ import { Result, Room } from "../../logic/interfaces";
 import {
     Box,
     Button,
+    Heading,
     IconButton,
     Input,
     Select,
@@ -275,18 +276,23 @@ const Results = (): JSX.Element => {
                             : "None"}
                     </Text>
                     <Text>Attempts: {maxAttempts}</Text>
-                    {HAS_WRITE_ACCESS.includes(userInfo.role) && (
-                        <Button
-                            colorScheme="yellow"
-                            width={{ base: "100%", md: "20%" }}
-                            onClick={handleResubmitRound}
-                        >
-                            Resubmit round results to WCA Live
-                        </Button>
-                    )}
+                    {HAS_WRITE_ACCESS.includes(userInfo.role) &&
+                        results.length > 0 && (
+                            <Button
+                                colorScheme="yellow"
+                                width={{ base: "100%", md: "20%" }}
+                                onClick={handleResubmitRound}
+                            >
+                                Resubmit round results to WCA Live
+                            </Button>
+                        )}
                 </Box>
             )}
-            <ResultsTable results={results} maxAttempts={maxAttempts} />
+            {results.length > 0 ? (
+                <ResultsTable results={results} maxAttempts={maxAttempts} />
+            ) : (
+                <Heading size="lg">No results found</Heading>
+            )}
             <Alert
                 isOpen={openConfirmation}
                 onCancel={handleCancel}

@@ -123,7 +123,6 @@ export enum DeviceType {
 
 export interface Settings {
     username: string;
-    email: string;
     role: string;
     createdAt: Date;
     updatedAt: Date;

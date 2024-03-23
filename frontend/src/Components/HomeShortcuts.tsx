@@ -26,7 +26,7 @@ const HomeShortcuts: React.FC<HomeShortcutsProps> = ({
                 Incidents
             </Button>
             <Heading size="lg">Attendance</Heading>
-            <Box display="flex" gap="2">
+            <Box display="flex" gap="2" flexWrap="wrap">
                 {rooms
                     .filter((r) => r.currentGroupId)
                     .map((room: Room) => (
@@ -45,7 +45,7 @@ const HomeShortcuts: React.FC<HomeShortcutsProps> = ({
                     ))}
             </Box>
             <Heading size="lg">Results</Heading>
-            <Box display="flex" gap="2">
+            <Box display="flex" gap="2" flexWrap="wrap">
                 {currentRounds.map((roundId) => (
                     <Button
                         key={roundId}
