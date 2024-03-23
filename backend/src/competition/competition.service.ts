@@ -212,7 +212,7 @@ export class CompetitionService {
     return {
       shouldUpdate: competition.shouldUpdateDevices,
       releaseChannel: competition.releaseChannel,
-      devices: allDevices.map((d) => d.espId),
+      devices: allDevices.map((d) => +d.espId),
       rooms: rooms
         .filter((r) => r.currentGroupId)
         .map((room) => {
@@ -226,7 +226,7 @@ export class CompetitionService {
             useInspection: useInspection,
             devices: room.devices
               .filter((d) => d.type === 'STATION')
-              .map((device) => device.espId),
+              .map((device) => +device.espId),
           };
         }),
     };
