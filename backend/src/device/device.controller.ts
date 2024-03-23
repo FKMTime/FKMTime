@@ -16,10 +16,15 @@ import { DeviceDto } from './dto/device.dto';
 import { AuthGuard } from '@nestjs/passport';
 import { AdminOrDelegateGuard } from '../auth/guards/adminOrDelegate.guard';
 import { UpdateBatteryPercentageDto } from './dto/updateBatteryPercentage.dto';
+import { RequestToConnectDto } from './dto/requestToConnect.dto';
+import { DeviceGateway } from './device.gateway';
 
 @Controller('device')
 export class DeviceController {
-  constructor(private readonly deviceService: DeviceService) {}
+  constructor(
+    private readonly deviceService: DeviceService,
+    private readonly deviceGateway: DeviceGateway,
+  ) {}
 
   @UseGuards(AuthGuard('jwt'), AdminOrDelegateGuard)
   @Get()
@@ -49,5 +54,11 @@ export class DeviceController {
   @Delete(':id')
   async deleteDevice(@Param('id') id: string) {
     return this.deviceService.deleteDevice(id);
+  }
+
+  @Post('connect')
+  async requestToConnect(@Body() data: RequestToConnectDto) {
+    this.deviceGateway.handleDeviceRequest(data.espId);
+    return { message: 'Request sent' };
   }
 }

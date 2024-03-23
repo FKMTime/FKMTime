@@ -2,8 +2,8 @@ import { useEffect, useState } from "react";
 import { getAllDevices } from "../../logic/devices.ts";
 import LoadingPage from "../../Components/LoadingPage";
 import { Device } from "../../logic/interfaces";
-import { Box, IconButton } from "@chakra-ui/react";
-import { MdAdd, MdSettings } from "react-icons/md";
+import { Box, Button, Heading, IconButton, Text } from "@chakra-ui/react";
+import { MdAdd, MdDevices, MdSettings } from "react-icons/md";
 import CreateDeviceModal from "../../Components/Modal/CreateDeviceModal.tsx";
 import DevicesTable from "../../Components/Table/DevicesTable.tsx";
 import io from "socket.io-client";
@@ -14,6 +14,8 @@ import UpdateDevicesSettingsModal from "../../Components/Modal/UpdateDevicesSett
 const Devices = (): JSX.Element => {
     const [isLoading, setIsLoading] = useState<boolean>(true);
     const [devices, setDevices] = useState<Device[]>([]);
+    const [availableDevices, setAvailableDevices] = useState<number[]>([]);
+    const [espId, setEspId] = useState<number>(0);
     const [isOpenCreateDeviceModal, setIsOpenCreateDeviceModal] =
         useState<boolean>(false);
     const [
@@ -39,6 +41,17 @@ const Devices = (): JSX.Element => {
     const handleCloseCreateDeviceModal = async () => {
         await fetchData();
         setIsOpenCreateDeviceModal(false);
+        setEspId(0);
+    };
+
+    const handleRemoveDeviceRequest = (espId: number) => {
+        setAvailableDevices(availableDevices.filter((id) => id !== espId));
+        socket.emit("removeDeviceRequest", { espId });
+    };
+
+    const handleAddDeviceRequest = (espId: number) => {
+        setEspId(espId);
+        setIsOpenCreateDeviceModal(true);
     };
 
     useEffect(() => {
@@ -47,6 +60,10 @@ const Devices = (): JSX.Element => {
 
         socket.on("deviceUpdated", () => {
             fetchData();
+        });
+
+        socket.on("deviceRequests", (data) => {
+            setAvailableDevices(data);
         });
 
         return () => {
@@ -89,9 +106,51 @@ const Devices = (): JSX.Element => {
                 />
             </Box>
             <DevicesTable devices={devices} fetchData={fetchData} />
+            <Heading size="lg">Available devices</Heading>
+            <Text size="md">
+                Press submit button on device you want to connect
+            </Text>
+            <Box
+                display="flex"
+                flexDirection="row"
+                gap="5"
+                flexWrap="wrap"
+                justifyContent={{ base: "center", md: "flex-start" }}
+            >
+                {availableDevices.map((espId) => (
+                    <Box
+                        key={espId}
+                        bg="gray.900"
+                        p="5"
+                        rounded="md"
+                        color="white"
+                        display="flex"
+                        flexDirection="column"
+                        gap="3"
+                        alignItems="center"
+                        justifyContent="center"
+                    >
+                        <MdDevices size={48} />
+                        <Text> Device ID: {espId}</Text>
+                        <Button
+                            colorScheme="green"
+                            onClick={() => handleAddDeviceRequest(espId)}
+                        >
+                            Add
+                        </Button>
+                        <Button
+                            colorScheme="red"
+                            onClick={() => handleRemoveDeviceRequest(espId)}
+                        >
+                            Remove
+                        </Button>
+                    </Box>
+                ))}
+            </Box>
             <CreateDeviceModal
                 isOpen={isOpenCreateDeviceModal}
                 onClose={handleCloseCreateDeviceModal}
+                espId={espId}
             />
             <UpdateDevicesSettingsModal
                 isOpen={isOpenUpdateDevicesSettingsModal}

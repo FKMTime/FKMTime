@@ -36,7 +36,7 @@ export class DeviceService {
   }
 
   async createDevice(data: DeviceDto) {
-    return this.prisma.device.create({
+    await this.prisma.device.create({
       data: {
         name: data.name,
         espId: data.espId,
@@ -48,6 +48,10 @@ export class DeviceService {
         },
       },
     });
+    this.deviceGateway.handleAddDeviceToDb(data.espId);
+    return {
+      message: 'Device created',
+    };
   }
 
   async updateDevice(id: string, data: DeviceDto) {

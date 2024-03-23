@@ -8,7 +8,7 @@ export const getAllDevices = async () => {
 
 export const createDevice = async (
     name: string,
-    espId: string,
+    espId: number,
     type: string,
     roomId: string
 ) => {

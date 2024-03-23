@@ -16,12 +16,14 @@ import { getAllRooms } from "../../logic/rooms.ts";
 interface CreateDeviceModalProps {
     isOpen: boolean;
     onClose: () => void;
+    espId?: number;
 }
 
 const CreateDeviceModal: React.FC<CreateDeviceModalProps> = ({
     isOpen,
     onClose,
-}): JSX.Element => {
+    espId,
+}) => {
     const toast = useToast();
     const [isLoading, setIsLoading] = useState(false);
     const [rooms, setRooms] = useState<Room[]>([]);
@@ -31,11 +33,11 @@ const CreateDeviceModal: React.FC<CreateDeviceModalProps> = ({
         event.preventDefault();
         const data = new FormData(event.currentTarget);
         const name = data.get("name") as string;
-        const espId = data.get("espId") as string;
+        const espIdFromForm = data.get("espId") as string;
         const roomId = data.get("roomId") as string;
         const type = data.get("type") as string;
 
-        const status = await createDevice(name, espId, type, roomId);
+        const status = await createDevice(name, +espIdFromForm, type, roomId);
         if (status === 201) {
             toast({
                 title: "Successfully created new device.",
@@ -89,6 +91,7 @@ const CreateDeviceModal: React.FC<CreateDeviceModalProps> = ({
                         _placeholder={{ color: "white" }}
                         name="espId"
                         disabled={isLoading}
+                        defaultValue={espId !== 0 ? espId : ""}
                     />
                 </FormControl>
                 <FormControl isRequired>
