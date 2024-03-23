@@ -193,7 +193,7 @@ const Attendance = () => {
                     onChange={(event) => {
                         setSelectedEvent(event?.target.value);
                         setSelectedRound(event?.target.value + "-r1");
-                        setAttendance([]);
+                        handleGroupChange(`${event?.target.value}-r1-g1`);
                     }}
                 >
                     {competition.wcif.events.map((event: Event) => (
@@ -212,7 +212,7 @@ const Attendance = () => {
                         value={selectedRound}
                         onChange={(event) => {
                             setSelectedRound(event?.target.value);
-                            setAttendance([]);
+                            handleGroupChange(`${event?.target.value}-g1`);
                         }}
                     >
                         {competition.wcif.events
