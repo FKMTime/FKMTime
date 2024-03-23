@@ -3,6 +3,7 @@ import { DbService } from '../db/db.service';
 import { DeviceDto } from './dto/device.dto';
 import { UpdateBatteryPercentageDto } from './dto/updateBatteryPercentage.dto';
 import { DeviceGateway } from './device.gateway';
+import { RequestToConnectDto } from './dto/requestToConnect.dto';
 
 @Injectable()
 export class DeviceService {
@@ -51,6 +52,23 @@ export class DeviceService {
     this.deviceGateway.handleAddDeviceToDb(data.espId);
     return {
       message: 'Device created',
+    };
+  }
+
+  async requestToConnect(data: RequestToConnectDto) {
+    const inInDb = await this.prisma.device.findFirst({
+      where: {
+        espId: data.espId,
+      },
+    });
+    if (inInDb) {
+      return {
+        message: 'Device already in database',
+      };
+    }
+    this.deviceGateway.handleDeviceRequest(data.espId);
+    return {
+      message: 'Request sent',
     };
   }
 

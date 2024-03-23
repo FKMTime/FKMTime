@@ -58,7 +58,6 @@ export class DeviceController {
 
   @Post('connect')
   async requestToConnect(@Body() data: RequestToConnectDto) {
-    this.deviceGateway.handleDeviceRequest(data.espId);
-    return { message: 'Request sent' };
+    return this.deviceService.requestToConnect(data);
   }
 }
