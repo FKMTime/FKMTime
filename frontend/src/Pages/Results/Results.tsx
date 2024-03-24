@@ -36,7 +36,7 @@ import { competitionAtom } from "../../logic/atoms.ts";
 import { useAtom } from "jotai";
 import { getAllRooms } from "../../logic/rooms.ts";
 import io from "socket.io-client";
-import { RESULTS_WEBSOCKET_URL } from "../../logic/request.ts";
+import { RESULTS_WEBSOCKET_URL, WEBSOCKET_PATH } from "../../logic/request.ts";
 
 const Results = (): JSX.Element => {
     const { id } = useParams<{ id: string }>();
@@ -51,6 +51,8 @@ const Results = (): JSX.Element => {
     const [socket] = useState(
         io(RESULTS_WEBSOCKET_URL, {
             transports: ["websocket"],
+            path: WEBSOCKET_PATH,
+            closeOnBeforeunload: true,
             auth: {
                 token: getToken(),
             },

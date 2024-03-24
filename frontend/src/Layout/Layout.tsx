@@ -7,6 +7,7 @@ import io from "socket.io-client";
 import {
     COMPETITION_WEBSOCKET_URL,
     INCIDENTS_WEBSOCKET_URL,
+    WEBSOCKET_PATH,
 } from "../logic/request.ts";
 import { useAtomValue } from "jotai";
 import { showSidebarAtom } from "../logic/atoms.ts";
@@ -19,6 +20,8 @@ const Layout = (): JSX.Element => {
     const [incidentsSocket] = useState(
         io(INCIDENTS_WEBSOCKET_URL, {
             transports: ["websocket"],
+            path: WEBSOCKET_PATH,
+            closeOnBeforeunload: true,
             auth: {
                 token: getToken(),
             },
@@ -27,6 +30,8 @@ const Layout = (): JSX.Element => {
     const [competitionSocket] = useState(
         io(COMPETITION_WEBSOCKET_URL, {
             transports: ["websocket"],
+            path: WEBSOCKET_PATH,
+            closeOnBeforeunload: true,
             auth: {
                 token: getToken(),
             },

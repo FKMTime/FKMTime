@@ -7,7 +7,7 @@ import { MdAdd, MdDevices, MdSettings } from "react-icons/md";
 import CreateDeviceModal from "../../Components/Modal/CreateDeviceModal.tsx";
 import DevicesTable from "../../Components/Table/DevicesTable.tsx";
 import io from "socket.io-client";
-import { DEVICES_WEBSOCKET_URL } from "../../logic/request.ts";
+import { DEVICES_WEBSOCKET_URL, WEBSOCKET_PATH } from "../../logic/request.ts";
 import { getToken } from "../../logic/auth.ts";
 import UpdateDevicesSettingsModal from "../../Components/Modal/UpdateDevicesSettingsModal.tsx";
 
@@ -25,6 +25,8 @@ const Devices = (): JSX.Element => {
     const [socket] = useState(
         io(DEVICES_WEBSOCKET_URL, {
             transports: ["websocket"],
+            path: WEBSOCKET_PATH,
+            closeOnBeforeunload: true,
             auth: {
                 token: getToken(),
             },

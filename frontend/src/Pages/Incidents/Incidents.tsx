@@ -8,8 +8,11 @@ import { getCompetitionInfo } from "../../logic/competition.ts";
 import { competitionAtom } from "../../logic/atoms.ts";
 import LoadingPage from "../../Components/LoadingPage.tsx";
 import io from "socket.io-client";
-import { INCIDENTS_WEBSOCKET_URL } from "../../logic/request.ts";
 import { getToken } from "../../logic/auth.ts";
+import {
+    INCIDENTS_WEBSOCKET_URL,
+    WEBSOCKET_PATH,
+} from "../../logic/request.ts";
 
 const Incidents = () => {
     const [incidents, setIncidents] = useState<Incident[]>([]);
@@ -17,6 +20,8 @@ const Incidents = () => {
     const [socket] = useState(
         io(INCIDENTS_WEBSOCKET_URL, {
             transports: ["websocket"],
+            path: WEBSOCKET_PATH,
+            closeOnBeforeunload: true,
             auth: {
                 token: getToken(),
             },
