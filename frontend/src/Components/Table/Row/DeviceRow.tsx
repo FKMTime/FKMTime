@@ -1,11 +1,12 @@
 import { useState } from "react";
-import { IconButton, Td, Tr, useToast } from "@chakra-ui/react";
+import { Box, IconButton, Td, Text, Tr, useToast } from "@chakra-ui/react";
 import { MdDelete, MdEdit } from "react-icons/md";
 import { Device } from "../../../logic/interfaces";
 import Alert from "../../Alert";
 import EditDeviceModal from "../../Modal/EditDeviceModal";
 import { deleteDevice } from "../../../logic/devices.ts";
 import { prettyDeviceType } from "../../../logic/utils.ts";
+import BatteryIcon from "../../Icons/BatteryIcon.tsx";
 
 interface deviceRowProps {
     device: Device;
@@ -60,7 +61,14 @@ const DeviceRow: React.FC<deviceRowProps> = ({ device, fetchData }) => {
                 <Td>{device.room.name}</Td>
                 <Td>{device.espId}</Td>
                 <Td>
-                    {device.batteryPercentage && `${device.batteryPercentage}%`}
+                    {device.batteryPercentage && (
+                        <Box display="flex" alignItems="center">
+                            <BatteryIcon
+                                batteryPercentage={device.batteryPercentage}
+                            />{" "}
+                            <Text>{`${device.batteryPercentage}%`}</Text>
+                        </Box>
+                    )}
                 </Td>
                 <Td>{prettyDeviceType(device.type)}</Td>
                 <Td>{device.count}</Td>
