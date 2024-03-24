@@ -89,6 +89,7 @@ export interface Attempt {
     isDelegate: boolean;
     isResolved: boolean;
     penalty: number;
+    inspectionTime?: number;
     isExtraAttempt: boolean;
     extraGiven: boolean;
     solvedAt: Date;

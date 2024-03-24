@@ -1,9 +1,18 @@
+// noinspection DuplicatedCode
+
 import { Activity, Competition } from "@wca/helpers";
 import regions from "./regions";
 import { Attempt, Attendance, Result } from "./interfaces";
 
 export const calculateTotalPages = (count: number, pageSize: number) => {
     return Math.ceil(count / pageSize);
+};
+
+export const msToString = (ms: number) => {
+    const minutes = Math.floor(ms / 60000);
+    const seconds = ((ms % 60000) / 1000).toFixed(2);
+    if (minutes > 0) return `${minutes}:${+seconds < 10 ? "0" : ""}${seconds}`;
+    return `${+seconds}s`;
 };
 
 export const prettyGender = (gender: string) => {

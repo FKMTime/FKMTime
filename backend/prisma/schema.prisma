@@ -97,6 +97,7 @@ model Attempt {
   penalty        Int?
   isExtraAttempt Boolean   @default(false)
   value          Int
+  inspectionTime Int?
   judgeId        String?
   judge          Person?   @relation(fields: [judgeId], references: [id])
   deviceId       String?

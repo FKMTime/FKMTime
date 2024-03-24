@@ -209,6 +209,7 @@ export class AttemptService {
         isResolved: true,
         penalty: true,
         comment: true,
+        inspectionTime: true,
         isExtraAttempt: true,
         extraGiven: true,
         value: true,

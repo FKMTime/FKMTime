@@ -7,6 +7,7 @@ import {
     Heading,
     Input,
     Select,
+    Text,
     useToast,
 } from "@chakra-ui/react";
 import { useNavigate, useParams } from "react-router-dom";
@@ -15,6 +16,7 @@ import { Incident, Person } from "../../logic/interfaces.ts";
 import { getIncidentById, updateAttempt } from "../../logic/attempt.ts";
 import LoadingPage from "../../Components/LoadingPage.tsx";
 import { getAllPersons } from "../../logic/persons.ts";
+import { msToString } from "../../logic/utils.ts";
 
 const IncidentPage = () => {
     const navigate = useNavigate();
@@ -154,6 +156,11 @@ const IncidentPage = () => {
                     }}
                 />
             </FormControl>
+            {editedIncident.inspectionTime && (
+                <Text>
+                    Inspection time: {msToString(editedIncident.inspectionTime)}
+                </Text>
+            )}
             <FormControl>
                 <FormLabel>Judge</FormLabel>
                 <Select

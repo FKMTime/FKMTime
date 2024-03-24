@@ -39,12 +39,6 @@ export class ResultController {
     return await this.resultService.getResultById(id);
   }
 
-  @UseGuards(AuthGuard('jwt'), AdminOrDelegateGuard)
-  @Get(':id/attempts')
-  async getAttemptsByResultId(@Param('id') id: string) {
-    return await this.resultService.getAttemptsByResultId(id);
-  }
-
   @HttpCode(HttpStatus.OK)
   @UseGuards(AuthGuard('jwt'), AdminOrDelegateGuard)
   @Post('round/:roundId/enter')

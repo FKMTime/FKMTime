@@ -1,4 +1,4 @@
-import { Tr, Td, IconButton, useToast } from "@chakra-ui/react";
+import { IconButton, Td, Tr, useToast } from "@chakra-ui/react";
 import { Attempt, Result } from "../../../logic/interfaces";
 import { resultToString } from "../../../logic/resultFormatters";
 import { MdDelete, MdEdit } from "react-icons/md";
@@ -21,7 +21,7 @@ const AttemptRow: React.FC<AttemptRowProps> = ({
     fetchData,
     no,
     result,
-}): JSX.Element => {
+}) => {
     const toast = useToast();
     const [openConfirmation, setOpenConfirmation] = useState<boolean>(false);
     const [isOpenEditAttemptModal, setIsOpenEditAttemptModal] =

@@ -14,7 +14,7 @@ const AttemptsTable: React.FC<AttemptsTableProps> = ({
     showExtraColumns = false,
     fetchData,
     result,
-}): JSX.Element => {
+}) => {
     return (
         <TableContainer>
             <Table variant="simple">

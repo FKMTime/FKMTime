@@ -6,6 +6,7 @@ import {
     FormLabel,
     Input,
     Select,
+    Text,
     useToast,
 } from "@chakra-ui/react";
 import { Modal } from "./Modal";
@@ -16,6 +17,7 @@ import { useAtomValue } from "jotai";
 import { competitionAtom } from "../../logic/atoms";
 import { checkTimeLimit } from "../../logic/results";
 import { getAllPersons } from "../../logic/persons";
+import { msToString } from "../../logic/utils.ts";
 
 interface EditAttemptModalProps {
     isOpen: boolean;
@@ -29,7 +31,7 @@ const EditAttemptModal: React.FC<EditAttemptModalProps> = ({
     onClose,
     attempt,
     result,
-}): JSX.Element => {
+}) => {
     const toast = useToast();
     const [isLoading, setIsLoading] = useState(false);
     const competition = useAtomValue(competitionAtom);
@@ -154,6 +156,11 @@ const EditAttemptModal: React.FC<EditAttemptModalProps> = ({
                         }}
                     />
                 </FormControl>
+                {attempt.inspectionTime && (
+                    <Text>
+                        Inspection time: {msToString(attempt.inspectionTime)}
+                    </Text>
+                )}
                 <FormControl>
                     <FormLabel>Judge</FormLabel>
                     <Select

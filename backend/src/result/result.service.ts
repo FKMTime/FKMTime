@@ -9,6 +9,7 @@ import { ResultGateway } from './result.gateway';
 
 const WCA_LIVE_API_ORIGIN = process.env.WCA_LIVE_API_ORIGIN;
 
+// noinspection DuplicatedCode
 @Injectable()
 export class ResultService {
   constructor(
@@ -233,6 +234,7 @@ export class ResultService {
             isResolved: true,
             penalty: true,
             solvedAt: true,
+            inspectionTime: true,
             comment: true,
             createdAt: true,
             isExtraAttempt: true,
@@ -280,77 +282,6 @@ export class ResultService {
       }),
       Attempt: undefined,
     };
-  }
-
-  async getAttemptsByResultId(resultId: string) {
-    const attempts = await this.prisma.attempt.findMany({
-      where: {
-        result: {
-          id: resultId,
-        },
-      },
-      select: {
-        id: true,
-        resultId: true,
-        attemptNumber: true,
-        replacedBy: true,
-        isDelegate: true,
-        isResolved: true,
-        penalty: true,
-        comment: true,
-        isExtraAttempt: true,
-        extraGiven: true,
-        value: true,
-        solvedAt: true,
-        createdAt: true,
-        judge: {
-          select: {
-            id: true,
-            registrantId: true,
-            wcaId: true,
-            name: true,
-          },
-        },
-        device: {
-          select: {
-            id: true,
-            name: true,
-          },
-        },
-        result: {
-          select: {
-            id: true,
-            eventId: true,
-            roundId: true,
-            createdAt: true,
-            updatedAt: true,
-            person: {
-              select: {
-                id: true,
-                name: true,
-                wcaId: true,
-                registrantId: true,
-              },
-            },
-          },
-        },
-      },
-    });
-    return attempts
-      .map((attempt) => {
-        return {
-          ...attempt,
-          judge: attempt.judge
-            ? attempt.judge
-            : {
-                id: 0,
-                registrantId: 0,
-                wcaId: '',
-                name: 'None',
-              },
-        };
-      })
-      .sort((a, b) => a.attemptNumber - b.attemptNumber);
   }
 
   async markJudgeAsPresent(judgeId: string, groupId: string, deviceId: string) {
@@ -650,10 +581,7 @@ export class ResultService {
         solvedAt: data.solvedAt,
         penalty: finalData.penalty,
         value: finalData.value,
-        comment:
-          finalData.inspectionTime >= 15000
-            ? `+2 penalty - inspection ${this.msToString(finalData.inspectionTime)}`
-            : '',
+        inspectionTime: finalData.inspectionTime,
         judge: judge
           ? {
               connect: {
@@ -906,10 +834,7 @@ export class ResultService {
         attemptNumber: data.attemptNumber,
         sessionId: data.sessionId,
         isDelegate: data.isDelegate,
-        comment:
-          data.inspectionTime >= 15000
-            ? `+2 penalty - inspection ${this.msToString(data.inspectionTime)}`
-            : '',
+        inspectionTime: data.inspectionTime,
         isExtraAttempt: true,
         solvedAt: data.solvedAt,
         isResolved: false,
