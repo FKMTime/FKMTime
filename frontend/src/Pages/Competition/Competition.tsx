@@ -122,6 +122,7 @@ const Competition = () => {
                 duration: 3000,
                 isClosable: true,
             });
+            await fetchCompetitionDataAndSetAtom();
         } else {
             toast({
                 title: "Error",
