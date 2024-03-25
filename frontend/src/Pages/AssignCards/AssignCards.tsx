@@ -4,21 +4,8 @@ import {
     getPersonsWithoutCardAssigned,
     updatePerson,
 } from "../../logic/persons";
-import {
-    Box,
-    DarkMode,
-    FormControl,
-    Heading,
-    Input,
-    Text,
-    useToast,
-} from "@chakra-ui/react";
-import {
-    AutoComplete,
-    AutoCompleteInput,
-    AutoCompleteItem,
-    AutoCompleteList,
-} from "@choc-ui/chakra-autocomplete";
+import { Box, Heading, Input, Text, useToast } from "@chakra-ui/react";
+import PersonAutocomplete from "../../Components/PersonAutocomplete.tsx";
 
 const AssignCards = () => {
     const toast = useToast();
@@ -96,38 +83,15 @@ const AssignCards = () => {
                 There are {personsWithoutCard.length} persons without card
                 assigned
             </Heading>
-            <DarkMode>
-                <FormControl w="60">
-                    <AutoComplete
-                        openOnFocus
-                        onChange={handleChangePerson}
-                        value={searchValue}
-                    >
-                        <AutoCompleteInput
-                            autoFocus
-                            placeholder="Search for a person"
-                            _placeholder={{
-                                color: "gray.200",
-                            }}
-                            ref={searchInputRef}
-                            borderColor="white"
-                        />
-                        <AutoCompleteList>
-                            {personsWithoutCard.map((person) => (
-                                <AutoCompleteItem
-                                    key={person.id}
-                                    value={person.id}
-                                    label={`${person.name} ${person.registrantId && `(${person.registrantId})`}`}
-                                >
-                                    {person.name}{" "}
-                                    {person.registrantId &&
-                                        `(${person.registrantId})`}
-                                </AutoCompleteItem>
-                            ))}
-                        </AutoCompleteList>
-                    </AutoComplete>
-                </FormControl>
-            </DarkMode>
+            <Box width={{ base: "100%", md: "20%" }}>
+                <PersonAutocomplete
+                    onSelect={handleChangePerson}
+                    persons={personsWithoutCard}
+                    value={searchValue}
+                    autoFocus={true}
+                    ref={searchInputRef}
+                />
+            </Box>
             {currentPerson && (
                 <>
                     <Text>Registrant ID: {currentPerson?.registrantId}</Text>

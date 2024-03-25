@@ -20,6 +20,7 @@ import AttemptResultInput from "../AttemptResultInput.tsx";
 import { DNF_VALUE } from "../../logic/constants.ts";
 import PenaltySelect from "../PenaltySelect.tsx";
 import Select from "../../Components/Select.tsx";
+import PersonAutocomplete from "../PersonAutocomplete.tsx";
 
 interface CreateAttemptModalModalProps {
     isOpen: boolean;
@@ -62,6 +63,7 @@ const CreateAttemptModal: React.FC<CreateAttemptModalModalProps> = ({
             setDevices(
                 data.filter((device: Device) => device.type === "STATION")
             );
+            setDeviceId(data[0].id);
         });
     }, [isOpen]);
 
@@ -78,7 +80,7 @@ const CreateAttemptModal: React.FC<CreateAttemptModalModalProps> = ({
             submitToWcaLive,
             competitorId: selectedCompetitorId,
             judgeId: selectedJudgeId,
-            deviceId: formData.get("deviceId") as string,
+            deviceId: deviceId,
             attemptNumber: formData.get("attemptNumber")
                 ? parseInt(formData.get("attemptNumber") as string)
                 : 0,
@@ -122,7 +124,7 @@ const CreateAttemptModal: React.FC<CreateAttemptModalModalProps> = ({
     };
 
     return (
-        <Modal isOpen={isOpen} onClose={onClose} title="Create account">
+        <Modal isOpen={isOpen} onClose={onClose} title="Enter attempt">
             <Box
                 display="flex"
                 flexDirection="column"
@@ -130,24 +132,17 @@ const CreateAttemptModal: React.FC<CreateAttemptModalModalProps> = ({
                 as="form"
                 onSubmit={handleSubmit}
             >
-                <FormControl isRequired>
-                    <FormLabel>Competitor</FormLabel>
-                    <Select
-                        value={selectedCompetitorId}
-                        disabled={isLoading || competitorId !== undefined}
-                        onChange={(e) =>
-                            setSelectedCompetitorId(e.target.value)
-                        }
-                    >
-                        {persons
-                            .filter((p) => p.canCompete)
-                            .map((person) => (
-                                <option key={person.id} value={person.id}>
-                                    {person.name} ({person.registrantId})
-                                </option>
-                            ))}
-                    </Select>
-                </FormControl>
+                {!competitorId && (
+                    <FormControl isRequired>
+                        <FormLabel>Competitor</FormLabel>
+                        <PersonAutocomplete
+                            value={selectedCompetitorId}
+                            disabled={isLoading}
+                            onSelect={setSelectedCompetitorId}
+                            persons={persons.filter((p) => p.canCompete)}
+                        />
+                    </FormControl>
+                )}
                 <FormControl isRequired>
                     <FormLabel>Attempt number</FormLabel>
                     <Input
@@ -184,17 +179,12 @@ const CreateAttemptModal: React.FC<CreateAttemptModalModalProps> = ({
                 />
                 <FormControl>
                     <FormLabel>Judge</FormLabel>
-                    <Select
-                        value={selectedJudgeId}
+                    <PersonAutocomplete
+                        onSelect={setSelectedJudgeId}
+                        persons={persons}
                         disabled={isLoading}
-                        onChange={(e) => setSelectedJudgeId(e.target.value)}
-                    >
-                        {persons.map((person) => (
-                            <option key={person.id} value={person.id}>
-                                {person.name} ({person.registrantId})
-                            </option>
-                        ))}
-                    </Select>
+                        value={selectedJudgeId}
+                    />
                 </FormControl>
                 <FormControl>
                     <FormLabel>Device</FormLabel>
