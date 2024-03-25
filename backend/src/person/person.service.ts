@@ -1,9 +1,9 @@
 import { DbService } from '../db/db.service';
 import { HttpException, Injectable } from '@nestjs/common';
 import { UpdatePersonDto } from './dto/updatePerson.dto';
-import { AssignManyCardsDto } from './dto/assignManyCards.dto';
 import { AddStaffMemberDto } from './dto/addStaffMember.dto';
 import { convertPolishToLatin } from '../translations';
+import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 
 @Injectable()
 export class PersonService {
@@ -153,25 +153,29 @@ export class PersonService {
     });
   }
 
-  async assignManyCards(data: AssignManyCardsDto) {
-    const transactions = data.persons.map((person) => {
-      return this.prisma.person.update({
-        where: { id: person.id },
+  async updatePerson(id: string, data: UpdatePersonDto) {
+    try {
+      await this.prisma.person.update({
+        where: { id },
         data: {
-          cardId: person.cardId.toString(),
+          cardId: data.cardId.toString(),
         },
       });
-    });
-    return this.prisma.$transaction(transactions);
-  }
-
-  async updatePerson(id: string, data: UpdatePersonDto) {
-    return this.prisma.person.update({
-      where: { id },
-      data: {
-        cardId: data.cardId.toString(),
-      },
-    });
+    } catch (e) {
+      if (e instanceof PrismaClientKnownRequestError) {
+        if (e.code === 'P2002') {
+          throw new HttpException(
+            {
+              message: 'Card already assigned',
+            },
+            409,
+          );
+        }
+      }
+    }
+    return {
+      message: 'Person updated',
+    };
   }
 
   async getPersonById(id: string) {

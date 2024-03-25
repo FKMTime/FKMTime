@@ -68,14 +68,11 @@ export const updatePerson = async (data: Person) => {
     return response.status;
 };
 
-export const assignManyCards = async (data: Person[]) => {
-    const response = await backendRequest(
-        "person/card/assign-many",
-        "PUT",
-        true,
-        {
-            persons: data,
-        }
+export const filterPersons = (persons: Person[], search: string) => {
+    return persons.filter(
+        (person) =>
+            person.name.toLowerCase().includes(search.toLowerCase()) ||
+            (person.registrantId &&
+                person.registrantId.toString().includes(search.toLowerCase()))
     );
-    return response.status;
 };
