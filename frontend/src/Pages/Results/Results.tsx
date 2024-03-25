@@ -212,7 +212,6 @@ const Results = (): JSX.Element => {
                     ))}
                 </Box>
                 <Select
-                    defaultValue={filters.roundId}
                     value={filters.roundId}
                     onChange={(event) =>
                         navigate(`/results/round/${event.target.value}`)

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Attendance as AttendanceType, Room } from "../../logic/interfaces";
 import {
     Box,
@@ -52,11 +52,15 @@ const Attendance = () => {
         competition.wcif.schedule.venues[0].rooms.forEach((room: WCIFRoom) => {
             room.activities.forEach((activity: Activity) => {
                 if (activity.activityCode === selectedRound) {
-                    activitiesToReturn = activity.childActivities;
+                    activitiesToReturn = activitiesToReturn.concat(
+                        activity.childActivities
+                    );
                 }
             });
         });
-        return activitiesToReturn;
+        return activitiesToReturn.sort((a, b) =>
+            a.activityCode.localeCompare(b.activityCode)
+        );
     }, [competition, selectedRound, selectedEvent]);
     const presentScramblers = useMemo(() => {
         return attendance.filter((a) => a.role === "SCRAMBLER");
@@ -98,27 +102,16 @@ const Attendance = () => {
         );
     }, [competition, presentJudges, selectedGroup]);
 
-    useEffect(() => {
-        getAllRooms().then((rooms: Room[]) => {
-            setRooms(rooms);
-        });
-    }, []);
-
-    useEffect(() => {
-        if (!competition) {
-            getCompetitionInfo().then((response) => {
-                setCompetition(response.data);
-            });
-        }
-    }, [competition, setCompetition]);
+    const handleGroupChange = useCallback(
+        (groupId: string) => {
+            navigate(`/attendance/${groupId}`);
+        },
+        [navigate]
+    );
 
     const fetchAttendanceData = async (groupId: string) => {
         const data = await getAttendanceByGroupId(groupId);
         setAttendance(data);
-    };
-
-    const handleGroupChange = (groupId: string) => {
-        navigate(`/attendance/${groupId}`);
     };
 
     const handleMarkAsPresent = async (registrantId: number, role: string) => {
@@ -144,6 +137,25 @@ const Attendance = () => {
     };
 
     useEffect(() => {
+        getAllRooms().then((data: Room[]) => {
+            setRooms(data);
+            if (data.filter((r) => r.currentGroupId).length === 1) {
+                handleGroupChange(
+                    data.filter((r) => r.currentGroupId)[0].currentGroupId
+                );
+            }
+        });
+    }, [handleGroupChange]);
+
+    useEffect(() => {
+        if (!competition) {
+            getCompetitionInfo().then((response) => {
+                setCompetition(response.data);
+            });
+        }
+    }, [competition, setCompetition]);
+
+    useEffect(() => {
         if (selectedGroup) {
             setSelectedEvent(selectedGroup.split("-")[0]);
             setSelectedRound(selectedGroup.split("-g")[0]);
@@ -154,6 +166,11 @@ const Attendance = () => {
     if (!competition) {
         return <LoadingPage />;
     }
+
+    const noRunners = absentRunners.length === 0 && presentRunners.length === 0;
+    const noScramblers =
+        absentScramblers.length === 0 && presentScramblers.length === 0;
+    const noJudges = absentJudges.length === 0 && presentJudges.length === 0;
 
     return (
         <Box display="flex" flexDirection="column" gap="5">
@@ -249,8 +266,7 @@ const Attendance = () => {
             )}
             {selectedGroup && (
                 <>
-                    {absentScramblers.length === 0 &&
-                    presentScramblers.length === 0 ? (
+                    {noScramblers ? (
                         <Heading size="md">No scramblers in this group</Heading>
                     ) : (
                         <Box gap="5" display="flex" flexDirection="column">
@@ -269,8 +285,7 @@ const Attendance = () => {
                             )}
                         </Box>
                     )}
-                    {absentRunners.length === 0 &&
-                    presentRunners.length === 0 ? (
+                    {noRunners ? (
                         <Heading size="md">No runners in this group</Heading>
                     ) : (
                         <Box gap="5" display="flex" flexDirection="column">
@@ -287,7 +302,7 @@ const Attendance = () => {
                             )}
                         </Box>
                     )}
-                    {absentJudges.length === 0 && presentJudges.length === 0 ? (
+                    {noJudges ? (
                         <Heading size="md">No judges in this group</Heading>
                     ) : (
                         <Box gap="5" display="flex" flexDirection="column">

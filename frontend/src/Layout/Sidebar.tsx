@@ -43,7 +43,7 @@ const Sidebar: React.FC<SidebarProps> = ({ user }): JSX.Element => {
         <>
             <Circle
                 position="fixed"
-                display={{ base: "block", md: "none" }}
+                display={{ base: "block", "2xl": "none" }}
                 top="1"
                 right="1"
                 backgroundColor="teal.500"
@@ -59,8 +59,8 @@ const Sidebar: React.FC<SidebarProps> = ({ user }): JSX.Element => {
             </Circle>
             <Box
                 height="100vh"
-                width={{ base: "100%", md: "20vh" }}
-                display={{ base: "none", md: "flex" }}
+                width={{ base: "100%", "2xl": "20vh" }}
+                display={{ base: "none", "2xl": "flex" }}
             >
                 <SidebarContent user={user} handleLogout={handleLogout} />
             </Box>

@@ -55,7 +55,7 @@ const DisplayGroupsModal: React.FC<DisplayGroupsModalProps> = ({
                         </Thead>
                         <Tbody>
                             {assignments.map((assignment) => (
-                                <Tr>
+                                <Tr key={assignment.activityCode}>
                                     <Td>{assignment.groupName}</Td>
                                     <Td>{assignment.activityName}</Td>
                                     <Td>
