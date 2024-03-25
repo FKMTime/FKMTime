@@ -5,10 +5,11 @@ import {
     Button,
     FormControl,
     FormLabel,
-    Select,
     useToast,
 } from "@chakra-ui/react";
 import { swapAttempts } from "../../logic/attempt.ts";
+import Select from "../../Components/Select.tsx";
+import { useState } from "react";
 
 interface SwapAttemptsModalProps {
     isOpen: boolean;
@@ -22,11 +23,11 @@ const SwapAttemptsModal: React.FC<SwapAttemptsModalProps> = ({
     attempts,
 }) => {
     const toast = useToast();
+    const [firstAttemptId, setFirstAttemptId] = useState<string>("");
+    const [secondAttemptId, setSecondAttemptId] = useState<string>("");
+
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
-        const data = new FormData(e.currentTarget);
-        const firstAttemptId = data.get("firstAttempt") as string;
-        const secondAttemptId = data.get("secondAttempt") as string;
         if (firstAttemptId === secondAttemptId) {
             return toast({
                 title: "Error",
@@ -68,7 +69,10 @@ const SwapAttemptsModal: React.FC<SwapAttemptsModalProps> = ({
             >
                 <FormControl>
                     <FormLabel>First attempt</FormLabel>
-                    <Select name="firstAttempt">
+                    <Select
+                        value={firstAttemptId}
+                        onChange={(e) => setFirstAttemptId(e.target.value)}
+                    >
                         {attempts.map((attempt) => (
                             <option key={attempt.id} value={attempt.id}>
                                 Attempt {attempt.attemptNumber}
@@ -78,7 +82,10 @@ const SwapAttemptsModal: React.FC<SwapAttemptsModalProps> = ({
                 </FormControl>
                 <FormControl>
                     <FormLabel>Second attempt</FormLabel>
-                    <Select name="secondAttempt">
+                    <Select
+                        value={secondAttemptId}
+                        onChange={(e) => setSecondAttemptId(e.target.value)}
+                    >
                         {attempts.map((attempt) => (
                             <option key={attempt.id} value={attempt.id}>
                                 Attempt {attempt.attemptNumber}

@@ -6,7 +6,6 @@ import {
     Heading,
     IconButton,
     Input,
-    Select,
     Text,
     useToast,
 } from "@chakra-ui/react";
@@ -37,6 +36,7 @@ import { useAtom } from "jotai";
 import { getAllRooms } from "../../logic/rooms.ts";
 import io from "socket.io-client";
 import { RESULTS_WEBSOCKET_URL, WEBSOCKET_PATH } from "../../logic/request.ts";
+import Select from "../../Components/Select.tsx";
 
 const Results = (): JSX.Element => {
     const { id } = useParams<{ id: string }>();
@@ -211,21 +211,24 @@ const Results = (): JSX.Element => {
                         />
                     ))}
                 </Box>
-                <Select
-                    value={filters.roundId}
-                    onChange={(event) =>
-                        navigate(`/results/round/${event.target.value}`)
-                    }
-                    width={{ base: "100%", md: "5%" }}
-                >
-                    {competition.wcif.events
-                        .find((event: Event) => event.id === filters.eventId)
-                        ?.rounds.map((round: Round, i: number) => (
-                            <option key={round.id} value={round.id}>
-                                {i + 1}
-                            </option>
-                        ))}
-                </Select>
+                <Box width={{ base: "100%", md: "5%" }}>
+                    <Select
+                        value={filters.roundId}
+                        onChange={(event) =>
+                            navigate(`/results/round/${event.target.value}`)
+                        }
+                    >
+                        {competition.wcif.events
+                            .find(
+                                (event: Event) => event.id === filters.eventId
+                            )
+                            ?.rounds.map((round: Round, i: number) => (
+                                <option key={round.id} value={round.id}>
+                                    {i + 1}
+                                </option>
+                            ))}
+                    </Select>
+                </Box>
                 <Input
                     placeholder="Search"
                     _placeholder={{ color: "white" }}

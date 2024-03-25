@@ -4,7 +4,6 @@ import {
     FormControl,
     FormLabel,
     Input,
-    Select,
     useToast,
 } from "@chakra-ui/react";
 import { Modal } from "./Modal";
@@ -12,6 +11,7 @@ import { useEffect, useState } from "react";
 import { updateDevice } from "../../logic/devices.ts";
 import { Device, DeviceType, Room } from "../../logic/interfaces";
 import { getAllRooms } from "../../logic/rooms.ts";
+import Select from "../../Components/Select.tsx";
 
 interface EditDeviceModalProps {
     isOpen: boolean;
@@ -104,7 +104,6 @@ const EditDeviceModal: React.FC<EditDeviceModalProps> = ({
                 <FormControl isRequired>
                     <FormLabel>Room</FormLabel>
                     <Select
-                        placeholder="Select room"
                         disabled={isLoading}
                         value={editedDevice.roomId}
                         onChange={(e) =>
@@ -124,7 +123,6 @@ const EditDeviceModal: React.FC<EditDeviceModalProps> = ({
                 <FormControl isRequired>
                     <FormLabel>Type</FormLabel>
                     <Select
-                        placeholder="Select type"
                         disabled={isLoading}
                         value={editedDevice.type}
                         onChange={(e) =>

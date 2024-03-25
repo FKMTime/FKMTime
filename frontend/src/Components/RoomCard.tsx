@@ -1,9 +1,10 @@
 import { Room, Competition } from "../logic/interfaces.ts";
-import { Box, FormControl, FormLabel, Heading, Select } from "@chakra-ui/react";
+import { Box, FormControl, FormLabel, Heading } from "@chakra-ui/react";
 import { useMemo, useState } from "react";
 import { Activity, Event, Round } from "@wca/helpers";
 import events from "../logic/events.ts";
 import { getGroupsByRoundId } from "../logic/activities.ts";
+import Select from "./Select.tsx";
 
 interface RoomCardProps {
     room: Room;
@@ -48,8 +49,6 @@ const RoomCard: React.FC<RoomCardProps> = ({
             <FormControl>
                 <FormLabel>Current event</FormLabel>
                 <Select
-                    placeholder="Select event"
-                    _placeholder={{ color: "white" }}
                     value={currentEvent}
                     onChange={(event) => {
                         setCurrentEvent(event?.target.value);
@@ -67,8 +66,6 @@ const RoomCard: React.FC<RoomCardProps> = ({
                 <FormControl>
                     <FormLabel>Current round</FormLabel>
                     <Select
-                        placeholder="Select round"
-                        _placeholder={{ color: "white" }}
                         value={currentRound}
                         onChange={(event) =>
                             setCurrentRound(event?.target.value)
@@ -88,8 +85,6 @@ const RoomCard: React.FC<RoomCardProps> = ({
                 <FormControl>
                     <FormLabel>Current group</FormLabel>
                     <Select
-                        placeholder="Select group"
-                        _placeholder={{ color: "white" }}
                         value={currentGroupId}
                         onChange={(event) =>
                             updateCurrentGroup({

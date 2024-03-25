@@ -5,7 +5,6 @@ import {
     FormControl,
     FormLabel,
     Input,
-    Select,
     Text,
     useToast,
 } from "@chakra-ui/react";
@@ -21,6 +20,7 @@ import { msToString } from "../../logic/utils.ts";
 import AttemptResultInput from "../AttemptResultInput.tsx";
 import { DNF_VALUE } from "../../logic/constants.ts";
 import PenaltySelect from "../PenaltySelect.tsx";
+import Select from "../../Components/Select.tsx";
 
 interface EditAttemptModalProps {
     isOpen: boolean;
@@ -175,14 +175,12 @@ const EditAttemptModal: React.FC<EditAttemptModalProps> = ({
                 <FormControl>
                     <FormLabel>Judge</FormLabel>
                     <Select
-                        placeholder="Select judge"
-                        _placeholder={{ color: "white" }}
                         value={editedAttempt.judgeId}
                         disabled={isLoading}
                         onChange={(e) =>
                             setEditedAttempt({
                                 ...editedAttempt,
-                                judgeId: +e.target.value,
+                                judgeId: e.target.value,
                             })
                         }
                     >

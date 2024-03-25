@@ -8,7 +8,6 @@ import {
     FormControl,
     FormLabel,
     Input,
-    Select,
     useToast,
 } from "@chakra-ui/react";
 import { Device, Person } from "../../logic/interfaces.ts";
@@ -20,6 +19,7 @@ import { TimeLimit } from "@wca/helpers";
 import AttemptResultInput from "../AttemptResultInput.tsx";
 import { DNF_VALUE } from "../../logic/constants.ts";
 import PenaltySelect from "../PenaltySelect.tsx";
+import Select from "../../Components/Select.tsx";
 
 interface CreateAttemptModalModalProps {
     isOpen: boolean;
@@ -51,6 +51,7 @@ const CreateAttemptModal: React.FC<CreateAttemptModalModalProps> = ({
     const [isExtraAttempt, setIsExtraAttempt] = useState<boolean>(false);
     const [value, setValue] = useState<number>(0);
     const [penalty, setPenalty] = useState<number>(0);
+    const [deviceId, setDeviceId] = useState<string>("");
 
     useEffect(() => {
         if (!isOpen) return;
@@ -132,8 +133,6 @@ const CreateAttemptModal: React.FC<CreateAttemptModalModalProps> = ({
                 <FormControl isRequired>
                     <FormLabel>Competitor</FormLabel>
                     <Select
-                        placeholder="Select competitor"
-                        _placeholder={{ color: "white" }}
                         value={selectedCompetitorId}
                         disabled={isLoading || competitorId !== undefined}
                         onChange={(e) =>
@@ -186,8 +185,6 @@ const CreateAttemptModal: React.FC<CreateAttemptModalModalProps> = ({
                 <FormControl>
                     <FormLabel>Judge</FormLabel>
                     <Select
-                        placeholder="Select judge"
-                        _placeholder={{ color: "white" }}
                         value={selectedJudgeId}
                         disabled={isLoading}
                         onChange={(e) => setSelectedJudgeId(e.target.value)}
@@ -202,10 +199,9 @@ const CreateAttemptModal: React.FC<CreateAttemptModalModalProps> = ({
                 <FormControl>
                     <FormLabel>Device</FormLabel>
                     <Select
-                        placeholder="Select device"
-                        _placeholder={{ color: "white" }}
                         disabled={isLoading}
-                        name="deviceId"
+                        value={deviceId}
+                        onChange={(e) => setDeviceId(e.target.value)}
                     >
                         {devices.map((device) => (
                             <option key={device.id} value={device.id}>

@@ -4,12 +4,12 @@ import {
     FormControl,
     FormLabel,
     Input,
-    Select,
     useToast,
 } from "@chakra-ui/react";
 import { Modal } from "./Modal";
 import { createAccount } from "../../logic/accounts";
 import { useState } from "react";
+import Select from "../../Components/Select";
 
 interface CreateAccountModalProps {
     isOpen: boolean;
@@ -22,13 +22,13 @@ const CreateAccountModal: React.FC<CreateAccountModalProps> = ({
 }) => {
     const toast = useToast();
     const [isLoading, setIsLoading] = useState(false);
+    const [role, setRole] = useState<string>("DELEGATE");
 
     const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
         setIsLoading(true);
         event.preventDefault();
         const data = new FormData(event.currentTarget);
         const username = data.get("username") as string;
-        const role = data.get("role") as string;
         const password = data.get("password") as string;
 
         const response = await createAccount(username, role, password);
@@ -84,9 +84,8 @@ const CreateAccountModal: React.FC<CreateAccountModalProps> = ({
                 <FormControl isRequired>
                     <FormLabel>Role</FormLabel>
                     <Select
-                        placeholder="Select role"
-                        _placeholder={{ color: "white" }}
-                        name="role"
+                        value={role}
+                        onChange={(e) => setRole(e.target.value)}
                         disabled={isLoading}
                     >
                         <option value="DELEGATE">Delegate</option>

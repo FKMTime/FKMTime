@@ -1,5 +1,4 @@
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
-import { ChakraProvider } from "@chakra-ui/react";
 import Login from "./Pages/Auth/Login/Login";
 import Layout from "./Layout/Layout";
 import Home from "./Pages/Home/Home";
@@ -105,11 +104,7 @@ const App = (): JSX.Element => {
         },
     ]);
 
-    return (
-        <ChakraProvider>
-            <RouterProvider router={router}></RouterProvider>
-        </ChakraProvider>
-    );
+    return <RouterProvider router={router} />;
 };
 
 export default App;

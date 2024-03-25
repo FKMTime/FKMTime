@@ -5,15 +5,15 @@ import {
     Checkbox,
     FormControl,
     FormLabel,
-    Select,
     useToast,
 } from "@chakra-ui/react";
-import { useEffect, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import { Competition, ReleaseChannel } from "../../logic/interfaces.ts";
 import {
     getCompetitionSettings,
     updateDevicesSettings,
 } from "../../logic/competition.ts";
+import Select from "../../Components/Select.tsx";
 
 interface UpdateDevicesSettingsModalProps {
     isOpen: boolean;
@@ -37,7 +37,7 @@ const UpdateDevicesSettingsModal: React.FC<UpdateDevicesSettingsModalProps> = ({
         fetchSettings();
     }, []);
 
-    const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
         event.preventDefault();
         if (!competition) return;
         const status = await updateDevicesSettings(competition.id, {

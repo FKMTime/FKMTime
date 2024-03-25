@@ -4,13 +4,13 @@ import {
     FormControl,
     FormLabel,
     Input,
-    Select,
     useToast,
 } from "@chakra-ui/react";
 import { Modal } from "./Modal";
 import { updateAccount } from "../../logic/accounts";
 import { useState } from "react";
 import { Account } from "../../logic/interfaces";
+import Select from "../../Components/Select.tsx";
 
 interface EditAccountModalProps {
     isOpen: boolean;
@@ -79,8 +79,6 @@ const EditAccountModal: React.FC<EditAccountModalProps> = ({
                 <FormControl isRequired>
                     <FormLabel>Role</FormLabel>
                     <Select
-                        placeholder="Select role"
-                        _placeholder={{ color: "white" }}
                         value={editedAccount.role}
                         disabled={isLoading}
                         onChange={(e) =>

@@ -7,7 +7,6 @@ import {
     FormLabel,
     Heading,
     Input,
-    Select,
     Text,
 } from "@chakra-ui/react";
 import { Activity, Event, Room as WCIFRoom, Venue } from "@wca/helpers";
@@ -22,6 +21,7 @@ import { getAllRooms } from "../../logic/rooms.ts";
 import { HAS_WRITE_ACCESS } from "../../logic/accounts.ts";
 import HomeShortcuts from "../../Components/HomeShortcuts.tsx";
 import { getUserInfo } from "../../logic/auth.ts";
+import Select from "../../Components/Select.tsx";
 
 const Home = (): JSX.Element => {
     const navigate = useNavigate();
@@ -136,7 +136,7 @@ const Home = (): JSX.Element => {
                         onChange={(e) =>
                             setSelectedVenue(parseInt(e.target.value))
                         }
-                        value={selectedVenue}
+                        value={selectedVenue.toString()}
                     >
                         {competition?.wcif.schedule.venues.map(
                             (venue: Venue) => (
@@ -153,7 +153,7 @@ const Home = (): JSX.Element => {
                         onChange={(e) =>
                             setSelectedRoom(parseInt(e.target.value))
                         }
-                        value={selectedRoom}
+                        value={selectedRoom.toString()}
                     >
                         {competition?.wcif.schedule.venues
                             .find((venue: Venue) => venue.id === selectedVenue)

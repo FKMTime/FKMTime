@@ -94,7 +94,7 @@ export interface Attempt {
     extraGiven: boolean;
     solvedAt: Date;
     value: number;
-    judgeId: number;
+    judgeId: string;
     judge: Person;
     device: Device;
 }
@@ -134,4 +134,9 @@ export interface GroupAssigment {
     activityCode: string;
     groupName: string;
     activityName: string;
+}
+
+export interface SelectOption {
+    value: string;
+    label: string;
 }

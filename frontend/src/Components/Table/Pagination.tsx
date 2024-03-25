@@ -1,10 +1,11 @@
-import { Box, IconButton, Select, Text } from "@chakra-ui/react";
+import { Box, IconButton, Text } from "@chakra-ui/react";
 import {
     FaAngleDoubleLeft,
     FaAngleDoubleRight,
     FaAngleLeft,
     FaAngleRight,
 } from "react-icons/fa";
+import Select from "../../Components/Select.tsx";
 
 interface PaginationProps {
     page: number;
@@ -79,10 +80,8 @@ const Pagination: React.FC<PaginationProps> = ({
             {totalPages !== 0 && (
                 <Box width={{ base: "30%", md: "5%" }} margin="auto" mt="5">
                     <Select
-                        value={pageSize}
+                        value={pageSize.toString()}
                         onChange={handlePageSizeChange}
-                        _placeholder={{ color: "white" }}
-                        color="white"
                     >
                         <option value={10}>10</option>
                         <option value={25}>25</option>

@@ -6,7 +6,6 @@ import {
     FormLabel,
     Heading,
     Input,
-    Select,
     Text,
     useToast,
 } from "@chakra-ui/react";
@@ -23,6 +22,7 @@ import { useAtomValue } from "jotai";
 import { competitionAtom } from "../../logic/atoms.ts";
 import { DNF_VALUE } from "../../logic/constants.ts";
 import PenaltySelect from "../../Components/PenaltySelect.tsx";
+import Select from "../../Components/Select.tsx";
 
 const IncidentPage = () => {
     const navigate = useNavigate();
@@ -196,14 +196,12 @@ const IncidentPage = () => {
             <FormControl>
                 <FormLabel>Judge</FormLabel>
                 <Select
-                    placeholder="Select judge"
-                    _placeholder={{ color: "white" }}
                     value={editedIncident.judgeId}
                     disabled={isLoading}
                     onChange={(e) =>
                         setEditedIncident({
                             ...editedIncident,
-                            judgeId: +e.target.value,
+                            judgeId: e.target.value,
                         })
                     }
                 >

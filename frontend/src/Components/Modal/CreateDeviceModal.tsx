@@ -4,7 +4,6 @@ import {
     FormControl,
     FormLabel,
     Input,
-    Select,
     useToast,
 } from "@chakra-ui/react";
 import { Modal } from "./Modal";
@@ -12,6 +11,7 @@ import { useEffect, useState } from "react";
 import { createDevice } from "../../logic/devices.ts";
 import { Room } from "../../logic/interfaces.ts";
 import { getAllRooms } from "../../logic/rooms.ts";
+import Select from "../../Components/Select.tsx";
 
 interface CreateDeviceModalProps {
     isOpen: boolean;
@@ -27,6 +27,8 @@ const CreateDeviceModal: React.FC<CreateDeviceModalProps> = ({
     const toast = useToast();
     const [isLoading, setIsLoading] = useState(false);
     const [rooms, setRooms] = useState<Room[]>([]);
+    const [roomId, setRoomId] = useState<string>("");
+    const [type, setType] = useState<string>("STATION");
 
     const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
         setIsLoading(true);
@@ -34,7 +36,6 @@ const CreateDeviceModal: React.FC<CreateDeviceModalProps> = ({
         const data = new FormData(event.currentTarget);
         const name = data.get("name") as string;
         const espIdFromForm = data.get("espId") as string;
-        const roomId = data.get("roomId") as string;
         const type = data.get("type") as string;
 
         const status = await createDevice(name, +espIdFromForm, type, roomId);
@@ -97,8 +98,8 @@ const CreateDeviceModal: React.FC<CreateDeviceModalProps> = ({
                 <FormControl isRequired>
                     <FormLabel>Room</FormLabel>
                     <Select
-                        placeholder="Select room"
-                        name="roomId"
+                        value={roomId}
+                        onChange={(e) => setRoomId(e.target.value)}
                         disabled={isLoading}
                     >
                         {rooms.map((room: Room) => (
@@ -111,8 +112,8 @@ const CreateDeviceModal: React.FC<CreateDeviceModalProps> = ({
                 <FormControl isRequired>
                     <FormLabel>Type</FormLabel>
                     <Select
-                        placeholder="Select type"
-                        name="type"
+                        value={type}
+                        onChange={(e) => setType(e.target.value)}
                         disabled={isLoading}
                     >
                         <option value="STATION">Station</option>

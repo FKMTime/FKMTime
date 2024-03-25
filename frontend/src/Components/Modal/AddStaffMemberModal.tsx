@@ -4,12 +4,12 @@ import {
     FormControl,
     FormLabel,
     Input,
-    Select,
     useToast,
 } from "@chakra-ui/react";
 import { Modal } from "./Modal";
 import React, { useState } from "react";
 import { addStaffMember } from "../../logic/persons";
+import Select from "../../Components/Select.tsx";
 
 interface AddStaffMemberModalProps {
     isOpen: boolean;
@@ -22,13 +22,13 @@ const AddStaffMemberModal: React.FC<AddStaffMemberModalProps> = ({
 }): JSX.Element => {
     const toast = useToast();
     const [isLoading, setIsLoading] = useState(false);
+    const [gender, setGender] = useState<string>("m");
 
     const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
         setIsLoading(true);
         event.preventDefault();
         const data = new FormData(event.currentTarget);
         const name = data.get("name") as string;
-        const gender = data.get("gender") as string;
 
         const status = await addStaffMember(name, gender);
         if (status === 201) {
@@ -71,9 +71,8 @@ const AddStaffMemberModal: React.FC<AddStaffMemberModalProps> = ({
                 <FormControl isRequired>
                     <FormLabel>Gender</FormLabel>
                     <Select
-                        placeholder="Select gender"
-                        _placeholder={{ color: "white" }}
-                        name="gender"
+                        value={gender}
+                        onChange={(e) => setGender(e.target.value)}
                         disabled={isLoading}
                     >
                         <option value="m">Male</option>

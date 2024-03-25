@@ -6,7 +6,6 @@ import {
     FormControl,
     FormLabel,
     Heading,
-    Select,
     useToast,
 } from "@chakra-ui/react";
 import { Activity, Event, Round } from "@wca/helpers";
@@ -25,6 +24,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import AbsentPeopleList from "../../Components/AbsentPeopleList.tsx";
 import PresentPeopleList from "../../Components/PresentPeopleList.tsx";
 import { getGroupsByRoundId } from "../../logic/activities.ts";
+import Select from "../../Components/Select.tsx";
 
 const Attendance = () => {
     const { id } = useParams<{ id: string }>();
@@ -190,8 +190,6 @@ const Attendance = () => {
             <FormControl width="fit-content">
                 <FormLabel>Event</FormLabel>
                 <Select
-                    placeholder="Select event"
-                    _placeholder={{ color: "white" }}
                     value={selectedEvent}
                     onChange={(event) => {
                         setSelectedEvent(event?.target.value);
@@ -210,8 +208,6 @@ const Attendance = () => {
                 <FormControl width="fit-content">
                     <FormLabel>Round</FormLabel>
                     <Select
-                        placeholder="Select round"
-                        _placeholder={{ color: "white" }}
                         value={selectedRound}
                         onChange={(event) => {
                             setSelectedRound(event?.target.value);
@@ -232,8 +228,6 @@ const Attendance = () => {
                 <FormControl width="fit-content">
                     <FormLabel>Group</FormLabel>
                     <Select
-                        placeholder="Select group"
-                        _placeholder={{ color: "white" }}
                         value={selectedGroup}
                         onChange={(event) =>
                             handleGroupChange(event?.target.value)

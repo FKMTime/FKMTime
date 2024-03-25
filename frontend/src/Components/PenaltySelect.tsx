@@ -1,6 +1,7 @@
-import { FormControl, FormLabel, Select } from "@chakra-ui/react";
+import { FormControl, FormLabel } from "@chakra-ui/react";
 import { AVAILABLE_PENALTIES } from "../logic/constants.ts";
 import { ChangeEvent } from "react";
+import Select from "./Select.tsx";
 
 interface PenaltySelectProps {
     value: number;
@@ -17,9 +18,7 @@ const PenaltySelect = ({
         <FormControl>
             <FormLabel>Penalty</FormLabel>
             <Select
-                placeholder="Select penalty"
-                _placeholder={{ color: "white" }}
-                value={value}
+                value={value.toString()}
                 disabled={disabled}
                 onChange={(event: ChangeEvent<HTMLSelectElement>) =>
                     onChange(+event.target.value)
