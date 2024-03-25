@@ -1,6 +1,7 @@
 import { Activity, Competition } from "@wca/helpers";
 import { getPersonFromWcif } from "./utils";
 import { GroupAssigment } from "./interfaces";
+import { Room as WCIFRoom } from "@wca/helpers/lib/models/room";
 
 export const getAssigmentsList = (registrantId: number, wcif: Competition) => {
     const personInfo = getPersonFromWcif(registrantId, wcif);
@@ -80,4 +81,20 @@ export const getActivityNameById = (activityId: number, wcif: Competition) => {
         });
     });
     return activityName;
+};
+
+export const getGroupsByRoundId = (roundId: string, wcif: Competition) => {
+    let activitiesToReturn: Activity[] = [];
+    wcif.schedule.venues[0].rooms.forEach((room: WCIFRoom) => {
+        room.activities.forEach((activity: Activity) => {
+            if (activity.activityCode === roundId) {
+                activitiesToReturn = activitiesToReturn.concat(
+                    activity.childActivities
+                );
+            }
+        });
+    });
+    return activitiesToReturn.sort((a, b) =>
+        a.activityCode.localeCompare(b.activityCode)
+    );
 };

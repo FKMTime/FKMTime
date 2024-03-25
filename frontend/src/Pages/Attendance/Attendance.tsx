@@ -9,7 +9,7 @@ import {
     Select,
     useToast,
 } from "@chakra-ui/react";
-import { Activity, Event, Room as WCIFRoom, Round } from "@wca/helpers";
+import { Activity, Event, Round } from "@wca/helpers";
 import { getCompetitionInfo } from "../../logic/competition.ts";
 import { competitionAtom } from "../../logic/atoms.ts";
 import { useAtom } from "jotai";
@@ -24,6 +24,7 @@ import { getAbsentPeople, getActivityNameByCode } from "../../logic/utils.ts";
 import { useNavigate, useParams } from "react-router-dom";
 import AbsentPeopleList from "../../Components/AbsentPeopleList.tsx";
 import PresentPeopleList from "../../Components/PresentPeopleList.tsx";
+import { getGroupsByRoundId } from "../../logic/activities.ts";
 
 const Attendance = () => {
     const { id } = useParams<{ id: string }>();
@@ -40,27 +41,12 @@ const Attendance = () => {
         if (
             !competition ||
             !selectedRound ||
-            !competition.wcif.schedule.venues[0].rooms[0].activities ||
             !selectedEvent ||
             selectedEvent === ""
         ) {
             return [];
         }
-        //eslint-disable-next-line
-        //@ts-ignore
-        let activitiesToReturn: Activity[] = [];
-        competition.wcif.schedule.venues[0].rooms.forEach((room: WCIFRoom) => {
-            room.activities.forEach((activity: Activity) => {
-                if (activity.activityCode === selectedRound) {
-                    activitiesToReturn = activitiesToReturn.concat(
-                        activity.childActivities
-                    );
-                }
-            });
-        });
-        return activitiesToReturn.sort((a, b) =>
-            a.activityCode.localeCompare(b.activityCode)
-        );
+        return getGroupsByRoundId(selectedRound, competition.wcif);
     }, [competition, selectedRound, selectedEvent]);
     const presentScramblers = useMemo(() => {
         return attendance.filter((a) => a.role === "SCRAMBLER");

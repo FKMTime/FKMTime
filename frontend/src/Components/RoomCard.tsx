@@ -3,6 +3,7 @@ import { Box, FormControl, FormLabel, Heading, Select } from "@chakra-ui/react";
 import { useMemo, useState } from "react";
 import { Activity, Event, Round } from "@wca/helpers";
 import events from "../logic/events.ts";
+import { getGroupsByRoundId } from "../logic/activities.ts";
 
 interface RoomCardProps {
     room: Room;
@@ -27,20 +28,13 @@ const RoomCard: React.FC<RoomCardProps> = ({
         if (
             !competition ||
             !currentRound ||
-            !competition.wcif.schedule.venues[0].rooms[0].activities ||
             !currentEvent ||
             currentEvent === ""
         ) {
             return [];
         }
-        //eslint-disable-next-line
-        //@ts-ignore
-        return competition.wcif.schedule.venues[0].rooms
-            .find((r) => r.name === room.name)
-            .activities.find(
-                (activity: Activity) => activity.activityCode === currentRound
-            ).childActivities;
-    }, [competition, currentEvent, currentRound, room.name]);
+        return getGroupsByRoundId(currentRound, competition.wcif);
+    }, [competition, currentEvent, currentRound]);
 
     return (
         <Box
