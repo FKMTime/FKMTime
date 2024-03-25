@@ -1,18 +1,31 @@
-import { ChangeEvent, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Person } from "../../logic/interfaces";
 import {
-    filterPersons,
     getPersonsWithoutCardAssigned,
     updatePerson,
 } from "../../logic/persons";
-import { Box, Button, Heading, Input, Text, useToast } from "@chakra-ui/react";
+import {
+    Box,
+    DarkMode,
+    FormControl,
+    Heading,
+    Input,
+    Text,
+    useToast,
+} from "@chakra-ui/react";
+import {
+    AutoComplete,
+    AutoCompleteInput,
+    AutoCompleteItem,
+    AutoCompleteList,
+} from "@choc-ui/chakra-autocomplete";
 
 const AssignCards = () => {
     const toast = useToast();
     const [cardId, setCardId] = useState<string>("");
     const [personsWithoutCard, setPersonsWithoutCard] = useState<Person[]>([]);
     const [currentPerson, setCurrentPerson] = useState<Person | null>(null);
-    const [search, setSearch] = useState<string>("");
+    const [searchValue, setSearchValue] = useState<string>("");
     //eslint-disable-next-line @typescript-eslint/no-explicit-any
     const searchInputRef: any = useRef();
     //eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -36,8 +49,8 @@ const AssignCards = () => {
                 duration: 5000,
                 isClosable: true,
             });
-            setSearch("");
             setCardId("");
+            setSearchValue("");
             setPersonsWithoutCard(
                 personsWithoutCard.filter(
                     (person) => person.id !== currentPerson.id
@@ -64,19 +77,11 @@ const AssignCards = () => {
         }
     };
 
-    const handleSearch = (e: ChangeEvent<HTMLInputElement>) => {
-        setSearch(e.target.value);
-        if (e.target.value === "") setCurrentPerson(null);
-        const filteredPersons = filterPersons(
-            personsWithoutCard,
-            e.target.value
+    const handleChangePerson = (value: string) => {
+        setSearchValue(value);
+        setCurrentPerson(
+            personsWithoutCard.find((person) => person.id === value) || null
         );
-        if (filteredPersons.length === 1) {
-            setCurrentPerson(filteredPersons[0]);
-            searchInputRef.current?.blur();
-        } else if (filteredPersons.length === 0) {
-            setCurrentPerson(null);
-        }
     };
 
     return (
@@ -91,47 +96,52 @@ const AssignCards = () => {
                 There are {personsWithoutCard.length} persons without card
                 assigned
             </Heading>
-            <Input
-                placeholder="Search"
-                value={search}
-                onChange={handleSearch}
-                width="20%"
-                autoFocus
-                ref={searchInputRef}
-            />
-            {currentPerson ? (
+            <DarkMode>
+                <FormControl w="60">
+                    <AutoComplete
+                        openOnFocus
+                        onChange={handleChangePerson}
+                        value={searchValue}
+                    >
+                        <AutoCompleteInput
+                            autoFocus
+                            placeholder="Search for a person"
+                            _placeholder={{
+                                color: "gray.200",
+                            }}
+                            ref={searchInputRef}
+                            borderColor="white"
+                        />
+                        <AutoCompleteList>
+                            {personsWithoutCard.map((person) => (
+                                <AutoCompleteItem
+                                    key={person.id}
+                                    value={person.id}
+                                    label={`${person.name} ${person.registrantId && `(${person.registrantId})`}`}
+                                >
+                                    {person.name}{" "}
+                                    {person.registrantId &&
+                                        `(${person.registrantId})`}
+                                </AutoCompleteItem>
+                            ))}
+                        </AutoCompleteList>
+                    </AutoComplete>
+                </FormControl>
+            </DarkMode>
+            {currentPerson && (
                 <>
                     <Text>Registrant ID: {currentPerson?.registrantId}</Text>
                     <Text>Name: {currentPerson?.name}</Text>
+                    <Input
+                        placeholder="Card ID"
+                        value={cardId}
+                        onChange={(e) => setCardId(e.target.value)}
+                        width="20%"
+                        onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
+                        autoFocus
+                        ref={cardInputRef}
+                    />
                 </>
-            ) : (
-                <Box
-                    display="flex"
-                    flexWrap="wrap"
-                    gap="2"
-                    alignItems="center"
-                    justifyContent="center"
-                >
-                    {filterPersons(personsWithoutCard, search).map((person) => (
-                        <Button
-                            key={person.id}
-                            onClick={() => setCurrentPerson(person)}
-                        >
-                            {person.name} ({person.registrantId})
-                        </Button>
-                    ))}
-                </Box>
-            )}
-            {currentPerson && (
-                <Input
-                    placeholder="Card ID"
-                    value={cardId}
-                    onChange={(e) => setCardId(e.target.value)}
-                    width="20%"
-                    onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
-                    autoFocus
-                    ref={cardInputRef}
-                />
             )}
         </Box>
     );
