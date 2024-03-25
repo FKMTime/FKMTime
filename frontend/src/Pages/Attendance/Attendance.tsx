@@ -3,6 +3,7 @@ import { Attendance as AttendanceType, Room } from "../../logic/interfaces";
 import {
     Box,
     Button,
+    Flex,
     FormControl,
     FormLabel,
     Heading,
@@ -25,12 +26,28 @@ import AbsentPeopleList from "../../Components/AbsentPeopleList.tsx";
 import PresentPeopleList from "../../Components/PresentPeopleList.tsx";
 import { getGroupsByRoundId } from "../../logic/activities.ts";
 import Select from "../../Components/Select.tsx";
+import io from "socket.io-client";
+import {
+    ATTENDANCE_WEBSOCKET_URL,
+    WEBSOCKET_PATH,
+} from "../../logic/request.ts";
+import { getToken } from "../../logic/auth.ts";
 
 const Attendance = () => {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
     const toast = useToast();
     const selectedGroup = id ? id : "";
+    const [socket] = useState(
+        io(ATTENDANCE_WEBSOCKET_URL, {
+            transports: ["websocket"],
+            path: WEBSOCKET_PATH,
+            closeOnBeforeunload: true,
+            auth: {
+                token: getToken(),
+            },
+        })
+    );
     const [competition, setCompetition] = useAtom(competitionAtom);
     const [attendance, setAttendance] = useState<AttendanceType[]>([]);
     const [rooms, setRooms] = useState<Room[]>([]);
@@ -146,8 +163,17 @@ const Attendance = () => {
             setSelectedEvent(selectedGroup.split("-")[0]);
             setSelectedRound(selectedGroup.split("-g")[0]);
             fetchAttendanceData(selectedGroup);
+            socket.emit("join", { groupId: selectedGroup });
+
+            socket.on("newAttendance", () => {
+                fetchAttendanceData(selectedGroup);
+            });
+
+            return () => {
+                socket.emit("leave", { groupId: selectedGroup });
+            };
         }
-    }, [rooms, selectedGroup]);
+    }, [rooms, selectedGroup, socket]);
 
     if (!competition) {
         return <LoadingPage />;
@@ -245,61 +271,84 @@ const Attendance = () => {
                 </FormControl>
             )}
             {selectedGroup && (
-                <>
-                    {noScramblers ? (
-                        <Heading size="md">No scramblers in this group</Heading>
-                    ) : (
-                        <Box gap="5" display="flex" flexDirection="column">
-                            <Heading>Scramblers</Heading>
-                            {presentScramblers.length > 0 && (
-                                <PresentPeopleList
-                                    persons={presentScramblers}
-                                />
-                            )}
-                            {absentScramblers.length > 0 && (
-                                <AbsentPeopleList
-                                    persons={absentScramblers}
-                                    handleMarkAsPresent={handleMarkAsPresent}
-                                    role="SCRAMBLER"
-                                />
-                            )}
-                        </Box>
-                    )}
-                    {noRunners ? (
-                        <Heading size="md">No runners in this group</Heading>
-                    ) : (
-                        <Box gap="5" display="flex" flexDirection="column">
-                            <Heading>Runners</Heading>
-                            {presentRunners.length > 0 && (
-                                <PresentPeopleList persons={presentRunners} />
-                            )}
-                            {absentRunners.length > 0 && (
-                                <AbsentPeopleList
-                                    persons={absentRunners}
-                                    handleMarkAsPresent={handleMarkAsPresent}
-                                    role="RUNNER"
-                                />
-                            )}
-                        </Box>
-                    )}
-                    {noJudges ? (
-                        <Heading size="md">No judges in this group</Heading>
-                    ) : (
-                        <Box gap="5" display="flex" flexDirection="column">
-                            <Heading>Judges</Heading>
-                            {presentJudges.length > 0 && (
-                                <PresentPeopleList persons={presentJudges} />
-                            )}
-                            {absentJudges.length > 0 && (
-                                <AbsentPeopleList
-                                    persons={absentJudges}
-                                    handleMarkAsPresent={handleMarkAsPresent}
-                                    role="JUDGE"
-                                />
-                            )}
-                        </Box>
-                    )}
-                </>
+                <Flex
+                    gap={{ base: 3, md: 20 }}
+                    flexDirection={{ base: "column", md: "row" }}
+                >
+                    <Box>
+                        {noScramblers ? (
+                            <Heading size="md">
+                                No scramblers in this group
+                            </Heading>
+                        ) : (
+                            <Box gap="5" display="flex" flexDirection="column">
+                                <Heading>Scramblers</Heading>
+                                {presentScramblers.length > 0 && (
+                                    <PresentPeopleList
+                                        persons={presentScramblers}
+                                    />
+                                )}
+                                {absentScramblers.length > 0 && (
+                                    <AbsentPeopleList
+                                        persons={absentScramblers}
+                                        handleMarkAsPresent={
+                                            handleMarkAsPresent
+                                        }
+                                        role="SCRAMBLER"
+                                    />
+                                )}
+                            </Box>
+                        )}
+                    </Box>
+                    <Box>
+                        {noRunners ? (
+                            <Heading size="md">
+                                No runners in this group
+                            </Heading>
+                        ) : (
+                            <Box gap="5" display="flex" flexDirection="column">
+                                <Heading>Runners</Heading>
+                                {presentRunners.length > 0 && (
+                                    <PresentPeopleList
+                                        persons={presentRunners}
+                                    />
+                                )}
+                                {absentRunners.length > 0 && (
+                                    <AbsentPeopleList
+                                        persons={absentRunners}
+                                        handleMarkAsPresent={
+                                            handleMarkAsPresent
+                                        }
+                                        role="RUNNER"
+                                    />
+                                )}
+                            </Box>
+                        )}
+                    </Box>
+                    <Box>
+                        {noJudges ? (
+                            <Heading size="md">No judges in this group</Heading>
+                        ) : (
+                            <Box gap="5" display="flex" flexDirection="column">
+                                <Heading>Judges</Heading>
+                                {presentJudges.length > 0 && (
+                                    <PresentPeopleList
+                                        persons={presentJudges}
+                                    />
+                                )}
+                                {absentJudges.length > 0 && (
+                                    <AbsentPeopleList
+                                        persons={absentJudges}
+                                        handleMarkAsPresent={
+                                            handleMarkAsPresent
+                                        }
+                                        role="JUDGE"
+                                    />
+                                )}
+                            </Box>
+                        )}
+                    </Box>
+                </Flex>
             )}
         </Box>
     );

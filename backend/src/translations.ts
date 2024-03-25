@@ -14,6 +14,8 @@ const translations = [
       noAttemptsLeft: 'No attempts left',
       competitorIsNotSignedInForEvent: 'You are not signed for this event',
       attemptAlreadyEntered: 'This attempt has already been entered',
+      alreadyCheckedIn: 'You have already checked in',
+      attendanceConfirmed: 'Attendance confirmed',
     },
   },
   {
@@ -32,6 +34,8 @@ const translations = [
       noAttemptsLeft: 'Wykonales juz wszystkie ulozenia',
       competitorIsNotSignedInForEvent: 'Nie jestes zapisany na ta konkurencje',
       attemptAlreadyEntered: 'To ulozenie zostalo juz wprowadzone',
+      alreadyCheckedIn: 'Twoja obecnosc zostala juz potwierdzona',
+      attendanceConfirmed: 'Obecnosc zostala potwierdzona',
     },
   },
 ];

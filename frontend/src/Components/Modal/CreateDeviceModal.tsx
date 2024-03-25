@@ -36,7 +36,6 @@ const CreateDeviceModal: React.FC<CreateDeviceModalProps> = ({
         const data = new FormData(event.currentTarget);
         const name = data.get("name") as string;
         const espIdFromForm = data.get("espId") as string;
-        const type = data.get("type") as string;
 
         const status = await createDevice(name, +espIdFromForm, type, roomId);
         if (status === 201) {
@@ -63,6 +62,7 @@ const CreateDeviceModal: React.FC<CreateDeviceModalProps> = ({
         if (!isOpen) return;
         getAllRooms().then((rooms: Room[]) => {
             setRooms(rooms);
+            setRoomId(rooms[0].id);
         });
     }, [isOpen]);
 

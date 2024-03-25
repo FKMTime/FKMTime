@@ -6,16 +6,17 @@ import { Event, Person, Round } from '@wca/helpers';
 import { Attempt, Competition } from '@prisma/client';
 import { IncidentsGateway } from '../attempt/incidents.gateway';
 import { ResultGateway } from './result.gateway';
+import { AttendanceGateway } from '../attendance/attendance.gateway';
 
 const WCA_LIVE_API_ORIGIN = process.env.WCA_LIVE_API_ORIGIN;
 
-// noinspection DuplicatedCode
 @Injectable()
 export class ResultService {
   constructor(
     private readonly prisma: DbService,
     private readonly incidentsGateway: IncidentsGateway,
     private readonly resultGateway: ResultGateway,
+    private readonly attendanceGateway: AttendanceGateway,
   ) {}
 
   private logger = new Logger(`WCA-Live`);
@@ -315,6 +316,7 @@ export class ResultService {
         role: 'JUDGE',
       },
     });
+    this.attendanceGateway.handleNewAttendance(groupId, judgeId);
   }
 
   async getStationOrThrow(espId: number) {
@@ -1023,12 +1025,5 @@ export class ResultService {
           attempt.value + attempt.penalty * 100 < cutoff,
       );
     }
-  }
-
-  private msToString(ms: number) {
-    const minutes = Math.floor(ms / 60000);
-    const seconds = ((ms % 60000) / 1000).toFixed(2);
-    if (minutes === 0) return `${+seconds < 10 ? '0' : ''}${seconds}`;
-    return `${minutes}:${+seconds < 10 ? '0' : ''}${seconds}`;
   }
 }

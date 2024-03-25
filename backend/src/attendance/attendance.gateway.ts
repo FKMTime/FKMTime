@@ -7,37 +7,39 @@ import {
 } from '@nestjs/websockets';
 import { UseGuards } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
+import { AdminOrDelegateGuard } from '../auth/guards/adminOrDelegate.guard';
 import { Server, Socket } from 'socket.io';
 
 @WebSocketGateway({
-  namespace: '/result',
+  namespace: '/attendance',
   transports: ['websocket'],
   cors: {
     origin: '*',
   },
 })
-@UseGuards(AuthGuard('jwt'))
-export class ResultGateway {
+@UseGuards(AuthGuard('jwt'), AdminOrDelegateGuard)
+export class AttendanceGateway {
   @WebSocketServer() server: Server;
 
   @SubscribeMessage('join')
   async handleJoin(
     @ConnectedSocket() socket: Socket,
-    @MessageBody('roundId') roundId: string,
+    @MessageBody('groupId') groupId: string,
   ) {
-    socket.join(`results-${roundId}`);
+    socket.join(`attendance-${groupId}`);
   }
 
   @SubscribeMessage('leave')
   async handleLeave(
     @ConnectedSocket() socket: Socket,
-    @MessageBody('roundId') roundId: string,
+    @MessageBody('groupId') groupId: string,
   ) {
-    socket.leave(`results-${roundId}`);
+    socket.leave(`attendance-${groupId}`);
   }
 
-  @SubscribeMessage('resultEntered')
-  handleResultEntered(roundId: string) {
-    this.server.to(`results-${roundId}`).emit('resultEntered');
+  handleNewAttendance(groupId: string, competitorId: string) {
+    this.server.to(`attendance-${groupId}`).emit('newAttendance', {
+      competitorId,
+    });
   }
 }

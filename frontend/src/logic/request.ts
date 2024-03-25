@@ -16,6 +16,9 @@ export const RESULTS_WEBSOCKET_URL = import.meta.env.PROD
 export const COMPETITION_WEBSOCKET_URL = import.meta.env.PROD
     ? "/competition"
     : `${DEV_BACKEND_URL}competition`;
+export const ATTENDANCE_WEBSOCKET_URL = import.meta.env.PROD
+    ? "/attendance"
+    : `${DEV_BACKEND_URL}attendance`;
 
 export const WEBSOCKET_PATH = import.meta.env.PROD ? "/api/socket.io/" : "";
 
