@@ -1,4 +1,5 @@
 import { Attempt } from "./interfaces.ts";
+import { DNF_VALUE, DNS_VALUE } from "./constants.ts";
 
 export const average = (attempts: Attempt[]) => {
     switch (attempts.length) {
@@ -27,7 +28,7 @@ const averageOf5 = (times: Attempt[]) => {
 };
 
 function meanOf3(times: Attempt[]) {
-    if (!times.every(isComplete)) return -1;
+    if (!times.every(isComplete)) return DNF_VALUE;
     return mean(times);
 }
 
@@ -42,10 +43,10 @@ function mean(values: Attempt[]) {
 const compareAttemptResults = (time: Attempt, time2: Attempt) => {
     if (!isComplete(time) && !isComplete(time2)) return 0;
     if (!isComplete(time) && isComplete(time2)) return 1;
-    if (isComplete(time) && !isComplete(time2)) return -1;
+    if (isComplete(time) && !isComplete(time2)) return DNF_VALUE;
     return time.value - time2.value;
 };
 
 const isComplete = (time: Attempt) => {
-    return time.penalty !== -1;
+    return time.penalty !== DNF_VALUE && time.penalty !== DNS_VALUE;
 };

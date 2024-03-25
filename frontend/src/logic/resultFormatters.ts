@@ -1,10 +1,11 @@
 import { Attempt } from "./interfaces.ts";
+import { DNF_VALUE, DNS_VALUE, SKIPPED_VALUE } from "./constants.ts";
 
 export const resultToString = (result: number) => {
-    if (result === -1) {
+    if (result === DNF_VALUE) {
         return "DNF";
     }
-    if (result === -2) {
+    if (result === DNS_VALUE) {
         return "DNS";
     }
     return centisecondsToClockFormat(result).toString();
@@ -29,15 +30,51 @@ export const toInt = (string: string) => {
 };
 
 export const attemptWithPenaltyToString = (attempt: Attempt) => {
-    if (attempt.penalty === -1) {
+    if (attempt.penalty === DNF_VALUE) {
         return "DNF";
     }
-    if (attempt.penalty === -2) {
+    if (attempt.penalty === DNS_VALUE) {
         return "DNS";
     }
     if (attempt.penalty === 0) {
         return resultToString(attempt.value);
     } else {
-        return resultToString(attempt.value * attempt.penalty * 100);
+        return resultToString(attempt.value + attempt.penalty * 100);
     }
+};
+
+export const reformatInput = (input: string) => {
+    const number = toInt(input.replace(/\D/g, "")) || 0;
+    if (number === 0) return "";
+    const str = "00000000" + number.toString().slice(0, 8);
+    //eslint-disable-next-line
+    //@ts-ignore
+    const [, hh, mm, ss, cc] = str.match(/(\d\d)(\d\d)(\d\d)(\d\d)$/);
+    return `${hh}:${mm}:${ss}.${cc}`.replace(/^[0:]*(?!\.)/g, "");
+};
+
+export const inputToAttemptResult = (input: string) => {
+    if (input === "") return SKIPPED_VALUE;
+    const num = toInt(input.replace(/\D/g, "")) || 0;
+    return (
+        Math.floor(num / 1000000) * 360000 +
+        Math.floor((num % 1000000) / 10000) * 6000 +
+        Math.floor((num % 10000) / 100) * 100 +
+        (num % 100)
+    );
+};
+
+export const attemptResultToInput = (attemptResult: number) => {
+    if (attemptResult === SKIPPED_VALUE) return "";
+    return centisecondsToClockFormat(attemptResult);
+};
+
+export const isValid = (input: string) => {
+    return input === attemptResultToInput(inputToAttemptResult(input));
+};
+
+export const autocompleteTimeAttemptResult = (attemptResult: number) => {
+    if (attemptResult <= 0) return attemptResult;
+    if (attemptResult <= 10 * 6000) return attemptResult;
+    return Math.round(attemptResult / 100) * 100;
 };

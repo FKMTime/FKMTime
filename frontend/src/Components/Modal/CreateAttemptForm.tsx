@@ -9,7 +9,6 @@ import {
     FormLabel,
     Input,
     Select,
-    Text,
     useToast,
 } from "@chakra-ui/react";
 import { Device, Person } from "../../logic/interfaces.ts";
@@ -18,7 +17,9 @@ import { getAllPersons } from "../../logic/persons.ts";
 import { createAttempt } from "../../logic/attempt.ts";
 import { getAllDevices } from "../../logic/devices.ts";
 import { TimeLimit } from "@wca/helpers";
-import { resultToString } from "../../logic/resultFormatters.ts";
+import AttemptResultInput from "../AttemptResultInput.tsx";
+import { DNF_VALUE } from "../../logic/constants.ts";
+import PenaltySelect from "../PenaltySelect.tsx";
 
 interface CreateAttemptModalModalProps {
     isOpen: boolean;
@@ -48,7 +49,8 @@ const CreateAttemptModal: React.FC<CreateAttemptModalModalProps> = ({
     const [isResolved, setIsResolved] = useState<boolean>(false);
     const [submitToWcaLive, setSubmitToWcaLive] = useState<boolean>(false);
     const [isExtraAttempt, setIsExtraAttempt] = useState<boolean>(false);
-    const [value, setValue] = useState<string>("");
+    const [value, setValue] = useState<number>(0);
+    const [penalty, setPenalty] = useState<number>(0);
 
     useEffect(() => {
         if (!isOpen) return;
@@ -79,12 +81,8 @@ const CreateAttemptModal: React.FC<CreateAttemptModalModalProps> = ({
             attemptNumber: formData.get("attemptNumber")
                 ? parseInt(formData.get("attemptNumber") as string)
                 : 0,
-            value: formData.get("value")
-                ? parseInt(formData.get("value") as string)
-                : 0,
-            penalty: formData.get("penalty")
-                ? parseInt(formData.get("penalty") as string)
-                : 0,
+            value: value,
+            penalty: penalty,
             comment: formData.get("comment") as string,
             replacedBy: formData.get("replacedBy")
                 ? parseInt(formData.get("replacedBy") as string)
@@ -92,7 +90,7 @@ const CreateAttemptModal: React.FC<CreateAttemptModalModalProps> = ({
         };
         if (timeLimit) {
             if (data.value + data.penalty * 100 > timeLimit.centiseconds) {
-                data.penalty = -1;
+                data.penalty = DNF_VALUE;
                 toast({
                     title: "Time limit not passed, time was replaced to DNF",
                     status: "warning",
@@ -166,9 +164,6 @@ const CreateAttemptModal: React.FC<CreateAttemptModalModalProps> = ({
                 >
                     Is extra attempt
                 </Checkbox>
-                {value.length > 0 && (
-                    <Text>Time: {resultToString(+value)}</Text>
-                )}
                 {timeLimit && +value >= timeLimit.centiseconds && (
                     <Alert status="warning" color="black">
                         <AlertIcon />
@@ -177,36 +172,17 @@ const CreateAttemptModal: React.FC<CreateAttemptModalModalProps> = ({
                 )}
                 <FormControl isRequired>
                     <FormLabel>Time</FormLabel>
-                    <Input
-                        placeholder="Time"
-                        _placeholder={{ color: "white" }}
-                        disabled={isLoading}
-                        name="value"
+                    <AttemptResultInput
                         value={value}
-                        onChange={(e) => setValue(e.target.value)}
+                        onChange={setValue}
+                        disabled={isLoading}
                     />
                 </FormControl>
-                <FormControl>
-                    <FormLabel>Penalty</FormLabel>
-                    <Select
-                        placeholder="Select penalty"
-                        _placeholder={{ color: "white" }}
-                        disabled={isLoading}
-                        name="penalty"
-                    >
-                        <option value={0}>No penalty</option>
-                        <option value={2}>+2</option>
-                        <option value={-1}>DNF</option>
-                        <option value={-2}>DNS</option>
-                        <option value={4}>+4</option>
-                        <option value={6}>+6</option>
-                        <option value={8}>+8</option>
-                        <option value={10}>+10</option>
-                        <option value={12}>+12</option>
-                        <option value={14}>+14</option>
-                        <option value={16}>+16</option>
-                    </Select>
-                </FormControl>
+                <PenaltySelect
+                    value={penalty}
+                    onChange={setPenalty}
+                    disabled={isLoading}
+                />
                 <FormControl>
                     <FormLabel>Judge</FormLabel>
                     <Select

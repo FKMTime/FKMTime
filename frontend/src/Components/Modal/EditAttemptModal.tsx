@@ -18,6 +18,9 @@ import { competitionAtom } from "../../logic/atoms";
 import { checkTimeLimit } from "../../logic/results";
 import { getAllPersons } from "../../logic/persons";
 import { msToString } from "../../logic/utils.ts";
+import AttemptResultInput from "../AttemptResultInput.tsx";
+import { DNF_VALUE } from "../../logic/constants.ts";
+import PenaltySelect from "../PenaltySelect.tsx";
 
 interface EditAttemptModalProps {
     isOpen: boolean;
@@ -116,27 +119,25 @@ const EditAttemptModal: React.FC<EditAttemptModalProps> = ({
                 </Checkbox>
                 <FormControl isRequired>
                     <FormLabel>Time</FormLabel>
-                    <Input
-                        placeholder="Time"
-                        _placeholder={{ color: "white" }}
+                    <AttemptResultInput
                         value={editedAttempt.value}
                         disabled={isLoading}
-                        onChange={(e) => {
+                        onChange={(newValue) => {
                             if (!competition) {
                                 setEditedAttempt({
                                     ...editedAttempt,
-                                    value: +e.target.value,
+                                    value: newValue,
                                 });
                                 return;
                             }
                             const isLimitPassed = checkTimeLimit(
-                                +e.target.value,
+                                newValue,
                                 competition?.wcif,
                                 result.roundId
                             );
                             if (!isLimitPassed) {
                                 toast({
-                                    title: "This attempt not passed time limit.",
+                                    title: "This attempt is over the time limit.",
                                     description: "This time is DNF.",
                                     status: "error",
                                     duration: 9000,
@@ -144,14 +145,14 @@ const EditAttemptModal: React.FC<EditAttemptModalProps> = ({
                                 });
                                 setEditedAttempt({
                                     ...editedAttempt,
-                                    value: +e.target.value,
-                                    penalty: -1,
+                                    value: newValue,
+                                    penalty: DNF_VALUE,
                                 });
                                 return;
                             }
                             setEditedAttempt({
                                 ...editedAttempt,
-                                value: +e.target.value,
+                                value: newValue,
                             });
                         }}
                     />
@@ -161,6 +162,16 @@ const EditAttemptModal: React.FC<EditAttemptModalProps> = ({
                         Inspection time: {msToString(attempt.inspectionTime)}
                     </Text>
                 )}
+                <PenaltySelect
+                    value={editedAttempt.penalty}
+                    onChange={(value) =>
+                        setEditedAttempt({
+                            ...editedAttempt,
+                            penalty: value,
+                        })
+                    }
+                    disabled={isLoading}
+                />
                 <FormControl>
                     <FormLabel>Judge</FormLabel>
                     <Select
@@ -196,33 +207,6 @@ const EditAttemptModal: React.FC<EditAttemptModalProps> = ({
                             })
                         }
                     />
-                </FormControl>
-                <FormControl>
-                    <FormLabel>Penalty</FormLabel>
-                    <Select
-                        placeholder="Select penalty"
-                        _placeholder={{ color: "white" }}
-                        value={editedAttempt.penalty}
-                        disabled={isLoading}
-                        onChange={(e) =>
-                            setEditedAttempt({
-                                ...editedAttempt,
-                                penalty: +e.target.value,
-                            })
-                        }
-                    >
-                        <option value={0}>No penalty</option>
-                        <option value={2}>+2</option>
-                        <option value={-1}>DNF</option>
-                        <option value={-2}>DNS</option>
-                        <option value={4}>+4</option>
-                        <option value={6}>+6</option>
-                        <option value={8}>+8</option>
-                        <option value={10}>+10</option>
-                        <option value={12}>+12</option>
-                        <option value={14}>+14</option>
-                        <option value={16}>+16</option>
-                    </Select>
                 </FormControl>
                 {editedAttempt.extraGiven && (
                     <FormControl>

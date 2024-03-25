@@ -47,5 +47,5 @@ export const checkTimeLimit = (
     if (!timeLimit) {
         return true;
     }
-    return time <= timeLimit.centiseconds;
+    return time < timeLimit.centiseconds;
 };

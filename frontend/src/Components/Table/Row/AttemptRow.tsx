@@ -1,6 +1,6 @@
 import { IconButton, Td, Tr, useToast } from "@chakra-ui/react";
 import { Attempt, Result } from "../../../logic/interfaces";
-import { resultToString } from "../../../logic/resultFormatters";
+import { attemptWithPenaltyToString } from "../../../logic/resultFormatters";
 import { MdDelete, MdEdit } from "react-icons/md";
 import { useState } from "react";
 import { deleteAttempt } from "../../../logic/attempt";
@@ -62,8 +62,6 @@ const AttemptRow: React.FC<AttemptRowProps> = ({
         setIsOpenEditAttemptModal(false);
     };
 
-    const attemptValueWithPenalty = attempt.value + attempt.penalty * 100;
-
     return (
         <>
             <Tr key={attempt.id}>
@@ -73,15 +71,7 @@ const AttemptRow: React.FC<AttemptRowProps> = ({
                         ? `Extra ${attempt.attemptNumber}`
                         : attempt.attemptNumber}
                 </Td>
-                <Td>
-                    {attempt.penalty === -2
-                        ? "DNS"
-                        : attempt.penalty === -1
-                          ? `DNF(${resultToString(attempt.value)})`
-                          : attempt.value === 0
-                            ? "None"
-                            : resultToString(attemptValueWithPenalty)}
-                </Td>
+                <Td>{attemptWithPenaltyToString(attempt)}</Td>
                 {showExtraColumns && (
                     <>
                         <Td>

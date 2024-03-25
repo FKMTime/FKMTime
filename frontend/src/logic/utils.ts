@@ -3,6 +3,7 @@
 import { Activity, Competition } from "@wca/helpers";
 import regions from "./regions";
 import { Attempt, Attendance, Result } from "./interfaces";
+import { DNF_VALUE } from "./constants.ts";
 
 export const calculateTotalPages = (count: number, pageSize: number) => {
     return Math.ceil(count / pageSize);
@@ -231,8 +232,8 @@ export const isThereADifferenceBetweenResults = (
         return true;
     for (let i = 0; i < submittedAttempts.length; i++) {
         const submittedValue =
-            submittedAttempts[i].penalty === -1
-                ? -1
+            submittedAttempts[i].penalty === DNF_VALUE
+                ? DNF_VALUE
                 : submittedAttempts[i].value +
                   submittedAttempts[i].penalty * 100;
         if (submittedValue !== resultsFromWcaLive.attempts[i].result)

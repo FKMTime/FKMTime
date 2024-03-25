@@ -17,9 +17,16 @@ import { getIncidentById, updateAttempt } from "../../logic/attempt.ts";
 import LoadingPage from "../../Components/LoadingPage.tsx";
 import { getAllPersons } from "../../logic/persons.ts";
 import { msToString } from "../../logic/utils.ts";
+import AttemptResultInput from "../../Components/AttemptResultInput.tsx";
+import { checkTimeLimit } from "../../logic/results.ts";
+import { useAtomValue } from "jotai";
+import { competitionAtom } from "../../logic/atoms.ts";
+import { DNF_VALUE } from "../../logic/constants.ts";
+import PenaltySelect from "../../Components/PenaltySelect.tsx";
 
 const IncidentPage = () => {
     const navigate = useNavigate();
+    const competition = useAtomValue(competitionAtom);
     const toast = useToast();
     const { id } = useParams<{ id: string }>();
     const [persons, setPersons] = useState<Person[]>([]);
@@ -124,7 +131,7 @@ const IncidentPage = () => {
                 Judge fault
             </Button>
             <Button colorScheme="green" onClick={ok}>
-                OK
+                Resolve as it is
             </Button>
             <FormControl isRequired>
                 <FormLabel>Attempt number</FormLabel>
@@ -143,17 +150,42 @@ const IncidentPage = () => {
             </FormControl>
             <FormControl isRequired>
                 <FormLabel>Time</FormLabel>
-                <Input
-                    placeholder="Time"
-                    _placeholder={{ color: "white" }}
+                <AttemptResultInput
                     value={editedIncident.value}
-                    disabled={isLoading}
-                    onChange={(e) => {
+                    onChange={(newValue) => {
+                        if (!competition) {
+                            setEditedIncident({
+                                ...editedIncident,
+                                value: newValue,
+                            });
+                            return;
+                        }
+                        const isLimitPassed = checkTimeLimit(
+                            newValue,
+                            competition?.wcif,
+                            editedIncident.result.roundId
+                        );
+                        if (!isLimitPassed) {
+                            toast({
+                                title: "This attempt is over the time limit.",
+                                description: "This time is DNF.",
+                                status: "error",
+                                duration: 9000,
+                                isClosable: true,
+                            });
+                            setEditedIncident({
+                                ...editedIncident,
+                                value: newValue,
+                                penalty: DNF_VALUE,
+                            });
+                            return;
+                        }
                         setEditedIncident({
                             ...editedIncident,
-                            value: +e.target.value,
+                            value: newValue,
                         });
                     }}
+                    disabled={isLoading}
                 />
             </FormControl>
             {editedIncident.inspectionTime && (
@@ -197,33 +229,16 @@ const IncidentPage = () => {
                     }
                 />
             </FormControl>
-            <FormControl>
-                <FormLabel>Penalty</FormLabel>
-                <Select
-                    placeholder="Select penalty"
-                    _placeholder={{ color: "white" }}
-                    value={editedIncident.penalty}
-                    disabled={isLoading}
-                    onChange={(e) =>
-                        setEditedIncident({
-                            ...editedIncident,
-                            penalty: +e.target.value,
-                        })
-                    }
-                >
-                    <option value={0}>No penalty</option>
-                    <option value={2}>+2</option>
-                    <option value={-1}>DNF</option>
-                    <option value={-2}>DNS</option>
-                    <option value={4}>+4</option>
-                    <option value={6}>+6</option>
-                    <option value={8}>+8</option>
-                    <option value={10}>+10</option>
-                    <option value={12}>+12</option>
-                    <option value={14}>+14</option>
-                    <option value={16}>+16</option>
-                </Select>
-            </FormControl>
+            <PenaltySelect
+                value={editedIncident.penalty}
+                onChange={(value) =>
+                    setEditedIncident({
+                        ...editedIncident,
+                        penalty: value,
+                    })
+                }
+                disabled={isLoading}
+            />
             <Checkbox
                 isChecked={editedIncident.isResolved}
                 onChange={(e) =>
