@@ -45,14 +45,16 @@ const SingleResult = () => {
         if (!result) return [];
         return (
             result.attempts
-                .filter((attempt) => !attempt.isExtraAttempt)
+                .filter((attempt) => attempt.status !== "EXTRA_ATTEMPT")
                 .sort((a, b) => a.attemptNumber - b.attemptNumber) || []
         );
     }, [result]);
     const extraAttempts = useMemo(() => {
         if (!result) return [];
         return (
-            result.attempts.filter((attempt) => attempt.isExtraAttempt) || []
+            result.attempts.filter(
+                (attempt) => attempt.status === "EXTRA_ATTEMPT"
+            ) || []
         );
     }, [result]);
     const submittedAttempts = useMemo(() => {

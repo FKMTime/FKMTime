@@ -1,11 +1,12 @@
 import { IconButton, Td, Tr, useToast } from "@chakra-ui/react";
-import { Attempt, Result } from "../../../logic/interfaces";
+import { Attempt, AttemptStatus, Result } from "../../../logic/interfaces";
 import { attemptWithPenaltyToString } from "../../../logic/resultFormatters";
 import { MdDelete, MdEdit } from "react-icons/md";
 import { useState } from "react";
 import { deleteAttempt } from "../../../logic/attempt";
 import Alert from "../../Alert";
 import EditAttemptModal from "../../Modal/EditAttemptModal";
+import { getResolvedStatus } from "../../../logic/utils.ts";
 
 interface AttemptRowProps {
     attempt: Attempt;
@@ -67,7 +68,7 @@ const AttemptRow: React.FC<AttemptRowProps> = ({
             <Tr key={attempt.id}>
                 <Td>{no}</Td>
                 <Td>
-                    {attempt.isExtraAttempt
+                    {attempt.status === AttemptStatus.EXTRA_ATTEMPT
                         ? `Extra ${attempt.attemptNumber}`
                         : attempt.attemptNumber}
                 </Td>
@@ -78,13 +79,7 @@ const AttemptRow: React.FC<AttemptRowProps> = ({
                             {attempt.replacedBy &&
                                 `Extra ${attempt.replacedBy}`}
                         </Td>
-                        <Td>
-                            {attempt.isDelegate
-                                ? attempt.isResolved
-                                    ? "Resolved"
-                                    : "Not resolved"
-                                : null}
-                        </Td>
+                        <Td>{getResolvedStatus(attempt.status)}</Td>
                     </>
                 )}
                 <Td>

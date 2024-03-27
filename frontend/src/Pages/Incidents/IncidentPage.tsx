@@ -1,7 +1,6 @@
 import {
     Box,
     Button,
-    Checkbox,
     FormControl,
     FormLabel,
     Heading,
@@ -11,7 +10,7 @@ import {
 } from "@chakra-ui/react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useEffect, useState } from "react";
-import { Incident, Person } from "../../logic/interfaces.ts";
+import { AttemptStatus, Incident, Person } from "../../logic/interfaces.ts";
 import { getIncidentById, updateAttempt } from "../../logic/attempt.ts";
 import LoadingPage from "../../Components/LoadingPage.tsx";
 import { getAllPersons } from "../../logic/persons.ts";
@@ -53,8 +52,7 @@ const IncidentPage = () => {
     const a7g = () => {
         const data = {
             ...editedIncident,
-            isResolved: true,
-            extraGiven: true,
+            status: AttemptStatus.EXTRA_GIVEN,
             comment: "A7G",
             shouldResubmitToWcaLive: false,
         };
@@ -65,21 +63,9 @@ const IncidentPage = () => {
     const judgeFault = () => {
         const data = {
             ...editedIncident,
-            isResolved: true,
-            extraGiven: true,
+            status: AttemptStatus.EXTRA_GIVEN,
             comment: "Judge fault",
             shouldResubmitToWcaLive: false,
-        };
-        setEditedIncident(data);
-        handleSubmit(data);
-    };
-
-    const ok = () => {
-        const data = {
-            ...editedIncident,
-            isResolved: true,
-            extraGiven: false,
-            shouldResubmitToWcaLive: true,
         };
         setEditedIncident(data);
         handleSubmit(data);
@@ -129,9 +115,6 @@ const IncidentPage = () => {
             </Button>
             <Button colorScheme="blue" onClick={judgeFault}>
                 Judge fault
-            </Button>
-            <Button colorScheme="green" onClick={ok}>
-                Resolve as it is
             </Button>
             <FormControl isRequired>
                 <FormLabel>Attempt number</FormLabel>
@@ -237,35 +220,25 @@ const IncidentPage = () => {
                 }
                 disabled={isLoading}
             />
-            <Checkbox
-                isChecked={editedIncident.isResolved}
-                onChange={(e) =>
-                    setEditedIncident({
-                        ...editedIncident,
-                        isResolved: e.target.checked,
-                    })
-                }
-            >
-                Is resolved
-            </Checkbox>
-            <Checkbox
-                isChecked={editedIncident.extraGiven}
-                onChange={(e) =>
-                    setEditedIncident({
-                        ...editedIncident,
-                        extraGiven: e.target.checked,
-                    })
-                }
-            >
-                Extra given
-            </Checkbox>
-            <Button
-                colorScheme="green"
-                width={{ base: "100%", md: "20%" }}
-                onClick={() => handleSubmit(editedIncident)}
-            >
-                Save
-            </Button>
+            <Box display="flex" gap="5" flexDirection="column">
+                <Button
+                    colorScheme="green"
+                    onClick={() => handleSubmit(editedIncident)}
+                >
+                    Mark as resolved
+                </Button>
+                <Button
+                    colorScheme="blue"
+                    onClick={() =>
+                        handleSubmit({
+                            ...editedIncident,
+                            status: AttemptStatus.EXTRA_GIVEN,
+                        })
+                    }
+                >
+                    Save and give extra
+                </Button>
+            </Box>
         </Box>
     );
 };

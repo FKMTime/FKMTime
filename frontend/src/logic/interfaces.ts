@@ -86,17 +86,22 @@ export interface Attempt {
     attemptNumber: number;
     comment?: string;
     replacedBy: number;
-    isDelegate: boolean;
-    isResolved: boolean;
     penalty: number;
+    status: AttemptStatus;
     inspectionTime?: number;
-    isExtraAttempt: boolean;
-    extraGiven: boolean;
     solvedAt: Date;
     value: number;
     judgeId: string;
     judge: Person;
     device: Device;
+}
+
+export enum AttemptStatus {
+    STANDARD_ATTEMPT = "STANDARD_ATTEMPT",
+    EXTRA_ATTEMPT = "EXTRA_ATTEMPT",
+    UNRESOLVED = "UNRESOLVED",
+    RESOLVED = "RESOLVED",
+    EXTRA_GIVEN = "EXTRA_GIVEN",
 }
 
 export interface Incident extends Attempt {

@@ -10,13 +10,13 @@ import {
 } from "@chakra-ui/react";
 import { Modal } from "./Modal";
 import { useEffect, useState } from "react";
-import { Attempt, Person, Result } from "../../logic/interfaces";
+import { Attempt, AttemptStatus, Person, Result } from "../../logic/interfaces";
 import { updateAttempt } from "../../logic/attempt";
 import { useAtomValue } from "jotai";
 import { competitionAtom } from "../../logic/atoms";
 import { checkTimeLimit } from "../../logic/results";
 import { getAllPersons } from "../../logic/persons";
-import { msToString } from "../../logic/utils.ts";
+import { msToString, prettyAttemptStatus } from "../../logic/utils.ts";
 import AttemptResultInput from "../AttemptResultInput.tsx";
 import { DNF_VALUE } from "../../logic/constants.ts";
 import PenaltySelect from "../PenaltySelect.tsx";
@@ -106,17 +106,29 @@ const EditAttemptModal: React.FC<EditAttemptModalProps> = ({
                         }
                     />
                 </FormControl>
-                <Checkbox
-                    isChecked={editedAttempt.isExtraAttempt}
-                    onChange={(e) =>
-                        setEditedAttempt({
-                            ...editedAttempt,
-                            isExtraAttempt: e.target.checked,
-                        })
-                    }
-                >
-                    Is extra attempt
-                </Checkbox>
+                <FormControl isRequired>
+                    <FormLabel>Attempt status</FormLabel>
+                    <Select
+                        disabled={isLoading}
+                        value={editedAttempt.status}
+                        onChange={(e) =>
+                            setEditedAttempt({
+                                ...editedAttempt,
+                                status: e.target.value as AttemptStatus,
+                            })
+                        }
+                    >
+                        {(
+                            Object.keys(AttemptStatus) as Array<
+                                keyof typeof AttemptStatus
+                            >
+                        ).map((key) => (
+                            <option key={key} value={key}>
+                                {prettyAttemptStatus(key as AttemptStatus)}
+                            </option>
+                        ))}
+                    </Select>
+                </FormControl>
                 <FormControl isRequired>
                     <FormLabel>Time</FormLabel>
                     <AttemptResultInput
@@ -206,7 +218,7 @@ const EditAttemptModal: React.FC<EditAttemptModalProps> = ({
                         }
                     />
                 </FormControl>
-                {editedAttempt.extraGiven && (
+                {editedAttempt.status === AttemptStatus.EXTRA_GIVEN && (
                     <FormControl>
                         <FormLabel>Replaced by</FormLabel>
                         <Input
@@ -222,43 +234,6 @@ const EditAttemptModal: React.FC<EditAttemptModalProps> = ({
                             }
                         />
                     </FormControl>
-                )}
-                <Checkbox
-                    isChecked={editedAttempt.isDelegate}
-                    onChange={(e) =>
-                        setEditedAttempt({
-                            ...editedAttempt,
-                            isDelegate: e.target.checked,
-                        })
-                    }
-                >
-                    Is delegate case
-                </Checkbox>
-                {editedAttempt.isDelegate && (
-                    <>
-                        <Checkbox
-                            isChecked={editedAttempt.isResolved}
-                            onChange={(e) =>
-                                setEditedAttempt({
-                                    ...editedAttempt,
-                                    isResolved: e.target.checked,
-                                })
-                            }
-                        >
-                            Is resolved
-                        </Checkbox>
-                        <Checkbox
-                            isChecked={editedAttempt.extraGiven}
-                            onChange={(e) =>
-                                setEditedAttempt({
-                                    ...editedAttempt,
-                                    extraGiven: e.target.checked,
-                                })
-                            }
-                        >
-                            Extra given
-                        </Checkbox>
-                    </>
                 )}
                 <Checkbox
                     isChecked={shouldResubmitToWcaLive}

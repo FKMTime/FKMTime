@@ -1,4 +1,4 @@
-import { Attempt, Incident } from "./interfaces";
+import { Attempt, AttemptStatus, Incident } from "./interfaces";
 import { backendRequest } from "./request";
 
 interface UpdateAttemptData extends Attempt {
@@ -14,10 +14,9 @@ interface CreateAttemptData {
     value: number;
     penalty: number;
     comment: string;
-    isExtraAttempt: boolean;
-    isResolved: boolean;
     replacedBy: number;
     submitToWcaLive: boolean;
+    status: AttemptStatus;
 }
 
 export const createAttempt = async (data: CreateAttemptData) => {

@@ -10,7 +10,7 @@ import {
     Input,
     useToast,
 } from "@chakra-ui/react";
-import { Device, Person } from "../../logic/interfaces.ts";
+import { AttemptStatus, Device, Person } from "../../logic/interfaces.ts";
 import { useEffect, useState } from "react";
 import { getAllPersons } from "../../logic/persons.ts";
 import { createAttempt } from "../../logic/attempt.ts";
@@ -21,6 +21,7 @@ import { DNF_VALUE } from "../../logic/constants.ts";
 import PenaltySelect from "../PenaltySelect.tsx";
 import Select from "../../Components/Select.tsx";
 import PersonAutocomplete from "../PersonAutocomplete.tsx";
+import { prettyAttemptStatus } from "../../logic/utils.ts";
 
 interface CreateAttemptModalModalProps {
     isOpen: boolean;
@@ -45,11 +46,10 @@ const CreateAttemptModal: React.FC<CreateAttemptModalModalProps> = ({
     const [selectedCompetitorId, setSelectedCompetitorId] = useState<string>(
         competitorId || ""
     );
-    const [isDelegate, setIsDelegate] = useState<boolean>(false);
-    const [extraGiven, setExtraGiven] = useState<boolean>(false);
-    const [isResolved, setIsResolved] = useState<boolean>(false);
+    const [attemptStatus, setAttemptStatus] = useState<AttemptStatus>(
+        AttemptStatus.STANDARD_ATTEMPT
+    );
     const [submitToWcaLive, setSubmitToWcaLive] = useState<boolean>(false);
-    const [isExtraAttempt, setIsExtraAttempt] = useState<boolean>(false);
     const [value, setValue] = useState<number>(0);
     const [penalty, setPenalty] = useState<number>(0);
     const [deviceId, setDeviceId] = useState<string>("");
@@ -73,10 +73,7 @@ const CreateAttemptModal: React.FC<CreateAttemptModalModalProps> = ({
         const formData = new FormData(e.currentTarget);
         const data = {
             roundId,
-            isDelegate,
-            extraGiven,
-            isExtraAttempt,
-            isResolved,
+            status: attemptStatus,
             submitToWcaLive,
             competitorId: selectedCompetitorId,
             judgeId: selectedJudgeId,
@@ -144,6 +141,26 @@ const CreateAttemptModal: React.FC<CreateAttemptModalModalProps> = ({
                     </FormControl>
                 )}
                 <FormControl isRequired>
+                    <FormLabel>Attempt status</FormLabel>
+                    <Select
+                        disabled={isLoading}
+                        value={attemptStatus}
+                        onChange={(e) =>
+                            setAttemptStatus(e.target.value as AttemptStatus)
+                        }
+                    >
+                        {(
+                            Object.keys(AttemptStatus) as Array<
+                                keyof typeof AttemptStatus
+                            >
+                        ).map((key) => (
+                            <option key={key} value={key}>
+                                {prettyAttemptStatus(key as AttemptStatus)}
+                            </option>
+                        ))}
+                    </Select>
+                </FormControl>
+                <FormControl isRequired>
                     <FormLabel>Attempt number</FormLabel>
                     <Input
                         placeholder="Attempt number"
@@ -152,12 +169,6 @@ const CreateAttemptModal: React.FC<CreateAttemptModalModalProps> = ({
                         name="attemptNumber"
                     />
                 </FormControl>
-                <Checkbox
-                    isChecked={isExtraAttempt}
-                    onChange={(e) => setIsExtraAttempt(e.target.checked)}
-                >
-                    Is extra attempt
-                </Checkbox>
                 {timeLimit && +value >= timeLimit.centiseconds && (
                     <Alert status="warning" color="black">
                         <AlertIcon />
@@ -209,45 +220,14 @@ const CreateAttemptModal: React.FC<CreateAttemptModalModalProps> = ({
                         name="comment"
                     />
                 </FormControl>
-                {extraGiven && (
-                    <FormControl>
-                        <FormLabel>Replaced by</FormLabel>
-                        <Input
-                            placeholder="Replaced by"
-                            _placeholder={{ color: "white" }}
-                            disabled={isLoading}
-                            name="replacedBy"
-                        />
-                    </FormControl>
+                {attemptStatus !== AttemptStatus.EXTRA_GIVEN && (
+                    <Checkbox
+                        isChecked={submitToWcaLive}
+                        onChange={(e) => setSubmitToWcaLive(e.target.checked)}
+                    >
+                        Submit to WCA Live
+                    </Checkbox>
                 )}
-                <Checkbox
-                    isChecked={isDelegate}
-                    onChange={(e) => setIsDelegate(e.target.checked)}
-                >
-                    Is delegate case
-                </Checkbox>
-                {isDelegate && (
-                    <>
-                        <Checkbox
-                            isChecked={isResolved}
-                            onChange={(e) => setIsResolved(e.target.checked)}
-                        >
-                            Is resolved
-                        </Checkbox>
-                        <Checkbox
-                            isChecked={extraGiven}
-                            onChange={(e) => setExtraGiven(e.target.checked)}
-                        >
-                            Extra given
-                        </Checkbox>
-                    </>
-                )}
-                <Checkbox
-                    isChecked={submitToWcaLive}
-                    onChange={(e) => setSubmitToWcaLive(e.target.checked)}
-                >
-                    Submit to WCA Live
-                </Checkbox>
                 <Box
                     display="flex"
                     flexDirection="row"

@@ -41,7 +41,7 @@ const translations = [
 ];
 
 export const getTranslation = (key: string, locale: string) => {
-  switch (locale) {
+  switch (locale.toLowerCase()) {
     case 'pl':
       return (
         translations.find((t) => t.locale === 'pl')?.translations[key] || key

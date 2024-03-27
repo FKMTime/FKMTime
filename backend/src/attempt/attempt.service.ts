@@ -1,15 +1,16 @@
-import { ResultService } from '../result/result.service';
 import { DbService } from '../db/db.service';
 import { HttpException, Injectable } from '@nestjs/common';
 import { UpdateAttemptDto } from './dto/updateAttempt.dto';
 import { CreateAttemptDto } from './dto/createAttempt.dto';
 import { IncidentsGateway } from './incidents.gateway';
+import { AttemptStatus } from '@prisma/client';
+import { WcaService } from '../wca/wca.service';
 
 @Injectable()
 export class AttemptService {
   constructor(
     private readonly prisma: DbService,
-    private readonly resultService: ResultService,
+    private readonly wcaService: WcaService,
     private readonly incidentsGateway: IncidentsGateway,
   ) {}
 
@@ -70,11 +71,8 @@ export class AttemptService {
           },
         },
         replacedBy: data.replacedBy ? data.replacedBy : null,
-        isDelegate: data.isDelegate,
-        isResolved: data.isResolved,
+        status: data.status,
         comment: data.comment,
-        isExtraAttempt: data.isExtraAttempt,
-        extraGiven: data.extraGiven,
         result: {
           connect: {
             id: result.id,
@@ -84,9 +82,8 @@ export class AttemptService {
     });
 
     if (data.submitToWcaLive) {
-      console.log('a');
       const competition = await this.prisma.competition.findFirst();
-      await this.resultService.enterAttemptToWcaLive(
+      await this.wcaService.enterAttemptToWcaLive(
         competition.wcaId,
         competition.scoretakingToken,
         data.roundId.split('-')[0],
@@ -127,17 +124,14 @@ export class AttemptService {
   }
 
   async updateAttempt(id: string, data: UpdateAttemptDto) {
-    if (!data.extraGiven || data.replacedBy === 0) {
+    if (data.status !== AttemptStatus.EXTRA_GIVEN || data.replacedBy === 0) {
       data.replacedBy = null;
     }
     const dataToUpdate = {
       attemptNumber: data.attemptNumber,
       replacedBy: data.replacedBy,
-      isDelegate: data.isDelegate,
-      isResolved: data.isResolved,
       penalty: data.penalty,
-      isExtraAttempt: data.isExtraAttempt,
-      extraGiven: data.extraGiven,
+      status: data.status,
       value: data.value,
       comment: data.comment,
     };
@@ -171,12 +165,16 @@ export class AttemptService {
     if (!attempt) {
       throw new HttpException('Attempt not found', 404);
     }
-    if (data.submitToWcaLive && !data.extraGiven && !data.replacedBy) {
+    if (
+      data.submitToWcaLive &&
+      data.status !== AttemptStatus.EXTRA_GIVEN &&
+      !data.replacedBy
+    ) {
       const competition = await this.prisma.competition.findFirst();
       const roundId = attempt.result.roundId;
       const timeToEnterAttemptToWcaLive =
         data.penalty === -1 ? -1 : data.penalty * 100 + data.value;
-      const status = await this.resultService.enterAttemptToWcaLive(
+      await this.wcaService.enterAttemptToWcaLive(
         competition.wcaId,
         competition.scoretakingToken,
         roundId.split('-')[0],
@@ -185,9 +183,7 @@ export class AttemptService {
         data.attemptNumber,
         timeToEnterAttemptToWcaLive,
       );
-      if (status === 200) {
-        return attempt;
-      }
+      return attempt;
     }
   }
 
@@ -198,20 +194,17 @@ export class AttemptService {
   }
 
   async getAttemptById(id: string) {
-    const attempt = await this.prisma.attempt.findUnique({
+    return this.prisma.attempt.findUnique({
       where: { id },
       select: {
         id: true,
         resultId: true,
         attemptNumber: true,
         replacedBy: true,
-        isDelegate: true,
-        isResolved: true,
         penalty: true,
         comment: true,
         inspectionTime: true,
-        isExtraAttempt: true,
-        extraGiven: true,
+        status: true,
         value: true,
         solvedAt: true,
         createdAt: true,
@@ -249,32 +242,18 @@ export class AttemptService {
         },
       },
     });
-    return {
-      ...attempt,
-      judge: attempt.judge
-        ? attempt.judge
-        : {
-            id: 0,
-            registrantId: 0,
-            wcaId: '',
-            name: 'None',
-          },
-    };
   }
 
   async getUnresolvedAttempts() {
-    const attempts = await this.prisma.attempt.findMany({
-      where: { isDelegate: true, isResolved: false },
+    return this.prisma.attempt.findMany({
+      where: { status: AttemptStatus.UNRESOLVED },
       select: {
         id: true,
         resultId: true,
         attemptNumber: true,
         replacedBy: true,
-        isDelegate: true,
-        isResolved: true,
+        status: true,
         penalty: true,
-        isExtraAttempt: true,
-        extraGiven: true,
         value: true,
         solvedAt: true,
         createdAt: true,
@@ -310,19 +289,6 @@ export class AttemptService {
           },
         },
       },
-    });
-    return attempts.map((attempt) => {
-      return {
-        ...attempt,
-        judge: attempt.judge
-          ? attempt.judge
-          : {
-              id: 0,
-              registrantId: 0,
-              wcaId: '',
-              name: 'None',
-            },
-      };
     });
   }
 }

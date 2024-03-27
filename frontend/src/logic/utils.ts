@@ -2,7 +2,7 @@
 
 import { Activity, Competition } from "@wca/helpers";
 import regions from "./regions";
-import { Attempt, Attendance, Result } from "./interfaces";
+import { Attempt, AttemptStatus, Attendance, Result } from "./interfaces";
 import { DNF_VALUE } from "./constants.ts";
 
 export const calculateTotalPages = (count: number, pageSize: number) => {
@@ -159,6 +159,7 @@ export const attendanceRoleToWcif = (role: string) => {
             return "staff-judge";
     }
 };
+
 interface AttemptWithNumber extends Attempt {
     number: number;
 }
@@ -170,20 +171,23 @@ export const getSubmittedAttempts = (attempts: Attempt[]) => {
         .forEach((attempt) => {
             if (
                 attempt.replacedBy === null &&
-                !(attempt.isDelegate && !attempt.isResolved) &&
-                !attempt.extraGiven &&
-                !attemptsToReturn.some((a) => a.id === attempt.id) &&
-                !attempt.isExtraAttempt
+                attempt.status !== AttemptStatus.EXTRA_GIVEN &&
+                attempt.status !== AttemptStatus.EXTRA_ATTEMPT &&
+                attempt.status !== AttemptStatus.UNRESOLVED &&
+                !attemptsToReturn.some((a) => a.id === attempt.id)
             )
                 attemptsToReturn.push({
                     ...attempt,
                     number: attemptsToReturn.length + 1,
                 });
-            if (attempt.replacedBy !== null && attempt.extraGiven) {
+            if (
+                attempt.replacedBy !== null &&
+                attempt.status === "EXTRA_GIVEN"
+            ) {
                 const extraAttempt = attempts.find(
                     (a) =>
                         a.attemptNumber === attempt.replacedBy &&
-                        a.isExtraAttempt
+                        a.status === AttemptStatus.EXTRA_ATTEMPT
                 );
                 if (
                     extraAttempt &&
@@ -265,4 +269,26 @@ export const isMobile = () => {
     const regex =
         /Mobi|Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i;
     return regex.test(navigator.userAgent);
+};
+
+export const prettyAttemptStatus = (status: AttemptStatus) => {
+    switch (status) {
+        case AttemptStatus.STANDARD_ATTEMPT:
+            return "Standard attempt";
+        case AttemptStatus.EXTRA_ATTEMPT:
+            return "Extra attempt";
+        case AttemptStatus.UNRESOLVED:
+            return "Unresolved delegate case";
+        case AttemptStatus.RESOLVED:
+            return "Resolved delegate case, leave as is";
+        case AttemptStatus.EXTRA_GIVEN:
+            return "Extra given";
+    }
+};
+
+export const getResolvedStatus = (status: AttemptStatus) => {
+    if (status === AttemptStatus.RESOLVED) return "Resolved";
+    else if (status === AttemptStatus.UNRESOLVED) return "Not resolved";
+    else if (status === AttemptStatus.EXTRA_GIVEN) return "Extra given";
+    return null;
 };

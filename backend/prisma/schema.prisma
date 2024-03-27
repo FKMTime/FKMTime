@@ -76,7 +76,7 @@ model Result {
   person    Person    @relation(fields: [personId], references: [id])
   eventId   String
   roundId   String
-  Attempt   Attempt[]
+  attempts  Attempt[]
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
 
@@ -84,27 +84,24 @@ model Result {
 }
 
 model Attempt {
-  id             String    @id @default(uuid())
+  id             String        @id @default(uuid())
   sessionId      String?
   resultId       String
-  result         Result?   @relation(fields: [resultId], references: [id])
+  result         Result?       @relation(fields: [resultId], references: [id])
   attemptNumber  Int
   replacedBy     Int?
   comment        String?
-  isDelegate     Boolean   @default(false)
-  extraGiven     Boolean   @default(false)
-  isResolved     Boolean?  @default(false)
+  status         AttemptStatus @default(STANDARD_ATTEMPT)
   penalty        Int?
-  isExtraAttempt Boolean   @default(false)
   value          Int
   inspectionTime Int?
   judgeId        String?
-  judge          Person?   @relation(fields: [judgeId], references: [id])
+  judge          Person?       @relation(fields: [judgeId], references: [id])
   deviceId       String?
-  device         Device?   @relation(fields: [deviceId], references: [id])
+  device         Device?       @relation(fields: [deviceId], references: [id])
   solvedAt       DateTime?
-  createdAt      DateTime  @default(now())
-  updatedAt      DateTime  @updatedAt
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
 }
 
 model Device {
@@ -125,6 +122,14 @@ enum DeviceType {
   STATION
   ATTENDANCE_SCRAMBLER
   ATTENDANCE_RUNNER
+}
+
+enum AttemptStatus {
+  STANDARD_ATTEMPT
+  EXTRA_ATTEMPT
+  UNRESOLVED
+  RESOLVED
+  EXTRA_GIVEN
 }
 
 enum ReleaseChannel {

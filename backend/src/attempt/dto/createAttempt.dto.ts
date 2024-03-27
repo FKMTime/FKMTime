@@ -1,10 +1,12 @@
 import {
   IsBoolean,
+  IsEnum,
   IsInt,
   IsNotEmpty,
   IsOptional,
   IsString,
 } from 'class-validator';
+import { AttemptStatus } from '@prisma/client';
 
 export class CreateAttemptDto {
   @IsInt()
@@ -32,20 +34,11 @@ export class CreateAttemptDto {
   @IsOptional()
   replacedBy: number;
 
-  @IsBoolean()
-  isDelegate: boolean;
-
   @IsString()
   competitorId: string;
 
-  @IsBoolean()
-  isExtraAttempt: boolean;
-
-  @IsBoolean()
-  extraGiven: boolean;
-
-  @IsBoolean()
-  isResolved: boolean;
+  @IsEnum(AttemptStatus)
+  status: AttemptStatus;
 
   @IsString()
   @IsOptional()

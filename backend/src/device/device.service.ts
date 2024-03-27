@@ -4,6 +4,7 @@ import { DeviceDto } from './dto/device.dto';
 import { UpdateBatteryPercentageDto } from './dto/updateBatteryPercentage.dto';
 import { DeviceGateway } from './device.gateway';
 import { RequestToConnectDto } from './dto/requestToConnect.dto';
+import { DeviceType } from '@prisma/client';
 
 @Injectable()
 export class DeviceService {
@@ -53,6 +54,18 @@ export class DeviceService {
     return {
       message: 'Device created',
     };
+  }
+
+  async getDeviceByEspId(espId: number, type: DeviceType) {
+    return this.prisma.device.findFirst({
+      where: {
+        espId: espId,
+        type: type,
+      },
+      include: {
+        room: true,
+      },
+    });
   }
 
   async requestToConnect(data: RequestToConnectDto) {

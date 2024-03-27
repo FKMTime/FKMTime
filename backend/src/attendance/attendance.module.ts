@@ -8,6 +8,6 @@ import { AttendanceGateway } from './attendance.gateway';
   providers: [AttendanceService, AttendanceGateway],
   controllers: [AttendanceController],
   imports: [AuthModule],
-  exports: [AttendanceGateway],
+  exports: [AttendanceService, AttendanceGateway],
 })
 export class AttendanceModule {}

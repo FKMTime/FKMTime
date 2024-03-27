@@ -2,7 +2,7 @@ import { DbService } from '../db/db.service';
 import { HttpException, Injectable } from '@nestjs/common';
 import { UpdatePersonDto } from './dto/updatePerson.dto';
 import { AddStaffMemberDto } from './dto/addStaffMember.dto';
-import { convertPolishToLatin } from '../translations';
+import { convertPolishToLatin, getTranslation } from '../translations';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 
 @Injectable()
@@ -195,8 +195,8 @@ export class PersonService {
     });
   }
 
-  async getPersonInfo(cardId: string) {
-    const person = await this.prisma.person.findFirst({
+  async getPersonByCardId(cardId: string) {
+    return this.prisma.person.findFirst({
       where: {
         cardId,
       },
@@ -210,10 +210,14 @@ export class PersonService {
         canCompete: true,
       },
     });
+  }
+
+  async getPersonInfo(cardId: string) {
+    const person = await this.getPersonByCardId(cardId);
     if (!person) {
       throw new HttpException(
         {
-          message: 'Competitor not found',
+          message: getTranslation('competitorNotFound', 'en'),
           shouldResetTime: false,
         },
         404,

@@ -7,6 +7,7 @@ import { DeviceGateway } from './device.gateway';
 @Module({
   providers: [DeviceService, DeviceGateway],
   controllers: [DeviceController],
+  exports: [DeviceService],
   imports: [AuthModule],
 })
 export class DeviceModule {}
