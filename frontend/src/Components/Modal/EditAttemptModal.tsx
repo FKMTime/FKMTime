@@ -189,6 +189,7 @@ const EditAttemptModal: React.FC<EditAttemptModalProps> = ({
                     <Select
                         value={editedAttempt.judgeId}
                         disabled={isLoading}
+                        placeholder="Select judge"
                         onChange={(e) =>
                             setEditedAttempt({
                                 ...editedAttempt,
