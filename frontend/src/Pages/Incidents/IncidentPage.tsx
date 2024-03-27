@@ -188,11 +188,11 @@ const IncidentPage = () => {
                     disabled={isLoading}
                 />
             </FormControl>
-            {editedIncident.inspectionTime && (
+            {editedIncident.inspectionTime ? (
                 <Text>
                     Inspection time: {msToString(editedIncident.inspectionTime)}
                 </Text>
-            )}
+            ) : null}
             <FormControl>
                 <FormLabel>Judge</FormLabel>
                 <Select

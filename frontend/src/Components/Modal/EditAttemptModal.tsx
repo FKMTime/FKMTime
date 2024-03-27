@@ -157,11 +157,11 @@ const EditAttemptModal: React.FC<EditAttemptModalProps> = ({
                         }}
                     />
                 </FormControl>
-                {attempt.inspectionTime && (
+                {attempt.inspectionTime ? (
                     <Text>
                         Inspection time: {msToString(attempt.inspectionTime)}
                     </Text>
-                )}
+                ) : null}
                 <PenaltySelect
                     value={editedAttempt.penalty}
                     onChange={(value) =>
