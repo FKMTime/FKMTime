@@ -12,4 +12,4 @@ RUN npm run build
 FROM filipton/proxied-nginx:latest
 
 COPY --from=frontend-app-builder /app/dist /frontend
-COPY ./nginx/default.conf /etc/nginx/conf.template
+COPY ./nginx/default.conf /etc/nginx/conf.d/default.conf
