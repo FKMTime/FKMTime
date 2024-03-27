@@ -51,6 +51,15 @@ const RoomCard: React.FC<RoomCardProps> = ({
                 <Select
                     value={currentEvent}
                     onChange={(event) => {
+                        if (!event?.target.value) {
+                            setCurrentEvent("");
+                            setCurrentRound("");
+                            updateCurrentGroup({
+                                ...room,
+                                currentGroupId: "",
+                            });
+                            return;
+                        }
                         setCurrentEvent(event?.target.value);
                         setCurrentRound(event?.target.value + "-r1");
                         updateCurrentGroup({
@@ -58,6 +67,7 @@ const RoomCard: React.FC<RoomCardProps> = ({
                             currentGroupId: event?.target.value + "-r1-g1",
                         });
                     }}
+                    placeholder="Select event"
                 >
                     {competition.wcif.events.map((event: Event) => (
                         <option key={event.id} value={event.id}>
@@ -78,6 +88,7 @@ const RoomCard: React.FC<RoomCardProps> = ({
                                 currentGroupId: event?.target.value + "-r1-g1",
                             });
                         }}
+                        placeholder="Select round"
                     >
                         {competition.wcif.events
                             .find((event: Event) => event.id === currentEvent)
@@ -100,6 +111,7 @@ const RoomCard: React.FC<RoomCardProps> = ({
                                 currentGroupId: event?.target.value,
                             })
                         }
+                        placeholder="Select group"
                     >
                         {groups.map((group: Activity, i: number) => (
                             <option

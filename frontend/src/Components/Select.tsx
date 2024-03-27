@@ -4,6 +4,7 @@ interface SelectProps {
     onChange: (e: React.ChangeEvent<HTMLSelectElement>) => void;
     value: string;
     disabled?: boolean;
+    placeholder?: string;
     children: React.ReactNode;
 }
 
@@ -12,6 +13,7 @@ const Select: React.FC<SelectProps> = ({
     onChange,
     disabled,
     children,
+    placeholder,
 }) => {
     return (
         <DarkMode>
@@ -23,6 +25,7 @@ const Select: React.FC<SelectProps> = ({
                 _hover={{
                     borderColor: "white",
                 }}
+                placeholder={placeholder}
             >
                 {children}
             </ChakraSelect>
