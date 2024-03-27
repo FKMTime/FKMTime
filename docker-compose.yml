@@ -46,13 +46,8 @@ services:
       - '80:80'
     env_file:
       - .env
-    volumes:
-      - letsencrypt:/etc/letsencrypt
-      - nginxconf:/etc/nginx/conf.d
     depends_on:
       - backend
 
 volumes:
-  nginxconf:
-  letsencrypt:
   database:
