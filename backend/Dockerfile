@@ -12,7 +12,6 @@ RUN npx prisma generate
 RUN npm run build
 
 FROM node:18-alpine
-RUN npm install -g @nestjs/cli
 
 WORKDIR /app
 COPY --from=build /app/dist/src /app
