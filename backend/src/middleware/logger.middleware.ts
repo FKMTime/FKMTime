@@ -9,35 +9,29 @@ export class LoggerMiddleware implements NestMiddleware {
   private logger = new Logger(`HTTP`);
 
   async use(req: any, res: Response, next: NextFunction) {
-    const baseUrl = req.baseUrl;
     if (req.headers.authorization) {
       if (req.headers.authorization.startsWith('Bearer ')) {
         const user = await this.authService.validateJwt(
           req.headers.authorization.split(' ')[1],
         );
-        res.on('close', () => {
-          this.logger.log(
-            `Logging HTTP request from user ${user.userId} ${req.method} ${baseUrl} ${res.statusCode}`,
-          );
-        });
-      } else if (req.headers.authorization.startsWith('Token ')) {
-        res.on('close', () => {
-          this.logger.log(
-            `Logging HTTP request with API token ${req.method} ${baseUrl} ${
-              res.statusCode
-            } body: ${JSON.stringify(req.body)}`,
-          );
-        });
+        this.logger.log(
+          `Logging HTTP request ${req.method} ${req.baseUrl} ${res.statusCode} from user ${user.userId}`,
+        );
       } else {
-        res.on('close', () => {
-          this.logger.log(
-            `Logging HTTP request ${req.method} ${baseUrl} ${
-              res.statusCode
-            } body: ${JSON.stringify(req.body)}`,
-          );
-        });
+        this.logger.log(
+          `Logging HTTP request ${req.method} ${req.baseUrl} ${res.statusCode} with API Token`,
+        );
       }
-      next();
+    } else {
+      const baseUrl = req.baseUrl;
+      res.on('close', () => {
+        this.logger.log(
+          `Logging HTTP request from ${req.method} ${baseUrl} ${
+            res.statusCode
+          } body: ${JSON.stringify(req.body)}`,
+        );
+      });
     }
+    next();
   }
 }
