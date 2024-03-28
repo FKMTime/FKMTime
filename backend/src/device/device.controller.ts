@@ -18,6 +18,7 @@ import { AdminOrDelegateGuard } from '../auth/guards/adminOrDelegate.guard';
 import { UpdateBatteryPercentageDto } from './dto/updateBatteryPercentage.dto';
 import { RequestToConnectDto } from './dto/requestToConnect.dto';
 import { DeviceGateway } from './device.gateway';
+import { TokenGuard } from '../auth/guards/token.guard';
 
 @Controller('device')
 export class DeviceController {
@@ -38,6 +39,7 @@ export class DeviceController {
     return this.deviceService.createDevice(data);
   }
 
+  @UseGuards(TokenGuard)
   @Post('battery')
   async updateBatteryPercentage(@Body() data: UpdateBatteryPercentageDto) {
     return this.deviceService.updateBatteryPercentage(data);

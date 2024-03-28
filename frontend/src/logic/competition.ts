@@ -72,6 +72,8 @@ export const updateDevicesSettings = async (
     data: {
         shouldUpdateDevices: boolean;
         releaseChannel: string;
+        wifiSsid?: string;
+        wifiPassword?: string;
     }
 ) => {
     const response = await backendRequest(
@@ -81,4 +83,13 @@ export const updateDevicesSettings = async (
         data
     );
     return response.status;
+};
+
+export const generateApiToken = async () => {
+    const response = await backendRequest(
+        "competition/settings/token",
+        "GET",
+        true
+    );
+    return await response.json();
 };

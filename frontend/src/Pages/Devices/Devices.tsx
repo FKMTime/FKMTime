@@ -3,13 +3,14 @@ import { getAllDevices } from "../../logic/devices.ts";
 import LoadingPage from "../../Components/LoadingPage";
 import { Device } from "../../logic/interfaces";
 import { Box, Button, Heading, IconButton, Text } from "@chakra-ui/react";
-import { MdAdd, MdDevices, MdSettings } from "react-icons/md";
+import { MdAdd, MdDevices, MdKey, MdSettings } from "react-icons/md";
 import CreateDeviceModal from "../../Components/Modal/CreateDeviceModal.tsx";
 import DevicesTable from "../../Components/Table/DevicesTable.tsx";
 import io from "socket.io-client";
 import { DEVICES_WEBSOCKET_URL, WEBSOCKET_PATH } from "../../logic/request.ts";
 import { getToken } from "../../logic/auth.ts";
 import UpdateDevicesSettingsModal from "../../Components/Modal/UpdateDevicesSettingsModal.tsx";
+import GetApiTokenModal from "../../Components/Modal/GetApiTokenModal.tsx";
 
 const Devices = (): JSX.Element => {
     const [isLoading, setIsLoading] = useState<boolean>(true);
@@ -17,6 +18,8 @@ const Devices = (): JSX.Element => {
     const [availableDevices, setAvailableDevices] = useState<number[]>([]);
     const [espId, setEspId] = useState<number>(0);
     const [isOpenCreateDeviceModal, setIsOpenCreateDeviceModal] =
+        useState<boolean>(false);
+    const [isOpenGetTokenModal, setIsOpenGetTokenModal] =
         useState<boolean>(false);
     const [
         isOpenUpdateDevicesSettingsModal,
@@ -90,6 +93,7 @@ const Devices = (): JSX.Element => {
                         background: "white",
                         color: "gray.700",
                     }}
+                    title="Add new device"
                     onClick={() => setIsOpenCreateDeviceModal(true)}
                 />
                 <IconButton
@@ -104,7 +108,23 @@ const Devices = (): JSX.Element => {
                         background: "white",
                         color: "gray.700",
                     }}
+                    title="Update devices settings"
                     onClick={() => setIsOpenUpdateDevicesSettingsModal(true)}
+                />
+                <IconButton
+                    icon={<MdKey />}
+                    aria-label="Get API token"
+                    bg="white"
+                    color="black"
+                    rounded="20"
+                    width="5"
+                    height="10"
+                    _hover={{
+                        background: "white",
+                        color: "gray.700",
+                    }}
+                    title="Get API token"
+                    onClick={() => setIsOpenGetTokenModal(true)}
                 />
             </Box>
             <DevicesTable devices={devices} fetchData={fetchData} />
@@ -157,6 +177,10 @@ const Devices = (): JSX.Element => {
             <UpdateDevicesSettingsModal
                 isOpen={isOpenUpdateDevicesSettingsModal}
                 onClose={() => setIsOpenUpdateDevicesSettingsModal(false)}
+            />
+            <GetApiTokenModal
+                isOpen={isOpenGetTokenModal}
+                handleClose={() => setIsOpenGetTokenModal(false)}
             />
         </Box>
     );

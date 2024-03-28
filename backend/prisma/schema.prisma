@@ -55,6 +55,9 @@ model Competition {
   countryIso2               String?
   shouldUpdateDevices       Boolean        @default(false)
   releaseChannel            ReleaseChannel @default(STABLE)
+  apiToken                  String?
+  wifiSsid                  String?
+  wifiPassword              String?
   wcif                      Json?
   scoretakingToken          String?
   scoretakingTokenUpdatedAt DateTime?

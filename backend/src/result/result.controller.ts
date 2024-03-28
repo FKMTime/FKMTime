@@ -13,6 +13,7 @@ import { EnterAttemptDto } from './dto/enterAttempt.dto';
 import { ResultService } from './result.service';
 import { AuthGuard } from '@nestjs/passport';
 import { AdminOrDelegateGuard } from '../auth/guards/adminOrDelegate.guard';
+import { TokenGuard } from '../auth/guards/token.guard';
 
 @Controller('result')
 export class ResultController {
@@ -24,13 +25,13 @@ export class ResultController {
     @Param('roundId') roundId: string,
     @Query('search') search: string,
   ) {
-    return await this.resultService.getAllResultsByRound(roundId, search);
+    return this.resultService.getAllResultsByRound(roundId, search);
   }
 
   @UseGuards(AuthGuard('jwt'))
   @Get('person/:id')
   async getAllResultsByPersonId(@Param('id') id: string) {
-    return await this.resultService.getAllResultsByPerson(id);
+    return this.resultService.getAllResultsByPerson(id);
   }
 
   @UseGuards(AuthGuard('jwt'), AdminOrDelegateGuard)
@@ -46,6 +47,7 @@ export class ResultController {
     return await this.resultService.enterRoundToWcaLive(roundId);
   }
 
+  @UseGuards(TokenGuard)
   @Post('enter')
   async enterAttempt(@Body() data: EnterAttemptDto) {
     return await this.resultService.enterAttempt(data);

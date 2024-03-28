@@ -6,6 +6,7 @@ import { AdminGuard } from 'src/auth/guards/admin.guard';
 import { AdminOrDelegateGuard } from '../auth/guards/adminOrDelegate.guard';
 import { UpdateRoomsDto } from './dto/updateCurrentRound.dto';
 import { UpdateDevicesSettingsDto } from './dto/updateDevicesSettings.dto';
+import { TokenGuard } from '../auth/guards/token.guard';
 
 @Controller('competition')
 export class CompetitionController {
@@ -23,9 +24,16 @@ export class CompetitionController {
     return await this.competitionService.getRoundsInfo();
   }
 
+  @UseGuards(TokenGuard)
   @Get('status')
   async shouldUpdateDevices() {
     return await this.competitionService.serverStatus();
+  }
+
+  @UseGuards(TokenGuard)
+  @Get('wifi')
+  async getWifiSettings() {
+    return await this.competitionService.getWifiSettings();
   }
 
   @UseGuards(AdminGuard)
@@ -80,5 +88,11 @@ export class CompetitionController {
     @Body() dto: UpdateDevicesSettingsDto,
   ) {
     return await this.competitionService.updateDevicesSettings(id, dto);
+  }
+
+  @UseGuards(AuthGuard('jwt'), AdminGuard)
+  @Get('settings/token')
+  async generateApiToken() {
+    return await this.competitionService.generateApiToken();
   }
 }

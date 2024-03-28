@@ -24,6 +24,8 @@ export interface Competition {
     countryIso2: string;
     scoretakingToken?: string;
     scoretakingTokenUpdatedAt?: Date;
+    wifiSsid?: string;
+    wifiPassword?: string;
     wcif: WCIF;
     createdAt?: Date;
     updatedAt?: Date;

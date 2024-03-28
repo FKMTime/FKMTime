@@ -5,6 +5,8 @@ import {
     Checkbox,
     FormControl,
     FormLabel,
+    Input,
+    Text,
     useToast,
 } from "@chakra-ui/react";
 import { FormEvent, useEffect, useState } from "react";
@@ -14,6 +16,7 @@ import {
     updateDevicesSettings,
 } from "../../logic/competition.ts";
 import Select from "../../Components/Select.tsx";
+import { MdKey, MdWifi } from "react-icons/md";
 
 interface UpdateDevicesSettingsModalProps {
     isOpen: boolean;
@@ -43,6 +46,8 @@ const UpdateDevicesSettingsModal: React.FC<UpdateDevicesSettingsModalProps> = ({
         const status = await updateDevicesSettings(competition.id, {
             shouldUpdateDevices: competition.shouldUpdateDevices,
             releaseChannel: competition.releaseChannel,
+            wifiSsid: competition.wifiSsid,
+            wifiPassword: competition.wifiPassword,
         });
         if (status === 200) {
             toast({
@@ -109,6 +114,39 @@ const UpdateDevicesSettingsModal: React.FC<UpdateDevicesSettingsModalProps> = ({
                         <option value="STABLE">Stable</option>
                         <option value="PRE_RELEASE">Pre-release</option>
                     </Select>
+                </FormControl>
+                <FormControl display="flex" flexDirection="column" gap="2">
+                    <FormLabel display="flex" gap="2" alignItems="center">
+                        <MdWifi />
+                        <Text>Wifi SSID</Text>
+                    </FormLabel>
+                    <Input
+                        value={competition.wifiSsid}
+                        onChange={(event) => {
+                            setCompetition({
+                                ...competition,
+                                wifiSsid: event.target.value,
+                            });
+                        }}
+                        autoComplete="off"
+                    />
+                </FormControl>
+                <FormControl display="flex" flexDirection="column" gap="2">
+                    <FormLabel display="flex" gap="2" alignItems="center">
+                        <MdKey />
+                        <Text>Wifi password</Text>
+                    </FormLabel>
+                    <Input
+                        value={competition.wifiPassword}
+                        onChange={(event) => {
+                            setCompetition({
+                                ...competition,
+                                wifiPassword: event.target.value,
+                            });
+                        }}
+                        type="password"
+                        autoComplete="off"
+                    />
                 </FormControl>
                 <Button type="submit" colorScheme="green">
                     Save

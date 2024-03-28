@@ -67,6 +67,15 @@ export class AuthService {
     return await this.jwtService.verifyAsync(token);
   }
 
+  async validateApiToken(token: string): Promise<boolean> {
+    const competition = await this.prisma.competition.findFirst({
+      where: {
+        apiToken: sha512(token),
+      },
+    });
+    return !!competition;
+  }
+
   async getUserPublicInfo(username: string): Promise<object | null> {
     return this.prisma.account.findUnique({
       where: {

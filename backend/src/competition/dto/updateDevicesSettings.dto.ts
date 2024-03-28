@@ -1,4 +1,4 @@
-import { IsBoolean, IsEnum } from 'class-validator';
+import { IsBoolean, IsEnum, IsOptional, IsString } from 'class-validator';
 import { ReleaseChannel } from '@prisma/client';
 
 export class UpdateDevicesSettingsDto {
@@ -7,4 +7,12 @@ export class UpdateDevicesSettingsDto {
 
   @IsEnum(ReleaseChannel)
   releaseChannel: ReleaseChannel;
+
+  @IsString()
+  @IsOptional()
+  wifiSsid: string;
+
+  @IsString()
+  @IsOptional()
+  wifiPassword: string;
 }

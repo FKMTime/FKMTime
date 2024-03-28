@@ -14,6 +14,7 @@ import { AuthGuard } from '@nestjs/passport';
 import { AdminOrDelegateGuard } from '../auth/guards/adminOrDelegate.guard';
 import { AdminGuard } from '../auth/guards/admin.guard';
 import { AddStaffMemberDto } from './dto/addStaffMember.dto';
+import { TokenGuard } from '../auth/guards/token.guard';
 
 @Controller('person')
 export class PersonController {
@@ -47,6 +48,7 @@ export class PersonController {
     return this.personService.getPersonsWithoutCardAssigned();
   }
 
+  @UseGuards(TokenGuard)
   @Get('card/:cardId')
   async getPersonInfo(@Param('cardId') cardId: string) {
     return await this.personService.getPersonInfo(cardId);

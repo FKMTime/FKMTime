@@ -10,6 +10,7 @@ import { CompetitionGateway } from './competition.gateway';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { sha512 } from 'js-sha512';
 import { convertPolishToLatin } from '../translations';
+import * as crypto from 'crypto';
 
 const WCA_ORIGIN = `${process.env.WCA_ORIGIN}/api/v0/competitions/`;
 @Injectable()
@@ -259,18 +260,47 @@ export class CompetitionService {
         id: true,
         shouldUpdateDevices: true,
         releaseChannel: true,
+        wifiSsid: true,
+        wifiPassword: true,
       },
     });
   }
 
-  async updateDevicesSettings(id: string, dto: UpdateDevicesSettingsDto) {
+  async generateApiToken() {
+    const competition = await this.prisma.competition.findFirst();
+    const token = crypto.randomBytes(32).toString('hex');
+    await this.prisma.competition.update({
+      where: {
+        id: competition.id,
+      },
+      data: {
+        apiToken: sha512(token),
+      },
+    });
+    return {
+      token: token,
+    };
+  }
+
+  async getWifiSettings() {
+    return this.prisma.competition.findFirst({
+      select: {
+        wifiSsid: true,
+        wifiPassword: true,
+      },
+    });
+  }
+
+  async updateDevicesSettings(id: string, data: UpdateDevicesSettingsDto) {
     return this.prisma.competition.update({
       where: {
         id: id,
       },
       data: {
-        shouldUpdateDevices: dto.shouldUpdateDevices,
-        releaseChannel: dto.releaseChannel,
+        shouldUpdateDevices: data.shouldUpdateDevices,
+        releaseChannel: data.releaseChannel,
+        wifiSsid: data.wifiSsid,
+        wifiPassword: data.wifiPassword,
       },
     });
   }
