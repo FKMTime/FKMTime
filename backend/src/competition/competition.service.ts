@@ -12,7 +12,9 @@ import { sha512 } from 'js-sha512';
 import { convertPolishToLatin } from '../translations';
 import * as crypto from 'crypto';
 
-const WCA_ORIGIN = `${process.env.WCA_ORIGIN}/api/v0/competitions/`;
+const WCA_ORIGIN = `${process.env.WCA_ORIGIN}/api/v0/competitions`;
+const DEFAULT_PASSWORD = process.env.DEFAULT_PASSWORD || '123456';
+
 @Injectable()
 export class CompetitionService {
   constructor(
@@ -21,7 +23,7 @@ export class CompetitionService {
   ) {}
 
   async importCompetition(wcaId: string) {
-    const wcifRes = await fetch(`${WCA_ORIGIN}${wcaId}/wcif/public`);
+    const wcifRes = await fetch(`${WCA_ORIGIN}/${wcaId}/wcif/public`);
     const wcif = await wcifRes.json();
     const competition = await this.prisma.competition.create({
       data: {
@@ -51,12 +53,12 @@ export class CompetitionService {
       data: [
         ...delegates.map((delegate: Person) => ({
           username: this.getUsername(delegate.name),
-          password: sha512('123456'),
+          password: sha512(DEFAULT_PASSWORD),
           role: 'DELEGATE',
         })),
         ...organizers.map((organizer: Person) => ({
           username: this.getUsername(organizer.name),
-          password: sha512('123456'),
+          password: sha512(DEFAULT_PASSWORD),
           role: 'ADMIN',
         })),
       ],
@@ -84,7 +86,7 @@ export class CompetitionService {
   }
 
   async updateWcif(wcaId: string) {
-    const wcifRes = await fetch(`${WCA_ORIGIN}${wcaId}/wcif/public`);
+    const wcifRes = await fetch(`${WCA_ORIGIN}/${wcaId}/wcif/public`);
     const wcif = await wcifRes.json();
     const transactions = [];
 

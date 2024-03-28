@@ -9,7 +9,7 @@ dotenv.config();
 import { PrismaClient } from '@prisma/client';
 import { sha512 } from 'js-sha512';
 
-async function initDb() {
+async function seedDb() {
   const prisma = new PrismaClient();
 
   try {
@@ -40,7 +40,7 @@ async function initDb() {
 const { PORT = 5000 } = process.env;
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
-  await initDb();
+  await seedDb();
   app.use(passport.initialize());
   app.useGlobalPipes(
     new ValidationPipe({

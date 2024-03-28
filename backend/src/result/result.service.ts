@@ -66,10 +66,24 @@ export class ResultService {
         updatedAt: 'desc',
       },
       include: {
-        person: true,
+        person: {
+          select: {
+            id: true,
+            name: true,
+            wcaId: true,
+            registrantId: true,
+          },
+        },
         attempts: {
           include: {
-            judge: true,
+            judge: {
+              select: {
+                id: true,
+                name: true,
+                wcaId: true,
+                registrantId: true,
+              },
+            },
             device: true,
           },
         },
@@ -83,10 +97,24 @@ export class ResultService {
         personId: personId,
       },
       include: {
-        person: true,
+        person: {
+          select: {
+            id: true,
+            name: true,
+            wcaId: true,
+            registrantId: true,
+          },
+        },
         attempts: {
           include: {
-            judge: true,
+            judge: {
+              select: {
+                id: true,
+                name: true,
+                wcaId: true,
+                registrantId: true,
+              },
+            },
             device: true,
           },
         },
@@ -100,10 +128,24 @@ export class ResultService {
         id: id,
       },
       include: {
-        person: true,
+        person: {
+          select: {
+            id: true,
+            name: true,
+            wcaId: true,
+            registrantId: true,
+          },
+        },
         attempts: {
           include: {
-            judge: true,
+            judge: {
+              select: {
+                id: true,
+                name: true,
+                wcaId: true,
+                registrantId: true,
+              },
+            },
             device: true,
           },
         },
@@ -162,6 +204,15 @@ export class ResultService {
         },
         eventId: roundId.split('-')[0],
         roundId: roundId,
+      },
+      include: {
+        person: true,
+        attempts: {
+          include: {
+            judge: true,
+            device: true,
+          },
+        },
       },
     });
   }

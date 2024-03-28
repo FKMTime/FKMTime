@@ -76,19 +76,6 @@ export class AuthService {
     return !!competition;
   }
 
-  async getUserPublicInfo(username: string): Promise<object | null> {
-    return this.prisma.account.findUnique({
-      where: {
-        username,
-      },
-      select: {
-        id: true,
-        username: true,
-        role: true,
-      },
-    });
-  }
-
   async changePassword(
     userId: string,
     oldPassword: string,

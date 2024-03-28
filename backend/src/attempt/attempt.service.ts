@@ -5,6 +5,7 @@ import { CreateAttemptDto } from './dto/createAttempt.dto';
 import { IncidentsGateway } from './incidents.gateway';
 import { AttemptStatus } from '@prisma/client';
 import { WcaService } from '../wca/wca.service';
+import { ResultService } from '../result/result.service';
 
 @Injectable()
 export class AttemptService {
@@ -12,47 +13,14 @@ export class AttemptService {
     private readonly prisma: DbService,
     private readonly wcaService: WcaService,
     private readonly incidentsGateway: IncidentsGateway,
+    private readonly resultService: ResultService,
   ) {}
 
   async createAttempt(data: CreateAttemptDto) {
-    const resultFromDb = await this.prisma.result.findFirst({
-      where: {
-        personId: data.competitorId,
-        roundId: data.roundId,
-      },
-      select: {
-        id: true,
-        roundId: true,
-      },
-    });
-    if (!resultFromDb) {
-      await this.prisma.result.create({
-        data: {
-          person: {
-            connect: {
-              id: data.competitorId,
-            },
-          },
-          eventId: data.roundId.split('-')[0],
-          roundId: data.roundId,
-        },
-      });
-    }
-
-    const result = await this.prisma.result.findFirst({
-      where: {
-        personId: data.competitorId,
-        roundId: data.roundId,
-      },
-      select: {
-        id: true,
-        person: {
-          select: {
-            registrantId: true,
-          },
-        },
-      },
-    });
+    const result = await this.resultService.getResultOrCreate(
+      data.competitorId,
+      data.roundId,
+    );
 
     await this.prisma.attempt.create({
       data: {
@@ -196,40 +164,18 @@ export class AttemptService {
   async getAttemptById(id: string) {
     return this.prisma.attempt.findUnique({
       where: { id },
-      select: {
-        id: true,
-        resultId: true,
-        attemptNumber: true,
-        replacedBy: true,
-        penalty: true,
-        comment: true,
-        inspectionTime: true,
-        status: true,
-        value: true,
-        solvedAt: true,
-        createdAt: true,
-        judgeId: true,
+      include: {
         judge: {
           select: {
             id: true,
-            registrantId: true,
+            name: true,
             wcaId: true,
-            name: true,
+            registrantId: true,
           },
         },
-        device: {
-          select: {
-            id: true,
-            name: true,
-          },
-        },
+        device: true,
         result: {
-          select: {
-            id: true,
-            eventId: true,
-            roundId: true,
-            createdAt: true,
-            updatedAt: true,
+          include: {
             person: {
               select: {
                 id: true,
@@ -247,37 +193,18 @@ export class AttemptService {
   async getUnresolvedAttempts() {
     return this.prisma.attempt.findMany({
       where: { status: AttemptStatus.UNRESOLVED },
-      select: {
-        id: true,
-        resultId: true,
-        attemptNumber: true,
-        replacedBy: true,
-        status: true,
-        penalty: true,
-        value: true,
-        solvedAt: true,
-        createdAt: true,
+      include: {
         judge: {
           select: {
             id: true,
-            registrantId: true,
+            name: true,
             wcaId: true,
-            name: true,
+            registrantId: true,
           },
         },
-        device: {
-          select: {
-            id: true,
-            name: true,
-          },
-        },
+        device: true,
         result: {
-          select: {
-            id: true,
-            eventId: true,
-            roundId: true,
-            createdAt: true,
-            updatedAt: true,
+          include: {
             person: {
               select: {
                 id: true,

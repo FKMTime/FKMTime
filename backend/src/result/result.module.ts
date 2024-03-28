@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
 import { ResultService } from './result.service';
 import { ResultController } from './result.controller';
 import { AuthModule } from '../auth/auth.module';
@@ -14,7 +14,7 @@ import { PersonModule } from '../person/person.module';
   controllers: [ResultController],
   imports: [
     AuthModule,
-    AttemptModule,
+    forwardRef(() => AttemptModule),
     AttendanceModule,
     WcaModule,
     DeviceModule,
