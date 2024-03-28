@@ -271,6 +271,10 @@ export const isMobile = () => {
     return regex.test(navigator.userAgent);
 };
 
+export const isNotificationsSupported = () => {
+    return "Notification" in window;
+};
+
 export const prettyAttemptStatus = (status: AttemptStatus) => {
     switch (status) {
         case AttemptStatus.STANDARD_ATTEMPT:
