@@ -55,6 +55,7 @@ const IncidentPage = () => {
             status: AttemptStatus.EXTRA_GIVEN,
             comment: "A7G",
             shouldResubmitToWcaLive: false,
+            updateReplacedBy: false,
         };
         setEditedIncident(data);
         handleSubmit(data);
@@ -66,6 +67,30 @@ const IncidentPage = () => {
             status: AttemptStatus.EXTRA_GIVEN,
             comment: "Judge fault",
             shouldResubmitToWcaLive: false,
+            updateReplacedBy: false,
+        };
+        setEditedIncident(data);
+        handleSubmit(data);
+    };
+
+    const extraWithSameReason = () => {
+        const data = {
+            ...editedIncident,
+            status: AttemptStatus.EXTRA_ATTEMPT,
+            shouldResubmitToWcaLive: false,
+            updateReplacedBy: false,
+        };
+        setEditedIncident(data);
+        handleSubmit(data);
+    };
+
+    const useThisExtra = () => {
+        const data = {
+            ...editedIncident,
+            status: AttemptStatus.EXTRA_ATTEMPT,
+            shouldBeUsed: true,
+            shouldResubmitToWcaLive: false,
+            updateReplacedBy: true,
         };
         setEditedIncident(data);
         handleSubmit(data);
@@ -116,6 +141,16 @@ const IncidentPage = () => {
             <Button colorScheme="blue" onClick={judgeFault}>
                 Judge fault
             </Button>
+            {!editedIncident.shouldBeUsed && (
+                <>
+                    <Button colorScheme="yellow" onClick={extraWithSameReason}>
+                        Give an extra with the same reason
+                    </Button>
+                    <Button colorScheme="gray" onClick={useThisExtra}>
+                        Use this extra attempt
+                    </Button>
+                </>
+            )}
             <FormControl isRequired>
                 <FormLabel>Attempt number</FormLabel>
                 <Input

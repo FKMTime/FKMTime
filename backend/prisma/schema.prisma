@@ -95,6 +95,7 @@ model Attempt {
   replacedBy     Int?
   comment        String?
   status         AttemptStatus @default(STANDARD_ATTEMPT)
+  shouldBeUsed   Boolean       @default(true)
   penalty        Int?
   value          Int
   inspectionTime Int?

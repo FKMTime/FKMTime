@@ -343,15 +343,26 @@ export class ResultService {
       attempts.some(
         (attempt) =>
           attempt.status === AttemptStatus.EXTRA_GIVEN &&
-          !data.isDelegate &&
           (attempt.replacedBy === 0 || attempt.replacedBy === null),
       )
     ) {
       const lastAttemptToReplace = attempts.find(
         (attempt) =>
           attempt.status === AttemptStatus.EXTRA_GIVEN &&
-          (attempt.replacedBy === 0 || attempt.replacedBy === null),
+          (attempt.replacedBy === 0 || attempt.replacedBy === null) &&
+          attempt.shouldBeUsed === true,
       );
+      if (data.isDelegate) {
+        await this.createAnUnusedExtraAttempt({
+          ...finalData,
+          device,
+          judge,
+          competitor,
+          result,
+          attemptNumber: lastExtra + 1,
+        });
+        return this.notifyDelegate(device.name, competitor.name, locale);
+      }
       const attemptNumber =
         await this.createAnExtraAttemptAnReplaceTheOriginalOne(
           {
@@ -364,10 +375,6 @@ export class ResultService {
           },
           lastAttemptToReplace.id,
         );
-
-      if (attemptNumber === -1) {
-        return this.notifyDelegate(device.name, competitor.name, locale);
-      }
       attemptToEnterToWcaLive = {
         wcaId: competition.wcaId,
         scoretakingToken: competition.scoretakingToken,
@@ -474,6 +481,38 @@ export class ResultService {
         ? getTranslation('attemptEntered', locale)
         : getTranslation('attemptEnteredButReplacedToDnf', locale),
     };
+  }
+
+  async createAnUnusedExtraAttempt(data: any) {
+    await this.prisma.attempt.create({
+      data: {
+        attemptNumber: data.attemptNumber,
+        sessionId: data.sessionId,
+        inspectionTime: data.inspectionTime,
+        solvedAt: data.solvedAt,
+        status: AttemptStatus.UNRESOLVED,
+        shouldBeUsed: false,
+        penalty: data.penalty,
+        value: data.value,
+        judge: data.judge
+          ? {
+              connect: {
+                id: data.judge.id,
+              },
+            }
+          : undefined,
+        device: {
+          connect: {
+            id: data.device.id,
+          },
+        },
+        result: {
+          connect: {
+            id: data.result.id,
+          },
+        },
+      },
+    });
   }
 
   async createAnExtraAttemptAnReplaceTheOriginalOne(

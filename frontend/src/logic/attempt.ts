@@ -3,6 +3,7 @@ import { backendRequest } from "./request";
 
 interface UpdateAttemptData extends Attempt {
     shouldResubmitToWcaLive: boolean;
+    updateReplacedBy?: boolean;
 }
 
 interface CreateAttemptData {

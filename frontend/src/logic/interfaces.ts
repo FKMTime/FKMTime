@@ -90,6 +90,7 @@ export interface Attempt {
     replacedBy: number;
     penalty: number;
     status: AttemptStatus;
+    shouldBeUsed?: boolean;
     inspectionTime?: number;
     solvedAt: Date;
     value: number;
@@ -109,6 +110,7 @@ export enum AttemptStatus {
 export interface Incident extends Attempt {
     result: Result;
     shouldResubmitToWcaLive: boolean;
+    updateReplacedBy?: boolean;
 }
 
 export interface Device {

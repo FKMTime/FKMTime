@@ -247,14 +247,6 @@ const SingleResult = () => {
                     result={result}
                 />
             )}
-
-            <Heading mt={3}>Important information</Heading>
-            <Alert status="info" color="black">
-                <AlertIcon />
-                Extra attempts should NEVER have an case set to true - we don't
-                replace extra attempts by next extra, we only replace the
-                original one.
-            </Alert>
             <CreateAttemptModal
                 isOpen={isOpenCreateAttemptModal}
                 onClose={handleCloseModal}

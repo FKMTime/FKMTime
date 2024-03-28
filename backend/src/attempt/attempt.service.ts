@@ -117,6 +117,7 @@ export class AttemptService {
       data: dataToUpdate,
       select: {
         id: true,
+        attemptNumber: true,
         result: {
           select: {
             roundId: true,
@@ -129,6 +130,25 @@ export class AttemptService {
         },
       },
     });
+    if (data.updateReplacedBy) {
+      const attemptToReplace = await this.prisma.attempt.findFirst({
+        where: {
+          status: AttemptStatus.EXTRA_GIVEN,
+          replacedBy: null,
+        },
+        select: {
+          id: true,
+        },
+      });
+      if (attemptToReplace) {
+        await this.prisma.attempt.update({
+          where: { id: attemptToReplace.id },
+          data: {
+            replacedBy: attempt.attemptNumber,
+          },
+        });
+      }
+    }
     this.incidentsGateway.handleAttemptUpdated();
     if (!attempt) {
       throw new HttpException('Attempt not found', 404);
