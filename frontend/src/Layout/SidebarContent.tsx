@@ -18,13 +18,13 @@ import { UserInfo } from "../logic/interfaces.ts";
 interface Props {
     user: UserInfo;
     handleLogout: () => void;
-    toggleDrawer?: () => void;
+    onElementClick?: () => void;
 }
 
 const SidebarContent: React.FC<Props> = ({
     user,
     handleLogout,
-    toggleDrawer,
+    onElementClick,
 }) => {
     return (
         <Box
@@ -41,14 +41,14 @@ const SidebarContent: React.FC<Props> = ({
                 name="Home"
                 icon={<MdHome />}
                 link="/"
-                onClick={toggleDrawer}
+                onClick={onElementClick}
             />
             {HAS_WRITE_ACCESS.includes(user.role) && (
                 <SidebarElement
                     name="Incidents"
                     icon={<IoMdWarning />}
                     link="/incidents"
-                    onClick={toggleDrawer}
+                    onClick={onElementClick}
                 />
             )}
             {user.role === "ADMIN" && (
@@ -57,19 +57,19 @@ const SidebarContent: React.FC<Props> = ({
                         name="Accounts"
                         icon={<MdPersonAdd />}
                         link="/accounts"
-                        onClick={toggleDrawer}
+                        onClick={onElementClick}
                     />
                     <SidebarElement
                         name="Devices"
                         icon={<MdSettings />}
                         link="/devices"
-                        onClick={toggleDrawer}
+                        onClick={onElementClick}
                     />
                     <SidebarElement
                         name="Competition"
                         icon={<IoMdTrophy />}
                         link="/competition"
-                        onClick={toggleDrawer}
+                        onClick={onElementClick}
                     />
                 </>
             )}
@@ -79,7 +79,7 @@ const SidebarContent: React.FC<Props> = ({
                         name="Rooms"
                         icon={<MdRoom />}
                         link="/rooms"
-                        onClick={toggleDrawer}
+                        onClick={onElementClick}
                     />
                 </>
             )}
@@ -87,33 +87,33 @@ const SidebarContent: React.FC<Props> = ({
                 name="Persons"
                 icon={<MdPerson />}
                 link="/persons"
-                onClick={toggleDrawer}
+                onClick={onElementClick}
             />
             {HAS_WRITE_ACCESS.includes(user.role) && (
                 <SidebarElement
                     name="Attendance"
                     icon={<FaClipboardList />}
                     link="/attendance"
-                    onClick={toggleDrawer}
+                    onClick={onElementClick}
                 />
             )}
             <SidebarElement
                 name="Giftpacks"
                 icon={<FaGift />}
                 link="/giftpacks"
-                onClick={toggleDrawer}
+                onClick={onElementClick}
             />
             <SidebarElement
                 name="Results"
                 icon={<MdTimer />}
                 link="/results"
-                onClick={toggleDrawer}
+                onClick={onElementClick}
             />
             <SidebarElement
                 name="Settings"
                 icon={<MdSettings />}
                 link="/settings"
-                onClick={toggleDrawer}
+                onClick={onElementClick}
             />
             <Button
                 leftIcon={<MdLogout />}

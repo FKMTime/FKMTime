@@ -1,7 +1,7 @@
 import { Outlet, useNavigate } from "react-router-dom";
 import Sidebar from "./Sidebar";
 import { Box } from "@chakra-ui/react";
-import { getToken, getUserInfo } from "../logic/auth";
+import { getToken, getUserInfo, isUserLoggedIn } from "../logic/auth";
 import { useEffect, useState } from "react";
 import io from "socket.io-client";
 import {
@@ -102,10 +102,12 @@ const Layout = (): JSX.Element => {
     }, [competitionSocket, incidentsSocket, userInfo]);
 
     useEffect(() => {
-        const token = getToken();
-        if (!token) {
-            navigate("/auth/login");
-        }
+        isUserLoggedIn().then((isLoggedIn) => {
+            if (!isLoggedIn) {
+                navigate("/auth/login");
+                window.location.reload();
+            }
+        });
     }, [navigate]);
 
     if (!userInfo) {

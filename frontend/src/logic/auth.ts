@@ -27,8 +27,9 @@ export const logout = () => {
     localStorage.removeItem(USER_INFO_NAME);
 };
 
-export const isUserLoggedIn = () => {
-    return localStorage.getItem(TOKEN_NAME) !== null;
+export const isUserLoggedIn = async () => {
+    const response = await backendRequest("auth/me", "GET", true);
+    return response.status === 200;
 };
 
 export const getUserInfo = () => {

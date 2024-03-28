@@ -67,6 +67,19 @@ export class AuthService {
     return await this.jwtService.verifyAsync(token);
   }
 
+  async getAccountInfo(userId: string) {
+    return this.prisma.account.findFirst({
+      where: {
+        id: userId,
+      },
+      select: {
+        id: true,
+        username: true,
+        role: true,
+      },
+    });
+  }
+
   async validateApiToken(token: string): Promise<boolean> {
     const competition = await this.prisma.competition.findFirst({
       where: {

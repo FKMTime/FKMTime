@@ -76,7 +76,7 @@ const Sidebar: React.FC<SidebarProps> = ({ user }): JSX.Element => {
                         <SidebarContent
                             user={user}
                             handleLogout={handleLogout}
-                            toggleDrawer={toggleDrawer}
+                            onElementClick={toggleDrawer}
                         />
                     </DrawerBody>
                 </DrawerContent>
