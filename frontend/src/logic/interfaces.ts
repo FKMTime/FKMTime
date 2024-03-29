@@ -94,8 +94,8 @@ export interface Attempt {
     inspectionTime?: number;
     solvedAt: Date;
     value: number;
-    judgeId: string;
-    judge: Person;
+    judgeId?: string;
+    judge?: Person;
     device: Device;
 }
 

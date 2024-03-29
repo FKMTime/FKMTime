@@ -33,7 +33,7 @@ const IncidentCard: React.FC<Props> = ({ incident, wcif }) => {
                 <Text>Attempt: {incident.attemptNumber}</Text>
                 <Text>Time: {resultToString(incident.value)}</Text>
                 <Text>Station: {incident.device.name}</Text>
-                <Text>Judge: {incident.judge.name}</Text>
+                {incident.judge && <Text>Judge: {incident.judge.name}</Text>}
             </CardBody>
         </Card>
     );

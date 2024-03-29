@@ -187,7 +187,7 @@ const EditAttemptModal: React.FC<EditAttemptModalProps> = ({
                 <FormControl>
                     <FormLabel>Judge</FormLabel>
                     <Select
-                        value={editedAttempt.judgeId}
+                        value={editedAttempt.judgeId || ""}
                         disabled={isLoading}
                         placeholder="Select judge"
                         onChange={(e) =>

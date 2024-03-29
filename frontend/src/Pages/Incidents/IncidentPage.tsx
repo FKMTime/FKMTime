@@ -214,7 +214,7 @@ const IncidentPage = () => {
             <FormControl>
                 <FormLabel>Judge</FormLabel>
                 <Select
-                    value={editedIncident.judgeId}
+                    value={editedIncident.judgeId || ""}
                     disabled={isLoading}
                     onChange={(e) =>
                         setEditedIncident({
@@ -258,7 +258,12 @@ const IncidentPage = () => {
             <Box display="flex" gap="5" flexDirection="column">
                 <Button
                     colorScheme="green"
-                    onClick={() => handleSubmit(editedIncident)}
+                    onClick={() =>
+                        handleSubmit({
+                            ...editedIncident,
+                            status: AttemptStatus.RESOLVED,
+                        })
+                    }
                 >
                     Mark as resolved
                 </Button>
