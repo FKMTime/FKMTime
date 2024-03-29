@@ -44,6 +44,7 @@ export class DeviceGateway {
   }
 
   handleDeviceRequest(deviceId: number) {
+    if (this.deviceRequests.includes(deviceId)) return;
     this.deviceRequests.push(deviceId);
     this.server.to(`device`).emit('deviceRequests', this.deviceRequests);
   }
