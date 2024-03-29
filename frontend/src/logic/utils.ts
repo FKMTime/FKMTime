@@ -1,5 +1,3 @@
-// noinspection DuplicatedCode
-
 import { Activity, Competition } from "@wca/helpers";
 
 import { DNF_VALUE } from "./constants";
@@ -51,7 +49,7 @@ export const getEventIdFromRoundId = (roundId: string) => {
 
 export const getRoundInfoFromWcif = (roundId: string, wcif: Competition) => {
     const eventId = getEventIdFromRoundId(roundId);
-    const event = wcif.events.find((event) => event.id === eventId);
+    const event = wcif.events.find((e) => e.id === eventId);
     return event?.rounds.find((round) => round.id === roundId);
 };
 

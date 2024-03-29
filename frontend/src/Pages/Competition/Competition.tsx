@@ -13,14 +13,7 @@ import {
     useToast,
 } from "@chakra-ui/react";
 import { useSetAtom } from "jotai";
-import {
-    FormEvent,
-    RefObject,
-    useCallback,
-    useEffect,
-    useRef,
-    useState,
-} from "react";
+import { FormEvent, useCallback, useEffect, useState } from "react";
 import { IoMdEye, IoMdEyeOff } from "react-icons/io";
 
 import LoadingPage from "@/Components/LoadingPage";
@@ -28,11 +21,11 @@ import { competitionAtom, showSidebarAtom } from "@/logic/atoms";
 import {
     getCompetitionInfo,
     getCompetitionSettings,
-    importCompetition,
     syncCompetition,
     updateCompetitionSettings,
 } from "@/logic/competition";
 import { Competition as CompetitionInterface } from "@/logic/interfaces";
+import ImportCompetition from "@/Pages/Competition/ImportCompetition";
 
 const Competition = () => {
     const setCompetitionAtom = useSetAtom(competitionAtom);
@@ -45,7 +38,6 @@ const Competition = () => {
     );
     const [showScoretakingToken, setShowScoretakingToken] =
         useState<boolean>(false);
-    const idRef: RefObject<HTMLInputElement> = useRef<HTMLInputElement>(null);
     const toast = useToast();
 
     const fetchData = useCallback(async () => {
@@ -60,32 +52,11 @@ const Competition = () => {
         setIsLoading(false);
     }, [setShowSidebar]);
 
-    const handleImportCompetition = async () => {
-        if (
-            !idRef ||
-            !idRef.current ||
-            !idRef.current.value ||
-            idRef.current.value === ""
-        ) {
-            toast({
-                title: "Error",
-                description: "Please enter a competition ID",
-                status: "error",
-                duration: 3000,
-                isClosable: true,
-            });
-        }
-        const id = idRef.current?.value;
-        if (!id) {
-            return;
-        }
-        const response = await importCompetition(id);
-        if (response.status === 200) {
-            await fetchCompetitionDataAndSetAtom();
-            setCompetitionImported(true);
-            setShowSidebar(true);
-            setCompetition(response.data);
-        }
+    const handleImportCompetition = async (data: CompetitionInterface) => {
+        setShowSidebar(true);
+        setCompetitionImported(true);
+        setCompetition(data);
+        await fetchCompetitionDataAndSetAtom();
     };
 
     const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
@@ -156,13 +127,9 @@ const Competition = () => {
 
     if (!competitionImported) {
         return (
-            <Box display="flex" flexDirection="column" gap="5">
-                <Heading size="lg">Competition</Heading>
-                <Box display="flex" flexDirection="column" gap="5">
-                    <Input placeholder="Competition ID" ref={idRef} />
-                    <Button onClick={handleImportCompetition}>Import</Button>
-                </Box>
-            </Box>
+            <ImportCompetition
+                handleImportCompetition={handleImportCompetition}
+            />
         );
     }
 

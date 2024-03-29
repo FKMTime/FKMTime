@@ -27,8 +27,8 @@ const Rooms = () => {
     }, [competition, fetchData]);
 
     useEffect(() => {
-        getAllRooms().then((rooms: Room[]) => {
-            setRooms(rooms);
+        getAllRooms().then((data: Room[]) => {
+            setRooms(data);
         });
     }, []);
 

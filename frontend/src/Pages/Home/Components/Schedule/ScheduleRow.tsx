@@ -11,9 +11,9 @@ interface ScheduleRowProps {
 
 const ScheduleRow = ({ activity, events }: ScheduleRowProps) => {
     const eventId = activity.activityCode.split("-")[0];
-    const event = events.find((event: Event) => event.id === eventId);
+    const event = events.find((e: Event) => e.id === eventId);
     const round = event?.rounds.find(
-        (round: Round) => round.id === activity.activityCode
+        (r: Round) => r.id === activity.activityCode
     );
 
     return (

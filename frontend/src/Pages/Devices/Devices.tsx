@@ -51,13 +51,15 @@ const Devices = () => {
         setEspId(0);
     };
 
-    const handleRemoveDeviceRequest = (espId: number) => {
-        setAvailableDevices(availableDevices.filter((id) => id !== espId));
+    const handleRemoveDeviceRequest = (deviceEspId: number) => {
+        setAvailableDevices(
+            availableDevices.filter((id) => id !== deviceEspId)
+        );
         socket.emit("removeDeviceRequest", { espId });
     };
 
-    const handleAddDeviceRequest = (espId: number) => {
-        setEspId(espId);
+    const handleAddDeviceRequest = (deviceEspId: number) => {
+        setEspId(deviceEspId);
         setIsOpenCreateDeviceModal(true);
     };
 
@@ -141,7 +143,7 @@ const Devices = () => {
                 flexWrap="wrap"
                 justifyContent={{ base: "center", md: "flex-start" }}
             >
-                {availableDevices.map((espId) => (
+                {availableDevices.map((deviceEspId) => (
                     <Box
                         key={espId}
                         bg="gray.900"
@@ -155,16 +157,18 @@ const Devices = () => {
                         justifyContent="center"
                     >
                         <MdDevices size={48} />
-                        <Text> Device ID: {espId}</Text>
+                        <Text> Device ID: {deviceEspId}</Text>
                         <Button
                             colorScheme="green"
-                            onClick={() => handleAddDeviceRequest(espId)}
+                            onClick={() => handleAddDeviceRequest(deviceEspId)}
                         >
                             Add
                         </Button>
                         <Button
                             colorScheme="red"
-                            onClick={() => handleRemoveDeviceRequest(espId)}
+                            onClick={() =>
+                                handleRemoveDeviceRequest(deviceEspId)
+                            }
                         >
                             Remove
                         </Button>

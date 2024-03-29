@@ -12,7 +12,7 @@ import {
     UnorderedList,
     useToast,
 } from "@chakra-ui/react";
-import { KeyboardEvent, useEffect, useRef, useState } from "react";
+import { KeyboardEvent, RefObject, useEffect, useRef, useState } from "react";
 import { MdDone } from "react-icons/md";
 
 import LoadingPage from "@/Components/LoadingPage";
@@ -33,8 +33,8 @@ const Giftpacks = () => {
         personsWhoNotCollectedGitpackYet,
         setPersonsWhoNotCollectedGitpackYet,
     ] = useState<Person[]>([]);
-    //eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const cardInputRef: any = useRef();
+    const cardInputRef: RefObject<HTMLInputElement> =
+        useRef<HTMLInputElement>(null);
     const [personData, setPersonData] = useState<Person | null>();
 
     const handleSubmitCard = async () => {

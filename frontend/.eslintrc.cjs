@@ -7,11 +7,12 @@ module.exports = {
         'plugin:react-hooks/recommended',
         'prettier'
     ],
-    ignorePatterns: ['dist', '.eslintrc.cjs'],
+    ignorePatterns: ['dist', '.eslintrc.cjs', 'src/vite-env.d.ts', 'src/main.tsx'],
     parser: '@typescript-eslint/parser',
     plugins: ['react-refresh', 'simple-import-sort', 'prettier'],
     rules: {
         'prettier/prettier': 'warn',
+        'no-shadow': 'error',
         'react-refresh/only-export-components': [
             'warn',
             {allowConstantExport: true},

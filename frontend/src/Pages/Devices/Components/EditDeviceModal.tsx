@@ -53,8 +53,8 @@ const EditDeviceModal = ({ isOpen, onClose, device }: EditDeviceModalProps) => {
 
     useEffect(() => {
         if (!isOpen) return;
-        getAllRooms().then((rooms: Room[]) => {
-            setRooms(rooms);
+        getAllRooms().then((data: Room[]) => {
+            setRooms(data);
         });
     }, [isOpen]);
 

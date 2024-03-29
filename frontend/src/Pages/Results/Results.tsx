@@ -86,8 +86,8 @@ const Results = () => {
         return getNumberOfAttemptsForRound(filters.roundId, competition.wcif);
     }, [competition, filters.roundId]);
 
-    const fetchData = async (roundId: string, search?: string) => {
-        const data = await getResultsByRoundId(roundId, search);
+    const fetchData = async (roundId: string, searchParam?: string) => {
+        const data = await getResultsByRoundId(roundId, searchParam);
         setResults(data);
     };
 
@@ -99,8 +99,8 @@ const Results = () => {
         setCompetition(response.data);
     }, [navigate, setCompetition]);
 
-    const handleEventChange = async (id: string) => {
-        const roundId = id + "-r1";
+    const handleEventChange = async (eventId: string) => {
+        const roundId = eventId + "-r1";
         navigate(`/results/round/${roundId}`);
         await fetchData(roundId);
     };

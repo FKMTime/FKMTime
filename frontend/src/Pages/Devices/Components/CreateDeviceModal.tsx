@@ -61,9 +61,9 @@ const CreateDeviceModal = ({
 
     useEffect(() => {
         if (!isOpen) return;
-        getAllRooms().then((rooms: Room[]) => {
-            setRooms(rooms);
-            setRoomId(rooms[0].id);
+        getAllRooms().then((data: Room[]) => {
+            setRooms(data);
+            setRoomId(data[0].id);
         });
     }, [isOpen]);
 

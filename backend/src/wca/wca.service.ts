@@ -123,7 +123,6 @@ export class WcaService {
     const sortedAttempts = result.attempts.sort(
       (a: Attempt, b: Attempt) => a.attemptNumber - b.attemptNumber,
     );
-    //TODO: DUPLICATED CODE
     sortedAttempts.forEach((attempt: Attempt) => {
       if (
         !attemptsToReturn.some((a) => a.id === attempt.id) &&

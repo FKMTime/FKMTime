@@ -24,10 +24,10 @@ const Pagination = ({
     changePageSize,
     pageSize,
 }: PaginationProps) => {
-    const handlePageChangeWrapper = (page: number) => {
-        if (page < 1) {
+    const handlePageChangeWrapper = (pageParam: number) => {
+        if (pageParam < 1) {
             handlePageChange(1);
-        } else if (page > totalPages) {
+        } else if (pageParam > totalPages) {
             handlePageChange(totalPages);
         } else {
             handlePageChange(page);

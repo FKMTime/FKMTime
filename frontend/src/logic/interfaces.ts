@@ -31,6 +31,7 @@ export interface Competition {
     updatedAt?: Date;
 }
 
+//eslint-disable-next-line
 export enum ReleaseChannel {
     STABLE = "STABLE",
     PRE_RELEASE = "PRE_RELEASE",
@@ -99,6 +100,7 @@ export interface Attempt {
     device: Device;
 }
 
+//eslint-disable-next-line
 export enum AttemptStatus {
     STANDARD_ATTEMPT = "STANDARD_ATTEMPT",
     EXTRA_ATTEMPT = "EXTRA_ATTEMPT",
@@ -126,6 +128,7 @@ export interface Device {
     updatedAt: Date;
 }
 
+//eslint-disable-next-line
 export enum DeviceType {
     STATION = "STATION",
     ATTENDANCE = "ATTENDANCE",
@@ -145,7 +148,11 @@ export interface GroupAssigment {
     activityName: string;
 }
 
-export interface SelectOption {
-    value: string;
-    label: string;
+export interface WCACompetition {
+    id: string;
+    name: string;
+    url: string;
+    country_iso2: string;
+    registration_open: string;
+    start_date: string;
 }
