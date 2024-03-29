@@ -1,13 +1,14 @@
+import { Input } from "@chakra-ui/react";
+import { ChangeEvent, useState } from "react";
+
+import { SKIPPED_VALUE } from "@/logic/constants";
 import {
     attemptResultToInput,
     autocompleteTimeAttemptResult,
     inputToAttemptResult,
     isValid,
     reformatInput,
-} from "../logic/resultFormatters.ts";
-import { ChangeEvent, useState } from "react";
-import { Input } from "@chakra-ui/react";
-import { SKIPPED_VALUE } from "../logic/constants.ts";
+} from "@/logic/resultFormatters";
 
 interface AttemptResultInputProps {
     value: number;

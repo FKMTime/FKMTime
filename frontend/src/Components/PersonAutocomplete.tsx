@@ -5,7 +5,8 @@ import {
     AutoCompleteItem,
     AutoCompleteList,
 } from "@choc-ui/chakra-autocomplete";
-import { Person } from "../logic/interfaces.ts";
+
+import { Person } from "@/logic/interfaces";
 
 interface PersonAutocompleteProps {
     onSelect: (value: string) => void;

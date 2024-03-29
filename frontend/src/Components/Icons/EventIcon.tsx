@@ -4,11 +4,7 @@ interface EventIconProps {
     size?: number;
 }
 
-const EventIcon: React.FC<EventIconProps> = ({
-    eventId,
-    selected,
-    size = 15,
-}): JSX.Element => {
+const EventIcon = ({ eventId, selected, size = 15 }: EventIconProps) => {
     return (
         <span
             className={`cubing-icon event-${eventId}`}

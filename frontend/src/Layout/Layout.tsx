@@ -1,19 +1,21 @@
-import { Outlet, useNavigate } from "react-router-dom";
-import Sidebar from "./Sidebar";
 import { Box } from "@chakra-ui/react";
-import { getToken, getUserInfo, isUserLoggedIn } from "../logic/auth";
+import { useAtomValue } from "jotai";
 import { useEffect, useState } from "react";
+import { Outlet, useNavigate } from "react-router-dom";
 import io from "socket.io-client";
+
+import { showSidebarAtom } from "@/logic/atoms";
+import { getToken, getUserInfo, isUserLoggedIn } from "@/logic/auth";
 import {
     COMPETITION_WEBSOCKET_URL,
     INCIDENTS_WEBSOCKET_URL,
     WEBSOCKET_PATH,
-} from "../logic/request.ts";
-import { useAtomValue } from "jotai";
-import { showSidebarAtom } from "../logic/atoms.ts";
-import { isMobile, isNotificationsSupported } from "../logic/utils.ts";
+} from "@/logic/request";
+import { isMobile, isNotificationsSupported } from "@/logic/utils";
 
-const Layout = (): JSX.Element => {
+import Sidebar from "./Sidebar";
+
+const Layout = () => {
     const userInfo = getUserInfo();
     const navigate = useNavigate();
     const showSidebar = useAtomValue(showSidebarAtom);

@@ -1,12 +1,14 @@
 import { Box, Button, Heading, useToast } from "@chakra-ui/react";
-import { useCallback, useEffect, useState } from "react";
-import { Room } from "../../logic/interfaces.ts";
-import { getAllRooms, updateCurrentRound } from "../../logic/rooms.ts";
 import { useAtom } from "jotai";
-import { competitionAtom } from "../../logic/atoms.ts";
-import { getCompetitionInfo } from "../../logic/competition.ts";
-import RoomCard from "../../Components/RoomCard.tsx";
-import LoadingPage from "../../Components/LoadingPage.tsx";
+import { useCallback, useEffect, useState } from "react";
+
+import LoadingPage from "@/Components/LoadingPage";
+import { competitionAtom } from "@/logic/atoms";
+import { getCompetitionInfo } from "@/logic/competition";
+import { Room } from "@/logic/interfaces";
+import { getAllRooms, updateCurrentRound } from "@/logic/rooms";
+
+import RoomCard from "./Components/RoomCard";
 
 const Rooms = () => {
     const toast = useToast();

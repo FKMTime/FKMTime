@@ -8,18 +8,20 @@ import {
     DrawerOverlay,
     useToast,
 } from "@chakra-ui/react";
-import React, { useState } from "react";
-import { UserInfo } from "../logic/interfaces";
-import { useNavigate } from "react-router-dom";
-import { logout } from "../logic/auth";
-import SidebarContent from "./SidebarContent.tsx";
+import { useState } from "react";
 import { MdMenu } from "react-icons/md";
+import { useNavigate } from "react-router-dom";
+
+import { logout } from "@/logic/auth";
+import { UserInfo } from "@/logic/interfaces";
+
+import SidebarContent from "./SidebarContent";
 
 interface SidebarProps {
     user: UserInfo;
 }
 
-const Sidebar: React.FC<SidebarProps> = ({ user }): JSX.Element => {
+const Sidebar = ({ user }: SidebarProps) => {
     const navigate = useNavigate();
     const toast = useToast();
     const [isDrawerOpen, setDrawerOpen] = useState<boolean>(false);

@@ -1,6 +1,6 @@
 import { Box, Button, Icon, Image, Link, Text } from "@chakra-ui/react";
-import logo from "../assets/logo.svg";
-import SidebarElement from "../Components/SidebarElement.tsx";
+import { FaClipboardList, FaGift, FaGithub } from "react-icons/fa";
+import { IoMdTrophy, IoMdWarning } from "react-icons/io";
 import {
     MdHome,
     MdLogout,
@@ -10,22 +10,24 @@ import {
     MdSettings,
     MdTimer,
 } from "react-icons/md";
-import { IoMdTrophy, IoMdWarning } from "react-icons/io";
-import { HAS_WRITE_ACCESS } from "../logic/accounts.ts";
-import { FaClipboardList, FaGift, FaGithub } from "react-icons/fa";
-import { UserInfo } from "../logic/interfaces.ts";
 
-interface Props {
+import logo from "@/assets/logo.svg";
+import { HAS_WRITE_ACCESS } from "@/logic/accounts";
+import { UserInfo } from "@/logic/interfaces";
+
+import SidebarElement from "./SidebarElement";
+
+interface SidebarContentProps {
     user: UserInfo;
     handleLogout: () => void;
     onElementClick?: () => void;
 }
 
-const SidebarContent: React.FC<Props> = ({
+const SidebarContent = ({
     user,
     handleLogout,
     onElementClick,
-}) => {
+}: SidebarContentProps) => {
     return (
         <Box
             backgroundColor="gray.600"

@@ -1,11 +1,9 @@
-import { useEffect, useRef, useState } from "react";
-import { Person } from "../../logic/interfaces";
-import {
-    getPersonsWithoutCardAssigned,
-    updatePerson,
-} from "../../logic/persons";
 import { Box, Heading, Input, Text, useToast } from "@chakra-ui/react";
-import PersonAutocomplete from "../../Components/PersonAutocomplete.tsx";
+import { useEffect, useRef, useState } from "react";
+
+import PersonAutocomplete from "@/Components/PersonAutocomplete";
+import { Person } from "@/logic/interfaces";
+import { getPersonsWithoutCardAssigned, updatePerson } from "@/logic/persons";
 
 const AssignCards = () => {
     const toast = useToast();

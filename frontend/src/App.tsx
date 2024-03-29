@@ -1,24 +1,25 @@
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
-import Login from "./Pages/Auth/Login/Login";
+
 import Layout from "./Layout/Layout";
-import Home from "./Pages/Home/Home";
 import Accounts from "./Pages/Accounts/Accounts";
+import AssignCards from "./Pages/AssignCards/AssignCards";
+import Attendance from "./Pages/Attendance/Attendance";
+import Login from "./Pages/Auth/Login/Login";
 import Competition from "./Pages/Competition/Competition";
+import Devices from "./Pages/Devices/Devices";
+import Giftpacks from "./Pages/Giftpacks/GIftpacks";
+import Home from "./Pages/Home/Home";
+import IncidentPage from "./Pages/Incidents/IncidentPage";
+import Incidents from "./Pages/Incidents/Incidents";
+import NotFound from "./Pages/NotFound/NotFound";
+import PersonResults from "./Pages/Persons/PersonResults/PersonResults";
 import Persons from "./Pages/Persons/Persons";
 import Results from "./Pages/Results/Results";
-import SingleResult from "./Pages/Results/SingleResult";
+import SingleResult from "./Pages/Results/SingleResult/SingleResult";
+import Rooms from "./Pages/Rooms/Rooms";
 import Settings from "./Pages/Settings/Settings";
-import Devices from "./Pages/Devices/Devices.tsx";
-import AssignCards from "./Pages/AssignCards/AssignCards";
-import Giftpacks from "./Pages/Giftpacks/GIftpacks.tsx";
-import PersonResults from "./Pages/Persons/PersonResults.tsx";
-import Rooms from "./Pages/Rooms/Rooms.tsx";
-import Attendance from "./Pages/Attendance/Attendance.tsx";
-import Incidents from "./Pages/Incidents/Incidents.tsx";
-import IncidentPage from "./Pages/Incidents/IncidentPage.tsx";
-import NotFound from "./Pages/NotFound/NotFound.tsx";
 
-const App = (): JSX.Element => {
+const App = () => {
     const router = createBrowserRouter([
         {
             path: "/auth/login",

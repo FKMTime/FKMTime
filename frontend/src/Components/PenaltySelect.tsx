@@ -1,7 +1,9 @@
 import { FormControl, FormLabel } from "@chakra-ui/react";
-import { AVAILABLE_PENALTIES } from "../logic/constants.ts";
 import { ChangeEvent } from "react";
-import Select from "./Select.tsx";
+
+import { AVAILABLE_PENALTIES } from "@/logic/constants";
+
+import Select from "./Select";
 
 interface PenaltySelectProps {
     value: number;

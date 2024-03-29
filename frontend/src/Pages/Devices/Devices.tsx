@@ -1,18 +1,20 @@
-import { useEffect, useState } from "react";
-import { getAllDevices } from "../../logic/devices.ts";
-import LoadingPage from "../../Components/LoadingPage";
-import { Device } from "../../logic/interfaces";
 import { Box, Button, Heading, IconButton, Text } from "@chakra-ui/react";
+import { useEffect, useState } from "react";
 import { MdAdd, MdDevices, MdKey, MdSettings } from "react-icons/md";
-import CreateDeviceModal from "../../Components/Modal/CreateDeviceModal.tsx";
-import DevicesTable from "../../Components/Table/DevicesTable.tsx";
 import io from "socket.io-client";
-import { DEVICES_WEBSOCKET_URL, WEBSOCKET_PATH } from "../../logic/request.ts";
-import { getToken } from "../../logic/auth.ts";
-import UpdateDevicesSettingsModal from "../../Components/Modal/UpdateDevicesSettingsModal.tsx";
-import GetApiTokenModal from "../../Components/Modal/GetApiTokenModal.tsx";
 
-const Devices = (): JSX.Element => {
+import LoadingPage from "@/Components/LoadingPage";
+import { getToken } from "@/logic/auth";
+import { getAllDevices } from "@/logic/devices";
+import { Device } from "@/logic/interfaces";
+import { DEVICES_WEBSOCKET_URL, WEBSOCKET_PATH } from "@/logic/request";
+
+import CreateDeviceModal from "./Components/CreateDeviceModal";
+import DevicesTable from "./Components/DevicesTable";
+import GetApiTokenModal from "./Components/GetApiTokenModal";
+import UpdateDevicesSettingsModal from "./Components/UpdateDevicesSettingsModal";
+
+const Devices = () => {
     const [isLoading, setIsLoading] = useState<boolean>(true);
     const [devices, setDevices] = useState<Device[]>([]);
     const [availableDevices, setAvailableDevices] = useState<number[]>([]);

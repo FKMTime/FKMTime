@@ -1,7 +1,8 @@
 import { Activity, Competition } from "@wca/helpers";
-import { getPersonFromWcif } from "./utils";
-import { GroupAssigment } from "./interfaces";
 import { Room as WCIFRoom } from "@wca/helpers/lib/models/room";
+
+import { GroupAssigment } from "./interfaces";
+import { getPersonFromWcif } from "./utils";
 
 export const getAssigmentsList = (registrantId: number, wcif: Competition) => {
     const personInfo = getPersonFromWcif(registrantId, wcif);

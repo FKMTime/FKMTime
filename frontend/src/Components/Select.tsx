@@ -1,20 +1,21 @@
 import { DarkMode, Select as ChakraSelect } from "@chakra-ui/react";
+import { ChangeEvent, ReactNode } from "react";
 
 interface SelectProps {
-    onChange: (e: React.ChangeEvent<HTMLSelectElement>) => void;
+    onChange: (e: ChangeEvent<HTMLSelectElement>) => void;
     value: string;
     disabled?: boolean;
     placeholder?: string;
-    children: React.ReactNode;
+    children: ReactNode;
 }
 
-const Select: React.FC<SelectProps> = ({
+const Select = ({
     value,
     onChange,
     disabled,
     children,
     placeholder,
-}) => {
+}: SelectProps) => {
     return (
         <DarkMode>
             <ChakraSelect

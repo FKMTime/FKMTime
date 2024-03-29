@@ -1,5 +1,5 @@
-import { backendRequest } from "./request.ts";
-import { Room } from "./interfaces.ts";
+import { Room } from "./interfaces";
+import { backendRequest } from "./request";
 
 export const getAllRooms = async () => {
     const response = await backendRequest("competition/rooms", "GET", true);

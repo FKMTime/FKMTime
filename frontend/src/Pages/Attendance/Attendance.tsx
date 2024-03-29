@@ -1,5 +1,3 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { Attendance as AttendanceType, Room } from "../../logic/interfaces";
 import {
     Box,
     Button,
@@ -10,28 +8,26 @@ import {
     useToast,
 } from "@chakra-ui/react";
 import { Activity, Event, Round } from "@wca/helpers";
-import { getCompetitionInfo } from "../../logic/competition.ts";
-import { competitionAtom } from "../../logic/atoms.ts";
 import { useAtom } from "jotai";
-import events from "../../logic/events.ts";
-import LoadingPage from "../../Components/LoadingPage.tsx";
-import { getAllRooms } from "../../logic/rooms.ts";
-import {
-    getAttendanceByGroupId,
-    markAsPresent,
-} from "../../logic/attendance.ts";
-import { getAbsentPeople, getActivityNameByCode } from "../../logic/utils.ts";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import AbsentPeopleList from "../../Components/AbsentPeopleList.tsx";
-import PresentPeopleList from "../../Components/PresentPeopleList.tsx";
-import { getGroupsByRoundId } from "../../logic/activities.ts";
-import Select from "../../Components/Select.tsx";
 import io from "socket.io-client";
-import {
-    ATTENDANCE_WEBSOCKET_URL,
-    WEBSOCKET_PATH,
-} from "../../logic/request.ts";
-import { getToken } from "../../logic/auth.ts";
+
+import Select from "@/Components/Select";
+import { getGroupsByRoundId } from "@/logic/activities";
+import { competitionAtom } from "@/logic/atoms";
+import { getAttendanceByGroupId, markAsPresent } from "@/logic/attendance";
+import { getToken } from "@/logic/auth";
+import { getCompetitionInfo } from "@/logic/competition";
+import { ATTENDANCE_WEBSOCKET_URL, WEBSOCKET_PATH } from "@/logic/request";
+import { getAllRooms } from "@/logic/rooms";
+import { getAbsentPeople, getActivityNameByCode } from "@/logic/utils";
+
+import LoadingPage from "../../Components/LoadingPage";
+import events from "../../logic/events";
+import { Attendance as AttendanceType, Room } from "../../logic/interfaces";
+import AbsentPeopleList from "./Components/AbsentPeopleList";
+import PresentPeopleList from "./Components/PresentPeopleList";
 
 const Attendance = () => {
     const { id } = useParams<{ id: string }>();

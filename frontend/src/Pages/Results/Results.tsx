@@ -1,5 +1,3 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { Result, Room } from "../../logic/interfaces";
 import {
     Box,
     Button,
@@ -9,36 +7,37 @@ import {
     Text,
     useToast,
 } from "@chakra-ui/react";
-import {
-    getResultsByRoundId,
-    reSubmitRoundToWcaLive,
-} from "../../logic/results";
-import { getCompetitionInfo } from "../../logic/competition";
-import { useNavigate, useParams } from "react-router-dom";
-import LoadingPage from "../../Components/LoadingPage";
-import EventIcon from "../../Components/Icons/EventIcon";
 import { Event, Round } from "@wca/helpers";
-import ResultsTable from "../../Components/Table/ResultsTable";
-import { resultToString } from "../../logic/resultFormatters";
+import { useAtom } from "jotai";
+import { ChangeEvent, useCallback, useEffect, useMemo, useState } from "react";
+import { MdAdd } from "react-icons/md";
+import { useNavigate, useParams } from "react-router-dom";
+import io from "socket.io-client";
+
+import Alert from "@/Components/Alert";
+import EventIcon from "@/Components/Icons/EventIcon";
+import LoadingPage from "@/Components/LoadingPage";
+import Select from "@/Components/Select";
+import { HAS_WRITE_ACCESS } from "@/logic/accounts";
+import { competitionAtom } from "@/logic/atoms";
+import { getToken, getUserInfo } from "@/logic/auth";
+import { getCompetitionInfo } from "@/logic/competition";
+import { Result, Room } from "@/logic/interfaces";
+import { RESULTS_WEBSOCKET_URL, WEBSOCKET_PATH } from "@/logic/request";
+import { resultToString } from "@/logic/resultFormatters";
+import { getResultsByRoundId, reSubmitRoundToWcaLive } from "@/logic/results";
+import { getAllRooms } from "@/logic/rooms";
 import {
     getCutoffByRoundId,
     getLimitByRoundId,
     getNumberOfAttemptsForRound,
     getRoundNameById,
-} from "../../logic/utils";
-import Alert from "../../Components/Alert";
-import { getToken, getUserInfo } from "../../logic/auth.ts";
-import { HAS_WRITE_ACCESS } from "../../logic/accounts.ts";
-import { MdAdd } from "react-icons/md";
-import CreateAttemptModal from "../../Components/Modal/CreateAttemptForm.tsx";
-import { competitionAtom } from "../../logic/atoms.ts";
-import { useAtom } from "jotai";
-import { getAllRooms } from "../../logic/rooms.ts";
-import io from "socket.io-client";
-import { RESULTS_WEBSOCKET_URL, WEBSOCKET_PATH } from "../../logic/request.ts";
-import Select from "../../Components/Select.tsx";
+} from "@/logic/utils";
 
-const Results = (): JSX.Element => {
+import CreateAttemptModal from "./Components/CreateAttemptModal";
+import ResultsTable from "./Components/ResultsTable";
+
+const Results = () => {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
 
@@ -106,7 +105,7 @@ const Results = (): JSX.Element => {
         await fetchData(roundId);
     };
 
-    const handleSearch = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const handleSearch = (event: ChangeEvent<HTMLInputElement>) => {
         fetchData(filters.roundId, event.target.value);
         setSearch(event.target.value);
     };
@@ -284,7 +283,7 @@ const Results = (): JSX.Element => {
                         results.length > 0 && (
                             <Button
                                 colorScheme="yellow"
-                                width={{ base: "100%", md: "20%" }}
+                                width={{ base: "100%", md: "fit-content" }}
                                 onClick={handleResubmitRound}
                             >
                                 Resubmit round results to WCA Live

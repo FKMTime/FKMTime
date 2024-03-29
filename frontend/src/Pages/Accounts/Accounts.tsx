@@ -1,12 +1,14 @@
-import { useEffect, useState } from "react";
-import { Account } from "../../logic/interfaces";
-import AccountsTable from "../../Components/Table/AccountsTable";
-import { getAllAccounts } from "../../logic/accounts";
 import { Box, IconButton } from "@chakra-ui/react";
+import { useEffect, useState } from "react";
 import { MdAdd } from "react-icons/md";
-import CreateAccountModal from "../../Components/Modal/CreateAccountModal";
 
-const Accounts = (): JSX.Element => {
+import { getAllAccounts } from "@/logic/accounts";
+import { Account } from "@/logic/interfaces";
+
+import AccountsTable from "./Components/AccountsTable";
+import CreateAccountModal from "./Components/CreateAccountModal";
+
+const Accounts = () => {
     const [accounts, setAccounts] = useState<Account[]>([]);
     const [isOpenCreateAccountModal, setIsOpenCreateAccountModal] =
         useState<boolean>(false);

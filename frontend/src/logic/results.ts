@@ -1,4 +1,5 @@
 import { Competition } from "@wca/helpers";
+
 import { backendRequest } from "./request";
 import { getLimitByRoundId } from "./utils";
 

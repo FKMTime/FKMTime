@@ -4,6 +4,7 @@ import viteTsconfigPaths from "vite-tsconfig-paths";
 import svgrPlugin from "vite-plugin-svgr";
 import checker from "vite-plugin-checker";
 import {VitePWA} from "vite-plugin-pwa";
+import * as path from "node:path";
 
 const manifestForPlugIn = {
   registerType:"prompt",
@@ -49,4 +50,9 @@ export default defineConfig({
     // @ts-ignore
     VitePWA(manifestForPlugIn),
   ],
+  resolve: {
+    alias: {
+      "@": path.resolve(__dirname, "./src"),
+    },
+  },
 });

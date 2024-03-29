@@ -1,13 +1,13 @@
-import { useRef } from "react";
 import {
     AlertDialog,
-    AlertDialogOverlay,
-    AlertDialogContent,
-    AlertDialogHeader,
     AlertDialogBody,
+    AlertDialogContent,
     AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogOverlay,
     Button,
 } from "@chakra-ui/react";
+import { useRef } from "react";
 
 interface AlertProps {
     isOpen: boolean;
@@ -17,13 +17,13 @@ interface AlertProps {
     description: string;
 }
 
-const Alert: React.FC<AlertProps> = ({
+const Alert = ({
     isOpen,
     onCancel,
     onConfirm,
     title,
     description,
-}): JSX.Element => {
+}: AlertProps) => {
     return (
         <AlertDialog
             isOpen={isOpen}

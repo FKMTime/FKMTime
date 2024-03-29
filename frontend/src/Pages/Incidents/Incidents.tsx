@@ -1,18 +1,17 @@
-import { useEffect, useState } from "react";
 import { Box, Heading } from "@chakra-ui/react";
-import { Incident } from "../../logic/interfaces.ts";
-import { getUnresolvedAttempts } from "../../logic/attempt.ts";
-import IncidentCard from "../../Components/IncidentCard.tsx";
 import { useAtom } from "jotai";
-import { getCompetitionInfo } from "../../logic/competition.ts";
-import { competitionAtom } from "../../logic/atoms.ts";
-import LoadingPage from "../../Components/LoadingPage.tsx";
+import { useEffect, useState } from "react";
 import io from "socket.io-client";
-import { getToken } from "../../logic/auth.ts";
-import {
-    INCIDENTS_WEBSOCKET_URL,
-    WEBSOCKET_PATH,
-} from "../../logic/request.ts";
+
+import LoadingPage from "@/Components/LoadingPage";
+import { competitionAtom } from "@/logic/atoms";
+import { getUnresolvedAttempts } from "@/logic/attempt";
+import { getToken } from "@/logic/auth";
+import { getCompetitionInfo } from "@/logic/competition";
+import { Incident } from "@/logic/interfaces";
+import { INCIDENTS_WEBSOCKET_URL, WEBSOCKET_PATH } from "@/logic/request";
+
+import IncidentCard from "./Components/IncidentCard";
 
 const Incidents = () => {
     const [incidents, setIncidents] = useState<Incident[]>([]);

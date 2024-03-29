@@ -1,5 +1,5 @@
-import { Attempt } from "./interfaces.ts";
-import { DNF_VALUE, DNS_VALUE } from "./constants.ts";
+import { DNF_VALUE, DNS_VALUE } from "./constants";
+import { Attempt } from "./interfaces";
 
 export const average = (attempts: Attempt[]) => {
     switch (attempts.length) {

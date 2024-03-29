@@ -7,18 +7,20 @@ import {
     Heading,
     Icon,
     Input,
-    VStack,
     useToast,
+    VStack,
 } from "@chakra-ui/react";
+import { FormEvent } from "react";
 import { FaLock } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
-import { login } from "../../../logic/auth";
 
-const Login = (): JSX.Element => {
+import { login } from "@/logic/auth";
+
+const Login = () => {
     const navigate = useNavigate();
     const toast = useToast();
 
-    const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
         event.preventDefault();
         const data = new FormData(event.currentTarget);
 

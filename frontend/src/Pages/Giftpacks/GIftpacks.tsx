@@ -1,24 +1,28 @@
-import { useEffect, useRef, useState } from "react";
 import {
     Alert,
     AlertIcon,
     Box,
     Button,
     FormControl,
-    FormLabel,
     Heading,
+    IconButton,
     Input,
+    ListItem,
     Text,
+    UnorderedList,
     useToast,
 } from "@chakra-ui/react";
-import { Person } from "../../logic/interfaces.ts";
+import { KeyboardEvent, useEffect, useRef, useState } from "react";
+import { MdDone } from "react-icons/md";
+
+import LoadingPage from "@/Components/LoadingPage";
+import { Person } from "@/logic/interfaces";
 import {
     collectGfitpack,
     getPersonInfoByCardIdWithSensitiveData,
     giftpackCount,
-} from "../../logic/persons.ts";
-import regions from "../../logic/regions.ts";
-import LoadingPage from "../../Components/LoadingPage.tsx";
+} from "@/logic/persons";
+import regions from "@/logic/regions";
 
 const Giftpacks = () => {
     const toast = useToast();
@@ -69,9 +73,10 @@ const Giftpacks = () => {
         }
     };
 
-    const handleCollectGiftpack = async () => {
-        if (!personData) return;
-        const res = await collectGfitpack(personData.id);
+    const handleCollectGiftpack = async (id?: string) => {
+        const idToCollect = id ? id : personData?.id;
+        if (!idToCollect) return;
+        const res = await collectGfitpack(idToCollect);
         if (res.status === 200) {
             toast({
                 title: "Success",
@@ -123,14 +128,6 @@ const Giftpacks = () => {
                     gap="2"
                     width="100%"
                 >
-                    <FormLabel
-                        display="flex"
-                        flexDirection="row"
-                        alignItems="center"
-                        gap="2"
-                    >
-                        <Text>Card</Text>
-                    </FormLabel>
                     <Input
                         placeholder="Card"
                         autoFocus
@@ -138,51 +135,59 @@ const Giftpacks = () => {
                         value={scannedCard}
                         onChange={(event) => setScannedCard(event.target.value)}
                         ref={cardInputRef}
-                        onKeyDown={(
-                            event: React.KeyboardEvent<HTMLInputElement>
-                        ) => event.key === "Enter" && handleSubmitCard()}
+                        onKeyDown={(event: KeyboardEvent<HTMLInputElement>) =>
+                            event.key === "Enter" && handleSubmitCard()
+                        }
                     />
                 </FormControl>
                 {personData && (
                     <>
-                        {(!personData.wcaId || personData.wcaId === "") && (
-                            <Alert
-                                status="warning"
-                                borderRadius="md"
-                                color="black"
-                            >
-                                <AlertIcon />
-                                Remember to check competitor's ID card
-                            </Alert>
-                        )}
+                        {(!personData.wcaId || personData.wcaId === "") &&
+                            personData.canCompete && (
+                                <Alert
+                                    status="warning"
+                                    borderRadius="md"
+                                    color="black"
+                                >
+                                    <AlertIcon />
+                                    Remember to check competitor's ID card
+                                </Alert>
+                            )}
                         <Text fontSize="2xl" fontWeight="bold">
                             Competitor information
                         </Text>
                         <Text fontSize="xl">Name: {personData.name}</Text>
-                        <Text fontSize="xl">
-                            Registrant ID: {personData.registrantId}
-                        </Text>
-                        <Text fontSize="xl">
-                            WCA ID:{" "}
-                            {personData.wcaId ? personData.wcaId : "Newcomer"}
-                        </Text>
-                        {personData.birthdate && (
-                            <Text fontSize="xl">
-                                Birthdate:{" "}
-                                {new Date(
-                                    personData.birthdate
-                                ).toLocaleDateString()}
-                            </Text>
+                        {personData.canCompete && (
+                            <>
+                                <Text fontSize="xl">
+                                    Registrant ID: {personData.registrantId}
+                                </Text>
+                                <Text fontSize="xl">
+                                    WCA ID:{" "}
+                                    {personData.wcaId
+                                        ? personData.wcaId
+                                        : "Newcomer"}
+                                </Text>
+                                {personData.birthdate && (
+                                    <Text fontSize="xl">
+                                        Birthdate:{" "}
+                                        {new Date(
+                                            personData.birthdate
+                                        ).toLocaleDateString()}
+                                    </Text>
+                                )}
+                                <Text fontSize="xl">
+                                    Representing:{" "}
+                                    {
+                                        regions.find(
+                                            (region) =>
+                                                region.iso2 ===
+                                                personData.countryIso2
+                                        )?.name
+                                    }
+                                </Text>
+                            </>
                         )}
-                        <Text fontSize="xl">
-                            Representing:{" "}
-                            {
-                                regions.find(
-                                    (region) =>
-                                        region.iso2 === personData.countryIso2
-                                )?.name
-                            }
-                        </Text>
                         {personData.giftpackCollectedAt ? (
                             <Alert
                                 status="success"
@@ -195,7 +200,7 @@ const Giftpacks = () => {
                         ) : (
                             <Button
                                 colorScheme="green"
-                                onClick={handleCollectGiftpack}
+                                onClick={() => handleCollectGiftpack()}
                             >
                                 Mark giftpack as collected
                             </Button>
@@ -207,11 +212,29 @@ const Giftpacks = () => {
                 <Heading size="lg">
                     Persons who not collected giftpack yet
                 </Heading>
-                {personsWhoNotCollectedGitpackYet.map((person) => (
-                    <Text key={person.id}>
-                        {person.name} ({person.registrantId})
-                    </Text>
-                ))}
+                <UnorderedList>
+                    {personsWhoNotCollectedGitpackYet.map((person) => (
+                        <ListItem
+                            key={person.id}
+                            display="flex"
+                            gap="2"
+                            alignItems="center"
+                        >
+                            <IconButton
+                                aria-label="Mark as present"
+                                rounded="20%"
+                                background="none"
+                                _hover={{ background: "none", opacity: 0.5 }}
+                                color="white"
+                                onClick={() => handleCollectGiftpack(person.id)}
+                            >
+                                <MdDone />
+                            </IconButton>
+                            {person.name}{" "}
+                            {person.registrantId && `(${person.registrantId})`}
+                        </ListItem>
+                    ))}
+                </UnorderedList>
             </Box>
         </Box>
     );

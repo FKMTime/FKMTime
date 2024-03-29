@@ -1,7 +1,7 @@
-import { backendRequest } from "./request.ts";
-import { Attendance } from "./interfaces.ts";
-import { prettyActivityName } from "./activities.ts";
-import { attendanceRoleToWcif } from "./utils.ts";
+import { prettyActivityName } from "./activities";
+import { Attendance } from "./interfaces";
+import { backendRequest } from "./request";
+import { attendanceRoleToWcif } from "./utils";
 
 export const getAttendanceByGroupId = async (groupId: string) => {
     const response = await backendRequest(

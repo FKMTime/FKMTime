@@ -12,19 +12,27 @@ import {
     Text,
     useToast,
 } from "@chakra-ui/react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useSetAtom } from "jotai";
+import {
+    FormEvent,
+    RefObject,
+    useCallback,
+    useEffect,
+    useRef,
+    useState,
+} from "react";
 import { IoMdEye, IoMdEyeOff } from "react-icons/io";
-import LoadingPage from "../../Components/LoadingPage";
+
+import LoadingPage from "@/Components/LoadingPage";
+import { competitionAtom, showSidebarAtom } from "@/logic/atoms";
 import {
     getCompetitionInfo,
     getCompetitionSettings,
     importCompetition,
     syncCompetition,
     updateCompetitionSettings,
-} from "../../logic/competition";
-import { Competition as CompetitionInterface } from "../../logic/interfaces";
-import { competitionAtom, showSidebarAtom } from "../../logic/atoms.ts";
-import { useSetAtom } from "jotai";
+} from "@/logic/competition";
+import { Competition as CompetitionInterface } from "@/logic/interfaces";
 
 const Competition = () => {
     const setCompetitionAtom = useSetAtom(competitionAtom);
@@ -37,8 +45,7 @@ const Competition = () => {
     );
     const [showScoretakingToken, setShowScoretakingToken] =
         useState<boolean>(false);
-    const idRef: React.RefObject<HTMLInputElement> =
-        useRef<HTMLInputElement>(null);
+    const idRef: RefObject<HTMLInputElement> = useRef<HTMLInputElement>(null);
     const toast = useToast();
 
     const fetchData = useCallback(async () => {
@@ -81,7 +88,7 @@ const Competition = () => {
         }
     };
 
-    const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
         event.preventDefault();
         if (!competition) {
             return;

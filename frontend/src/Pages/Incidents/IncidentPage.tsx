@@ -8,20 +8,21 @@ import {
     Text,
     useToast,
 } from "@chakra-ui/react";
-import { useNavigate, useParams } from "react-router-dom";
-import { useEffect, useState } from "react";
-import { AttemptStatus, Incident, Person } from "../../logic/interfaces.ts";
-import { getIncidentById, updateAttempt } from "../../logic/attempt.ts";
-import LoadingPage from "../../Components/LoadingPage.tsx";
-import { getAllPersons } from "../../logic/persons.ts";
-import { msToString } from "../../logic/utils.ts";
-import AttemptResultInput from "../../Components/AttemptResultInput.tsx";
-import { checkTimeLimit } from "../../logic/results.ts";
 import { useAtomValue } from "jotai";
-import { competitionAtom } from "../../logic/atoms.ts";
-import { DNF_VALUE } from "../../logic/constants.ts";
-import PenaltySelect from "../../Components/PenaltySelect.tsx";
-import Select from "../../Components/Select.tsx";
+import { useEffect, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
+
+import AttemptResultInput from "@/Components/AttemptResultInput";
+import LoadingPage from "@/Components/LoadingPage";
+import PenaltySelect from "@/Components/PenaltySelect";
+import Select from "@/Components/Select";
+import { competitionAtom } from "@/logic/atoms";
+import { getIncidentById, updateAttempt } from "@/logic/attempt";
+import { DNF_VALUE } from "@/logic/constants";
+import { AttemptStatus, Incident, Person } from "@/logic/interfaces";
+import { getAllPersons } from "@/logic/persons";
+import { checkTimeLimit } from "@/logic/results";
+import { msToString } from "@/logic/utils";
 
 const IncidentPage = () => {
     const navigate = useNavigate();

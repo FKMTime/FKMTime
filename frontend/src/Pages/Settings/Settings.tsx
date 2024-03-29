@@ -7,11 +7,13 @@ import {
     Input,
     useToast,
 } from "@chakra-ui/react";
-import { useEffect, useState } from "react";
-import { Settings as SettingsInterface } from "../../logic/interfaces";
-import LoadingPage from "../../Components/LoadingPage";
-import { getSettings, updateSettings } from "../../logic/settings";
-import ChangePasswordModal from "../../Components/Modal/ChangePasswordModal";
+import { FormEvent, useEffect, useState } from "react";
+
+import LoadingPage from "@/Components/LoadingPage";
+import { Settings as SettingsInterface } from "@/logic/interfaces";
+import { getSettings, updateSettings } from "@/logic/settings";
+
+import ChangePasswordModal from "./Components/ChangePasswordModal";
 
 const Settings = () => {
     const toast = useToast();
@@ -27,7 +29,7 @@ const Settings = () => {
         setIsLoading(false);
     };
 
-    const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
         event.preventDefault();
         if (!settings) return;
         setIsLoading(true);

@@ -1,6 +1,3 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { getCompetitionInfo } from "../../logic/competition";
-import LoadingPage from "../../Components/LoadingPage";
 import {
     Box,
     FormControl,
@@ -10,20 +7,25 @@ import {
     Text,
 } from "@chakra-ui/react";
 import { Activity, Event, Room as WCIFRoom, Venue } from "@wca/helpers";
-import ScheduleTable from "../../Components/Table/ScheduleTable";
-import EventIcon from "../../Components/Icons/EventIcon";
 import { useAtom } from "jotai";
-import { competitionAtom } from "../../logic/atoms";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import MobileSchedule from "../../Components/Schedule/MobileSchedule.tsx";
-import { Room } from "../../logic/interfaces.ts";
-import { getAllRooms } from "../../logic/rooms.ts";
-import { HAS_WRITE_ACCESS } from "../../logic/accounts.ts";
-import HomeShortcuts from "../../Components/HomeShortcuts.tsx";
-import { getUserInfo } from "../../logic/auth.ts";
-import Select from "../../Components/Select.tsx";
 
-const Home = (): JSX.Element => {
+import EventIcon from "@/Components/Icons/EventIcon";
+import LoadingPage from "@/Components/LoadingPage";
+import Select from "@/Components/Select";
+import { HAS_WRITE_ACCESS } from "@/logic/accounts";
+import { competitionAtom } from "@/logic/atoms";
+import { getUserInfo } from "@/logic/auth";
+import { getCompetitionInfo } from "@/logic/competition";
+import { Room } from "@/logic/interfaces";
+import { getAllRooms } from "@/logic/rooms";
+
+import HomeShortcuts from "./Components/HomeShortcuts";
+import MobileSchedule from "./Components/Schedule/MobileSchedule";
+import ScheduleTable from "./Components/Schedule/ScheduleTable";
+
+const Home = () => {
     const navigate = useNavigate();
     const userInfo = getUserInfo();
     const [competition, setCompetition] = useAtom(competitionAtom);

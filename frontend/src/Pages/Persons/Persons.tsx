@@ -1,5 +1,3 @@
-import { useCallback, useEffect, useState } from "react";
-import { Competition, Person } from "../../logic/interfaces";
 import {
     Alert,
     AlertIcon,
@@ -8,17 +6,21 @@ import {
     IconButton,
     Input,
 } from "@chakra-ui/react";
-import { getPersons } from "../../logic/persons";
-import { calculateTotalPages } from "../../logic/utils";
-import PersonsTable from "../../Components/Table/PersonsTable";
-import { getCompetitionInfo } from "../../logic/competition";
-import { useNavigate } from "react-router-dom";
-import { getUserInfo } from "../../logic/auth.ts";
-import { HAS_WRITE_ACCESS } from "../../logic/accounts.ts";
+import { ChangeEvent, useCallback, useEffect, useState } from "react";
 import { MdAdd } from "react-icons/md";
-import AddStaffMemberModal from "../../Components/Modal/AddStaffMemberModal.tsx";
+import { useNavigate } from "react-router-dom";
 
-const Persons = (): JSX.Element => {
+import { HAS_WRITE_ACCESS } from "@/logic/accounts";
+import { getUserInfo } from "@/logic/auth";
+import { getCompetitionInfo } from "@/logic/competition";
+import { Competition, Person } from "@/logic/interfaces";
+import { getPersons } from "@/logic/persons";
+import { calculateTotalPages } from "@/logic/utils";
+
+import AddStaffMemberModal from "./Components/AddStaffMemberModal";
+import PersonsTable from "./Components/PersonsTable";
+
+const Persons = () => {
     const navigate = useNavigate();
     const userInfo = getUserInfo();
     const [competition, setCompetition] = useState<Competition | undefined>();
@@ -66,7 +68,7 @@ const Persons = (): JSX.Element => {
         fetchData(1, pageSizeParam);
     };
 
-    const handleSearch = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const handleSearch = (event: ChangeEvent<HTMLInputElement>) => {
         setSearch(event.target.value);
         fetchData(1, pageSize, event.target.value);
     };

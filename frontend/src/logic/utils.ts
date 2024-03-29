@@ -1,9 +1,10 @@
 // noinspection DuplicatedCode
 
 import { Activity, Competition } from "@wca/helpers";
-import regions from "./regions";
+
+import { DNF_VALUE } from "./constants";
 import { Attempt, AttemptStatus, Attendance, Result } from "./interfaces";
-import { DNF_VALUE } from "./constants.ts";
+import regions from "./regions";
 
 export const calculateTotalPages = (count: number, pageSize: number) => {
     return Math.ceil(count / pageSize);

@@ -1,6 +1,6 @@
 import { Box, Spinner } from "@chakra-ui/react";
 
-const LoadingPage = (): JSX.Element => {
+const LoadingPage = () => {
     return (
         <Box
             display="flex"
