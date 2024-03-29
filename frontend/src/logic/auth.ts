@@ -28,8 +28,12 @@ export const logout = () => {
 };
 
 export const isUserLoggedIn = async () => {
-    const response = await backendRequest("auth/me", "GET", true);
-    return response.status === 200;
+    try {
+        const response = await backendRequest("auth/me", "GET", true);
+        return response.status === 200;
+    } catch (error) {
+        return false;
+    }
 };
 
 export const getUserInfo = () => {
