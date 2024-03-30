@@ -6,14 +6,17 @@ import {
     IconButton,
     Input,
 } from "@chakra-ui/react";
+import { useAtom } from "jotai";
 import { ChangeEvent, useCallback, useEffect, useState } from "react";
 import { MdAdd } from "react-icons/md";
 import { useNavigate } from "react-router-dom";
 
+import LoadingPage from "@/Components/LoadingPage";
 import { HAS_WRITE_ACCESS } from "@/logic/accounts";
+import { competitionAtom } from "@/logic/atoms";
 import { getUserInfo } from "@/logic/auth";
 import { getCompetitionInfo } from "@/logic/competition";
-import { Competition, Person } from "@/logic/interfaces";
+import { Person } from "@/logic/interfaces";
 import { getPersons } from "@/logic/persons";
 import { calculateTotalPages } from "@/logic/utils";
 
@@ -23,7 +26,7 @@ import PersonsTable from "./Components/PersonsTable";
 const Persons = () => {
     const navigate = useNavigate();
     const userInfo = getUserInfo();
-    const [competition, setCompetition] = useState<Competition | undefined>();
+    const [competition, setCompetition] = useAtom(competitionAtom);
     const [persons, setPersons] = useState<Person[]>([]);
     const [page, setPage] = useState<number>(1);
     const [totalPages, setTotalPages] = useState<number>(1);
@@ -41,8 +44,10 @@ const Persons = () => {
                 pageSizeParam,
                 searchParam
             );
-            const competitionResponse = await getCompetitionInfo();
-            setCompetition(competitionResponse.data);
+            if (!competition) {
+                const competitionData = await getCompetitionInfo();
+                setCompetition(competitionData.data);
+            }
             setPersons(response.data);
             setPersonsWithoutCardAssigned(response.personsWithoutCardAssigned);
             const totalPagesCalculation = calculateTotalPages(
@@ -51,7 +56,7 @@ const Persons = () => {
             );
             setTotalPages(totalPagesCalculation);
         },
-        []
+        [competition, setCompetition]
     );
 
     const handlePageChange = (pageParam: number) => {
@@ -76,6 +81,10 @@ const Persons = () => {
     useEffect(() => {
         fetchData();
     }, [fetchData]);
+
+    if (!competition) {
+        return <LoadingPage />;
+    }
 
     return (
         <Box display="flex" flexDirection="column" gap="5">

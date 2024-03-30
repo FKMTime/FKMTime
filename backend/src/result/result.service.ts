@@ -41,6 +41,7 @@ export class ResultService {
           person: {
             name: {
               contains: search,
+              mode: 'insensitive',
             },
           },
         },
@@ -48,6 +49,7 @@ export class ResultService {
           person: {
             wcaId: {
               contains: search,
+              mode: 'insensitive',
             },
           },
         },

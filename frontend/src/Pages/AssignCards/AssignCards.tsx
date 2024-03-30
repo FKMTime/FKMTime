@@ -1,4 +1,4 @@
-import { Box, Heading, Input, Text, useToast } from "@chakra-ui/react";
+import { Box, Heading, Input, useToast } from "@chakra-ui/react";
 import { useEffect, useRef, useState } from "react";
 
 import PersonAutocomplete from "@/Components/PersonAutocomplete";
@@ -91,19 +91,15 @@ const AssignCards = () => {
                 />
             </Box>
             {currentPerson && (
-                <>
-                    <Text>Registrant ID: {currentPerson?.registrantId}</Text>
-                    <Text>Name: {currentPerson?.name}</Text>
-                    <Input
-                        placeholder="Card ID"
-                        value={cardId}
-                        onChange={(e) => setCardId(e.target.value)}
-                        width="20%"
-                        onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
-                        autoFocus
-                        ref={cardInputRef}
-                    />
-                </>
+                <Input
+                    placeholder="Card ID"
+                    value={cardId}
+                    onChange={(e) => setCardId(e.target.value)}
+                    width="20%"
+                    onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
+                    autoFocus
+                    ref={cardInputRef}
+                />
             )}
         </Box>
     );

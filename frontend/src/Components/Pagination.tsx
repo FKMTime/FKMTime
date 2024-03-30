@@ -30,7 +30,7 @@ const Pagination = ({
         } else if (pageParam > totalPages) {
             handlePageChange(totalPages);
         } else {
-            handlePageChange(page);
+            handlePageChange(pageParam);
         }
     };
 

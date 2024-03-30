@@ -45,11 +45,12 @@ const PersonAutocomplete = ({
                             <AutoCompleteItem
                                 key={person.id}
                                 value={person.id}
-                                label={`${person.name} ${person.registrantId && `(${person.registrantId})`}`}
+                                label={`${person.name} ${person.registrantId ? `(${person.registrantId})` : ""}`}
                             >
                                 {person.name}{" "}
-                                {person.registrantId &&
-                                    `(${person.registrantId})`}
+                                {person.registrantId
+                                    ? `(${person.registrantId})`
+                                    : ""}
                             </AutoCompleteItem>
                         ))}
                     </AutoCompleteList>

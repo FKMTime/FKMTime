@@ -16,11 +16,13 @@ export class PersonService {
         {
           name: {
             contains: search,
+            mode: 'insensitive',
           },
         },
         {
           wcaId: {
             contains: search,
+            mode: 'insensitive',
           },
         },
         {

@@ -76,13 +76,10 @@ export class DeviceService {
     });
     if (inInDb) {
       return {
-        message: 'Device already in database',
+        message: 'Device already exists in database',
       };
     }
-    this.deviceGateway.handleDeviceRequest({
-      espId: data.espId,
-      type: data.type,
-    });
+    this.deviceGateway.handleDeviceRequest(data);
     return {
       message: 'Request sent',
     };
