@@ -38,6 +38,7 @@ services:
 
   nginx:
     image: filipton/fkmtime-nginx:latest
+    restart: unless-stopped
     build:
       context: ./
       dockerfile: nginx.Dockerfile
