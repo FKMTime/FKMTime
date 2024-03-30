@@ -79,7 +79,10 @@ export class DeviceService {
         message: 'Device already in database',
       };
     }
-    this.deviceGateway.handleDeviceRequest(data.espId);
+    this.deviceGateway.handleDeviceRequest({
+      espId: data.espId,
+      type: data.type,
+    });
     return {
       message: 'Request sent',
     };

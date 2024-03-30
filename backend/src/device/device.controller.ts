@@ -10,22 +10,18 @@ import {
   Put,
   UseGuards,
 } from '@nestjs/common';
+import { AuthGuard } from '@nestjs/passport';
 import { AdminGuard } from '../auth/guards/admin.guard';
+import { AdminOrDelegateGuard } from '../auth/guards/adminOrDelegate.guard';
+import { TokenGuard } from '../auth/guards/token.guard';
 import { DeviceService } from './device.service';
 import { DeviceDto } from './dto/device.dto';
-import { AuthGuard } from '@nestjs/passport';
-import { AdminOrDelegateGuard } from '../auth/guards/adminOrDelegate.guard';
-import { UpdateBatteryPercentageDto } from './dto/updateBatteryPercentage.dto';
 import { RequestToConnectDto } from './dto/requestToConnect.dto';
-import { DeviceGateway } from './device.gateway';
-import { TokenGuard } from '../auth/guards/token.guard';
+import { UpdateBatteryPercentageDto } from './dto/updateBatteryPercentage.dto';
 
 @Controller('device')
 export class DeviceController {
-  constructor(
-    private readonly deviceService: DeviceService,
-    private readonly deviceGateway: DeviceGateway,
-  ) {}
+  constructor(private readonly deviceService: DeviceService) {}
 
   @UseGuards(AuthGuard('jwt'), AdminOrDelegateGuard)
   @Get()

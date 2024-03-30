@@ -9,6 +9,7 @@ import { UseGuards } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { Server, Socket } from 'socket.io';
 import { AdminOrDelegateGuard } from '../auth/guards/adminOrDelegate.guard';
+import { RequestToConnectDto } from './dto/requestToConnect.dto';
 
 @WebSocketGateway({
   namespace: '/device',
@@ -20,7 +21,7 @@ import { AdminOrDelegateGuard } from '../auth/guards/adminOrDelegate.guard';
 @UseGuards(AuthGuard('jwt'), AdminOrDelegateGuard)
 export class DeviceGateway {
   @WebSocketServer() server: Server;
-  deviceRequests: number[] = [];
+  deviceRequests: RequestToConnectDto[] = [];
 
   @SubscribeMessage('join')
   async handleJoin(@ConnectedSocket() socket: Socket) {
@@ -43,20 +44,24 @@ export class DeviceGateway {
     socket.emit('deviceRequests', this.deviceRequests);
   }
 
-  handleDeviceRequest(deviceId: number) {
-    if (this.deviceRequests.includes(deviceId)) return;
-    this.deviceRequests.push(deviceId);
+  handleDeviceRequest(device: RequestToConnectDto) {
+    if (this.deviceRequests.some((req) => req.espId === device.espId)) return;
+    this.deviceRequests.push(device);
     this.server.to(`device`).emit('deviceRequests', this.deviceRequests);
   }
 
   @SubscribeMessage('removeDeviceRequest')
   handleRemoveDeviceRequest(@MessageBody() data: { espId: number }) {
-    this.deviceRequests = this.deviceRequests.filter((id) => id !== data.espId);
+    this.deviceRequests = this.deviceRequests.filter(
+      (device) => device.espId !== data.espId,
+    );
     this.server.to(`device`).emit('deviceRequests', this.deviceRequests);
   }
 
   handleAddDeviceToDb(deviceId: number) {
-    this.deviceRequests = this.deviceRequests.filter((id) => id !== deviceId);
+    this.deviceRequests = this.deviceRequests.filter(
+      (device) => device.espId !== deviceId,
+    );
     this.server.to(`device`).emit('deviceRequests', this.deviceRequests);
   }
 }

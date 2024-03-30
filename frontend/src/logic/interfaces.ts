@@ -131,7 +131,19 @@ export interface Device {
 //eslint-disable-next-line
 export enum DeviceType {
     STATION = "STATION",
-    ATTENDANCE = "ATTENDANCE",
+    ATTENDANCE_SCRAMBLER = "ATTENDANCE_SCRAMBLER",
+    ATTENDANCE_RUNNER = "ATTENDANCE_RUNNER",
+}
+
+export interface AvailableDevice {
+    espId: number;
+    type: AvailableDeviceType;
+}
+
+//eslint-disable-next-line
+export enum AvailableDeviceType {
+    STATION = "STATION",
+    STAFF_ATTENDANCE = "STAFF_ATTENDANCE",
 }
 
 export interface Settings {

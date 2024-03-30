@@ -1,13 +1,14 @@
-import { Box, Button, Heading, IconButton, Text } from "@chakra-ui/react";
+import { Box, IconButton } from "@chakra-ui/react";
 import { useEffect, useState } from "react";
-import { MdAdd, MdDevices, MdKey, MdSettings } from "react-icons/md";
+import { MdAdd, MdKey, MdSettings } from "react-icons/md";
 import io from "socket.io-client";
 
 import LoadingPage from "@/Components/LoadingPage";
 import { getToken } from "@/logic/auth";
 import { getAllDevices } from "@/logic/devices";
-import { Device } from "@/logic/interfaces";
+import { AvailableDevice, Device } from "@/logic/interfaces";
 import { DEVICES_WEBSOCKET_URL, WEBSOCKET_PATH } from "@/logic/request";
+import AvailableDevices from "@/Pages/Devices/Components/AvailableDevices.tsx";
 
 import CreateDeviceModal from "./Components/CreateDeviceModal";
 import DevicesTable from "./Components/DevicesTable";
@@ -17,8 +18,12 @@ import UpdateDevicesSettingsModal from "./Components/UpdateDevicesSettingsModal"
 const Devices = () => {
     const [isLoading, setIsLoading] = useState<boolean>(true);
     const [devices, setDevices] = useState<Device[]>([]);
-    const [availableDevices, setAvailableDevices] = useState<number[]>([]);
-    const [espId, setEspId] = useState<number>(0);
+    const [availableDevices, setAvailableDevices] = useState<AvailableDevice[]>(
+        []
+    );
+    const [deviceToAdd, setDeviceToAdd] = useState<AvailableDevice | null>(
+        null
+    );
     const [isOpenCreateDeviceModal, setIsOpenCreateDeviceModal] =
         useState<boolean>(false);
     const [isOpenGetTokenModal, setIsOpenGetTokenModal] =
@@ -48,18 +53,18 @@ const Devices = () => {
     const handleCloseCreateDeviceModal = async () => {
         await fetchData();
         setIsOpenCreateDeviceModal(false);
-        setEspId(0);
+        setDeviceToAdd(null);
     };
 
     const handleRemoveDeviceRequest = (deviceEspId: number) => {
         setAvailableDevices(
-            availableDevices.filter((id) => id !== deviceEspId)
+            availableDevices.filter((device) => device.espId !== deviceEspId)
         );
-        socket.emit("removeDeviceRequest", { espId });
+        socket.emit("removeDeviceRequest", { espId: deviceEspId });
     };
 
-    const handleAddDeviceRequest = (deviceEspId: number) => {
-        setEspId(deviceEspId);
+    const handleAddDeviceRequest = (device: AvailableDevice) => {
+        setDeviceToAdd(device);
         setIsOpenCreateDeviceModal(true);
     };
 
@@ -132,53 +137,15 @@ const Devices = () => {
                 />
             </Box>
             <DevicesTable devices={devices} fetchData={fetchData} />
-            <Heading size="lg">Available devices</Heading>
-            <Text size="md">
-                Press submit button on device you want to connect
-            </Text>
-            <Box
-                display="flex"
-                flexDirection="row"
-                gap="5"
-                flexWrap="wrap"
-                justifyContent={{ base: "center", md: "flex-start" }}
-            >
-                {availableDevices.map((deviceEspId) => (
-                    <Box
-                        key={espId}
-                        bg="gray.900"
-                        p="5"
-                        rounded="md"
-                        color="white"
-                        display="flex"
-                        flexDirection="column"
-                        gap="3"
-                        alignItems="center"
-                        justifyContent="center"
-                    >
-                        <MdDevices size={48} />
-                        <Text> Device ID: {deviceEspId}</Text>
-                        <Button
-                            colorScheme="green"
-                            onClick={() => handleAddDeviceRequest(deviceEspId)}
-                        >
-                            Add
-                        </Button>
-                        <Button
-                            colorScheme="red"
-                            onClick={() =>
-                                handleRemoveDeviceRequest(deviceEspId)
-                            }
-                        >
-                            Remove
-                        </Button>
-                    </Box>
-                ))}
-            </Box>
+            <AvailableDevices
+                devices={availableDevices}
+                handleAddDeviceRequest={handleAddDeviceRequest}
+                handleRemoveDeviceRequest={handleRemoveDeviceRequest}
+            />
             <CreateDeviceModal
                 isOpen={isOpenCreateDeviceModal}
                 onClose={handleCloseCreateDeviceModal}
-                espId={espId}
+                deviceToAdd={deviceToAdd || undefined}
             />
             <UpdateDevicesSettingsModal
                 isOpen={isOpenUpdateDevicesSettingsModal}

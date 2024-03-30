@@ -11,25 +11,31 @@ import { FormEvent, useEffect, useState } from "react";
 import { Modal } from "@/Components/Modal";
 import Select from "@/Components/Select";
 import { createDevice } from "@/logic/devices";
-import { Room } from "@/logic/interfaces";
+import { AvailableDevice, Room } from "@/logic/interfaces";
 import { getAllRooms } from "@/logic/rooms";
+import { prettyDeviceType } from "@/logic/utils.ts";
 
 interface CreateDeviceModalProps {
     isOpen: boolean;
     onClose: () => void;
-    espId?: number;
+    deviceToAdd?: AvailableDevice;
 }
 
 const CreateDeviceModal = ({
     isOpen,
     onClose,
-    espId,
+    deviceToAdd,
 }: CreateDeviceModalProps) => {
     const toast = useToast();
     const [isLoading, setIsLoading] = useState(false);
     const [rooms, setRooms] = useState<Room[]>([]);
     const [roomId, setRoomId] = useState<string>("");
-    const [type, setType] = useState<string>("STATION");
+    const [availableTypes, setAvailableTypes] = useState<string[]>([
+        "STATION",
+        "ATTENDANCE_SCRAMBLER",
+        "ATTENDANCE_RUNNER",
+    ]);
+    const [type, setType] = useState<string>("");
 
     const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
         setIsLoading(true);
@@ -65,7 +71,18 @@ const CreateDeviceModal = ({
             setRooms(data);
             setRoomId(data[0].id);
         });
-    }, [isOpen]);
+        if (deviceToAdd) {
+            if (deviceToAdd.type === "STAFF_ATTENDANCE") {
+                setAvailableTypes([
+                    "ATTENDANCE_SCRAMBLER",
+                    "ATTENDANCE_RUNNER",
+                ]);
+            } else {
+                setAvailableTypes(["STATION"]);
+                setType("STATION");
+            }
+        }
+    }, [deviceToAdd, isOpen]);
 
     return (
         <Modal isOpen={isOpen} onClose={onClose} title="Create device">
@@ -93,7 +110,7 @@ const CreateDeviceModal = ({
                         _placeholder={{ color: "white" }}
                         name="espId"
                         disabled={isLoading}
-                        defaultValue={espId !== 0 ? espId : ""}
+                        defaultValue={deviceToAdd?.espId || ""}
                     />
                 </FormControl>
                 <FormControl isRequired>
@@ -115,15 +132,14 @@ const CreateDeviceModal = ({
                     <Select
                         value={type}
                         onChange={(e) => setType(e.target.value)}
-                        disabled={isLoading}
+                        disabled={isLoading || availableTypes.length === 1}
+                        placeholder="Select type"
                     >
-                        <option value="STATION">Station</option>
-                        <option value="ATTENDANCE_SCRAMBLER">
-                            Attendance device for scramblers
-                        </option>
-                        <option value="ATTENDANCE_RUNNER">
-                            Attendance device for runners
-                        </option>
+                        {availableTypes.map((availableType: string) => (
+                            <option key={availableType} value={availableType}>
+                                {prettyDeviceType(availableType)}
+                            </option>
+                        ))}
                     </Select>
                 </FormControl>
                 <Box

@@ -114,6 +114,17 @@ export const prettyDeviceType = (type: string) => {
     }
 };
 
+export const prettyAvailableDeviceType = (type: string) => {
+    switch (type) {
+        case "STATION":
+            return "Station";
+        case "STAFF_ATTENDANCE":
+            return "Staff attendance device";
+        default:
+            return "Unknown";
+    }
+};
+
 export const getAbsentPeople = (
     wcif: Competition,
     presentPeople: Attendance[],
