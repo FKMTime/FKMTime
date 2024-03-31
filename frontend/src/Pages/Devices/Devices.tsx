@@ -85,7 +85,7 @@ const Devices = () => {
         };
     }, [socket]);
 
-    if (isLoading) return <LoadingPage />;
+    if (isLoading && devices.length === 0) return <LoadingPage />;
 
     return (
         <Box display="flex" flexDirection="column" gap="5">
