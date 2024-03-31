@@ -60,7 +60,7 @@ const Sidebar = ({ user }: SidebarProps) => {
                 <MdMenu />
             </Circle>
             <Box
-                height="100vh"
+                height="fit-content"
                 width={{ base: "100%", "2xl": "20vh" }}
                 display={{ base: "none", "2xl": "flex" }}
             >

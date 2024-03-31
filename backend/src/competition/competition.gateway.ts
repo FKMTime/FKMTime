@@ -4,7 +4,7 @@ import {
   WebSocketGateway,
   WebSocketServer,
 } from '@nestjs/websockets';
-import { UseGuards } from '@nestjs/common';
+import { Logger, UseGuards } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { Server, Socket } from 'socket.io';
 import { AdminOrDelegateGuard } from '../auth/guards/adminOrDelegate.guard';
@@ -20,6 +20,8 @@ import { AdminOrDelegateGuard } from '../auth/guards/adminOrDelegate.guard';
 export class CompetitionGateway {
   @WebSocketServer() server: Server;
 
+  private logger = new Logger(`CompetitionGateway`);
+
   @SubscribeMessage('join')
   async handleJoin(@ConnectedSocket() socket: Socket) {
     socket.join(`competition`);
@@ -32,6 +34,7 @@ export class CompetitionGateway {
 
   @SubscribeMessage('groupShouldBeChanged')
   handleGroupShouldBeChanged(message: string) {
+    this.logger.log(`Group should be changed: ${message}`);
     this.server.to(`competition`).emit('groupShouldBeChanged', { message });
   }
 }

@@ -104,7 +104,30 @@ You have to run WCA and WCA Live locally in order to import competition to the s
 
 The system is designed to be configured from scratch for each competition. It is recommended to run the server on a computer located at the competition venue.
 
-We use Docker for production. Just run
+We use Docker for production. Do the following steps to run the server:
+
+### Environment variables 
+
+Rename the .env.example file to .env and fill in the required fields.
+
+```bash
+mv .env.example .env
+```
+
+### Logs user
+
+Generate a password hash for the logs user using the following command:
+```bash
+echo -n 'secret-password' | shasum -a 256
+```
+
+Rename the users.yml.example file to users.yml and paste your hash into "password" field
+
+```bash
+mv dozzle/users.yml.example dozzle/users.yml
+```
+
+And finally, run the following command to start the server:
 
 ```bash
 docker compose up

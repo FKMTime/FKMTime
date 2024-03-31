@@ -4,7 +4,7 @@ import {
   WebSocketGateway,
   WebSocketServer,
 } from '@nestjs/websockets';
-import { UseGuards } from '@nestjs/common';
+import { Logger, UseGuards } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { Server, Socket } from 'socket.io';
 import { AdminOrDelegateGuard } from '../auth/guards/adminOrDelegate.guard';
@@ -20,6 +20,8 @@ import { AdminOrDelegateGuard } from '../auth/guards/adminOrDelegate.guard';
 export class IncidentsGateway {
   @WebSocketServer() server: Server;
 
+  private logger = new Logger(`IncidentsGateway`);
+
   @SubscribeMessage('join')
   async handleJoin(@ConnectedSocket() socket: Socket) {
     socket.join(`incidents`);
@@ -32,6 +34,9 @@ export class IncidentsGateway {
 
   @SubscribeMessage('newIncident')
   handleNewIncident(deviceName: string, competitorName: string) {
+    this.logger.log(
+      `New incident on station ${deviceName} - ${competitorName}`,
+    );
     this.server.to(`incidents`).emit('newIncident', {
       deviceName,
       competitorName,

@@ -1,5 +1,5 @@
 import { Box, Button, Icon, Image, Link, Text } from "@chakra-ui/react";
-import { FaClipboardList, FaGift, FaGithub } from "react-icons/fa";
+import { FaClipboardList, FaGift, FaGithub, FaServer } from "react-icons/fa";
 import { IoMdTrophy, IoMdWarning } from "react-icons/io";
 import {
     MdHome,
@@ -36,6 +36,8 @@ const SidebarContent = ({
             gap="5"
             alignItems="center"
             padding={5}
+            width="100%"
+            height="fit-content"
         >
             <Image src={logo} alt="Logo" width="100%" />
             <Text color="white" textAlign="center">
@@ -119,17 +121,33 @@ const SidebarContent = ({
                 link="/settings"
                 onClick={onElementClick}
             />
-            <Button
-                leftIcon={<MdLogout />}
-                colorScheme="teal"
-                variant="solid"
-                rounded="20"
-                width="100%"
-                textAlign="center"
-                onClick={handleLogout}
-            >
-                Logout
-            </Button>
+            {import.meta.env.PROD && user.role.includes("ADMIN") && (
+                <a href="/logs" style={{ width: "100%" }} target="_blank">
+                    <Button
+                        leftIcon={<FaServer />}
+                        colorScheme="teal"
+                        variant="solid"
+                        rounded="20"
+                        width="100%"
+                        textAlign="center"
+                    >
+                        Logs
+                    </Button>
+                </a>
+            )}
+            <Box width="100%">
+                <Button
+                    leftIcon={<MdLogout />}
+                    colorScheme="teal"
+                    variant="solid"
+                    rounded="20"
+                    width="100%"
+                    textAlign="center"
+                    onClick={handleLogout}
+                >
+                    Logout
+                </Button>
+            </Box>
             <Link href="https://github.com/maxidragon/FKMTime" isExternal>
                 <Icon
                     as={FaGithub}
