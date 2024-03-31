@@ -61,7 +61,7 @@ const Persons = () => {
 
     const handlePageChange = (pageParam: number) => {
         setPage(pageParam);
-        fetchData(pageParam);
+        fetchData(pageParam, pageSize, search);
     };
 
     const handleCloseEditModal = async () => {
@@ -70,7 +70,7 @@ const Persons = () => {
 
     const changePageSize = (pageSizeParam: number) => {
         setPageSize(pageSizeParam);
-        fetchData(1, pageSizeParam);
+        fetchData(1, pageSizeParam, search);
     };
 
     const handleSearch = (event: ChangeEvent<HTMLInputElement>) => {
