@@ -12,6 +12,7 @@ RUN npx prisma generate
 RUN npm run build
 
 FROM node:18-alpine
+RUN apk add --no-cache curl
 
 WORKDIR /app
 COPY --from=build /app/dist/src /app
