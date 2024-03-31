@@ -13,8 +13,6 @@ interface PersonAutocompleteProps {
     persons: Person[];
     autoFocus?: boolean;
     value?: string;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    ref?: any;
     disabled?: boolean;
 }
 
@@ -23,7 +21,6 @@ const PersonAutocomplete = ({
     persons,
     autoFocus,
     value,
-    ref,
     disabled,
 }: PersonAutocompleteProps) => {
     return (
@@ -37,8 +34,8 @@ const PersonAutocomplete = ({
                             color: "gray.200",
                         }}
                         disabled={disabled}
-                        ref={ref}
                         borderColor="white"
+                        id="searchInput"
                     />
                     <AutoCompleteList>
                         {persons.map((person) => (

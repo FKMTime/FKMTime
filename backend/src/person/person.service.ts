@@ -250,6 +250,7 @@ export class PersonService {
         id: true,
         registrantId: true,
         wcaId: true,
+        canCompete: true,
         name: true,
         countryIso2: true,
         birthdate: true,

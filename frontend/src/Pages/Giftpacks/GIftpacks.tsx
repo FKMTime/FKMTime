@@ -5,15 +5,11 @@ import {
     Button,
     FormControl,
     Heading,
-    IconButton,
     Input,
-    ListItem,
     Text,
-    UnorderedList,
     useToast,
 } from "@chakra-ui/react";
 import { KeyboardEvent, RefObject, useEffect, useRef, useState } from "react";
-import { MdDone } from "react-icons/md";
 
 import LoadingPage from "@/Components/LoadingPage";
 import { Person } from "@/logic/interfaces";
@@ -22,7 +18,8 @@ import {
     getPersonInfoByCardIdWithSensitiveData,
     giftpackCount,
 } from "@/logic/persons";
-import regions from "@/logic/regions";
+import PersonInfo from "@/Pages/Giftpacks/Components/PersonInfo.tsx";
+import PersonsWithoutGiftpackCollected from "@/Pages/Giftpacks/Components/PersonsWithoutGiftpackCollected.tsx";
 
 const Giftpacks = () => {
     const toast = useToast();
@@ -30,8 +27,8 @@ const Giftpacks = () => {
     const [totalPersons, setTotalPersons] = useState<number>(0);
     const [collectedGiftpacks, setCollectedGiftpacks] = useState<number>(0);
     const [
-        personsWhoNotCollectedGitpackYet,
-        setPersonsWhoNotCollectedGitpackYet,
+        personsWithoutGiftpackCollected,
+        setPersonsWithoutGiftpackCollected,
     ] = useState<Person[]>([]);
     const cardInputRef: RefObject<HTMLInputElement> =
         useRef<HTMLInputElement>(null);
@@ -104,7 +101,7 @@ const Giftpacks = () => {
         const data = await giftpackCount();
         setCollectedGiftpacks(data.collectedGiftpacksCount);
         setTotalPersons(data.totalPersonsCount);
-        setPersonsWhoNotCollectedGitpackYet(
+        setPersonsWithoutGiftpackCollected(
             data.personsWithoutGiftpackCollected
         );
     };
@@ -142,52 +139,7 @@ const Giftpacks = () => {
                 </FormControl>
                 {personData && (
                     <>
-                        {(!personData.wcaId || personData.wcaId === "") &&
-                            personData.canCompete && (
-                                <Alert
-                                    status="warning"
-                                    borderRadius="md"
-                                    color="black"
-                                >
-                                    <AlertIcon />
-                                    Remember to check competitor's ID card
-                                </Alert>
-                            )}
-                        <Text fontSize="2xl" fontWeight="bold">
-                            Competitor information
-                        </Text>
-                        <Text fontSize="xl">Name: {personData.name}</Text>
-                        {personData.canCompete && (
-                            <>
-                                <Text fontSize="xl">
-                                    Registrant ID: {personData.registrantId}
-                                </Text>
-                                <Text fontSize="xl">
-                                    WCA ID:{" "}
-                                    {personData.wcaId
-                                        ? personData.wcaId
-                                        : "Newcomer"}
-                                </Text>
-                                {personData.birthdate && (
-                                    <Text fontSize="xl">
-                                        Birthdate:{" "}
-                                        {new Date(
-                                            personData.birthdate
-                                        ).toLocaleDateString()}
-                                    </Text>
-                                )}
-                                <Text fontSize="xl">
-                                    Representing:{" "}
-                                    {
-                                        regions.find(
-                                            (region) =>
-                                                region.iso2 ===
-                                                personData.countryIso2
-                                        )?.name
-                                    }
-                                </Text>
-                            </>
-                        )}
+                        <PersonInfo person={personData} />
                         {personData.giftpackCollectedAt ? (
                             <Alert
                                 status="success"
@@ -208,34 +160,10 @@ const Giftpacks = () => {
                     </>
                 )}
             </Box>
-            <Box>
-                <Heading size="lg">
-                    Persons who not collected giftpack yet
-                </Heading>
-                <UnorderedList>
-                    {personsWhoNotCollectedGitpackYet.map((person) => (
-                        <ListItem
-                            key={person.id}
-                            display="flex"
-                            gap="2"
-                            alignItems="center"
-                        >
-                            <IconButton
-                                aria-label="Mark as present"
-                                rounded="20%"
-                                background="none"
-                                _hover={{ background: "none", opacity: 0.5 }}
-                                color="white"
-                                onClick={() => handleCollectGiftpack(person.id)}
-                            >
-                                <MdDone />
-                            </IconButton>
-                            {person.name}{" "}
-                            {person.registrantId && `(${person.registrantId})`}
-                        </ListItem>
-                    ))}
-                </UnorderedList>
-            </Box>
+            <PersonsWithoutGiftpackCollected
+                persons={personsWithoutGiftpackCollected}
+                handleCollectGiftpack={handleCollectGiftpack}
+            />
         </Box>
     );
 };

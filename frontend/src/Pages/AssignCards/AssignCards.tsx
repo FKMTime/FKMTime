@@ -1,5 +1,5 @@
 import { Box, Heading, Input, useToast } from "@chakra-ui/react";
-import { useEffect, useRef, useState } from "react";
+import { RefObject, useEffect, useRef, useState } from "react";
 
 import PersonAutocomplete from "@/Components/PersonAutocomplete";
 import { Person } from "@/logic/interfaces";
@@ -11,10 +11,8 @@ const AssignCards = () => {
     const [personsWithoutCard, setPersonsWithoutCard] = useState<Person[]>([]);
     const [currentPerson, setCurrentPerson] = useState<Person | null>(null);
     const [searchValue, setSearchValue] = useState<string>("");
-    //eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const searchInputRef: any = useRef();
-    //eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const cardInputRef: any = useRef();
+    const cardInputRef: RefObject<HTMLInputElement> =
+        useRef<HTMLInputElement>(null);
 
     useEffect(() => {
         const fetchData = async () => {
@@ -42,7 +40,7 @@ const AssignCards = () => {
                 )
             );
             setCurrentPerson(null);
-            searchInputRef.current?.focus();
+            document.getElementById("searchInput")?.focus();
         } else if (status === 409) {
             toast({
                 title: "Error",
@@ -87,7 +85,6 @@ const AssignCards = () => {
                     persons={personsWithoutCard}
                     value={searchValue}
                     autoFocus={true}
-                    ref={searchInputRef}
                 />
             </Box>
             {currentPerson && (
