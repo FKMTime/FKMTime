@@ -41,6 +41,14 @@ const EditAccountModal = ({
                 isClosable: true,
             });
             onClose();
+        } else if (status === 409) {
+            toast({
+                title: "Error",
+                description: "Username already taken!",
+                status: "error",
+                duration: 9000,
+                isClosable: true,
+            });
         } else {
             toast({
                 title: "Error",

@@ -48,14 +48,25 @@ export class AccountService {
   }
 
   async updateAccount(id: string, data: UpdateAccountDto) {
-    return this.prisma.account.update({
-      where: { id: id },
-      data: {
-        username: data.username,
-        fullName: data.fullName,
-        role: data.role,
-      },
-    });
+    try {
+      await this.prisma.account.update({
+        where: { id: id },
+        data: {
+          username: data.username,
+          fullName: data.fullName,
+          role: data.role,
+        },
+      });
+    } catch (e) {
+      if (e instanceof PrismaClientKnownRequestError) {
+        if (e.code === 'P2002') {
+          throw new HttpException('Username already taken', 409);
+        }
+      }
+    }
+    return {
+      message: 'Account updated successfully',
+    };
   }
 
   async updatePassword(id: string, password: string) {

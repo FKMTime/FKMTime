@@ -45,6 +45,14 @@ const CreateAccountModal = ({ isOpen, onClose }: CreateAccountModalProps) => {
                 isClosable: true,
             });
             onClose();
+        } else if (response.status === 409) {
+            toast({
+                title: "Error",
+                description: "Username already taken!",
+                status: "error",
+                duration: 9000,
+                isClosable: true,
+            });
         } else {
             toast({
                 title: "Error",
