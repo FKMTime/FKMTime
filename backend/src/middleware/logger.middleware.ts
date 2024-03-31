@@ -24,6 +24,9 @@ export class LoggerMiddleware implements NestMiddleware {
       }
     } else {
       const baseUrl = req.baseUrl;
+      if (req.baseUrl.includes('health')) {
+        return next();
+      }
       res.on('close', () => {
         this.logger.log(
           `Logging HTTP request from ${req.method} ${baseUrl} ${
