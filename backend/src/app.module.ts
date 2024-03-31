@@ -12,6 +12,7 @@ import { AttendanceModule } from './attendance/attendance.module';
 import { LoggerMiddleware } from './middleware/logger.middleware';
 import { ScheduleModule } from '@nestjs/schedule';
 import { WcaModule } from './wca/wca.module';
+import { HealthModule } from './health/health.module';
 
 @Module({
   imports: [
@@ -27,6 +28,7 @@ import { WcaModule } from './wca/wca.module';
     DeviceModule,
     AttendanceModule,
     WcaModule,
+    HealthModule
   ],
 })
 export class AppModule implements NestModule {
