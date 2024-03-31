@@ -1,14 +1,11 @@
-import {
-    Controller,
-    Get,
-} from '@nestjs/common';
+import { Controller, Get } from '@nestjs/common';
 
 @Controller('health')
 export class HealthController {
-    constructor() { }
+  constructor() {}
 
-    @Get()
-    async getHealth() {
-        return { status: 'OK' };
-    }
+  @Get()
+  async getHealth() {
+    return { status: 'OK' };
+  }
 }

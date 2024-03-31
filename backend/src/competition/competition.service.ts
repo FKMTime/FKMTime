@@ -41,6 +41,7 @@ export class CompetitionService {
         registrantId: person.registrantId,
         gender: person.gender,
         countryIso2: person.countryIso2,
+        canCompete: person.registration && person.registration.isCompeting,
       })),
     });
     const delegates = wcif.persons.filter((person: Person) =>

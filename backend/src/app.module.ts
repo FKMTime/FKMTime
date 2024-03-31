@@ -28,7 +28,7 @@ import { HealthModule } from './health/health.module';
     DeviceModule,
     AttendanceModule,
     WcaModule,
-    HealthModule
+    HealthModule,
   ],
 })
 export class AppModule implements NestModule {
