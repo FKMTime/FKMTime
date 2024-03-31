@@ -1,12 +1,11 @@
-import { IsIn, IsNotEmpty, IsString } from 'class-validator';
+import { Role } from '@prisma/client';
+import { IsEnum, IsNotEmpty, IsString } from 'class-validator';
 
 export class JwtAuthDto {
   @IsNotEmpty()
   @IsString()
   userId: string;
 
-  @IsNotEmpty()
-  @IsString()
-  @IsIn(['ADMIN', 'DELEGATE', 'STAFF'])
-  role: 'ADMIN' | 'DELEGATE' | 'STAFF';
+  @IsEnum(Role)
+  role: Role;
 }

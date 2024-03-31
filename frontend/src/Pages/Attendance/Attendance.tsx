@@ -183,36 +183,40 @@ const Attendance = () => {
     return (
         <Box display="flex" flexDirection="column" gap="5">
             <Heading size="lg">Attendance</Heading>
-            <Heading size="md">Current groups</Heading>
-            <Box display="flex" gap="2">
-                {rooms
-                    .filter((r) => r.currentGroupId)
-                    .map((room: Room) => (
-                        <Button
-                            key={room.id}
-                            colorScheme="blue"
-                            onClick={() => {
-                                setSelectedEvent(
-                                    room.currentGroupId.split("-")[0]
-                                );
-                                setSelectedRound(
-                                    room.currentGroupId.split("-g")[0]
-                                );
-                                handleGroupChange(room.currentGroupId);
-                            }}
-                        >
-                            {getActivityNameByCode(
-                                room.currentGroupId,
-                                competition.wcif
-                            )}
-                        </Button>
-                    ))}
-            </Box>
-
+            {rooms.filter((r) => r.currentGroupId).length > 0 && (
+                <>
+                    <Heading size="md">Current groups</Heading>
+                    <Box display="flex" gap="2">
+                        {rooms
+                            .filter((r) => r.currentGroupId)
+                            .map((room: Room) => (
+                                <Button
+                                    key={room.id}
+                                    colorScheme="blue"
+                                    onClick={() => {
+                                        setSelectedEvent(
+                                            room.currentGroupId.split("-")[0]
+                                        );
+                                        setSelectedRound(
+                                            room.currentGroupId.split("-g")[0]
+                                        );
+                                        handleGroupChange(room.currentGroupId);
+                                    }}
+                                >
+                                    {getActivityNameByCode(
+                                        room.currentGroupId,
+                                        competition.wcif
+                                    )}
+                                </Button>
+                            ))}
+                    </Box>
+                </>
+            )}
             <FormControl width="fit-content">
                 <FormLabel>Event</FormLabel>
                 <Select
                     value={selectedEvent}
+                    placeholder="Select event"
                     onChange={(event) => {
                         setSelectedEvent(event?.target.value);
                         setSelectedRound(event?.target.value + "-r1");

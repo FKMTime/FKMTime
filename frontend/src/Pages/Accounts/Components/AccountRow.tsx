@@ -1,10 +1,12 @@
-import { IconButton, Td, Tr, useToast } from "@chakra-ui/react";
+import { Box, IconButton, Td, Text, Tr, useToast } from "@chakra-ui/react";
 import { useState } from "react";
 import { MdDelete, MdEdit, MdLock } from "react-icons/md";
 
 import Alert from "@/Components/Alert";
+import RoleIcon from "@/Components/Icons/RoleIcon.tsx";
 import { deleteAccount } from "@/logic/accounts";
 import { Account } from "@/logic/interfaces";
+import { prettyAccountRoleName } from "@/logic/utils.ts";
 
 import EditAccountModal from "./EditAccountModal";
 import EditAccountPasswordModal from "./EditAccountPasswordModal";
@@ -61,9 +63,12 @@ const AccountRow = ({ account, fetchData }: AccountRowProps) => {
         <>
             <Tr key={account.id}>
                 <Td>{account.username}</Td>
+                <Td>{account.fullName}</Td>
                 <Td>
-                    {account.role.charAt(0).toUpperCase() +
-                        account.role.slice(1).toLowerCase()}
+                    <Box display="flex" alignItems="center" gap="1">
+                        <Text>{prettyAccountRoleName(account.role)}</Text>
+                        <RoleIcon role={account.role} />
+                    </Box>
                 </Td>
                 <Td>
                     <IconButton
@@ -108,7 +113,7 @@ const AccountRow = ({ account, fetchData }: AccountRowProps) => {
                 isOpen={openConfirmation}
                 onCancel={handleCancel}
                 onConfirm={handleConfirm}
-                title="Delete Account"
+                title="Delete account"
                 description="Are you sure?"
             />
             <EditAccountModal

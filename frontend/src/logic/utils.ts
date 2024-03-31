@@ -125,6 +125,19 @@ export const prettyAvailableDeviceType = (type: string) => {
     }
 };
 
+export const prettyAccountRoleName = (role: string) => {
+    switch (role) {
+        case "DELEGATE":
+            return "Delegate";
+        case "ADMIN":
+            return "Admin";
+        case "STAFF":
+            return "Staff";
+        default:
+            return "Unknown";
+    }
+};
+
 export const getAbsentPeople = (
     wcif: Competition,
     presentPeople: Attendance[],

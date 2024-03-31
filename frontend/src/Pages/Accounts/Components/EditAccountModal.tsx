@@ -77,6 +77,21 @@ const EditAccountModal = ({
                         }
                     />
                 </FormControl>
+                <FormControl>
+                    <FormLabel>Full name</FormLabel>
+                    <Input
+                        placeholder="Full name"
+                        _placeholder={{ color: "white" }}
+                        value={editedAccount.fullName}
+                        disabled={isLoading}
+                        onChange={(e) =>
+                            setEditedAccount({
+                                ...editedAccount,
+                                fullName: e.target.value,
+                            })
+                        }
+                    />
+                </FormControl>
                 <FormControl isRequired>
                     <FormLabel>Role</FormLabel>
                     <Select

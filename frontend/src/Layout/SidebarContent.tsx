@@ -38,7 +38,9 @@ const SidebarContent = ({
             padding={5}
         >
             <Image src={logo} alt="Logo" width="100%" />
-            <Text color="white">Hello {user.username}!</Text>
+            <Text color="white" textAlign="center">
+                Hello {user.fullName ? user.fullName : user.username}!
+            </Text>
             <SidebarElement
                 name="Home"
                 icon={<MdHome />}

@@ -9,7 +9,7 @@ import { Room } from '@prisma/client';
 import { CompetitionGateway } from './competition.gateway';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { sha512 } from 'js-sha512';
-import { convertPolishToLatin } from '../translations';
+import { convertToLatin } from '../translations';
 import * as crypto from 'crypto';
 
 const WCA_ORIGIN = `${process.env.WCA_ORIGIN}/api/v0/competitions`;
@@ -44,25 +44,33 @@ export class CompetitionService {
         canCompete: person.registration && person.registration.isCompeting,
       })),
     });
-    const delegates = wcif.persons.filter((person: Person) =>
-      person.roles.includes('delegate'),
+    const personsToCreateAccount = wcif.persons.filter(
+      (person: Person) =>
+        person.roles.includes('delegate') || person.roles.includes('organizer'),
     );
-    const organizers = wcif.persons.filter((person: Person) =>
-      person.roles.includes('organizer'),
-    );
+    const accounts = [];
+    for (const person of personsToCreateAccount) {
+      if (accounts.some((a) => a.username === this.getUsername(person.name))) {
+        const length = accounts.filter(
+          (a) => a.username === this.getUsername(person.name),
+        ).length;
+        accounts.push({
+          username: this.getUsername(person.name) + length,
+          fullName: person.name,
+          password: sha512(DEFAULT_PASSWORD),
+          role: person.roles.includes('delegate') ? 'DELEGATE' : 'ADMIN',
+        });
+      } else {
+        accounts.push({
+          username: this.getUsername(person.name),
+          fullName: person.name,
+          password: sha512(DEFAULT_PASSWORD),
+          role: person.roles.includes('delegate') ? 'DELEGATE' : 'ADMIN',
+        });
+      }
+    }
     await this.prisma.account.createMany({
-      data: [
-        ...delegates.map((delegate: Person) => ({
-          username: this.getUsername(delegate.name),
-          password: sha512(DEFAULT_PASSWORD),
-          role: 'DELEGATE',
-        })),
-        ...organizers.map((organizer: Person) => ({
-          username: this.getUsername(organizer.name),
-          password: sha512(DEFAULT_PASSWORD),
-          role: 'ADMIN',
-        })),
-      ],
+      data: accounts,
     });
     const rooms = [];
 
@@ -81,9 +89,7 @@ export class CompetitionService {
   }
 
   getUsername(fullName: string) {
-    return convertPolishToLatin(
-      (fullName[0] + fullName.split(' ')[1]).toLowerCase(),
-    );
+    return convertToLatin((fullName[0] + fullName.split(' ')[1]).toLowerCase());
   }
 
   async updateWcif(wcaId: string) {

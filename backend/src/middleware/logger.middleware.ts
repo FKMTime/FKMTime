@@ -24,7 +24,7 @@ export class LoggerMiddleware implements NestMiddleware {
       }
     } else {
       const baseUrl = req.baseUrl;
-      if (req.baseUrl.includes('health')) {
+      if (baseUrl.includes('health') || baseUrl.includes('login')) {
         return next();
       }
       res.on('close', () => {

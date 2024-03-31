@@ -1,10 +1,9 @@
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
-import { DbService } from '../db/db.service';
-import { RegisterDto } from './dto/register.dto';
-import { JwtAuthDto } from './dto/jwt-auth.dto';
 import { JwtService } from '@nestjs/jwt';
-import { LoginDto } from './dto/login.dto';
 import { sha512 } from 'js-sha512';
+import { DbService } from '../db/db.service';
+import { JwtAuthDto } from './dto/jwt-auth.dto';
+import { LoginDto } from './dto/login.dto';
 
 @Injectable()
 export class AuthService {
@@ -12,28 +11,6 @@ export class AuthService {
     private readonly prisma: DbService,
     private readonly jwtService: JwtService,
   ) {}
-
-  async isTaken(username: string) {
-    const user = await this.prisma.account.findFirst({
-      where: { username: username },
-    });
-    return !!user;
-  }
-
-  async registerAccount(dto: RegisterDto): Promise<object> {
-    if (await this.isTaken(dto.username)) {
-      throw new HttpException('Username is already taken!', 400);
-    }
-    await this.prisma.account.create({
-      data: {
-        password: sha512(dto.password),
-        username: dto.username,
-        role: dto.role,
-      },
-    });
-
-    return { msg: 'Successfully registered a new account!' };
-  }
 
   async login(dto: LoginDto) {
     const user = await this.prisma.account.findFirst({
@@ -54,6 +31,7 @@ export class AuthService {
       userInfo: {
         id: user.id,
         username: user.username,
+        fullName: user.fullName,
         role: user.role,
       },
     };

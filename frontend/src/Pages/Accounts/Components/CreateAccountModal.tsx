@@ -28,8 +28,14 @@ const CreateAccountModal = ({ isOpen, onClose }: CreateAccountModalProps) => {
         const data = new FormData(event.currentTarget);
         const username = data.get("username") as string;
         const password = data.get("password") as string;
+        const fullName = data.get("fullName") as string;
 
-        const response = await createAccount(username, role, password);
+        const response = await createAccount(
+            username,
+            role,
+            password,
+            fullName
+        );
         if (response.status === 201) {
             toast({
                 title: "Success",
@@ -66,6 +72,15 @@ const CreateAccountModal = ({ isOpen, onClose }: CreateAccountModalProps) => {
                         placeholder="Username"
                         _placeholder={{ color: "white" }}
                         name="username"
+                        disabled={isLoading}
+                    />
+                </FormControl>
+                <FormControl>
+                    <FormLabel>Full name</FormLabel>
+                    <Input
+                        placeholder="Full name"
+                        _placeholder={{ color: "white" }}
+                        name="fullName"
                         disabled={isLoading}
                     />
                 </FormControl>

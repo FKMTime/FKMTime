@@ -10,6 +10,10 @@ export class UpdateAccountDto {
   @IsNotEmpty()
   username: string;
 
+  @IsString()
+  @IsNotEmpty()
+  fullName: string;
+
   @IsEnum(Role)
   role: Role;
 }

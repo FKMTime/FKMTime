@@ -2,7 +2,7 @@ import { DbService } from '../db/db.service';
 import { HttpException, Injectable } from '@nestjs/common';
 import { UpdatePersonDto } from './dto/updatePerson.dto';
 import { AddStaffMemberDto } from './dto/addStaffMember.dto';
-import { convertPolishToLatin, getTranslation } from '../translations';
+import { convertToLatin, getTranslation } from '../translations';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 
 @Injectable()
@@ -227,7 +227,7 @@ export class PersonService {
     }
     return {
       ...person,
-      name: convertPolishToLatin(person.name),
+      name: convertToLatin(person.name),
     };
   }
 

@@ -23,6 +23,7 @@ async function seedDb() {
         update: {},
         create: {
           username: 'admin',
+          fullName: 'Admin',
           role: 'ADMIN',
           password: adminPassword,
         },

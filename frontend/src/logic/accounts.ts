@@ -10,12 +10,14 @@ export const getAllAccounts = async (): Promise<Account[]> => {
 export const createAccount = async (
     username: string,
     role: string,
-    password: string
+    password: string,
+    fullName?: string
 ) => {
-    const response = await backendRequest("auth/register", "POST", true, {
+    const response = await backendRequest("account", "POST", true, {
         username,
         role,
         password,
+        fullName,
     });
     const data = await response.json();
     return {

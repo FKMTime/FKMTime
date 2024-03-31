@@ -6,12 +6,14 @@ import {
   HttpCode,
   HttpStatus,
   Param,
+  Post,
   Put,
   UseGuards,
 } from '@nestjs/common';
-import { AccountService } from './account.service';
-import { UpdateAccountDto } from './dto/updateAccount.dto';
 import { AdminGuard } from 'src/auth/guards/admin.guard';
+import { AccountService } from './account.service';
+import { CreateAccountDto } from './dto/createAccount.dto';
+import { UpdateAccountDto } from './dto/updateAccount.dto';
 import { UpdatePasswordDto } from './dto/updatePassword.dto';
 
 @Controller('account')
@@ -22,6 +24,12 @@ export class AccountController {
   @Get()
   async getAllAccounts() {
     return this.accountService.getAllAccounts();
+  }
+
+  @UseGuards(AdminGuard)
+  @Post()
+  async createAccount(@Body() data: CreateAccountDto) {
+    return await this.accountService.createAccount(data);
   }
 
   @UseGuards(AdminGuard)

@@ -57,53 +57,10 @@ export const isLocaleAvailable = (locale: string) => {
   return translations.some((t) => t.locale === locale);
 };
 
-export const convertPolishToLatin = (text: string) => {
-  const letters = [
-    'ą',
-    'ć',
-    'ę',
-    'ł',
-    'ń',
-    'ó',
-    'ś',
-    'ź',
-    'ż',
-    'Ą',
-    'Ć',
-    'Ę',
-    'Ł',
-    'Ń',
-    'Ó',
-    'Ś',
-    'Ź',
-    'Ż',
-  ];
-  const replacement = [
-    'a',
-    'c',
-    'e',
-    'l',
-    'n',
-    'o',
-    's',
-    'z',
-    'z',
-    'A',
-    'C',
-    'E',
-    'L',
-    'N',
-    'O',
-    'S',
-    'Z',
-    'Z',
-  ];
-
-  let result = text;
-
-  for (let i = 0; i < letters.length; ++i) {
-    result = result.replaceAll(letters[i], replacement[i]);
-  }
-
-  return result;
+export const convertToLatin = (text: string) => {
+  return text
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/ł/g, 'l')
+    .replace(/Ł/g, 'L');
 };

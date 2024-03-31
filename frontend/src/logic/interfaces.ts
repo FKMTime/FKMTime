@@ -2,12 +2,14 @@ import { Competition as WCIF } from "@wca/helpers";
 
 export interface UserInfo {
     username: string;
+    fullName?: string;
     role: string;
 }
 
 export interface Account {
     id: string;
     username: string;
+    fullName?: string;
     role: string;
     createdAt?: Date;
     updatedAt?: Date;
