@@ -1,4 +1,4 @@
-import { Card, CardBody, CardHeader, Heading, Text } from "@chakra-ui/react";
+import { Card, CardBody, Heading, Text } from "@chakra-ui/react";
 import { Activity } from "@wca/helpers";
 import { useNavigate } from "react-router-dom";
 
@@ -10,23 +10,28 @@ interface ScheduleCardProps {
 
 const ScheduleCard = ({ activity }: ScheduleCardProps) => {
     const navigate = useNavigate();
+    const isRound = activity.activityCode.includes("-r");
+
     return (
         <Card
             backgroundColor="teal.500"
             color="white"
             textAlign="center"
-            cursor="pointer"
+            cursor={isRound ? "pointer" : "default"}
             width="100%"
             onClick={() => {
-                navigate(
-                    `/results/round/${activity.activityCode.split("-g")[0]}`
-                );
+                if (isRound) {
+                    navigate(`/results/round/${activity.activityCode}`);
+                }
             }}
         >
-            <CardHeader>
+            <CardBody display="flex" flexDirection="column" gap="2">
                 <Heading size="md">{activity.name}</Heading>
-            </CardHeader>
-            <CardBody>
+                <Text>
+                    {activity.childActivities.length === 0
+                        ? ""
+                        : `${activity.childActivities.length} groups`}
+                </Text>
                 <Text>
                     {" "}
                     {formatTime(activity.startTime)} -{" "}
