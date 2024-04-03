@@ -2,7 +2,7 @@ import { Attempt, AttemptStatus, Incident } from "./interfaces";
 import { backendRequest } from "./request";
 
 interface UpdateAttemptData extends Attempt {
-    shouldResubmitToWcaLive: boolean;
+    submitToWcaLive: boolean;
     updateReplacedBy?: boolean;
 }
 

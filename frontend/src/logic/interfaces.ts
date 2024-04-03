@@ -113,7 +113,7 @@ export enum AttemptStatus {
 
 export interface Incident extends Attempt {
     result: Result;
-    shouldResubmitToWcaLive: boolean;
+    submitToWcaLive: boolean;
     updateReplacedBy?: boolean;
 }
 

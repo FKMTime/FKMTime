@@ -19,7 +19,7 @@ export class LoggerMiddleware implements NestMiddleware {
         );
       } else {
         this.logger.log(
-          `Logging HTTP request ${req.method} ${req.baseUrl} ${res.statusCode} with API Token`,
+          `Logging HTTP request ${req.method} ${req.baseUrl} ${res.statusCode} with API Token ${req.method !== 'GET' ? JSON.stringify(req.body) : ''}`,
         );
       }
     } else {

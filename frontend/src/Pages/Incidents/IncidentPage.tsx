@@ -20,7 +20,7 @@ import { competitionAtom } from "@/logic/atoms";
 import { getIncidentById, updateAttempt } from "@/logic/attempt";
 import { DNF_VALUE } from "@/logic/constants";
 import { AttemptStatus, Incident, Person } from "@/logic/interfaces";
-import { getAllPersons } from "@/logic/persons";
+import { getAllPersons, getPersonNameAndRegistrantId } from "@/logic/persons";
 import { checkTimeLimit } from "@/logic/results";
 import { msToString } from "@/logic/utils";
 
@@ -55,7 +55,7 @@ const IncidentPage = () => {
             ...editedIncident,
             status: AttemptStatus.EXTRA_GIVEN,
             comment: "A7G",
-            shouldResubmitToWcaLive: false,
+            submitToWcaLive: false,
             updateReplacedBy: false,
         };
         setEditedIncident(data);
@@ -67,7 +67,7 @@ const IncidentPage = () => {
             ...editedIncident,
             status: AttemptStatus.EXTRA_GIVEN,
             comment: "Judge fault",
-            shouldResubmitToWcaLive: false,
+            submitToWcaLive: false,
             updateReplacedBy: false,
         };
         setEditedIncident(data);
@@ -78,7 +78,7 @@ const IncidentPage = () => {
         const data = {
             ...editedIncident,
             status: AttemptStatus.EXTRA_ATTEMPT,
-            shouldResubmitToWcaLive: false,
+            submitToWcaLive: false,
             updateReplacedBy: false,
         };
         setEditedIncident(data);
@@ -90,7 +90,7 @@ const IncidentPage = () => {
             ...editedIncident,
             status: AttemptStatus.EXTRA_ATTEMPT,
             shouldBeUsed: true,
-            shouldResubmitToWcaLive: false,
+            submitToWcaLive: false,
             updateReplacedBy: true,
         };
         setEditedIncident(data);
@@ -98,6 +98,16 @@ const IncidentPage = () => {
     };
 
     const handleSubmit = async (data: Incident) => {
+        if (editedIncident.value === 0 && editedIncident.penalty === 0) {
+            return toast({
+                title: "Error",
+                description:
+                    "The time must be greater than 0 or DNF penalty should be applied",
+                status: "error",
+                duration: 3000,
+                isClosable: true,
+            });
+        }
         setIsLoading(true);
         const status = await updateAttempt(data);
         if (status === 200) {
@@ -226,7 +236,7 @@ const IncidentPage = () => {
                 >
                     {persons.map((person) => (
                         <option key={person.id} value={person.id}>
-                            {person.name} ({person.registrantId})
+                            {getPersonNameAndRegistrantId(person)}
                         </option>
                     ))}
                 </Select>
@@ -263,6 +273,7 @@ const IncidentPage = () => {
                         handleSubmit({
                             ...editedIncident,
                             status: AttemptStatus.RESOLVED,
+                            submitToWcaLive: true,
                         })
                     }
                 >

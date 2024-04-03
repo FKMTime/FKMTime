@@ -51,7 +51,7 @@ const EditAttemptModal = ({
 
         const status = await updateAttempt({
             ...editedAttempt,
-            shouldResubmitToWcaLive,
+            submitToWcaLive: shouldResubmitToWcaLive,
         });
         if (status === 200) {
             toast({
