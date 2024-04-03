@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import {HttpException, Injectable} from '@nestjs/common';
 import { DbService } from '../db/db.service';
 import { DeviceDto } from './dto/device.dto';
 import { UpdateBatteryPercentageDto } from './dto/updateBatteryPercentage.dto';
@@ -102,12 +102,16 @@ export class DeviceService {
   }
 
   async updateBatteryPercentage(data: UpdateBatteryPercentageDto) {
-    await this.prisma.device.update({
-      where: { espId: data.espId },
-      data: {
-        batteryPercentage: data.batteryPercentage,
-      },
-    });
+    try {
+      await this.prisma.device.update({
+        where: { espId: data.espId },
+        data: {
+          batteryPercentage: data.batteryPercentage,
+        },
+      });
+    } catch (error) {
+      throw new HttpException('Device not found', 404);
+    }
     this.deviceGateway.handleDeviceUpdated();
     return {
       message: 'Battery percentage updated',
