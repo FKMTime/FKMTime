@@ -1,7 +1,7 @@
 import { Box, Heading, Input, useToast } from "@chakra-ui/react";
 import { RefObject, useEffect, useRef, useState } from "react";
 
-import PersonAutocomplete from "@/Components/PersonAutocomplete";
+import ManualPersonAutocomplete from "@/Components/ManulPersonAutocomplete.tsx";
 import { Person } from "@/logic/interfaces";
 import { getPersonsWithoutCardAssigned, updatePerson } from "@/logic/persons";
 
@@ -80,7 +80,7 @@ const AssignCards = () => {
                 assigned
             </Heading>
             <Box width={{ base: "100%", md: "20%" }}>
-                <PersonAutocomplete
+                <ManualPersonAutocomplete
                     onSelect={handleChangePerson}
                     persons={personsWithoutCard}
                     value={searchValue}

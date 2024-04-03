@@ -20,8 +20,7 @@ import Select from "@/Components/Select";
 import { createAttempt } from "@/logic/attempt";
 import { DNF_VALUE } from "@/logic/constants";
 import { getAllDevices } from "@/logic/devices";
-import { AttemptStatus, Device, Person } from "@/logic/interfaces";
-import { getAllPersons } from "@/logic/persons";
+import { AttemptStatus, Device } from "@/logic/interfaces";
 import { prettyAttemptStatus } from "@/logic/utils";
 
 interface CreateAttemptModalProps {
@@ -40,7 +39,6 @@ const CreateAttemptModal = ({
     timeLimit,
 }: CreateAttemptModalProps) => {
     const toast = useToast();
-    const [persons, setPersons] = useState<Person[]>([]);
     const [devices, setDevices] = useState<Device[]>([]);
     const [isLoading, setIsLoading] = useState<boolean>(false);
     const [selectedJudgeId, setSelectedJudgeId] = useState<string>("");
@@ -57,9 +55,6 @@ const CreateAttemptModal = ({
 
     useEffect(() => {
         if (!isOpen) return;
-        getAllPersons().then((data) => {
-            setPersons(data);
-        });
         getAllDevices().then((data) => {
             setDevices(
                 data.filter((device: Device) => device.type === "STATION")
@@ -137,7 +132,6 @@ const CreateAttemptModal = ({
                             value={selectedCompetitorId}
                             disabled={isLoading}
                             onSelect={setSelectedCompetitorId}
-                            persons={persons.filter((p) => p.canCompete)}
                         />
                     </FormControl>
                 )}
@@ -193,7 +187,6 @@ const CreateAttemptModal = ({
                     <FormLabel>Judge</FormLabel>
                     <PersonAutocomplete
                         onSelect={setSelectedJudgeId}
-                        persons={persons}
                         disabled={isLoading}
                         value={selectedJudgeId}
                     />
