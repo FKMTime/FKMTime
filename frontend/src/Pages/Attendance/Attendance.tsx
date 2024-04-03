@@ -186,13 +186,14 @@ const Attendance = () => {
             {rooms.filter((r) => r.currentGroupId).length > 0 && (
                 <>
                     <Heading size="md">Current groups</Heading>
-                    <Box display="flex" gap="2">
+                    <Box display="flex" gap="2" flexWrap="wrap">
                         {rooms
                             .filter((r) => r.currentGroupId)
                             .map((room: Room) => (
                                 <Button
                                     key={room.id}
                                     colorScheme="blue"
+                                    width={{ base: "100%", md: "auto" }}
                                     onClick={() => {
                                         setSelectedEvent(
                                             room.currentGroupId.split("-")[0]

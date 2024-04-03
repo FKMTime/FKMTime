@@ -1,17 +1,10 @@
-import {
-    Alert,
-    AlertIcon,
-    Box,
-    Button,
-    IconButton,
-    Input,
-} from "@chakra-ui/react";
+import { Alert, AlertIcon, Box, Button, Input } from "@chakra-ui/react";
 import { useAtom } from "jotai";
 import { ChangeEvent, useCallback, useEffect, useState } from "react";
-import { MdAdd } from "react-icons/md";
 import { useNavigate } from "react-router-dom";
 
 import LoadingPage from "@/Components/LoadingPage";
+import PlusButton from "@/Components/PlusButton.tsx";
 import { HAS_WRITE_ACCESS } from "@/logic/accounts";
 import { competitionAtom } from "@/logic/atoms";
 import { getUserInfo } from "@/logic/auth";
@@ -115,30 +108,20 @@ const Persons = () => {
             <Box
                 display="flex"
                 flexDirection="row"
-                justifyContent="space-between"
-                marginRight="5"
-                gap="5"
+                justifyContent={{ base: "center", md: "space-between" }}
+                marginRight={{ base: "0", md: "5" }}
+                gap={{ base: "3", md: "5" }}
             >
                 <Input
                     placeholder="Search"
                     _placeholder={{ color: "white" }}
                     value={search}
                     onChange={handleSearch}
-                    width={{ base: "100%", md: "40%" }}
+                    width="100%"
                 />
                 {HAS_WRITE_ACCESS.includes(userInfo.role) && (
-                    <IconButton
-                        icon={<MdAdd />}
+                    <PlusButton
                         aria-label="Add"
-                        bg="white"
-                        color="black"
-                        rounded="20"
-                        width="5"
-                        height="10"
-                        _hover={{
-                            background: "white",
-                            color: "gray.700",
-                        }}
                         onClick={() => setIsOpenAddStaffMemberModal(true)}
                     />
                 )}

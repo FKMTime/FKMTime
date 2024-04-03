@@ -4,16 +4,15 @@ import {
     Box,
     Button,
     Heading,
-    IconButton,
     Text,
     useToast,
 } from "@chakra-ui/react";
 import { useAtom } from "jotai";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { MdAdd } from "react-icons/md";
 import { useNavigate, useParams } from "react-router-dom";
 
 import LoadingPage from "@/Components/LoadingPage";
+import PlusButton from "@/Components/PlusButton.tsx";
 import { competitionAtom } from "@/logic/atoms";
 import { getCompetitionInfo } from "@/logic/competition";
 import { Result } from "@/logic/interfaces";
@@ -196,18 +195,8 @@ const SingleResult = () => {
             <Text fontSize="xl">Attempts: {maxAttempts}</Text>
             <Box display="flex" gap="5" alignItems="center">
                 <Heading mt={3}>Attempts</Heading>
-                <IconButton
-                    icon={<MdAdd />}
+                <PlusButton
                     aria-label="Add"
-                    bg="white"
-                    color="black"
-                    rounded="20"
-                    width="5"
-                    height="10"
-                    _hover={{
-                        background: "white",
-                        color: "gray.700",
-                    }}
                     onClick={() => setIsOpenCreateAttemptModal(true)}
                 />
             </Box>

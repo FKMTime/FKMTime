@@ -1,6 +1,7 @@
 import {
     Box,
     Button,
+    Flex,
     Heading,
     IconButton,
     Input,
@@ -10,13 +11,13 @@ import {
 import { Event, Round } from "@wca/helpers";
 import { useAtom } from "jotai";
 import { ChangeEvent, useCallback, useEffect, useMemo, useState } from "react";
-import { MdAdd } from "react-icons/md";
 import { useNavigate, useParams } from "react-router-dom";
 import io from "socket.io-client";
 
 import Alert from "@/Components/Alert";
 import EventIcon from "@/Components/Icons/EventIcon";
 import LoadingPage from "@/Components/LoadingPage";
+import PlusButton from "@/Components/PlusButton.tsx";
 import Select from "@/Components/Select";
 import { HAS_WRITE_ACCESS } from "@/logic/accounts";
 import { competitionAtom } from "@/logic/atoms";
@@ -235,7 +236,6 @@ const Results = () => {
                     value={search}
                     onChange={handleSearch}
                 />
-
                 {currentRounds.map((roundId) => (
                     <Button
                         key={roundId}
@@ -251,19 +251,10 @@ const Results = () => {
             {filters.roundId && (
                 <Box display="flex" flexDirection="column" gap="5">
                     {HAS_WRITE_ACCESS.includes(userInfo.role) && (
-                        <IconButton
-                            icon={<MdAdd />}
-                            aria-label="Add"
-                            bg="white"
-                            color="black"
-                            rounded="20"
-                            width="5"
-                            height="10"
-                            _hover={{
-                                background: "white",
-                                color: "gray.700",
-                            }}
+                        <PlusButton
                             onClick={() => setIsOpenCreateAttemptModal(true)}
+                            aria-label="Add"
+                            display={{ base: "none", md: "flex" }}
                         />
                     )}
                     <Text>
@@ -281,13 +272,22 @@ const Results = () => {
                     <Text>Attempts: {maxAttempts}</Text>
                     {HAS_WRITE_ACCESS.includes(userInfo.role) &&
                         results.length > 0 && (
-                            <Button
-                                colorScheme="yellow"
-                                width={{ base: "100%", md: "fit-content" }}
-                                onClick={handleResubmitRound}
-                            >
-                                Resubmit round results to WCA Live
-                            </Button>
+                            <Flex gap="2">
+                                <Button
+                                    colorScheme="yellow"
+                                    width={{ base: "100%", md: "fit-content" }}
+                                    onClick={handleResubmitRound}
+                                >
+                                    Resubmit round results to WCA Live
+                                </Button>
+                                <PlusButton
+                                    onClick={() =>
+                                        setIsOpenCreateAttemptModal(true)
+                                    }
+                                    aria-label="Add"
+                                    display={{ base: "flex", md: "none" }}
+                                />
+                            </Flex>
                         )}
                 </Box>
             )}

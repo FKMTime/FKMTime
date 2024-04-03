@@ -1,9 +1,10 @@
 import { Box, IconButton } from "@chakra-ui/react";
 import { useEffect, useState } from "react";
-import { MdAdd, MdKey, MdSettings } from "react-icons/md";
+import { MdKey, MdSettings } from "react-icons/md";
 import io from "socket.io-client";
 
 import LoadingPage from "@/Components/LoadingPage";
+import PlusButton from "@/Components/PlusButton.tsx";
 import { getToken } from "@/logic/auth";
 import { getAllDevices } from "@/logic/devices";
 import { AvailableDevice, Device } from "@/logic/interfaces";
@@ -90,20 +91,10 @@ const Devices = () => {
     return (
         <Box display="flex" flexDirection="column" gap="5">
             <Box display="flex" gap="2">
-                <IconButton
-                    icon={<MdAdd />}
+                <PlusButton
                     aria-label="Add"
-                    bg="white"
-                    color="black"
-                    rounded="20"
-                    width="5"
-                    height="10"
-                    _hover={{
-                        background: "white",
-                        color: "gray.700",
-                    }}
-                    title="Add new device"
                     onClick={() => setIsOpenCreateDeviceModal(true)}
+                    title="Add new device"
                 />
                 <IconButton
                     icon={<MdSettings />}

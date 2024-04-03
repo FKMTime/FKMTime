@@ -1,11 +1,12 @@
 import { Box } from "@chakra-ui/react";
-import { useAtomValue } from "jotai";
-import { useEffect, useState } from "react";
+import { useAtom, useAtomValue } from "jotai";
+import { useCallback, useEffect, useState } from "react";
 import { Outlet, useNavigate } from "react-router-dom";
 import io from "socket.io-client";
 
-import { showSidebarAtom } from "@/logic/atoms";
+import { competitionAtom, showSidebarAtom } from "@/logic/atoms";
 import { getToken, getUserInfo, isUserLoggedIn } from "@/logic/auth";
+import { getCompetitionInfo } from "@/logic/competition.ts";
 import {
     COMPETITION_WEBSOCKET_URL,
     INCIDENTS_WEBSOCKET_URL,
@@ -19,6 +20,7 @@ const Layout = () => {
     const userInfo = getUserInfo();
     const navigate = useNavigate();
     const showSidebar = useAtomValue(showSidebarAtom);
+    const [competition, setCompetition] = useAtom(competitionAtom);
     const [incidentsSocket] = useState(
         io(INCIDENTS_WEBSOCKET_URL, {
             transports: ["websocket"],
@@ -112,12 +114,26 @@ const Layout = () => {
         });
     }, [navigate]);
 
-    if (!userInfo) {
+    const fetchCompetition = useCallback(async () => {
+        const response = await getCompetitionInfo();
+        if (response.status !== 200) {
+            navigate("/competition");
+        }
+        setCompetition(response.data);
+    }, [navigate, setCompetition]);
+
+    useEffect(() => {
+        fetchCompetition();
+    }, [fetchCompetition]);
+
+    if (!userInfo || !competition) {
         return <></>;
     }
     return (
         <Box display="flex">
-            {showSidebar && <Sidebar user={userInfo} />}
+            {showSidebar && (
+                <Sidebar user={userInfo} competition={competition} />
+            )}
             <Box width="100%" padding="5" color="white">
                 <Outlet />
             </Box>

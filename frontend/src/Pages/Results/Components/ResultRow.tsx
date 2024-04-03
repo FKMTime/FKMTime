@@ -10,7 +10,7 @@ import {
     attemptWithPenaltyToString,
     resultToString,
 } from "@/logic/resultFormatters";
-import { getSubmittedAttempts } from "@/logic/utils";
+import { getSubmittedAttempts, isMobileView } from "@/logic/utils";
 
 interface ResultRowProps {
     result: Result;
@@ -31,13 +31,16 @@ const ResultRow = ({ result, maxAttempts }: ResultRowProps) => {
                 <Td>
                     {result.person.name} ({result.person.registrantId})
                 </Td>
-                {Array.from({ length: maxAttempts }, (_, i) => (
-                    <Td key={i}>
-                        {submittedAttempts.length > i
-                            ? attemptWithPenaltyToString(submittedAttempts[i])
-                            : ""}
-                    </Td>
-                ))}
+                {!isMobileView() &&
+                    Array.from({ length: maxAttempts }, (_, i) => (
+                        <Td key={i}>
+                            {submittedAttempts.length > i
+                                ? attemptWithPenaltyToString(
+                                      submittedAttempts[i]
+                                  )
+                                : ""}
+                        </Td>
+                    ))}
                 <Td>
                     {calculatedAverage ? resultToString(calculatedAverage) : ""}
                 </Td>

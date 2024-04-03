@@ -294,6 +294,10 @@ export const isMobile = () => {
     return regex.test(navigator.userAgent);
 };
 
+export const isMobileView = () => {
+    return window.innerWidth < 768;
+};
+
 export const isNotificationsSupported = () => {
     return "Notification" in window;
 };

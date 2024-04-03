@@ -13,18 +13,20 @@ import {
 
 import logo from "@/assets/logo.svg";
 import { HAS_WRITE_ACCESS } from "@/logic/accounts";
-import { UserInfo } from "@/logic/interfaces";
+import { Competition, UserInfo } from "@/logic/interfaces";
 
 import SidebarElement from "./SidebarElement";
 
 interface SidebarContentProps {
     user: UserInfo;
+    competition: Competition;
     handleLogout: () => void;
     onElementClick?: () => void;
 }
 
 const SidebarContent = ({
     user,
+    competition,
     handleLogout,
     onElementClick,
 }: SidebarContentProps) => {
@@ -40,6 +42,14 @@ const SidebarContent = ({
             height="fit-content"
         >
             <Image src={logo} alt="Logo" width="100%" />
+            <Text
+                textAlign="center"
+                fontWeight="bold"
+                fontSize="xl"
+                color="white"
+            >
+                {competition.name}
+            </Text>
             <Text color="white" textAlign="center">
                 Hello {user.fullName ? user.fullName : user.username}!
             </Text>

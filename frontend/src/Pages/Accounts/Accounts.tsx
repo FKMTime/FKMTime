@@ -1,7 +1,7 @@
-import { Box, IconButton } from "@chakra-ui/react";
+import { Box } from "@chakra-ui/react";
 import { useEffect, useState } from "react";
-import { MdAdd } from "react-icons/md";
 
+import PlusButton from "@/Components/PlusButton.tsx";
 import { getAllAccounts } from "@/logic/accounts";
 import { Account } from "@/logic/interfaces";
 
@@ -29,18 +29,8 @@ const Accounts = () => {
 
     return (
         <Box display="flex" flexDirection="column" gap="5">
-            <IconButton
-                icon={<MdAdd />}
+            <PlusButton
                 aria-label="Add"
-                bg="white"
-                color="black"
-                rounded="20"
-                width="5"
-                height="10"
-                _hover={{
-                    background: "white",
-                    color: "gray.700",
-                }}
                 onClick={() => setIsOpenCreateAccountModal(true)}
             />
             <AccountsTable accounts={accounts} fetchData={fetchData} />

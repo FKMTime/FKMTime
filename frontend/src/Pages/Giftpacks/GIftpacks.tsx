@@ -113,7 +113,12 @@ const Giftpacks = () => {
         return <LoadingPage />;
     }
     return (
-        <Box display="flex" justifyContent="space-between" gap="5">
+        <Box
+            display="flex"
+            justifyContent="space-between"
+            gap="5"
+            flexDirection={{ base: "column", md: "row" }}
+        >
             <Box display="flex" flexDirection="column" gap="5">
                 <Heading size="lg">
                     Giftpacks {`${collectedGiftpacks}/${totalPersons}`}
