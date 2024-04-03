@@ -1,6 +1,6 @@
 import { IconButton, Td, Tr, useToast } from "@chakra-ui/react";
 import { useState } from "react";
-import { MdDelete, MdEdit } from "react-icons/md";
+import { MdDelete, MdEdit, MdNewLabel } from "react-icons/md";
 
 import Alert from "@/Components/Alert";
 import { deleteAttempt } from "@/logic/attempt";
@@ -9,6 +9,7 @@ import { attemptWithPenaltyToString } from "@/logic/resultFormatters";
 import { getResolvedStatus } from "@/logic/utils";
 
 import EditAttemptModal from "./EditAttemptModal";
+import GiveExtraAttemptModal from "./GiveExtraAttemptModal";
 
 interface AttemptRowProps {
     attempt: Attempt;
@@ -28,6 +29,8 @@ const AttemptRow = ({
     const toast = useToast();
     const [openConfirmation, setOpenConfirmation] = useState<boolean>(false);
     const [isOpenEditAttemptModal, setIsOpenEditAttemptModal] =
+        useState<boolean>(false);
+    const [isOpenGiveExtraAttemptModal, setIsOpenGiveExtraAttemptModal] =
         useState<boolean>(false);
 
     const handleDelete = async () => {
@@ -60,9 +63,10 @@ const AttemptRow = ({
         }
     };
 
-    const handleCloseEditModal = async () => {
+    const handleCloseModal = async () => {
         fetchData();
         setIsOpenEditAttemptModal(false);
+        setIsOpenGiveExtraAttemptModal(false);
     };
 
     return (
@@ -106,6 +110,20 @@ const AttemptRow = ({
                         title="Edit attempt"
                         onClick={() => setIsOpenEditAttemptModal(true)}
                     />
+                    {attempt.status === AttemptStatus.STANDARD_ATTEMPT && (
+                        <IconButton
+                            icon={<MdNewLabel />}
+                            aria-label="Delete"
+                            bg="none"
+                            color="white"
+                            _hover={{
+                                background: "none",
+                                color: "gray.400",
+                            }}
+                            title="Give extra attempt"
+                            onClick={() => setIsOpenGiveExtraAttemptModal(true)}
+                        />
+                    )}
                     <IconButton
                         icon={<MdDelete />}
                         aria-label="Delete"
@@ -129,9 +147,14 @@ const AttemptRow = ({
             />
             <EditAttemptModal
                 isOpen={isOpenEditAttemptModal}
-                onClose={handleCloseEditModal}
+                onClose={handleCloseModal}
                 attempt={attempt}
                 result={result}
+            />
+            <GiveExtraAttemptModal
+                isOpen={isOpenGiveExtraAttemptModal}
+                onClose={handleCloseModal}
+                attempt={attempt}
             />
         </>
     );

@@ -123,6 +123,7 @@ export class AttemptService {
             roundId: true,
             person: {
               select: {
+                id: true,
                 registrantId: true,
               },
             },
@@ -153,24 +154,12 @@ export class AttemptService {
     if (!attempt) {
       throw new HttpException('Attempt not found', 404);
     }
-    if (
-      data.submitToWcaLive &&
-      data.status !== AttemptStatus.EXTRA_GIVEN &&
-      !data.replacedBy
-    ) {
-      const competition = await this.prisma.competition.findFirst();
-      const roundId = attempt.result.roundId;
-      const timeToEnterAttemptToWcaLive =
-        data.penalty === -1 ? -1 : data.penalty * 100 + data.value;
-      await this.wcaService.enterAttemptToWcaLive(
-        competition.wcaId,
-        competition.scoretakingToken,
-        roundId.split('-')[0],
-        parseInt(roundId.split('-r')[1]),
-        attempt.result.person.registrantId,
-        data.attemptNumber,
-        timeToEnterAttemptToWcaLive,
+    if (data.submitToWcaLive) {
+      const result = await this.resultService.getResultOrCreate(
+        attempt.result.person.id,
+        attempt.result.roundId,
       );
+      await this.wcaService.enterWholeScorecardToWcaLive(result);
       return attempt;
     }
   }
