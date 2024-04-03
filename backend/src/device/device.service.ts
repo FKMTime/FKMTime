@@ -1,4 +1,4 @@
-import {HttpException, Injectable} from '@nestjs/common';
+import { HttpException, Injectable } from '@nestjs/common';
 import { DbService } from '../db/db.service';
 import { DeviceDto } from './dto/device.dto';
 import { UpdateBatteryPercentageDto } from './dto/updateBatteryPercentage.dto';

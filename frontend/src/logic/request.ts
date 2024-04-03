@@ -6,7 +6,7 @@ const DEV_BACKEND_URL = import.meta.env.VITE_BACKEND_ORIGIN
 const DEV_WCA_URL =
     import.meta.env.VITE_WCA_ORIGIN || "https://www.worldcubeassociation.org";
 
-const WCA_ORIGIN = import.meta.env.PROD
+export const WCA_ORIGIN = import.meta.env.PROD
     ? "https://www.worldcubeassociation.org"
     : DEV_WCA_URL;
 

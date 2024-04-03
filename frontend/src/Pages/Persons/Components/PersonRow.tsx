@@ -1,4 +1,4 @@
-import { Box, IconButton, Td, Tr } from "@chakra-ui/react";
+import { Box, IconButton, Link, Td, Tr } from "@chakra-ui/react";
 import { Competition } from "@wca/helpers";
 import { useState } from "react";
 import { FaAddressCard } from "react-icons/fa";
@@ -7,6 +7,7 @@ import { useNavigate } from "react-router-dom";
 
 import EventIcon from "@/Components/Icons/EventIcon";
 import { Person } from "@/logic/interfaces";
+import { WCA_ORIGIN } from "@/logic/request";
 import {
     getPersonFromWcif,
     prettyGender,
@@ -42,7 +43,14 @@ const PersonRow = ({ person, wcif, handleCloseEditModal }: PersonRowProps) => {
             <Tr key={person.id}>
                 <Td>{person.registrantId}</Td>
                 <Td>{person.name}</Td>
-                <Td>{person.wcaId}</Td>
+                <Td>
+                    <Link
+                        target="_blank"
+                        href={`${WCA_ORIGIN}/persons/${person.wcaId}`}
+                    >
+                        {person.wcaId}
+                    </Link>
+                </Td>
                 <Td>{regionNameByIso2(person.countryIso2!)}</Td>
                 <Td>{prettyGender(person.gender)}</Td>
                 <Td>
