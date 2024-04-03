@@ -5,11 +5,17 @@ export const getPersons = async (
     page = 1,
     pageSize = 10,
     search?: string,
-    registrantId?: number
+    registrantId?: number,
+    withoutCardAssigned?: boolean
 ) => {
-    const query = `person?page=${page}&pageSize=${pageSize}${
-        search ? `&search=${search}` : ""
-    }${registrantId ? `&registrantId=${registrantId}` : ""}`;
+    const searchParams = new URLSearchParams();
+    searchParams.append("page", page.toString());
+    searchParams.append("pageSize", pageSize.toString());
+    if (search) searchParams.append("search", search);
+    if (registrantId)
+        searchParams.append("registrantId", registrantId.toString());
+    if (withoutCardAssigned) searchParams.append("withoutCardAssigned", "true");
+    const query = `person?${searchParams.toString()}`;
     const response = await backendRequest(query, "GET", true);
     return await response.json();
 };
@@ -70,6 +76,13 @@ export const updatePerson = async (data: Person) => {
         true,
         data
     );
+    return response.status;
+};
+
+export const assignCard = async (personId: string, cardId: string) => {
+    const response = await backendRequest(`person/${personId}`, "PUT", true, {
+        cardId,
+    });
     return response.status;
 };
 

@@ -14,35 +14,81 @@ export class PersonService {
     pageSize: number,
     search?: string,
     registrantId?: number,
+    withoutCardAssigned?: boolean,
   ) {
     const whereParams = {};
     if (registrantId) {
       whereParams['registrantId'] = registrantId;
     }
-    if (search && !registrantId) {
-      whereParams['OR'] = [
+    if (withoutCardAssigned && search) {
+      whereParams['AND'] = [
         {
-          name: {
-            contains: search,
-            mode: 'insensitive',
-          },
+          OR: [
+            {
+              cardId: {
+                equals: null,
+              },
+            },
+            {
+              cardId: {
+                equals: '',
+              },
+            },
+            {
+              cardId: {
+                equals: '0',
+              },
+            },
+          ],
         },
         {
-          wcaId: {
-            contains: search,
-            mode: 'insensitive',
-          },
-        },
-        {
-          cardId: {
-            equals: search,
-          },
+          OR: [
+            {
+              name: {
+                contains: search,
+                mode: 'insensitive',
+              },
+            },
+            {
+              wcaId: {
+                contains: search,
+                mode: 'insensitive',
+              },
+            },
+            {
+              cardId: {
+                equals: search,
+              },
+            },
+          ],
         },
       ];
-      if (!isNaN(parseInt(search)) && !registrantId) {
-        whereParams['OR'].push({
-          registrantId: parseInt(search),
-        });
+    } else if (!withoutCardAssigned && search) {
+      if (search && !registrantId) {
+        whereParams['OR'] = [
+          {
+            name: {
+              contains: search,
+              mode: 'insensitive',
+            },
+          },
+          {
+            wcaId: {
+              contains: search,
+              mode: 'insensitive',
+            },
+          },
+          {
+            cardId: {
+              equals: search,
+            },
+          },
+        ];
+        if (!isNaN(parseInt(search)) && !registrantId) {
+          whereParams['OR'].push({
+            registrantId: parseInt(search),
+          });
+        }
       }
     }
     const persons = await this.prisma.person.findMany({
@@ -140,7 +186,7 @@ export class PersonService {
   }
 
   async getPersonsWithoutCardAssigned() {
-    return this.prisma.person.findMany({
+    const count = await this.prisma.person.count({
       where: {
         OR: [
           {
@@ -161,6 +207,9 @@ export class PersonService {
         ],
       },
     });
+    return {
+      count,
+    };
   }
 
   async updatePerson(id: string, data: UpdatePersonDto) {

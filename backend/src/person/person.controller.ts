@@ -27,12 +27,14 @@ export class PersonController {
     @Query('pageSize') pageSize = 10,
     @Query('search') search?: string,
     @Query('registrantId') registrantId?: number,
+    @Query('withoutCardAssigned') withoutCardAssigned?: boolean,
   ) {
     return await this.personService.getPersons(
       +page,
       +pageSize,
       search,
       +registrantId,
+      withoutCardAssigned,
     );
   }
 

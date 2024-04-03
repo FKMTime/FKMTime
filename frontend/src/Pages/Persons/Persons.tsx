@@ -65,7 +65,12 @@ const Persons = () => {
     };
 
     const handleCloseEditModal = async () => {
-        await fetchData(page, pageSize, search);
+        await fetchData(
+            page,
+            pageSize,
+            search,
+            searchedId ? parseInt(searchedId) : undefined
+        );
     };
 
     const changePageSize = (pageSizeParam: number) => {

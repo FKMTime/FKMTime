@@ -13,24 +13,30 @@ import { getPersonNameAndRegistrantId, getPersons } from "@/logic/persons.ts";
 interface PersonAutocompleteProps {
     onSelect: (value: string) => void;
     autoFocus?: boolean;
-    personsList?: Person[];
     value?: string;
     disabled?: boolean;
+    withoutCardAssigned?: boolean;
 }
 
 const PersonAutocomplete = ({
     onSelect,
     autoFocus,
-    personsList,
     value,
     disabled,
+    withoutCardAssigned,
 }: PersonAutocompleteProps) => {
-    const [persons, setPersons] = useState<Person[]>(personsList || []);
+    const [persons, setPersons] = useState<Person[]>([]);
     const [isLoading, setIsLoading] = useState<boolean>(false);
 
     const handleSearch = async (searchValue: string) => {
         setIsLoading(true);
-        const response = await getPersons(1, 10, searchValue);
+        const response = await getPersons(
+            1,
+            10,
+            searchValue,
+            undefined,
+            withoutCardAssigned
+        );
         if (response.data.length === 0) {
             setIsLoading(false);
             return;
@@ -56,7 +62,7 @@ const PersonAutocomplete = ({
                             color: "gray.200",
                         }}
                         onChange={(e: ChangeEvent<HTMLInputElement>) =>
-                            !personsList && handleSearch(e.target.value)
+                            handleSearch(e.target.value)
                         }
                         disabled={disabled}
                         borderColor="white"

@@ -1,30 +1,28 @@
 import { Box, Heading, Input, useToast } from "@chakra-ui/react";
 import { RefObject, useEffect, useRef, useState } from "react";
 
-import ManualPersonAutocomplete from "@/Components/ManulPersonAutocomplete.tsx";
-import { Person } from "@/logic/interfaces";
-import { getPersonsWithoutCardAssigned, updatePerson } from "@/logic/persons";
+import PersonAutocomplete from "@/Components/PersonAutocomplete.tsx";
+import { assignCard, getPersonsWithoutCardAssigned } from "@/logic/persons";
 
 const AssignCards = () => {
     const toast = useToast();
     const [cardId, setCardId] = useState<string>("");
-    const [personsWithoutCard, setPersonsWithoutCard] = useState<Person[]>([]);
-    const [currentPerson, setCurrentPerson] = useState<Person | null>(null);
-    const [searchValue, setSearchValue] = useState<string>("");
+    const [personsWithoutCard, setPersonsWithoutCard] = useState<number>(0);
+    const [currentPersonId, setCurrentPersonId] = useState<string>("");
     const cardInputRef: RefObject<HTMLInputElement> =
         useRef<HTMLInputElement>(null);
 
     useEffect(() => {
         const fetchData = async () => {
             const data = await getPersonsWithoutCardAssigned();
-            setPersonsWithoutCard(data);
+            setPersonsWithoutCard(data.count);
         };
         fetchData();
     }, []);
 
     const handleSubmit = async () => {
-        if (!currentPerson) return;
-        const status = await updatePerson({ ...currentPerson, cardId });
+        if (!currentPersonId) return;
+        const status = await assignCard(currentPersonId, cardId);
         if (status === 200) {
             toast({
                 title: "Card assigned",
@@ -33,13 +31,8 @@ const AssignCards = () => {
                 isClosable: true,
             });
             setCardId("");
-            setSearchValue("");
-            setPersonsWithoutCard(
-                personsWithoutCard.filter(
-                    (person) => person.id !== currentPerson.id
-                )
-            );
-            setCurrentPerson(null);
+            setPersonsWithoutCard(personsWithoutCard - 1);
+            setCurrentPersonId("");
             document.getElementById("searchInput")?.focus();
         } else if (status === 409) {
             toast({
@@ -61,10 +54,7 @@ const AssignCards = () => {
     };
 
     const handleChangePerson = (value: string) => {
-        setSearchValue(value);
-        setCurrentPerson(
-            personsWithoutCard.find((person) => person.id === value) || null
-        );
+        setCurrentPersonId(value);
     };
 
     return (
@@ -76,18 +66,17 @@ const AssignCards = () => {
             justifyContent="center"
         >
             <Heading size="lg">
-                There are {personsWithoutCard.length} persons without card
-                assigned
+                There are {personsWithoutCard} persons without card assigned
             </Heading>
             <Box width={{ base: "100%", md: "20%" }}>
-                <ManualPersonAutocomplete
+                <PersonAutocomplete
                     onSelect={handleChangePerson}
-                    persons={personsWithoutCard}
-                    value={searchValue}
+                    withoutCardAssigned={true}
+                    value={currentPersonId}
                     autoFocus={true}
                 />
             </Box>
-            {currentPerson && (
+            {currentPersonId && (
                 <Input
                     placeholder="Card ID"
                     value={cardId}
