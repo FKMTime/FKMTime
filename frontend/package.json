@@ -40,7 +40,7 @@
     "eslint-plugin-simple-import-sort": "^12.0.0",
     "prettier": "^3.2.5",
     "typescript": "^5.2.2",
-    "vite": "^5.0.12",
+    "vite": "^5.1.7",
     "vite-plugin-checker": "^0.6.2",
     "vite-plugin-eslint": "^1.8.1",
     "vite-plugin-pwa": "^0.19.2",
