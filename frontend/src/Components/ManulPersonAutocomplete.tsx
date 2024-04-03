@@ -7,6 +7,7 @@ import {
 } from "@choc-ui/chakra-autocomplete";
 
 import { Person } from "@/logic/interfaces";
+import { getPersonNameAndRegistrantId } from "@/logic/persons.ts";
 
 interface ManualPersonAutocompleteProps {
     onSelect: (value: string) => void;
@@ -42,12 +43,9 @@ const ManualPersonAutocomplete = ({
                             <AutoCompleteItem
                                 key={person.id}
                                 value={person.id}
-                                label={`${person.name} ${person.registrantId ? `(${person.registrantId})` : ""}`}
+                                label={getPersonNameAndRegistrantId(person)}
                             >
-                                {person.name}{" "}
-                                {person.registrantId
-                                    ? `(${person.registrantId})`
-                                    : ""}
+                                {getPersonNameAndRegistrantId(person)}
                             </AutoCompleteItem>
                         ))}
                     </AutoCompleteList>

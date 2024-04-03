@@ -19,7 +19,7 @@ import { competitionAtom } from "@/logic/atoms";
 import { updateAttempt } from "@/logic/attempt";
 import { DNF_VALUE } from "@/logic/constants";
 import { Attempt, AttemptStatus, Person, Result } from "@/logic/interfaces";
-import { getAllPersons } from "@/logic/persons";
+import { getAllPersons, getPersonNameAndRegistrantId } from "@/logic/persons";
 import { checkTimeLimit } from "@/logic/results";
 import { msToString, prettyAttemptStatus } from "@/logic/utils";
 
@@ -200,7 +200,7 @@ const EditAttemptModal = ({
                     >
                         {persons.map((person) => (
                             <option key={person.id} value={person.id}>
-                                {person.name} ({person.registrantId})
+                                {getPersonNameAndRegistrantId(person)}
                             </option>
                         ))}
                     </Select>

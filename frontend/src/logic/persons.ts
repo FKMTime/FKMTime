@@ -73,11 +73,6 @@ export const updatePerson = async (data: Person) => {
     return response.status;
 };
 
-export const filterPersons = (persons: Person[], search: string) => {
-    return persons.filter(
-        (person) =>
-            person.name.toLowerCase().includes(search.toLowerCase()) ||
-            (person.registrantId &&
-                person.registrantId.toString().includes(search.toLowerCase()))
-    );
+export const getPersonNameAndRegistrantId = (person: Person) => {
+    return `${person.name} ${person.registrantId ? `(${person.registrantId})` : ""}`;
 };

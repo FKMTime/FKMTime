@@ -8,7 +8,7 @@ import {
 import { ChangeEvent, useState } from "react";
 
 import { Person } from "@/logic/interfaces";
-import { getPersons } from "@/logic/persons.ts";
+import { getPersonNameAndRegistrantId, getPersons } from "@/logic/persons.ts";
 
 interface PersonAutocompleteProps {
     onSelect: (value: string) => void;
@@ -67,12 +67,9 @@ const PersonAutocomplete = ({
                             <AutoCompleteItem
                                 key={person.id}
                                 value={person.id}
-                                label={`${person.name} ${person.registrantId ? `(${person.registrantId})` : ""}`}
+                                label={getPersonNameAndRegistrantId(person)}
                             >
-                                {person.name}{" "}
-                                {person.registrantId
-                                    ? `(${person.registrantId})`
-                                    : ""}
+                                {getPersonNameAndRegistrantId(person)}
                             </AutoCompleteItem>
                         ))}
                     </AutoCompleteList>
