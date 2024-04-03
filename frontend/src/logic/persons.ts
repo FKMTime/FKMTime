@@ -1,10 +1,15 @@
 import { Person } from "./interfaces";
 import { backendRequest } from "./request";
 
-export const getPersons = async (page = 1, pageSize = 10, search?: string) => {
+export const getPersons = async (
+    page = 1,
+    pageSize = 10,
+    search?: string,
+    registrantId?: number
+) => {
     const query = `person?page=${page}&pageSize=${pageSize}${
         search ? `&search=${search}` : ""
-    }`;
+    }${registrantId ? `&registrantId=${registrantId}` : ""}`;
     const response = await backendRequest(query, "GET", true);
     return await response.json();
 };

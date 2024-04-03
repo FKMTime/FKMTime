@@ -26,8 +26,14 @@ export class PersonController {
     @Query('page') page = 1,
     @Query('pageSize') pageSize = 10,
     @Query('search') search?: string,
+    @Query('registrantId') registrantId?: number,
   ) {
-    return await this.personService.getPersons(+page, +pageSize, search);
+    return await this.personService.getPersons(
+      +page,
+      +pageSize,
+      search,
+      +registrantId,
+    );
   }
 
   @UseGuards(AuthGuard('jwt'), AdminGuard)

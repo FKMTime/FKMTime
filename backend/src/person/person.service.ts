@@ -9,9 +9,17 @@ import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 export class PersonService {
   constructor(private readonly prisma: DbService) {}
 
-  async getPersons(page: number, pageSize: number, search?: string) {
+  async getPersons(
+    page: number,
+    pageSize: number,
+    search?: string,
+    registrantId?: number,
+  ) {
     const whereParams = {};
-    if (search) {
+    if (registrantId) {
+      whereParams['registrantId'] = registrantId;
+    }
+    if (search && !registrantId) {
       whereParams['OR'] = [
         {
           name: {
@@ -31,7 +39,7 @@ export class PersonService {
           },
         },
       ];
-      if (!isNaN(parseInt(search))) {
+      if (!isNaN(parseInt(search)) && !registrantId) {
         whereParams['OR'].push({
           registrantId: parseInt(search),
         });

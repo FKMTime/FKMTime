@@ -43,7 +43,9 @@ const RoomCard = ({
             key={room.id}
             border="1px"
             p="3"
-            borderColor="gray.200"
+            display="flex"
+            flexDirection="column"
+            gap="3"
             width="fit-content"
         >
             <Heading size="md">{room.name}</Heading>
