@@ -164,7 +164,7 @@ const SingleResult = () => {
             </Text>
             <Button
                 colorScheme="yellow"
-                width={{ base: "100%", md: "20%" }}
+                width={{ base: "100%", md: "fit-content" }}
                 onClick={handleResubmit}
             >
                 Resubmit scorecard to WCA Live

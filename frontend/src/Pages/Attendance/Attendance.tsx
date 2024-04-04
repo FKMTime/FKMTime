@@ -339,6 +339,7 @@ const Attendance = () => {
                                 {presentJudges.length > 0 && (
                                     <PresentPeopleList
                                         persons={presentJudges}
+                                        showDevice
                                     />
                                 )}
                                 {absentJudges.length > 0 && (

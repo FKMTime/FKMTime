@@ -136,6 +136,7 @@ export class ResultService {
             name: true,
             wcaId: true,
             registrantId: true,
+            countryIso2: true,
           },
         },
         attempts: {
