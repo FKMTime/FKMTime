@@ -5,6 +5,7 @@ import { FaAddressCard } from "react-icons/fa";
 import { MdAssignment, MdBarChart, MdDone } from "react-icons/md";
 import { useNavigate } from "react-router-dom";
 
+import Avatar from "@/Components/Avatar/Avatar";
 import EventIcon from "@/Components/Icons/EventIcon";
 import FlagIcon from "@/Components/Icons/FlagIcon.tsx";
 import { Person } from "@/logic/interfaces";
@@ -43,7 +44,17 @@ const PersonRow = ({ person, wcif, handleCloseEditModal }: PersonRowProps) => {
         <>
             <Tr key={person.id}>
                 <Td>{person.registrantId}</Td>
-                <Td>{person.name}</Td>
+                <Td>
+                    <Box display="flex" alignItems="center" gap="1">
+                        <Avatar
+                            avatarSize={30}
+                            avatarUrl={wcifInfo?.avatar?.thumbUrl}
+                            fullAvatarUrl={wcifInfo?.avatar?.url}
+                            username={person.name}
+                        />
+                        <Text>{person.name}</Text>
+                    </Box>
+                </Td>
                 <Td>
                     <Link
                         target="_blank"
