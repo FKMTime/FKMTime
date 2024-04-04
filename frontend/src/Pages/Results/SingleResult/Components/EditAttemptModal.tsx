@@ -18,7 +18,14 @@ import Select from "@/Components/Select";
 import { competitionAtom } from "@/logic/atoms";
 import { updateAttempt } from "@/logic/attempt";
 import { DNF_VALUE } from "@/logic/constants";
-import { Attempt, AttemptStatus, Person, Result } from "@/logic/interfaces";
+import { getAllDevices } from "@/logic/devices.ts";
+import {
+    Attempt,
+    AttemptStatus,
+    Device,
+    Person,
+    Result,
+} from "@/logic/interfaces";
 import { getAllPersons, getPersonNameAndRegistrantId } from "@/logic/persons";
 import { checkTimeLimit } from "@/logic/results";
 import { msToString, prettyAttemptStatus } from "@/logic/utils";
@@ -40,6 +47,7 @@ const EditAttemptModal = ({
     const [isLoading, setIsLoading] = useState(false);
     const competition = useAtomValue(competitionAtom);
     const [persons, setPersons] = useState<Person[]>([]);
+    const [devices, setDevices] = useState<Device[]>([]);
 
     const [editedAttempt, setEditedAttempt] = useState<Attempt>(attempt);
     const [shouldResubmitToWcaLive, setShouldResubmitToWcaLive] =
@@ -78,8 +86,13 @@ const EditAttemptModal = ({
             const data = await getAllPersons();
             setPersons(data);
         };
+        const fetchDevicesData = async () => {
+            const data = await getAllDevices();
+            setDevices(data);
+        };
         if (isOpen) {
             fetchPersonsData();
+            fetchDevicesData();
         }
     }, [isOpen]);
 
@@ -201,6 +214,26 @@ const EditAttemptModal = ({
                         {persons.map((person) => (
                             <option key={person.id} value={person.id}>
                                 {getPersonNameAndRegistrantId(person)}
+                            </option>
+                        ))}
+                    </Select>
+                </FormControl>
+                <FormControl>
+                    <FormLabel>Device</FormLabel>
+                    <Select
+                        disabled={isLoading}
+                        value={editedAttempt.deviceId || ""}
+                        placeholder="Select device"
+                        onChange={(e) =>
+                            setEditedAttempt({
+                                ...editedAttempt,
+                                deviceId: e.target.value,
+                            })
+                        }
+                    >
+                        {devices.map((device) => (
+                            <option key={device.id} value={device.id}>
+                                {device.name}
                             </option>
                         ))}
                     </Select>

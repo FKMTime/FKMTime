@@ -39,7 +39,6 @@ const SidebarContent = ({
             alignItems="center"
             padding={5}
             width="100%"
-            height="fit-content"
         >
             <Image src={logo} alt="Logo" width="100%" />
             <Text

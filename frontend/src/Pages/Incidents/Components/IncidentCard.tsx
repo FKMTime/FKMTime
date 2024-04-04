@@ -33,7 +33,9 @@ const IncidentCard = ({ incident, wcif }: IncidentCardProps) => {
                 <Text>{getRoundNameById(incident.result.roundId, wcif)}</Text>
                 <Text>Attempt: {incident.attemptNumber}</Text>
                 <Text>Time: {resultToString(incident.value)}</Text>
-                <Text>Station: {incident.device.name}</Text>
+                {incident.device && (
+                    <Text>Station: {incident.device.name}</Text>
+                )}
                 {incident.judge && <Text>Judge: {incident.judge.name}</Text>}
             </CardBody>
         </Card>

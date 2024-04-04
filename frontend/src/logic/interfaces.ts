@@ -99,7 +99,8 @@ export interface Attempt {
     value: number;
     judgeId?: string;
     judge?: Person;
-    device: Device;
+    deviceId?: string;
+    device?: Device;
 }
 
 //eslint-disable-next-line

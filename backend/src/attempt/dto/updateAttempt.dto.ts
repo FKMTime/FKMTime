@@ -21,6 +21,10 @@ export class UpdateAttemptDto {
   @IsOptional()
   judgeId: string;
 
+  @IsString()
+  @IsOptional()
+  deviceId: string;
+
   @IsEnum(AttemptStatus)
   status: AttemptStatus;
 

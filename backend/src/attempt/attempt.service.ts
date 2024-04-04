@@ -103,18 +103,14 @@ export class AttemptService {
       value: data.value,
       comment: data.comment,
     };
-    if (data.judgeId) {
-      dataToUpdate['judge'] = {
-        connect: {
-          id: data.judgeId,
-        },
-      };
-    } else {
-      dataToUpdate['judgeId'] = null;
-    }
+
     const attempt = await this.prisma.attempt.update({
       where: { id: id },
-      data: dataToUpdate,
+      data: {
+        ...dataToUpdate,
+        judge: data.judgeId ? { connect: { id: data.judgeId } } : undefined,
+        device: data.deviceId ? { connect: { id: data.deviceId } } : undefined,
+      },
       select: {
         id: true,
         attemptNumber: true,
@@ -159,7 +155,11 @@ export class AttemptService {
         attempt.result.person.id,
         attempt.result.roundId,
       );
-      await this.wcaService.enterWholeScorecardToWcaLive(result);
+      try {
+        await this.wcaService.enterWholeScorecardToWcaLive(result);
+      } catch (e) {
+        console.error(e);
+      }
       return attempt;
     }
   }

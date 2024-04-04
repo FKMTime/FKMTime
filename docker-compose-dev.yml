@@ -7,6 +7,8 @@ services:
       dockerfile: Dockerfile.dev
     container_name: fkmtime-dev-backend
     network_mode: "host"
+    volumes:
+      - ./backend:/app
     restart: unless-stopped
     environment:
       - DATABASE_URL=postgres://root:password@127.0.0.1:5432/fkm_time
@@ -21,6 +23,8 @@ services:
       context: ./frontend
       dockerfile: Dockerfile.dev
     container_name: fkmtime-dev-frontend
+    volumes:
+      - ./frontend:/app
     ports:
       - '5173:5173'
     restart: unless-stopped
