@@ -2,7 +2,7 @@ import { PrismaClient } from '@prisma/client';
 import { sha512 } from 'js-sha512';
 const prisma = new PrismaClient();
 
-async function main() {
+export async function seedDb() {
   const adminPassword = sha512('admin');
   const adminUser = await prisma.account.upsert({
     where: { username: 'admin' },
@@ -17,7 +17,7 @@ async function main() {
 
   console.log({ adminUser });
 }
-main()
+seedDb()
   .then(async () => {
     await prisma.$disconnect();
   })

@@ -19,8 +19,14 @@ import Select from "@/Components/Select";
 import { competitionAtom } from "@/logic/atoms";
 import { getIncidentById, updateAttempt } from "@/logic/attempt";
 import { DNF_VALUE } from "@/logic/constants";
-import { AttemptStatus, Incident, Person } from "@/logic/interfaces";
+import {
+    AttemptStatus,
+    Incident,
+    Person,
+    QuickAction,
+} from "@/logic/interfaces";
 import { getAllPersons, getPersonNameAndRegistrantId } from "@/logic/persons";
+import { getQuickActions } from "@/logic/quickActions.ts";
 import { checkTimeLimit } from "@/logic/results";
 import { msToString } from "@/logic/utils";
 
@@ -30,6 +36,7 @@ const IncidentPage = () => {
     const toast = useToast();
     const { id } = useParams<{ id: string }>();
     const [persons, setPersons] = useState<Person[]>([]);
+    const [quickActions, setQuickActions] = useState<QuickAction[]>([]);
     const [editedIncident, setEditedIncident] = useState<Incident | null>(null);
     const [isLoading, setIsLoading] = useState<boolean>(false);
 
@@ -43,6 +50,9 @@ const IncidentPage = () => {
     useEffect(() => {
         getAllPersons().then((data) => {
             setPersons(data);
+        });
+        getQuickActions().then((data) => {
+            setQuickActions(data);
         });
     }, []);
 
@@ -162,6 +172,25 @@ const IncidentPage = () => {
                     </Button>
                 </>
             )}
+            <Heading size="lg">Custom quick actions</Heading>
+            {quickActions.map((quickAction) => (
+                <Button
+                    key={quickAction.id}
+                    colorScheme="gray"
+                    onClick={() =>
+                        handleSubmit({
+                            ...editedIncident,
+                            status: quickAction.giveExtra
+                                ? AttemptStatus.EXTRA_GIVEN
+                                : AttemptStatus.RESOLVED,
+                            comment: quickAction.comment || "",
+                            submitToWcaLive: !quickAction.giveExtra,
+                        })
+                    }
+                >
+                    {quickAction.name}
+                </Button>
+            ))}
             <FormControl isRequired>
                 <FormLabel>Attempt number</FormLabel>
                 <Input

@@ -156,6 +156,13 @@ export interface Settings {
     updatedAt: Date;
 }
 
+export interface QuickAction {
+    id: string;
+    name: string;
+    comment?: string;
+    giveExtra: boolean;
+}
+
 export interface GroupAssigment {
     groupId: number;
     activityCode: string;

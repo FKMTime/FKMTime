@@ -90,7 +90,6 @@ const AttemptRow = ({
                     </>
                 )}
                 <Td>
-                    {attempt.judge && attempt.judge.name}
                     {attempt.judge &&
                         getPersonNameAndRegistrantId(attempt.judge)}
                 </Td>

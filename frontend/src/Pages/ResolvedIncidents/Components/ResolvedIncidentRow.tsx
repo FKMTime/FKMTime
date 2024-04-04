@@ -30,6 +30,7 @@ const ResolvedIncidentRow = ({ incident, wcif }: ResolvedIncidentRowProps) => {
             <Td>{attemptWithPenaltyToString(incident)}</Td>
             <Td>{new Date(incident.solvedAt).toLocaleString()}</Td>
             <Td>{prettyAttemptStatus(incident.status, true)}</Td>
+            <Td>{incident.comment}</Td>
             <Td>{incident.judge?.name}</Td>
             <Td>
                 <IconButton

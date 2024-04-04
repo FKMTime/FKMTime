@@ -22,6 +22,7 @@ const ResolvedIncidents = ({ data, wcif }: ResolvedIncidentsTableProps) => {
                         <Th>Time</Th>
                         <Th>Solved at</Th>
                         <Th>Status</Th>
+                        <Th>Comment</Th>
                         <Th>Judge</Th>
                         <Th>Actions</Th>
                     </Tr>

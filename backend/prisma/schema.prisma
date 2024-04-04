@@ -8,13 +8,14 @@ datasource db {
 }
 
 model Account {
-  id        String   @id @default(uuid())
-  password  String
-  username  String?  @unique
-  role      Role?
-  fullName  String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id           String        @id @default(uuid())
+  password     String
+  username     String?       @unique
+  role         Role?
+  fullName     String?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  quickActions QuickAction[]
 }
 
 model Person {
@@ -121,6 +122,17 @@ model Device {
   updatedAt         DateTime     @updatedAt
   Attempt           Attempt[]
   Attendance        Attendance[]
+}
+
+model QuickAction {
+  id        String   @id @default(uuid())
+  name      String
+  comment   String?
+  giveExtra Boolean  @default(false)
+  accountId String
+  account   Account  @relation(fields: [accountId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 enum DeviceType {
