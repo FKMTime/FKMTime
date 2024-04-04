@@ -227,4 +227,52 @@ export class AttemptService {
       },
     });
   }
+
+  async getIncidents(search?: string) {
+    const whereParams = {};
+    if (search) {
+      whereParams['result'] = {
+        person: {
+          name: {
+            contains: search,
+            mode: 'insensitive',
+          },
+        },
+      };
+    }
+    return this.prisma.attempt.findMany({
+      where: {
+        ...whereParams,
+        status: {
+          in: [AttemptStatus.RESOLVED, AttemptStatus.EXTRA_GIVEN],
+        },
+      },
+      orderBy: {
+        solvedAt: 'desc',
+      },
+      include: {
+        judge: {
+          select: {
+            id: true,
+            name: true,
+            wcaId: true,
+            registrantId: true,
+          },
+        },
+        device: true,
+        result: {
+          include: {
+            person: {
+              select: {
+                id: true,
+                name: true,
+                wcaId: true,
+                registrantId: true,
+              },
+            },
+          },
+        },
+      },
+    });
+  }
 }

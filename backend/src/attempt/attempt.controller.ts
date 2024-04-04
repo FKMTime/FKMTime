@@ -8,6 +8,7 @@ import {
   Param,
   Post,
   Put,
+  Query,
   UseGuards,
 } from '@nestjs/common';
 import { AttemptService } from './attempt.service';
@@ -27,7 +28,12 @@ export class AttemptController {
     return this.attemptService.getUnresolvedAttempts();
   }
 
-  @Post('')
+  @Get('incidents')
+  async getResolvedAttempts(@Query('search') search: string) {
+    return this.attemptService.getIncidents(search);
+  }
+
+  @Post()
   async createAttempt(@Body() data: CreateAttemptDto) {
     return await this.attemptService.createAttempt(data);
   }

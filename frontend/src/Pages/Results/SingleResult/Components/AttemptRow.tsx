@@ -5,6 +5,7 @@ import { MdDelete, MdEdit, MdNewLabel } from "react-icons/md";
 import Alert from "@/Components/Alert";
 import { deleteAttempt } from "@/logic/attempt";
 import { Attempt, AttemptStatus, Result } from "@/logic/interfaces";
+import { getPersonNameAndRegistrantId } from "@/logic/persons.ts";
 import { attemptWithPenaltyToString } from "@/logic/resultFormatters";
 import { getResolvedStatus } from "@/logic/utils";
 
@@ -91,8 +92,7 @@ const AttemptRow = ({
                 <Td>
                     {attempt.judge && attempt.judge.name}
                     {attempt.judge &&
-                        attempt.judge.registrantId &&
-                        ` (${attempt.judge.registrantId})`}
+                        getPersonNameAndRegistrantId(attempt.judge)}
                 </Td>
                 <Td>{attempt.device && attempt.device.name}</Td>
                 <Td>{attempt.comment}</Td>

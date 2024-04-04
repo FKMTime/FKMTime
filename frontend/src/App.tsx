@@ -1,5 +1,7 @@
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 
+import ResolvedIncidents from "@/Pages/ResolvedIncidents/ResolvedIncidents.tsx";
+
 import Layout from "./Layout/Layout";
 import Accounts from "./Pages/Accounts/Accounts";
 import AssignCards from "./Pages/AssignCards/AssignCards";
@@ -44,6 +46,10 @@ const App = () => {
                 {
                     path: "incidents",
                     element: <Incidents />,
+                },
+                {
+                    path: "incidents/resolved",
+                    element: <ResolvedIncidents />,
                 },
                 {
                     path: "incidents/:id",

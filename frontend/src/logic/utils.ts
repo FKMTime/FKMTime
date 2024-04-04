@@ -302,7 +302,10 @@ export const isNotificationsSupported = () => {
     return "Notification" in window;
 };
 
-export const prettyAttemptStatus = (status: AttemptStatus) => {
+export const prettyAttemptStatus = (
+    status: AttemptStatus,
+    isIncidentPage?: boolean
+) => {
     switch (status) {
         case AttemptStatus.STANDARD_ATTEMPT:
             return "Standard attempt";
@@ -311,7 +314,9 @@ export const prettyAttemptStatus = (status: AttemptStatus) => {
         case AttemptStatus.UNRESOLVED:
             return "Unresolved delegate case";
         case AttemptStatus.RESOLVED:
-            return "Resolved delegate case, leave as is";
+            return isIncidentPage
+                ? "Resolved without extra"
+                : "Resolved delegate case, leave as is";
         case AttemptStatus.EXTRA_GIVEN:
             return "Extra given";
     }

@@ -1,6 +1,7 @@
-import { Box, Heading } from "@chakra-ui/react";
+import { Box, Button, Heading } from "@chakra-ui/react";
 import { useAtom } from "jotai";
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import io from "socket.io-client";
 
 import LoadingPage from "@/Components/LoadingPage";
@@ -14,6 +15,7 @@ import { INCIDENTS_WEBSOCKET_URL, WEBSOCKET_PATH } from "@/logic/request";
 import IncidentCard from "./Components/IncidentCard";
 
 const Incidents = () => {
+    const navigate = useNavigate();
     const [incidents, setIncidents] = useState<Incident[]>([]);
     const [competition, setCompetition] = useAtom(competitionAtom);
     const [socket] = useState(
@@ -63,6 +65,13 @@ const Incidents = () => {
     return (
         <Box display="flex" flexDirection="column" gap="5">
             <Heading size="lg">Incidents</Heading>
+            <Button
+                colorScheme="yellow"
+                width={{ base: "100%", md: "fit-content" }}
+                onClick={() => navigate("/incidents/resolved")}
+            >
+                Resolved incidents
+            </Button>
             <Box
                 display="flex"
                 flexDirection="row"
