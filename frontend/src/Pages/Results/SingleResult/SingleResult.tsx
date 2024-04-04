@@ -11,12 +11,12 @@ import { useAtom } from "jotai";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 
+import FlagIcon from "@/Components/Icons/FlagIcon";
 import LoadingPage from "@/Components/LoadingPage";
-import PlusButton from "@/Components/PlusButton.tsx";
+import PlusButton from "@/Components/PlusButton";
 import { competitionAtom } from "@/logic/atoms";
 import { getCompetitionInfo } from "@/logic/competition";
 import { Result } from "@/logic/interfaces";
-import regions from "@/logic/regions";
 import { resultToString } from "@/logic/resultFormatters";
 import { getResultById, reSubmitScorecardToWcaLive } from "@/logic/results";
 import {
@@ -26,6 +26,7 @@ import {
     getRoundNameById,
     getSubmittedAttempts,
     isThereADifferenceBetweenResults,
+    regionNameByIso2,
 } from "@/logic/utils";
 
 import CreateAttemptModal from "../Components/CreateAttemptModal";
@@ -154,14 +155,20 @@ const SingleResult = () => {
                 Registrant ID: {result.person.registrantId}
             </Text>
             <Text fontSize="xl">WCA ID: {result.person.wcaId}</Text>
-            <Text fontSize="xl">
-                Representing:{" "}
-                {
-                    regions.find(
-                        (region) => region.iso2 === result.person.countryIso2
-                    )?.name
-                }
-            </Text>
+            {result.person.countryIso2 && (
+                <Text fontSize="xl">
+                    <Box display="flex" alignItems="center" gap="1">
+                        <Text>
+                            Representing:{" "}
+                            {regionNameByIso2(result.person.countryIso2)}
+                        </Text>
+                        <FlagIcon
+                            country={result.person.countryIso2}
+                            size={20}
+                        />
+                    </Box>
+                </Text>
+            )}
             <Button
                 colorScheme="yellow"
                 width={{ base: "100%", md: "fit-content" }}

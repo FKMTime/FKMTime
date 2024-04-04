@@ -3,13 +3,14 @@ import { useAtom } from "jotai";
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 
+import FlagIcon from "@/Components/Icons/FlagIcon";
 import LoadingPage from "@/Components/LoadingPage";
 import { competitionAtom } from "@/logic/atoms";
 import { getCompetitionInfo } from "@/logic/competition";
 import { Person, Result } from "@/logic/interfaces";
 import { getPersonById } from "@/logic/persons";
-import regions from "@/logic/regions";
 import { getAllResultsByPersonId } from "@/logic/results";
+import { regionNameByIso2 } from "@/logic/utils";
 
 import PersonResultsTable from "./Components/PersonResultsTable";
 
@@ -54,14 +55,20 @@ const PersonResults = () => {
                         Registrant ID: {person.registrantId}
                     </Text>
                     <Text fontSize="xl">WCA ID: {person.wcaId}</Text>
-                    <Text fontSize="xl">
-                        Representing:{" "}
-                        {
-                            regions.find(
-                                (region) => region.iso2 === person.countryIso2
-                            )?.name
-                        }
-                    </Text>
+                    {person.countryIso2 && (
+                        <Text fontSize="xl">
+                            <Box display="flex" alignItems="center" gap="1">
+                                <Text>
+                                    Representing:{" "}
+                                    {regionNameByIso2(person.countryIso2)}
+                                </Text>
+                                <FlagIcon
+                                    country={person.countryIso2}
+                                    size={20}
+                                />
+                            </Box>
+                        </Text>
+                    )}
                 </>
             )}
             {results.length > 0 ? (

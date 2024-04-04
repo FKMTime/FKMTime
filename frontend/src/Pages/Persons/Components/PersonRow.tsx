@@ -1,4 +1,4 @@
-import { Box, IconButton, Link, Td, Tr } from "@chakra-ui/react";
+import { Box, IconButton, Link, Td, Text, Tr } from "@chakra-ui/react";
 import { Competition } from "@wca/helpers";
 import { useState } from "react";
 import { FaAddressCard } from "react-icons/fa";
@@ -6,6 +6,7 @@ import { MdAssignment, MdBarChart, MdDone } from "react-icons/md";
 import { useNavigate } from "react-router-dom";
 
 import EventIcon from "@/Components/Icons/EventIcon";
+import FlagIcon from "@/Components/Icons/FlagIcon.tsx";
 import { Person } from "@/logic/interfaces";
 import { WCA_ORIGIN } from "@/logic/request";
 import {
@@ -51,7 +52,14 @@ const PersonRow = ({ person, wcif, handleCloseEditModal }: PersonRowProps) => {
                         {person.wcaId}
                     </Link>
                 </Td>
-                <Td>{regionNameByIso2(person.countryIso2!)}</Td>
+                <Td>
+                    {person.countryIso2 && (
+                        <Box display="flex" alignItems="center" gap="1">
+                            <FlagIcon country={person.countryIso2} size={20} />
+                            <Text>{regionNameByIso2(person.countryIso2)}</Text>
+                        </Box>
+                    )}
+                </Td>
                 <Td>{prettyGender(person.gender)}</Td>
                 <Td>
                     <Box display="flex" flexDirection="row" gap="2">
