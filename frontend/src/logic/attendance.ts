@@ -47,7 +47,7 @@ export const wasPresent = (
     if (attendance.find((a) => a.groupId === activityCode)) {
         const data = attendance.find((a) => a.groupId === activityCode);
         const wcifRole = attendanceRoleToWcif(data?.role as string);
-        if (role === wcifRole) {
+        if (role.toLowerCase() === data?.role.toLowerCase()) {
             return "Yes";
         } else {
             return `As ${prettyActivityName(wcifRole as string).toLowerCase()}`;

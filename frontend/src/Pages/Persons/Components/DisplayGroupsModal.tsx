@@ -60,7 +60,8 @@ const DisplayGroupsModal = ({
                                     <Td>{assignment.groupName}</Td>
                                     <Td>{assignment.activityName}</Td>
                                     <Td>
-                                        {attendance
+                                        {attendance &&
+                                        assignment.activityName !== "Competitor"
                                             ? wasPresent(
                                                   attendance,
                                                   assignment.activityCode,
