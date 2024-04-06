@@ -33,7 +33,7 @@ export class AccountController {
   }
 
   @UseGuards(AdminGuard)
-  @Put(':id/password')
+  @Put('password/:id')
   async updatePassword(
     @Param('id') id: string,
     @Body() data: UpdatePasswordDto,

@@ -43,7 +43,7 @@ export const deleteAccount = async (id: string) => {
 
 export const updateAccountPassword = async (id: string, password: string) => {
     const response = await backendRequest(
-        `account/${id}/password`,
+        `account/password/${id}`,
         "PUT",
         true,
         { password }
