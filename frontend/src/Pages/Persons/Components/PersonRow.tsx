@@ -8,6 +8,8 @@ import { useNavigate } from "react-router-dom";
 import Avatar from "@/Components/Avatar/Avatar";
 import EventIcon from "@/Components/Icons/EventIcon";
 import FlagIcon from "@/Components/Icons/FlagIcon.tsx";
+import { HAS_WRITE_ACCESS } from "@/logic/accounts.ts";
+import { getUserInfo } from "@/logic/auth.ts";
 import { Person } from "@/logic/interfaces";
 import { WCA_ORIGIN } from "@/logic/request";
 import {
@@ -26,6 +28,7 @@ interface PersonRowProps {
 }
 
 const PersonRow = ({ person, wcif, handleCloseEditModal }: PersonRowProps) => {
+    const userInfo = getUserInfo();
     const navigate = useNavigate();
     const [isOpenAssignCardModal, setIsOpenAssignCardModal] =
         useState<boolean>(false);
@@ -102,38 +105,42 @@ const PersonRow = ({ person, wcif, handleCloseEditModal }: PersonRowProps) => {
                         title="Assign card"
                         onClick={() => setIsOpenAssignCardModal(true)}
                     />
-                    {person.registrantId && person.registrantId !== 0 && (
-                        <>
-                            <IconButton
-                                icon={<MdAssignment />}
-                                aria-label="Groups"
-                                bg="none"
-                                color="white"
-                                _hover={{
-                                    background: "none",
-                                    color: "gray.400",
-                                }}
-                                title="Display groups"
-                                onClick={() =>
-                                    setIsOpenDisplayGroupsModal(true)
-                                }
-                            />
-                            <IconButton
-                                icon={<MdBarChart />}
-                                aria-label="Results"
-                                bg="none"
-                                color="white"
-                                _hover={{
-                                    background: "none",
-                                    color: "gray.400",
-                                }}
-                                title="Display all results for this person"
-                                onClick={() =>
-                                    navigate(`/persons/${person.id}/results`)
-                                }
-                            />
-                        </>
-                    )}
+                    {person.registrantId &&
+                        person.registrantId !== 0 &&
+                        HAS_WRITE_ACCESS.includes(userInfo.role) && (
+                            <>
+                                <IconButton
+                                    icon={<MdAssignment />}
+                                    aria-label="Groups"
+                                    bg="none"
+                                    color="white"
+                                    _hover={{
+                                        background: "none",
+                                        color: "gray.400",
+                                    }}
+                                    title="Display groups"
+                                    onClick={() =>
+                                        setIsOpenDisplayGroupsModal(true)
+                                    }
+                                />
+                                <IconButton
+                                    icon={<MdBarChart />}
+                                    aria-label="Results"
+                                    bg="none"
+                                    color="white"
+                                    _hover={{
+                                        background: "none",
+                                        color: "gray.400",
+                                    }}
+                                    title="Display all results for this person"
+                                    onClick={() =>
+                                        navigate(
+                                            `/persons/${person.id}/results`
+                                        )
+                                    }
+                                />
+                            </>
+                        )}
                 </Td>
             </Tr>
             <AssignCardModal

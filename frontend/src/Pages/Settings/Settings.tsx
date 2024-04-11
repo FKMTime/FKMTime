@@ -11,6 +11,7 @@ import {
 import { FormEvent, useEffect, useState } from "react";
 
 import LoadingPage from "@/Components/LoadingPage";
+import { HAS_WRITE_ACCESS } from "@/logic/accounts.ts";
 import { Settings as SettingsInterface } from "@/logic/interfaces";
 import { getSettings, updateSettings } from "@/logic/settings";
 import QuickActions from "@/Pages/Settings/Components/QuickActions.tsx";
@@ -104,7 +105,7 @@ const Settings = () => {
                     </Button>
                 </Box>
             </Box>
-            <QuickActions />
+            {HAS_WRITE_ACCESS.includes(settings.role) && <QuickActions />}
             <ChangePasswordModal
                 isOpen={isOpenChangePasswordModal}
                 onClose={() => setIsOpenChangePasswordModal(false)}
