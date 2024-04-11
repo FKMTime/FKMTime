@@ -225,7 +225,7 @@ const Persons = () => {
                                 onClick={() =>
                                     setIsOpenAddStaffMemberModal(true)
                                 }
-                                colorScheme="bluenp"
+                                colorScheme="blue"
                                 width="100%"
                             >
                                 Add staff member
