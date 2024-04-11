@@ -1,5 +1,7 @@
 import { useState } from "react";
 
+import { WCA_ORIGIN } from "@/logic/request.ts";
+
 import AvatarModal from "./AvatarModal";
 import DefaultAvatar from "./DefaultAvatar";
 
@@ -20,7 +22,7 @@ const Avatar = ({
 
     return (
         <>
-            {avatarUrl ? (
+            {avatarUrl && !avatarUrl.includes(WCA_ORIGIN) ? (
                 <img
                     style={{
                         width: avatarSize,

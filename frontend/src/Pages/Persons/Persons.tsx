@@ -1,4 +1,13 @@
-import { Alert, AlertIcon, Box, Button, Input } from "@chakra-ui/react";
+import {
+    Alert,
+    AlertIcon,
+    Box,
+    Button,
+    FormControl,
+    FormLabel,
+    Input,
+    Switch,
+} from "@chakra-ui/react";
 import { useAtom } from "jotai";
 import { ChangeEvent, useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -26,8 +35,10 @@ const Persons = () => {
     const [pageSize, setPageSize] = useState<number>(10);
     const [search, setSearch] = useState<string>("");
     const [searchedId, setSearchedId] = useState<string>("");
+    const [searchedCardId, setSearchedCardId] = useState<string>("");
     const [personsWithoutCardAssigned, setPersonsWithoutCardAssigned] =
         useState<number>(0);
+    const [onlyNewcomers, setOnlyNewcomers] = useState<boolean>(false);
     const [isOpenAddStaffMemberModal, setIsOpenAddStaffMemberModal] =
         useState<boolean>(false);
 
@@ -36,13 +47,18 @@ const Persons = () => {
             pageParam = 1,
             pageSizeParam = 10,
             searchParam?: string,
-            registrantId?: number
+            registrantId?: number,
+            cardId?: string,
+            onlyNewcomersParam?: boolean
         ) => {
             const response = await getPersons(
                 pageParam,
                 pageSizeParam,
                 searchParam,
-                registrantId
+                registrantId,
+                undefined,
+                cardId,
+                onlyNewcomersParam
             );
             if (!competition) {
                 const competitionData = await getCompetitionInfo();
@@ -81,16 +97,38 @@ const Persons = () => {
     const handleSearch = (event: ChangeEvent<HTMLInputElement>) => {
         setSearch(event.target.value);
         setSearchedId("");
+        setSearchedCardId("");
         fetchData(1, pageSize, event.target.value);
     };
 
     const handleSearchId = (event: ChangeEvent<HTMLInputElement>) => {
         setSearchedId(event.target.value);
+        setSearchedCardId("");
+        setSearch("");
         fetchData(
             1,
             pageSize,
             undefined,
             event.target.value ? parseInt(event.target.value) : undefined
+        );
+    };
+
+    const handleSearchCardId = (event: ChangeEvent<HTMLInputElement>) => {
+        setSearchedCardId(event.target.value);
+        setSearch("");
+        setSearchedId("");
+        fetchData(1, pageSize, undefined, undefined, event.target.value);
+    };
+
+    const handleOnlyNewcomers = () => {
+        setOnlyNewcomers(!onlyNewcomers);
+        fetchData(
+            1,
+            pageSize,
+            search,
+            undefined,
+            searchedCardId,
+            !onlyNewcomers
         );
     };
 
@@ -130,12 +168,16 @@ const Persons = () => {
                 )}
             <Box
                 display="flex"
-                flexDirection="row"
+                flexDirection={{ base: "column", md: "row" }}
                 justifyContent={{ base: "center", md: "space-between" }}
                 marginRight={{ base: "0", md: "5" }}
                 gap={{ base: "3", md: "3" }}
             >
-                <Box display="flex" gap="2">
+                <Box
+                    display="flex"
+                    gap="2"
+                    flexDirection={{ base: "column", md: "row" }}
+                >
                     <Input
                         placeholder="ID"
                         _placeholder={{ color: "white" }}
@@ -144,18 +186,52 @@ const Persons = () => {
                         width={{ base: "auto", md: "20%" }}
                     />
                     <Input
+                        placeholder="Card"
+                        _placeholder={{ color: "white" }}
+                        value={searchedCardId}
+                        onChange={handleSearchCardId}
+                        width={{ base: "auto", md: "30%" }}
+                    />
+                    <Input
                         placeholder="Search"
                         _placeholder={{ color: "white" }}
                         value={search}
                         onChange={handleSearch}
                         width="100%"
                     />
+                    <FormControl display="flex" alignItems="center" gap="2">
+                        <Switch
+                            id="onlyNewcomers"
+                            onChange={handleOnlyNewcomers}
+                            isChecked={onlyNewcomers}
+                        />
+                        <FormLabel htmlFor="onlyNewcomers" mb="0">
+                            Only newcomers
+                        </FormLabel>
+                    </FormControl>
                 </Box>
                 {HAS_WRITE_ACCESS.includes(userInfo.role) && (
-                    <PlusButton
-                        aria-label="Add"
-                        onClick={() => setIsOpenAddStaffMemberModal(true)}
-                    />
+                    <>
+                        <Box display={{ base: "none", md: "flex" }} gap="2">
+                            <PlusButton
+                                aria-label="Add"
+                                onClick={() =>
+                                    setIsOpenAddStaffMemberModal(true)
+                                }
+                            />
+                        </Box>
+                        <Box display={{ base: "flex", md: "none" }}>
+                            <Button
+                                onClick={() =>
+                                    setIsOpenAddStaffMemberModal(true)
+                                }
+                                colorScheme="blue"
+                                width="100%"
+                            >
+                                Add staff member
+                            </Button>
+                        </Box>
+                    </>
                 )}
             </Box>
             <PersonsTable

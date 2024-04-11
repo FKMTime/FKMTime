@@ -28,6 +28,8 @@ export class PersonController {
     @Query('search') search?: string,
     @Query('registrantId') registrantId?: number,
     @Query('withoutCardAssigned') withoutCardAssigned?: boolean,
+    @Query('cardId') cardId?: string,
+    @Query('onlyNewcomers') onlyNewcomers?: boolean,
   ) {
     return await this.personService.getPersons(
       +page,
@@ -35,6 +37,8 @@ export class PersonController {
       search,
       +registrantId,
       withoutCardAssigned,
+      cardId,
+      onlyNewcomers,
     );
   }
 

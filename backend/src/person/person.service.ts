@@ -15,10 +15,31 @@ export class PersonService {
     search?: string,
     registrantId?: number,
     withoutCardAssigned?: boolean,
+    cardId?: string,
+    onlyNewcomers?: boolean,
   ) {
     const whereParams = {};
+    const searchParams = {
+      OR: [
+        {
+          name: {
+            contains: search,
+            mode: 'insensitive',
+          },
+        },
+        {
+          wcaId: {
+            contains: search,
+            mode: 'insensitive',
+          },
+        },
+      ],
+    };
     if (registrantId) {
       whereParams['registrantId'] = registrantId;
+    }
+    if (cardId) {
+      whereParams['cardId'] = cardId;
     }
     if (withoutCardAssigned && search) {
       whereParams['AND'] = [
@@ -41,56 +62,38 @@ export class PersonService {
             },
           ],
         },
-        {
-          OR: [
-            {
-              name: {
-                contains: search,
-                mode: 'insensitive',
-              },
-            },
-            {
-              wcaId: {
-                contains: search,
-                mode: 'insensitive',
-              },
-            },
-            {
-              cardId: {
-                equals: search,
-              },
-            },
-          ],
-        },
+        searchParams,
       ];
     } else if (!withoutCardAssigned && search) {
-      if (search && !registrantId) {
-        whereParams['OR'] = [
-          {
-            name: {
-              contains: search,
-              mode: 'insensitive',
-            },
-          },
+      if (onlyNewcomers) {
+        whereParams['AND'] = [
+          searchParams,
           {
             wcaId: {
-              contains: search,
-              mode: 'insensitive',
-            },
-          },
-          {
-            cardId: {
-              equals: search,
+              equals: null,
             },
           },
         ];
-        if (!isNaN(parseInt(search)) && !registrantId) {
-          whereParams['OR'].push({
-            registrantId: parseInt(search),
-          });
-        }
+      } else {
+        whereParams['OR'] = searchParams.OR;
+      }
+    } else {
+      if (onlyNewcomers) {
+        whereParams['AND'] = [
+          {
+            wcaId: {
+              equals: null,
+            },
+          },
+          {
+            canCompete: {
+              equals: true,
+            },
+          },
+        ];
       }
     }
+
     const persons = await this.prisma.person.findMany({
       skip: (page - 1) * pageSize,
       take: pageSize,
