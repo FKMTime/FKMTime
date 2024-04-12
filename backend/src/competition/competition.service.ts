@@ -93,6 +93,7 @@ export class CompetitionService {
                 registrantId: person.registrantId,
                 gender: person.gender,
                 countryIso2: person.countryIso2,
+                birthdate: person.wcaId ? null : new Date(person.birthdate),
               },
             }),
           );

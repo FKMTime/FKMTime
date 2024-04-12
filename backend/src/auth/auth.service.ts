@@ -25,7 +25,7 @@ export class AuthService {
     }
 
     if (user.wcaAccessToken) {
-      throw new HttpException('Already logged in with WCALogin', 403);
+      throw new HttpException('Already logged in with WCA', 403);
     }
 
     const jwt = await this.generateAuthJwt({
@@ -50,7 +50,7 @@ export class AuthService {
       data.redirectUri,
     );
     if (token.hasOwnProperty('error') || !token) {
-      throw new HttpException('Error logging in with WCALogin', 500);
+      throw new HttpException('Error logging in with WCA', 500);
     }
     const userInfo = await this.wcaService.getUserInfo(token);
     const existingUser = await this.prisma.account.findFirst({

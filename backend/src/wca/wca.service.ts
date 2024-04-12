@@ -73,7 +73,7 @@ export class WcaService {
       `Sending scorecard to WCA Live: ${eventId}-r${roundNumber} status ${response.status} data ${JSON.stringify(data)}`,
     );
     if (response.status !== 200) {
-      throw new HttpException('WCALogin Live error', 500);
+      throw new HttpException('WCA Live error', 500);
     } else {
       return {
         message: 'Scorecard submitted',
@@ -112,7 +112,7 @@ export class WcaService {
       `Sending round to WCA Live: ${eventIdToSubmit}-r${roundNumberToSubmit} status ${response.status} data ${JSON.stringify(data)}`,
     );
     if (response.status !== 200) {
-      throw new HttpException('WCALogin Live error', 500);
+      throw new HttpException('WCA Live error', 500);
     } else {
       return {
         message: 'Round resubmitted',
