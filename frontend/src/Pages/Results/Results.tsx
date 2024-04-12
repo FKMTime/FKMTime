@@ -122,7 +122,7 @@ const Results = () => {
         const status = await reSubmitRoundToWcaLive(filters.roundId);
         if (status === 200) {
             toast({
-                title: "Successfully resubmitted round results to WCALogin Live.",
+                title: "Successfully resubmitted round results to WCA Live.",
                 status: "success",
                 duration: 9000,
                 isClosable: true,
