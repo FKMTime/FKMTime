@@ -18,7 +18,7 @@ You can run FKMTime in development mode in 2 ways:
 ### Docker
 Run the following command in the root directory of the project
 ```bash
-docker compose -f docker-compose.dev.yml up
+docker compose -f docker-compose-dev.yml up
 ```
 
 Frontend will be accessible at localhost:5173, backend at localhost:5000, database at localhost:5432
