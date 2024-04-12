@@ -3,16 +3,25 @@ import { Competition as WCIF } from "@wca/helpers";
 export interface UserInfo {
     username: string;
     fullName?: string;
-    role: string;
+    role: AccountRole;
+    wcaUserId?: number;
+    wcaAccessToken?: string;
 }
 
 export interface Account {
     id: string;
-    username: string;
+    username?: string;
+    wcaUserId?: number;
     fullName?: string;
     role: string;
     createdAt?: Date;
     updatedAt?: Date;
+}
+
+//eslint-disable-next-line
+export enum AccountRole {
+    ADMIN = "ADMIN",
+    STAFF = "STAFF",
 }
 
 export interface Competition {
@@ -151,7 +160,8 @@ export enum AvailableDeviceType {
 
 export interface Settings {
     username: string;
-    role: string;
+    role: AccountRole;
+    wcaUserId?: number;
     createdAt: Date;
     updatedAt: Date;
 }

@@ -1,13 +1,13 @@
+import { Logger, UseGuards } from '@nestjs/common';
+import { AuthGuard } from '@nestjs/passport';
 import {
   ConnectedSocket,
   SubscribeMessage,
   WebSocketGateway,
   WebSocketServer,
 } from '@nestjs/websockets';
-import { Logger, UseGuards } from '@nestjs/common';
-import { AuthGuard } from '@nestjs/passport';
 import { Server, Socket } from 'socket.io';
-import { AdminOrDelegateGuard } from '../auth/guards/adminOrDelegate.guard';
+import { AdminGuard } from '../auth/guards/admin.guard';
 
 @WebSocketGateway({
   namespace: '/competition',
@@ -16,7 +16,7 @@ import { AdminOrDelegateGuard } from '../auth/guards/adminOrDelegate.guard';
     origin: '*',
   },
 })
-@UseGuards(AuthGuard('jwt'), AdminOrDelegateGuard)
+@UseGuards(AuthGuard('jwt'), AdminGuard)
 export class CompetitionGateway {
   @WebSocketServer() server: Server;
 

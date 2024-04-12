@@ -119,7 +119,7 @@ const SingleResult = () => {
         if (status === 200) {
             toast({
                 title: "Success",
-                description: "Scorecard resubmitted to WCA Live",
+                description: "Scorecard resubmitted to WCALogin Live",
                 status: "success",
                 duration: 5000,
                 isClosable: true,

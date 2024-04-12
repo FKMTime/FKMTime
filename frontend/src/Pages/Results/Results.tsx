@@ -19,9 +19,8 @@ import EventIcon from "@/Components/Icons/EventIcon";
 import LoadingPage from "@/Components/LoadingPage";
 import PlusButton from "@/Components/PlusButton.tsx";
 import Select from "@/Components/Select";
-import { HAS_WRITE_ACCESS } from "@/logic/accounts";
 import { competitionAtom } from "@/logic/atoms";
-import { getToken, getUserInfo } from "@/logic/auth";
+import { getToken, isAdmin } from "@/logic/auth";
 import { getCompetitionInfo } from "@/logic/competition";
 import { Result, Room } from "@/logic/interfaces";
 import { RESULTS_WEBSOCKET_URL, WEBSOCKET_PATH } from "@/logic/request";
@@ -47,7 +46,6 @@ const Results = () => {
         roundId: id || "",
     };
     const toast = useToast();
-    const userInfo = getUserInfo();
     const [socket] = useState(
         io(RESULTS_WEBSOCKET_URL, {
             transports: ["websocket"],
@@ -124,7 +122,7 @@ const Results = () => {
         const status = await reSubmitRoundToWcaLive(filters.roundId);
         if (status === 200) {
             toast({
-                title: "Successfully resubmitted round results to WCA Live.",
+                title: "Successfully resubmitted round results to WCALogin Live.",
                 status: "success",
                 duration: 9000,
                 isClosable: true,
@@ -250,7 +248,7 @@ const Results = () => {
             </Box>
             {filters.roundId && (
                 <Box display="flex" flexDirection="column" gap="5">
-                    {HAS_WRITE_ACCESS.includes(userInfo.role) && (
+                    {isAdmin() && (
                         <PlusButton
                             onClick={() => setIsOpenCreateAttemptModal(true)}
                             aria-label="Add"
@@ -270,25 +268,24 @@ const Results = () => {
                             : "None"}
                     </Text>
                     <Text>Attempts: {maxAttempts}</Text>
-                    {HAS_WRITE_ACCESS.includes(userInfo.role) &&
-                        results.length > 0 && (
-                            <Flex gap="2">
-                                <Button
-                                    colorScheme="yellow"
-                                    width={{ base: "100%", md: "fit-content" }}
-                                    onClick={handleResubmitRound}
-                                >
-                                    Resubmit round results to WCA Live
-                                </Button>
-                                <PlusButton
-                                    onClick={() =>
-                                        setIsOpenCreateAttemptModal(true)
-                                    }
-                                    aria-label="Add"
-                                    display={{ base: "flex", md: "none" }}
-                                />
-                            </Flex>
-                        )}
+                    {isAdmin() && results.length > 0 && (
+                        <Flex gap="2">
+                            <Button
+                                colorScheme="yellow"
+                                width={{ base: "100%", md: "fit-content" }}
+                                onClick={handleResubmitRound}
+                            >
+                                Resubmit round results to WCA Live
+                            </Button>
+                            <PlusButton
+                                onClick={() =>
+                                    setIsOpenCreateAttemptModal(true)
+                                }
+                                aria-label="Add"
+                                display={{ base: "flex", md: "none" }}
+                            />
+                        </Flex>
+                    )}
                 </Box>
             )}
             {results.length > 0 ? (

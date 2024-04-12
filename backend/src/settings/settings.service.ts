@@ -13,6 +13,7 @@ export class SettingsService {
       select: {
         username: true,
         role: true,
+        wcaUserId: true,
         createdAt: true,
         updatedAt: true,
       },

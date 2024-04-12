@@ -1,12 +1,13 @@
 import { Body, Controller, Get, Param, Put, UseGuards } from '@nestjs/common';
-import { CompetitionService } from './competition.service';
-import { UpdateCompetitionDto } from './dto/updateCompetition.dto';
 import { AuthGuard } from '@nestjs/passport';
 import { AdminGuard } from 'src/auth/guards/admin.guard';
-import { AdminOrDelegateGuard } from '../auth/guards/adminOrDelegate.guard';
+import { GetUser } from '../auth/decorator/getUser.decorator';
+import { JwtAuthDto } from '../auth/dto/jwt-auth.dto';
+import { TokenGuard } from '../auth/guards/token.guard';
+import { CompetitionService } from './competition.service';
+import { UpdateCompetitionDto } from './dto/updateCompetition.dto';
 import { UpdateRoomsDto } from './dto/updateCurrentRound.dto';
 import { UpdateDevicesSettingsDto } from './dto/updateDevicesSettings.dto';
-import { TokenGuard } from '../auth/guards/token.guard';
 
 @Controller('competition')
 export class CompetitionController {
@@ -42,16 +43,19 @@ export class CompetitionController {
     return await this.competitionService.getCompetitionSettings();
   }
 
-  @UseGuards(AdminGuard)
+  @UseGuards(AuthGuard('jwt'), AdminGuard)
   @Get('import/:id')
-  async importCompetition(@Param('id') id: string) {
-    return await this.competitionService.importCompetition(id);
+  async importCompetition(
+    @Param('id') id: string,
+    @GetUser() user: JwtAuthDto,
+  ) {
+    return await this.competitionService.importCompetition(id, user.userId);
   }
 
-  @UseGuards(AuthGuard('jwt'), AdminOrDelegateGuard)
+  @UseGuards(AuthGuard('jwt'), AdminGuard)
   @Get('sync/:id')
-  async syncCompetition(@Param('id') id: string) {
-    return await this.competitionService.updateWcif(id);
+  async syncCompetition(@Param('id') id: string, @GetUser() user: JwtAuthDto) {
+    return await this.competitionService.updateWcif(id, user.userId);
   }
 
   @UseGuards(AuthGuard('jwt'))
@@ -60,13 +64,13 @@ export class CompetitionController {
     return this.competitionService.getAllRooms();
   }
 
-  @UseGuards(AuthGuard('jwt'), AdminOrDelegateGuard)
+  @UseGuards(AuthGuard('jwt'), AdminGuard)
   @Put('rooms')
   async updateRooms(@Body() dto: UpdateRoomsDto) {
     return this.competitionService.updateRooms(dto);
   }
 
-  @UseGuards(AuthGuard('jwt'), AdminOrDelegateGuard)
+  @UseGuards(AuthGuard('jwt'), AdminGuard)
   @Put('settings/:id')
   async updateCompetition(
     @Param('id') id: string,

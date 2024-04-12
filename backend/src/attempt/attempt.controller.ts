@@ -11,14 +11,14 @@ import {
   Query,
   UseGuards,
 } from '@nestjs/common';
-import { AttemptService } from './attempt.service';
-import { UpdateAttemptDto } from './dto/updateAttempt.dto';
-import { CreateAttemptDto } from './dto/createAttempt.dto';
-import { AdminOrDelegateGuard } from '../auth/guards/adminOrDelegate.guard';
 import { AuthGuard } from '@nestjs/passport';
+import { AdminGuard } from '../auth/guards/admin.guard';
+import { AttemptService } from './attempt.service';
+import { CreateAttemptDto } from './dto/createAttempt.dto';
 import { SwapAttemptsDto } from './dto/swapAttempts.dto';
+import { UpdateAttemptDto } from './dto/updateAttempt.dto';
 
-@UseGuards(AuthGuard('jwt'), AdminOrDelegateGuard)
+@UseGuards(AuthGuard('jwt'), AdminGuard)
 @Controller('attempt')
 export class AttemptController {
   constructor(private readonly attemptService: AttemptService) {}

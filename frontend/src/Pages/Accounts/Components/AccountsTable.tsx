@@ -15,7 +15,7 @@ const AccountsTable = ({ accounts, fetchData }: AccountsTableProps) => {
             <Table variant="simple">
                 <Thead>
                     <Tr bg="gray.400">
-                        <Th>Username</Th>
+                        <Th>Account type</Th>
                         <Th>Full name</Th>
                         <Th>Role</Th>
                         <Th>Actions</Th>

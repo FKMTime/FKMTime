@@ -1,7 +1,6 @@
 import { Table, TableContainer, Tbody, Th, Thead, Tr } from "@chakra-ui/react";
 
-import { HAS_WRITE_ACCESS } from "@/logic/accounts";
-import { getUserInfo } from "@/logic/auth";
+import { isAdmin } from "@/logic/auth";
 import { Result } from "@/logic/interfaces";
 import { isMobileView } from "@/logic/utils.ts";
 
@@ -13,7 +12,6 @@ interface ResultsTableProps {
 }
 
 const ResultsTable = ({ results, maxAttempts }: ResultsTableProps) => {
-    const userInfo = getUserInfo();
     return (
         <TableContainer>
             <Table variant="simple">
@@ -28,9 +26,7 @@ const ResultsTable = ({ results, maxAttempts }: ResultsTableProps) => {
                             ))}
                         <Th>Average</Th>
                         <Th>Best</Th>
-                        {HAS_WRITE_ACCESS.includes(userInfo.role) && (
-                            <Th>Actions</Th>
-                        )}
+                        {isAdmin() && <Th>Actions</Th>}
                     </Tr>
                 </Thead>
                 <Tbody>

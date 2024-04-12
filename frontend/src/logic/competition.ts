@@ -1,3 +1,5 @@
+import { getUserInfo } from "@/logic/auth.ts";
+
 import { Competition, WCACompetition } from "./interfaces";
 import { backendRequest, wcaApiRequest } from "./request";
 
@@ -94,27 +96,16 @@ export const generateApiToken = async () => {
     return await response.json();
 };
 
-export const searchCompetitions = async (name: string) => {
-    try {
-        const today = new Date();
-        let start = "";
-        if (name.length < 1) {
-            start = `${today.getFullYear()}-${(today.getMonth() + 1)
-                .toString()
-                .padStart(
-                    2,
-                    "0"
-                )}-${today.getDate().toString().padStart(2, "0")}`;
-        }
-        const response = await wcaApiRequest(
-            `competitions?q=${name}&start=${start}&per_page=50&sort=start_date`
-        );
-        const data = await response.json();
-        return data.filter(
-            (competition: WCACompetition) =>
-                new Date(competition.start_date).getFullYear() >= 2023
-        );
-    } catch (err) {
+export const getUpcomingManageableCompetitions = async (): Promise<
+    WCACompetition[]
+> => {
+    const userInfo = getUserInfo();
+    if (!userInfo) {
         return [];
     }
+    const token = userInfo.wcaAccessToken;
+    const oneWeekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+    const params = `managed_by_me=true&start=${oneWeekAgo.toISOString()}&sort=start_date`;
+    const response = await wcaApiRequest(`competitions?${params}`, token);
+    return await response.json();
 };

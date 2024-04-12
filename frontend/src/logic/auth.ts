@@ -18,6 +18,22 @@ export const login = async (
     return response.status;
 };
 
+export const loginWithWca = async (code: string, redirectUri: string) => {
+    const response = await backendRequest("auth/wca/login", "POST", false, {
+        code: code,
+        redirectUri: redirectUri,
+    });
+    const data = await response.json();
+    if (response.status === 200) {
+        localStorage.setItem(TOKEN_NAME, data.token);
+        localStorage.setItem(USER_INFO_NAME, JSON.stringify(data.userInfo));
+    }
+    return {
+        status: response.status,
+        data: data,
+    };
+};
+
 export const getToken = () => {
     return localStorage.getItem(TOKEN_NAME);
 };
@@ -34,6 +50,14 @@ export const isUserLoggedIn = async () => {
     } catch (error) {
         return false;
     }
+};
+
+export const isAdmin = () => {
+    const userInfo = getUserInfo();
+    if (userInfo === null) {
+        return false;
+    }
+    return userInfo.role === "ADMIN";
 };
 
 export const getUserInfo = () => {

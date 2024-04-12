@@ -1,8 +1,7 @@
 import { Table, TableContainer, Tbody, Th, Thead, Tr } from "@chakra-ui/react";
 import { Competition } from "@wca/helpers";
 
-import { HAS_WRITE_ACCESS } from "@/logic/accounts";
-import { getUserInfo } from "@/logic/auth";
+import { isAdmin } from "@/logic/auth";
 import { Result } from "@/logic/interfaces";
 
 import PersonResultRow from "./PersonResultRow";
@@ -13,7 +12,6 @@ interface PersonResultsTableProps {
 }
 
 const PersonResultsTable = ({ results, wcif }: PersonResultsTableProps) => {
-    const userInfo = getUserInfo();
     return (
         <TableContainer>
             <Table variant="simple">
@@ -22,9 +20,7 @@ const PersonResultsTable = ({ results, wcif }: PersonResultsTableProps) => {
                         <Th>Round</Th>
                         <Th>Average</Th>
                         <Th>Best</Th>
-                        {HAS_WRITE_ACCESS.includes(userInfo.role) && (
-                            <Th>Actions</Th>
-                        )}
+                        {isAdmin() && <Th>Actions</Th>}
                     </Tr>
                 </Thead>
                 <Tbody>

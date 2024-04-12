@@ -8,14 +8,16 @@ datasource db {
 }
 
 model Account {
-  id           String        @id @default(uuid())
-  password     String
-  username     String?       @unique
-  role         Role?
-  fullName     String?
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
-  quickActions QuickAction[]
+  id             String        @id @default(uuid())
+  password       String?
+  username       String?       @unique
+  role           Role?
+  fullName       String?
+  wcaUserId      Int?
+  wcaAccessToken String?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  quickActions   QuickAction[]
 }
 
 model Person {
@@ -156,7 +158,6 @@ enum ReleaseChannel {
 
 enum Role {
   ADMIN
-  DELEGATE
   STAFF
 }
 

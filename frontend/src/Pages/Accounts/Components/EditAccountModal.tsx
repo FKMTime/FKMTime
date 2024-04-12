@@ -11,7 +11,8 @@ import { FormEvent, useState } from "react";
 import { Modal } from "@/Components/Modal";
 import Select from "@/Components/Select";
 import { updateAccount } from "@/logic/accounts";
-import { Account } from "@/logic/interfaces";
+import { Account, AccountRole } from "@/logic/interfaces";
+import { prettyAccountRoleName } from "@/logic/utils.ts";
 
 interface EditAccountModalProps {
     isOpen: boolean;
@@ -112,8 +113,11 @@ const EditAccountModal = ({
                             })
                         }
                     >
-                        <option value="DELEGATE">Delegate</option>
-                        <option value="ADMIN">Admin</option>
+                        {Object.keys(AccountRole).map((accountRole) => (
+                            <option key={accountRole} value={accountRole}>
+                                {prettyAccountRoleName(accountRole)}
+                            </option>
+                        ))}
                     </Select>
                 </FormControl>
                 <Box

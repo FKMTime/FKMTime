@@ -11,7 +11,7 @@ import {
 import { FormEvent, useEffect, useState } from "react";
 
 import LoadingPage from "@/Components/LoadingPage";
-import { HAS_WRITE_ACCESS } from "@/logic/accounts.ts";
+import { isAdmin } from "@/logic/auth.ts";
 import { Settings as SettingsInterface } from "@/logic/interfaces";
 import { getSettings, updateSettings } from "@/logic/settings";
 import QuickActions from "@/Pages/Settings/Components/QuickActions.tsx";
@@ -64,48 +64,50 @@ const Settings = () => {
 
     return (
         <Flex flexDirection="column" gap="5">
-            <Box>
-                <Heading fontSize="3xl">Settings</Heading>
-                <Box
-                    display="flex"
-                    flexDirection="column"
-                    gap={3}
-                    as="form"
-                    width={{ base: "100%", md: "20%" }}
-                    mt={5}
-                    onSubmit={handleSubmit}
-                >
-                    <FormControl isRequired>
-                        <FormLabel>Username</FormLabel>
-                        <Input
-                            placeholder="Username"
-                            _placeholder={{ color: "white" }}
-                            value={settings.username}
-                            disabled={isLoading}
-                            onChange={(e) =>
-                                setSettings({
-                                    ...settings,
-                                    username: e.target.value,
-                                })
-                            }
-                        />
-                    </FormControl>
-                    <Button
-                        colorScheme="green"
-                        isLoading={isLoading}
-                        type="submit"
+            {!settings.wcaUserId && (
+                <Box>
+                    <Heading fontSize="3xl">Settings</Heading>
+                    <Box
+                        display="flex"
+                        flexDirection="column"
+                        gap={3}
+                        as="form"
+                        width={{ base: "100%", md: "20%" }}
+                        mt={5}
+                        onSubmit={handleSubmit}
                     >
-                        Save
-                    </Button>
-                    <Button
-                        colorScheme="yellow"
-                        onClick={() => setIsOpenChangePasswordModal(true)}
-                    >
-                        Change password
-                    </Button>
+                        <FormControl isRequired>
+                            <FormLabel>Username</FormLabel>
+                            <Input
+                                placeholder="Username"
+                                _placeholder={{ color: "white" }}
+                                value={settings.username}
+                                disabled={isLoading}
+                                onChange={(e) =>
+                                    setSettings({
+                                        ...settings,
+                                        username: e.target.value,
+                                    })
+                                }
+                            />
+                        </FormControl>
+                        <Button
+                            colorScheme="green"
+                            isLoading={isLoading}
+                            type="submit"
+                        >
+                            Save
+                        </Button>
+                        <Button
+                            colorScheme="yellow"
+                            onClick={() => setIsOpenChangePasswordModal(true)}
+                        >
+                            Change password
+                        </Button>
+                    </Box>
                 </Box>
-            </Box>
-            {HAS_WRITE_ACCESS.includes(settings.role) && <QuickActions />}
+            )}
+            {isAdmin() && <QuickActions />}
             <ChangePasswordModal
                 isOpen={isOpenChangePasswordModal}
                 onClose={() => setIsOpenChangePasswordModal(false)}
