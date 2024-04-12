@@ -86,11 +86,10 @@ export class AuthService {
       const manageableCompetitions =
         await this.wcaService.getUpcomingManageableCompetitions(token);
       if (!competition) {
-        await this.createAndReturnAccount(
+        return await this.createAndReturnAccount(
           userInfo.me.id,
           userInfo.me.name,
           token,
-          true,
         );
       } else {
         if (
@@ -116,7 +115,6 @@ export class AuthService {
     wcaUserId: number,
     fullName: string,
     wcaAccessToken: string,
-    competitionNotImported?: boolean,
   ) {
     const user = await this.prisma.account.create({
       data: {
@@ -139,7 +137,6 @@ export class AuthService {
         role: user.role,
         wcaAccessToken: user.wcaAccessToken,
       },
-      competitionNotImported: competitionNotImported,
     };
   }
 

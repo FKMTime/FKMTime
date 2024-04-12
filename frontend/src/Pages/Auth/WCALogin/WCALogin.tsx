@@ -10,6 +10,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import wcaLogo from "@/assets/wca.svg";
+import LoadingPage from "@/Components/LoadingPage.tsx";
 import { loginWithWca } from "@/logic/auth.ts";
 
 const WCALogin = () => {
@@ -32,6 +33,10 @@ const WCALogin = () => {
     useEffect(() => {
         handleLogin();
     }, [code, handleLogin, navigate]);
+
+    if (!error) {
+        return <LoadingPage />;
+    }
     return (
         <Box
             display="flex"
