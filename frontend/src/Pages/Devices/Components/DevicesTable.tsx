@@ -21,6 +21,7 @@ const DevicesTable = ({ devices, fetchData }: DevicesTableProps) => {
                         <Th>Battery</Th>
                         <Th>Type</Th>
                         <Th>Solves</Th>
+                        <Th>Last update</Th>
                         <Th>Actions</Th>
                     </Tr>
                 </Thead>

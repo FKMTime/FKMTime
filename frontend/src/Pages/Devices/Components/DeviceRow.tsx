@@ -74,6 +74,7 @@ const DeviceRow = ({ device, fetchData }: DeviceRowProps) => {
                 </Td>
                 <Td>{prettyDeviceType(device.type)}</Td>
                 <Td>{device.count}</Td>
+                <Td>{new Date(device.updatedAt).toLocaleString()}</Td>
                 <Td>
                     <IconButton
                         icon={<MdEdit />}

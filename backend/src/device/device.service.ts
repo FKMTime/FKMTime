@@ -18,6 +18,9 @@ export class DeviceService {
       include: {
         room: true,
       },
+      orderBy: {
+        name: 'asc',
+      },
     });
     const transactions = [];
 
