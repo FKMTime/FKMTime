@@ -1,5 +1,6 @@
 import { DbService } from '../db/db.service';
 import { HttpException, Injectable } from '@nestjs/common';
+import { WcaService } from '../wca/wca.service';
 import { UpdateCompetitionDto } from './dto/updateCompetition.dto';
 import { eventsData } from 'src/events';
 import { UpdateRoomsDto } from './dto/updateCurrentRound.dto';
@@ -9,29 +10,31 @@ import { Room } from '@prisma/client';
 import { CompetitionGateway } from './competition.gateway';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { sha512 } from 'js-sha512';
-import { convertToLatin } from '../translations';
 import * as crypto from 'crypto';
-
-const WCA_ORIGIN = `${process.env.WCA_ORIGIN}/api/v0/competitions`;
-const DEFAULT_PASSWORD = process.env.DEFAULT_PASSWORD || '123456';
 
 @Injectable()
 export class CompetitionService {
   constructor(
     private readonly prisma: DbService,
     private readonly competitionGateway: CompetitionGateway,
+    private readonly wcaService: WcaService,
   ) {}
 
-  async importCompetition(wcaId: string) {
-    const wcifRes = await fetch(`${WCA_ORIGIN}/${wcaId}/wcif/public`);
-    const wcif = await wcifRes.json();
+  async importCompetition(wcaId: string, userId: string) {
+    const user = await this.prisma.account.findFirst({
+      where: {
+        id: userId,
+      },
+    });
+    const wcifPublic = await this.wcaService.getPublicWcif(wcaId);
+    const wcif = await this.wcaService.getWcif(wcaId, user.wcaAccessToken);
     const competition = await this.prisma.competition.create({
       data: {
-        name: wcif.name,
-        wcaId: wcif.id,
-        shortName: wcif.shortName,
-        countryIso2: wcif.countryIso2,
-        wcif: wcif,
+        name: wcifPublic.name,
+        wcaId: wcifPublic.id,
+        shortName: wcifPublic.shortName,
+        countryIso2: wcifPublic.countryIso2,
+        wcif: wcifPublic,
       },
     });
     await this.prisma.person.createMany({
@@ -42,39 +45,12 @@ export class CompetitionService {
         gender: person.gender,
         countryIso2: person.countryIso2,
         canCompete: person.registration && person.registration.isCompeting,
+        birthdate: person.wcaId ? null : new Date(person.birthdate),
       })),
-    });
-    const personsToCreateAccount = wcif.persons.filter(
-      (person: Person) =>
-        person.roles.includes('delegate') || person.roles.includes('organizer'),
-    );
-    const accounts = [];
-    for (const person of personsToCreateAccount) {
-      if (accounts.some((a) => a.username === this.getUsername(person.name))) {
-        const length = accounts.filter(
-          (a) => a.username === this.getUsername(person.name),
-        ).length;
-        accounts.push({
-          username: this.getUsername(person.name) + length,
-          fullName: person.name,
-          password: sha512(DEFAULT_PASSWORD),
-          role: person.roles.includes('delegate') ? 'DELEGATE' : 'ADMIN',
-        });
-      } else {
-        accounts.push({
-          username: this.getUsername(person.name),
-          fullName: person.name,
-          password: sha512(DEFAULT_PASSWORD),
-          role: person.roles.includes('delegate') ? 'DELEGATE' : 'ADMIN',
-        });
-      }
-    }
-    await this.prisma.account.createMany({
-      data: accounts,
     });
     const rooms = [];
 
-    for (const venue of wcif.schedule.venues) {
+    for (const venue of wcifPublic.schedule.venues) {
       for (const room of venue.rooms) {
         rooms.push({
           name: room.name,
@@ -88,47 +64,75 @@ export class CompetitionService {
     return competition;
   }
 
-  getUsername(fullName: string) {
-    return convertToLatin((fullName[0] + fullName.split(' ')[1]).toLowerCase());
-  }
-
-  async updateWcif(wcaId: string) {
-    const wcifRes = await fetch(`${WCA_ORIGIN}/${wcaId}/wcif/public`);
-    const wcif = await wcifRes.json();
-    const transactions = [];
-
-    wcif.persons.forEach((person: Person) => {
-      if (person.registrantId) {
-        transactions.push(
-          this.prisma.person.upsert({
-            where: {
-              registrantId: person.registrantId,
-            },
-            update: {
-              name: person.name,
-              wcaId: person.wcaId,
-              gender: person.gender,
-              countryIso2: person.countryIso2,
-            },
-            create: {
-              name: person.name,
-              wcaId: person.wcaId,
-              registrantId: person.registrantId,
-              gender: person.gender,
-              countryIso2: person.countryIso2,
-            },
-          }),
-        );
-      }
+  async updateWcif(wcaId: string, userId: string) {
+    const user = await this.prisma.account.findFirst({
+      where: {
+        id: userId,
+      },
     });
+    const wcifPublic = await this.wcaService.getPublicWcif(wcaId);
+    const transactions = [];
+    if (user.wcaUserId) {
+      const wcif = await this.wcaService.getWcif(wcaId, user.wcaAccessToken);
+      wcif.persons.forEach((person: Person) => {
+        if (person.registrantId) {
+          transactions.push(
+            this.prisma.person.upsert({
+              where: {
+                registrantId: person.registrantId,
+              },
+              update: {
+                name: person.name,
+                wcaId: person.wcaId,
+                gender: person.gender,
+                countryIso2: person.countryIso2,
+              },
+              create: {
+                name: person.name,
+                wcaId: person.wcaId,
+                registrantId: person.registrantId,
+                gender: person.gender,
+                countryIso2: person.countryIso2,
+                birthdate: person.wcaId ? null : new Date(person.birthdate),
+              },
+            }),
+          );
+        }
+      });
+    } else {
+      wcifPublic.persons.forEach((person: Person) => {
+        if (person.registrantId) {
+          transactions.push(
+            this.prisma.person.upsert({
+              where: {
+                registrantId: person.registrantId,
+              },
+              update: {
+                name: person.name,
+                wcaId: person.wcaId,
+                gender: person.gender,
+                countryIso2: person.countryIso2,
+              },
+              create: {
+                name: person.name,
+                wcaId: person.wcaId,
+                registrantId: person.registrantId,
+                gender: person.gender,
+                countryIso2: person.countryIso2,
+              },
+            }),
+          );
+        }
+      });
+    }
     await this.prisma.$transaction(transactions);
     await this.prisma.competition.updateMany({
       where: { wcaId },
       data: {
-        name: wcif.name,
-        shortName: wcif.shortName,
-        countryIso2: wcif.countryIso2,
-        wcif: wcif,
+        name: wcifPublic.name,
+        shortName: wcifPublic.shortName,
+        countryIso2: wcifPublic.countryIso2,
+        wcif: wcifPublic,
       },
     });
   }

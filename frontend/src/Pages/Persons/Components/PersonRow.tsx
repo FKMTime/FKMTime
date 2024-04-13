@@ -8,8 +8,7 @@ import { useNavigate } from "react-router-dom";
 import Avatar from "@/Components/Avatar/Avatar";
 import EventIcon from "@/Components/Icons/EventIcon";
 import FlagIcon from "@/Components/Icons/FlagIcon.tsx";
-import { HAS_WRITE_ACCESS } from "@/logic/accounts.ts";
-import { getUserInfo } from "@/logic/auth.ts";
+import { isAdmin } from "@/logic/auth.ts";
 import { Person } from "@/logic/interfaces";
 import { WCA_ORIGIN } from "@/logic/request";
 import {
@@ -28,7 +27,6 @@ interface PersonRowProps {
 }
 
 const PersonRow = ({ person, wcif, handleCloseEditModal }: PersonRowProps) => {
-    const userInfo = getUserInfo();
     const navigate = useNavigate();
     const [isOpenAssignCardModal, setIsOpenAssignCardModal] =
         useState<boolean>(false);
@@ -107,7 +105,7 @@ const PersonRow = ({ person, wcif, handleCloseEditModal }: PersonRowProps) => {
                     />
                     {person.registrantId &&
                         person.registrantId !== 0 &&
-                        HAS_WRITE_ACCESS.includes(userInfo.role) && (
+                        isAdmin() && (
                             <>
                                 <IconButton
                                     icon={<MdAssignment />}

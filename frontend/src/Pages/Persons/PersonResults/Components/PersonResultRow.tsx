@@ -3,8 +3,7 @@ import { Competition } from "@wca/helpers";
 import { FaList } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 
-import { HAS_WRITE_ACCESS } from "@/logic/accounts";
-import { getUserInfo } from "@/logic/auth";
+import { isAdmin } from "@/logic/auth";
 import { average, best } from "@/logic/average";
 import { Result } from "@/logic/interfaces";
 import { resultToString } from "@/logic/resultFormatters";
@@ -17,7 +16,6 @@ interface PersonResultRowProps {
 
 const PersonResultRow = ({ result, wcif }: PersonResultRowProps) => {
     const navigate = useNavigate();
-    const userInfo = getUserInfo();
 
     const submittedAttempts = getSubmittedAttempts(result.attempts);
     const calculatedAverage = average(submittedAttempts);
@@ -32,7 +30,7 @@ const PersonResultRow = ({ result, wcif }: PersonResultRowProps) => {
                         : "No average"}
                 </Td>
                 <Td>{resultToString(best(submittedAttempts))}</Td>
-                {HAS_WRITE_ACCESS.includes(userInfo.role) && (
+                {isAdmin() && (
                     <Td>
                         <IconButton
                             icon={<FaList />}

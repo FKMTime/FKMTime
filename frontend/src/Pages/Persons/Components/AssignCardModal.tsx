@@ -9,8 +9,7 @@ import {
 import { FormEvent, useState } from "react";
 
 import { Modal } from "@/Components/Modal";
-import { HAS_WRITE_ACCESS } from "@/logic/accounts";
-import { getUserInfo } from "@/logic/auth";
+import { isAdmin } from "@/logic/auth";
 import { Person } from "@/logic/interfaces";
 import { updatePerson } from "@/logic/persons";
 
@@ -22,7 +21,6 @@ interface AssignCardModalProps {
 
 const AssignCardModal = ({ isOpen, onClose, person }: AssignCardModalProps) => {
     const toast = useToast();
-    const userInfo = getUserInfo();
     const [isLoading, setIsLoading] = useState(false);
     const [editedPerson, setEditedPerson] = useState<Person>(person);
 
@@ -64,7 +62,7 @@ const AssignCardModal = ({ isOpen, onClose, person }: AssignCardModalProps) => {
                     <FormLabel>Card</FormLabel>
                     <Input
                         placeholder="Card"
-                        isReadOnly={!HAS_WRITE_ACCESS.includes(userInfo.role)}
+                        isReadOnly={!isAdmin()}
                         _placeholder={{ color: "white" }}
                         value={editedPerson.cardId}
                         disabled={isLoading}
@@ -88,7 +86,7 @@ const AssignCardModal = ({ isOpen, onClose, person }: AssignCardModalProps) => {
                             Cancel
                         </Button>
                     )}
-                    {HAS_WRITE_ACCESS.includes(userInfo.role) && (
+                    {isAdmin() && (
                         <Button
                             colorScheme="green"
                             type="submit"

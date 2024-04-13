@@ -12,7 +12,7 @@ import {
 } from "react-icons/md";
 
 import logo from "@/assets/logo.svg";
-import { HAS_WRITE_ACCESS } from "@/logic/accounts";
+import { isAdmin } from "@/logic/auth.ts";
 import { Competition, UserInfo } from "@/logic/interfaces";
 
 import SidebarElement from "./SidebarElement";
@@ -58,16 +58,14 @@ const SidebarContent = ({
                 link="/"
                 onClick={onElementClick}
             />
-            {HAS_WRITE_ACCESS.includes(user.role) && (
-                <SidebarElement
-                    name="Incidents"
-                    icon={<IoMdWarning />}
-                    link="/incidents"
-                    onClick={onElementClick}
-                />
-            )}
-            {user.role === "ADMIN" && (
+            {isAdmin() && (
                 <>
+                    <SidebarElement
+                        name="Incidents"
+                        icon={<IoMdWarning />}
+                        link="/incidents"
+                        onClick={onElementClick}
+                    />
                     <SidebarElement
                         name="Accounts"
                         icon={<MdPersonAdd />}
@@ -86,10 +84,6 @@ const SidebarContent = ({
                         link="/competition"
                         onClick={onElementClick}
                     />
-                </>
-            )}
-            {HAS_WRITE_ACCESS.includes(user.role) && (
-                <>
                     <SidebarElement
                         name="Rooms"
                         icon={<MdRoom />}
@@ -104,7 +98,7 @@ const SidebarContent = ({
                 link="/persons"
                 onClick={onElementClick}
             />
-            {HAS_WRITE_ACCESS.includes(user.role) && (
+            {isAdmin() && (
                 <SidebarElement
                     name="Attendance"
                     icon={<FaClipboardList />}
@@ -130,7 +124,7 @@ const SidebarContent = ({
                 link="/settings"
                 onClick={onElementClick}
             />
-            {import.meta.env.PROD && user.role.includes("ADMIN") && (
+            {import.meta.env.PROD && isAdmin() && (
                 <a href="/logs" style={{ width: "100%" }} target="_blank">
                     <Button
                         leftIcon={<FaServer />}

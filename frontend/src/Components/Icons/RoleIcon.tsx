@@ -1,4 +1,3 @@
-import { FaBan } from "react-icons/fa";
 import { MdAdminPanelSettings, MdPerson } from "react-icons/md";
 
 interface RoleIconProps {
@@ -9,8 +8,6 @@ const RoleIcon = ({ role }: RoleIconProps) => {
     switch (role) {
         case "ADMIN":
             return <MdAdminPanelSettings />;
-        case "DELEGATE":
-            return <FaBan />;
         default:
             return <MdPerson />;
     }

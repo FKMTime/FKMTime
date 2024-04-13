@@ -11,6 +11,8 @@ import { FormEvent, useState } from "react";
 import { Modal } from "@/Components/Modal";
 import Select from "@/Components/Select";
 import { createAccount } from "@/logic/accounts";
+import { AccountRole } from "@/logic/interfaces.ts";
+import { prettyAccountRoleName } from "@/logic/utils.ts";
 
 interface CreateAccountModalProps {
     isOpen: boolean;
@@ -20,7 +22,7 @@ interface CreateAccountModalProps {
 const CreateAccountModal = ({ isOpen, onClose }: CreateAccountModalProps) => {
     const toast = useToast();
     const [isLoading, setIsLoading] = useState(false);
-    const [role, setRole] = useState<string>("DELEGATE");
+    const [role, setRole] = useState<string>("");
 
     const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
         setIsLoading(true);
@@ -108,10 +110,13 @@ const CreateAccountModal = ({ isOpen, onClose }: CreateAccountModalProps) => {
                         value={role}
                         onChange={(e) => setRole(e.target.value)}
                         disabled={isLoading}
+                        placeholder="Select role"
                     >
-                        <option value="DELEGATE">Delegate</option>
-                        <option value="STAFF">Staff</option>
-                        <option value="ADMIN">Admin</option>
+                        {Object.keys(AccountRole).map((accountRole) => (
+                            <option key={accountRole} value={accountRole}>
+                                {prettyAccountRoleName(accountRole)}
+                            </option>
+                        ))}
                     </Select>
                 </FormControl>
                 <Box

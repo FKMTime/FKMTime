@@ -14,7 +14,9 @@ import { FormEvent } from "react";
 import { FaLock } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 
+import wca from "@/assets/wca.svg";
 import { login } from "@/logic/auth";
+import { WCA_CLIENT_ID, WCA_ORIGIN } from "@/logic/request.ts";
 
 const Login = () => {
     const navigate = useNavigate();
@@ -57,6 +59,16 @@ const Login = () => {
                 });
             }
         }
+    };
+
+    const handleWcaLogin = async () => {
+        const queryParams = new URLSearchParams({
+            redirect_uri: `${window.location.origin}/auth/wca`,
+            scope: "public manage_competitions",
+            response_type: "code",
+            client_id: WCA_CLIENT_ID,
+        });
+        window.location.href = `${WCA_ORIGIN}/oauth/authorize?${queryParams.toString()}`;
     };
 
     return (
@@ -109,6 +121,16 @@ const Login = () => {
                     <VStack spacing={4} align="stretch" mt={3}>
                         <Button colorScheme="teal" type="submit">
                             Sign in
+                        </Button>
+                        <Button
+                            colorScheme="blue"
+                            mt={3}
+                            display="flex"
+                            gap="3"
+                            onClick={handleWcaLogin}
+                        >
+                            <img src={wca} alt="WCA" width="25" />
+                            Sign in with WCA
                         </Button>
                     </VStack>
                 </Box>

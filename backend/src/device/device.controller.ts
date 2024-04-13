@@ -12,7 +12,6 @@ import {
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { AdminGuard } from '../auth/guards/admin.guard';
-import { AdminOrDelegateGuard } from '../auth/guards/adminOrDelegate.guard';
 import { TokenGuard } from '../auth/guards/token.guard';
 import { DeviceService } from './device.service';
 import { DeviceDto } from './dto/device.dto';
@@ -23,7 +22,7 @@ import { UpdateBatteryPercentageDto } from './dto/updateBatteryPercentage.dto';
 export class DeviceController {
   constructor(private readonly deviceService: DeviceService) {}
 
-  @UseGuards(AuthGuard('jwt'), AdminOrDelegateGuard)
+  @UseGuards(AuthGuard('jwt'), AdminGuard)
   @Get()
   async getAllDevices() {
     return this.deviceService.getAllDevices();

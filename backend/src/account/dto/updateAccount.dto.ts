@@ -1,9 +1,5 @@
+import { Role } from '@prisma/client';
 import { IsEnum, IsNotEmpty, IsString } from 'class-validator';
-
-enum Role {
-  ADMIN = 'ADMIN',
-  DELEGATE = 'DELEGATE',
-}
 
 export class UpdateAccountDto {
   @IsString()

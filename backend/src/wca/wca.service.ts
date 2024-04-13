@@ -3,12 +3,14 @@ import { DbService } from '../db/db.service';
 import { Attempt, AttemptStatus, Competition } from '@prisma/client';
 
 const WCA_LIVE_API_ORIGIN = process.env.WCA_LIVE_API_ORIGIN;
+const WCA_ORIGIN = process.env.WCA_ORIGIN;
 
 @Injectable()
 export class WcaService {
   constructor(private readonly prisma: DbService) {}
 
-  private logger = new Logger(`WCA-Live`);
+  private wcaLogger = new Logger(`WCA`);
+  private wcaLiveLogger = new Logger(`WCA-Live`);
 
   async enterAttemptToWcaLive(
     competitionId: string,
@@ -36,11 +38,11 @@ export class WcaService {
         }),
       });
       const data = await response.json();
-      this.logger.log(
+      this.wcaLiveLogger.log(
         `Sending attempt to WCA Live: ${eventId}-r${roundNumber} competitorId: ${registrantId} attemptNumber: ${attemptNumber} attemptResult: ${attemptResult} status ${response.status} data ${JSON.stringify(data)}`,
       );
     } catch (error) {
-      this.logger.error(
+      this.wcaLiveLogger.error(
         `Error sending attempt to WCA Live: ${eventId}-r${roundNumber} competitorId: ${registrantId} attemptNumber: ${attemptNumber} attemptResult: ${attemptResult} error ${error}`,
       );
     }
@@ -67,7 +69,7 @@ export class WcaService {
       }),
     });
     const data = await response.json();
-    this.logger.log(
+    this.wcaLiveLogger.log(
       `Sending scorecard to WCA Live: ${eventId}-r${roundNumber} status ${response.status} data ${JSON.stringify(data)}`,
     );
     if (response.status !== 200) {
@@ -106,7 +108,7 @@ export class WcaService {
       }),
     });
     const data = await response.json();
-    this.logger.log(
+    this.wcaLiveLogger.log(
       `Sending round to WCA Live: ${eventIdToSubmit}-r${roundNumberToSubmit} status ${response.status} data ${JSON.stringify(data)}`,
     );
     if (response.status !== 200) {
@@ -172,5 +174,74 @@ export class WcaService {
         },
       ],
     };
+  }
+
+  async getPublicWcif(competitionId: string) {
+    const response = await fetch(
+      `${WCA_ORIGIN}/api/v0/competitions/${competitionId}/wcif/public`,
+    );
+    this.wcaLogger.log(`Fetching public WCIF ${response.status}`);
+    return await response.json();
+  }
+
+  async getWcif(competitionId: string, token: string) {
+    const response = await fetch(
+      `${WCA_ORIGIN}/api/v0/competitions/${competitionId}/wcif`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      },
+    );
+    this.wcaLogger.log(`Fetching WCIF ${response.status}`);
+    return await response.json();
+  }
+
+  async getAccessToken(code: string, redirectUrl: string) {
+    const tokenResponse = await fetch(`${WCA_ORIGIN}/oauth/token`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        code,
+        redirect_uri: redirectUrl,
+        client_id: process.env.WCA_CLIENT_ID,
+        client_secret: process.env.WCA_CLIENT_SECRET,
+        grant_type: 'authorization_code',
+      }),
+    });
+    const tokenData = await tokenResponse.json();
+    return tokenData.access_token;
+  }
+
+  async getUserInfo(token: string) {
+    const userInfoResponse = await fetch(`${WCA_ORIGIN}/api/v0/me`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    const data = await userInfoResponse.json();
+    this.wcaLogger.log(
+      `Fetching user info ${userInfoResponse.status}, ${JSON.stringify(data)}`,
+    );
+    return data;
+  }
+
+  async getUpcomingManageableCompetitions(token: string) {
+    const oneWeekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+    const params = `managed_by_me=true&start=${oneWeekAgo.toISOString()}&sort=start_date`;
+    this.wcaLogger.log(
+      `Fetching manageable competitions with params: ${params}`,
+    );
+    const response = await fetch(
+      `${WCA_ORIGIN}/api/v0/competitions?${params}`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      },
+    );
+    return await response.json();
   }
 }

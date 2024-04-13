@@ -8,13 +8,12 @@ import {
   Query,
   UseGuards,
 } from '@nestjs/common';
-import { PersonService } from './person.service';
-import { UpdatePersonDto } from './dto/updatePerson.dto';
 import { AuthGuard } from '@nestjs/passport';
-import { AdminOrDelegateGuard } from '../auth/guards/adminOrDelegate.guard';
 import { AdminGuard } from '../auth/guards/admin.guard';
-import { AddStaffMemberDto } from './dto/addStaffMember.dto';
 import { TokenGuard } from '../auth/guards/token.guard';
+import { AddStaffMemberDto } from './dto/addStaffMember.dto';
+import { UpdatePersonDto } from './dto/updatePerson.dto';
+import { PersonService } from './person.service';
 
 @Controller('person')
 export class PersonController {
@@ -90,7 +89,7 @@ export class PersonController {
     return await this.personService.getPersonById(id);
   }
 
-  @UseGuards(AuthGuard('jwt'), AdminOrDelegateGuard)
+  @UseGuards(AuthGuard('jwt'), AdminGuard)
   @Put(':id')
   async updatePerson(@Param('id') id: string, @Body() data: UpdatePersonDto) {
     return await this.personService.updatePerson(id, data);

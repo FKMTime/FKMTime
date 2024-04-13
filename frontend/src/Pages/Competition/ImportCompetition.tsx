@@ -1,9 +1,12 @@
-import { Box, Button, Heading, useToast } from "@chakra-ui/react";
-import { FormEvent, useState } from "react";
+import { Box, Heading, useToast } from "@chakra-ui/react";
+import { useEffect, useState } from "react";
 
-import { importCompetition } from "@/logic/competition";
-import { Competition } from "@/logic/interfaces";
-import CompetitionsAutocomplete from "@/Pages/Competition/Components/CompetitionsAutocomplete.tsx";
+import {
+    getUpcomingManageableCompetitions,
+    importCompetition,
+} from "@/logic/competition";
+import { Competition, WCACompetition } from "@/logic/interfaces";
+import CompetitionsList from "@/Pages/Competition/Components/CompetitionsList.tsx";
 
 interface ImportCompetitionProps {
     handleImportCompetition: (data: Competition) => void;
@@ -13,10 +16,10 @@ const ImportCompetition = ({
     handleImportCompetition,
 }: ImportCompetitionProps) => {
     const toast = useToast();
-    const [competitionId, setCompetitionId] = useState<string>("");
-    const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
-        event.preventDefault();
-        if (competitionId === "") {
+    const [competitions, setCompetitions] = useState<WCACompetition[]>([]);
+
+    const handleSubmit = async (wcaId: string) => {
+        if (wcaId === "") {
             toast({
                 title: "Error",
                 description: "Please enter a competition ID",
@@ -25,30 +28,26 @@ const ImportCompetition = ({
                 isClosable: true,
             });
         }
-        const response = await importCompetition(competitionId);
+        const response = await importCompetition(wcaId);
         if (response.status === 200) {
             handleImportCompetition(response.data);
         }
     };
 
+    useEffect(() => {
+        getUpcomingManageableCompetitions().then((data) => {
+            setCompetitions(data);
+        });
+    }, []);
+
     return (
         <Box display="flex" flexDirection="column" gap="5">
             <Heading size="lg">Import competition from the WCA Website</Heading>
-            <Box
-                display="flex"
-                flexDirection="column"
-                gap="5"
-                as="form"
-                onSubmit={handleSubmit}
-                width={{ base: "100%", md: "20%" }}
-            >
-                <CompetitionsAutocomplete
-                    value={competitionId}
-                    onSelect={(value) => setCompetitionId(value)}
+            <Box display="flex" flexDirection="column" gap="5">
+                <CompetitionsList
+                    competitions={competitions}
+                    handleImportCompetition={handleSubmit}
                 />
-                <Button colorScheme="green" type="submit">
-                    Import
-                </Button>
             </Box>
         </Box>
     );

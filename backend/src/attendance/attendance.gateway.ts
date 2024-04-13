@@ -1,3 +1,5 @@
+import { UseGuards } from '@nestjs/common';
+import { AuthGuard } from '@nestjs/passport';
 import {
   ConnectedSocket,
   MessageBody,
@@ -5,10 +7,8 @@ import {
   WebSocketGateway,
   WebSocketServer,
 } from '@nestjs/websockets';
-import { UseGuards } from '@nestjs/common';
-import { AuthGuard } from '@nestjs/passport';
-import { AdminOrDelegateGuard } from '../auth/guards/adminOrDelegate.guard';
 import { Server, Socket } from 'socket.io';
+import { AdminGuard } from '../auth/guards/admin.guard';
 
 @WebSocketGateway({
   namespace: '/attendance',
@@ -17,7 +17,7 @@ import { Server, Socket } from 'socket.io';
     origin: '*',
   },
 })
-@UseGuards(AuthGuard('jwt'), AdminOrDelegateGuard)
+@UseGuards(AuthGuard('jwt'), AdminGuard)
 export class AttendanceGateway {
   @WebSocketServer() server: Server;
 

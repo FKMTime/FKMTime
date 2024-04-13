@@ -1,3 +1,5 @@
+import { UseGuards } from '@nestjs/common';
+import { AuthGuard } from '@nestjs/passport';
 import {
   ConnectedSocket,
   MessageBody,
@@ -5,10 +7,8 @@ import {
   WebSocketGateway,
   WebSocketServer,
 } from '@nestjs/websockets';
-import { UseGuards } from '@nestjs/common';
-import { AuthGuard } from '@nestjs/passport';
 import { Server, Socket } from 'socket.io';
-import { AdminOrDelegateGuard } from '../auth/guards/adminOrDelegate.guard';
+import { AdminGuard } from '../auth/guards/admin.guard';
 import { RequestToConnectDto } from './dto/requestToConnect.dto';
 
 @WebSocketGateway({
@@ -18,7 +18,7 @@ import { RequestToConnectDto } from './dto/requestToConnect.dto';
     origin: '*',
   },
 })
-@UseGuards(AuthGuard('jwt'), AdminOrDelegateGuard)
+@UseGuards(AuthGuard('jwt'), AdminGuard)
 export class DeviceGateway {
   @WebSocketServer() server: Server;
   deviceRequests: RequestToConnectDto[] = [];

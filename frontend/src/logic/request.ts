@@ -10,6 +10,10 @@ export const WCA_ORIGIN = import.meta.env.PROD
     ? "https://www.worldcubeassociation.org"
     : DEV_WCA_URL;
 
+export const WCA_CLIENT_ID = import.meta.env.PROD
+    ? import.meta.env.VITE_WCA_CLIENT_ID
+    : "example-application-id";
+
 const BACKEND_URL = import.meta.env.PROD ? "/api" : DEV_BACKEND_URL;
 
 export const INCIDENTS_WEBSOCKET_URL = import.meta.env.PROD
@@ -50,6 +54,15 @@ export const backendRequest = (
     });
 };
 
-export const wcaApiRequest = (path: string) => {
-    return fetch(`${WCA_ORIGIN}/api/v0/${path}`);
+export const wcaApiRequest = (path: string, token?: string) => {
+    const headers = new Headers();
+    headers.append("Content-Type", "application/json");
+    if (token) {
+        headers.append("Authorization", `Bearer ${token}`);
+    }
+    return fetch(`${WCA_ORIGIN}/api/v0/${path}`, {
+        method: "GET",
+        headers: headers,
+        redirect: "follow",
+    });
 };

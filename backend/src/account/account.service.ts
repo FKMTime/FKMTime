@@ -16,6 +16,7 @@ export class AccountService {
         username: true,
         fullName: true,
         role: true,
+        wcaUserId: true,
         createdAt: true,
         updatedAt: true,
       },

@@ -14,9 +14,8 @@ import { useNavigate } from "react-router-dom";
 import EventIcon from "@/Components/Icons/EventIcon";
 import LoadingPage from "@/Components/LoadingPage";
 import Select from "@/Components/Select";
-import { HAS_WRITE_ACCESS } from "@/logic/accounts";
 import { competitionAtom } from "@/logic/atoms";
-import { getUserInfo } from "@/logic/auth";
+import { isAdmin } from "@/logic/auth";
 import { getCompetitionInfo } from "@/logic/competition";
 import { Room } from "@/logic/interfaces";
 import { getAllRooms } from "@/logic/rooms";
@@ -27,7 +26,6 @@ import ScheduleTable from "./Components/Schedule/ScheduleTable";
 
 const Home = () => {
     const navigate = useNavigate();
-    const userInfo = getUserInfo();
     const [competition, setCompetition] = useAtom(competitionAtom);
     const [rooms, setRooms] = useState<Room[]>([]);
     const [currentRounds, setCurrentRounds] = useState<string[]>([]);
@@ -114,7 +112,7 @@ const Home = () => {
                     />
                 ))}
             </Box>
-            {HAS_WRITE_ACCESS.includes(userInfo.role) && (
+            {isAdmin() && (
                 <HomeShortcuts
                     rooms={rooms}
                     currentRounds={currentRounds}

@@ -2,6 +2,7 @@ import { Box, IconButton, Td, Text, Tr, useToast } from "@chakra-ui/react";
 import { useState } from "react";
 import { MdDelete, MdEdit, MdLock } from "react-icons/md";
 
+import wcaLogo from "@/assets/wca.svg";
 import Alert from "@/Components/Alert";
 import RoleIcon from "@/Components/Icons/RoleIcon.tsx";
 import { deleteAccount } from "@/logic/accounts";
@@ -62,7 +63,13 @@ const AccountRow = ({ account, fetchData }: AccountRowProps) => {
     return (
         <>
             <Tr key={account.id}>
-                <Td>{account.username}</Td>
+                <Td>
+                    {account.wcaUserId ? (
+                        <img src={wcaLogo} width="25" />
+                    ) : (
+                        "FKM"
+                    )}
+                </Td>
                 <Td>{account.fullName}</Td>
                 <Td>
                     <Box display="flex" alignItems="center" gap="1">
@@ -83,18 +90,20 @@ const AccountRow = ({ account, fetchData }: AccountRowProps) => {
                         }}
                         onClick={() => setIsOpenEditAccountModal(true)}
                     />
-                    <IconButton
-                        icon={<MdLock />}
-                        title="Change password"
-                        aria-label="Change password"
-                        bg="none"
-                        color="white"
-                        _hover={{
-                            background: "none",
-                            color: "gray.400",
-                        }}
-                        onClick={() => setIsOpenChangePasswordModal(true)}
-                    />
+                    {!account.wcaUserId && (
+                        <IconButton
+                            icon={<MdLock />}
+                            title="Change password"
+                            aria-label="Change password"
+                            bg="none"
+                            color="white"
+                            _hover={{
+                                background: "none",
+                                color: "gray.400",
+                            }}
+                            onClick={() => setIsOpenChangePasswordModal(true)}
+                        />
+                    )}
                     <IconButton
                         icon={<MdDelete />}
                         title="Delete"

@@ -1,19 +1,19 @@
 import {
   Body,
   Controller,
-  Param,
-  Post,
   Get,
-  UseGuards,
-  Query,
   HttpCode,
   HttpStatus,
+  Param,
+  Post,
+  Query,
+  UseGuards,
 } from '@nestjs/common';
+import { AuthGuard } from '@nestjs/passport';
+import { AdminGuard } from '../auth/guards/admin.guard';
+import { TokenGuard } from '../auth/guards/token.guard';
 import { EnterAttemptDto } from './dto/enterAttempt.dto';
 import { ResultService } from './result.service';
-import { AuthGuard } from '@nestjs/passport';
-import { AdminOrDelegateGuard } from '../auth/guards/adminOrDelegate.guard';
-import { TokenGuard } from '../auth/guards/token.guard';
 
 @Controller('result')
 export class ResultController {
@@ -34,14 +34,14 @@ export class ResultController {
     return this.resultService.getAllResultsByPerson(id);
   }
 
-  @UseGuards(AuthGuard('jwt'), AdminOrDelegateGuard)
+  @UseGuards(AuthGuard('jwt'), AdminGuard)
   @Get(':id')
   async getResultById(@Param('id') id: string) {
     return await this.resultService.getResultById(id);
   }
 
   @HttpCode(HttpStatus.OK)
-  @UseGuards(AuthGuard('jwt'), AdminOrDelegateGuard)
+  @UseGuards(AuthGuard('jwt'), AdminGuard)
   @Post('round/:roundId/enter')
   async enterRoundToWcaLive(@Param('roundId') roundId: string) {
     return await this.resultService.enterRoundToWcaLive(roundId);
@@ -53,7 +53,7 @@ export class ResultController {
     return await this.resultService.enterAttempt(data);
   }
 
-  @UseGuards(AuthGuard('jwt'), AdminOrDelegateGuard)
+  @UseGuards(AuthGuard('jwt'), AdminGuard)
   @Get(':id/enter')
   async enterWholeScorecardToWcaLive(@Param('id') id: string) {
     return await this.resultService.enterWholeScorecardToWcaLive(id);
