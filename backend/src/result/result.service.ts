@@ -414,7 +414,8 @@ export class ResultService {
           solvedAt: data.solvedAt,
           penalty: finalData.penalty,
           value: finalData.value,
-          inspectionTime: finalData.inspectionTime,
+          inspectionTime:
+            finalData.inspectionTime > 20000 ? 20000 : finalData.inspectionTime,
           judge: judge
             ? {
                 connect: {
@@ -491,7 +492,8 @@ export class ResultService {
       data: {
         attemptNumber: data.attemptNumber,
         sessionId: data.sessionId,
-        inspectionTime: data.inspectionTime,
+        inspectionTime:
+          data.inspectionTime > 20000 ? 20000 : data.inspectionTime,
         solvedAt: data.solvedAt,
         status: AttemptStatus.UNRESOLVED,
         shouldBeUsed: false,
@@ -526,7 +528,8 @@ export class ResultService {
       data: {
         attemptNumber: data.attemptNumber,
         sessionId: data.sessionId,
-        inspectionTime: data.inspectionTime,
+        inspectionTime:
+          data.inspectionTime > 20000 ? 20000 : data.inspectionTime,
         solvedAt: data.solvedAt,
         status: AttemptStatus.EXTRA_ATTEMPT,
         penalty: data.penalty,
