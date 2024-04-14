@@ -1,8 +1,10 @@
 import { Device } from "./interfaces";
 import { backendRequest } from "./request";
 
-export const getAllDevices = async () => {
-    const response = await backendRequest("device", "GET", true);
+export const getAllDevices = async (type?: string) => {
+    const url = type ? `device?type=${type}` : "device";
+    const response = await backendRequest(url, "GET", true);
+    if (!response.ok) return [];
     return await response.json();
 };
 

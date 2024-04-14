@@ -8,6 +8,7 @@ import {
   Param,
   Post,
   Put,
+  Query,
   UseGuards,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
@@ -17,6 +18,7 @@ import { DeviceService } from './device.service';
 import { DeviceDto } from './dto/device.dto';
 import { RequestToConnectDto } from './dto/requestToConnect.dto';
 import { UpdateBatteryPercentageDto } from './dto/updateBatteryPercentage.dto';
+import { DeviceType } from '@prisma/client';
 
 @Controller('device')
 export class DeviceController {
@@ -24,8 +26,8 @@ export class DeviceController {
 
   @UseGuards(AuthGuard('jwt'), AdminGuard)
   @Get()
-  async getAllDevices() {
-    return this.deviceService.getAllDevices();
+  async getAllDevices(@Query('type') type: DeviceType) {
+    return this.deviceService.getAllDevices(type);
   }
 
   @UseGuards(AdminGuard)

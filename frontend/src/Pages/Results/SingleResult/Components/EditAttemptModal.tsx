@@ -23,6 +23,7 @@ import {
     Attempt,
     AttemptStatus,
     Device,
+    DeviceType,
     Person,
     Result,
 } from "@/logic/interfaces";
@@ -87,7 +88,7 @@ const EditAttemptModal = ({
             setPersons(data);
         };
         const fetchDevicesData = async () => {
-            const data = await getAllDevices();
+            const data = await getAllDevices(DeviceType.STATION);
             setDevices(data);
         };
         if (isOpen) {

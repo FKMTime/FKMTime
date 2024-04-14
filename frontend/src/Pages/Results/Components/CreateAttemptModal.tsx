@@ -20,7 +20,7 @@ import Select from "@/Components/Select";
 import { createAttempt } from "@/logic/attempt";
 import { DNF_VALUE } from "@/logic/constants";
 import { getAllDevices } from "@/logic/devices";
-import { AttemptStatus, Device } from "@/logic/interfaces";
+import { AttemptStatus, Device, DeviceType } from "@/logic/interfaces";
 import { prettyAttemptStatus } from "@/logic/utils";
 
 interface CreateAttemptModalProps {
@@ -55,13 +55,13 @@ const CreateAttemptModal = ({
 
     useEffect(() => {
         if (!isOpen) return;
-        getAllDevices().then((data) => {
-            setDevices(
-                data.filter((device: Device) => device.type === "STATION")
-            );
-            setDeviceId(data[0].id);
+        getAllDevices(DeviceType.STATION).then((data) => {
+            setDevices(data);
+            if (devices.length > 0) {
+                setDeviceId(devices[0].id);
+            }
         });
-    }, [isOpen]);
+    }, [devices, isOpen]);
 
     const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
         e.preventDefault();

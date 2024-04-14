@@ -13,11 +13,16 @@ export class DeviceService {
     private readonly deviceGateway: DeviceGateway,
   ) {}
 
-  async getAllDevices() {
+  async getAllDevices(type?: DeviceType) {
+    if (type && !Object.values(DeviceType).includes(type)) {
+      throw new HttpException('Invalid device type', 400);
+    }
+    const whereParams = type ? { type: type } : {};
     const devices = await this.prisma.device.findMany({
       include: {
         room: true,
       },
+      where: whereParams,
       orderBy: {
         name: 'asc',
       },
