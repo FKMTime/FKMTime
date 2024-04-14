@@ -9,6 +9,7 @@ import {
 import { FormEvent, useState } from "react";
 
 import { Modal } from "@/Components/Modal";
+import PasswordInput from "@/Components/PasswordInput.tsx";
 import Select from "@/Components/Select";
 import { createAccount } from "@/logic/accounts";
 import { AccountRole } from "@/logic/interfaces.ts";
@@ -91,17 +92,15 @@ const CreateAccountModal = ({ isOpen, onClose }: CreateAccountModalProps) => {
                         placeholder="Full name"
                         _placeholder={{ color: "white" }}
                         name="fullName"
-                        disabled={isLoading}
+                        isDisabled={isLoading}
                     />
                 </FormControl>
                 <FormControl isRequired>
                     <FormLabel>Password</FormLabel>
-                    <Input
+                    <PasswordInput
                         placeholder="Password"
-                        type="password"
-                        _placeholder={{ color: "white" }}
                         name="password"
-                        disabled={isLoading}
+                        isDisabled={isLoading}
                     />
                 </FormControl>
                 <FormControl isRequired>

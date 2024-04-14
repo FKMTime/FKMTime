@@ -1,6 +1,5 @@
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 
-import WCALogin from "@/Pages/Auth/WCALogin/WCALogin.tsx";
 import ResolvedIncidents from "@/Pages/ResolvedIncidents/ResolvedIncidents.tsx";
 
 import Layout from "./Layout/Layout";
@@ -27,10 +26,6 @@ const App = () => {
         {
             path: "/auth/login",
             element: <Login />,
-        },
-        {
-            path: "/auth/wca",
-            element: <WCALogin />,
         },
         {
             path: "/",

@@ -7,16 +7,13 @@ import {
     FormControl,
     FormLabel,
     Heading,
-    IconButton,
-    Input,
-    Text,
     useToast,
 } from "@chakra-ui/react";
 import { useSetAtom } from "jotai";
 import { FormEvent, useCallback, useEffect, useState } from "react";
-import { IoMdEye, IoMdEyeOff } from "react-icons/io";
 
 import LoadingPage from "@/Components/LoadingPage";
+import PasswordInput from "@/Components/PasswordInput.tsx";
 import { competitionAtom, showSidebarAtom } from "@/logic/atoms";
 import {
     getCompetitionInfo,
@@ -36,8 +33,6 @@ const Competition = () => {
     const [competition, setCompetition] = useState<CompetitionInterface | null>(
         null
     );
-    const [showScoretakingToken, setShowScoretakingToken] =
-        useState<boolean>(false);
     const toast = useToast();
 
     const fetchData = useCallback(async () => {
@@ -138,26 +133,21 @@ const Competition = () => {
     }
 
     return (
-        <Box display="flex" flexDirection="column" gap="5">
+        <Box
+            display="flex"
+            flexDirection="column"
+            gap="5"
+            width={{ base: "100%", md: "20%" }}
+        >
             <Heading size="lg">{competition?.name}</Heading>
             <Box display="flex" flexDirection="column" gap="5">
-                <Alert
-                    status="warning"
-                    borderRadius="md"
-                    color="black"
-                    width={{ base: "100%", md: "20%" }}
-                >
+                <Alert status="warning" borderRadius="md" color="black">
                     <AlertIcon />
                     Remember to open round in WCA Live
                 </Alert>
                 {competition.scoretakingToken === "" ||
                     (!competition.scoretakingToken && (
-                        <Alert
-                            status="error"
-                            borderRadius="md"
-                            color="black"
-                            width={{ base: "100%", md: "20%" }}
-                        >
+                        <Alert status="error" borderRadius="md" color="black">
                             <AlertIcon />
                             You need to set the scoretaking token taken from WCA
                             Live before the competition
@@ -166,23 +156,13 @@ const Competition = () => {
                 {competition.scoretakingTokenUpdatedAt &&
                     new Date(competition.scoretakingTokenUpdatedAt).getTime() <
                         new Date().getTime() - 7 * 24 * 60 * 60 * 1000 && (
-                        <Alert
-                            status="error"
-                            borderRadius="md"
-                            color="black"
-                            width={{ base: "100%", md: "20%" }}
-                        >
+                        <Alert status="error" borderRadius="md" color="black">
                             <AlertIcon />
                             The scoretaking token may have expired
                         </Alert>
                     )}
             </Box>
-            <Box
-                display="flex"
-                flexDirection="column"
-                gap="5"
-                width={{ base: "100%", md: "20%" }}
-            >
+            <Box display="flex" flexDirection="column" gap="5">
                 <Button colorScheme="yellow" onClick={handleSync}>
                     Sync
                 </Button>
@@ -191,39 +171,14 @@ const Competition = () => {
                 display="flex"
                 flexDirection="column"
                 gap="5"
-                width={{ base: "100%", md: "20%" }}
                 as="form"
                 onSubmit={handleSubmit}
             >
                 <FormControl display="flex" flexDirection="column" gap="2">
-                    <FormLabel
-                        display="flex"
-                        flexDirection="row"
-                        alignItems="center"
-                        gap="2"
-                    >
-                        <IconButton
-                            aria-label="Show"
-                            icon={
-                                showScoretakingToken ? (
-                                    <IoMdEyeOff />
-                                ) : (
-                                    <IoMdEye />
-                                )
-                            }
-                            onClick={() =>
-                                setShowScoretakingToken(!showScoretakingToken)
-                            }
-                            background="none"
-                            color="white"
-                            _hover={{ background: "none", opacity: 0.5 }}
-                        />
-                        <Text>Scoretaking token</Text>
-                    </FormLabel>
-                    <Input
-                        type={showScoretakingToken ? "text" : "password"}
+                    <FormLabel>Scoretaking token</FormLabel>
+                    <PasswordInput
                         placeholder="Scoretaking token"
-                        _placeholder={{ color: "white" }}
+                        autoComplete="off"
                         value={competition?.scoretakingToken}
                         onChange={(event) =>
                             setCompetition({

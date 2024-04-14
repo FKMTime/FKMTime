@@ -3,12 +3,12 @@ import {
     Button,
     FormControl,
     FormLabel,
-    Input,
     useToast,
 } from "@chakra-ui/react";
 import { FormEvent, useState } from "react";
 
 import { Modal } from "@/Components/Modal";
+import PasswordInput from "@/Components/PasswordInput.tsx";
 import { updateAccountPassword } from "@/logic/accounts";
 import { Account } from "@/logic/interfaces";
 
@@ -63,12 +63,11 @@ const EditAccountPasswordModal = ({
             >
                 <FormControl isRequired>
                     <FormLabel>New password</FormLabel>
-                    <Input
+                    <PasswordInput
                         placeholder="New password"
-                        _placeholder={{ color: "white" }}
-                        disabled={isLoading}
-                        type="password"
+                        isDisabled={isLoading}
                         name="password"
+                        autoComplete="off"
                     />
                 </FormControl>
                 <Box

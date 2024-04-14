@@ -12,6 +12,7 @@ import { FormEvent, useEffect, useState } from "react";
 import { MdKey, MdWifi } from "react-icons/md";
 
 import { Modal } from "@/Components/Modal";
+import PasswordInput from "@/Components/PasswordInput.tsx";
 import Select from "@/Components/Select";
 import {
     getCompetitionSettings,
@@ -137,16 +138,15 @@ const UpdateDevicesSettingsModal = ({
                         <MdKey />
                         <Text>Wifi password</Text>
                     </FormLabel>
-                    <Input
+                    <PasswordInput
                         value={competition.wifiPassword}
+                        autoComplete="off"
                         onChange={(event) => {
                             setCompetition({
                                 ...competition,
                                 wifiPassword: event.target.value,
                             });
                         }}
-                        type="password"
-                        autoComplete="off"
                     />
                 </FormControl>
                 <Button type="submit" colorScheme="green">
