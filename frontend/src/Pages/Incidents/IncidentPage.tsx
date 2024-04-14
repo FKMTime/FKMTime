@@ -108,7 +108,11 @@ const IncidentPage = () => {
     };
 
     const handleSubmit = async (data: Incident) => {
-        if (editedIncident.value === 0 && editedIncident.penalty === 0) {
+        if (
+            data.value === 0 &&
+            data.penalty === 0 &&
+            data.status !== AttemptStatus.EXTRA_GIVEN
+        ) {
             return toast({
                 title: "Error",
                 description:
