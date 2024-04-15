@@ -57,19 +57,39 @@ const Layout = () => {
                     if (permission === "granted") {
                         if (isMobile()) {
                             navigator.serviceWorker.ready.then(
-                                (registration) => {
-                                    registration.showNotification(
-                                        "New incident",
-                                        {
-                                            body: `Competitor ${data.competitorName}  on station ${data.deviceName}`,
-                                        }
-                                    );
+                                async (registration) => {
+                                    if (
+                                        await registration
+                                            .getNotifications({
+                                                tag: `newIncident-${data.id}`,
+                                            })
+                                            .then(
+                                                (notifications) =>
+                                                    notifications.length === 0
+                                            )
+                                    ) {
+                                        await registration.showNotification(
+                                            "New incident",
+                                            {
+                                                body: `Competitor ${data.competitorName}  on station ${data.deviceName}`,
+                                                tag: `newIncident-${data.id}`,
+                                            }
+                                        );
+                                    }
                                 }
                             );
                         } else {
-                            new Notification("New incident", {
-                                body: `Competitor ${data.competitorName}  on station ${data.deviceName}`,
-                            });
+                            const notification = new Notification(
+                                "New incident",
+                                {
+                                    body: `Competitor ${data.competitorName}  on station ${data.deviceName}`,
+                                    tag: `newIncident-${data.id}`,
+                                },
+                            );
+                            notification.onclick = () => {
+                                window.focus();
+                                navigate("/incidents");
+                            };
                         }
                     }
                 });

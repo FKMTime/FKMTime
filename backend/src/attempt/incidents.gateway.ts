@@ -33,11 +33,16 @@ export class IncidentsGateway {
   }
 
   @SubscribeMessage('newIncident')
-  handleNewIncident(deviceName: string, competitorName: string) {
+  handleNewIncident(
+    deviceName: string,
+    competitorName: string,
+    attemptId: string,
+  ) {
     this.logger.log(
       `New incident on station ${deviceName} - ${competitorName}`,
     );
     this.server.to(`incidents`).emit('newIncident', {
+      id: attemptId,
       deviceName,
       competitorName,
     });

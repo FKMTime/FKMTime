@@ -364,7 +364,12 @@ export class ResultService {
           result,
           attemptNumber: lastExtra + 1,
         });
-        return this.notifyDelegate(device.name, competitor.name, locale);
+        return this.notifyDelegate(
+          device.name,
+          competitor.name,
+          locale,
+          lastAttemptToReplace.id,
+        );
       }
       const attemptNumber =
         await this.createAnExtraAttemptAnReplaceTheOriginalOne(
@@ -435,7 +440,12 @@ export class ResultService {
         },
       });
       if (data.isDelegate) {
-        return this.notifyDelegate(device.name, competitor.name, locale);
+        return this.notifyDelegate(
+          device.name,
+          competitor.name,
+          locale,
+          lastAttempt.id,
+        );
       }
       attemptToEnterToWcaLive = {
         wcaId: competition.wcaId,
@@ -569,8 +579,13 @@ export class ResultService {
     deviceName: string,
     competitorName: string,
     locale: string,
+    attemptId: string,
   ) {
-    this.incidentsGateway.handleNewIncident(deviceName, competitorName);
+    this.incidentsGateway.handleNewIncident(
+      deviceName,
+      competitorName,
+      attemptId,
+    );
     return {
       message: getTranslation('delegateWasNotified', locale),
       shouldResetTime: true,
