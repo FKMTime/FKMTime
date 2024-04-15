@@ -38,40 +38,17 @@ export class AttendanceService {
     });
   }
 
-  async markAsPresent(data: MarkAsPresentDto) {
-    const person = await this.prisma.person.findFirst({
+  async markAsPresent(id: string) {
+    const attendance = await this.prisma.staffActivity.update({
       where: {
-        id: data.personId,
+        id,
       },
-    });
-    if (!person) {
-      throw new HttpException('Person not found', 404);
-    }
-    const attendance = await this.prisma.staffActivity.upsert({
-      where: {
-        personId_groupId_role: {
-          groupId: data.groupId,
-          personId: person.id,
-          role: data.role,
-        },
-      },
-      create: {
-        groupId: data.groupId,
-        role: data.role,
-        person: {
-          connect: {
-            id: person.id,
-          },
-        },
-        isAssigned: false,
-        isPresent: true,
-      },
-      update: {
+      data: {
         isPresent: true,
       },
     });
     this.attendanceGateway.handleNewAttendance(
-      data.groupId,
+      attendance.groupId,
       attendance.personId,
     );
     return attendance;
@@ -196,5 +173,21 @@ export class AttendanceService {
     return {
       message: getTranslation('attendanceConfirmed', person.countryIso2),
     };
+  }
+
+  async markAsAbsent(id: string) {
+    const attendance = await this.prisma.staffActivity.update({
+      where: {
+        id: id,
+      },
+      data: {
+        isPresent: false,
+      },
+    });
+    this.attendanceGateway.handleNewAttendance(
+      attendance.groupId,
+      attendance.personId,
+    );
+    return attendance;
   }
 }

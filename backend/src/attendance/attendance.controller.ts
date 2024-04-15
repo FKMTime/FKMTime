@@ -27,8 +27,14 @@ export class AttendanceController {
   }
 
   @UseGuards(AuthGuard('jwt'), AdminGuard)
-  @Post('mark-as-present')
-  async markAsPresent(@Body() data: MarkAsPresentDto) {
-    return this.attendanceService.markAsPresent(data);
+  @Post('present/:id')
+  async markAsPresent(@Param('id') id: string)  {
+    return this.attendanceService.markAsPresent(id);
+  }
+
+  @UseGuards(AuthGuard('jwt'), AdminGuard)
+  @Post('absent/:id')
+  async markAsAbsent(@Param('id') id: string){
+    return this.attendanceService.markAsAbsent(id);
   }
 }

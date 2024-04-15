@@ -18,20 +18,20 @@ export const getStaffActivitiesByPersonId = async (id: string) => {
     return await response.json();
 };
 
-export const markAsPresent = async (
-    groupId: string,
-    personId: string,
-    role: string
-) => {
+export const markAsPresent = async (id: string) => {
     const response = await backendRequest(
-        `attendance/mark-as-present`,
+        `attendance/present/${id}`,
         "POST",
-        true,
-        {
-            groupId,
-            personId,
-            role,
-        }
+        true
+    );
+    return response.status;
+};
+
+export const markAsAbsent = async (id: string) => {
+    const response = await backendRequest(
+        `attendance/absent/${id}`,
+        "POST",
+        true
     );
     return response.status;
 };

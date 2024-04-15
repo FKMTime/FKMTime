@@ -16,13 +16,18 @@ import io from "socket.io-client";
 import Select from "@/Components/Select";
 import { getGroupsByRoundId } from "@/logic/activities";
 import { competitionAtom } from "@/logic/atoms";
-import { getAttendanceByGroupId, markAsPresent } from "@/logic/attendance";
+import {
+    getAttendanceByGroupId,
+    markAsAbsent,
+    markAsPresent,
+} from "@/logic/attendance";
 import { getToken } from "@/logic/auth";
 import { getCompetitionInfo } from "@/logic/competition";
 import { Room, StaffActivity } from "@/logic/interfaces";
 import { ATTENDANCE_WEBSOCKET_URL, WEBSOCKET_PATH } from "@/logic/request";
 import { getAllRooms } from "@/logic/rooms";
 import { getActivityNameByCode } from "@/logic/utils";
+import PresentPeopleList from "@/Pages/Attendance/Components/PresentPeopleList.tsx";
 
 import LoadingPage from "../../Components/LoadingPage";
 import events from "../../logic/events";
@@ -101,12 +106,34 @@ const Attendance = () => {
         setAttendance(data);
     };
 
-    const handleMarkAsPresent = async (personId: string, role: string) => {
-        const status = await markAsPresent(selectedGroup, personId, role);
+    const handleMarkAsPresent = async (staffActivityId: string) => {
+        const status = await markAsPresent(staffActivityId);
         if (status === 201) {
             toast({
                 title: "Success",
                 description: "Marked as present",
+                status: "success",
+                duration: 3000,
+                isClosable: true,
+            });
+            fetchAttendanceData(selectedGroup);
+        } else {
+            toast({
+                title: "Error",
+                description: "Something went wrong",
+                status: "error",
+                duration: 3000,
+                isClosable: true,
+            });
+        }
+    };
+
+    const handleMarkAsAbsent = async (staffActivityId: string) => {
+        const status = await markAsAbsent(staffActivityId);
+        if (status === 201) {
+            toast({
+                title: "Success",
+                description: "Marked as absent",
                 status: "success",
                 duration: 3000,
                 isClosable: true,
@@ -301,8 +328,9 @@ const Attendance = () => {
                             <Box gap="5" display="flex" flexDirection="column">
                                 <Heading>Scramblers</Heading>
                                 {presentScramblers.length > 0 && (
-                                    <UnorderedPeopleList
-                                        persons={presentScramblers}
+                                    <PresentPeopleList
+                                        staffActivities={presentScramblers}
+                                        handleMarkAsAbsent={handleMarkAsAbsent}
                                     />
                                 )}
                                 {absentScramblers.length > 0 && (
@@ -311,7 +339,6 @@ const Attendance = () => {
                                         handleMarkAsPresent={
                                             handleMarkAsPresent
                                         }
-                                        role="SCRAMBLER"
                                     />
                                 )}
                             </Box>
@@ -326,8 +353,9 @@ const Attendance = () => {
                             <Box gap="5" display="flex" flexDirection="column">
                                 <Heading>Runners</Heading>
                                 {presentRunners.length > 0 && (
-                                    <UnorderedPeopleList
-                                        persons={presentRunners}
+                                    <PresentPeopleList
+                                        staffActivities={presentRunners}
+                                        handleMarkAsAbsent={handleMarkAsAbsent}
                                     />
                                 )}
                                 {absentRunners.length > 0 && (
@@ -336,7 +364,6 @@ const Attendance = () => {
                                         handleMarkAsPresent={
                                             handleMarkAsPresent
                                         }
-                                        role="RUNNER"
                                     />
                                 )}
                             </Box>
@@ -349,8 +376,9 @@ const Attendance = () => {
                             <Box gap="5" display="flex" flexDirection="column">
                                 <Heading>Judges</Heading>
                                 {presentJudges.length > 0 && (
-                                    <UnorderedPeopleList
-                                        persons={presentJudges}
+                                    <PresentPeopleList
+                                        staffActivities={presentJudges}
+                                        handleMarkAsAbsent={handleMarkAsAbsent}
                                         showDevice
                                     />
                                 )}
@@ -360,7 +388,6 @@ const Attendance = () => {
                                         handleMarkAsPresent={
                                             handleMarkAsPresent
                                         }
-                                        role="JUDGE"
                                     />
                                 )}
                             </Box>
