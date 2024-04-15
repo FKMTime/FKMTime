@@ -150,7 +150,6 @@ const PersonRow = ({ person, wcif, handleCloseEditModal }: PersonRowProps) => {
                 <DisplayGroupsModal
                     isOpen={isOpenDisplayGroupsModal}
                     onClose={() => setIsOpenDisplayGroupsModal(false)}
-                    wcif={wcif}
                     person={person}
                 />
             )}

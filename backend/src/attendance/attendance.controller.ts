@@ -22,8 +22,8 @@ export class AttendanceController {
 
   @UseGuards(AuthGuard('jwt'), AdminGuard)
   @Get('person/:id')
-  async getAttendanceByPerson(@Param('id') id: string) {
-    return this.attendanceService.getAttendanceByPerson(id);
+  async getStaffActivitiesByPersonId(@Param('id') id: string) {
+    return this.attendanceService.getStaffActivitiesByPersonId(id);
   }
 
   @UseGuards(AuthGuard('jwt'), AdminGuard)

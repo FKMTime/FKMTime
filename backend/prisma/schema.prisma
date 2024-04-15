@@ -21,44 +21,45 @@ model Account {
 }
 
 model Person {
-  id                  String       @id @default(uuid())
-  registrantId        Int?         @unique
+  id                  String          @id @default(uuid())
+  registrantId        Int?            @unique
   name                String
   wcaId               String?
   countryIso2         String?
   gender              String
-  canCompete          Boolean      @default(true)
+  canCompete          Boolean         @default(true)
   birthdate           DateTime?
   giftpackCollectedAt DateTime?
-  cardId              String?      @unique
+  cardId              String?         @unique
   Result              Result[]
   Attempt             Attempt[]
-  Attendance          Attendance[]
+  StaffActivity       StaffActivity[]
 }
 
-model Attendance {
-  id        String    @id @default(uuid())
-  personId  String
-  person    Person    @relation(fields: [personId], references: [id])
-  deviceId  String?
-  device    Device?   @relation(fields: [deviceId], references: [id])
-  groupId   String
-  role      StaffRole
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
+model StaffActivity {
+  id         String    @id @default(uuid())
+  personId   String
+  person     Person    @relation(fields: [personId], references: [id])
+  deviceId   String?
+  device     Device?   @relation(fields: [deviceId], references: [id])
+  isAssigned Boolean   @default(false)
+  isPresent  Boolean   @default(false)
+  groupId    String
+  role       StaffRole
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
 
   @@unique([personId, groupId, role])
 }
 
 model Competition {
-  id                        String         @id @default(uuid())
+  id                        String    @id @default(uuid())
   wcaId                     String
-  sendResultsToWcaLive      Boolean        @default(true)
+  sendResultsToWcaLive      Boolean   @default(true)
   name                      String
   shortName                 String
   countryIso2               String?
-  shouldUpdateDevices       Boolean        @default(false)
-  releaseChannel            ReleaseChannel @default(STABLE)
+  shouldUpdateDevices       Boolean   @default(false)
   apiToken                  String?
   wifiSsid                  String?
   wifiPassword              String?
@@ -113,17 +114,17 @@ model Attempt {
 }
 
 model Device {
-  id                String       @id @default(uuid())
+  id                String          @id @default(uuid())
   name              String
-  espId             Int?         @unique
+  espId             Int?            @unique
   type              DeviceType
   batteryPercentage Int?
   roomId            String
-  room              Room         @relation(fields: [roomId], references: [id])
-  createdAt         DateTime     @default(now())
-  updatedAt         DateTime     @updatedAt
+  room              Room            @relation(fields: [roomId], references: [id])
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
   Attempt           Attempt[]
-  Attendance        Attendance[]
+  StaffActivity     StaffActivity[]
 }
 
 model QuickAction {
@@ -151,17 +152,13 @@ enum AttemptStatus {
   EXTRA_GIVEN
 }
 
-enum ReleaseChannel {
-  STABLE
-  PRE_RELEASE
-}
-
 enum Role {
   ADMIN
   STAFF
 }
 
 enum StaffRole {
+  COMPETITOR
   JUDGE
   RUNNER
   SCRAMBLER

@@ -14,7 +14,7 @@ export class AttendanceService {
   ) {}
 
   async getAttendanceByGroupId(groupId: string) {
-    return this.prisma.attendance.findMany({
+    return this.prisma.staffActivity.findMany({
       where: {
         groupId,
       },
@@ -25,8 +25,8 @@ export class AttendanceService {
     });
   }
 
-  async getAttendanceByPerson(id: string) {
-    return this.prisma.attendance.findMany({
+  async getStaffActivitiesByPersonId(id: string) {
+    return this.prisma.staffActivity.findMany({
       where: {
         person: {
           id: id,
@@ -39,29 +39,46 @@ export class AttendanceService {
   }
 
   async markAsPresent(data: MarkAsPresentDto) {
-    const attendance = await this.prisma.attendance.create({
-      data: {
+    const person = await this.prisma.person.findFirst({
+      where: {
+        id: data.personId,
+      },
+    });
+    if (!person) {
+      throw new HttpException('Person not found', 404);
+    }
+    const attendance = await this.prisma.staffActivity.upsert({
+      where: {
+        personId_groupId_role: {
+          groupId: data.groupId,
+          personId: person.id,
+          role: data.role,
+        },
+      },
+      create: {
         groupId: data.groupId,
         role: data.role,
         person: {
           connect: {
-            registrantId: data.registrantId,
+            id: person.id,
           },
         },
+        isAssigned: false,
+        isPresent: true,
       },
-      include: {
-        person: true,
+      update: {
+        isPresent: true,
       },
     });
     this.attendanceGateway.handleNewAttendance(
       data.groupId,
-      attendance.person.id,
+      attendance.personId,
     );
     return attendance;
   }
 
   async markJudgeAsPresent(judgeId: string, groupId: string, deviceId: string) {
-    await this.prisma.attendance.upsert({
+    await this.prisma.staffActivity.upsert({
       where: {
         personId_groupId_role: {
           groupId: groupId,
@@ -75,6 +92,7 @@ export class AttendanceService {
             id: deviceId,
           },
         },
+        isPresent: true,
       },
       create: {
         groupId: groupId,
@@ -89,6 +107,8 @@ export class AttendanceService {
           },
         },
         role: 'JUDGE',
+        isPresent: true,
+        isAssigned: false,
       },
     });
     this.attendanceGateway.handleNewAttendance(groupId, judgeId);
@@ -128,20 +148,37 @@ export class AttendanceService {
       person.id,
     );
     try {
-      await this.prisma.attendance.create({
-        data: {
+      await this.prisma.staffActivity.upsert({
+        where: {
+          personId_groupId_role: {
+            groupId: device.room.currentGroupId,
+            personId: person.id,
+            role: role,
+          },
+        },
+        create: {
           groupId: device.room.currentGroupId,
           role: role,
-          device: {
-            connect: {
-              id: device.id,
-            },
-          },
           person: {
             connect: {
               id: person.id,
             },
           },
+          device: {
+            connect: {
+              id: device.id,
+            },
+          },
+          isAssigned: false,
+          isPresent: true,
+        },
+        update: {
+          device: {
+            connect: {
+              id: device.id,
+            },
+          },
+          isPresent: true,
         },
       });
     } catch (e) {

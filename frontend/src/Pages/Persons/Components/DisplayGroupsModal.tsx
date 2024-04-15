@@ -8,36 +8,31 @@ import {
     Thead,
     Tr,
 } from "@chakra-ui/react";
-import { Competition } from "@wca/helpers";
+import { activityCodeToName } from "@wca/helpers";
 import { useEffect, useState } from "react";
 
 import { Modal } from "@/Components/Modal";
-import { getAssigmentsList } from "@/logic/activities";
-import { getAttendanceByPersonId, wasPresent } from "@/logic/attendance";
-import { Attendance, Person } from "@/logic/interfaces";
+import { prettyActivityName } from "@/logic/activities";
+import { getStaffActivitiesByPersonId } from "@/logic/attendance";
+import { Person, StaffActivity } from "@/logic/interfaces";
 
 interface DisplayGroupsModalProps {
     isOpen: boolean;
     onClose: () => void;
     person: Person;
-    wcif: Competition;
 }
 
 const DisplayGroupsModal = ({
     isOpen,
     onClose,
-    wcif,
     person,
 }: DisplayGroupsModalProps) => {
-    const assignments = person.registrantId
-        ? getAssigmentsList(person.registrantId, wcif)
-        : [];
-    const [attendance, setAttendance] = useState<Attendance[]>([]);
+    const [staffActivity, setStaffActivity] = useState<StaffActivity[]>([]);
 
     useEffect(() => {
         if (person.registrantId && isOpen) {
-            getAttendanceByPersonId(person.id).then((data) => {
-                setAttendance(data);
+            getStaffActivitiesByPersonId(person.id).then((data) => {
+                setStaffActivity(data);
             });
         }
     }, [isOpen, person.id, person.registrantId]);
@@ -52,22 +47,19 @@ const DisplayGroupsModal = ({
                                 <Th>Group</Th>
                                 <Th>Activity</Th>
                                 <Th>Was present</Th>
+                                <Th>Is assigned</Th>
                             </Tr>
                         </Thead>
                         <Tbody>
-                            {assignments.map((assignment) => (
-                                <Tr key={assignment.activityCode}>
-                                    <Td>{assignment.groupName}</Td>
-                                    <Td>{assignment.activityName}</Td>
+                            {staffActivity.map((activity) => (
+                                <Tr key={activity.id}>
                                     <Td>
-                                        {attendance &&
-                                        assignment.activityName !== "Competitor"
-                                            ? wasPresent(
-                                                  attendance,
-                                                  assignment.activityCode,
-                                                  assignment.activityName
-                                              )
-                                            : ""}
+                                        {activityCodeToName(activity.groupId)}
+                                    </Td>
+                                    <Td>{prettyActivityName(activity.role)}</Td>
+                                    <Td>{activity.isPresent ? "Yes" : "No"}</Td>
+                                    <Td>
+                                        {activity.isAssigned ? "Yes" : "No"}
                                     </Td>
                                 </Tr>
                             ))}

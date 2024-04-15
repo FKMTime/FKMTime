@@ -84,7 +84,7 @@ const Layout = () => {
                                 {
                                     body: `Competitor ${data.competitorName}  on station ${data.deviceName}`,
                                     tag: `newIncident-${data.id}`,
-                                },
+                                }
                             );
                             notification.onclick = () => {
                                 window.focus();
@@ -123,7 +123,7 @@ const Layout = () => {
                 competitionSocket.emit("leave");
             };
         }
-    }, [competitionSocket, incidentsSocket, userInfo]);
+    }, [competitionSocket, incidentsSocket, navigate, userInfo]);
 
     useEffect(() => {
         isUserLoggedIn().then((isLoggedIn) => {

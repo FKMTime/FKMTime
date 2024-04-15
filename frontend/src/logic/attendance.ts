@@ -1,7 +1,4 @@
-import { prettyActivityName } from "./activities";
-import { Attendance } from "./interfaces";
 import { backendRequest } from "./request";
-import { attendanceRoleToWcif } from "./utils";
 
 export const getAttendanceByGroupId = async (groupId: string) => {
     const response = await backendRequest(
@@ -12,7 +9,7 @@ export const getAttendanceByGroupId = async (groupId: string) => {
     return await response.json();
 };
 
-export const getAttendanceByPersonId = async (id: string) => {
+export const getStaffActivitiesByPersonId = async (id: string) => {
     const response = await backendRequest(
         `attendance/person/${id}`,
         "GET",
@@ -23,7 +20,7 @@ export const getAttendanceByPersonId = async (id: string) => {
 
 export const markAsPresent = async (
     groupId: string,
-    registrantId: number,
+    personId: string,
     role: string
 ) => {
     const response = await backendRequest(
@@ -32,26 +29,9 @@ export const markAsPresent = async (
         true,
         {
             groupId,
-            registrantId,
+            personId,
             role,
         }
     );
     return response.status;
-};
-
-export const wasPresent = (
-    attendance: Attendance[],
-    activityCode: string,
-    role: string
-) => {
-    if (attendance.find((a) => a.groupId === activityCode)) {
-        const data = attendance.find((a) => a.groupId === activityCode);
-        const wcifRole = attendanceRoleToWcif(data?.role as string);
-        if (role.toLowerCase() === data?.role.toLowerCase()) {
-            return "Yes";
-        } else {
-            return `As ${prettyActivityName(wcifRole as string).toLowerCase()}`;
-        }
-    }
-    return "No";
 };

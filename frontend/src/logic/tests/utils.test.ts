@@ -2,7 +2,6 @@ import { describe } from "vitest";
 
 import {
     calculateTotalPages,
-    getAbsentPeople,
     getActivityNameByCode,
     getCutoffByRoundId,
     getEventIdFromRoundId,
@@ -146,15 +145,6 @@ describe("prettyAvailableDeviceType", () => {
 describe("prettyAccountRoleName", () => {
     it("return pretty account role name", () => {
         expect(prettyAccountRoleName("ADMIN")).toEqual("Admin");
-    });
-});
-
-describe("getAbsentPeople", () => {
-    it("return absent people", () => {
-        const wcifJson = JSON.parse(JSON.stringify(wcif));
-        expect(
-            getAbsentPeople(wcifJson, [], "333-r1-g1", "SCRAMBLER").length
-        ).toEqual(1);
     });
 });
 

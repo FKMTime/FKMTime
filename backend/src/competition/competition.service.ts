@@ -2,11 +2,19 @@ import { DbService } from '../db/db.service';
 import { HttpException, Injectable } from '@nestjs/common';
 import { WcaService } from '../wca/wca.service';
 import { UpdateCompetitionDto } from './dto/updateCompetition.dto';
-import { eventsData } from 'src/events';
+import { eventsData } from '../events';
 import { UpdateRoomsDto } from './dto/updateCurrentRound.dto';
-import { Activity, Event, Person, Room as WCIFRoom, Venue } from '@wca/helpers';
+import {
+  Activity,
+  Event,
+  Person,
+  Room as WCIFRoom,
+  Venue,
+  Competition,
+  Assignment,
+} from '@wca/helpers';
 import { UpdateDevicesSettingsDto } from './dto/updateDevicesSettings.dto';
-import { Room } from '@prisma/client';
+import { Room, StaffRole } from '@prisma/client';
 import { CompetitionGateway } from './competition.gateway';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { sha512 } from 'js-sha512';
@@ -58,6 +66,31 @@ export class CompetitionService {
         });
       }
     }
+    const staffActivitiesTransactions = [];
+
+    wcifPublic.persons.forEach((person: Person) => {
+      person.assignments.forEach((assignment: Assignment) => {
+        const group = this.getGroupInfoByActivityId(
+          assignment.activityId,
+          wcifPublic,
+        );
+        staffActivitiesTransactions.push(
+          this.prisma.staffActivity.create({
+            data: {
+              person: {
+                connect: {
+                  registrantId: person.registrantId,
+                },
+              },
+              role: this.wcifRoleToAttendanceRole(assignment.assignmentCode),
+              groupId: group.activityCode,
+              isAssigned: true,
+            },
+          }),
+        );
+      });
+    });
+    await this.prisma.$transaction(staffActivitiesTransactions);
     await this.prisma.room.createMany({
       data: rooms,
     });
@@ -125,7 +158,45 @@ export class CompetitionService {
         }
       });
     }
+    const activitiesTransactions = [];
+    wcifPublic.persons.forEach((person: Person) => {
+      person.assignments.forEach((assignment: Assignment) => {
+        const group = this.getGroupInfoByActivityId(
+          assignment.activityId,
+          wcifPublic,
+        );
+        activitiesTransactions.push(
+          this.prisma.staffActivity.upsert({
+            where: {
+              personId_groupId_role: {
+                groupId: group.activityCode,
+                personId: person.wcaId,
+                role: this.wcifRoleToAttendanceRole(
+                  assignment.assignmentCode,
+                ) as StaffRole,
+              },
+            },
+            update: {
+              isAssigned: true,
+            },
+            create: {
+              person: {
+                connect: {
+                  registrantId: person.registrantId,
+                },
+              },
+              role: this.wcifRoleToAttendanceRole(
+                assignment.assignmentCode,
+              ) as StaffRole,
+              groupId: group.activityCode,
+              isAssigned: true,
+            },
+          }),
+        );
+      });
+    });
     await this.prisma.$transaction(transactions);
+    await this.prisma.$transaction(activitiesTransactions);
     await this.prisma.competition.updateMany({
       where: { wcaId },
       data: {
@@ -225,7 +296,6 @@ export class CompetitionService {
     });
     return {
       shouldUpdate: competition.shouldUpdateDevices,
-      releaseChannel: competition.releaseChannel,
       devices: allDevices.map((d) => d.espId),
       rooms: rooms
         .filter((r) => r.currentGroupId)
@@ -272,7 +342,6 @@ export class CompetitionService {
       select: {
         id: true,
         shouldUpdateDevices: true,
-        releaseChannel: true,
         wifiSsid: true,
         wifiPassword: true,
       },
@@ -311,7 +380,6 @@ export class CompetitionService {
       },
       data: {
         shouldUpdateDevices: data.shouldUpdateDevices,
-        releaseChannel: data.releaseChannel,
         wifiSsid: data.wifiSsid,
         wifiPassword: data.wifiPassword,
       },
@@ -356,5 +424,37 @@ export class CompetitionService {
         });
       });
     });
+  }
+
+  getGroupInfoByActivityId(activityId: number, wcif: Competition) {
+    let groupInfo: Activity | null = null;
+    wcif.schedule.venues.forEach((venue) => {
+      venue.rooms.forEach((room) => {
+        room.activities.forEach((activity) => {
+          if (activity.id === activityId) {
+            groupInfo = activity;
+          }
+          activity.childActivities.forEach((childActivity) => {
+            if (childActivity.id === activityId) {
+              groupInfo = childActivity;
+            }
+          });
+        });
+      });
+    });
+    return groupInfo as Activity | null;
+  }
+
+  private wcifRoleToAttendanceRole(role: string) {
+    switch (role) {
+      case 'staff-judge':
+        return 'JUDGE';
+      case 'staff-runner':
+        return 'RUNNER';
+      case 'staff-scrambler':
+        return 'SCRAMBLER';
+      default:
+        return 'COMPETITOR';
+    }
   }
 }

@@ -19,15 +19,15 @@ import { competitionAtom } from "@/logic/atoms";
 import { getAttendanceByGroupId, markAsPresent } from "@/logic/attendance";
 import { getToken } from "@/logic/auth";
 import { getCompetitionInfo } from "@/logic/competition";
+import { Room, StaffActivity } from "@/logic/interfaces";
 import { ATTENDANCE_WEBSOCKET_URL, WEBSOCKET_PATH } from "@/logic/request";
 import { getAllRooms } from "@/logic/rooms";
-import { getAbsentPeople, getActivityNameByCode } from "@/logic/utils";
+import { getActivityNameByCode } from "@/logic/utils";
 
 import LoadingPage from "../../Components/LoadingPage";
 import events from "../../logic/events";
-import { Attendance as AttendanceType, Room } from "../../logic/interfaces";
 import AbsentPeopleList from "./Components/AbsentPeopleList";
-import PresentPeopleList from "./Components/PresentPeopleList";
+import UnorderedPeopleList from "./Components/UnorderedPeopleList.tsx";
 
 const Attendance = () => {
     const { id } = useParams<{ id: string }>();
@@ -45,7 +45,7 @@ const Attendance = () => {
         })
     );
     const [competition, setCompetition] = useAtom(competitionAtom);
-    const [attendance, setAttendance] = useState<AttendanceType[]>([]);
+    const [attendance, setAttendance] = useState<StaffActivity[]>([]);
     const [rooms, setRooms] = useState<Room[]>([]);
 
     const [selectedEvent, setSelectedEvent] = useState<string>("");
@@ -62,44 +62,32 @@ const Attendance = () => {
         return getGroupsByRoundId(selectedRound, competition.wcif);
     }, [competition, selectedRound, selectedEvent]);
     const presentScramblers = useMemo(() => {
-        return attendance.filter((a) => a.role === "SCRAMBLER");
+        return attendance.filter((a) => a.role === "SCRAMBLER" && a.isPresent);
     }, [attendance]);
     const presentRunners = useMemo(() => {
-        return attendance.filter((a) => a.role === "RUNNER");
+        return attendance.filter((a) => a.role === "RUNNER" && a.isPresent);
     }, [attendance]);
     const presentJudges = useMemo(() => {
-        return attendance.filter((a) => a.role === "JUDGE");
+        return attendance.filter((a) => a.role === "JUDGE" && a.isPresent);
+    }, [attendance]);
+    const presentCompetitors = useMemo(() => {
+        return attendance.filter((a) => a.role === "COMPETITOR" && a.isPresent);
     }, [attendance]);
 
     const absentScramblers = useMemo(() => {
-        if (!competition) return [];
-        return getAbsentPeople(
-            competition.wcif,
-            presentScramblers,
-            selectedGroup,
-            "SCRAMBLER"
-        );
-    }, [competition, presentScramblers, selectedGroup]);
-
+        return attendance.filter((a) => a.role === "SCRAMBLER" && !a.isPresent);
+    }, [attendance]);
     const absentRunners = useMemo(() => {
-        if (!competition) return [];
-        return getAbsentPeople(
-            competition.wcif,
-            presentRunners,
-            selectedGroup,
-            "RUNNER"
-        );
-    }, [competition, presentRunners, selectedGroup]);
-
+        return attendance.filter((a) => a.role === "RUNNER" && !a.isPresent);
+    }, [attendance]);
     const absentJudges = useMemo(() => {
-        if (!competition) return [];
-        return getAbsentPeople(
-            competition.wcif,
-            presentJudges,
-            selectedGroup,
-            "JUDGE"
+        return attendance.filter((a) => a.role === "JUDGE" && !a.isPresent);
+    }, [attendance]);
+    const absentCompetitors = useMemo(() => {
+        return attendance.filter(
+            (a) => a.role === "COMPETITOR" && !a.isPresent
         );
-    }, [competition, presentJudges, selectedGroup]);
+    }, [attendance]);
 
     const handleGroupChange = useCallback(
         (groupId: string) => {
@@ -113,8 +101,8 @@ const Attendance = () => {
         setAttendance(data);
     };
 
-    const handleMarkAsPresent = async (registrantId: number, role: string) => {
-        const status = await markAsPresent(selectedGroup, registrantId, role);
+    const handleMarkAsPresent = async (personId: string, role: string) => {
+        const status = await markAsPresent(selectedGroup, personId, role);
         if (status === 201) {
             toast({
                 title: "Success",
@@ -179,6 +167,8 @@ const Attendance = () => {
     const noScramblers =
         absentScramblers.length === 0 && presentScramblers.length === 0;
     const noJudges = absentJudges.length === 0 && presentJudges.length === 0;
+    const noCompetitors =
+        absentCompetitors.length === 0 && presentCompetitors.length === 0;
 
     return (
         <Box display="flex" flexDirection="column" gap="5">
@@ -281,6 +271,28 @@ const Attendance = () => {
                     flexDirection={{ base: "column", md: "row" }}
                 >
                     <Box>
+                        {noCompetitors ? (
+                            <Heading size="md">
+                                No competitors in this group
+                            </Heading>
+                        ) : (
+                            <Box gap="5" display="flex" flexDirection="column">
+                                <Heading>Competitors</Heading>
+                                {presentCompetitors.length > 0 && (
+                                    <UnorderedPeopleList
+                                        persons={presentCompetitors}
+                                    />
+                                )}
+                                {absentCompetitors.length > 0 && (
+                                    <UnorderedPeopleList
+                                        persons={absentCompetitors}
+                                        heading="Absent"
+                                    />
+                                )}
+                            </Box>
+                        )}
+                    </Box>
+                    <Box>
                         {noScramblers ? (
                             <Heading size="md">
                                 No scramblers in this group
@@ -289,13 +301,13 @@ const Attendance = () => {
                             <Box gap="5" display="flex" flexDirection="column">
                                 <Heading>Scramblers</Heading>
                                 {presentScramblers.length > 0 && (
-                                    <PresentPeopleList
+                                    <UnorderedPeopleList
                                         persons={presentScramblers}
                                     />
                                 )}
                                 {absentScramblers.length > 0 && (
                                     <AbsentPeopleList
-                                        persons={absentScramblers}
+                                        staffActivities={absentScramblers}
                                         handleMarkAsPresent={
                                             handleMarkAsPresent
                                         }
@@ -314,13 +326,13 @@ const Attendance = () => {
                             <Box gap="5" display="flex" flexDirection="column">
                                 <Heading>Runners</Heading>
                                 {presentRunners.length > 0 && (
-                                    <PresentPeopleList
+                                    <UnorderedPeopleList
                                         persons={presentRunners}
                                     />
                                 )}
                                 {absentRunners.length > 0 && (
                                     <AbsentPeopleList
-                                        persons={absentRunners}
+                                        staffActivities={absentRunners}
                                         handleMarkAsPresent={
                                             handleMarkAsPresent
                                         }
@@ -337,14 +349,14 @@ const Attendance = () => {
                             <Box gap="5" display="flex" flexDirection="column">
                                 <Heading>Judges</Heading>
                                 {presentJudges.length > 0 && (
-                                    <PresentPeopleList
+                                    <UnorderedPeopleList
                                         persons={presentJudges}
                                         showDevice
                                     />
                                 )}
                                 {absentJudges.length > 0 && (
                                     <AbsentPeopleList
-                                        persons={absentJudges}
+                                        staffActivities={absentJudges}
                                         handleMarkAsPresent={
                                             handleMarkAsPresent
                                         }

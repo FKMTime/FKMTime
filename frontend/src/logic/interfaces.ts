@@ -73,12 +73,14 @@ export interface Person {
     giftpackCollectedAt?: Date;
 }
 
-export interface Attendance {
+export interface StaffActivity {
     id: string;
     groupId: string;
     person: Person;
     role: string;
     device: Device;
+    isPresent: boolean;
+    isAssigned: boolean;
     createdAt: Date;
     updatedAt: Date;
 }

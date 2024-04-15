@@ -1,15 +1,16 @@
 import { Heading, IconButton, ListItem, UnorderedList } from "@chakra-ui/react";
-import { Person } from "@wca/helpers";
 import { MdDone } from "react-icons/md";
 
+import { StaffActivity } from "@/logic/interfaces.ts";
+
 interface AbsentPeopleListProps {
-    persons: Person[];
-    handleMarkAsPresent: (registrantId: number, role: string) => void;
+    staffActivities: StaffActivity[];
+    handleMarkAsPresent: (personId: string, role: string) => void;
     role: string;
 }
 
 const AbsentPeopleList = ({
-    persons,
+    staffActivities,
     handleMarkAsPresent,
     role,
 }: AbsentPeopleListProps) => {
@@ -17,9 +18,9 @@ const AbsentPeopleList = ({
         <>
             <Heading size="md">Absent</Heading>
             <UnorderedList>
-                {persons.map((person) => (
+                {staffActivities.map((activity) => (
                     <ListItem
-                        key={person.registrantId}
+                        key={activity.id}
                         display="flex"
                         gap="2"
                         alignItems="center"
@@ -31,12 +32,12 @@ const AbsentPeopleList = ({
                             _hover={{ background: "none", opacity: 0.5 }}
                             color="white"
                             onClick={() =>
-                                handleMarkAsPresent(person.registrantId, role)
+                                handleMarkAsPresent(activity.person.id, role)
                             }
                         >
                             <MdDone />
                         </IconButton>
-                        {person.name}
+                        {activity.person.name}
                     </ListItem>
                 ))}
             </UnorderedList>

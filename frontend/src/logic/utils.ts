@@ -1,7 +1,7 @@
-import { Activity, Competition } from "@wca/helpers";
+import { Competition } from "@wca/helpers";
 
 import { DNF_VALUE } from "./constants";
-import { Attempt, AttemptStatus, Attendance, Result } from "./interfaces";
+import { Attempt, AttemptStatus, Result } from "./interfaces";
 import regions from "./regions";
 
 export const calculateTotalPages = (count: number, pageSize: number) => {
@@ -135,51 +135,6 @@ export const prettyAccountRoleName = (role: string) => {
             return "Staff";
         default:
             return "Unknown";
-    }
-};
-
-export const getAbsentPeople = (
-    wcif: Competition,
-    presentPeople: Attendance[],
-    groupId: string,
-    role: string
-) => {
-    const activities: Activity[] = [];
-    wcif.schedule?.venues[0].rooms.forEach((room) => {
-        room.activities.forEach((a) => {
-            a.childActivities.forEach((ca) => {
-                if (ca.activityCode === groupId) {
-                    activities.push(ca);
-                }
-            });
-        });
-    });
-    if (activities.length === 0) return [];
-    const wcifRole = attendanceRoleToWcif(role);
-    return wcif.persons.filter((person) => {
-        if (
-            person.assignments?.some(
-                (assignment) =>
-                    activities.some((a) => a.id === assignment.activityId) &&
-                    assignment.assignmentCode === wcifRole
-            ) &&
-            !presentPeople.some(
-                (p) => p.person.registrantId === person.registrantId
-            )
-        ) {
-            return person;
-        }
-    });
-};
-
-export const attendanceRoleToWcif = (role: string) => {
-    switch (role) {
-        case "SCRAMBLER":
-            return "staff-scrambler";
-        case "RUNNER":
-            return "staff-runner";
-        case "JUDGE":
-            return "staff-judge";
     }
 };
 

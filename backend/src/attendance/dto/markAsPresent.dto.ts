@@ -6,8 +6,8 @@ export class MarkAsPresentDto {
   @IsNotEmpty()
   groupId: string;
 
-  @IsInt()
-  registrantId: number;
+  @IsString()
+  personId: string;
 
   @IsEnum(StaffRole)
   role: StaffRole;

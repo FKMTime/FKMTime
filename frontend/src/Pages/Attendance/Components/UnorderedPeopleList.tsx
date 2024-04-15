@@ -1,16 +1,21 @@
 import { Heading, ListItem, UnorderedList } from "@chakra-ui/react";
 
-import { Attendance } from "@/logic/interfaces";
+import { StaffActivity } from "@/logic/interfaces";
 
 interface PresentPeopleListProps {
-    persons: Attendance[];
+    persons: StaffActivity[];
     showDevice?: boolean;
+    heading?: string;
 }
 
-const PresentPeopleList = ({ persons, showDevice }: PresentPeopleListProps) => {
+const UnorderedPeopleList = ({
+    persons,
+    showDevice,
+    heading = "Present",
+}: PresentPeopleListProps) => {
     return (
         <>
-            <Heading size="md">Present</Heading>
+            <Heading size="md">{heading}</Heading>
             <UnorderedList>
                 {persons.map((attendance) => (
                     <ListItem key={attendance.id}>
@@ -18,6 +23,7 @@ const PresentPeopleList = ({ persons, showDevice }: PresentPeopleListProps) => {
                         {showDevice &&
                             attendance.device &&
                             `- station ${attendance.device.name}`}
+                        {!attendance.isAssigned && " (unassigned)"}
                     </ListItem>
                 ))}
             </UnorderedList>
@@ -25,4 +31,4 @@ const PresentPeopleList = ({ persons, showDevice }: PresentPeopleListProps) => {
     );
 };
 
-export default PresentPeopleList;
+export default UnorderedPeopleList;
