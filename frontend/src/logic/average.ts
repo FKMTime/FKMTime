@@ -44,7 +44,11 @@ const compareAttemptResults = (time: Attempt, time2: Attempt) => {
     if (!isComplete(time) && !isComplete(time2)) return 0;
     if (!isComplete(time) && isComplete(time2)) return 1;
     if (isComplete(time) && !isComplete(time2)) return DNF_VALUE;
-    return time.value - time2.value;
+    const fullTime1 =
+        time.penalty === 0 ? time.value : time.value + time.penalty * 100;
+    const fullTime2 =
+        time2.penalty === 0 ? time2.value : time2.value + time2.penalty * 100;
+    return fullTime1 - fullTime2;
 };
 
 const isComplete = (time: Attempt) => {

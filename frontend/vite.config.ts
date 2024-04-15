@@ -1,3 +1,4 @@
+/// <reference types="vitest" />
 import * as path from "node:path";
 
 import react from "@vitejs/plugin-react";
@@ -58,5 +59,10 @@ export default defineConfig({
         alias: {
             "@": path.resolve(__dirname, "./src"),
         },
+    },
+    test: {
+        globals: true,
+        environment: "jsdom",
+        setupFiles: "./src/setupTests.ts",
     },
 });

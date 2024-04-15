@@ -9,10 +9,10 @@ export const calculateTotalPages = (count: number, pageSize: number) => {
 };
 
 export const msToString = (ms: number) => {
-    const minutes = Math.floor(ms / 60000);
-    const seconds = ((ms % 60000) / 1000).toFixed(2);
-    if (minutes > 0) return `${minutes}:${+seconds < 10 ? "0" : ""}${seconds}`;
-    return `${+seconds}s`;
+    return new Date(ms)
+        .toISOString()
+        .substr(11, 11)
+        .replace(/^[0:]*(?!\.)/g, "");
 };
 
 export const prettyGender = (gender: string) => {
@@ -98,6 +98,8 @@ export const prettyRoundFormat = (format: string, cutoffAttempts?: number) => {
             return `Best of ${cutoffAttempts} / Average of 5`;
         case "m":
             return "Mean of 3";
+        default:
+            return "Unknown";
     }
 };
 

@@ -1,0 +1,129 @@
+{
+  "attempts": [
+    {
+      "id": "9b007087-8250-40a5-9f24-a0741a3c7b3d",
+      "sessionId": "41338570-0bc7-4d6e-b052-6de8f6e9c6ef",
+      "resultId": "d8b72007-b7de-4ed1-8938-435cc0a972ec",
+      "attemptNumber": 1,
+      "replacedBy": null,
+      "comment": null,
+      "status": "STANDARD_ATTEMPT",
+      "shouldBeUsed": true,
+      "penalty": 2,
+      "value": 1334,
+      "inspectionTime": 11567,
+      "judgeId": "427efbc7-5f6c-4dce-baa5-929b32fbf788",
+      "deviceId": null,
+      "solvedAt": "2024-04-08T18:18:46.000Z",
+      "createdAt": "2024-04-08T18:18:46.562Z",
+      "updatedAt": "2024-04-08T18:18:46.562Z",
+      "judge": {
+        "id": "427efbc7-5f6c-4dce-baa5-929b32fbf788",
+        "name": "Radosław Marcinek",
+        "wcaId": "2022MARC05",
+        "registrantId": 8
+      },
+      "device": null
+    },
+    {
+      "id": "aab83f98-3f3b-4f6e-aa04-dc16c6962523",
+      "sessionId": "bd6ed672-3f13-42cb-85d4-567e8394393f",
+      "resultId": "d8b72007-b7de-4ed1-8938-435cc0a972ec",
+      "attemptNumber": 2,
+      "replacedBy": null,
+      "comment": null,
+      "status": "STANDARD_ATTEMPT",
+      "shouldBeUsed": true,
+      "penalty": -1,
+      "value": 1264,
+      "inspectionTime": 17340,
+      "judgeId": "75afe2e6-434a-4113-b699-3ee5550d588d",
+      "deviceId": null,
+      "solvedAt": "2024-04-08T18:28:44.000Z",
+      "createdAt": "2024-04-08T18:28:44.839Z",
+      "updatedAt": "2024-04-08T18:28:44.839Z",
+      "judge": {
+        "id": "75afe2e6-434a-4113-b699-3ee5550d588d",
+        "name": "Przemysław Rogalski",
+        "wcaId": "2013ROGA02",
+        "registrantId": 1
+      },
+      "device": null
+    },
+    {
+      "id": "1de76918-9f6a-4619-817c-e36bfdbd07d8",
+      "sessionId": "eb643cf8-c732-4583-a221-a731f1c44874",
+      "resultId": "d8b72007-b7de-4ed1-8938-435cc0a972ec",
+      "attemptNumber": 3,
+      "replacedBy": null,
+      "comment": null,
+      "status": "STANDARD_ATTEMPT",
+      "shouldBeUsed": true,
+      "penalty": 2,
+      "value": 843,
+      "inspectionTime": 14738,
+      "judgeId": "75afe2e6-434a-4113-b699-3ee5550d588d",
+      "deviceId": null,
+      "solvedAt": "2024-04-08T18:29:22.000Z",
+      "createdAt": "2024-04-08T18:29:23.104Z",
+      "updatedAt": "2024-04-08T18:29:23.104Z",
+      "judge": {
+        "id": "75afe2e6-434a-4113-b699-3ee5550d588d",
+        "name": "Przemysław Rogalski",
+        "wcaId": "2013ROGA02",
+        "registrantId": 1
+      },
+      "device": null
+    },
+    {
+      "id": "e99efac2-dd08-42d2-9359-325c888b27a0",
+      "sessionId": "47f66e90-e3d9-477f-8f53-7c790f1f4130",
+      "resultId": "d8b72007-b7de-4ed1-8938-435cc0a972ec",
+      "attemptNumber": 4,
+      "replacedBy": null,
+      "comment": null,
+      "status": "STANDARD_ATTEMPT",
+      "shouldBeUsed": true,
+      "penalty": 2,
+      "value": 100,
+      "inspectionTime": 16560,
+      "judgeId": "75afe2e6-434a-4113-b699-3ee5550d588d",
+      "deviceId": null,
+      "solvedAt": "2024-04-08T18:58:58.000Z",
+      "createdAt": "2024-04-08T18:58:58.816Z",
+      "updatedAt": "2024-04-08T19:06:59.494Z",
+      "judge": {
+        "id": "75afe2e6-434a-4113-b699-3ee5550d588d",
+        "name": "Przemysław Rogalski",
+        "wcaId": "2013ROGA02",
+        "registrantId": 1
+      },
+      "device": null
+    },
+    {
+      "id": "8f822db5-5c41-468f-a417-fbaf43062c29",
+      "sessionId": "3d94d5e3-3660-4019-b352-e6bd1fcad88e",
+      "resultId": "d8b72007-b7de-4ed1-8938-435cc0a972ec",
+      "attemptNumber": 5,
+      "replacedBy": null,
+      "comment": null,
+      "status": "STANDARD_ATTEMPT",
+      "shouldBeUsed": true,
+      "penalty": 0,
+      "value": 171,
+      "inspectionTime": 0,
+      "judgeId": "75afe2e6-434a-4113-b699-3ee5550d588d",
+      "deviceId": null,
+      "solvedAt": "2024-04-08T19:07:26.000Z",
+      "createdAt": "2024-04-08T19:07:27.062Z",
+      "updatedAt": "2024-04-08T19:07:27.062Z",
+      "judge": {
+        "id": "75afe2e6-434a-4113-b699-3ee5550d588d",
+        "name": "Przemysław Rogalski",
+        "wcaId": "2013ROGA02",
+        "registrantId": 1
+      },
+      "device": null
+    }
+  ]
+}
