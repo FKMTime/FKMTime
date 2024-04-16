@@ -200,6 +200,13 @@ const Attendance = () => {
     return (
         <Box display="flex" flexDirection="column" gap="5">
             <Heading size="lg">Attendance</Heading>
+            <Button
+                colorScheme="yellow"
+                onClick={() => navigate("/attendance/statistics")}
+                width={{ base: "100%", md: "fit-content" }}
+            >
+                Statistics
+            </Button>
             {rooms.filter((r) => r.currentGroupId).length > 0 && (
                 <>
                     <Heading size="md">Current groups</Heading>

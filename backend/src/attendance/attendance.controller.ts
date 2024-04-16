@@ -14,6 +14,12 @@ export class AttendanceController {
     return this.attendanceService.getAttendanceByGroupId(groupId);
   }
 
+  @UseGuards(AuthGuard('jwt'), AdminGuard)
+  @Get('statistics')
+  async getAttendanceStatistics() {
+    return this.attendanceService.getAttendanceStatistics();
+  }
+
   @Post()
   async createAttendance(@Body() data: CreateAttendaceDto) {
     return this.attendanceService.createAttendance(data);

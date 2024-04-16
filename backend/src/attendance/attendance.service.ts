@@ -90,6 +90,64 @@ export class AttendanceService {
     this.attendanceGateway.handleNewAttendance(groupId, judgeId);
   }
 
+  async getAttendanceStatistics() {
+    const persons = await this.prisma.person.findMany({
+      where: {
+        registrantId: {
+          not: null,
+        },
+      },
+      include: {
+        StaffActivity: true,
+      },
+    });
+    const roundsThatTookPlace = await this.prisma.result.findMany({
+      distinct: ['roundId'],
+    });
+
+    return persons.map((person) => {
+      const totalPresentAtStaffingComparedToRounds =
+        person.StaffActivity.filter(
+          (activity) =>
+            activity.isPresent &&
+            activity.isAssigned &&
+            activity.role !== 'COMPETITOR' &&
+            roundsThatTookPlace.some(
+              (round) => round.roundId === activity.groupId.split('-g')[0],
+            ),
+        ).length;
+      const totalAbsentAtStaffingComparedToRounds = person.StaffActivity.filter(
+        (activity) =>
+          !activity.isPresent &&
+          activity.isAssigned &&
+          activity.role !== 'COMPETITOR' &&
+          roundsThatTookPlace.some(
+            (round) => round.roundId === activity.groupId.split('-g')[0],
+          ),
+      ).length;
+      const totalStaffingComparedToRounds = person.StaffActivity.filter(
+        (activity) =>
+          activity.isAssigned &&
+          activity.role !== 'COMPETITOR' &&
+          roundsThatTookPlace.some(
+            (round) => round.roundId === activity.groupId.split('-g')[0],
+          ),
+      ).length;
+      return {
+        personName: person.name,
+        totalAssignedStaffing: person.StaffActivity.filter(
+          (activity) => activity.isAssigned && activity.role !== 'COMPETITOR',
+        ).length,
+        presentPercentage:
+          (totalPresentAtStaffingComparedToRounds /
+            totalStaffingComparedToRounds) *
+          100,
+        totalPresentAtStaffingComparedToRounds,
+        totalStaffingComparedToRounds,
+      };
+    });
+  }
+
   async createAttendance(data: CreateAttendaceDto) {
     const device = await this.prisma.device.findFirst({
       where: {

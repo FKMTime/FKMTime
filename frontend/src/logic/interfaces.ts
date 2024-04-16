@@ -78,6 +78,14 @@ export interface CompetitionStatistics {
     attemptsEnteredManually: number;
 }
 
+export interface AttendanceStatistics {
+    personName: string;
+    presentPercentage: number;
+    totalAssignedStaffing: number;
+    totalPresentAtStaffingComparedToRounds: number;
+    totalStaffingComparedToRounds: number;
+}
+
 export interface StaffActivity {
     id: string;
     groupId: string;

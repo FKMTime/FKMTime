@@ -35,3 +35,8 @@ export const markAsAbsent = async (id: string) => {
     );
     return response.status;
 };
+
+export const getAttendanceStatistics = async () => {
+    const response = await backendRequest(`attendance/statistics`, "GET", true);
+    return await response.json();
+};

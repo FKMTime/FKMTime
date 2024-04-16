@@ -1,5 +1,6 @@
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 
+import AttendanceStatistics from "@/Pages/Attendance/AttendanceStatistics/AttendanceStatistics.tsx";
 import ImportCompetition from "@/Pages/ImportCompetition/ImportCompetition.tsx";
 import ResolvedIncidents from "@/Pages/ResolvedIncidents/ResolvedIncidents.tsx";
 
@@ -99,6 +100,10 @@ const App = () => {
                 {
                     path: "attendance",
                     element: <Attendance />,
+                },
+                {
+                    path: "attendance/statistics",
+                    element: <AttendanceStatistics />,
                 },
                 {
                     path: "attendance/:id",
