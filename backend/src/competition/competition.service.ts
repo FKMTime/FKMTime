@@ -246,6 +246,19 @@ export class CompetitionService {
     return this.prisma.$transaction(transactions);
   }
 
+  async getCompetitionStatistics() {
+    const allAttempts = await this.prisma.attempt.count();
+    const attemptsEnteredManually = await this.prisma.attempt.count({
+      where: {
+        sessionId: null,
+      },
+    });
+    return {
+      allAttempts,
+      attemptsEnteredManually,
+    };
+  }
+
   async getCompetitionSettings() {
     const competition = await this.prisma.competition.findFirst();
     if (!competition) {

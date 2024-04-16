@@ -1,5 +1,6 @@
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 
+import ImportCompetition from "@/Pages/ImportCompetition/ImportCompetition.tsx";
 import ResolvedIncidents from "@/Pages/ResolvedIncidents/ResolvedIncidents.tsx";
 
 import Layout from "./Layout/Layout";
@@ -26,6 +27,10 @@ const App = () => {
         {
             path: "/auth/login",
             element: <Login />,
+        },
+        {
+            path: "/competition/import",
+            element: <ImportCompetition />,
         },
         {
             path: "/",

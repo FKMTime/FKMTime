@@ -3,34 +3,38 @@ import {
     AlertIcon,
     Box,
     Button,
-    Checkbox,
-    FormControl,
-    FormLabel,
     Heading,
+    Text,
     useToast,
 } from "@chakra-ui/react";
 import { useSetAtom } from "jotai";
 import { FormEvent, useCallback, useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 import LoadingPage from "@/Components/LoadingPage";
-import PasswordInput from "@/Components/PasswordInput.tsx";
-import { competitionAtom, showSidebarAtom } from "@/logic/atoms";
+import { competitionAtom } from "@/logic/atoms";
 import {
     getCompetitionInfo,
     getCompetitionSettings,
+    getCompetitionStatistics,
     syncCompetition,
     updateCompetitionSettings,
 } from "@/logic/competition";
-import { Competition as CompetitionInterface } from "@/logic/interfaces";
-import ImportCompetition from "@/Pages/Competition/ImportCompetition";
+import {
+    Competition as CompetitionInterface,
+    CompetitionStatistics,
+} from "@/logic/interfaces";
+
+import CompetitionForm from "./Components/CompetitionForm";
 
 const Competition = () => {
+    const navigate = useNavigate();
     const setCompetitionAtom = useSetAtom(competitionAtom);
     const [isLoading, setIsLoading] = useState<boolean>(true);
-    const [competitionImported, setCompetitionImported] =
-        useState<boolean>(false);
-    const setShowSidebar = useSetAtom(showSidebarAtom);
     const [competition, setCompetition] = useState<CompetitionInterface | null>(
+        null
+    );
+    const [statistics, setStatistics] = useState<CompetitionStatistics | null>(
         null
     );
     const toast = useToast();
@@ -38,21 +42,12 @@ const Competition = () => {
     const fetchData = useCallback(async () => {
         const response = await getCompetitionSettings();
         if (response.status === 200) {
-            setCompetitionImported(true);
             setCompetition(response.data);
         } else if (response.status === 404) {
-            setCompetitionImported(false);
-            setShowSidebar(false);
+            navigate("/competition/import");
         }
         setIsLoading(false);
-    }, [setShowSidebar]);
-
-    const handleImportCompetition = async (data: CompetitionInterface) => {
-        setShowSidebar(true);
-        setCompetitionImported(true);
-        setCompetition(data);
-        await fetchCompetitionDataAndSetAtom();
-    };
+    }, [navigate]);
 
     const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
         event.preventDefault();
@@ -116,19 +111,13 @@ const Competition = () => {
         fetchData();
     }, [fetchData]);
 
-    if (isLoading || (!competition && competitionImported)) {
-        return <LoadingPage />;
-    }
+    useEffect(() => {
+        getCompetitionStatistics().then((data) => {
+            setStatistics(data);
+        });
+    }, []);
 
-    if (!competitionImported) {
-        return (
-            <ImportCompetition
-                handleImportCompetition={handleImportCompetition}
-            />
-        );
-    }
-
-    if (!competition) {
+    if (isLoading || !competition) {
         return <LoadingPage />;
     }
 
@@ -167,45 +156,21 @@ const Competition = () => {
                     Sync
                 </Button>
             </Box>
-            <Box
-                display="flex"
-                flexDirection="column"
-                gap="5"
-                as="form"
-                onSubmit={handleSubmit}
-            >
-                <FormControl display="flex" flexDirection="column" gap="2">
-                    <FormLabel>Scoretaking token</FormLabel>
-                    <PasswordInput
-                        placeholder="Scoretaking token"
-                        autoComplete="off"
-                        value={competition?.scoretakingToken}
-                        onChange={(event) =>
-                            setCompetition({
-                                ...competition,
-                                scoretakingToken: event?.target.value,
-                            })
-                        }
-                    />
-                </FormControl>
-                <FormControl display="flex" flexDirection="column" gap="2">
-                    <Checkbox
-                        defaultChecked={competition.sendResultsToWcaLive}
-                        onChange={(event) =>
-                            setCompetition({
-                                ...competition,
-                                sendResultsToWcaLive: event?.target.checked,
-                            })
-                        }
-                    >
-                        Send results to WCA Live (disable it only during
-                        tutorial)
-                    </Checkbox>
-                </FormControl>
-                <Button type="submit" colorScheme="green">
-                    Save
-                </Button>
-            </Box>
+            <CompetitionForm
+                competition={competition}
+                setCompetition={setCompetition}
+                handleSubmit={handleSubmit}
+            />
+            {statistics && (
+                <Box display="flex" flexDirection="column" gap="5">
+                    <Heading size="md">Competition statistics</Heading>
+                    <Text>All attempts: {statistics?.allAttempts}</Text>
+                    <Text>
+                        Attempts entered manually:{" "}
+                        {statistics?.attemptsEnteredManually}
+                    </Text>
+                </Box>
+            )}
         </Box>
     );
 };

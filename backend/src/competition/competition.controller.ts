@@ -20,6 +20,12 @@ export class CompetitionController {
   }
 
   @UseGuards(AuthGuard('jwt'))
+  @Get('statistics')
+  async getCompetitionStatistics() {
+    return await this.competitionService.getCompetitionStatistics();
+  }
+
+  @UseGuards(AuthGuard('jwt'))
   @Get('rounds')
   async getCompetitionRounds() {
     return await this.competitionService.getRoundsInfo();

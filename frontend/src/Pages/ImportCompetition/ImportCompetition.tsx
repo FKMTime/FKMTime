@@ -1,20 +1,17 @@
 import { Box, Heading, useToast } from "@chakra-ui/react";
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 import {
     getUpcomingManageableCompetitions,
     importCompetition,
 } from "@/logic/competition";
-import { Competition, WCACompetition } from "@/logic/interfaces";
-import CompetitionsList from "@/Pages/Competition/Components/CompetitionsList.tsx";
+import { WCACompetition } from "@/logic/interfaces";
 
-interface ImportCompetitionProps {
-    handleImportCompetition: (data: Competition) => void;
-}
+import CompetitionsList from "./Components/CompetitionsList";
 
-const ImportCompetition = ({
-    handleImportCompetition,
-}: ImportCompetitionProps) => {
+const ImportCompetition = () => {
+    const navigate = useNavigate();
     const toast = useToast();
     const [competitions, setCompetitions] = useState<WCACompetition[]>([]);
 
@@ -30,7 +27,7 @@ const ImportCompetition = ({
         }
         const response = await importCompetition(wcaId);
         if (response.status === 200) {
-            handleImportCompetition(response.data);
+            navigate(`/competition/`);
         }
     };
 
@@ -41,7 +38,7 @@ const ImportCompetition = ({
     }, []);
 
     return (
-        <Box display="flex" flexDirection="column" gap="5">
+        <Box display="flex" flexDirection="column" gap="5" p={5}>
             <Heading size="lg">Import competition from the WCA Website</Heading>
             <Box display="flex" flexDirection="column" gap="5">
                 <CompetitionsList

@@ -3,7 +3,6 @@ import { AuthGuard } from '@nestjs/passport';
 import { AdminGuard } from '../auth/guards/admin.guard';
 import { AttendanceService } from './attendance.service';
 import { CreateAttendaceDto } from './dto/createAttendance.dto';
-import { MarkAsPresentDto } from './dto/markAsPresent.dto';
 
 @Controller('attendance')
 export class AttendanceController {
@@ -28,13 +27,13 @@ export class AttendanceController {
 
   @UseGuards(AuthGuard('jwt'), AdminGuard)
   @Post('present/:id')
-  async markAsPresent(@Param('id') id: string)  {
+  async markAsPresent(@Param('id') id: string) {
     return this.attendanceService.markAsPresent(id);
   }
 
   @UseGuards(AuthGuard('jwt'), AdminGuard)
   @Post('absent/:id')
-  async markAsAbsent(@Param('id') id: string){
+  async markAsAbsent(@Param('id') id: string) {
     return this.attendanceService.markAsAbsent(id);
   }
 }

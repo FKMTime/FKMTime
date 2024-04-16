@@ -1,10 +1,9 @@
 import { HttpException, Injectable } from '@nestjs/common';
-import { DbService } from '../db/db.service';
-import { CreateAttendaceDto } from './dto/createAttendance.dto';
-import { MarkAsPresentDto } from './dto/markAsPresent.dto';
-import { AttendanceGateway } from './attendance.gateway';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
+import { DbService } from '../db/db.service';
 import { getTranslation } from '../translations';
+import { AttendanceGateway } from './attendance.gateway';
+import { CreateAttendaceDto } from './dto/createAttendance.dto';
 
 @Injectable()
 export class AttendanceService {

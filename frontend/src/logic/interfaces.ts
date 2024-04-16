@@ -73,6 +73,11 @@ export interface Person {
     giftpackCollectedAt?: Date;
 }
 
+export interface CompetitionStatistics {
+    allAttempts: number;
+    attemptsEnteredManually: number;
+}
+
 export interface StaffActivity {
     id: string;
     groupId: string;

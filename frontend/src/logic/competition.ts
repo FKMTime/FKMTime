@@ -109,3 +109,12 @@ export const getUpcomingManageableCompetitions = async (): Promise<
     const response = await wcaApiRequest(`competitions?${params}`, token);
     return await response.json();
 };
+
+export const getCompetitionStatistics = async () => {
+    const response = await backendRequest(
+        `competition/statistics/`,
+        "GET",
+        true
+    );
+    return await response.json();
+};

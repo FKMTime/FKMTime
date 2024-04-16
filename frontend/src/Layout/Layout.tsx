@@ -1,10 +1,10 @@
 import { Box } from "@chakra-ui/react";
-import { useAtom, useAtomValue } from "jotai";
+import { useAtom } from "jotai";
 import { useCallback, useEffect, useState } from "react";
 import { Outlet, useNavigate } from "react-router-dom";
 import io from "socket.io-client";
 
-import { competitionAtom, showSidebarAtom } from "@/logic/atoms";
+import { competitionAtom } from "@/logic/atoms";
 import { getToken, getUserInfo, isUserLoggedIn } from "@/logic/auth";
 import { getCompetitionInfo } from "@/logic/competition.ts";
 import {
@@ -19,7 +19,6 @@ import Sidebar from "./Sidebar";
 const Layout = () => {
     const userInfo = getUserInfo();
     const navigate = useNavigate();
-    const showSidebar = useAtomValue(showSidebarAtom);
     const [competition, setCompetition] = useAtom(competitionAtom);
     const [incidentsSocket] = useState(
         io(INCIDENTS_WEBSOCKET_URL, {
@@ -151,9 +150,7 @@ const Layout = () => {
     }
     return (
         <Box display="flex">
-            {showSidebar && (
-                <Sidebar user={userInfo} competition={competition} />
-            )}
+            <Sidebar user={userInfo} competition={competition} />
             <Box width="100%" padding="5" color="white">
                 <Outlet />
             </Box>
