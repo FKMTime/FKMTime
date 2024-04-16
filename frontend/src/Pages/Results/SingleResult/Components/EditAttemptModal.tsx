@@ -22,6 +22,7 @@ import { getAllDevices } from "@/logic/devices.ts";
 import {
     Attempt,
     AttemptStatus,
+    AttemptType,
     Device,
     DeviceType,
     Person,
@@ -29,7 +30,11 @@ import {
 } from "@/logic/interfaces";
 import { getAllPersons, getPersonNameAndRegistrantId } from "@/logic/persons";
 import { checkTimeLimit } from "@/logic/results";
-import { msToString, prettyAttemptStatus } from "@/logic/utils";
+import {
+    msToString,
+    prettyAttemptStatus,
+    prettyAttemptType,
+} from "@/logic/utils";
 
 interface EditAttemptModalProps {
     isOpen: boolean;
@@ -121,6 +126,30 @@ const EditAttemptModal = ({
                         }
                     />
                 </FormControl>
+                <FormControl isRequired>
+                    <FormLabel>Attempt type</FormLabel>
+                    <Select
+                        disabled={isLoading}
+                        value={editedAttempt.type}
+                        onChange={(e) =>
+                            setEditedAttempt({
+                                ...editedAttempt,
+                                type: e.target.value as AttemptType,
+                            })
+                        }
+                    >
+                        {(
+                            Object.keys(AttemptType) as Array<
+                                keyof typeof AttemptType
+                            >
+                        ).map((key) => (
+                            <option key={key} value={key}>
+                                {prettyAttemptType(key as AttemptType)}
+                            </option>
+                        ))}
+                    </Select>
+                </FormControl>
+
                 <FormControl isRequired>
                     <FormLabel>Attempt status</FormLabel>
                     <Select

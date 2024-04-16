@@ -84,29 +84,6 @@ const IncidentPage = () => {
         handleSubmit(data);
     };
 
-    const extraWithSameReason = () => {
-        const data = {
-            ...editedIncident,
-            status: AttemptStatus.EXTRA_ATTEMPT,
-            submitToWcaLive: false,
-            updateReplacedBy: false,
-        };
-        setEditedIncident(data);
-        handleSubmit(data);
-    };
-
-    const useThisExtra = () => {
-        const data = {
-            ...editedIncident,
-            status: AttemptStatus.EXTRA_ATTEMPT,
-            shouldBeUsed: true,
-            submitToWcaLive: false,
-            updateReplacedBy: true,
-        };
-        setEditedIncident(data);
-        handleSubmit(data);
-    };
-
     const handleSubmit = async (data: Incident) => {
         if (
             data.value === 0 &&
@@ -166,16 +143,6 @@ const IncidentPage = () => {
             <Button colorScheme="blue" onClick={judgeFault}>
                 Judge fault
             </Button>
-            {!editedIncident.shouldBeUsed && (
-                <>
-                    <Button colorScheme="yellow" onClick={extraWithSameReason}>
-                        Give an extra with the same reason
-                    </Button>
-                    <Button colorScheme="gray" onClick={useThisExtra}>
-                        Use this extra attempt
-                    </Button>
-                </>
-            )}
             <Heading size="lg">Custom quick actions</Heading>
             {quickActions.map((quickAction) => (
                 <Button

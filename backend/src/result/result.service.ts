@@ -3,7 +3,7 @@ import { DbService } from 'src/db/db.service';
 import { EnterAttemptDto } from './dto/enterAttempt.dto';
 import { getTranslation, isLocaleAvailable } from 'src/translations';
 import { Event, Person, Round } from '@wca/helpers';
-import { AttemptStatus, DeviceType } from '@prisma/client';
+import { AttemptStatus, AttemptType, DeviceType } from '@prisma/client';
 import { IncidentsGateway } from '../attempt/incidents.gateway';
 import { ResultGateway } from './result.gateway';
 import {
@@ -340,8 +340,7 @@ export class ResultService {
 
     const lastExtra =
       sortedExtraAttempts.length > 0 ? sortedExtraAttempts.length : 0;
-    let attemptToEnterToWcaLive: any = {};
-
+    let extraEntered = false;
     if (
       attempts.some(
         (attempt) =>
@@ -352,18 +351,21 @@ export class ResultService {
       const lastAttemptToReplace = attempts.find(
         (attempt) =>
           attempt.status === AttemptStatus.EXTRA_GIVEN &&
-          (attempt.replacedBy === 0 || attempt.replacedBy === null) &&
-          attempt.shouldBeUsed === true,
+          (attempt.replacedBy === 0 || attempt.replacedBy === null),
       );
-      if (data.isDelegate) {
-        await this.createAnUnusedExtraAttempt({
+      await this.createAnExtraAttemptAnReplaceTheOriginalOne(
+        {
           ...finalData,
           device,
           judge,
           competitor,
           result,
           attemptNumber: lastExtra + 1,
-        });
+        },
+        lastAttemptToReplace.id,
+      );
+      extraEntered = true;
+      if (data.isDelegate) {
         return this.notifyDelegate(
           device.name,
           competitor.name,
@@ -371,31 +373,10 @@ export class ResultService {
           lastAttemptToReplace.id,
         );
       }
-      const attemptNumber =
-        await this.createAnExtraAttemptAnReplaceTheOriginalOne(
-          {
-            ...finalData,
-            device,
-            judge,
-            competitor,
-            result,
-            attemptNumber: lastExtra + 1,
-          },
-          lastAttemptToReplace.id,
-        );
-      attemptToEnterToWcaLive = {
-        wcaId: competition.wcaId,
-        scoretakingToken: competition.scoretakingToken,
-        eventId: currentRoundId.split('-')[0],
-        roundNumber: parseInt(currentRoundId.split('-r')[1]),
-        registrantId: competitor.registrantId,
-        attemptNumber: attemptNumber,
-        attemptResult: finalData.timeToEnter,
-      };
     }
-    let attemptNumber = 1;
-    const maxAttempts = roundInfo.format === 'a' ? 5 : 3;
-    if (!attemptToEnterToWcaLive.registrantId) {
+    if (!extraEntered) {
+      let attemptNumber = 1;
+      const maxAttempts = roundInfo.format === 'a' ? 5 : 3;
       const lastAttempt = sortedAttempts[sortedAttempts.length - 1];
       if (lastAttempt && lastAttempt.attemptNumber === maxAttempts) {
         throw new HttpException(
@@ -415,7 +396,8 @@ export class ResultService {
           sessionId: data.sessionId,
           status: data.isDelegate
             ? AttemptStatus.UNRESOLVED
-            : AttemptStatus.STANDARD_ATTEMPT,
+            : AttemptStatus.STANDARD,
+          type: AttemptType.STANDARD_ATTEMPT,
           solvedAt: data.solvedAt,
           penalty: finalData.penalty,
           value: finalData.value,
@@ -447,46 +429,28 @@ export class ResultService {
           lastAttempt.id,
         );
       }
-      attemptToEnterToWcaLive = {
-        wcaId: competition.wcaId,
-        scoretakingToken: competition.scoretakingToken,
-        eventId: currentRoundId.split('-')[0],
-        roundNumber: parseInt(currentRoundId.split('-r')[1]),
-        registrantId: competitor.registrantId,
-        attemptNumber: attemptNumber,
-        attemptResult: finalData.timeToEnter,
-      };
-    }
-    if (competition.sendResultsToWcaLive) {
-      await this.wcaService.enterAttemptToWcaLive(
-        attemptToEnterToWcaLive.wcaId,
-        attemptToEnterToWcaLive.scoretakingToken,
-        attemptToEnterToWcaLive.eventId,
-        attemptToEnterToWcaLive.roundNumber,
-        attemptToEnterToWcaLive.registrantId,
-        attemptToEnterToWcaLive.attemptNumber,
-        attemptToEnterToWcaLive.attemptResult,
-      );
-    }
-    if (finalData.dnsOther) {
-      for (let i = 0; i < maxAttempts - attemptNumber; i++) {
-        await this.prisma.attempt.create({
-          data: {
-            attemptNumber: attemptNumber + i + 1,
-            status: AttemptStatus.STANDARD_ATTEMPT,
-            penalty: -2,
-            value: 0,
-            result: {
-              connect: {
-                id: result.id,
+      if (finalData.dnsOther) {
+        for (let i = 0; i < maxAttempts - attemptNumber; i++) {
+          await this.prisma.attempt.create({
+            data: {
+              attemptNumber: attemptNumber + i + 1,
+              status: AttemptStatus.STANDARD,
+              type: AttemptType.STANDARD_ATTEMPT,
+              penalty: -2,
+              value: 0,
+              result: {
+                connect: {
+                  id: result.id,
+                },
               },
             },
-          },
-        });
+          });
+        }
       }
-      if (competition.sendResultsToWcaLive) {
-        await this.wcaService.enterWholeScorecardToWcaLive(result.id);
-      }
+    }
+    if (competition.sendResultsToWcaLive) {
+      const resultToEnter = await this.getResultById(result.id);
+      await this.wcaService.enterWholeScorecardToWcaLive(resultToEnter);
     }
     this.resultGateway.handleResultEntered(result.roundId);
     return {
@@ -494,38 +458,6 @@ export class ResultService {
         ? getTranslation('attemptEntered', locale)
         : getTranslation('attemptEnteredButReplacedToDnf', locale),
     };
-  }
-
-  async createAnUnusedExtraAttempt(data: any) {
-    await this.prisma.attempt.create({
-      data: {
-        attemptNumber: data.attemptNumber,
-        sessionId: data.sessionId,
-        inspectionTime: data.inspectionTime,
-        solvedAt: data.solvedAt,
-        status: AttemptStatus.UNRESOLVED,
-        shouldBeUsed: false,
-        penalty: data.penalty,
-        value: data.value,
-        judge: data.judge
-          ? {
-              connect: {
-                id: data.judge.id,
-              },
-            }
-          : undefined,
-        device: {
-          connect: {
-            id: data.device.id,
-          },
-        },
-        result: {
-          connect: {
-            id: data.result.id,
-          },
-        },
-      },
-    });
   }
 
   async createAnExtraAttemptAnReplaceTheOriginalOne(
@@ -538,7 +470,10 @@ export class ResultService {
         sessionId: data.sessionId,
         inspectionTime: data.inspectionTime,
         solvedAt: data.solvedAt,
-        status: AttemptStatus.EXTRA_ATTEMPT,
+        status: data.isDelegate
+          ? AttemptStatus.UNRESOLVED
+          : AttemptStatus.STANDARD,
+        type: AttemptType.EXTRA_ATTEMPT,
         penalty: data.penalty,
         value: data.value,
         judge: data.judge
@@ -561,18 +496,15 @@ export class ResultService {
       },
     });
 
-    if (!data.isDelegate) {
-      const attempt = await this.prisma.attempt.update({
-        where: {
-          id: originalId,
-        },
-        data: {
-          replacedBy: extraAttempt.attemptNumber,
-        },
-      });
-      return attempt.attemptNumber;
-    }
-    return -1;
+    const attempt = await this.prisma.attempt.update({
+      where: {
+        id: originalId,
+      },
+      data: {
+        replacedBy: extraAttempt.attemptNumber,
+      },
+    });
+    return attempt.attemptNumber;
   }
 
   private notifyDelegate(
@@ -604,30 +536,25 @@ export class ResultService {
     attempts.forEach((attempt) => {
       if (
         attempt.replacedBy === null &&
-        attempt.status !== AttemptStatus.EXTRA_ATTEMPT &&
+        attempt.type === AttemptType.STANDARD_ATTEMPT &&
         !submittedAttempts.some((a) => a.id === attempt.id) &&
-        attempt.status !== AttemptStatus.EXTRA_GIVEN &&
-        attempt.status !== AttemptStatus.UNRESOLVED
-      )
+        attempt.status === AttemptStatus.STANDARD
+      ) {
         submittedAttempts.push(attempt);
-      if (
+      } else if (
         attempt.replacedBy !== null &&
         attempt.status === AttemptStatus.EXTRA_GIVEN
       ) {
-        const extraAttempt = attempts.find(
-          (a) =>
-            a.attemptNumber === attempt.replacedBy &&
-            a.status === AttemptStatus.EXTRA_ATTEMPT,
-        );
+        const extraAttempt = this.wcaService.getExtra(attempt.id, attempts);
         if (
           extraAttempt &&
-          !submittedAttempts.some((a) => a.id === extraAttempt.id)
+          !submittedAttempts.some((a) => a.id === extraAttempt.id) &&
+          extraAttempt.status === AttemptStatus.STANDARD
         ) {
           submittedAttempts.push(extraAttempt);
         }
       }
     });
-    let timeToEnterToWcaLive: any = null;
 
     if (wcifRoundInfo.timeLimit.cumulativeRoundIds.length > 0) {
       if (
@@ -639,7 +566,6 @@ export class ResultService {
         limitPassed = false;
         dataToReturn.penalty = -1;
         dataToReturn.dnsOther = true;
-        timeToEnterToWcaLive = -1;
       }
     }
     if (wcifRoundInfo.timeLimit.centiseconds > 0) {
@@ -650,7 +576,6 @@ export class ResultService {
         )
       ) {
         limitPassed = false;
-        timeToEnterToWcaLive = -1;
         dataToReturn.penalty = -1;
       }
     }
@@ -663,18 +588,12 @@ export class ResultService {
         )
       ) {
         cutoffPassed = false;
-        timeToEnterToWcaLive = 0;
         dataToReturn.penalty = 0;
       }
     }
 
     return {
       ...dataToReturn,
-      timeToEnter: timeToEnterToWcaLive
-        ? timeToEnterToWcaLive
-        : newAttemptData.penalty === -1
-          ? -1
-          : newAttemptData.penalty * 100 + newAttemptData.value,
       limitPassed: limitPassed,
       cutoffPassed: cutoffPassed,
       attemptNumber: submittedAttempts.length + 1,

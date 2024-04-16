@@ -117,7 +117,7 @@ export interface Attempt {
     replacedBy: number;
     penalty: number;
     status: AttemptStatus;
-    shouldBeUsed?: boolean;
+    type: AttemptType;
     inspectionTime?: number;
     solvedAt: Date;
     value: number;
@@ -129,11 +129,16 @@ export interface Attempt {
 
 //eslint-disable-next-line
 export enum AttemptStatus {
-    STANDARD_ATTEMPT = "STANDARD_ATTEMPT",
-    EXTRA_ATTEMPT = "EXTRA_ATTEMPT",
+    STANDARD = "STANDARD",
     UNRESOLVED = "UNRESOLVED",
     RESOLVED = "RESOLVED",
     EXTRA_GIVEN = "EXTRA_GIVEN",
+}
+
+//eslint-disable-next-line
+export enum AttemptType {
+    STANDARD_ATTEMPT = "STANDARD_ATTEMPT",
+    EXTRA_ATTEMPT = "EXTRA_ATTEMPT",
 }
 
 export interface Incident extends Attempt {

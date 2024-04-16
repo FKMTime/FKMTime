@@ -1,7 +1,7 @@
 import { Competition } from "@wca/helpers";
 
 import { DNF_VALUE } from "./constants";
-import { Attempt, AttemptStatus, Result } from "./interfaces";
+import { Attempt, AttemptStatus, AttemptType, Result } from "./interfaces";
 import regions from "./regions";
 
 export const calculateTotalPages = (count: number, pageSize: number) => {
@@ -142,6 +142,24 @@ interface AttemptWithNumber extends Attempt {
     number: number;
 }
 
+//eslint-disable-next-line
+//@ts-ignore
+export const getExtra = (originalAttemptId: string, attempts: Attempt[]) => {
+    const originalAttempt = attempts.find((a) => a.id === originalAttemptId);
+    const extraAttempt = attempts.find(
+        (a) =>
+            a.attemptNumber === originalAttempt?.replacedBy &&
+            a.type === AttemptType.EXTRA_ATTEMPT
+    );
+    if (extraAttempt && extraAttempt.replacedBy) {
+        //eslint-disable-next-line
+        //@ts-ignore
+        const furtherExtraAttempt = getExtra(extraAttempt.id, attempts);
+        return furtherExtraAttempt || extraAttempt;
+    }
+    return extraAttempt;
+};
+
 export const getSubmittedAttempts = (attempts: Attempt[]) => {
     const attemptsToReturn: AttemptWithNumber[] = [];
     attempts
@@ -149,27 +167,24 @@ export const getSubmittedAttempts = (attempts: Attempt[]) => {
         .forEach((attempt) => {
             if (
                 attempt.replacedBy === null &&
-                attempt.status !== AttemptStatus.EXTRA_GIVEN &&
-                attempt.status !== AttemptStatus.EXTRA_ATTEMPT &&
-                attempt.status !== AttemptStatus.UNRESOLVED &&
+                attempt.type === AttemptType.STANDARD_ATTEMPT &&
+                (attempt.status === AttemptStatus.STANDARD ||
+                    attempt.status === AttemptStatus.RESOLVED) &&
                 !attemptsToReturn.some((a) => a.id === attempt.id)
-            )
+            ) {
                 attemptsToReturn.push({
                     ...attempt,
                     number: attemptsToReturn.length + 1,
                 });
-            if (
+            } else if (
                 attempt.replacedBy !== null &&
-                attempt.status === "EXTRA_GIVEN"
+                attempt.status === AttemptStatus.EXTRA_GIVEN
             ) {
-                const extraAttempt = attempts.find(
-                    (a) =>
-                        a.attemptNumber === attempt.replacedBy &&
-                        a.status === AttemptStatus.EXTRA_ATTEMPT
-                );
+                const extraAttempt = getExtra(attempt.id, attempts);
                 if (
                     extraAttempt &&
-                    !attemptsToReturn.some((a) => a.id === extraAttempt.id)
+                    !attemptsToReturn.some((a) => a.id === extraAttempt.id) &&
+                    extraAttempt.status === AttemptStatus.STANDARD
                 ) {
                     attemptsToReturn.push({
                         ...extraAttempt,
@@ -262,10 +277,8 @@ export const prettyAttemptStatus = (
     isIncidentPage?: boolean
 ) => {
     switch (status) {
-        case AttemptStatus.STANDARD_ATTEMPT:
-            return "Standard attempt";
-        case AttemptStatus.EXTRA_ATTEMPT:
-            return "Extra attempt";
+        case AttemptStatus.STANDARD:
+            return "Standard";
         case AttemptStatus.UNRESOLVED:
             return "Unresolved delegate case";
         case AttemptStatus.RESOLVED:
@@ -274,6 +287,15 @@ export const prettyAttemptStatus = (
                 : "Resolved delegate case, leave as is";
         case AttemptStatus.EXTRA_GIVEN:
             return "Extra given";
+    }
+};
+
+export const prettyAttemptType = (type: AttemptType) => {
+    switch (type) {
+        case AttemptType.STANDARD_ATTEMPT:
+            return "Standard attempt";
+        case AttemptType.EXTRA_ATTEMPT:
+            return "Extra attempt";
     }
 };
 

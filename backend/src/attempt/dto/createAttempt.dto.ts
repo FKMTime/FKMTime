@@ -6,7 +6,7 @@ import {
   IsOptional,
   IsString,
 } from 'class-validator';
-import { AttemptStatus } from '@prisma/client';
+import { AttemptStatus, AttemptType } from '@prisma/client';
 
 export class CreateAttemptDto {
   @IsInt()
@@ -39,6 +39,9 @@ export class CreateAttemptDto {
 
   @IsEnum(AttemptStatus)
   status: AttemptStatus;
+
+  @IsEnum(AttemptType)
+  type: AttemptType;
 
   @IsString()
   @IsOptional()

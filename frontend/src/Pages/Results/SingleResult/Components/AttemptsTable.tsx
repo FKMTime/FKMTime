@@ -28,7 +28,7 @@ const AttemptsTable = ({
                         {showExtraColumns && (
                             <>
                                 <Th>Replaced by</Th>
-                                <Th>Case</Th>
+                                <Th>Status</Th>
                             </>
                         )}
                         <Th>Judge</Th>

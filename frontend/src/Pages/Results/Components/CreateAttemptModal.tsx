@@ -20,8 +20,13 @@ import Select from "@/Components/Select";
 import { createAttempt } from "@/logic/attempt";
 import { DNF_VALUE } from "@/logic/constants";
 import { getAllDevices } from "@/logic/devices";
-import { AttemptStatus, Device, DeviceType } from "@/logic/interfaces";
-import { prettyAttemptStatus } from "@/logic/utils";
+import {
+    AttemptStatus,
+    AttemptType,
+    Device,
+    DeviceType,
+} from "@/logic/interfaces";
+import { prettyAttemptStatus, prettyAttemptType } from "@/logic/utils";
 
 interface CreateAttemptModalProps {
     isOpen: boolean;
@@ -46,7 +51,10 @@ const CreateAttemptModal = ({
         competitorId || ""
     );
     const [attemptStatus, setAttemptStatus] = useState<AttemptStatus>(
-        AttemptStatus.STANDARD_ATTEMPT
+        AttemptStatus.STANDARD
+    );
+    const [attemptType, setAttemptType] = useState<AttemptType>(
+        AttemptType.STANDARD_ATTEMPT
     );
     const [submitToWcaLive, setSubmitToWcaLive] = useState<boolean>(false);
     const [value, setValue] = useState<number>(0);
@@ -54,14 +62,15 @@ const CreateAttemptModal = ({
     const [deviceId, setDeviceId] = useState<string>("");
 
     useEffect(() => {
-        if (!isOpen) return;
-        getAllDevices(DeviceType.STATION).then((data) => {
-            setDevices(data);
-            if (devices.length > 0) {
-                setDeviceId(devices[0].id);
-            }
-        });
-    }, [devices, isOpen]);
+        if (isOpen) {
+            getAllDevices(DeviceType.STATION).then((data) => {
+                setDevices(data);
+                if (data.length > 0) {
+                    setDeviceId(data[0].id);
+                }
+            });
+        }
+    }, [isOpen]);
 
     const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
         e.preventDefault();
@@ -74,6 +83,7 @@ const CreateAttemptModal = ({
             competitorId: selectedCompetitorId,
             judgeId: selectedJudgeId,
             deviceId: deviceId,
+            type: attemptType,
             attemptNumber: formData.get("attemptNumber")
                 ? parseInt(formData.get("attemptNumber") as string)
                 : 0,
@@ -135,6 +145,26 @@ const CreateAttemptModal = ({
                         />
                     </FormControl>
                 )}
+                <FormControl isRequired>
+                    <FormLabel>Attempt type</FormLabel>
+                    <Select
+                        disabled={isLoading}
+                        value={attemptType}
+                        onChange={(e) =>
+                            setAttemptType(e.target.value as AttemptType)
+                        }
+                    >
+                        {(
+                            Object.keys(AttemptType) as Array<
+                                keyof typeof AttemptType
+                            >
+                        ).map((key) => (
+                            <option key={key} value={key}>
+                                {prettyAttemptType(key as AttemptType)}
+                            </option>
+                        ))}
+                    </Select>
+                </FormControl>
                 <FormControl isRequired>
                     <FormLabel>Attempt status</FormLabel>
                     <Select

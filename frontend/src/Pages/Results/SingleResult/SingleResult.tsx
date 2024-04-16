@@ -47,16 +47,16 @@ const SingleResult = () => {
         if (!result) return [];
         return (
             result.attempts
-                .filter((attempt) => attempt.status !== "EXTRA_ATTEMPT")
+                .filter((attempt) => attempt.type === "STANDARD_ATTEMPT")
                 .sort((a, b) => a.attemptNumber - b.attemptNumber) || []
         );
     }, [result]);
     const extraAttempts = useMemo(() => {
         if (!result) return [];
         return (
-            result.attempts.filter(
-                (attempt) => attempt.status === "EXTRA_ATTEMPT"
-            ) || []
+            result.attempts
+                .filter((attempt) => attempt.type === "EXTRA_ATTEMPT")
+                .sort((a, b) => a.attemptNumber - b.attemptNumber) || []
         );
     }, [result]);
     const submittedAttempts = useMemo(() => {
@@ -243,6 +243,7 @@ const SingleResult = () => {
                     attempts={extraAttempts}
                     fetchData={fetchData}
                     result={result}
+                    showExtraColumns
                 />
             )}
             <CreateAttemptModal

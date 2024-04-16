@@ -40,6 +40,7 @@ export class AttemptService {
         },
         replacedBy: data.replacedBy ? data.replacedBy : null,
         status: data.status,
+        type: data.type,
         comment: data.comment,
         result: {
           connect: {
@@ -100,6 +101,7 @@ export class AttemptService {
       replacedBy: data.replacedBy,
       penalty: data.penalty,
       status: data.status,
+      type: data.type,
       value: data.value,
       comment: data.comment,
     };

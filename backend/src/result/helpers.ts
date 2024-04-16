@@ -1,5 +1,5 @@
+import { Attempt, AttemptType } from '@prisma/client';
 import { EventId, Person } from '@wca/helpers';
-import { Attempt, AttemptStatus } from '@prisma/client';
 
 export const isCompetitorSignedInForEvent = (
   competitorWcif: Person,
@@ -29,12 +29,12 @@ export const checkCutoff = (
 
 export const getSortedStandardAttempts = (attempts: Attempt[]) => {
   return attempts
-    .filter((attempt) => attempt.status !== AttemptStatus.EXTRA_ATTEMPT)
+    .filter((attempt) => attempt.type === AttemptType.STANDARD_ATTEMPT)
     .sort((a, b) => a.attemptNumber - b.attemptNumber);
 };
 
 export const getSortedExtraAttempts = (attempts: Attempt[]) => {
   return attempts
-    .filter((attempt) => attempt.status === AttemptStatus.EXTRA_ATTEMPT)
+    .filter((attempt) => attempt.type === AttemptType.EXTRA_ATTEMPT)
     .sort((a, b) => a.attemptNumber - b.attemptNumber);
 };

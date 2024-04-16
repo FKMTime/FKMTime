@@ -4,7 +4,7 @@ import { MdDelete, MdEdit, MdNewLabel } from "react-icons/md";
 
 import Alert from "@/Components/Alert";
 import { deleteAttempt } from "@/logic/attempt";
-import { Attempt, AttemptStatus, Result } from "@/logic/interfaces";
+import { Attempt, AttemptType, Result } from "@/logic/interfaces";
 import { getPersonNameAndRegistrantId } from "@/logic/persons.ts";
 import { attemptWithPenaltyToString } from "@/logic/resultFormatters";
 import { getResolvedStatus } from "@/logic/utils";
@@ -75,7 +75,7 @@ const AttemptRow = ({
             <Tr key={attempt.id}>
                 <Td>{no}</Td>
                 <Td>
-                    {attempt.status === AttemptStatus.EXTRA_ATTEMPT
+                    {attempt.type === AttemptType.EXTRA_ATTEMPT
                         ? `Extra ${attempt.attemptNumber}`
                         : attempt.attemptNumber}
                 </Td>
@@ -109,20 +109,18 @@ const AttemptRow = ({
                         title="Edit attempt"
                         onClick={() => setIsOpenEditAttemptModal(true)}
                     />
-                    {attempt.status === AttemptStatus.STANDARD_ATTEMPT && (
-                        <IconButton
-                            icon={<MdNewLabel />}
-                            aria-label="Delete"
-                            bg="none"
-                            color="white"
-                            _hover={{
-                                background: "none",
-                                color: "gray.400",
-                            }}
-                            title="Give extra attempt"
-                            onClick={() => setIsOpenGiveExtraAttemptModal(true)}
-                        />
-                    )}
+                    <IconButton
+                        icon={<MdNewLabel />}
+                        aria-label="Delete"
+                        bg="none"
+                        color="white"
+                        _hover={{
+                            background: "none",
+                            color: "gray.400",
+                        }}
+                        title="Give extra attempt"
+                        onClick={() => setIsOpenGiveExtraAttemptModal(true)}
+                    />
                     <IconButton
                         icon={<MdDelete />}
                         aria-label="Delete"

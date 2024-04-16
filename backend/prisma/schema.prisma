@@ -99,8 +99,8 @@ model Attempt {
   attemptNumber  Int
   replacedBy     Int?
   comment        String?
-  status         AttemptStatus @default(STANDARD_ATTEMPT)
-  shouldBeUsed   Boolean       @default(true)
+  type           AttemptType   @default(STANDARD_ATTEMPT)
+  status         AttemptStatus @default(STANDARD)
   penalty        Int?
   value          Int
   inspectionTime Int?
@@ -144,9 +144,13 @@ enum DeviceType {
   ATTENDANCE_RUNNER
 }
 
-enum AttemptStatus {
+enum AttemptType {
   STANDARD_ATTEMPT
   EXTRA_ATTEMPT
+}
+
+enum AttemptStatus {
+  STANDARD
   UNRESOLVED
   RESOLVED
   EXTRA_GIVEN

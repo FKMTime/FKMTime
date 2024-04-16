@@ -1,6 +1,11 @@
 import { HttpException, Injectable, Logger } from '@nestjs/common';
 import { DbService } from '../db/db.service';
-import { Attempt, AttemptStatus, Competition } from '@prisma/client';
+import {
+  Attempt,
+  AttemptStatus,
+  AttemptType,
+  Competition,
+} from '@prisma/client';
 
 const WCA_LIVE_API_ORIGIN = process.env.WCA_LIVE_API_ORIGIN;
 const WCA_ORIGIN = process.env.WCA_ORIGIN;
@@ -125,33 +130,34 @@ export class WcaService {
     const sortedAttempts = result.attempts.sort(
       (a: Attempt, b: Attempt) => a.attemptNumber - b.attemptNumber,
     );
-    sortedAttempts.forEach((attempt: Attempt) => {
+    sortedAttempts.forEach((attempt) => {
       if (
-        !attemptsToReturn.some((a) => a.id === attempt.id) &&
         attempt.replacedBy === null &&
-        attempt.status !== AttemptStatus.EXTRA_ATTEMPT &&
-        attempt.status !== AttemptStatus.EXTRA_GIVEN &&
-        attempt.status !== AttemptStatus.UNRESOLVED
-      )
-        attemptsToReturn.push(attempt);
-      if (
+        attempt.type === AttemptType.STANDARD_ATTEMPT &&
+        attempt.status === AttemptStatus.STANDARD &&
+        !attemptsToReturn.some((a) => a.id === attempt.id)
+      ) {
+        attemptsToReturn.push({
+          ...attempt,
+          number: attemptsToReturn.length + 1,
+        });
+      } else if (
         attempt.replacedBy !== null &&
         attempt.status === AttemptStatus.EXTRA_GIVEN
       ) {
-        const extraAttempt = result.attempts.find(
-          (a: Attempt) =>
-            a.attemptNumber === attempt.replacedBy &&
-            a.status === AttemptStatus.EXTRA_ATTEMPT,
-        );
+        const extraAttempt = this.getExtra(attempt.id, sortedAttempts);
         if (
           extraAttempt &&
-          !attemptsToReturn.some((a) => a.id === extraAttempt.id)
+          !attemptsToReturn.some((a) => a.id === extraAttempt.id) &&
+          extraAttempt.status === AttemptStatus.STANDARD
         ) {
-          attemptsToReturn.push(extraAttempt);
+          attemptsToReturn.push({
+            ...extraAttempt,
+            number: attempt.attemptNumber,
+          });
         }
       }
     });
-
     const timesToSubmit = attemptsToReturn.map((attempt) => {
       return {
         result:
@@ -174,6 +180,20 @@ export class WcaService {
         },
       ],
     };
+  }
+
+  getExtra(originalAttemptId: string, attempts: Attempt[]) {
+    const originalAttempt = attempts.find((a) => a.id === originalAttemptId);
+    const extraAttempt = attempts.find(
+      (a) =>
+        a.attemptNumber === originalAttempt?.replacedBy &&
+        a.type === AttemptType.EXTRA_ATTEMPT,
+    );
+    if (extraAttempt && extraAttempt.replacedBy) {
+      const furtherExtraAttempt = this.getExtra(extraAttempt.id, attempts);
+      return furtherExtraAttempt || extraAttempt;
+    }
+    return extraAttempt;
   }
 
   async getPublicWcif(competitionId: string) {
