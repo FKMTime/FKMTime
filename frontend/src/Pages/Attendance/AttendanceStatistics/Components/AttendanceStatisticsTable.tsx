@@ -105,6 +105,8 @@ const AttendanceStatisticsTable = ({
                             {row.cells.map((cell) => (
                                 <Td {...cell.getCellProps()}>
                                     {cell.render("Cell")}
+                                    {cell.column.id === "presentPercentage" &&
+                                        "%"}
                                 </Td>
                             ))}
                         </Tr>

@@ -110,21 +110,11 @@ export class AttendanceService {
         person.StaffActivity.filter(
           (activity) =>
             activity.isPresent &&
-            activity.isAssigned &&
             activity.role !== 'COMPETITOR' &&
             roundsThatTookPlace.some(
               (round) => round.roundId === activity.groupId.split('-g')[0],
             ),
         ).length;
-      const totalAbsentAtStaffingComparedToRounds = person.StaffActivity.filter(
-        (activity) =>
-          !activity.isPresent &&
-          activity.isAssigned &&
-          activity.role !== 'COMPETITOR' &&
-          roundsThatTookPlace.some(
-            (round) => round.roundId === activity.groupId.split('-g')[0],
-          ),
-      ).length;
       const totalStaffingComparedToRounds = person.StaffActivity.filter(
         (activity) =>
           activity.isAssigned &&
