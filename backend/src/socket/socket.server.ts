@@ -27,9 +27,10 @@ export class SocketServer {
       callback();
     });
 
-    this.server.on('connection', (socket) => {
+    this.server.on('connection', async (socket) => {
       this.logger.log('Client connected');
       this.connectedSockets.push(socket);
+      await this.sendInitData(socket);
       socket.on('data', async (data) => {
         const request: RequestDto<any> = JSON.parse(data.toString());
         this.logger.log(
@@ -39,7 +40,7 @@ export class SocketServer {
           const responseData = await this.socketService.enterAttempt(
             request.data,
           );
-          this.sendResponse(socket, {
+          this.sendResponseWithTag(socket, {
             type: 'EnterAttempt',
             tag: request.tag,
             data: responseData,
@@ -48,7 +49,7 @@ export class SocketServer {
           const responseData = await this.socketService.requestToConnectDevice(
             request.data,
           );
-          this.sendResponse(socket, {
+          this.sendResponseWithTag(socket, {
             type: 'RequestToConnectDevice',
             tag: request.tag,
             data: responseData,
@@ -57,7 +58,7 @@ export class SocketServer {
           const responseData = await this.socketService.updateBatteryPercentage(
             request.data,
           );
-          this.sendResponse(socket, {
+          this.sendResponseWithTag(socket, {
             type: 'UpdateBatteryPercentage',
             tag: request.tag,
             data: responseData,
@@ -66,21 +67,21 @@ export class SocketServer {
           const responseData = await this.socketService.createAttendance(
             request.data,
           );
-          this.sendResponse(socket, {
+          this.sendResponseWithTag(socket, {
             type: 'CreateAttendance',
             tag: request.tag,
             data: responseData,
           });
         } else if (request.type === 'ServerStatus') {
           const responseData = await this.socketService.getServerStatus();
-          this.sendResponse(socket, {
+          this.sendResponseWithTag(socket, {
             type: 'ServerStatus',
             tag: request.tag,
             data: responseData,
           });
         } else if (request.type === 'WifiSettings') {
           const responseData = await this.socketService.getWifiSettings();
-          this.sendResponse(socket, {
+          this.sendResponseWithTag(socket, {
             type: 'WifiSettings',
             tag: request.tag,
             data: responseData,
@@ -89,7 +90,7 @@ export class SocketServer {
           const responseData = await this.socketService.getPersonInfo(
             request.data.cardId,
           );
-          this.sendResponse(socket, {
+          this.sendResponseWithTag(socket, {
             type: 'PersonInfo',
             tag: request.tag,
             data: responseData,
@@ -108,14 +109,33 @@ export class SocketServer {
     });
   }
 
-  private sendResponse<T>(socket: net.Socket, request: RequestDto<T>) {
+  private sendResponseWithTag<T>(socket: net.Socket, request: RequestDto<T>) {
     socket.write(JSON.stringify(request));
+  }
+
+  private sendResponse<T>(socket: net.Socket, response: ResponseDto<T>) {
+    this.logger.log('Sending response to socket');
+    socket.write(JSON.stringify(response));
   }
 
   sendToAll<T>(response: ResponseDto<T>) {
     this.logger.log('Sending response to all connected sockets');
     this.connectedSockets.forEach((socket) => {
       socket.write(JSON.stringify(response));
+    });
+  }
+
+  async sendInitData(socket: net.Socket) {
+    this.logger.log('Sending init data to socket');
+    const wifiData = await this.socketService.getWifiSettings();
+    const serverStatus = await this.socketService.getServerStatus();
+    this.sendResponse(socket, {
+      type: 'WifiSettings',
+      data: wifiData,
+    });
+    this.sendResponse(socket, {
+      type: 'ServerStatus',
+      data: serverStatus,
     });
   }
 }
