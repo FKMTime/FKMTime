@@ -47,5 +47,19 @@ services:
       timeout: 20s
       retries: 50
 
+  api_tester:
+    build:
+      context: ./backend/api_tester
+      dockerfile: Dockerfile.dev
+    container_name: fkmtime-dev-api-tester
+    expose:
+      - '5001:5001'
+    volumes:
+      - ./api_tester:/app
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_healthy
+
 volumes:
   database:

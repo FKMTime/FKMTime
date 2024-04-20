@@ -1,0 +1,199 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>FKM tester</title>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #2D3748;
+            color: #E2E8F0;
+        }
+        input, select {
+            background-color: #1c2334;
+            color: white;
+            border-radius: 5px;
+            padding: 5px;
+            border: 1px solid #2D3748;
+        }
+        button {
+            background-color: #1c2334;
+            color: white;
+            border: 1px solid #1c2334;
+            padding: 5px 10px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .response {
+            background-color: #125b06;
+            color: white;
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+<div>
+    <h1>Enter attempt</h1>
+    <ul>
+        <li>Type: EnterAttempt</li>
+    </ul>
+    <form id="enterAttemptForm">
+        <div>
+            <label for="value">Value</label>
+            <input type="text" name="value" placeholder="Time" value="1030" id="value"/>
+        </div>
+        <div>
+            <label for="penalty">Penalty</label>
+            <select name="penalty" id="penalty">
+                <option value="0">No penalty</option>
+                <option value="2">+2</option>
+                <option value="-1">DNF</option>
+                <option value="4">+4</option>
+                <option value="6">+6</option>
+                <option value="8">+8</option>
+                <option value="10">+10</option>
+                <option value="12">+12</option>
+                <option value="14">+14</option>
+                <option value="16">+16</option>
+            </select>
+        </div>
+        <div>
+            <label for="competitorId">Competitor card</label>
+            <input type="text" name="competitorId" placeholder="Competitor card" value="1" id="competitorId"/>
+        </div>
+        <div>
+            <label for="judgeId">Judge card</label>
+            <input type="text" name="judgeId" placeholder="Judge card" value="2" id="judgeId"/>
+        </div>
+        <div>
+            <label for="sessionId">Session ID</label>
+            <input type="text" name="sessionId" value=""/>
+        </div>
+        <div>
+            <label for="espId">ESP ID</label>
+            <input type="text" name="espId" placeholder="ESP ID" value="1"/>
+        </div>
+        <div>
+            <label for="inspectionTime">Inspection time</label>
+            <input type="text" name="inspectionTime" placeholder="Inspection time" value="0"/>
+        </div>
+        <div>
+            <label for="isDelegate">Delegate</label>
+            <input type="checkbox" name="isDelegate" value="1"/>
+        </div>
+        <button type="submit">Submit</button>
+    </form>
+    <div id="enterAttemptResponse" class="response" hidden>
+    </div>
+    <form id="connectDeviceForm">
+        <h1>Connect device</h1>
+        <ul>
+            <li>Type: ConnectDevice</li>
+        </ul>
+        <div>
+            <label for="deviceType">Device type</label>
+            <select name="type" id="deviceType">
+                <option value="STATION">Station</option>
+                <option value="STAFF_ATTENDANCE">Staff attendance device</option>
+            </select>
+        </div>
+        <div>
+            <label for="espId">ESP ID</label>
+            <input type="text" name="espId" placeholder="ESP ID" value=""/>
+        </div>
+        <button type="submit">Submit</button>
+    </form>
+    <div id="connectDeviceResponse" class="response" hidden></div>
+</div>
+<script>
+    const form = document.getElementById('enterAttemptForm');
+    form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const formData = new FormData(form);
+        const data = {};
+        formData.forEach((value, key) => {
+            data[key] = value;
+        });
+        data['solvedAt'] = new Date().toISOString();
+        data['competitorId'] = +data['competitorId'];
+        data['value'] = +data['value'];
+        data['penalty'] = +data['penalty'];
+        data['isDelegate'] = !!data['isDelegate'];
+        data['inspectionTime'] = +data['inspectionTime'];
+        data['judgeId'] = +data['judgeId'];
+        data['espId'] = +data['espId'];
+        const response = await fetch('/attempt/enter/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(data)
+        });
+        const json = await response.json();
+        const responseDiv = document.querySelector('#enterAttemptResponse');
+        responseDiv.hidden = false;
+        responseDiv.style.backgroundColor = json.data.status >= 200 && json.data.status < 400 ? '#125b06' : '#b00020';
+        responseDiv.innerHTML = JSON.stringify(json, null, 2);
+    });
+</script>
+<script>
+    const connectDeviceForm = document.getElementById('connectDeviceForm');
+    connectDeviceForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const formData = new FormData(connectDeviceForm);
+        const data = {};
+        formData.forEach((value, key) => {
+            data[key] = value;
+        });
+        data['espId'] = +data['espId'];
+        const response = await fetch('/device/connect/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(data)
+        });
+        const json = await response.json();
+        const responseDiv = document.querySelector('#connectDeviceResponse');
+        responseDiv.hidden = false;
+        responseDiv.style.backgroundColor = json.data.status >= 200 && json.data.status < 400 ? '#125b06' : '#b00020';
+        responseDiv.innerHTML = JSON.stringify(json, null, 2);
+    });
+</script>
+<script>
+    function generateRandomString(length) {
+        const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+        let result = '';
+        for (let i = 0; i < length; i++) {
+            result += characters.charAt(Math.floor(Math.random() * characters.length));
+        }
+        return result;
+    }
+
+    function generateRandomNumbers(length) {
+        const characters = '123456789';
+        let result = '';
+        for (let i = 0; i < length; i++) {
+            result += characters.charAt(Math.floor(Math.random() * characters.length));
+        }
+        return result;
+    }
+
+    const currentDate = new Date().toISOString();
+    const sessionId = generateRandomString(20);
+    const espId = generateRandomNumbers(5);
+    const espIdInput = document.querySelector('#connectDeviceForm input[name="espId"]');
+    espIdInput.value = espId;
+    const sessionIdInput = document.querySelector('input[name="sessionId"]');
+    sessionIdInput.value = sessionId;
+    const currentDateInput = document.querySelector('input[name="solvedAt"]');
+    currentDateInput.value = currentDate;
+</script>
+</body>
+</html>

@@ -161,15 +161,6 @@ export class AuthService {
     });
   }
 
-  async validateApiToken(token: string): Promise<boolean> {
-    const competition = await this.prisma.competition.findFirst({
-      where: {
-        apiToken: sha512(token),
-      },
-    });
-    return !!competition;
-  }
-
   async changePassword(
     userId: string,
     oldPassword: string,

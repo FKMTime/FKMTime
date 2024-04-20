@@ -28,7 +28,7 @@ const translations = [
       competitorIsNotInThisGroup: 'Zawodnik nie jest w tej grupie',
       cutoffNotPassed: 'Nie zrobiles cutoffa',
       delegateWasNotified: 'Delegat został powiadomiony',
-      attemptEntered: 'Ulozenie zostalo wprowadzona',
+      attemptEntered: 'Ulozenie zostalo wprowadzone',
       attemptEnteredButReplacedToDnf:
         "Ulozenie zostalo wprowadzona, ale zastąpione DNF'em",
       noAttemptsLeft: 'Wykonales juz wszystkie ulozenia',

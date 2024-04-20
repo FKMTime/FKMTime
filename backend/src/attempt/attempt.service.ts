@@ -1,11 +1,12 @@
-import { DbService } from '../db/db.service';
 import { HttpException, Injectable } from '@nestjs/common';
-import { UpdateAttemptDto } from './dto/updateAttempt.dto';
-import { CreateAttemptDto } from './dto/createAttempt.dto';
-import { IncidentsGateway } from './incidents.gateway';
 import { AttemptStatus } from '@prisma/client';
-import { WcaService } from '../wca/wca.service';
+import { DbService } from '../db/db.service';
 import { ResultService } from '../result/result.service';
+import { SocketController } from '../socket/socket.controller';
+import { WcaService } from '../wca/wca.service';
+import { CreateAttemptDto } from './dto/createAttempt.dto';
+import { UpdateAttemptDto } from './dto/updateAttempt.dto';
+import { IncidentsGateway } from './incidents.gateway';
 
 @Injectable()
 export class AttemptService {
@@ -14,6 +15,7 @@ export class AttemptService {
     private readonly wcaService: WcaService,
     private readonly incidentsGateway: IncidentsGateway,
     private readonly resultService: ResultService,
+    private readonly socketController: SocketController,
   ) {}
 
   async createAttempt(data: CreateAttemptDto) {
@@ -93,6 +95,12 @@ export class AttemptService {
   }
 
   async updateAttempt(id: string, data: UpdateAttemptDto) {
+    const attemptToUpdate = await this.prisma.attempt.findUnique({
+      where: { id: id },
+    });
+    if (!attemptToUpdate) {
+      throw new HttpException('Attempt not found', 404);
+    }
     if (data.status !== AttemptStatus.EXTRA_GIVEN || data.replacedBy === 0) {
       data.replacedBy = null;
     }
@@ -113,18 +121,11 @@ export class AttemptService {
         judge: data.judgeId ? { connect: { id: data.judgeId } } : undefined,
         device: data.deviceId ? { connect: { id: data.deviceId } } : undefined,
       },
-      select: {
-        id: true,
-        attemptNumber: true,
+      include: {
+        device: true,
         result: {
-          select: {
-            roundId: true,
-            person: {
-              select: {
-                id: true,
-                registrantId: true,
-              },
-            },
+          include: {
+            person: true,
           },
         },
       },
@@ -149,6 +150,16 @@ export class AttemptService {
       }
     }
     this.incidentsGateway.handleAttemptUpdated();
+    if (attemptToUpdate.status === AttemptStatus.UNRESOLVED) {
+      this.socketController.sendResponseToAllSockets({
+        type: 'IncidentResolved',
+        data: {
+          attempt: attempt,
+          espId: attempt.device.espId,
+          shouldScanCards: attempt.status === AttemptStatus.RESOLVED,
+        },
+      });
+    }
     if (!attempt) {
       throw new HttpException('Attempt not found', 404);
     }

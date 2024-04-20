@@ -1,24 +1,22 @@
-import { DbService } from '../db/db.service';
 import { HttpException, Injectable } from '@nestjs/common';
-import { WcaService } from '../wca/wca.service';
-import { UpdateCompetitionDto } from './dto/updateCompetition.dto';
-import { eventsData } from '../events';
-import { UpdateRoomsDto } from './dto/updateCurrentRound.dto';
+import { Cron, CronExpression } from '@nestjs/schedule';
+import { Room, StaffRole } from '@prisma/client';
 import {
   Activity,
+  Assignment,
+  Competition,
   Event,
   Person,
   Room as WCIFRoom,
   Venue,
-  Competition,
-  Assignment,
 } from '@wca/helpers';
-import { UpdateDevicesSettingsDto } from './dto/updateDevicesSettings.dto';
-import { Room, StaffRole } from '@prisma/client';
+import { DbService } from '../db/db.service';
+import { eventsData } from '../events';
+import { WcaService } from '../wca/wca.service';
 import { CompetitionGateway } from './competition.gateway';
-import { Cron, CronExpression } from '@nestjs/schedule';
-import { sha512 } from 'js-sha512';
-import * as crypto from 'crypto';
+import { UpdateCompetitionDto } from './dto/updateCompetition.dto';
+import { UpdateRoomsDto } from './dto/updateCurrentRound.dto';
+import { UpdateDevicesSettingsDto } from './dto/updateDevicesSettings.dto';
 
 @Injectable()
 export class CompetitionService {
@@ -296,7 +294,10 @@ export class CompetitionService {
   async serverStatus() {
     const competition = await this.prisma.competition.findFirst();
     if (!competition) {
-      throw new HttpException('Competition not found', 404);
+      return {
+        message: 'Competition not found',
+        status: 404,
+      };
     }
     const rooms = await this.prisma.room.findMany({
       include: {
@@ -359,22 +360,6 @@ export class CompetitionService {
         wifiPassword: true,
       },
     });
-  }
-
-  async generateApiToken() {
-    const competition = await this.prisma.competition.findFirst();
-    const token = crypto.randomBytes(32).toString('hex');
-    await this.prisma.competition.update({
-      where: {
-        id: competition.id,
-      },
-      data: {
-        apiToken: sha512(token),
-      },
-    });
-    return {
-      token: token,
-    };
   }
 
   async getWifiSettings() {

@@ -12,13 +12,10 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
+import { DeviceType } from '@prisma/client';
 import { AdminGuard } from '../auth/guards/admin.guard';
-import { TokenGuard } from '../auth/guards/token.guard';
 import { DeviceService } from './device.service';
 import { DeviceDto } from './dto/device.dto';
-import { RequestToConnectDto } from './dto/requestToConnect.dto';
-import { UpdateBatteryPercentageDto } from './dto/updateBatteryPercentage.dto';
-import { DeviceType } from '@prisma/client';
 
 @Controller('device')
 export class DeviceController {
@@ -36,12 +33,6 @@ export class DeviceController {
     return this.deviceService.createDevice(data);
   }
 
-  @UseGuards(TokenGuard)
-  @Post('battery')
-  async updateBatteryPercentage(@Body() data: UpdateBatteryPercentageDto) {
-    return this.deviceService.updateBatteryPercentage(data);
-  }
-
   @UseGuards(AdminGuard)
   @Put(':id')
   async updateDevice(@Param('id') id: string, @Body() data: DeviceDto) {
@@ -53,10 +44,5 @@ export class DeviceController {
   @Delete(':id')
   async deleteDevice(@Param('id') id: string) {
     return this.deviceService.deleteDevice(id);
-  }
-
-  @Post('connect')
-  async requestToConnect(@Body() data: RequestToConnectDto) {
-    return this.deviceService.requestToConnect(data);
   }
 }

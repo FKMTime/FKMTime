@@ -277,13 +277,11 @@ export class PersonService {
   async getPersonInfo(cardId: string) {
     const person = await this.getPersonByCardId(cardId);
     if (!person) {
-      throw new HttpException(
-        {
-          message: getTranslation('competitorNotFound', 'en'),
-          shouldResetTime: false,
-        },
-        404,
-      );
+      return {
+        message: getTranslation('competitorNotFound', 'en'),
+        shouldResetTime: false,
+        status: 404,
+      };
     }
     return {
       ...person,

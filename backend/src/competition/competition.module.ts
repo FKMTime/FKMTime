@@ -9,5 +9,6 @@ import { CompetitionGateway } from './competition.gateway';
   providers: [CompetitionService, CompetitionGateway],
   controllers: [CompetitionController],
   imports: [AuthModule, WcaModule],
+  exports: [CompetitionService],
 })
 export class CompetitionModule {}

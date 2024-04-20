@@ -1,8 +1,7 @@
-import { Body, Controller, Get, Param, Post, UseGuards } from '@nestjs/common';
+import { Controller, Get, Param, Post, UseGuards } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { AdminGuard } from '../auth/guards/admin.guard';
 import { AttendanceService } from './attendance.service';
-import { CreateAttendaceDto } from './dto/createAttendance.dto';
 
 @Controller('attendance')
 export class AttendanceController {
@@ -18,11 +17,6 @@ export class AttendanceController {
   @Get('statistics')
   async getAttendanceStatistics() {
     return this.attendanceService.getAttendanceStatistics();
-  }
-
-  @Post()
-  async createAttendance(@Body() data: CreateAttendaceDto) {
-    return this.attendanceService.createAttendance(data);
   }
 
   @UseGuards(AuthGuard('jwt'), AdminGuard)

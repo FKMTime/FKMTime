@@ -60,7 +60,6 @@ model Competition {
   shortName                 String
   countryIso2               String?
   shouldUpdateDevices       Boolean   @default(false)
-  apiToken                  String?
   wifiSsid                  String?
   wifiPassword              String?
   wcif                      Json?

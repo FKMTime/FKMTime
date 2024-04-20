@@ -1,10 +1,10 @@
 import { HttpException, Injectable } from '@nestjs/common';
-import { DbService } from '../db/db.service';
-import { DeviceDto } from './dto/device.dto';
-import { UpdateBatteryPercentageDto } from './dto/updateBatteryPercentage.dto';
-import { DeviceGateway } from './device.gateway';
-import { RequestToConnectDto } from './dto/requestToConnect.dto';
 import { DeviceType } from '@prisma/client';
+import { DbService } from '../db/db.service';
+import { DeviceGateway } from './device.gateway';
+import { DeviceDto } from './dto/device.dto';
+import { RequestToConnectDto } from './dto/requestToConnect.dto';
+import { UpdateBatteryPercentageDto } from './dto/updateBatteryPercentage.dto';
 
 @Injectable()
 export class DeviceService {
@@ -85,11 +85,13 @@ export class DeviceService {
     if (inInDb) {
       return {
         message: 'Device already exists in database',
+        status: 409,
       };
     }
     this.deviceGateway.handleDeviceRequest(data);
     return {
       message: 'Request sent',
+      status: 200,
     };
   }
 
@@ -118,11 +120,15 @@ export class DeviceService {
         },
       });
     } catch (error) {
-      throw new HttpException('Device not found', 404);
+      return {
+        message: 'Device not found',
+        status: 404,
+      };
     }
     this.deviceGateway.handleDeviceUpdated();
     return {
       message: 'Battery percentage updated',
+      status: 200,
     };
   }
 

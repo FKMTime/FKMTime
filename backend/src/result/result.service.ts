@@ -1,11 +1,14 @@
 import { HttpException, Injectable } from '@nestjs/common';
-import { DbService } from 'src/db/db.service';
-import { EnterAttemptDto } from './dto/enterAttempt.dto';
-import { getTranslation, isLocaleAvailable } from 'src/translations';
-import { Event, Person, Round } from '@wca/helpers';
 import { AttemptStatus, AttemptType, DeviceType } from '@prisma/client';
+import { Event, Person, Round } from '@wca/helpers';
+import { DbService } from 'src/db/db.service';
+import { getTranslation, isLocaleAvailable } from 'src/translations';
 import { IncidentsGateway } from '../attempt/incidents.gateway';
-import { ResultGateway } from './result.gateway';
+import { AttendanceService } from '../attendance/attendance.service';
+import { DeviceService } from '../device/device.service';
+import { PersonService } from '../person/person.service';
+import { WcaService } from '../wca/wca.service';
+import { EnterAttemptDto } from './dto/enterAttempt.dto';
 import {
   checkAttemptLimit,
   checkCutoff,
@@ -13,10 +16,7 @@ import {
   getSortedStandardAttempts,
   isCompetitorSignedInForEvent,
 } from './helpers';
-import { AttendanceService } from '../attendance/attendance.service';
-import { WcaService } from '../wca/wca.service';
-import { DeviceService } from '../device/device.service';
-import { PersonService } from '../person/person.service';
+import { ResultGateway } from './result.gateway';
 
 @Injectable()
 export class ResultService {
@@ -170,24 +170,8 @@ export class ResultService {
     return await this.wcaService.enterRoundToWcaLive(results);
   }
 
-  async getStationByEspIdOrThrow(espId: number) {
-    const station = await this.deviceService.getDeviceByEspId(
-      espId,
-      DeviceType.STATION,
-    );
-    if (!station) {
-      throw new HttpException('Station not found', 404);
-    }
-    if (!station.room.currentGroupId) {
-      throw new HttpException(
-        {
-          message: 'No group in this room',
-          shouldResetTime: false,
-        },
-        400,
-      );
-    }
-    return station;
+  async getStationByEspId(espId: number) {
+    return await this.deviceService.getDeviceByEspId(espId, DeviceType.STATION);
   }
 
   async getResultOrCreate(personId: string, roundId: string) {
@@ -221,19 +205,23 @@ export class ResultService {
   }
 
   async enterAttempt(data: EnterAttemptDto) {
-    const device = await this.getStationByEspIdOrThrow(data.espId);
+    const device = await this.getStationByEspId(data.espId);
+    if (!device) {
+      throw new HttpException('Device not found', 404);
+    }
+    if (!device.room.currentGroupId) {
+      throw new HttpException('No group in this room', 400);
+    }
     const competitor = await this.personService.getPersonByCardId(
       data.competitorId.toString(),
     );
     let locale = 'PL';
     if (!competitor) {
-      throw new HttpException(
-        {
-          message: getTranslation('competitorNotFound', locale),
-          shouldResetTime: true,
-        },
-        404,
-      );
+      return {
+        message: getTranslation('competitorNotFound', locale),
+        shouldResetTime: true,
+        status: 404,
+      };
     }
     locale = competitor.countryIso2;
 
@@ -245,13 +233,11 @@ export class ResultService {
         },
       });
     if (previousAttemptWithSameSessionId) {
-      throw new HttpException(
-        {
-          message: getTranslation('attemptAlreadyEntered', locale),
-          shouldResetTime: false,
-        },
-        400,
-      );
+      return {
+        message: getTranslation('attemptAlreadyEntered', locale),
+        shouldResetTime: false,
+        status: 400,
+      };
     }
 
     const judge = await this.personService.getPersonByCardId(
@@ -259,13 +245,11 @@ export class ResultService {
     );
 
     if (!judge && !data.isDelegate) {
-      throw new HttpException(
-        {
-          message: getTranslation('judgeNotFound', locale),
-          shouldResetTime: false,
-        },
-        404,
-      );
+      return {
+        message: getTranslation('judgeNotFound', locale),
+        shouldResetTime: false,
+        status: 404,
+      };
     }
     if (judge) {
       await this.attendanceService.markJudgeAsPresent(
@@ -284,13 +268,11 @@ export class ResultService {
 
     const competition = await this.prisma.competition.findFirst();
     if (!competition) {
-      throw new HttpException(
-        {
-          message: getTranslation('competitionNotFound', locale),
-          shouldResetTime: true,
-        },
-        404,
-      );
+      return {
+        message: getTranslation('competitionNotFound', locale),
+        shouldResetTime: true,
+        status: 404,
+      };
     }
     const wcif = JSON.parse(JSON.stringify(competition.wcif));
     const currentRoundId = device.room.currentGroupId.split('-g')[0];
@@ -308,13 +290,11 @@ export class ResultService {
       currentRoundId.split('-')[0],
     );
     if (!competitorSignedInForEvent) {
-      throw new HttpException(
-        {
-          message: getTranslation('competitorIsNotSignedInForEvent', locale),
-          shouldResetTime: false,
-        },
-        400,
-      );
+      return {
+        message: getTranslation('competitorIsNotSignedInForEvent', locale),
+        shouldResetTime: false,
+        status: 400,
+      };
     }
     const result = await this.getResultOrCreate(competitor.id, currentRoundId);
 
@@ -327,13 +307,11 @@ export class ResultService {
     const finalData = await this.getValidatedData(roundInfo, attempts, data);
 
     if (!finalData.cutoffPassed) {
-      throw new HttpException(
-        {
-          message: getTranslation('cutoffNotPassed', locale),
-          shouldResetTime: true,
-        },
-        400,
-      );
+      return {
+        message: getTranslation('cutoffNotPassed', locale),
+        shouldResetTime: true,
+        status: 400,
+      };
     }
     const sortedAttempts = getSortedStandardAttempts(attempts);
     const sortedExtraAttempts = getSortedExtraAttempts(attempts);
@@ -379,13 +357,11 @@ export class ResultService {
       const maxAttempts = roundInfo.format === 'a' ? 5 : 3;
       const lastAttempt = sortedAttempts[sortedAttempts.length - 1];
       if (lastAttempt && lastAttempt.attemptNumber === maxAttempts) {
-        throw new HttpException(
-          {
-            message: getTranslation('noAttemptsLeft', locale),
-            shouldResetTime: true,
-          },
-          400,
-        );
+        return {
+          message: getTranslation('noAttemptsLeft', locale),
+          shouldResetTime: true,
+          status: 400,
+        };
       }
       if (lastAttempt) {
         attemptNumber = lastAttempt.attemptNumber + 1;
@@ -449,14 +425,24 @@ export class ResultService {
       }
     }
     if (competition.sendResultsToWcaLive) {
-      const resultToEnter = await this.getResultById(result.id);
-      await this.wcaService.enterWholeScorecardToWcaLive(resultToEnter);
+      try {
+        const resultToEnter = await this.getResultById(result.id);
+        try {
+          await this.wcaService.enterWholeScorecardToWcaLive(resultToEnter);
+        } catch (e) {
+          console.log(e);
+        }
+      } catch (e) {
+        console.log(e);
+      }
     }
     this.resultGateway.handleResultEntered(result.roundId);
     return {
       message: finalData.limitPassed
         ? getTranslation('attemptEntered', locale)
         : getTranslation('attemptEnteredButReplacedToDnf', locale),
+      shouldResetTime: true,
+      status: 200,
     };
   }
 
@@ -521,6 +507,7 @@ export class ResultService {
     return {
       message: getTranslation('delegateWasNotified', locale),
       shouldResetTime: true,
+      status: 200,
     };
   }
 

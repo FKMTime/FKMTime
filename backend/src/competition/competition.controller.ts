@@ -3,7 +3,6 @@ import { AuthGuard } from '@nestjs/passport';
 import { AdminGuard } from 'src/auth/guards/admin.guard';
 import { GetUser } from '../auth/decorator/getUser.decorator';
 import { JwtAuthDto } from '../auth/dto/jwt-auth.dto';
-import { TokenGuard } from '../auth/guards/token.guard';
 import { CompetitionService } from './competition.service';
 import { UpdateCompetitionDto } from './dto/updateCompetition.dto';
 import { UpdateRoomsDto } from './dto/updateCurrentRound.dto';
@@ -29,18 +28,6 @@ export class CompetitionController {
   @Get('rounds')
   async getCompetitionRounds() {
     return await this.competitionService.getRoundsInfo();
-  }
-
-  @UseGuards(TokenGuard)
-  @Get('status')
-  async shouldUpdateDevices() {
-    return await this.competitionService.serverStatus();
-  }
-
-  @UseGuards(TokenGuard)
-  @Get('wifi')
-  async getWifiSettings() {
-    return await this.competitionService.getWifiSettings();
   }
 
   @UseGuards(AdminGuard)
@@ -98,11 +85,5 @@ export class CompetitionController {
     @Body() dto: UpdateDevicesSettingsDto,
   ) {
     return await this.competitionService.updateDevicesSettings(id, dto);
-  }
-
-  @UseGuards(AuthGuard('jwt'), AdminGuard)
-  @Get('settings/token')
-  async generateApiToken() {
-    return await this.competitionService.generateApiToken();
   }
 }

@@ -10,7 +10,6 @@ import {
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { AdminGuard } from '../auth/guards/admin.guard';
-import { TokenGuard } from '../auth/guards/token.guard';
 import { AddStaffMemberDto } from './dto/addStaffMember.dto';
 import { UpdatePersonDto } from './dto/updatePerson.dto';
 import { PersonService } from './person.service';
@@ -57,12 +56,6 @@ export class PersonController {
   @Get('without-card')
   async getPersonsWithoutCardAssigned() {
     return this.personService.getPersonsWithoutCardAssigned();
-  }
-
-  @UseGuards(TokenGuard)
-  @Get('card/:cardId')
-  async getPersonInfo(@Param('cardId') cardId: string) {
-    return await this.personService.getPersonInfo(cardId);
   }
 
   @UseGuards(AuthGuard('jwt'))

@@ -1,5 +1,4 @@
 import {
-  Body,
   Controller,
   Get,
   HttpCode,
@@ -11,8 +10,6 @@ import {
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { AdminGuard } from '../auth/guards/admin.guard';
-import { TokenGuard } from '../auth/guards/token.guard';
-import { EnterAttemptDto } from './dto/enterAttempt.dto';
 import { ResultService } from './result.service';
 
 @Controller('result')
@@ -45,12 +42,6 @@ export class ResultController {
   @Post('round/:roundId/enter')
   async enterRoundToWcaLive(@Param('roundId') roundId: string) {
     return await this.resultService.enterRoundToWcaLive(roundId);
-  }
-
-  @UseGuards(TokenGuard)
-  @Post('enter')
-  async enterAttempt(@Body() data: EnterAttemptDto) {
-    return await this.resultService.enterAttempt(data);
   }
 
   @UseGuards(AuthGuard('jwt'), AdminGuard)

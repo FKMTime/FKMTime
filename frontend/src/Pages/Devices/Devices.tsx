@@ -1,6 +1,6 @@
 import { Box, IconButton } from "@chakra-ui/react";
 import { useEffect, useState } from "react";
-import { MdKey, MdSettings } from "react-icons/md";
+import { MdSettings } from "react-icons/md";
 import io from "socket.io-client";
 
 import LoadingPage from "@/Components/LoadingPage";
@@ -13,7 +13,6 @@ import AvailableDevices from "@/Pages/Devices/Components/AvailableDevices.tsx";
 
 import CreateDeviceModal from "./Components/CreateDeviceModal";
 import DevicesTable from "./Components/DevicesTable";
-import GetApiTokenModal from "./Components/GetApiTokenModal";
 import UpdateDevicesSettingsModal from "./Components/UpdateDevicesSettingsModal";
 
 const Devices = () => {
@@ -26,8 +25,6 @@ const Devices = () => {
         null
     );
     const [isOpenCreateDeviceModal, setIsOpenCreateDeviceModal] =
-        useState<boolean>(false);
-    const [isOpenGetTokenModal, setIsOpenGetTokenModal] =
         useState<boolean>(false);
     const [
         isOpenUpdateDevicesSettingsModal,
@@ -111,21 +108,6 @@ const Devices = () => {
                     title="Update devices settings"
                     onClick={() => setIsOpenUpdateDevicesSettingsModal(true)}
                 />
-                <IconButton
-                    icon={<MdKey />}
-                    aria-label="Get API token"
-                    bg="white"
-                    color="black"
-                    rounded="20"
-                    width="5"
-                    height="10"
-                    _hover={{
-                        background: "white",
-                        color: "gray.700",
-                    }}
-                    title="Get API token"
-                    onClick={() => setIsOpenGetTokenModal(true)}
-                />
             </Box>
             <DevicesTable devices={devices} fetchData={fetchData} />
             <AvailableDevices
@@ -141,10 +123,6 @@ const Devices = () => {
             <UpdateDevicesSettingsModal
                 isOpen={isOpenUpdateDevicesSettingsModal}
                 onClose={() => setIsOpenUpdateDevicesSettingsModal(false)}
-            />
-            <GetApiTokenModal
-                isOpen={isOpenGetTokenModal}
-                handleClose={() => setIsOpenGetTokenModal(false)}
             />
         </Box>
     );
