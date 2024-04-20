@@ -73,7 +73,6 @@ export const updateDevicesSettings = async (
     id: string,
     data: {
         shouldUpdateDevices: boolean;
-        releaseChannel: string;
         wifiSsid?: string;
         wifiPassword?: string;
     }

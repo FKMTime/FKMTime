@@ -30,7 +30,6 @@ export interface Competition {
     name: string;
     sendResultsToWcaLive: boolean;
     shouldUpdateDevices: boolean;
-    releaseChannel: ReleaseChannel;
     shortName: string;
     countryIso2: string;
     scoretakingToken?: string;
@@ -40,12 +39,6 @@ export interface Competition {
     wcif: WCIF;
     createdAt?: Date;
     updatedAt?: Date;
-}
-
-//eslint-disable-next-line
-export enum ReleaseChannel {
-    STABLE = "STABLE",
-    PRE_RELEASE = "PRE_RELEASE",
 }
 
 export interface Room {
@@ -191,13 +184,6 @@ export interface QuickAction {
     name: string;
     comment?: string;
     giveExtra: boolean;
-}
-
-export interface GroupAssigment {
-    groupId: number;
-    activityCode: string;
-    groupName: string;
-    activityName: string;
 }
 
 export interface WCACompetition {

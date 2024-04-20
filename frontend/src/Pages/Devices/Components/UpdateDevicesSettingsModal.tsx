@@ -13,12 +13,11 @@ import { MdKey, MdWifi } from "react-icons/md";
 
 import { Modal } from "@/Components/Modal";
 import PasswordInput from "@/Components/PasswordInput.tsx";
-import Select from "@/Components/Select";
 import {
     getCompetitionSettings,
     updateDevicesSettings,
 } from "@/logic/competition";
-import { Competition, ReleaseChannel } from "@/logic/interfaces";
+import { Competition } from "@/logic/interfaces";
 
 interface UpdateDevicesSettingsModalProps {
     isOpen: boolean;
@@ -47,7 +46,6 @@ const UpdateDevicesSettingsModal = ({
         if (!competition) return;
         const status = await updateDevicesSettings(competition.id, {
             shouldUpdateDevices: competition.shouldUpdateDevices,
-            releaseChannel: competition.releaseChannel,
             wifiSsid: competition.wifiSsid,
             wifiPassword: competition.wifiPassword,
         });
@@ -100,22 +98,6 @@ const UpdateDevicesSettingsModal = ({
                         Update devices (turn it off if competition is in
                         progress)
                     </Checkbox>
-                </FormControl>
-                <FormControl display="flex" flexDirection="column" gap="2">
-                    <FormLabel>Release channel</FormLabel>
-                    <Select
-                        value={competition.releaseChannel}
-                        onChange={(event) => {
-                            setCompetition({
-                                ...competition,
-                                releaseChannel: event?.target
-                                    .value as ReleaseChannel,
-                            });
-                        }}
-                    >
-                        <option value="STABLE">Stable</option>
-                        <option value="PRE_RELEASE">Pre-release</option>
-                    </Select>
                 </FormControl>
                 <FormControl display="flex" flexDirection="column" gap="2">
                     <FormLabel display="flex" gap="2" alignItems="center">
