@@ -1,4 +1,4 @@
-version: '3'
+version: "3"
 
 services:
   backend:
@@ -8,15 +8,22 @@ services:
     container_name: fkmtime-dev-backend
     network_mode: "host"
     volumes:
-      - ./backend:/app
+      - ./backend/src:/app/src
+      - socket:/app/socket.sock
     restart: unless-stopped
     environment:
       - DATABASE_URL=postgres://root:password@127.0.0.1:5432/fkm_time
       - WCA_LIVE_API_ORIGIN=http://0.0.0.0:3001/api
       - WCA_ORIGIN=http://0.0.0.0:3000
+      - SOCKET_PATH=/app/socket.sock
     depends_on:
       database:
         condition: service_healthy
+    healthcheck:
+      test: [ "CMD-SHELL", "curl -f http://localhost:5000/health || exit 1"]
+      interval: 5s
+      timeout: 20s
+      retries: 50
 
   frontend:
     build:
@@ -24,17 +31,17 @@ services:
       dockerfile: Dockerfile.dev
     container_name: fkmtime-dev-frontend
     volumes:
-      - ./frontend:/app
+      - ./frontend/src:/app/src
     ports:
-      - '5173:5173'
+      - "5173:5173"
     restart: unless-stopped
 
   database:
     image: postgres:16
     container_name: fkmtime-dev-database
     ports:
-      - '5432:5432'
-    restart: unless-stopped 
+      - "5432:5432"
+    restart: unless-stopped
     environment:
       - POSTGRES_USER=root
       - POSTGRES_PASSWORD=password
@@ -42,20 +49,23 @@ services:
     volumes:
       - database:/var/lib/postgresql/data
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -d postgres" ]
+      test: ["CMD-SHELL", "pg_isready -d postgres"]
       interval: 5s
       timeout: 20s
       retries: 50
 
   api_tester:
     build:
-      context: ./backend/api_tester
+      context: ./backend/api-tester
       dockerfile: Dockerfile.dev
     container_name: fkmtime-dev-api-tester
     expose:
-      - '5001:5001'
+      - "5001:5001"
+    environment:
+      - SOCKET_PATH=/app/socket.sock
     volumes:
-      - ./api_tester:/app
+      - ./backend/api-tester/src:/app/src
+      - socket:/app/socket.sock
     restart: unless-stopped
     depends_on:
       backend:
@@ -63,3 +73,4 @@ services:
 
 volumes:
   database:
+  socket:
