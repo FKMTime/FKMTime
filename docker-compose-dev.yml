@@ -1,5 +1,3 @@
-version: "3"
-
 services:
   backend:
     build:
@@ -9,7 +7,7 @@ services:
     network_mode: "host"
     volumes:
       - ./backend/src:/app/src
-      - sock:/app/sock
+      - /tmp/sock:/app/sock
     restart: unless-stopped
     environment:
       - DATABASE_URL=postgres://root:password@127.0.0.1:5432/fkm_time
@@ -65,7 +63,7 @@ services:
       - SOCKET_PATH=/app/sock/socket.sock
     volumes:
       - ./backend/api-tester/src:/app/src
-      - sock:/app/sock
+      - /tmp/sock:/app/sock
     restart: unless-stopped
     depends_on:
       backend:
@@ -73,4 +71,3 @@ services:
 
 volumes:
   database:
-  sock:

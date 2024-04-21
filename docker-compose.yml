@@ -1,5 +1,3 @@
-version: '3'
-
 services:
   backend:
     image: filipton/fkmtime-backend:latest
@@ -12,8 +10,11 @@ services:
     restart: unless-stopped
     environment:
       - DATABASE_URL=postgres://root:password@database:5432/fkm_time
+      - SOCKET_PATH=/app/sock/socket.sock
     env_file:
       - .env
+    volumes:
+      - sock:/app/sock
     healthcheck:
       test: [ "CMD-SHELL", "curl -f http://localhost:5000/health || exit 1"]
       interval: 5s
@@ -77,3 +78,4 @@ services:
 
 volumes:
   database:
+  sock:
