@@ -57,7 +57,7 @@ services:
       context: ./backend/api-tester
       dockerfile: Dockerfile.dev
     container_name: fkmtime-dev-api-tester
-    expose:
+    ports:
       - "5001:5001"
     environment:
       - SOCKET_PATH=/app/sock/socket.sock
