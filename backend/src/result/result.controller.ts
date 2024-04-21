@@ -1,5 +1,6 @@
 import {
   Controller,
+  Delete,
   Get,
   HttpCode,
   HttpStatus,
@@ -35,6 +36,13 @@ export class ResultController {
   @Get(':id')
   async getResultById(@Param('id') id: string) {
     return await this.resultService.getResultById(id);
+  }
+
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @UseGuards(AuthGuard('jwt'), AdminGuard)
+  @Delete(':id')
+  async deleteResultById(@Param('id') id: string) {
+    return await this.resultService.deleteResultById(id);
   }
 
   @HttpCode(HttpStatus.OK)

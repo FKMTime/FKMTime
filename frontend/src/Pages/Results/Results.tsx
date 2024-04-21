@@ -289,7 +289,11 @@ const Results = () => {
                 </Box>
             )}
             {results.length > 0 ? (
-                <ResultsTable results={results} maxAttempts={maxAttempts} />
+                <ResultsTable
+                    results={results}
+                    maxAttempts={maxAttempts}
+                    fetchData={fetchData}
+                />
             ) : (
                 <Heading size="lg">No results found</Heading>
             )}

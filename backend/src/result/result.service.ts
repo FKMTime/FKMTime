@@ -93,6 +93,14 @@ export class ResultService {
     });
   }
 
+  async deleteResultById(id: string) {
+    return this.prisma.result.delete({
+      where: {
+        id: id,
+      },
+    });
+  }
+
   async getAllResultsByPerson(personId: string) {
     return this.prisma.result.findMany({
       where: {

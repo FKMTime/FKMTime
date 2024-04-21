@@ -9,9 +9,14 @@ import ResultRow from "./ResultRow";
 interface ResultsTableProps {
     results: Result[];
     maxAttempts: number;
+    fetchData: (roundId: string, searchParam?: string) => void;
 }
 
-const ResultsTable = ({ results, maxAttempts }: ResultsTableProps) => {
+const ResultsTable = ({
+    results,
+    maxAttempts,
+    fetchData,
+}: ResultsTableProps) => {
     return (
         <TableContainer>
             <Table variant="simple">
@@ -35,6 +40,7 @@ const ResultsTable = ({ results, maxAttempts }: ResultsTableProps) => {
                             key={result.id}
                             result={result}
                             maxAttempts={maxAttempts}
+                            fetchData={fetchData}
                         />
                     ))}
                 </Tbody>

@@ -25,6 +25,11 @@ export const getResultById = async (id: string) => {
     };
 };
 
+export const deleteResultById = async (id: string) => {
+    const response = await backendRequest(`result/${id}`, "DELETE", true);
+    return response.status;
+};
+
 export const reSubmitScorecardToWcaLive = async (id: string) => {
     const response = await backendRequest(`result/${id}/enter`, "GET", true);
     return response.status;

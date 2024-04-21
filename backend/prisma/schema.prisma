@@ -94,7 +94,7 @@ model Attempt {
   id             String        @id @default(uuid())
   sessionId      String?
   resultId       String
-  result         Result?       @relation(fields: [resultId], references: [id])
+  result         Result?       @relation(fields: [resultId], references: [id], onDelete: Cascade)
   attemptNumber  Int
   replacedBy     Int?
   comment        String?
