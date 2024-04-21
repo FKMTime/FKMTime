@@ -9,13 +9,13 @@ services:
     network_mode: "host"
     volumes:
       - ./backend/src:/app/src
-      - socket:/app/socket.sock
+      - sock:/app/sock
     restart: unless-stopped
     environment:
       - DATABASE_URL=postgres://root:password@127.0.0.1:5432/fkm_time
       - WCA_LIVE_API_ORIGIN=http://0.0.0.0:3001/api
       - WCA_ORIGIN=http://0.0.0.0:3000
-      - SOCKET_PATH=/app/socket.sock
+      - SOCKET_PATH=/app/sock/socket.sock
     depends_on:
       database:
         condition: service_healthy
@@ -62,10 +62,10 @@ services:
     expose:
       - "5001:5001"
     environment:
-      - SOCKET_PATH=/app/socket.sock
+      - SOCKET_PATH=/app/sock/socket.sock
     volumes:
       - ./backend/api-tester/src:/app/src
-      - socket:/app/socket.sock
+      - sock:/app/sock
     restart: unless-stopped
     depends_on:
       backend:
@@ -73,4 +73,4 @@ services:
 
 volumes:
   database:
-  socket:
+  sock:
