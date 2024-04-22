@@ -22,6 +22,8 @@ router.post('/attempt/enter', (req, res) => {
   client.write(
     JSON.stringify({ type: 'EnterAttempt', tag: randomTag, data: req.body }),
   );
+  client.write(0x00);
+
   client.on('data', (data) => {
     client.end();
     res.send(data);
@@ -37,6 +39,7 @@ router.post('/device/connect', (req, res) => {
       data: req.body,
     }),
   );
+  client.write(0x00);
   client.on('data', (data) => {
     client.end();
     res.send(data);
