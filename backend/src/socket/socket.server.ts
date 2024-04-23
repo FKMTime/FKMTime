@@ -75,12 +75,7 @@ export class SocketServer {
 
   async sendInitData(socket: net.Socket) {
     this.logger.log('Sending init data to socket');
-    const wifiData = await this.socketService.getWifiSettings();
     const serverStatus = await this.socketService.getServerStatus();
-    this.sendResponse(socket, {
-      type: 'WifiSettings',
-      data: wifiData,
-    });
     this.sendResponse(socket, {
       type: 'ServerStatus',
       data: serverStatus,

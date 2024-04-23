@@ -1,4 +1,4 @@
-import { HttpException, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { AttemptStatus, AttemptType, DeviceType } from '@prisma/client';
 import { Event, Person, Round } from '@wca/helpers';
 import { DbService } from 'src/db/db.service';
@@ -163,7 +163,10 @@ export class ResultService {
       },
     });
     if (!result) {
-      throw new HttpException('Result not found', 404);
+      return {
+        message: 'Result not found',
+        status: 404,
+      };
     }
     return result;
   }
@@ -215,10 +218,18 @@ export class ResultService {
   async enterAttempt(data: EnterAttemptDto) {
     const device = await this.getStationByEspId(data.espId);
     if (!device) {
-      throw new HttpException('Device not found', 404);
+      return {
+        message: 'Device not found',
+        shouldResetTime: false,
+        status: 404,
+      };
     }
     if (!device.room.currentGroupId) {
-      throw new HttpException('No group in this room', 400);
+      return {
+        message: 'No group in this room',
+        status: 400,
+        shouldResetTime: false,
+      };
     }
     const competitor = await this.personService.getPersonByCardId(
       data.competitorId.toString(),
