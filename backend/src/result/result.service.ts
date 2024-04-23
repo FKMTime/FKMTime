@@ -166,6 +166,7 @@ export class ResultService {
       return {
         message: 'Result not found',
         status: 404,
+        error: true,
       };
     }
     return result;
@@ -222,6 +223,7 @@ export class ResultService {
         message: 'Device not found',
         shouldResetTime: false,
         status: 404,
+        error: true,
       };
     }
     if (!device.room.currentGroupId) {
@@ -229,6 +231,7 @@ export class ResultService {
         message: 'No group in this room',
         status: 400,
         shouldResetTime: false,
+        error: true,
       };
     }
     const competitor = await this.personService.getPersonByCardId(
@@ -240,6 +243,7 @@ export class ResultService {
         message: getTranslation('competitorNotFound', locale),
         shouldResetTime: true,
         status: 404,
+        error: true,
       };
     }
     locale = competitor.countryIso2;
@@ -256,6 +260,7 @@ export class ResultService {
         message: getTranslation('attemptAlreadyEntered', locale),
         shouldResetTime: false,
         status: 400,
+        error: true,
       };
     }
 
@@ -268,6 +273,7 @@ export class ResultService {
         message: getTranslation('judgeNotFound', locale),
         shouldResetTime: false,
         status: 404,
+        error: true,
       };
     }
     if (judge) {
@@ -291,6 +297,7 @@ export class ResultService {
         message: getTranslation('competitionNotFound', locale),
         shouldResetTime: true,
         status: 404,
+        error: true,
       };
     }
     const wcif = JSON.parse(JSON.stringify(competition.wcif));
@@ -313,6 +320,7 @@ export class ResultService {
         message: getTranslation('competitorIsNotSignedInForEvent', locale),
         shouldResetTime: false,
         status: 400,
+        error: true,
       };
     }
     const result = await this.getResultOrCreate(competitor.id, currentRoundId);
@@ -330,6 +338,7 @@ export class ResultService {
         message: getTranslation('cutoffNotPassed', locale),
         shouldResetTime: true,
         status: 400,
+        error: true,
       };
     }
     const sortedAttempts = getSortedStandardAttempts(attempts);
@@ -380,6 +389,7 @@ export class ResultService {
           message: getTranslation('noAttemptsLeft', locale),
           shouldResetTime: true,
           status: 400,
+          error: true,
         };
       }
       if (lastAttempt) {
@@ -462,6 +472,7 @@ export class ResultService {
         : getTranslation('attemptEnteredButReplacedToDnf', locale),
       shouldResetTime: true,
       status: 200,
+      error: false,
     };
   }
 
@@ -527,6 +538,7 @@ export class ResultService {
       message: getTranslation('delegateWasNotified', locale),
       shouldResetTime: true,
       status: 200,
+      error: true,
     };
   }
 

@@ -86,12 +86,14 @@ export class DeviceService {
       return {
         message: 'Device already exists in database',
         status: 409,
+        error: true,
       };
     }
     this.deviceGateway.handleDeviceRequest(data);
     return {
       message: 'Request sent',
       status: 200,
+      error: false,
     };
   }
 
@@ -123,12 +125,14 @@ export class DeviceService {
       return {
         message: 'Device not found',
         status: 404,
+        error: true,
       };
     }
     this.deviceGateway.handleDeviceUpdated();
     return {
       message: 'Battery percentage updated',
       status: 200,
+      error: false,
     };
   }
 

@@ -297,6 +297,7 @@ export class CompetitionService {
       return {
         message: 'Competition not found',
         status: 404,
+        error: true,
       };
     }
     const rooms = await this.prisma.room.findMany({

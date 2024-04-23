@@ -58,7 +58,7 @@ export class SocketServer {
   }
 
   private sendResponseWithTag<T>(socket: net.Socket, request: RequestDto<T>) {
-    socket.write(JSON.stringify(request) + '\0');
+    socket.write(JSON.stringify(this.parseResponse(request)) + '\0');
   }
 
   private sendResponse<T>(socket: net.Socket, response: ResponseDto<T>) {
@@ -146,5 +146,13 @@ export class SocketServer {
     } else {
       this.logger.error('Unknown request type');
     }
+  }
+
+  private parseResponse(response: RequestDto<any>) {
+    return {
+      type: response.data.error ? 'Error' : response.type,
+      data: response.data,
+      tag: response.tag,
+    };
   }
 }

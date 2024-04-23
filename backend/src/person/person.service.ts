@@ -281,6 +281,7 @@ export class PersonService {
         message: getTranslation('competitorNotFound', 'en'),
         shouldResetTime: false,
         status: 404,
+        error: true,
       };
     }
     return {
