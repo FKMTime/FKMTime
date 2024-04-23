@@ -20,13 +20,12 @@ router.post('/attempt/enter', (req, res) => {
   const randomTag = Math.floor(Math.random() * 1000);
   client = net.createConnection({ path: socketPath });
   client.write(
-    JSON.stringify({ type: 'EnterAttempt', tag: randomTag, data: req.body }),
+    JSON.stringify({ type: 'EnterAttempt', tag: randomTag, data: req.body }) + '\0'
   );
-  client.write(0x00);
 
   client.on('data', (data) => {
     client.end();
-    res.send(data);
+    res.send(data.subarray(0, data.length - 1)); // -1 because of null byte
   });
 });
 router.post('/device/connect', (req, res) => {
@@ -37,12 +36,11 @@ router.post('/device/connect', (req, res) => {
       type: 'RequestToConnectDevice',
       tag: randomTag,
       data: req.body,
-    }),
+    }) + '\0'
   );
-  client.write(0x00);
   client.on('data', (data) => {
     client.end();
-    res.send(data);
+    res.send(data.subarray(0, data.length - 1)); // -1 because of null byte
   });
 });
 
