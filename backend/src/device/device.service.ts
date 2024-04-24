@@ -102,7 +102,7 @@ export class DeviceService {
   }
 
   async updateDevice(id: string, data: DeviceDto) {
-    return this.prisma.device.update({
+    await this.prisma.device.update({
       where: { id },
       data: {
         name: data.name,
@@ -115,6 +115,11 @@ export class DeviceService {
         },
       },
     });
+    await this.socketController.sendServerStatus();
+    this.deviceGateway.handleDeviceUpdated();
+    return {
+      message: 'Device updated',
+    };
   }
 
   async updateBatteryPercentage(data: UpdateBatteryPercentageDto) {
@@ -141,8 +146,13 @@ export class DeviceService {
   }
 
   async deleteDevice(id: string) {
-    return this.prisma.device.delete({
+    await this.prisma.device.delete({
       where: { id },
     });
+    this.deviceGateway.handleDeviceUpdated();
+    await this.socketController.sendServerStatus();
+    return {
+      message: 'Device deleted',
+    };
   }
 }

@@ -14,7 +14,7 @@ import { ResultModule } from '../result/result.module';
     AuthModule,
     WcaModule,
     forwardRef(() => ResultModule),
-    SocketModule,
+    forwardRef(() => SocketModule),
   ],
   exports: [IncidentsGateway],
 })

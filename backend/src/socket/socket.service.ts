@@ -17,6 +17,7 @@ export class SocketService {
     @Inject(forwardRef(() => DeviceService))
     private readonly deviceService: DeviceService,
     private readonly attendanceService: AttendanceService,
+    @Inject(forwardRef(() => CompetitionService))
     private readonly competitionService: CompetitionService,
     private readonly personService: PersonService,
   ) {}

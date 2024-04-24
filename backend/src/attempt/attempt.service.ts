@@ -1,4 +1,4 @@
-import { HttpException, Injectable } from '@nestjs/common';
+import {forwardRef, HttpException, Inject, Injectable} from '@nestjs/common';
 import { AttemptStatus } from '@prisma/client';
 import { DbService } from '../db/db.service';
 import { ResultService } from '../result/result.service';
@@ -14,7 +14,9 @@ export class AttemptService {
     private readonly prisma: DbService,
     private readonly wcaService: WcaService,
     private readonly incidentsGateway: IncidentsGateway,
+    @Inject(forwardRef(() => ResultService))
     private readonly resultService: ResultService,
+    @Inject(forwardRef(() => SocketController))
     private readonly socketController: SocketController,
   ) {}
 

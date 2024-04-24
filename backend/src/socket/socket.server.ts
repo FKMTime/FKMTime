@@ -58,16 +58,21 @@ export class SocketServer {
   }
 
   private sendResponseWithTag<T>(socket: net.Socket, request: RequestDto<T>) {
+    this.logger.log(
+      `Sending response of type ${request.type} to socket, tag ${request.tag}, data ${JSON.stringify(request.data)}`,
+    );
     socket.write(JSON.stringify(this.parseResponse(request)) + '\0');
   }
 
   private sendResponse<T>(socket: net.Socket, response: ResponseDto<T>) {
-    this.logger.log('Sending response to socket');
+    this.logger.log(
+      `Sending response of type ${response.type} to socket, data ${JSON.stringify(response.data)}`,
+    );
     socket.write(JSON.stringify(response) + '\0');
   }
 
   sendToAll<T>(response: ResponseDto<T>) {
-    this.logger.log('Sending response to all connected sockets');
+    this.logger.log(`Sending ${response.type} to all connected sockets`);
     this.connectedSockets.forEach((socket) => {
       socket.write(JSON.stringify(response) + '\0');
     });
@@ -83,7 +88,6 @@ export class SocketServer {
   }
 
   async sendServerStatus() {
-    this.logger.log('Sending server status to all connected sockets');
     const serverStatus = await this.socketService.getServerStatus();
     this.sendToAll({
       type: 'ServerStatus',

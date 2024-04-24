@@ -1,4 +1,4 @@
-import { HttpException, Injectable } from '@nestjs/common';
+import {forwardRef, HttpException, Inject, Injectable} from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { Room, StaffRole } from '@prisma/client';
 import {
@@ -12,6 +12,7 @@ import {
 } from '@wca/helpers';
 import { DbService } from '../db/db.service';
 import { eventsData } from '../events';
+import { SocketController } from '../socket/socket.controller';
 import { WcaService } from '../wca/wca.service';
 import { CompetitionGateway } from './competition.gateway';
 import { UpdateCompetitionDto } from './dto/updateCompetition.dto';
@@ -24,6 +25,8 @@ export class CompetitionService {
     private readonly prisma: DbService,
     private readonly competitionGateway: CompetitionGateway,
     private readonly wcaService: WcaService,
+    @Inject(forwardRef(() => SocketController))
+    private readonly socketController: SocketController,
   ) {}
 
   async importCompetition(wcaId: string, userId: string) {
@@ -241,6 +244,7 @@ export class CompetitionService {
         }),
       );
     }
+    await this.socketController.sendServerStatus();
     return this.prisma.$transaction(transactions);
   }
 
