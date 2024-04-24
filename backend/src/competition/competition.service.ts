@@ -382,7 +382,7 @@ export class CompetitionService {
   }
 
   async updateDevicesSettings(id: string, data: UpdateDevicesSettingsDto) {
-    return this.prisma.competition.update({
+    await this.prisma.competition.update({
       where: {
         id: id,
       },
@@ -392,6 +392,10 @@ export class CompetitionService {
         wifiPassword: data.wifiPassword,
       },
     });
+    await this.socketController.sendServerStatus();
+    return {
+      message: 'Devices settings updated',
+    };
   }
 
   @Cron(CronExpression.EVERY_5_MINUTES)
