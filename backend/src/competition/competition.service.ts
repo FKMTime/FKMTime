@@ -1,4 +1,4 @@
-import {forwardRef, HttpException, Inject, Injectable} from '@nestjs/common';
+import { forwardRef, HttpException, Inject, Injectable } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { Room, StaffRole } from '@prisma/client';
 import {
@@ -244,8 +244,11 @@ export class CompetitionService {
         }),
       );
     }
+    await this.prisma.$transaction(transactions);
     await this.socketController.sendServerStatus();
-    return this.prisma.$transaction(transactions);
+    return {
+      message: 'Rooms updated',
+    };
   }
 
   async getCompetitionStatistics() {

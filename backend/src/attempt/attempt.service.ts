@@ -1,4 +1,4 @@
-import {forwardRef, HttpException, Inject, Injectable} from '@nestjs/common';
+import { forwardRef, HttpException, Inject, Injectable } from '@nestjs/common';
 import { AttemptStatus } from '@prisma/client';
 import { DbService } from '../db/db.service';
 import { ResultService } from '../result/result.service';
