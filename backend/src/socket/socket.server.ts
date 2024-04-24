@@ -163,7 +163,7 @@ export class SocketServer {
 
   private parseResponse(response: RequestDto<any>) {
     return {
-      type: response.data.error ? 'Error' : 'Success',
+      type: response.data.error ? 'Error' : response.type,
       data: response.data,
       tag: response.tag,
     };
