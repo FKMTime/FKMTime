@@ -99,13 +99,25 @@ const Layout = () => {
                     if (permission === "granted") {
                         if (isMobile()) {
                             navigator.serviceWorker.ready.then(
-                                (registration) => {
-                                    registration.showNotification(
-                                        "Group should be changed",
-                                        {
-                                            body: data.message,
-                                        }
-                                    );
+                                async (registration) => {
+                                    if (
+                                        await registration
+                                            .getNotifications({
+                                                tag: `groupShouldBeChanged`,
+                                            })
+                                            .then(
+                                                (notifications) =>
+                                                    notifications.length === 0
+                                            )
+                                    ) {
+                                        await registration.showNotification(
+                                            "Group should be changed",
+                                            {
+                                                body: data.message,
+                                                tag: "groupShouldBeChanged",
+                                            }
+                                        );
+                                    }
                                 }
                             );
                         } else {

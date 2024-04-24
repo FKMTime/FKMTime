@@ -11,8 +11,10 @@ services:
     restart: unless-stopped
     environment:
       - DATABASE_URL=postgres://root:password@127.0.0.1:5432/fkm_time
-      - WCA_LIVE_API_ORIGIN=http://0.0.0.0:3001/api
+      - WCA_LIVE_API_ORIGIN=http://0.0.0.0:4000/api
       - WCA_ORIGIN=http://0.0.0.0:3000
+      - WCA_CLIENT_ID=example-application-id
+      - WCA_CLIENT_SECRET=example-secret
       - SOCKET_PATH=/app/sock/socket.sock
     depends_on:
       database:
