@@ -160,21 +160,23 @@ export class CompetitionService {
       });
     }
     const activitiesTransactions = [];
+    const persons = await this.prisma.person.findMany();
     wcifPublic.persons.forEach((person: Person) => {
       person.assignments.forEach((assignment: Assignment) => {
         const group = this.getGroupInfoByActivityId(
           assignment.activityId,
           wcifPublic,
         );
+        const personData = persons.find(
+          (p) => p.registrantId === person.registrantId,
+        );
         activitiesTransactions.push(
           this.prisma.staffActivity.upsert({
             where: {
               personId_groupId_role: {
                 groupId: group.activityCode,
-                personId: person.wcaId,
-                role: this.wcifRoleToAttendanceRole(
-                  assignment.assignmentCode,
-                ) as StaffRole,
+                personId: personData.id,
+                role: this.wcifRoleToAttendanceRole(assignment.assignmentCode),
               },
             },
             update: {

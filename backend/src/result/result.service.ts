@@ -247,6 +247,11 @@ export class ResultService {
         error: true,
       };
     }
+    await this.attendanceService.markCompetitorAsPresent(
+      competitor.id,
+      device.room.currentGroupId,
+      device.id,
+    );
     locale = competitor.countryIso2;
 
     const previousAttemptWithSameSessionId =

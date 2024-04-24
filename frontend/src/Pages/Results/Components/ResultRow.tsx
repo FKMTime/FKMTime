@@ -6,7 +6,7 @@ import { useNavigate } from "react-router-dom";
 
 import Alert from "@/Components/Alert.tsx";
 import { isAdmin } from "@/logic/auth";
-import { average, best } from "@/logic/average";
+import { average, formattedBest } from "@/logic/average";
 import { Result } from "@/logic/interfaces";
 import {
     attemptWithPenaltyToString,
@@ -79,7 +79,7 @@ const ResultRow = ({ result, maxAttempts, fetchData }: ResultRowProps) => {
                 <Td>
                     {calculatedAverage ? resultToString(calculatedAverage) : ""}
                 </Td>
-                <Td>{resultToString(best(submittedAttempts))}</Td>
+                <Td>{formattedBest(submittedAttempts)}</Td>
                 {isAdmin() && (
                     <Td>
                         <IconButton

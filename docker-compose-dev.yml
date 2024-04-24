@@ -4,13 +4,13 @@ services:
       context: ./backend
       dockerfile: Dockerfile.dev
     container_name: fkmtime-dev-backend
-    network_mode: "host"
+    network_mode: host
     volumes:
       - ./backend/src:/app/src
       - /tmp/sock:/app/sock
     restart: unless-stopped
     environment:
-      - DATABASE_URL=postgres://root:password@127.0.0.1:5432/fkm_time
+      - DATABASE_URL=postgres://root:password@127.0.0.1:5433/fkm_time
       - WCA_LIVE_API_ORIGIN=http://0.0.0.0:4000/api
       - WCA_ORIGIN=http://0.0.0.0:3000
       - WCA_CLIENT_ID=example-application-id
@@ -40,7 +40,7 @@ services:
     image: postgres:16
     container_name: fkmtime-dev-database
     ports:
-      - "5432:5432"
+      - "5433:5432"
     restart: unless-stopped
     environment:
       - POSTGRES_USER=root

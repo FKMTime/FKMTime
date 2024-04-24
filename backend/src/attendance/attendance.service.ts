@@ -53,6 +53,47 @@ export class AttendanceService {
     return attendance;
   }
 
+  async markCompetitorAsPresent(
+    competitorId: string,
+    groupId: string,
+    deviceId: string,
+  ) {
+    await this.prisma.staffActivity.upsert({
+      where: {
+        personId_groupId_role: {
+          groupId: groupId,
+          personId: competitorId,
+          role: 'COMPETITOR',
+        },
+      },
+      update: {
+        device: {
+          connect: {
+            id: deviceId,
+          },
+        },
+        isPresent: true,
+      },
+      create: {
+        groupId: groupId,
+        person: {
+          connect: {
+            id: competitorId,
+          },
+        },
+        device: {
+          connect: {
+            id: deviceId,
+          },
+        },
+        role: 'COMPETITOR',
+        isPresent: true,
+        isAssigned: false,
+      },
+    });
+    this.attendanceGateway.handleNewAttendance(groupId, competitorId);
+  }
+
   async markJudgeAsPresent(judgeId: string, groupId: string, deviceId: string) {
     await this.prisma.staffActivity.upsert({
       where: {
