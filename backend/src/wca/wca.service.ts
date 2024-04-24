@@ -60,30 +60,32 @@ export class WcaService {
     if (!competition.sendResultsToWcaLive) {
       return;
     }
-    const response = await fetch(`${WCA_LIVE_API_ORIGIN}/enter-results`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${scoretakingToken}`,
-      },
-      body: JSON.stringify({
-        competitionWcaId: competitionId,
-        eventId: eventId,
-        roundNumber: roundNumber,
-        results: results,
-      }),
-    });
-    const data = await response.json();
-    this.wcaLiveLogger.log(
-      `Sending scorecard to WCA Live: ${eventId}-r${roundNumber} status ${response.status} data ${JSON.stringify(data)}`,
-    );
-    if (response.status !== 200) {
-      throw new HttpException('WCA Live error', 500);
-    } else {
-      return {
-        message: 'Scorecard submitted',
-      };
+    try {
+      const response = await fetch(`${WCA_LIVE_API_ORIGIN}/enter-results`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${scoretakingToken}`,
+        },
+        body: JSON.stringify({
+          competitionWcaId: competitionId,
+          eventId: eventId,
+          roundNumber: roundNumber,
+          results: results,
+        }),
+      });
+      const data = await response.json();
+      this.wcaLiveLogger.log(
+        `Sending scorecard to WCA Live: ${eventId}-r${roundNumber} status ${response.status} data ${JSON.stringify(data)}`,
+      );
+    } catch (err) {
+      this.wcaLiveLogger.error(
+        `Error sending scorecard to WCA Live: ${eventId}-r${roundNumber} error ${err}`,
+      );
     }
+    return {
+      message: 'Scorecard submitted',
+    };
   }
 
   async enterRoundToWcaLive(results: any) {
