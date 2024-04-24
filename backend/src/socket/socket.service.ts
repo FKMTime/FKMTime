@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { forwardRef, Inject, Injectable } from '@nestjs/common';
 import { AttendanceService } from '../attendance/attendance.service';
 import { CreateAttendaceDto } from '../attendance/dto/createAttendance.dto';
 import { CompetitionService } from '../competition/competition.service';
@@ -12,7 +12,9 @@ import { ResultService } from '../result/result.service';
 @Injectable()
 export class SocketService {
   constructor(
+    @Inject(forwardRef(() => ResultService))
     private readonly resultService: ResultService,
+    @Inject(forwardRef(() => DeviceService))
     private readonly deviceService: DeviceService,
     private readonly attendanceService: AttendanceService,
     private readonly competitionService: CompetitionService,

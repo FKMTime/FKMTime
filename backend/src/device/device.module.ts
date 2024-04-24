@@ -1,5 +1,6 @@
-import { Module } from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
 import { AuthModule } from '../auth/auth.module';
+import { SocketModule } from '../socket/socket.module';
 import { DeviceController } from './device.controller';
 import { DeviceGateway } from './device.gateway';
 import { DeviceService } from './device.service';
@@ -8,6 +9,6 @@ import { DeviceService } from './device.service';
   providers: [DeviceService, DeviceGateway],
   controllers: [DeviceController],
   exports: [DeviceService],
-  imports: [AuthModule],
+  imports: [AuthModule, forwardRef(() => SocketModule)],
 })
 export class DeviceModule {}

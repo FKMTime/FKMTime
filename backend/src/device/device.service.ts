@@ -1,6 +1,7 @@
-import { HttpException, Injectable } from '@nestjs/common';
+import { forwardRef, HttpException, Inject, Injectable } from '@nestjs/common';
 import { DeviceType } from '@prisma/client';
 import { DbService } from '../db/db.service';
+import { SocketController } from '../socket/socket.controller';
 import { DeviceGateway } from './device.gateway';
 import { DeviceDto } from './dto/device.dto';
 import { RequestToConnectDto } from './dto/requestToConnect.dto';
@@ -11,6 +12,8 @@ export class DeviceService {
   constructor(
     private readonly prisma: DbService,
     private readonly deviceGateway: DeviceGateway,
+    @Inject(forwardRef(() => SocketController))
+    private readonly socketController: SocketController,
   ) {}
 
   async getAllDevices(type?: DeviceType) {
@@ -59,6 +62,7 @@ export class DeviceService {
       },
     });
     this.deviceGateway.handleAddDeviceToDb(data.espId);
+    await this.socketController.sendServerStatus();
     return {
       message: 'Device created',
     };

@@ -82,6 +82,15 @@ export class SocketServer {
     });
   }
 
+  async sendServerStatus() {
+    this.logger.log('Sending server status to all connected sockets');
+    const serverStatus = await this.socketService.getServerStatus();
+    this.sendToAll({
+      type: 'ServerStatus',
+      data: serverStatus,
+    });
+  }
+
   private async parsePacket(socket: net.Socket, request: RequestDto<any>) {
     this.logger.log(
       `Received request of type ${request.type}, tag ${request.tag}, data ${JSON.stringify(request.data)}`,

@@ -23,4 +23,8 @@ export class SocketController implements OnModuleInit, OnModuleDestroy {
   sendResponseToAllSockets(data: any) {
     this.socketServer.sendToAll(data);
   }
+
+  async sendServerStatus() {
+    await this.socketServer.sendServerStatus();
+  }
 }
