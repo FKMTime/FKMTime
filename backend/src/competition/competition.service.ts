@@ -4,7 +4,6 @@ import { Room, StaffRole } from '@prisma/client';
 import {
   Activity,
   Assignment,
-  Competition,
   Event,
   Person,
   Room as WCIFRoom,
@@ -14,6 +13,10 @@ import { DbService } from '../db/db.service';
 import { eventsData } from '../events';
 import { SocketController } from '../socket/socket.controller';
 import { WcaService } from '../wca/wca.service';
+import {
+  getGroupInfoByActivityId,
+  wcifRoleToAttendanceRole,
+} from '../wcif-helpers';
 import { CompetitionGateway } from './competition.gateway';
 import { UpdateCompetitionDto } from './dto/updateCompetition.dto';
 import { UpdateRoomsDto } from './dto/updateCurrentRound.dto';
@@ -71,7 +74,7 @@ export class CompetitionService {
 
     wcifPublic.persons.forEach((person: Person) => {
       person.assignments.forEach((assignment: Assignment) => {
-        const group = this.getGroupInfoByActivityId(
+        const group = getGroupInfoByActivityId(
           assignment.activityId,
           wcifPublic,
         );
@@ -83,7 +86,7 @@ export class CompetitionService {
                   registrantId: person.registrantId,
                 },
               },
-              role: this.wcifRoleToAttendanceRole(assignment.assignmentCode),
+              role: wcifRoleToAttendanceRole(assignment.assignmentCode),
               groupId: group.activityCode,
               isAssigned: true,
             },
@@ -163,7 +166,7 @@ export class CompetitionService {
     const persons = await this.prisma.person.findMany();
     wcifPublic.persons.forEach((person: Person) => {
       person.assignments.forEach((assignment: Assignment) => {
-        const group = this.getGroupInfoByActivityId(
+        const group = getGroupInfoByActivityId(
           assignment.activityId,
           wcifPublic,
         );
@@ -176,7 +179,7 @@ export class CompetitionService {
               personId_groupId_role: {
                 groupId: group.activityCode,
                 personId: personData.id,
-                role: this.wcifRoleToAttendanceRole(assignment.assignmentCode),
+                role: wcifRoleToAttendanceRole(assignment.assignmentCode),
               },
             },
             update: {
@@ -188,7 +191,7 @@ export class CompetitionService {
                   registrantId: person.registrantId,
                 },
               },
-              role: this.wcifRoleToAttendanceRole(
+              role: wcifRoleToAttendanceRole(
                 assignment.assignmentCode,
               ) as StaffRole,
               groupId: group.activityCode,
@@ -436,37 +439,5 @@ export class CompetitionService {
         });
       });
     });
-  }
-
-  getGroupInfoByActivityId(activityId: number, wcif: Competition) {
-    let groupInfo: Activity | null = null;
-    wcif.schedule.venues.forEach((venue) => {
-      venue.rooms.forEach((room) => {
-        room.activities.forEach((activity) => {
-          if (activity.id === activityId) {
-            groupInfo = activity;
-          }
-          activity.childActivities.forEach((childActivity) => {
-            if (childActivity.id === activityId) {
-              groupInfo = childActivity;
-            }
-          });
-        });
-      });
-    });
-    return groupInfo as Activity | null;
-  }
-
-  private wcifRoleToAttendanceRole(role: string) {
-    switch (role) {
-      case 'staff-judge':
-        return 'JUDGE';
-      case 'staff-runner':
-        return 'RUNNER';
-      case 'staff-scrambler':
-        return 'SCRAMBLER';
-      default:
-        return 'COMPETITOR';
-    }
   }
 }
