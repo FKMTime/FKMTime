@@ -389,7 +389,7 @@ export class ResultService {
     if (!extraEntered) {
       let attemptNumber = 1;
       const maxAttempts = roundInfo.format === 'a' ? 5 : 3;
-      const lastAttempt = sortedAttempts[sortedAttempts.length - 1];
+      let lastAttempt = sortedAttempts[sortedAttempts.length - 1];
       if (lastAttempt && lastAttempt.attemptNumber === maxAttempts) {
         return {
           message: getTranslation('noAttemptsLeft', locale),
@@ -401,7 +401,7 @@ export class ResultService {
       if (lastAttempt) {
         attemptNumber = lastAttempt.attemptNumber + 1;
       }
-      await this.prisma.attempt.create({
+      const attempt = await this.prisma.attempt.create({
         data: {
           attemptNumber: attemptNumber,
           sessionId: data.sessionId,
@@ -432,6 +432,9 @@ export class ResultService {
           },
         },
       });
+      if (!lastAttempt) {
+        lastAttempt = attempt;
+      }
       if (data.isDelegate) {
         return this.notifyDelegate(
           device.name,
@@ -542,9 +545,8 @@ export class ResultService {
     );
     return {
       message: getTranslation('delegateWasNotified', locale),
-      shouldResetTime: true,
       status: 200,
-      error: true,
+      error: false,
     };
   }
 
