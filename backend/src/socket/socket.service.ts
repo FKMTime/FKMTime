@@ -6,6 +6,7 @@ import { DeviceService } from '../device/device.service';
 import { RequestToConnectDto } from '../device/dto/requestToConnect.dto';
 import { UpdateBatteryPercentageDto } from '../device/dto/updateBatteryPercentage.dto';
 import { PersonService } from '../person/person.service';
+import { CheckIfAttemptEnteredDto } from '../result/dto/checkIfAttemptEntered.dto';
 import { EnterAttemptDto } from '../result/dto/enterAttempt.dto';
 import { ResultService } from '../result/result.service';
 
@@ -48,5 +49,9 @@ export class SocketService {
 
   async getPersonInfo(cardId: string) {
     return await this.personService.getPersonInfo(cardId);
+  }
+
+  async checkIfAttemptEntered(data: CheckIfAttemptEnteredDto) {
+    return await this.resultService.checkIfAttemptEntered(data);
   }
 }

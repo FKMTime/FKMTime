@@ -8,6 +8,7 @@ import { AttendanceService } from '../attendance/attendance.service';
 import { DeviceService } from '../device/device.service';
 import { PersonService } from '../person/person.service';
 import { WcaService } from '../wca/wca.service';
+import { CheckIfAttemptEnteredDto } from './dto/checkIfAttemptEntered.dto';
 import { EnterAttemptDto } from './dto/enterAttempt.dto';
 import {
   checkAttemptLimit,
@@ -171,6 +172,18 @@ export class ResultService {
       };
     }
     return result;
+  }
+
+  async checkIfAttemptEntered(data: CheckIfAttemptEnteredDto) {
+    const attempt = await this.prisma.attempt.findFirst({
+      where: {
+        sessionId: data.sessionId,
+        device: {
+          espId: data.espId,
+        },
+      },
+    });
+    return !!attempt;
   }
 
   async enterWholeScorecardToWcaLive(resultId: string) {

@@ -156,6 +156,15 @@ export class SocketServer {
         tag: request.tag,
         data: responseData,
       });
+    } else if (request.type === 'CheckTimeEntry') {
+      const responseData = await this.socketService.checkIfAttemptEntered(
+        request.data,
+      );
+      this.sendResponseWithTag(socket, {
+        type: 'CheckTimeEntry',
+        tag: request.tag,
+        data: responseData,
+      });
     } else {
       this.logger.error('Unknown request type');
     }
@@ -163,9 +172,10 @@ export class SocketServer {
 
   private parseResponse(response: RequestDto<any>) {
     return {
-      type: response.data.error ? 'Error' : response.type,
+      type: response.data.error ? 'Error' : response.type + 'Resp',
       data: response.data,
       tag: response.tag,
+      error: response.data.error,
     };
   }
 }
