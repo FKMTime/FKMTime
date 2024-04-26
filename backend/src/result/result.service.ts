@@ -230,6 +230,26 @@ export class ResultService {
     });
   }
 
+  async updateResolvedIncident(attemptId: string, judgeCardId: string) {
+    await this.prisma.attempt.update({
+      where: {
+        id: attemptId,
+      },
+      data: {
+        judge: {
+          connect: {
+            cardId: judgeCardId,
+          },
+        },
+      },
+    });
+    return {
+      message: 'Attempt updated',
+      status: 200,
+      error: false,
+    };
+  }
+
   async enterAttempt(data: EnterAttemptDto) {
     const device = await this.getStationByEspId(data.espId);
     if (!device) {
@@ -275,6 +295,12 @@ export class ResultService {
         },
       });
     if (previousAttemptWithSameSessionId) {
+      if (previousAttemptWithSameSessionId.status === AttemptStatus.RESOLVED) {
+        return this.updateResolvedIncident(
+          previousAttemptWithSameSessionId.id,
+          data.judgeId.toString(),
+        );
+      }
       return {
         message: getTranslation('attemptAlreadyEntered', locale),
         shouldResetTime: false,
