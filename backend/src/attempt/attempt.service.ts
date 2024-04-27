@@ -152,7 +152,10 @@ export class AttemptService {
       }
     }
     this.incidentsGateway.handleAttemptUpdated();
-    if (attemptToUpdate.status === AttemptStatus.UNRESOLVED) {
+    if (
+      attemptToUpdate.status === AttemptStatus.UNRESOLVED &&
+      attempt.status !== AttemptStatus.UNRESOLVED
+    ) {
       this.socketController.sendResponseToAllSockets({
         type: 'IncidentResolved',
         data: {

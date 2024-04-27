@@ -150,8 +150,7 @@ export class WcaService {
         const extraAttempt = this.getExtra(attempt.id, sortedAttempts);
         if (
           extraAttempt &&
-          !attemptsToReturn.some((a) => a.id === extraAttempt.id) &&
-          extraAttempt.status === AttemptStatus.STANDARD
+          !attemptsToReturn.some((a) => a.id === extraAttempt.id)
         ) {
           attemptsToReturn.push({
             ...extraAttempt,

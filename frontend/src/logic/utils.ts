@@ -183,8 +183,7 @@ export const getSubmittedAttempts = (attempts: Attempt[]) => {
                 const extraAttempt = getExtra(attempt.id, attempts);
                 if (
                     extraAttempt &&
-                    !attemptsToReturn.some((a) => a.id === extraAttempt.id) &&
-                    extraAttempt.status === AttemptStatus.STANDARD
+                    !attemptsToReturn.some((a) => a.id === extraAttempt.id)
                 ) {
                     attemptsToReturn.push({
                         ...extraAttempt,
