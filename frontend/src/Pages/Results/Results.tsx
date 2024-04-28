@@ -8,7 +8,7 @@ import {
     Text,
     useToast,
 } from "@chakra-ui/react";
-import { Event, Round } from "@wca/helpers";
+import { activityCodeToName, Event, Round } from "@wca/helpers";
 import { useAtom } from "jotai";
 import { ChangeEvent, useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
@@ -31,7 +31,6 @@ import {
     getCutoffByRoundId,
     getLimitByRoundId,
     getNumberOfAttemptsForRound,
-    getRoundNameById,
 } from "@/logic/utils";
 
 import CreateAttemptModal from "./Components/CreateAttemptModal";
@@ -242,7 +241,7 @@ const Results = () => {
                             navigate(`/results/round/${roundId}`);
                         }}
                     >
-                        {getRoundNameById(roundId, competition.wcif)}
+                        {activityCodeToName(roundId)}
                     </Button>
                 ))}
             </Box>

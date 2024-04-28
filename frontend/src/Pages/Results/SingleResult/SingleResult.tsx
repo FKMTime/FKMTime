@@ -7,6 +7,7 @@ import {
     Text,
     useToast,
 } from "@chakra-ui/react";
+import { activityCodeToName } from "@wca/helpers";
 import { useAtom } from "jotai";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
@@ -23,7 +24,6 @@ import {
     getCutoffByRoundId,
     getLimitByRoundId,
     getNumberOfAttemptsForRound,
-    getRoundNameById,
     getSubmittedAttempts,
     isThereADifferenceBetweenResults,
     regionNameByIso2,
@@ -185,7 +185,7 @@ const SingleResult = () => {
                 </Alert>
             )}
             <Heading mt={3}>
-                Limits for {getRoundNameById(result.roundId, competition?.wcif)}
+                Limits for {activityCodeToName(result.roundId)}
             </Heading>
             <Text fontSize="xl">
                 Cutoff:{" "}

@@ -1,18 +1,17 @@
 import { IconButton, Link, Td, Tr } from "@chakra-ui/react";
-import { Competition } from "@wca/helpers";
+import { activityCodeToName } from "@wca/helpers";
 import { FaList } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 
 import { Incident } from "@/logic/interfaces.ts";
 import { attemptWithPenaltyToString } from "@/logic/resultFormatters.ts";
-import { getRoundNameById, prettyAttemptStatus } from "@/logic/utils.ts";
+import { prettyAttemptStatus } from "@/logic/utils.ts";
 
 interface ResolvedIncidentRowProps {
     incident: Incident;
-    wcif: Competition;
 }
 
-const ResolvedIncidentRow = ({ incident, wcif }: ResolvedIncidentRowProps) => {
+const ResolvedIncidentRow = ({ incident }: ResolvedIncidentRowProps) => {
     const navigate = useNavigate();
     return (
         <Tr>
@@ -23,7 +22,7 @@ const ResolvedIncidentRow = ({ incident, wcif }: ResolvedIncidentRowProps) => {
                         navigate(`/results/round/${incident.result.roundId}`)
                     }
                 >
-                    {getRoundNameById(incident.result.roundId, wcif)}
+                    {activityCodeToName(incident.result.roundId)}
                 </Link>
             </Td>
             <Td>{incident.attemptNumber}</Td>

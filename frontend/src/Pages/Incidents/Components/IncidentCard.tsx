@@ -1,17 +1,15 @@
 import { Card, CardBody, CardHeader, Heading, Text } from "@chakra-ui/react";
-import { Competition } from "@wca/helpers";
+import { activityCodeToName } from "@wca/helpers";
 import { useNavigate } from "react-router-dom";
 
 import { Incident } from "@/logic/interfaces";
 import { resultToString } from "@/logic/resultFormatters";
-import { getRoundNameById } from "@/logic/utils";
 
 interface IncidentCardProps {
     incident: Incident;
-    wcif: Competition;
 }
 
-const IncidentCard = ({ incident, wcif }: IncidentCardProps) => {
+const IncidentCard = ({ incident }: IncidentCardProps) => {
     const navigate = useNavigate();
 
     return (
@@ -30,7 +28,7 @@ const IncidentCard = ({ incident, wcif }: IncidentCardProps) => {
                 </Heading>
             </CardHeader>
             <CardBody>
-                <Text>{getRoundNameById(incident.result.roundId, wcif)}</Text>
+                <Text>{activityCodeToName(incident.result.roundId)}</Text>
                 <Text>Attempt: {incident.attemptNumber}</Text>
                 <Text>Time: {resultToString(incident.value)}</Text>
                 {incident.device && (

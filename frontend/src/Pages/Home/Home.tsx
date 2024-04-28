@@ -104,11 +104,7 @@ const Home = () => {
                 ))}
             </Box>
             {isAdmin() && (
-                <HomeShortcuts
-                    rooms={rooms}
-                    currentRounds={currentRounds}
-                    competition={competition}
-                />
+                <HomeShortcuts rooms={rooms} currentRounds={currentRounds} />
             )}
             <Box display="flex" flexDirection="row" gap="5">
                 <FormControl width="fit-content">

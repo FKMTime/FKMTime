@@ -2,14 +2,12 @@ import { describe } from "vitest";
 
 import {
     calculateTotalPages,
-    getActivityNameByCode,
     getCutoffByRoundId,
     getEventIdFromRoundId,
     getLimitByRoundId,
     getNumberOfAttemptsForRound,
     getPersonFromWcif,
     getRoundInfoFromWcif,
-    getRoundNameById,
     msToString,
     prettyAccountRoleName,
     prettyAvailableDeviceType,
@@ -145,23 +143,5 @@ describe("prettyAvailableDeviceType", () => {
 describe("prettyAccountRoleName", () => {
     it("return pretty account role name", () => {
         expect(prettyAccountRoleName("ADMIN")).toEqual("Admin");
-    });
-});
-
-describe("getRoundNameById", () => {
-    it("return round name by id", () => {
-        const wcifJson = JSON.parse(JSON.stringify(wcif));
-        expect(getRoundNameById("333-r1", wcifJson)).toEqual(
-            "3x3x3 Cube, Round 1"
-        );
-    });
-});
-
-describe("getActivityNameByCode", () => {
-    it("return activity name by code", () => {
-        const wcifJson = JSON.parse(JSON.stringify(wcif));
-        expect(getActivityNameByCode("333-r1-g1", wcifJson)).toEqual(
-            "3x3x3 Cube, Round 1, Group 1"
-        );
     });
 });

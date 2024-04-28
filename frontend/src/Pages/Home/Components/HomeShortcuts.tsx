@@ -1,20 +1,15 @@
 import { Box, Button, Heading } from "@chakra-ui/react";
+import { activityCodeToName } from "@wca/helpers";
 import { useNavigate } from "react-router-dom";
 
-import { Competition, Room } from "@/logic/interfaces";
-import { getActivityNameByCode, getRoundNameById } from "@/logic/utils";
+import { Room } from "@/logic/interfaces";
 
 interface HomeShortcutsProps {
     rooms: Room[];
     currentRounds: string[];
-    competition: Competition;
 }
 
-const HomeShortcuts = ({
-    rooms,
-    currentRounds,
-    competition,
-}: HomeShortcutsProps) => {
+const HomeShortcuts = ({ rooms, currentRounds }: HomeShortcutsProps) => {
     const navigate = useNavigate();
     const showAttendance = rooms.some((r) => r.currentGroupId);
     const showResults = currentRounds.length > 0;
@@ -44,10 +39,7 @@ const HomeShortcuts = ({
                                         );
                                     }}
                                 >
-                                    {getActivityNameByCode(
-                                        room.currentGroupId,
-                                        competition.wcif
-                                    )}
+                                    {activityCodeToName(room.currentGroupId)}
                                 </Button>
                             ))}
                     </Box>
@@ -65,7 +57,7 @@ const HomeShortcuts = ({
                                     navigate(`/results/round/${roundId}`);
                                 }}
                             >
-                                {getRoundNameById(roundId, competition.wcif)}
+                                {activityCodeToName(roundId)}
                             </Button>
                         ))}
                     </Box>

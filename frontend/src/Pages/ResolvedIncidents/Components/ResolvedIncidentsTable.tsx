@@ -1,5 +1,4 @@
 import { Table, TableContainer, Tbody, Th, Thead, Tr } from "@chakra-ui/react";
-import { Competition } from "@wca/helpers";
 
 import { Incident } from "@/logic/interfaces.ts";
 
@@ -7,10 +6,9 @@ import ResolvedIncidentRow from "./ResolvedIncidentRow";
 
 interface ResolvedIncidentsTableProps {
     data: Incident[];
-    wcif: Competition;
 }
 
-const ResolvedIncidents = ({ data, wcif }: ResolvedIncidentsTableProps) => {
+const ResolvedIncidents = ({ data }: ResolvedIncidentsTableProps) => {
     return (
         <TableContainer>
             <Table variant="simple">
@@ -32,7 +30,6 @@ const ResolvedIncidents = ({ data, wcif }: ResolvedIncidentsTableProps) => {
                         <ResolvedIncidentRow
                             key={incident.id}
                             incident={incident}
-                            wcif={wcif}
                         />
                     ))}
                 </Tbody>

@@ -7,7 +7,7 @@ import {
     Heading,
     useToast,
 } from "@chakra-ui/react";
-import { Activity, Event, Round } from "@wca/helpers";
+import { Activity, activityCodeToName, Event, Round } from "@wca/helpers";
 import { useAtom } from "jotai";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
@@ -26,7 +26,6 @@ import { getCompetitionInfo } from "@/logic/competition";
 import { Room, StaffActivity } from "@/logic/interfaces";
 import { ATTENDANCE_WEBSOCKET_URL, WEBSOCKET_PATH } from "@/logic/request";
 import { getAllRooms } from "@/logic/rooms";
-import { getActivityNameByCode } from "@/logic/utils";
 import PresentPeopleList from "@/Pages/Attendance/Components/PresentPeopleList.tsx";
 
 import LoadingPage from "../../Components/LoadingPage";
@@ -228,10 +227,7 @@ const Attendance = () => {
                                         handleGroupChange(room.currentGroupId);
                                     }}
                                 >
-                                    {getActivityNameByCode(
-                                        room.currentGroupId,
-                                        competition.wcif
-                                    )}
+                                    {activityCodeToName(room.currentGroupId)}
                                 </Button>
                             ))}
                     </Box>

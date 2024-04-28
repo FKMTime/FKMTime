@@ -1,5 +1,4 @@
 import { Table, TableContainer, Tbody, Th, Thead, Tr } from "@chakra-ui/react";
-import { Competition } from "@wca/helpers";
 
 import { isAdmin } from "@/logic/auth";
 import { Result } from "@/logic/interfaces";
@@ -8,10 +7,9 @@ import PersonResultRow from "./PersonResultRow";
 
 interface PersonResultsTableProps {
     results: Result[];
-    wcif: Competition;
 }
 
-const PersonResultsTable = ({ results, wcif }: PersonResultsTableProps) => {
+const PersonResultsTable = ({ results }: PersonResultsTableProps) => {
     return (
         <TableContainer>
             <Table variant="simple">
@@ -25,11 +23,7 @@ const PersonResultsTable = ({ results, wcif }: PersonResultsTableProps) => {
                 </Thead>
                 <Tbody>
                     {results.map((result: Result) => (
-                        <PersonResultRow
-                            key={result.id}
-                            result={result}
-                            wcif={wcif}
-                        />
+                        <PersonResultRow key={result.id} result={result} />
                     ))}
                 </Tbody>
             </Table>

@@ -1,12 +1,9 @@
 import { Box, Heading, Text } from "@chakra-ui/react";
-import { useAtom } from "jotai";
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 
 import FlagIcon from "@/Components/Icons/FlagIcon";
 import LoadingPage from "@/Components/LoadingPage";
-import { competitionAtom } from "@/logic/atoms";
-import { getCompetitionInfo } from "@/logic/competition";
 import { Person, Result } from "@/logic/interfaces";
 import { getPersonById } from "@/logic/persons";
 import { getAllResultsByPersonId } from "@/logic/results";
@@ -18,7 +15,6 @@ const PersonResults = () => {
     const { id } = useParams<{ id: string }>();
     const [results, setResults] = useState<Result[]>([]);
     const [person, setPerson] = useState<Person | null>();
-    const [competition, setCompetition] = useAtom(competitionAtom);
 
     useEffect(() => {
         const fetchData = async () => {
@@ -31,26 +27,19 @@ const PersonResults = () => {
             const data = await getPersonById(id);
             setPerson(data);
         };
-        const fetchCompetitionData = async () => {
-            if (competition) return;
-            const res = await getCompetitionInfo();
-            setCompetition(res.data);
-        };
-        fetchCompetitionData();
         fetchData();
         fetchPersonData();
-    }, [id, competition, setCompetition]);
+    }, [id]);
 
-    if (!results || !person || !competition) {
+    if (!results || !person) {
         return <LoadingPage />;
     }
 
     return (
-        <Box display="flex" flexDirection="column" gap="5">
-            <Heading>Results</Heading>
+        <Box display="flex" flexDirection="column" gap="5" mt="2">
+            <Heading>{person.name}</Heading>
             {person && (
                 <>
-                    <Text fontSize="xl">Name: {person.name}</Text>
                     <Text fontSize="xl">
                         Registrant ID: {person.registrantId}
                     </Text>
@@ -72,10 +61,7 @@ const PersonResults = () => {
                 </>
             )}
             {results.length > 0 ? (
-                <PersonResultsTable
-                    results={results}
-                    wcif={competition?.wcif}
-                />
+                <PersonResultsTable results={results} />
             ) : (
                 <Box display="flex" alignItems="center" justifyContent="center">
                     <Text fontSize="3xl">No results found</Text>

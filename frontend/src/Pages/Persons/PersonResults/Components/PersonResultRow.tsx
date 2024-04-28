@@ -1,5 +1,5 @@
 import { IconButton, Td, Tr } from "@chakra-ui/react";
-import { Competition } from "@wca/helpers";
+import { activityCodeToName } from "@wca/helpers";
 import { FaList } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 
@@ -7,14 +7,13 @@ import { isAdmin } from "@/logic/auth";
 import { average, best } from "@/logic/average";
 import { Result } from "@/logic/interfaces";
 import { resultToString } from "@/logic/resultFormatters";
-import { getRoundNameById, getSubmittedAttempts } from "@/logic/utils";
+import { getSubmittedAttempts } from "@/logic/utils";
 
 interface PersonResultRowProps {
     result: Result;
-    wcif: Competition;
 }
 
-const PersonResultRow = ({ result, wcif }: PersonResultRowProps) => {
+const PersonResultRow = ({ result }: PersonResultRowProps) => {
     const navigate = useNavigate();
 
     const submittedAttempts = getSubmittedAttempts(result.attempts);
@@ -23,7 +22,7 @@ const PersonResultRow = ({ result, wcif }: PersonResultRowProps) => {
     return (
         <>
             <Tr key={result.id}>
-                <Td>{getRoundNameById(result.roundId, wcif)}</Td>
+                <Td>{activityCodeToName(result.eventId)}</Td>
                 <Td>
                     {calculatedAverage
                         ? resultToString(calculatedAverage)

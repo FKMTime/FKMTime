@@ -213,21 +213,6 @@ export const getSubmittedAttempts = (attempts: Attempt[]) => {
         .map((a) => a as Attempt);
 };
 
-export const getRoundNameById = (roundId: string, wcif?: Competition) => {
-    if (!wcif) return "";
-    let roundName = "";
-    wcif.schedule?.venues.forEach((venue) => {
-        venue.rooms.forEach((room) => {
-            room.activities.forEach((activity) => {
-                if (activity.activityCode === roundId) {
-                    roundName = activity.name;
-                }
-            });
-        });
-    });
-    return roundName;
-};
-
 export const isThereADifferenceBetweenResults = (
     result: Result,
     submittedAttempts: Attempt[],
@@ -252,25 +237,6 @@ export const isThereADifferenceBetweenResults = (
             return true;
     }
     return false;
-};
-
-export const getActivityNameByCode = (code: string, wcif: Competition) => {
-    let activityName = "";
-    wcif.schedule.venues.forEach((venue) => {
-        venue.rooms.forEach((room) => {
-            room.activities.forEach((activity) => {
-                if (activity.activityCode === code) {
-                    activityName = activity.name;
-                }
-                activity.childActivities.forEach((childActivity) => {
-                    if (childActivity.activityCode === code) {
-                        activityName = childActivity.name;
-                    }
-                });
-            });
-        });
-    });
-    return activityName;
 };
 
 export const isMobile = () => {
@@ -315,8 +281,14 @@ export const prettyAttemptType = (type: AttemptType) => {
 };
 
 export const getResolvedStatus = (status: AttemptStatus) => {
-    if (status === AttemptStatus.RESOLVED) return "Resolved";
-    else if (status === AttemptStatus.UNRESOLVED) return "Not resolved";
-    else if (status === AttemptStatus.EXTRA_GIVEN) return "Extra given";
-    return null;
+    switch (status) {
+        case AttemptStatus.RESOLVED:
+            return "Resolved";
+        case AttemptStatus.UNRESOLVED:
+            return "Not resolved";
+        case AttemptStatus.EXTRA_GIVEN:
+            return "Extra given";
+        default:
+            return "Unknown";
+    }
 };
