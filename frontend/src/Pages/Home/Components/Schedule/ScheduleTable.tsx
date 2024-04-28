@@ -1,5 +1,7 @@
 import { Table, TableContainer, Tbody, Th, Thead, Tr } from "@chakra-ui/react";
-import { Activity, Event } from "@wca/helpers";
+import { Event } from "@wca/helpers";
+
+import { Activity } from "@/logic/interfaces.ts";
 
 import ScheduleRow from "./ScheduleRow";
 
@@ -14,7 +16,10 @@ const ScheduleTable = ({ activities, events }: ScheduleTableProps) => {
             <Table variant="simple">
                 <Thead textAlign="center">
                     <Tr bg="gray.400">
-                        <Th>Time</Th>
+                        <Th>Scheduled time</Th>
+                        <Th title="Real time is calculated based on first and last attempt of the round">
+                            Real time
+                        </Th>
                         <Th>Name</Th>
                         <Th>Format</Th>
                         <Th>Limit</Th>

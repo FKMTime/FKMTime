@@ -1,8 +1,13 @@
 import { Td, Tr } from "@chakra-ui/react";
-import { Activity, Event, Round } from "@wca/helpers";
+import { Event, Round } from "@wca/helpers";
 
+import { Activity } from "@/logic/interfaces.ts";
 import { resultToString } from "@/logic/resultFormatters";
-import { formatTime, prettyRoundFormat } from "@/logic/utils";
+import {
+    formatTime,
+    getFormattedRealActivityTime,
+    prettyRoundFormat,
+} from "@/logic/utils";
 
 interface ScheduleRowProps {
     activity: Activity;
@@ -15,6 +20,10 @@ const ScheduleRow = ({ activity, events }: ScheduleRowProps) => {
     const round = event?.rounds.find(
         (r: Round) => r.id === activity.activityCode
     );
+    const formattedRealTime = getFormattedRealActivityTime(
+        activity.realStartTime,
+        activity.realEndTime
+    );
 
     return (
         <Tr key={activity.id}>
@@ -22,6 +31,7 @@ const ScheduleRow = ({ activity, events }: ScheduleRowProps) => {
                 {formatTime(activity.startTime)} -{" "}
                 {formatTime(activity.endTime)}
             </Td>
+            <Td>{formattedRealTime}</Td>
             <Td>{activity.name}</Td>
             <Td>
                 {round &&

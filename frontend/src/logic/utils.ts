@@ -15,6 +15,22 @@ export const msToString = (ms: number) => {
         .replace(/^[0:]*(?!\.)/g, "");
 };
 
+export const getFormattedRealActivityTime = (
+    startTime?: Date,
+    endTime?: Date
+) => {
+    if (!startTime && !endTime) return "";
+    if (startTime && endTime) {
+        return `${formatTime(new Date(startTime).toISOString())} - ${formatTime(
+            new Date(endTime).toISOString()
+        )}`;
+    }
+    if (startTime) {
+        return `Started at ${formatTime(new Date(startTime).toISOString())}`;
+    }
+    return `${startTime} - ${endTime}`;
+};
+
 export const prettyGender = (gender: string) => {
     switch (gender) {
         case "m":

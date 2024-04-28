@@ -1,8 +1,8 @@
 import { Card, CardBody, Heading, Text } from "@chakra-ui/react";
-import { Activity } from "@wca/helpers";
 import { useNavigate } from "react-router-dom";
 
-import { formatTime } from "@/logic/utils";
+import { Activity } from "@/logic/interfaces.ts";
+import { formatTime, getFormattedRealActivityTime } from "@/logic/utils";
 
 interface ScheduleCardProps {
     activity: Activity;
@@ -11,6 +11,10 @@ interface ScheduleCardProps {
 const ScheduleCard = ({ activity }: ScheduleCardProps) => {
     const navigate = useNavigate();
     const isRound = activity.activityCode.includes("-r");
+    const formattedRealTime = getFormattedRealActivityTime(
+        activity.realStartTime,
+        activity.realEndTime
+    );
 
     return (
         <Card
@@ -32,6 +36,9 @@ const ScheduleCard = ({ activity }: ScheduleCardProps) => {
                         ? ""
                         : `${activity.childActivities.length} groups`}
                 </Text>
+                {formattedRealTime && (
+                    <Text>Real time: {formattedRealTime}</Text>
+                )}
                 <Text>
                     {" "}
                     {formatTime(activity.startTime)} -{" "}

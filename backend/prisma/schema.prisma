@@ -57,7 +57,6 @@ model Competition {
   wcaId                     String
   sendResultsToWcaLive      Boolean   @default(true)
   name                      String
-  shortName                 String
   countryIso2               String?
   shouldUpdateDevices       Boolean   @default(false)
   wifiSsid                  String?

@@ -1,4 +1,12 @@
-import { Body, Controller, Get, Param, Put, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  Put,
+  Query,
+  UseGuards,
+} from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { AdminGuard } from 'src/auth/guards/admin.guard';
 import { GetUser } from '../auth/decorator/getUser.decorator';
@@ -49,6 +57,20 @@ export class CompetitionController {
   @Get('sync/:id')
   async syncCompetition(@Param('id') id: string, @GetUser() user: JwtAuthDto) {
     return await this.competitionService.updateWcif(id, user.userId);
+  }
+
+  @UseGuards(AuthGuard('jwt'))
+  @Get('activities')
+  async getActivitiesWithRealEndTime(
+    @Query('venueId') venueId: number,
+    @Query('roomId') roomId: number,
+    @Query('date') date: Date,
+  ) {
+    return await this.competitionService.getActivitiesWithRealEndTime(
+      +venueId,
+      +roomId,
+      new Date(date),
+    );
   }
 
   @UseGuards(AuthGuard('jwt'))

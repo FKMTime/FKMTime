@@ -1,4 +1,4 @@
-import { Competition as WCIF } from "@wca/helpers";
+import { Activity as WCIFActivity, Competition as WCIF } from "@wca/helpers";
 
 export interface UserInfo {
     username: string;
@@ -30,7 +30,6 @@ export interface Competition {
     name: string;
     sendResultsToWcaLive: boolean;
     shouldUpdateDevices: boolean;
-    shortName: string;
     countryIso2: string;
     scoretakingToken?: string;
     scoretakingTokenUpdatedAt?: Date;
@@ -39,6 +38,11 @@ export interface Competition {
     wcif: WCIF;
     createdAt?: Date;
     updatedAt?: Date;
+}
+
+export interface Activity extends WCIFActivity {
+    realStartTime?: Date;
+    realEndTime?: Date;
 }
 
 export interface Room {

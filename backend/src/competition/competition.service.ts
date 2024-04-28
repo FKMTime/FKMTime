@@ -44,7 +44,6 @@ export class CompetitionService {
       data: {
         name: wcifPublic.name,
         wcaId: wcifPublic.id,
-        shortName: wcifPublic.shortName,
         countryIso2: wcifPublic.countryIso2,
         wcif: wcifPublic,
       },
@@ -207,7 +206,6 @@ export class CompetitionService {
       where: { wcaId },
       data: {
         name: wcifPublic.name,
-        shortName: wcifPublic.shortName,
         countryIso2: wcifPublic.countryIso2,
         wcif: wcifPublic,
       },
@@ -219,7 +217,6 @@ export class CompetitionService {
       select: {
         id: true,
         name: true,
-        shortName: true,
         wcaId: true,
         countryIso2: true,
         wcif: true,
@@ -229,6 +226,97 @@ export class CompetitionService {
       throw new HttpException('Competition not found', 404);
     }
     return competition;
+  }
+
+  async getActivitiesWithRealEndTime(
+    venueId: number,
+    roomId: number,
+    date: Date,
+  ) {
+    const competition = await this.prisma.competition.findFirst();
+    if (!competition) {
+      throw new HttpException('Competition not found', 404);
+    }
+    const wcif = JSON.parse(JSON.stringify(competition.wcif));
+    const activities = wcif.schedule.venues
+      .find((venue: Venue) => venue.id === venueId)
+      ?.rooms.find((room: WCIFRoom) => room.id === roomId)
+      ?.activities.filter((a: Activity) => {
+        if (new Date(a.startTime).getDay() === date.getDay()) {
+          return true;
+        }
+      })
+      .sort((a: Activity, b: Activity) => {
+        if (new Date(a.startTime).getTime() < new Date(b.startTime).getTime()) {
+          return -1;
+        }
+        if (new Date(a.startTime).getTime() > new Date(b.startTime).getTime()) {
+          return 1;
+        }
+        return 0;
+      });
+    if (!activities) {
+      return [];
+    }
+    const activitiesToReturn = [];
+    const startTimeTransactions = [];
+    const endTimeTransactions = [];
+    activities.forEach((activity: Activity) => {
+      startTimeTransactions.push(
+        this.prisma.attempt.findFirst({
+          where: {
+            result: {
+              roundId: activity.activityCode,
+            },
+          },
+          orderBy: {
+            solvedAt: 'asc',
+          },
+          include: {
+            result: true,
+          },
+        }),
+      );
+    });
+    activities.forEach((activity: Activity) => {
+      endTimeTransactions.push(
+        this.prisma.attempt.findFirst({
+          where: {
+            result: {
+              roundId: activity.activityCode,
+            },
+          },
+          orderBy: {
+            solvedAt: 'desc',
+          },
+          include: {
+            result: true,
+          },
+        }),
+      );
+    });
+    const firstRoundAttempts = await this.prisma.$transaction(
+      startTimeTransactions,
+    );
+    const lastRoundAttempts =
+      await this.prisma.$transaction(endTimeTransactions);
+    activities.forEach((activity: Activity) => {
+      const firstAttempt = firstRoundAttempts.find(
+        (a) => a?.result.roundId === activity.activityCode,
+      );
+      const lastAttempt = lastRoundAttempts.find(
+        (a) => a?.result.roundId === activity.activityCode,
+      );
+      activitiesToReturn.push({
+        ...activity,
+        realStartTime: firstAttempt ? new Date(firstAttempt.solvedAt) : null,
+        realEndTime:
+          lastAttempt && lastAttempt.id !== firstAttempt.id
+            ? new Date(lastAttempt.solvedAt)
+            : null,
+      });
+    });
+    return activitiesToReturn;
   }
 
   async getAllRooms() {

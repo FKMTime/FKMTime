@@ -1,5 +1,6 @@
 import { Box } from "@chakra-ui/react";
-import { Activity } from "@wca/helpers";
+
+import { Activity } from "@/logic/interfaces.ts";
 
 import ScheduleCard from "./ScheduleCard";
 

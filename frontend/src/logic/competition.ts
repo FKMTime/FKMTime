@@ -69,6 +69,19 @@ export const getDevicesSettings = async () => {
     return await response.json();
 };
 
+export const getActivitiesWithRealEndTime = async (
+    venueId: number,
+    roomId: number,
+    date: Date
+) => {
+    const response = await backendRequest(
+        `competition/activities?venueId=${venueId}&roomId=${roomId}&date=${date.toISOString()}`,
+        "GET",
+        true
+    );
+    return await response.json();
+};
+
 export const updateDevicesSettings = async (
     id: string,
     data: {

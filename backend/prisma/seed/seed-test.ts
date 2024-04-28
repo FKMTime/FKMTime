@@ -24,7 +24,6 @@ export async function seedDb() {
   await prisma.competition.create({
     data: {
       name: wcifJson.name,
-      shortName: wcifJson.shortName,
       sendResultsToWcaLive: true,
       wcaId: wcifJson.id,
       countryIso2: 'PL',
