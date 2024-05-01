@@ -32,6 +32,7 @@ export async function seedDb() {
       wifiPassword: 'WCA',
       scoretakingToken: 'WCA',
       scoretakingTokenUpdatedAt: new Date(),
+      wcif: JSON.parse(wcifFile),
     },
   });
   await prisma.person.createMany({

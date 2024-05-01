@@ -13,6 +13,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import io from "socket.io-client";
 
+import LoadingPage from "@/Components/LoadingPage";
 import Select from "@/Components/Select";
 import { getGroupsByRoundId } from "@/logic/activities";
 import { competitionAtom } from "@/logic/atoms";
@@ -23,15 +24,14 @@ import {
 } from "@/logic/attendance";
 import { getToken } from "@/logic/auth";
 import { getCompetitionInfo } from "@/logic/competition";
+import { getEventName } from "@/logic/events";
 import { Room, StaffActivity } from "@/logic/interfaces";
 import { ATTENDANCE_WEBSOCKET_URL, WEBSOCKET_PATH } from "@/logic/request";
 import { getAllRooms } from "@/logic/rooms";
-import PresentPeopleList from "@/Pages/Attendance/Components/PresentPeopleList.tsx";
+import PresentPeopleList from "@/Pages/Attendance/Components/PresentPeopleList";
 
-import LoadingPage from "../../Components/LoadingPage";
-import events from "../../logic/events";
 import AbsentPeopleList from "./Components/AbsentPeopleList";
-import UnorderedPeopleList from "./Components/UnorderedPeopleList.tsx";
+import UnorderedPeopleList from "./Components/UnorderedPeopleList";
 
 const Attendance = () => {
     const { id } = useParams<{ id: string }>();
@@ -247,7 +247,7 @@ const Attendance = () => {
                     >
                         {competition.wcif.events.map((event: Event) => (
                             <option key={event.id} value={event.id}>
-                                {events.find((e) => e.id === event.id)?.name}
+                                {getEventName(event.id)}
                             </option>
                         ))}
                     </Select>

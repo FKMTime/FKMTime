@@ -99,6 +99,15 @@ export const getNumberOfAttemptsForRound = (
     }
 };
 
+export const getCompetitionDates = (startDate: Date, numberOfDays: number) => {
+    const dates: Date[] = [];
+    for (let i = 0; i < numberOfDays; i++) {
+        dates.push(new Date(startDate));
+        startDate.setDate(startDate.getDate() + 1);
+    }
+    return dates;
+};
+
 export const prettyRoundFormat = (format: string, cutoffAttempts?: number) => {
     switch (format) {
         case "1":

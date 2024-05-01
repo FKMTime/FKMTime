@@ -23,3 +23,7 @@ const events: {
 ];
 
 export default events;
+
+export const getEventName = (eventId: string) => {
+    return events.find((event) => event.id === eventId)?.name;
+};

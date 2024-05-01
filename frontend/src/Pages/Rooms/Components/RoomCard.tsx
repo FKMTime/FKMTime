@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 
 import Select from "@/Components/Select";
 import { getGroupsByRoundId } from "@/logic/activities";
-import events from "@/logic/events";
+import { getEventName } from "@/logic/events";
 import { Competition, Room } from "@/logic/interfaces";
 
 interface RoomCardProps {
@@ -74,7 +74,7 @@ const RoomCard = ({
                 >
                     {competition.wcif.events.map((event: Event) => (
                         <option key={event.id} value={event.id}>
-                            {events.find((e) => e.id === event.id)?.name}
+                            {getEventName(event.id)}
                         </option>
                     ))}
                 </Select>

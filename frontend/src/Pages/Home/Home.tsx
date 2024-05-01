@@ -1,11 +1,4 @@
-import {
-    Box,
-    FormControl,
-    FormLabel,
-    Heading,
-    Input,
-    Text,
-} from "@chakra-ui/react";
+import { Box, FormControl, FormLabel, Heading, Text } from "@chakra-ui/react";
 import { Event, Room as WCIFRoom, Venue } from "@wca/helpers";
 import { useAtom } from "jotai";
 import { useCallback, useEffect, useState } from "react";
@@ -22,6 +15,7 @@ import {
 } from "@/logic/competition";
 import { Activity, Room } from "@/logic/interfaces";
 import { getAllRooms } from "@/logic/rooms";
+import { getCompetitionDates } from "@/logic/utils";
 
 import HomeShortcuts from "./Components/HomeShortcuts";
 import MobileSchedule from "./Components/Schedule/MobileSchedule";
@@ -35,6 +29,7 @@ const Home = () => {
     const [selectedVenue, setSelectedVenue] = useState<number>(0);
     const [selectedRoom, setSelectedRoom] = useState<number>(0);
     const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+    const [possibleDates, setPossibleDates] = useState<Date[]>([]);
     const [activities, setActivities] = useState<Activity[]>([]);
 
     const fetchActivitiesData = (
@@ -58,13 +53,18 @@ const Home = () => {
         }
         setCompetition(response.data);
         setSelectedVenue(response.data.wcif.schedule.venues[0].id);
+        const competitionDates = getCompetitionDates(
+            new Date(response.data.wcif.schedule.startDate),
+            response.data.wcif.schedule.numberOfDays
+        );
+        setPossibleDates(competitionDates);
         if (
             new Date(response.data.wcif.schedule.startDate).getTime() >
             new Date().getTime()
         ) {
             setSelectedDate(new Date(response.data.wcif.schedule.startDate));
         } else {
-            setSelectedDate(new Date());
+            setSelectedDate(competitionDates[0]);
         }
         setSelectedRoom(response.data.wcif.schedule.venues[0].rooms[0].id);
     }, [navigate, setCompetition]);
@@ -109,8 +109,7 @@ const Home = () => {
             <Box display="flex" flexDirection="row" gap="5">
                 <FormControl width="fit-content">
                     <FormLabel>Date</FormLabel>
-                    <Input
-                        type="date"
+                    <Select
                         onChange={(e) => {
                             setSelectedDate(new Date(e.target.value));
                             fetchActivitiesData(
@@ -119,8 +118,17 @@ const Home = () => {
                                 new Date(e.target.value)
                             );
                         }}
-                        value={selectedDate.toISOString().split("T")[0]}
-                    />
+                        value={selectedDate.toISOString()}
+                    >
+                        {possibleDates.map((date) => (
+                            <option
+                                key={date.toISOString()}
+                                value={date.toISOString()}
+                            >
+                                {date.toISOString().split("T")[0]}
+                            </option>
+                        ))}
+                    </Select>
                 </FormControl>
                 <FormControl width="fit-content">
                     <FormLabel>Venue</FormLabel>
