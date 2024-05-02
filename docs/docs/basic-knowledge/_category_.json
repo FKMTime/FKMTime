@@ -1,0 +1,8 @@
+{
+  "label": "Basic knowledge",
+  "position": 1,
+  "link": {
+    "type": "generated-index",
+    "description": "Basic knowledge about the FKMTime system"
+  }
+}
