@@ -2,18 +2,16 @@ import { Alert, AlertIcon, Text } from "@chakra-ui/react";
 
 import { Person } from "@/logic/interfaces.ts";
 import regions from "@/logic/regions.ts";
+import { isNewcomer } from "@/logic/utils";
 
 interface PersonInfoProps {
     person: Person;
 }
 
 const PersonInfo = ({ person }: PersonInfoProps) => {
-    const isNewcomer = !person.wcaId || person.wcaId === "";
-    const canCompete = person.canCompete;
-
     return (
         <>
-            {isNewcomer && canCompete && (
+            {isNewcomer(person) && (
                 <Alert status="warning" borderRadius="md" color="black">
                     <AlertIcon />
                     Remember to check competitor's ID card

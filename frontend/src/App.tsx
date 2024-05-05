@@ -1,6 +1,7 @@
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 
 import AttendanceStatistics from "@/Pages/Attendance/AttendanceStatistics/AttendanceStatistics.tsx";
+import CheckIn from "@/Pages/CheckIn/CheckIn.tsx";
 import ImportCompetition from "@/Pages/ImportCompetition/ImportCompetition.tsx";
 import ResolvedIncidents from "@/Pages/ResolvedIncidents/ResolvedIncidents.tsx";
 
@@ -11,7 +12,6 @@ import Attendance from "./Pages/Attendance/Attendance";
 import Login from "./Pages/Auth/Login/Login";
 import Competition from "./Pages/Competition/Competition";
 import Devices from "./Pages/Devices/Devices";
-import Giftpacks from "./Pages/Giftpacks/GIftpacks";
 import Home from "./Pages/Home/Home";
 import IncidentPage from "./Pages/Incidents/IncidentPage";
 import Incidents from "./Pages/Incidents/Incidents";
@@ -110,8 +110,8 @@ const App = () => {
                     element: <Attendance />,
                 },
                 {
-                    path: "giftpacks",
-                    element: <Giftpacks />,
+                    path: "check-in",
+                    element: <CheckIn />,
                 },
             ],
         },

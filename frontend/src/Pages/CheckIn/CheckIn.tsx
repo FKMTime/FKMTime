@@ -1,8 +1,5 @@
 import {
-    Alert,
-    AlertIcon,
     Box,
-    Button,
     FormControl,
     Heading,
     Input,
@@ -14,18 +11,19 @@ import { KeyboardEvent, RefObject, useEffect, useRef, useState } from "react";
 import LoadingPage from "@/Components/LoadingPage";
 import { Person } from "@/logic/interfaces";
 import {
-    collectGfitpack,
+    checkedInCount,
+    checkIn,
     getPersonInfoByCardIdWithSensitiveData,
-    giftpackCount,
 } from "@/logic/persons";
-import PersonInfo from "@/Pages/Giftpacks/Components/PersonInfo.tsx";
-import PersonsWithoutGiftpackCollected from "@/Pages/Giftpacks/Components/PersonsWithoutGiftpackCollected.tsx";
+import NotCheckedInPersons from "@/Pages/CheckIn/Components/NotCheckedInPersons.tsx";
+import PersonInfo from "@/Pages/CheckIn/Components/PersonInfo.tsx";
+import SubmitActions from "@/Pages/CheckIn/Components/SubmitActions.tsx";
 
-const Giftpacks = () => {
+const CheckIn = () => {
     const toast = useToast();
     const [scannedCard, setScannedCard] = useState<string>("");
     const [totalPersons, setTotalPersons] = useState<number>(0);
-    const [collectedGiftpacks, setCollectedGiftpacks] = useState<number>(0);
+    const [personsCheckedIn, setPersonsCheckedIn] = useState<number>(0);
     const [
         personsWithoutGiftpackCollected,
         setPersonsWithoutGiftpackCollected,
@@ -37,11 +35,10 @@ const Giftpacks = () => {
     const handleSubmitCard = async () => {
         const res = await getPersonInfoByCardIdWithSensitiveData(scannedCard);
         if (res.status === 200) {
-            if (res.data.giftpackCollectedAt) {
+            if (res.data.checkedInAt) {
                 toast({
-                    title: "Giftpack already collected",
-                    description:
-                        "This competitor already collected the giftpack",
+                    title: "Something went wrong",
+                    description: "Competitor has been already checked in",
                     status: "warning",
                     duration: 9000,
                     isClosable: true,
@@ -70,14 +67,14 @@ const Giftpacks = () => {
         }
     };
 
-    const handleCollectGiftpack = async (id?: string) => {
-        const idToCollect = id ? id : personData?.id;
-        if (!idToCollect) return;
-        const res = await collectGfitpack(idToCollect);
+    const handleCheckIn = async (id?: string) => {
+        const idToCheckIn = id ? id : personData?.id;
+        if (!idToCheckIn) return;
+        const res = await checkIn(idToCheckIn);
         if (res.status === 200) {
             toast({
                 title: "Success",
-                description: "Giftpack collected",
+                description: "Competitor checked in successfully",
                 status: "success",
                 duration: 9000,
                 isClosable: true,
@@ -97,13 +94,17 @@ const Giftpacks = () => {
         cardInputRef.current?.focus();
     };
 
+    const handleClickOnList = (id: string) => {
+        const person = personsWithoutGiftpackCollected.find((p) => p.id === id);
+        setPersonData(person);
+        setScannedCard(person?.cardId || "");
+    };
+
     const fetchData = async () => {
-        const data = await giftpackCount();
-        setCollectedGiftpacks(data.collectedGiftpacksCount);
+        const data = await checkedInCount();
+        setPersonsCheckedIn(data.checkedInPersonsCount);
         setTotalPersons(data.totalPersonsCount);
-        setPersonsWithoutGiftpackCollected(
-            data.personsWithoutGiftpackCollected
-        );
+        setPersonsWithoutGiftpackCollected(data.personsWhoDidNotCheckIn);
     };
     useEffect(() => {
         fetchData();
@@ -121,7 +122,7 @@ const Giftpacks = () => {
         >
             <Box display="flex" flexDirection="column" gap="5">
                 <Heading size="lg">
-                    Giftpacks {`${collectedGiftpacks}/${totalPersons}`}
+                    Checked in {`${personsCheckedIn}/${totalPersons}`}
                 </Heading>
                 <Text>Scan the card of the competitor</Text>
                 <FormControl
@@ -145,32 +146,19 @@ const Giftpacks = () => {
                 {personData && (
                     <>
                         <PersonInfo person={personData} />
-                        {personData.giftpackCollectedAt ? (
-                            <Alert
-                                status="success"
-                                borderRadius="md"
-                                color="black"
-                            >
-                                <AlertIcon />
-                                Giftpack already collected
-                            </Alert>
-                        ) : (
-                            <Button
-                                colorScheme="green"
-                                onClick={() => handleCollectGiftpack()}
-                            >
-                                Mark giftpack as collected
-                            </Button>
-                        )}
+                        <SubmitActions
+                            person={personData}
+                            handleCheckIn={handleCheckIn}
+                        />
                     </>
                 )}
             </Box>
-            <PersonsWithoutGiftpackCollected
+            <NotCheckedInPersons
                 persons={personsWithoutGiftpackCollected}
-                handleCollectGiftpack={handleCollectGiftpack}
+                handleClick={handleClickOnList}
             />
         </Box>
     );
 };
 
-export default Giftpacks;
+export default CheckIn;

@@ -137,40 +137,40 @@ export class PersonService {
     return this.prisma.person.findMany();
   }
 
-  async collectGiftpack(personId: string) {
+  async checkIn(personId: string) {
     await this.prisma.person.update({
       where: { id: personId },
       data: {
-        giftpackCollectedAt: new Date(),
+        checkedInAt: new Date(),
       },
     });
-    const collectedGiftpacksCount = await this.prisma.person.count({
+    const checkedInPersonsCount = await this.prisma.person.count({
       where: {
-        giftpackCollectedAt: {
+        checkedInAt: {
           not: null,
         },
       },
     });
     const totalPersonsCount = await this.prisma.person.count();
     return {
-      message: 'Giftpack collected',
-      collectedGiftpacksCount,
+      message: 'Checked in successfully',
+      checkedInPersonsCount,
       totalPersonsCount,
     };
   }
 
-  async giftpackCount() {
-    const collectedGiftpacksCount = await this.prisma.person.count({
+  async checkedInCount() {
+    const checkedInPersonsCount = await this.prisma.person.count({
       where: {
-        giftpackCollectedAt: {
+        checkedInAt: {
           not: null,
         },
       },
     });
     const totalPersonsCount = await this.prisma.person.count();
-    const personsWithoutGiftpackCollected = await this.prisma.person.findMany({
+    const personsWhoDidNotCheckIn = await this.prisma.person.findMany({
       where: {
-        giftpackCollectedAt: {
+        checkedInAt: {
           equals: null,
         },
       },
@@ -182,9 +182,9 @@ export class PersonService {
       },
     });
     return {
-      collectedGiftpacksCount,
+      checkedInPersonsCount,
       totalPersonsCount,
-      personsWithoutGiftpackCollected,
+      personsWhoDidNotCheckIn,
     };
   }
 
@@ -313,7 +313,7 @@ export class PersonService {
         name: true,
         countryIso2: true,
         birthdate: true,
-        giftpackCollectedAt: true,
+        checkedInAt: true,
       },
     });
     if (!person) {

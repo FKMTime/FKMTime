@@ -11,12 +11,12 @@ import { Person } from "@/logic/interfaces";
 
 interface PersonsWithoutGiftpackCollectedProps {
     persons: Person[];
-    handleCollectGiftpack: (id: string) => void;
+    handleClick: (id: string) => void;
 }
 
-const PersonsWithoutGiftpackCollected = ({
+const NotCheckedInPersons = ({
     persons,
-    handleCollectGiftpack,
+    handleClick,
 }: PersonsWithoutGiftpackCollectedProps) => {
     return (
         <Box>
@@ -35,7 +35,7 @@ const PersonsWithoutGiftpackCollected = ({
                             background="none"
                             _hover={{ background: "none", opacity: 0.5 }}
                             color="white"
-                            onClick={() => handleCollectGiftpack(person.id)}
+                            onClick={() => handleClick(person.id)}
                         >
                             <MdDone />
                         </IconButton>
@@ -48,4 +48,4 @@ const PersonsWithoutGiftpackCollected = ({
     );
 };
 
-export default PersonsWithoutGiftpackCollected;
+export default NotCheckedInPersons;

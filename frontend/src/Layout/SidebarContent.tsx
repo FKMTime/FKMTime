@@ -1,7 +1,8 @@
 import { Box, Button, Icon, Image, Link, Text } from "@chakra-ui/react";
-import { FaClipboardList, FaGift, FaGithub, FaServer } from "react-icons/fa";
+import { FaClipboardList, FaGithub, FaServer } from "react-icons/fa";
 import { IoMdTrophy, IoMdWarning } from "react-icons/io";
 import {
+    MdDone,
     MdHome,
     MdLogout,
     MdPerson,
@@ -107,9 +108,9 @@ const SidebarContent = ({
                 />
             )}
             <SidebarElement
-                name="Giftpacks"
-                icon={<FaGift />}
-                link="/giftpacks"
+                name="Check in"
+                icon={<MdDone />}
+                link="/check-in"
                 onClick={onElementClick}
             />
             <SidebarElement

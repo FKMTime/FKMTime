@@ -67,7 +67,7 @@ export interface Person {
     gender: string;
     birthdate?: Date;
     cardId?: string;
-    giftpackCollectedAt?: Date;
+    checkedInAt?: Date;
 }
 
 export interface CompetitionStatistics {

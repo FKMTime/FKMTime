@@ -65,15 +65,15 @@ export class PersonController {
   }
 
   @UseGuards(AuthGuard('jwt'))
-  @Get('giftpack/:id')
-  async collectGiftpack(@Param('id') id: string) {
-    return await this.personService.collectGiftpack(id);
+  @Get('check-in/:id')
+  async checkIn(@Param('id') id: string) {
+    return await this.personService.checkIn(id);
   }
 
   @UseGuards(AuthGuard('jwt'))
-  @Get('giftpack')
-  async giftpackCount() {
-    return await this.personService.giftpackCount();
+  @Get('check-in')
+  async checkedInCount() {
+    return await this.personService.checkedInCount();
   }
 
   @UseGuards(AuthGuard('jwt'))

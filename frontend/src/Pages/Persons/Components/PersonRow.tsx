@@ -88,7 +88,7 @@ const PersonRow = ({ person, wcif, handleCloseEditModal }: PersonRowProps) => {
                     </Box>
                 </Td>
                 <Td>{person.cardId && <MdDone />}</Td>
-                <Td>{person.giftpackCollectedAt && <MdDone />}</Td>
+                <Td>{person.checkedInAt && <MdDone />}</Td>
                 <Td>{person.canCompete && <MdDone />}</Td>
                 <Td>
                     <IconButton

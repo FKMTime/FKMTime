@@ -55,7 +55,7 @@ const PersonsTable = ({
                             <Th>Gender</Th>
                             <Th>Events</Th>
                             <Th>Card assigned</Th>
-                            <Th>Giftpack</Th>
+                            <Th>Checked in</Th>
                             <Th>Can compete</Th>
                             <Th>Actions</Th>
                         </Tr>

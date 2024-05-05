@@ -21,19 +21,19 @@ model Account {
 }
 
 model Person {
-  id                  String          @id @default(uuid())
-  registrantId        Int?            @unique
-  name                String
-  wcaId               String?
-  countryIso2         String?
-  gender              String
-  canCompete          Boolean         @default(true)
-  birthdate           DateTime?
-  giftpackCollectedAt DateTime?
-  cardId              String?         @unique
-  Result              Result[]
-  Attempt             Attempt[]
-  StaffActivity       StaffActivity[]
+  id            String          @id @default(uuid())
+  registrantId  Int?            @unique
+  name          String
+  wcaId         String?
+  countryIso2   String?
+  gender        String
+  canCompete    Boolean         @default(true)
+  birthdate     DateTime?
+  checkedInAt   DateTime?
+  cardId        String?         @unique
+  Result        Result[]
+  Attempt       Attempt[]
+  StaffActivity StaffActivity[]
 }
 
 model StaffActivity {

@@ -50,16 +50,16 @@ export const addStaffMember = async (name: string, gender: string) => {
     });
     return response.status;
 };
-export const collectGfitpack = async (id: string) => {
-    const response = await backendRequest(`person/giftpack/${id}`, "GET", true);
+export const checkIn = async (id: string) => {
+    const response = await backendRequest(`person/check-in/${id}`, "GET", true);
     return {
         data: await response.json(),
         status: response.status,
     };
 };
 
-export const giftpackCount = async () => {
-    const response = await backendRequest("person/giftpack", "GET", true);
+export const checkedInCount = async () => {
+    const response = await backendRequest("person/check-in", "GET", true);
     return await response.json();
 };
 

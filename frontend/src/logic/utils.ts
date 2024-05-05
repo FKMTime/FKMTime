@@ -1,7 +1,13 @@
 import { Competition } from "@wca/helpers";
 
 import { DNF_VALUE } from "./constants";
-import { Attempt, AttemptStatus, AttemptType, Result } from "./interfaces";
+import {
+    Attempt,
+    AttemptStatus,
+    AttemptType,
+    Person,
+    Result,
+} from "./interfaces";
 import regions from "./regions";
 
 export const calculateTotalPages = (count: number, pageSize: number) => {
@@ -106,6 +112,10 @@ export const getCompetitionDates = (startDate: Date, numberOfDays: number) => {
         startDate.setDate(startDate.getDate() + 1);
     }
     return dates;
+};
+
+export const isNewcomer = (person: Person) => {
+    return (!person.wcaId || person.wcaId === "") && person.canCompete;
 };
 
 export const prettyRoundFormat = (format: string, cutoffAttempts?: number) => {
