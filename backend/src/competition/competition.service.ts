@@ -492,6 +492,9 @@ export class CompetitionService {
   @Cron(CronExpression.EVERY_5_MINUTES)
   async checkIfGroupShouldBeChanged() {
     const competition = await this.prisma.competition.findFirst();
+    if (!competition) {
+      return;
+    }
     const wcif = JSON.parse(JSON.stringify(competition.wcif));
     const rooms = await this.prisma.room.findMany({
       include: {
