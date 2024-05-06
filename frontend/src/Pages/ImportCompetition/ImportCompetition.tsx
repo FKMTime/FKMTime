@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import {
+    getCompetitionInfo,
     getUpcomingManageableCompetitions,
     importCompetition,
 } from "@/logic/competition";
@@ -28,14 +29,27 @@ const ImportCompetition = () => {
         const response = await importCompetition(wcaId);
         if (response.status === 200) {
             navigate(`/competition/`);
+        } else if (response.status === 400) {
+            toast({
+                title: "Error",
+                description: "Competition has already been imported",
+                status: "error",
+                duration: 3000,
+                isClosable: true,
+            });
         }
     };
 
     useEffect(() => {
+        getCompetitionInfo().then((res) => {
+            if (res.status === 200) {
+                navigate("/");
+            }
+        });
         getUpcomingManageableCompetitions().then((data) => {
             setCompetitions(data);
         });
-    }, []);
+    }, [navigate]);
 
     return (
         <Box display="flex" flexDirection="column" gap="5" p={5}>

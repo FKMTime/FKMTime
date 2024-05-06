@@ -33,6 +33,10 @@ export class CompetitionService {
   ) {}
 
   async importCompetition(wcaId: string, userId: string) {
+    const existingCompetition = await this.prisma.competition.findFirst();
+    if (existingCompetition) {
+      throw new HttpException('Competition already exists', 400);
+    }
     const user = await this.prisma.account.findFirst({
       where: {
         id: userId,
