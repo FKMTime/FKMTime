@@ -23,6 +23,7 @@ export class SocketServer {
     }
 
     this.server.listen(this.path, () => {
+      fs.chmodSync(this.path, '777');
       this.logger.log('Unix socket server started at ' + this.path);
       callback();
     });

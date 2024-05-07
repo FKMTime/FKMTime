@@ -505,7 +505,8 @@ export class ResultService {
       try {
         const resultToEnter = await this.getResultById(result.id);
         try {
-          await this.wcaService.enterWholeScorecardToWcaLive(resultToEnter);
+          //This is intentionally not awaited
+          this.wcaService.enterWholeScorecardToWcaLive(resultToEnter);
         } catch (e) {
           console.log(e);
         }
