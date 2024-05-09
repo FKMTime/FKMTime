@@ -4,6 +4,7 @@ import { Event, Round } from "@wca/helpers";
 import { Activity } from "@/logic/interfaces.ts";
 import { resultToString } from "@/logic/resultFormatters";
 import {
+    cumulativeRoundsToString,
     formatTime,
     getFormattedRealActivityTime,
     prettyRoundFormat,
@@ -41,7 +42,9 @@ const ScheduleRow = ({ activity, events }: ScheduleRowProps) => {
                         round?.cutoff?.numberOfAttempts
                     )}
             </Td>
-            <Td>
+            <Td
+                title={`For ${cumulativeRoundsToString(round?.timeLimit?.cumulativeRoundIds || [])}`}
+            >
                 {round?.timeLimit &&
                     resultToString(round?.timeLimit?.centiseconds || 0)}{" "}
                 {round?.timeLimit?.cumulativeRoundIds?.length || 0 > 1

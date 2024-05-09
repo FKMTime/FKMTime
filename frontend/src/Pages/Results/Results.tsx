@@ -28,6 +28,7 @@ import { resultToString } from "@/logic/resultFormatters";
 import { getResultsByRoundId, reSubmitRoundToWcaLive } from "@/logic/results";
 import { getAllRooms } from "@/logic/rooms";
 import {
+    cumulativeRoundsToString,
     getCutoffByRoundId,
     getLimitByRoundId,
     getNumberOfAttemptsForRound,
@@ -260,7 +261,9 @@ const Results = () => {
                             ? `${resultToString(cutoff.attemptResult)} (${cutoff.numberOfAttempts} attempts)`
                             : "None"}
                     </Text>
-                    <Text>
+                    <Text
+                        title={`For ${cumulativeRoundsToString(limit?.cumulativeRoundIds || [])}`}
+                    >
                         Limit:{" "}
                         {limit
                             ? `${resultToString(limit.centiseconds)} ${limit.cumulativeRoundIds.length > 0 ? "(cumulative)" : ""}`

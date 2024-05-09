@@ -1,4 +1,4 @@
-import { Competition } from "@wca/helpers";
+import { activityCodeToName, Competition } from "@wca/helpers";
 
 import { DNF_VALUE } from "./constants";
 import {
@@ -310,4 +310,12 @@ export const getResolvedStatus = (status: AttemptStatus) => {
         default:
             return "Unknown";
     }
+};
+
+export const cumulativeRoundsToString = (roundIds: string[]) => {
+    return roundIds
+        .map((roundId) => {
+            return activityCodeToName(roundId);
+        })
+        .join(", ");
 };
