@@ -38,6 +38,7 @@ const Sidebar = ({ user, competition }: SidebarProps) => {
         });
         navigate("/auth/login");
     };
+
     const toggleDrawer = () => {
         setDrawerOpen(!isDrawerOpen);
     };

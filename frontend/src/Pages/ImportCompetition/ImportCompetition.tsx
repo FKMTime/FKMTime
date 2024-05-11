@@ -1,7 +1,10 @@
 import { Box, Heading, useToast } from "@chakra-ui/react";
 import { useEffect, useState } from "react";
+import { MdLogout } from "react-icons/md";
 import { useNavigate } from "react-router-dom";
 
+import RoundedIconButton from "@/Components/RoundedIconButton";
+import { logout } from "@/logic/auth";
 import {
     getCompetitionInfo,
     getUpcomingManageableCompetitions,
@@ -40,6 +43,18 @@ const ImportCompetition = () => {
         }
     };
 
+    const handleLogout = () => {
+        logout();
+        toast({
+            title: "Logged out",
+            description: "You have been logged out.",
+            status: "success",
+            duration: 9000,
+            isClosable: true,
+        });
+        navigate("/auth/login");
+    };
+
     useEffect(() => {
         getCompetitionInfo().then((res) => {
             if (res.status === 200) {
@@ -53,7 +68,17 @@ const ImportCompetition = () => {
 
     return (
         <Box display="flex" flexDirection="column" gap="5" p={5}>
-            <Heading size="lg">Import competition from the WCA Website</Heading>
+            <Box display="flex" justifyContent="space-between">
+                <Heading size="lg">
+                    Import competition from the WCA Website
+                </Heading>
+                <RoundedIconButton
+                    title="Logout"
+                    ariaLabel="Logout"
+                    onClick={handleLogout}
+                    icon={<MdLogout />}
+                />
+            </Box>
             <Box display="flex" flexDirection="column" gap="5">
                 <CompetitionsList
                     competitions={competitions}

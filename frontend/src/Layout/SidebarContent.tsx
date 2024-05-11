@@ -48,7 +48,9 @@ const SidebarContent = ({
                 fontSize="xl"
                 color="white"
             >
-                {competition.name}
+                {competition.wcif.shortName
+                    ? competition.wcif.shortName
+                    : competition.name}
             </Text>
             <Text color="white" textAlign="center">
                 Hello {user.fullName ? user.fullName : user.username}!
