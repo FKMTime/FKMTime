@@ -1,4 +1,4 @@
-import { Activity, Competition } from "@wca/helpers";
+import { Activity, activityCodeToName, Competition } from "@wca/helpers";
 import { Room as WCIFRoom } from "@wca/helpers/lib/models/room";
 
 export const prettyActivityName = (activity: string) => {
@@ -30,4 +30,10 @@ export const getGroupsByRoundId = (roundId: string, wcif: Competition) => {
     return activitiesToReturn.sort((a, b) =>
         a.activityCode.localeCompare(b.activityCode)
     );
+};
+
+export const getActivityName = (activity: Activity) => {
+    return activity.activityCode.startsWith("other")
+        ? activity.name
+        : activityCodeToName(activity.activityCode);
 };

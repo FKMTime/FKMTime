@@ -1,6 +1,7 @@
 import { Td, Tr } from "@chakra-ui/react";
 import { Event, Round } from "@wca/helpers";
 
+import { getActivityName } from "@/logic/activities";
 import { Activity } from "@/logic/interfaces.ts";
 import { resultToString } from "@/logic/resultFormatters";
 import {
@@ -33,7 +34,7 @@ const ScheduleRow = ({ activity, events }: ScheduleRowProps) => {
                 {formatTime(activity.endTime)}
             </Td>
             <Td>{formattedRealTime}</Td>
-            <Td>{activity.name}</Td>
+            <Td>{getActivityName(activity)}</Td>
             <Td>
                 {round &&
                     round.format &&

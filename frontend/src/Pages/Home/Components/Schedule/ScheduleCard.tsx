@@ -1,6 +1,7 @@
 import { Card, CardBody, Heading, Text } from "@chakra-ui/react";
 import { useNavigate } from "react-router-dom";
 
+import { getActivityName } from "@/logic/activities";
 import { Activity } from "@/logic/interfaces.ts";
 import { formatTime, getFormattedRealActivityTime } from "@/logic/utils";
 
@@ -30,7 +31,7 @@ const ScheduleCard = ({ activity }: ScheduleCardProps) => {
             }}
         >
             <CardBody display="flex" flexDirection="column" gap="2">
-                <Heading size="md">{activity.name}</Heading>
+                <Heading size="md">{getActivityName(activity)}</Heading>
                 <Text>
                     {activity.childActivities.length === 0
                         ? ""
