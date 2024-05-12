@@ -8,9 +8,16 @@ import {
     Thead,
     Tr,
 } from "@chakra-ui/react";
-import { useMemo } from "react";
+import {
+    createColumnHelper,
+    flexRender,
+    getCoreRowModel,
+    getSortedRowModel,
+    SortingState,
+    useReactTable,
+} from "@tanstack/react-table";
+import { useMemo, useState } from "react";
 import { FaChevronDown, FaChevronUp } from "react-icons/fa";
-import { useSortBy, useTable } from "react-table";
 
 import { AttendanceStatistics } from "@/logic/interfaces.ts";
 
@@ -18,72 +25,86 @@ interface AttendanceStatisticsTableProps {
     attendanceStatistics: AttendanceStatistics[];
 }
 
+interface Meta {
+    isNumeric?: boolean;
+}
+
 const AttendanceStatisticsTable = ({
     attendanceStatistics,
 }: AttendanceStatisticsTableProps) => {
     const data = useMemo(() => attendanceStatistics, [attendanceStatistics]);
 
-    const columns = useMemo(
-        () => [
-            {
-                Header: "Name",
-                accessor: "personName",
-            },
-            {
-                Header: "Present percentage",
-                accessor: "presentPercentage",
-                render: (value: number) => `${value}%`,
-                isNumeric: true,
-            },
-            {
-                Header: "Total present staffing",
-                accessor: "totalPresentAtStaffingComparedToRounds",
-                isNumeric: true,
-            },
-            {
-                Header: "Total assigned staffing (from rounds that have been started)",
-                accessor: "totalStaffingComparedToRounds",
-                isNumeric: true,
-            },
-            {
-                Header: "Total assigned staffing",
-                accessor: "totalAssignedStaffing",
-                isNumeric: true,
-            },
-        ],
-        []
-    );
+    const columnHelper = createColumnHelper<AttendanceStatistics>();
 
-    const { getTableProps, getTableBodyProps, headerGroups, rows, prepareRow } =
-        //eslint-disable-next-line
-        //@ts-ignore
-        useTable({ columns, data }, useSortBy);
+    const columns = [
+        columnHelper.accessor("personName", {
+            cell: (info) => info.getValue(),
+            header: "Name",
+        }),
+        columnHelper.accessor("presentPercentage", {
+            cell: (info) => `${info.getValue()}%`,
+            header: "Present percentage",
+            meta: {
+                isNumeric: true,
+            },
+        }),
+        columnHelper.accessor("totalPresentAtStaffingComparedToRounds", {
+            cell: (info) => info.getValue(),
+            header: "Total present staffing",
+            meta: {
+                isNumeric: true,
+            },
+        }),
+        columnHelper.accessor("totalStaffingComparedToRounds", {
+            cell: (info) => info.getValue(),
+            header: "Total assigned staffing (from rounds that have been started)",
+            meta: {
+                isNumeric: true,
+            },
+        }),
+        columnHelper.accessor("totalAssignedStaffing", {
+            cell: (info) => info.getValue(),
+            header: "Total assigned staffing",
+            meta: {
+                isNumeric: true,
+            },
+        }),
+    ];
+
+    const [sorting, setSorting] = useState<SortingState>([]);
+    const table = useReactTable({
+        columns,
+        data,
+        getCoreRowModel: getCoreRowModel(),
+        onSortingChange: setSorting,
+        getSortedRowModel: getSortedRowModel(),
+        state: {
+            sorting,
+        },
+    });
     return (
-        <Table {...getTableProps()}>
+        <Table>
             <Thead>
-                {headerGroups.map((headerGroup) => (
-                    <Tr {...headerGroup.getHeaderGroupProps()}>
-                        {headerGroup.headers.map((column) => {
-                            //eslint-disable-next-line
-                            //@ts-ignore
-                            const isSorted = column.isSorted;
-                            //eslint-disable-next-line
-                            //@ts-ignore
-                            const isSortedDesc = column.isSortedDesc;
+                {table.getHeaderGroups().map((headerGroup) => (
+                    <Tr key={headerGroup.id} bg="gray.400">
+                        {headerGroup.headers.map((header) => {
+                            const meta: Meta = header.column.columnDef
+                                .meta as Meta;
                             return (
                                 <Th
-                                    backgroundColor="gray.400"
-                                    {...column.getHeaderProps(
-                                        //eslint-disable-next-line
-                                        // @ts-ignore
-                                        column.getSortByToggleProps()
-                                    )}
+                                    key={header.id}
+                                    onClick={header.column.getToggleSortingHandler()}
+                                    isNumeric={meta?.isNumeric}
                                 >
                                     <Flex>
-                                        {column.render("Header")}
+                                        {flexRender(
+                                            header.column.columnDef.header,
+                                            header.getContext()
+                                        )}
                                         <chakra.span pl="4">
-                                            {isSorted ? (
-                                                isSortedDesc ? (
+                                            {header.column.getIsSorted() ? (
+                                                header.column.getIsSorted() ===
+                                                "desc" ? (
                                                     <FaChevronDown aria-label="sorted descending" />
                                                 ) : (
                                                     <FaChevronUp aria-label="sorted ascending" />
@@ -97,22 +118,23 @@ const AttendanceStatisticsTable = ({
                     </Tr>
                 ))}
             </Thead>
-            <Tbody {...getTableBodyProps()}>
-                {rows.map((row) => {
-                    prepareRow(row);
-                    return (
-                        <Tr {...row.getRowProps()}>
-                            {row.cells.map((cell) => (
-                                <Td {...cell.getCellProps()}>
-                                    {cell.render("Cell")}
-                                    {cell.column.id === "presentPercentage" &&
-                                        cell.value &&
-                                        "%"}
+            <Tbody>
+                {table.getRowModel().rows.map((row) => (
+                    <Tr key={row.id}>
+                        {row.getVisibleCells().map((cell) => {
+                            const meta: Meta = cell.column.columnDef
+                                .meta as Meta;
+                            return (
+                                <Td key={cell.id} isNumeric={meta?.isNumeric}>
+                                    {flexRender(
+                                        cell.column.columnDef.cell,
+                                        cell.getContext()
+                                    )}
                                 </Td>
-                            ))}
-                        </Tr>
-                    );
-                })}
+                            );
+                        })}
+                    </Tr>
+                ))}
             </Tbody>
         </Table>
     );

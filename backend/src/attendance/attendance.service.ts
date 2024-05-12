@@ -172,7 +172,7 @@ export class AttendanceService {
         presentPercentage:
           (totalPresentAtStaffingComparedToRounds /
             totalStaffingComparedToRounds) *
-          100,
+            100 || 0,
         totalPresentAtStaffingComparedToRounds,
         totalStaffingComparedToRounds,
       };

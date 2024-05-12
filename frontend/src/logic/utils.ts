@@ -308,7 +308,7 @@ export const getResolvedStatus = (status: AttemptStatus) => {
         case AttemptStatus.EXTRA_GIVEN:
             return "Extra given";
         default:
-            return "Unknown";
+            return "";
     }
 };
 
