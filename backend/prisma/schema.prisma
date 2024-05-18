@@ -55,7 +55,7 @@ model StaffActivity {
 model Competition {
   id                        String    @id @default(uuid())
   wcaId                     String
-  sendResultsToWcaLive      Boolean   @default(true)
+  sendingResultsFrequency   SendingResultsFrequency
   name                      String
   countryIso2               String?
   shouldUpdateDevices       Boolean   @default(false)
@@ -164,4 +164,10 @@ enum StaffRole {
   JUDGE
   RUNNER
   SCRAMBLER
+}
+
+enum SendingResultsFrequency {
+  AFTER_SOLVE
+  EVERY_5_MINUTES
+  NEVER
 }

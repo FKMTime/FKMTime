@@ -1,20 +1,16 @@
-import {
-    Box,
-    Button,
-    Checkbox,
-    FormControl,
-    FormLabel,
-} from "@chakra-ui/react";
+import { Box, Button, FormControl, FormLabel, Select } from "@chakra-ui/react";
 import { FormEvent } from "react";
 
 import PasswordInput from "@/Components/PasswordInput.tsx";
-import { Competition } from "@/logic/interfaces.ts";
+import { Competition, SendingResultsFrequency } from "@/logic/interfaces.ts";
+import { prettySendingResultsFrequency } from "@/logic/utils";
 
 interface CompetitionFormProps {
     competition: Competition;
     setCompetition: (competition: Competition) => void;
     handleSubmit: (event: FormEvent<HTMLFormElement>) => void;
 }
+
 const CompetitionForm = ({
     competition,
     setCompetition,
@@ -43,17 +39,23 @@ const CompetitionForm = ({
                 />
             </FormControl>
             <FormControl display="flex" flexDirection="column" gap="2">
-                <Checkbox
-                    defaultChecked={competition.sendResultsToWcaLive}
+                <FormLabel>Send results to WCA Live</FormLabel>
+                <Select
+                    value={competition.sendingResultsFrequency}
                     onChange={(event) =>
                         setCompetition({
                             ...competition,
-                            sendResultsToWcaLive: event?.target.checked,
+                            sendingResultsFrequency: event?.target
+                                .value as SendingResultsFrequency,
                         })
                     }
                 >
-                    Send results to WCA Live (disable it only during tutorial)
-                </Checkbox>
+                    {Object.values(SendingResultsFrequency).map((frequency) => (
+                        <option key={frequency} value={frequency}>
+                            {prettySendingResultsFrequency(frequency)}
+                        </option>
+                    ))}
+                </Select>
             </FormControl>
             <Button type="submit" colorScheme="green">
                 Save

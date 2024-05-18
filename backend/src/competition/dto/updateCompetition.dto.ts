@@ -1,10 +1,11 @@
-import { IsBoolean, IsNotEmpty, IsString } from 'class-validator';
+import { SendingResultsFrequency } from '@prisma/client';
+import { IsEnum, IsNotEmpty, IsString } from 'class-validator';
 
 export class UpdateCompetitionDto {
   @IsString()
   @IsNotEmpty()
   scoretakingToken: string;
 
-  @IsBoolean()
-  sendResultsToWcaLive: boolean;
+  @IsEnum(SendingResultsFrequency)
+  sendingResultsFrequency: SendingResultsFrequency;
 }

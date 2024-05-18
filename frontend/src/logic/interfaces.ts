@@ -28,7 +28,7 @@ export interface Competition {
     id: string;
     wcaId: string;
     name: string;
-    sendResultsToWcaLive: boolean;
+    sendingResultsFrequency: SendingResultsFrequency;
     shouldUpdateDevices: boolean;
     countryIso2: string;
     scoretakingToken?: string;
@@ -40,6 +40,12 @@ export interface Competition {
     updatedAt?: Date;
 }
 
+//eslint-disable-next-line
+export enum SendingResultsFrequency {
+    AFTER_SOLVE = "AFTER_SOLVE",
+    EVERY_5_MINUTES = "EVERY_5_MINUTES",
+    NEVER = "NEVER",
+}
 export interface Activity extends WCIFActivity {
     realStartTime?: Date;
     realEndTime?: Date;

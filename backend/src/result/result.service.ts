@@ -1,5 +1,10 @@
 import { forwardRef, Inject, Injectable } from '@nestjs/common';
-import { AttemptStatus, AttemptType, DeviceType } from '@prisma/client';
+import {
+  AttemptStatus,
+  AttemptType,
+  DeviceType,
+  SendingResultsFrequency,
+} from '@prisma/client';
 import { Event, Person, Round } from '@wca/helpers';
 import { DbService } from 'src/db/db.service';
 import { getTranslation, isLocaleAvailable } from 'src/translations';
@@ -501,7 +506,10 @@ export class ResultService {
         }
       }
     }
-    if (competition.sendResultsToWcaLive) {
+    if (
+      competition.sendingResultsFrequency ===
+      SendingResultsFrequency.AFTER_SOLVE
+    ) {
       try {
         const resultToEnter = await this.getResultById(result.id);
         try {

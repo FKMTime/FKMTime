@@ -57,9 +57,6 @@ export class WcaService {
     const competition = await this.prisma.competition.findFirst();
     const { competitionId, eventId, roundNumber, scoretakingToken, results } =
       await this.getAttemptsToEnterToWcaLive(result, competition);
-    if (!competition.sendResultsToWcaLive) {
-      return;
-    }
     try {
       const response = await fetch(`${WCA_LIVE_API_ORIGIN}/enter-results`, {
         method: 'POST',

@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, SendingResultsFrequency } from '@prisma/client';
 import { Assignment, Competition, Person } from '@wca/helpers';
 import * as fs from 'fs';
 import { sha512 } from 'js-sha512';
@@ -24,7 +24,7 @@ export async function seedDb() {
   await prisma.competition.create({
     data: {
       name: wcifJson.name,
-      sendResultsToWcaLive: true,
+      sendingResultsFrequency: SendingResultsFrequency.AFTER_SOLVE,
       wcaId: wcifJson.id,
       countryIso2: 'PL',
       shouldUpdateDevices: true,

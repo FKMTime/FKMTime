@@ -319,3 +319,16 @@ export const cumulativeRoundsToString = (roundIds: string[]) => {
         })
         .join(", ");
 };
+
+export const prettySendingResultsFrequency = (frequency: string) => {
+    switch (frequency) {
+        case "NEVER":
+            return "Do not send";
+        case "AFTER_SOLVE":
+            return "Send after every solve";
+        case "EVERY_5_MINUTES":
+            return "Send active rounds results every 5 minutes";
+        default:
+            return "Unknown";
+    }
+};

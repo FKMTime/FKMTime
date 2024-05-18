@@ -1,6 +1,6 @@
 import { forwardRef, HttpException, Inject, Injectable } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
-import { Room, StaffRole } from '@prisma/client';
+import { Room, SendingResultsFrequency, StaffRole } from '@prisma/client';
 import {
   Activity,
   Assignment,
@@ -8,6 +8,7 @@ import {
   Person,
   Room as WCIFRoom,
   Venue,
+  parseActivityCode,
 } from '@wca/helpers';
 import { DbService } from '../db/db.service';
 import { eventsData } from '../events';
@@ -21,12 +22,14 @@ import { CompetitionGateway } from './competition.gateway';
 import { UpdateCompetitionDto } from './dto/updateCompetition.dto';
 import { UpdateRoomsDto } from './dto/updateCurrentRound.dto';
 import { UpdateDevicesSettingsDto } from './dto/updateDevicesSettings.dto';
+import { ResultService } from 'src/result/result.service';
 
 @Injectable()
 export class CompetitionService {
   constructor(
     private readonly prisma: DbService,
     private readonly competitionGateway: CompetitionGateway,
+    private readonly resultService: ResultService,
     private readonly wcaService: WcaService,
     @Inject(forwardRef(() => SocketController))
     private readonly socketController: SocketController,
@@ -50,6 +53,7 @@ export class CompetitionService {
         wcaId: wcifPublic.id,
         countryIso2: wcifPublic.countryIso2,
         wcif: wcifPublic,
+        sendingResultsFrequency: SendingResultsFrequency.AFTER_SOLVE,
       },
     });
     await this.prisma.person.createMany({
@@ -451,7 +455,7 @@ export class CompetitionService {
           competition.scoretakingToken !== dto.scoretakingToken
             ? new Date()
             : competition.scoretakingTokenUpdatedAt,
-        sendResultsToWcaLive: dto.sendResultsToWcaLive,
+        sendingResultsFrequency: dto.sendingResultsFrequency,
       },
     });
   }
@@ -499,6 +503,12 @@ export class CompetitionService {
     if (!competition) {
       return;
     }
+    if (
+      competition.sendingResultsFrequency ===
+      SendingResultsFrequency.EVERY_5_MINUTES
+    ) {
+      this.sendResultsToWcaLive();
+    }
     const wcif = JSON.parse(JSON.stringify(competition.wcif));
     const rooms = await this.prisma.room.findMany({
       include: {
@@ -534,5 +544,16 @@ export class CompetitionService {
         });
       });
     });
+  }
+
+  async sendResultsToWcaLive() {
+    const rooms = await this.prisma.room.findMany();
+    for (const room of rooms) {
+      if (room.currentGroupId) {
+        const roundId = room.currentGroupId.split('-g')[0];
+        const results = await this.resultService.getAllResultsByRound(roundId);
+        await this.wcaService.enterRoundToWcaLive(results);
+      }
+    }
   }
 }
