@@ -10,8 +10,12 @@ export const WCA_ORIGIN = import.meta.env.PROD
     ? "https://www.worldcubeassociation.org"
     : DEV_WCA_URL;
 
-export const WCA_CLIENT_ID = import.meta.env.PROD
+const PRODUCTION_WCA_CLIENT_ID = import.meta.env.VITE_WCA_CLIENT_ID
     ? import.meta.env.VITE_WCA_CLIENT_ID
+    : "ZODPEQQjPyCnAO-GAXtaHjN7iQyosQfSzPMZG6RcVJ0";
+
+export const WCA_CLIENT_ID = import.meta.env.PROD
+    ? PRODUCTION_WCA_CLIENT_ID
     : "example-application-id";
 
 const BACKEND_URL = import.meta.env.PROD ? "/api" : DEV_BACKEND_URL;
