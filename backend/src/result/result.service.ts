@@ -1,9 +1,10 @@
-import { forwardRef, Inject, Injectable } from '@nestjs/common';
+import { forwardRef, HttpException, Inject, Injectable } from '@nestjs/common';
 import {
   AttemptStatus,
   AttemptType,
   DeviceType,
   SendingResultsFrequency,
+  StaffRole,
 } from '@prisma/client';
 import { Event, Person, Round } from '@wca/helpers';
 import { DbService } from 'src/db/db.service';
@@ -101,6 +102,44 @@ export class ResultService {
   }
 
   async deleteResultById(id: string) {
+    const result = await this.prisma.result.findUnique({
+      where: {
+        id: id,
+      },
+    });
+    if (!result) {
+      throw new HttpException('Result not found', 404);
+    }
+    const personActivities = await this.prisma.staffActivity.findMany({
+      where: {
+        personId: result.personId,
+      },
+    });
+    if (personActivities) {
+      for (const activity of personActivities) {
+        if (
+          activity.role === StaffRole.COMPETITOR &&
+          activity.groupId.includes(result.roundId)
+        ) {
+          if (activity.isAssigned) {
+            await this.prisma.staffActivity.update({
+              where: {
+                id: activity.id,
+              },
+              data: {
+                isPresent: false,
+              },
+            });
+          } else {
+            await this.prisma.staffActivity.delete({
+              where: {
+                id: activity.id,
+              },
+            });
+          }
+        }
+      }
+    }
     return this.prisma.result.delete({
       where: {
         id: id,

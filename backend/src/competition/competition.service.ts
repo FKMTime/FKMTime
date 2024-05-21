@@ -1,4 +1,4 @@
-import { forwardRef, HttpException, Inject, Injectable } from '@nestjs/common';
+import { HttpException, Inject, Injectable, forwardRef } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { Room, SendingResultsFrequency, StaffRole } from '@prisma/client';
 import {
@@ -8,7 +8,6 @@ import {
   Person,
   Room as WCIFRoom,
   Venue,
-  parseActivityCode,
 } from '@wca/helpers';
 import { DbService } from '../db/db.service';
 import { eventsData } from '../events';
