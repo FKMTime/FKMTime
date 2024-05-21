@@ -56,17 +56,19 @@ export class CompetitionService {
       },
     });
     await this.prisma.person.createMany({
-      data: wcif.persons.map((person: Person) => ({
-        wcaId: person.wcaId,
-        name: person.name,
-        registrantId: person.registrantId,
-        gender: person.gender,
-        countryIso2: person.countryIso2,
-        canCompete: person.registration && person.registration.isCompeting,
-        birthdate: person.wcaId
-          ? null
-          : person.birthdate && new Date(person.birthdate),
-      })),
+      data: wcif.persons
+        .filter((p: Person) => p.registration.status === 'accepted')
+        .map((person: Person) => ({
+          wcaId: person.wcaId,
+          name: person.name,
+          registrantId: person.registrantId,
+          gender: person.gender,
+          countryIso2: person.countryIso2,
+          canCompete: person.registration && person.registration.isCompeting,
+          birthdate: person.wcaId
+            ? null
+            : person.birthdate && new Date(person.birthdate),
+        })),
     });
     const rooms = [];
 
@@ -120,7 +122,7 @@ export class CompetitionService {
     if (user.wcaUserId) {
       const wcif = await this.wcaService.getWcif(wcaId, user.wcaAccessToken);
       wcif.persons.forEach((person: Person) => {
-        if (person.registrantId) {
+        if (person.registrantId && person.registration.status === 'accepted') {
           transactions.push(
             this.prisma.person.upsert({
               where: {
@@ -144,6 +146,17 @@ export class CompetitionService {
           );
         }
       });
+      wcif.persons
+        .filter((p) => p.registration.status !== 'accepted')
+        .forEach((p) => {
+          transactions.push(
+            this.prisma.person.delete({
+              where: {
+                registrantId: p.registrantId,
+              },
+            }),
+          );
+        });
     } else {
       wcifPublic.persons.forEach((person: Person) => {
         if (person.registrantId) {
