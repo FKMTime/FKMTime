@@ -63,7 +63,9 @@ export class CompetitionService {
         gender: person.gender,
         countryIso2: person.countryIso2,
         canCompete: person.registration && person.registration.isCompeting,
-        birthdate: person.wcaId ? null : new Date(person.birthdate),
+        birthdate: person.wcaId
+          ? null
+          : person.birthdate && new Date(person.birthdate),
       })),
     });
     const rooms = [];

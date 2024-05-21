@@ -1,9 +1,11 @@
 import { Box, Heading, useToast } from "@chakra-ui/react";
+import { useSetAtom } from "jotai";
 import { useEffect, useState } from "react";
 import { MdLogout } from "react-icons/md";
 import { useNavigate } from "react-router-dom";
 
 import RoundedIconButton from "@/Components/RoundedIconButton";
+import { competitionAtom } from "@/logic/atoms";
 import { logout } from "@/logic/auth";
 import {
     getCompetitionInfo,
@@ -18,6 +20,7 @@ const ImportCompetition = () => {
     const navigate = useNavigate();
     const toast = useToast();
     const [competitions, setCompetitions] = useState<WCACompetition[]>([]);
+    const setCompetition = useSetAtom(competitionAtom);
 
     const handleSubmit = async (wcaId: string) => {
         if (wcaId === "") {
@@ -31,6 +34,7 @@ const ImportCompetition = () => {
         }
         const response = await importCompetition(wcaId);
         if (response.status === 200) {
+            setCompetition(response.data);
             navigate(`/competition/`);
         } else if (response.status === 400) {
             toast({

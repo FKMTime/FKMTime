@@ -147,8 +147,8 @@ const Layout = () => {
 
     const fetchCompetition = useCallback(async () => {
         const response = await getCompetitionInfo();
-        if (response.status !== 200) {
-            navigate("/competition");
+        if (response.status === 404) {
+            navigate("/competition/import");
         }
         setCompetition(response.data);
     }, [navigate, setCompetition]);
