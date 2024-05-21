@@ -78,6 +78,13 @@ services:
     depends_on:
       backend:
         condition: service_healthy
+  
+  dummy_wca:
+    container_name: fkmtime-dummy-wca
+    restart: unless-stopped
+    image: maxidragon/dummy-wca:latest
+    ports:
+    - "3000:3000"
 
 volumes:
   database:
