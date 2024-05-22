@@ -106,7 +106,14 @@ const Home = () => {
             {isAdmin() && (
                 <HomeShortcuts rooms={rooms} currentRounds={currentRounds} />
             )}
-            <Box display="flex" flexDirection="row" gap="5">
+            <Box
+                display="flex"
+                flexDirection={{
+                    base: "column",
+                    md: "row",
+                }}
+                gap="5"
+            >
                 <FormControl width="fit-content">
                     <FormLabel>Date</FormLabel>
                     <Select

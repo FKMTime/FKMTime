@@ -35,7 +35,7 @@ const ScheduleCard = ({ activity }: ScheduleCardProps) => {
                 <Text>
                     {activity.childActivities.length === 0
                         ? ""
-                        : `${activity.childActivities.length} groups`}
+                        : `${activity.childActivities.length} ${activity.childActivities.length === 1 ? "group" : "groups"}`}
                 </Text>
                 {formattedRealTime && (
                     <Text>Real time: {formattedRealTime}</Text>
