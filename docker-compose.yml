@@ -1,35 +1,47 @@
 services:
   backend:
-    image: filipton/fkmtime-backend:latest
     build:
       context: ./backend
-      dockerfile: Dockerfile
-    container_name: fkmtime-backend
-    ports:
-      - '5000:5000'
+      dockerfile: Dockerfile.dev
+    container_name: fkmtime-dev-backend
+    network_mode: host
+    volumes:
+      - ./backend/src:/app/src
+      - /tmp/sock:/app/sock
     restart: unless-stopped
     environment:
-      - DATABASE_URL=postgres://root:password@database:5432/fkm_time
+      - DATABASE_URL=postgres://root:password@127.0.0.1:5433/fkm_time
+      - WCA_LIVE_API_ORIGIN=http://0.0.0.0:4000/api
+      - WCA_ORIGIN=http://0.0.0.0:3000
+      - WCA_CLIENT_ID=example-application-id
+      - WCA_CLIENT_SECRET=example-secret
       - SOCKET_PATH=/app/sock/socket.sock
-    env_file:
-      - .env
-    volumes:
-      - sock:/app/sock
+    depends_on:
+      database:
+        condition: service_healthy
     healthcheck:
       test: [ "CMD-SHELL", "curl -f http://localhost:5000/health || exit 1"]
       interval: 5s
       timeout: 20s
       retries: 50
-    depends_on:
-      database:
-        condition: service_healthy
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
+    container_name: fkmtime-dev-frontend
+    volumes:
+      - ./frontend/src:/app/src
+    ports:
+      - "5173:5173"
+    restart: unless-stopped
 
   database:
     image: postgres:16
-    container_name: fkmtime-database
+    container_name: fkmtime-dev-database
     ports:
-      - '5432:5432'
-    restart: unless-stopped 
+      - "5433:5432"
+    restart: unless-stopped
     environment:
       - POSTGRES_USER=root
       - POSTGRES_PASSWORD=password
@@ -37,45 +49,34 @@ services:
     volumes:
       - database:/var/lib/postgresql/data
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -d postgres" ]
+      test: ["CMD-SHELL", "pg_isready -d postgres"]
       interval: 5s
       timeout: 20s
       retries: 50
-
-  nginx:
-    image: filipton/fkmtime-nginx:latest
-    restart: unless-stopped
+    
+  api_tester:
     build:
-      context: ./
-      dockerfile: nginx.Dockerfile
-    container_name: fkmtime-nginx
+      context: ./backend/api-tester
+      dockerfile: Dockerfile.dev
+    container_name: fkmtime-dev-api-tester
     ports:
-      - '80:80'
-    env_file:
-      - .env
+      - "5001:5001"
+    environment:
+      - SOCKET_PATH=/app/sock/socket.sock
+    volumes:
+      - ./backend/api-tester/src:/app/src
+      - /tmp/sock:/app/sock
+    restart: unless-stopped
     depends_on:
       backend:
         condition: service_healthy
-      dozzle:
-        condition: service_healthy
-
-  dozzle:
-    container_name: dozzle
-    image: amir20/dozzle:latest
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-      - ./dozzle:/data
+  
+  dummy_wca:
+    container_name: fkmtime-dummy-wca
+    restart: unless-stopped
+    image: maxidragon/dummy-wca:latest
     ports:
-      - "8080:8080"
-    environment:
-      DOZZLE_BASE: /logs
-      DOZZLE_AUTH_PROVIDER: simple
-    healthcheck:
-      test: [ "CMD", "/dozzle", "healthcheck" ]
-      interval: 3s
-      timeout: 30s
-      retries: 50
+    - "3000:3000"
 
 volumes:
   database:
-  sock:
