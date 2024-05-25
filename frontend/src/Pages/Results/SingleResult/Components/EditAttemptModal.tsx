@@ -173,7 +173,7 @@ const EditAttemptModal = ({
                         ))}
                     </Select>
                 </FormControl>
-                <FormControl isRequired>
+                <FormControl>
                     <FormLabel>Time</FormLabel>
                     <AttemptResultInput
                         value={editedAttempt.value}

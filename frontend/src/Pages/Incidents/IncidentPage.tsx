@@ -143,7 +143,6 @@ const IncidentPage = () => {
             <Button colorScheme="blue" onClick={judgeFault}>
                 Judge fault
             </Button>
-            <Heading size="lg">Custom quick actions</Heading>
             {quickActions.map((quickAction) => (
                 <Button
                     key={quickAction.id}
@@ -177,7 +176,7 @@ const IncidentPage = () => {
                     }
                 />
             </FormControl>
-            <FormControl isRequired>
+            <FormControl>
                 <FormLabel>Time</FormLabel>
                 <AttemptResultInput
                     value={editedIncident.value}

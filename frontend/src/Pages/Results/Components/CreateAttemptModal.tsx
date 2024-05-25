@@ -200,7 +200,7 @@ const CreateAttemptModal = ({
                         Time limit not passed, time should be replaced to DNF
                     </Alert>
                 )}
-                <FormControl isRequired>
+                <FormControl>
                     <FormLabel>Time</FormLabel>
                     <AttemptResultInput
                         value={value}
