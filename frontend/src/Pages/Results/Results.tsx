@@ -85,10 +85,15 @@ const Results = () => {
         return getNumberOfAttemptsForRound(filters.roundId, competition.wcif);
     }, [competition, filters.roundId]);
 
-    const fetchData = async (roundId: string, searchParam?: string) => {
-        const data = await getResultsByRoundId(roundId, searchParam);
-        setResults(data);
-    };
+    const fetchData = useCallback(
+        async (roundId: string, searchParam?: string) => {
+            const data = await getResultsByRoundId(roundId, searchParam);
+            if (roundId === filters.roundId && roundId !== "") {
+                setResults(data);
+            }
+        },
+        [filters.roundId]
+    );
 
     const fetchCompetition = useCallback(async () => {
         const response = await getCompetitionInfo();
@@ -167,7 +172,7 @@ const Results = () => {
         return () => {
             socket.emit("leave", { roundId: filters.roundId });
         };
-    }, [currentRounds, filters.roundId, navigate, socket]);
+    }, [currentRounds, fetchData, filters.roundId, navigate, socket]);
 
     useEffect(() => {
         getAllRooms().then((rooms: Room[]) => {
@@ -290,7 +295,7 @@ const Results = () => {
                     )}
                 </Box>
             )}
-            {results.length > 0 ? (
+            {results && results.length > 0 ? (
                 <ResultsTable
                     results={results}
                     maxAttempts={maxAttempts}

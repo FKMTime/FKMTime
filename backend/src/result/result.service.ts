@@ -1,4 +1,10 @@
-import { forwardRef, HttpException, Inject, Injectable } from '@nestjs/common';
+import {
+  forwardRef,
+  HttpException,
+  Inject,
+  Injectable,
+  Logger,
+} from '@nestjs/common';
 import {
   AttemptStatus,
   AttemptType,
@@ -37,6 +43,8 @@ export class ResultService {
     private readonly deviceService: DeviceService,
     private readonly personService: PersonService,
   ) {}
+
+  private logger = new Logger('ResultService');
 
   async getAllResultsByRound(roundId: string, search?: string) {
     const whereParams = {
@@ -555,10 +563,12 @@ export class ResultService {
           //This is intentionally not awaited
           this.wcaService.enterWholeScorecardToWcaLive(resultToEnter);
         } catch (e) {
-          console.log(e);
+          this.logger.error('Error while entering result to WCA Live');
+          this.logger.error(e);
         }
       } catch (e) {
-        console.log(e);
+        this.logger.error('Error while entering result to WCA Live');
+        this.logger.error(e);
       }
     }
     this.resultGateway.handleResultEntered(result.roundId);

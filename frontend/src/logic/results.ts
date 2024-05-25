@@ -9,7 +9,7 @@ export const getResultsByRoundId = async (roundId: string, search?: string) => {
         route += `?search=${search}`;
     }
     const response = await backendRequest(route, "GET", true);
-    return await response.json();
+    return (await response.json()) || [];
 };
 
 export const getAllResultsByPersonId = async (id: string) => {

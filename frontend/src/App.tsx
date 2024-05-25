@@ -86,6 +86,10 @@ const App = () => {
                     element: <Results />,
                 },
                 {
+                    path: "results/round",
+                    element: <Results />,
+                },
+                {
                     path: "results/:id",
                     element: <SingleResult />,
                 },
