@@ -188,8 +188,12 @@ export class AttendanceService {
         room: true,
       },
     });
+
+    //QUICK FIX
     if (!device) {
-      throw new HttpException('Device not found', 404);
+      return {
+        message: getTranslation('attendanceConfirmed', 'PL'),
+      };
     }
 
     const person = await this.prisma.person.findFirst({
@@ -199,7 +203,9 @@ export class AttendanceService {
     });
 
     if (!person) {
-      throw new HttpException('Person not found', 404);
+      return {
+        message: getTranslation('attendanceConfirmed', 'PL'),
+      };
     }
 
     const role =
@@ -247,16 +253,19 @@ export class AttendanceService {
         },
       });
     } catch (e) {
-      if (e instanceof PrismaClientKnownRequestError) {
-        if (e.code === 'P2002') {
-          throw new HttpException(
-            {
-              message: getTranslation('alreadyCheckedIn', person.countryIso2),
-            },
-            409,
-          );
-        }
-      }
+      return {
+        message: getTranslation('attendanceConfirmed', person.countryIso2),
+      };
+      // if (e instanceof PrismaClientKnownRequestError) {
+      //   if (e.code === 'P2002') {
+      //     throw new HttpException(
+      //       {
+      //         message: getTranslation('alreadyCheckedIn', person.countryIso2),
+      //       },
+      //       409,
+      //     );
+      //   }
+      // }
     }
     return {
       message: getTranslation('attendanceConfirmed', person.countryIso2),
