@@ -71,36 +71,40 @@ const EditAccountModal = ({
                 as="form"
                 onSubmit={handleSubmit}
             >
-                <FormControl isRequired>
-                    <FormLabel>Username</FormLabel>
-                    <Input
-                        placeholder="Username"
-                        _placeholder={{ color: "white" }}
-                        value={editedAccount.username}
-                        disabled={isLoading}
-                        onChange={(e) =>
-                            setEditedAccount({
-                                ...editedAccount,
-                                username: e.target.value,
-                            })
-                        }
-                    />
-                </FormControl>
-                <FormControl>
-                    <FormLabel>Full name</FormLabel>
-                    <Input
-                        placeholder="Full name"
-                        _placeholder={{ color: "white" }}
-                        value={editedAccount.fullName}
-                        disabled={isLoading}
-                        onChange={(e) =>
-                            setEditedAccount({
-                                ...editedAccount,
-                                fullName: e.target.value,
-                            })
-                        }
-                    />
-                </FormControl>
+                {!editedAccount.wcaUserId && (
+                    <>
+                        <FormControl isRequired>
+                            <FormLabel>Username</FormLabel>
+                            <Input
+                                placeholder="Username"
+                                _placeholder={{ color: "white" }}
+                                value={editedAccount.username}
+                                disabled={isLoading}
+                                onChange={(e) =>
+                                    setEditedAccount({
+                                        ...editedAccount,
+                                        username: e.target.value,
+                                    })
+                                }
+                            />
+                        </FormControl>
+                        <FormControl>
+                            <FormLabel>Full name</FormLabel>
+                            <Input
+                                placeholder="Full name"
+                                _placeholder={{ color: "white" }}
+                                value={editedAccount.fullName}
+                                disabled={isLoading}
+                                onChange={(e) =>
+                                    setEditedAccount({
+                                        ...editedAccount,
+                                        fullName: e.target.value,
+                                    })
+                                }
+                            />
+                        </FormControl>
+                    </>
+                )}
                 <FormControl isRequired>
                     <FormLabel>Role</FormLabel>
                     <Select

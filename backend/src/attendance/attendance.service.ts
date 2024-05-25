@@ -1,5 +1,4 @@
-import { HttpException, Injectable } from '@nestjs/common';
-import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
+import { Injectable } from '@nestjs/common';
 import { DbService } from '../db/db.service';
 import { getTranslation } from '../translations';
 import { AttendanceGateway } from './attendance.gateway';
