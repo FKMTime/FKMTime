@@ -2,7 +2,7 @@ import { IconButton, Td, Tr, useToast } from "@chakra-ui/react";
 import { useState } from "react";
 import { FaList } from "react-icons/fa";
 import { MdDelete } from "react-icons/md";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 import Alert from "@/Components/Alert.tsx";
 import { isAdmin } from "@/logic/auth";
@@ -64,7 +64,9 @@ const ResultRow = ({ result, maxAttempts, fetchData }: ResultRowProps) => {
         <>
             <Tr key={result.id}>
                 <Td>
-                    {result.person.name} ({result.person.registrantId})
+                    <Link to={`/results/${result.id}`}>
+                        {result.person.name} ({result.person.registrantId})
+                    </Link>
                 </Td>
                 {!isMobileView() &&
                     Array.from({ length: maxAttempts }, (_, i) => (
