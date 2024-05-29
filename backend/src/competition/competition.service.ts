@@ -133,6 +133,9 @@ export class CompetitionService {
                 wcaId: person.wcaId,
                 gender: person.gender,
                 countryIso2: person.countryIso2,
+                birthdate: person.wcaId
+                  ? null
+                  : person.birthdate && new Date(person.birthdate),
               },
               create: {
                 name: person.name,
@@ -140,7 +143,9 @@ export class CompetitionService {
                 registrantId: person.registrantId,
                 gender: person.gender,
                 countryIso2: person.countryIso2,
-                birthdate: person.wcaId ? null : new Date(person.birthdate),
+                birthdate: person.wcaId
+                  ? null
+                  : person.birthdate && new Date(person.birthdate),
               },
             }),
           );
@@ -150,7 +155,7 @@ export class CompetitionService {
         .filter((p) => p.registration.status !== 'accepted')
         .forEach((p) => {
           transactions.push(
-            this.prisma.person.delete({
+            this.prisma.person.deleteMany({
               where: {
                 registrantId: p.registrantId,
               },
