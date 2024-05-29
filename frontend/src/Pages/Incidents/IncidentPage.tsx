@@ -8,6 +8,7 @@ import {
     Text,
     useToast,
 } from "@chakra-ui/react";
+import { useConfirm } from "chakra-ui-confirm";
 import { useAtomValue } from "jotai";
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
@@ -17,7 +18,7 @@ import LoadingPage from "@/Components/LoadingPage";
 import PenaltySelect from "@/Components/PenaltySelect";
 import Select from "@/Components/Select";
 import { competitionAtom } from "@/logic/atoms";
-import { getIncidentById, updateAttempt } from "@/logic/attempt";
+import { deleteAttempt, getIncidentById, updateAttempt } from "@/logic/attempt";
 import { DNF_VALUE } from "@/logic/constants";
 import {
     AttemptStatus,
@@ -34,6 +35,7 @@ const IncidentPage = () => {
     const navigate = useNavigate();
     const competition = useAtomValue(competitionAtom);
     const toast = useToast();
+    const confirm = useConfirm();
     const { id } = useParams<{ id: string }>();
     const [persons, setPersons] = useState<Person[]>([]);
     const [quickActions, setQuickActions] = useState<QuickAction[]>([]);
@@ -119,6 +121,35 @@ const IncidentPage = () => {
             });
         }
         setIsLoading(false);
+    };
+
+    const handleDelete = async () => {
+        confirm({
+            title: "Are you sure you want to delete this attempt?",
+            description: "This action cannot be undone.",
+            onConfirm: async () => {
+                setIsLoading(true);
+                const status = await deleteAttempt(editedIncident.id);
+                if (status === 204) {
+                    toast({
+                        title: "Successfully deleted attempt.",
+                        status: "success",
+                        duration: 9000,
+                        isClosable: true,
+                    });
+                    navigate("/incidents");
+                } else {
+                    toast({
+                        title: "Error",
+                        description: "Something went wrong",
+                        status: "error",
+                        duration: 9000,
+                        isClosable: true,
+                    });
+                }
+                setIsLoading(false);
+            },
+        });
     };
 
     return (
@@ -288,6 +319,9 @@ const IncidentPage = () => {
                     }
                 >
                     Save and give extra
+                </Button>
+                <Button colorScheme="red" onClick={handleDelete}>
+                    Delete attempt
                 </Button>
             </Box>
         </Box>
