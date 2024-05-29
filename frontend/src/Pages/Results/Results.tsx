@@ -9,12 +9,12 @@ import {
     useToast,
 } from "@chakra-ui/react";
 import { activityCodeToName, Event, Round } from "@wca/helpers";
+import { useConfirm } from "chakra-ui-confirm";
 import { useAtom } from "jotai";
 import { ChangeEvent, useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import io from "socket.io-client";
 
-import Alert from "@/Components/Alert";
 import EventIcon from "@/Components/Icons/EventIcon";
 import LoadingPage from "@/Components/LoadingPage";
 import PlusButton from "@/Components/PlusButton.tsx";
@@ -40,6 +40,7 @@ import ResultsTable from "./Components/ResultsTable";
 const Results = () => {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
+    const confirm = useConfirm();
 
     const filters = {
         eventId: id?.split("-")[0] || "",
@@ -57,7 +58,6 @@ const Results = () => {
         })
     );
 
-    const [openConfirmation, setOpenConfirmation] = useState<boolean>(false);
     const [competition, setCompetition] = useAtom(competitionAtom);
     const [results, setResults] = useState<Result[]>([]);
     const [currentRounds, setCurrentRounds] = useState<string[]>([]);
@@ -114,33 +114,41 @@ const Results = () => {
         setSearch(event.target.value);
     };
 
-    const handleResubmitRound = () => {
-        setOpenConfirmation(true);
-    };
-
-    const handleCancel = () => {
-        setOpenConfirmation(false);
-    };
-
-    const handleConfirm = async () => {
-        setOpenConfirmation(false);
-        const status = await reSubmitRoundToWcaLive(filters.roundId);
-        if (status === 200) {
-            toast({
-                title: "Successfully resubmitted round results to WCA Live.",
-                status: "success",
-                duration: 9000,
-                isClosable: true,
+    const handleResubmitRound = async () => {
+        confirm({
+            title: "Resubmit results",
+            description:
+                "Are you sure you want to override results from WCA Live?",
+        })
+            .then(async () => {
+                const status = await reSubmitRoundToWcaLive(filters.roundId);
+                if (status === 200) {
+                    toast({
+                        title: "Successfully resubmitted round results to WCA Live.",
+                        status: "success",
+                        duration: 9000,
+                        isClosable: true,
+                    });
+                } else {
+                    toast({
+                        title: "Error",
+                        description: "Something went wrong",
+                        status: "error",
+                        duration: 9000,
+                        isClosable: true,
+                    });
+                }
+            })
+            .catch(() => {
+                toast({
+                    title: "Cancelled",
+                    description:
+                        "You have cancelled the resubmission of the results.",
+                    status: "info",
+                    duration: 9000,
+                    isClosable: true,
+                });
             });
-        } else {
-            toast({
-                title: "Error",
-                description: "Something went wrong",
-                status: "error",
-                duration: 9000,
-                isClosable: true,
-            });
-        }
     };
 
     const handleCloseCreateAttemptModal = () => {
@@ -304,13 +312,6 @@ const Results = () => {
             ) : (
                 <Heading size="lg">No results found</Heading>
             )}
-            <Alert
-                isOpen={openConfirmation}
-                onCancel={handleCancel}
-                onConfirm={handleConfirm}
-                title="Resubmit results"
-                description="Are you sure you want to override results from WCA Live?"
-            />
             <CreateAttemptModal
                 isOpen={isOpenCreateAttemptModal}
                 onClose={handleCloseCreateAttemptModal}

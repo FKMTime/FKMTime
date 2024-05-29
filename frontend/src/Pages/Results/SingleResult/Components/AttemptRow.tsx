@@ -1,8 +1,8 @@
 import { IconButton, Td, Tr, useToast } from "@chakra-ui/react";
+import { useConfirm } from "chakra-ui-confirm";
 import { useState } from "react";
 import { MdDelete, MdEdit, MdNewLabel } from "react-icons/md";
 
-import Alert from "@/Components/Alert";
 import { deleteAttempt } from "@/logic/attempt";
 import { Attempt, AttemptType, Result } from "@/logic/interfaces";
 import { getPersonNameAndRegistrantId } from "@/logic/persons.ts";
@@ -28,40 +28,48 @@ const AttemptRow = ({
     result,
 }: AttemptRowProps) => {
     const toast = useToast();
-    const [openConfirmation, setOpenConfirmation] = useState<boolean>(false);
+    const confirm = useConfirm();
     const [isOpenEditAttemptModal, setIsOpenEditAttemptModal] =
         useState<boolean>(false);
     const [isOpenGiveExtraAttemptModal, setIsOpenGiveExtraAttemptModal] =
         useState<boolean>(false);
 
     const handleDelete = async () => {
-        setOpenConfirmation(true);
-    };
-
-    const handleCancel = () => {
-        setOpenConfirmation(false);
-    };
-
-    const handleConfirm = async () => {
-        setOpenConfirmation(false);
-        const status = await deleteAttempt(attempt.id);
-        if (status === 204) {
-            toast({
-                title: "Successfully deleted attempt.",
-                status: "success",
-                duration: 9000,
-                isClosable: true,
+        confirm({
+            title: "Delete attempt",
+            description:
+                "Are you sure you want to delete this attempt? This action cannot be undone",
+        })
+            .then(async () => {
+                const status = await deleteAttempt(attempt.id);
+                if (status === 204) {
+                    toast({
+                        title: "Successfully deleted attempt.",
+                        status: "success",
+                        duration: 9000,
+                        isClosable: true,
+                    });
+                    fetchData();
+                } else {
+                    toast({
+                        title: "Error",
+                        description: "Something went wrong",
+                        status: "error",
+                        duration: 9000,
+                        isClosable: true,
+                    });
+                }
+            })
+            .catch(() => {
+                toast({
+                    title: "Cancelled",
+                    description:
+                        "You have cancelled the deletion of the attempt.",
+                    status: "info",
+                    duration: 9000,
+                    isClosable: true,
+                });
             });
-            fetchData();
-        } else {
-            toast({
-                title: "Error",
-                description: "Something went wrong",
-                status: "error",
-                duration: 9000,
-                isClosable: true,
-            });
-        }
     };
 
     const handleCloseModal = async () => {
@@ -135,13 +143,6 @@ const AttemptRow = ({
                     />
                 </Td>
             </Tr>
-            <Alert
-                isOpen={openConfirmation}
-                onCancel={handleCancel}
-                onConfirm={handleConfirm}
-                title="Delete attempt"
-                description="Are you sure you want to delete this attempt? This action cannot be undone"
-            />
             <EditAttemptModal
                 isOpen={isOpenEditAttemptModal}
                 onClose={handleCloseModal}

@@ -1,4 +1,5 @@
 import { Box, IconButton, Td, Text, Tr, useToast } from "@chakra-ui/react";
+import { useConfirm } from "chakra-ui-confirm";
 import { useState } from "react";
 import { MdDelete, MdEdit } from "react-icons/md";
 
@@ -6,7 +7,6 @@ import { deleteDevice } from "@/logic/devices";
 import { Device } from "@/logic/interfaces";
 import { prettyDeviceType } from "@/logic/utils";
 
-import Alert from "../../../Components/Alert";
 import BatteryIcon from "../../../Components/Icons/BatteryIcon";
 import EditDeviceModal from "./EditDeviceModal";
 
@@ -17,43 +17,51 @@ interface DeviceRowProps {
 
 const DeviceRow = ({ device, fetchData }: DeviceRowProps) => {
     const toast = useToast();
-    const [openConfirmation, setOpenConfirmation] = useState<boolean>(false);
+    const confirm = useConfirm();
     const [isOpenEditDeviceModal, setIsOpenEditDeviceModal] =
         useState<boolean>(false);
-
-    const handleDelete = async () => {
-        setOpenConfirmation(true);
-    };
-
-    const handleCancel = () => {
-        setOpenConfirmation(false);
-    };
 
     const handleCloseEditDeviceModal = async () => {
         fetchData();
         setIsOpenEditDeviceModal(false);
     };
 
-    const handleConfirm = async () => {
-        setOpenConfirmation(false);
-        const status = await deleteDevice(device.id);
-        if (status === 204) {
-            toast({
-                title: "Successfully deleted device.",
-                status: "success",
-                duration: 9000,
-                isClosable: true,
+    const handleDelete = async () => {
+        confirm({
+            title: "Delete device",
+            description:
+                "Are you sure you want to delete this device? This action cannot be undone",
+        })
+            .then(async () => {
+                const status = await deleteDevice(device.id);
+                if (status === 204) {
+                    toast({
+                        title: "Successfully deleted device.",
+                        status: "success",
+                        duration: 9000,
+                        isClosable: true,
+                    });
+                    fetchData();
+                } else {
+                    toast({
+                        title: "Error",
+                        description: "Something went wrong",
+                        status: "error",
+                        duration: 9000,
+                        isClosable: true,
+                    });
+                }
+            })
+            .catch(() => {
+                toast({
+                    title: "Cancelled",
+                    description:
+                        "You have cancelled the deletion of the device.",
+                    status: "info",
+                    duration: 9000,
+                    isClosable: true,
+                });
             });
-            fetchData();
-        } else {
-            toast({
-                title: "Error",
-                description: "Something went wrong",
-                status: "error",
-                duration: 9000,
-                isClosable: true,
-            });
-        }
     };
 
     return (
@@ -102,13 +110,6 @@ const DeviceRow = ({ device, fetchData }: DeviceRowProps) => {
                     />
                 </Td>
             </Tr>
-            <Alert
-                isOpen={openConfirmation}
-                onCancel={handleCancel}
-                onConfirm={handleConfirm}
-                title="Delete device"
-                description="Are you sure?"
-            />
             <EditDeviceModal
                 isOpen={isOpenEditDeviceModal}
                 onClose={handleCloseEditDeviceModal}

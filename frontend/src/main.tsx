@@ -5,6 +5,7 @@ import { ChakraProvider, extendTheme } from "@chakra-ui/react";
 import ReactDOM from "react-dom/client";
 
 import App from "./App";
+import { ConfirmProvider } from "chakra-ui-confirm";
 
 const theme = extendTheme({
     styles: {
@@ -19,6 +20,8 @@ const theme = extendTheme({
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
     <ChakraProvider theme={theme} resetCSS>
-        <App />
+        <ConfirmProvider>
+            <App />
+        </ConfirmProvider>
     </ChakraProvider>
 );

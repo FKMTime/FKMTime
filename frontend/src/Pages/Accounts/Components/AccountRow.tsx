@@ -1,9 +1,9 @@
 import { Box, IconButton, Td, Text, Tr, useToast } from "@chakra-ui/react";
+import { useConfirm } from "chakra-ui-confirm";
 import { useState } from "react";
 import { MdDelete, MdEdit, MdLock } from "react-icons/md";
 
 import wcaLogo from "@/assets/wca.svg";
-import Alert from "@/Components/Alert";
 import RoleIcon from "@/Components/Icons/RoleIcon.tsx";
 import { deleteAccount } from "@/logic/accounts";
 import { Account } from "@/logic/interfaces";
@@ -19,45 +19,53 @@ interface AccountRowProps {
 
 const AccountRow = ({ account, fetchData }: AccountRowProps) => {
     const toast = useToast();
-    const [openConfirmation, setOpenConfirmation] = useState<boolean>(false);
+    const confirm = useConfirm();
     const [isOpenEditAccountModal, setIsOpenEditAccountModal] =
         useState<boolean>(false);
     const [isOpenChangePasswordModal, setIsOpenChangePasswordModal] =
         useState<boolean>(false);
-
-    const handleDelete = async () => {
-        setOpenConfirmation(true);
-    };
-
-    const handleCancel = () => {
-        setOpenConfirmation(false);
-    };
 
     const handleCloseEditAccountModal = async () => {
         await fetchData();
         setIsOpenEditAccountModal(false);
     };
 
-    const handleConfirm = async () => {
-        setOpenConfirmation(false);
-        const status = await deleteAccount(account.id);
-        if (status === 204) {
-            toast({
-                title: "Successfully deleted account.",
-                status: "success",
-                duration: 9000,
-                isClosable: true,
+    const handleDelete = async () => {
+        confirm({
+            title: "Delete account",
+            description:
+                "Are you sure you want to delete this account? This action cannot be undone",
+        })
+            .then(async () => {
+                const status = await deleteAccount(account.id);
+                if (status === 204) {
+                    toast({
+                        title: "Successfully deleted account.",
+                        status: "success",
+                        duration: 9000,
+                        isClosable: true,
+                    });
+                    fetchData();
+                } else {
+                    toast({
+                        title: "Error",
+                        description: "Something went wrong",
+                        status: "error",
+                        duration: 9000,
+                        isClosable: true,
+                    });
+                }
+            })
+            .catch(() => {
+                toast({
+                    title: "Cancelled",
+                    description:
+                        "You have cancelled the deletion of the account.",
+                    status: "info",
+                    duration: 9000,
+                    isClosable: true,
+                });
             });
-            fetchData();
-        } else {
-            toast({
-                title: "Error",
-                description: "Something went wrong",
-                status: "error",
-                duration: 9000,
-                isClosable: true,
-            });
-        }
     };
 
     return (
@@ -118,13 +126,6 @@ const AccountRow = ({ account, fetchData }: AccountRowProps) => {
                     />
                 </Td>
             </Tr>
-            <Alert
-                isOpen={openConfirmation}
-                onCancel={handleCancel}
-                onConfirm={handleConfirm}
-                title="Delete account"
-                description="Are you sure?"
-            />
             <EditAccountModal
                 isOpen={isOpenEditAccountModal}
                 onClose={handleCloseEditAccountModal}

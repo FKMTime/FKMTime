@@ -1,10 +1,9 @@
 import { IconButton, Td, Tr, useToast } from "@chakra-ui/react";
-import { useState } from "react";
+import { useConfirm } from "chakra-ui-confirm";
 import { FaList } from "react-icons/fa";
 import { MdDelete } from "react-icons/md";
 import { Link, useNavigate } from "react-router-dom";
 
-import Alert from "@/Components/Alert.tsx";
 import { isAdmin } from "@/logic/auth";
 import { average, formattedBest } from "@/logic/average";
 import { Result } from "@/logic/interfaces";
@@ -24,40 +23,48 @@ interface ResultRowProps {
 const ResultRow = ({ result, maxAttempts, fetchData }: ResultRowProps) => {
     const navigate = useNavigate();
     const toast = useToast();
-    const [openConfirmation, setOpenConfirmation] = useState<boolean>(false);
+    const confirm = useConfirm();
 
     const submittedAttempts = getSubmittedAttempts(result.attempts);
     const calculatedAverage =
         submittedAttempts.length === maxAttempts && average(submittedAttempts);
 
     const handleDelete = async () => {
-        setOpenConfirmation(true);
-    };
-
-    const handleCancel = () => {
-        setOpenConfirmation(false);
-    };
-
-    const handleConfirm = async () => {
-        setOpenConfirmation(false);
-        const status = await deleteResultById(result.id);
-        if (status === 204) {
-            toast({
-                title: "Successfully deleted result.",
-                status: "success",
-                duration: 9000,
-                isClosable: true,
+        confirm({
+            title: "Delete result",
+            description:
+                "Are you sure you want to delete this result? This action cannot be undone",
+        })
+            .then(async () => {
+                const status = await deleteResultById(result.id);
+                if (status === 204) {
+                    toast({
+                        title: "Successfully deleted result.",
+                        status: "success",
+                        duration: 9000,
+                        isClosable: true,
+                    });
+                    fetchData(result.roundId);
+                } else {
+                    toast({
+                        title: "Error",
+                        description: "Something went wrong",
+                        status: "error",
+                        duration: 9000,
+                        isClosable: true,
+                    });
+                }
+            })
+            .catch(() => {
+                toast({
+                    title: "Cancelled",
+                    description:
+                        "You have cancelled the deletion of the result.",
+                    status: "info",
+                    duration: 9000,
+                    isClosable: true,
+                });
             });
-            fetchData(result.roundId);
-        } else {
-            toast({
-                title: "Error",
-                description: "Something went wrong",
-                status: "error",
-                duration: 9000,
-                isClosable: true,
-            });
-        }
     };
 
     return (
@@ -111,13 +118,6 @@ const ResultRow = ({ result, maxAttempts, fetchData }: ResultRowProps) => {
                     </Td>
                 )}
             </Tr>
-            <Alert
-                isOpen={openConfirmation}
-                onCancel={handleCancel}
-                onConfirm={handleConfirm}
-                title="Delete result"
-                description="Are you sure you want to delete this result? This action cannot be undone"
-            />
         </>
     );
 };

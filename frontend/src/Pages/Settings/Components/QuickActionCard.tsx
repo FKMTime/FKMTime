@@ -1,8 +1,8 @@
 import { Box, Flex, Text, useToast } from "@chakra-ui/react";
+import { useConfirm } from "chakra-ui-confirm";
 import { useState } from "react";
 import { MdDelete, MdEdit } from "react-icons/md";
 
-import Alert from "@/Components/Alert.tsx";
 import RoundedIconButton from "@/Components/RoundedIconButton.tsx";
 import { QuickAction } from "@/logic/interfaces.ts";
 import { deleteQuickAction } from "@/logic/quickActions.ts";
@@ -14,31 +14,47 @@ interface QuickActionCardProps {
 }
 
 const QuickActionCard = ({ quickAction, fetchData }: QuickActionCardProps) => {
+    const confirm = useConfirm();
     const toast = useToast();
-    const [openConfirmation, setOpenConfirmation] = useState(false);
     const [isOpenEditQuickActionModal, setIsOpenEditQuickActionModal] =
         useState(false);
 
-    const handleConfirm = async () => {
-        setOpenConfirmation(false);
-        const status = await deleteQuickAction(quickAction.id);
-        if (status === 204) {
-            toast({
-                title: "Successfully deleted quick action.",
-                status: "success",
-                duration: 9000,
-                isClosable: true,
+    const handleDelete = async () => {
+        confirm({
+            title: "Delete quick action",
+            description:
+                "Are you sure you want to delete this quick action? This action cannot be undone",
+        })
+            .then(async () => {
+                const status = await deleteQuickAction(quickAction.id);
+                if (status === 204) {
+                    toast({
+                        title: "Successfully deleted quick action.",
+                        status: "success",
+                        duration: 9000,
+                        isClosable: true,
+                    });
+                    fetchData();
+                } else {
+                    toast({
+                        title: "Error",
+                        description: "Something went wrong",
+                        status: "error",
+                        duration: 9000,
+                        isClosable: true,
+                    });
+                }
+            })
+            .catch(() => {
+                toast({
+                    title: "Cancelled",
+                    description:
+                        "You have cancelled the deletion of the quick action.",
+                    status: "info",
+                    duration: 9000,
+                    isClosable: true,
+                });
             });
-            fetchData();
-        } else {
-            toast({
-                title: "Error",
-                description: "Something went wrong",
-                status: "error",
-                duration: 9000,
-                isClosable: true,
-            });
-        }
     };
 
     const handleCloseEditModal = () => {
@@ -77,16 +93,9 @@ const QuickActionCard = ({ quickAction, fetchData }: QuickActionCardProps) => {
                     icon={<MdDelete />}
                     title="Delete quick action"
                     ariaLabel="Delete"
-                    onClick={() => setOpenConfirmation(true)}
+                    onClick={handleDelete}
                 />
             </Flex>
-            <Alert
-                isOpen={openConfirmation}
-                onCancel={() => setOpenConfirmation(false)}
-                onConfirm={handleConfirm}
-                title="Delete quick action"
-                description="Are you sure you want to delete this quick action? This action cannot be undone"
-            />
             <EditQuickActionModal
                 isOpen={isOpenEditQuickActionModal}
                 onClose={handleCloseEditModal}
