@@ -179,6 +179,10 @@ export class PersonService {
         name: true,
         registrantId: true,
         wcaId: true,
+        cardId: true,
+        canCompete: true,
+        countryIso2: true,
+        birthdate: true,
       },
     });
     return {
