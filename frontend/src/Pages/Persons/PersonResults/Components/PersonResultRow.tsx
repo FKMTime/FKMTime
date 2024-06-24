@@ -1,8 +1,9 @@
-import { IconButton, Td, Tr } from "@chakra-ui/react";
-import { activityCodeToName } from "@wca/helpers";
+import { Td, Tr } from "@chakra-ui/react";
 import { FaList } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 
+import SmallIconButton from "@/Components/SmallIconButton";
+import { activityCodeToName } from "@/logic/activities";
 import { isAdmin } from "@/logic/auth";
 import { average, best } from "@/logic/average";
 import { Result } from "@/logic/interfaces";
@@ -31,15 +32,9 @@ const PersonResultRow = ({ result }: PersonResultRowProps) => {
                 <Td>{resultToString(best(submittedAttempts))}</Td>
                 {isAdmin() && (
                     <Td>
-                        <IconButton
+                        <SmallIconButton
                             icon={<FaList />}
-                            aria-label="List"
-                            bg="none"
-                            color="white"
-                            _hover={{
-                                background: "none",
-                                color: "gray.400",
-                            }}
+                            ariaLabel="List"
                             title="View attempts"
                             onClick={() => navigate(`/results/${result.id}`)}
                         />

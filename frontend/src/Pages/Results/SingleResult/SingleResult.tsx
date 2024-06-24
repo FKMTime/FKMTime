@@ -7,7 +7,6 @@ import {
     Text,
     useToast,
 } from "@chakra-ui/react";
-import { activityCodeToName } from "@wca/helpers";
 import { useAtom } from "jotai";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
@@ -15,8 +14,10 @@ import { useNavigate, useParams } from "react-router-dom";
 import FlagIcon from "@/Components/Icons/FlagIcon";
 import LoadingPage from "@/Components/LoadingPage";
 import PlusButton from "@/Components/PlusButton";
+import { activityCodeToName } from "@/logic/activities";
 import { competitionAtom } from "@/logic/atoms";
 import { getCompetitionInfo } from "@/logic/competition";
+import { isUnofficialEvent } from "@/logic/events";
 import { Result } from "@/logic/interfaces";
 import { resultToString } from "@/logic/resultFormatters";
 import { getResultById, reSubmitScorecardToWcaLive } from "@/logic/results";
@@ -170,20 +171,24 @@ const SingleResult = () => {
                     </Box>
                 </Text>
             )}
-            <Button
-                colorScheme="yellow"
-                width={{ base: "100%", md: "fit-content" }}
-                onClick={handleResubmit}
-            >
-                Resubmit scorecard to WCA Live
-            </Button>
-            {isDifferenceBetweenResults && (
-                <Alert status="error" color="black">
-                    <AlertIcon />
-                    There is a difference between results in WCA Live and FKM.
-                    Please check it manually, fix in FKM and resubmit scorecard
-                    to WCA Live.
-                </Alert>
+            {!isUnofficialEvent(result.eventId) && (
+                <>
+                    <Button
+                        colorScheme="yellow"
+                        width={{ base: "100%", md: "fit-content" }}
+                        onClick={handleResubmit}
+                    >
+                        Resubmit scorecard to WCA Live
+                    </Button>
+                    {isDifferenceBetweenResults && (
+                        <Alert status="error" color="black">
+                            <AlertIcon />
+                            There is a difference between results in WCA Live
+                            and FKM. Please check it manually, fix in FKM and
+                            resubmit scorecard to WCA Live.
+                        </Alert>
+                    )}
+                </>
             )}
             <Heading mt={3}>
                 Limits for {activityCodeToName(result.roundId)}

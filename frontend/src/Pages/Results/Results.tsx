@@ -8,7 +8,7 @@ import {
     Text,
     useToast,
 } from "@chakra-ui/react";
-import { activityCodeToName, Event, Round } from "@wca/helpers";
+import { Event, Round } from "@wca/helpers";
 import { useConfirm } from "chakra-ui-confirm";
 import { useAtom } from "jotai";
 import { ChangeEvent, useCallback, useEffect, useMemo, useState } from "react";
@@ -19,9 +19,11 @@ import EventIcon from "@/Components/Icons/EventIcon";
 import LoadingPage from "@/Components/LoadingPage";
 import PlusButton from "@/Components/PlusButton.tsx";
 import Select from "@/Components/Select";
+import { activityCodeToName } from "@/logic/activities";
 import { competitionAtom } from "@/logic/atoms";
 import { getToken, isAdmin } from "@/logic/auth";
 import { getCompetitionInfo } from "@/logic/competition";
+import { isUnofficialEvent } from "@/logic/events";
 import { Result, Room } from "@/logic/interfaces";
 import { RESULTS_WEBSOCKET_URL, WEBSOCKET_PATH } from "@/logic/request";
 import { resultToString } from "@/logic/resultFormatters";
@@ -284,14 +286,24 @@ const Results = () => {
                     </Text>
                     <Text>Attempts: {maxAttempts}</Text>
                     {isAdmin() && results.length > 0 && (
-                        <Flex gap="2">
-                            <Button
-                                colorScheme="yellow"
-                                width={{ base: "100%", md: "fit-content" }}
-                                onClick={handleResubmitRound}
-                            >
-                                Resubmit round results to WCA Live
-                            </Button>
+                        <Flex
+                            gap="2"
+                            display={{
+                                base: "flex",
+                                md: isUnofficialEvent(id?.split("-r")[0] || "")
+                                    ? "none"
+                                    : "flex",
+                            }}
+                        >
+                            {!isUnofficialEvent(id?.split("-r")[0] || "") && (
+                                <Button
+                                    colorScheme="yellow"
+                                    width={{ base: "100%", md: "fit-content" }}
+                                    onClick={handleResubmitRound}
+                                >
+                                    Resubmit round results to WCA Live
+                                </Button>
+                            )}
                             <PlusButton
                                 onClick={() =>
                                     setIsOpenCreateAttemptModal(true)

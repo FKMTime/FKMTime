@@ -65,7 +65,7 @@ services:
       - SOCKET_PATH=/app/sock/socket.sock
     volumes:
       - ./backend/api-tester/src:/app/src
-      - /tmp/sock:/app/sock
+      - sock:/app/sock
     restart: unless-stopped
     depends_on:
       backend:

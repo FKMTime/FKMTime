@@ -1,8 +1,10 @@
+//Unofficial events supported by FKMTime are included here as well.
 export const eventsData: {
   id: string;
   name: string;
   icon: string;
   useInspection?: boolean;
+  isUnofficial?: boolean;
 }[] = [
   { id: '333', name: '3x3x3 Cube', icon: 'event-333', useInspection: true },
   { id: '222', name: '2x2x2 Cube', icon: 'event-222', useInspection: true },
@@ -51,4 +53,22 @@ export const eventsData: {
     icon: 'event-333mbf',
     useInspection: false,
   },
+  {
+    id: 'fto',
+    name: 'FTO',
+    icon: 'unofficial-fto',
+    useInspection: true,
+    isUnofficial: true,
+  },
+  {
+    id: 'mirror',
+    name: 'Mirror blocks',
+    icon: 'unofficial-333_mirror_blocks',
+    useInspection: true,
+    isUnofficial: true,
+  },
 ];
+
+export const isUnofficialEvent = (eventId: string) => {
+  return eventsData.find((event) => event.id === eventId)?.isUnofficial;
+};

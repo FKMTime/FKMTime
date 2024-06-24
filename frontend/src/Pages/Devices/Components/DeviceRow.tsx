@@ -1,8 +1,9 @@
-import { Box, IconButton, Td, Text, Tr, useToast } from "@chakra-ui/react";
+import { Box, Td, Text, Tr, useToast } from "@chakra-ui/react";
 import { useConfirm } from "chakra-ui-confirm";
 import { useState } from "react";
-import { MdDelete, MdEdit } from "react-icons/md";
 
+import DeleteButton from "@/Components/DeleteButton";
+import EditButton from "@/Components/EditButton";
 import { deleteDevice } from "@/logic/devices";
 import { Device } from "@/logic/interfaces";
 import { prettyDeviceType } from "@/logic/utils";
@@ -84,30 +85,10 @@ const DeviceRow = ({ device, fetchData }: DeviceRowProps) => {
                 <Td>{device.count}</Td>
                 <Td>{new Date(device.updatedAt).toLocaleString()}</Td>
                 <Td>
-                    <IconButton
-                        icon={<MdEdit />}
-                        aria-label="Edit"
-                        bg="none"
-                        color="white"
-                        _hover={{
-                            background: "none",
-                            color: "gray.400",
-                        }}
-                        title="Edit"
+                    <EditButton
                         onClick={() => setIsOpenEditDeviceModal(true)}
                     />
-                    <IconButton
-                        icon={<MdDelete />}
-                        aria-label="Delete"
-                        bg="none"
-                        color="white"
-                        _hover={{
-                            background: "none",
-                            color: "gray.400",
-                        }}
-                        title="Delete"
-                        onClick={handleDelete}
-                    />
+                    <DeleteButton onClick={handleDelete} />
                 </Td>
             </Tr>
             <EditDeviceModal

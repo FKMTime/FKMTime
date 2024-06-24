@@ -1,9 +1,10 @@
-import { IconButton, Td, Tr, useToast } from "@chakra-ui/react";
+import { Td, Tr, useToast } from "@chakra-ui/react";
 import { useConfirm } from "chakra-ui-confirm";
 import { FaList } from "react-icons/fa";
-import { MdDelete } from "react-icons/md";
 import { Link, useNavigate } from "react-router-dom";
 
+import DeleteButton from "@/Components/DeleteButton";
+import SmallIconButton from "@/Components/SmallIconButton";
 import { isAdmin } from "@/logic/auth";
 import { average, formattedBest } from "@/logic/average";
 import { Result } from "@/logic/interfaces";
@@ -91,30 +92,13 @@ const ResultRow = ({ result, maxAttempts, fetchData }: ResultRowProps) => {
                 <Td>{formattedBest(submittedAttempts)}</Td>
                 {isAdmin() && (
                     <Td>
-                        <IconButton
+                        <SmallIconButton
                             icon={<FaList />}
-                            aria-label="List"
-                            bg="none"
-                            color="white"
-                            _hover={{
-                                background: "none",
-                                color: "gray.400",
-                            }}
+                            ariaLabel="List"
                             title="View attempts"
                             onClick={() => navigate(`/results/${result.id}`)}
                         />
-                        <IconButton
-                            icon={<MdDelete />}
-                            aria-label="Delete"
-                            bg="none"
-                            color="white"
-                            _hover={{
-                                background: "none",
-                                color: "gray.400",
-                            }}
-                            title="Delete result"
-                            onClick={handleDelete}
-                        />
+                        <DeleteButton onClick={handleDelete} />
                     </Td>
                 )}
             </Tr>

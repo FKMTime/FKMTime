@@ -66,6 +66,14 @@ model Competition {
   scoretakingTokenUpdatedAt DateTime?
 }
 
+model UnofficialEvent {
+  id        String   @id @default(uuid())
+  eventId   String  @unique
+  wcif      Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
 model Room {
   id             String   @id @default(uuid())
   name           String

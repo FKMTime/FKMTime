@@ -1,10 +1,13 @@
-import { Box, IconButton, Td, Text, Tr, useToast } from "@chakra-ui/react";
+import { Box, Td, Text, Tr, useToast } from "@chakra-ui/react";
 import { useConfirm } from "chakra-ui-confirm";
 import { useState } from "react";
-import { MdDelete, MdEdit, MdLock } from "react-icons/md";
+import { MdLock } from "react-icons/md";
 
 import wcaLogo from "@/assets/wca.svg";
+import DeleteButton from "@/Components/DeleteButton";
+import EditButton from "@/Components/EditButton";
 import RoleIcon from "@/Components/Icons/RoleIcon.tsx";
+import SmallIconButton from "@/Components/SmallIconButton";
 import { deleteAccount } from "@/logic/accounts";
 import { Account } from "@/logic/interfaces";
 import { prettyAccountRoleName } from "@/logic/utils.ts";
@@ -86,44 +89,18 @@ const AccountRow = ({ account, fetchData }: AccountRowProps) => {
                     </Box>
                 </Td>
                 <Td>
-                    <IconButton
-                        icon={<MdEdit />}
-                        title="Edit"
-                        aria-label="Edit"
-                        bg="none"
-                        color="white"
-                        _hover={{
-                            background: "none",
-                            color: "gray.400",
-                        }}
+                    <EditButton
                         onClick={() => setIsOpenEditAccountModal(true)}
                     />
                     {!account.wcaUserId && (
-                        <IconButton
+                        <SmallIconButton
                             icon={<MdLock />}
                             title="Change password"
-                            aria-label="Change password"
-                            bg="none"
-                            color="white"
-                            _hover={{
-                                background: "none",
-                                color: "gray.400",
-                            }}
+                            ariaLabel="Change password"
                             onClick={() => setIsOpenChangePasswordModal(true)}
                         />
                     )}
-                    <IconButton
-                        icon={<MdDelete />}
-                        title="Delete"
-                        aria-label="Delete"
-                        bg="none"
-                        color="white"
-                        _hover={{
-                            background: "none",
-                            color: "gray.400",
-                        }}
-                        onClick={handleDelete}
-                    />
+                    <DeleteButton onClick={handleDelete} />
                 </Td>
             </Tr>
             <EditAccountModal

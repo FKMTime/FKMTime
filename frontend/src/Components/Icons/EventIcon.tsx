@@ -1,3 +1,5 @@
+import { getEventIconClass } from "@/logic/events";
+
 interface EventIconProps {
     eventId: string;
     selected?: boolean;
@@ -5,9 +7,10 @@ interface EventIconProps {
 }
 
 const EventIcon = ({ eventId, selected, size = 15 }: EventIconProps) => {
+    const iconClass = getEventIconClass(eventId);
     return (
         <span
-            className={`cubing-icon event-${eventId}`}
+            className={`cubing-icon ${iconClass}`}
             style={{ opacity: selected ? 1 : 0.3, fontSize: size }}
         ></span>
     );

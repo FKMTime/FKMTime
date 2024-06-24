@@ -129,6 +129,9 @@ const Competition = () => {
             width={{ base: "100%", md: "20%" }}
         >
             <Heading size="lg">{competition?.name}</Heading>
+            <Button colorScheme="yellow" onClick={() => navigate("/events")}>
+                Unofficial events
+            </Button>
             <Box display="flex" flexDirection="column" gap="5">
                 <Alert status="warning" borderRadius="md" color="black">
                     <AlertIcon />

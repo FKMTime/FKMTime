@@ -1,4 +1,4 @@
-import { Box, IconButton, Link, Td, Text, Tr } from "@chakra-ui/react";
+import { Box, Link, Td, Text, Tr } from "@chakra-ui/react";
 import { Competition } from "@wca/helpers";
 import { useState } from "react";
 import { FaAddressCard } from "react-icons/fa";
@@ -8,6 +8,7 @@ import { useNavigate } from "react-router-dom";
 import Avatar from "@/Components/Avatar/Avatar";
 import EventIcon from "@/Components/Icons/EventIcon";
 import FlagIcon from "@/Components/Icons/FlagIcon.tsx";
+import SmallIconButton from "@/Components/SmallIconButton";
 import { isAdmin } from "@/logic/auth.ts";
 import { Person } from "@/logic/interfaces";
 import { WCA_ORIGIN } from "@/logic/request";
@@ -91,15 +92,9 @@ const PersonRow = ({ person, wcif, handleCloseEditModal }: PersonRowProps) => {
                 <Td>{person.checkedInAt && <MdDone />}</Td>
                 <Td>{person.canCompete && <MdDone />}</Td>
                 <Td>
-                    <IconButton
+                    <SmallIconButton
                         icon={<FaAddressCard />}
-                        aria-label="Card"
-                        bg="none"
-                        color="white"
-                        _hover={{
-                            background: "none",
-                            color: "gray.400",
-                        }}
+                        ariaLabel="Card"
                         title="Assign card"
                         onClick={() => setIsOpenAssignCardModal(true)}
                     />
@@ -107,29 +102,17 @@ const PersonRow = ({ person, wcif, handleCloseEditModal }: PersonRowProps) => {
                         person.registrantId !== 0 &&
                         isAdmin() && (
                             <>
-                                <IconButton
+                                <SmallIconButton
                                     icon={<MdAssignment />}
-                                    aria-label="Groups"
-                                    bg="none"
-                                    color="white"
-                                    _hover={{
-                                        background: "none",
-                                        color: "gray.400",
-                                    }}
+                                    ariaLabel="Groups"
                                     title="Display groups"
                                     onClick={() =>
                                         setIsOpenDisplayGroupsModal(true)
                                     }
                                 />
-                                <IconButton
+                                <SmallIconButton
                                     icon={<MdBarChart />}
-                                    aria-label="Results"
-                                    bg="none"
-                                    color="white"
-                                    _hover={{
-                                        background: "none",
-                                        color: "gray.400",
-                                    }}
+                                    ariaLabel="Results"
                                     title="Display all results for this person"
                                     onClick={() =>
                                         navigate(

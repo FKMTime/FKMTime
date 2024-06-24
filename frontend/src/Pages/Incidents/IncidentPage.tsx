@@ -257,6 +257,7 @@ const IncidentPage = () => {
                 <Select
                     value={editedIncident.judgeId || ""}
                     disabled={isLoading}
+                    placeholder="Select judge"
                     onChange={(e) =>
                         setEditedIncident({
                             ...editedIncident,

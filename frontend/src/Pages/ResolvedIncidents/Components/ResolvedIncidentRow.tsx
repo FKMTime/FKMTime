@@ -1,8 +1,9 @@
-import { IconButton, Link, Td, Tr } from "@chakra-ui/react";
-import { activityCodeToName } from "@wca/helpers";
+import { Link, Td, Tr } from "@chakra-ui/react";
 import { FaList } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 
+import SmallIconButton from "@/Components/SmallIconButton";
+import { activityCodeToName } from "@/logic/activities";
 import { Incident } from "@/logic/interfaces.ts";
 import { attemptWithPenaltyToString } from "@/logic/resultFormatters.ts";
 import { prettyAttemptStatus } from "@/logic/utils.ts";
@@ -32,15 +33,9 @@ const ResolvedIncidentRow = ({ incident }: ResolvedIncidentRowProps) => {
             <Td>{incident.comment}</Td>
             <Td>{incident.judge?.name}</Td>
             <Td>
-                <IconButton
+                <SmallIconButton
                     icon={<FaList />}
-                    aria-label="List"
-                    bg="none"
-                    color="white"
-                    _hover={{
-                        background: "none",
-                        color: "gray.400",
-                    }}
+                    ariaLabel="List"
                     title="View attempts"
                     onClick={() => navigate(`/results/${incident.result.id}`)}
                 />

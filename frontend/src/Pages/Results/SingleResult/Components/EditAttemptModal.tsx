@@ -19,6 +19,7 @@ import { competitionAtom } from "@/logic/atoms";
 import { updateAttempt } from "@/logic/attempt";
 import { DNF_VALUE } from "@/logic/constants";
 import { getAllDevices } from "@/logic/devices.ts";
+import { isUnofficialEvent } from "@/logic/events";
 import {
     Attempt,
     AttemptStatus,
@@ -300,14 +301,16 @@ const EditAttemptModal = ({
                         />
                     </FormControl>
                 )}
-                <Checkbox
-                    isChecked={shouldResubmitToWcaLive}
-                    onChange={(e) =>
-                        setShouldResubmitToWcaLive(e.target.checked)
-                    }
-                >
-                    Resubmit to WCA Live
-                </Checkbox>
+                {!isUnofficialEvent(result.eventId) && (
+                    <Checkbox
+                        isChecked={shouldResubmitToWcaLive}
+                        onChange={(e) =>
+                            setShouldResubmitToWcaLive(e.target.checked)
+                        }
+                    >
+                        Resubmit to WCA Live
+                    </Checkbox>
+                )}
                 <Box
                     display="flex"
                     flexDirection="row"

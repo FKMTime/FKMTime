@@ -14,6 +14,7 @@ import { ScheduleModule } from '@nestjs/schedule';
 import { WcaModule } from './wca/wca.module';
 import { HealthModule } from './health/health.module';
 import { SocketModule } from './socket/socket.module';
+import { EventsModule } from './events/events.module';
 
 @Module({
   imports: [
@@ -31,6 +32,7 @@ import { SocketModule } from './socket/socket.module';
     WcaModule,
     HealthModule,
     SocketModule,
+    EventsModule,
   ],
 })
 export class AppModule implements NestModule {

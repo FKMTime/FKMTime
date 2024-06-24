@@ -1,5 +1,11 @@
-import { Activity, activityCodeToName, Competition } from "@wca/helpers";
+import {
+    Activity,
+    activityCodeToName as wcifActivityCodeToName,
+    Competition,
+} from "@wca/helpers";
 import { Room as WCIFRoom } from "@wca/helpers/lib/models/room";
+
+import { getEventName, isUnofficialEvent } from "./events";
 
 export const prettyActivityName = (activity: string) => {
     switch (activity) {
@@ -27,6 +33,18 @@ export const getGroupsByRoundId = (roundId: string, wcif: Competition) => {
             }
         });
     });
+    const eventId = roundId.split("-")[0];
+    if (isUnofficialEvent(eventId)) {
+        activitiesToReturn.push({
+            id: 1,
+            activityCode: `${roundId}-g1`,
+            name: `${getEventName(eventId)}, Round 1, Group 1`,
+            startTime: "",
+            endTime: "",
+            childActivities: [],
+            extensions: [],
+        });
+    }
     return activitiesToReturn.sort((a, b) =>
         a.activityCode.localeCompare(b.activityCode)
     );
@@ -36,4 +54,13 @@ export const getActivityName = (activity: Activity) => {
     return activity.activityCode.startsWith("other")
         ? activity.name
         : activityCodeToName(activity.activityCode);
+};
+
+export const activityCodeToName = (activityCode: string) => {
+    const eventId = activityCode.split("-r")[0];
+    if (isUnofficialEvent(eventId)) {
+        return `${getEventName(eventId)}, Round ${activityCode.split("-g")[0].split("-r")[1]}`;
+    } else {
+        return wcifActivityCodeToName(activityCode);
+    }
 };
