@@ -33,7 +33,7 @@
     "socket.io-client": "^4.7.5"
   },
   "devDependencies": {
-    "@types/node": "^20.11.30",
+    "@types/node": "^20.14.8",
     "@types/react": "^18.2.43",
     "@types/react-dom": "^18.2.17",
     "@types/react-table": "^7.7.20",
