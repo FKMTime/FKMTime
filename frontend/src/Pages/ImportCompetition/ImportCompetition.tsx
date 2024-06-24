@@ -28,8 +28,6 @@ const ImportCompetition = () => {
                 title: "Error",
                 description: "Please enter a competition ID",
                 status: "error",
-                duration: 3000,
-                isClosable: true,
             });
         }
         const response = await importCompetition(wcaId);
@@ -41,8 +39,6 @@ const ImportCompetition = () => {
                 title: "Error",
                 description: "Competition has already been imported",
                 status: "error",
-                duration: 3000,
-                isClosable: true,
             });
         }
     };
@@ -53,8 +49,6 @@ const ImportCompetition = () => {
             title: "Logged out",
             description: "You have been logged out.",
             status: "success",
-            duration: 9000,
-            isClosable: true,
         });
         navigate("/auth/login");
     };

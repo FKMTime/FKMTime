@@ -49,8 +49,6 @@ const AttemptRow = ({
                     toast({
                         title: "Successfully deleted attempt.",
                         status: "success",
-                        duration: 9000,
-                        isClosable: true,
                     });
                     fetchData();
                 } else {
@@ -58,8 +56,6 @@ const AttemptRow = ({
                         title: "Error",
                         description: "Something went wrong",
                         status: "error",
-                        duration: 9000,
-                        isClosable: true,
                     });
                 }
             })
@@ -69,8 +65,6 @@ const AttemptRow = ({
                     description:
                         "You have cancelled the deletion of the attempt.",
                     status: "info",
-                    duration: 9000,
-                    isClosable: true,
                 });
             });
     };

@@ -27,8 +27,6 @@ const AssignCards = () => {
             toast({
                 title: "Card assigned",
                 status: "success",
-                duration: 5000,
-                isClosable: true,
             });
             setCardId("");
             setPersonsWithoutCard(personsWithoutCard - 1);
@@ -39,16 +37,12 @@ const AssignCards = () => {
                 title: "Error",
                 description: "This card is already assigned to someone else",
                 status: "error",
-                duration: 5000,
-                isClosable: true,
             });
         } else {
             toast({
                 title: "Error",
                 description: "Something went wrong",
                 status: "error",
-                duration: 5000,
-                isClosable: true,
             });
         }
     };

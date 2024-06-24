@@ -42,8 +42,6 @@ const ChangePasswordModal = ({ isOpen, onClose }: ChangePasswordModalProps) => {
                 title: "Error",
                 description: "Passwords do not match",
                 status: "error",
-                duration: 9000,
-                isClosable: true,
             });
             setIsLoading(false);
             return;
@@ -57,8 +55,6 @@ const ChangePasswordModal = ({ isOpen, onClose }: ChangePasswordModalProps) => {
             toast({
                 title: "Successfully changed password.",
                 status: "success",
-                duration: 9000,
-                isClosable: true,
             });
             onClose();
         } else {
@@ -66,8 +62,6 @@ const ChangePasswordModal = ({ isOpen, onClose }: ChangePasswordModalProps) => {
                 title: "Error",
                 description: "Something went wrong",
                 status: "error",
-                duration: 9000,
-                isClosable: true,
             });
         }
         setIsLoading(false);

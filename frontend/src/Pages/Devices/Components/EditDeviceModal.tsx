@@ -35,8 +35,6 @@ const EditDeviceModal = ({ isOpen, onClose, device }: EditDeviceModalProps) => {
             toast({
                 title: "Successfully updated this device.",
                 status: "success",
-                duration: 9000,
-                isClosable: true,
             });
             onClose();
         } else {
@@ -44,8 +42,6 @@ const EditDeviceModal = ({ isOpen, onClose, device }: EditDeviceModalProps) => {
                 title: "Error",
                 description: "Something went wrong",
                 status: "error",
-                duration: 9000,
-                isClosable: true,
             });
         }
         setIsLoading(false);

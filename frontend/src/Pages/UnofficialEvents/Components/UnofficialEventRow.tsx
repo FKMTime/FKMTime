@@ -31,8 +31,6 @@ const UnofficialEventRow = ({ event, fetchData }: UnofficialEventRowProps) => {
                     toast({
                         title: "Successfully deleted event.",
                         status: "success",
-                        duration: 9000,
-                        isClosable: true,
                     });
                     fetchData();
                 } else if (status === 409) {
@@ -40,16 +38,12 @@ const UnofficialEventRow = ({ event, fetchData }: UnofficialEventRowProps) => {
                         title: "Error",
                         description: "Cannot delete event with results",
                         status: "error",
-                        duration: 9000,
-                        isClosable: true,
                     });
                 } else {
                     toast({
                         title: "Error",
                         description: "Something went wrong",
                         status: "error",
-                        duration: 9000,
-                        isClosable: true,
                     });
                 }
             })
@@ -59,8 +53,6 @@ const UnofficialEventRow = ({ event, fetchData }: UnofficialEventRowProps) => {
                     description:
                         "You have cancelled the deletion of the event.",
                     status: "info",
-                    duration: 9000,
-                    isClosable: true,
                 });
             });
     };

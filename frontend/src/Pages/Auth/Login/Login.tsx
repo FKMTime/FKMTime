@@ -25,8 +25,6 @@ const Login = () => {
                     title: "Successfully logged in.",
                     description: "You have been successfully logged in.",
                     status: "success",
-                    duration: 9000,
-                    isClosable: true,
                 });
                 navigate("/");
             } else if (status === 401) {
@@ -34,16 +32,12 @@ const Login = () => {
                     title: "Error",
                     description: "Wrong username or password",
                     status: "error",
-                    duration: 9000,
-                    isClosable: true,
                 });
             } else {
                 toast({
                     title: "Error",
                     description: errorMessage || "Something went wrong",
                     status: "error",
-                    duration: 9000,
-                    isClosable: true,
                 });
             }
         },

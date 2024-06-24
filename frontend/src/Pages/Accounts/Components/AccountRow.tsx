@@ -45,8 +45,6 @@ const AccountRow = ({ account, fetchData }: AccountRowProps) => {
                     toast({
                         title: "Successfully deleted account.",
                         status: "success",
-                        duration: 9000,
-                        isClosable: true,
                     });
                     fetchData();
                 } else {
@@ -54,8 +52,6 @@ const AccountRow = ({ account, fetchData }: AccountRowProps) => {
                         title: "Error",
                         description: "Something went wrong",
                         status: "error",
-                        duration: 9000,
-                        isClosable: true,
                     });
                 }
             })
@@ -65,8 +61,6 @@ const AccountRow = ({ account, fetchData }: AccountRowProps) => {
                     description:
                         "You have cancelled the deletion of the account.",
                     status: "info",
-                    duration: 9000,
-                    isClosable: true,
                 });
             });
     };

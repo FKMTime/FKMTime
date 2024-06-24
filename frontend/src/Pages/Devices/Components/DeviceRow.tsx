@@ -39,8 +39,6 @@ const DeviceRow = ({ device, fetchData }: DeviceRowProps) => {
                     toast({
                         title: "Successfully deleted device.",
                         status: "success",
-                        duration: 9000,
-                        isClosable: true,
                     });
                     fetchData();
                 } else {
@@ -48,8 +46,6 @@ const DeviceRow = ({ device, fetchData }: DeviceRowProps) => {
                         title: "Error",
                         description: "Something went wrong",
                         status: "error",
-                        duration: 9000,
-                        isClosable: true,
                     });
                 }
             })
@@ -59,8 +55,6 @@ const DeviceRow = ({ device, fetchData }: DeviceRowProps) => {
                     description:
                         "You have cancelled the deletion of the device.",
                     status: "info",
-                    duration: 9000,
-                    isClosable: true,
                 });
             });
     };

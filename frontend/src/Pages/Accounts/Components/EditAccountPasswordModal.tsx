@@ -36,8 +36,6 @@ const EditAccountPasswordModal = ({
             toast({
                 title: "Successfully changed password.",
                 status: "success",
-                duration: 9000,
-                isClosable: true,
             });
             onClose();
         } else {
@@ -45,8 +43,6 @@ const EditAccountPasswordModal = ({
                 title: "Error",
                 description: "Something went wrong",
                 status: "error",
-                duration: 9000,
-                isClosable: true,
             });
         }
         setIsLoading(false);

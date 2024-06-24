@@ -63,16 +63,12 @@ const Competition = () => {
                 title: "Success",
                 description: "Competition updated",
                 status: "success",
-                duration: 3000,
-                isClosable: true,
             });
         } else {
             toast({
                 title: "Error",
                 description: "Something went wrong",
                 status: "error",
-                duration: 3000,
-                isClosable: true,
             });
         }
     };
@@ -87,8 +83,6 @@ const Competition = () => {
                 title: "Success",
                 description: "Competition synced",
                 status: "success",
-                duration: 3000,
-                isClosable: true,
             });
             await fetchCompetitionDataAndSetAtom();
         } else {
@@ -96,8 +90,6 @@ const Competition = () => {
                 title: "Error",
                 description: "Something went wrong",
                 status: "error",
-                duration: 3000,
-                isClosable: true,
             });
         }
     };

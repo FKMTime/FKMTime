@@ -41,16 +41,12 @@ const Settings = () => {
             toast({
                 title: "Successfully updated settings.",
                 status: "success",
-                duration: 9000,
-                isClosable: true,
             });
         } else {
             toast({
                 title: "Error",
                 description: "Something went wrong",
                 status: "error",
-                duration: 9000,
-                isClosable: true,
             });
         }
         setIsLoading(false);

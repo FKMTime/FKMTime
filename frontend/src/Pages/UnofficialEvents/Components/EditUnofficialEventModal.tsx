@@ -53,8 +53,6 @@ const EditUnofficialEventModal = ({
             toast({
                 title: "Successfully updated unofficial event",
                 status: "success",
-                duration: 9000,
-                isClosable: true,
             });
             onClose();
         } else {
@@ -62,8 +60,6 @@ const EditUnofficialEventModal = ({
                 title: "Error",
                 description: "Something went wrong",
                 status: "error",
-                duration: 9000,
-                isClosable: true,
             });
         }
         setIsLoading(false);
@@ -75,8 +71,6 @@ const EditUnofficialEventModal = ({
                 title: "Error",
                 description: "You cannot add more than 4 rounds",
                 status: "error",
-                duration: 9000,
-                isClosable: true,
             });
         }
         setEditedEvent((prev) => {

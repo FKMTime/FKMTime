@@ -42,8 +42,6 @@ const ResultRow = ({ result, maxAttempts, fetchData }: ResultRowProps) => {
                     toast({
                         title: "Successfully deleted result.",
                         status: "success",
-                        duration: 9000,
-                        isClosable: true,
                     });
                     fetchData(result.roundId);
                 } else {
@@ -51,8 +49,6 @@ const ResultRow = ({ result, maxAttempts, fetchData }: ResultRowProps) => {
                         title: "Error",
                         description: "Something went wrong",
                         status: "error",
-                        duration: 9000,
-                        isClosable: true,
                     });
                 }
             })
@@ -62,8 +58,6 @@ const ResultRow = ({ result, maxAttempts, fetchData }: ResultRowProps) => {
                     description:
                         "You have cancelled the deletion of the result.",
                     status: "info",
-                    duration: 9000,
-                    isClosable: true,
                 });
             });
     };

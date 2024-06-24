@@ -107,8 +107,6 @@ const SingleResult = () => {
                 title: "Error",
                 description: "Result not found",
                 status: "error",
-                duration: 5000,
-                isClosable: true,
             });
             navigate("/results");
         }
@@ -123,16 +121,12 @@ const SingleResult = () => {
                 title: "Success",
                 description: "Scorecard resubmitted to WCA Live",
                 status: "success",
-                duration: 5000,
-                isClosable: true,
             });
         } else {
             toast({
                 title: "Error",
                 description: "Something went wrong",
                 status: "error",
-                duration: 5000,
-                isClosable: true,
             });
         }
     };

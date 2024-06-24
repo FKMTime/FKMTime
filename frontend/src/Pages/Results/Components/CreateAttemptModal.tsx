@@ -101,8 +101,6 @@ const CreateAttemptModal = ({
                 toast({
                     title: "Time limit not passed, time was replaced to DNF",
                     status: "warning",
-                    duration: 3000,
-                    isClosable: true,
                 });
             }
         }
@@ -111,8 +109,6 @@ const CreateAttemptModal = ({
             toast({
                 title: "Attempt created",
                 status: "success",
-                duration: 3000,
-                isClosable: true,
             });
             onClose();
         } else {
@@ -120,8 +116,6 @@ const CreateAttemptModal = ({
                 title: "Error",
                 description: "Something went wrong",
                 status: "error",
-                duration: 9000,
-                isClosable: true,
             });
         }
         setIsLoading(false);

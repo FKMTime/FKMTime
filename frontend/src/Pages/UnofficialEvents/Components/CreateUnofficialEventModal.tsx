@@ -19,6 +19,13 @@ import { CUTOFF_ALLOWED } from "@/logic/constants";
 import { createUnofficialEvent, getUnofficialEvents } from "@/logic/events";
 import { Event } from "@/logic/interfaces";
 
+import {
+    updateCumulativeLimit,
+    updateCutoffInRounds,
+    updateFormatInRounds,
+    updateTimeLimitInRounds,
+} from "../utils";
+
 interface CreateUnofficialEventModalProps {
     isOpen: boolean;
     onClose: () => void;
@@ -51,25 +58,21 @@ const CreateUnofficialEventModal = ({
             toast({
                 title: "Successfully added unofficial event",
                 status: "success",
-                duration: 9000,
-                isClosable: true,
             });
+            setRounds([]);
+            setSelectedEventId("");
             onClose();
         } else if (status === 409) {
             toast({
                 title: "Error",
                 description: "Event already exists",
                 status: "error",
-                duration: 9000,
-                isClosable: true,
             });
         } else {
             toast({
                 title: "Error",
                 description: "Something went wrong",
                 status: "error",
-                duration: 9000,
-                isClosable: true,
             });
         }
         setIsLoading(false);
@@ -81,8 +84,6 @@ const CreateUnofficialEventModal = ({
                 title: "Error",
                 description: "You cannot add more than 4 rounds",
                 status: "error",
-                duration: 9000,
-                isClosable: true,
             });
         }
         setRounds((prev) => {
@@ -121,77 +122,25 @@ const CreateUnofficialEventModal = ({
 
     const updateTimeLimit = (roundId: string, value: number) => {
         setRounds((prev) => {
-            const newRounds = [...prev];
-            const round = newRounds.find((r) => r.id === roundId);
-            if (!round) {
-                return newRounds;
-            }
-            if (!round.timeLimit) {
-                round.timeLimit = {
-                    centiseconds: value,
-                    cumulativeRoundIds: [],
-                };
-                return newRounds;
-            } else {
-                round.timeLimit.centiseconds = value;
-            }
-            return newRounds;
+            return updateTimeLimitInRounds(roundId, value, prev);
         });
     };
 
     const updateFormat = (roundId: string, value: RoundFormat) => {
         setRounds((prev) => {
-            const newRounds = [...prev];
-            const round = newRounds.find((r) => r.id === roundId);
-            if (!round) {
-                return newRounds;
-            }
-            round.format = value;
-            if (round.cutoff) {
-                if (!CUTOFF_ALLOWED.includes(value)) {
-                    round.cutoff = null;
-                } else {
-                    round.cutoff.numberOfAttempts = value === "a" ? 2 : 1;
-                }
-            }
-            return newRounds;
+            return updateFormatInRounds(roundId, value, prev);
         });
     };
 
     const updateCutoff = (roundId: string, value: number) => {
         setRounds((prev) => {
-            const newRounds = [...prev];
-            const round = newRounds.find((r) => r.id === roundId);
-            if (!round) {
-                return newRounds;
-            }
-            round.cutoff = {
-                numberOfAttempts: round.format === "a" ? 2 : 1,
-                attemptResult: value,
-            };
-            return newRounds;
+            return updateCutoffInRounds(roundId, value, prev);
         });
     };
 
     const updateCumulative = (roundId: string, value: boolean) => {
         setRounds((prev) => {
-            const newRounds = [...prev];
-            const round = newRounds.find((r) => r.id === roundId);
-            if (!round) {
-                return newRounds;
-            }
-            if (!round.timeLimit) {
-                round.timeLimit = {
-                    centiseconds: 60000,
-                    cumulativeRoundIds: [],
-                };
-            }
-            if (value) {
-                round.timeLimit.cumulativeRoundIds.push(roundId);
-            } else {
-                round.timeLimit.cumulativeRoundIds = [];
-            }
-            return newRounds;
+            return updateCumulativeLimit(roundId, value, prev);
         });
     };
 

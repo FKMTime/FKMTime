@@ -112,8 +112,6 @@ const Attendance = () => {
                 title: "Success",
                 description: "Marked as present",
                 status: "success",
-                duration: 3000,
-                isClosable: true,
             });
             fetchAttendanceData(selectedGroup);
         } else {
@@ -121,8 +119,6 @@ const Attendance = () => {
                 title: "Error",
                 description: "Something went wrong",
                 status: "error",
-                duration: 3000,
-                isClosable: true,
             });
         }
     };
@@ -134,8 +130,6 @@ const Attendance = () => {
                 title: "Success",
                 description: "Marked as absent",
                 status: "success",
-                duration: 3000,
-                isClosable: true,
             });
             fetchAttendanceData(selectedGroup);
         } else {
@@ -143,8 +137,6 @@ const Attendance = () => {
                 title: "Error",
                 description: "Something went wrong",
                 status: "error",
-                duration: 3000,
-                isClosable: true,
             });
         }
     };

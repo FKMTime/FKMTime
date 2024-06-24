@@ -53,8 +53,6 @@ const UpdateDevicesSettingsModal = ({
             toast({
                 title: "Successfully updated devices settings",
                 status: "success",
-                duration: 9000,
-                isClosable: true,
             });
             onClose();
         } else {
@@ -62,8 +60,6 @@ const UpdateDevicesSettingsModal = ({
                 title: "Error",
                 description: "Something went wrong",
                 status: "error",
-                duration: 9000,
-                isClosable: true,
             });
         }
     };

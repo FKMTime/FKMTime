@@ -38,8 +38,6 @@ const EditQuickActionModal = ({
                 title: "Success",
                 description: "Quick action has been updated successfully.",
                 status: "success",
-                duration: 9000,
-                isClosable: true,
             });
             onClose();
         } else {
@@ -47,8 +45,6 @@ const EditQuickActionModal = ({
                 title: "Error",
                 description: "Something went wrong",
                 status: "error",
-                duration: 9000,
-                isClosable: true,
             });
         }
         setIsLoading(false);

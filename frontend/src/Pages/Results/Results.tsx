@@ -129,16 +129,12 @@ const Results = () => {
                     toast({
                         title: "Successfully resubmitted round results to WCA Live.",
                         status: "success",
-                        duration: 9000,
-                        isClosable: true,
                     });
                 } else {
                     toast({
                         title: "Error",
                         description: "Something went wrong",
                         status: "error",
-                        duration: 9000,
-                        isClosable: true,
                     });
                 }
             })
@@ -148,8 +144,6 @@ const Results = () => {
                     description:
                         "You have cancelled the resubmission of the results.",
                     status: "info",
-                    duration: 9000,
-                    isClosable: true,
                 });
             });
     };
