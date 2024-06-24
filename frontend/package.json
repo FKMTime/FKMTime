@@ -16,7 +16,7 @@
   },
   "dependencies": {
     "@chakra-ui/react": "^2.8.2",
-    "@choc-ui/chakra-autocomplete": "^5.3.0",
+    "@choc-ui/chakra-autocomplete": "^5.5.1",
     "@cubing/icons": "^1.1.2",
     "@tanstack/react-table": "^8.16.0",
     "@testing-library/jest-dom": "^6.4.2",
