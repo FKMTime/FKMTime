@@ -116,6 +116,13 @@ export interface Result {
     attempts: Attempt[];
 }
 
+export interface ResultWithAverage extends Result {
+    average: number;
+    best: number;
+    averageString: string;
+    bestString: string;
+}
+
 export interface Attempt {
     id: string;
     resultId: number;

@@ -1,7 +1,14 @@
 import { Competition } from "@wca/helpers";
 
+import { average, best, formattedBest } from "./average";
+import { Result, ResultWithAverage } from "./interfaces";
 import { backendRequest } from "./request";
-import { getLimitByRoundId } from "./utils";
+import { resultToString } from "./resultFormatters";
+import {
+    getLimitByRoundId,
+    getNumberOfAttemptsForRound,
+    getSubmittedAttempts,
+} from "./utils";
 
 export const getResultsByRoundId = async (roundId: string, search?: string) => {
     let route = `result/round/${roundId}`;
@@ -54,4 +61,44 @@ export const checkTimeLimit = (
         return true;
     }
     return time < timeLimit.centiseconds;
+};
+
+export const resultsWithAverageProperty = (
+    results: Result[],
+    wcif: Competition
+) => {
+    return results.map((result) => {
+        const submittedAttempts = getSubmittedAttempts(result.attempts);
+        const maxAttempts = getNumberOfAttemptsForRound(result.roundId, wcif);
+        const calculatedAverage =
+            submittedAttempts.length === maxAttempts &&
+            average(submittedAttempts);
+        return {
+            ...result,
+            average: calculatedAverage || 0,
+            averageString: calculatedAverage
+                ? resultToString(calculatedAverage)
+                : "",
+            best: best(submittedAttempts) || 0,
+            bestString: formattedBest(submittedAttempts) || "",
+        };
+    });
+};
+
+export const orderResultsByAverage = (results: ResultWithAverage[]) => {
+    return results.sort((a, b) => {
+        if (a.average && b.average) {
+            if (a.average === b.average) {
+                return a.best - b.best;
+            }
+            return a.average - b.average;
+        }
+        if (a.average) {
+            return -1;
+        } else if (b.average) {
+            return 1;
+        } else {
+            return a.best - b.best;
+        }
+    });
 };

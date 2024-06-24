@@ -3,22 +3,18 @@ import {
     Button,
     Flex,
     Heading,
-    IconButton,
     Input,
     Text,
     useToast,
 } from "@chakra-ui/react";
-import { Event, Round } from "@wca/helpers";
 import { useConfirm } from "chakra-ui-confirm";
 import { useAtom } from "jotai";
 import { ChangeEvent, useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import io from "socket.io-client";
 
-import EventIcon from "@/Components/Icons/EventIcon";
 import LoadingPage from "@/Components/LoadingPage";
 import PlusButton from "@/Components/PlusButton.tsx";
-import Select from "@/Components/Select";
 import { activityCodeToName } from "@/logic/activities";
 import { competitionAtom } from "@/logic/atoms";
 import { getToken, isAdmin } from "@/logic/auth";
@@ -37,6 +33,7 @@ import {
 } from "@/logic/utils";
 
 import CreateAttemptModal from "./Components/CreateAttemptModal";
+import EventAndRoundSelector from "./Components/EventAndRoundSelector";
 import ResultsTable from "./Components/ResultsTable";
 
 const Results = () => {
@@ -109,6 +106,10 @@ const Results = () => {
         const roundId = eventId + "-r1";
         navigate(`/results/round/${roundId}`);
         await fetchData(roundId);
+    };
+
+    const handleRoundChange = (roundId: string) => {
+        navigate(`/results/round/${roundId}`);
     };
 
     const handleSearch = (event: ChangeEvent<HTMLInputElement>) => {
@@ -206,42 +207,12 @@ const Results = () => {
                 flexDirection={{ base: "column", md: "row" }}
                 gap="5"
             >
-                <Box display="flex" flexDirection="row" gap="5">
-                    {competition.wcif.events.map((event: Event) => (
-                        <IconButton
-                            key={event.id}
-                            aria-label={event.id}
-                            icon={
-                                <EventIcon
-                                    eventId={event.id}
-                                    selected={filters.eventId === event.id}
-                                    size={20}
-                                />
-                            }
-                            onClick={() => handleEventChange(event.id)}
-                            justifyContent="center"
-                            alignItems="center"
-                        />
-                    ))}
-                </Box>
-                <Box width={{ base: "100%", md: "5%" }}>
-                    <Select
-                        value={filters.roundId}
-                        onChange={(event) =>
-                            navigate(`/results/round/${event.target.value}`)
-                        }
-                    >
-                        {competition.wcif.events
-                            .find(
-                                (event: Event) => event.id === filters.eventId
-                            )
-                            ?.rounds.map((round: Round, i: number) => (
-                                <option key={round.id} value={round.id}>
-                                    {i + 1}
-                                </option>
-                            ))}
-                    </Select>
-                </Box>
+                <EventAndRoundSelector
+                    competition={competition}
+                    filters={filters}
+                    handleEventChange={handleEventChange}
+                    handleRoundChange={handleRoundChange}
+                />
                 <Input
                     placeholder="Search"
                     _placeholder={{ color: "white" }}

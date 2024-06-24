@@ -17,6 +17,7 @@ import NotFound from "./Pages/NotFound/NotFound";
 import PersonResults from "./Pages/Persons/PersonResults/PersonResults";
 import Persons from "./Pages/Persons/Persons";
 import ResolvedIncidents from "./Pages/ResolvedIncidents/ResolvedIncidents";
+import PublicView from "./Pages/Results/PublicView/PublicView";
 import Results from "./Pages/Results/Results";
 import SingleResult from "./Pages/Results/SingleResult/SingleResult";
 import Rooms from "./Pages/Rooms/Rooms";
@@ -80,6 +81,10 @@ const App = () => {
                 {
                     path: "results",
                     element: <Results />,
+                },
+                {
+                    path: "results/public/:id",
+                    element: <PublicView />,
                 },
                 {
                     path: "results/round/:id",
