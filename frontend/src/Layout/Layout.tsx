@@ -6,7 +6,8 @@ import io from "socket.io-client";
 
 import { competitionAtom } from "@/logic/atoms";
 import { getToken, getUserInfo, isUserLoggedIn } from "@/logic/auth";
-import { getCompetitionInfo } from "@/logic/competition.ts";
+import { getCompetitionInfo } from "@/logic/competition";
+import { getEvents } from "@/logic/events";
 import {
     COMPETITION_WEBSOCKET_URL,
     INCIDENTS_WEBSOCKET_URL,
@@ -153,9 +154,17 @@ const Layout = () => {
         setCompetition(response.data);
     }, [navigate, setCompetition]);
 
+    const fetchEvents = async () => {
+        await getEvents();
+    };
+
     useEffect(() => {
         fetchCompetition();
     }, [fetchCompetition]);
+
+    useEffect(() => {
+        fetchEvents();
+    }, []);
 
     if (!userInfo || !competition) {
         return <></>;

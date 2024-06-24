@@ -8,11 +8,10 @@ import {
     Thead,
     Tr,
 } from "@chakra-ui/react";
-import { activityCodeToName } from "@wca/helpers";
 import { useEffect, useState } from "react";
 
 import { Modal } from "@/Components/Modal";
-import { prettyActivityName } from "@/logic/activities";
+import { activityCodeToName, prettyActivityName } from "@/logic/activities";
 import { getStaffActivitiesByPersonId } from "@/logic/attendance";
 import { Person, StaffActivity } from "@/logic/interfaces";
 

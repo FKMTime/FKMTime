@@ -33,8 +33,6 @@ const AddStaffMemberModal = ({ isOpen, onClose }: AddStaffMemberModalProps) => {
             toast({
                 title: "Successfully added staff member",
                 status: "success",
-                duration: 9000,
-                isClosable: true,
             });
             onClose();
         } else {
@@ -42,8 +40,6 @@ const AddStaffMemberModal = ({ isOpen, onClose }: AddStaffMemberModalProps) => {
                 title: "Error",
                 description: "Something went wrong",
                 status: "error",
-                duration: 9000,
-                isClosable: true,
             });
         }
         setIsLoading(false);

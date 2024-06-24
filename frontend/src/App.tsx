@@ -1,27 +1,28 @@
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 
-import AttendanceStatistics from "@/Pages/Attendance/AttendanceStatistics/AttendanceStatistics.tsx";
-import CheckIn from "@/Pages/CheckIn/CheckIn.tsx";
-import ImportCompetition from "@/Pages/ImportCompetition/ImportCompetition.tsx";
-import ResolvedIncidents from "@/Pages/ResolvedIncidents/ResolvedIncidents.tsx";
-
 import Layout from "./Layout/Layout";
 import Accounts from "./Pages/Accounts/Accounts";
 import AssignCards from "./Pages/AssignCards/AssignCards";
 import Attendance from "./Pages/Attendance/Attendance";
+import AttendanceStatistics from "./Pages/Attendance/AttendanceStatistics/AttendanceStatistics";
 import Login from "./Pages/Auth/Login/Login";
+import CheckIn from "./Pages/CheckIn/CheckIn";
 import Competition from "./Pages/Competition/Competition";
 import Devices from "./Pages/Devices/Devices";
 import Home from "./Pages/Home/Home";
+import ImportCompetition from "./Pages/ImportCompetition/ImportCompetition";
 import IncidentPage from "./Pages/Incidents/IncidentPage";
 import Incidents from "./Pages/Incidents/Incidents";
 import NotFound from "./Pages/NotFound/NotFound";
 import PersonResults from "./Pages/Persons/PersonResults/PersonResults";
 import Persons from "./Pages/Persons/Persons";
+import ResolvedIncidents from "./Pages/ResolvedIncidents/ResolvedIncidents";
+import PublicView from "./Pages/Results/PublicView/PublicView";
 import Results from "./Pages/Results/Results";
 import SingleResult from "./Pages/Results/SingleResult/SingleResult";
 import Rooms from "./Pages/Rooms/Rooms";
 import Settings from "./Pages/Settings/Settings";
+import UnofficialEvents from "./Pages/UnofficialEvents/UnofficialEvents";
 
 const App = () => {
     const router = createBrowserRouter([
@@ -82,6 +83,10 @@ const App = () => {
                     element: <Results />,
                 },
                 {
+                    path: "results/public/:id",
+                    element: <PublicView />,
+                },
+                {
                     path: "results/round/:id",
                     element: <Results />,
                 },
@@ -116,6 +121,10 @@ const App = () => {
                 {
                     path: "check-in",
                     element: <CheckIn />,
+                },
+                {
+                    path: "events",
+                    element: <UnofficialEvents />,
                 },
             ],
         },

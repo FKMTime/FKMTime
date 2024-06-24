@@ -33,8 +33,6 @@ const AssignCardModal = ({ isOpen, onClose, person }: AssignCardModalProps) => {
             toast({
                 title: "Successfully updated person.",
                 status: "success",
-                duration: 9000,
-                isClosable: true,
             });
             onClose();
         } else {
@@ -42,8 +40,6 @@ const AssignCardModal = ({ isOpen, onClose, person }: AssignCardModalProps) => {
                 title: "Error",
                 description: "Something went wrong",
                 status: "error",
-                duration: 9000,
-                isClosable: true,
             });
         }
         setIsLoading(false);

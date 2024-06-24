@@ -49,15 +49,11 @@ const Rooms = () => {
             toast({
                 title: "Rooms updated",
                 status: "success",
-                duration: 3000,
-                isClosable: true,
             });
         } else {
             toast({
                 title: "Something went wrong!",
                 status: "error",
-                duration: 3000,
-                isClosable: true,
             });
         }
     };

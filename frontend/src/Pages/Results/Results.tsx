@@ -3,25 +3,23 @@ import {
     Button,
     Flex,
     Heading,
-    IconButton,
     Input,
     Text,
     useToast,
 } from "@chakra-ui/react";
-import { activityCodeToName, Event, Round } from "@wca/helpers";
 import { useConfirm } from "chakra-ui-confirm";
 import { useAtom } from "jotai";
 import { ChangeEvent, useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import io from "socket.io-client";
 
-import EventIcon from "@/Components/Icons/EventIcon";
 import LoadingPage from "@/Components/LoadingPage";
 import PlusButton from "@/Components/PlusButton.tsx";
-import Select from "@/Components/Select";
+import { activityCodeToName } from "@/logic/activities";
 import { competitionAtom } from "@/logic/atoms";
 import { getToken, isAdmin } from "@/logic/auth";
 import { getCompetitionInfo } from "@/logic/competition";
+import { isUnofficialEvent } from "@/logic/events";
 import { Result, Room } from "@/logic/interfaces";
 import { RESULTS_WEBSOCKET_URL, WEBSOCKET_PATH } from "@/logic/request";
 import { resultToString } from "@/logic/resultFormatters";
@@ -35,6 +33,7 @@ import {
 } from "@/logic/utils";
 
 import CreateAttemptModal from "./Components/CreateAttemptModal";
+import EventAndRoundSelector from "./Components/EventAndRoundSelector";
 import ResultsTable from "./Components/ResultsTable";
 
 const Results = () => {
@@ -109,6 +108,10 @@ const Results = () => {
         await fetchData(roundId);
     };
 
+    const handleRoundChange = (roundId: string) => {
+        navigate(`/results/round/${roundId}`);
+    };
+
     const handleSearch = (event: ChangeEvent<HTMLInputElement>) => {
         fetchData(filters.roundId, event.target.value);
         setSearch(event.target.value);
@@ -126,16 +129,12 @@ const Results = () => {
                     toast({
                         title: "Successfully resubmitted round results to WCA Live.",
                         status: "success",
-                        duration: 9000,
-                        isClosable: true,
                     });
                 } else {
                     toast({
                         title: "Error",
                         description: "Something went wrong",
                         status: "error",
-                        duration: 9000,
-                        isClosable: true,
                     });
                 }
             })
@@ -145,8 +144,6 @@ const Results = () => {
                     description:
                         "You have cancelled the resubmission of the results.",
                     status: "info",
-                    duration: 9000,
-                    isClosable: true,
                 });
             });
     };
@@ -204,42 +201,12 @@ const Results = () => {
                 flexDirection={{ base: "column", md: "row" }}
                 gap="5"
             >
-                <Box display="flex" flexDirection="row" gap="5">
-                    {competition.wcif.events.map((event: Event) => (
-                        <IconButton
-                            key={event.id}
-                            aria-label={event.id}
-                            icon={
-                                <EventIcon
-                                    eventId={event.id}
-                                    selected={filters.eventId === event.id}
-                                    size={20}
-                                />
-                            }
-                            onClick={() => handleEventChange(event.id)}
-                            justifyContent="center"
-                            alignItems="center"
-                        />
-                    ))}
-                </Box>
-                <Box width={{ base: "100%", md: "5%" }}>
-                    <Select
-                        value={filters.roundId}
-                        onChange={(event) =>
-                            navigate(`/results/round/${event.target.value}`)
-                        }
-                    >
-                        {competition.wcif.events
-                            .find(
-                                (event: Event) => event.id === filters.eventId
-                            )
-                            ?.rounds.map((round: Round, i: number) => (
-                                <option key={round.id} value={round.id}>
-                                    {i + 1}
-                                </option>
-                            ))}
-                    </Select>
-                </Box>
+                <EventAndRoundSelector
+                    competition={competition}
+                    filters={filters}
+                    handleEventChange={handleEventChange}
+                    handleRoundChange={handleRoundChange}
+                />
                 <Input
                     placeholder="Search"
                     _placeholder={{ color: "white" }}
@@ -284,14 +251,24 @@ const Results = () => {
                     </Text>
                     <Text>Attempts: {maxAttempts}</Text>
                     {isAdmin() && results.length > 0 && (
-                        <Flex gap="2">
-                            <Button
-                                colorScheme="yellow"
-                                width={{ base: "100%", md: "fit-content" }}
-                                onClick={handleResubmitRound}
-                            >
-                                Resubmit round results to WCA Live
-                            </Button>
+                        <Flex
+                            gap="2"
+                            display={{
+                                base: "flex",
+                                md: isUnofficialEvent(id?.split("-r")[0] || "")
+                                    ? "none"
+                                    : "flex",
+                            }}
+                        >
+                            {!isUnofficialEvent(id?.split("-r")[0] || "") && (
+                                <Button
+                                    colorScheme="yellow"
+                                    width={{ base: "100%", md: "fit-content" }}
+                                    onClick={handleResubmitRound}
+                                >
+                                    Resubmit round results to WCA Live
+                                </Button>
+                            )}
                             <PlusButton
                                 onClick={() =>
                                     setIsOpenCreateAttemptModal(true)

@@ -33,8 +33,6 @@ const Sidebar = ({ user, competition }: SidebarProps) => {
             title: "Logged out",
             description: "You have been logged out.",
             status: "success",
-            duration: 9000,
-            isClosable: true,
         });
         navigate("/auth/login");
     };

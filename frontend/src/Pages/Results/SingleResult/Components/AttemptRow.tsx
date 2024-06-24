@@ -1,8 +1,11 @@
-import { IconButton, Td, Tr, useToast } from "@chakra-ui/react";
+import { Td, Tr, useToast } from "@chakra-ui/react";
 import { useConfirm } from "chakra-ui-confirm";
 import { useState } from "react";
-import { MdDelete, MdEdit, MdNewLabel } from "react-icons/md";
+import { MdNewLabel } from "react-icons/md";
 
+import DeleteButton from "@/Components/DeleteButton";
+import EditButton from "@/Components/EditButton";
+import SmallIconButton from "@/Components/SmallIconButton";
 import { deleteAttempt } from "@/logic/attempt";
 import { Attempt, AttemptType, Result } from "@/logic/interfaces";
 import { getPersonNameAndRegistrantId } from "@/logic/persons.ts";
@@ -46,8 +49,6 @@ const AttemptRow = ({
                     toast({
                         title: "Successfully deleted attempt.",
                         status: "success",
-                        duration: 9000,
-                        isClosable: true,
                     });
                     fetchData();
                 } else {
@@ -55,8 +56,6 @@ const AttemptRow = ({
                         title: "Error",
                         description: "Something went wrong",
                         status: "error",
-                        duration: 9000,
-                        isClosable: true,
                     });
                 }
             })
@@ -66,8 +65,6 @@ const AttemptRow = ({
                     description:
                         "You have cancelled the deletion of the attempt.",
                     status: "info",
-                    duration: 9000,
-                    isClosable: true,
                 });
             });
     };
@@ -105,42 +102,16 @@ const AttemptRow = ({
                 <Td>{attempt.comment}</Td>
                 <Td>{new Date(attempt.solvedAt).toLocaleString()}</Td>
                 <Td>
-                    <IconButton
-                        icon={<MdEdit />}
-                        aria-label="Edit"
-                        bg="none"
-                        color="white"
-                        _hover={{
-                            background: "none",
-                            color: "gray.400",
-                        }}
-                        title="Edit attempt"
+                    <EditButton
                         onClick={() => setIsOpenEditAttemptModal(true)}
                     />
-                    <IconButton
+                    <SmallIconButton
                         icon={<MdNewLabel />}
-                        aria-label="Delete"
-                        bg="none"
-                        color="white"
-                        _hover={{
-                            background: "none",
-                            color: "gray.400",
-                        }}
+                        ariaLabel="Delete"
                         title="Give extra attempt"
                         onClick={() => setIsOpenGiveExtraAttemptModal(true)}
                     />
-                    <IconButton
-                        icon={<MdDelete />}
-                        aria-label="Delete"
-                        bg="none"
-                        color="white"
-                        _hover={{
-                            background: "none",
-                            color: "gray.400",
-                        }}
-                        title="Delete attempt"
-                        onClick={handleDelete}
-                    />
+                    <DeleteButton onClick={handleDelete} />
                 </Td>
             </Tr>
             <EditAttemptModal

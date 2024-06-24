@@ -37,8 +37,6 @@ const CreateQuickActionModal = ({
                 title: "Success",
                 description: "Quick action has been created successfully.",
                 status: "success",
-                duration: 9000,
-                isClosable: true,
             });
             onClose();
         } else {
@@ -46,8 +44,6 @@ const CreateQuickActionModal = ({
                 title: "Error",
                 description: "Something went wrong",
                 status: "error",
-                duration: 9000,
-                isClosable: true,
             });
         }
         setIsLoading(false);

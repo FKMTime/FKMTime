@@ -49,8 +49,6 @@ const CreateDeviceModal = ({
             toast({
                 title: "Successfully created new device.",
                 status: "success",
-                duration: 9000,
-                isClosable: true,
             });
             onClose();
         } else {
@@ -58,8 +56,6 @@ const CreateDeviceModal = ({
                 title: "Error",
                 description: "Something went wrong",
                 status: "error",
-                duration: 9000,
-                isClosable: true,
             });
         }
         setIsLoading(false);

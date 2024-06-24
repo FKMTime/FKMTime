@@ -19,7 +19,16 @@ const theme = extendTheme({
 });
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
-    <ChakraProvider theme={theme} resetCSS>
+    <ChakraProvider
+        theme={theme}
+        resetCSS
+        toastOptions={{
+            defaultOptions: {
+                duration: 3500,
+                isClosable: true,
+            },
+        }}
+    >
         <ConfirmProvider>
             <App />
         </ConfirmProvider>

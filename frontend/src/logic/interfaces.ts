@@ -1,4 +1,8 @@
-import { Activity as WCIFActivity, Competition as WCIF } from "@wca/helpers";
+import {
+    Activity as WCIFActivity,
+    Competition as WCIF,
+    Event as WCIFEvent,
+} from "@wca/helpers";
 
 export interface UserInfo {
     username: string;
@@ -112,6 +116,13 @@ export interface Result {
     attempts: Attempt[];
 }
 
+export interface ResultWithAverage extends Result {
+    average: number;
+    best: number;
+    averageString: string;
+    bestString: string;
+}
+
 export interface Attempt {
     id: string;
     resultId: number;
@@ -203,4 +214,20 @@ export interface WCACompetition {
     country_iso2: string;
     registration_open: string;
     start_date: string;
+}
+
+export interface Event {
+    id: string;
+    name: string;
+    icon: string;
+    useInspection?: boolean;
+    isUnofficial?: boolean;
+}
+
+export interface UnofficialEvent {
+    id: string;
+    eventId: string;
+    wcif: WCIFEvent;
+    createdAt: Date;
+    updatedAt: Date;
 }

@@ -31,8 +31,6 @@ const QuickActionCard = ({ quickAction, fetchData }: QuickActionCardProps) => {
                     toast({
                         title: "Successfully deleted quick action.",
                         status: "success",
-                        duration: 9000,
-                        isClosable: true,
                     });
                     fetchData();
                 } else {
@@ -40,8 +38,6 @@ const QuickActionCard = ({ quickAction, fetchData }: QuickActionCardProps) => {
                         title: "Error",
                         description: "Something went wrong",
                         status: "error",
-                        duration: 9000,
-                        isClosable: true,
                     });
                 }
             })
@@ -51,8 +47,6 @@ const QuickActionCard = ({ quickAction, fetchData }: QuickActionCardProps) => {
                     description:
                         "You have cancelled the deletion of the quick action.",
                     status: "info",
-                    duration: 9000,
-                    isClosable: true,
                 });
             });
     };

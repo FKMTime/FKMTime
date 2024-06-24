@@ -20,6 +20,7 @@ import Select from "@/Components/Select";
 import { createAttempt } from "@/logic/attempt";
 import { DNF_VALUE } from "@/logic/constants";
 import { getAllDevices } from "@/logic/devices";
+import { isUnofficialEvent } from "@/logic/events";
 import {
     AttemptStatus,
     AttemptType,
@@ -100,8 +101,6 @@ const CreateAttemptModal = ({
                 toast({
                     title: "Time limit not passed, time was replaced to DNF",
                     status: "warning",
-                    duration: 3000,
-                    isClosable: true,
                 });
             }
         }
@@ -110,8 +109,6 @@ const CreateAttemptModal = ({
             toast({
                 title: "Attempt created",
                 status: "success",
-                duration: 3000,
-                isClosable: true,
             });
             onClose();
         } else {
@@ -119,8 +116,6 @@ const CreateAttemptModal = ({
                 title: "Error",
                 description: "Something went wrong",
                 status: "error",
-                duration: 9000,
-                isClosable: true,
             });
         }
         setIsLoading(false);
@@ -244,14 +239,17 @@ const CreateAttemptModal = ({
                         name="comment"
                     />
                 </FormControl>
-                {attemptStatus !== AttemptStatus.EXTRA_GIVEN && (
-                    <Checkbox
-                        isChecked={submitToWcaLive}
-                        onChange={(e) => setSubmitToWcaLive(e.target.checked)}
-                    >
-                        Submit to WCA Live
-                    </Checkbox>
-                )}
+                {attemptStatus !== AttemptStatus.EXTRA_GIVEN &&
+                    !isUnofficialEvent(roundId.split("-r")[0]) && (
+                        <Checkbox
+                            isChecked={submitToWcaLive}
+                            onChange={(e) =>
+                                setSubmitToWcaLive(e.target.checked)
+                            }
+                        >
+                            Submit to WCA Live
+                        </Checkbox>
+                    )}
                 <Box
                     display="flex"
                     flexDirection="row"

@@ -30,6 +30,7 @@ import {
   isCompetitorSignedInForEvent,
 } from './helpers';
 import { ResultGateway } from './result.gateway';
+import { isUnofficialEvent } from 'src/events';
 
 @Injectable()
 export class ResultService {
@@ -412,7 +413,10 @@ export class ResultService {
       competitorWcifInfo,
       currentRoundId.split('-')[0],
     );
-    if (!competitorSignedInForEvent) {
+    if (
+      !competitorSignedInForEvent &&
+      !isUnofficialEvent(currentRoundId.split('-')[0])
+    ) {
       return {
         message: getTranslation('competitorIsNotSignedInForEvent', locale),
         shouldResetTime: false,
@@ -555,7 +559,8 @@ export class ResultService {
     }
     if (
       competition.sendingResultsFrequency ===
-      SendingResultsFrequency.AFTER_SOLVE
+        SendingResultsFrequency.AFTER_SOLVE &&
+      !isUnofficialEvent(currentRoundId.split('-')[0])
     ) {
       try {
         const resultToEnter = await this.getResultById(result.id);

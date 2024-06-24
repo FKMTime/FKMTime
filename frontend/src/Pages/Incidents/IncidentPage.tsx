@@ -97,8 +97,6 @@ const IncidentPage = () => {
                 description:
                     "The time must be greater than 0 or DNF penalty should be applied",
                 status: "error",
-                duration: 3000,
-                isClosable: true,
             });
         }
         setIsLoading(true);
@@ -107,8 +105,6 @@ const IncidentPage = () => {
             toast({
                 title: "Incident updated",
                 status: "success",
-                duration: 3000,
-                isClosable: true,
             });
             navigate("/incidents");
         } else {
@@ -116,8 +112,6 @@ const IncidentPage = () => {
                 title: "Error",
                 description: "An error occurred while updating the incident",
                 status: "error",
-                duration: 3000,
-                isClosable: true,
             });
         }
         setIsLoading(false);
@@ -134,8 +128,6 @@ const IncidentPage = () => {
                     toast({
                         title: "Successfully deleted attempt.",
                         status: "success",
-                        duration: 9000,
-                        isClosable: true,
                     });
                     navigate("/incidents");
                 } else {
@@ -143,8 +135,6 @@ const IncidentPage = () => {
                         title: "Error",
                         description: "Something went wrong",
                         status: "error",
-                        duration: 9000,
-                        isClosable: true,
                     });
                 }
                 setIsLoading(false);
@@ -229,8 +219,6 @@ const IncidentPage = () => {
                                 title: "This attempt is over the time limit.",
                                 description: "This time is DNF.",
                                 status: "error",
-                                duration: 9000,
-                                isClosable: true,
                             });
                             setEditedIncident({
                                 ...editedIncident,
@@ -257,6 +245,7 @@ const IncidentPage = () => {
                 <Select
                     value={editedIncident.judgeId || ""}
                     disabled={isLoading}
+                    placeholder="Select judge"
                     onChange={(e) =>
                         setEditedIncident({
                             ...editedIncident,

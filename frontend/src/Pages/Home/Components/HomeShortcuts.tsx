@@ -1,7 +1,7 @@
 import { Box, Button, Heading } from "@chakra-ui/react";
-import { activityCodeToName } from "@wca/helpers";
 import { useNavigate } from "react-router-dom";
 
+import { activityCodeToName } from "@/logic/activities";
 import { Room } from "@/logic/interfaces";
 
 interface HomeShortcutsProps {
@@ -27,21 +27,19 @@ const HomeShortcuts = ({ rooms, currentRounds }: HomeShortcutsProps) => {
                 <>
                     <Heading size="lg">Attendance</Heading>
                     <Box display="flex" gap="2" flexWrap="wrap">
-                        {rooms
-                            .filter((r) => r.currentGroupId)
-                            .map((room: Room) => (
-                                <Button
-                                    key={room.id}
-                                    colorScheme="blue"
-                                    onClick={() => {
-                                        navigate(
-                                            `/attendance/${room.currentGroupId}`
-                                        );
-                                    }}
-                                >
-                                    {activityCodeToName(room.currentGroupId)}
-                                </Button>
-                            ))}
+                        {rooms.map((room: Room) => (
+                            <Button
+                                key={room.id}
+                                colorScheme="blue"
+                                onClick={() => {
+                                    navigate(
+                                        `/attendance/${room.currentGroupId}`
+                                    );
+                                }}
+                            >
+                                {activityCodeToName(room.currentGroupId)}
+                            </Button>
+                        ))}
                     </Box>
                 </>
             )}

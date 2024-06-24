@@ -38,8 +38,6 @@ const GiveExtraAttemptModal = ({
             toast({
                 title: "Successfully given extra.",
                 status: "success",
-                duration: 9000,
-                isClosable: true,
             });
             onClose();
         } else {
@@ -47,8 +45,6 @@ const GiveExtraAttemptModal = ({
                 title: "Error",
                 description: "Something went wrong",
                 status: "error",
-                duration: 9000,
-                isClosable: true,
             });
         }
         setIsLoading(false);

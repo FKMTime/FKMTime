@@ -237,6 +237,7 @@ export class CompetitionService {
         wcif: wcifPublic,
       },
     });
+    await this.addUnofficialEventsToWcif();
   }
 
   async getCompetitionInfo() {
@@ -574,5 +575,21 @@ export class CompetitionService {
         await this.wcaService.enterRoundToWcaLive(results);
       }
     }
+  }
+
+  async addUnofficialEventsToWcif() {
+    const unofficialEvents = await this.prisma.unofficialEvent.findMany();
+    const competition = await this.prisma.competition.findFirst();
+    if (!competition) {
+      throw new HttpException('Competition not found', 404);
+    }
+    const wcifPublic = await this.wcaService.getPublicWcif(competition.wcaId);
+    unofficialEvents.forEach((event) => {
+      wcifPublic.events.push(event.wcif);
+    });
+    await this.prisma.competition.update({
+      where: { id: competition.id },
+      data: { wcif: wcifPublic },
+    });
   }
 }

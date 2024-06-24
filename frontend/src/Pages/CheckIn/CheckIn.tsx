@@ -40,8 +40,6 @@ const CheckIn = () => {
                     title: "Something went wrong",
                     description: "Competitor has been already checked in",
                     status: "warning",
-                    duration: 9000,
-                    isClosable: true,
                 });
                 setScannedCard("");
                 cardInputRef.current?.focus();
@@ -53,16 +51,12 @@ const CheckIn = () => {
                 title: "Card not found",
                 description: "The card was not found in the database.",
                 status: "error",
-                duration: 9000,
-                isClosable: true,
             });
         } else {
             toast({
                 title: "Error",
                 description: "Something went wrong!",
                 status: "error",
-                duration: 9000,
-                isClosable: true,
             });
         }
     };
@@ -76,8 +70,6 @@ const CheckIn = () => {
                 title: "Success",
                 description: "Competitor checked in successfully",
                 status: "success",
-                duration: 9000,
-                isClosable: true,
             });
             await fetchData();
         } else {
@@ -85,8 +77,6 @@ const CheckIn = () => {
                 title: "Error",
                 description: "Something went wrong!",
                 status: "error",
-                duration: 9000,
-                isClosable: true,
             });
         }
         setPersonData(null);

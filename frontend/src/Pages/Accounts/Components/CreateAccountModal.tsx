@@ -44,8 +44,6 @@ const CreateAccountModal = ({ isOpen, onClose }: CreateAccountModalProps) => {
                 title: "Success",
                 description: "Account has been created successfully.",
                 status: "success",
-                duration: 9000,
-                isClosable: true,
             });
             onClose();
         } else if (response.status === 409) {
@@ -53,16 +51,12 @@ const CreateAccountModal = ({ isOpen, onClose }: CreateAccountModalProps) => {
                 title: "Error",
                 description: "Username already taken!",
                 status: "error",
-                duration: 9000,
-                isClosable: true,
             });
         } else {
             toast({
                 title: "Error",
                 description: "Something went wrong",
                 status: "error",
-                duration: 9000,
-                isClosable: true,
             });
         }
         setIsLoading(false);

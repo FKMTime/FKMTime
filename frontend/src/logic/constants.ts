@@ -14,3 +14,4 @@ export const AVAILABLE_PENALTIES = [
     { value: 14, label: "+14" },
     { value: 16, label: "+16" },
 ];
+export const CUTOFF_ALLOWED = ["a", "m"];

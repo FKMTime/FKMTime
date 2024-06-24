@@ -7,7 +7,7 @@ import {
     Heading,
     useToast,
 } from "@chakra-ui/react";
-import { Activity, activityCodeToName, Event, Round } from "@wca/helpers";
+import { Activity, Event, Round } from "@wca/helpers";
 import { useAtom } from "jotai";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
@@ -15,7 +15,7 @@ import io from "socket.io-client";
 
 import LoadingPage from "@/Components/LoadingPage";
 import Select from "@/Components/Select";
-import { getGroupsByRoundId } from "@/logic/activities";
+import { activityCodeToName, getGroupsByRoundId } from "@/logic/activities";
 import { competitionAtom } from "@/logic/atoms";
 import {
     getAttendanceByGroupId,
@@ -112,8 +112,6 @@ const Attendance = () => {
                 title: "Success",
                 description: "Marked as present",
                 status: "success",
-                duration: 3000,
-                isClosable: true,
             });
             fetchAttendanceData(selectedGroup);
         } else {
@@ -121,8 +119,6 @@ const Attendance = () => {
                 title: "Error",
                 description: "Something went wrong",
                 status: "error",
-                duration: 3000,
-                isClosable: true,
             });
         }
     };
@@ -134,8 +130,6 @@ const Attendance = () => {
                 title: "Success",
                 description: "Marked as absent",
                 status: "success",
-                duration: 3000,
-                isClosable: true,
             });
             fetchAttendanceData(selectedGroup);
         } else {
@@ -143,8 +137,6 @@ const Attendance = () => {
                 title: "Error",
                 description: "Something went wrong",
                 status: "error",
-                duration: 3000,
-                isClosable: true,
             });
         }
     };

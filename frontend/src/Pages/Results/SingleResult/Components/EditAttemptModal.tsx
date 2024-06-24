@@ -19,6 +19,7 @@ import { competitionAtom } from "@/logic/atoms";
 import { updateAttempt } from "@/logic/attempt";
 import { DNF_VALUE } from "@/logic/constants";
 import { getAllDevices } from "@/logic/devices.ts";
+import { isUnofficialEvent } from "@/logic/events";
 import {
     Attempt,
     AttemptStatus,
@@ -71,8 +72,6 @@ const EditAttemptModal = ({
             toast({
                 title: "Successfully updated attempt.",
                 status: "success",
-                duration: 9000,
-                isClosable: true,
             });
             onClose();
         } else {
@@ -80,8 +79,6 @@ const EditAttemptModal = ({
                 title: "Error",
                 description: "Something went wrong",
                 status: "error",
-                duration: 9000,
-                isClosable: true,
             });
         }
         setIsLoading(false);
@@ -196,8 +193,6 @@ const EditAttemptModal = ({
                                     title: "This attempt is over the time limit.",
                                     description: "This time is DNF.",
                                     status: "error",
-                                    duration: 9000,
-                                    isClosable: true,
                                 });
                                 setEditedAttempt({
                                     ...editedAttempt,
@@ -300,14 +295,16 @@ const EditAttemptModal = ({
                         />
                     </FormControl>
                 )}
-                <Checkbox
-                    isChecked={shouldResubmitToWcaLive}
-                    onChange={(e) =>
-                        setShouldResubmitToWcaLive(e.target.checked)
-                    }
-                >
-                    Resubmit to WCA Live
-                </Checkbox>
+                {!isUnofficialEvent(result.eventId) && (
+                    <Checkbox
+                        isChecked={shouldResubmitToWcaLive}
+                        onChange={(e) =>
+                            setShouldResubmitToWcaLive(e.target.checked)
+                        }
+                    >
+                        Resubmit to WCA Live
+                    </Checkbox>
+                )}
                 <Box
                     display="flex"
                     flexDirection="row"

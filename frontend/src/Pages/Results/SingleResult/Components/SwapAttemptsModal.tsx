@@ -34,8 +34,6 @@ const SwapAttemptsModal = ({
                 title: "Error",
                 description: "You can't swap an attempt with itself",
                 status: "error",
-                duration: 5000,
-                isClosable: true,
             });
         }
         const status = await swapAttempts(firstAttemptId, secondAttemptId);
@@ -44,8 +42,6 @@ const SwapAttemptsModal = ({
                 title: "Success",
                 description: "Attempts swapped successfully",
                 status: "success",
-                duration: 5000,
-                isClosable: true,
             });
             onClose();
         } else {
@@ -53,8 +49,6 @@ const SwapAttemptsModal = ({
                 title: "Error",
                 description: "Something went wrong",
                 status: "error",
-                duration: 5000,
-                isClosable: true,
             });
         }
     };

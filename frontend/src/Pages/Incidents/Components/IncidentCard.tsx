@@ -1,7 +1,7 @@
 import { Card, CardBody, CardHeader, Heading, Text } from "@chakra-ui/react";
-import { activityCodeToName } from "@wca/helpers";
 import { useNavigate } from "react-router-dom";
 
+import { activityCodeToName } from "@/logic/activities";
 import { Incident } from "@/logic/interfaces";
 import { resultToString } from "@/logic/resultFormatters";
 
