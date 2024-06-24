@@ -7,7 +7,7 @@ services:
     network_mode: host
     volumes:
       - ./backend/src:/app/src
-      - /tmp/sock:/app/sock
+      - sock:/app/sock
     restart: unless-stopped
     environment:
       - DATABASE_URL=postgres://root:password@127.0.0.1:5433/fkm_time
@@ -78,5 +78,23 @@ services:
     ports:
     - "3000:3000"
 
+  micro_connector:
+    image: "ghcr.io/fkmtime/fkmtime-micro-connector:master"
+    container_name: micro-connector
+    network_mode: host
+    volumes:
+      - /run/dbus:/run/dbus:ro
+      - sock:/app/sock
+    environment:
+      - PORT=8080
+      - FIRMWARE_DIR=/app/firmware
+      - RUST_LOG=none,backend=debug
+      - SOCKET_PATH=/app/sock/socket.sock
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_healthy
+
 volumes:
   database:
+  sock:
