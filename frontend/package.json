@@ -20,7 +20,7 @@
     "@cubing/icons": "^1.1.2",
     "@tanstack/react-table": "^8.16.0",
     "@testing-library/jest-dom": "^6.4.2",
-    "@testing-library/react": "^15.0.2",
+    "@testing-library/react": "^16.0.0",
     "@testing-library/user-event": "^14.5.2",
     "@wca/helpers": "^1.1.5",
     "chakra-ui-confirm": "^0.1.4",
