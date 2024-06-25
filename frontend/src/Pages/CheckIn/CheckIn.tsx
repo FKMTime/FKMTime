@@ -9,15 +9,15 @@ import {
 import { KeyboardEvent, RefObject, useEffect, useRef, useState } from "react";
 
 import LoadingPage from "@/Components/LoadingPage";
+import PersonAutocomplete from "@/Components/PersonAutocomplete";
 import { Person } from "@/logic/interfaces";
 import {
     checkedInCount,
     checkIn,
     getPersonInfoByCardIdWithSensitiveData,
 } from "@/logic/persons";
-import NotCheckedInPersons from "@/Pages/CheckIn/Components/NotCheckedInPersons.tsx";
-import PersonInfo from "@/Pages/CheckIn/Components/PersonInfo.tsx";
-import SubmitActions from "@/Pages/CheckIn/Components/SubmitActions.tsx";
+import PersonInfo from "@/Pages/CheckIn/Components/PersonInfo";
+import SubmitActions from "@/Pages/CheckIn/Components/SubmitActions";
 
 const CheckIn = () => {
     const toast = useToast();
@@ -31,6 +31,7 @@ const CheckIn = () => {
     const cardInputRef: RefObject<HTMLInputElement> =
         useRef<HTMLInputElement>(null);
     const [personData, setPersonData] = useState<Person | null>();
+    const [selectedPersonId, setSelectedPersonId] = useState<string>("");
 
     const handleSubmitCard = async () => {
         const res = await getPersonInfoByCardIdWithSensitiveData(scannedCard);
@@ -68,7 +69,7 @@ const CheckIn = () => {
         if (res.status === 200) {
             toast({
                 title: "Success",
-                description: "Competitor checked in successfully",
+                description: "Competitor has been checked in successfully",
                 status: "success",
             });
             await fetchData();
@@ -81,11 +82,23 @@ const CheckIn = () => {
         }
         setPersonData(null);
         setScannedCard("");
+        setSelectedPersonId("");
         cardInputRef.current?.focus();
     };
 
-    const handleClickOnList = (id: string) => {
+    const handleSelectPerson = (id: string) => {
         const person = personsWithoutGiftpackCollected.find((p) => p.id === id);
+        setSelectedPersonId(id);
+        if (!person) {
+            toast({
+                title: "Already checked in",
+                description: "This person has already been checked in",
+                status: "warning",
+            });
+            setTimeout(() => {
+                setSelectedPersonId("");
+            }, 500);
+        }
         setPersonData(person);
         setScannedCard(person?.cardId || "");
     };
@@ -133,6 +146,10 @@ const CheckIn = () => {
                         }
                     />
                 </FormControl>
+                <PersonAutocomplete
+                    onSelect={handleSelectPerson}
+                    value={selectedPersonId}
+                />
                 {personData && (
                     <>
                         <PersonInfo person={personData} />
@@ -143,10 +160,6 @@ const CheckIn = () => {
                     </>
                 )}
             </Box>
-            <NotCheckedInPersons
-                persons={personsWithoutGiftpackCollected}
-                handleClick={handleClickOnList}
-            />
         </Box>
     );
 };
