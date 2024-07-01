@@ -46,7 +46,7 @@
     "js-sha512": "^0.8.0",
     "passport": "^0.7.0",
     "passport-jwt": "^4.0.1",
-    "prisma": "^5.8.0",
+    "prisma": "^5.16.1",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.1",
     "socket.io": "^4.7.5"
