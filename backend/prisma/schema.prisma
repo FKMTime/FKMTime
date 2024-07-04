@@ -18,6 +18,7 @@ model Account {
   createdAt      DateTime      @default(now())
   updatedAt      DateTime      @updatedAt
   quickActions   QuickAction[]
+  Attempt        Attempt[]
 }
 
 model Person {
@@ -53,12 +54,12 @@ model StaffActivity {
 }
 
 model Competition {
-  id                        String    @id @default(uuid())
+  id                        String                  @id @default(uuid())
   wcaId                     String
   sendingResultsFrequency   SendingResultsFrequency
   name                      String
   countryIso2               String?
-  shouldUpdateDevices       Boolean   @default(false)
+  shouldUpdateDevices       Boolean                 @default(false)
   wifiSsid                  String?
   wifiPassword              String?
   wcif                      Json?
@@ -68,7 +69,7 @@ model Competition {
 
 model UnofficialEvent {
   id        String   @id @default(uuid())
-  eventId   String  @unique
+  eventId   String   @unique
   wcif      Json
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -117,6 +118,8 @@ model Attempt {
   solvedAt       DateTime?
   createdAt      DateTime      @default(now())
   updatedAt      DateTime      @updatedAt
+  updatedById    String?
+  updatedBy      Account?      @relation(fields: [updatedById], references: [id])
 }
 
 model Device {

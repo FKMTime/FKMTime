@@ -35,6 +35,7 @@ const AttemptsTable = ({
                         <Th>Station</Th>
                         <Th>Comment</Th>
                         <Th>Solved at</Th>
+                        <Th>Updated by</Th>
                         <Th>Actions</Th>
                     </Tr>
                 </Thead>

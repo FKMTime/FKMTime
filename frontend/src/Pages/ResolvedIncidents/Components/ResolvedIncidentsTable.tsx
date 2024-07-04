@@ -19,6 +19,7 @@ const ResolvedIncidents = ({ data }: ResolvedIncidentsTableProps) => {
                         <Th>Attempt</Th>
                         <Th>Time</Th>
                         <Th>Solved at</Th>
+                        <Th>Updated by</Th>
                         <Th>Status</Th>
                         <Th>Comment</Th>
                         <Th>Judge</Th>

@@ -29,6 +29,7 @@ const ResolvedIncidentRow = ({ incident }: ResolvedIncidentRowProps) => {
             <Td>{incident.attemptNumber}</Td>
             <Td>{attemptWithPenaltyToString(incident)}</Td>
             <Td>{new Date(incident.solvedAt).toLocaleString()}</Td>
+            <Td>{incident.updatedBy?.fullName}</Td>
             <Td>{prettyAttemptStatus(incident.status, true)}</Td>
             <Td>{incident.comment}</Td>
             <Td>{incident.judge?.name}</Td>

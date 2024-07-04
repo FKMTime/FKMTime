@@ -96,7 +96,7 @@ export class AttemptService {
     };
   }
 
-  async updateAttempt(id: string, data: UpdateAttemptDto) {
+  async updateAttempt(id: string, data: UpdateAttemptDto, userId: string) {
     const attemptToUpdate = await this.prisma.attempt.findUnique({
       where: { id: id },
     });
@@ -122,6 +122,7 @@ export class AttemptService {
         ...dataToUpdate,
         judge: data.judgeId ? { connect: { id: data.judgeId } } : undefined,
         device: data.deviceId ? { connect: { id: data.deviceId } } : undefined,
+        updatedBy: { connect: { id: userId } },
       },
       include: {
         device: true,
@@ -275,6 +276,12 @@ export class AttemptService {
             name: true,
             wcaId: true,
             registrantId: true,
+          },
+        },
+        updatedBy: {
+          select: {
+            id: true,
+            fullName: true,
           },
         },
         device: true,

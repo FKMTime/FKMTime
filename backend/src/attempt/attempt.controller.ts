@@ -17,6 +17,8 @@ import { AttemptService } from './attempt.service';
 import { CreateAttemptDto } from './dto/createAttempt.dto';
 import { SwapAttemptsDto } from './dto/swapAttempts.dto';
 import { UpdateAttemptDto } from './dto/updateAttempt.dto';
+import { JwtAuthDto } from 'src/auth/dto/jwt-auth.dto';
+import { GetUser } from 'src/auth/decorator/getUser.decorator';
 
 @UseGuards(AuthGuard('jwt'), AdminGuard)
 @Controller('attempt')
@@ -52,8 +54,12 @@ export class AttemptController {
   }
 
   @Put(':id')
-  async updateAttempt(@Param('id') id: string, @Body() data: UpdateAttemptDto) {
-    return await this.attemptService.updateAttempt(id, data);
+  async updateAttempt(
+    @Param('id') id: string,
+    @Body() data: UpdateAttemptDto,
+    @GetUser() user: JwtAuthDto,
+  ) {
+    return await this.attemptService.updateAttempt(id, data, user.userId);
   }
 
   @HttpCode(HttpStatus.NO_CONTENT)

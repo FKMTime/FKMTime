@@ -212,6 +212,12 @@ export class ResultService {
                 registrantId: true,
               },
             },
+            updatedBy: {
+              select: {
+                id: true,
+                fullName: true,
+              },
+            },
             device: true,
           },
         },

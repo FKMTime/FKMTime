@@ -101,6 +101,7 @@ const AttemptRow = ({
                 <Td>{attempt.device && attempt.device.name}</Td>
                 <Td>{attempt.comment}</Td>
                 <Td>{new Date(attempt.solvedAt).toLocaleString()}</Td>
+                <Td>{attempt.updatedBy?.fullName}</Td>
                 <Td>
                     <EditButton
                         onClick={() => setIsOpenEditAttemptModal(true)}

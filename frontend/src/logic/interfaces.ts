@@ -139,6 +139,7 @@ export interface Attempt {
     judge?: Person;
     deviceId?: string;
     device?: Device;
+    updatedBy?: Account;
 }
 
 //eslint-disable-next-line
