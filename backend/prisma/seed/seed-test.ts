@@ -11,7 +11,7 @@ const prisma = new PrismaClient();
 
 export async function seedDb() {
   const adminPassword = sha512('admin');
-  await prisma.account.create({
+  await prisma.user.create({
     data: {
       username: 'admin',
       fullName: 'Admin',

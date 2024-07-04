@@ -7,9 +7,9 @@ import { UpdateSettingsDto } from './dto/updateSettings.dto';
 export class SettingsService {
   constructor(private readonly prisma: DbService) {}
 
-  async getSettings(accountId: string) {
-    return this.prisma.account.findFirst({
-      where: { id: accountId },
+  async getSettings(userId: string) {
+    return this.prisma.user.findFirst({
+      where: { id: userId },
       select: {
         username: true,
         role: true,
@@ -19,9 +19,9 @@ export class SettingsService {
       },
     });
   }
-  async updateSettings(accountId: string, data: UpdateSettingsDto) {
-    return this.prisma.account.update({
-      where: { id: accountId },
+  async updateSettings(userId: string, data: UpdateSettingsDto) {
+    return this.prisma.user.update({
+      where: { id: userId },
       data: data,
       select: {
         username: true,
@@ -32,19 +32,19 @@ export class SettingsService {
     });
   }
 
-  async getMyQuickActions(accountId: string) {
+  async getMyQuickActions(userId: string) {
     return this.prisma.quickAction.findMany({
-      where: { accountId },
+      where: { userId },
     });
   }
 
-  async createQuickAction(accountId: string, data: QuickActionDto) {
+  async createQuickAction(userId: string, data: QuickActionDto) {
     return this.prisma.quickAction.create({
       data: {
         ...data,
-        account: {
+        user: {
           connect: {
-            id: accountId,
+            id: userId,
           },
         },
       },
@@ -52,19 +52,19 @@ export class SettingsService {
   }
 
   async updateQuickAction(
-    accountId: string,
+    userId: string,
     quickActionId: string,
     data: QuickActionDto,
   ) {
     return this.prisma.quickAction.update({
-      where: { id: quickActionId, accountId },
+      where: { id: quickActionId, userId },
       data: data,
     });
   }
 
-  async deleteQuickAction(accountId: string, quickActionId: string) {
+  async deleteQuickAction(userId: string, quickActionId: string) {
     return this.prisma.quickAction.delete({
-      where: { id: quickActionId, accountId },
+      where: { id: quickActionId, userId },
     });
   }
 }

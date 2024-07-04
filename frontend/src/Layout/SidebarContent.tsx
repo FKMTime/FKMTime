@@ -70,9 +70,9 @@ const SidebarContent = ({
                         onClick={onElementClick}
                     />
                     <SidebarElement
-                        name="Accounts"
+                        name="Users"
                         icon={<MdPersonAdd />}
-                        link="/accounts"
+                        link="/users"
                         onClick={onElementClick}
                     />
                     <SidebarElement

@@ -1,7 +1,7 @@
 import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
 import { AuthModule } from './auth/auth.module';
 import { DbModule } from './db/db.module';
-import { AccountModule } from './account/account.module';
+import { UserModule } from './user/user.module';
 import { CompetitionModule } from './competition/competition.module';
 import { PersonModule } from './person/person.module';
 import { ResultModule } from './result/result.module';
@@ -21,7 +21,7 @@ import { EventsModule } from './events/events.module';
     DbModule,
     ScheduleModule.forRoot(),
     AuthModule,
-    AccountModule,
+    UserModule,
     CompetitionModule,
     PersonModule,
     ResultModule,

@@ -11,16 +11,16 @@ import { FormEvent, useState } from "react";
 import { Modal } from "@/Components/Modal";
 import PasswordInput from "@/Components/PasswordInput.tsx";
 import Select from "@/Components/Select";
-import { createAccount } from "@/logic/accounts";
-import { AccountRole } from "@/logic/interfaces.ts";
-import { prettyAccountRoleName } from "@/logic/utils.ts";
+import { UserRole } from "@/logic/interfaces.ts";
+import { createUser } from "@/logic/user";
+import { prettyUserRoleName } from "@/logic/utils.ts";
 
-interface CreateAccountModalProps {
+interface CreateUserModalProps {
     isOpen: boolean;
     onClose: () => void;
 }
 
-const CreateAccountModal = ({ isOpen, onClose }: CreateAccountModalProps) => {
+const CreateUserModal = ({ isOpen, onClose }: CreateUserModalProps) => {
     const toast = useToast();
     const [isLoading, setIsLoading] = useState(false);
     const [role, setRole] = useState<string>("");
@@ -33,16 +33,11 @@ const CreateAccountModal = ({ isOpen, onClose }: CreateAccountModalProps) => {
         const password = data.get("password") as string;
         const fullName = data.get("fullName") as string;
 
-        const response = await createAccount(
-            username,
-            role,
-            password,
-            fullName
-        );
+        const response = await createUser(username, role, password, fullName);
         if (response.status === 201) {
             toast({
                 title: "Success",
-                description: "Account has been created successfully.",
+                description: "User has been created successfully.",
                 status: "success",
             });
             onClose();
@@ -63,7 +58,7 @@ const CreateAccountModal = ({ isOpen, onClose }: CreateAccountModalProps) => {
     };
 
     return (
-        <Modal isOpen={isOpen} onClose={onClose} title="Create account">
+        <Modal isOpen={isOpen} onClose={onClose} title="Create user">
             <Box
                 display="flex"
                 flexDirection="column"
@@ -105,9 +100,9 @@ const CreateAccountModal = ({ isOpen, onClose }: CreateAccountModalProps) => {
                         disabled={isLoading}
                         placeholder="Select role"
                     >
-                        {Object.keys(AccountRole).map((accountRole) => (
-                            <option key={accountRole} value={accountRole}>
-                                {prettyAccountRoleName(accountRole)}
+                        {Object.keys(UserRole).map((userRole) => (
+                            <option key={userRole} value={userRole}>
+                                {prettyUserRoleName(userRole)}
                             </option>
                         ))}
                     </Select>
@@ -136,4 +131,4 @@ const CreateAccountModal = ({ isOpen, onClose }: CreateAccountModalProps) => {
     );
 };
 
-export default CreateAccountModal;
+export default CreateUserModal;

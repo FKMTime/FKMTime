@@ -11,8 +11,8 @@ export class AuthController {
 
   @UseGuards(AuthGuard('jwt'))
   @Get('me')
-  async getAccountInfo(@GetUser() user: JwtAuthDto) {
-    return await this.authService.getAccountInfo(user.userId);
+  async getUserInfo(@GetUser() user: JwtAuthDto) {
+    return await this.authService.getUserInfo(user.userId);
   }
 
   @UseGuards(AuthGuard('jwt'))

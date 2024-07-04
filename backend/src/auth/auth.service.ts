@@ -16,7 +16,7 @@ export class AuthService {
   ) {}
 
   async login(dto: LoginDto) {
-    const user = await this.prisma.account.findFirst({
+    const user = await this.prisma.user.findFirst({
       where: { username: dto.username },
     });
 
@@ -53,13 +53,13 @@ export class AuthService {
       throw new HttpException('Error logging in with WCA', 500);
     }
     const userInfo = await this.wcaService.getUserInfo(token);
-    const existingUser = await this.prisma.account.findFirst({
+    const existingUser = await this.prisma.user.findFirst({
       where: {
         wcaUserId: userInfo.me.id,
       },
     });
     if (existingUser) {
-      await this.prisma.account.update({
+      await this.prisma.user.update({
         where: {
           id: existingUser.id,
         },
@@ -86,7 +86,7 @@ export class AuthService {
       const manageableCompetitions =
         await this.wcaService.getUpcomingManageableCompetitions(token);
       if (!competition) {
-        return await this.createAndReturnAccount(
+        return await this.createAndReturnUser(
           userInfo.me.id,
           userInfo.me.name,
           token,
@@ -101,7 +101,7 @@ export class AuthService {
             403,
           );
         } else {
-          return await this.createAndReturnAccount(
+          return await this.createAndReturnUser(
             userInfo.me.id,
             userInfo.me.name,
             token,
@@ -111,12 +111,12 @@ export class AuthService {
     }
   }
 
-  async createAndReturnAccount(
+  async createAndReturnUser(
     wcaUserId: number,
     fullName: string,
     wcaAccessToken: string,
   ) {
-    const user = await this.prisma.account.create({
+    const user = await this.prisma.user.create({
       data: {
         wcaUserId: wcaUserId,
         fullName: fullName,
@@ -148,8 +148,8 @@ export class AuthService {
     return await this.jwtService.verifyAsync(token);
   }
 
-  async getAccountInfo(userId: string) {
-    return this.prisma.account.findFirst({
+  async getUserInfo(userId: string) {
+    return this.prisma.user.findFirst({
       where: {
         id: userId,
       },
@@ -166,7 +166,7 @@ export class AuthService {
     oldPassword: string,
     newPassword: string,
   ) {
-    const user = await this.prisma.account.findFirst({
+    const user = await this.prisma.user.findFirst({
       where: {
         id: userId,
       },
@@ -174,7 +174,7 @@ export class AuthService {
     if (sha512(oldPassword) !== user.password) {
       throw new HttpException('Wrong password', HttpStatus.FORBIDDEN);
     }
-    await this.prisma.account.update({
+    await this.prisma.user.update({
       where: {
         id: userId,
       },

@@ -1,16 +1,16 @@
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 import { DbService } from '../db/db.service';
 import { HttpException, Injectable } from '@nestjs/common';
-import { CreateAccountDto } from './dto/createAccount.dto';
-import { UpdateAccountDto } from './dto/updateAccount.dto';
+import { CreateUserDto } from './dto/createUser.dto';
+import { UpdateUserDto } from './dto/updateUser.dto';
 import { sha512 } from 'js-sha512';
 
 @Injectable()
-export class AccountService {
+export class UserService {
   constructor(private readonly prisma: DbService) {}
 
-  async getAllAccounts() {
-    return this.prisma.account.findMany({
+  async getAllUsers() {
+    return this.prisma.user.findMany({
       select: {
         id: true,
         username: true,
@@ -26,9 +26,9 @@ export class AccountService {
     });
   }
 
-  async createAccount(data: CreateAccountDto) {
+  async createUser(data: CreateUserDto) {
     try {
-      await this.prisma.account.create({
+      await this.prisma.user.create({
         data: {
           username: data.username,
           fullName: data.fullName,
@@ -44,13 +44,13 @@ export class AccountService {
       }
     }
     return {
-      message: 'Account created successfully',
+      message: 'User created successfully',
     };
   }
 
-  async updateAccount(id: string, data: UpdateAccountDto) {
+  async updateUser(id: string, data: UpdateUserDto) {
     try {
-      await this.prisma.account.update({
+      await this.prisma.user.update({
         where: { id: id },
         data: {
           username: data.username,
@@ -66,12 +66,12 @@ export class AccountService {
       }
     }
     return {
-      message: 'Account updated successfully',
+      message: 'User updated successfully',
     };
   }
 
   async updatePassword(id: string, password: string) {
-    return this.prisma.account.update({
+    return this.prisma.user.update({
       where: { id: id },
       data: {
         password: sha512(password),
@@ -79,8 +79,8 @@ export class AccountService {
     });
   }
 
-  async deleteAccount(id: string) {
-    return this.prisma.account.delete({
+  async deleteUser(id: string) {
+    return this.prisma.user.delete({
       where: { id: id },
     });
   }

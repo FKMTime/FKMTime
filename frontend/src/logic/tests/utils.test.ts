@@ -9,11 +9,11 @@ import {
     getPersonFromWcif,
     getRoundInfoFromWcif,
     msToString,
-    prettyAccountRoleName,
     prettyAvailableDeviceType,
     prettyDeviceType,
     prettyGender,
     prettyRoundFormat,
+    prettyUserRoleName,
     regionNameByIso2,
 } from "@/logic/utils.ts";
 
@@ -140,8 +140,8 @@ describe("prettyAvailableDeviceType", () => {
     });
 });
 
-describe("prettyAccountRoleName", () => {
-    it("return pretty account role name", () => {
-        expect(prettyAccountRoleName("ADMIN")).toEqual("Admin");
+describe("prettyUserRoleName", () => {
+    it("return pretty user role name", () => {
+        expect(prettyUserRoleName("ADMIN")).toEqual("Admin");
     });
 });

@@ -9,20 +9,20 @@ import { FormEvent, useState } from "react";
 
 import { Modal } from "@/Components/Modal";
 import PasswordInput from "@/Components/PasswordInput.tsx";
-import { updateAccountPassword } from "@/logic/accounts";
-import { Account } from "@/logic/interfaces";
+import { User } from "@/logic/interfaces";
+import { updateUserPassword } from "@/logic/user";
 
-interface EditAccountPasswordModalProps {
+interface EditUserPasswordModalProps {
     isOpen: boolean;
     onClose: () => void;
-    account: Account;
+    user: User;
 }
 
-const EditAccountPasswordModal = ({
+const EditUserPasswordModal = ({
     isOpen,
     onClose,
-    account,
-}: EditAccountPasswordModalProps) => {
+    user,
+}: EditUserPasswordModalProps) => {
     const toast = useToast();
     const [isLoading, setIsLoading] = useState(false);
 
@@ -31,7 +31,7 @@ const EditAccountPasswordModal = ({
         event.preventDefault();
         const data = new FormData(event.currentTarget);
         const password = data.get("password") as string;
-        const status = await updateAccountPassword(account.id, password);
+        const status = await updateUserPassword(user.id, password);
         if (status === 200) {
             toast({
                 title: "Successfully changed password.",
@@ -90,4 +90,4 @@ const EditAccountPasswordModal = ({
     );
 };
 
-export default EditAccountPasswordModal;
+export default EditUserPasswordModal;

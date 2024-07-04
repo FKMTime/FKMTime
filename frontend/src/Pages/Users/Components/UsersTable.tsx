@@ -1,15 +1,15 @@
 import { Table, TableContainer, Tbody, Th, Thead, Tr } from "@chakra-ui/react";
 
-import { Account } from "@/logic/interfaces";
+import { User } from "@/logic/interfaces";
 
-import AccountRow from "./AccountRow";
+import UserRow from "./UserRow";
 
-interface AccountsTableProps {
-    accounts: Account[];
+interface UsersTableProps {
+    users: User[];
     fetchData: () => void;
 }
 
-const AccountsTable = ({ accounts, fetchData }: AccountsTableProps) => {
+const UsersTable = ({ users, fetchData }: UsersTableProps) => {
     return (
         <TableContainer>
             <Table variant="simple">
@@ -22,10 +22,10 @@ const AccountsTable = ({ accounts, fetchData }: AccountsTableProps) => {
                     </Tr>
                 </Thead>
                 <Tbody>
-                    {accounts.map((account) => (
-                        <AccountRow
-                            key={account.id}
-                            account={account}
+                    {users.map((user) => (
+                        <UserRow
+                            key={user.id}
+                            user={user}
                             fetchData={fetchData}
                         />
                     ))}
@@ -35,4 +35,4 @@ const AccountsTable = ({ accounts, fetchData }: AccountsTableProps) => {
     );
 };
 
-export default AccountsTable;
+export default UsersTable;

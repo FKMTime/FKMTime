@@ -39,7 +39,7 @@ export class CompetitionService {
     if (existingCompetition) {
       throw new HttpException('Competition already exists', 400);
     }
-    const user = await this.prisma.account.findFirst({
+    const user = await this.prisma.user.findFirst({
       where: {
         id: userId,
       },
@@ -112,7 +112,7 @@ export class CompetitionService {
   }
 
   async updateWcif(wcaId: string, userId: string) {
-    const user = await this.prisma.account.findFirst({
+    const user = await this.prisma.user.findFirst({
       where: {
         id: userId,
       },

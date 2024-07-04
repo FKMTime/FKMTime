@@ -4,7 +4,7 @@ const prisma = new PrismaClient();
 
 export async function seedDb() {
   const adminPassword = sha512('admin');
-  const adminUser = await prisma.account.upsert({
+  const adminUser = await prisma.user.upsert({
     where: { username: 'admin' },
     update: {},
     create: {

@@ -8,42 +8,42 @@ import DeleteButton from "@/Components/DeleteButton";
 import EditButton from "@/Components/EditButton";
 import RoleIcon from "@/Components/Icons/RoleIcon.tsx";
 import SmallIconButton from "@/Components/SmallIconButton";
-import { deleteAccount } from "@/logic/accounts";
-import { Account } from "@/logic/interfaces";
-import { prettyAccountRoleName } from "@/logic/utils.ts";
+import { User } from "@/logic/interfaces";
+import { deleteUser } from "@/logic/user";
+import { prettyUserRoleName } from "@/logic/utils.ts";
 
-import EditAccountModal from "./EditAccountModal";
-import EditAccountPasswordModal from "./EditAccountPasswordModal";
+import EditUserModal from "./EditUserModal";
+import EditUserPasswordModal from "./EditUserPasswordModal";
 
-interface AccountRowProps {
-    account: Account;
+interface UserRowProps {
+    user: User;
     fetchData: () => void;
 }
 
-const AccountRow = ({ account, fetchData }: AccountRowProps) => {
+const UserRow = ({ user, fetchData }: UserRowProps) => {
     const toast = useToast();
     const confirm = useConfirm();
-    const [isOpenEditAccountModal, setIsOpenEditAccountModal] =
+    const [isOpenEditUserModal, setIsOpenEditUserModal] =
         useState<boolean>(false);
     const [isOpenChangePasswordModal, setIsOpenChangePasswordModal] =
         useState<boolean>(false);
 
-    const handleCloseEditAccountModal = async () => {
+    const handleCloseEditUserModal = async () => {
         await fetchData();
-        setIsOpenEditAccountModal(false);
+        setIsOpenEditUserModal(false);
     };
 
     const handleDelete = async () => {
         confirm({
-            title: "Delete account",
+            title: "Delete user",
             description:
-                "Are you sure you want to delete this account? This action cannot be undone",
+                "Are you sure you want to delete this user? This action cannot be undone",
         })
             .then(async () => {
-                const status = await deleteAccount(account.id);
+                const status = await deleteUser(user.id);
                 if (status === 204) {
                     toast({
-                        title: "Successfully deleted account.",
+                        title: "Successfully deleted user.",
                         status: "success",
                     });
                     fetchData();
@@ -59,7 +59,7 @@ const AccountRow = ({ account, fetchData }: AccountRowProps) => {
                 toast({
                     title: "Cancelled",
                     description:
-                        "You have cancelled the deletion of the account.",
+                        "You have cancelled the deletion of this user.",
                     status: "info",
                 });
             });
@@ -67,26 +67,20 @@ const AccountRow = ({ account, fetchData }: AccountRowProps) => {
 
     return (
         <>
-            <Tr key={account.id}>
+            <Tr key={user.id}>
                 <Td>
-                    {account.wcaUserId ? (
-                        <img src={wcaLogo} width="25" />
-                    ) : (
-                        "FKM"
-                    )}
+                    {user.wcaUserId ? <img src={wcaLogo} width="25" /> : "FKM"}
                 </Td>
-                <Td>{account.fullName}</Td>
+                <Td>{user.fullName}</Td>
                 <Td>
                     <Box display="flex" alignItems="center" gap="1">
-                        <Text>{prettyAccountRoleName(account.role)}</Text>
-                        <RoleIcon role={account.role} />
+                        <Text>{prettyUserRoleName(user.role)}</Text>
+                        <RoleIcon role={user.role} />
                     </Box>
                 </Td>
                 <Td>
-                    <EditButton
-                        onClick={() => setIsOpenEditAccountModal(true)}
-                    />
-                    {!account.wcaUserId && (
+                    <EditButton onClick={() => setIsOpenEditUserModal(true)} />
+                    {!user.wcaUserId && (
                         <SmallIconButton
                             icon={<MdLock />}
                             title="Change password"
@@ -97,18 +91,18 @@ const AccountRow = ({ account, fetchData }: AccountRowProps) => {
                     <DeleteButton onClick={handleDelete} />
                 </Td>
             </Tr>
-            <EditAccountModal
-                isOpen={isOpenEditAccountModal}
-                onClose={handleCloseEditAccountModal}
-                account={account}
+            <EditUserModal
+                isOpen={isOpenEditUserModal}
+                onClose={handleCloseEditUserModal}
+                user={user}
             />
-            <EditAccountPasswordModal
+            <EditUserPasswordModal
                 isOpen={isOpenChangePasswordModal}
                 onClose={() => setIsOpenChangePasswordModal(false)}
-                account={account}
+                user={user}
             />
         </>
     );
 };
 
-export default AccountRow;
+export default UserRow;

@@ -7,7 +7,7 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model Account {
+model User {
   id             String        @id @default(uuid())
   password       String?
   username       String?       @unique
@@ -119,7 +119,7 @@ model Attempt {
   createdAt      DateTime      @default(now())
   updatedAt      DateTime      @updatedAt
   updatedById    String?
-  updatedBy      Account?      @relation(fields: [updatedById], references: [id])
+  updatedBy      User?      @relation(fields: [updatedById], references: [id])
 }
 
 model Device {
@@ -141,8 +141,8 @@ model QuickAction {
   name      String
   comment   String?
   giveExtra Boolean  @default(false)
-  accountId String
-  account   Account  @relation(fields: [accountId], references: [id])
+  userId String
+  user   User  @relation(fields: [userId], references: [id])
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }

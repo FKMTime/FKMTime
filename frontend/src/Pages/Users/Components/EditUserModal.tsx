@@ -10,33 +10,29 @@ import { FormEvent, useState } from "react";
 
 import { Modal } from "@/Components/Modal";
 import Select from "@/Components/Select";
-import { updateAccount } from "@/logic/accounts";
-import { Account, AccountRole } from "@/logic/interfaces";
-import { prettyAccountRoleName } from "@/logic/utils.ts";
+import { User, UserRole } from "@/logic/interfaces";
+import { updateUser } from "@/logic/user";
+import { prettyUserRoleName } from "@/logic/utils.ts";
 
-interface EditAccountModalProps {
+interface EditUserModalProps {
     isOpen: boolean;
     onClose: () => void;
-    account: Account;
+    user: User;
 }
 
-const EditAccountModal = ({
-    isOpen,
-    onClose,
-    account,
-}: EditAccountModalProps) => {
+const EditUserModal = ({ isOpen, onClose, user }: EditUserModalProps) => {
     const toast = useToast();
     const [isLoading, setIsLoading] = useState(false);
-    const [editedAccount, setEditedAccount] = useState<Account>(account);
+    const [editedUser, setEditedUser] = useState<User>(user);
 
     const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
         setIsLoading(true);
         event.preventDefault();
 
-        const status = await updateAccount(editedAccount);
+        const status = await updateUser(editedUser);
         if (status === 200) {
             toast({
-                title: "Successfully updated account.",
+                title: "Successfully updated user.",
                 status: "success",
             });
             onClose();
@@ -57,7 +53,7 @@ const EditAccountModal = ({
     };
 
     return (
-        <Modal isOpen={isOpen} onClose={onClose} title="Edit account">
+        <Modal isOpen={isOpen} onClose={onClose} title="Edit user">
             <Box
                 display="flex"
                 flexDirection="column"
@@ -65,18 +61,18 @@ const EditAccountModal = ({
                 as="form"
                 onSubmit={handleSubmit}
             >
-                {!editedAccount.wcaUserId && (
+                {!editedUser.wcaUserId && (
                     <>
                         <FormControl isRequired>
                             <FormLabel>Username</FormLabel>
                             <Input
                                 placeholder="Username"
                                 _placeholder={{ color: "white" }}
-                                value={editedAccount.username}
+                                value={editedUser.username}
                                 disabled={isLoading}
                                 onChange={(e) =>
-                                    setEditedAccount({
-                                        ...editedAccount,
+                                    setEditedUser({
+                                        ...editedUser,
                                         username: e.target.value,
                                     })
                                 }
@@ -87,11 +83,11 @@ const EditAccountModal = ({
                             <Input
                                 placeholder="Full name"
                                 _placeholder={{ color: "white" }}
-                                value={editedAccount.fullName}
+                                value={editedUser.fullName}
                                 disabled={isLoading}
                                 onChange={(e) =>
-                                    setEditedAccount({
-                                        ...editedAccount,
+                                    setEditedUser({
+                                        ...editedUser,
                                         fullName: e.target.value,
                                     })
                                 }
@@ -102,18 +98,18 @@ const EditAccountModal = ({
                 <FormControl isRequired>
                     <FormLabel>Role</FormLabel>
                     <Select
-                        value={editedAccount.role}
+                        value={editedUser.role}
                         disabled={isLoading}
                         onChange={(e) =>
-                            setEditedAccount({
-                                ...editedAccount,
+                            setEditedUser({
+                                ...editedUser,
                                 role: e.target.value,
                             })
                         }
                     >
-                        {Object.keys(AccountRole).map((accountRole) => (
-                            <option key={accountRole} value={accountRole}>
-                                {prettyAccountRoleName(accountRole)}
+                        {Object.keys(UserRole).map((userRole) => (
+                            <option key={userRole} value={userRole}>
+                                {prettyUserRoleName(userRole)}
                             </option>
                         ))}
                     </Select>
@@ -142,4 +138,4 @@ const EditAccountModal = ({
     );
 };
 
-export default EditAccountModal;
+export default EditUserModal;

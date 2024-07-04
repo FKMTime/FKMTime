@@ -162,7 +162,7 @@ export const prettyAvailableDeviceType = (type: string) => {
     }
 };
 
-export const prettyAccountRoleName = (role: string) => {
+export const prettyUserRoleName = (role: string) => {
     switch (role) {
         case "ADMIN":
             return "Admin";

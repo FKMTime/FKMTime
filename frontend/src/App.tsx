@@ -1,7 +1,6 @@
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 
 import Layout from "./Layout/Layout";
-import Accounts from "./Pages/Accounts/Accounts";
 import AssignCards from "./Pages/AssignCards/AssignCards";
 import Attendance from "./Pages/Attendance/Attendance";
 import AttendanceStatistics from "./Pages/Attendance/AttendanceStatistics/AttendanceStatistics";
@@ -23,6 +22,7 @@ import SingleResult from "./Pages/Results/SingleResult/SingleResult";
 import Rooms from "./Pages/Rooms/Rooms";
 import Settings from "./Pages/Settings/Settings";
 import UnofficialEvents from "./Pages/UnofficialEvents/UnofficialEvents";
+import Users from "./Pages/Users/Users";
 
 const App = () => {
     const router = createBrowserRouter([
@@ -43,8 +43,8 @@ const App = () => {
                     element: <Home />,
                 },
                 {
-                    path: "accounts",
-                    element: <Accounts />,
+                    path: "users",
+                    element: <Users />,
                 },
                 {
                     path: "competition",

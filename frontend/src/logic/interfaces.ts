@@ -7,12 +7,12 @@ import {
 export interface UserInfo {
     username: string;
     fullName?: string;
-    role: AccountRole;
+    role: UserRole;
     wcaUserId?: number;
     wcaAccessToken?: string;
 }
 
-export interface Account {
+export interface User {
     id: string;
     username?: string;
     wcaUserId?: number;
@@ -23,7 +23,7 @@ export interface Account {
 }
 
 //eslint-disable-next-line
-export enum AccountRole {
+export enum UserRole {
     ADMIN = "ADMIN",
     STAFF = "STAFF",
 }
@@ -139,7 +139,7 @@ export interface Attempt {
     judge?: Person;
     deviceId?: string;
     device?: Device;
-    updatedBy?: Account;
+    updatedBy?: User;
 }
 
 //eslint-disable-next-line
@@ -195,7 +195,7 @@ export enum AvailableDeviceType {
 
 export interface Settings {
     username: string;
-    role: AccountRole;
+    role: UserRole;
     wcaUserId?: number;
     createdAt: Date;
     updatedAt: Date;
