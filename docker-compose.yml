@@ -94,6 +94,18 @@ services:
     depends_on:
       backend:
         condition: service_healthy
+        
+  pgadmin:
+    image: dpage/pgadmin4
+    restart: unless-stopped
+    container_name: fkmtime-dev-pgadmin
+    environment:
+      - PGADMIN_DEFAULT_EMAIL=admin@fkmtime.com
+      - PGADMIN_DEFAULT_PASSWORD=admin
+    ports:
+      - '5050:80'
+    depends_on:
+      - database
 
 volumes:
   database:
