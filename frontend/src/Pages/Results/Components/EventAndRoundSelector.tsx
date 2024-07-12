@@ -22,7 +22,13 @@ const EventAndRoundSelector = ({
 }: EventAndRoundSelectorProps) => {
     return (
         <>
-            <Box display="flex" flexDirection="row" gap="5">
+            <Box
+                display="flex"
+                flexDirection="row"
+                gap="5"
+                flexWrap="wrap"
+                width={{ base: "90%", md: "auto" }}
+            >
                 {competition.wcif.events.map((event: Event) => (
                     <IconButton
                         key={event.id}

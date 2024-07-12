@@ -250,34 +250,71 @@ const Results = () => {
                             : "None"}
                     </Text>
                     <Text>Attempts: {maxAttempts}</Text>
-                    {isAdmin() && results.length > 0 && (
-                        <Flex
-                            gap="2"
+                    <Flex
+                        gap="2"
+                        display={{
+                            base: "flex",
+                            md: isUnofficialEvent(id?.split("-r")[0] || "")
+                                ? "none"
+                                : "flex",
+                        }}
+                    >
+                        <Button
+                            colorScheme="blue"
                             display={{
-                                base: "flex",
-                                md: isUnofficialEvent(id?.split("-r")[0] || "")
-                                    ? "none"
-                                    : "flex",
+                                base: "none",
+                                md: "flex",
                             }}
+                            onClick={() =>
+                                navigate(`/results/public/${filters.roundId}`)
+                            }
                         >
-                            {!isUnofficialEvent(id?.split("-r")[0] || "") && (
-                                <Button
-                                    colorScheme="yellow"
-                                    width={{ base: "100%", md: "fit-content" }}
-                                    onClick={handleResubmitRound}
-                                >
-                                    Resubmit round results to WCA Live
-                                </Button>
-                            )}
-                            <PlusButton
-                                onClick={() =>
-                                    setIsOpenCreateAttemptModal(true)
-                                }
-                                aria-label="Add"
-                                display={{ base: "flex", md: "none" }}
-                            />
-                        </Flex>
-                    )}
+                            Public view
+                        </Button>
+                        {isAdmin() && results.length > 0 && (
+                            <>
+                                {!isUnofficialEvent(
+                                    id?.split("-r")[0] || ""
+                                ) && (
+                                    <Button
+                                        colorScheme="yellow"
+                                        width={{
+                                            base: "100%",
+                                            md: "fit-content",
+                                        }}
+                                        onClick={handleResubmitRound}
+                                    >
+                                        Resubmit round results to WCA Live
+                                    </Button>
+                                )}
+                                <PlusButton
+                                    onClick={() =>
+                                        setIsOpenCreateAttemptModal(true)
+                                    }
+                                    aria-label="Add"
+                                    display={{ base: "flex", md: "none" }}
+                                />
+                            </>
+                        )}
+                    </Flex>
+                    <Button
+                        colorScheme="blue"
+                        display={{
+                            base: "flex",
+                            md: isUnofficialEvent(id?.split("-r")[0] || "")
+                                ? "block"
+                                : "none",
+                        }}
+                        width={{
+                            base: "100%",
+                            md: "fit-content",
+                        }}
+                        onClick={() =>
+                            navigate(`/results/public/${filters.roundId}`)
+                        }
+                    >
+                        Public view
+                    </Button>
                 </Box>
             )}
             {results && results.length > 0 ? (
