@@ -45,6 +45,7 @@ export class AuthService {
   }
 
   async loginWithWca(data: WcaLoginDto) {
+    const ALWAYS_MANAGERS = ['wst', 'wrt', 'wcat'];
     const token = await this.wcaService.getAccessToken(
       data.code,
       data.redirectUri,
@@ -93,8 +94,11 @@ export class AuthService {
         );
       } else {
         if (
-          manageableCompetitions.length === 0 ||
-          !manageableCompetitions.some((c) => c.id === competition.wcaId)
+          (manageableCompetitions.length === 0 ||
+            !manageableCompetitions.some((c) => c.id === competition.wcaId)) &&
+          !userInfo.me.teams.some((t) =>
+            ALWAYS_MANAGERS.includes(t.friendly_id),
+          )
         ) {
           throw new HttpException(
             'You are not allowed to manage this competition',
