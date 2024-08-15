@@ -57,6 +57,7 @@ export const getActivityName = (activity: Activity) => {
 };
 
 export const activityCodeToName = (activityCode: string) => {
+    if (activityCode === "") return "";
     const eventId = activityCode.split("-r")[0];
     if (isUnofficialEvent(eventId)) {
         return `${getEventName(eventId)}, Round ${activityCode.split("-g")[0].split("-r")[1]}`;

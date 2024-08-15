@@ -1,5 +1,5 @@
 import { HttpException, Inject, Injectable, forwardRef } from '@nestjs/common';
-import { AttemptStatus } from '@prisma/client';
+import { AttemptStatus, StaffRole } from '@prisma/client';
 import { DbService } from '../db/db.service';
 import { ResultService } from '../result/result.service';
 import { SocketController } from '../socket/socket.controller';
@@ -9,6 +9,7 @@ import { UpdateAttemptDto } from './dto/updateAttempt.dto';
 import { IncidentsGateway } from './incidents.gateway';
 import { isUnofficialEvent } from 'src/events';
 import { ContestsService } from 'src/contests/contests.service';
+import { AttendanceService } from 'src/attendance/attendance.service';
 
 @Injectable()
 export class AttemptService {
@@ -17,6 +18,7 @@ export class AttemptService {
     private readonly wcaService: WcaService,
     private readonly contestsService: ContestsService,
     private readonly incidentsGateway: IncidentsGateway,
+    private readonly attendanceService: AttendanceService,
     @Inject(forwardRef(() => ResultService))
     private readonly resultService: ResultService,
     @Inject(forwardRef(() => SocketController))
@@ -56,6 +58,21 @@ export class AttemptService {
         },
       },
     });
+
+    const staffActivity = await this.prisma.staffActivity.findFirst({
+      where: {
+        personId: data.competitorId,
+        groupId: {
+          contains: data.roundId,
+        },
+        role: StaffRole.COMPETITOR,
+      },
+    });
+    await this.attendanceService.markCompetitorAsPresent(
+      result.person.id,
+      staffActivity.groupId,
+      data.deviceId,
+    );
 
     if (data.submitToWcaLive) {
       const competition = await this.prisma.competition.findFirst();

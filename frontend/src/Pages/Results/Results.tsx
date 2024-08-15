@@ -1,12 +1,4 @@
-import {
-    Box,
-    Button,
-    Flex,
-    Heading,
-    Input,
-    Text,
-    useToast,
-} from "@chakra-ui/react";
+import { Box, Button, Heading, Input, Text, useToast } from "@chakra-ui/react";
 import { useConfirm } from "chakra-ui-confirm";
 import { useAtom } from "jotai";
 import { ChangeEvent, useCallback, useEffect, useMemo, useState } from "react";
@@ -35,6 +27,7 @@ import {
 import CreateAttemptModal from "./Components/CreateAttemptModal";
 import EventAndRoundSelector from "./Components/EventAndRoundSelector";
 import ResultsTable from "./Components/ResultsTable";
+import RestartGroupModal from "./SingleResult/Components/RestartGroupModal";
 
 const Results = () => {
     const { id } = useParams<{ id: string }>();
@@ -63,6 +56,9 @@ const Results = () => {
 
     const [isOpenCreateAttemptModal, setIsOpenCreateAttemptModal] =
         useState<boolean>(false);
+    const [isOpenRestartGroupModal, setIsOpenRestartGroupModal] =
+        useState<boolean>(false);
+
     const [search, setSearch] = useState<string>("");
     const cutoff = useMemo(() => {
         if (!competition) {
@@ -152,6 +148,11 @@ const Results = () => {
     const handleCloseCreateAttemptModal = () => {
         fetchData(filters.roundId);
         setIsOpenCreateAttemptModal(false);
+    };
+
+    const handleCloseRestartGroupModal = () => {
+        fetchData(filters.roundId);
+        setIsOpenRestartGroupModal(false);
     };
 
     useEffect(() => {
@@ -251,41 +252,43 @@ const Results = () => {
                             : "None"}
                     </Text>
                     <Text>Attempts: {maxAttempts}</Text>
-                    <Flex gap="2">
-                        <Button
-                            colorScheme="blue"
-                            display={{
-                                base: "none",
-                                md: "flex",
-                            }}
-                            onClick={() =>
-                                navigate(`/results/public/${filters.roundId}`)
-                            }
-                        >
-                            Public view
-                        </Button>
-                        {isAdmin() && results.length > 0 && (
-                            <>
-                                <Button
-                                    colorScheme="yellow"
-                                    width={{
-                                        base: "100%",
-                                        md: "fit-content",
-                                    }}
-                                    onClick={handleResubmitRound}
-                                >
-                                    Resubmit results to {submissionPlatformName}
-                                </Button>
-                                <PlusButton
-                                    onClick={() =>
-                                        setIsOpenCreateAttemptModal(true)
-                                    }
-                                    aria-label="Add"
-                                    display={{ base: "flex", md: "none" }}
-                                />
-                            </>
-                        )}
-                    </Flex>
+                    {isAdmin() && results.length > 0 && (
+                        <>
+                            <Button
+                                colorScheme="green"
+                                width="100%"
+                                onClick={() =>
+                                    setIsOpenCreateAttemptModal(true)
+                                }
+                                display={{ base: "flex", md: "none" }}
+                            >
+                                Enter attempt
+                            </Button>
+                            <Button
+                                colorScheme="yellow"
+                                width={{
+                                    base: "100%",
+                                    md: "fit-content",
+                                }}
+                                onClick={handleResubmitRound}
+                            >
+                                Resubmit results to {submissionPlatformName}
+                            </Button>
+                        </>
+                    )}
+                    <Button
+                        colorScheme="blue"
+                        display={{
+                            base: "none",
+                            md: "flex",
+                        }}
+                        width="fit-content"
+                        onClick={() =>
+                            navigate(`/results/public/${filters.roundId}`)
+                        }
+                    >
+                        Public view
+                    </Button>
                     <Button
                         colorScheme="blue"
                         display={{
@@ -301,6 +304,16 @@ const Results = () => {
                         }
                     >
                         Public view
+                    </Button>
+                    <Button
+                        colorScheme="red"
+                        width={{
+                            base: "100%",
+                            md: "fit-content",
+                        }}
+                        onClick={() => setIsOpenRestartGroupModal(true)}
+                    >
+                        Restart group
                     </Button>
                 </Box>
             )}
@@ -318,6 +331,12 @@ const Results = () => {
                 onClose={handleCloseCreateAttemptModal}
                 roundId={filters.roundId}
                 timeLimit={limit!}
+            />
+            <RestartGroupModal
+                isOpen={isOpenRestartGroupModal}
+                onClose={handleCloseRestartGroupModal}
+                roundId={filters.roundId}
+                wcif={competition.wcif}
             />
         </Box>
     );

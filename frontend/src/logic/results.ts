@@ -102,3 +102,12 @@ export const orderResultsByAverage = (results: ResultWithAverage[]) => {
         }
     });
 };
+
+export const restartGroup = async (id: string) => {
+    const response = await backendRequest(
+        `result/group/${id}/restart`,
+        "DELETE",
+        true
+    );
+    return response.status;
+};

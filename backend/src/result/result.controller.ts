@@ -61,4 +61,11 @@ export class ResultController {
       id,
     );
   }
+
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @UseGuards(AuthGuard('jwt'), AdminGuard)
+  @Delete('group/:id/restart')
+  async restartGroup(@Param('id') id: string) {
+    return await this.resultService.restartGroup(id);
+  }
 }

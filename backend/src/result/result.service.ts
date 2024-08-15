@@ -667,6 +667,38 @@ export class ResultService {
     return attempt.attemptNumber;
   }
 
+  async restartGroup(groupId: string) {
+    const staffActivity =
+      await this.attendanceService.getAttendanceByGroupId(groupId);
+    const competitors = staffActivity.filter(
+      (activity) =>
+        activity.isPresent && activity.role === StaffRole.COMPETITOR,
+    );
+    const results = await this.prisma.result.findMany({
+      where: {
+        personId: {
+          in: competitors.map((competitor) => competitor.personId),
+        },
+        roundId: groupId.split('-g')[0],
+      },
+    });
+    await this.prisma.staffActivity.updateMany({
+      where: {
+        groupId: groupId,
+      },
+      data: {
+        isPresent: false,
+      },
+    });
+    await this.prisma.result.deleteMany({
+      where: {
+        id: {
+          in: results.map((result) => result.id),
+        },
+      },
+    });
+  }
+
   private notifyDelegate(
     deviceName: string,
     competitorName: string,
