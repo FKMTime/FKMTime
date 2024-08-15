@@ -65,6 +65,7 @@ model Competition {
   wcif                      Json?
   scoretakingToken          String?
   scoretakingTokenUpdatedAt DateTime?
+  cubingContestsToken       String?
 }
 
 model UnofficialEvent {

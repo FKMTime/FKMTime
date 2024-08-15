@@ -475,6 +475,7 @@ export class CompetitionService {
           competition.scoretakingToken !== dto.scoretakingToken
             ? new Date()
             : competition.scoretakingTokenUpdatedAt,
+        cubingContestsToken: dto.cubingContestsToken,
         sendingResultsFrequency: dto.sendingResultsFrequency,
       },
     });

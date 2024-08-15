@@ -1,6 +1,7 @@
 import { activityCodeToName, Competition } from "@wca/helpers";
 
 import { DNF_VALUE } from "./constants";
+import { isUnofficialEvent } from "./events";
 import {
     Attempt,
     AttemptStatus,
@@ -331,4 +332,8 @@ export const prettySendingResultsFrequency = (frequency: string) => {
         default:
             return "Unknown";
     }
+};
+
+export const getSubmissionPlatformName = (eventId: string) => {
+    return isUnofficialEvent(eventId) ? "Cubing Contests" : "WCA Live";
 };

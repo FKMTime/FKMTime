@@ -26,6 +26,7 @@ import {
     getCutoffByRoundId,
     getLimitByRoundId,
     getNumberOfAttemptsForRound,
+    getSubmissionPlatformName,
     getSubmittedAttempts,
     isThereADifferenceBetweenResults,
     regionNameByIso2,
@@ -95,6 +96,10 @@ const SingleResult = () => {
         return getNumberOfAttemptsForRound(result.roundId, competition.wcif);
     }, [competition, result]);
 
+    const submissionPlatformName = getSubmissionPlatformName(
+        result?.eventId || ""
+    );
+
     const fetchData = useCallback(async () => {
         if (!id) return;
         if (!competition) {
@@ -119,7 +124,7 @@ const SingleResult = () => {
         if (status === 200) {
             toast({
                 title: "Success",
-                description: "Scorecard resubmitted to WCA Live",
+                description: `Scorecard resubmitted to ${submissionPlatformName}`,
                 status: "success",
             });
         } else {
@@ -165,16 +170,16 @@ const SingleResult = () => {
                     </Box>
                 </Text>
             )}
-            {!isUnofficialEvent(result.eventId) && (
-                <>
-                    <Button
-                        colorScheme="yellow"
-                        width={{ base: "100%", md: "fit-content" }}
-                        onClick={handleResubmit}
-                    >
-                        Resubmit scorecard to WCA Live
-                    </Button>
-                    {isDifferenceBetweenResults && (
+            <>
+                <Button
+                    colorScheme="yellow"
+                    width={{ base: "100%", md: "fit-content" }}
+                    onClick={handleResubmit}
+                >
+                    Resubmit scorecard to {submissionPlatformName}
+                </Button>
+                {isDifferenceBetweenResults &&
+                    !isUnofficialEvent(result.eventId) && (
                         <Alert status="error" color="black">
                             <AlertIcon />
                             There is a difference between results in WCA Live
@@ -182,8 +187,7 @@ const SingleResult = () => {
                             resubmit scorecard to WCA Live.
                         </Alert>
                     )}
-                </>
-            )}
+            </>
             <Heading mt={3}>
                 Limits for {activityCodeToName(result.roundId)}
             </Heading>

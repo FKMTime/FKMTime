@@ -48,13 +48,17 @@ export class ResultController {
   @HttpCode(HttpStatus.OK)
   @UseGuards(AuthGuard('jwt'), AdminGuard)
   @Post('round/:roundId/enter')
-  async enterRoundToWcaLive(@Param('roundId') roundId: string) {
-    return await this.resultService.enterRoundToWcaLive(roundId);
+  async enterRoundToWcaLiveOrCubingContests(@Param('roundId') roundId: string) {
+    return await this.resultService.enterRoundToWcaLiveOrCubingContests(
+      roundId,
+    );
   }
 
   @UseGuards(AuthGuard('jwt'), AdminGuard)
   @Get(':id/enter')
-  async enterWholeScorecardToWcaLive(@Param('id') id: string) {
-    return await this.resultService.enterWholeScorecardToWcaLive(id);
+  async enterWholeScorecardToWcaLiveOrCubingContests(@Param('id') id: string) {
+    return await this.resultService.enterWholeScorecardToWcaLiveOrCubingContests(
+      id,
+    );
   }
 }

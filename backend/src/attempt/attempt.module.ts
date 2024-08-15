@@ -6,6 +6,7 @@ import { AuthModule } from '../auth/auth.module';
 import { IncidentsGateway } from './incidents.gateway';
 import { WcaModule } from '../wca/wca.module';
 import { ResultModule } from '../result/result.module';
+import { ContestsModule } from 'src/contests/contests.module';
 
 @Module({
   providers: [AttemptService, IncidentsGateway],
@@ -13,6 +14,7 @@ import { ResultModule } from '../result/result.module';
   imports: [
     AuthModule,
     WcaModule,
+    ContestsModule,
     forwardRef(() => ResultModule),
     forwardRef(() => SocketModule),
   ],

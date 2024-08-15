@@ -19,7 +19,6 @@ import { competitionAtom } from "@/logic/atoms";
 import { updateAttempt } from "@/logic/attempt";
 import { DNF_VALUE } from "@/logic/constants";
 import { getAllDevices } from "@/logic/devices.ts";
-import { isUnofficialEvent } from "@/logic/events";
 import {
     Attempt,
     AttemptStatus,
@@ -32,6 +31,7 @@ import {
 import { getAllPersons, getPersonNameAndRegistrantId } from "@/logic/persons";
 import { checkTimeLimit } from "@/logic/results";
 import {
+    getSubmissionPlatformName,
     msToString,
     prettyAttemptStatus,
     prettyAttemptType,
@@ -59,6 +59,8 @@ const EditAttemptModal = ({
     const [editedAttempt, setEditedAttempt] = useState<Attempt>(attempt);
     const [shouldResubmitToWcaLive, setShouldResubmitToWcaLive] =
         useState<boolean>(false);
+
+    const submissionPlatform = getSubmissionPlatformName(result.eventId);
 
     const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
         setIsLoading(true);
@@ -295,16 +297,14 @@ const EditAttemptModal = ({
                         />
                     </FormControl>
                 )}
-                {!isUnofficialEvent(result.eventId) && (
-                    <Checkbox
-                        isChecked={shouldResubmitToWcaLive}
-                        onChange={(e) =>
-                            setShouldResubmitToWcaLive(e.target.checked)
-                        }
-                    >
-                        Resubmit to WCA Live
-                    </Checkbox>
-                )}
+                <Checkbox
+                    isChecked={shouldResubmitToWcaLive}
+                    onChange={(e) =>
+                        setShouldResubmitToWcaLive(e.target.checked)
+                    }
+                >
+                    Resubmit to {submissionPlatform}
+                </Checkbox>
                 <Box
                     display="flex"
                     flexDirection="row"

@@ -1,4 +1,4 @@
-import { forwardRef, HttpException, Inject, Injectable } from '@nestjs/common';
+import { HttpException, Inject, Injectable, forwardRef } from '@nestjs/common';
 import { AttemptStatus } from '@prisma/client';
 import { DbService } from '../db/db.service';
 import { ResultService } from '../result/result.service';
@@ -7,12 +7,15 @@ import { WcaService } from '../wca/wca.service';
 import { CreateAttemptDto } from './dto/createAttempt.dto';
 import { UpdateAttemptDto } from './dto/updateAttempt.dto';
 import { IncidentsGateway } from './incidents.gateway';
+import { isUnofficialEvent } from 'src/events';
+import { ContestsService } from 'src/contests/contests.service';
 
 @Injectable()
 export class AttemptService {
   constructor(
     private readonly prisma: DbService,
     private readonly wcaService: WcaService,
+    private readonly contestsService: ContestsService,
     private readonly incidentsGateway: IncidentsGateway,
     @Inject(forwardRef(() => ResultService))
     private readonly resultService: ResultService,
@@ -56,15 +59,27 @@ export class AttemptService {
 
     if (data.submitToWcaLive) {
       const competition = await this.prisma.competition.findFirst();
-      await this.wcaService.enterAttemptToWcaLive(
-        competition.wcaId,
-        competition.scoretakingToken,
-        data.roundId.split('-')[0],
-        parseInt(data.roundId.split('-r')[1]),
-        result.person.registrantId,
-        data.attemptNumber,
-        data.penalty * 100 + data.value,
-      );
+      if (isUnofficialEvent(data.roundId.split('-')[0])) {
+        await this.contestsService.enterAttemptToCubingContests(
+          competition.wcaId,
+          competition.cubingContestsToken,
+          data.roundId.split('-')[0],
+          parseInt(data.roundId.split('-r')[1]),
+          result.person.wcaId,
+          data.attemptNumber,
+          data.penalty * 100 + data.value,
+        );
+      } else {
+        await this.wcaService.enterAttemptToWcaLive(
+          competition.wcaId,
+          competition.scoretakingToken,
+          data.roundId.split('-')[0],
+          parseInt(data.roundId.split('-r')[1]),
+          result.person.registrantId,
+          data.attemptNumber,
+          data.penalty * 100 + data.value,
+        );
+      }
     }
     return {
       message: 'Attempt created successfully',

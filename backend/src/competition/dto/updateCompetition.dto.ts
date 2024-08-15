@@ -1,5 +1,5 @@
 import { SendingResultsFrequency } from '@prisma/client';
-import { IsEnum, IsNotEmpty, IsString } from 'class-validator';
+import { IsEnum, IsNotEmpty, IsOptional, IsString } from 'class-validator';
 
 export class UpdateCompetitionDto {
   @IsString()
@@ -8,4 +8,8 @@ export class UpdateCompetitionDto {
 
   @IsEnum(SendingResultsFrequency)
   sendingResultsFrequency: SendingResultsFrequency;
+
+  @IsString()
+  @IsOptional()
+  cubingContestsToken: string;
 }

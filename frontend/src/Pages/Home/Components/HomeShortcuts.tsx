@@ -12,6 +12,7 @@ interface HomeShortcutsProps {
 const HomeShortcuts = ({ rooms, currentRounds }: HomeShortcutsProps) => {
     const navigate = useNavigate();
     const showAttendance = rooms.some((r) => r.currentGroupId);
+    const activeRounds = rooms.filter((r) => r.currentGroupId);
     const showResults = currentRounds.length > 0;
 
     return (
@@ -27,7 +28,7 @@ const HomeShortcuts = ({ rooms, currentRounds }: HomeShortcutsProps) => {
                 <>
                     <Heading size="lg">Attendance</Heading>
                     <Box display="flex" gap="2" flexWrap="wrap">
-                        {rooms.map((room: Room) => (
+                        {activeRounds.map((room: Room) => (
                             <Button
                                 key={room.id}
                                 colorScheme="blue"

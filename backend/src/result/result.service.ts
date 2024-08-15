@@ -1,9 +1,9 @@
 import {
-  forwardRef,
   HttpException,
   Inject,
   Injectable,
   Logger,
+  forwardRef,
 } from '@nestjs/common';
 import {
   AttemptStatus,
@@ -31,6 +31,7 @@ import {
 } from './helpers';
 import { ResultGateway } from './result.gateway';
 import { isUnofficialEvent } from 'src/events';
+import { ContestsService } from 'src/contests/contests.service';
 
 @Injectable()
 export class ResultService {
@@ -40,6 +41,7 @@ export class ResultService {
     private readonly resultGateway: ResultGateway,
     private readonly attendanceService: AttendanceService,
     private readonly wcaService: WcaService,
+    private readonly contestsService: ContestsService,
     @Inject(forwardRef(() => DeviceService))
     private readonly deviceService: DeviceService,
     private readonly personService: PersonService,
@@ -223,13 +225,6 @@ export class ResultService {
         },
       },
     });
-    if (!result) {
-      return {
-        message: 'Result not found',
-        status: 404,
-        error: true,
-      };
-    }
     return result;
   }
 
@@ -245,14 +240,43 @@ export class ResultService {
     return !!attempt;
   }
 
-  async enterWholeScorecardToWcaLive(resultId: string) {
+  async enterWholeScorecardToWcaLiveOrCubingContests(resultId: string) {
     const result = await this.getResultById(resultId);
+    const isUnofficial = isUnofficialEvent(result.eventId);
+    const competition = await this.prisma.competition.findFirst();
+    if (isUnofficial) {
+      if (!competition.cubingContestsToken) {
+        return {
+          message: 'Cubing Contests token not found',
+          status: 404,
+          error: true,
+        };
+      }
+      return await this.contestsService.enterWholeScorecardToCubingContests(
+        result,
+      );
+    }
     return await this.wcaService.enterWholeScorecardToWcaLive(result);
   }
 
-  async enterRoundToWcaLive(roundId: string) {
+  async enterRoundToWcaLiveOrCubingContests(roundId: string) {
+    const isUnofficial = isUnofficialEvent(roundId.split('-')[0]);
+    const competition = await this.prisma.competition.findFirst();
     const results = await this.getAllResultsByRound(roundId);
-    return await this.wcaService.enterRoundToWcaLive(results);
+    if (isUnofficial) {
+      if (!competition.cubingContestsToken) {
+        return {
+          message: 'Cubing Contests token not found',
+          status: 404,
+          error: true,
+        };
+      }
+      for (const result of results) {
+        await this.contestsService.enterWholeScorecardToCubingContests(result);
+      }
+    } else {
+      return await this.wcaService.enterRoundToWcaLive(results);
+    }
   }
 
   async getStationByEspId(espId: number) {
@@ -565,11 +589,17 @@ export class ResultService {
     }
     if (
       competition.sendingResultsFrequency ===
-        SendingResultsFrequency.AFTER_SOLVE &&
-      !isUnofficialEvent(currentRoundId.split('-')[0])
+      SendingResultsFrequency.AFTER_SOLVE
     ) {
-      try {
-        const resultToEnter = await this.getResultById(result.id);
+      const resultToEnter = await this.getResultById(result.id);
+      if (isUnofficialEvent(currentRoundId.split('-')[0])) {
+        if (competition.cubingContestsToken) {
+          //This is intentionally not awaited
+          this.contestsService.enterWholeScorecardToCubingContests(
+            resultToEnter,
+          );
+        }
+      } else {
         try {
           //This is intentionally not awaited
           this.wcaService.enterWholeScorecardToWcaLive(resultToEnter);
@@ -577,9 +607,6 @@ export class ResultService {
           this.logger.error('Error while entering result to WCA Live');
           this.logger.error(e);
         }
-      } catch (e) {
-        this.logger.error('Error while entering result to WCA Live');
-        this.logger.error(e);
       }
     }
     this.resultGateway.handleResultEntered(result.roundId);

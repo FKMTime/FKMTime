@@ -169,11 +169,13 @@ export class WcaService {
     return {
       competitionId: competition.wcaId,
       scoretakingToken: competition.scoretakingToken,
+      apiToken: competition.cubingContestsToken,
       eventId: result.eventId,
       roundNumber: parseInt(result.roundId.split('-r')[1]),
       results: [
         {
           registrantId: result.person.registrantId,
+          wcaId: result.person.wcaId,
           attempts: timesToSubmit,
         },
       ],

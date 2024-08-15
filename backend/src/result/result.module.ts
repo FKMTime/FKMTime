@@ -8,6 +8,7 @@ import { AttendanceModule } from '../attendance/attendance.module';
 import { WcaModule } from '../wca/wca.module';
 import { DeviceModule } from '../device/device.module';
 import { PersonModule } from '../person/person.module';
+import { ContestsModule } from 'src/contests/contests.module';
 
 @Module({
   providers: [ResultService, ResultGateway],
@@ -17,6 +18,7 @@ import { PersonModule } from '../person/person.module';
     forwardRef(() => AttemptModule),
     AttendanceModule,
     WcaModule,
+    ContestsModule,
     DeviceModule,
     PersonModule,
   ],

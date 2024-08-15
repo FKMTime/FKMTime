@@ -15,6 +15,7 @@ import { WcaModule } from './wca/wca.module';
 import { HealthModule } from './health/health.module';
 import { SocketModule } from './socket/socket.module';
 import { EventsModule } from './events/events.module';
+import { ContestsModule } from './contests/contests.module';
 
 @Module({
   imports: [
@@ -33,6 +34,7 @@ import { EventsModule } from './events/events.module';
     HealthModule,
     SocketModule,
     EventsModule,
+    ContestsModule,
   ],
 })
 export class AppModule implements NestModule {

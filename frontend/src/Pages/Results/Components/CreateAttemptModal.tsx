@@ -20,14 +20,17 @@ import Select from "@/Components/Select";
 import { createAttempt } from "@/logic/attempt";
 import { DNF_VALUE } from "@/logic/constants";
 import { getAllDevices } from "@/logic/devices";
-import { isUnofficialEvent } from "@/logic/events";
 import {
     AttemptStatus,
     AttemptType,
     Device,
     DeviceType,
 } from "@/logic/interfaces";
-import { prettyAttemptStatus, prettyAttemptType } from "@/logic/utils";
+import {
+    getSubmissionPlatformName,
+    prettyAttemptStatus,
+    prettyAttemptType,
+} from "@/logic/utils";
 
 interface CreateAttemptModalProps {
     isOpen: boolean;
@@ -61,6 +64,8 @@ const CreateAttemptModal = ({
     const [value, setValue] = useState<number>(0);
     const [penalty, setPenalty] = useState<number>(0);
     const [deviceId, setDeviceId] = useState<string>("");
+
+    const submissionPlatform = getSubmissionPlatformName(roundId.split("-")[0]);
 
     useEffect(() => {
         if (isOpen) {
@@ -239,17 +244,14 @@ const CreateAttemptModal = ({
                         name="comment"
                     />
                 </FormControl>
-                {attemptStatus !== AttemptStatus.EXTRA_GIVEN &&
-                    !isUnofficialEvent(roundId.split("-r")[0]) && (
-                        <Checkbox
-                            isChecked={submitToWcaLive}
-                            onChange={(e) =>
-                                setSubmitToWcaLive(e.target.checked)
-                            }
-                        >
-                            Submit to WCA Live
-                        </Checkbox>
-                    )}
+                {attemptStatus !== AttemptStatus.EXTRA_GIVEN && (
+                    <Checkbox
+                        isChecked={submitToWcaLive}
+                        onChange={(e) => setSubmitToWcaLive(e.target.checked)}
+                    >
+                        Submit to {submissionPlatform}
+                    </Checkbox>
+                )}
                 <Box
                     display="flex"
                     flexDirection="row"

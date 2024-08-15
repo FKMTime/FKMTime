@@ -19,7 +19,6 @@ import { activityCodeToName } from "@/logic/activities";
 import { competitionAtom } from "@/logic/atoms";
 import { getToken, isAdmin } from "@/logic/auth";
 import { getCompetitionInfo } from "@/logic/competition";
-import { isUnofficialEvent } from "@/logic/events";
 import { Result, Room } from "@/logic/interfaces";
 import { RESULTS_WEBSOCKET_URL, WEBSOCKET_PATH } from "@/logic/request";
 import { resultToString } from "@/logic/resultFormatters";
@@ -30,6 +29,7 @@ import {
     getCutoffByRoundId,
     getLimitByRoundId,
     getNumberOfAttemptsForRound,
+    getSubmissionPlatformName,
 } from "@/logic/utils";
 
 import CreateAttemptModal from "./Components/CreateAttemptModal";
@@ -84,6 +84,8 @@ const Results = () => {
         return getNumberOfAttemptsForRound(filters.roundId, competition.wcif);
     }, [competition, filters.roundId]);
 
+    const submissionPlatformName = getSubmissionPlatformName(filters.eventId);
+
     const fetchData = useCallback(
         async (roundId: string, searchParam?: string) => {
             const data = await getResultsByRoundId(roundId, searchParam);
@@ -120,14 +122,13 @@ const Results = () => {
     const handleResubmitRound = async () => {
         confirm({
             title: "Resubmit results",
-            description:
-                "Are you sure you want to override results from WCA Live?",
+            description: `Are you sure you want to override results from ${submissionPlatformName}?`,
         })
             .then(async () => {
                 const status = await reSubmitRoundToWcaLive(filters.roundId);
                 if (status === 200) {
                     toast({
-                        title: "Successfully resubmitted round results to WCA Live.",
+                        title: `Successfully resubmitted round results to ${submissionPlatformName}`,
                         status: "success",
                     });
                 } else {
@@ -250,15 +251,7 @@ const Results = () => {
                             : "None"}
                     </Text>
                     <Text>Attempts: {maxAttempts}</Text>
-                    <Flex
-                        gap="2"
-                        display={{
-                            base: "flex",
-                            md: isUnofficialEvent(id?.split("-r")[0] || "")
-                                ? "none"
-                                : "flex",
-                        }}
-                    >
+                    <Flex gap="2">
                         <Button
                             colorScheme="blue"
                             display={{
@@ -273,20 +266,16 @@ const Results = () => {
                         </Button>
                         {isAdmin() && results.length > 0 && (
                             <>
-                                {!isUnofficialEvent(
-                                    id?.split("-r")[0] || ""
-                                ) && (
-                                    <Button
-                                        colorScheme="yellow"
-                                        width={{
-                                            base: "100%",
-                                            md: "fit-content",
-                                        }}
-                                        onClick={handleResubmitRound}
-                                    >
-                                        Resubmit round results to WCA Live
-                                    </Button>
-                                )}
+                                <Button
+                                    colorScheme="yellow"
+                                    width={{
+                                        base: "100%",
+                                        md: "fit-content",
+                                    }}
+                                    onClick={handleResubmitRound}
+                                >
+                                    Resubmit results to {submissionPlatformName}
+                                </Button>
                                 <PlusButton
                                     onClick={() =>
                                         setIsOpenCreateAttemptModal(true)
@@ -301,9 +290,7 @@ const Results = () => {
                         colorScheme="blue"
                         display={{
                             base: "flex",
-                            md: isUnofficialEvent(id?.split("-r")[0] || "")
-                                ? "block"
-                                : "none",
+                            md: "none",
                         }}
                         width={{
                             base: "100%",

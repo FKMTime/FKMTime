@@ -32,7 +32,7 @@ const Avatar = ({
                     }}
                     src={avatarUrl}
                     onClick={() => setIsOpenAvatarModal(true)}
-                    alt="User's avatar"
+                    alt=" "
                 />
             ) : (
                 <DefaultAvatar size={avatarSize} username={username} />
