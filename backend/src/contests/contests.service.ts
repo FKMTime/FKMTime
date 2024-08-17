@@ -33,7 +33,7 @@ export class ContestsService {
           body: JSON.stringify({
             competitionWcaId: competitionId,
             eventId: eventId,
-            roundNumber: roundNumber.toString(),
+            roundNumber: roundNumber,
             wcaId: wcaId,
             attemptNumber: attemptNumber,
             attemptResult: attemptResult,
@@ -67,7 +67,7 @@ export class ContestsService {
           body: JSON.stringify({
             competitionWcaId: competitionId,
             eventId: eventId,
-            roundNumber: roundNumber.toString(),
+            roundNumber: roundNumber,
             results: this.mapResults(results),
           }),
         },
