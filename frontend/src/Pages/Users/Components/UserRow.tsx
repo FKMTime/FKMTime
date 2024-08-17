@@ -74,7 +74,7 @@ const UserRow = ({ user, fetchData }: UserRowProps) => {
                 <Td>{user.fullName}</Td>
                 <Td>
                     <Box display="flex" alignItems="center" gap="1">
-                        <Text>{prettyUserRoleName(user.role)}</Text>
+                        <Text>{prettyUserRoleName(user)}</Text>
                         <RoleIcon role={user.role} />
                     </Box>
                 </Td>

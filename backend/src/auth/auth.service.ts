@@ -45,7 +45,7 @@ export class AuthService {
   }
 
   async loginWithWca(data: WcaLoginDto) {
-    const ALWAYS_MANAGERS = ['wst', 'wrt', 'wcat'];
+    const WCA_ADMIN = ['wst', 'wrt', 'wcat'];
     const token = await this.wcaService.getAccessToken(
       data.code,
       data.redirectUri,
@@ -59,6 +59,9 @@ export class AuthService {
         wcaUserId: userInfo.me.id,
       },
     });
+    const isWcaAdmin = userInfo.me.teams.some((t) =>
+      WCA_ADMIN.includes(t.friendly_id),
+    );
     if (existingUser) {
       await this.prisma.user.update({
         where: {
@@ -66,6 +69,7 @@ export class AuthService {
         },
         data: {
           wcaAccessToken: token,
+          isWcaAdmin: isWcaAdmin,
         },
       });
       const jwt = await this.generateAuthJwt({
@@ -80,6 +84,7 @@ export class AuthService {
           fullName: existingUser.fullName,
           role: existingUser.role,
           wcaAccessToken: token,
+          isWcaAdmin: isWcaAdmin,
         },
       };
     } else {
@@ -91,14 +96,13 @@ export class AuthService {
           userInfo.me.id,
           userInfo.me.name,
           token,
+          isWcaAdmin,
         );
       } else {
         if (
           (manageableCompetitions.length === 0 ||
             !manageableCompetitions.some((c) => c.id === competition.wcaId)) &&
-          !userInfo.me.teams.some((t) =>
-            ALWAYS_MANAGERS.includes(t.friendly_id),
-          )
+          !userInfo.me.teams.some((t) => WCA_ADMIN.includes(t.friendly_id))
         ) {
           throw new HttpException(
             'You are not allowed to manage this competition',
@@ -109,6 +113,7 @@ export class AuthService {
             userInfo.me.id,
             userInfo.me.name,
             token,
+            isWcaAdmin,
           );
         }
       }
@@ -119,6 +124,7 @@ export class AuthService {
     wcaUserId: number,
     fullName: string,
     wcaAccessToken: string,
+    isWcaAdmin = false,
   ) {
     const user = await this.prisma.user.create({
       data: {
@@ -126,6 +132,7 @@ export class AuthService {
         fullName: fullName,
         role: 'ADMIN',
         wcaAccessToken: wcaAccessToken,
+        isWcaAdmin: isWcaAdmin,
       },
     });
     const jwt = await this.generateAuthJwt({
@@ -140,6 +147,7 @@ export class AuthService {
         fullName: user.fullName,
         role: user.role,
         wcaAccessToken: user.wcaAccessToken,
+        isWcaAdmin: user.isWcaAdmin,
       },
     };
   }
@@ -161,6 +169,7 @@ export class AuthService {
         id: true,
         username: true,
         role: true,
+        isWcaAdmin: true,
       },
     });
   }

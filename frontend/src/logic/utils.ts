@@ -8,6 +8,7 @@ import {
     AttemptType,
     Person,
     Result,
+    User,
 } from "./interfaces";
 import regions from "./regions";
 
@@ -163,8 +164,11 @@ export const prettyAvailableDeviceType = (type: string) => {
     }
 };
 
-export const prettyUserRoleName = (role: string) => {
-    switch (role) {
+export const prettyUserRoleName = (user: User) => {
+    if (user.isWcaAdmin) {
+        return "WCA Admin";
+    }
+    switch (user.role) {
         case "ADMIN":
             return "Admin";
         case "STAFF":

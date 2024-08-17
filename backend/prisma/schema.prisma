@@ -14,6 +14,7 @@ model User {
   role           Role?
   fullName       String?
   wcaUserId      Int?
+  isWcaAdmin     Boolean       @default(false)
   wcaAccessToken String?
   createdAt      DateTime      @default(now())
   updatedAt      DateTime      @updatedAt
@@ -40,7 +41,7 @@ model Person {
 model StaffActivity {
   id         String    @id @default(uuid())
   personId   String
-  person     Person    @relation(fields: [personId], references: [id])
+  person     Person    @relation(fields: [personId], references: [id], onDelete: Cascade)
   deviceId   String?
   device     Device?   @relation(fields: [deviceId], references: [id])
   isAssigned Boolean   @default(false)
@@ -89,7 +90,7 @@ model Room {
 model Result {
   id        String    @id @default(uuid())
   personId  String
-  person    Person    @relation(fields: [personId], references: [id])
+  person    Person    @relation(fields: [personId], references: [id], onDelete: Cascade)
   eventId   String
   roundId   String
   attempts  Attempt[]
@@ -143,7 +144,7 @@ model QuickAction {
   comment   String?
   giveExtra Boolean  @default(false)
   userId String
-  user   User  @relation(fields: [userId], references: [id])
+  user   User  @relation(fields: [userId], references: [id], onDelete: Cascade)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }

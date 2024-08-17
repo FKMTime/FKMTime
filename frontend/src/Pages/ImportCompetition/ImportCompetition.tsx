@@ -6,7 +6,7 @@ import { useNavigate } from "react-router-dom";
 
 import RoundedIconButton from "@/Components/RoundedIconButton";
 import { competitionAtom } from "@/logic/atoms";
-import { logout } from "@/logic/auth";
+import { getUserInfo, logout } from "@/logic/auth";
 import {
     getCompetitionInfo,
     getUpcomingManageableCompetitions,
@@ -14,12 +14,15 @@ import {
 } from "@/logic/competition";
 import { WCACompetition } from "@/logic/interfaces";
 
+import CompetitionsAutocomplete from "../Competition/Components/CompetitionsAutocomplete";
 import CompetitionsList from "./Components/CompetitionsList";
 
 const ImportCompetition = () => {
     const navigate = useNavigate();
     const toast = useToast();
+    const userInfo = getUserInfo();
     const [competitions, setCompetitions] = useState<WCACompetition[]>([]);
+    const [competitionId, setCompetitionId] = useState<string>("");
     const setCompetition = useSetAtom(competitionAtom);
 
     const handleSubmit = async (wcaId: string) => {
@@ -41,6 +44,11 @@ const ImportCompetition = () => {
                 status: "error",
             });
         }
+    };
+
+    const handleSelect = (competition: WCACompetition) => {
+        setCompetitionId(competition.id);
+        setCompetitions((prev) => [...prev, competition]);
     };
 
     const handleLogout = () => {
@@ -77,6 +85,12 @@ const ImportCompetition = () => {
                     icon={<MdLogout />}
                 />
             </Box>
+            {userInfo.isWcaAdmin && (
+                <CompetitionsAutocomplete
+                    onSelect={handleSelect}
+                    value={competitionId}
+                />
+            )}
             <Box display="flex" flexDirection="column" gap="5">
                 <CompetitionsList
                     competitions={competitions}

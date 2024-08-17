@@ -10,12 +10,14 @@ export interface UserInfo {
     role: UserRole;
     wcaUserId?: number;
     wcaAccessToken?: string;
+    isWcaAdmin: boolean;
 }
 
 export interface User {
     id: string;
     username?: string;
     wcaUserId?: number;
+    isWcaAdmin: boolean;
     fullName?: string;
     role: string;
     createdAt?: Date;
