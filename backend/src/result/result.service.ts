@@ -271,9 +271,7 @@ export class ResultService {
           error: true,
         };
       }
-      for (const result of results) {
-        await this.contestsService.enterWholeScorecardToCubingContests(result);
-      }
+      return await this.contestsService.enterRoundToCubingContests(results);
     } else {
       return await this.wcaService.enterRoundToWcaLive(results);
     }

@@ -68,34 +68,21 @@ export class AttemptService {
         role: StaffRole.COMPETITOR,
       },
     });
+    const groupId = isUnofficialEvent(data.roundId.split('-')[0])
+      ? `${data.roundId}-g1`
+      : staffActivity.groupId;
+
     await this.attendanceService.markCompetitorAsPresent(
       result.person.id,
-      staffActivity.groupId,
+      groupId,
       data.deviceId,
     );
 
     if (data.submitToWcaLive) {
-      const competition = await this.prisma.competition.findFirst();
       if (isUnofficialEvent(data.roundId.split('-')[0])) {
-        await this.contestsService.enterAttemptToCubingContests(
-          competition.wcaId,
-          competition.cubingContestsToken,
-          data.roundId.split('-')[0],
-          parseInt(data.roundId.split('-r')[1]),
-          result.person.wcaId,
-          data.attemptNumber,
-          data.penalty * 100 + data.value,
-        );
+        await this.contestsService.enterWholeScorecardToCubingContests(result);
       } else {
-        await this.wcaService.enterAttemptToWcaLive(
-          competition.wcaId,
-          competition.scoretakingToken,
-          data.roundId.split('-')[0],
-          parseInt(data.roundId.split('-r')[1]),
-          result.person.registrantId,
-          data.attemptNumber,
-          data.penalty * 100 + data.value,
-        );
+        await this.wcaService.enterWholeScorecardToWcaLive(result);
       }
     }
     return {

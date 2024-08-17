@@ -14,7 +14,7 @@ services:
       - DATABASE_URL=postgres://root:password@127.0.0.1:5433/fkm_time
       - WCA_LIVE_API_ORIGIN=http://0.0.0.0:4000/api
       - CUBING_CONTESTS_API_ORIGIN=http://0.0.0.0:5001/api
-      - WCA_ORIGIN=http://0.0.0.0:3000
+      - WCA_ORIGIN=http://0.0.0.0:3005
       - WCA_CLIENT_ID=example-application-id
       - WCA_CLIENT_SECRET=example-secret
       - SOCKET_PATH=/app/sock/socket.sock
@@ -33,7 +33,7 @@ services:
       dockerfile: Dockerfile.dev
     container_name: fkmtime-dev-frontend
     environment:
-      - VITE_WCA_ORIGIN=http://0.0.0.0:3000
+      - VITE_WCA_ORIGIN=http://0.0.0.0:3005
     volumes:
       - ./frontend/src:/app/src
     ports:
