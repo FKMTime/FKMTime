@@ -1,4 +1,6 @@
 import {
+    Alert,
+    AlertIcon,
     Box,
     FormControl,
     Heading,
@@ -32,44 +34,54 @@ const CheckIn = () => {
         useRef<HTMLInputElement>(null);
     const [personData, setPersonData] = useState<Person | null>();
     const [selectedPersonId, setSelectedPersonId] = useState<string>("");
+    const [cardShouldBeAssigned, setCardShouldBeAssign] =
+        useState<boolean>(false);
 
     const handleSubmitCard = async () => {
-        const res = await getPersonInfoByCardIdWithSensitiveData(scannedCard);
-        if (res.status === 200) {
-            if (res.data.checkedInAt) {
-                toast({
-                    title: "Something went wrong",
-                    description: "Competitor has been already checked in",
-                    status: "warning",
-                });
-                setScannedCard("");
-                cardInputRef.current?.focus();
-                return;
-            }
-            setPersonData(res.data);
-        } else if (res.status === 404) {
-            toast({
-                title: "Card not found",
-                description: "The card was not found in the database.",
-                status: "error",
+        if (personData) {
+            setPersonData({
+                ...personData,
+                cardId: scannedCard,
             });
         } else {
-            toast({
-                title: "Error",
-                description: "Something went wrong!",
-                status: "error",
-            });
+            const res =
+                await getPersonInfoByCardIdWithSensitiveData(scannedCard);
+            if (res.status === 200) {
+                if (res.data.checkedInAt) {
+                    toast({
+                        title: "Something went wrong",
+                        description: "Competitor has been already checked in",
+                        status: "warning",
+                    });
+                    setScannedCard("");
+                    cardInputRef.current?.focus();
+                    return;
+                }
+                setPersonData(res.data);
+            } else if (res.status === 404) {
+                toast({
+                    title: "Card not found",
+                    description: "The card was not found in the database.",
+                    status: "error",
+                });
+            } else {
+                toast({
+                    title: "Error",
+                    description: "Something went wrong!",
+                    status: "error",
+                });
+            }
         }
     };
 
     const handleCheckIn = async (id?: string) => {
         const idToCheckIn = id ? id : personData?.id;
         if (!idToCheckIn) return;
-        const res = await checkIn(idToCheckIn);
+        const res = await checkIn(idToCheckIn, scannedCard);
         if (res.status === 200) {
             toast({
                 title: "Success",
-                description: "Competitor has been checked in successfully",
+                description: `Competitor has been checked in successfully${cardShouldBeAssigned && " and card was assigned"}.`,
                 status: "success",
             });
             await fetchData();
@@ -83,6 +95,7 @@ const CheckIn = () => {
         setPersonData(null);
         setScannedCard("");
         setSelectedPersonId("");
+        setCardShouldBeAssign(false);
         cardInputRef.current?.focus();
     };
 
@@ -101,6 +114,10 @@ const CheckIn = () => {
         }
         setPersonData(person);
         setScannedCard(person?.cardId || "");
+        setCardShouldBeAssign(person?.cardId ? false : true);
+        if (!person?.cardId) {
+            cardInputRef.current?.focus();
+        }
     };
 
     const fetchData = async () => {
@@ -128,6 +145,10 @@ const CheckIn = () => {
                     Checked in {`${personsCheckedIn}/${totalPersons}`}
                 </Heading>
                 <Text>Scan the card of the competitor</Text>
+                <PersonAutocomplete
+                    onSelect={handleSelectPerson}
+                    value={selectedPersonId}
+                />
                 <FormControl
                     display="flex"
                     flexDirection="column"
@@ -139,23 +160,38 @@ const CheckIn = () => {
                         autoFocus
                         _placeholder={{ color: "white" }}
                         value={scannedCard}
-                        onChange={(event) => setScannedCard(event.target.value)}
+                        onChange={(event) => {
+                            setScannedCard(event.target.value);
+                            if (personData?.id) {
+                                setPersonData({
+                                    ...personData,
+                                    cardId: event.target.value,
+                                });
+                            }
+                        }}
                         ref={cardInputRef}
                         onKeyDown={(event: KeyboardEvent<HTMLInputElement>) =>
                             event.key === "Enter" && handleSubmitCard()
                         }
                     />
                 </FormControl>
-                <PersonAutocomplete
-                    onSelect={handleSelectPerson}
-                    value={selectedPersonId}
-                />
                 {personData && (
                     <>
+                        {!personData.cardId && (
+                            <Alert
+                                status="warning"
+                                borderRadius="md"
+                                color="black"
+                            >
+                                <AlertIcon />
+                                Please assign a card to the competitor
+                            </Alert>
+                        )}
                         <PersonInfo person={personData} />
                         <SubmitActions
                             person={personData}
                             handleCheckIn={handleCheckIn}
+                            cardShouldBeAssigned={cardShouldBeAssigned}
                         />
                     </>
                 )}

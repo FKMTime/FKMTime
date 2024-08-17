@@ -2,6 +2,8 @@ import {
   Body,
   Controller,
   Get,
+  HttpCode,
+  HttpStatus,
   Param,
   Post,
   Put,
@@ -65,9 +67,10 @@ export class PersonController {
   }
 
   @UseGuards(AuthGuard('jwt'))
-  @Get('check-in/:id')
-  async checkIn(@Param('id') id: string) {
-    return await this.personService.checkIn(id);
+  @HttpCode(HttpStatus.OK)
+  @Post('check-in/:id')
+  async checkIn(@Param('id') id: string, @Body() data: UpdatePersonDto) {
+    return await this.personService.checkIn(id, data);
   }
 
   @UseGuards(AuthGuard('jwt'))

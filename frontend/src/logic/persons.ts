@@ -50,8 +50,13 @@ export const addStaffMember = async (name: string, gender: string) => {
     });
     return response.status;
 };
-export const checkIn = async (id: string) => {
-    const response = await backendRequest(`person/check-in/${id}`, "GET", true);
+export const checkIn = async (id: string, cardId: string) => {
+    const response = await backendRequest(
+        `person/check-in/${id}`,
+        "POST",
+        true,
+        { cardId }
+    );
     return {
         data: await response.json(),
         status: response.status,

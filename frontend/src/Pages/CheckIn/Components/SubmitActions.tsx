@@ -7,9 +7,14 @@ import { isNewcomer } from "@/logic/utils.ts";
 interface SubmitActionsProps {
     handleCheckIn: () => void;
     person: Person;
+    cardShouldBeAssigned: boolean;
 }
 
-const SubmitActions = ({ handleCheckIn, person }: SubmitActionsProps) => {
+const SubmitActions = ({
+    handleCheckIn,
+    person,
+    cardShouldBeAssigned,
+}: SubmitActionsProps) => {
     const newcomer = isNewcomer(person);
     const [documentChecked, setDocumentChecked] = useState<boolean>(false);
     const [confirmedIsNewcomer, setConfirmedIsNewcomer] =
@@ -47,10 +52,11 @@ const SubmitActions = ({ handleCheckIn, person }: SubmitActionsProps) => {
                 colorScheme="green"
                 onClick={() => handleCheckIn()}
                 isDisabled={
-                    newcomer && (!documentChecked || !confirmedIsNewcomer)
+                    (newcomer && (!documentChecked || !confirmedIsNewcomer)) ||
+                    !person.cardId
                 }
             >
-                Check in
+                Check in {cardShouldBeAssigned && "and assign card"}
             </Button>
         </>
     );

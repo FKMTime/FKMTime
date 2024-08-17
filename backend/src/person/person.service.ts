@@ -137,11 +137,12 @@ export class PersonService {
     return this.prisma.person.findMany();
   }
 
-  async checkIn(personId: string) {
+  async checkIn(personId: string, data: UpdatePersonDto) {
     await this.prisma.person.update({
       where: { id: personId },
       data: {
         checkedInAt: new Date(),
+        cardId: data.cardId,
       },
     });
     const checkedInPersonsCount = await this.prisma.person.count({
