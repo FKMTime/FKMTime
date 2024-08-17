@@ -10,7 +10,7 @@ import RoleIcon from "@/Components/Icons/RoleIcon.tsx";
 import SmallIconButton from "@/Components/SmallIconButton";
 import { User } from "@/logic/interfaces";
 import { deleteUser } from "@/logic/user";
-import { prettyUserRoleName } from "@/logic/utils.ts";
+import { prettyUserRoleNameIncludingWCA } from "@/logic/utils.ts";
 
 import EditUserModal from "./EditUserModal";
 import EditUserPasswordModal from "./EditUserPasswordModal";
@@ -74,7 +74,7 @@ const UserRow = ({ user, fetchData }: UserRowProps) => {
                 <Td>{user.fullName}</Td>
                 <Td>
                     <Box display="flex" alignItems="center" gap="1">
-                        <Text>{prettyUserRoleName(user)}</Text>
+                        <Text>{prettyUserRoleNameIncludingWCA(user)}</Text>
                         <RoleIcon role={user.role} />
                     </Box>
                 </Td>

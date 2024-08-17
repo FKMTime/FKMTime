@@ -163,12 +163,13 @@ export const prettyAvailableDeviceType = (type: string) => {
             return "Unknown";
     }
 };
+export const prettyUserRoleNameIncludingWCA = (user: User) => {
+    if (user.isWcaAdmin) return "WCA Admin";
+    return prettyUserRoleName(user.role);
+};
 
-export const prettyUserRoleName = (user: User) => {
-    if (user.isWcaAdmin) {
-        return "WCA Admin";
-    }
-    switch (user.role) {
+export const prettyUserRoleName = (role: string) => {
+    switch (role) {
         case "ADMIN":
             return "Admin";
         case "STAFF":

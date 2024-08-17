@@ -252,7 +252,7 @@ const Results = () => {
                             : "None"}
                     </Text>
                     <Text>Attempts: {maxAttempts}</Text>
-                    {isAdmin() && results.length > 0 && (
+                    {isAdmin() && (
                         <>
                             <Button
                                 colorScheme="green"
@@ -305,16 +305,18 @@ const Results = () => {
                     >
                         Public view
                     </Button>
-                    <Button
-                        colorScheme="red"
-                        width={{
-                            base: "100%",
-                            md: "fit-content",
-                        }}
-                        onClick={() => setIsOpenRestartGroupModal(true)}
-                    >
-                        Restart group
-                    </Button>
+                    {results.length > 0 && (
+                        <Button
+                            colorScheme="red"
+                            width={{
+                                base: "100%",
+                                md: "fit-content",
+                            }}
+                            onClick={() => setIsOpenRestartGroupModal(true)}
+                        >
+                            Restart group
+                        </Button>
+                    )}
                 </Box>
             )}
             {results && results.length > 0 ? (

@@ -674,12 +674,13 @@ export class ResultService {
       (activity) =>
         activity.isPresent && activity.role === StaffRole.COMPETITOR,
     );
+    const roundId = groupId.split('-g')[0];
     const results = await this.prisma.result.findMany({
       where: {
         personId: {
           in: competitors.map((competitor) => competitor.personId),
         },
-        roundId: groupId.split('-g')[0],
+        roundId: roundId,
       },
     });
     await this.prisma.staffActivity.updateMany({
@@ -697,6 +698,7 @@ export class ResultService {
         },
       },
     });
+    await this.enterRoundToWcaLiveOrCubingContests(roundId);
   }
 
   private notifyDelegate(
