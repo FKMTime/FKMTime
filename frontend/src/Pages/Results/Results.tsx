@@ -6,7 +6,6 @@ import { useNavigate, useParams } from "react-router-dom";
 import io from "socket.io-client";
 
 import LoadingPage from "@/Components/LoadingPage";
-import PlusButton from "@/Components/PlusButton.tsx";
 import { activityCodeToName } from "@/logic/activities";
 import { competitionAtom } from "@/logic/atoms";
 import { getToken, isAdmin } from "@/logic/auth";
@@ -163,6 +162,9 @@ const Results = () => {
 
     useEffect(() => {
         if (filters.roundId) {
+            if (!isAdmin()) {
+                navigate(`/results/public/${filters.roundId}`);
+            }
             fetchData(filters.roundId);
         } else {
             if (currentRounds.length === 1) {
@@ -230,13 +232,6 @@ const Results = () => {
             </Box>
             {filters.roundId && (
                 <Box display="flex" flexDirection="column" gap="5">
-                    {isAdmin() && (
-                        <PlusButton
-                            onClick={() => setIsOpenCreateAttemptModal(true)}
-                            aria-label="Add"
-                            display={{ base: "none", md: "flex" }}
-                        />
-                    )}
                     <Text>
                         Cutoff:{" "}
                         {cutoff
@@ -252,71 +247,58 @@ const Results = () => {
                             : "None"}
                     </Text>
                     <Text>Attempts: {maxAttempts}</Text>
-                    {isAdmin() && (
-                        <>
-                            <Button
-                                colorScheme="green"
-                                width="100%"
-                                onClick={() =>
-                                    setIsOpenCreateAttemptModal(true)
-                                }
-                                display={{ base: "flex", md: "none" }}
-                            >
-                                Enter attempt
-                            </Button>
-                            <Button
-                                colorScheme="yellow"
-                                width={{
-                                    base: "100%",
-                                    md: "fit-content",
-                                }}
-                                onClick={handleResubmitRound}
-                            >
-                                Resubmit results to {submissionPlatformName}
-                            </Button>
-                        </>
-                    )}
-                    <Button
-                        colorScheme="blue"
-                        display={{
-                            base: "none",
-                            md: "flex",
-                        }}
-                        width="fit-content"
-                        onClick={() =>
-                            navigate(`/results/public/${filters.roundId}`)
-                        }
+
+                    <Box
+                        display="flex"
+                        gap="3"
+                        flexDirection={{ base: "column", md: "row" }}
                     >
-                        Public view
-                    </Button>
-                    <Button
-                        colorScheme="blue"
-                        display={{
-                            base: "flex",
-                            md: "none",
-                        }}
-                        width={{
-                            base: "100%",
-                            md: "fit-content",
-                        }}
-                        onClick={() =>
-                            navigate(`/results/public/${filters.roundId}`)
-                        }
-                    >
-                        Public view
-                    </Button>
-                    {results.length > 0 && (
                         <Button
-                            colorScheme="red"
+                            colorScheme="green"
                             width={{
                                 base: "100%",
                                 md: "fit-content",
                             }}
-                            onClick={() => setIsOpenRestartGroupModal(true)}
+                            onClick={() => setIsOpenCreateAttemptModal(true)}
                         >
-                            Restart group
+                            Enter attempt
                         </Button>
-                    )}
+                        <Button
+                            colorScheme="yellow"
+                            width={{
+                                base: "100%",
+                                md: "fit-content",
+                            }}
+                            onClick={handleResubmitRound}
+                        >
+                            Resubmit results to {submissionPlatformName}
+                        </Button>
+                        <Button
+                            colorScheme="blue"
+                            width={{
+                                base: "100%",
+                                md: "fit-content",
+                            }}
+                            onClick={() =>
+                                navigate(`/results/public/${filters.roundId}`)
+                            }
+                        >
+                            Public view
+                        </Button>
+
+                        {results.length > 0 && (
+                            <Button
+                                colorScheme="red"
+                                width={{
+                                    base: "100%",
+                                    md: "fit-content",
+                                }}
+                                onClick={() => setIsOpenRestartGroupModal(true)}
+                            >
+                                Restart group
+                            </Button>
+                        )}
+                    </Box>
                 </Box>
             )}
             {results && results.length > 0 ? (

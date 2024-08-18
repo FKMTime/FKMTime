@@ -88,7 +88,7 @@ const RoomCard = ({
                             setCurrentRound(event?.target.value);
                             updateCurrentGroup({
                                 ...room,
-                                currentGroupId: event?.target.value + "-r1-g1",
+                                currentGroupId: event?.target.value + "-g1",
                             });
                         }}
                         placeholder="Select round"

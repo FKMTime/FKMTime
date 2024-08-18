@@ -1,10 +1,21 @@
-import { Box, Button, Heading, useToast } from "@chakra-ui/react";
+import {
+    Alert,
+    AlertIcon,
+    Box,
+    Button,
+    Heading,
+    ListItem,
+    UnorderedList,
+    useToast,
+} from "@chakra-ui/react";
 import { useAtom } from "jotai";
 import { useCallback, useEffect, useState } from "react";
 
 import LoadingPage from "@/Components/LoadingPage";
+import { activityCodeToName } from "@/logic/activities";
 import { competitionAtom } from "@/logic/atoms";
 import { getCompetitionInfo } from "@/logic/competition";
+import { isUnofficialEvent } from "@/logic/events";
 import { Room } from "@/logic/interfaces";
 import { getAllRooms, updateCurrentRound } from "@/logic/rooms";
 
@@ -31,6 +42,22 @@ const Rooms = () => {
             setRooms(data);
         });
     }, []);
+
+    const currentOfficialRounds: Room[] = [];
+
+    rooms.filter((room) => {
+        if (room.currentGroupId) {
+            const roundId = room.currentGroupId?.split("-g")[0];
+            if (
+                !isUnofficialEvent(roundId.split("-")[0]) &&
+                !currentOfficialRounds.some(
+                    (r) => r.currentGroupId.split("-g")[0] === roundId
+                )
+            ) {
+                currentOfficialRounds.push(room);
+            }
+        }
+    });
 
     const updateCurrentGroup = (room: Room) => {
         setRooms(
@@ -65,6 +92,31 @@ const Rooms = () => {
     return (
         <Box display="flex" flexDirection="column" gap="5" width="fit-content">
             <Heading size="lg">Rooms</Heading>
+            {currentOfficialRounds.length > 0 && (
+                <Alert
+                    status="warning"
+                    borderRadius="md"
+                    color="black"
+                    display="flex"
+                    flexDirection="column"
+                    alignItems="flex-start"
+                >
+                    <Box display="flex">
+                        <AlertIcon />
+                        Remember to open the following rounds in WCA Live:
+                    </Box>
+                    <UnorderedList>
+                        {currentOfficialRounds.map((room) => (
+                            <ListItem>
+                                {activityCodeToName(
+                                    room.currentGroupId?.split("-g")[0]
+                                )}
+                            </ListItem>
+                        ))}
+                    </UnorderedList>
+                </Alert>
+            )}
+
             <Box display="flex" flexWrap="wrap" gap="5">
                 {rooms.map((room: Room) => (
                     <RoomCard

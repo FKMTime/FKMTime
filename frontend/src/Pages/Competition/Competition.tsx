@@ -121,14 +121,22 @@ const Competition = () => {
             width={{ base: "100%", md: "20%" }}
         >
             <Heading size="lg">{competition?.name}</Heading>
-            <Button colorScheme="yellow" onClick={() => navigate("/events")}>
-                Unofficial events
-            </Button>
+            <Box
+                display="flex"
+                flexDirection={{ base: "column", md: "row" }}
+                gap="2"
+            >
+                <Button
+                    colorScheme="yellow"
+                    onClick={() => navigate("/events")}
+                >
+                    Unofficial events
+                </Button>
+                <Button colorScheme="yellow" onClick={handleSync}>
+                    Sync
+                </Button>
+            </Box>
             <Box display="flex" flexDirection="column" gap="5">
-                <Alert status="warning" borderRadius="md" color="black">
-                    <AlertIcon />
-                    Remember to open round in WCA Live
-                </Alert>
                 {competition.scoretakingToken === "" ||
                     (!competition.scoretakingToken && (
                         <Alert status="error" borderRadius="md" color="black">
@@ -146,11 +154,8 @@ const Competition = () => {
                         </Alert>
                     )}
             </Box>
-            <Box display="flex" flexDirection="column" gap="5">
-                <Button colorScheme="yellow" onClick={handleSync}>
-                    Sync
-                </Button>
-            </Box>
+
+            <Heading size="md">Competition settings</Heading>
             <CompetitionForm
                 competition={competition}
                 setCompetition={setCompetition}
