@@ -203,6 +203,26 @@ export class AttemptService {
   }
 
   async deleteAttempt(id: string) {
+    const attempt = await this.prisma.attempt.findUnique({
+      where: { id },
+      include: {
+        device: true,
+      },
+    });
+    if (!attempt) {
+      throw new HttpException('Attempt not found', 404);
+    }
+
+    if (attempt.status === AttemptStatus.UNRESOLVED) {
+      this.socketController.sendResponseToAllSockets({
+        type: 'IncidentResolved',
+        data: {
+          attempt: attempt,
+          espId: attempt.device.espId,
+          shouldScanCards: false,
+        },
+      });
+    }
     return this.prisma.attempt.delete({
       where: { id: id },
     });
