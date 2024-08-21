@@ -1,4 +1,4 @@
-import { Box, Heading, useToast } from "@chakra-ui/react";
+import { Box, Heading, Text, useToast } from "@chakra-ui/react";
 import { useSetAtom } from "jotai";
 import { useEffect, useState } from "react";
 import { MdLogout } from "react-icons/md";
@@ -78,12 +78,17 @@ const ImportCompetition = () => {
                 <Heading size="lg">
                     Import competition from the WCA Website
                 </Heading>
-                <RoundedIconButton
-                    title="Logout"
-                    ariaLabel="Logout"
-                    onClick={handleLogout}
-                    icon={<MdLogout />}
-                />
+                <Box display="flex" gap="5" alignItems="center">
+                    <Text display={{ base: "none", md: "block" }}>
+                        Hi {userInfo.fullName}
+                    </Text>
+                    <RoundedIconButton
+                        title="Logout"
+                        ariaLabel="Logout"
+                        onClick={handleLogout}
+                        icon={<MdLogout />}
+                    />
+                </Box>
             </Box>
             {userInfo.isWcaAdmin && (
                 <CompetitionsAutocomplete
@@ -92,10 +97,16 @@ const ImportCompetition = () => {
                 />
             )}
             <Box display="flex" flexDirection="column" gap="5">
-                <CompetitionsList
-                    competitions={competitions}
-                    handleImportCompetition={handleSubmit}
-                />
+                {competitions.length > 0 ? (
+                    <CompetitionsList
+                        competitions={competitions}
+                        handleImportCompetition={handleSubmit}
+                    />
+                ) : (
+                    <Heading size="md">
+                        You have no upcoming competitions to manage
+                    </Heading>
+                )}
             </Box>
         </Box>
     );
