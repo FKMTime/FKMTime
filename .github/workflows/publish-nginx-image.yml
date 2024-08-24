@@ -9,6 +9,7 @@ on:
       - 'nginx/**'
       - 'nginx.Dockerfile'
       - '.github/workflows/publish-nginx-image.yml'
+  workflow_dispatch:
 
       
 env:
