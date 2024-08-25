@@ -451,6 +451,7 @@ export class CompetitionService {
             id: room.id,
             name: room.name,
             useInspection: useInspection,
+            secondaryText: this.computeSecondaryText(room.currentGroupId),
             devices: room.devices
               .filter((d) => d.type === 'STATION')
               .map((device) => device.espId),
@@ -592,5 +593,13 @@ export class CompetitionService {
       where: { id: competition.id },
       data: { wcif: wcifPublic },
     });
+  }
+
+  computeSecondaryText(groupId: string) {
+    const roundId = groupId.split('-g')[0];
+    const eventId = roundId.split('-r')[0];
+    const roundNumber = roundId.split('-r')[1];
+    const eventData = eventsData.find((e) => e.id === eventId);
+    return `${eventData.shortName ? eventData.shortName : eventData.name} - Round ${roundNumber}`;
   }
 }
