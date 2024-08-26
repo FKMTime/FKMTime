@@ -91,11 +91,13 @@ services:
     volumes:
       - /run/dbus:/run/dbus:ro
       - sock:/app/sock
+      - /tmp/fkm-build:/app/firmware
     environment:
       - PORT=8080
       - FIRMWARE_DIR=/app/firmware
       - RUST_LOG=none,backend=debug
       - SOCKET_PATH=/app/sock/socket.sock
+      - DEV=1
     restart: unless-stopped
     depends_on:
       backend:

@@ -600,6 +600,6 @@ export class CompetitionService {
     const eventId = roundId.split('-r')[0];
     const roundNumber = roundId.split('-r')[1];
     const eventData = eventsData.find((e) => e.id === eventId);
-    return `${eventData.shortName ? eventData.shortName : eventData.name} - Round ${roundNumber}`;
+    return `${eventData.shortName ? eventData.shortName : eventData.name} - R${roundNumber}`;
   }
 }
