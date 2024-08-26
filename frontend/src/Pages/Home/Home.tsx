@@ -58,11 +58,11 @@ const Home = () => {
             response.data.wcif.schedule.numberOfDays
         );
         setPossibleDates(competitionDates);
-        if (
-            new Date(response.data.wcif.schedule.startDate).getTime() >
-            new Date().getTime()
-        ) {
-            setSelectedDate(new Date(response.data.wcif.schedule.startDate));
+        const todayPresent = competitionDates.find(
+            (date) => date.toDateString() === new Date().toDateString()
+        );
+        if (todayPresent) {
+            setSelectedDate(new Date());
         } else {
             setSelectedDate(competitionDates[0]);
         }
