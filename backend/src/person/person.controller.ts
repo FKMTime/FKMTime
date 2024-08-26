@@ -30,6 +30,7 @@ export class PersonController {
     @Query('withoutCardAssigned') withoutCardAssigned?: boolean,
     @Query('cardId') cardId?: string,
     @Query('onlyNewcomers') onlyNewcomers?: boolean,
+    @Query('onlyNotCheckedIn') onlyNotCheckedIn?: boolean,
   ) {
     return await this.personService.getPersons(
       +page,
@@ -39,6 +40,7 @@ export class PersonController {
       withoutCardAssigned,
       cardId,
       onlyNewcomers,
+      onlyNotCheckedIn,
     );
   }
 

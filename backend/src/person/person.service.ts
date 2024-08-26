@@ -17,6 +17,7 @@ export class PersonService {
     withoutCardAssigned?: boolean,
     cardId?: string,
     onlyNewcomers?: boolean,
+    onlyNotCheckedIn?: boolean,
   ) {
     const whereParams = {};
     const searchParams = {
@@ -92,6 +93,11 @@ export class PersonService {
           },
         ];
       }
+      if (onlyNotCheckedIn) {
+        whereParams['checkedInAt'] = {
+          equals: null,
+        };
+      }
     }
 
     const persons = await this.prisma.person.findMany({
@@ -138,13 +144,26 @@ export class PersonService {
   }
 
   async checkIn(personId: string, data: UpdatePersonDto) {
-    await this.prisma.person.update({
-      where: { id: personId },
-      data: {
-        checkedInAt: new Date(),
-        cardId: data.cardId,
-      },
-    });
+    try {
+      await this.prisma.person.update({
+        where: { id: personId },
+        data: {
+          checkedInAt: new Date(),
+          cardId: data.cardId,
+        },
+      });
+    } catch (e) {
+      if (e instanceof PrismaClientKnownRequestError) {
+        if (e.code === 'P2002') {
+          throw new HttpException(
+            {
+              message: 'Card already assigned',
+            },
+            409,
+          );
+        }
+      }
+    }
     const checkedInPersonsCount = await this.prisma.person.count({
       where: {
         checkedInAt: {
@@ -271,6 +290,7 @@ export class PersonService {
         id: true,
         registrantId: true,
         wcaId: true,
+        cardId: true,
         name: true,
         countryIso2: true,
         gender: true,
@@ -315,6 +335,7 @@ export class PersonService {
         registrantId: true,
         wcaId: true,
         canCompete: true,
+        cardId: true,
         name: true,
         countryIso2: true,
         birthdate: true,

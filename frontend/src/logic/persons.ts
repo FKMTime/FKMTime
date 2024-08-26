@@ -8,7 +8,8 @@ export const getPersons = async (
     registrantId?: number,
     withoutCardAssigned?: boolean,
     cardId?: string,
-    onlyNewcomers?: boolean
+    onlyNewcomers?: boolean,
+    onlyNotCheckedIn?: boolean
 ) => {
     const searchParams = new URLSearchParams();
     searchParams.append("page", page.toString());
@@ -19,6 +20,7 @@ export const getPersons = async (
     if (withoutCardAssigned) searchParams.append("withoutCardAssigned", "true");
     if (cardId) searchParams.append("cardId", cardId);
     if (onlyNewcomers) searchParams.append("onlyNewcomers", "true");
+    if (onlyNotCheckedIn) searchParams.append("onlyNotCheckedIn", "true");
     const query = `person?${searchParams.toString()}`;
     const response = await backendRequest(query, "GET", true);
     return await response.json();

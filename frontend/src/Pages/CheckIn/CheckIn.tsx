@@ -34,7 +34,7 @@ const CheckIn = () => {
         useRef<HTMLInputElement>(null);
     const [personData, setPersonData] = useState<Person | null>();
     const [selectedPersonId, setSelectedPersonId] = useState<string>("");
-    const [cardShouldBeAssigned, setCardShouldBeAssign] =
+    const [cardShouldBeAssigned, setCardShouldBeAssigned] =
         useState<boolean>(false);
 
     const handleSubmitCard = async () => {
@@ -58,6 +58,7 @@ const CheckIn = () => {
                     return;
                 }
                 setPersonData(res.data);
+                setCardShouldBeAssigned(false);
             } else if (res.status === 404) {
                 toast({
                     title: "Card not found",
@@ -81,10 +82,21 @@ const CheckIn = () => {
         if (res.status === 200) {
             toast({
                 title: "Success",
-                description: `Competitor has been checked in successfully${cardShouldBeAssigned && " and card was assigned"}.`,
+                description: `Competitor has been checked in successfully${cardShouldBeAssigned ? " and card was assigned" : ""}.`,
                 status: "success",
             });
             await fetchData();
+            setPersonData(null);
+            setScannedCard("");
+            setSelectedPersonId("");
+            setCardShouldBeAssigned(false);
+            cardInputRef.current?.focus();
+        } else if (res.status === 409) {
+            toast({
+                title: "Card not assigned",
+                description: "The card is already assigned to someone.",
+                status: "error",
+            });
         } else {
             toast({
                 title: "Error",
@@ -92,11 +104,6 @@ const CheckIn = () => {
                 status: "error",
             });
         }
-        setPersonData(null);
-        setScannedCard("");
-        setSelectedPersonId("");
-        setCardShouldBeAssign(false);
-        cardInputRef.current?.focus();
     };
 
     const handleSelectPerson = (id: string) => {
@@ -114,7 +121,7 @@ const CheckIn = () => {
         }
         setPersonData(person);
         setScannedCard(person?.cardId || "");
-        setCardShouldBeAssign(person?.cardId ? false : true);
+        setCardShouldBeAssigned(person?.cardId ? false : true);
         if (!person?.cardId) {
             cardInputRef.current?.focus();
         }

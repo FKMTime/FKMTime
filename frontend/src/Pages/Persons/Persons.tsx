@@ -37,6 +37,7 @@ const Persons = () => {
     const [personsWithoutCardAssigned, setPersonsWithoutCardAssigned] =
         useState<number>(0);
     const [onlyNewcomers, setOnlyNewcomers] = useState<boolean>(false);
+    const [onlyNotCheckedIn, setOnlyNotCheckedIn] = useState<boolean>(false);
     const [isOpenAddStaffMemberModal, setIsOpenAddStaffMemberModal] =
         useState<boolean>(false);
 
@@ -47,7 +48,8 @@ const Persons = () => {
             searchParam?: string,
             registrantId?: number,
             cardId?: string,
-            onlyNewcomersParam?: boolean
+            onlyNewcomersParam?: boolean,
+            onlyNotCheckedInParam?: boolean
         ) => {
             const response = await getPersons(
                 pageParam,
@@ -56,7 +58,8 @@ const Persons = () => {
                 registrantId,
                 undefined,
                 cardId,
-                onlyNewcomersParam
+                onlyNewcomersParam,
+                onlyNotCheckedInParam
             );
             if (!competition) {
                 const competitionData = await getCompetitionInfo();
@@ -130,6 +133,19 @@ const Persons = () => {
         );
     };
 
+    const handleOnlyNotCheckedIn = () => {
+        setOnlyNotCheckedIn(!onlyNotCheckedIn);
+        fetchData(
+            1,
+            pageSize,
+            search,
+            undefined,
+            searchedCardId,
+            onlyNewcomers,
+            !onlyNotCheckedIn
+        );
+    };
+
     useEffect(() => {
         fetchData();
     }, [fetchData]);
@@ -167,7 +183,6 @@ const Persons = () => {
                 flexDirection={{ base: "column", md: "row" }}
                 justifyContent={{ base: "center", md: "space-between" }}
                 marginRight={{ base: "0", md: "5" }}
-                gap={{ base: "3", md: "3" }}
             >
                 <Box
                     display="flex"
@@ -195,16 +210,6 @@ const Persons = () => {
                         onChange={handleSearch}
                         width="100%"
                     />
-                    <FormControl display="flex" alignItems="center" gap="2">
-                        <Switch
-                            id="onlyNewcomers"
-                            onChange={handleOnlyNewcomers}
-                            isChecked={onlyNewcomers}
-                        />
-                        <FormLabel htmlFor="onlyNewcomers" mb="0">
-                            Only newcomers
-                        </FormLabel>
-                    </FormControl>
                 </Box>
                 {isAdmin() && (
                     <>
@@ -229,6 +234,28 @@ const Persons = () => {
                         </Box>
                     </>
                 )}
+            </Box>
+            <Box display="flex" gap="2" flexDirection="column">
+                <FormControl display="flex" alignItems="center" gap="2">
+                    <Switch
+                        id="onlyNewcomers"
+                        onChange={handleOnlyNewcomers}
+                        isChecked={onlyNewcomers}
+                    />
+                    <FormLabel htmlFor="onlyNewcomers" mb="0">
+                        Newcomers
+                    </FormLabel>
+                </FormControl>
+                <FormControl display="flex" alignItems="center" gap="2">
+                    <Switch
+                        id="onlyNotCheckedIn"
+                        onChange={handleOnlyNotCheckedIn}
+                        isChecked={onlyNotCheckedIn}
+                    />
+                    <FormLabel htmlFor="onlyNotCheckedIn" mb="0">
+                        Not checked in
+                    </FormLabel>
+                </FormControl>
             </Box>
             <PersonsTable
                 persons={persons}
