@@ -66,6 +66,7 @@ const QuickActionCard = ({ quickAction, fetchData }: QuickActionCardProps) => {
             display="flex"
             flexDirection="column"
             gap="3"
+            width={{ base: "100%", md: "fit-content" }}
             alignItems="center"
             justifyContent="center"
         >

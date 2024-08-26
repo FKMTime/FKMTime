@@ -28,7 +28,11 @@ const QuickActions = () => {
 
     return (
         <Flex flexDirection="column" gap="5s">
-            <Flex gap="3" alignItems="center">
+            <Flex
+                gap="3"
+                flexDirection={{ base: "column", md: "row" }}
+                alignItems={{ base: "flex-start", md: "center" }}
+            >
                 <Heading fontSize="3xl">Quick incident actions</Heading>
                 <PlusButton
                     aria-label="Add quick action"

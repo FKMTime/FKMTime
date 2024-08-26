@@ -93,7 +93,13 @@ const Home = () => {
     return (
         <Box display="flex" flexDirection="column" gap="5">
             <Heading size="lg">{competition?.name}</Heading>
-            <Box display="flex" flexDirection="row" gap="5" width="20%">
+            <Box
+                display="flex"
+                flexDirection="row"
+                gap="5"
+                width={{ base: "100%", md: "50%" }}
+                flexWrap={{ base: "wrap", md: "nowrap" }}
+            >
                 {competition.wcif.events.map((event: Event) => (
                     <EventIcon
                         key={event.id}
