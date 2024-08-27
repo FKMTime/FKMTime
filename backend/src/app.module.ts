@@ -38,6 +38,7 @@ import { AppGateway } from './app.gateway';
         EventsModule,
         ContestsModule,
     ],
+    exports: [AppGateway]
 })
 export class AppModule implements NestModule {
     configure(consumer: MiddlewareConsumer) {

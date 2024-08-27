@@ -1,14 +1,14 @@
 import { Injectable } from '@nestjs/common';
 import { DbService } from '../db/db.service';
 import { getTranslation } from '../translations';
-import { AttendanceGateway } from './attendance.gateway';
 import { CreateAttendaceDto } from './dto/createAttendance.dto';
+import { AppGateway } from 'src/app.gateway';
 
 @Injectable()
 export class AttendanceService {
   constructor(
     private readonly prisma: DbService,
-    private readonly attendanceGateway: AttendanceGateway,
+    private readonly appGateway: AppGateway,
   ) {}
 
   async getAttendanceByGroupId(groupId: string) {
@@ -45,7 +45,7 @@ export class AttendanceService {
         isPresent: true,
       },
     });
-    this.attendanceGateway.handleNewAttendance(
+    this.appGateway.handleNewAttendance(
       attendance.groupId,
       attendance.personId,
     );
@@ -90,7 +90,7 @@ export class AttendanceService {
         isAssigned: false,
       },
     });
-    this.attendanceGateway.handleNewAttendance(groupId, competitorId);
+    this.appGateway.handleNewAttendance(groupId, competitorId);
   }
 
   async markJudgeAsPresent(judgeId: string, groupId: string, deviceId: string) {
@@ -127,7 +127,7 @@ export class AttendanceService {
         isAssigned: false,
       },
     });
-    this.attendanceGateway.handleNewAttendance(groupId, judgeId);
+    this.appGateway.handleNewAttendance(groupId, judgeId);
   }
 
   async getAttendanceStatistics() {
@@ -213,7 +213,7 @@ export class AttendanceService {
         : device.type === 'ATTENDANCE_RUNNER'
           ? 'RUNNER'
           : 'JUDGE';
-    this.attendanceGateway.handleNewAttendance(
+    this.appGateway.handleNewAttendance(
       device.room.currentGroupId,
       person.id,
     );
@@ -280,7 +280,7 @@ export class AttendanceService {
         isPresent: false,
       },
     });
-    this.attendanceGateway.handleNewAttendance(
+    this.appGateway.handleNewAttendance(
       attendance.groupId,
       attendance.personId,
     );

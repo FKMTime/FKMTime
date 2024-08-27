@@ -1,13 +1,13 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { AttendanceService } from './attendance.service';
 import { AttendanceController } from './attendance.controller';
 import { AuthModule } from '../auth/auth.module';
-import { AttendanceGateway } from './attendance.gateway';
+import { AppModule } from 'src/app.module';
 
 @Module({
-  providers: [AttendanceService, AttendanceGateway],
-  controllers: [AttendanceController],
-  imports: [AuthModule],
-  exports: [AttendanceService, AttendanceGateway],
+    providers: [AttendanceService],
+    controllers: [AttendanceController],
+    imports: [AuthModule, forwardRef(() => AppModule)],
+    exports: [AttendanceService],
 })
-export class AttendanceModule {}
+export class AttendanceModule { }
