@@ -95,6 +95,7 @@ const CreateDeviceModal = ({
                         placeholder="Name"
                         _placeholder={{ color: "white" }}
                         name="name"
+                        autoFocus
                         disabled={isLoading}
                     />
                 </FormControl>
