@@ -9,7 +9,7 @@ RUN npm run build
 ## END BUILD ##
 
 ## NGINX ##
-FROM filipton/proxied-nginx:latest
+FROM ghcr.io/fkmtime/fkmtime-proxied-nginx:master
 
 COPY --from=frontend-app-builder /app/dist /frontend
 COPY ./nginx/default.conf /etc/nginx/conf.d/default.conf
