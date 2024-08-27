@@ -57,7 +57,9 @@ export class CompetitionService {
     });
     await this.prisma.person.createMany({
       data: wcif.persons
-        .filter((p: Person) => p.registration.status === 'accepted')
+        .filter(
+          (p: Person) => p.registrantId && p.registration.status === 'accepted',
+        )
         .map((person: Person) => ({
           wcaId: person.wcaId,
           name: person.name,
