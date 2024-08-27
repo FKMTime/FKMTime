@@ -20,23 +20,8 @@ export const WCA_CLIENT_ID = import.meta.env.PROD
 
 const BACKEND_URL = import.meta.env.PROD ? "/api" : DEV_BACKEND_URL;
 
-export const INCIDENTS_WEBSOCKET_URL = import.meta.env.PROD
-    ? "/incidents"
-    : `${DEV_BACKEND_URL}/incidents`;
-export const DEVICES_WEBSOCKET_URL = import.meta.env.PROD
-    ? "/device"
-    : `${DEV_BACKEND_URL}/device`;
-export const RESULTS_WEBSOCKET_URL = import.meta.env.PROD
-    ? "/result"
-    : `${DEV_BACKEND_URL}/result`;
-export const COMPETITION_WEBSOCKET_URL = import.meta.env.PROD
-    ? "/competition"
-    : `${DEV_BACKEND_URL}/competition`;
-export const ATTENDANCE_WEBSOCKET_URL = import.meta.env.PROD
-    ? "/attendance"
-    : `${DEV_BACKEND_URL}/attendance`;
-
 export const WEBSOCKET_PATH = import.meta.env.PROD ? "/api/socket.io/" : "";
+export const WEBSOCKET_URL = import.meta.env.PROD ? "/" : `${DEV_BACKEND_URL}/`;
 
 export const backendRequest = (
     path: string,

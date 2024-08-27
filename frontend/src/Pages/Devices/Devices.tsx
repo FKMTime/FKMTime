@@ -1,15 +1,13 @@
 import { Box, IconButton } from "@chakra-ui/react";
 import { useEffect, useState } from "react";
 import { MdSettings } from "react-icons/md";
-import io from "socket.io-client";
 
 import LoadingPage from "@/Components/LoadingPage";
 import PlusButton from "@/Components/PlusButton.tsx";
-import { getToken } from "@/logic/auth";
 import { getAllDevices } from "@/logic/devices";
 import { AvailableDevice, Device } from "@/logic/interfaces";
-import { DEVICES_WEBSOCKET_URL, WEBSOCKET_PATH } from "@/logic/request";
 import AvailableDevices from "@/Pages/Devices/Components/AvailableDevices.tsx";
+import { socket } from "@/socket";
 
 import CreateDeviceModal from "./Components/CreateDeviceModal";
 import DevicesTable from "./Components/DevicesTable";
@@ -30,16 +28,6 @@ const Devices = () => {
         isOpenUpdateDevicesSettingsModal,
         setIsOpenUpdateDevicesSettingsModal,
     ] = useState<boolean>(false);
-    const [socket] = useState(
-        io(DEVICES_WEBSOCKET_URL, {
-            transports: ["websocket"],
-            path: WEBSOCKET_PATH,
-            closeOnBeforeunload: true,
-            auth: {
-                token: getToken(),
-            },
-        })
-    );
 
     const fetchData = async () => {
         setIsLoading(true);
@@ -68,7 +56,7 @@ const Devices = () => {
 
     useEffect(() => {
         fetchData();
-        socket.emit("join");
+        socket.emit("joinDevices");
 
         socket.on("deviceUpdated", () => {
             fetchData();
@@ -79,9 +67,9 @@ const Devices = () => {
         });
 
         return () => {
-            socket.emit("leave");
+            socket.emit("leaveDevices");
         };
-    }, [socket]);
+    }, []);
 
     if (isLoading && devices.length === 0) return <LoadingPage />;
 

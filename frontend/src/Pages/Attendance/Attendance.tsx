@@ -11,7 +11,6 @@ import { Activity, Event, Round } from "@wca/helpers";
 import { useAtom } from "jotai";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import io from "socket.io-client";
 
 import LoadingPage from "@/Components/LoadingPage";
 import Select from "@/Components/Select";
@@ -22,13 +21,12 @@ import {
     markAsAbsent,
     markAsPresent,
 } from "@/logic/attendance";
-import { getToken } from "@/logic/auth";
 import { getCompetitionInfo } from "@/logic/competition";
 import { getEventName } from "@/logic/events";
 import { Room, StaffActivity } from "@/logic/interfaces";
-import { ATTENDANCE_WEBSOCKET_URL, WEBSOCKET_PATH } from "@/logic/request";
 import { getAllRooms } from "@/logic/rooms";
 import PresentPeopleList from "@/Pages/Attendance/Components/PresentPeopleList";
+import { socket } from "@/socket";
 
 import AbsentPeopleList from "./Components/AbsentPeopleList";
 import UnorderedPeopleList from "./Components/UnorderedPeopleList";
@@ -38,16 +36,6 @@ const Attendance = () => {
     const navigate = useNavigate();
     const toast = useToast();
     const selectedGroup = id ? id : "";
-    const [socket] = useState(
-        io(ATTENDANCE_WEBSOCKET_URL, {
-            transports: ["websocket"],
-            path: WEBSOCKET_PATH,
-            closeOnBeforeunload: true,
-            auth: {
-                token: getToken(),
-            },
-        })
-    );
     const [competition, setCompetition] = useAtom(competitionAtom);
     const [attendance, setAttendance] = useState<StaffActivity[]>([]);
     const [rooms, setRooms] = useState<Room[]>([]);
@@ -165,17 +153,17 @@ const Attendance = () => {
             setSelectedEvent(selectedGroup.split("-")[0]);
             setSelectedRound(selectedGroup.split("-g")[0]);
             fetchAttendanceData(selectedGroup);
-            socket.emit("join", { groupId: selectedGroup });
+            socket.emit("joinAttendance", { groupId: selectedGroup });
 
             socket.on("newAttendance", () => {
                 fetchAttendanceData(selectedGroup);
             });
 
             return () => {
-                socket.emit("leave", { groupId: selectedGroup });
+                socket.emit("leaveAttendance", { groupId: selectedGroup });
             };
         }
-    }, [rooms, selectedGroup, socket]);
+    }, [rooms, selectedGroup]);
 
     if (!competition) {
         return <LoadingPage />;

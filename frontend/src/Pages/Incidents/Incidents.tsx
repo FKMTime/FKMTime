@@ -1,28 +1,16 @@
 import { Box, Button, Heading } from "@chakra-ui/react";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import io from "socket.io-client";
 
 import { getUnresolvedAttempts } from "@/logic/attempt";
-import { getToken } from "@/logic/auth";
 import { Incident } from "@/logic/interfaces";
-import { INCIDENTS_WEBSOCKET_URL, WEBSOCKET_PATH } from "@/logic/request";
+import { socket } from "@/socket";
 
 import IncidentCard from "./Components/IncidentCard";
 
 const Incidents = () => {
     const navigate = useNavigate();
     const [incidents, setIncidents] = useState<Incident[]>([]);
-    const [socket] = useState(
-        io(INCIDENTS_WEBSOCKET_URL, {
-            transports: ["websocket"],
-            path: WEBSOCKET_PATH,
-            closeOnBeforeunload: true,
-            auth: {
-                token: getToken(),
-            },
-        })
-    );
 
     const fetchData = async () => {
         const data = await getUnresolvedAttempts();
@@ -30,7 +18,7 @@ const Incidents = () => {
     };
     useEffect(() => {
         fetchData();
-        socket.emit("join");
+        socket.emit("joinIncidents");
 
         socket.on("newIncident", () => {
             fetchData();
@@ -41,9 +29,9 @@ const Incidents = () => {
         });
 
         return () => {
-            socket.emit("leave");
+            socket.emit("leaveIncidents");
         };
-    }, [socket]);
+    }, []);
 
     return (
         <Box display="flex" flexDirection="column" gap="5">
