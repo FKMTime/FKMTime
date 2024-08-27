@@ -16,29 +16,31 @@ import { HealthModule } from './health/health.module';
 import { SocketModule } from './socket/socket.module';
 import { EventsModule } from './events/events.module';
 import { ContestsModule } from './contests/contests.module';
+import { AppGateway } from './app.gateway';
 
 @Module({
-  imports: [
-    DbModule,
-    ScheduleModule.forRoot(),
-    AuthModule,
-    UserModule,
-    CompetitionModule,
-    PersonModule,
-    ResultModule,
-    AttemptModule,
-    SettingsModule,
-    DeviceModule,
-    AttendanceModule,
-    WcaModule,
-    HealthModule,
-    SocketModule,
-    EventsModule,
-    ContestsModule,
-  ],
+    providers: [AppGateway],
+    imports: [
+        DbModule,
+        ScheduleModule.forRoot(),
+        AuthModule,
+        UserModule,
+        CompetitionModule,
+        PersonModule,
+        ResultModule,
+        AttemptModule,
+        SettingsModule,
+        DeviceModule,
+        AttendanceModule,
+        WcaModule,
+        HealthModule,
+        SocketModule,
+        EventsModule,
+        ContestsModule,
+    ],
 })
 export class AppModule implements NestModule {
-  configure(consumer: MiddlewareConsumer) {
-    consumer.apply(LoggerMiddleware).forRoutes('*');
-  }
+    configure(consumer: MiddlewareConsumer) {
+        consumer.apply(LoggerMiddleware).forRoutes('*');
+    }
 }
