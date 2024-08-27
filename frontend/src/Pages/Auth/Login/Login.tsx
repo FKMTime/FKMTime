@@ -71,7 +71,6 @@ const Login = () => {
             alignItems="center"
             justifyContent="center"
             color="white"
-            backgroundImage="https://source.unsplash.com/random/?city,night"
             backgroundSize="cover"
             backgroundPosition="center"
             backgroundRepeat="no-repeat"
