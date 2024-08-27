@@ -9,7 +9,7 @@ import {
 } from "@chakra-ui/react";
 import { Activity, Event, Round } from "@wca/helpers";
 import { useAtom } from "jotai";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 
 import LoadingPage from "@/Components/LoadingPage";
@@ -26,7 +26,7 @@ import { getEventName } from "@/logic/events";
 import { Room, StaffActivity } from "@/logic/interfaces";
 import { getAllRooms } from "@/logic/rooms";
 import PresentPeopleList from "@/Pages/Attendance/Components/PresentPeopleList";
-import { socket } from "@/socket";
+import { socket, SocketContext } from "@/socket";
 
 import AbsentPeopleList from "./Components/AbsentPeopleList";
 import UnorderedPeopleList from "./Components/UnorderedPeopleList";
@@ -148,6 +148,10 @@ const Attendance = () => {
         }
     }, [competition, setCompetition]);
 
+    const [isConnected] = useContext(SocketContext) as [
+        number,
+        React.Dispatch<React.SetStateAction<number>>,
+    ];
     useEffect(() => {
         if (selectedGroup) {
             setSelectedEvent(selectedGroup.split("-")[0]);
@@ -155,20 +159,15 @@ const Attendance = () => {
             fetchAttendanceData(selectedGroup);
 
             socket.emit("joinAttendance", { groupId: selectedGroup });
-            socket.on("connect", () => {
-                socket.emit("joinAttendance", { groupId: selectedGroup });
-            });
-
             socket.on("newAttendance", () => {
                 fetchAttendanceData(selectedGroup);
             });
 
             return () => {
-                if (socket.connected) socket.removeAllListeners("connect");
                 socket.emit("leaveAttendance", { groupId: selectedGroup });
             };
         }
-    }, [rooms, selectedGroup]);
+    }, [rooms, selectedGroup, isConnected]);
 
     if (!competition) {
         return <LoadingPage />;

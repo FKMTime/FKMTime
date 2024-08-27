@@ -1,7 +1,14 @@
 import { Box, Button, Heading, Input, Text, useToast } from "@chakra-ui/react";
 import { useConfirm } from "chakra-ui-confirm";
 import { useAtom } from "jotai";
-import { ChangeEvent, useCallback, useEffect, useMemo, useState } from "react";
+import {
+    ChangeEvent,
+    useCallback,
+    useContext,
+    useEffect,
+    useMemo,
+    useState,
+} from "react";
 import { useNavigate, useParams } from "react-router-dom";
 
 import LoadingPage from "@/Components/LoadingPage";
@@ -20,7 +27,7 @@ import {
     getNumberOfAttemptsForRound,
     getSubmissionPlatformName,
 } from "@/logic/utils";
-import { socket } from "@/socket";
+import { socket, SocketContext } from "@/socket";
 
 import CreateAttemptModal from "./Components/CreateAttemptModal";
 import EventAndRoundSelector from "./Components/EventAndRoundSelector";
@@ -149,6 +156,10 @@ const Results = () => {
         }
     }, [competition, fetchCompetition]);
 
+    const [isConnected] = useContext(SocketContext) as [
+        number,
+        React.Dispatch<React.SetStateAction<number>>,
+    ];
     useEffect(() => {
         if (filters.roundId) {
             if (!isAdmin()) {
@@ -162,18 +173,14 @@ const Results = () => {
         }
 
         socket.emit("joinResults", { roundId: filters.roundId });
-        socket.on("connect", () => {
-            socket.emit("joinResults", { roundId: filters.roundId });
-        });
         socket.on("resultEntered", () => {
             fetchData(filters.roundId);
         });
 
         return () => {
-            if (socket.connected) socket.removeListener("connect");
             socket.emit("leaveResults", { roundId: filters.roundId });
         };
-    }, [currentRounds, fetchData, filters.roundId, navigate]);
+    }, [currentRounds, fetchData, filters.roundId, navigate, isConnected]);
 
     useEffect(() => {
         getAllRooms().then((rooms: Room[]) => {

@@ -1,6 +1,6 @@
 import { Box } from "@chakra-ui/react";
 import { useAtom } from "jotai";
-import { useCallback, useEffect } from "react";
+import { useCallback, useContext, useEffect } from "react";
 import { Outlet, useNavigate } from "react-router-dom";
 
 import { competitionAtom } from "@/logic/atoms";
@@ -8,7 +8,7 @@ import { getToken, getUserInfo, isUserLoggedIn } from "@/logic/auth";
 import { getCompetitionInfo } from "@/logic/competition";
 import { getEvents } from "@/logic/events";
 import { isMobile, isNotificationsSupported } from "@/logic/utils";
-import { socket } from "@/socket";
+import { socket, SocketContext } from "@/socket";
 
 import Sidebar from "./Sidebar";
 
@@ -16,6 +16,11 @@ const Layout = () => {
     const userInfo = getUserInfo();
     const navigate = useNavigate();
     const [competition, setCompetition] = useAtom(competitionAtom);
+
+    const [isConnected, setConnected] = useContext(SocketContext) as [
+        number,
+        React.Dispatch<React.SetStateAction<number>>,
+    ];
 
     useEffect(() => {
         if (!userInfo) return;
@@ -27,10 +32,6 @@ const Layout = () => {
 
             socket.emit("joinIncidents");
             socket.emit("joinCompetition");
-            socket.on("connect", () => {
-                socket.emit("joinIncidents");
-                socket.emit("joinCompetition");
-            });
             socket.on("newIncident", (data) => {
                 Notification.requestPermission().then((permission) => {
                     if (permission === "granted") {
@@ -110,24 +111,30 @@ const Layout = () => {
             });
 
             return () => {
-                if (socket.connected) socket.removeListener("connect");
                 socket.emit("leaveIncidents");
                 socket.emit("leaveCompetition");
             };
         }
-    }, [navigate, userInfo]);
+    }, [navigate, userInfo, isConnected]);
 
     useEffect(() => {
         isUserLoggedIn().then((isLoggedIn) => {
             if (isLoggedIn) {
                 socket.auth = { token: getToken() };
                 socket.connect();
+
+                socket.on("connect", () => {
+                    setConnected(isConnected + 1);
+                });
+                socket.on("disconnect", () => {
+                    //setConnected(false);
+                });
             } else {
                 navigate("/auth/login");
                 window.location.reload();
             }
         });
-    }, [navigate]);
+    }, [navigate, isConnected, setConnected]);
 
     const fetchCompetition = useCallback(async () => {
         const response = await getCompetitionInfo();

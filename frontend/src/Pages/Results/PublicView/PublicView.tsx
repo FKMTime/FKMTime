@@ -1,6 +1,6 @@
 import { Box, Heading } from "@chakra-ui/react";
 import { useAtom } from "jotai";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 
 import LoadingPage from "@/Components/LoadingPage";
@@ -13,7 +13,7 @@ import {
     resultsWithAverageProperty,
 } from "@/logic/results";
 import { getNumberOfAttemptsForRound } from "@/logic/utils";
-import { socket } from "@/socket";
+import { socket, SocketContext } from "@/socket";
 
 import EventAndRoundSelector from "../Components/EventAndRoundSelector";
 import PublicResultsTable from "./Components/PublicResultsTable";
@@ -74,25 +74,24 @@ const PublicView = () => {
         }
     }, [competition, fetchCompetition]);
 
+    const [isConnected] = useContext(SocketContext) as [
+        number,
+        React.Dispatch<React.SetStateAction<number>>,
+    ];
     useEffect(() => {
         if (filters.roundId) {
             fetchData(filters.roundId);
         }
 
         socket.emit("joinResults", { roundId: filters.roundId });
-        socket.on("connect", () => {
-            socket.emit("joinResults", { roundId: filters.roundId });
-        });
-
         socket.on("resultEntered", () => {
             fetchData(filters.roundId);
         });
 
         return () => {
-            if (socket.connected) socket.removeAllListeners("connect");
             socket.emit("leaveResults", { roundId: filters.roundId });
         };
-    }, [fetchData, filters.roundId, navigate]);
+    }, [fetchData, filters.roundId, navigate, isConnected]);
 
     if (!competition || !results) {
         return <LoadingPage />;

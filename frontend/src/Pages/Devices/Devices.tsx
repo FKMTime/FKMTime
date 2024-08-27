@@ -1,5 +1,5 @@
 import { Box, IconButton } from "@chakra-ui/react";
-import { useEffect, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import { MdSettings } from "react-icons/md";
 
 import LoadingPage from "@/Components/LoadingPage";
@@ -7,7 +7,7 @@ import PlusButton from "@/Components/PlusButton.tsx";
 import { getAllDevices } from "@/logic/devices";
 import { AvailableDevice, Device } from "@/logic/interfaces";
 import AvailableDevices from "@/Pages/Devices/Components/AvailableDevices.tsx";
-import { socket } from "@/socket";
+import { socket, SocketContext } from "@/socket";
 
 import CreateDeviceModal from "./Components/CreateDeviceModal";
 import DevicesTable from "./Components/DevicesTable";
@@ -54,14 +54,14 @@ const Devices = () => {
         setIsOpenCreateDeviceModal(true);
     };
 
+    const [isConnected] = useContext(SocketContext) as [
+        number,
+        React.Dispatch<React.SetStateAction<number>>,
+    ];
     useEffect(() => {
         fetchData();
 
         socket.emit("joinDevices");
-        socket.on("connect", () => {
-            socket.emit("joinDevices");
-        });
-
         socket.on("deviceUpdated", () => {
             fetchData();
         });
@@ -71,10 +71,9 @@ const Devices = () => {
         });
 
         return () => {
-            if (socket.connected) socket.removeListener("connect");
             socket.emit("leaveDevices");
         };
-    }, []);
+    }, [isConnected]);
 
     if (isLoading && devices.length === 0) return <LoadingPage />;
 
