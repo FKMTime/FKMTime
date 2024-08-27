@@ -7,7 +7,4 @@ export const socket = io(WEBSOCKET_URL, {
     path: WEBSOCKET_PATH,
     closeOnBeforeunload: true,
     autoConnect: false,
-    auth: {
-        //token: getToken(),
-    },
 });
