@@ -213,10 +213,7 @@ export class AttendanceService {
         : device.type === 'ATTENDANCE_RUNNER'
           ? 'RUNNER'
           : 'JUDGE';
-    this.appGateway.handleNewAttendance(
-      device.room.currentGroupId,
-      person.id,
-    );
+    this.appGateway.handleNewAttendance(device.room.currentGroupId, person.id);
     try {
       await this.prisma.staffActivity.upsert({
         where: {

@@ -1,9 +1,9 @@
 import {
-    ConnectedSocket,
-    MessageBody,
-    SubscribeMessage,
-    WebSocketGateway,
-    WebSocketServer,
+  ConnectedSocket,
+  MessageBody,
+  SubscribeMessage,
+  WebSocketGateway,
+  WebSocketServer,
 } from '@nestjs/websockets';
 import { Logger, UseGuards } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
@@ -12,188 +12,178 @@ import { RequestToConnectDto } from './device/dto/requestToConnect.dto';
 import { AdminGuard } from './auth/guards/admin.guard';
 
 @WebSocketGateway({
-    namespace: '/',
-    transports: ['websocket'],
-    cors: {
-        origin: '*',
-    },
+  namespace: '/',
+  transports: ['websocket'],
+  cors: {
+    origin: '*',
+  },
 })
 @UseGuards(AuthGuard('jwt'))
 export class AppGateway {
-    @WebSocketServer() server: Server;
-    deviceRequests: RequestToConnectDto[] = [];
-    private logger = new Logger(`AppGateway`);
+  @WebSocketServer() server: Server;
+  deviceRequests: RequestToConnectDto[] = [];
+  private logger = new Logger(`AppGateway`);
 
+  /* ====================== */
+  /* ======= Results ====== */
+  /* ====================== */
+  @SubscribeMessage('joinResults')
+  async handleJoinResults(
+    @ConnectedSocket() socket: Socket,
+    @MessageBody('roundId') roundId: string,
+  ) {
+    socket.join(`results-${roundId}`);
+  }
 
+  @SubscribeMessage('leaveResults')
+  async handleLeaveResults(
+    @ConnectedSocket() socket: Socket,
+    @MessageBody('roundId') roundId: string,
+  ) {
+    socket.leave(`results-${roundId}`);
+  }
 
-    /* ====================== */
-    /* ======= Results ====== */
-    /* ====================== */
-    @SubscribeMessage('joinResults')
-    async handleJoinResults(
-        @ConnectedSocket() socket: Socket,
-        @MessageBody('roundId') roundId: string,
-    ) {
-        socket.join(`results-${roundId}`);
-    }
+  @SubscribeMessage('resultEntered')
+  handleResultEntered(roundId: string) {
+    this.server.to(`results-${roundId}`).emit('resultEntered');
+  }
 
-    @SubscribeMessage('leaveResults')
-    async handleLeaveResults(
-        @ConnectedSocket() socket: Socket,
-        @MessageBody('roundId') roundId: string,
-    ) {
-        socket.leave(`results-${roundId}`);
-    }
+  @SubscribeMessage('groupShouldBeChanged')
+  handleGroupShouldBeChanged(message: string) {
+    this.logger.log(`Group should be changed: ${message}`);
+    this.server.to(`competition`).emit('groupShouldBeChanged', { message });
+  }
 
-    @SubscribeMessage('resultEntered')
-    handleResultEntered(roundId: string) {
-        this.server.to(`results-${roundId}`).emit('resultEntered');
-    }
+  /* ====================== */
+  /* ======= Devices ====== */
+  /* ====================== */
+  @SubscribeMessage('joinDevices')
+  @UseGuards(AdminGuard)
+  async handleJoinDevices(@ConnectedSocket() socket: Socket) {
+    socket.join(`device`);
+    this.sendDeviceRequests(socket);
+  }
 
-    @SubscribeMessage('groupShouldBeChanged')
-    handleGroupShouldBeChanged(message: string) {
-        this.logger.log(`Group should be changed: ${message}`);
-        this.server.to(`competition`).emit('groupShouldBeChanged', { message });
-    }
+  @SubscribeMessage('leaveDevices')
+  @UseGuards(AdminGuard)
+  async handleLeaveDevices(@ConnectedSocket() socket: Socket) {
+    socket.leave(`device`);
+  }
 
+  @SubscribeMessage('deviceUpdated')
+  @UseGuards(AdminGuard)
+  handleDeviceUpdated() {
+    this.server.to(`device`).emit('deviceUpdated');
+  }
 
+  @SubscribeMessage('deviceRequests')
+  @UseGuards(AdminGuard)
+  sendDeviceRequests(@ConnectedSocket() socket: Socket) {
+    socket.emit('deviceRequests', this.deviceRequests);
+  }
 
-    /* ====================== */
-    /* ======= Devices ====== */
-    /* ====================== */
-    @SubscribeMessage('joinDevices')
-    @UseGuards(AdminGuard)
-    async handleJoinDevices(@ConnectedSocket() socket: Socket) {
-        socket.join(`device`);
-        this.sendDeviceRequests(socket);
-    }
+  @UseGuards(AdminGuard)
+  handleDeviceRequest(device: RequestToConnectDto) {
+    if (this.deviceRequests.some((req) => req.espId === device.espId)) return;
+    this.deviceRequests.push(device);
+    this.server.to(`device`).emit('deviceRequests', this.deviceRequests);
+  }
 
-    @SubscribeMessage('leaveDevices')
-    @UseGuards(AdminGuard)
-    async handleLeaveDevices(@ConnectedSocket() socket: Socket) {
-        socket.leave(`device`);
-    }
+  @SubscribeMessage('removeDeviceRequest')
+  @UseGuards(AdminGuard)
+  handleRemoveDeviceRequest(@MessageBody() data: { espId: number }) {
+    this.deviceRequests = this.deviceRequests.filter(
+      (device) => device.espId !== data.espId,
+    );
+    this.server.to(`device`).emit('deviceRequests', this.deviceRequests);
+  }
 
-    @SubscribeMessage('deviceUpdated')
-    @UseGuards(AdminGuard)
-    handleDeviceUpdated() {
-        this.server.to(`device`).emit('deviceUpdated');
-    }
+  @UseGuards(AdminGuard)
+  handleAddDeviceToDb(deviceId: number) {
+    this.deviceRequests = this.deviceRequests.filter(
+      (device) => device.espId !== deviceId,
+    );
+    this.server.to(`device`).emit('deviceRequests', this.deviceRequests);
+  }
 
-    @SubscribeMessage('deviceRequests')
-    @UseGuards(AdminGuard)
-    sendDeviceRequests(@ConnectedSocket() socket: Socket) {
-        socket.emit('deviceRequests', this.deviceRequests);
-    }
+  /* ====================== */
+  /* ==== Competition ===== */
+  /* ====================== */
+  @SubscribeMessage('joinCompetition')
+  @UseGuards(AdminGuard)
+  async handleJoinCompetition(@ConnectedSocket() socket: Socket) {
+    socket.join(`competition`);
+  }
 
-    @UseGuards(AdminGuard)
-    handleDeviceRequest(device: RequestToConnectDto) {
-        if (this.deviceRequests.some((req) => req.espId === device.espId)) return;
-        this.deviceRequests.push(device);
-        this.server.to(`device`).emit('deviceRequests', this.deviceRequests);
-    }
+  @SubscribeMessage('leaveCompetition')
+  @UseGuards(AdminGuard)
+  async handleLeaveCompetition(@ConnectedSocket() socket: Socket) {
+    socket.leave(`competition`);
+  }
 
-    @SubscribeMessage('removeDeviceRequest')
-    @UseGuards(AdminGuard)
-    handleRemoveDeviceRequest(@MessageBody() data: { espId: number }) {
-        this.deviceRequests = this.deviceRequests.filter(
-            (device) => device.espId !== data.espId,
-        );
-        this.server.to(`device`).emit('deviceRequests', this.deviceRequests);
-    }
+  /* ====================== */
+  /* ===== Attendance ===== */
+  /* ====================== */
+  @SubscribeMessage('joinAttendance')
+  @UseGuards(AdminGuard)
+  async handleJoinAttendance(
+    @ConnectedSocket() socket: Socket,
+    @MessageBody('groupId') groupId: string,
+  ) {
+    socket.join(`attendance-${groupId}`);
+  }
 
-    @UseGuards(AdminGuard)
-    handleAddDeviceToDb(deviceId: number) {
-        this.deviceRequests = this.deviceRequests.filter(
-            (device) => device.espId !== deviceId,
-        );
-        this.server.to(`device`).emit('deviceRequests', this.deviceRequests);
-    }
+  @SubscribeMessage('leaveAttendance')
+  @UseGuards(AdminGuard)
+  async handleLeaveAttentance(
+    @ConnectedSocket() socket: Socket,
+    @MessageBody('groupId') groupId: string,
+  ) {
+    socket.leave(`attendance-${groupId}`);
+  }
 
+  @UseGuards(AdminGuard)
+  handleNewAttendance(groupId: string, competitorId: string) {
+    this.server.to(`attendance-${groupId}`).emit('newAttendance', {
+      competitorId,
+    });
+  }
 
+  /* ====================== */
+  /* ====== Incidents ===== */
+  /* ====================== */
+  @SubscribeMessage('joinIncidents')
+  @UseGuards(AdminGuard)
+  async handleJoinIncidents(@ConnectedSocket() socket: Socket) {
+    socket.join(`incidents`);
+  }
 
-    /* ====================== */
-    /* ==== Competition ===== */
-    /* ====================== */
-    @SubscribeMessage('joinCompetition')
-    @UseGuards(AdminGuard)
-    async handleJoinCompetition(@ConnectedSocket() socket: Socket) {
-        socket.join(`competition`);
-    }
+  @SubscribeMessage('leaveIncidents')
+  @UseGuards(AdminGuard)
+  async handleLeaveIncidents(@ConnectedSocket() socket: Socket) {
+    socket.leave(`incidents`);
+  }
 
-    @SubscribeMessage('leaveCompetition')
-    @UseGuards(AdminGuard)
-    async handleLeaveCompetition(@ConnectedSocket() socket: Socket) {
-        socket.leave(`competition`);
-    }
+  @SubscribeMessage('newIncident')
+  @UseGuards(AdminGuard)
+  handleNewIncident(
+    deviceName: string,
+    competitorName: string,
+    attemptId: string,
+  ) {
+    this.logger.log(
+      `New incident on station ${deviceName} - ${competitorName}`,
+    );
+    this.server.to(`incidents`).emit('newIncident', {
+      id: attemptId,
+      deviceName,
+      competitorName,
+    });
+  }
 
-
-
-    /* ====================== */
-    /* ===== Attendance ===== */
-    /* ====================== */
-    @SubscribeMessage('joinAttendance')
-    @UseGuards(AdminGuard)
-    async handleJoinAttendance(
-        @ConnectedSocket() socket: Socket,
-        @MessageBody('groupId') groupId: string,
-    ) {
-        socket.join(`attendance-${groupId}`);
-    }
-
-    @SubscribeMessage('leaveAttendance')
-    @UseGuards(AdminGuard)
-    async handleLeaveAttentance(
-        @ConnectedSocket() socket: Socket,
-        @MessageBody('groupId') groupId: string,
-    ) {
-        socket.leave(`attendance-${groupId}`);
-    }
-
-    @UseGuards(AdminGuard)
-    handleNewAttendance(groupId: string, competitorId: string) {
-        this.server.to(`attendance-${groupId}`).emit('newAttendance', {
-            competitorId,
-        });
-    }
-
-
-
-    /* ====================== */
-    /* ====== Incidents ===== */
-    /* ====================== */
-    @SubscribeMessage('joinIncidents')
-    @UseGuards(AdminGuard)
-    async handleJoinIncidents(@ConnectedSocket() socket: Socket) {
-        socket.join(`incidents`);
-    }
-
-    @SubscribeMessage('leaveIncidents')
-    @UseGuards(AdminGuard)
-    async handleLeaveIncidents(@ConnectedSocket() socket: Socket) {
-        socket.leave(`incidents`);
-    }
-
-    @SubscribeMessage('newIncident')
-    @UseGuards(AdminGuard)
-    handleNewIncident(
-        deviceName: string,
-        competitorName: string,
-        attemptId: string,
-    ) {
-        this.logger.log(
-            `New incident on station ${deviceName} - ${competitorName}`,
-        );
-        this.server.to(`incidents`).emit('newIncident', {
-            id: attemptId,
-            deviceName,
-            competitorName,
-        });
-    }
-
-    @SubscribeMessage('attemptUpdated')
-    @UseGuards(AdminGuard)
-    handleAttemptUpdated() {
-        this.server.to(`incidents`).emit('attemptUpdated');
-    }
+  @SubscribeMessage('attemptUpdated')
+  @UseGuards(AdminGuard)
+  handleAttemptUpdated() {
+    this.server.to(`incidents`).emit('attemptUpdated');
+  }
 }

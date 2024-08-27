@@ -6,9 +6,13 @@ import { DeviceService } from './device.service';
 import { AppModule } from 'src/app.module';
 
 @Module({
-    providers: [DeviceService],
-    controllers: [DeviceController],
-    exports: [DeviceService],
-    imports: [AuthModule, forwardRef(() => SocketModule), forwardRef(() => AppModule)],
+  providers: [DeviceService],
+  controllers: [DeviceController],
+  exports: [DeviceService],
+  imports: [
+    AuthModule,
+    forwardRef(() => SocketModule),
+    forwardRef(() => AppModule),
+  ],
 })
-export class DeviceModule { }
+export class DeviceModule {}

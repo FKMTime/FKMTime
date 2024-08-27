@@ -703,11 +703,7 @@ export class ResultService {
     locale: string,
     attemptId: string,
   ) {
-    this.appGateway.handleNewIncident(
-      deviceName,
-      competitorName,
-      attemptId,
-    );
+    this.appGateway.handleNewIncident(deviceName, competitorName, attemptId);
     return {
       message: getTranslation('delegateWasNotified', locale),
       status: 200,

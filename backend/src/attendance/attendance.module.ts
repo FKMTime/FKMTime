@@ -5,9 +5,9 @@ import { AuthModule } from '../auth/auth.module';
 import { AppModule } from 'src/app.module';
 
 @Module({
-    providers: [AttendanceService],
-    controllers: [AttendanceController],
-    imports: [AuthModule, forwardRef(() => AppModule)],
-    exports: [AttendanceService],
+  providers: [AttendanceService],
+  controllers: [AttendanceController],
+  imports: [AuthModule, forwardRef(() => AppModule)],
+  exports: [AttendanceService],
 })
-export class AttendanceModule { }
+export class AttendanceModule {}
