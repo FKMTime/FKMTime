@@ -2,16 +2,16 @@ import { forwardRef, HttpException, Inject, Injectable } from '@nestjs/common';
 import { DeviceType } from '@prisma/client';
 import { DbService } from '../db/db.service';
 import { SocketController } from '../socket/socket.controller';
-import { DeviceGateway } from './device.gateway';
 import { DeviceDto } from './dto/device.dto';
 import { RequestToConnectDto } from './dto/requestToConnect.dto';
 import { UpdateBatteryPercentageDto } from './dto/updateBatteryPercentage.dto';
+import { AppGateway } from 'src/app.gateway';
 
 @Injectable()
 export class DeviceService {
   constructor(
     private readonly prisma: DbService,
-    private readonly deviceGateway: DeviceGateway,
+    private readonly appGateway: AppGateway,
     @Inject(forwardRef(() => SocketController))
     private readonly socketController: SocketController,
   ) {}
@@ -61,7 +61,7 @@ export class DeviceService {
         },
       },
     });
-    this.deviceGateway.handleAddDeviceToDb(data.espId);
+    this.appGateway.handleAddDeviceToDb(data.espId);
     await this.socketController.sendServerStatus();
     return {
       message: 'Device created',
@@ -93,7 +93,7 @@ export class DeviceService {
         error: true,
       };
     }
-    this.deviceGateway.handleDeviceRequest(data);
+    this.appGateway.handleDeviceRequest(data);
     return {
       message: 'Request sent',
       status: 200,
@@ -116,7 +116,7 @@ export class DeviceService {
       },
     });
     await this.socketController.sendServerStatus();
-    this.deviceGateway.handleDeviceUpdated();
+    this.appGateway.handleDeviceUpdated();
     return {
       message: 'Device updated',
     };
@@ -137,7 +137,7 @@ export class DeviceService {
         error: true,
       };
     }
-    this.deviceGateway.handleDeviceUpdated();
+    this.appGateway.handleDeviceUpdated();
     return {
       message: 'Battery percentage updated',
       status: 200,
@@ -149,7 +149,7 @@ export class DeviceService {
     await this.prisma.device.delete({
       where: { id },
     });
-    this.deviceGateway.handleDeviceUpdated();
+    this.appGateway.handleDeviceUpdated();
     await this.socketController.sendServerStatus();
     return {
       message: 'Device deleted',

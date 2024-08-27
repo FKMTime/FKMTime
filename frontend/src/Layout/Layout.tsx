@@ -1,19 +1,14 @@
 import { Box } from "@chakra-ui/react";
 import { useAtom } from "jotai";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useContext, useEffect } from "react";
 import { Outlet, useNavigate } from "react-router-dom";
-import io from "socket.io-client";
 
 import { competitionAtom } from "@/logic/atoms";
 import { getToken, getUserInfo, isUserLoggedIn } from "@/logic/auth";
 import { getCompetitionInfo } from "@/logic/competition";
 import { getEvents } from "@/logic/events";
-import {
-    COMPETITION_WEBSOCKET_URL,
-    INCIDENTS_WEBSOCKET_URL,
-    WEBSOCKET_PATH,
-} from "@/logic/request";
 import { isMobile, isNotificationsSupported } from "@/logic/utils";
+import { socket, SocketContext } from "@/socket";
 
 import Sidebar from "./Sidebar";
 
@@ -21,26 +16,11 @@ const Layout = () => {
     const userInfo = getUserInfo();
     const navigate = useNavigate();
     const [competition, setCompetition] = useAtom(competitionAtom);
-    const [incidentsSocket] = useState(
-        io(INCIDENTS_WEBSOCKET_URL, {
-            transports: ["websocket"],
-            path: WEBSOCKET_PATH,
-            closeOnBeforeunload: true,
-            auth: {
-                token: getToken(),
-            },
-        })
-    );
-    const [competitionSocket] = useState(
-        io(COMPETITION_WEBSOCKET_URL, {
-            transports: ["websocket"],
-            path: WEBSOCKET_PATH,
-            closeOnBeforeunload: true,
-            auth: {
-                token: getToken(),
-            },
-        })
-    );
+
+    const [isConnected, setConnected] = useContext(SocketContext) as [
+        number,
+        React.Dispatch<React.SetStateAction<number>>,
+    ];
 
     useEffect(() => {
         if (!userInfo) return;
@@ -49,10 +29,10 @@ const Layout = () => {
                 navigator.serviceWorker.register("sw.js");
             }
             Notification.requestPermission();
-            incidentsSocket.emit("join");
-            competitionSocket.emit("join");
 
-            incidentsSocket.on("newIncident", (data) => {
+            socket.emit("joinIncidents");
+            socket.emit("joinCompetition");
+            socket.on("newIncident", (data) => {
                 Notification.requestPermission().then((permission) => {
                     if (permission === "granted") {
                         if (isMobile()) {
@@ -95,7 +75,7 @@ const Layout = () => {
                 });
             });
 
-            competitionSocket.on("groupShouldBeChanged", (data) => {
+            socket.on("groupShouldBeChanged", (data) => {
                 Notification.requestPermission().then((permission) => {
                     if (permission === "granted") {
                         if (isMobile()) {
@@ -131,20 +111,30 @@ const Layout = () => {
             });
 
             return () => {
-                incidentsSocket.emit("leave");
-                competitionSocket.emit("leave");
+                socket.emit("leaveIncidents");
+                socket.emit("leaveCompetition");
             };
         }
-    }, [competitionSocket, incidentsSocket, navigate, userInfo]);
+    }, [navigate, userInfo, isConnected]);
 
     useEffect(() => {
         isUserLoggedIn().then((isLoggedIn) => {
-            if (!isLoggedIn) {
+            if (isLoggedIn) {
+                socket.auth = { token: getToken() };
+                socket.connect();
+
+                socket.on("connect", () => {
+                    setConnected(isConnected + 1);
+                });
+                socket.on("disconnect", () => {
+                    //setConnected(false);
+                });
+            } else {
                 navigate("/auth/login");
                 window.location.reload();
             }
         });
-    }, [navigate]);
+    }, [navigate, isConnected, setConnected]);
 
     const fetchCompetition = useCallback(async () => {
         const response = await getCompetitionInfo();

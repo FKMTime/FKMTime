@@ -16,8 +16,10 @@ import { HealthModule } from './health/health.module';
 import { SocketModule } from './socket/socket.module';
 import { EventsModule } from './events/events.module';
 import { ContestsModule } from './contests/contests.module';
+import { AppGateway } from './app.gateway';
 
 @Module({
+  providers: [AppGateway],
   imports: [
     DbModule,
     ScheduleModule.forRoot(),
@@ -36,6 +38,7 @@ import { ContestsModule } from './contests/contests.module';
     EventsModule,
     ContestsModule,
   ],
+  exports: [AppGateway],
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {

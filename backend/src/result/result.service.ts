@@ -15,7 +15,6 @@ import {
 import { Event, Person, Round } from '@wca/helpers';
 import { DbService } from 'src/db/db.service';
 import { getTranslation, isLocaleAvailable } from 'src/translations';
-import { IncidentsGateway } from '../attempt/incidents.gateway';
 import { AttendanceService } from '../attendance/attendance.service';
 import { DeviceService } from '../device/device.service';
 import { PersonService } from '../person/person.service';
@@ -29,16 +28,15 @@ import {
   getSortedStandardAttempts,
   isCompetitorSignedInForEvent,
 } from './helpers';
-import { ResultGateway } from './result.gateway';
 import { isUnofficialEvent } from 'src/events';
 import { ContestsService } from 'src/contests/contests.service';
+import { AppGateway } from 'src/app.gateway';
 
 @Injectable()
 export class ResultService {
   constructor(
     private readonly prisma: DbService,
-    private readonly incidentsGateway: IncidentsGateway,
-    private readonly resultGateway: ResultGateway,
+    private readonly appGateway: AppGateway,
     private readonly attendanceService: AttendanceService,
     private readonly wcaService: WcaService,
     private readonly contestsService: ContestsService,
@@ -607,7 +605,7 @@ export class ResultService {
         }
       }
     }
-    this.resultGateway.handleResultEntered(result.roundId);
+    this.appGateway.handleResultEntered(result.roundId);
     return {
       message: finalData.limitPassed
         ? getTranslation('attemptEntered', locale)
@@ -705,11 +703,7 @@ export class ResultService {
     locale: string,
     attemptId: string,
   ) {
-    this.incidentsGateway.handleNewIncident(
-      deviceName,
-      competitorName,
-      attemptId,
-    );
+    this.appGateway.handleNewIncident(deviceName, competitorName, attemptId);
     return {
       message: getTranslation('delegateWasNotified', locale),
       status: 200,

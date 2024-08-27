@@ -3,15 +3,15 @@ import { ResultService } from './result.service';
 import { ResultController } from './result.controller';
 import { AuthModule } from '../auth/auth.module';
 import { AttemptModule } from '../attempt/attempt.module';
-import { ResultGateway } from './result.gateway';
 import { AttendanceModule } from '../attendance/attendance.module';
 import { WcaModule } from '../wca/wca.module';
 import { DeviceModule } from '../device/device.module';
 import { PersonModule } from '../person/person.module';
 import { ContestsModule } from 'src/contests/contests.module';
+import { AppModule } from 'src/app.module';
 
 @Module({
-  providers: [ResultService, ResultGateway],
+  providers: [ResultService],
   controllers: [ResultController],
   imports: [
     AuthModule,
@@ -21,6 +21,7 @@ import { ContestsModule } from 'src/contests/contests.module';
     ContestsModule,
     DeviceModule,
     PersonModule,
+    forwardRef(() => AppModule),
   ],
   exports: [ResultService],
 })

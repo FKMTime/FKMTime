@@ -17,17 +17,17 @@ import {
   getGroupInfoByActivityId,
   wcifRoleToAttendanceRole,
 } from '../wcif-helpers';
-import { CompetitionGateway } from './competition.gateway';
 import { UpdateCompetitionDto } from './dto/updateCompetition.dto';
 import { UpdateRoomsDto } from './dto/updateCurrentRound.dto';
 import { UpdateDevicesSettingsDto } from './dto/updateDevicesSettings.dto';
 import { ResultService } from 'src/result/result.service';
+import { AppGateway } from 'src/app.gateway';
 
 @Injectable()
 export class CompetitionService {
   constructor(
     private readonly prisma: DbService,
-    private readonly competitionGateway: CompetitionGateway,
+    private readonly appGateway: AppGateway,
     private readonly resultService: ResultService,
     private readonly wcaService: WcaService,
     @Inject(forwardRef(() => SocketController))
@@ -556,7 +556,7 @@ export class CompetitionService {
               currentGroupIdInSchedule !== room.currentGroupId &&
               currentGroupIdInSchedule !== ''
             ) {
-              this.competitionGateway.server
+              this.appGateway.server
                 .to(`competition`)
                 .emit('groupShouldBeChanged', {
                   message: `Group in room ${room.name} should be changed`,

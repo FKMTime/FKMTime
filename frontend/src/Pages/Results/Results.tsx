@@ -1,17 +1,22 @@
 import { Box, Button, Heading, Input, Text, useToast } from "@chakra-ui/react";
 import { useConfirm } from "chakra-ui-confirm";
 import { useAtom } from "jotai";
-import { ChangeEvent, useCallback, useEffect, useMemo, useState } from "react";
+import {
+    ChangeEvent,
+    useCallback,
+    useContext,
+    useEffect,
+    useMemo,
+    useState,
+} from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import io from "socket.io-client";
 
 import LoadingPage from "@/Components/LoadingPage";
 import { activityCodeToName } from "@/logic/activities";
 import { competitionAtom } from "@/logic/atoms";
-import { getToken, isAdmin } from "@/logic/auth";
+import { isAdmin } from "@/logic/auth";
 import { getCompetitionInfo } from "@/logic/competition";
 import { Result, Room } from "@/logic/interfaces";
-import { RESULTS_WEBSOCKET_URL, WEBSOCKET_PATH } from "@/logic/request";
 import { resultToString } from "@/logic/resultFormatters";
 import { getResultsByRoundId, reSubmitRoundToWcaLive } from "@/logic/results";
 import { getAllRooms } from "@/logic/rooms";
@@ -22,6 +27,7 @@ import {
     getNumberOfAttemptsForRound,
     getSubmissionPlatformName,
 } from "@/logic/utils";
+import { socket, SocketContext } from "@/socket";
 
 import CreateAttemptModal from "./Components/CreateAttemptModal";
 import EventAndRoundSelector from "./Components/EventAndRoundSelector";
@@ -38,16 +44,6 @@ const Results = () => {
         roundId: id || "",
     };
     const toast = useToast();
-    const [socket] = useState(
-        io(RESULTS_WEBSOCKET_URL, {
-            transports: ["websocket"],
-            path: WEBSOCKET_PATH,
-            closeOnBeforeunload: true,
-            auth: {
-                token: getToken(),
-            },
-        })
-    );
 
     const [competition, setCompetition] = useAtom(competitionAtom);
     const [results, setResults] = useState<Result[]>([]);
@@ -160,6 +156,10 @@ const Results = () => {
         }
     }, [competition, fetchCompetition]);
 
+    const [isConnected] = useContext(SocketContext) as [
+        number,
+        React.Dispatch<React.SetStateAction<number>>,
+    ];
     useEffect(() => {
         if (filters.roundId) {
             if (!isAdmin()) {
@@ -172,16 +172,15 @@ const Results = () => {
             }
         }
 
-        socket.emit("join", { roundId: filters.roundId });
-
+        socket.emit("joinResults", { roundId: filters.roundId });
         socket.on("resultEntered", () => {
             fetchData(filters.roundId);
         });
 
         return () => {
-            socket.emit("leave", { roundId: filters.roundId });
+            socket.emit("leaveResults", { roundId: filters.roundId });
         };
-    }, [currentRounds, fetchData, filters.roundId, navigate, socket]);
+    }, [currentRounds, fetchData, filters.roundId, navigate, isConnected]);
 
     useEffect(() => {
         getAllRooms().then((rooms: Room[]) => {

@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 
 import Layout from "./Layout/Layout";
@@ -23,8 +24,11 @@ import Rooms from "./Pages/Rooms/Rooms";
 import Settings from "./Pages/Settings/Settings";
 import UnofficialEvents from "./Pages/UnofficialEvents/UnofficialEvents";
 import Users from "./Pages/Users/Users";
+import { SocketContext } from "./socket";
 
 const App = () => {
+    const [isConnected, setConnected] = useState(0);
+
     const router = createBrowserRouter([
         {
             path: "/auth/login",
@@ -134,7 +138,11 @@ const App = () => {
         },
     ]);
 
-    return <RouterProvider router={router} />;
+    return (
+        <SocketContext.Provider value={[isConnected, setConnected]}>
+            <RouterProvider router={router} />
+        </SocketContext.Provider>
+    );
 };
 
 export default App;
