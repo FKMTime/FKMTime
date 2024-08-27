@@ -56,7 +56,11 @@ const Devices = () => {
 
     useEffect(() => {
         fetchData();
+
         socket.emit("joinDevices");
+        socket.on("connect", () => {
+            socket.emit("joinDevices");
+        });
 
         socket.on("deviceUpdated", () => {
             fetchData();
@@ -67,6 +71,7 @@ const Devices = () => {
         });
 
         return () => {
+            if (socket.connected) socket.removeListener("connect");
             socket.emit("leaveDevices");
         };
     }, []);

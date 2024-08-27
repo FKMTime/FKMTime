@@ -24,9 +24,13 @@ const Layout = () => {
                 navigator.serviceWorker.register("sw.js");
             }
             Notification.requestPermission();
+
             socket.emit("joinIncidents");
             socket.emit("joinCompetition");
-
+            socket.on("connect", () => {
+                socket.emit("joinIncidents");
+                socket.emit("joinCompetition");
+            });
             socket.on("newIncident", (data) => {
                 Notification.requestPermission().then((permission) => {
                     if (permission === "granted") {
@@ -106,6 +110,7 @@ const Layout = () => {
             });
 
             return () => {
+                if (socket.connected) socket.removeListener("connect");
                 socket.emit("leaveIncidents");
                 socket.emit("leaveCompetition");
             };

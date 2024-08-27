@@ -7,4 +7,5 @@ export const socket = io(WEBSOCKET_URL, {
     path: WEBSOCKET_PATH,
     closeOnBeforeunload: true,
     autoConnect: false,
+    reconnectionDelayMax: 30000,
 });

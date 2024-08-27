@@ -80,12 +80,16 @@ const PublicView = () => {
         }
 
         socket.emit("joinResults", { roundId: filters.roundId });
+        socket.on("connect", () => {
+            socket.emit("joinResults", { roundId: filters.roundId });
+        });
 
         socket.on("resultEntered", () => {
             fetchData(filters.roundId);
         });
 
         return () => {
+            if (socket.connected) socket.removeAllListeners("connect");
             socket.emit("leaveResults", { roundId: filters.roundId });
         };
     }, [fetchData, filters.roundId, navigate]);

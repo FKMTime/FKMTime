@@ -153,13 +153,18 @@ const Attendance = () => {
             setSelectedEvent(selectedGroup.split("-")[0]);
             setSelectedRound(selectedGroup.split("-g")[0]);
             fetchAttendanceData(selectedGroup);
+
             socket.emit("joinAttendance", { groupId: selectedGroup });
+            socket.on("connect", () => {
+                socket.emit("joinAttendance", { groupId: selectedGroup });
+            });
 
             socket.on("newAttendance", () => {
                 fetchAttendanceData(selectedGroup);
             });
 
             return () => {
+                if (socket.connected) socket.removeAllListeners("connect");
                 socket.emit("leaveAttendance", { groupId: selectedGroup });
             };
         }

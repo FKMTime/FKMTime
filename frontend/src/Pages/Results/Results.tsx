@@ -162,12 +162,15 @@ const Results = () => {
         }
 
         socket.emit("joinResults", { roundId: filters.roundId });
-
+        socket.on("connect", () => {
+            socket.emit("joinResults", { roundId: filters.roundId });
+        });
         socket.on("resultEntered", () => {
             fetchData(filters.roundId);
         });
 
         return () => {
+            if (socket.connected) socket.removeListener("connect");
             socket.emit("leaveResults", { roundId: filters.roundId });
         };
     }, [currentRounds, fetchData, filters.roundId, navigate]);
