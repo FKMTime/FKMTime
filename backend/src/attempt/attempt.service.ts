@@ -70,7 +70,9 @@ export class AttemptService {
     });
     const groupId = isUnofficialEvent(data.roundId.split('-')[0])
       ? `${data.roundId}-g1`
-      : staffActivity.groupId;
+      : staffActivity
+        ? staffActivity.groupId
+        : `${data.roundId}-g1`;
 
     await this.attendanceService.markCompetitorAsPresent(
       result.person.id,
