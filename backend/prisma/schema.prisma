@@ -28,7 +28,7 @@ model Person {
   name          String
   wcaId         String?
   countryIso2   String?
-  gender        String
+  gender        String?
   canCompete    Boolean         @default(true)
   birthdate     DateTime?
   checkedInAt   DateTime?

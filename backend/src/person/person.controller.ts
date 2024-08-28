@@ -12,9 +12,9 @@ import {
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { AdminGuard } from '../auth/guards/admin.guard';
-import { AddStaffMemberDto } from './dto/addStaffMember.dto';
 import { UpdatePersonDto } from './dto/updatePerson.dto';
 import { PersonService } from './person.service';
+import { AddPersonDto } from './dto/addPerson.dto';
 
 @Controller('person')
 export class PersonController {
@@ -45,9 +45,9 @@ export class PersonController {
   }
 
   @UseGuards(AuthGuard('jwt'), AdminGuard)
-  @Post('staff')
-  async addStaffMember(@Body() data: AddStaffMemberDto) {
-    return await this.personService.addStaffMember(data);
+  @Post()
+  async addPerson(@Body() data: AddPersonDto) {
+    return await this.personService.addPerson(data);
   }
 
   @UseGuards(AuthGuard('jwt'))

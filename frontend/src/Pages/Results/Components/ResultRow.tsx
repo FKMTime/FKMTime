@@ -67,7 +67,9 @@ const ResultRow = ({ result, maxAttempts, fetchData }: ResultRowProps) => {
             <Tr key={result.id}>
                 <Td>
                     <Link to={`/results/${result.id}`}>
-                        {result.person.name} ({result.person.registrantId})
+                        {result.person.name}{" "}
+                        {result.person.registrantId &&
+                            `(${result.person.registrantId})`}
                     </Link>
                 </Td>
                 {!isMobileView() &&

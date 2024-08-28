@@ -242,3 +242,12 @@ export interface GroupedIncidents {
     category: string;
     incidents: Incident[];
 }
+
+export interface AddPerson {
+    name: string;
+    wcaId?: string;
+    countryIso2?: string;
+    cardId?: string;
+    canCompete: boolean;
+    gender: string;
+}

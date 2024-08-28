@@ -1,7 +1,7 @@
 import { DbService } from '../db/db.service';
 import { HttpException, Injectable } from '@nestjs/common';
 import { UpdatePersonDto } from './dto/updatePerson.dto';
-import { AddStaffMemberDto } from './dto/addStaffMember.dto';
+import { AddPersonDto } from './dto/addPerson.dto';
 import { convertToLatin, getTranslation } from '../translations';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 
@@ -315,12 +315,23 @@ export class PersonService {
     };
   }
 
-  async addStaffMember(data: AddStaffMemberDto) {
+  async addPerson(data: AddPersonDto) {
+    if (data.canCompete && !data.countryIso2) {
+      throw new HttpException(
+        {
+          message: 'Country is required',
+        },
+        400,
+      );
+    }
     return this.prisma.person.create({
       data: {
         name: data.name,
+        wcaId: data.wcaId,
+        countryIso2: data.countryIso2,
+        cardId: data.cardId || null,
+        canCompete: data.canCompete,
         gender: data.gender,
-        canCompete: false,
       },
     });
   }

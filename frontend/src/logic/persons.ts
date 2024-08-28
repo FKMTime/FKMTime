@@ -1,4 +1,4 @@
-import { Person } from "./interfaces";
+import { AddPerson, Person } from "./interfaces";
 import { backendRequest } from "./request";
 
 export const getPersons = async (
@@ -45,11 +45,8 @@ export const getPersonInfoByCardIdWithSensitiveData = async (
     };
 };
 
-export const addStaffMember = async (name: string, gender: string) => {
-    const response = await backendRequest("person/staff", "POST", true, {
-        name,
-        gender,
-    });
+export const addPerson = async (data: AddPerson) => {
+    const response = await backendRequest("person", "POST", true, data);
     return response.status;
 };
 export const checkIn = async (id: string, cardId: string) => {

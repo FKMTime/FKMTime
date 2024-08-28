@@ -5,6 +5,7 @@ export const isCompetitorSignedInForEvent = (
   competitorWcif: Person,
   eventId: string,
 ) => {
+  if (!competitorWcif || !competitorWcif.registration) return false;
   return competitorWcif.registration.eventIds.includes(eventId as EventId);
 };
 

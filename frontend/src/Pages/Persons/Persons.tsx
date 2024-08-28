@@ -21,7 +21,7 @@ import { Person } from "@/logic/interfaces";
 import { getPersons } from "@/logic/persons";
 import { calculateTotalPages } from "@/logic/utils";
 
-import AddStaffMemberModal from "./Components/AddStaffMemberModal";
+import AddPersonModal from "./Components/AddPersonModal";
 import PersonsTable from "./Components/PersonsTable";
 
 const Persons = () => {
@@ -38,7 +38,7 @@ const Persons = () => {
         useState<number>(0);
     const [onlyNewcomers, setOnlyNewcomers] = useState<boolean>(false);
     const [onlyNotCheckedIn, setOnlyNotCheckedIn] = useState<boolean>(false);
-    const [isOpenAddStaffMemberModal, setIsOpenAddStaffMemberModal] =
+    const [isOpenAddPersonModal, setIsOpenAddPersonModal] =
         useState<boolean>(false);
 
     const fetchData = useCallback(
@@ -146,6 +146,17 @@ const Persons = () => {
         );
     };
 
+    const handleCloseAddPersonModal = () => {
+        fetchData(
+            page,
+            pageSize,
+            search,
+            searchedId ? parseInt(searchedId) : undefined,
+            searchedCardId
+        );
+        setIsOpenAddPersonModal(false);
+    };
+
     useEffect(() => {
         fetchData();
     }, [fetchData]);
@@ -216,16 +227,12 @@ const Persons = () => {
                         <Box display={{ base: "none", md: "flex" }} gap="2">
                             <PlusButton
                                 aria-label="Add"
-                                onClick={() =>
-                                    setIsOpenAddStaffMemberModal(true)
-                                }
+                                onClick={() => setIsOpenAddPersonModal(true)}
                             />
                         </Box>
                         <Box display={{ base: "flex", md: "none" }}>
                             <Button
-                                onClick={() =>
-                                    setIsOpenAddStaffMemberModal(true)
-                                }
+                                onClick={() => setIsOpenAddPersonModal(true)}
                                 colorScheme="blue"
                                 width="100%"
                             >
@@ -267,10 +274,10 @@ const Persons = () => {
                 totalPages={totalPages}
                 pageSize={pageSize}
             />
-            {isOpenAddStaffMemberModal && (
-                <AddStaffMemberModal
-                    isOpen={isOpenAddStaffMemberModal}
-                    onClose={() => setIsOpenAddStaffMemberModal(false)}
+            {isOpenAddPersonModal && (
+                <AddPersonModal
+                    isOpen={isOpenAddPersonModal}
+                    onClose={handleCloseAddPersonModal}
                 />
             )}
         </Box>

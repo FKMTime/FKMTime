@@ -152,9 +152,11 @@ const SingleResult = () => {
         <Box display="flex" flexDirection="column" gap={3}>
             <Heading>Competitor</Heading>
             <Text fontSize="xl">Name: {result.person.name}</Text>
-            <Text fontSize="xl">
-                Registrant ID: {result.person.registrantId}
-            </Text>
+            {result.person.registrantId && (
+                <Text fontSize="xl">
+                    Registrant ID: {result.person.registrantId}
+                </Text>
+            )}
             <Text fontSize="xl">WCA ID: {result.person.wcaId}</Text>
             {result.person.countryIso2 && (
                 <Text fontSize="xl">
