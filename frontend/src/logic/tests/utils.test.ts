@@ -8,7 +8,6 @@ import {
     getNumberOfAttemptsForRound,
     getPersonFromWcif,
     getRoundInfoFromWcif,
-    msToString,
     prettyAvailableDeviceType,
     prettyDeviceType,
     prettyGender,
@@ -25,18 +24,6 @@ describe("calculateTotalPages", () => {
     });
     it("calculates the total number of pages with a remainder", () => {
         expect(calculateTotalPages(101, 10)).toEqual(11);
-    });
-});
-
-describe("msToString", () => {
-    it("converts milliseconds to a string", () => {
-        expect(msToString(1100)).toEqual("1.10");
-    });
-    it("converts milliseconds to a string with seconds", () => {
-        expect(msToString(10000)).toEqual("10.00");
-    });
-    it("converts milliseconds to a string with minutes and seconds", () => {
-        expect(msToString(60000)).toEqual("1:00.00");
     });
 });
 

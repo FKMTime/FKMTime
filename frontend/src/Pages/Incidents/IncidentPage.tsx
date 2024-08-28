@@ -28,8 +28,8 @@ import {
 } from "@/logic/interfaces";
 import { getAllPersons, getPersonNameAndRegistrantId } from "@/logic/persons";
 import { getQuickActions } from "@/logic/quickActions.ts";
+import { milisecondsToClockFormat } from "@/logic/resultFormatters";
 import { checkTimeLimit } from "@/logic/results";
-import { msToString } from "@/logic/utils";
 
 const IncidentPage = () => {
     const navigate = useNavigate();
@@ -237,7 +237,8 @@ const IncidentPage = () => {
             </FormControl>
             {editedIncident.inspectionTime ? (
                 <Text>
-                    Inspection time: {msToString(editedIncident.inspectionTime)}
+                    Inspection time:{" "}
+                    {milisecondsToClockFormat(editedIncident.inspectionTime)}
                 </Text>
             ) : null}
             <FormControl>
