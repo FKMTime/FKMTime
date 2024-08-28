@@ -1,7 +1,7 @@
 import { activityCodeToName, Competition } from "@wca/helpers";
 
 import { DNF_VALUE } from "./constants";
-import { isUnofficialEvent } from "./events";
+import { getEventShortName, isUnofficialEvent } from "./events";
 import {
     Attempt,
     AttemptStatus,
@@ -14,6 +14,11 @@ import regions from "./regions";
 
 export const calculateTotalPages = (count: number, pageSize: number) => {
     return Math.ceil(count / pageSize);
+};
+
+export const shortRoundName = (roundId: string) => {
+    const [eventId, roundNumber] = roundId.split("-r");
+    return `${getEventShortName(eventId)} R${roundNumber}`;
 };
 
 export const getFormattedRealActivityTime = (

@@ -35,6 +35,16 @@ export const getEventName = (eventId: string) => {
     return "";
 };
 
+export const getEventShortName = (eventId: string) => {
+    const eventsData = localStorage.getItem(EVENTS_KEY);
+    if (eventsData) {
+        const events: Event[] = JSON.parse(eventsData);
+        const event = events.find((e) => e.id === eventId);
+        return event?.shortName || event?.name;
+    }
+    return "";
+};
+
 export const getEventIconClass = (eventId: string) => {
     const eventsData = localStorage.getItem(EVENTS_KEY);
     if (eventsData) {

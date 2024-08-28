@@ -1,13 +1,17 @@
-import { Flex, Heading, Input } from "@chakra-ui/react";
+import { Button, Flex, Heading, Input } from "@chakra-ui/react";
 import { useCallback, useEffect, useState } from "react";
 
 import { getResolvedIncidents } from "@/logic/attempt";
 import { Incident } from "@/logic/interfaces";
 import ResolvedIncidentsTable from "@/Pages/ResolvedIncidents/Components/ResolvedIncidentsTable";
 
+import SummaryModal from "./Components/SummaryModal";
+
 const ResolvedIncidents = () => {
     const [search, setSearch] = useState<string>("");
     const [incidents, setIncidents] = useState<Incident[]>([]);
+    const [isOpenSummaryModal, setIsOpenSummaryModal] =
+        useState<boolean>(false);
 
     const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
         setSearch(e.target.value);
@@ -26,6 +30,13 @@ const ResolvedIncidents = () => {
     return (
         <Flex flexDirection="column" gap="5">
             <Heading size="lg">Resolved incidents</Heading>
+            <Button
+                colorScheme="yellow"
+                width={{ base: "100%", md: "fit-content" }}
+                onClick={() => setIsOpenSummaryModal(true)}
+            >
+                Summary
+            </Button>
             <Input
                 placeholder="Search"
                 _placeholder={{ color: "white" }}
@@ -38,6 +49,11 @@ const ResolvedIncidents = () => {
             ) : (
                 <Heading size="md">No resolved incidents found</Heading>
             )}
+            <SummaryModal
+                incidents={incidents}
+                isOpen={isOpenSummaryModal}
+                onClose={() => setIsOpenSummaryModal(false)}
+            />
         </Flex>
     );
 };

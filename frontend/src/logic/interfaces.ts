@@ -224,6 +224,7 @@ export interface WCACompetition {
 export interface Event {
     id: string;
     name: string;
+    shortName?: string;
     icon: string;
     useInspection?: boolean;
     isUnofficial?: boolean;
@@ -235,4 +236,9 @@ export interface UnofficialEvent {
     wcif: WCIFEvent;
     createdAt: Date;
     updatedAt: Date;
+}
+
+export interface GroupedIncidents {
+    category: string;
+    incidents: Incident[];
 }
