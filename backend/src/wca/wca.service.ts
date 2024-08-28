@@ -133,7 +133,8 @@ export class WcaService {
       if (
         attempt.replacedBy === null &&
         attempt.type === AttemptType.STANDARD_ATTEMPT &&
-        attempt.status === AttemptStatus.STANDARD &&
+        (attempt.status === AttemptStatus.STANDARD ||
+          attempt.status === AttemptStatus.RESOLVED) &&
         !attemptsToReturn.some((a) => a.id === attempt.id)
       ) {
         attemptsToReturn.push({
