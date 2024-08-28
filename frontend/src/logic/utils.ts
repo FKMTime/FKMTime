@@ -16,13 +16,6 @@ export const calculateTotalPages = (count: number, pageSize: number) => {
     return Math.ceil(count / pageSize);
 };
 
-export const msToString = (ms: number) => {
-    return new Date(ms)
-        .toISOString()
-        .substr(11, 11)
-        .replace(/^[0:]*(?!\.)/g, "");
-};
-
 export const getFormattedRealActivityTime = (
     startTime?: Date,
     endTime?: Date

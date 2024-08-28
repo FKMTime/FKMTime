@@ -10,6 +10,9 @@ export class EnterAttemptDto {
   @IsInt()
   value: number;
 
+  @IsInt()
+  valueMs: number;
+
   //-1 - DNF
   //2, 4, 6, 8, 10, 12, 14, 16 - penalties
   //0 - no penalty

@@ -14,7 +14,7 @@ services:
       - DATABASE_URL=postgres://root:password@127.0.0.1:5433/fkm_time
       - WCA_LIVE_API_ORIGIN=http://0.0.0.0:4000/api
       - CUBING_CONTESTS_API_ORIGIN=http://0.0.0.0:5001/api
-      - WCA_ORIGIN=https://staging.worldcubeassociation.org
+      - WCA_ORIGIN=http://0.0.0.0:3005
       - WCA_CLIENT_ID=example-application-id
       - WCA_CLIENT_SECRET=example-secret
       - SOCKET_PATH=/app/sock/socket.sock
@@ -33,7 +33,7 @@ services:
       dockerfile: Dockerfile.dev
     container_name: fkmtime-dev-frontend
     environment:
-      - VITE_WCA_ORIGIN=https://staging.worldcubeassociation.org
+      - VITE_WCA_ORIGIN=http://0.0.0.0:3005
     volumes:
       - ./frontend/src:/app/src
     ports:
@@ -92,12 +92,13 @@ services:
       - /run/dbus:/run/dbus:ro
       - sock:/app/sock
       - /tmp/fkm-build:/app/firmware
+      - /tmp/fkm-logs:/logs
     environment:
       - PORT=8080
       - FIRMWARE_DIR=/app/firmware
       - RUST_LOG=none,backend=debug
       - SOCKET_PATH=/app/sock/socket.sock
-      - DEV=1
+      - DEVICE_LOGS=/logs
     restart: unless-stopped
     depends_on:
       backend:

@@ -533,6 +533,7 @@ export class ResultService {
           solvedAt: data.solvedAt,
           penalty: finalData.penalty,
           value: finalData.value,
+          originalTime: finalData.valueMs,
           inspectionTime: finalData.inspectionTime,
           judge: judge
             ? {
@@ -632,6 +633,7 @@ export class ResultService {
         type: AttemptType.EXTRA_ATTEMPT,
         penalty: data.penalty,
         value: data.value,
+        originalTime: data.valueMs,
         judge: data.judge
           ? {
               connect: {

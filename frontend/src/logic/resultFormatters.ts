@@ -23,6 +23,19 @@ export const centisecondsToClockFormat = (centiseconds: number) => {
         .replace(/^[0:]*(?!\.)/g, "");
 };
 
+export const milisecondsToClockFormat = (ms: number) => {
+    const seconds = ms / 1000;
+    if (seconds > 60) {
+        const minutes = Math.floor(seconds / 60);
+        const remainingSeconds = seconds % 60;
+        if (remainingSeconds < 10) {
+            return `${minutes}:0${remainingSeconds.toFixed(3)}`;
+        }
+        return `${minutes}:${remainingSeconds.toFixed(3)}`;
+    }
+    return seconds.toFixed(3);
+};
+
 export const toInt = (string: string) => {
     const number = parseInt(string, 10);
     if (Number.isNaN(number)) return null;

@@ -29,10 +29,10 @@ import {
     Result,
 } from "@/logic/interfaces";
 import { getAllPersons, getPersonNameAndRegistrantId } from "@/logic/persons";
+import { milisecondsToClockFormat } from "@/logic/resultFormatters";
 import { checkTimeLimit } from "@/logic/results";
 import {
     getSubmissionPlatformName,
-    msToString,
     prettyAttemptStatus,
     prettyAttemptType,
 } from "@/logic/utils";
@@ -148,7 +148,6 @@ const EditAttemptModal = ({
                         ))}
                     </Select>
                 </FormControl>
-
                 <FormControl isRequired>
                     <FormLabel>Attempt status</FormLabel>
                     <Select
@@ -212,7 +211,14 @@ const EditAttemptModal = ({
                 </FormControl>
                 {attempt.inspectionTime ? (
                     <Text>
-                        Inspection time: {msToString(attempt.inspectionTime)}
+                        Inspection time:{" "}
+                        {milisecondsToClockFormat(attempt.inspectionTime)}
+                    </Text>
+                ) : null}
+                {attempt.originalTime ? (
+                    <Text>
+                        Original time:{" "}
+                        {milisecondsToClockFormat(attempt.originalTime)}
                     </Text>
                 ) : null}
                 <PenaltySelect

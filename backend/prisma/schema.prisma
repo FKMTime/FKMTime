@@ -112,6 +112,7 @@ model Attempt {
   status         AttemptStatus @default(STANDARD)
   penalty        Int?
   value          Int
+  originalTime   Int?
   inspectionTime Int?
   judgeId        String?
   judge          Person?       @relation(fields: [judgeId], references: [id])
