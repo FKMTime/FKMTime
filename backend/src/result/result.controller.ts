@@ -38,6 +38,13 @@ export class ResultController {
     return await this.resultService.getResultById(id);
   }
 
+  @HttpCode(HttpStatus.OK)
+  @UseGuards(AuthGuard('jwt'), AdminGuard)
+  @Post(':id/assign-dns')
+  async assignDnsOnRemainingAttempts(@Param('id') id: string) {
+    return await this.resultService.assignDnsOnRemainingAttempts(id);
+  }
+
   @HttpCode(HttpStatus.NO_CONTENT)
   @UseGuards(AuthGuard('jwt'), AdminGuard)
   @Delete(':id')

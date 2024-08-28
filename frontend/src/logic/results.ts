@@ -111,3 +111,12 @@ export const restartGroup = async (id: string) => {
     );
     return response.status;
 };
+
+export const assignDnsOnRemainingSolves = async (id: string) => {
+    const response = await backendRequest(
+        `result/${id}/assign-dns`,
+        "POST",
+        true
+    );
+    return response.status;
+};

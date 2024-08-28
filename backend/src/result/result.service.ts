@@ -699,6 +699,57 @@ export class ResultService {
     await this.enterRoundToWcaLiveOrCubingContests(roundId);
   }
 
+  async assignDnsOnRemainingAttempts(resultId: string) {
+    const result = await this.getResultById(resultId);
+    const attempts = await this.prisma.attempt.findMany({
+      where: {
+        resultId: result.id,
+      },
+    });
+    const wcif = await this.prisma.competition.findFirst().then((c) => {
+      return JSON.parse(JSON.stringify(c.wcif));
+    });
+    const eventInfo = wcif.events.find(
+      (event: Event) => event.id === result.eventId,
+    );
+    const roundInfo = eventInfo.rounds.find(
+      (round: Round) => round.id === result.roundId,
+    );
+    const maxAttempts = roundInfo.format === 'a' ? 5 : 3;
+    const sortedAttempts = getSortedStandardAttempts(attempts);
+    const lastAttempt = sortedAttempts[sortedAttempts.length - 1];
+    if (lastAttempt.attemptNumber === maxAttempts) {
+      return {
+        message: 'No attempts left',
+        status: 400,
+        error: true,
+      };
+    }
+    for (let i = lastAttempt.attemptNumber + 1; i <= maxAttempts; i++) {
+      await this.prisma.attempt.create({
+        data: {
+          attemptNumber: i,
+          status: AttemptStatus.STANDARD,
+          type: AttemptType.STANDARD_ATTEMPT,
+          penalty: -2,
+          solvedAt: new Date(),
+          value: 0,
+          result: {
+            connect: {
+              id: result.id,
+            },
+          },
+        },
+      });
+    }
+    this.appGateway.handleResultEntered(result.roundId);
+    return {
+      message: 'DNS added',
+      status: 200,
+      error: false,
+    };
+  }
+
   private notifyDelegate(
     deviceName: string,
     competitorName: string,

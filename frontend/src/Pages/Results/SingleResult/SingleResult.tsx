@@ -7,6 +7,7 @@ import {
     Text,
     useToast,
 } from "@chakra-ui/react";
+import { useConfirm } from "chakra-ui-confirm";
 import { useAtom } from "jotai";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
@@ -20,7 +21,11 @@ import { getCompetitionInfo } from "@/logic/competition";
 import { isUnofficialEvent } from "@/logic/events";
 import { Result } from "@/logic/interfaces";
 import { resultToString } from "@/logic/resultFormatters";
-import { getResultById, reSubmitScorecardToWcaLive } from "@/logic/results";
+import {
+    assignDnsOnRemainingSolves,
+    getResultById,
+    reSubmitScorecardToWcaLive,
+} from "@/logic/results";
 import {
     cumulativeRoundsToString,
     getCutoffByRoundId,
@@ -38,6 +43,7 @@ import SwapAttemptsModal from "./Components/SwapAttemptsModal";
 
 const SingleResult = () => {
     const { id } = useParams<{ id: string }>();
+    const confirm = useConfirm();
     const navigate = useNavigate();
     const toast = useToast();
     const [competition, setCompetition] = useAtom(competitionAtom);
@@ -142,6 +148,39 @@ const SingleResult = () => {
         setIsOpenSwapAttemptsModal(false);
     };
 
+    const handleAssignDns = async () => {
+        if (!result) return;
+        confirm({
+            title: "Assign DNS",
+            description:
+                "Are you sure you want to assign DNS on remaining attempts?",
+        })
+            .then(async () => {
+                const status = await assignDnsOnRemainingSolves(result.id);
+                if (status === 200) {
+                    toast({
+                        title: "Success",
+                        description: "DNS assigned",
+                        status: "success",
+                    });
+                    fetchData();
+                } else {
+                    toast({
+                        title: "Error",
+                        description: "Something went wrong",
+                        status: "error",
+                    });
+                }
+            })
+            .catch(() => {
+                toast({
+                    title: "Cancelled",
+                    description: "Operation has been cancelled",
+                    status: "info",
+                });
+            });
+    };
+
     useEffect(() => {
         fetchData();
     }, [fetchData]);
@@ -180,6 +219,15 @@ const SingleResult = () => {
                 >
                     Resubmit scorecard to {submissionPlatformName}
                 </Button>
+                {standardAttempts.length < maxAttempts && (
+                    <Button
+                        colorScheme="green"
+                        width={{ base: "100%", md: "fit-content" }}
+                        onClick={handleAssignDns}
+                    >
+                        Assign DNS on remaing attempts
+                    </Button>
+                )}
                 {isDifferenceBetweenResults &&
                     !isUnofficialEvent(result.eventId) && (
                         <Alert status="error" color="black">
