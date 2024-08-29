@@ -162,7 +162,13 @@ const Layout = () => {
     return (
         <Box display="flex">
             <Sidebar user={userInfo} competition={competition} />
-            <Box width="100%" padding="5" color="white">
+            <Box
+                width="100%"
+                padding="5"
+                color="white"
+                height="100vh"
+                overflowY="auto"
+            >
                 <Outlet />
             </Box>
         </Box>

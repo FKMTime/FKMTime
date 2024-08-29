@@ -1,4 +1,4 @@
-import { Td, Tr, useToast } from "@chakra-ui/react";
+import { Badge, Td, Tr, useToast } from "@chakra-ui/react";
 import { useConfirm } from "chakra-ui-confirm";
 import { useState } from "react";
 import { MdNewLabel } from "react-icons/md";
@@ -113,6 +113,19 @@ const AttemptRow = ({
                         onClick={() => setIsOpenGiveExtraAttemptModal(true)}
                     />
                     <DeleteButton onClick={handleDelete} />
+                </Td>
+                <Td>
+                    {!attempt.sessionId && (
+                        <Badge colorScheme="orange" borderRadius="md" p="1">
+                            Entered manually
+                        </Badge>
+                    )}
+                    {attempt.inspectionTime &&
+                        attempt.inspectionTime > 15000 && (
+                            <Badge colorScheme="red" borderRadius="md" p="1">
+                                Inspection time exceeded
+                            </Badge>
+                        )}
                 </Td>
             </Tr>
             <EditAttemptModal

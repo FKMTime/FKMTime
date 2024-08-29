@@ -23,7 +23,7 @@ const PersonResultRow = ({ result }: PersonResultRowProps) => {
     return (
         <>
             <Tr key={result.id}>
-                <Td>{activityCodeToName(result.eventId)}</Td>
+                <Td>{activityCodeToName(result.roundId)}</Td>
                 <Td>
                     {calculatedAverage
                         ? resultToString(calculatedAverage)

@@ -18,7 +18,7 @@ const AttemptsTable = ({
     result,
 }: AttemptsTableProps) => {
     return (
-        <TableContainer>
+        <TableContainer overflowX="auto">
             <Table variant="simple">
                 <Thead>
                     <Tr bg="gray.400">
@@ -37,6 +37,7 @@ const AttemptsTable = ({
                         <Th>Solved at</Th>
                         <Th>Updated by</Th>
                         <Th>Actions</Th>
+                        <Th></Th>
                     </Tr>
                 </Thead>
                 <Tbody>
