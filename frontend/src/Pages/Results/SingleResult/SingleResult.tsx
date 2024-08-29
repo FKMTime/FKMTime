@@ -269,7 +269,7 @@ const SingleResult = () => {
                     onClick={() => setIsOpenCreateAttemptModal(true)}
                 />
             </Box>
-            <Box width="90%">
+            <Box>
                 <Tabs variant="enclosed">
                     <TabList>
                         <Tab
@@ -322,13 +322,6 @@ const SingleResult = () => {
                             gap={3}
                             ml="-4"
                         >
-                            <Button
-                                colorScheme="yellow"
-                                onClick={() => setIsOpenSwapAttemptsModal(true)}
-                                width={{ base: "100%", md: "20%" }}
-                            >
-                                Swap attempts
-                            </Button>
                             {standardAttempts.length === 0 ? (
                                 <Text>No attempts</Text>
                             ) : (
@@ -339,6 +332,13 @@ const SingleResult = () => {
                                     result={result}
                                 />
                             )}
+                            <Button
+                                colorScheme="yellow"
+                                onClick={() => setIsOpenSwapAttemptsModal(true)}
+                                width={{ base: "100%", md: "20%" }}
+                            >
+                                Swap attempts
+                            </Button>
                         </TabPanel>
                         <TabPanel
                             display="flex"
