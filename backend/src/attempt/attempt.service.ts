@@ -42,11 +42,13 @@ export class AttemptService {
             id: data.deviceId,
           },
         },
-        judge: {
-          connect: {
-            id: data.judgeId,
-          },
-        },
+        judge: data.judgeId
+          ? {
+              connect: {
+                id: data.judgeId,
+              },
+            }
+          : undefined,
         replacedBy: data.replacedBy ? data.replacedBy : null,
         status: data.status,
         type: data.type,
