@@ -1,4 +1,12 @@
-import { Box, IconButton } from "@chakra-ui/react";
+import {
+    Box,
+    IconButton,
+    Tab,
+    TabList,
+    TabPanel,
+    TabPanels,
+    Tabs,
+} from "@chakra-ui/react";
 import { useContext, useEffect, useState } from "react";
 import { MdSettings } from "react-icons/md";
 
@@ -10,6 +18,7 @@ import AvailableDevices from "@/Pages/Devices/Components/AvailableDevices.tsx";
 import { socket, SocketContext } from "@/socket";
 
 import CreateDeviceModal from "./Components/CreateDeviceModal";
+import DeviceCard from "./Components/DeviceCard";
 import DevicesTable from "./Components/DevicesTable";
 import UpdateDevicesSettingsModal from "./Components/UpdateDevicesSettingsModal";
 
@@ -101,12 +110,53 @@ const Devices = () => {
                     onClick={() => setIsOpenUpdateDevicesSettingsModal(true)}
                 />
             </Box>
-            <DevicesTable devices={devices} fetchData={fetchData} />
-            <AvailableDevices
-                devices={availableDevices}
-                handleAddDeviceRequest={handleAddDeviceRequest}
-                handleRemoveDeviceRequest={handleRemoveDeviceRequest}
-            />
+            <Box display={{ base: "none", md: "block" }}>
+                <DevicesTable devices={devices} fetchData={fetchData} />
+            </Box>
+            <Box display={{ base: "block", md: "none" }}>
+                <Tabs isFitted>
+                    <TabList>
+                        <Tab
+                            _selected={{
+                                color: "white",
+                                bg: "blue.500",
+                            }}
+                        >
+                            All
+                        </Tab>
+                        <Tab _selected={{ color: "white", bg: "blue.500" }}>
+                            Available
+                        </Tab>
+                    </TabList>
+                    <TabPanels>
+                        <TabPanel display="flex" flexDirection="column" gap={3}>
+                            {devices.map((device) => (
+                                <DeviceCard
+                                    device={device}
+                                    key={device.espId}
+                                    fetchData={fetchData}
+                                />
+                            ))}
+                        </TabPanel>
+                        <TabPanel>
+                            <AvailableDevices
+                                devices={availableDevices}
+                                handleAddDeviceRequest={handleAddDeviceRequest}
+                                handleRemoveDeviceRequest={
+                                    handleRemoveDeviceRequest
+                                }
+                            />
+                        </TabPanel>
+                    </TabPanels>
+                </Tabs>
+            </Box>
+            <Box display={{ base: "none", md: "block" }}>
+                <AvailableDevices
+                    devices={availableDevices}
+                    handleAddDeviceRequest={handleAddDeviceRequest}
+                    handleRemoveDeviceRequest={handleRemoveDeviceRequest}
+                />
+            </Box>
             <CreateDeviceModal
                 isOpen={isOpenCreateDeviceModal}
                 onClose={handleCloseCreateDeviceModal}

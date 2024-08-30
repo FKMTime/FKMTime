@@ -1,8 +1,8 @@
-import { Box, Button, Flex, Heading, Text } from "@chakra-ui/react";
-import { MdDevices } from "react-icons/md";
+import { Box, Flex, Heading, Text } from "@chakra-ui/react";
 
 import { AvailableDevice } from "@/logic/interfaces";
-import { prettyAvailableDeviceType } from "@/logic/utils";
+
+import AvailableDeviceCard from "./AvailableDeviceCard";
 
 interface AvailableDevicesProps {
     devices: AvailableDevice[];
@@ -29,38 +29,12 @@ const AvailableDevices = ({
                 justifyContent={{ base: "center", md: "flex-start" }}
             >
                 {devices.map((device) => (
-                    <Box
+                    <AvailableDeviceCard
+                        device={device}
+                        handleAddDeviceRequest={handleAddDeviceRequest}
+                        handleRemoveDeviceRequest={handleRemoveDeviceRequest}
                         key={device.espId}
-                        bg="gray.900"
-                        p="5"
-                        rounded="md"
-                        color="white"
-                        display="flex"
-                        flexDirection="column"
-                        gap="3"
-                        alignItems="center"
-                        justifyContent="center"
-                    >
-                        <MdDevices size={48} />
-                        <Text>Device ID: {device.espId}</Text>
-                        <Text>
-                            Type: {prettyAvailableDeviceType(device.type)}
-                        </Text>
-                        <Button
-                            colorScheme="green"
-                            onClick={() => handleAddDeviceRequest(device)}
-                        >
-                            Add
-                        </Button>
-                        <Button
-                            colorScheme="red"
-                            onClick={() =>
-                                handleRemoveDeviceRequest(device.espId)
-                            }
-                        >
-                            Remove
-                        </Button>
-                    </Box>
+                    />
                 ))}
             </Box>
         </Flex>
