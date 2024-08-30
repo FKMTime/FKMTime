@@ -9,12 +9,15 @@ import { PersonService } from '../person/person.service';
 import { CheckIfAttemptEnteredDto } from '../result/dto/checkIfAttemptEntered.dto';
 import { EnterAttemptDto } from '../result/dto/enterAttempt.dto';
 import { ResultService } from '../result/result.service';
+import { ResultFromDeviceService } from 'src/result/resultFromDevice.service';
 
 @Injectable()
 export class SocketService {
   constructor(
     @Inject(forwardRef(() => ResultService))
     private readonly resultService: ResultService,
+    @Inject(forwardRef(() => ResultFromDeviceService))
+    private readonly resultFromDeviceService: ResultFromDeviceService,
     @Inject(forwardRef(() => DeviceService))
     private readonly deviceService: DeviceService,
     private readonly attendanceService: AttendanceService,
@@ -24,7 +27,7 @@ export class SocketService {
   ) {}
 
   async enterAttempt(data: EnterAttemptDto) {
-    return await this.resultService.enterAttempt(data);
+    return await this.resultFromDeviceService.enterAttempt(data);
   }
 
   async requestToConnectDevice(data: RequestToConnectDto) {

@@ -9,9 +9,10 @@ import { DeviceModule } from '../device/device.module';
 import { PersonModule } from '../person/person.module';
 import { ContestsModule } from 'src/contests/contests.module';
 import { AppModule } from 'src/app.module';
+import { ResultFromDeviceService } from './resultFromDevice.service';
 
 @Module({
-  providers: [ResultService],
+  providers: [ResultService, ResultFromDeviceService],
   controllers: [ResultController],
   imports: [
     AuthModule,
@@ -23,6 +24,6 @@ import { AppModule } from 'src/app.module';
     PersonModule,
     forwardRef(() => AppModule),
   ],
-  exports: [ResultService],
+  exports: [ResultService, ResultFromDeviceService],
 })
 export class ResultModule {}
