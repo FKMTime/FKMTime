@@ -233,7 +233,7 @@ export class ResultFromDeviceService {
       if (lastAttempt && lastAttempt.attemptNumber === maxAttempts) {
         return {
           message: getTranslation('noAttemptsLeft', locale),
-          shouldResetTime: true,
+          shouldResetTime: false,
           status: 400,
           error: true,
         };

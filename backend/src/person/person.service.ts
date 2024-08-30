@@ -244,7 +244,7 @@ export class PersonService {
       await this.prisma.person.update({
         where: { id },
         data: {
-          cardId: data.cardId.toString(),
+          cardId: data.cardId.toString() || null,
         },
       });
     } catch (e) {

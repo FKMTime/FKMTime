@@ -43,7 +43,7 @@ const PersonsTable = ({
         );
     }
     return (
-        <>
+        <Box display="flex" flexDirection="column" gap={4}>
             <TableContainer>
                 <Table variant="simple">
                     <Thead>
@@ -80,7 +80,7 @@ const PersonsTable = ({
                 changePageSize={changePageSize}
                 pageSize={pageSize}
             />
-        </>
+        </Box>
     );
 };
 
