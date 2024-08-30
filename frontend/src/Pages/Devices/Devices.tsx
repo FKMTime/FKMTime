@@ -12,8 +12,10 @@ import { MdSettings } from "react-icons/md";
 
 import LoadingPage from "@/Components/LoadingPage";
 import PlusButton from "@/Components/PlusButton.tsx";
+import Select from "@/Components/Select";
 import { getAllDevices } from "@/logic/devices";
-import { AvailableDevice, Device } from "@/logic/interfaces";
+import { AvailableDevice, Device, Room } from "@/logic/interfaces";
+import { getAllRooms } from "@/logic/rooms";
 import AvailableDevices from "@/Pages/Devices/Components/AvailableDevices.tsx";
 import { socket, SocketContext } from "@/socket";
 
@@ -28,6 +30,8 @@ const Devices = () => {
     const [availableDevices, setAvailableDevices] = useState<AvailableDevice[]>(
         []
     );
+    const [rooms, setRooms] = useState<Room[]>([]);
+    const [selectedRoomId, setSelectedRoomId] = useState<string>("");
     const [deviceToAdd, setDeviceToAdd] = useState<AvailableDevice | null>(
         null
     );
@@ -38,15 +42,15 @@ const Devices = () => {
         setIsOpenUpdateDevicesSettingsModal,
     ] = useState<boolean>(false);
 
-    const fetchData = async () => {
+    const fetchData = async (roomIdParam?: string) => {
         setIsLoading(true);
-        const data = await getAllDevices();
+        const data = await getAllDevices(undefined, roomIdParam);
         setDevices(data);
         setIsLoading(false);
     };
 
     const handleCloseCreateDeviceModal = async () => {
-        await fetchData();
+        await fetchData(selectedRoomId);
         setIsOpenCreateDeviceModal(false);
         setDeviceToAdd(null);
     };
@@ -61,6 +65,11 @@ const Devices = () => {
     const handleAddDeviceRequest = (device: AvailableDevice) => {
         setDeviceToAdd(device);
         setIsOpenCreateDeviceModal(true);
+    };
+
+    const handleSelectRoom = (roomId: string) => {
+        setSelectedRoomId(roomId);
+        fetchData(roomId);
     };
 
     const [isConnected] = useContext(SocketContext) as [
@@ -83,6 +92,13 @@ const Devices = () => {
             socket.emit("leaveDevices");
         };
     }, [isConnected]);
+
+    useEffect(() => {
+        getAllRooms().then((data) => {
+            setRooms(data);
+            setSelectedRoomId(data[0].id);
+        });
+    }, []);
 
     if (isLoading && devices.length === 0) return <LoadingPage />;
 
@@ -109,6 +125,19 @@ const Devices = () => {
                     title="Update devices settings"
                     onClick={() => setIsOpenUpdateDevicesSettingsModal(true)}
                 />
+            </Box>
+            <Box width={{ base: "100%", md: "fit-content" }}>
+                <Select
+                    placeholder="Select room"
+                    value={selectedRoomId}
+                    onChange={(e) => handleSelectRoom(e.target.value)}
+                >
+                    {rooms.map((room) => (
+                        <option key={room.id} value={room.id}>
+                            {room.name}
+                        </option>
+                    ))}
+                </Select>
             </Box>
             <Box display={{ base: "none", md: "block" }}>
                 <DevicesTable devices={devices} fetchData={fetchData} />

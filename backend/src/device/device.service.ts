@@ -16,11 +16,17 @@ export class DeviceService {
     private readonly socketController: SocketController,
   ) {}
 
-  async getAllDevices(type?: DeviceType) {
+  async getAllDevices(type?: DeviceType, roomId?: string) {
     if (type && !Object.values(DeviceType).includes(type)) {
       throw new HttpException('Invalid device type', 400);
     }
-    const whereParams = type ? { type: type } : {};
+    const whereParams = {};
+    if (type) {
+      whereParams['type'] = type;
+    }
+    if (roomId) {
+      whereParams['roomId'] = roomId;
+    }
     const devices = await this.prisma.device.findMany({
       include: {
         room: true,

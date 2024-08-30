@@ -23,8 +23,11 @@ export class DeviceController {
 
   @UseGuards(AuthGuard('jwt'), AdminGuard)
   @Get()
-  async getAllDevices(@Query('type') type: DeviceType) {
-    return this.deviceService.getAllDevices(type);
+  async getAllDevices(
+    @Query('type') type: DeviceType,
+    @Query('roomId') roomId: string,
+  ) {
+    return this.deviceService.getAllDevices(type, roomId);
   }
 
   @UseGuards(AdminGuard)

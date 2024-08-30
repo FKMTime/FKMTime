@@ -1,8 +1,12 @@
 import { Device } from "./interfaces";
 import { backendRequest } from "./request";
 
-export const getAllDevices = async (type?: string) => {
-    const url = type ? `device?type=${type}` : "device";
+export const getAllDevices = async (type?: string, roomId?: string) => {
+    let url = "device";
+    const searchParams = new URLSearchParams();
+    if (type) searchParams.append("type", type);
+    if (roomId) searchParams.append("roomId", roomId);
+    if (searchParams.toString()) url += `?${searchParams.toString()}`;
     const response = await backendRequest(url, "GET", true);
     if (!response.ok) return [];
     return await response.json();

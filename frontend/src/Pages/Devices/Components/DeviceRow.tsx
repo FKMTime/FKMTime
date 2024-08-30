@@ -63,7 +63,6 @@ const DeviceRow = ({ device, fetchData }: DeviceRowProps) => {
         <>
             <Tr key={device.id}>
                 <Td>{device.name}</Td>
-                <Td>{device.room.name}</Td>
                 <Td>{device.espId}</Td>
                 <Td>
                     {device.batteryPercentage && (

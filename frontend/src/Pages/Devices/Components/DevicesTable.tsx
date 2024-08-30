@@ -16,7 +16,6 @@ const DevicesTable = ({ devices, fetchData }: DevicesTableProps) => {
                 <Thead>
                     <Tr bg="gray.400">
                         <Th>Name</Th>
-                        <Th>Room</Th>
                         <Th>ESP ID</Th>
                         <Th>Battery</Th>
                         <Th>Type</Th>
