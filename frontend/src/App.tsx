@@ -2,7 +2,7 @@ import { Suspense, useState } from "react";
 import React from "react";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 
-import Loader from "./Components/Loader";
+import LoadingPage from "./Components/LoadingPage";
 import Layout from "./Layout/Layout";
 import AssignCards from "./Pages/AssignCards/AssignCards";
 import Attendance from "./Pages/Attendance/Attendance";
@@ -146,7 +146,7 @@ const App = () => {
 
     return (
         <SocketContext.Provider value={[isConnected, setConnected]}>
-            <Suspense fallback={<Loader />}>
+            <Suspense fallback={<LoadingPage />}>
                 <RouterProvider router={router} />
             </Suspense>
         </SocketContext.Provider>
