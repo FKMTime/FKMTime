@@ -1,6 +1,8 @@
-import { useState } from "react";
+import { Suspense, useState } from "react";
+import React from "react";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 
+import Loader from "./Components/Loader";
 import Layout from "./Layout/Layout";
 import AssignCards from "./Pages/AssignCards/AssignCards";
 import Attendance from "./Pages/Attendance/Attendance";
@@ -14,17 +16,21 @@ import ImportCompetition from "./Pages/ImportCompetition/ImportCompetition";
 import IncidentPage from "./Pages/Incidents/IncidentPage";
 import Incidents from "./Pages/Incidents/Incidents";
 import NotFound from "./Pages/NotFound/NotFound";
-import PersonResults from "./Pages/Persons/PersonResults/PersonResults";
-import Persons from "./Pages/Persons/Persons";
 import ResolvedIncidents from "./Pages/ResolvedIncidents/ResolvedIncidents";
 import PublicView from "./Pages/Results/PublicView/PublicView";
-import Results from "./Pages/Results/Results";
-import SingleResult from "./Pages/Results/SingleResult/SingleResult";
 import Rooms from "./Pages/Rooms/Rooms";
 import Settings from "./Pages/Settings/Settings";
 import UnofficialEvents from "./Pages/UnofficialEvents/UnofficialEvents";
 import Users from "./Pages/Users/Users";
 import { SocketContext } from "./socket";
+const Persons = React.lazy(() => import("./Pages/Persons/Persons"));
+const Results = React.lazy(() => import("./Pages/Results/Results"));
+const SingleResult = React.lazy(
+    () => import("./Pages/Results/SingleResult/SingleResult")
+);
+const PersonResults = React.lazy(
+    () => import("./Pages/Persons/PersonResults/PersonResults")
+);
 
 const App = () => {
     const [isConnected, setConnected] = useState(0);
@@ -140,7 +146,9 @@ const App = () => {
 
     return (
         <SocketContext.Provider value={[isConnected, setConnected]}>
-            <RouterProvider router={router} />
+            <Suspense fallback={<Loader />}>
+                <RouterProvider router={router} />
+            </Suspense>
         </SocketContext.Provider>
     );
 };
