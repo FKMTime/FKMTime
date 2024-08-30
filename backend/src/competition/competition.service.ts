@@ -435,30 +435,26 @@ export class CompetitionService {
         devices: true,
       },
     });
-    const allDevices = [];
-    rooms.forEach((room) => {
-      allDevices.push(...room.devices);
-    });
     return {
       shouldUpdate: competition.shouldUpdateDevices,
-      devices: allDevices.map((d) => d.espId),
-      rooms: rooms
-        .filter((r) => r.currentGroupId)
-        .map((room) => {
+      rooms: rooms.map((room) => {
+        let useInspection = true;
+        if (room.currentGroupId) {
           const eventId = room.currentGroupId.split('-')[0];
-          const useInspection = eventsData.find(
+          useInspection = eventsData.find(
             (e) => e.id === eventId,
           ).useInspection;
-          return {
-            id: room.id,
-            name: room.name,
-            useInspection: useInspection,
-            secondaryText: this.computeSecondaryText(room.currentGroupId),
-            devices: room.devices
-              .filter((d) => d.type === 'STATION')
-              .map((device) => device.espId),
-          };
-        }),
+        }
+        return {
+          id: room.id,
+          name: room.name,
+          useInspection: useInspection,
+          secondaryText: this.computeSecondaryText(room.currentGroupId),
+          devices: room.devices
+            .filter((d) => d.type === 'STATION')
+            .map((device) => device.espId),
+        };
+      }),
     };
   }
 
@@ -597,7 +593,8 @@ export class CompetitionService {
     });
   }
 
-  computeSecondaryText(groupId: string) {
+  computeSecondaryText(groupId?: string) {
+    if (!groupId) return '';
     const roundId = groupId.split('-g')[0];
     const eventId = roundId.split('-r')[0];
     const roundNumber = roundId.split('-r')[1];
