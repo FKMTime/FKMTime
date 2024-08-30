@@ -1,5 +1,5 @@
+import { Flag64 as Flag } from "@weston/react-world-flags";
 import { MdPublic } from "react-icons/md";
-import Flag from "react-world-flags";
 
 interface FlagIconProps {
     country?: string;
