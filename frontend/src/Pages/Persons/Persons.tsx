@@ -13,6 +13,7 @@ import { ChangeEvent, useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import LoadingPage from "@/Components/LoadingPage";
+import Pagination from "@/Components/Pagination";
 import PlusButton from "@/Components/PlusButton.tsx";
 import { competitionAtom } from "@/logic/atoms";
 import { isAdmin } from "@/logic/auth";
@@ -22,6 +23,7 @@ import { getPersons } from "@/logic/persons";
 import { calculateTotalPages } from "@/logic/utils";
 
 import AddPersonModal from "./Components/AddPersonModal";
+import PersonCard from "./Components/PersonCard";
 import PersonsTable from "./Components/PersonsTable";
 
 const Persons = () => {
@@ -230,13 +232,13 @@ const Persons = () => {
                                 onClick={() => setIsOpenAddPersonModal(true)}
                             />
                         </Box>
-                        <Box display={{ base: "flex", md: "none" }}>
+                        <Box display={{ base: "flex", md: "none" }} mt={2}>
                             <Button
                                 onClick={() => setIsOpenAddPersonModal(true)}
                                 colorScheme="blue"
                                 width="100%"
                             >
-                                Add staff member
+                                Add person
                             </Button>
                         </Box>
                     </>
@@ -264,16 +266,39 @@ const Persons = () => {
                     </FormLabel>
                 </FormControl>
             </Box>
-            <PersonsTable
-                persons={persons}
-                competition={competition}
-                handleCloseEditModal={handleCloseEditModal}
-                changePageSize={changePageSize}
-                handlePageChange={handlePageChange}
-                page={page}
-                totalPages={totalPages}
-                pageSize={pageSize}
-            />
+            <Box display={{ base: "none", md: "block" }}>
+                <PersonsTable
+                    persons={persons}
+                    competition={competition}
+                    handleCloseEditModal={handleCloseEditModal}
+                    changePageSize={changePageSize}
+                    handlePageChange={handlePageChange}
+                    page={page}
+                    totalPages={totalPages}
+                    pageSize={pageSize}
+                />
+            </Box>
+            <Box
+                display={{ base: "flex", md: "none" }}
+                flexDirection="column"
+                gap={3}
+            >
+                {persons.map((person) => (
+                    <PersonCard
+                        key={person.id}
+                        wcif={competition.wcif}
+                        person={person}
+                        handleCloseEditModal={handleCloseEditModal}
+                    />
+                ))}
+                <Pagination
+                    page={page}
+                    totalPages={totalPages}
+                    handlePageChange={handlePageChange}
+                    changePageSize={changePageSize}
+                    pageSize={pageSize}
+                />
+            </Box>
             {isOpenAddPersonModal && (
                 <AddPersonModal
                     isOpen={isOpenAddPersonModal}
