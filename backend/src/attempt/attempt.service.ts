@@ -227,9 +227,27 @@ export class AttemptService {
         },
       });
     }
-    return this.prisma.attempt.delete({
+    await this.prisma.attempt.delete({
       where: { id: id },
     });
+
+    const allAttempts = await this.prisma.attempt.count({
+      where: {
+        resultId: attempt.resultId,
+      },
+    });
+    if (allAttempts === 0) {
+      await this.prisma.result.delete({
+        where: { id: attempt.resultId },
+      });
+      return {
+        resultDeleted: true,
+      };
+    }
+    return {
+      resultDeleted: false,
+      message: 'Attempt deleted successfully',
+    };
   }
 
   async getAttemptById(id: string) {

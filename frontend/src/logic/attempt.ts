@@ -68,5 +68,8 @@ export const updateAttempt = async (data: UpdateAttemptData) => {
 
 export const deleteAttempt = async (id: string) => {
     const response = await backendRequest(`attempt/${id}`, "DELETE", true);
-    return response.status;
+    return {
+        status: response.status,
+        data: await response.json(),
+    };
 };

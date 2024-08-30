@@ -2,6 +2,7 @@ import { Badge, Box, Td, Tr, useToast } from "@chakra-ui/react";
 import { useConfirm } from "chakra-ui-confirm";
 import { useState } from "react";
 import { MdNewLabel } from "react-icons/md";
+import { useNavigate } from "react-router-dom";
 
 import DeleteButton from "@/Components/DeleteButton";
 import EditButton from "@/Components/EditButton";
@@ -30,6 +31,7 @@ const AttemptRow = ({
     no,
     result,
 }: AttemptRowProps) => {
+    const navigate = useNavigate();
     const toast = useToast();
     const confirm = useConfirm();
     const [isOpenEditAttemptModal, setIsOpenEditAttemptModal] =
@@ -44,13 +46,17 @@ const AttemptRow = ({
                 "Are you sure you want to delete this attempt? This action cannot be undone",
         })
             .then(async () => {
-                const status = await deleteAttempt(attempt.id);
-                if (status === 204) {
+                const response = await deleteAttempt(attempt.id);
+                if (response.status === 200) {
                     toast({
                         title: "Successfully deleted attempt.",
                         status: "success",
                     });
-                    fetchData();
+                    if (response.data.resultDeleted) {
+                        navigate(`/results/round/${result.roundId}`);
+                    } else {
+                        fetchData();
+                    }
                 } else {
                     toast({
                         title: "Error",

@@ -3,8 +3,6 @@ import {
   Controller,
   Delete,
   Get,
-  HttpCode,
-  HttpStatus,
   Param,
   Post,
   Put,
@@ -62,7 +60,6 @@ export class AttemptController {
     return await this.attemptService.updateAttempt(id, data, user.userId);
   }
 
-  @HttpCode(HttpStatus.NO_CONTENT)
   @Delete(':id')
   async deleteAttempt(@Param('id') id: string) {
     return await this.attemptService.deleteAttempt(id);
