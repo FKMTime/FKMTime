@@ -123,8 +123,8 @@ const IncidentPage = () => {
             description: "This action cannot be undone.",
             onConfirm: async () => {
                 setIsLoading(true);
-                const status = await deleteAttempt(editedIncident.id);
-                if (status === 204) {
+                const response = await deleteAttempt(editedIncident.id);
+                if (response.status === 200) {
                     toast({
                         title: "Successfully deleted attempt.",
                         status: "success",

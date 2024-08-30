@@ -139,6 +139,7 @@ export interface Attempt {
     solvedAt: Date;
     value: number;
     originalTime?: number;
+    sessionId?: string;
     judgeId?: string;
     judge?: Person;
     deviceId?: string;

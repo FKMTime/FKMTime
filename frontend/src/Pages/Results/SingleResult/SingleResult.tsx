@@ -4,6 +4,11 @@ import {
     Box,
     Button,
     Heading,
+    Tab,
+    TabList,
+    TabPanel,
+    TabPanels,
+    Tabs,
     Text,
     useToast,
 } from "@chakra-ui/react";
@@ -264,45 +269,97 @@ const SingleResult = () => {
                     onClick={() => setIsOpenCreateAttemptModal(true)}
                 />
             </Box>
-            <Heading size="md">List of attempts submitted to WCA Live</Heading>
-            {submittedAttempts.length === 0 ? (
-                <Text>No attempts submitted to WCA Live</Text>
-            ) : (
-                <AttemptsTable
-                    attempts={submittedAttempts as never}
-                    fetchData={fetchData}
-                    result={result}
-                />
-            )}
-            <Heading size="md">Standard</Heading>
-            <Button
-                colorScheme="yellow"
-                onClick={() => setIsOpenSwapAttemptsModal(true)}
-                width={{ base: "100%", md: "20%" }}
-            >
-                Swap attempts
-            </Button>
-            {standardAttempts.length === 0 ? (
-                <Text>No attempts</Text>
-            ) : (
-                <AttemptsTable
-                    attempts={standardAttempts}
-                    showExtraColumns
-                    fetchData={fetchData}
-                    result={result}
-                />
-            )}
-            <Heading size="md">Extra</Heading>
-            {extraAttempts.length === 0 ? (
-                <Text>No extra attempts</Text>
-            ) : (
-                <AttemptsTable
-                    attempts={extraAttempts}
-                    fetchData={fetchData}
-                    result={result}
-                    showExtraColumns
-                />
-            )}
+            <Box>
+                <Tabs variant="enclosed">
+                    <TabList>
+                        <Tab
+                            _selected={{
+                                color: "white",
+                                bg: "blue.500",
+                            }}
+                        >
+                            Submitted to WCA Live
+                        </Tab>
+                        <Tab
+                            _selected={{
+                                color: "white",
+                                bg: "blue.500",
+                            }}
+                        >
+                            Standard
+                        </Tab>
+                        <Tab
+                            _selected={{
+                                color: "white",
+                                bg: "blue.500",
+                            }}
+                        >
+                            Extra
+                        </Tab>
+                    </TabList>
+                    <TabPanels>
+                        <TabPanel
+                            display="flex"
+                            flexDirection="column"
+                            gap={3}
+                            ml="-4"
+                            overflowX="auto"
+                            width="100%"
+                        >
+                            {submittedAttempts.length === 0 ? (
+                                <Text>No attempts submitted to WCA Live</Text>
+                            ) : (
+                                <AttemptsTable
+                                    attempts={submittedAttempts as never}
+                                    fetchData={fetchData}
+                                    result={result}
+                                />
+                            )}
+                        </TabPanel>
+                        <TabPanel
+                            display="flex"
+                            flexDirection="column"
+                            gap={3}
+                            ml="-4"
+                        >
+                            {standardAttempts.length === 0 ? (
+                                <Text>No attempts</Text>
+                            ) : (
+                                <AttemptsTable
+                                    attempts={standardAttempts}
+                                    showExtraColumns
+                                    fetchData={fetchData}
+                                    result={result}
+                                />
+                            )}
+                            <Button
+                                colorScheme="yellow"
+                                onClick={() => setIsOpenSwapAttemptsModal(true)}
+                                width={{ base: "100%", md: "20%" }}
+                            >
+                                Swap attempts
+                            </Button>
+                        </TabPanel>
+                        <TabPanel
+                            display="flex"
+                            flexDirection="column"
+                            gap={3}
+                            ml="-4"
+                        >
+                            {extraAttempts.length === 0 ? (
+                                <Text>No extra attempts</Text>
+                            ) : (
+                                <AttemptsTable
+                                    attempts={extraAttempts}
+                                    fetchData={fetchData}
+                                    result={result}
+                                    showExtraColumns
+                                />
+                            )}
+                        </TabPanel>
+                    </TabPanels>
+                </Tabs>
+            </Box>
             <CreateAttemptModal
                 isOpen={isOpenCreateAttemptModal}
                 onClose={handleCloseModal}
