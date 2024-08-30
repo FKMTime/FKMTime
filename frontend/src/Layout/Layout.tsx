@@ -1,8 +1,9 @@
 import { Box } from "@chakra-ui/react";
 import { useAtom } from "jotai";
-import { useCallback, useContext, useEffect } from "react";
+import { Suspense, useCallback, useContext, useEffect } from "react";
 import { Outlet, useNavigate } from "react-router-dom";
 
+import LoadingPage from "@/Components/LoadingPage";
 import { competitionAtom } from "@/logic/atoms";
 import { getToken, getUserInfo, isUserLoggedIn } from "@/logic/auth";
 import { getCompetitionInfo } from "@/logic/competition";
@@ -169,7 +170,9 @@ const Layout = () => {
                 height="100vh"
                 overflowY="auto"
             >
-                <Outlet />
+                <Suspense fallback={<LoadingPage />}>
+                    <Outlet />
+                </Suspense>
             </Box>
         </Box>
     );
