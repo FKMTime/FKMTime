@@ -9,6 +9,7 @@ import { getSortedStandardAttempts } from './helpers';
 import { isUnofficialEvent } from 'src/events';
 import { ContestsService } from 'src/contests/contests.service';
 import { AppGateway } from 'src/app.gateway';
+import { DoubleCheckDto } from './dto/doubleCheck.dto';
 
 @Injectable()
 export class ResultService {
@@ -19,6 +20,30 @@ export class ResultService {
     private readonly wcaService: WcaService,
     private readonly contestsService: ContestsService,
   ) {}
+
+  resultsInclude = {
+    person: {
+      select: {
+        id: true,
+        name: true,
+        wcaId: true,
+        registrantId: true,
+      },
+    },
+    attempts: {
+      include: {
+        judge: {
+          select: {
+            id: true,
+            name: true,
+            wcaId: true,
+            registrantId: true,
+          },
+        },
+        device: true,
+      },
+    },
+  };
 
   async getAllResultsByRound(roundId: string, search?: string) {
     const whereParams = {
@@ -57,29 +82,7 @@ export class ResultService {
       orderBy: {
         updatedAt: 'desc',
       },
-      include: {
-        person: {
-          select: {
-            id: true,
-            name: true,
-            wcaId: true,
-            registrantId: true,
-          },
-        },
-        attempts: {
-          include: {
-            judge: {
-              select: {
-                id: true,
-                name: true,
-                wcaId: true,
-                registrantId: true,
-              },
-            },
-            device: true,
-          },
-        },
-      },
+      include: this.resultsInclude,
     });
   }
 
@@ -361,5 +364,67 @@ export class ResultService {
       status: 200,
       error: false,
     };
+  }
+
+  async getResultsToDoubleCheckByRoundId(roundId: string) {
+    const results = await this.prisma.result.findMany({
+      where: {
+        roundId: roundId,
+        isDoubleChecked: false,
+      },
+      include: this.resultsInclude,
+    });
+    const totalCount = await this.prisma.result.count({
+      where: {
+        roundId: roundId,
+      },
+    });
+    const doubleCheckedCount = await this.prisma.result.count({
+      where: {
+        roundId: roundId,
+        isDoubleChecked: true,
+      },
+    });
+
+    return {
+      results: results,
+      totalCount: totalCount,
+      doubleCheckedCount: doubleCheckedCount,
+    };
+  }
+
+  async doubleCheckResult(data: DoubleCheckDto) {
+    const result = await this.prisma.result.update({
+      where: {
+        id: data.resultId,
+      },
+      data: {
+        isDoubleChecked: true,
+      },
+    });
+    for (const attempt of data.attempts) {
+      await this.prisma.attempt.update({
+        where: {
+          id: attempt.id,
+        },
+        data: {
+          penalty: attempt.penalty,
+          value: attempt.value,
+        },
+      });
+    }
+    this.appGateway.handleResultEntered(result.roundId);
+    await this.enterWholeScorecardToWcaLiveOrCubingContests(result.id);
+  }
+
+  async undoDoubleCheckResultsByRoundId(roundId: string) {
+    return this.prisma.result.updateMany({
+      where: {
+        roundId: roundId,
+      },
+      data: {
+        isDoubleChecked: false,
+      },
+    });
   }
 }

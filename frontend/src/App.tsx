@@ -16,6 +16,7 @@ import IncidentPage from "./Pages/Incidents/IncidentPage";
 import Incidents from "./Pages/Incidents/Incidents";
 import NotFound from "./Pages/NotFound/NotFound";
 import ResolvedIncidents from "./Pages/ResolvedIncidents/ResolvedIncidents";
+import DoubleCheck from "./Pages/Results/DoubleCheck/DoubleCheck";
 import PublicView from "./Pages/Results/PublicView/PublicView";
 import Rooms from "./Pages/Rooms/Rooms";
 import Settings from "./Pages/Settings/Settings";
@@ -98,6 +99,10 @@ const App = () => {
                 {
                     path: "results/round/:id",
                     element: <Results />,
+                },
+                {
+                    path: "results/round/:id/double-check",
+                    element: <DoubleCheck />,
                 },
                 {
                     path: "results/round",

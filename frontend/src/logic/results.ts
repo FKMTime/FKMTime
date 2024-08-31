@@ -1,7 +1,7 @@
 import { Competition } from "@wca/helpers";
 
 import { average, best, formattedBest } from "./average";
-import { Result, ResultWithAverage } from "./interfaces";
+import { Attempt, Result, ResultWithAverage } from "./interfaces";
 import { backendRequest } from "./request";
 import { resultToString } from "./resultFormatters";
 import {
@@ -116,6 +116,35 @@ export const assignDnsOnRemainingSolves = async (id: string) => {
     const response = await backendRequest(
         `result/${id}/assign-dns`,
         "POST",
+        true
+    );
+    return response.status;
+};
+
+export const getResultsToDoubleCheckByRoundId = async (roundId: string) => {
+    const response = await backendRequest(
+        `result/round/${roundId}/double-check`,
+        "GET",
+        true
+    );
+    return await response.json();
+};
+
+export const doubleCheckResult = async (
+    resultId: string,
+    attempts: Attempt[]
+) => {
+    const response = await backendRequest(`result/double-check`, "POST", true, {
+        resultId,
+        attempts,
+    });
+    return response.status;
+};
+
+export const undoDoubleCheck = async (roundId: string) => {
+    const response = await backendRequest(
+        `result/round/${roundId}/double-check`,
+        "DELETE",
         true
     );
     return response.status;

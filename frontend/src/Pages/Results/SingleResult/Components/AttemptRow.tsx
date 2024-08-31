@@ -4,6 +4,7 @@ import { useState } from "react";
 import { MdNewLabel } from "react-icons/md";
 import { useNavigate } from "react-router-dom";
 
+import AttemptWarnings from "@/Components/AttemptWarnings";
 import DeleteButton from "@/Components/DeleteButton";
 import EditButton from "@/Components/EditButton";
 import SmallIconButton from "@/Components/SmallIconButton";
@@ -127,21 +128,7 @@ const AttemptRow = ({
                                 Entered manually
                             </Badge>
                         )}
-                        {attempt.inspectionTime &&
-                            attempt.inspectionTime > 15000 && (
-                                <Badge
-                                    colorScheme="red"
-                                    borderRadius="md"
-                                    p="1"
-                                >
-                                    Inspection time exceeded
-                                </Badge>
-                            )}
-                        {attempt.penalty > 2 && (
-                            <Badge colorScheme="red" borderRadius="md" p="1">
-                                +{attempt.penalty}
-                            </Badge>
-                        )}
+                        <AttemptWarnings attempt={attempt} />
                     </Box>
                 </Td>
             </Tr>

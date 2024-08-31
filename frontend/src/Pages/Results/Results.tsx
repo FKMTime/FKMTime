@@ -286,16 +286,34 @@ const Results = () => {
                         </Button>
 
                         {results.length > 0 && (
-                            <Button
-                                colorScheme="red"
-                                width={{
-                                    base: "100%",
-                                    md: "fit-content",
-                                }}
-                                onClick={() => setIsOpenRestartGroupModal(true)}
-                            >
-                                Restart group
-                            </Button>
+                            <>
+                                <Button
+                                    colorScheme="purple"
+                                    width={{
+                                        base: "100%",
+                                        md: "fit-content",
+                                    }}
+                                    onClick={() =>
+                                        navigate(
+                                            `/results/round/${filters.roundId}/double-check`
+                                        )
+                                    }
+                                >
+                                    Double check
+                                </Button>
+                                <Button
+                                    colorScheme="red"
+                                    width={{
+                                        base: "100%",
+                                        md: "fit-content",
+                                    }}
+                                    onClick={() =>
+                                        setIsOpenRestartGroupModal(true)
+                                    }
+                                >
+                                    Restart group
+                                </Button>
+                            </>
                         )}
                     </Box>
                 </Box>

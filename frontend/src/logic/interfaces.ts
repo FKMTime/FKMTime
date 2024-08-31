@@ -119,6 +119,10 @@ export interface Result {
     attempts: Attempt[];
 }
 
+export interface ResultToDoubleCheck extends Result {
+    combinedName: string;
+}
+
 export interface ResultWithAverage extends Result {
     average: number;
     best: number;

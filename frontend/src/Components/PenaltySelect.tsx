@@ -9,16 +9,22 @@ interface PenaltySelectProps {
     value: number;
     onChange: (value: number) => void;
     disabled?: boolean;
+    showLabel?: boolean;
+    width?: string;
+    shortVersion?: boolean;
 }
 
 const PenaltySelect = ({
     value,
     onChange,
     disabled = false,
+    showLabel = true,
+    shortVersion,
+    width,
 }: PenaltySelectProps) => {
     return (
-        <FormControl>
-            <FormLabel>Penalty</FormLabel>
+        <FormControl width={width}>
+            {showLabel && <FormLabel>Penalty</FormLabel>}
             <Select
                 value={value.toString()}
                 disabled={disabled}
@@ -28,7 +34,11 @@ const PenaltySelect = ({
             >
                 {AVAILABLE_PENALTIES.map((penalty) => (
                     <option key={penalty.value} value={penalty.value}>
-                        {penalty.label}
+                        {shortVersion
+                            ? penalty.shortVersion
+                                ? penalty.shortVersion
+                                : penalty.label
+                            : penalty.label}
                     </option>
                 ))}
             </Select>

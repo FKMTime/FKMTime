@@ -93,6 +93,7 @@ model Result {
   person    Person    @relation(fields: [personId], references: [id], onDelete: Cascade)
   eventId   String
   roundId   String
+  isDoubleChecked Boolean @default(false)
   attempts  Attempt[]
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt

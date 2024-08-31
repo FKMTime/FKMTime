@@ -2,7 +2,7 @@ export const SKIPPED_VALUE = 0;
 export const DNF_VALUE = -1;
 export const DNS_VALUE = -2;
 export const AVAILABLE_PENALTIES = [
-    { value: 0, label: "No penalty" },
+    { value: 0, label: "No penalty", shortVersion: "-" },
     { value: 2, label: "+2" },
     { value: DNF_VALUE, label: "DNF" },
     { value: DNS_VALUE, label: "DNS" },

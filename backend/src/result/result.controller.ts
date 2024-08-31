@@ -1,4 +1,5 @@
 import {
+  Body,
   Controller,
   Delete,
   Get,
@@ -12,6 +13,7 @@ import {
 import { AuthGuard } from '@nestjs/passport';
 import { AdminGuard } from '../auth/guards/admin.guard';
 import { ResultService } from './result.service';
+import { DoubleCheckDto } from './dto/doubleCheck.dto';
 
 @Controller('result')
 export class ResultController {
@@ -24,6 +26,26 @@ export class ResultController {
     @Query('search') search: string,
   ) {
     return this.resultService.getAllResultsByRound(roundId, search);
+  }
+
+  @UseGuards(AuthGuard('jwt'), AdminGuard)
+  @Get('round/:roundId/double-check')
+  async getResultsToDoubleCheckByRoundId(@Param('roundId') roundId: string) {
+    return this.resultService.getResultsToDoubleCheckByRoundId(roundId);
+  }
+
+  @HttpCode(HttpStatus.OK)
+  @UseGuards(AuthGuard('jwt'), AdminGuard)
+  @Post('double-check')
+  async doubleCheckResultsByRoundId(@Body() data: DoubleCheckDto) {
+    return this.resultService.doubleCheckResult(data);
+  }
+
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @UseGuards(AuthGuard('jwt'), AdminGuard)
+  @Delete('round/:roundId/double-check')
+  async undoDoubleCheckResultsByRoundId(@Param('roundId') roundId: string) {
+    return this.resultService.undoDoubleCheckResultsByRoundId(roundId);
   }
 
   @UseGuards(AuthGuard('jwt'))
