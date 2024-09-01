@@ -37,7 +37,7 @@
     "@nestjs/platform-express": "^10.3.10",
     "@nestjs/platform-socket.io": "^10.3.3",
     "@nestjs/schedule": "^4.0.2",
-    "@nestjs/websockets": "^10.3.9",
+    "@nestjs/websockets": "^10.4.1",
     "@prisma/client": "^5.19.0",
     "@wca/helpers": "^1.1.5",
     "class-transformer": "^0.5.1",
