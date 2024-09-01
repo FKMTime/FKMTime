@@ -45,6 +45,29 @@ export class ResultService {
     },
   };
 
+  attemptsInclude = {
+    judge: {
+      select: {
+        id: true,
+        name: true,
+        wcaId: true,
+        registrantId: true,
+      },
+    },
+    result: {
+      include: {
+        person: {
+          select: {
+            id: true,
+            name: true,
+            wcaId: true,
+            registrantId: true,
+          },
+        },
+      },
+    },
+  };
+
   async getAllResultsByRound(roundId: string, search?: string) {
     const whereParams = {
       roundId: roundId,
@@ -426,5 +449,39 @@ export class ResultService {
         isDoubleChecked: false,
       },
     });
+  }
+
+  async getResultsChecks() {
+    const exceededInspection = await this.prisma.attempt.findMany({
+      where: {
+        inspectionTime: {
+          gt: 15000,
+        },
+        status: AttemptStatus.STANDARD,
+      },
+      include: this.attemptsInclude,
+    });
+    const penalties = await this.prisma.attempt.findMany({
+      where: {
+        penalty: {
+          gt: 2,
+        },
+      },
+      include: this.attemptsInclude,
+    });
+    const attempts = [];
+    for (const attempt of exceededInspection) {
+      const alreadyChecked = attempts.some((a) => a.id === attempt.id);
+      if (!alreadyChecked) {
+        attempts.push(attempt);
+      }
+    }
+    for (const attempt of penalties) {
+      const alreadyChecked = attempts.some((a) => a.id === attempt.id);
+      if (!alreadyChecked) {
+        attempts.push(attempt);
+      }
+    }
+    return attempts;
   }
 }

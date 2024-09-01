@@ -18,6 +18,7 @@ import NotFound from "./Pages/NotFound/NotFound";
 import ResolvedIncidents from "./Pages/ResolvedIncidents/ResolvedIncidents";
 import DoubleCheck from "./Pages/Results/DoubleCheck/DoubleCheck";
 import PublicView from "./Pages/Results/PublicView/PublicView";
+import ResultsChecks from "./Pages/Results/ResultsChecks/ResultsChecks";
 import Rooms from "./Pages/Rooms/Rooms";
 import Settings from "./Pages/Settings/Settings";
 import UnofficialEvents from "./Pages/UnofficialEvents/UnofficialEvents";
@@ -107,6 +108,10 @@ const App = () => {
                 {
                     path: "results/round",
                     element: <Results />,
+                },
+                {
+                    path: "results/checks",
+                    element: <ResultsChecks />,
                 },
                 {
                     path: "results/:id",

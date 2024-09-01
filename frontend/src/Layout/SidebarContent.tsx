@@ -34,6 +34,7 @@ const SidebarContent = ({
     return (
         <Box
             backgroundColor="gray.600"
+            overflowY="auto"
             display="flex"
             flexDirection="column"
             gap="5"

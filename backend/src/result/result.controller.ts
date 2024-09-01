@@ -55,6 +55,12 @@ export class ResultController {
   }
 
   @UseGuards(AuthGuard('jwt'), AdminGuard)
+  @Get('checks')
+  async getResultsChecks() {
+    return await this.resultService.getResultsChecks();
+  }
+
+  @UseGuards(AuthGuard('jwt'), AdminGuard)
   @Get(':id')
   async getResultById(@Param('id') id: string) {
     return await this.resultService.getResultById(id);
