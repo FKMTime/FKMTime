@@ -82,12 +82,10 @@ export class AttemptService {
       data.deviceId,
     );
 
-    if (data.submitToWcaLive) {
-      if (isUnofficialEvent(data.roundId.split('-')[0])) {
-        await this.contestsService.enterWholeScorecardToCubingContests(result);
-      } else {
-        await this.wcaService.enterWholeScorecardToWcaLive(result);
-      }
+    if (data.status !== AttemptStatus.EXTRA_GIVEN) {
+      await this.resultService.enterWholeScorecardToWcaLiveOrCubingContests(
+        result.id,
+      );
     }
     return {
       message: 'Attempt created successfully',
@@ -192,13 +190,15 @@ export class AttemptService {
     if (!attempt) {
       throw new HttpException('Attempt not found', 404);
     }
-    if (data.submitToWcaLive) {
+    if (data.status !== AttemptStatus.EXTRA_GIVEN) {
       const result = await this.resultService.getResultOrCreate(
         attempt.result.person.id,
         attempt.result.roundId,
       );
       try {
-        await this.wcaService.enterWholeScorecardToWcaLive(result);
+        await this.resultService.enterWholeScorecardToWcaLiveOrCubingContests(
+          result.id,
+        );
       } catch (e) {
         console.error(e);
       }
@@ -230,6 +230,9 @@ export class AttemptService {
     await this.prisma.attempt.delete({
       where: { id: id },
     });
+    await this.resultService.enterWholeScorecardToWcaLiveOrCubingContests(
+      attempt.resultId,
+    );
 
     const allAttempts = await this.prisma.attempt.count({
       where: {

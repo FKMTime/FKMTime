@@ -1,7 +1,6 @@
 import {
     Box,
     Button,
-    Checkbox,
     FormControl,
     FormLabel,
     Input,
@@ -57,8 +56,6 @@ const EditAttemptModal = ({
     const [devices, setDevices] = useState<Device[]>([]);
 
     const [editedAttempt, setEditedAttempt] = useState<Attempt>(attempt);
-    const [shouldResubmitToWcaLive, setShouldResubmitToWcaLive] =
-        useState<boolean>(false);
 
     const submissionPlatform = getSubmissionPlatformName(result.eventId);
 
@@ -66,13 +63,10 @@ const EditAttemptModal = ({
         setIsLoading(true);
         event.preventDefault();
 
-        const status = await updateAttempt({
-            ...editedAttempt,
-            submitToWcaLive: shouldResubmitToWcaLive,
-        });
+        const status = await updateAttempt(editedAttempt);
         if (status === 200) {
             toast({
-                title: "Successfully updated attempt.",
+                title: `Successfully updated attempt and resubmitted result to ${submissionPlatform}.`,
                 status: "success",
             });
             onClose();
@@ -303,14 +297,6 @@ const EditAttemptModal = ({
                         />
                     </FormControl>
                 )}
-                <Checkbox
-                    isChecked={shouldResubmitToWcaLive}
-                    onChange={(e) =>
-                        setShouldResubmitToWcaLive(e.target.checked)
-                    }
-                >
-                    Resubmit to {submissionPlatform}
-                </Checkbox>
                 <Box
                     display="flex"
                     flexDirection="row"

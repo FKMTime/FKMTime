@@ -3,7 +3,6 @@ import {
     AlertIcon,
     Box,
     Button,
-    Checkbox,
     FormControl,
     FormLabel,
     Input,
@@ -60,7 +59,6 @@ const CreateAttemptModal = ({
     const [attemptType, setAttemptType] = useState<AttemptType>(
         AttemptType.STANDARD_ATTEMPT
     );
-    const [submitToWcaLive, setSubmitToWcaLive] = useState<boolean>(false);
     const [value, setValue] = useState<number>(0);
     const [penalty, setPenalty] = useState<number>(0);
     const [deviceId, setDeviceId] = useState<string>("");
@@ -85,7 +83,6 @@ const CreateAttemptModal = ({
         const data = {
             roundId,
             status: attemptStatus,
-            submitToWcaLive,
             competitorId: selectedCompetitorId,
             judgeId: selectedJudgeId,
             deviceId: deviceId,
@@ -112,7 +109,7 @@ const CreateAttemptModal = ({
         const status = await createAttempt(data);
         if (status === 201) {
             toast({
-                title: "Attempt created",
+                title: `Attempt created and submitted to ${submissionPlatform}`,
                 status: "success",
             });
             onClose();
@@ -244,14 +241,6 @@ const CreateAttemptModal = ({
                         name="comment"
                     />
                 </FormControl>
-                {attemptStatus !== AttemptStatus.EXTRA_GIVEN && (
-                    <Checkbox
-                        isChecked={submitToWcaLive}
-                        onChange={(e) => setSubmitToWcaLive(e.target.checked)}
-                    >
-                        Submit to {submissionPlatform}
-                    </Checkbox>
-                )}
                 <Box
                     display="flex"
                     flexDirection="row"

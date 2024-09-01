@@ -2,7 +2,6 @@ import { Attempt, AttemptStatus, Incident } from "./interfaces";
 import { backendRequest } from "./request";
 
 interface UpdateAttemptData extends Attempt {
-    submitToWcaLive: boolean;
     updateReplacedBy?: boolean;
 }
 
@@ -16,7 +15,6 @@ interface CreateAttemptData {
     penalty: number;
     comment: string;
     replacedBy: number;
-    submitToWcaLive: boolean;
     status: AttemptStatus;
 }
 

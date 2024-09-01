@@ -31,7 +31,6 @@ const GiveExtraAttemptModal = ({
         setIsLoading(true);
         const status = await updateAttempt({
             ...editedAttempt,
-            submitToWcaLive: true,
             status: AttemptStatus.EXTRA_GIVEN,
         });
         if (status === 200) {

@@ -43,9 +43,5 @@ export class UpdateAttemptDto {
 
   @IsOptional()
   @IsBoolean()
-  submitToWcaLive: boolean;
-
-  @IsOptional()
-  @IsBoolean()
   updateReplacedBy: boolean;
 }

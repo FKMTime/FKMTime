@@ -67,7 +67,6 @@ const IncidentPage = () => {
             ...editedIncident,
             status: AttemptStatus.EXTRA_GIVEN,
             comment: "A7G",
-            submitToWcaLive: false,
             updateReplacedBy: false,
         };
         setEditedIncident(data);
@@ -79,7 +78,6 @@ const IncidentPage = () => {
             ...editedIncident,
             status: AttemptStatus.EXTRA_GIVEN,
             comment: "Judge fault",
-            submitToWcaLive: false,
             updateReplacedBy: false,
         };
         setEditedIncident(data);
@@ -175,7 +173,6 @@ const IncidentPage = () => {
                                 ? AttemptStatus.EXTRA_GIVEN
                                 : AttemptStatus.RESOLVED,
                             comment: quickAction.comment || "",
-                            submitToWcaLive: !quickAction.giveExtra,
                         })
                     }
                 >
@@ -293,7 +290,6 @@ const IncidentPage = () => {
                         handleSubmit({
                             ...editedIncident,
                             status: AttemptStatus.RESOLVED,
-                            submitToWcaLive: true,
                         })
                     }
                 >

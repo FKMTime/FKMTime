@@ -1,5 +1,4 @@
 import {
-  IsBoolean,
   IsEnum,
   IsInt,
   IsNotEmpty,
@@ -46,8 +45,4 @@ export class CreateAttemptDto {
   @IsString()
   @IsOptional()
   comment: string;
-
-  @IsBoolean()
-  @IsOptional()
-  submitToWcaLive: boolean;
 }
