@@ -17,6 +17,7 @@ export interface User {
     id: string;
     username?: string;
     wcaUserId?: number;
+    wcaId?: string;
     isWcaAdmin: boolean;
     fullName?: string;
     role: string;
@@ -254,4 +255,18 @@ export interface AddPerson {
     cardId?: string;
     canCompete: boolean;
     gender: string;
+}
+
+export interface NewUserData {
+    username?: string;
+    password?: string;
+    fullName: string;
+    role: UserRole;
+    wcaId?: string;
+}
+
+export interface WCAPerson {
+    name: string;
+    wcaId: string;
+    combinedName: string;
 }

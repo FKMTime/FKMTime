@@ -1,4 +1,4 @@
-import { User } from "./interfaces";
+import { NewUserData, User } from "./interfaces";
 import { backendRequest } from "./request";
 
 export const getAllUsers = async (): Promise<User[]> => {
@@ -6,18 +6,8 @@ export const getAllUsers = async (): Promise<User[]> => {
     return await response.json();
 };
 
-export const createUser = async (
-    username: string,
-    role: string,
-    password: string,
-    fullName?: string
-) => {
-    const response = await backendRequest("user", "POST", true, {
-        username,
-        role,
-        password,
-        fullName,
-    });
+export const createUser = async (body: NewUserData) => {
+    const response = await backendRequest("user", "POST", true, body);
     const data = await response.json();
     return {
         status: response.status,

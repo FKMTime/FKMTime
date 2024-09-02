@@ -4,16 +4,23 @@ import {
     FormControl,
     FormLabel,
     Input,
+    Tab,
+    TabList,
+    TabPanel,
+    TabPanels,
+    Tabs,
     useToast,
 } from "@chakra-ui/react";
-import { FormEvent, useState } from "react";
+import { useState } from "react";
 
 import { Modal } from "@/Components/Modal";
 import PasswordInput from "@/Components/PasswordInput.tsx";
 import Select from "@/Components/Select";
-import { UserRole } from "@/logic/interfaces.ts";
+import { NewUserData, UserRole } from "@/logic/interfaces.ts";
 import { createUser } from "@/logic/user";
 import { prettyUserRoleName } from "@/logic/utils.ts";
+
+import WCAPersonsAutocomplete from "./WCAPersonsAutocomplete";
 
 interface CreateUserModalProps {
     isOpen: boolean;
@@ -23,17 +30,14 @@ interface CreateUserModalProps {
 const CreateUserModal = ({ isOpen, onClose }: CreateUserModalProps) => {
     const toast = useToast();
     const [isLoading, setIsLoading] = useState(false);
-    const [role, setRole] = useState<string>("");
+    const [userData, setUserData] = useState<NewUserData>({
+        fullName: "",
+        role: UserRole.ADMIN,
+    });
 
-    const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    const handleSubmit = async () => {
         setIsLoading(true);
-        event.preventDefault();
-        const data = new FormData(event.currentTarget);
-        const username = data.get("username") as string;
-        const password = data.get("password") as string;
-        const fullName = data.get("fullName") as string;
-
-        const response = await createUser(username, role, password, fullName);
+        const response = await createUser(userData);
         if (response.status === 201) {
             toast({
                 title: "Success",
@@ -63,50 +67,149 @@ const CreateUserModal = ({ isOpen, onClose }: CreateUserModalProps) => {
                 display="flex"
                 flexDirection="column"
                 gap="5"
-                as="form"
                 onSubmit={handleSubmit}
             >
-                <FormControl isRequired>
-                    <FormLabel>Username</FormLabel>
-                    <Input
-                        placeholder="Username"
-                        _placeholder={{ color: "white" }}
-                        name="username"
-                        disabled={isLoading}
-                    />
-                </FormControl>
-                <FormControl>
-                    <FormLabel>Full name</FormLabel>
-                    <Input
-                        placeholder="Full name"
-                        _placeholder={{ color: "white" }}
-                        name="fullName"
-                        isDisabled={isLoading}
-                    />
-                </FormControl>
-                <FormControl isRequired>
-                    <FormLabel>Password</FormLabel>
-                    <PasswordInput
-                        placeholder="Password"
-                        name="password"
-                        isDisabled={isLoading}
-                    />
-                </FormControl>
-                <FormControl isRequired>
-                    <FormLabel>Role</FormLabel>
-                    <Select
-                        value={role}
-                        onChange={(e) => setRole(e.target.value)}
-                        disabled={isLoading}
-                        placeholder="Select role"
-                    >
-                        {Object.keys(UserRole).map((userRole) => (
-                            <option key={userRole} value={userRole}>
-                                {prettyUserRoleName(userRole)}
-                            </option>
-                        ))}
-                    </Select>
-                </FormControl>
+                <Tabs isFitted variant="enclosed">
+                    <TabList>
+                        <Tab
+                            _selected={{
+                                color: "white",
+                                bg: "blue.500",
+                            }}
+                        >
+                            FKM Account
+                        </Tab>
+                        <Tab
+                            _selected={{
+                                color: "white",
+                                bg: "blue.500",
+                            }}
+                        >
+                            WCA Login
+                        </Tab>
+                    </TabList>
+                    <TabPanels>
+                        <TabPanel>
+                            <Box display="flex" gap="5" flexDirection="column">
+                                <FormControl isRequired>
+                                    <FormLabel>Username</FormLabel>
+                                    <Input
+                                        placeholder="Username"
+                                        _placeholder={{ color: "white" }}
+                                        value={userData.username}
+                                        onChange={(e) =>
+                                            setUserData({
+                                                ...userData,
+                                                username: e.target.value,
+                                            })
+                                        }
+                                        disabled={isLoading}
+                                    />
+                                </FormControl>
+                                <FormControl>
+                                    <FormLabel>Full name</FormLabel>
+                                    <Input
+                                        placeholder="Full name"
+                                        _placeholder={{ color: "white" }}
+                                        value={userData.fullName}
+                                        onChange={(e) =>
+                                            setUserData({
+                                                ...userData,
+                                                fullName: e.target.value,
+                                            })
+                                        }
+                                        isDisabled={isLoading}
+                                    />
+                                </FormControl>
+                                <FormControl isRequired>
+                                    <FormLabel>Password</FormLabel>
+                                    <PasswordInput
+                                        placeholder="Password"
+                                        isDisabled={isLoading}
+                                        value={userData.password}
+                                        onChange={(e) =>
+                                            setUserData({
+                                                ...userData,
+                                                password: e.target.value,
+                                            })
+                                        }
+                                    />
+                                </FormControl>
+                                <FormControl isRequired>
+                                    <FormLabel>Role</FormLabel>
+                                    <Select
+                                        value={userData.role}
+                                        onChange={(e) =>
+                                            setUserData({
+                                                ...userData,
+                                                role: e.target
+                                                    .value as UserRole,
+                                            })
+                                        }
+                                        disabled={isLoading}
+                                        placeholder="Select role"
+                                    >
+                                        {Object.keys(UserRole).map(
+                                            (userRole) => (
+                                                <option
+                                                    key={userRole}
+                                                    value={userRole}
+                                                >
+                                                    {prettyUserRoleName(
+                                                        userRole
+                                                    )}
+                                                </option>
+                                            )
+                                        )}
+                                    </Select>
+                                </FormControl>
+                            </Box>
+                        </TabPanel>
+                        <TabPanel>
+                            <Box display="flex" gap="5" flexDirection="column">
+                                <WCAPersonsAutocomplete
+                                    value={userData.wcaId || ""}
+                                    onSelect={(person) =>
+                                        setUserData({
+                                            ...userData,
+                                            wcaId: person.wcaId,
+                                            fullName: person.name,
+                                        })
+                                    }
+                                />
+                                <FormControl isRequired>
+                                    <FormLabel>Role</FormLabel>
+                                    <Select
+                                        value={userData.role}
+                                        onChange={(e) =>
+                                            setUserData({
+                                                ...userData,
+                                                role: e.target
+                                                    .value as UserRole,
+                                            })
+                                        }
+                                        disabled={isLoading}
+                                        placeholder="Select role"
+                                    >
+                                        {Object.keys(UserRole).map(
+                                            (userRole) => (
+                                                <option
+                                                    key={userRole}
+                                                    value={userRole}
+                                                >
+                                                    {prettyUserRoleName(
+                                                        userRole
+                                                    )}
+                                                </option>
+                                            )
+                                        )}
+                                    </Select>
+                                </FormControl>
+                            </Box>
+                        </TabPanel>
+                    </TabPanels>
+                </Tabs>
+
                 <Box
                     display="flex"
                     flexDirection="row"
@@ -120,7 +223,7 @@ const CreateUserModal = ({ isOpen, onClose }: CreateUserModalProps) => {
                     )}
                     <Button
                         colorScheme="green"
-                        type="submit"
+                        onClick={handleSubmit}
                         isLoading={isLoading}
                     >
                         Submit

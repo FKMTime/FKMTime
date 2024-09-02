@@ -17,6 +17,7 @@ export class UserService {
         fullName: true,
         role: true,
         wcaUserId: true,
+        wcaId: true,
         isWcaAdmin: true,
         createdAt: true,
         updatedAt: true,
@@ -28,10 +29,26 @@ export class UserService {
   }
 
   async createUser(data: CreateUserDto) {
+    if (data.wcaId) {
+      await this.prisma.user.create({
+        data: {
+          fullName: data.fullName,
+          wcaUserId: 0,
+          wcaId: data.wcaId,
+          role: data.role,
+        },
+      });
+      return {
+        message: 'User created successfully',
+      };
+    }
+    if (data.username && !data.password) {
+      throw new HttpException('Password is required', 400);
+    }
     try {
       await this.prisma.user.create({
         data: {
-          username: data.username,
+          username: data.username ? data.username : null,
           fullName: data.fullName,
           password: sha512(data.password),
           role: data.role,

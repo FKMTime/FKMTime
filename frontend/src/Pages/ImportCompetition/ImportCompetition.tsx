@@ -14,7 +14,7 @@ import {
 } from "@/logic/competition";
 import { WCACompetition } from "@/logic/interfaces";
 
-import CompetitionsAutocomplete from "../Competition/Components/CompetitionsAutocomplete";
+import CompetitionsAutocomplete from "./Components/CompetitionsAutocomplete";
 import CompetitionsList from "./Components/CompetitionsList";
 
 const ImportCompetition = () => {

@@ -40,7 +40,7 @@ const SidebarContent = ({
             gap="5"
             alignItems="center"
             padding={5}
-            width="100%"
+            height="100vh"
         >
             <Image src={logo} alt="Logo" width="100%" />
             <Text

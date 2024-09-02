@@ -27,6 +27,7 @@ const UserRow = ({ user, fetchData }: UserRowProps) => {
         useState<boolean>(false);
     const [isOpenChangePasswordModal, setIsOpenChangePasswordModal] =
         useState<boolean>(false);
+    const isWcaAccount = user.wcaUserId || user.wcaId;
 
     const handleCloseEditUserModal = async () => {
         await fetchData();
@@ -69,7 +70,7 @@ const UserRow = ({ user, fetchData }: UserRowProps) => {
         <>
             <Tr key={user.id}>
                 <Td>
-                    {user.wcaUserId ? <img src={wcaLogo} width="25" /> : "FKM"}
+                    {isWcaAccount ? <img src={wcaLogo} width="25" /> : "FKM"}
                 </Td>
                 <Td>{user.fullName}</Td>
                 <Td>
@@ -80,7 +81,7 @@ const UserRow = ({ user, fetchData }: UserRowProps) => {
                 </Td>
                 <Td>
                     <EditButton onClick={() => setIsOpenEditUserModal(true)} />
-                    {!user.wcaUserId && (
+                    {!isWcaAccount && (
                         <SmallIconButton
                             icon={<MdLock />}
                             title="Change password"

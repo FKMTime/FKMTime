@@ -51,7 +51,7 @@ services:
       - POSTGRES_PASSWORD=password
       - POSTGRES_DB=fkm_time
     volumes:
-      - database:/var/lib/postgresql/data
+      - dev_database:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -d postgres"]
       interval: 5s
@@ -117,5 +117,5 @@ services:
       - database
 
 volumes:
-  database:
+  dev_database:
   sock:
