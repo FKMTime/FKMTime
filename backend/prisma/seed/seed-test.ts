@@ -11,6 +11,11 @@ const prisma = new PrismaClient();
 
 export async function seedDb() {
   const adminPassword = sha512('admin');
+  await prisma.user.deleteMany();
+  await prisma.competition.deleteMany();
+  await prisma.person.deleteMany();
+  await prisma.room.deleteMany();
+  await prisma.staffActivity.deleteMany();
   await prisma.user.create({
     data: {
       username: 'admin',
@@ -28,8 +33,8 @@ export async function seedDb() {
       wcaId: wcifJson.id,
       countryIso2: 'PL',
       shouldUpdateDevices: true,
-      wifiSsid: 'WCA',
-      wifiPassword: 'WCA',
+      wifiSsid: 'FKM',
+      wifiPassword: 'FKM',
       scoretakingToken: 'WCA',
       scoretakingTokenUpdatedAt: new Date(),
       wcif: JSON.parse(wcifFile),

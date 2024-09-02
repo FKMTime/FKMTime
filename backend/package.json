@@ -22,7 +22,7 @@
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json",
     "prisma-seed": "ts-node prisma/seed/seed.ts",
-    "prisma:seed-test": "npm run prisma:reset && ts-node prisma/seed/seed-test.ts --env-file .env.test",
+    "prisma:seed-test": "ts-node prisma/seed/seed-test.ts --env-file .env.test",
     "prisma:reset": "npx prisma db push --force-reset"
   },
   "prisma": {

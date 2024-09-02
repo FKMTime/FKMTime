@@ -17,10 +17,17 @@ import { SocketModule } from './socket/socket.module';
 import { EventsModule } from './events/events.module';
 import { ContestsModule } from './contests/contests.module';
 import { AppGateway } from './app.gateway';
+import { ConfigModule } from '@nestjs/config';
 
 @Module({
   providers: [AppGateway],
   imports: [
+    ConfigModule.forRoot({
+      envFilePath: process.env.NODE_ENV
+        ? `.env.${process.env.NODE_ENV}`
+        : '.env',
+      isGlobal: true,
+    }),
     DbModule,
     ScheduleModule.forRoot(),
     AuthModule,

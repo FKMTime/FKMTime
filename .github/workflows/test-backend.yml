@@ -9,10 +9,27 @@ on:
       - 'backend/**'
       - '.github/workflows/test-backend.yml'
 
+env:
+  DATABASE_URL: postgres://postgres:postgres@localhost:5432/fkm_time_test
+
 jobs:
    test_backend:
       name: Backend
       runs-on: ubuntu-latest
+      services:
+        postgres:
+          image: postgres
+          env:
+            POSTGRES_PASSWORD: postgres
+            POSTGRES_USER: postgres
+            POSTGRES_DB: fkm_time_test
+          options: >-
+            --health-cmd pg_isready
+            --health-interval 10s
+            --health-timeout 5s
+            --health-retries 5
+          ports:
+            - 5432:5432      
       strategy:
         matrix:
           node-version: [19.x]
@@ -35,3 +52,12 @@ jobs:
         - name: Build backend
           working-directory: 'backend'
           run: npm run build
+        - name: Push schema to database
+          working-directory: 'backend'
+          run: npx prisma db push
+        - name: Seed test database
+          working-directory: 'backend'
+          run: npm run prisma:seed-test
+        - name: Run E2E tests
+          working-directory: 'backend'
+          run: npm run test:e2e
