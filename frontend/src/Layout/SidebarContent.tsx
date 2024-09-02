@@ -1,5 +1,6 @@
 import { Box, Button, Icon, Image, Link, Text } from "@chakra-ui/react";
 import { FaClipboardList, FaGithub, FaServer } from "react-icons/fa";
+import { GrDocumentVerified } from "react-icons/gr";
 import { IoMdTrophy, IoMdWarning } from "react-icons/io";
 import {
     MdDone,
@@ -122,6 +123,14 @@ const SidebarContent = ({
                 link="/results"
                 onClick={onElementClick}
             />
+            {isAdmin() && (
+                <SidebarElement
+                    name="Checks"
+                    icon={<GrDocumentVerified />}
+                    link="/results/checks"
+                    onClick={onElementClick}
+                />
+            )}
             <SidebarElement
                 name="Settings"
                 icon={<MdSettings />}

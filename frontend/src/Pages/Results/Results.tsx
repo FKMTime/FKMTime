@@ -315,9 +315,6 @@ const Results = () => {
                                 </Button>
                             </>
                         )}
-                        <Button onClick={() => navigate("/results/checks")}>
-                            Checks
-                        </Button>
                     </Box>
                 </Box>
             )}
