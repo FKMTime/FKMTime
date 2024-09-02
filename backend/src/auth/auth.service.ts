@@ -168,6 +168,7 @@ export class AuthService {
       select: {
         id: true,
         username: true,
+        fullName: true,
         role: true,
         isWcaAdmin: true,
       },

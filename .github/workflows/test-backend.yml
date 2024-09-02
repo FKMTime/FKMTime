@@ -11,7 +11,9 @@ on:
 
 env:
   DATABASE_URL: postgres://postgres:postgres@localhost:5432/fkm_time_test
-
+  WCA_ORIGIN: http://localhost:3000
+  WCA_CLIENT_ID: example-application-id
+  WCA_CLIENT_SECRET: example-secret
 jobs:
    test_backend:
       name: Backend
@@ -29,7 +31,12 @@ jobs:
             --health-timeout 5s
             --health-retries 5
           ports:
-            - 5432:5432      
+            - 5432:5432
+        dummy-wca:
+          image: maxidragon/dummy-wca:latest
+          ports:
+            - 3000:3000
+
       strategy:
         matrix:
           node-version: [19.x]

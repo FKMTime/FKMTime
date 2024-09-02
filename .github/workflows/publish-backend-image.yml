@@ -5,7 +5,9 @@ on:
     branches:
       - main
     paths:
-      - 'backend/**'
+      - 'backend/src'
+      - 'backend/Dockerfile'
+      - 'backend/package.json'
       - '.github/workflows/publish-backend-image.yml'
   workflow_dispatch:
       

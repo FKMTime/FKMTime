@@ -232,6 +232,7 @@ export class WcaService {
         grant_type: 'authorization_code',
       }),
     });
+    this.wcaLogger.log(`Fetching access token ${tokenResponse.status}`);
     const tokenData = await tokenResponse.json();
     return tokenData.access_token;
   }
