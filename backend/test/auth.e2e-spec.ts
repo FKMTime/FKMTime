@@ -1,5 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { INestApplication, Logger } from '@nestjs/common';
+import { INestApplication } from '@nestjs/common';
 import * as request from 'supertest';
 import { PrismaClient } from '@prisma/client';
 import { AppModule } from 'src/app.module';
@@ -16,7 +16,8 @@ describe('AuthController (e2e)', () => {
     }).compile();
 
     app = moduleFixture.createNestApplication();
-    app.useLogger(new Logger());
+    //Uncomment this if there is a need to debug
+    //app.useLogger(new Logger());
     await app.init();
     prismaClient = moduleFixture.get<PrismaClient>(PrismaClient);
   }, 30000);

@@ -18,6 +18,7 @@ import { EventsModule } from './events/events.module';
 import { ContestsModule } from './contests/contests.module';
 import { AppGateway } from './app.gateway';
 import { ConfigModule } from '@nestjs/config';
+import { validate } from './env.validation';
 
 @Module({
   providers: [AppGateway],
@@ -26,6 +27,7 @@ import { ConfigModule } from '@nestjs/config';
       envFilePath: process.env.NODE_ENV
         ? `.env.${process.env.NODE_ENV}`
         : '.env',
+      validate,
       isGlobal: true,
     }),
     DbModule,
