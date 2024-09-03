@@ -85,7 +85,7 @@ services:
     - "3005:3000"
 
   dummy_wca_live:
-    container_name: dummy-wca-live
+    container_name: fkmtime-dummy-wca-live
     restart: unless-stopped
     image: maxidragon/dummy-wca-live:latest
     ports:
