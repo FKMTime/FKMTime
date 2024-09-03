@@ -18,6 +18,9 @@ export class SocketServer {
   }
 
   start(callback: () => void) {
+    if (process.env.NODE_ENV === 'test') {
+      return;
+    }
     if (fs.existsSync(this.path)) {
       fs.unlinkSync(this.path);
     }
