@@ -77,7 +77,7 @@ services:
         condition: service_healthy
   
   dummy_wca:
-    container_name: fkmtime-dummy-wca
+    container_name: fkmtime-dev-dummy-wca
     restart: unless-stopped
     image: maxidragon/dummy-wca:latest
     # Feel free to change this if you are not using CubingContests
@@ -85,7 +85,7 @@ services:
     - "3005:3000"
 
   dummy_wca_live:
-    container_name: fkmtime-dummy-wca-live
+    container_name: fkmtime-dev-dummy-wca-live
     restart: unless-stopped
     image: maxidragon/dummy-wca-live:latest
     ports:
