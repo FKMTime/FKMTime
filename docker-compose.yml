@@ -84,6 +84,13 @@ services:
     ports:
     - "3005:3000"
 
+  dummy_wca_live:
+    container_name: dummy-wca-live
+    restart: unless-stopped
+    image: maxidragon/dummy-wca-live:latest
+    ports:
+      - "4000:4000"
+
   micro_connector:
     image: "ghcr.io/fkmtime/fkmtime-micro-connector:master"
     container_name: micro-connector
