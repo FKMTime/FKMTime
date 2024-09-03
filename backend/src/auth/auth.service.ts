@@ -120,6 +120,7 @@ export class AuthService {
         } else {
           return await this.createAndReturnUser(
             userInfo.me.id,
+            userInfo.me.wca_id,
             userInfo.me.name,
             token,
             isWcaAdmin,
