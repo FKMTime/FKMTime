@@ -16,6 +16,7 @@ export async function seedDb() {
   await prisma.person.deleteMany();
   await prisma.room.deleteMany();
   await prisma.staffActivity.deleteMany();
+  await prisma.unofficialEvent.deleteMany();
   await prisma.user.create({
     data: {
       username: 'admin',
