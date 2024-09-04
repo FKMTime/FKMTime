@@ -1,11 +1,14 @@
-import { Flex, useToast, VStack } from "@chakra-ui/react";
+import { Box, useToast } from "@chakra-ui/react";
 import { useCallback, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
+import background from "@/assets/background.jpg";
 import logo from "@/assets/logo.svg";
 import { login, loginWithWca } from "@/logic/auth";
 import { WCA_CLIENT_ID, WCA_ORIGIN } from "@/logic/request.ts";
 import LoginForm from "@/Pages/Auth/Components/LoginForm.tsx";
+
+import MobileLogin from "./MobileLogin";
 
 const Login = () => {
     const searchParams = new URLSearchParams(window.location.search);
@@ -66,30 +69,42 @@ const Login = () => {
     }, [code, handleCode, navigate]);
 
     return (
-        <Flex
-            height="100vh"
-            alignItems="center"
-            justifyContent="center"
-            color="white"
-            backgroundSize="cover"
-            backgroundPosition="center"
-            backgroundRepeat="no-repeat"
-            backgroundAttachment="fixed"
-        >
-            <VStack
-                spacing={4}
-                align="center"
-                p={10}
-                backgroundColor="rgba(0,0,0,0.8)"
-                borderRadius="md"
-            >
-                <img src={logo} width="150" alt="logo" />
-                <LoginForm
-                    handleLogin={handleSubmit}
+        <>
+            <Box display={{ base: "block", lg: "none" }}>
+                <MobileLogin
+                    handleSubmit={handleSubmit}
                     handleWcaLogin={handleWcaLogin}
                 />
-            </VStack>
-        </Flex>
+            </Box>
+            <Box
+                display={{ base: "none", lg: "flex" }}
+                backgroundColor="gray.800"
+                width="100%"
+                height="100vh"
+            >
+                <Box
+                    width="30%"
+                    p={5}
+                    alignItems="center"
+                    justifyContent="center"
+                    display="flex"
+                    flexDirection="column"
+                >
+                    <img src={logo} width="300" alt="logo" />
+                    <LoginForm
+                        handleLogin={handleSubmit}
+                        handleWcaLogin={handleWcaLogin}
+                    />
+                </Box>
+                <img
+                    src={background}
+                    alt="background"
+                    width="100%"
+                    height="100%"
+                    style={{ objectFit: "cover" }}
+                />
+            </Box>
+        </>
     );
 };
 
