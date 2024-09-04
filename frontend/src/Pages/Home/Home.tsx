@@ -17,6 +17,7 @@ import { Activity, Room } from "@/logic/interfaces";
 import { getAllRooms } from "@/logic/rooms";
 import { getCompetitionDates } from "@/logic/utils";
 
+import CompetitionStatistics from "./Components/CompetitionStatistics";
 import HomeShortcuts from "./Components/HomeShortcuts";
 import MobileSchedule from "./Components/Schedule/MobileSchedule";
 import ScheduleTable from "./Components/Schedule/ScheduleTable";
@@ -92,101 +93,120 @@ const Home = () => {
 
     return (
         <Box display="flex" flexDirection="column" gap="5">
-            <Heading size="lg">{competition?.name}</Heading>
-            <Box
-                display="flex"
-                flexDirection="row"
-                gap="5"
-                width={{ base: "100%", md: "50%" }}
-                flexWrap={{ base: "wrap", md: "nowrap" }}
-            >
-                {competition.wcif.events.map((event: Event) => (
-                    <EventIcon
-                        key={event.id}
-                        eventId={event.id}
-                        selected={true}
-                        size={25}
-                    />
-                ))}
-            </Box>
-            {isAdmin() && (
-                <HomeShortcuts rooms={rooms} currentRounds={currentRounds} />
-            )}
             <Box
                 display="flex"
                 flexDirection={{
                     base: "column",
                     md: "row",
                 }}
-                gap="5"
+                gap={3}
+                justifyContent="space-between"
             >
-                <FormControl width="fit-content">
-                    <FormLabel>Date</FormLabel>
-                    <Select
-                        onChange={(e) => {
-                            setSelectedDate(new Date(e.target.value));
-                            fetchActivitiesData(
-                                selectedVenue,
-                                selectedRoom,
-                                new Date(e.target.value)
-                            );
-                        }}
-                        value={selectedDate.toISOString()}
+                <Box display="flex" flexDirection="column" gap="5">
+                    <Heading size="lg">{competition?.name}</Heading>
+                    <Box
+                        display="flex"
+                        flexDirection="row"
+                        gap="5"
+                        width={{ base: "100%", md: "50%" }}
+                        flexWrap={{ base: "wrap", md: "nowrap" }}
                     >
-                        {possibleDates.map((date) => (
-                            <option
-                                key={date.toISOString()}
-                                value={date.toISOString()}
-                            >
-                                {date.toISOString().split("T")[0]}
-                            </option>
+                        {competition.wcif.events.map((event: Event) => (
+                            <EventIcon
+                                key={event.id}
+                                eventId={event.id}
+                                selected={true}
+                                size={25}
+                            />
                         ))}
-                    </Select>
-                </FormControl>
-                <FormControl width="fit-content">
-                    <FormLabel>Venue</FormLabel>
-                    <Select
-                        onChange={(e) => {
-                            setSelectedVenue(parseInt(e.target.value));
-                            fetchActivitiesData(
-                                parseInt(e.target.value),
-                                selectedRoom,
-                                selectedDate
-                            );
+                    </Box>
+                    {isAdmin() && (
+                        <HomeShortcuts
+                            rooms={rooms}
+                            currentRounds={currentRounds}
+                        />
+                    )}
+                    <Box
+                        display="flex"
+                        flexDirection={{
+                            base: "column",
+                            md: "row",
                         }}
-                        value={selectedVenue.toString()}
+                        gap="5"
                     >
-                        {competition?.wcif.schedule.venues.map(
-                            (venue: Venue) => (
-                                <option key={venue.id} value={venue.id}>
-                                    {venue.name}
-                                </option>
-                            )
-                        )}
-                    </Select>
-                </FormControl>
-                <FormControl width="fit-content">
-                    <FormLabel>Room</FormLabel>
-                    <Select
-                        onChange={(e) => {
-                            setSelectedRoom(parseInt(e.target.value));
-                            fetchActivitiesData(
-                                selectedVenue,
-                                parseInt(e.target.value),
-                                selectedDate
-                            );
-                        }}
-                        value={selectedRoom.toString()}
-                    >
-                        {competition?.wcif.schedule.venues
-                            .find((venue: Venue) => venue.id === selectedVenue)
-                            ?.rooms.map((room: WCIFRoom) => (
-                                <option key={room.id} value={room.id}>
-                                    {room.name}
-                                </option>
-                            ))}
-                    </Select>
-                </FormControl>
+                        <FormControl width="fit-content">
+                            <FormLabel>Date</FormLabel>
+                            <Select
+                                onChange={(e) => {
+                                    setSelectedDate(new Date(e.target.value));
+                                    fetchActivitiesData(
+                                        selectedVenue,
+                                        selectedRoom,
+                                        new Date(e.target.value)
+                                    );
+                                }}
+                                value={selectedDate.toISOString()}
+                            >
+                                {possibleDates.map((date) => (
+                                    <option
+                                        key={date.toISOString()}
+                                        value={date.toISOString()}
+                                    >
+                                        {date.toISOString().split("T")[0]}
+                                    </option>
+                                ))}
+                            </Select>
+                        </FormControl>
+                        <FormControl width="fit-content">
+                            <FormLabel>Venue</FormLabel>
+                            <Select
+                                onChange={(e) => {
+                                    setSelectedVenue(parseInt(e.target.value));
+                                    fetchActivitiesData(
+                                        parseInt(e.target.value),
+                                        selectedRoom,
+                                        selectedDate
+                                    );
+                                }}
+                                value={selectedVenue.toString()}
+                            >
+                                {competition?.wcif.schedule.venues.map(
+                                    (venue: Venue) => (
+                                        <option key={venue.id} value={venue.id}>
+                                            {venue.name}
+                                        </option>
+                                    )
+                                )}
+                            </Select>
+                        </FormControl>
+                        <FormControl width="fit-content">
+                            <FormLabel>Room</FormLabel>
+                            <Select
+                                onChange={(e) => {
+                                    setSelectedRoom(parseInt(e.target.value));
+                                    fetchActivitiesData(
+                                        selectedVenue,
+                                        parseInt(e.target.value),
+                                        selectedDate
+                                    );
+                                }}
+                                value={selectedRoom.toString()}
+                            >
+                                {competition?.wcif.schedule.venues
+                                    .find(
+                                        (venue: Venue) =>
+                                            venue.id === selectedVenue
+                                    )
+                                    ?.rooms.map((room: WCIFRoom) => (
+                                        <option key={room.id} value={room.id}>
+                                            {room.name}
+                                        </option>
+                                    ))}
+                            </Select>
+                        </FormControl>
+                    </Box>
+                </Box>
+                <CompetitionStatistics />
             </Box>
             {activities && activities.length > 0 ? (
                 <>

@@ -87,6 +87,8 @@ export interface Person {
 export interface CompetitionStatistics {
     allAttempts: number;
     attemptsEnteredManually: number;
+    scorecardsCount: number;
+    personsCompeted: number;
 }
 
 export interface AttendanceStatistics {

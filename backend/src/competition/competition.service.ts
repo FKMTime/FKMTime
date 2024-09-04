@@ -381,9 +381,20 @@ export class CompetitionService {
         sessionId: null,
       },
     });
+    //This is there until we're still using scorecards ;D
+    const scorecardsCount = await this.prisma.result.count();
+    const personsCompeted = await this.prisma.person.count({
+      where: {
+        Result: {
+          some: {},
+        },
+      },
+    });
     return {
       allAttempts,
       attemptsEnteredManually,
+      scorecardsCount,
+      personsCompeted,
     };
   }
 
