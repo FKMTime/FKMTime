@@ -250,6 +250,17 @@ export class WcaService {
     return data;
   }
 
+  async getUserInfoByWcaId(wcaId: string) {
+    const userInfoResponse = await fetch(`${WCA_ORIGIN}/api/v0/users/${wcaId}`);
+    const data = await userInfoResponse.json();
+    this.wcaLogger.log(
+      `Fetching user info by WCA ID ${userInfoResponse.status}, ${JSON.stringify(
+        data,
+      )}`,
+    );
+    return data;
+  }
+
   async getUpcomingManageableCompetitions(token: string) {
     const oneWeekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
     const params = `managed_by_me=true&start=${oneWeekAgo.toISOString()}&sort=start_date`;

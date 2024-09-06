@@ -56,14 +56,7 @@ export class AuthService {
     const userInfo = await this.wcaService.getUserInfo(token);
     const existingUser = await this.prisma.user.findFirst({
       where: {
-        OR: [
-          {
-            wcaUserId: userInfo.me.id,
-          },
-          {
-            wcaId: userInfo.me.wca_id,
-          },
-        ],
+        wcaUserId: userInfo.me.id,
       },
     });
     const isWcaAdmin = userInfo.me.teams.some((t) =>
@@ -102,7 +95,6 @@ export class AuthService {
       if (!competition) {
         return await this.createAndReturnUser(
           userInfo.me.id,
-          userInfo.me.wca_id,
           userInfo.me.name,
           token,
           isWcaAdmin,
@@ -120,7 +112,6 @@ export class AuthService {
         } else {
           return await this.createAndReturnUser(
             userInfo.me.id,
-            userInfo.me.wca_id,
             userInfo.me.name,
             token,
             isWcaAdmin,
@@ -132,7 +123,6 @@ export class AuthService {
 
   async createAndReturnUser(
     wcaUserId: number,
-    wcaId: string,
     fullName: string,
     wcaAccessToken: string,
     isWcaAdmin = false,
@@ -142,7 +132,6 @@ export class AuthService {
         wcaUserId: wcaUserId,
         fullName: fullName,
         role: 'ADMIN',
-        wcaId: wcaId,
         wcaAccessToken: wcaAccessToken,
         isWcaAdmin: isWcaAdmin,
       },

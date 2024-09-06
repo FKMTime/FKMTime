@@ -4,10 +4,14 @@ import { HttpException, Injectable } from '@nestjs/common';
 import { CreateUserDto } from './dto/createUser.dto';
 import { UpdateUserDto } from './dto/updateUser.dto';
 import { sha512 } from 'js-sha512';
+import { WcaService } from 'src/wca/wca.service';
 
 @Injectable()
 export class UserService {
-  constructor(private readonly prisma: DbService) {}
+  constructor(
+    private readonly prisma: DbService,
+    private readonly wcaService: WcaService,
+  ) {}
 
   async getAllUsers() {
     return this.prisma.user.findMany({
@@ -30,11 +34,11 @@ export class UserService {
 
   async createUser(data: CreateUserDto) {
     if (data.wcaId) {
+      const userInfo = await this.wcaService.getUserInfoByWcaId(data.wcaId);
       await this.prisma.user.create({
         data: {
           fullName: data.fullName,
-          wcaUserId: 0,
-          wcaId: data.wcaId,
+          wcaUserId: userInfo.user.id,
           role: data.role,
         },
       });
