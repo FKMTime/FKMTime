@@ -44,7 +44,6 @@ describe('UserController (e2e)', () => {
         createdAt: expect.any(String),
         updatedAt: expect.any(String),
         isWcaAdmin: false,
-        wcaId: null,
         wcaUserId: null,
       },
     ]);
@@ -85,7 +84,7 @@ describe('UserController (e2e)', () => {
       .set('Authorization', `Bearer ${user.token}`)
       .send({
         fullName: 'WCA User',
-        wcaId: '2013DOZO01',
+        wcaUserId: 100,
         role: 'ADMIN',
       })
       .expect(201);

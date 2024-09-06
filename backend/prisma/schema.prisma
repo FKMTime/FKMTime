@@ -14,7 +14,6 @@ model User {
   role           Role?
   fullName       String?
   wcaUserId      Int?
-  wcaId          String?
   isWcaAdmin     Boolean       @default(false)
   wcaAccessToken String?
   createdAt      DateTime      @default(now())

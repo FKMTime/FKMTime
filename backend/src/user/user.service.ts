@@ -21,7 +21,6 @@ export class UserService {
         fullName: true,
         role: true,
         wcaUserId: true,
-        wcaId: true,
         isWcaAdmin: true,
         createdAt: true,
         updatedAt: true,
