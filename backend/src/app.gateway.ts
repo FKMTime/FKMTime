@@ -45,6 +45,7 @@ export class AppGateway {
 
   @SubscribeMessage('resultEntered')
   handleResultEntered(roundId: string) {
+    this.handleStatisticsUpdated();
     this.server.to(`results-${roundId}`).emit('resultEntered');
   }
 
@@ -122,6 +123,25 @@ export class AppGateway {
   }
 
   /* ====================== */
+  /* ==== Statistics ===== */
+  /* ====================== */
+  @SubscribeMessage('joinStatistics')
+  @UseGuards(AdminGuard)
+  async handleJoinStatistics(@ConnectedSocket() socket: Socket) {
+    socket.join(`statistics`);
+  }
+
+  @SubscribeMessage('leaveStatistics')
+  @UseGuards(AdminGuard)
+  async handleLeaveStatistics(@ConnectedSocket() socket: Socket) {
+    socket.leave(`statistics`);
+  }
+
+  handleStatisticsUpdated() {
+    this.server.to(`competition`).emit('statisticsUpdated');
+  }
+
+  /* ====================== */
   /* ===== Attendance ===== */
   /* ====================== */
   @SubscribeMessage('joinAttendance')
@@ -184,6 +204,7 @@ export class AppGateway {
   @SubscribeMessage('attemptUpdated')
   @UseGuards(AdminGuard)
   handleAttemptUpdated() {
+    this.handleStatisticsUpdated();
     this.server.to(`incidents`).emit('attemptUpdated');
   }
 }

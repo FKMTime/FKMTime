@@ -3,11 +3,9 @@ import { AttemptStatus, StaffRole } from '@prisma/client';
 import { DbService } from '../db/db.service';
 import { ResultService } from '../result/result.service';
 import { SocketController } from '../socket/socket.controller';
-import { WcaService } from '../wca/wca.service';
 import { CreateAttemptDto } from './dto/createAttempt.dto';
 import { UpdateAttemptDto } from './dto/updateAttempt.dto';
 import { isUnofficialEvent } from 'src/events';
-import { ContestsService } from 'src/contests/contests.service';
 import { AttendanceService } from 'src/attendance/attendance.service';
 import { AppGateway } from 'src/app.gateway';
 
@@ -16,8 +14,6 @@ export class AttemptService {
   constructor(
     private readonly appGateway: AppGateway,
     private readonly prisma: DbService,
-    private readonly wcaService: WcaService,
-    private readonly contestsService: ContestsService,
     private readonly attendanceService: AttendanceService,
     @Inject(forwardRef(() => ResultService))
     private readonly resultService: ResultService,
@@ -87,6 +83,7 @@ export class AttemptService {
         result.id,
       );
     }
+    this.appGateway.handleResultEntered(result.roundId);
     return {
       message: 'Attempt created successfully',
     };
@@ -247,6 +244,7 @@ export class AttemptService {
         resultDeleted: true,
       };
     }
+    this.appGateway.handleAttemptUpdated();
     return {
       resultDeleted: false,
       message: 'Attempt deleted successfully',

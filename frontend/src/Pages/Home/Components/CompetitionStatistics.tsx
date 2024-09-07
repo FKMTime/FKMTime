@@ -5,22 +5,38 @@ import { MdEqualizer, MdPerson } from "react-icons/md";
 import StatCard from "@/Components/StatCard";
 import { getCompetitionStatistics } from "@/logic/competition";
 import { CompetitionStatistics as ICompetitionStatistics } from "@/logic/interfaces";
+import { socket } from "@/socket";
 
 const CompetitionStatistics = () => {
     const [statistics, setStatistics] = useState<ICompetitionStatistics | null>(
         null
     );
 
-    useEffect(() => {
+    const fetchData = () => {
         getCompetitionStatistics().then((data) => {
             setStatistics(data);
         });
+    };
+
+    useEffect(() => {
+        fetchData();
+
+        socket.emit("joinStatistics");
+
+        socket.on("statisticsUpdated", () => {
+            fetchData();
+        });
+
+        return () => {
+            socket.emit("leaveStatistics");
+        };
     }, []);
 
     return (
         <Box
-            display={{ base: "none", md: "grid" }}
+            display={{ base: "none", md: "flex" }}
             flexDirection={{ base: "column", md: "row" }}
+            flexWrap="wrap"
             gap={4}
         >
             <StatCard
