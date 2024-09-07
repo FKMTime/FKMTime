@@ -49,7 +49,14 @@ const ResultsChecks = () => {
     return (
         <Box display="flex" flexDirection="column" gap="5">
             <Heading size="lg">Suspicious times/penalties</Heading>
-            <Box display="flex" flexDirection="row" gap="5">
+            <Box
+                display="flex"
+                flexDirection={{
+                    base: "column",
+                    md: "row",
+                }}
+                gap="5"
+            >
                 <EventAndRoundSelector
                     competition={competition}
                     filters={filters}

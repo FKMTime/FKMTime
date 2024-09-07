@@ -1,4 +1,4 @@
-import { Box, IconButton, Select } from "@chakra-ui/react";
+import { Box, FormLabel, IconButton, Select } from "@chakra-ui/react";
 import { Event, Round } from "@wca/helpers";
 
 import EventIcon from "@/Components/Icons/EventIcon";
@@ -10,6 +10,7 @@ interface EventAndRoundSelectorProps {
         eventId: string;
         roundId: string;
     };
+    showLabel?: boolean;
     handleEventChange: (eventId: string) => void;
     handleRoundChange: (roundId: string) => void;
 }
@@ -17,6 +18,7 @@ interface EventAndRoundSelectorProps {
 const EventAndRoundSelector = ({
     competition,
     filters,
+    showLabel,
     handleEventChange,
     handleRoundChange,
 }: EventAndRoundSelectorProps) => {
@@ -47,12 +49,14 @@ const EventAndRoundSelector = ({
                 ))}
             </Box>
             {filters.eventId && (
-                <Box width={{ base: "100%", md: "5%" }}>
+                <Box>
+                    {showLabel && <FormLabel>Round</FormLabel>}
                     <Select
                         value={filters.roundId}
                         onChange={(event) =>
                             handleRoundChange(event.target.value as string)
                         }
+                        width="fit-content"
                     >
                         {competition.wcif.events
                             .find(

@@ -7,7 +7,7 @@ import {
     Heading,
     useToast,
 } from "@chakra-ui/react";
-import { Activity, Event, Round } from "@wca/helpers";
+import { Activity } from "@wca/helpers";
 import { useAtom } from "jotai";
 import { useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
@@ -22,12 +22,12 @@ import {
     markAsPresent,
 } from "@/logic/attendance";
 import { getCompetitionInfo } from "@/logic/competition";
-import { getEventName } from "@/logic/events";
 import { Room, StaffActivity } from "@/logic/interfaces";
 import { getAllRooms } from "@/logic/rooms";
 import PresentPeopleList from "@/Pages/Attendance/Components/PresentPeopleList";
 import { socket, SocketContext } from "@/socket";
 
+import EventAndRoundSelector from "../Results/Components/EventAndRoundSelector";
 import AbsentPeopleList from "./Components/AbsentPeopleList";
 import UnorderedPeopleList from "./Components/UnorderedPeopleList";
 
@@ -217,47 +217,22 @@ const Attendance = () => {
                     </Box>
                 </>
             )}
-            <Flex flexDirection={{ base: "column", md: "row" }} gap="5">
-                <FormControl width="fit-content">
-                    <FormLabel>Event</FormLabel>
-                    <Select
-                        value={selectedEvent}
-                        placeholder="Select event"
-                        onChange={(event) => {
-                            setSelectedEvent(event?.target.value);
-                            setSelectedRound(event?.target.value + "-r1");
-                            handleGroupChange(`${event?.target.value}-r1-g1`);
-                        }}
-                    >
-                        {competition.wcif.events.map((event: Event) => (
-                            <option key={event.id} value={event.id}>
-                                {getEventName(event.id)}
-                            </option>
-                        ))}
-                    </Select>
-                </FormControl>
-                {selectedEvent && (
-                    <FormControl width="fit-content">
-                        <FormLabel>Round</FormLabel>
-                        <Select
-                            value={selectedRound}
-                            onChange={(event) => {
-                                setSelectedRound(event?.target.value);
-                                handleGroupChange(`${event?.target.value}-g1`);
-                            }}
-                        >
-                            {competition.wcif.events
-                                .find(
-                                    (event: Event) => event.id === selectedEvent
-                                )
-                                ?.rounds.map((round: Round, i: number) => (
-                                    <option key={round.id} value={round.id}>
-                                        {i + 1}
-                                    </option>
-                                ))}
-                        </Select>
-                    </FormControl>
-                )}
+            <Flex flexDirection="column" gap="5">
+                <EventAndRoundSelector
+                    competition={competition}
+                    showLabel
+                    filters={{ eventId: selectedEvent, roundId: selectedRound }}
+                    handleEventChange={(eventId) => {
+                        setSelectedEvent(eventId);
+                        setSelectedRound(eventId + "-r1");
+                        handleGroupChange(`${eventId}-r1-g1`);
+                    }}
+                    handleRoundChange={(roundId) => {
+                        setSelectedRound(roundId);
+                        handleGroupChange(`${roundId}-g1`);
+                    }}
+                />
+
                 {selectedRound && (
                     <FormControl width="fit-content">
                         <FormLabel>Group</FormLabel>
