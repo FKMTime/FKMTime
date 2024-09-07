@@ -447,13 +447,20 @@ export class ResultService {
     });
   }
 
-  async getResultsChecks() {
+  async getResultsChecks(roundId?: string) {
+    const whereParams = {};
+    if (roundId) {
+      whereParams['result'] = {
+        roundId: roundId,
+      };
+    }
     const exceededInspection = await this.prisma.attempt.findMany({
       where: {
         inspectionTime: {
           gt: 15000,
         },
         status: AttemptStatus.STANDARD,
+        ...whereParams,
       },
       include: this.attemptsInclude,
     });
@@ -462,6 +469,7 @@ export class ResultService {
         penalty: {
           gt: 2,
         },
+        ...whereParams,
       },
       include: this.attemptsInclude,
     });

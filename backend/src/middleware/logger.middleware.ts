@@ -15,21 +15,21 @@ export class LoggerMiddleware implements NestMiddleware {
           req.headers.authorization.split(' ')[1],
         );
         this.logger.log(
-          `Logging HTTP request ${req.method} ${req.baseUrl} ${res.statusCode} from user ${user.userId}`,
+          `Logging HTTP request ${req.method} ${req.originalUrl} ${res.statusCode} from user ${user.userId}`,
         );
       } else {
         this.logger.log(
-          `Logging HTTP request ${req.method} ${req.baseUrl} ${res.statusCode} with API Token ${req.method !== 'GET' ? JSON.stringify(req.body) : ''}`,
+          `Logging HTTP request ${req.method} ${req.originalUrl} ${res.statusCode} with API Token ${req.method !== 'GET' ? JSON.stringify(req.body) : ''}`,
         );
       }
     } else {
-      const baseUrl = req.baseUrl;
-      if (baseUrl.includes('health') || baseUrl.includes('login')) {
+      const originalUrl = req.originalUrl;
+      if (originalUrl.includes('health') || originalUrl.includes('login')) {
         return next();
       }
       res.on('close', () => {
         this.logger.log(
-          `Logging HTTP request from ${req.method} ${baseUrl} ${
+          `Logging HTTP request from ${req.method} ${originalUrl} ${
             res.statusCode
           } body: ${JSON.stringify(req.body)}`,
         );

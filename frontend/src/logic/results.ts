@@ -147,7 +147,11 @@ export const undoDoubleCheck = async (roundId: string) => {
     return response.status;
 };
 
-export const getResultsChecks = async () => {
-    const response = await backendRequest(`result/checks`, "GET", true);
+export const getResultsChecks = async (roundId?: string) => {
+    const response = await backendRequest(
+        `result/checks${roundId ? `?roundId=${roundId}` : ""}`,
+        "GET",
+        true
+    );
     return await response.json();
 };

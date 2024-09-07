@@ -114,6 +114,10 @@ const App = () => {
                     element: <ResultsChecks />,
                 },
                 {
+                    path: "results/checks/:id",
+                    element: <ResultsChecks />,
+                },
+                {
                     path: "results/:id",
                     element: <SingleResult />,
                 },

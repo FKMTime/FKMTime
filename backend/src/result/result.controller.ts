@@ -56,8 +56,8 @@ export class ResultController {
 
   @UseGuards(AuthGuard('jwt'), AdminGuard)
   @Get('checks')
-  async getResultsChecks() {
-    return await this.resultService.getResultsChecks();
+  async getResultsChecks(@Query('roundId') roundId: string) {
+    return await this.resultService.getResultsChecks(roundId);
   }
 
   @UseGuards(AuthGuard('jwt'), AdminGuard)

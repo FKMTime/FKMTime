@@ -46,22 +46,26 @@ const EventAndRoundSelector = ({
                     />
                 ))}
             </Box>
-            <Box width={{ base: "100%", md: "5%" }}>
-                <Select
-                    value={filters.roundId}
-                    onChange={(event) =>
-                        handleRoundChange(event.target.value as string)
-                    }
-                >
-                    {competition.wcif.events
-                        .find((event: Event) => event.id === filters.eventId)
-                        ?.rounds.map((round: Round, i: number) => (
-                            <option key={round.id} value={round.id}>
-                                {i + 1}
-                            </option>
-                        ))}
-                </Select>
-            </Box>
+            {filters.eventId && (
+                <Box width={{ base: "100%", md: "5%" }}>
+                    <Select
+                        value={filters.roundId}
+                        onChange={(event) =>
+                            handleRoundChange(event.target.value as string)
+                        }
+                    >
+                        {competition.wcif.events
+                            .find(
+                                (event: Event) => event.id === filters.eventId
+                            )
+                            ?.rounds.map((round: Round, i: number) => (
+                                <option key={round.id} value={round.id}>
+                                    {i + 1}
+                                </option>
+                            ))}
+                    </Select>
+                </Box>
+            )}
         </>
     );
 };
