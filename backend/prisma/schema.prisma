@@ -146,6 +146,7 @@ model QuickAction {
   name      String
   comment   String?
   giveExtra Boolean  @default(false)
+  isShared  Boolean  @default(true)
   userId String
   user   User  @relation(fields: [userId], references: [id], onDelete: Cascade)
   createdAt DateTime @default(now())

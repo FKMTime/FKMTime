@@ -10,16 +10,12 @@ export const getQuickActions = async () => {
     return await response.json();
 };
 
-export const createQuickAction = async (
-    name: string,
-    comment: string,
-    giveExtra: boolean
-) => {
+export const createQuickAction = async (data: QuickAction) => {
     const response = await backendRequest(
         "settings/quick-actions",
         "POST",
         true,
-        { name, comment, giveExtra }
+        data
     );
     return response.status;
 };

@@ -10,4 +10,7 @@ export class QuickActionDto {
 
   @IsBoolean()
   giveExtra: boolean;
+
+  @IsBoolean()
+  isShared: boolean;
 }

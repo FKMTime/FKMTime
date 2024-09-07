@@ -216,6 +216,8 @@ export interface Settings {
 export interface QuickAction {
     id: string;
     name: string;
+    user: User;
+    isShared: boolean;
     comment?: string;
     giveExtra: boolean;
 }

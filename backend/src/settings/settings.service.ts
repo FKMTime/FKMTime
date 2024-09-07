@@ -34,7 +34,15 @@ export class SettingsService {
 
   async getMyQuickActions(userId: string) {
     return this.prisma.quickAction.findMany({
-      where: { userId },
+      where: { OR: [{ userId }, { isShared: true }] },
+      include: {
+        user: {
+          select: {
+            id: true,
+            fullName: true,
+          },
+        },
+      },
     });
   }
 
@@ -57,14 +65,14 @@ export class SettingsService {
     data: QuickActionDto,
   ) {
     return this.prisma.quickAction.update({
-      where: { id: quickActionId, userId },
+      where: { id: quickActionId, OR: [{ userId }, { isShared: true }] },
       data: data,
     });
   }
 
   async deleteQuickAction(userId: string, quickActionId: string) {
     return this.prisma.quickAction.delete({
-      where: { id: quickActionId, userId },
+      where: { id: quickActionId, OR: [{ userId }, { isShared: true }] },
     });
   }
 }

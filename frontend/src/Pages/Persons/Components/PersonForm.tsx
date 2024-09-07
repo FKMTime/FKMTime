@@ -36,6 +36,7 @@ const PersonForm = ({
                     placeholder="Name"
                     disabled={isLoading}
                     value={newPersonData.name}
+                    _placeholder={{ color: "white" }}
                     onChange={(event) =>
                         setNewPersonData({
                             ...newPersonData,
@@ -70,6 +71,7 @@ const PersonForm = ({
                             placeholder="WCA ID"
                             disabled={isLoading}
                             value={newPersonData.wcaId}
+                            _placeholder={{ color: "white" }}
                             onChange={(event) =>
                                 setNewPersonData({
                                     ...newPersonData,
@@ -124,6 +126,7 @@ const PersonForm = ({
                     placeholder="Scan card"
                     disabled={isLoading}
                     value={newPersonData.cardId}
+                    _placeholder={{ color: "white" }}
                     onChange={(event) =>
                         setNewPersonData({
                             ...newPersonData,
