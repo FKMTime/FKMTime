@@ -1,24 +1,23 @@
-import { HttpException, Inject, Injectable, forwardRef } from '@nestjs/common';
-import { Cron, CronExpression } from '@nestjs/schedule';
-import { Room, SendingResultsFrequency, StaffRole } from '@prisma/client';
 import {
-  Activity,
-  Assignment,
-  Event,
-  Person,
-  Room as WCIFRoom,
-  Venue,
-} from '@wca/helpers';
+  HttpException,
+  Inject,
+  Injectable,
+  Logger,
+  forwardRef,
+} from '@nestjs/common';
+import { Cron, CronExpression } from '@nestjs/schedule';
+import { AttemptStatus, SendingResultsFrequency } from '@prisma/client';
+import { Activity, Event, Room as WCIFRoom, Venue } from '@wca/helpers';
 import { DbService } from '../db/db.service';
 import { eventsData } from '../events';
 import { SocketController } from '../socket/socket.controller';
 import { WcaService } from '../wca/wca.service';
 import {
-  getGroupInfoByActivityId,
-  wcifRoleToAttendanceRole,
+  getActivityInfoFromSchedule,
+  getNumberOfAttemptsForRound,
+  getRoundInfoFromWcif,
 } from '../wcif-helpers';
 import { UpdateCompetitionDto } from './dto/updateCompetition.dto';
-import { UpdateRoomsDto } from './dto/updateCurrentRound.dto';
 import { UpdateDevicesSettingsDto } from './dto/updateDevicesSettings.dto';
 import { ResultService } from 'src/result/result.service';
 import { AppGateway } from 'src/app.gateway';
@@ -34,213 +33,7 @@ export class CompetitionService {
     private readonly socketController: SocketController,
   ) {}
 
-  async importCompetition(wcaId: string, userId: string) {
-    const existingCompetition = await this.prisma.competition.findFirst();
-    if (existingCompetition) {
-      throw new HttpException('Competition already exists', 400);
-    }
-    const user = await this.prisma.user.findFirst({
-      where: {
-        id: userId,
-      },
-    });
-    const wcifPublic = await this.wcaService.getPublicWcif(wcaId);
-    const wcif = await this.wcaService.getWcif(wcaId, user.wcaAccessToken);
-    const competition = await this.prisma.competition.create({
-      data: {
-        name: wcifPublic.name,
-        wcaId: wcifPublic.id,
-        countryIso2: wcifPublic.countryIso2,
-        wcif: wcifPublic,
-        sendingResultsFrequency: SendingResultsFrequency.AFTER_SOLVE,
-      },
-    });
-    await this.prisma.person.createMany({
-      data: wcif.persons
-        .filter(
-          (p: Person) => p.registrantId && p.registration.status === 'accepted',
-        )
-        .map((person: Person) => ({
-          wcaId: person.wcaId,
-          name: person.name,
-          registrantId: person.registrantId,
-          gender: person.gender,
-          countryIso2: person.countryIso2,
-          canCompete: person.registration && person.registration.isCompeting,
-          birthdate: person.wcaId
-            ? null
-            : person.birthdate && new Date(person.birthdate),
-        })),
-    });
-    const rooms = [];
-
-    for (const venue of wcifPublic.schedule.venues) {
-      for (const room of venue.rooms) {
-        rooms.push({
-          name: room.name,
-          color: room.color,
-        });
-      }
-    }
-    const staffActivitiesTransactions = [];
-
-    wcifPublic.persons.forEach((person: Person) => {
-      person.assignments.forEach((assignment: Assignment) => {
-        const group = getGroupInfoByActivityId(
-          assignment.activityId,
-          wcifPublic,
-        );
-        staffActivitiesTransactions.push(
-          this.prisma.staffActivity.create({
-            data: {
-              person: {
-                connect: {
-                  registrantId: person.registrantId,
-                },
-              },
-              role: wcifRoleToAttendanceRole(assignment.assignmentCode),
-              groupId: group.activityCode,
-              isAssigned: true,
-            },
-          }),
-        );
-      });
-    });
-    await this.prisma.$transaction(staffActivitiesTransactions);
-    await this.prisma.room.createMany({
-      data: rooms,
-    });
-    return competition;
-  }
-
-  async updateWcif(wcaId: string, userId: string) {
-    const user = await this.prisma.user.findFirst({
-      where: {
-        id: userId,
-      },
-    });
-    const wcifPublic = await this.wcaService.getPublicWcif(wcaId);
-    const transactions = [];
-    if (user.wcaUserId) {
-      const wcif = await this.wcaService.getWcif(wcaId, user.wcaAccessToken);
-      wcif.persons.forEach((person: Person) => {
-        if (person.registrantId && person.registration.status === 'accepted') {
-          transactions.push(
-            this.prisma.person.upsert({
-              where: {
-                registrantId: person.registrantId,
-              },
-              update: {
-                name: person.name,
-                wcaId: person.wcaId,
-                gender: person.gender,
-                countryIso2: person.countryIso2,
-                birthdate: person.wcaId
-                  ? null
-                  : person.birthdate && new Date(person.birthdate),
-              },
-              create: {
-                name: person.name,
-                wcaId: person.wcaId,
-                registrantId: person.registrantId,
-                gender: person.gender,
-                countryIso2: person.countryIso2,
-                birthdate: person.wcaId
-                  ? null
-                  : person.birthdate && new Date(person.birthdate),
-              },
-            }),
-          );
-        }
-      });
-      wcif.persons
-        .filter((p) => p.registration.status !== 'accepted')
-        .forEach((p) => {
-          transactions.push(
-            this.prisma.person.deleteMany({
-              where: {
-                registrantId: p.registrantId,
-              },
-            }),
-          );
-        });
-    } else {
-      wcifPublic.persons.forEach((person: Person) => {
-        if (person.registrantId) {
-          transactions.push(
-            this.prisma.person.upsert({
-              where: {
-                registrantId: person.registrantId,
-              },
-              update: {
-                name: person.name,
-                wcaId: person.wcaId,
-                gender: person.gender,
-                countryIso2: person.countryIso2,
-              },
-              create: {
-                name: person.name,
-                wcaId: person.wcaId,
-                registrantId: person.registrantId,
-                gender: person.gender,
-                countryIso2: person.countryIso2,
-              },
-            }),
-          );
-        }
-      });
-    }
-    const activitiesTransactions = [];
-    const persons = await this.prisma.person.findMany();
-    wcifPublic.persons.forEach((person: Person) => {
-      person.assignments.forEach((assignment: Assignment) => {
-        const group = getGroupInfoByActivityId(
-          assignment.activityId,
-          wcifPublic,
-        );
-        const personData = persons.find(
-          (p) => p.registrantId === person.registrantId,
-        );
-        activitiesTransactions.push(
-          this.prisma.staffActivity.upsert({
-            where: {
-              personId_groupId_role: {
-                groupId: group.activityCode,
-                personId: personData.id,
-                role: wcifRoleToAttendanceRole(assignment.assignmentCode),
-              },
-            },
-            update: {
-              isAssigned: true,
-            },
-            create: {
-              person: {
-                connect: {
-                  registrantId: person.registrantId,
-                },
-              },
-              role: wcifRoleToAttendanceRole(
-                assignment.assignmentCode,
-              ) as StaffRole,
-              groupId: group.activityCode,
-              isAssigned: true,
-            },
-          }),
-        );
-      });
-    });
-    await this.prisma.$transaction(transactions);
-    await this.prisma.$transaction(activitiesTransactions);
-    await this.prisma.competition.updateMany({
-      where: { wcaId },
-      data: {
-        name: wcifPublic.name,
-        countryIso2: wcifPublic.countryIso2,
-        wcif: wcifPublic,
-      },
-    });
-    await this.addUnofficialEventsToWcif();
-  }
+  private logger = new Logger(CompetitionService.name);
 
   async getCompetitionInfo() {
     const competition = await this.prisma.competition.findFirst({
@@ -347,31 +140,6 @@ export class CompetitionService {
       });
     });
     return activitiesToReturn;
-  }
-
-  async getAllRooms() {
-    return this.prisma.room.findMany();
-  }
-
-  async updateRooms(data: UpdateRoomsDto) {
-    const transactions = [];
-    for (const room of data.rooms) {
-      transactions.push(
-        this.prisma.room.update({
-          where: {
-            id: room.id,
-          },
-          data: {
-            currentGroupId: room.currentGroupId,
-          },
-        }),
-      );
-    }
-    await this.prisma.$transaction(transactions);
-    await this.socketController.sendServerStatus();
-    return {
-      message: 'Rooms updated',
-    };
   }
 
   async getCompetitionStatistics() {
@@ -487,6 +255,7 @@ export class CompetitionService {
             : competition.scoretakingTokenUpdatedAt,
         cubingContestsToken: dto.cubingContestsToken,
         sendingResultsFrequency: dto.sendingResultsFrequency,
+        shouldChangeGroupsAutomatically: dto.shouldChangeGroupsAutomatically,
       },
     });
   }
@@ -530,6 +299,7 @@ export class CompetitionService {
 
   @Cron(CronExpression.EVERY_5_MINUTES)
   async checkIfGroupShouldBeChanged() {
+    this.logger.log('Checking if group should be changed');
     const competition = await this.prisma.competition.findFirst();
     if (!competition) {
       return;
@@ -546,7 +316,7 @@ export class CompetitionService {
         devices: true,
       },
     });
-    rooms.forEach((room: Room) => {
+    for (const room of rooms) {
       let currentGroupIdInSchedule = '';
       wcif.schedule.venues.forEach((venue: Venue) => {
         venue.rooms.forEach((r: WCIFRoom) => {
@@ -561,20 +331,176 @@ export class CompetitionService {
                 }
               });
             });
-            if (
-              currentGroupIdInSchedule !== room.currentGroupId &&
-              currentGroupIdInSchedule !== ''
-            ) {
-              this.appGateway.server
-                .to(`competition`)
-                .emit('groupShouldBeChanged', {
-                  message: `Group in room ${room.name} should be changed`,
-                });
-            }
           }
         });
       });
+      const lastAttemptEntered = await this.prisma.attempt.findFirst({
+        where: {
+          result: {
+            roundId: room.currentGroupId.split('-g')[0],
+          },
+        },
+        orderBy: {
+          solvedAt: 'desc',
+        },
+      });
+      const isLastAttemptMoreThan5MinutesAgo =
+        new Date().getTime() - new Date(lastAttemptEntered.solvedAt).getTime() >
+        300000;
+
+      if (
+        (currentGroupIdInSchedule !== room.currentGroupId &&
+          currentGroupIdInSchedule !== '') ||
+        isLastAttemptMoreThan5MinutesAgo
+      ) {
+        if (competition.shouldChangeGroupsAutomatically) {
+          await this.checkIfGroupCanBeChanged(room.id);
+        } else {
+          this.appGateway.server
+            .to(`competition`)
+            .emit('groupShouldBeChanged', {
+              message: `Group in room ${room.name} should be changed, but automatic group change is disabled.`,
+            });
+        }
+      }
+    }
+  }
+
+  async checkIfGroupCanBeChanged(roomId: string) {
+    this.logger.log(`Checking if group in room ${roomId} can be changed`);
+    const room = await this.prisma.room.findFirst({
+      where: {
+        id: roomId,
+      },
     });
+    const roundId = room.currentGroupId.split('-g')[0];
+
+    const resultsFromDb =
+      await this.resultService.getAllResultsByRound(roundId);
+
+    const competition = await this.prisma.competition.findFirst();
+    const wcif = JSON.parse(JSON.stringify(competition.wcif));
+    const roundInfo = getRoundInfoFromWcif(
+      room.currentGroupId.split('-g')[0],
+      wcif,
+    );
+    const maxAttempts = getNumberOfAttemptsForRound(
+      room.currentGroupId.split('-g')[0],
+      wcif,
+    );
+    let finished = true;
+    for (const result of resultsFromDb) {
+      const { results } = this.wcaService.getAttemptsToEnterToWcaLive(
+        result,
+        competition,
+      );
+      if (results[0].attempts.length !== maxAttempts) {
+        if (roundInfo.cutoff) {
+          if (
+            results[0].attempts.some(
+              (a) => a.result < roundInfo.cutoff.attemptResult && a.result > 0,
+            )
+          ) {
+            finished = false;
+          }
+        } else {
+          finished = false;
+        }
+      }
+      if (
+        result.attempts.some((a) => a.status === AttemptStatus.UNRESOLVED) ||
+        result.attempts.some(
+          (a) => a.status === AttemptStatus.EXTRA_GIVEN && !a.replacedBy,
+        )
+      ) {
+        finished = false;
+      }
+      if (!finished) {
+        break;
+      }
+    }
+    if (finished) {
+      this.logger.log(`Group in room ${room.name} can be changed`);
+      await this.changeGroup(room.id, room.currentGroupId);
+    } else {
+      this.appGateway.server.to(`competition`).emit('groupShouldBeChanged', {
+        message: `Group in room ${room.name} should be changed, but not all results are entered.`,
+      });
+      this.logger.log(
+        `Group in room ${room.name} should be changed, but not all results are entered.`,
+      );
+    }
+  }
+
+  async changeGroup(roomId: string, currentGroupId: string) {
+    const room = await this.prisma.room.findFirst({
+      where: {
+        id: roomId,
+      },
+    });
+    const competition = await this.prisma.competition.findFirst();
+    const wcif = JSON.parse(JSON.stringify(competition.wcif));
+    const currentRoundId = currentGroupId.split('-g')[0];
+    const roundInfoFromSchedule = getActivityInfoFromSchedule(
+      currentRoundId,
+      wcif,
+    );
+    const potentialNextGroupId =
+      currentRoundId + '-g' + (+currentGroupId.split('-g')[1] + 1);
+    if (
+      roundInfoFromSchedule.childActivities.some(
+        (a) => a.activityCode === potentialNextGroupId,
+      )
+    ) {
+      await this.prisma.room.update({
+        where: {
+          id: roomId,
+        },
+        data: {
+          currentGroupId: potentialNextGroupId,
+        },
+      });
+      this.appGateway.server.to(`competition`).emit('groupShouldBeChanged', {
+        message: `Group in room ${room.name} was changed to ${potentialNextGroupId}`,
+      });
+      this.logger.log(
+        `Group in room ${roomId} changed to ${potentialNextGroupId}`,
+      );
+    } else {
+      const endTime = new Date(roundInfoFromSchedule.endTime);
+      let nextRoundId = '';
+      let nextRoundStartTime = new Date();
+      wcif.schedule.venues.forEach((venue: Venue) => {
+        venue.rooms.forEach((r: WCIFRoom) => {
+          r.activities.forEach((a: Activity) => {
+            if (
+              new Date(a.startTime).getDay() === endTime.getDay() &&
+              new Date(a.startTime).getTime() >= endTime.getTime() &&
+              new Date(a.startTime).getTime() <= nextRoundStartTime.getTime() &&
+              !a.activityCode.startsWith('other')
+            ) {
+              nextRoundId = a.activityCode;
+              nextRoundStartTime = new Date(a.startTime);
+            }
+          });
+        });
+      });
+      if (nextRoundId) {
+        const nextGroupId = nextRoundId + '-g1';
+        await this.prisma.room.update({
+          where: {
+            id: roomId,
+          },
+          data: {
+            currentGroupId: nextGroupId,
+          },
+        });
+        this.appGateway.server.to(`competition`).emit('groupShouldBeChanged', {
+          message: `Group in room ${room.name} was changed to ${nextGroupId}`,
+        });
+        this.logger.log(`Group in room ${room.name} changed to ${nextGroupId}`);
+      }
+    }
   }
 
   async sendResultsToWcaLive() {
@@ -586,22 +512,6 @@ export class CompetitionService {
         await this.wcaService.enterRoundToWcaLive(results);
       }
     }
-  }
-
-  async addUnofficialEventsToWcif() {
-    const unofficialEvents = await this.prisma.unofficialEvent.findMany();
-    const competition = await this.prisma.competition.findFirst();
-    if (!competition) {
-      throw new HttpException('Competition not found', 404);
-    }
-    const wcifPublic = await this.wcaService.getPublicWcif(competition.wcaId);
-    unofficialEvents.forEach((event) => {
-      wcifPublic.events.push(event.wcif);
-    });
-    await this.prisma.competition.update({
-      where: { id: competition.id },
-      data: { wcif: wcifPublic },
-    });
   }
 
   computeSecondaryText(groupId?: string) {

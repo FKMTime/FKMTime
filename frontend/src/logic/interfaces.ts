@@ -36,6 +36,7 @@ export interface Competition {
     wcaId: string;
     name: string;
     sendingResultsFrequency: SendingResultsFrequency;
+    shouldChangeGroupsAutomatically: boolean;
     shouldUpdateDevices: boolean;
     countryIso2: string;
     scoretakingToken?: string;

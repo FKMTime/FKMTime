@@ -124,7 +124,7 @@ export class WcaService {
     }
   }
 
-  async getAttemptsToEnterToWcaLive(result: any, competition: Competition) {
+  getAttemptsToEnterToWcaLive(result: any, competition: Competition) {
     const attemptsToReturn = [];
     const sortedAttempts = result.attempts.sort(
       (a: Attempt, b: Attempt) => a.attemptNumber - b.attemptNumber,

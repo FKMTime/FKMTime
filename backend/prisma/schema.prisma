@@ -61,6 +61,7 @@ model Competition {
   name                      String
   countryIso2               String?
   shouldUpdateDevices       Boolean                 @default(false)
+  shouldChangeGroupsAutomatically Boolean          @default(false)
   wifiSsid                  String?
   wifiPassword              String?
   wcif                      Json?

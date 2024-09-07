@@ -2,14 +2,14 @@ import { HttpException, Injectable } from '@nestjs/common';
 import { eventsData } from '../events';
 import { CreateUnofficialEventDto } from './dto/createUnofficialEvent.dto';
 import { DbService } from 'src/db/db.service';
-import { CompetitionService } from 'src/competition/competition.service';
 import { UpdateUnofficialEventDto } from './dto/updateUnofficialEvent.dto';
+import { SyncService } from 'src/competition/sync.service';
 
 @Injectable()
 export class EventsService {
   constructor(
     private readonly prisma: DbService,
-    private readonly competitionService: CompetitionService,
+    private readonly syncService: SyncService,
   ) {}
 
   getAllEvents() {
@@ -40,7 +40,7 @@ export class EventsService {
         wcif: wcif,
       },
     });
-    await this.competitionService.addUnofficialEventsToWcif();
+    await this.syncService.addUnofficialEventsToWcif();
     return {
       message: 'Unofficial event created successfully.',
     };
@@ -60,7 +60,7 @@ export class EventsService {
         wcif: wcif,
       },
     });
-    await this.competitionService.addUnofficialEventsToWcif();
+    await this.syncService.addUnofficialEventsToWcif();
     return {
       message: 'Unofficial event updated successfully.',
     };
@@ -87,7 +87,7 @@ export class EventsService {
     await this.prisma.unofficialEvent.delete({
       where: { id },
     });
-    await this.competitionService.addUnofficialEventsToWcif();
+    await this.syncService.addUnofficialEventsToWcif();
     return {
       message: 'Unofficial event deleted successfully.',
     };

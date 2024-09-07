@@ -15,10 +15,18 @@ import { CompetitionService } from './competition.service';
 import { UpdateCompetitionDto } from './dto/updateCompetition.dto';
 import { UpdateRoomsDto } from './dto/updateCurrentRound.dto';
 import { UpdateDevicesSettingsDto } from './dto/updateDevicesSettings.dto';
+import { RoomsService } from './rooms.service';
+import { ImportService } from './import.service';
+import { SyncService } from './sync.service';
 
 @Controller('competition')
 export class CompetitionController {
-  constructor(private readonly competitionService: CompetitionService) {}
+  constructor(
+    private readonly competitionService: CompetitionService,
+    private readonly roomsService: RoomsService,
+    private readonly importService: ImportService,
+    private readonly syncService: SyncService,
+  ) {}
 
   @UseGuards(AuthGuard('jwt'))
   @Get()
@@ -50,13 +58,13 @@ export class CompetitionController {
     @Param('id') id: string,
     @GetUser() user: JwtAuthDto,
   ) {
-    return await this.competitionService.importCompetition(id, user.userId);
+    return await this.importService.importCompetition(id, user.userId);
   }
 
   @UseGuards(AuthGuard('jwt'), AdminGuard)
   @Get('sync/:id')
   async syncCompetition(@Param('id') id: string, @GetUser() user: JwtAuthDto) {
-    return await this.competitionService.updateWcif(id, user.userId);
+    return await this.syncService.updateWcif(id, user.userId);
   }
 
   @UseGuards(AuthGuard('jwt'))
@@ -76,13 +84,13 @@ export class CompetitionController {
   @UseGuards(AuthGuard('jwt'))
   @Get('rooms')
   async getAllRooms() {
-    return this.competitionService.getAllRooms();
+    return this.roomsService.getAllRooms();
   }
 
   @UseGuards(AuthGuard('jwt'), AdminGuard)
   @Put('rooms')
   async updateRooms(@Body() dto: UpdateRoomsDto) {
-    return this.competitionService.updateRooms(dto);
+    return this.roomsService.updateRooms(dto);
   }
 
   @UseGuards(AuthGuard('jwt'), AdminGuard)

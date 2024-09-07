@@ -6,17 +6,22 @@ import { CompetitionController } from './competition.controller';
 import { AuthModule } from 'src/auth/auth.module';
 import { ResultModule } from 'src/result/result.module';
 import { AppModule } from 'src/app.module';
+import { RoomsService } from './rooms.service';
+import { ImportService } from './import.service';
+import { SyncService } from './sync.service';
+import { DbModule } from 'src/db/db.module';
 
 @Module({
-  providers: [CompetitionService],
+  providers: [CompetitionService, RoomsService, ImportService, SyncService],
   controllers: [CompetitionController],
   imports: [
     AuthModule,
     WcaModule,
+    DbModule,
     forwardRef(() => SocketModule),
     ResultModule,
     forwardRef(() => AppModule),
   ],
-  exports: [CompetitionService],
+  exports: [CompetitionService, SyncService],
 })
 export class CompetitionModule {}

@@ -292,11 +292,7 @@ export class ResultService {
     const results = await this.getAllResultsByRound(roundId);
     if (isUnofficial) {
       if (!competition.cubingContestsToken) {
-        return {
-          message: 'Cubing Contests token not found',
-          status: 404,
-          error: true,
-        };
+        throw new HttpException('Cubing Contests token not found', 404);
       }
       return await this.contestsService.enterRoundToCubingContests(results);
     } else {
