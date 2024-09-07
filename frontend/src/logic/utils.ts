@@ -61,81 +61,8 @@ export const formatTime = (dateString: string) => {
     return `${hours}:${minutes}`;
 };
 
-export const getPersonFromWcif = (registrantId: number, wcif: Competition) => {
-    return wcif.persons.find((person) => person.registrantId === registrantId);
-};
-
-export const getEventIdFromRoundId = (roundId: string) => {
-    return roundId.split("-")[0];
-};
-
-export const getRoundInfoFromWcif = (roundId: string, wcif: Competition) => {
-    const eventId = getEventIdFromRoundId(roundId);
-    const event = wcif.events.find((e) => e.id === eventId);
-    return event?.rounds.find((round) => round.id === roundId);
-};
-
-export const getCutoffByRoundId = (roundId: string, wcif: Competition) => {
-    const round = getRoundInfoFromWcif(roundId, wcif);
-    return round?.cutoff || null;
-};
-
-export const getLimitByRoundId = (roundId: string, wcif: Competition) => {
-    const round = getRoundInfoFromWcif(roundId, wcif);
-    return round?.timeLimit || null;
-};
-
-export const getNumberOfAttemptsForRound = (
-    roundId: string,
-    wcif: Competition
-): number => {
-    const round = getRoundInfoFromWcif(roundId, wcif);
-    if (!round) return 0;
-    switch (round.format) {
-        case "1":
-            return 1;
-        case "2":
-            return 2;
-        case "3":
-            return 3;
-        case "a":
-            return 5;
-        case "m":
-            return 3;
-    }
-};
-
-export const getCompetitionDates = (startDate: Date, numberOfDays: number) => {
-    const dates: Date[] = [];
-    for (let i = 0; i < numberOfDays; i++) {
-        dates.push(new Date(startDate));
-        startDate.setDate(startDate.getDate() + 1);
-    }
-    return dates;
-};
-
 export const isNewcomer = (person: Person) => {
     return (!person.wcaId || person.wcaId === "") && person.canCompete;
-};
-
-export const prettyRoundFormat = (format: string, cutoffAttempts?: number) => {
-    switch (format) {
-        case "1":
-            return "Best of 1";
-        case "2":
-            return "Best of 2";
-        case "3":
-            return "Best of 3";
-        case "a":
-            if (!cutoffAttempts) {
-                return `Average of 5`;
-            }
-            return `Best of ${cutoffAttempts} / Average of 5`;
-        case "m":
-            return "Mean of 3";
-        default:
-            return "Unknown";
-    }
 };
 
 export const prettyDeviceType = (type: string) => {

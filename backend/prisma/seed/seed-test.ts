@@ -2,10 +2,8 @@ import { PrismaClient, SendingResultsFrequency } from '@prisma/client';
 import { Assignment, Competition, Person } from '@wca/helpers';
 import * as fs from 'fs';
 import { sha512 } from 'js-sha512';
-import {
-  getGroupInfoByActivityId,
-  wcifRoleToAttendanceRole,
-} from '../../src/wcif-helpers';
+import { wcifRoleToAttendanceRole } from '../../src/wcif-helpers';
+import { getGroupInfoByActivityId } from 'wcif-helpers';
 
 const prisma = new PrismaClient();
 

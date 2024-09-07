@@ -1,14 +1,11 @@
 import { Competition } from "@wca/helpers";
+import { getLimitByRoundId, getNumberOfAttemptsForRound } from "wcif-helpers";
 
 import { average, best, formattedBest } from "./average";
 import { Attempt, Result, ResultWithAverage } from "./interfaces";
 import { backendRequest } from "./request";
 import { resultToString } from "./resultFormatters";
-import {
-    getLimitByRoundId,
-    getNumberOfAttemptsForRound,
-    getSubmittedAttempts,
-} from "./utils";
+import { getSubmittedAttempts } from "./utils";
 
 export const getResultsByRoundId = async (roundId: string, search?: string) => {
     let route = `result/round/${roundId}`;

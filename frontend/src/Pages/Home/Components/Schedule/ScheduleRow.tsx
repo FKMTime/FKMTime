@@ -1,5 +1,6 @@
 import { Td, Tr } from "@chakra-ui/react";
 import { Event, Round } from "@wca/helpers";
+import { prettyRoundFormat } from "wcif-helpers";
 
 import { getActivityName } from "@/logic/activities";
 import { Activity } from "@/logic/interfaces.ts";
@@ -8,7 +9,6 @@ import {
     cumulativeRoundsToString,
     formatTime,
     getFormattedRealActivityTime,
-    prettyRoundFormat,
 } from "@/logic/utils";
 
 interface ScheduleRowProps {

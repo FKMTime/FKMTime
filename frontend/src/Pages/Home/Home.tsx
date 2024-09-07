@@ -3,6 +3,7 @@ import { Event, Room as WCIFRoom, Venue } from "@wca/helpers";
 import { useAtom } from "jotai";
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { getCompetitionDates } from "wcif-helpers";
 
 import EventIcon from "@/Components/Icons/EventIcon";
 import LoadingPage from "@/Components/LoadingPage";
@@ -15,7 +16,6 @@ import {
 } from "@/logic/competition";
 import { Activity, Room } from "@/logic/interfaces";
 import { getAllRooms } from "@/logic/rooms";
-import { getCompetitionDates } from "@/logic/utils";
 
 import CompetitionStatistics from "./Components/CompetitionStatistics";
 import HomeShortcuts from "./Components/HomeShortcuts";

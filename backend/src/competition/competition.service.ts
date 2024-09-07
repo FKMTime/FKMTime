@@ -12,15 +12,15 @@ import { DbService } from '../db/db.service';
 import { eventsData } from '../events';
 import { SocketController } from '../socket/socket.controller';
 import { WcaService } from '../wca/wca.service';
-import {
-  getActivityInfoFromSchedule,
-  getNumberOfAttemptsForRound,
-  getRoundInfoFromWcif,
-} from '../wcif-helpers';
 import { UpdateCompetitionDto } from './dto/updateCompetition.dto';
 import { UpdateDevicesSettingsDto } from './dto/updateDevicesSettings.dto';
 import { ResultService } from 'src/result/result.service';
 import { AppGateway } from 'src/app.gateway';
+import {
+  getActivityInfoFromSchedule,
+  getNumberOfAttemptsForRound,
+  getRoundInfoFromWcif,
+} from 'wcif-helpers';
 
 @Injectable()
 export class CompetitionService {
@@ -441,10 +441,11 @@ export class CompetitionService {
     const competition = await this.prisma.competition.findFirst();
     const wcif = JSON.parse(JSON.stringify(competition.wcif));
     const currentRoundId = currentGroupId.split('-g')[0];
-    const roundInfoFromSchedule = getActivityInfoFromSchedule(
+    const roundInfoFromSchedule: Activity = getActivityInfoFromSchedule(
       currentRoundId,
       wcif,
     );
+    if (!roundInfoFromSchedule) return;
     const potentialNextGroupId =
       currentRoundId + '-g' + (+currentGroupId.split('-g')[1] + 1);
     if (

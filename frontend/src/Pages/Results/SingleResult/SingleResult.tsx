@@ -16,6 +16,11 @@ import { useConfirm } from "chakra-ui-confirm";
 import { useAtom } from "jotai";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import {
+    getCutoffByRoundId,
+    getLimitByRoundId,
+    getNumberOfAttemptsForRound,
+} from "wcif-helpers";
 
 import FlagIcon from "@/Components/Icons/FlagIcon";
 import LoadingPage from "@/Components/LoadingPage";
@@ -33,9 +38,6 @@ import {
 } from "@/logic/results";
 import {
     cumulativeRoundsToString,
-    getCutoffByRoundId,
-    getLimitByRoundId,
-    getNumberOfAttemptsForRound,
     getSubmissionPlatformName,
     getSubmittedAttempts,
     isThereADifferenceBetweenResults,

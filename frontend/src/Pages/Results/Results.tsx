@@ -10,6 +10,11 @@ import {
     useState,
 } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import {
+    getCutoffByRoundId,
+    getLimitByRoundId,
+    getNumberOfAttemptsForRound,
+} from "wcif-helpers";
 
 import LoadingPage from "@/Components/LoadingPage";
 import { activityCodeToName } from "@/logic/activities";
@@ -22,9 +27,6 @@ import { getResultsByRoundId, reSubmitRoundToWcaLive } from "@/logic/results";
 import { getAllRooms } from "@/logic/rooms";
 import {
     cumulativeRoundsToString,
-    getCutoffByRoundId,
-    getLimitByRoundId,
-    getNumberOfAttemptsForRound,
     getSubmissionPlatformName,
 } from "@/logic/utils";
 import { socket, SocketContext } from "@/socket";

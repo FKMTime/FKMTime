@@ -49,7 +49,8 @@
     "prisma": "^5.16.1",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.1",
-    "socket.io": "^4.7.5"
+    "socket.io": "^4.7.5",
+    "wcif-helpers": "^0.1.2"
   },
   "devDependencies": {
     "@nestjs/cli": "^10.4.5",

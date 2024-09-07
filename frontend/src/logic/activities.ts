@@ -4,6 +4,7 @@ import {
     Competition,
 } from "@wca/helpers";
 import { Room as WCIFRoom } from "@wca/helpers/lib/models/room";
+import { getEventIdFromRoundId } from "wcif-helpers";
 
 import { getEventName, isUnofficialEvent } from "./events";
 
@@ -33,7 +34,7 @@ export const getGroupsByRoundId = (roundId: string, wcif: Competition) => {
             }
         });
     });
-    const eventId = roundId.split("-")[0];
+    const eventId = getEventIdFromRoundId(roundId);
     if (isUnofficialEvent(eventId)) {
         activitiesToReturn.push({
             id: 1,

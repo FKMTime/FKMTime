@@ -3,10 +3,8 @@ import { SendingResultsFrequency } from '@prisma/client';
 import { Assignment, Person } from '@wca/helpers';
 import { DbService } from 'src/db/db.service';
 import { WcaService } from 'src/wca/wca.service';
-import {
-  getGroupInfoByActivityId,
-  wcifRoleToAttendanceRole,
-} from 'src/wcif-helpers';
+import { wcifRoleToAttendanceRole } from 'src/wcif-helpers';
+import { getGroupInfoByActivityId } from 'wcif-helpers';
 
 export class ImportService {
   constructor(

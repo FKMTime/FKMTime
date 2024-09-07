@@ -2,6 +2,7 @@ import { Box, Heading } from "@chakra-ui/react";
 import { useAtom } from "jotai";
 import { useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import { getNumberOfAttemptsForRound } from "wcif-helpers";
 
 import LoadingPage from "@/Components/LoadingPage";
 import { competitionAtom } from "@/logic/atoms";
@@ -12,7 +13,6 @@ import {
     orderResultsByAverage,
     resultsWithAverageProperty,
 } from "@/logic/results";
-import { getNumberOfAttemptsForRound } from "@/logic/utils";
 import { socket, SocketContext } from "@/socket";
 
 import EventAndRoundSelector from "../Components/EventAndRoundSelector";

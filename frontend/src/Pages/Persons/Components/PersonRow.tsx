@@ -4,6 +4,7 @@ import { useState } from "react";
 import { FaAddressCard } from "react-icons/fa";
 import { MdAssignment, MdBarChart, MdDone } from "react-icons/md";
 import { useNavigate } from "react-router-dom";
+import { getPersonFromWcif } from "wcif-helpers";
 
 import Avatar from "@/Components/Avatar/Avatar";
 import EventIcon from "@/Components/Icons/EventIcon";
@@ -12,11 +13,7 @@ import SmallIconButton from "@/Components/SmallIconButton";
 import { isAdmin } from "@/logic/auth.ts";
 import { Person } from "@/logic/interfaces";
 import { WCA_ORIGIN } from "@/logic/request";
-import {
-    getPersonFromWcif,
-    prettyGender,
-    regionNameByIso2,
-} from "@/logic/utils";
+import { prettyGender, regionNameByIso2 } from "@/logic/utils";
 
 import AssignCardModal from "./AssignCardModal";
 import DisplayGroupsModal from "./DisplayGroupsModal";
