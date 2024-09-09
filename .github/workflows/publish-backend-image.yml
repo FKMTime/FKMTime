@@ -6,6 +6,7 @@ on:
       - main
     paths:
       - 'backend/src/**'
+      - 'backend/prisma/**'
       - 'backend/Dockerfile'
       - 'backend/package.json'
       - '.github/workflows/publish-backend-image.yml'
