@@ -69,6 +69,11 @@ describe('SettingsController (e2e)', () => {
         id: expect.any(String),
         createdAt: expect.any(String),
         updatedAt: expect.any(String),
+        isShared: true,
+        user: {
+          id: expect.any(String),
+          fullName: 'Admin',
+        },
         userId: expect.any(String),
         name: 'Test',
         comment: 'Test',
