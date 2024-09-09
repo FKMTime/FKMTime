@@ -20,7 +20,7 @@ const HomeShortcuts = ({ rooms, currentRounds }: HomeShortcutsProps) => {
             <Button
                 colorScheme="yellow"
                 onClick={() => navigate("/incidents")}
-                width={{ base: "100%", md: "20%" }}
+                width={{ base: "100%", md: "fit-content" }}
             >
                 Incidents
             </Button>
