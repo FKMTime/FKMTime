@@ -472,18 +472,17 @@ export class CompetitionService {
       let nextRoundId = '';
       let nextRoundStartTime = new Date();
       wcif.schedule.venues.forEach((venue: Venue) => {
-        venue.rooms.forEach((r: WCIFRoom) => {
-          r.activities.forEach((a: Activity) => {
-            if (
-              new Date(a.startTime).getDay() === endTime.getDay() &&
-              new Date(a.startTime).getTime() >= endTime.getTime() &&
-              new Date(a.startTime).getTime() <= nextRoundStartTime.getTime() &&
-              !a.activityCode.startsWith('other')
-            ) {
-              nextRoundId = a.activityCode;
-              nextRoundStartTime = new Date(a.startTime);
-            }
-          });
+        const room = venue.rooms.find((r: WCIFRoom) => r.name === room.name);
+        room.activities.forEach((a: Activity) => {
+          if (
+            new Date(a.startTime).getDay() === endTime.getDay() &&
+            new Date(a.startTime).getTime() >= endTime.getTime() &&
+            new Date(a.startTime).getTime() <= nextRoundStartTime.getTime() &&
+            !a.activityCode.startsWith('other')
+          ) {
+            nextRoundId = a.activityCode;
+            nextRoundStartTime = new Date(a.startTime);
+          }
         });
       });
       if (nextRoundId) {
