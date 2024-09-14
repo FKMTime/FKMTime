@@ -1,11 +1,30 @@
 import { PrismaClient, SendingResultsFrequency } from '@prisma/client';
-import { Assignment, Competition, Person } from '@wca/helpers';
+import { Activity, Assignment, Competition, Person } from '@wca/helpers';
 import * as fs from 'fs';
 import { sha512 } from 'js-sha512';
 import { wcifRoleToAttendanceRole } from '../../src/wcif-helpers';
-import { getGroupInfoByActivityId } from 'wcif-helpers';
 
 const prisma = new PrismaClient();
+
+//This is temporary fix for the issue with importing functions from the wcif-helpers library
+const getGroupInfoByActivityId = (activityId: number, wcif: Competition) => {
+  let groupInfo: Activity | null = null;
+  wcif.schedule.venues.forEach((venue) => {
+    venue.rooms.forEach((room) => {
+      room.activities.forEach((activity) => {
+        if (activity.id === activityId) {
+          groupInfo = activity;
+        }
+        activity.childActivities.forEach((childActivity) => {
+          if (childActivity.id === activityId) {
+            groupInfo = childActivity;
+          }
+        });
+      });
+    });
+  });
+  return groupInfo as Activity | null;
+};
 
 export async function seedDb() {
   const adminPassword = sha512('admin');
