@@ -17,42 +17,6 @@ export class WcaService {
   private wcaLogger = new Logger(`WCA`);
   private wcaLiveLogger = new Logger(`WCA-Live`);
 
-  async enterAttemptToWcaLive(
-    competitionId: string,
-    scoretakingToken: string,
-    eventId: string,
-    roundNumber: number,
-    registrantId: number,
-    attemptNumber: number,
-    attemptResult: number,
-  ) {
-    try {
-      const response = await fetch(`${WCA_LIVE_API_ORIGIN}/enter-attempt`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${scoretakingToken}`,
-        },
-        body: JSON.stringify({
-          competitionWcaId: competitionId,
-          eventId: eventId,
-          roundNumber: roundNumber,
-          registrantId: registrantId,
-          attemptNumber: attemptNumber,
-          attemptResult: attemptResult,
-        }),
-      });
-      const data = await response.json();
-      this.wcaLiveLogger.log(
-        `Sending attempt to WCA Live: ${eventId}-r${roundNumber} competitorId: ${registrantId} attemptNumber: ${attemptNumber} attemptResult: ${attemptResult} status ${response.status} data ${JSON.stringify(data)}`,
-      );
-    } catch (error) {
-      this.wcaLiveLogger.error(
-        `Error sending attempt to WCA Live: ${eventId}-r${roundNumber} competitorId: ${registrantId} attemptNumber: ${attemptNumber} attemptResult: ${attemptResult} error ${error}`,
-      );
-    }
-  }
-
   async enterWholeScorecardToWcaLive(result: any) {
     const competition = await this.prisma.competition.findFirst();
     const { competitionId, eventId, roundNumber, scoretakingToken, results } =

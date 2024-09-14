@@ -87,7 +87,7 @@ services:
   dummy_wca_live:
     container_name: fkmtime-dev-dummy-wca-live
     restart: unless-stopped
-    image: maxidragon/dummy-wca-live:latest
+    image: maxidragon/dummy-wca-live:main
     ports:
       - "4000:4000"
 
