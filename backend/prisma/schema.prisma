@@ -68,11 +68,11 @@ model Competition {
     shouldUpdateDevices             Boolean                 @default(false) @map("should_update_devices")
     shouldChangeGroupsAutomatically Boolean                 @default(false) @map("should_change_groups_automatically")
     wifiSsid                        String?                 @map("wifi_ssid")
-    wifiPassword                    String?                 @map("wifi_passowrd")
+    wifiPassword                    String?                 @map("wifi_password")
     wcif                            Json?
     scoretakingToken                String?                 @map("scoretaking_token")
     scoretakingTokenUpdatedAt       DateTime?               @map("scoretaking_token_updated_at")
-    cubingContestsToken             String?                 @map("cubnig_contests_token")
+    cubingContestsToken             String?                 @map("cubing_contests_token")
 
     @@map("competition")
 }
@@ -91,7 +91,7 @@ model Room {
     id             String   @id @default(uuid())
     name           String
     color          String
-    currentGroupId String?  @map("currrent_group_id")
+    currentGroupId String?  @map("current_group_id")
     createdAt      DateTime @default(now()) @map("created_at")
     updatedAt      DateTime @updatedAt @map("updated_at")
     devices        Device[]
@@ -126,7 +126,7 @@ model Attempt {
     status         AttemptStatus @default(STANDARD)
     penalty        Int?
     value          Int
-    originalTime   Int?          @map("orginal_time")
+    originalTime   Int?          @map("original_time")
     inspectionTime Int?          @map("inspection_time")
     judgeId        String?       @map("judge_id")
     judge          Person?       @relation(fields: [judgeId], references: [id])
@@ -165,7 +165,7 @@ model QuickAction {
     isShared  Boolean  @default(true) @map("is_shared")
     userId    String   @map("user_id")
     user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-    createdAt DateTime @default(now()) @map("crated_at")
+    createdAt DateTime @default(now()) @map("created_at")
     updatedAt DateTime @updatedAt @map("updated_at")
 
 
