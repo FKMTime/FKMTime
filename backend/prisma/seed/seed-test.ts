@@ -53,7 +53,7 @@ export async function seedDb() {
       shouldUpdateDevices: true,
       wifiSsid: 'FKM',
       wifiPassword: 'FKM',
-      scoretakingToken: 'WCA',
+      scoretakingToken: 'wca-live-token',
       scoretakingTokenUpdatedAt: new Date(),
       wcif: JSON.parse(wcifFile),
     },
