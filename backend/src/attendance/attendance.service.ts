@@ -1,8 +1,9 @@
 import { Injectable } from '@nestjs/common';
+import { AppGateway } from 'src/app.gateway';
+
 import { DbService } from '../db/db.service';
 import { getTranslation } from '../translations';
 import { CreateAttendaceDto } from './dto/createAttendance.dto';
-import { AppGateway } from 'src/app.gateway';
 
 @Injectable()
 export class AttendanceService {

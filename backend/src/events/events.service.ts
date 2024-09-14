@@ -1,9 +1,10 @@
 import { HttpException, Injectable } from '@nestjs/common';
+import { SyncService } from 'src/competition/sync.service';
+import { DbService } from 'src/db/db.service';
+
 import { eventsData } from '../events';
 import { CreateUnofficialEventDto } from './dto/createUnofficialEvent.dto';
-import { DbService } from 'src/db/db.service';
 import { UpdateUnofficialEventDto } from './dto/updateUnofficialEvent.dto';
-import { SyncService } from 'src/competition/sync.service';
 
 @Injectable()
 export class EventsService {

@@ -1,7 +1,8 @@
-import { Inject, forwardRef } from '@nestjs/common';
+import { forwardRef, Inject } from '@nestjs/common';
 import { DbService } from 'src/db/db.service';
-import { UpdateRoomsDto } from './dto/updateCurrentRound.dto';
 import { SocketController } from 'src/socket/socket.controller';
+
+import { UpdateRoomsDto } from './dto/updateCurrentRound.dto';
 
 export class RoomsService {
   constructor(

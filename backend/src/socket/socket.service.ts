@@ -1,4 +1,6 @@
 import { forwardRef, Inject, Injectable } from '@nestjs/common';
+import { ResultFromDeviceService } from 'src/result/resultFromDevice.service';
+
 import { AttendanceService } from '../attendance/attendance.service';
 import { CreateAttendaceDto } from '../attendance/dto/createAttendance.dto';
 import { CompetitionService } from '../competition/competition.service';
@@ -9,7 +11,6 @@ import { PersonService } from '../person/person.service';
 import { CheckIfAttemptEnteredDto } from '../result/dto/checkIfAttemptEntered.dto';
 import { EnterAttemptDto } from '../result/dto/enterAttempt.dto';
 import { ResultService } from '../result/result.service';
-import { ResultFromDeviceService } from 'src/result/resultFromDevice.service';
 
 @Injectable()
 export class SocketService {

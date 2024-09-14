@@ -1,27 +1,28 @@
 import {
+  forwardRef,
   HttpException,
   Inject,
   Injectable,
   Logger,
-  forwardRef,
 } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { AttemptStatus, SendingResultsFrequency } from '@prisma/client';
 import { Activity, Event, Room as WCIFRoom, Venue } from '@wca/helpers';
-import { DbService } from '../db/db.service';
-import { eventsData } from '../events';
-import { SocketController } from '../socket/socket.controller';
-import { WcaService } from '../wca/wca.service';
-import { UpdateCompetitionDto } from './dto/updateCompetition.dto';
-import { UpdateDevicesSettingsDto } from './dto/updateDevicesSettings.dto';
-import { ResultService } from 'src/result/result.service';
 import { AppGateway } from 'src/app.gateway';
+import { ResultService } from 'src/result/result.service';
 import {
   getActivityInfoFromSchedule,
   getActivityInfoFromScheduleWithRoom,
   getNumberOfAttemptsForRound,
   getRoundInfoFromWcif,
 } from 'wcif-helpers';
+
+import { DbService } from '../db/db.service';
+import { eventsData } from '../events';
+import { SocketController } from '../socket/socket.controller';
+import { WcaService } from '../wca/wca.service';
+import { UpdateCompetitionDto } from './dto/updateCompetition.dto';
+import { UpdateDevicesSettingsDto } from './dto/updateDevicesSettings.dto';
 
 @Injectable()
 export class CompetitionService {

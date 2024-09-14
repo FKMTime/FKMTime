@@ -1,10 +1,11 @@
-import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
-import { DbService } from '../db/db.service';
 import { HttpException, Injectable } from '@nestjs/common';
-import { CreateUserDto } from './dto/createUser.dto';
-import { UpdateUserDto } from './dto/updateUser.dto';
+import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 import { sha512 } from 'js-sha512';
 import { WcaService } from 'src/wca/wca.service';
+
+import { DbService } from '../db/db.service';
+import { CreateUserDto } from './dto/createUser.dto';
+import { UpdateUserDto } from './dto/updateUser.dto';
 
 @Injectable()
 export class UserService {

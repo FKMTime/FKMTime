@@ -1,24 +1,25 @@
 import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
+import { ConfigModule } from '@nestjs/config';
+import { ScheduleModule } from '@nestjs/schedule';
+
+import { AppGateway } from './app.gateway';
+import { AttemptModule } from './attempt/attempt.module';
+import { AttendanceModule } from './attendance/attendance.module';
 import { AuthModule } from './auth/auth.module';
-import { DbModule } from './db/db.module';
-import { UserModule } from './user/user.module';
 import { CompetitionModule } from './competition/competition.module';
+import { ContestsModule } from './contests/contests.module';
+import { DbModule } from './db/db.module';
+import { DeviceModule } from './device/device.module';
+import { validate } from './env.validation';
+import { EventsModule } from './events/events.module';
+import { HealthModule } from './health/health.module';
+import { LoggerMiddleware } from './middleware/logger.middleware';
 import { PersonModule } from './person/person.module';
 import { ResultModule } from './result/result.module';
-import { AttemptModule } from './attempt/attempt.module';
 import { SettingsModule } from './settings/settings.module';
-import { DeviceModule } from './device/device.module';
-import { AttendanceModule } from './attendance/attendance.module';
-import { LoggerMiddleware } from './middleware/logger.middleware';
-import { ScheduleModule } from '@nestjs/schedule';
-import { WcaModule } from './wca/wca.module';
-import { HealthModule } from './health/health.module';
 import { SocketModule } from './socket/socket.module';
-import { EventsModule } from './events/events.module';
-import { ContestsModule } from './contests/contests.module';
-import { AppGateway } from './app.gateway';
-import { ConfigModule } from '@nestjs/config';
-import { validate } from './env.validation';
+import { UserModule } from './user/user.module';
+import { WcaModule } from './wca/wca.module';
 
 @Module({
   providers: [AppGateway],

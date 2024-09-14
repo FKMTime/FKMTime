@@ -9,14 +9,15 @@ import {
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { AdminGuard } from 'src/auth/guards/admin.guard';
+
 import { GetUser } from '../auth/decorator/getUser.decorator';
 import { JwtAuthDto } from '../auth/dto/jwt-auth.dto';
 import { CompetitionService } from './competition.service';
 import { UpdateCompetitionDto } from './dto/updateCompetition.dto';
 import { UpdateRoomsDto } from './dto/updateCurrentRound.dto';
 import { UpdateDevicesSettingsDto } from './dto/updateDevicesSettings.dto';
-import { RoomsService } from './rooms.service';
 import { ImportService } from './import.service';
+import { RoomsService } from './rooms.service';
 import { SyncService } from './sync.service';
 
 @Controller('competition')

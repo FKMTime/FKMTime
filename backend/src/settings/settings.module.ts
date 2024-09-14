@@ -1,7 +1,8 @@
 import { Module } from '@nestjs/common';
+
 import { AuthModule } from '../auth/auth.module';
-import { SettingsService } from './settings.service';
 import { SettingsController } from './settings.controller';
+import { SettingsService } from './settings.service';
 
 @Module({
   providers: [SettingsService],

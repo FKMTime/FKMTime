@@ -1,10 +1,10 @@
-import { Inject, forwardRef, Logger } from '@nestjs/common';
+import { forwardRef, Inject, Logger } from '@nestjs/common';
 import {
   AttemptStatus,
-  Person,
   AttemptType,
-  SendingResultsFrequency,
   DeviceType,
+  Person,
+  SendingResultsFrequency,
 } from '@prisma/client';
 import { Event, Round } from '@wca/helpers';
 import { AppGateway } from 'src/app.gateway';
@@ -16,13 +16,14 @@ import { isUnofficialEvent } from 'src/events';
 import { PersonService } from 'src/person/person.service';
 import { getTranslation, isLocaleAvailable } from 'src/translations';
 import { WcaService } from 'src/wca/wca.service';
+
 import { EnterAttemptDto } from './dto/enterAttempt.dto';
 import {
-  isCompetitorSignedInForEvent,
-  getSortedStandardAttempts,
-  getSortedExtraAttempts,
   checkAttemptLimit,
   checkCutoff,
+  getSortedExtraAttempts,
+  getSortedStandardAttempts,
+  isCompetitorSignedInForEvent,
 } from './helpers';
 import { ResultService } from './result.service';
 

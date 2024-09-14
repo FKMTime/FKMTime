@@ -1,13 +1,14 @@
-import { HttpException, Inject, Injectable, forwardRef } from '@nestjs/common';
+import { forwardRef, HttpException, Inject, Injectable } from '@nestjs/common';
 import { AttemptStatus, StaffRole } from '@prisma/client';
+import { AppGateway } from 'src/app.gateway';
+import { AttendanceService } from 'src/attendance/attendance.service';
+import { isUnofficialEvent } from 'src/events';
+
 import { DbService } from '../db/db.service';
 import { ResultService } from '../result/result.service';
 import { SocketController } from '../socket/socket.controller';
 import { CreateAttemptDto } from './dto/createAttempt.dto';
 import { UpdateAttemptDto } from './dto/updateAttempt.dto';
-import { isUnofficialEvent } from 'src/events';
-import { AttendanceService } from 'src/attendance/attendance.service';
-import { AppGateway } from 'src/app.gateway';
 
 @Injectable()
 export class AttemptService {

@@ -1,3 +1,5 @@
+import { Logger, UseGuards } from '@nestjs/common';
+import { AuthGuard } from '@nestjs/passport';
 import {
   ConnectedSocket,
   MessageBody,
@@ -5,11 +7,10 @@ import {
   WebSocketGateway,
   WebSocketServer,
 } from '@nestjs/websockets';
-import { Logger, UseGuards } from '@nestjs/common';
-import { AuthGuard } from '@nestjs/passport';
 import { Server, Socket } from 'socket.io';
-import { RequestToConnectDto } from './device/dto/requestToConnect.dto';
+
 import { AdminGuard } from './auth/guards/admin.guard';
+import { RequestToConnectDto } from './device/dto/requestToConnect.dto';
 
 @WebSocketGateway({
   namespace: '/',

@@ -1,15 +1,16 @@
 import { HttpException, Injectable } from '@nestjs/common';
 import { AttemptStatus, AttemptType, StaffRole } from '@prisma/client';
 import { Event, Round } from '@wca/helpers';
+import { AppGateway } from 'src/app.gateway';
+import { ContestsService } from 'src/contests/contests.service';
 import { DbService } from 'src/db/db.service';
+import { isUnofficialEvent } from 'src/events';
+
 import { AttendanceService } from '../attendance/attendance.service';
 import { WcaService } from '../wca/wca.service';
 import { CheckIfAttemptEnteredDto } from './dto/checkIfAttemptEntered.dto';
-import { getSortedStandardAttempts } from './helpers';
-import { isUnofficialEvent } from 'src/events';
-import { ContestsService } from 'src/contests/contests.service';
-import { AppGateway } from 'src/app.gateway';
 import { DoubleCheckDto } from './dto/doubleCheck.dto';
+import { getSortedStandardAttempts } from './helpers';
 
 @Injectable()
 export class ResultService {

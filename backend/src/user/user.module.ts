@@ -1,8 +1,9 @@
 import { Module } from '@nestjs/common';
-import { UserService } from './user.service';
 import { AuthModule } from 'src/auth/auth.module';
-import { UserController } from './user.controller';
 import { WcaModule } from 'src/wca/wca.module';
+
+import { UserController } from './user.controller';
+import { UserService } from './user.service';
 
 @Module({
   providers: [UserService],

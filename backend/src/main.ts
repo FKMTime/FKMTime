@@ -2,6 +2,7 @@ import { ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import * as dotenv from 'dotenv';
 import * as passport from 'passport';
+
 import { AppModule } from './app.module';
 
 dotenv.config();

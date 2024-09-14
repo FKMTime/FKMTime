@@ -1,9 +1,10 @@
-import { DbService } from '../db/db.service';
 import { HttpException, Injectable } from '@nestjs/common';
-import { UpdatePersonDto } from './dto/updatePerson.dto';
-import { AddPersonDto } from './dto/addPerson.dto';
-import { convertToLatin, getTranslation } from '../translations';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
+
+import { DbService } from '../db/db.service';
+import { convertToLatin, getTranslation } from '../translations';
+import { AddPersonDto } from './dto/addPerson.dto';
+import { UpdatePersonDto } from './dto/updatePerson.dto';
 
 @Injectable()
 export class PersonService {

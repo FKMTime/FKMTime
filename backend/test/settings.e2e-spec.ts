@@ -1,8 +1,9 @@
 import { INestApplication } from '@nestjs/common';
-import { TestingModule, Test } from '@nestjs/testing';
+import { Test, TestingModule } from '@nestjs/testing';
 import { PrismaClient } from '@prisma/client';
 import { AppModule } from 'src/app.module';
 import * as request from 'supertest';
+
 import { loginWithFKMAccount } from './helpers/auth.helper';
 
 describe('SettingsController (e2e)', () => {

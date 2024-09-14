@@ -1,11 +1,12 @@
 import { HttpException, Injectable, Logger } from '@nestjs/common';
-import { DbService } from '../db/db.service';
 import {
   Attempt,
   AttemptStatus,
   AttemptType,
   Competition,
 } from '@prisma/client';
+
+import { DbService } from '../db/db.service';
 
 const WCA_LIVE_API_ORIGIN = process.env.WCA_LIVE_API_ORIGIN;
 const WCA_ORIGIN = process.env.WCA_ORIGIN;

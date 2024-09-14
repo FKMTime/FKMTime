@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
-import { ContestsService } from './contests.service';
 import { WcaModule } from 'src/wca/wca.module';
+
+import { ContestsService } from './contests.service';
 
 @Module({
   imports: [WcaModule],

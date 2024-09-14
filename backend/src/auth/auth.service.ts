@@ -1,6 +1,7 @@
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { sha512 } from 'js-sha512';
+
 import { DbService } from '../db/db.service';
 import { WcaService } from '../wca/wca.service';
 import { JwtAuthDto } from './dto/jwt-auth.dto';

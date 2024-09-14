@@ -11,10 +11,11 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { AdminGuard } from 'src/auth/guards/admin.guard';
-import { UserService } from './user.service';
+
 import { CreateUserDto } from './dto/createUser.dto';
-import { UpdateUserDto } from './dto/updateUser.dto';
 import { UpdatePasswordDto } from './dto/updatePassword.dto';
+import { UpdateUserDto } from './dto/updateUser.dto';
+import { UserService } from './user.service';
 
 @Controller('user')
 export class UserController {

@@ -1,5 +1,6 @@
-import { DbService } from '../db/db.service';
 import { Injectable } from '@nestjs/common';
+
+import { DbService } from '../db/db.service';
 import { QuickActionDto } from './dto/quickAction.dto';
 import { UpdateSettingsDto } from './dto/updateSettings.dto';
 

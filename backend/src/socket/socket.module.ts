@@ -1,4 +1,5 @@
 import { forwardRef, Module } from '@nestjs/common';
+
 import { AttendanceModule } from '../attendance/attendance.module';
 import { CompetitionModule } from '../competition/competition.module';
 import { DeviceModule } from '../device/device.module';

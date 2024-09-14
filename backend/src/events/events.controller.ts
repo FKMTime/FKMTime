@@ -10,9 +10,10 @@ import {
   Put,
   UseGuards,
 } from '@nestjs/common';
-import { EventsService } from './events.service';
 import { AdminGuard } from 'src/auth/guards/admin.guard';
+
 import { CreateUnofficialEventDto } from './dto/createUnofficialEvent.dto';
+import { EventsService } from './events.service';
 
 @Controller('events')
 export class EventsController {

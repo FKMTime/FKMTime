@@ -1,8 +1,9 @@
-import { Module, forwardRef } from '@nestjs/common';
-import { AttendanceService } from './attendance.service';
-import { AttendanceController } from './attendance.controller';
-import { AuthModule } from '../auth/auth.module';
+import { forwardRef, Module } from '@nestjs/common';
 import { AppModule } from 'src/app.module';
+
+import { AuthModule } from '../auth/auth.module';
+import { AttendanceController } from './attendance.controller';
+import { AttendanceService } from './attendance.service';
 
 @Module({
   providers: [AttendanceService],

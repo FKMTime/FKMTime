@@ -13,6 +13,7 @@ import {
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { DeviceType } from '@prisma/client';
+
 import { AdminGuard } from '../auth/guards/admin.guard';
 import { DeviceService } from './device.service';
 import { DeviceDto } from './dto/device.dto';

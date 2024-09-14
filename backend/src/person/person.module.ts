@@ -1,7 +1,8 @@
 import { Module } from '@nestjs/common';
-import { PersonService } from './person.service';
-import { PersonController } from './person.controller';
+
 import { AuthModule } from '../auth/auth.module';
+import { PersonController } from './person.controller';
+import { PersonService } from './person.service';
 
 @Module({
   providers: [PersonService],

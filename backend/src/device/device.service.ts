@@ -1,11 +1,12 @@
 import { forwardRef, HttpException, Inject, Injectable } from '@nestjs/common';
 import { DeviceType } from '@prisma/client';
+import { AppGateway } from 'src/app.gateway';
+
 import { DbService } from '../db/db.service';
 import { SocketController } from '../socket/socket.controller';
 import { DeviceDto } from './dto/device.dto';
 import { RequestToConnectDto } from './dto/requestToConnect.dto';
 import { UpdateBatteryPercentageDto } from './dto/updateBatteryPercentage.dto';
-import { AppGateway } from 'src/app.gateway';
 
 @Injectable()
 export class DeviceService {

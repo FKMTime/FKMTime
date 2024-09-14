@@ -11,9 +11,10 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
+
 import { AdminGuard } from '../auth/guards/admin.guard';
-import { ResultService } from './result.service';
 import { DoubleCheckDto } from './dto/doubleCheck.dto';
+import { ResultService } from './result.service';
 
 @Controller('result')
 export class ResultController {

@@ -1,3 +1,4 @@
+import { AttemptStatus, AttemptType } from '@prisma/client';
 import {
   IsBoolean,
   IsEnum,
@@ -6,7 +7,6 @@ import {
   IsString,
   Min,
 } from 'class-validator';
-import { AttemptStatus, AttemptType } from '@prisma/client';
 
 export class UpdateAttemptDto {
   @IsInt()

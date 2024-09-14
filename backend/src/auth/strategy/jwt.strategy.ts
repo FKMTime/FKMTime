@@ -1,6 +1,7 @@
+import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { Strategy } from 'passport-jwt';
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+
 import { JwtAuthDto } from '../dto/jwt-auth.dto';
 
 const { SECRET = 'secret' } = process.env;

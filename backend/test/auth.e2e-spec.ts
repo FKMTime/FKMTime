@@ -1,10 +1,11 @@
-import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
-import * as request from 'supertest';
+import { Test, TestingModule } from '@nestjs/testing';
 import { PrismaClient } from '@prisma/client';
-import { AppModule } from 'src/app.module';
-import { loginWithFKMAccount } from './helpers/auth.helper';
 import { sha512 } from 'js-sha512';
+import { AppModule } from 'src/app.module';
+import * as request from 'supertest';
+
+import { loginWithFKMAccount } from './helpers/auth.helper';
 
 describe('AuthController (e2e)', () => {
   let app: INestApplication;

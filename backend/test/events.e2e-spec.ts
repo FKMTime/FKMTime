@@ -1,9 +1,10 @@
 import { INestApplication } from '@nestjs/common';
-import { TestingModule, Test } from '@nestjs/testing';
+import { Test, TestingModule } from '@nestjs/testing';
 import { PrismaClient } from '@prisma/client';
 import { AppModule } from 'src/app.module';
 import { eventsData } from 'src/events';
 import * as request from 'supertest';
+
 import { loginWithFKMAccount } from './helpers/auth.helper';
 
 describe('EventsController (e2e)', () => {
