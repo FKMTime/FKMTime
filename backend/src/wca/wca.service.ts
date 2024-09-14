@@ -49,13 +49,13 @@ export class WcaService {
     };
   }
 
-  async enterRoundToWcaLive(results: any) {
+  async enterRoundToWcaLive(resultsFromDb: any) {
     const competition = await this.prisma.competition.findFirst();
-    const eventIdToSubmit = results[0].eventId;
-    const roundNumberToSubmit = +results[0].roundId.split('-r')[1];
+    const eventIdToSubmit = resultsFromDb[0].eventId;
+    const roundNumberToSubmit = +resultsFromDb[0].roundId.split('-r')[1];
 
     const resultsToSubmit = [];
-    for (const result of results) {
+    for (const result of resultsFromDb) {
       const { results } = await this.getAttemptsToEnterToWcaLive(
         result,
         competition,

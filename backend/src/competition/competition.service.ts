@@ -18,6 +18,7 @@ import { ResultService } from 'src/result/result.service';
 import { AppGateway } from 'src/app.gateway';
 import {
   getActivityInfoFromSchedule,
+  getActivityInfoFromScheduleWithRoom,
   getNumberOfAttemptsForRound,
   getRoundInfoFromWcif,
 } from 'wcif-helpers';
@@ -318,22 +319,19 @@ export class CompetitionService {
     });
     for (const room of rooms) {
       let currentGroupIdInSchedule = '';
-      wcif.schedule.venues.forEach((venue: Venue) => {
-        venue.rooms.forEach((r: WCIFRoom) => {
-          if (r.name === room.name && room.currentGroupId) {
-            r.activities.forEach((activity: Activity) => {
-              activity.childActivities.forEach((childActivity: Activity) => {
-                const startTime = new Date(childActivity.startTime).getTime();
-                const endTime = new Date(childActivity.endTime).getTime();
-                const now = new Date().getTime();
-                if (startTime <= now && now <= endTime) {
-                  currentGroupIdInSchedule = childActivity.activityCode;
-                }
-              });
-            });
-          }
-        });
-      });
+      const activity: Activity | null = getActivityInfoFromSchedule(
+        room.currentGroupId,
+        wcif,
+      );
+      if (!activity) {
+        continue;
+      }
+      const startTime = new Date(activity.startTime).getTime();
+      const endTime = new Date(activity.endTime).getTime();
+      const now = new Date().getTime();
+      if (startTime <= now && now <= endTime) {
+        currentGroupIdInSchedule = activity.activityCode;
+      }
       const lastAttemptEntered = await this.prisma.attempt.findFirst({
         where: {
           result: {
@@ -347,7 +345,6 @@ export class CompetitionService {
       const isLastAttemptMoreThan5MinutesAgo =
         new Date().getTime() - new Date(lastAttemptEntered.solvedAt).getTime() >
         300000;
-
       if (
         (currentGroupIdInSchedule !== room.currentGroupId &&
           currentGroupIdInSchedule !== '') ||
@@ -438,11 +435,13 @@ export class CompetitionService {
         id: roomId,
       },
     });
+    if (!room) return;
     const competition = await this.prisma.competition.findFirst();
     const wcif = JSON.parse(JSON.stringify(competition.wcif));
     const currentRoundId = currentGroupId.split('-g')[0];
-    const roundInfoFromSchedule: Activity = getActivityInfoFromSchedule(
+    const roundInfoFromSchedule: Activity = getActivityInfoFromScheduleWithRoom(
       currentRoundId,
+      room.name,
       wcif,
     );
     if (!roundInfoFromSchedule) return;
@@ -472,8 +471,8 @@ export class CompetitionService {
       let nextRoundId = '';
       let nextRoundStartTime = new Date();
       wcif.schedule.venues.forEach((venue: Venue) => {
-        const room = venue.rooms.find((r: WCIFRoom) => r.name === room.name);
-        room.activities.forEach((a: Activity) => {
+        const r = venue.rooms.find((item: WCIFRoom) => item.name === room.name);
+        r.activities.forEach((a: Activity) => {
           if (
             new Date(a.startTime).getDay() === endTime.getDay() &&
             new Date(a.startTime).getTime() >= endTime.getTime() &&
