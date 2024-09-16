@@ -13,7 +13,7 @@ import {
 import regions from "./regions";
 
 export const getGitCommitValue = () => {
-    return process.env.VITE_GIT_COMMIT;
+    return import.meta.env.VITE_GIT_COMMIT;
 };
 
 export const calculateTotalPages = (count: number, pageSize: number) => {

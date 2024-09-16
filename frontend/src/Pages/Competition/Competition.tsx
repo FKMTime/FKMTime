@@ -6,6 +6,7 @@ import {
     TabPanel,
     TabPanels,
     Tabs,
+    Text,
 } from "@chakra-ui/react";
 import { useSetAtom } from "jotai";
 import { useCallback, useEffect, useState } from "react";
@@ -18,11 +19,12 @@ import {
     getCompetitionSettings,
 } from "@/logic/competition";
 import { Competition as CompetitionInterface } from "@/logic/interfaces";
+import { getGitCommitValue } from "@/logic/utils";
 
 import CompetitionStatistics from "../../Components/CompetitionStatistics";
-import UnofficialEvents from "../UnofficialEvents/UnofficialEvents";
 import ManageCompetition from "./Tabs/ManageCompetition";
 import Rooms from "./Tabs/Rooms";
+import UnofficialEvents from "./Tabs/UnofficialEvents/UnofficialEvents";
 
 const tabs = [
     {
@@ -94,6 +96,7 @@ const Competition = () => {
     return (
         <Box display="flex" flexDirection="column" gap="5">
             <Heading size="lg">{competition?.name}</Heading>
+            <Text>Version: {getGitCommitValue()}</Text>
             <Tabs
                 variant="enclosed"
                 index={tabIndex}

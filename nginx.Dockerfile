@@ -5,6 +5,13 @@ WORKDIR /app
 COPY frontend/package*.json ./
 RUN npm install
 COPY frontend .
+COPY .git .git
+
+# Add commit hash to the build
+RUN git rev-parse --short HEAD > .commit
+RUN cat .commit
+RUN export VITE_GIT_COMMIT=$(cat .commit)
+
 RUN npm run build
 ## END BUILD ##
 
