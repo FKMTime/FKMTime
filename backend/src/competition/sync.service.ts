@@ -2,6 +2,7 @@ import { forwardRef, HttpException, Inject } from '@nestjs/common';
 import { StaffRole } from '@prisma/client';
 import { Assignment, Person } from '@wca/helpers';
 import { DbService } from 'src/db/db.service';
+import { isUnofficialEvent } from 'src/events';
 import { WcaService } from 'src/wca/wca.service';
 import { wcifRoleToAttendanceRole } from 'src/wcif-helpers';
 import { getGroupInfoByActivityId } from 'wcif-helpers';
@@ -149,6 +150,9 @@ export class SyncService {
       throw new HttpException('Competition not found', 404);
     }
     const wcifPublic = JSON.parse(JSON.stringify(competition.wcif));
+    wcifPublic.events = wcifPublic.events.filter(
+      (event) => !isUnofficialEvent(event.id),
+    );
     unofficialEvents.forEach((event) => {
       wcifPublic.events.push(event.wcif);
     });
