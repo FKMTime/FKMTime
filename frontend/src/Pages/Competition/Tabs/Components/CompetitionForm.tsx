@@ -30,6 +30,7 @@ const CompetitionForm = ({
             display="flex"
             flexDirection="column"
             gap="5"
+            width={{ base: "100%", md: "20%" }}
             as="form"
             onSubmit={handleSubmit}
         >

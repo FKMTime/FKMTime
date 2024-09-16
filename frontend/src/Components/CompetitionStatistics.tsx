@@ -7,7 +7,13 @@ import { getCompetitionStatistics } from "@/logic/competition";
 import { CompetitionStatistics as ICompetitionStatistics } from "@/logic/interfaces";
 import { socket } from "@/socket";
 
-const CompetitionStatistics = () => {
+interface CompetitionStatisticsProps {
+    enableMobile?: boolean;
+}
+
+const CompetitionStatistics = ({
+    enableMobile,
+}: CompetitionStatisticsProps) => {
     const [statistics, setStatistics] = useState<ICompetitionStatistics | null>(
         null
     );
@@ -34,7 +40,7 @@ const CompetitionStatistics = () => {
 
     return (
         <Box
-            display={{ base: "none", md: "flex" }}
+            display={{ base: enableMobile ? "flex" : "none", md: "flex" }}
             flexDirection={{ base: "column", md: "row" }}
             flexWrap="wrap"
             gap={4}

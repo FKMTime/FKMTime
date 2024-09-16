@@ -9,6 +9,7 @@ import AttendanceStatistics from "./Pages/Attendance/AttendanceStatistics/Attend
 import Login from "./Pages/Auth/Login/Login";
 import CheckIn from "./Pages/CheckIn/CheckIn";
 import Competition from "./Pages/Competition/Competition";
+import Rooms from "./Pages/Competition/Tabs/Rooms";
 import Devices from "./Pages/Devices/Devices";
 import Home from "./Pages/Home/Home";
 import ImportCompetition from "./Pages/ImportCompetition/ImportCompetition";
@@ -19,9 +20,7 @@ import ResolvedIncidents from "./Pages/ResolvedIncidents/ResolvedIncidents";
 import DoubleCheck from "./Pages/Results/DoubleCheck/DoubleCheck";
 import PublicView from "./Pages/Results/PublicView/PublicView";
 import ResultsChecks from "./Pages/Results/ResultsChecks/ResultsChecks";
-import Rooms from "./Pages/Rooms/Rooms";
 import Settings from "./Pages/Settings/Settings";
-import UnofficialEvents from "./Pages/UnofficialEvents/UnofficialEvents";
 import Users from "./Pages/Users/Users";
 import { SocketContext } from "./socket";
 const Persons = React.lazy(() => import("./Pages/Persons/Persons"));
@@ -144,10 +143,6 @@ const App = () => {
                 {
                     path: "check-in",
                     element: <CheckIn />,
-                },
-                {
-                    path: "events",
-                    element: <UnofficialEvents />,
                 },
             ],
         },

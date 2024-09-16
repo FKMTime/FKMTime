@@ -3,7 +3,6 @@ import {
     AlertIcon,
     Box,
     Button,
-    Heading,
     ListItem,
     UnorderedList,
     useToast,
@@ -91,7 +90,6 @@ const Rooms = () => {
 
     return (
         <Box display="flex" flexDirection="column" gap="5" width="fit-content">
-            <Heading size="lg">Rooms</Heading>
             {currentOfficialRounds.length > 0 && (
                 <Alert
                     status="warning"

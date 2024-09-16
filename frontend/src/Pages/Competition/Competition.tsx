@@ -1,31 +1,47 @@
 import {
-    Alert,
-    AlertIcon,
     Box,
-    Button,
     Heading,
-    Text,
-    useToast,
+    Tab,
+    TabList,
+    TabPanel,
+    TabPanels,
+    Tabs,
 } from "@chakra-ui/react";
 import { useSetAtom } from "jotai";
-import { FormEvent, useCallback, useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useCallback, useEffect, useState } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 
 import LoadingPage from "@/Components/LoadingPage";
 import { competitionAtom } from "@/logic/atoms";
 import {
     getCompetitionInfo,
     getCompetitionSettings,
-    getCompetitionStatistics,
-    syncCompetition,
-    updateCompetitionSettings,
 } from "@/logic/competition";
-import {
-    Competition as CompetitionInterface,
-    CompetitionStatistics,
-} from "@/logic/interfaces";
+import { Competition as CompetitionInterface } from "@/logic/interfaces";
 
-import CompetitionForm from "./Components/CompetitionForm";
+import CompetitionStatistics from "../../Components/CompetitionStatistics";
+import UnofficialEvents from "../UnofficialEvents/UnofficialEvents";
+import ManageCompetition from "./Tabs/ManageCompetition";
+import Rooms from "./Tabs/Rooms";
+
+const tabs = [
+    {
+        name: "competitionSettings",
+        value: 0,
+    },
+    {
+        name: "rooms",
+        value: 1,
+    },
+    {
+        name: "unofficialEvents",
+        value: 2,
+    },
+    {
+        name: "statistics",
+        value: 3,
+    },
+];
 
 const Competition = () => {
     const navigate = useNavigate();
@@ -34,10 +50,8 @@ const Competition = () => {
     const [competition, setCompetition] = useState<CompetitionInterface | null>(
         null
     );
-    const [statistics, setStatistics] = useState<CompetitionStatistics | null>(
-        null
-    );
-    const toast = useToast();
+    const [tabIndex, setTabIndex] = useState<number>(tabs[0].value);
+    const [searchParams, setSearchParams] = useSearchParams();
 
     const fetchData = useCallback(async () => {
         const response = await getCompetitionSettings();
@@ -49,128 +63,88 @@ const Competition = () => {
         setIsLoading(false);
     }, [navigate]);
 
-    const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
-        event.preventDefault();
-        if (!competition) {
-            return;
-        }
-        const status = await updateCompetitionSettings(
-            competition.id,
-            competition
-        );
-        if (status === 200) {
-            toast({
-                title: "Success",
-                description: "Competition updated",
-                status: "success",
-            });
-        } else {
-            toast({
-                title: "Error",
-                description: "Something went wrong",
-                status: "error",
-            });
-        }
-    };
-
-    const handleSync = async () => {
-        if (!competition || !competition.wcaId) {
-            return;
-        }
-        const status = await syncCompetition(competition.wcaId);
-        if (status === 200) {
-            toast({
-                title: "Success",
-                description: "Competition synced",
-                status: "success",
-            });
-            await fetchCompetitionDataAndSetAtom();
-        } else {
-            toast({
-                title: "Error",
-                description: "Something went wrong",
-                status: "error",
-            });
-        }
-    };
-
     const fetchCompetitionDataAndSetAtom = async () => {
         const response = await getCompetitionInfo();
         setCompetitionAtom(response.data);
     };
 
+    const onChangeTabIndex = (index: number) => {
+        setTabIndex(index);
+        const tab = tabs.find((t) => t.value === index)?.name;
+        if (!tab) return;
+        setSearchParams({ tab: tab });
+    };
+
+    useEffect(() => {
+        const tab = searchParams.get("tab");
+        const index = tabs.find((t) => t.name === tab)?.value;
+        if (index) {
+            setTabIndex(index);
+        }
+    }, [searchParams]);
+
     useEffect(() => {
         fetchData();
     }, [fetchData]);
-
-    useEffect(() => {
-        getCompetitionStatistics().then((data) => {
-            setStatistics(data);
-        });
-    }, []);
 
     if (isLoading || !competition) {
         return <LoadingPage />;
     }
 
     return (
-        <Box
-            display="flex"
-            flexDirection="column"
-            gap="5"
-            width={{ base: "100%", md: "20%" }}
-        >
+        <Box display="flex" flexDirection="column" gap="5">
             <Heading size="lg">{competition?.name}</Heading>
-            <Box
-                display="flex"
-                flexDirection={{ base: "column", md: "row" }}
-                gap="2"
+            <Tabs
+                variant="enclosed"
+                index={tabIndex}
+                onChange={onChangeTabIndex}
+                isFitted
             >
-                <Button
-                    colorScheme="yellow"
-                    onClick={() => navigate("/events")}
-                >
-                    Unofficial events
-                </Button>
-                <Button colorScheme="yellow" onClick={handleSync}>
-                    Sync
-                </Button>
-            </Box>
-            <Box display="flex" flexDirection="column" gap="5">
-                {competition.scoretakingToken === "" ||
-                    (!competition.scoretakingToken && (
-                        <Alert status="error" borderRadius="md" color="black">
-                            <AlertIcon />
-                            You need to set the scoretaking token taken from WCA
-                            Live before the competition
-                        </Alert>
-                    ))}
-                {competition.scoretakingTokenUpdatedAt &&
-                    new Date(competition.scoretakingTokenUpdatedAt).getTime() <
-                        new Date().getTime() - 7 * 24 * 60 * 60 * 1000 && (
-                        <Alert status="error" borderRadius="md" color="black">
-                            <AlertIcon />
-                            The scoretaking token may have expired
-                        </Alert>
-                    )}
-            </Box>
-
-            <Heading size="md">Competition settings</Heading>
-            <CompetitionForm
-                competition={competition}
-                setCompetition={setCompetition}
-                handleSubmit={handleSubmit}
-            />
-            {statistics && (
-                <Box display="flex" flexDirection="column" gap="5">
-                    <Heading size="md">Competition statistics</Heading>
-                    <Text>All attempts: {statistics?.allAttempts}</Text>
-                    <Text>
-                        Attempts entered manually:{" "}
-                        {statistics?.attemptsEnteredManually}
-                    </Text>
-                </Box>
-            )}
+                <TabList>
+                    <Tab
+                        _selected={{
+                            color: "white",
+                            bg: "blue.500",
+                        }}
+                    >
+                        Manage competition
+                    </Tab>
+                    <Tab _selected={{ color: "white", bg: "blue.500" }}>
+                        Current groups
+                    </Tab>
+                    <Tab
+                        _selected={{
+                            color: "white",
+                            bg: "blue.500",
+                        }}
+                    >
+                        Unofficial events
+                    </Tab>
+                    <Tab _selected={{ color: "white", bg: "blue.500" }}>
+                        Statistics
+                    </Tab>
+                </TabList>
+                <TabPanels>
+                    <TabPanel>
+                        <ManageCompetition
+                            competition={competition}
+                            setCompetition={setCompetition}
+                            fetchCompetitionDataAndSetAtom={
+                                fetchCompetitionDataAndSetAtom
+                            }
+                        />
+                    </TabPanel>
+                    <TabPanel ml={-4}>
+                        <Rooms />
+                    </TabPanel>
+                    <TabPanel ml={-4}>
+                        <UnofficialEvents />
+                    </TabPanel>
+                    <TabPanel ml={-4}>
+                        <CompetitionStatistics enableMobile />
+                    </TabPanel>
+                </TabPanels>
+            </Tabs>
         </Box>
     );
 };

@@ -8,7 +8,6 @@ import {
     MdLogout,
     MdPerson,
     MdPersonAdd,
-    MdRoom,
     MdSettings,
     MdTimer,
 } from "react-icons/md";
@@ -87,12 +86,6 @@ const SidebarContent = ({
                         name="Competition"
                         icon={<IoMdTrophy />}
                         link="/competition"
-                        onClick={onElementClick}
-                    />
-                    <SidebarElement
-                        name="Rooms"
-                        icon={<MdRoom />}
-                        link="/rooms"
                         onClick={onElementClick}
                     />
                 </>

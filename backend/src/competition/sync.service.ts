@@ -148,7 +148,7 @@ export class SyncService {
     if (!competition) {
       throw new HttpException('Competition not found', 404);
     }
-    const wcifPublic = await this.wcaService.getPublicWcif(competition.wcaId);
+    const wcifPublic = JSON.parse(JSON.stringify(competition.wcif));
     unofficialEvents.forEach((event) => {
       wcifPublic.events.push(event.wcif);
     });

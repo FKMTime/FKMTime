@@ -17,13 +17,24 @@ const HomeShortcuts = ({ rooms, currentRounds }: HomeShortcutsProps) => {
 
     return (
         <>
-            <Button
-                colorScheme="yellow"
-                onClick={() => navigate("/incidents")}
-                width={{ base: "100%", md: "fit-content" }}
+            <Box
+                display="flex"
+                flexDirection={{ base: "column", md: "row" }}
+                gap="4"
             >
-                Incidents
-            </Button>
+                <Button
+                    colorScheme="yellow"
+                    onClick={() => navigate("/incidents")}
+                >
+                    Incidents
+                </Button>
+                <Button
+                    colorScheme="purple"
+                    onClick={() => navigate("/competition?tab=rooms")}
+                >
+                    Current groups
+                </Button>
+            </Box>
             {showAttendance && (
                 <>
                     <Heading size="lg">Attendance</Heading>

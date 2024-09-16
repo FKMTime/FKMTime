@@ -12,6 +12,10 @@ import {
 } from "./interfaces";
 import regions from "./regions";
 
+export const getGitCommitValue = () => {
+    return process.env.VITE_GIT_COMMIT;
+};
+
 export const calculateTotalPages = (count: number, pageSize: number) => {
     return Math.ceil(count / pageSize);
 };
