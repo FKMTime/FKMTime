@@ -268,6 +268,19 @@ export const prettySendingResultsFrequency = (frequency: string) => {
     }
 };
 
+export const prettyRoundFormat = (format: string) => {
+    switch (format) {
+        case "a":
+            return "Average of 5";
+        case "m":
+            return "Mean of 3";
+        case "3":
+            return "Best of 3";
+        default:
+            return "Unknown";
+    }
+};
+
 export const getSubmissionPlatformName = (eventId: string) => {
     return isUnofficialEvent(eventId) ? "Cubing Contests" : "WCA Live";
 };
