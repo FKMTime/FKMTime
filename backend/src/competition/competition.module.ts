@@ -20,7 +20,7 @@ import { SyncService } from './sync.service';
     WcaModule,
     DbModule,
     forwardRef(() => SocketModule),
-    ResultModule,
+    forwardRef(() => ResultModule),
     forwardRef(() => AppModule),
   ],
   exports: [CompetitionService, SyncService],
