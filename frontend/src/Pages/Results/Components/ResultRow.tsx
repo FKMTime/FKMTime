@@ -13,7 +13,7 @@ import {
     resultToString,
 } from "@/logic/resultFormatters";
 import { deleteResultById } from "@/logic/results.ts";
-import { getSubmittedAttempts, isMobileView } from "@/logic/utils";
+import { getSubmittedAttempts } from "@/logic/utils";
 
 interface ResultRowProps {
     result: Result;
@@ -72,20 +72,19 @@ const ResultRow = ({ result, maxAttempts, fetchData }: ResultRowProps) => {
                             `(${result.person.registrantId})`}
                     </Link>
                 </Td>
-                {!isMobileView() &&
-                    Array.from({ length: maxAttempts }, (_, i) => (
-                        <Td key={i}>
-                            {submittedAttempts.length > i
-                                ? attemptWithPenaltyToString(
-                                      submittedAttempts[i]
-                                  )
-                                : ""}
-                        </Td>
-                    ))}
-                <Td>
+                {Array.from({ length: maxAttempts }, (_, i) => (
+                    <Td key={i} display={{ base: "none", md: "table-cell" }}>
+                        {submittedAttempts.length > i
+                            ? attemptWithPenaltyToString(submittedAttempts[i])
+                            : ""}
+                    </Td>
+                ))}
+                <Td display={{ base: "none", md: "table-cell" }}>
                     {calculatedAverage ? resultToString(calculatedAverage) : ""}
                 </Td>
-                <Td>{formattedBest(submittedAttempts)}</Td>
+                <Td display={{ base: "none", md: "table-cell" }}>
+                    {formattedBest(submittedAttempts)}
+                </Td>
                 {isAdmin() && (
                     <Td>
                         <SmallIconButton
