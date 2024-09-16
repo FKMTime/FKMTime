@@ -17,7 +17,7 @@ import {
 import { Activity, Room } from "@/logic/interfaces";
 import { getAllRooms } from "@/logic/rooms";
 
-import CompetitionStatistics from "../../Components/CompetitionStatistics";
+import CompetitionStatistics from "../../Components/CompetitionStatistics/CompetitionStatistics";
 import HomeShortcuts from "./Components/HomeShortcuts";
 import MobileSchedule from "./Components/Schedule/MobileSchedule";
 import ScheduleTable from "./Components/Schedule/ScheduleTable";

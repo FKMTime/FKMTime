@@ -88,8 +88,28 @@ export interface Person {
 export interface CompetitionStatistics {
     allAttempts: number;
     attemptsEnteredManually: number;
+    byEventStats: EventStatistics[];
+    byRoundStats: RoundStatisticsByDay[];
     scorecardsCount: number;
     personsCompeted: number;
+}
+
+export interface EventStatistics {
+    eventId: string;
+    dnf: number;
+    incidents: number;
+    attempts: number;
+}
+
+export interface RoundStatisticsByDay {
+    date: Date;
+    roundsStatistics: RoundStatistics[];
+}
+
+export interface RoundStatistics {
+    roundId: string;
+    roundName: string;
+    delayInSeconds: number;
 }
 
 export interface AttendanceStatistics {

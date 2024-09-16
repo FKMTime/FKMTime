@@ -116,3 +116,8 @@ export const eventsData: {
 export const isUnofficialEvent = (eventId: string) => {
   return eventsData.find((event) => event.id === eventId)?.isUnofficial;
 };
+
+export const getEventShortName = (eventId: string) => {
+  const event = eventsData.find((e) => e.id === eventId);
+  return event?.shortName || event?.name;
+};

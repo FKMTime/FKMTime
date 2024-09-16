@@ -144,30 +144,6 @@ export class CompetitionService {
     return activitiesToReturn;
   }
 
-  async getCompetitionStatistics() {
-    const allAttempts = await this.prisma.attempt.count();
-    const attemptsEnteredManually = await this.prisma.attempt.count({
-      where: {
-        sessionId: null,
-      },
-    });
-    //This is there until we're still using scorecards ;D
-    const scorecardsCount = await this.prisma.result.count();
-    const personsCompeted = await this.prisma.person.count({
-      where: {
-        Result: {
-          some: {},
-        },
-      },
-    });
-    return {
-      allAttempts,
-      attemptsEnteredManually,
-      scorecardsCount,
-      personsCompeted,
-    };
-  }
-
   async getCompetitionSettings() {
     const competition = await this.prisma.competition.findFirst();
     if (!competition) {

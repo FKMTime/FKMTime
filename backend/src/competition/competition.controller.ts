@@ -18,6 +18,7 @@ import { UpdateRoomsDto } from './dto/updateCurrentRound.dto';
 import { UpdateDevicesSettingsDto } from './dto/updateDevicesSettings.dto';
 import { ImportService } from './import.service';
 import { RoomsService } from './rooms.service';
+import { StatisticsService } from './statistics.service';
 import { SyncService } from './sync.service';
 
 @Controller('competition')
@@ -27,6 +28,7 @@ export class CompetitionController {
     private readonly roomsService: RoomsService,
     private readonly importService: ImportService,
     private readonly syncService: SyncService,
+    private readonly statisticsService: StatisticsService,
   ) {}
 
   @UseGuards(AuthGuard('jwt'))
@@ -38,7 +40,7 @@ export class CompetitionController {
   @UseGuards(AuthGuard('jwt'))
   @Get('statistics')
   async getCompetitionStatistics() {
-    return await this.competitionService.getCompetitionStatistics();
+    return await this.statisticsService.getCompetitionStatistics();
   }
 
   @UseGuards(AuthGuard('jwt'))

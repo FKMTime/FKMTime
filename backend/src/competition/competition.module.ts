@@ -10,10 +10,17 @@ import { CompetitionController } from './competition.controller';
 import { CompetitionService } from './competition.service';
 import { ImportService } from './import.service';
 import { RoomsService } from './rooms.service';
+import { StatisticsService } from './statistics.service';
 import { SyncService } from './sync.service';
 
 @Module({
-  providers: [CompetitionService, RoomsService, ImportService, SyncService],
+  providers: [
+    CompetitionService,
+    RoomsService,
+    ImportService,
+    SyncService,
+    StatisticsService,
+  ],
   controllers: [CompetitionController],
   imports: [
     AuthModule,

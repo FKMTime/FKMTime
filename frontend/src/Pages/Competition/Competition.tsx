@@ -21,7 +21,7 @@ import {
 import { Competition as CompetitionInterface } from "@/logic/interfaces";
 import { getGitCommitValue } from "@/logic/utils";
 
-import CompetitionStatistics from "../../Components/CompetitionStatistics";
+import CompetitionStatistics from "../../Components/CompetitionStatistics/CompetitionStatistics";
 import ManageCompetition from "./Tabs/ManageCompetition";
 import Rooms from "./Tabs/Rooms";
 import UnofficialEvents from "./Tabs/UnofficialEvents/UnofficialEvents";
@@ -144,7 +144,7 @@ const Competition = () => {
                         <UnofficialEvents />
                     </TabPanel>
                     <TabPanel ml={-4}>
-                        <CompetitionStatistics enableMobile />
+                        <CompetitionStatistics enableMobile showCharts />
                     </TabPanel>
                 </TabPanels>
             </Tabs>
