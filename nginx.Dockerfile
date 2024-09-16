@@ -9,9 +9,8 @@ COPY .git .git
 
 # Add commit hash to the build
 RUN git rev-parse --short HEAD > .commit
-RUN export VITE_GIT_COMMIT=$(cat .commit)
 
-RUN npm run build
+RUN VITE_GIT_COMMIT=$(cat .commit) npm run build
 ## END BUILD ##
 
 ## NGINX ##
