@@ -39,6 +39,13 @@ export class StatisticsService {
       },
       distinct: ['eventId'],
     });
+    const devices = await this.prisma.device.findMany();
+    const attemptsByDevice = await this.prisma.attempt.groupBy({
+      by: ['deviceId'],
+      _count: {
+        _all: true,
+      },
+    });
     const byEventStats = [];
     const byRoundStats = [];
     for (const eventId of eventIds) {
@@ -135,6 +142,13 @@ export class StatisticsService {
       allAttempts,
       byEventStats,
       byRoundStats,
+      attemptsByDevice: devices.map((device) => ({
+        deviceId: device.id,
+        deviceName: device.name,
+        Count:
+          attemptsByDevice.find((a) => a.deviceId === device.id)?._count
+            ?._all || 0,
+      })),
       attemptsEnteredManually,
       scorecardsCount,
       personsCompeted,

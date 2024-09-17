@@ -90,6 +90,7 @@ export interface CompetitionStatistics {
     attemptsEnteredManually: number;
     byEventStats: EventStatistics[];
     byRoundStats: RoundStatisticsByDay[];
+    attemptsByDevice: DeviceStatistics[];
     scorecardsCount: number;
     personsCompeted: number;
 }
@@ -99,6 +100,12 @@ export interface EventStatistics {
     dnf: number;
     incidents: number;
     attempts: number;
+}
+
+export interface DeviceStatistics {
+    deviceId: string;
+    deviceName: string;
+    count: number;
 }
 
 export interface RoundStatisticsByDay {

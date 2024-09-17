@@ -37,21 +37,18 @@ export class DeviceService {
         name: 'asc',
       },
     });
-    const transactions = [];
+    const attemptsByDevice = await this.prisma.attempt.groupBy({
+      by: ['deviceId'],
+      _count: {
+        _all: true,
+      },
+    });
 
-    for (const device of devices) {
-      transactions.push(
-        this.prisma.attempt.count({
-          where: {
-            deviceId: device.id,
-          },
-        }),
-      );
-    }
-    const counts = await Promise.all(transactions);
-    return devices.map((device, index) => ({
+    return devices.map((device) => ({
       ...device,
-      count: counts[index],
+      count:
+        attemptsByDevice.find((a) => a.deviceId === device.id)?._count?._all ||
+        0,
     }));
   }
 

@@ -70,6 +70,24 @@ const Charts = ({ statistics }: ChartsProps) => {
                     </CardBody>
                 </Card>
             ))}
+            <Card backgroundColor="gray.900" color="white">
+                <CardHeader pb="0">
+                    <Heading as="h4" fontWeight="medium" size="md">
+                        Attempts by device
+                    </Heading>
+                </CardHeader>
+                <CardBody>
+                    <BarChart
+                        //eslint-disable-next-line
+                        data={statistics.attemptsByDevice as any}
+                        index="deviceName"
+                        categories={["Count"]}
+                        colors={["blue"]}
+                        variant="solid"
+                        height="300px"
+                    />
+                </CardBody>
+            </Card>
         </Box>
     );
 };
