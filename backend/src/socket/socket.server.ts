@@ -100,6 +100,14 @@ export class SocketServer {
     });
   }
 
+  async semdAutoSetupStatus() {
+    const autoSetupStatus = await this.socketService.getAutoSetupSettings();
+    this.sendToAll({
+      type: 'AutoSetupSettings',
+      data: autoSetupStatus,
+    });
+  }
+
   private async parsePacket(socket: net.Socket, request: RequestDto<any>) {
     this.logger.log(
       `Received request of type ${request.type}, tag ${request.tag}, data ${JSON.stringify(request.data)}`,
@@ -145,10 +153,10 @@ export class SocketServer {
         tag: request.tag,
         data: responseData,
       });
-    } else if (request.type === 'WifiSettings') {
-      const responseData = await this.socketService.getWifiSettings();
+    } else if (request.type === 'AutoSetupSettings') {
+      const responseData = await this.socketService.getAutoSetupSettings();
       this.sendResponseWithTag(socket, {
-        type: 'WifiSettings',
+        type: 'AutoSetupSettings',
         tag: request.tag,
         data: responseData,
       });

@@ -82,13 +82,11 @@ export const getActivitiesWithRealEndTime = async (
     return await response.json();
 };
 
+type CompetitionWithoutWCIF = Omit<Competition, "wcif">;
+
 export const updateDevicesSettings = async (
     id: string,
-    data: {
-        shouldUpdateDevices: boolean;
-        wifiSsid?: string;
-        wifiPassword?: string;
-    }
+    data: CompetitionWithoutWCIF
 ) => {
     const response = await backendRequest(
         `competition/settings/${id}/devices/`,

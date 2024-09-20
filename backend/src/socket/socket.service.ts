@@ -47,8 +47,8 @@ export class SocketService {
     return await this.competitionService.serverStatus();
   }
 
-  async getWifiSettings() {
-    return await this.competitionService.getWifiSettings();
+  async getAutoSetupSettings() {
+    return await this.competitionService.getAutoSetupSettings();
   }
 
   async getPersonInfo(cardId: string) {

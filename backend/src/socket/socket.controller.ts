@@ -28,4 +28,8 @@ export class SocketController implements OnModuleInit, OnModuleDestroy {
   async sendServerStatus() {
     await this.socketServer.sendServerStatus();
   }
+
+  async sendAutoSetupStatus() {
+    await this.socketServer.semdAutoSetupStatus();
+  }
 }

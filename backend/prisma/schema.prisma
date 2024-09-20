@@ -1,209 +1,212 @@
 generator client {
-    provider = "prisma-client-js"
+  provider = "prisma-client-js"
 }
 
 datasource db {
-    provider = "postgresql"
-    url      = env("DATABASE_URL")
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 model User {
-    id             String        @id @default(uuid())
-    password       String?
-    username       String?       @unique
-    role           Role?
-    fullName       String?       @map("full_name")
-    wcaUserId      Int?          @map("wca_user_id")
-    isWcaAdmin     Boolean       @default(false) @map("is_wca_admin")
-    wcaAccessToken String?       @map("wca_access_token")
-    createdAt      DateTime      @default(now()) @map("created_at")
-    updatedAt      DateTime      @updatedAt @map("updated_at")
-    quickActions   QuickAction[]
-    Attempt        Attempt[]
+  id             String        @id @default(uuid())
+  password       String?
+  username       String?       @unique
+  role           Role?
+  fullName       String?       @map("full_name")
+  wcaUserId      Int?          @map("wca_user_id")
+  isWcaAdmin     Boolean       @default(false) @map("is_wca_admin")
+  wcaAccessToken String?       @map("wca_access_token")
+  createdAt      DateTime      @default(now()) @map("created_at")
+  updatedAt      DateTime      @updatedAt @map("updated_at")
+  quickActions   QuickAction[]
+  Attempt        Attempt[]
 
-    @@map("users")
+  @@map("users")
 }
 
 model Person {
-    id            String          @id @default(uuid())
-    registrantId  Int?            @unique @map("registrant_id")
-    name          String
-    wcaId         String?         @map("wca_id")
-    countryIso2   String?         @map("country_iso_2")
-    gender        String?
-    canCompete    Boolean         @default(true) @map("can_compete")
-    birthdate     DateTime?
-    checkedInAt   DateTime?       @map("checked_in_at")
-    cardId        String?         @unique @map("card_id")
-    Result        Result[]
-    Attempt       Attempt[]
-    StaffActivity StaffActivity[]
+  id            String          @id @default(uuid())
+  registrantId  Int?            @unique @map("registrant_id")
+  name          String
+  wcaId         String?         @map("wca_id")
+  countryIso2   String?         @map("country_iso_2")
+  gender        String?
+  canCompete    Boolean         @default(true) @map("can_compete")
+  birthdate     DateTime?
+  checkedInAt   DateTime?       @map("checked_in_at")
+  cardId        String?         @unique @map("card_id")
+  Result        Result[]
+  Attempt       Attempt[]
+  StaffActivity StaffActivity[]
 
-    @@map("person")
+  @@map("person")
 }
 
 model StaffActivity {
-    id         String    @id @default(uuid())
-    personId   String    @map("person_id")
-    person     Person    @relation(fields: [personId], references: [id], onDelete: Cascade)
-    deviceId   String?   @map("device_id")
-    device     Device?   @relation(fields: [deviceId], references: [id])
-    isAssigned Boolean   @default(false) @map("is_assigned")
-    isPresent  Boolean   @default(false) @map("is_present")
-    groupId    String    @map("group_id")
-    role       StaffRole
-    createdAt  DateTime  @default(now()) @map("created_at")
-    updatedAt  DateTime  @updatedAt @map("updated_at")
+  id         String    @id @default(uuid())
+  personId   String    @map("person_id")
+  person     Person    @relation(fields: [personId], references: [id], onDelete: Cascade)
+  deviceId   String?   @map("device_id")
+  device     Device?   @relation(fields: [deviceId], references: [id])
+  isAssigned Boolean   @default(false) @map("is_assigned")
+  isPresent  Boolean   @default(false) @map("is_present")
+  groupId    String    @map("group_id")
+  role       StaffRole
+  createdAt  DateTime  @default(now()) @map("created_at")
+  updatedAt  DateTime  @updatedAt @map("updated_at")
 
-    @@unique([personId, groupId, role])
-    @@map("staff_activity")
+  @@unique([personId, groupId, role])
+  @@map("staff_activity")
 }
 
 model Competition {
-    id                              String                  @id @default(uuid())
-    wcaId                           String                  @map("wca_id")
-    sendingResultsFrequency         SendingResultsFrequency @map("sending_results_frequency")
-    name                            String
-    countryIso2                     String?                 @map("country_iso_2")
-    shouldUpdateDevices             Boolean                 @default(false) @map("should_update_devices")
-    shouldChangeGroupsAutomatically Boolean                 @default(false) @map("should_change_groups_automatically")
-    wifiSsid                        String?                 @map("wifi_ssid")
-    wifiPassword                    String?                 @map("wifi_password")
-    wcif                            Json?
-    scoretakingToken                String?                 @map("scoretaking_token")
-    scoretakingTokenUpdatedAt       DateTime?               @map("scoretaking_token_updated_at")
-    cubingContestsToken             String?                 @map("cubing_contests_token")
+  id                              String                  @id @default(uuid())
+  wcaId                           String                  @map("wca_id")
+  sendingResultsFrequency         SendingResultsFrequency @map("sending_results_frequency")
+  name                            String
+  countryIso2                     String?                 @map("country_iso_2")
+  shouldUpdateDevices             Boolean                 @default(false) @map("should_update_devices")
+  shouldChangeGroupsAutomatically Boolean                 @default(false) @map("should_change_groups_automatically")
+  wifiSsid                        String?                 @map("wifi_ssid")
+  wifiPassword                    String?                 @map("wifi_password")
+  mdns                            Boolean                 @default(true)
+  ipAddress                       String?
+  port                            Int?
+  secure                          Boolean                 @default(false)
+  wcif                            Json?
+  scoretakingToken                String?                 @map("scoretaking_token")
+  scoretakingTokenUpdatedAt       DateTime?               @map("scoretaking_token_updated_at")
+  cubingContestsToken             String?                 @map("cubing_contests_token")
 
-    @@map("competition")
+  @@map("competition")
 }
 
 model UnofficialEvent {
-    id        String   @id @default(uuid())
-    eventId   String   @unique @map("event_id")
-    wcif      Json
-    createdAt DateTime @default(now()) @map("created_at")
-    updatedAt DateTime @updatedAt @map("updated_at")
+  id        String   @id @default(uuid())
+  eventId   String   @unique @map("event_id")
+  wcif      Json
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
-    @@map("unofficial_event")
+  @@map("unofficial_event")
 }
 
 model Room {
-    id             String   @id @default(uuid())
-    name           String
-    color          String
-    currentGroupId String?  @map("current_group_id")
-    createdAt      DateTime @default(now()) @map("created_at")
-    updatedAt      DateTime @updatedAt @map("updated_at")
-    devices        Device[]
+  id             String   @id @default(uuid())
+  name           String
+  color          String
+  currentGroupId String?  @map("current_group_id")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+  devices        Device[]
 
-    @@map("room")
+  @@map("room")
 }
 
 model Result {
-    id              String    @id @default(uuid())
-    personId        String    @map("person_id")
-    person          Person    @relation(fields: [personId], references: [id], onDelete: Cascade)
-    eventId         String    @map("event_id")
-    roundId         String    @map("round_id")
-    isDoubleChecked Boolean   @default(false) @map("is_double_checked")
-    attempts        Attempt[]
-    createdAt       DateTime  @default(now()) @map("created_at")
-    updatedAt       DateTime  @updatedAt @map("updated_at")
+  id              String    @id @default(uuid())
+  personId        String    @map("person_id")
+  person          Person    @relation(fields: [personId], references: [id], onDelete: Cascade)
+  eventId         String    @map("event_id")
+  roundId         String    @map("round_id")
+  isDoubleChecked Boolean   @default(false) @map("is_double_checked")
+  attempts        Attempt[]
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
 
-    @@unique([personId, roundId])
-    @@map("result")
+  @@unique([personId, roundId])
+  @@map("result")
 }
 
 model Attempt {
-    id             String        @id @default(uuid())
-    sessionId      String?       @map("session_id")
-    resultId       String        @map("result_id")
-    result         Result?       @relation(fields: [resultId], references: [id], onDelete: Cascade)
-    attemptNumber  Int           @map("attempt_number")
-    replacedBy     Int?          @map("replaced_by")
-    comment        String?
-    type           AttemptType   @default(STANDARD_ATTEMPT)
-    status         AttemptStatus @default(STANDARD)
-    penalty        Int?
-    value          Int
-    originalTime   Int?          @map("original_time")
-    inspectionTime Int?          @map("inspection_time")
-    judgeId        String?       @map("judge_id")
-    judge          Person?       @relation(fields: [judgeId], references: [id])
-    deviceId       String?       @map("device_id")
-    device         Device?       @relation(fields: [deviceId], references: [id])
-    solvedAt       DateTime?     @map("solved_at")
-    createdAt      DateTime      @default(now()) @map("created_at")
-    updatedAt      DateTime      @updatedAt @map("updated_at")
-    updatedById    String?       @map("updated_by_id")
-    updatedBy      User?         @relation(fields: [updatedById], references: [id])
+  id             String        @id @default(uuid())
+  sessionId      String?       @map("session_id")
+  resultId       String        @map("result_id")
+  result         Result?       @relation(fields: [resultId], references: [id], onDelete: Cascade)
+  attemptNumber  Int           @map("attempt_number")
+  replacedBy     Int?          @map("replaced_by")
+  comment        String?
+  type           AttemptType   @default(STANDARD_ATTEMPT)
+  status         AttemptStatus @default(STANDARD)
+  penalty        Int?
+  value          Int
+  originalTime   Int?          @map("original_time")
+  inspectionTime Int?          @map("inspection_time")
+  judgeId        String?       @map("judge_id")
+  judge          Person?       @relation(fields: [judgeId], references: [id])
+  deviceId       String?       @map("device_id")
+  device         Device?       @relation(fields: [deviceId], references: [id])
+  solvedAt       DateTime?     @map("solved_at")
+  createdAt      DateTime      @default(now()) @map("created_at")
+  updatedAt      DateTime      @updatedAt @map("updated_at")
+  updatedById    String?       @map("updated_by_id")
+  updatedBy      User?         @relation(fields: [updatedById], references: [id])
 
-    @@map("attempt")
+  @@map("attempt")
 }
 
 model Device {
-    id                String          @id @default(uuid())
-    name              String
-    espId             Int?            @unique @map("esp_id")
-    type              DeviceType
-    batteryPercentage Int?            @map("battery_percentage")
-    roomId            String          @map("room_id")
-    room              Room            @relation(fields: [roomId], references: [id])
-    createdAt         DateTime        @default(now()) @map("created_at")
-    updatedAt         DateTime        @updatedAt @map("updated_at")
-    Attempt           Attempt[]
-    StaffActivity     StaffActivity[]
+  id                String          @id @default(uuid())
+  name              String
+  espId             Int?            @unique @map("esp_id")
+  type              DeviceType
+  batteryPercentage Int?            @map("battery_percentage")
+  roomId            String          @map("room_id")
+  room              Room            @relation(fields: [roomId], references: [id])
+  createdAt         DateTime        @default(now()) @map("created_at")
+  updatedAt         DateTime        @updatedAt @map("updated_at")
+  Attempt           Attempt[]
+  StaffActivity     StaffActivity[]
 
-    @@map("device")
+  @@map("device")
 }
 
 model QuickAction {
-    id        String   @id @default(uuid())
-    name      String
-    comment   String?
-    giveExtra Boolean  @default(false) @map("give_extra")
-    isShared  Boolean  @default(true) @map("is_shared")
-    userId    String   @map("user_id")
-    user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-    createdAt DateTime @default(now()) @map("created_at")
-    updatedAt DateTime @updatedAt @map("updated_at")
+  id        String   @id @default(uuid())
+  name      String
+  comment   String?
+  giveExtra Boolean  @default(false) @map("give_extra")
+  isShared  Boolean  @default(true) @map("is_shared")
+  userId    String   @map("user_id")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
-
-    @@map("quick_action")
+  @@map("quick_action")
 }
 
 enum DeviceType {
-    STATION
-    ATTENDANCE_SCRAMBLER
-    ATTENDANCE_RUNNER
+  STATION
+  ATTENDANCE_SCRAMBLER
+  ATTENDANCE_RUNNER
 }
 
 enum AttemptType {
-    STANDARD_ATTEMPT
-    EXTRA_ATTEMPT
+  STANDARD_ATTEMPT
+  EXTRA_ATTEMPT
 }
 
 enum AttemptStatus {
-    STANDARD
-    UNRESOLVED
-    RESOLVED
-    EXTRA_GIVEN
+  STANDARD
+  UNRESOLVED
+  RESOLVED
+  EXTRA_GIVEN
 }
 
 enum Role {
-    ADMIN
-    STAFF
+  ADMIN
+  STAFF
 }
 
 enum StaffRole {
-    COMPETITOR
-    JUDGE
-    RUNNER
-    SCRAMBLER
+  COMPETITOR
+  JUDGE
+  RUNNER
+  SCRAMBLER
 }
 
 enum SendingResultsFrequency {
-    AFTER_SOLVE
-    EVERY_5_MINUTES
-    NEVER
+  AFTER_SOLVE
+  EVERY_5_MINUTES
+  NEVER
 }

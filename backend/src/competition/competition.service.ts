@@ -24,6 +24,16 @@ import { WcaService } from '../wca/wca.service';
 import { UpdateCompetitionDto } from './dto/updateCompetition.dto';
 import { UpdateDevicesSettingsDto } from './dto/updateDevicesSettings.dto';
 
+const autoSetupSettingsSelect = {
+  id: true,
+  wifiSsid: true,
+  wifiPassword: true,
+  mdns: true,
+  ipAddress: true,
+  port: true,
+  secure: true,
+};
+
 @Injectable()
 export class CompetitionService {
   constructor(
@@ -240,22 +250,24 @@ export class CompetitionService {
 
   async getDevicesSettings() {
     return this.prisma.competition.findFirst({
-      select: {
-        id: true,
-        shouldUpdateDevices: true,
-        wifiSsid: true,
-        wifiPassword: true,
-      },
+      select: autoSetupSettingsSelect,
     });
   }
 
-  async getWifiSettings() {
-    return this.prisma.competition.findFirst({
-      select: {
-        wifiSsid: true,
-        wifiPassword: true,
-      },
+  async getAutoSetupSettings() {
+    const competition = await this.prisma.competition.findFirst({
+      select: autoSetupSettingsSelect,
     });
+    return {
+      ssid: competition.wifiSsid,
+      psk: competition.wifiPassword,
+      data: {
+        mdns: competition.mdns,
+        ip: competition.ipAddress,
+        port: competition.port,
+        secure: competition.secure,
+      },
+    };
   }
 
   async updateDevicesSettings(id: string, data: UpdateDevicesSettingsDto) {
@@ -267,9 +279,13 @@ export class CompetitionService {
         shouldUpdateDevices: data.shouldUpdateDevices,
         wifiSsid: data.wifiSsid,
         wifiPassword: data.wifiPassword,
+        mdns: data.mdns,
+        ipAddress: data.ipAddress,
+        port: data.port,
+        secure: data.secure,
       },
     });
-    await this.socketController.sendServerStatus();
+    await this.socketController.sendAutoSetupStatus();
     return {
       message: 'Devices settings updated',
     };

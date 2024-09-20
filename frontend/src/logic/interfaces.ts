@@ -44,6 +44,10 @@ export interface Competition {
     cubingContestsToken?: string;
     wifiSsid?: string;
     wifiPassword?: string;
+    mdns?: boolean;
+    ipAddress?: string;
+    port?: number;
+    secure?: boolean;
     wcif: WCIF;
     createdAt?: Date;
     updatedAt?: Date;
