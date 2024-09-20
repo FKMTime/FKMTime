@@ -80,7 +80,7 @@ services:
   dummy_wca:
     container_name: fkmtime-dev-dummy-wca
     restart: unless-stopped
-    image: maxidragon/dummy-wca:latest
+    image: maxidragon/dummy-wca:main
     # Feel free to change this if you are not using CubingContests
     ports:
     - "3005:3000"

@@ -20,7 +20,7 @@ services:
   dummy_wca:
     container_name: fkmtime-test-dummy-wca
     restart: unless-stopped
-    image: maxidragon/dummy-wca:latest
+    image: maxidragon/dummy-wca:main
     ports:
     - "3000:3000"
 
