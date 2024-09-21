@@ -5,6 +5,7 @@ import { AppGateway } from 'src/app.gateway';
 import { ContestsService } from 'src/contests/contests.service';
 import { DbService } from 'src/db/db.service';
 import { isUnofficialEvent } from 'src/events';
+import { isCumulativeLimit } from 'src/wcif-helpers';
 
 import { AttendanceService } from '../attendance/attendance.service';
 import { WcaService } from '../wca/wca.service';
@@ -455,6 +456,8 @@ export class ResultService {
         roundId: roundId,
       };
     }
+    const competition = await this.prisma.competition.findFirst();
+    const wcif = JSON.parse(JSON.stringify(competition.wcif));
     const exceededInspection = await this.prisma.attempt.findMany({
       where: {
         inspectionTime: {
@@ -465,6 +468,15 @@ export class ResultService {
       },
       include: this.attemptsInclude,
     });
+    const dns = await this.prisma.attempt.findMany({
+      where: {
+        penalty: -2,
+        status: AttemptStatus.STANDARD,
+        ...whereParams,
+      },
+      include: this.attemptsInclude,
+    });
+
     const penalties = await this.prisma.attempt.findMany({
       where: {
         penalty: {
@@ -484,6 +496,13 @@ export class ResultService {
     for (const attempt of penalties) {
       const alreadyChecked = attempts.some((a) => a.id === attempt.id);
       if (!alreadyChecked) {
+        attempts.push(attempt);
+      }
+    }
+    for (const attempt of dns) {
+      const alreadyChecked = attempts.some((a) => a.id === attempt.id);
+      const cumulative = isCumulativeLimit(attempt.result.roundId, wcif);
+      if (!alreadyChecked && !cumulative) {
         attempts.push(attempt);
       }
     }

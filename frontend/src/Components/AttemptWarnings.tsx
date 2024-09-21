@@ -21,6 +21,11 @@ const AttemptWarnings = ({ attempt }: AttemptsWarningProps) => {
                     +{attempt.penalty}
                 </Badge>
             )}
+            {attempt.penalty === -2 && (
+                <Badge colorScheme="yellow" borderRadius="md" p="1">
+                    DNS
+                </Badge>
+            )}
         </>
     );
 };
