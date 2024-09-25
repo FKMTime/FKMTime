@@ -187,7 +187,10 @@ const Layout = () => {
                 user={userInfo}
                 competition={competition}
                 notifications={notifications}
-                onClickNotifications={() => setIsOpenNotificationsModal(true)}
+                onClickNotifications={() =>
+                    notifications.length > 0 &&
+                    setIsOpenNotificationsModal(true)
+                }
             />
             <Box
                 width="100%"

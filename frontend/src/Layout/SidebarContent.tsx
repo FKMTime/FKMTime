@@ -89,9 +89,7 @@ const SidebarContent = ({
                         cursor={
                             notifications.length > 0 ? "pointer" : "default"
                         }
-                        onClick={() =>
-                            notifications.length > 0 && onClickNotifications
-                        }
+                        onClick={onClickNotifications}
                         icon={
                             <>
                                 <IoMdNotifications size={32} />
