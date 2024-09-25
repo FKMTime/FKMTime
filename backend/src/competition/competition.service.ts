@@ -346,10 +346,11 @@ export class CompetitionService {
         if (competition.shouldChangeGroupsAutomatically) {
           await this.checkIfGroupCanBeChanged(room.id);
         } else {
+          const message = `Group in room ${room.name} should be changed, but automatic group change is disabled.`;
           this.appGateway.server
             .to(`competition`)
             .emit('groupShouldBeChanged', {
-              message: `Group in room ${room.name} should be changed, but automatic group change is disabled.`,
+              message: message,
             });
         }
       }
@@ -413,12 +414,11 @@ export class CompetitionService {
       this.logger.log(`Group in room ${room.name} can be changed`);
       await this.changeGroup(room.id, room.currentGroupId);
     } else {
+      const message = `Group in room ${room.name} should be changed, but not all results are entered.`;
       this.appGateway.server.to(`competition`).emit('groupShouldBeChanged', {
-        message: `Group in room ${room.name} should be changed, but not all results are entered.`,
+        message: message,
       });
-      this.logger.log(
-        `Group in room ${room.name} should be changed, but not all results are entered.`,
-      );
+      this.logger.log(message);
     }
   }
 
@@ -453,12 +453,11 @@ export class CompetitionService {
           currentGroupId: potentialNextGroupId,
         },
       });
+      const message = `Group in room ${room.name} was changed to ${potentialNextGroupId}`;
       this.appGateway.server.to(`competition`).emit('groupShouldBeChanged', {
-        message: `Group in room ${room.name} was changed to ${potentialNextGroupId}`,
+        message: message,
       });
-      this.logger.log(
-        `Group in room ${roomId} changed to ${potentialNextGroupId}`,
-      );
+      this.logger.log(message);
     } else {
       const endTime = new Date(roundInfoFromSchedule.endTime);
       let nextRoundId = '';
@@ -487,10 +486,11 @@ export class CompetitionService {
             currentGroupId: nextGroupId,
           },
         });
+        const message = `Group in room ${room.name} was changed to ${nextGroupId}`;
         this.appGateway.server.to(`competition`).emit('groupShouldBeChanged', {
-          message: `Group in room ${room.name} was changed to ${nextGroupId}`,
+          message: message,
         });
-        this.logger.log(`Group in room ${room.name} changed to ${nextGroupId}`);
+        this.logger.log(message);
       }
     }
   }

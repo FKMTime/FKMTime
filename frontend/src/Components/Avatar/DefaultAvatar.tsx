@@ -3,6 +3,7 @@ import { Box } from "@chakra-ui/react";
 interface Props {
     size: number;
     username?: string;
+    backgroundColor?: string;
     className?: string;
 }
 
@@ -15,6 +16,7 @@ const DefaultAvatar = ({ size, username, className }: Props) => {
             justifyContent="center"
             alignItems="center"
             borderRadius="full"
+            padding={2}
             width={size}
             height={size}
         >

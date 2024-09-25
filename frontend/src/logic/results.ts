@@ -36,7 +36,7 @@ export const deleteResultById = async (id: string) => {
 
 export const reSubmitScorecardToWcaLive = async (id: string) => {
     const response = await backendRequest(`result/${id}/enter`, "GET", true);
-    return response.status;
+    return await response.json();
 };
 
 export const reSubmitRoundToWcaLive = async (roundId: string) => {

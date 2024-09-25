@@ -2,6 +2,7 @@ import { HttpException, Injectable } from '@nestjs/common';
 import { AttemptStatus, AttemptType, StaffRole } from '@prisma/client';
 import { Event, Round } from '@wca/helpers';
 import { AppGateway } from 'src/app.gateway';
+import { publicPersonSelect } from 'src/constants';
 import { ContestsService } from 'src/contests/contests.service';
 import { DbService } from 'src/db/db.service';
 import { isUnofficialEvent } from 'src/events';
@@ -24,48 +25,20 @@ export class ResultService {
   ) {}
 
   resultsInclude = {
-    person: {
-      select: {
-        id: true,
-        name: true,
-        wcaId: true,
-        registrantId: true,
-      },
-    },
+    person: publicPersonSelect,
     attempts: {
       include: {
-        judge: {
-          select: {
-            id: true,
-            name: true,
-            wcaId: true,
-            registrantId: true,
-          },
-        },
+        judge: publicPersonSelect,
         device: true,
       },
     },
   };
 
   attemptsInclude = {
-    judge: {
-      select: {
-        id: true,
-        name: true,
-        wcaId: true,
-        registrantId: true,
-      },
-    },
+    judge: publicPersonSelect,
     result: {
       include: {
-        person: {
-          select: {
-            id: true,
-            name: true,
-            wcaId: true,
-            registrantId: true,
-          },
-        },
+        person: publicPersonSelect,
       },
     },
   };
@@ -163,24 +136,10 @@ export class ResultService {
         personId: personId,
       },
       include: {
-        person: {
-          select: {
-            id: true,
-            name: true,
-            wcaId: true,
-            registrantId: true,
-          },
-        },
+        person: publicPersonSelect,
         attempts: {
           include: {
-            judge: {
-              select: {
-                id: true,
-                name: true,
-                wcaId: true,
-                registrantId: true,
-              },
-            },
+            judge: publicPersonSelect,
             device: true,
           },
         },
@@ -194,25 +153,10 @@ export class ResultService {
         id: id,
       },
       include: {
-        person: {
-          select: {
-            id: true,
-            name: true,
-            wcaId: true,
-            registrantId: true,
-            countryIso2: true,
-          },
-        },
+        person: publicPersonSelect,
         attempts: {
           include: {
-            judge: {
-              select: {
-                id: true,
-                name: true,
-                wcaId: true,
-                registrantId: true,
-              },
-            },
+            judge: publicPersonSelect,
             updatedBy: {
               select: {
                 id: true,
@@ -246,10 +190,10 @@ export class ResultService {
         roundId: roundId,
       },
       include: {
-        person: true,
+        person: publicPersonSelect,
         attempts: {
           include: {
-            judge: true,
+            judge: publicPersonSelect,
             device: true,
           },
         },

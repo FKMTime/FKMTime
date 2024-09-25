@@ -16,6 +16,7 @@ model User {
   wcaUserId      Int?          @map("wca_user_id")
   isWcaAdmin     Boolean       @default(false) @map("is_wca_admin")
   wcaAccessToken String?       @map("wca_access_token")
+  avatarUrl      String?       @map("avatar_url")
   createdAt      DateTime      @default(now()) @map("created_at")
   updatedAt      DateTime      @updatedAt @map("updated_at")
   quickActions   QuickAction[]

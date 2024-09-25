@@ -1,6 +1,6 @@
 import { Box } from "@chakra-ui/react";
 import { useAtom } from "jotai";
-import { Suspense, useCallback, useContext, useEffect } from "react";
+import { Suspense, useCallback, useContext, useEffect, useState } from "react";
 import { Outlet, useNavigate } from "react-router-dom";
 
 import LoadingPage from "@/Components/LoadingPage";
@@ -8,15 +8,20 @@ import { competitionAtom } from "@/logic/atoms";
 import { getToken, getUserInfo, isUserLoggedIn } from "@/logic/auth";
 import { getCompetitionInfo } from "@/logic/competition";
 import { getEvents } from "@/logic/events";
+import { INotification } from "@/logic/interfaces";
 import { isMobile, isNotificationsSupported } from "@/logic/utils";
 import { socket, SocketContext } from "@/socket";
 
+import NotificationsModal from "./NotiifcationsModal";
 import Sidebar from "./Sidebar";
 
 const Layout = () => {
     const userInfo = getUserInfo();
     const navigate = useNavigate();
     const [competition, setCompetition] = useAtom(competitionAtom);
+    const [notifications, setNotifications] = useState<INotification[]>([]);
+    const [isOpenNotificationsModal, setIsOpenNotificationsModal] =
+        useState<boolean>(false);
 
     const [isConnected, setConnected] = useContext(SocketContext) as [
         number,
@@ -34,6 +39,17 @@ const Layout = () => {
             socket.emit("joinIncidents");
             socket.emit("joinCompetition");
             socket.on("newIncident", (data) => {
+                const message = `Competitor ${data.competitorName} on station ${data.deviceName}`;
+                if (!notifications.some((n) => n.message === data.message)) {
+                    setNotifications((prev) => [
+                        {
+                            id: data.id,
+                            message,
+                            type: "incident",
+                        },
+                        ...prev.filter((n) => n.message !== data.message),
+                    ]);
+                }
                 Notification.requestPermission().then((permission) => {
                     if (permission === "granted") {
                         if (isMobile()) {
@@ -44,15 +60,12 @@ const Layout = () => {
                                             .getNotifications({
                                                 tag: `newIncident-${data.id}`,
                                             })
-                                            .then(
-                                                (notifications) =>
-                                                    notifications.length === 0
-                                            )
+                                            .then((n) => n.length === 0)
                                     ) {
                                         await registration.showNotification(
                                             "New incident",
                                             {
-                                                body: `Competitor ${data.competitorName}  on station ${data.deviceName}`,
+                                                body: message,
                                                 tag: `newIncident-${data.id}`,
                                             }
                                         );
@@ -63,7 +76,7 @@ const Layout = () => {
                             const notification = new Notification(
                                 "New incident",
                                 {
-                                    body: `Competitor ${data.competitorName}  on station ${data.deviceName}`,
+                                    body: message,
                                     tag: `newIncident-${data.id}`,
                                 }
                             );
@@ -77,6 +90,17 @@ const Layout = () => {
             });
 
             socket.on("groupShouldBeChanged", (data) => {
+                if (!notifications.some((n) => n.message === data.message)) {
+                    setNotifications((prev) => [
+                        {
+                            id: "groupShouldBeChanged",
+                            message: data.message,
+                            type: "info",
+                        },
+                        ...prev,
+                    ]);
+                }
+
                 Notification.requestPermission().then((permission) => {
                     if (permission === "granted") {
                         if (isMobile()) {
@@ -87,10 +111,7 @@ const Layout = () => {
                                             .getNotifications({
                                                 tag: `groupShouldBeChanged`,
                                             })
-                                            .then(
-                                                (notifications) =>
-                                                    notifications.length === 0
-                                            )
+                                            .then((n) => n.length === 0)
                                     ) {
                                         await registration.showNotification(
                                             "Group should be changed",
@@ -116,7 +137,7 @@ const Layout = () => {
                 socket.emit("leaveCompetition");
             };
         }
-    }, [navigate, userInfo, isConnected]);
+    }, [navigate, userInfo, isConnected, notifications]);
 
     useEffect(() => {
         isUserLoggedIn().then((isLoggedIn) => {
@@ -162,7 +183,12 @@ const Layout = () => {
     }
     return (
         <Box display="flex">
-            <Sidebar user={userInfo} competition={competition} />
+            <Sidebar
+                user={userInfo}
+                competition={competition}
+                notifications={notifications}
+                onClickNotifications={() => setIsOpenNotificationsModal(true)}
+            />
             <Box
                 width="100%"
                 padding="5"
@@ -173,6 +199,18 @@ const Layout = () => {
                 <Suspense fallback={<LoadingPage />}>
                     <Outlet />
                 </Suspense>
+                <NotificationsModal
+                    isOpen={isOpenNotificationsModal}
+                    onDelete={(id) =>
+                        setNotifications((prev) =>
+                            prev.filter(
+                                (notification) => notification.id !== id
+                            )
+                        )
+                    }
+                    onClose={() => setIsOpenNotificationsModal(false)}
+                    notifications={notifications}
+                />
             </Box>
         </Box>
     );

@@ -1,11 +1,24 @@
-import { Box, Button, Icon, Image, Link, Text } from "@chakra-ui/react";
+import {
+    Avatar,
+    Box,
+    Button,
+    DarkMode,
+    Icon,
+    IconButton,
+    Image,
+    Link,
+    Menu,
+    MenuButton,
+    MenuItem,
+    MenuList,
+    Text,
+} from "@chakra-ui/react";
 import { FaClipboardList, FaGithub, FaServer } from "react-icons/fa";
 import { GrDocumentVerified } from "react-icons/gr";
-import { IoMdTrophy, IoMdWarning } from "react-icons/io";
+import { IoMdNotifications, IoMdTrophy, IoMdWarning } from "react-icons/io";
 import {
     MdDone,
     MdHome,
-    MdLogout,
     MdPerson,
     MdPersonAdd,
     MdSettings,
@@ -14,7 +27,7 @@ import {
 
 import logo from "@/assets/logo.svg";
 import { isAdmin } from "@/logic/auth.ts";
-import { Competition, UserInfo } from "@/logic/interfaces";
+import { Competition, INotification, UserInfo } from "@/logic/interfaces";
 
 import SidebarElement from "./SidebarElement";
 
@@ -23,13 +36,16 @@ interface SidebarContentProps {
     competition: Competition;
     handleLogout: () => void;
     onElementClick?: () => void;
+    onClickNotifications: () => void;
+    notifications: INotification[];
 }
 
 const SidebarContent = ({
     user,
-    competition,
     handleLogout,
     onElementClick,
+    onClickNotifications,
+    notifications,
 }: SidebarContentProps) => {
     return (
         <Box
@@ -43,19 +59,65 @@ const SidebarContent = ({
             height="100vh"
         >
             <Image src={logo} alt="Logo" width="100%" />
-            <Text
+            <Box
+                display="flex"
+                rounded="20"
+                padding={2}
+                gap={5}
+                alignItems="center"
+                justifyContent="center"
+                width="100%"
                 textAlign="center"
-                fontWeight="bold"
-                fontSize="xl"
-                color="white"
             >
-                {competition.wcif.shortName
-                    ? competition.wcif.shortName
-                    : competition.name}
-            </Text>
-            <Text color="white" textAlign="center">
-                Hello {user.fullName ? user.fullName : user.username}!
-            </Text>
+                <Menu>
+                    <MenuButton>
+                        <Avatar
+                            src={user.avatarUrl}
+                            name={user.fullName ? user.fullName : user.username}
+                        />
+                    </MenuButton>
+                    <DarkMode>
+                        <MenuList>
+                            <MenuItem onClick={handleLogout}>Logout</MenuItem>
+                        </MenuList>
+                    </DarkMode>
+                </Menu>
+                <Box position="relative">
+                    <IconButton
+                        colorScheme="transparent"
+                        variant="solid"
+                        cursor={
+                            notifications.length > 0 ? "pointer" : "default"
+                        }
+                        onClick={() =>
+                            notifications.length > 0 && onClickNotifications
+                        }
+                        icon={
+                            <>
+                                <IoMdNotifications size={32} />
+                                <Box position="absolute" top="-3" right="-3">
+                                    <Text
+                                        fontSize="sm"
+                                        color="white"
+                                        backgroundColor={
+                                            notifications.length > 0
+                                                ? "red.500"
+                                                : "green.500"
+                                        }
+                                        padding={1}
+                                        rounded="full"
+                                        width="30px"
+                                    >
+                                        {notifications.length}
+                                    </Text>
+                                </Box>
+                            </>
+                        }
+                        aria-label="Notifications"
+                    />
+                </Box>
+            </Box>
+
             <SidebarElement
                 name="Home"
                 icon={<MdHome />}
@@ -144,19 +206,6 @@ const SidebarContent = ({
                     </Button>
                 </a>
             )}
-            <Box width="100%">
-                <Button
-                    leftIcon={<MdLogout />}
-                    colorScheme="teal"
-                    variant="solid"
-                    rounded="20"
-                    width="100%"
-                    textAlign="center"
-                    onClick={handleLogout}
-                >
-                    Logout
-                </Button>
-            </Box>
             <Link href="https://github.com/maxidragon/FKMTime" isExternal>
                 <Icon
                     as={FaGithub}

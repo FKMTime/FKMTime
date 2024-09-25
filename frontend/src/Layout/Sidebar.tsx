@@ -13,16 +13,23 @@ import { MdMenu } from "react-icons/md";
 import { useNavigate } from "react-router-dom";
 
 import { logout } from "@/logic/auth";
-import { Competition, UserInfo } from "@/logic/interfaces";
+import { Competition, INotification, UserInfo } from "@/logic/interfaces";
 
 import SidebarContent from "./SidebarContent";
 
 interface SidebarProps {
     user: UserInfo;
     competition: Competition;
+    notifications: INotification[];
+    onClickNotifications: () => void;
 }
 
-const Sidebar = ({ user, competition }: SidebarProps) => {
+const Sidebar = ({
+    user,
+    competition,
+    notifications,
+    onClickNotifications,
+}: SidebarProps) => {
     const navigate = useNavigate();
     const toast = useToast();
     const [isDrawerOpen, setDrawerOpen] = useState<boolean>(false);
@@ -68,6 +75,8 @@ const Sidebar = ({ user, competition }: SidebarProps) => {
                     user={user}
                     handleLogout={handleLogout}
                     competition={competition}
+                    onClickNotifications={onClickNotifications}
+                    notifications={notifications}
                 />
             </Box>
             <Drawer
@@ -83,7 +92,9 @@ const Sidebar = ({ user, competition }: SidebarProps) => {
                             user={user}
                             handleLogout={handleLogout}
                             onElementClick={toggleDrawer}
+                            notifications={notifications}
                             competition={competition}
+                            onClickNotifications={onClickNotifications}
                         />
                     </DrawerBody>
                 </DrawerContent>

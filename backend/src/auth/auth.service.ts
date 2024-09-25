@@ -72,6 +72,7 @@ export class AuthService {
           fullName: userInfo.me.name,
           wcaAccessToken: token,
           isWcaAdmin: isWcaAdmin,
+          avatarUrl: userInfo.me.avatar.thumb_url,
         },
       });
       const jwt = await this.generateAuthJwt({
@@ -87,6 +88,7 @@ export class AuthService {
           role: existingUser.role,
           wcaAccessToken: token,
           isWcaAdmin: isWcaAdmin,
+          avatarUrl: userInfo.me.avatar.thumb_url,
         },
       };
     } else {
@@ -99,6 +101,7 @@ export class AuthService {
           userInfo.me.name,
           token,
           isWcaAdmin,
+          userInfo.me.avatar.thumb_url,
         );
       } else {
         if (
@@ -127,6 +130,7 @@ export class AuthService {
     fullName: string,
     wcaAccessToken: string,
     isWcaAdmin = false,
+    avatarUrl?: string,
   ) {
     const user = await this.prisma.user.create({
       data: {
@@ -135,6 +139,7 @@ export class AuthService {
         role: 'ADMIN',
         wcaAccessToken: wcaAccessToken,
         isWcaAdmin: isWcaAdmin,
+        avatarUrl: avatarUrl,
       },
     });
     const jwt = await this.generateAuthJwt({
@@ -173,6 +178,7 @@ export class AuthService {
         fullName: true,
         role: true,
         isWcaAdmin: true,
+        avatarUrl: true,
       },
     });
   }

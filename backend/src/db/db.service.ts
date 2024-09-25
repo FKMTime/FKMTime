@@ -11,6 +11,8 @@ export class DbService extends PrismaClient {
           url: config.get('DATABASE_URL'),
         },
       },
+      log: [{ emit: 'stdout', level: 'error' }],
+      errorFormat: 'colorless',
     });
   }
 }

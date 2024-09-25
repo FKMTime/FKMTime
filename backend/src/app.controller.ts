@@ -1,10 +1,8 @@
 import { Controller, Get } from '@nestjs/common';
 
-@Controller('health')
-export class HealthController {
-  constructor() {}
-
-  @Get()
+@Controller()
+export class AppController {
+  @Get('health')
   async getHealth() {
     return { status: 'OK' };
   }

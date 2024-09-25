@@ -2,6 +2,7 @@ import { forwardRef, HttpException, Inject, Injectable } from '@nestjs/common';
 import { AttemptStatus, StaffRole } from '@prisma/client';
 import { AppGateway } from 'src/app.gateway';
 import { AttendanceService } from 'src/attendance/attendance.service';
+import { publicPersonSelect } from 'src/constants';
 import { isUnofficialEvent } from 'src/events';
 
 import { DbService } from '../db/db.service';
@@ -256,25 +257,11 @@ export class AttemptService {
     return this.prisma.attempt.findUnique({
       where: { id },
       include: {
-        judge: {
-          select: {
-            id: true,
-            name: true,
-            wcaId: true,
-            registrantId: true,
-          },
-        },
+        judge: publicPersonSelect,
         device: true,
         result: {
           include: {
-            person: {
-              select: {
-                id: true,
-                name: true,
-                wcaId: true,
-                registrantId: true,
-              },
-            },
+            person: publicPersonSelect,
           },
         },
       },
@@ -285,25 +272,11 @@ export class AttemptService {
     return this.prisma.attempt.findMany({
       where: { status: AttemptStatus.UNRESOLVED },
       include: {
-        judge: {
-          select: {
-            id: true,
-            name: true,
-            wcaId: true,
-            registrantId: true,
-          },
-        },
+        judge: publicPersonSelect,
         device: true,
         result: {
           include: {
-            person: {
-              select: {
-                id: true,
-                name: true,
-                wcaId: true,
-                registrantId: true,
-              },
-            },
+            person: publicPersonSelect,
           },
         },
       },
@@ -333,14 +306,7 @@ export class AttemptService {
         solvedAt: 'desc',
       },
       include: {
-        judge: {
-          select: {
-            id: true,
-            name: true,
-            wcaId: true,
-            registrantId: true,
-          },
-        },
+        judge: publicPersonSelect,
         updatedBy: {
           select: {
             id: true,
@@ -350,14 +316,7 @@ export class AttemptService {
         device: true,
         result: {
           include: {
-            person: {
-              select: {
-                id: true,
-                name: true,
-                wcaId: true,
-                registrantId: true,
-              },
-            },
+            person: publicPersonSelect,
           },
         },
       },

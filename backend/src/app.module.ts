@@ -2,6 +2,7 @@ import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { ScheduleModule } from '@nestjs/schedule';
 
+import { AppController } from './app.controller';
 import { AppGateway } from './app.gateway';
 import { AttemptModule } from './attempt/attempt.module';
 import { AttendanceModule } from './attendance/attendance.module';
@@ -12,7 +13,6 @@ import { DbModule } from './db/db.module';
 import { DeviceModule } from './device/device.module';
 import { validate } from './env.validation';
 import { EventsModule } from './events/events.module';
-import { HealthModule } from './health/health.module';
 import { LoggerMiddleware } from './middleware/logger.middleware';
 import { PersonModule } from './person/person.module';
 import { ResultModule } from './result/result.module';
@@ -23,6 +23,7 @@ import { WcaModule } from './wca/wca.module';
 
 @Module({
   providers: [AppGateway],
+  controllers: [AppController],
   imports: [
     ConfigModule.forRoot({
       envFilePath: process.env.NODE_ENV
@@ -43,7 +44,6 @@ import { WcaModule } from './wca/wca.module';
     DeviceModule,
     AttendanceModule,
     WcaModule,
-    HealthModule,
     SocketModule,
     EventsModule,
     ContestsModule,

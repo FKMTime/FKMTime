@@ -10,6 +10,7 @@ export interface UserInfo {
     role: UserRole;
     wcaUserId?: number;
     wcaAccessToken?: string;
+    avatarUrl?: string;
     isWcaAdmin: boolean;
 }
 
@@ -23,6 +24,12 @@ export interface User {
     role: string;
     createdAt?: Date;
     updatedAt?: Date;
+}
+
+export interface INotification {
+    id: string;
+    message: string;
+    type: "incident" | "info";
 }
 
 //eslint-disable-next-line

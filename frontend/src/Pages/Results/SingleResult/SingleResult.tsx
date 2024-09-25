@@ -133,8 +133,8 @@ const SingleResult = () => {
 
     const handleResubmit = async () => {
         if (!result) return;
-        const status = await reSubmitScorecardToWcaLive(result.id);
-        if (status === 200) {
+        const data = await reSubmitScorecardToWcaLive(result.id);
+        if (data.status === 200) {
             toast({
                 title: "Success",
                 description: `Scorecard resubmitted to ${submissionPlatformName}`,
