@@ -34,7 +34,7 @@
     "@nestjs/core": "^10.4.1",
     "@nestjs/jwt": "^10.2.0",
     "@nestjs/passport": "^10.0.3",
-    "@nestjs/platform-express": "^10.3.10",
+    "@nestjs/platform-express": "^10.4.4",
     "@nestjs/platform-socket.io": "^10.3.3",
     "@nestjs/schedule": "^4.0.2",
     "@nestjs/websockets": "^10.4.1",
