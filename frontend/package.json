@@ -53,7 +53,7 @@
     "prettier": "^3.3.2",
     "typescript": "^5.5.4",
     "vite": "^5.4.6",
-    "vite-plugin-checker": "^0.7.2",
+    "vite-plugin-checker": "^0.8.0",
     "vite-plugin-eslint": "^1.8.1",
     "vite-plugin-pwa": "^0.20.0",
     "vite-plugin-svgr": "^4.2.0",
