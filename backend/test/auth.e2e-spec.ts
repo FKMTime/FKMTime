@@ -80,6 +80,7 @@ describe('AuthController (e2e)', () => {
         fullName: user.userInfo.fullName,
         role: user.userInfo.role,
         isWcaAdmin: false,
+        avatarUrl: null,
       });
     });
 
@@ -130,7 +131,7 @@ describe('AuthController (e2e)', () => {
       const response = await request(app.getHttpServer())
         .post('/auth/wca/login')
         .send({
-          code: 'example-access-code',
+          code: 'code-2022GALA01',
           redirectUri: 'http://localhost:5173/auth/login',
         })
         .expect(200);
