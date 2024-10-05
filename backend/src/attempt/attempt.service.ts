@@ -254,7 +254,7 @@ export class AttemptService {
   }
 
   async getAttemptById(id: string) {
-    return this.prisma.attempt.findUnique({
+    const attempt = await this.prisma.attempt.findUnique({
       where: { id },
       include: {
         judge: publicPersonSelect,
@@ -266,6 +266,32 @@ export class AttemptService {
         },
       },
     });
+    const previousIncidents = await this.prisma.attempt.findMany({
+      where: {
+        result: {
+          personId: attempt.result.person.id,
+        },
+        status: {
+          in: [AttemptStatus.RESOLVED, AttemptStatus.EXTRA_GIVEN],
+        },
+      },
+      orderBy: {
+        solvedAt: 'desc',
+      },
+      include: {
+        judge: publicPersonSelect,
+        device: true,
+        result: {
+          include: {
+            person: publicPersonSelect,
+          },
+        },
+      },
+    });
+    return {
+      attempt,
+      previousIncidents,
+    };
   }
 
   async getUnresolvedAttempts() {

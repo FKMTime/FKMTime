@@ -13,8 +13,7 @@ import Rooms from "./Pages/Competition/Tabs/Rooms";
 import Devices from "./Pages/Devices/Devices";
 import Home from "./Pages/Home/Home";
 import ImportCompetition from "./Pages/ImportCompetition/ImportCompetition";
-import IncidentPage from "./Pages/Incidents/IncidentPage";
-import Incidents from "./Pages/Incidents/Incidents";
+import Incidents from "./Pages/Incidents/AllIncidents/Incidents";
 import NotFound from "./Pages/NotFound/NotFound";
 import ResolvedIncidents from "./Pages/ResolvedIncidents/ResolvedIncidents";
 import DoubleCheck from "./Pages/Results/DoubleCheck/DoubleCheck";
@@ -27,6 +26,9 @@ const Persons = React.lazy(() => import("./Pages/Persons/Persons"));
 const Results = React.lazy(() => import("./Pages/Results/Results"));
 const SingleResult = React.lazy(
     () => import("./Pages/Results/SingleResult/SingleResult")
+);
+const IncidentPage = React.lazy(
+    () => import("./Pages/Incidents/IncidentPage/IncidentPage")
 );
 const PersonResults = React.lazy(
     () => import("./Pages/Persons/PersonResults/PersonResults")

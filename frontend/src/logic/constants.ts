@@ -15,3 +15,4 @@ export const AVAILABLE_PENALTIES = [
     { value: 16, label: "+16" },
 ];
 export const CUTOFF_ALLOWED = ["a", "m"];
+export const GITHUB_URL = "https://github.com/FKMTime/FKMTime";

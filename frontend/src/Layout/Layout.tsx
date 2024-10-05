@@ -90,17 +90,14 @@ const Layout = () => {
             });
 
             socket.on("groupShouldBeChanged", (data) => {
-                if (!notifications.some((n) => n.message === data.message)) {
-                    setNotifications((prev) => [
-                        {
-                            id: "groupShouldBeChanged",
-                            message: data.message,
-                            type: "info",
-                        },
-                        ...prev,
-                    ]);
-                }
-
+                setNotifications((prev) => [
+                    {
+                        id: "groupShouldBeChanged",
+                        message: data.message,
+                        type: "info",
+                    },
+                    ...prev.filter((n) => n.message !== data.message),
+                ]);
                 Notification.requestPermission().then((permission) => {
                     if (permission === "granted") {
                         if (isMobile()) {

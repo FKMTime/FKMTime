@@ -290,14 +290,16 @@ const SingleResult = () => {
                         >
                             Standard
                         </Tab>
-                        <Tab
-                            _selected={{
-                                color: "white",
-                                bg: "blue.500",
-                            }}
-                        >
-                            Extra
-                        </Tab>
+                        {extraAttempts.length > 0 && (
+                            <Tab
+                                _selected={{
+                                    color: "white",
+                                    bg: "blue.500",
+                                }}
+                            >
+                                Extra
+                            </Tab>
+                        )}
                     </TabList>
                     <TabPanels>
                         <TabPanel
@@ -342,23 +344,25 @@ const SingleResult = () => {
                                 Swap attempts
                             </Button>
                         </TabPanel>
-                        <TabPanel
-                            display="flex"
-                            flexDirection="column"
-                            gap={3}
-                            ml="-4"
-                        >
-                            {extraAttempts.length === 0 ? (
-                                <Text>No extra attempts</Text>
-                            ) : (
-                                <AttemptsTable
-                                    attempts={extraAttempts}
-                                    fetchData={fetchData}
-                                    result={result}
-                                    showExtraColumns
-                                />
-                            )}
-                        </TabPanel>
+                        {extraAttempts.length > 0 && (
+                            <TabPanel
+                                display="flex"
+                                flexDirection="column"
+                                gap={3}
+                                ml="-4"
+                            >
+                                {extraAttempts.length === 0 ? (
+                                    <Text>No extra attempts</Text>
+                                ) : (
+                                    <AttemptsTable
+                                        attempts={extraAttempts}
+                                        fetchData={fetchData}
+                                        result={result}
+                                        showExtraColumns
+                                    />
+                                )}
+                            </TabPanel>
+                        )}
                     </TabPanels>
                 </Tabs>
             </Box>

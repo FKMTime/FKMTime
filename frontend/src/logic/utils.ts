@@ -215,11 +215,11 @@ export const prettyAttemptStatus = (
         case AttemptStatus.STANDARD:
             return "Standard";
         case AttemptStatus.UNRESOLVED:
-            return "Unresolved delegate case";
+            return "Unresolved incident";
         case AttemptStatus.RESOLVED:
             return isIncidentPage
-                ? "Resolved without extra"
-                : "Resolved delegate case, leave as is";
+                ? "Incident resolved without extra"
+                : "Incident resolved, leave as is";
         case AttemptStatus.EXTRA_GIVEN:
             return "Extra given";
     }

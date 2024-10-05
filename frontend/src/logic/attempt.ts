@@ -38,7 +38,12 @@ export const getResolvedIncidents = async (
     return await response.json();
 };
 
-export const getIncidentById = async (id: string): Promise<Incident> => {
+export const getIncidentById = async (
+    id: string
+): Promise<{
+    attempt: Incident;
+    previousIncidents: Incident[];
+}> => {
     const response = await backendRequest(`attempt/${id}`, "GET", true);
     return await response.json();
 };

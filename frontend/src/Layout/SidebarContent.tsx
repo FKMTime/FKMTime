@@ -27,6 +27,7 @@ import {
 
 import logo from "@/assets/logo.svg";
 import { isAdmin } from "@/logic/auth.ts";
+import { GITHUB_URL } from "@/logic/constants";
 import { Competition, INotification, UserInfo } from "@/logic/interfaces";
 
 import SidebarElement from "./SidebarElement";
@@ -204,7 +205,7 @@ const SidebarContent = ({
                     </Button>
                 </a>
             )}
-            <Link href="https://github.com/maxidragon/FKMTime" isExternal>
+            <Link href={GITHUB_URL} isExternal>
                 <Icon
                     as={FaGithub}
                     color="white"

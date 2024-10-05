@@ -260,6 +260,14 @@ export interface QuickAction {
     giveExtra: boolean;
 }
 
+export interface ApplicationQuickAction {
+    id: string;
+    name: string;
+    color: string;
+    comment?: string;
+    giveExtra: boolean;
+}
+
 export interface WCACompetition {
     id: string;
     name: string;
