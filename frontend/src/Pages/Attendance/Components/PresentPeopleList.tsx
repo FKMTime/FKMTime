@@ -38,7 +38,7 @@ const PresentPeopleList = ({
                         {activity.person.name}
                         {showDevice &&
                             activity.device &&
-                            `- station ${activity.device.name}`}
+                            ` - station ${activity.device.name}`}
                         {!activity.isAssigned && " (unassigned)"}
                     </ListItem>
                 ))}

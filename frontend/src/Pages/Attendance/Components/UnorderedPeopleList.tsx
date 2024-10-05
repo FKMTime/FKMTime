@@ -22,7 +22,7 @@ const UnorderedPeopleList = ({
                         {attendance.person.name}{" "}
                         {showDevice &&
                             attendance.device &&
-                            `- station ${attendance.device.name}`}
+                            ` - station ${attendance.device.name}`}
                         {!attendance.isAssigned && " (unassigned)"}
                     </ListItem>
                 ))}
