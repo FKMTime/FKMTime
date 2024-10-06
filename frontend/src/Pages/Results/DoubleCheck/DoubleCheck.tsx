@@ -3,23 +3,13 @@ import {
     AlertIcon,
     Box,
     Button,
-    ButtonGroup,
-    DarkMode,
-    FormControl,
     Heading,
-    Input,
     useToast,
 } from "@chakra-ui/react";
-import {
-    AutoComplete,
-    AutoCompleteInput,
-    AutoCompleteItem,
-    AutoCompleteList,
-} from "@choc-ui/chakra-autocomplete";
 import { useConfirm } from "chakra-ui-confirm";
 import { useAtomValue } from "jotai";
-import { ChangeEvent, useCallback, useEffect, useRef, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { useParams } from "react-router-dom";
 
 import LoadingPage from "@/Components/LoadingPage";
 import { activityCodeToName } from "@/logic/activities";
@@ -33,12 +23,13 @@ import {
 import { getSubmissionPlatformName } from "@/logic/utils";
 
 import AttemptsList from "./Components/AttemptsList";
+import DoubleCheckActions from "./Components/DoubleCheckActions";
 import DoubleCheckFinished from "./Components/DoubleCheckFinished";
+import SelectCompetitor from "./Components/SelectCompetitor";
 
 const DoubleCheck = () => {
     const { id } = useParams<{ id: string }>();
     const confirm = useConfirm();
-    const navigate = useNavigate();
     const toast = useToast();
     const [resultsToDoubleCheck, setResultsToDoubleCheck] = useState<
         ResultToDoubleCheck[]
@@ -47,6 +38,7 @@ const DoubleCheck = () => {
     const [result, setResult] = useState<ResultToDoubleCheck | null>(null);
     const [totalResults, setTotalResults] = useState<number>(0);
     const [doubleCheckedResults, setDoubleCheckedResults] = useState<number>(0);
+    const [justSelected, setJustSelected] = useState<boolean>(false);
     const roundName = activityCodeToName(id || "");
     const competition = useAtomValue(competitionAtom);
     const idInputRef = useRef<HTMLInputElement>(null);
@@ -68,22 +60,6 @@ const DoubleCheck = () => {
     useEffect(() => {
         fetchData();
     }, [fetchData, id]);
-
-    const handleSelect = (value: string) => {
-        const selectedResult = resultsToDoubleCheck.find((r) => r.id === value);
-        if (selectedResult) {
-            setResult(selectedResult);
-            setInputValue(selectedResult.person.registrantId?.toString() || "");
-        }
-    };
-
-    const handleChangeIdInput = (event: ChangeEvent<HTMLInputElement>) => {
-        setInputValue(event.target.value);
-        const selectedResult = resultsToDoubleCheck.find(
-            (r) => r.person.registrantId === +event.target.value
-        );
-        setResult(selectedResult || null);
-    };
 
     const handleUpdateAttempt = (attempt: Attempt) => {
         if (!result) return;
@@ -198,15 +174,19 @@ const DoubleCheck = () => {
 
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
-            if (e.key === "Enter") {
-                handleSubmit();
+            if (
+                e.key === "Enter" &&
+                !(idInputRef.current === document.activeElement)
+            ) {
+                if (!justSelected) handleSubmit();
+                else setJustSelected(false);
             }
         };
         window.addEventListener("keydown", handleKeyDown);
         return () => {
             window.removeEventListener("keydown", handleKeyDown);
         };
-    }, [handleSubmit]);
+    }, [handleSubmit, justSelected]);
 
     if (!resultsToDoubleCheck || !id) return <LoadingPage />;
 
@@ -239,52 +219,16 @@ const DoubleCheck = () => {
                         double-checked
                     </Alert>
                     {resultsToDoubleCheck ? (
-                        <Box display="flex" gap={3}>
-                            <Input
-                                placeholder="ID"
-                                width="20%"
-                                autoFocus
-                                ref={idInputRef}
-                                _placeholder={{
-                                    color: "gray.200",
-                                }}
-                                onKeyDown={(e) => {
-                                    if (e.key === "Enter") {
-                                        handleSubmit();
-                                    }
-                                }}
-                                value={inputValue}
-                                onChange={handleChangeIdInput}
-                            />
-                            <DarkMode>
-                                <FormControl>
-                                    <AutoComplete
-                                        openOnFocus
-                                        onChange={handleSelect}
-                                        value={result?.id || ""}
-                                    >
-                                        <AutoCompleteInput
-                                            placeholder="Search"
-                                            _placeholder={{
-                                                color: "gray.200",
-                                            }}
-                                            borderColor="white"
-                                        />
-                                        <AutoCompleteList>
-                                            {resultsToDoubleCheck.map((r) => (
-                                                <AutoCompleteItem
-                                                    key={r.id}
-                                                    value={r.id}
-                                                    label={r.combinedName}
-                                                >
-                                                    {r.combinedName}
-                                                </AutoCompleteItem>
-                                            ))}
-                                        </AutoCompleteList>
-                                    </AutoComplete>
-                                </FormControl>
-                            </DarkMode>
-                        </Box>
+                        <SelectCompetitor
+                            idInputRef={idInputRef}
+                            handleSubmit={handleSubmit}
+                            result={result}
+                            resultsToDoubleCheck={resultsToDoubleCheck}
+                            setResult={setResult}
+                            inputValue={inputValue}
+                            setJustSelected={setJustSelected}
+                            setInputValue={setInputValue}
+                        />
                     ) : (
                         <Heading>No results to double check</Heading>
                     )}
@@ -297,39 +241,11 @@ const DoubleCheck = () => {
                                     updateAttempt={handleUpdateAttempt}
                                 />
                             )}
-                            <Alert
-                                status="info"
-                                color="black"
-                                width="fit-content"
-                            >
-                                <AlertIcon />
-                                If you want to make more changes please go to
-                                Details page
-                            </Alert>
-                            <Box display="flex">
-                                <ButtonGroup>
-                                    <Button
-                                        colorScheme="green"
-                                        onClick={handleSubmit}
-                                    >
-                                        Save
-                                    </Button>
-                                    <Button
-                                        colorScheme="purple"
-                                        onClick={() =>
-                                            navigate(`/results/${result.id}`)
-                                        }
-                                    >
-                                        Details
-                                    </Button>
-                                    <Button
-                                        colorScheme="red"
-                                        onClick={handleSkip}
-                                    >
-                                        Skip
-                                    </Button>
-                                </ButtonGroup>
-                            </Box>
+                            <DoubleCheckActions
+                                handleSubmit={handleSubmit}
+                                handleSkip={handleSkip}
+                                result={result}
+                            />
                         </>
                     )}
                 </>

@@ -59,7 +59,7 @@ const CompetitionForm = ({
                 </FormHelperText>
             </FormControl>
             <FormControl display="flex" flexDirection="column" gap="2">
-                <FormLabel>Cubing contests token</FormLabel>
+                <FormLabel>CubingContests token</FormLabel>
                 <PasswordInput
                     placeholder="Cubing contests API token"
                     autoComplete="off"
@@ -83,7 +83,7 @@ const CompetitionForm = ({
                 </FormHelperText>
             </FormControl>
             <FormControl display="flex" flexDirection="column" gap="2">
-                <FormLabel>Send results to WCA Live/Cubing contests</FormLabel>
+                <FormLabel>Send results to WCA Live/CubingContests</FormLabel>
                 <Select
                     value={competition.sendingResultsFrequency}
                     onChange={(event) =>
