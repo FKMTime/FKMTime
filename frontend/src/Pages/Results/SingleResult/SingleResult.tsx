@@ -30,14 +30,12 @@ import { competitionAtom } from "@/logic/atoms";
 import { getCompetitionInfo } from "@/logic/competition";
 import { isUnofficialEvent } from "@/logic/events";
 import { Result } from "@/logic/interfaces";
-import { resultToString } from "@/logic/resultFormatters";
 import {
     assignDnsOnRemainingSolves,
     getResultById,
     reSubmitScorecardToWcaLive,
 } from "@/logic/results";
 import {
-    cumulativeRoundsToString,
     getSubmissionPlatformName,
     getSubmittedAttempts,
     isThereADifferenceBetweenResults,
@@ -45,6 +43,7 @@ import {
 } from "@/logic/utils";
 
 import CreateAttemptModal from "../Components/CreateAttemptModal";
+import RoundLimits from "../Components/RoundLimits";
 import AttemptsTable from "./Components/AttemptsTable";
 import SwapAttemptsModal from "./Components/SwapAttemptsModal";
 
@@ -196,74 +195,75 @@ const SingleResult = () => {
 
     return (
         <Box display="flex" flexDirection="column" gap={3}>
-            <Heading>Competitor</Heading>
-            <Text fontSize="xl">Name: {result.person.name}</Text>
-            {result.person.registrantId && (
-                <Text fontSize="xl">
-                    Registrant ID: {result.person.registrantId}
-                </Text>
-            )}
-            <Text fontSize="xl">WCA ID: {result.person.wcaId}</Text>
-            {result.person.countryIso2 && (
-                <Text fontSize="xl">
-                    <Box display="flex" alignItems="center" gap="1">
-                        <Text>
-                            Representing:{" "}
-                            {regionNameByIso2(result.person.countryIso2)}
-                        </Text>
-                        <FlagIcon
-                            country={result.person.countryIso2}
-                            size={20}
-                        />
-                    </Box>
-                </Text>
-            )}
-            <>
-                <Button
-                    colorScheme="yellow"
-                    width={{ base: "100%", md: "fit-content" }}
-                    onClick={handleResubmit}
-                >
-                    Resubmit scorecard to {submissionPlatformName}
-                </Button>
-                {standardAttempts.length < maxAttempts && (
-                    <Button
-                        colorScheme="green"
-                        width={{ base: "100%", md: "fit-content" }}
-                        onClick={handleAssignDns}
-                    >
-                        Assign DNS on remaing attempts
-                    </Button>
-                )}
-                {isDifferenceBetweenResults &&
-                    !isUnofficialEvent(result.eventId) && (
-                        <Alert status="error" color="black">
-                            <AlertIcon />
-                            There is a difference between results in WCA Live
-                            and FKM. Please check it manually, fix in FKM and
-                            resubmit scorecard to WCA Live.
-                        </Alert>
-                    )}
-            </>
-            <Heading mt={3}>
-                Limits for {activityCodeToName(result.roundId)}
-            </Heading>
-            <Text fontSize="xl">
-                Cutoff:{" "}
-                {cutoff
-                    ? `${resultToString(cutoff.attemptResult)} (${cutoff.numberOfAttempts} attempts)`
-                    : "None"}
-            </Text>
-            <Text
-                fontSize="xl"
-                title={`For ${cumulativeRoundsToString(limit?.cumulativeRoundIds || [])}`}
+            <Box
+                display="flex"
+                flexDirection={{ base: "column", md: "row" }}
+                justifyContent="space-between"
+                gap={3}
             >
-                Limit:{" "}
-                {limit
-                    ? `${resultToString(limit.centiseconds)} ${limit.cumulativeRoundIds.length > 0 ? "(cumulative)" : ""}`
-                    : "None"}
-            </Text>
-            <Text fontSize="xl">Attempts: {maxAttempts}</Text>
+                <Box display="flex" flexDirection="column" gap={3}>
+                    <Heading>Competitor</Heading>
+                    <Text fontSize="xl">Name: {result.person.name}</Text>
+                    {result.person.registrantId && (
+                        <Text fontSize="xl">
+                            Registrant ID: {result.person.registrantId}
+                        </Text>
+                    )}
+                    <Text fontSize="xl">WCA ID: {result.person.wcaId}</Text>
+                    {result.person.countryIso2 && (
+                        <Text fontSize="xl">
+                            <Box display="flex" alignItems="center" gap="1">
+                                <Text>
+                                    Representing:{" "}
+                                    {regionNameByIso2(
+                                        result.person.countryIso2
+                                    )}
+                                </Text>
+                                <FlagIcon
+                                    country={result.person.countryIso2}
+                                    size={20}
+                                />
+                            </Box>
+                        </Text>
+                    )}
+                </Box>
+                <Box display="flex" flexDirection="column" gap={3}>
+                    {isDifferenceBetweenResults &&
+                        !isUnofficialEvent(result.eventId) && (
+                            <Alert status="error" color="black">
+                                <AlertIcon />
+                                There is a difference between results in WCA
+                                Live and FKM. Please check it manually, fix in
+                                FKM and resubmit scorecard to WCA Live.
+                            </Alert>
+                        )}
+                    <Heading mt={3}>
+                        Limits for {activityCodeToName(result.roundId)}
+                    </Heading>
+                    <RoundLimits
+                        cutoff={cutoff}
+                        limit={limit}
+                        maxAttempts={maxAttempts}
+                        fontSize="xl"
+                    />
+                </Box>
+            </Box>
+            <Button
+                colorScheme="yellow"
+                width={{ base: "100%", md: "fit-content" }}
+                onClick={handleResubmit}
+            >
+                Resubmit scorecard to {submissionPlatformName}
+            </Button>
+            {standardAttempts.length < maxAttempts && (
+                <Button
+                    colorScheme="green"
+                    width={{ base: "100%", md: "fit-content" }}
+                    onClick={handleAssignDns}
+                >
+                    Assign DNS on remaing attempts
+                </Button>
+            )}
             <Box display="flex" gap="5" alignItems="center">
                 <Heading mt={3}>Attempts</Heading>
                 <PlusButton

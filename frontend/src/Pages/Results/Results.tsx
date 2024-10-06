@@ -1,5 +1,4 @@
-import { Box, Button, Heading, Input, Text, useToast } from "@chakra-ui/react";
-import { useConfirm } from "chakra-ui-confirm";
+import { Box, Button, Heading, Input } from "@chakra-ui/react";
 import { useAtom } from "jotai";
 import {
     ChangeEvent,
@@ -22,30 +21,25 @@ import { competitionAtom } from "@/logic/atoms";
 import { isAdmin } from "@/logic/auth";
 import { getCompetitionInfo } from "@/logic/competition";
 import { Result, Room } from "@/logic/interfaces";
-import { resultToString } from "@/logic/resultFormatters";
-import { getResultsByRoundId, reSubmitRoundToWcaLive } from "@/logic/results";
+import { getResultsByRoundId } from "@/logic/results";
 import { getAllRooms } from "@/logic/rooms";
-import {
-    cumulativeRoundsToString,
-    getSubmissionPlatformName,
-} from "@/logic/utils";
 import { socket, SocketContext } from "@/socket";
 
 import CreateAttemptModal from "./Components/CreateAttemptModal";
 import EventAndRoundSelector from "./Components/EventAndRoundSelector";
+import ResultsActions from "./Components/ResultsActions";
 import ResultsTable from "./Components/ResultsTable";
+import RoundLimits from "./Components/RoundLimits";
 import RestartGroupModal from "./SingleResult/Components/RestartGroupModal";
 
 const Results = () => {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
-    const confirm = useConfirm();
 
     const filters = {
         eventId: id?.split("-")[0] || "",
         roundId: id || "",
     };
-    const toast = useToast();
 
     const [competition, setCompetition] = useAtom(competitionAtom);
     const [results, setResults] = useState<Result[]>([]);
@@ -76,8 +70,6 @@ const Results = () => {
         }
         return getNumberOfAttemptsForRound(filters.roundId, competition.wcif);
     }, [competition, filters.roundId]);
-
-    const submissionPlatformName = getSubmissionPlatformName(filters.eventId);
 
     const fetchData = useCallback(
         async (roundId: string, searchParam?: string) => {
@@ -110,36 +102,6 @@ const Results = () => {
     const handleSearch = (event: ChangeEvent<HTMLInputElement>) => {
         fetchData(filters.roundId, event.target.value);
         setSearch(event.target.value);
-    };
-
-    const handleResubmitRound = async () => {
-        confirm({
-            title: "Resubmit results",
-            description: `Are you sure you want to override results from ${submissionPlatformName}?`,
-        })
-            .then(async () => {
-                const status = await reSubmitRoundToWcaLive(filters.roundId);
-                if (status === 200) {
-                    toast({
-                        title: `Successfully resubmitted round results to ${submissionPlatformName}`,
-                        status: "success",
-                    });
-                } else {
-                    toast({
-                        title: "Error",
-                        description: "Something went wrong",
-                        status: "error",
-                    });
-                }
-            })
-            .catch(() => {
-                toast({
-                    title: "Cancelled",
-                    description:
-                        "You have cancelled the resubmission of the results.",
-                    status: "info",
-                });
-            });
     };
 
     const handleCloseCreateAttemptModal = () => {
@@ -233,91 +195,19 @@ const Results = () => {
             </Box>
             {filters.roundId && (
                 <Box display="flex" flexDirection="column" gap="5">
-                    <Text>
-                        Cutoff:{" "}
-                        {cutoff
-                            ? `${resultToString(cutoff.attemptResult)} (${cutoff.numberOfAttempts} attempts)`
-                            : "None"}
-                    </Text>
-                    <Text
-                        title={`For ${cumulativeRoundsToString(limit?.cumulativeRoundIds || [])}`}
-                    >
-                        Limit:{" "}
-                        {limit
-                            ? `${resultToString(limit.centiseconds)} ${limit.cumulativeRoundIds.length > 0 ? "(cumulative)" : ""}`
-                            : "None"}
-                    </Text>
-                    <Text>Attempts: {maxAttempts}</Text>
-
-                    <Box
-                        display="flex"
-                        gap="3"
-                        flexDirection={{ base: "column", md: "row" }}
-                    >
-                        <Button
-                            colorScheme="green"
-                            width={{
-                                base: "100%",
-                                md: "fit-content",
-                            }}
-                            onClick={() => setIsOpenCreateAttemptModal(true)}
-                        >
-                            Enter attempt
-                        </Button>
-                        <Button
-                            colorScheme="yellow"
-                            width={{
-                                base: "100%",
-                                md: "fit-content",
-                            }}
-                            onClick={handleResubmitRound}
-                        >
-                            Resubmit results to {submissionPlatformName}
-                        </Button>
-                        <Button
-                            colorScheme="blue"
-                            width={{
-                                base: "100%",
-                                md: "fit-content",
-                            }}
-                            onClick={() =>
-                                navigate(`/results/public/${filters.roundId}`)
-                            }
-                        >
-                            Public view
-                        </Button>
-
-                        {results.length > 0 && (
-                            <>
-                                <Button
-                                    colorScheme="purple"
-                                    width={{
-                                        base: "100%",
-                                        md: "fit-content",
-                                    }}
-                                    onClick={() =>
-                                        navigate(
-                                            `/results/round/${filters.roundId}/double-check`
-                                        )
-                                    }
-                                >
-                                    Double check
-                                </Button>
-                                <Button
-                                    colorScheme="red"
-                                    width={{
-                                        base: "100%",
-                                        md: "fit-content",
-                                    }}
-                                    onClick={() =>
-                                        setIsOpenRestartGroupModal(true)
-                                    }
-                                >
-                                    Restart group
-                                </Button>
-                            </>
-                        )}
-                    </Box>
+                    <RoundLimits
+                        cutoff={cutoff}
+                        limit={limit}
+                        maxAttempts={maxAttempts}
+                    />
+                    <ResultsActions
+                        filters={filters}
+                        setIsOpenCreateAttemptModal={
+                            setIsOpenCreateAttemptModal
+                        }
+                        setIsOpenRestartGroupModal={setIsOpenRestartGroupModal}
+                        resultsLength={results.length}
+                    />
                 </Box>
             )}
             {results && results.length > 0 ? (
