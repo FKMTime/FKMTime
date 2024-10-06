@@ -174,7 +174,7 @@ const SidebarContent = ({
             <SidebarElement
                 name="Results"
                 icon={<MdTimer />}
-                link="/results"
+                link={isAdmin() ? "/results" : "/results/public"}
                 onClick={onElementClick}
             />
             {isAdmin() && (

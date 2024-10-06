@@ -88,7 +88,7 @@ export class PersonController {
     return await this.personService.getPersonById(id);
   }
 
-  @UseGuards(AuthGuard('jwt'), AdminGuard)
+  @UseGuards(AuthGuard('jwt'))
   @Put(':id')
   async updatePerson(@Param('id') id: string, @Body() data: UpdatePersonDto) {
     return await this.personService.updatePerson(id, data);

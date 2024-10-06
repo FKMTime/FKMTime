@@ -7,9 +7,14 @@ import LoginForm from "../Components/LoginForm";
 interface MobileLoginProps {
     handleSubmit: (username: string, password: string) => void;
     handleWcaLogin: () => void;
+    isLoading?: boolean;
 }
 
-const MobileLogin = ({ handleSubmit, handleWcaLogin }: MobileLoginProps) => {
+const MobileLogin = ({
+    handleSubmit,
+    handleWcaLogin,
+    isLoading,
+}: MobileLoginProps) => {
     return (
         <Box
             display="flex"
@@ -26,6 +31,7 @@ const MobileLogin = ({ handleSubmit, handleWcaLogin }: MobileLoginProps) => {
             <LoginForm
                 handleLogin={handleSubmit}
                 handleWcaLogin={handleWcaLogin}
+                isLoading={isLoading}
             />
         </Box>
     );

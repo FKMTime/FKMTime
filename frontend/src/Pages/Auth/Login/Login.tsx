@@ -1,5 +1,5 @@
 import { Box, useToast } from "@chakra-ui/react";
-import { useCallback, useEffect } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import background from "@/assets/background.jpg";
@@ -15,6 +15,7 @@ const Login = () => {
     const code = searchParams.get("code");
     const navigate = useNavigate();
     const toast = useToast();
+    const [isLoading, setIsLoading] = useState<boolean>(code ? true : false);
 
     const handleSubmit = async (username: string, password: string) => {
         const status = await login(username, password);
@@ -23,6 +24,7 @@ const Login = () => {
 
     const handleLoginResponse = useCallback(
         (status: number, errorMessage?: string) => {
+            setIsLoading(false);
             if (status === 200) {
                 toast({
                     title: "Successfully logged in.",
@@ -74,6 +76,7 @@ const Login = () => {
                 <MobileLogin
                     handleSubmit={handleSubmit}
                     handleWcaLogin={handleWcaLogin}
+                    isLoading={isLoading}
                 />
             </Box>
             <Box
@@ -94,6 +97,7 @@ const Login = () => {
                     <LoginForm
                         handleLogin={handleSubmit}
                         handleWcaLogin={handleWcaLogin}
+                        isLoading={isLoading}
                     />
                 </Box>
                 <img

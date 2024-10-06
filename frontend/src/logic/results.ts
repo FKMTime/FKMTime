@@ -72,6 +72,7 @@ export const resultsWithAverageProperty = (
             average(submittedAttempts);
         return {
             ...result,
+            eventId: result.roundId.split("-")[0],
             average: calculatedAverage || 0,
             averageString: calculatedAverage
                 ? resultToString(calculatedAverage)
@@ -83,10 +84,22 @@ export const resultsWithAverageProperty = (
 };
 
 export const orderResultsByAverage = (results: ResultWithAverage[]) => {
+    const blindEvents = ["333bf", "444bf", "555bf", "333mbf"];
+    if (blindEvents.includes(results[0].eventId)) {
+        return results.sort((a, b) => {
+            if (a.best === b.best) {
+                return a.average - b.average;
+            }
+            return a.best - b.best;
+        });
+    }
     return results.sort((a, b) => {
         if (a.average && b.average) {
             if (a.average === b.average) {
                 return a.best - b.best;
+            }
+            if (a.average === -1) {
+                return 1;
             }
             return a.average - b.average;
         }

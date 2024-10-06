@@ -95,6 +95,10 @@ const App = () => {
                     element: <Results />,
                 },
                 {
+                    path: "results/public",
+                    element: <PublicView />,
+                },
+                {
                     path: "results/public/:id",
                     element: <PublicView />,
                 },

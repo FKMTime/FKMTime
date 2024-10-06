@@ -169,7 +169,7 @@ const Persons = () => {
 
     return (
         <Box display="flex" flexDirection="column" gap="5">
-            {isAdmin() && personsWithoutCardAssigned !== 0 && (
+            {personsWithoutCardAssigned !== 0 && (
                 <>
                     <Alert
                         status="error"

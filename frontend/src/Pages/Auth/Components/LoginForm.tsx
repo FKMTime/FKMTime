@@ -13,8 +13,13 @@ import wca from "@/assets/wca.svg";
 interface LoginFormProps {
     handleLogin: (username: string, password: string) => void;
     handleWcaLogin: () => void;
+    isLoading?: boolean;
 }
-const LoginForm = ({ handleLogin, handleWcaLogin }: LoginFormProps) => {
+const LoginForm = ({
+    handleLogin,
+    handleWcaLogin,
+    isLoading,
+}: LoginFormProps) => {
     const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
         event.preventDefault();
         const data = new FormData(event.currentTarget);
@@ -39,6 +44,7 @@ const LoginForm = ({ handleLogin, handleWcaLogin }: LoginFormProps) => {
                         type="text"
                         placeholder="Enter username"
                         name="username"
+                        isDisabled={isLoading}
                     />
                 </FormControl>
                 <FormControl isRequired>
@@ -47,10 +53,15 @@ const LoginForm = ({ handleLogin, handleWcaLogin }: LoginFormProps) => {
                         type="password"
                         placeholder="Enter password"
                         name="password"
+                        isDisabled={isLoading}
                     />
                 </FormControl>
                 <VStack spacing={4} align="stretch" mt={3}>
-                    <Button colorScheme="teal" type="submit">
+                    <Button
+                        colorScheme="teal"
+                        type="submit"
+                        isDisabled={isLoading}
+                    >
                         Sign in
                     </Button>
                     <Button
@@ -59,6 +70,7 @@ const LoginForm = ({ handleLogin, handleWcaLogin }: LoginFormProps) => {
                         display="flex"
                         gap="3"
                         onClick={handleWcaLogin}
+                        isLoading={isLoading}
                     >
                         <img src={wca} alt="WCA" width="25" />
                         Sign in with WCA

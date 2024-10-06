@@ -7,12 +7,13 @@ import { getNumberOfAttemptsForRound } from "wcif-helpers";
 import LoadingPage from "@/Components/LoadingPage";
 import { competitionAtom } from "@/logic/atoms";
 import { getCompetitionInfo } from "@/logic/competition";
-import { ResultWithAverage } from "@/logic/interfaces";
+import { ResultWithAverage, Room } from "@/logic/interfaces";
 import {
     getResultsByRoundId,
     orderResultsByAverage,
     resultsWithAverageProperty,
 } from "@/logic/results";
+import { getAllRooms } from "@/logic/rooms";
 import { socket, SocketContext } from "@/socket";
 
 import EventAndRoundSelector from "../Components/EventAndRoundSelector";
@@ -27,6 +28,7 @@ const PublicView = () => {
     };
     const [competition, setCompetition] = useAtom(competitionAtom);
     const [results, setResults] = useState<ResultWithAverage[]>([]);
+    const [currentRounds, setCurrentRounds] = useState<string[]>([]);
 
     const maxAttempts = useMemo(() => {
         if (!competition) {
@@ -81,6 +83,10 @@ const PublicView = () => {
     useEffect(() => {
         if (filters.roundId) {
             fetchData(filters.roundId);
+        } else {
+            if (currentRounds.length === 1) {
+                navigate(`/results/public/${currentRounds[0]}`);
+            }
         }
 
         socket.emit("joinResults", { roundId: filters.roundId });
@@ -91,7 +97,19 @@ const PublicView = () => {
         return () => {
             socket.emit("leaveResults", { roundId: filters.roundId });
         };
-    }, [fetchData, filters.roundId, navigate, isConnected]);
+    }, [fetchData, filters.roundId, navigate, isConnected, currentRounds]);
+
+    useEffect(() => {
+        getAllRooms().then((rooms: Room[]) => {
+            const ids = new Set<string>(
+                rooms
+                    .filter((room) => room.currentGroupId)
+                    .map((room) => room.currentGroupId.split("-g")[0])
+            );
+            const idsArray = [...ids];
+            setCurrentRounds(idsArray);
+        });
+    }, []);
 
     if (!competition || !results) {
         return <LoadingPage />;
