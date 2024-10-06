@@ -83,7 +83,7 @@ const SidebarContent = ({
                         </MenuList>
                     </DarkMode>
                 </Menu>
-                <Box position="relative">
+                <Box position="relative" display={isAdmin() ? "block" : "none"}>
                     <IconButton
                         colorScheme="transparent"
                         variant="solid"
