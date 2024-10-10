@@ -89,7 +89,12 @@ const Rooms = () => {
     }
 
     return (
-        <Box display="flex" flexDirection="column" gap="5" width="fit-content">
+        <Box
+            display="flex"
+            flexDirection="column"
+            gap="5"
+            width={{ base: "100%", md: "fit-content" }}
+        >
             {currentOfficialRounds.length > 0 && (
                 <Alert
                     status="warning"

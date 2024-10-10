@@ -12,7 +12,7 @@ import { INotification } from "@/logic/interfaces";
 import { isMobile, isNotificationsSupported } from "@/logic/utils";
 import { socket, SocketContext } from "@/socket";
 
-import NotificationsModal from "./NotiifcationsModal";
+import NotificationsModal from "./NotificationsModal";
 import Sidebar from "./Sidebar";
 
 const Layout = () => {

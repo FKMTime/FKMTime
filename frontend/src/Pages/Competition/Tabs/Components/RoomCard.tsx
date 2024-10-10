@@ -46,7 +46,7 @@ const RoomCard = ({
             display="flex"
             flexDirection="column"
             gap="3"
-            width="fit-content"
+            width={{ base: "100%", md: "fit-content" }}
         >
             <Heading size="md">{room.name}</Heading>
             <FormControl>
