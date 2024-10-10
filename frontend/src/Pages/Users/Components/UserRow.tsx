@@ -27,7 +27,7 @@ const UserRow = ({ user, fetchData }: UserRowProps) => {
         useState<boolean>(false);
     const [isOpenChangePasswordModal, setIsOpenChangePasswordModal] =
         useState<boolean>(false);
-    const isWcaAccount = user.wcaUserId || user.wcaId;
+    const isWcaAccount = user.wcaUserId !== null;
 
     const handleCloseEditUserModal = async () => {
         await fetchData();

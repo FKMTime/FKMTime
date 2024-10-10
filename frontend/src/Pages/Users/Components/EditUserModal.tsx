@@ -24,7 +24,7 @@ const EditUserModal = ({ isOpen, onClose, user }: EditUserModalProps) => {
     const toast = useToast();
     const [isLoading, setIsLoading] = useState(false);
     const [editedUser, setEditedUser] = useState<User>(user);
-    const isWcaAccount = user.wcaUserId || user.wcaId;
+    const isWcaAccount = user.wcaUserId !== null;
 
     const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
         setIsLoading(true);

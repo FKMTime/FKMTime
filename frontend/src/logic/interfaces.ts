@@ -18,12 +18,12 @@ export interface User {
     id: string;
     username?: string;
     wcaUserId?: number;
-    wcaId?: string;
+    avatarUrl?: string;
     isWcaAdmin: boolean;
     fullName?: string;
     role: string;
-    createdAt?: Date;
-    updatedAt?: Date;
+    createdAt: Date;
+    updatedAt: Date;
 }
 
 export interface INotification {
