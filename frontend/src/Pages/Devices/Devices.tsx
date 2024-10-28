@@ -26,15 +26,18 @@ import DevicesTable from "./Components/DevicesTable";
 
 const tabs = [
     {
-        name: "allDevices",
+        id: "allDevices",
+        name: "All devices",
         value: 0,
     },
     {
-        name: "availableDevices",
+        id: "availableDevices",
+        name: "Available devices",
         value: 1,
     },
     {
-        name: "settings",
+        id: "settings",
+        name: "Settings",
         value: 2,
     },
 ];
@@ -108,14 +111,14 @@ const Devices = () => {
 
     const onChangeTabIndex = (index: number) => {
         setTabIndex(index);
-        const tab = tabs.find((t) => t.value === index)?.name;
+        const tab = tabs.find((t) => t.value === index)?.id;
         if (!tab) return;
         setSearchParams({ tab: tab });
     };
 
     useEffect(() => {
         const tab = searchParams.get("tab");
-        const index = tabs.find((t) => t.name === tab)?.value;
+        const index = tabs.find((t) => t.id === tab)?.value;
         if (index) {
             setTabIndex(index);
         }
@@ -134,20 +137,17 @@ const Devices = () => {
         <Box display="flex" flexDirection="column" gap="5">
             <Tabs isFitted index={tabIndex} onChange={onChangeTabIndex}>
                 <TabList>
-                    <Tab
-                        _selected={{
-                            color: "white",
-                            bg: "blue.500",
-                        }}
-                    >
-                        All
-                    </Tab>
-                    <Tab _selected={{ color: "white", bg: "blue.500" }}>
-                        Available
-                    </Tab>
-                    <Tab _selected={{ color: "white", bg: "blue.500" }}>
-                        Settings
-                    </Tab>
+                    {tabs.map((tab) => (
+                        <Tab
+                            key={tab.id}
+                            _selected={{
+                                color: "white",
+                                bg: "blue.500",
+                            }}
+                        >
+                            {tab.name}
+                        </Tab>
+                    ))}
                 </TabList>
                 <TabPanels>
                     <TabPanel

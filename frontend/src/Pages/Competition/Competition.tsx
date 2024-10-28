@@ -28,19 +28,23 @@ import UnofficialEvents from "./Tabs/UnofficialEvents/UnofficialEvents";
 
 const tabs = [
     {
-        name: "competitionSettings",
+        id: "competitionSettings",
+        name: "Manage competition",
         value: 0,
     },
     {
-        name: "rooms",
+        id: "rooms",
+        name: "Current groups",
         value: 1,
     },
     {
-        name: "unofficialEvents",
+        id: "unofficialEvents",
+        name: "Unofficial events",
         value: 2,
     },
     {
-        name: "statistics",
+        id: "statistics",
+        name: "Statistics",
         value: 3,
     },
 ];
@@ -72,14 +76,14 @@ const Competition = () => {
 
     const onChangeTabIndex = (index: number) => {
         setTabIndex(index);
-        const tab = tabs.find((t) => t.value === index)?.name;
+        const tab = tabs.find((t) => t.value === index)?.id;
         if (!tab) return;
         setSearchParams({ tab: tab });
     };
 
     useEffect(() => {
         const tab = searchParams.get("tab");
-        const index = tabs.find((t) => t.name === tab)?.value;
+        const index = tabs.find((t) => t.id === tab)?.value;
         if (index) {
             setTabIndex(index);
         }
@@ -104,28 +108,17 @@ const Competition = () => {
                 isFitted
             >
                 <TabList>
-                    <Tab
-                        _selected={{
-                            color: "white",
-                            bg: "blue.500",
-                        }}
-                    >
-                        Manage competition
-                    </Tab>
-                    <Tab _selected={{ color: "white", bg: "blue.500" }}>
-                        Current groups
-                    </Tab>
-                    <Tab
-                        _selected={{
-                            color: "white",
-                            bg: "blue.500",
-                        }}
-                    >
-                        Unofficial events
-                    </Tab>
-                    <Tab _selected={{ color: "white", bg: "blue.500" }}>
-                        Statistics
-                    </Tab>
+                    {tabs.map((tab) => (
+                        <Tab
+                            key={tab.id}
+                            _selected={{
+                                color: "white",
+                                bg: "blue.500",
+                            }}
+                        >
+                            {tab.name}
+                        </Tab>
+                    ))}
                 </TabList>
                 <TabPanels>
                     <TabPanel>

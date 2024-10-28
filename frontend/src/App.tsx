@@ -19,6 +19,7 @@ import ResolvedIncidents from "./Pages/ResolvedIncidents/ResolvedIncidents";
 import DoubleCheck from "./Pages/Results/DoubleCheck/DoubleCheck";
 import PublicView from "./Pages/Results/PublicView/PublicView";
 import ResultsChecks from "./Pages/Results/ResultsChecks/ResultsChecks";
+import ScramblesAdmin from "./Pages/ScramblesAdmin/ScramblesAdmin";
 import Settings from "./Pages/Settings/Settings";
 import Users from "./Pages/Users/Users";
 import { SocketContext } from "./socket";
@@ -133,6 +134,10 @@ const App = () => {
                 {
                     path: "devices",
                     element: <Devices />,
+                },
+                {
+                    path: "scrambles",
+                    element: <ScramblesAdmin />,
                 },
                 {
                     path: "attendance",

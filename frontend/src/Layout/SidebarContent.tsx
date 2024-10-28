@@ -13,7 +13,12 @@ import {
     MenuList,
     Text,
 } from "@chakra-ui/react";
-import { FaClipboardList, FaGithub, FaServer } from "react-icons/fa";
+import {
+    FaClipboardList,
+    FaGithub,
+    FaPuzzlePiece,
+    FaServer,
+} from "react-icons/fa";
 import { GrDocumentVerified } from "react-icons/gr";
 import { IoMdNotifications, IoMdTrophy, IoMdWarning } from "react-icons/io";
 import {
@@ -147,6 +152,12 @@ const SidebarContent = ({
                         name="Competition"
                         icon={<IoMdTrophy />}
                         link="/competition"
+                        onClick={onElementClick}
+                    />
+                    <SidebarElement
+                        name="Scrambles"
+                        icon={<FaPuzzlePiece />}
+                        link="/scrambles"
                         onClick={onElementClick}
                     />
                 </>

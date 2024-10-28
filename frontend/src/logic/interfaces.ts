@@ -321,3 +321,12 @@ export interface WCAPerson {
     wcaId: string;
     combinedName: string;
 }
+
+export interface ScramblingDevice {
+    id: string;
+    name: string;
+    roomId: string;
+    room: Room;
+    createdAt: Date;
+    updatedAt: Date;
+}

@@ -1,4 +1,4 @@
-import { forwardRef, Module } from '@nestjs/common';
+import { forwardRef, Global, Module } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
 
@@ -11,6 +11,7 @@ import { WcaController } from './wca/wca.controller';
 
 const { SECRET: secret = 'secret' } = process.env;
 
+@Global()
 @Module({
   imports: [
     forwardRef(() => LoginModule),

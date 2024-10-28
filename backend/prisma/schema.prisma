@@ -93,13 +93,14 @@ model UnofficialEvent {
 }
 
 model Room {
-  id             String   @id @default(uuid())
+  id             String           @id @default(uuid())
   name           String
   color          String
-  currentGroupId String?  @map("current_group_id")
-  createdAt      DateTime @default(now()) @map("created_at")
-  updatedAt      DateTime @updatedAt @map("updated_at")
+  currentGroupId String?          @map("current_group_id")
+  createdAt      DateTime         @default(now()) @map("created_at")
+  updatedAt      DateTime         @updatedAt @map("updated_at")
   devices        Device[]
+  scramblingDevices ScramblingDevice[]
 
   @@map("room")
 }
@@ -174,6 +175,31 @@ model QuickAction {
   updatedAt DateTime @updatedAt @map("updated_at")
 
   @@map("quick_action")
+}
+
+model ScramblingDevice {
+  id                   String   @id @default(uuid())
+  name                 String
+  encryptedToken       String?  @map("encrypted_token")
+  encryptedOneTimeCode String?  @map("encrypted_one_time_code")
+  roomId               String   @map("room_id")
+  room                 Room     @relation(fields: [roomId], references: [id])
+  createdAt            DateTime @default(now()) @map("created_at")
+  updatedAt            DateTime @updatedAt @map("updated_at")
+
+  @@map("scrambling_device")
+}
+
+model ScrambleSet {
+  id                 String   @id @default(uuid())
+  roundId            String   @map("round_id")
+  set                String
+  encryptedScrambles String?  @map("encrypted_scrambles")
+  createdAt          DateTime @default(now()) @map("created_at")
+  updatedAt          DateTime @updatedAt @map("updated_at")
+
+  @@unique([roundId, set])
+  @@map("scramble_set")
 }
 
 enum DeviceType {
