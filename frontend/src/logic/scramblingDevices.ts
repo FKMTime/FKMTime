@@ -48,3 +48,12 @@ export const deleteScramblingDevice = async (id: string) => {
     );
     return response.status;
 };
+
+export const getOneTimeCode = async (id: string) => {
+    const response = await backendRequest(
+        `scrambling-device/${id}/code`,
+        "GET",
+        true
+    );
+    return await response.json();
+};

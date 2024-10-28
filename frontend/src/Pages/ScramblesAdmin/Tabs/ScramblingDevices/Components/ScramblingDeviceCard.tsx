@@ -1,12 +1,13 @@
 import {
     Box,
     Button,
-    ButtonGroup,
     Card,
     CardBody,
     CardFooter,
     Divider,
+    GridItem,
     Heading,
+    SimpleGrid,
     Stack,
     Text,
     useToast,
@@ -18,6 +19,7 @@ import { ScramblingDevice } from "@/logic/interfaces";
 import { deleteScramblingDevice } from "@/logic/scramblingDevices";
 
 import EditScramblingDeviceModal from "./EditScramblingDeviceModal";
+import OneTimeCodeModal from "./OneTimeCodeModal";
 
 interface ScramblingDeviceCardProps {
     device: ScramblingDevice;
@@ -31,6 +33,8 @@ const ScramblingDeviceCard = ({
     const toast = useToast();
     const confirm = useConfirm();
     const [isOpenEditDeviceModal, setIsOpenEditDeviceModal] =
+        useState<boolean>(false);
+    const [isOpenOneTimeCodeModal, setIsOpenOneTimeCodeModal] =
         useState<boolean>(false);
 
     const handleCloseEditDeviceModal = async () => {
@@ -92,27 +96,48 @@ const ScramblingDeviceCard = ({
                 </CardBody>
                 <Divider />
                 <CardFooter>
-                    <ButtonGroup spacing="2">
-                        <Button
-                            variant="solid"
-                            colorScheme="blue"
-                            onClick={() => setIsOpenEditDeviceModal(true)}
-                        >
-                            Edit
-                        </Button>
-                        <Button
-                            variant="solid"
-                            colorScheme="red"
-                            onClick={handleDelete}
-                        >
-                            Delete
-                        </Button>
-                    </ButtonGroup>
+                    <SimpleGrid gap={3} columns={2} width="100%">
+                        <GridItem>
+                            <Button
+                                variant="solid"
+                                colorScheme="blue"
+                                onClick={() => setIsOpenEditDeviceModal(true)}
+                                width="100%"
+                            >
+                                Edit
+                            </Button>
+                        </GridItem>
+                        <GridItem>
+                            <Button
+                                variant="solid"
+                                colorScheme="red"
+                                onClick={handleDelete}
+                                width="100%"
+                            >
+                                Delete
+                            </Button>
+                        </GridItem>
+                        <GridItem colSpan={2}>
+                            <Button
+                                variant="solid"
+                                colorScheme="yellow"
+                                onClick={() => setIsOpenOneTimeCodeModal(true)}
+                                width="100%"
+                            >
+                                Generate one time code
+                            </Button>
+                        </GridItem>
+                    </SimpleGrid>
                 </CardFooter>
             </Card>
             <EditScramblingDeviceModal
                 isOpen={isOpenEditDeviceModal}
                 onClose={handleCloseEditDeviceModal}
+                device={device}
+            />
+            <OneTimeCodeModal
+                isOpen={isOpenOneTimeCodeModal}
+                onClose={() => setIsOpenOneTimeCodeModal(false)}
                 device={device}
             />
         </>

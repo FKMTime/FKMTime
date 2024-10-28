@@ -36,7 +36,7 @@ export class ScramblingDeviceController {
 
   @UseGuards(AdminGuard)
   @Get(':id/code')
-  async generateOneTimeCode(scramblingDeviceId: string) {
+  async generateOneTimeCode(@Param('id') scramblingDeviceId: string) {
     return this.scramblingDeviceService.generateOneTimeCode(scramblingDeviceId);
   }
 
