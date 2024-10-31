@@ -284,6 +284,8 @@ export interface Event {
     icon: string;
     useInspection?: boolean;
     isUnofficial?: boolean;
+    usualScramblesCount?: number;
+    usualExtraScramblesCount?: number;
 }
 
 export interface UnofficialEvent {

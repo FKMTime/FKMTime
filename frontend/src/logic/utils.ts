@@ -284,3 +284,7 @@ export const prettyRoundFormat = (format: string) => {
 export const getSubmissionPlatformName = (eventId: string) => {
     return isUnofficialEvent(eventId) ? "Cubing Contests" : "WCA Live";
 };
+
+export const numberToLetter = (number: number) => {
+    return String.fromCharCode(64 + number);
+};

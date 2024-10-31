@@ -2,7 +2,7 @@ import { Box, Tab, TabList, TabPanel, TabPanels, Tabs } from "@chakra-ui/react";
 import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 
-import ScrambleSets from "./Tabs/ScrambleSets/ScrambleSets";
+import ImportScrambles from "./Tabs/ImportScrambles/ImportScrambles";
 import ScramblingDevices from "./Tabs/ScramblingDevices/ScramblingDevices";
 
 const tabs = [
@@ -13,10 +13,16 @@ const tabs = [
         component: <ScramblingDevices />,
     },
     {
+        id: "importScrambles",
+        name: "Import scrambles",
+        value: 1,
+        component: <ImportScrambles />,
+    },
+    {
         id: "scrambleSets",
         name: "Scramble sets",
-        value: 1,
-        component: <ScrambleSets />,
+        value: 2,
+        component: <Box>Scramble sets</Box>,
     },
 ];
 const ScramblesAdmin = () => {

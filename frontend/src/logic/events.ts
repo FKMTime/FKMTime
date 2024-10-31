@@ -54,6 +54,26 @@ export const getEventIconClass = (eventId: string) => {
     return "";
 };
 
+export const getUsualScramblesCount = (eventId: string) => {
+    const eventsData = localStorage.getItem(EVENTS_KEY);
+    if (eventsData) {
+        const events: Event[] = JSON.parse(eventsData);
+        return events.find((event) => event.id === eventId)
+            ?.usualScramblesCount;
+    }
+    return 5;
+};
+
+export const getUsualExtraScramblesCount = (eventId: string) => {
+    const eventsData = localStorage.getItem(EVENTS_KEY);
+    if (eventsData) {
+        const events: Event[] = JSON.parse(eventsData);
+        return events.find((event) => event.id === eventId)
+            ?.usualExtraScramblesCount;
+    }
+    return 2;
+};
+
 export const createUnofficialEvent = async (
     eventId: string,
     rounds: Round[]
