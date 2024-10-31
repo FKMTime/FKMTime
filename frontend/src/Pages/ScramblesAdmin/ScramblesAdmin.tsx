@@ -2,6 +2,7 @@ import { Box, Tab, TabList, TabPanel, TabPanels, Tabs } from "@chakra-ui/react";
 import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 
+import ScrambleSets from "./Tabs/ScrambleSets/ScrambleSets";
 import ScramblingDevices from "./Tabs/ScramblingDevices/ScramblingDevices";
 
 const tabs = [
@@ -15,7 +16,7 @@ const tabs = [
         id: "scrambleSets",
         name: "Scramble sets",
         value: 1,
-        component: <div>Scramble sets</div>,
+        component: <ScrambleSets />,
     },
 ];
 const ScramblesAdmin = () => {
