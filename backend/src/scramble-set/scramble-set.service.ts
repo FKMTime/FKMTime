@@ -32,9 +32,66 @@ export class ScrambleSetService {
           );
         }
       }
-      return {
-        message: 'Scrambles imported successfully',
-      };
     }
+    return {
+      message: 'Scrambles imported successfully',
+    };
+  }
+
+  async getScrambleSets(roundId: string) {
+    const sets = await this.prisma.scrambleSet.findMany({
+      where: {
+        roundId,
+      },
+      include: {
+        scrambles: true,
+      },
+    });
+    return sets.map((set) => {
+      return {
+        ...set,
+        scramblesCount: set.scrambles.filter((scramble) => !scramble.isExtra)
+          .length,
+        extraScramblesCount: set.scrambles.filter(
+          (scramble) => scramble.isExtra,
+        ).length,
+        scrambles: undefined,
+      };
+    });
+  }
+
+  async deleteScrambleSet(id: string) {
+    try {
+      await this.prisma.scrambleSet.delete({
+        where: {
+          id,
+        },
+      });
+    } catch (e) {
+      if (e.code === 'P2016') {
+        throw new HttpException('Scramble set not found', HttpStatus.NOT_FOUND);
+      }
+    }
+    return {
+      message: 'Scramble set deleted successfully',
+    };
+  }
+
+  async deleteScrambleSetsByRoundId(roundId: string) {
+    await this.prisma.scrambleSet.deleteMany({
+      where: {
+        roundId,
+      },
+    });
+    return {
+      message: 'Scramble sets deleted successfully',
+    };
+  }
+
+  async deleteAllScrambleSets() {
+    await this.prisma.scrambleSet.deleteMany();
+    return {
+      message: 'All scramble sets deleted successfully',
+    };
   }
 }

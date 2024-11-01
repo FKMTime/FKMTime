@@ -9,7 +9,8 @@ import { numberToLetter } from "./utils";
 
 export const validateScrambles = (
     wcifWithScrambles: WCIF,
-    competitionWCIF: WCIF
+    competitionWCIF: WCIF,
+    additional?: boolean
 ) => {
     const warnings: string[] = [];
     const errors: string[] = [];
@@ -19,7 +20,7 @@ export const validateScrambles = (
                 round.id,
                 wcifWithScrambles
             );
-            if (!roundWithScrambles) {
+            if (!roundWithScrambles && !additional) {
                 warnings.push(
                     `There are no scrambles for ${activityCodeToName(round.id)}`
                 );
@@ -39,7 +40,8 @@ export const validateScrambles = (
             if (
                 roundWithScrambles?.scrambleSets &&
                 roundWithScrambles?.scrambleSets.length !==
-                    round.scrambleSetCount
+                    round.scrambleSetCount &&
+                !additional
             ) {
                 warnings.push(
                     `There are ${roundWithScrambles?.scrambleSets.length} scramble sets for ${activityCodeToName(
@@ -54,7 +56,8 @@ export const validateScrambles = (
                 roundWithScrambles?.scrambleSets &&
                 roundWithScrambles?.scrambleSets.some(
                     (set) => set.scrambles.length !== usualScramblesCount
-                )
+                ) &&
+                !additional
             ) {
                 warnings.push(
                     `There are some sets with a different number of scrambles than usual for ${activityCodeToName(
@@ -67,7 +70,8 @@ export const validateScrambles = (
                 roundWithScrambles?.scrambleSets &&
                 roundWithScrambles?.scrambleSets.some(
                     (set) => set.extraScrambles.length !== extraScramblesCount
-                )
+                ) &&
+                !additional
             ) {
                 warnings.push(
                     `There are some sets with a different number of extra scrambles than usual for ${activityCodeToName(
@@ -92,6 +96,38 @@ export const importScrambles = async (wcif: WCIF) => {
         status: response.status,
         data: await response.json(),
     };
+};
+
+export const addScrambles = async (
+    roundId: string,
+    wcif: WCIF,
+    startFrom: number
+) => {
+    const transformedData = addToSet(roundId, wcif, startFrom);
+    const response = await backendRequest(`scramble-set/import`, "POST", true, {
+        scrambleSets: transformedData,
+    });
+    return {
+        status: response.status,
+        data: await response.json(),
+    };
+};
+
+const addToSet = (roundId: string, wcif: WCIF, startFrom: number) => {
+    const transformedData = transformScramblesData(wcif);
+    const filteredData = transformedData.filter(
+        (set) => set.roundId.split("-")[0] === roundId.split("-")[0]
+    );
+    const dataToReturn = [];
+    let i = startFrom;
+    for (const set of filteredData) {
+        dataToReturn.push({
+            ...set,
+            set: numberToLetter(i),
+        });
+        i++;
+    }
+    return dataToReturn;
 };
 
 const transformScramblesData = (wcif: WCIF) => {

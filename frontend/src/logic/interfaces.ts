@@ -337,7 +337,8 @@ export interface ScrambleSet {
     id: string;
     roundId: string;
     set: string;
-    scrambles: Scramble[];
+    scramblesCount: number;
+    extraScramblesCount: number;
 }
 
 export interface Scramble {

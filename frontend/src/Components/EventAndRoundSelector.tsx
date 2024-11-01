@@ -64,7 +64,7 @@ const EventAndRoundSelector = ({
                             )
                             ?.rounds.map((round: Round, i: number) => (
                                 <option key={round.id} value={round.id}>
-                                    {i + 1}
+                                    Round {i + 1}
                                 </option>
                             ))}
                     </Select>

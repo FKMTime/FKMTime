@@ -16,7 +16,7 @@ import {
 import { getAllRooms } from "@/logic/rooms";
 import { socket, SocketContext } from "@/socket";
 
-import EventAndRoundSelector from "../Components/EventAndRoundSelector";
+import EventAndRoundSelector from "../../../Components/EventAndRoundSelector";
 import PublicResultsTable from "./Components/PublicResultsTable";
 
 const PublicView = () => {

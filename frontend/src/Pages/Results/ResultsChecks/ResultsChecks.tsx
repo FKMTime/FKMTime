@@ -8,7 +8,7 @@ import { competitionAtom } from "@/logic/atoms";
 import { Incident } from "@/logic/interfaces";
 import { getResultsChecks } from "@/logic/results";
 
-import EventAndRoundSelector from "../Components/EventAndRoundSelector";
+import EventAndRoundSelector from "../../../Components/EventAndRoundSelector";
 import ResultsChecksTable from "./Components/ResultsChecksTable";
 
 const ResultsChecks = () => {

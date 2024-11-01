@@ -25,8 +25,8 @@ import { getResultsByRoundId } from "@/logic/results";
 import { getAllRooms } from "@/logic/rooms";
 import { socket, SocketContext } from "@/socket";
 
+import EventAndRoundSelector from "../../Components/EventAndRoundSelector";
 import CreateAttemptModal from "./Components/CreateAttemptModal";
-import EventAndRoundSelector from "./Components/EventAndRoundSelector";
 import ResultsActions from "./Components/ResultsActions";
 import ResultsTable from "./Components/ResultsTable";
 import RoundLimits from "./Components/RoundLimits";

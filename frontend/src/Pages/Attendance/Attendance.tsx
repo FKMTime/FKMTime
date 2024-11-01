@@ -27,7 +27,7 @@ import { getAllRooms } from "@/logic/rooms";
 import PresentPeopleList from "@/Pages/Attendance/Components/PresentPeopleList";
 import { socket, SocketContext } from "@/socket";
 
-import EventAndRoundSelector from "../Results/Components/EventAndRoundSelector";
+import EventAndRoundSelector from "../../Components/EventAndRoundSelector";
 import AbsentPeopleList from "./Components/AbsentPeopleList";
 import UnorderedPeopleList from "./Components/UnorderedPeopleList";
 

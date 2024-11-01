@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 
 import ImportScrambles from "./Tabs/ImportScrambles/ImportScrambles";
+import ScrambleSets from "./Tabs/ScrambleSets/ScrambleSets";
 import ScramblingDevices from "./Tabs/ScramblingDevices/ScramblingDevices";
 
 const tabs = [
@@ -22,7 +23,7 @@ const tabs = [
         id: "scrambleSets",
         name: "Scramble sets",
         value: 2,
-        component: <Box>Scramble sets</Box>,
+        component: <ScrambleSets />,
     },
 ];
 const ScramblesAdmin = () => {

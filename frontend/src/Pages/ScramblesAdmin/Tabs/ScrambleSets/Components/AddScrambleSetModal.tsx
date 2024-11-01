@@ -1,15 +1,30 @@
-import { Alert, AlertIcon, Box, Button, useToast } from "@chakra-ui/react";
+import { Box, Button, Heading, Text, useToast } from "@chakra-ui/react";
 import { Competition as WCIF } from "@wca/helpers";
 import { useAtomValue } from "jotai";
-import { useState } from "react";
+import { useRef, useState } from "react";
 
+import { Modal } from "@/Components/Modal";
+import { activityCodeToName } from "@/logic/activities";
 import { competitionAtom } from "@/logic/atoms";
-import { importScrambles, validateScrambles } from "@/logic/scramblesImport";
+import { getEventName } from "@/logic/events";
+import { addScrambles, validateScrambles } from "@/logic/scramblesImport";
+import { numberToLetter } from "@/logic/utils";
 
-import ScrambleSetsList from "./Components/ScrambleSetsList";
-import ScrambleSetsWarnings from "./Components/ScrambleSetsValidators";
+import ScrambleSetsValidators from "../../ImportScrambles/Components/ScrambleSetsValidators";
 
-const ImportScrambles = () => {
+interface AddScrambleSetModalProps {
+    isOpen: boolean;
+    onClose: () => void;
+    lastSet: number;
+    roundId: string;
+}
+
+const AddScrambleSetModal = ({
+    isOpen,
+    onClose,
+    lastSet,
+    roundId,
+}: AddScrambleSetModalProps) => {
     const toast = useToast();
     const [wcif, setWcif] = useState<WCIF>();
     const [fileInputKey, setFileInputKey] = useState(0);
@@ -17,10 +32,11 @@ const ImportScrambles = () => {
     const competition = useAtomValue(competitionAtom);
     const [warningsList, setWarningsList] = useState<string[]>([]);
     const [errorsList, setErrorsList] = useState<string[]>([]);
+    const inputRef = useRef<HTMLInputElement>(null);
 
     const handleFileUpload = () => {
         clearUploadedScrambles(false);
-        const file = document.querySelector("input")?.files?.[0];
+        const file = inputRef.current?.files?.[0];
         if (file) {
             const reader = new FileReader();
             reader.onload = () => {
@@ -29,28 +45,30 @@ const ImportScrambles = () => {
                 if (!parsedWCIF || !competition) return;
                 const { warnings, errors } = validateScrambles(
                     parsedWCIF,
-                    competition?.wcif
+                    competition?.wcif,
+                    true
                 );
                 setWarningsList(warnings);
                 setErrorsList(errors);
                 if (errors.length > 0) {
                     setPreventFromImporting(true);
                 }
-                setWcif(JSON.parse(result).wcif);
+                setWcif(parsedWCIF);
             };
             reader.readAsText(file);
         }
     };
 
-    const handleImport = async () => {
+    const handleAdd = async () => {
         if (!wcif || !competition) return;
-        const response = await importScrambles(wcif);
+        const response = await addScrambles(roundId, wcif, lastSet + 1);
         if (response.status === 201) {
             toast({
                 title: "Scrambles imported",
                 status: "success",
             });
             clearUploadedScrambles();
+            onClose();
         } else {
             toast({
                 title: "Error",
@@ -72,42 +90,35 @@ const ImportScrambles = () => {
     };
 
     return (
-        <Box display="flex" flexDirection="column" gap="3">
-            <Alert status="info" color="black">
-                <AlertIcon />
-                Use this page only for importing scrambles for the round that
-                doesn't have them yet. If you want to add an extra scramble/set
-                please do it in the Scramble Sets tab.
-            </Alert>
-            <input type="file" onChange={handleFileUpload} key={fileInputKey} />
-            {wcif && competition && (
-                <ScrambleSetsWarnings
+        <Modal isOpen={isOpen} onClose={onClose} title="Add scramble set">
+            <Box display="flex" flexDirection="column" gap="5">
+                <Heading size="sm">{activityCodeToName(roundId)}</Heading>
+                <ScrambleSetsValidators
                     warnings={warningsList}
                     errors={errorsList}
                 />
-            )}
-            {wcif && <ScrambleSetsList wcif={wcif} />}
-            {wcif && competition && (
-                <Box display="flex" gap="3">
-                    <Button
-                        colorScheme="red"
-                        onClick={() => clearUploadedScrambles()}
-                        width={{ base: "100%", md: "fit-content" }}
-                    >
-                        Clear
-                    </Button>
-                    <Button
-                        isDisabled={preventFromImporting}
-                        colorScheme="green"
-                        onClick={handleImport}
-                        width={{ base: "100%", md: "fit-content" }}
-                    >
-                        Import
-                    </Button>
-                </Box>
-            )}
-        </Box>
+                <Text>
+                    Sets generated for {getEventName(roundId.split("-")[0])}{" "}
+                    Round 1 will be added to this round, starting from set{" "}
+                    {numberToLetter(lastSet + 1)}.
+                </Text>
+                <input
+                    type="file"
+                    onChange={handleFileUpload}
+                    id="add-scramble-set"
+                    ref={inputRef}
+                    key={fileInputKey}
+                />
+                <Button
+                    colorScheme="green"
+                    onClick={handleAdd}
+                    isDisabled={preventFromImporting}
+                >
+                    Add
+                </Button>
+            </Box>
+        </Modal>
     );
 };
 
-export default ImportScrambles;
+export default AddScrambleSetModal;
