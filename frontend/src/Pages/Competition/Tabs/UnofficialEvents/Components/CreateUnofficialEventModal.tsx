@@ -16,8 +16,9 @@ import PlusButton from "@/Components/PlusButton";
 import RoundedIconButton from "@/Components/RoundedIconButton";
 import Select from "@/Components/Select";
 import { CUTOFF_ALLOWED } from "@/logic/constants";
-import { createUnofficialEvent, getUnofficialEvents } from "@/logic/events";
+import { getUnofficialEvents } from "@/logic/events";
 import { Event } from "@/logic/interfaces";
+import { createUnofficialEvent } from "@/logic/unofficialEvents";
 
 import {
     updateCumulativeLimit,

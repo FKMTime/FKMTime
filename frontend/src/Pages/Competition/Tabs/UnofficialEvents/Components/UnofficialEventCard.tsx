@@ -16,9 +16,10 @@ import { useState } from "react";
 import { prettyRoundFormat } from "wcif-helpers";
 
 import EventIcon from "@/Components/Icons/EventIcon";
-import { deleteUnofficialEvent, getEventName } from "@/logic/events";
+import { getEventName } from "@/logic/events";
 import { UnofficialEvent } from "@/logic/interfaces";
 import { resultToString } from "@/logic/resultFormatters";
+import { deleteUnofficialEvent } from "@/logic/unofficialEvents";
 
 import EditUnofficialEventModal from "./EditUnofficialEventModal";
 

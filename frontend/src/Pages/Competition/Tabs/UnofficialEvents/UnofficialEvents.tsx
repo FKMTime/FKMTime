@@ -1,8 +1,8 @@
 import { Box, Button } from "@chakra-ui/react";
 import { useEffect, useState } from "react";
 
-import { getCompetitionUnofficialEvents } from "@/logic/events";
 import { UnofficialEvent } from "@/logic/interfaces";
+import { getCompetitionUnofficialEvents } from "@/logic/unofficialEvents";
 
 import CreateUnofficialEventModal from "./Components/CreateUnofficialEventModal";
 import UnofficialEventCard from "./Components/UnofficialEventCard";

@@ -4,8 +4,9 @@ import { useState } from "react";
 
 import DeleteButton from "@/Components/DeleteButton";
 import EditButton from "@/Components/EditButton";
-import { deleteUnofficialEvent, getEventName } from "@/logic/events";
+import { getEventName } from "@/logic/events";
 import { UnofficialEvent } from "@/logic/interfaces";
+import { deleteUnofficialEvent } from "@/logic/unofficialEvents";
 
 import EditUnofficialEventModal from "./EditUnofficialEventModal";
 

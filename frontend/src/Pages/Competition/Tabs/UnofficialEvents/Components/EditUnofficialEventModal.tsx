@@ -16,8 +16,8 @@ import PlusButton from "@/Components/PlusButton";
 import RoundedIconButton from "@/Components/RoundedIconButton";
 import Select from "@/Components/Select";
 import { CUTOFF_ALLOWED } from "@/logic/constants";
-import { updateUnofficialEvent } from "@/logic/events";
 import { UnofficialEvent } from "@/logic/interfaces";
+import { updateUnofficialEvent } from "@/logic/unofficialEvents";
 
 interface EditUnofficialEventModalProps {
     isOpen: boolean;
