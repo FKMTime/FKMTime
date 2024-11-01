@@ -1,9 +1,10 @@
 import { Module } from '@nestjs/common';
-import { ScrambleSetService } from './scramble-set.service';
+
 import { ScrambleSetController } from './scramble-set.controller';
+import { ScrambleSetService } from './scramble-set.service';
 
 @Module({
   providers: [ScrambleSetService],
-  controllers: [ScrambleSetController]
+  controllers: [ScrambleSetController],
 })
 export class ScrambleSetModule {}
