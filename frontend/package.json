@@ -27,7 +27,7 @@
     "@weston/react-world-flags": "^2.0.0",
     "chakra-ui-confirm": "^0.1.4",
     "framer-motion": "^11.5.4",
-    "jotai": "^2.9.1",
+    "jotai": "^2.10.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-icons": "^5.0.1",
