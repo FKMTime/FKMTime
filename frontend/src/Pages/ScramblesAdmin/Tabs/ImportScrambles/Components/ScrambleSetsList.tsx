@@ -9,7 +9,7 @@ interface ScrambleSetsListProps {
 
 const ScrambleSetsList = ({ wcif }: ScrambleSetsListProps) => {
     return (
-        <Box display="flex" flexDirection="row" gap="5">
+        <Box display="flex" flexDirection="row" gap="5" flexWrap="wrap">
             {wcif.events.map((event) => (
                 <EventCard key={event.id} eventData={event} />
             ))}

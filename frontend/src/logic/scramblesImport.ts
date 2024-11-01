@@ -3,12 +3,16 @@ import { getRoundInfoFromWcif } from "wcif-helpers";
 
 import { activityCodeToName } from "./activities";
 import { getUsualExtraScramblesCount, getUsualScramblesCount } from "./events";
+import { ImportedScramble, ImportedScrambleSet } from "./interfaces";
+import { backendRequest } from "./request";
+import { numberToLetter } from "./utils";
 
-export const getScramblesWarnings = (
+export const validateScrambles = (
     wcifWithScrambles: WCIF,
     competitionWCIF: WCIF
 ) => {
     const warnings: string[] = [];
+    const errors: string[] = [];
     competitionWCIF.events.forEach((event) => {
         event.rounds.forEach((round) => {
             const roundWithScrambles = getRoundInfoFromWcif(
@@ -20,6 +24,18 @@ export const getScramblesWarnings = (
                     `There are no scrambles for ${activityCodeToName(round.id)}`
                 );
             }
+            roundWithScrambles?.scrambleSets?.forEach((set, i: number) => {
+                const unecryptedScrambles = set.scrambles.some((scramble) =>
+                    scramble.includes(" ")
+                );
+                if (unecryptedScrambles) {
+                    errors.push(
+                        `${activityCodeToName(
+                            round.id
+                        )} Set ${numberToLetter(i + 1)} contains unencrypted scrambles`
+                    );
+                }
+            });
             if (
                 roundWithScrambles?.scrambleSets &&
                 roundWithScrambles?.scrambleSets.length !==
@@ -61,5 +77,51 @@ export const getScramblesWarnings = (
             }
         });
     });
-    return warnings;
+    return {
+        warnings,
+        errors,
+    };
+};
+
+export const importScrambles = async (wcif: WCIF) => {
+    const transformedData = transformScramblesData(wcif);
+    const response = await backendRequest("scramble-set/import", "POST", true, {
+        scrambleSets: transformedData,
+    });
+    return {
+        status: response.status,
+        data: await response.json(),
+    };
+};
+
+const transformScramblesData = (wcif: WCIF) => {
+    const scrambleSets: ImportedScrambleSet[] = [];
+    wcif.events.forEach((event) => {
+        event.rounds.forEach((round) => {
+            if (!round.scrambleSets) return;
+            round.scrambleSets.forEach((set, i: number) => {
+                const combinedScrambles: ImportedScramble[] = [];
+                set.scrambles.forEach((scramble, j: number) => {
+                    combinedScrambles.push({
+                        num: j + 1,
+                        encryptedScramble: scramble,
+                        isExtra: false,
+                    });
+                });
+                set.extraScrambles.forEach((scramble, j: number) => {
+                    combinedScrambles.push({
+                        num: j + 1,
+                        encryptedScramble: scramble,
+                        isExtra: true,
+                    });
+                });
+                scrambleSets.push({
+                    roundId: round.id,
+                    set: numberToLetter(i + 1),
+                    scrambles: combinedScrambles,
+                });
+            });
+        });
+    });
+    return scrambleSets;
 };

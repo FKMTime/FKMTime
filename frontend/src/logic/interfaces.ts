@@ -332,3 +332,29 @@ export interface ScramblingDevice {
     createdAt: Date;
     updatedAt: Date;
 }
+
+export interface ScrambleSet {
+    id: string;
+    roundId: string;
+    set: string;
+    scrambles: Scramble[];
+}
+
+export interface Scramble {
+    id: string;
+    num: number;
+    isExtra: boolean;
+    encryptedScramble: string;
+}
+
+export interface ImportedScrambleSet {
+    roundId: string;
+    set: string;
+    scrambles: ImportedScramble[];
+}
+
+export interface ImportedScramble {
+    num: number;
+    isExtra: boolean;
+    encryptedScramble: string;
+}
