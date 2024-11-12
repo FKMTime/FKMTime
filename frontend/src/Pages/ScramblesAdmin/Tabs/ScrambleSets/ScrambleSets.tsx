@@ -142,7 +142,7 @@ const ScrambleSets = () => {
             <Box
                 display="flex"
                 gap="5"
-                flexDirection={{ base: "column", md: "row" }}
+                flexDirection={{ base: "column", lg: "row" }}
             >
                 <EventAndRoundSelector
                     competition={competition}
@@ -150,17 +150,23 @@ const ScrambleSets = () => {
                     handleEventChange={handleEventChange}
                     handleRoundChange={handleRoundChange}
                 />
+            </Box>
+            <Box
+                display="flex"
+                gap="5"
+                flexDirection={{ base: "column", md: "row" }}
+            >
                 <Button
                     colorScheme="green"
+                    width={{ base: "100%", md: "fit-content" }}
                     onClick={() => setIsOpenAddScrambleSetModal(true)}
-                    width="fit-content"
                 >
                     Add scramble set
                 </Button>
                 {filters.roundId && (
                     <Button
                         colorScheme="purple"
-                        width="fit-content"
+                        width={{ base: "100%", md: "fit-content" }}
                         onClick={handleDeleteScrambleSetsByRound}
                     >
                         Delete scramble sets for this round
@@ -168,7 +174,7 @@ const ScrambleSets = () => {
                 )}
                 <Button
                     colorScheme="red"
-                    width="fit-content"
+                    width={{ base: "100%", md: "fit-content" }}
                     onClick={handleDeleteAllScrambleSets}
                 >
                     Delete all scramble sets

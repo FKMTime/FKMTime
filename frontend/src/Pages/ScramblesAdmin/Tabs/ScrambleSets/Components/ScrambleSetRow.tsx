@@ -50,7 +50,6 @@ const ScrambleSetRow = ({ scrambleSet, fetchData }: ScrambleSetRowProps) => {
             <Td>{scrambleSet.scramblesCount}</Td>
             <Td>{scrambleSet.extraScramblesCount}</Td>
             <Td display="flex" gap="2">
-                <Button colorScheme="blue">Add extra scramble</Button>
                 <Button colorScheme="red" onClick={handleDelete}>
                     Delete
                 </Button>
