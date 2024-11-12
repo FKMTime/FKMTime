@@ -144,7 +144,6 @@ export class ContestsService {
   }
 
   private mapAttempts(attempts: any) {
-    console.log(attempts);
     return attempts.map((attempt: any) => {
       return {
         result: attempt.result,

@@ -284,6 +284,8 @@ export interface Event {
     icon: string;
     useInspection?: boolean;
     isUnofficial?: boolean;
+    usualScramblesCount?: number;
+    usualExtraScramblesCount?: number;
 }
 
 export interface UnofficialEvent {
@@ -329,4 +331,31 @@ export interface ScramblingDevice {
     room: Room;
     createdAt: Date;
     updatedAt: Date;
+}
+
+export interface ScrambleSet {
+    id: string;
+    roundId: string;
+    set: string;
+    scramblesCount: number;
+    extraScramblesCount: number;
+}
+
+export interface Scramble {
+    id: string;
+    num: number;
+    isExtra: boolean;
+    encryptedScramble: string;
+}
+
+export interface ImportedScrambleSet {
+    roundId: string;
+    set: string;
+    scrambles: ImportedScramble[];
+}
+
+export interface ImportedScramble {
+    num: number;
+    isExtra: boolean;
+    encryptedScramble: string;
 }

@@ -16,6 +16,7 @@ import { EventsModule } from './events/events.module';
 import { LoggerMiddleware } from './middleware/logger.middleware';
 import { PersonModule } from './person/person.module';
 import { ResultModule } from './result/result.module';
+import { ScrambleSetModule } from './scramble-set/scramble-set.module';
 import { ScramblingDeviceModule } from './scrambling-device/scrambling-device.module';
 import { SettingsModule } from './settings/settings.module';
 import { SocketModule } from './socket/socket.module';
@@ -49,6 +50,7 @@ import { WcaModule } from './wca/wca.module';
     EventsModule,
     ContestsModule,
     ScramblingDeviceModule,
+    ScrambleSetModule,
   ],
   exports: [AppGateway],
 })

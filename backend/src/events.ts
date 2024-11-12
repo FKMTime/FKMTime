@@ -6,6 +6,8 @@ export const eventsData: {
   shortName?: string;
   useInspection?: boolean;
   isUnofficial?: boolean;
+  usualScramblesCount?: number;
+  usualExtraScramblesCount?: number;
 }[] = [
   {
     id: '333',
@@ -13,6 +15,8 @@ export const eventsData: {
     shortName: '3x3x3',
     icon: 'event-333',
     useInspection: true,
+    usualScramblesCount: 5,
+    usualExtraScramblesCount: 2,
   },
   {
     id: '222',
@@ -20,6 +24,8 @@ export const eventsData: {
     shortName: '2x2x2',
     icon: 'event-222',
     useInspection: true,
+    usualScramblesCount: 5,
+    usualExtraScramblesCount: 2,
   },
   {
     id: '444',
@@ -27,6 +33,8 @@ export const eventsData: {
     shortName: '4x4x4',
     icon: 'event-444',
     useInspection: true,
+    usualScramblesCount: 5,
+    usualExtraScramblesCount: 2,
   },
   {
     id: '555',
@@ -34,6 +42,8 @@ export const eventsData: {
     shortName: '5x5x5',
     icon: 'event-555',
     useInspection: true,
+    usualScramblesCount: 5,
+    usualExtraScramblesCount: 2,
   },
   {
     id: '666',
@@ -41,6 +51,8 @@ export const eventsData: {
     shortName: '6x6x6',
     icon: 'event-666',
     useInspection: true,
+    usualScramblesCount: 3,
+    usualExtraScramblesCount: 2,
   },
   {
     id: '777',
@@ -48,6 +60,8 @@ export const eventsData: {
     shortName: '7x7x7',
     icon: 'event-777',
     useInspection: true,
+    usualScramblesCount: 3,
+    usualExtraScramblesCount: 2,
   },
   {
     id: '333bf',
@@ -55,6 +69,8 @@ export const eventsData: {
     shortName: '3x3x3 BLD',
     icon: 'event-333bf',
     useInspection: false,
+    usualScramblesCount: 3,
+    usualExtraScramblesCount: 2,
   },
   {
     id: '333fm',
@@ -62,6 +78,8 @@ export const eventsData: {
     shortName: 'FMC',
     icon: 'event-333fm',
     useInspection: false,
+    usualScramblesCount: 3,
+    usualExtraScramblesCount: 0,
   },
   {
     id: '333oh',
@@ -69,18 +87,57 @@ export const eventsData: {
     shortName: '3x3x3 OH',
     icon: 'event-333oh',
     useInspection: true,
+    usualScramblesCount: 5,
+    usualExtraScramblesCount: 2,
   },
-  { id: 'minx', name: 'Megaminx', icon: 'event-minx', useInspection: true },
-  { id: 'pyram', name: 'Pyraminx', icon: 'event-pyram', useInspection: true },
-  { id: 'clock', name: 'Clock', icon: 'event-clock', useInspection: true },
-  { id: 'skewb', name: 'Skewb', icon: 'event-skewb', useInspection: true },
-  { id: 'sq1', name: 'Square-1', icon: 'event-sq1', useInspection: true },
+  {
+    id: 'minx',
+    name: 'Megaminx',
+    icon: 'event-minx',
+    useInspection: true,
+    usualScramblesCount: 5,
+    usualExtraScramblesCount: 2,
+  },
+  {
+    id: 'pyram',
+    name: 'Pyraminx',
+    icon: 'event-pyram',
+    useInspection: true,
+    usualScramblesCount: 5,
+    usualExtraScramblesCount: 2,
+  },
+  {
+    id: 'clock',
+    name: 'Clock',
+    icon: 'event-clock',
+    useInspection: true,
+    usualScramblesCount: 5,
+    usualExtraScramblesCount: 2,
+  },
+  {
+    id: 'skewb',
+    name: 'Skewb',
+    icon: 'event-skewb',
+    useInspection: true,
+    usualScramblesCount: 5,
+    usualExtraScramblesCount: 2,
+  },
+  {
+    id: 'sq1',
+    name: 'Square-1',
+    icon: 'event-sq1',
+    useInspection: true,
+    usualScramblesCount: 5,
+    usualExtraScramblesCount: 2,
+  },
   {
     id: '444bf',
     name: '4x4x4 Blindfolded',
     shortName: '4x4x4 BLD',
     icon: 'event-444bf',
     useInspection: false,
+    usualScramblesCount: 3,
+    usualExtraScramblesCount: 2,
   },
   {
     id: '555bf',
@@ -88,6 +145,8 @@ export const eventsData: {
     shortName: '5x5x5 BLD',
     icon: 'event-555bf',
     useInspection: false,
+    usualScramblesCount: 3,
+    usualExtraScramblesCount: 2,
   },
   {
     id: '333mbf',
@@ -102,6 +161,8 @@ export const eventsData: {
     icon: 'unofficial-fto',
     useInspection: true,
     isUnofficial: true,
+    usualScramblesCount: 5,
+    usualExtraScramblesCount: 2,
   },
   {
     id: 'mirror',
@@ -110,6 +171,8 @@ export const eventsData: {
     icon: 'unofficial-333_mirror_blocks',
     useInspection: true,
     isUnofficial: true,
+    usualScramblesCount: 5,
+    usualExtraScramblesCount: 2,
   },
 ];
 

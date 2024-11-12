@@ -1,6 +1,4 @@
-import { Round } from "@wca/helpers";
-
-import { Event, UnofficialEvent } from "./interfaces";
+import { Event } from "./interfaces";
 import { backendRequest } from "./request";
 
 const EVENTS_KEY = "fkmtime-events";
@@ -54,35 +52,22 @@ export const getEventIconClass = (eventId: string) => {
     return "";
 };
 
-export const createUnofficialEvent = async (
-    eventId: string,
-    rounds: Round[]
-) => {
-    const response = await backendRequest("events", "POST", true, {
-        eventId,
-        rounds,
-    });
-    return response.status;
+export const getUsualScramblesCount = (eventId: string) => {
+    const eventsData = localStorage.getItem(EVENTS_KEY);
+    if (eventsData) {
+        const events: Event[] = JSON.parse(eventsData);
+        return events.find((event) => event.id === eventId)
+            ?.usualScramblesCount;
+    }
+    return 5;
 };
 
-export const getCompetitionUnofficialEvents = async () => {
-    const response = await backendRequest(`events/unofficial`, "GET", true);
-    return await response.json();
-};
-
-export const updateUnofficialEvent = async (
-    unofficialEvent: UnofficialEvent
-) => {
-    const response = await backendRequest(
-        `events/${unofficialEvent.id}`,
-        "PUT",
-        true,
-        unofficialEvent
-    );
-    return response.status;
-};
-
-export const deleteUnofficialEvent = async (id: string) => {
-    const response = await backendRequest(`events/${id}`, "DELETE", true);
-    return response.status;
+export const getUsualExtraScramblesCount = (eventId: string) => {
+    const eventsData = localStorage.getItem(EVENTS_KEY);
+    if (eventsData) {
+        const events: Event[] = JSON.parse(eventsData);
+        return events.find((event) => event.id === eventId)
+            ?.usualExtraScramblesCount;
+    }
+    return 2;
 };

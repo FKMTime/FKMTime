@@ -3,6 +3,7 @@ import * as crypto from 'crypto';
 import { sha512 } from 'js-sha512';
 import { DbService } from 'src/db/db.service';
 
+import { CheckTokenDto } from './dto/checkToken.dto';
 import { GetTokenDto } from './dto/getToken.dto';
 import { ScramblingDeviceDto } from './dto/scramblingDevice.dto';
 
@@ -66,6 +67,7 @@ export class ScramblingDeviceService {
     });
     return {
       token,
+      device: scramblingDevice,
     };
   }
 
@@ -79,6 +81,15 @@ export class ScramblingDeviceService {
       throw new HttpException('Not found', 404);
     }
     return scramblingDevice;
+  }
+
+  async isTokenValid(data: CheckTokenDto) {
+    const scramblingDevice = await this.prisma.scramblingDevice.findFirst({
+      where: {
+        encryptedToken: sha512(data.token),
+      },
+    });
+    return !!scramblingDevice;
   }
 
   async updateScramblingDevice(

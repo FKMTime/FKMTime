@@ -6,7 +6,7 @@ import background from "@/assets/background.jpg";
 import logo from "@/assets/logo.svg";
 import { login, loginWithWca } from "@/logic/auth";
 import { WCA_CLIENT_ID, WCA_ORIGIN } from "@/logic/request.ts";
-import LoginForm from "@/Pages/Auth/Components/LoginForm.tsx";
+import LoginForm from "@/Pages/Auth/Login/Components/LoginForm";
 
 import MobileLogin from "./MobileLogin";
 
