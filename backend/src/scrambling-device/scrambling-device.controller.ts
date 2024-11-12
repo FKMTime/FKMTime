@@ -12,6 +12,7 @@ import {
 } from '@nestjs/common';
 import { AdminGuard } from 'src/auth/guards/admin.guard';
 
+import { CheckTokenDto } from './dto/checkToken.dto';
 import { GetTokenDto } from './dto/getToken.dto';
 import { ScramblingDeviceDto } from './dto/scramblingDevice.dto';
 import { ScramblingDeviceService } from './scrambling-device.service';
@@ -43,6 +44,12 @@ export class ScramblingDeviceController {
   @Post('token')
   async getToken(@Body() data: GetTokenDto) {
     return this.scramblingDeviceService.getToken(data);
+  }
+
+  @HttpCode(HttpStatus.OK)
+  @Post('token-valid')
+  async isTokenValid(@Body() data: CheckTokenDto) {
+    return this.scramblingDeviceService.isTokenValid(data);
   }
 
   @Put(':id')

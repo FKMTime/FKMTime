@@ -2,7 +2,7 @@ import { Box } from "@chakra-ui/react";
 
 import logo from "@/assets/logo.svg";
 
-import LoginForm from "../Components/LoginForm";
+import LoginForm from "./Components/LoginForm";
 
 interface MobileLoginProps {
     handleSubmit: (username: string, password: string) => void;

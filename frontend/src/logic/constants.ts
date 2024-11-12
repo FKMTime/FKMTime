@@ -14,12 +14,5 @@ export const AVAILABLE_PENALTIES = [
     { value: 14, label: "+14" },
     { value: 16, label: "+16" },
 ];
-export const USUAL_FORMATS = [
-    {
-        eventId: "333",
-        attemptsCount: 5,
-        extraAttemptsCount: 2,
-    },
-];
 export const CUTOFF_ALLOWED = ["a", "m"];
 export const GITHUB_URL = "https://github.com/FKMTime/FKMTime";
