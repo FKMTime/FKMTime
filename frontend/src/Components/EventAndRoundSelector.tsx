@@ -1,8 +1,10 @@
-import { Box, FormLabel, IconButton, Select } from "@chakra-ui/react";
+import { Box, FormLabel, IconButton } from "@chakra-ui/react";
 import { Event, Round } from "@wca/helpers";
 
 import EventIcon from "@/Components/Icons/EventIcon";
 import { Competition } from "@/logic/interfaces";
+
+import Select from "./Select";
 
 interface EventAndRoundSelectorProps {
     competition: Competition;

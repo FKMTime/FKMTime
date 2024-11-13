@@ -6,5 +6,6 @@ import { ScrambleSetService } from './scramble-set.service';
 @Module({
   providers: [ScrambleSetService],
   controllers: [ScrambleSetController],
+  exports: [ScrambleSetService],
 })
 export class ScrambleSetModule {}

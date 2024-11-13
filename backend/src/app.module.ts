@@ -22,6 +22,7 @@ import { SettingsModule } from './settings/settings.module';
 import { SocketModule } from './socket/socket.module';
 import { UserModule } from './user/user.module';
 import { WcaModule } from './wca/wca.module';
+import { ScramblingModule } from './scrambling/scrambling.module';
 
 @Module({
   providers: [AppGateway],
@@ -51,6 +52,7 @@ import { WcaModule } from './wca/wca.module';
     ContestsModule,
     ScramblingDeviceModule,
     ScrambleSetModule,
+    ScramblingModule,
   ],
   exports: [AppGateway],
 })

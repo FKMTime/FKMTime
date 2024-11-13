@@ -1,6 +1,7 @@
 import { forwardRef, Global, Module } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
+import { ScramblingDeviceModule } from 'src/scrambling-device/scrambling-device.module';
 
 import { WcaModule } from '../wca/wca.module';
 import { AuthController } from './auth.controller';
@@ -22,6 +23,7 @@ const { SECRET: secret = 'secret' } = process.env;
     }),
     LoginModule,
     WcaModule,
+    ScramblingDeviceModule,
   ],
   controllers: [AuthController, WcaController],
   providers: [AuthService, JwtStrategy],

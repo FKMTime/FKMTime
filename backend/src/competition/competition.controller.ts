@@ -37,6 +37,11 @@ export class CompetitionController {
     return await this.competitionService.getCompetitionInfo();
   }
 
+  @Get('for/scrambling-device')
+  async getCompetitionInfoForScramblingDevice() {
+    return await this.competitionService.getCompetitionInfo();
+  }
+
   @UseGuards(AuthGuard('jwt'))
   @Get('statistics')
   async getCompetitionStatistics() {
