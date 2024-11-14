@@ -23,6 +23,7 @@ import ScramblesAdmin from "./Pages/Main/ScramblesAdmin/ScramblesAdmin";
 import Settings from "./Pages/Main/Settings/Settings";
 import Users from "./Pages/Main/Users/Users";
 import ScramblingDeviceHome from "./Pages/ScramblingDevice/Home/ScramblingDeviceHome";
+import ScrambleSet from "./Pages/ScramblingDevice/ScrambleSet/ScrambleSet";
 import ScramblingDeviceLayout from "./Pages/ScramblingDevice/ScramblingDeviceLayout";
 import { SocketContext } from "./socket";
 const Persons = React.lazy(() => import("./Pages/Main/Persons/Persons"));
@@ -166,6 +167,10 @@ const App = () => {
                 {
                     path: "/scrambling-device",
                     element: <ScramblingDeviceHome />,
+                },
+                {
+                    path: "/scrambling-device/set/:id",
+                    element: <ScrambleSet />,
                 },
             ],
         },
