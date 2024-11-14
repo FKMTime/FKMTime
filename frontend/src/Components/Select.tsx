@@ -2,7 +2,7 @@ import { DarkMode, Select as ChakraSelect } from "@chakra-ui/react";
 import { ChangeEvent, ReactNode } from "react";
 
 interface SelectProps {
-    width: string;
+    width?: string;
     onChange: (e: ChangeEvent<HTMLSelectElement>) => void;
     value: string;
     disabled?: boolean;
