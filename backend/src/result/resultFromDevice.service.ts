@@ -2,11 +2,10 @@ import { forwardRef, Inject, Logger } from '@nestjs/common';
 import {
   AttemptStatus,
   AttemptType,
+  Competition,
   DeviceType,
-  Person,
   SendingResultsFrequency,
 } from '@prisma/client';
-import { Event, Round } from '@wca/helpers';
 import { AppGateway } from 'src/app.gateway';
 import { AttendanceService } from 'src/attendance/attendance.service';
 import { ContestsService } from 'src/contests/contests.service';
@@ -16,6 +15,7 @@ import { isUnofficialEvent } from 'src/events';
 import { PersonService } from 'src/person/person.service';
 import { getTranslation, isLocaleAvailable } from 'src/translations';
 import { WcaService } from 'src/wca/wca.service';
+import { getPersonFromWcif, getRoundInfoFromWcif } from 'wcif-helpers';
 
 import { EnterAttemptDto } from './dto/enterAttempt.dto';
 import {
@@ -143,15 +143,8 @@ export class ResultFromDeviceService {
     }
     const wcif = JSON.parse(JSON.stringify(competition.wcif));
     const currentRoundId = device.room.currentGroupId.split('-g')[0];
-    const eventInfo = wcif.events.find(
-      (event: Event) => event.id === currentRoundId.split('-')[0],
-    );
-    const roundInfo = eventInfo.rounds.find(
-      (round: Round) => round.id === currentRoundId,
-    );
-    const competitorWcifInfo = wcif.persons.find(
-      (person: Person) => person.registrantId === competitor.registrantId,
-    );
+    const roundInfo = getRoundInfoFromWcif(currentRoundId, wcif);
+    const competitorWcifInfo = getPersonFromWcif(competitor.registrantId, wcif);
     const competitorSignedInForEvent = isCompetitorSignedInForEvent(
       competitorWcifInfo,
       currentRoundId.split('-')[0],
@@ -286,45 +279,18 @@ export class ResultFromDeviceService {
         );
       }
       if (finalData.dnsOther) {
-        for (let i = attemptNumber + 1; i <= maxAttempts; i++) {
-          await this.prisma.attempt.create({
-            data: {
-              attemptNumber: attemptNumber + i + 1,
-              status: AttemptStatus.STANDARD,
-              type: AttemptType.STANDARD_ATTEMPT,
-              penalty: -2,
-              value: 0,
-              result: {
-                connect: {
-                  id: result.id,
-                },
-              },
-            },
-          });
-        }
+        await this.dnsOtherAttempts(attemptNumber, maxAttempts, result.id);
       }
     }
     if (
       competition.sendingResultsFrequency ===
       SendingResultsFrequency.AFTER_SOLVE
     ) {
-      const resultToEnter = await this.resultService.getResultById(result.id);
-      if (isUnofficialEvent(currentRoundId.split('-')[0])) {
-        if (competition.cubingContestsToken) {
-          //This is intentionally not awaited
-          this.contestsService.enterWholeScorecardToCubingContests(
-            resultToEnter,
-          );
-        }
-      } else {
-        try {
-          //This is intentionally not awaited
-          this.wcaService.enterWholeScorecardToWcaLive(resultToEnter);
-        } catch (e) {
-          this.logger.error('Error while entering result to WCA Live');
-          this.logger.error(e);
-        }
-      }
+      await this.enterResultToExternalService(
+        result.id,
+        competition,
+        currentRoundId,
+      );
     }
     this.appGateway.handleResultEntered(result.roundId);
     return {
@@ -334,6 +300,65 @@ export class ResultFromDeviceService {
       shouldResetTime: true,
       status: 200,
       error: false,
+    };
+  }
+
+  async getScrambleData(cardId: string, roundId: string) {
+    const competitor = await this.personService.getPersonByCardId(cardId);
+    const result = await this.resultService.getResultOrCreate(
+      competitor.id,
+      roundId,
+    );
+    const attempts = await this.prisma.attempt.findMany({
+      where: {
+        resultId: result.id,
+      },
+    });
+    const sortedAttempts = getSortedStandardAttempts(attempts);
+    const sortedExtraAttempts = getSortedExtraAttempts(attempts);
+    if (sortedAttempts.length === 0 && sortedExtraAttempts.length === 0) {
+      return {
+        num: 1,
+        isExtra: false,
+      };
+    }
+    if (
+      attempts.some(
+        (attempt) =>
+          attempt.status === AttemptStatus.EXTRA_GIVEN &&
+          (attempt.replacedBy === 0 || attempt.replacedBy === null),
+      )
+    ) {
+      const extrasCount = sortedExtraAttempts.length;
+      return {
+        num: extrasCount + 1,
+        isExtra: true,
+      };
+    }
+    const competition = await this.prisma.competition.findFirst();
+    if (!competition) {
+      throw new Error('Competition not found');
+    }
+    const wcif = JSON.parse(JSON.stringify(competition.wcif));
+    const currentRoundId = roundId.split('-g')[0];
+    const roundInfo = getRoundInfoFromWcif(currentRoundId, wcif);
+
+    let attemptNumber = 1;
+    const maxAttempts = roundInfo.format === 'a' ? 5 : 3;
+    const lastAttempt = sortedAttempts[sortedAttempts.length - 1];
+    if (lastAttempt && lastAttempt.attemptNumber === maxAttempts) {
+      //No attempts left
+      return {
+        num: -1,
+        isExtra: false,
+      };
+    }
+    if (lastAttempt) {
+      attemptNumber = lastAttempt.attemptNumber + 1;
+    }
+    return {
+      num: attemptNumber,
+      isExtra: false,
     };
   }
 
@@ -403,6 +428,51 @@ export class ResultFromDeviceService {
       status: 200,
       error: false,
     };
+  }
+
+  private async enterResultToExternalService(
+    resultId: string,
+    competition: Competition,
+    currentRoundId: string,
+  ) {
+    const resultToEnter = await this.resultService.getResultById(resultId);
+    if (isUnofficialEvent(currentRoundId.split('-')[0])) {
+      if (competition.cubingContestsToken) {
+        //This is intentionally not awaited
+        this.contestsService.enterWholeScorecardToCubingContests(resultToEnter);
+      }
+    } else {
+      try {
+        //This is intentionally not awaited
+        this.wcaService.enterWholeScorecardToWcaLive(resultToEnter);
+      } catch (e) {
+        this.logger.error('Error while entering result to WCA Live');
+        this.logger.error(e);
+      }
+    }
+  }
+
+  private async dnsOtherAttempts(
+    attemptNumber: number,
+    maxAttempts: number,
+    resultId: string,
+  ) {
+    for (let i = attemptNumber + 1; i <= maxAttempts; i++) {
+      await this.prisma.attempt.create({
+        data: {
+          attemptNumber: attemptNumber + i + 1,
+          status: AttemptStatus.STANDARD,
+          type: AttemptType.STANDARD_ATTEMPT,
+          penalty: -2,
+          value: 0,
+          result: {
+            connect: {
+              id: resultId,
+            },
+          },
+        },
+      });
+    }
   }
 
   private notifyDelegate(

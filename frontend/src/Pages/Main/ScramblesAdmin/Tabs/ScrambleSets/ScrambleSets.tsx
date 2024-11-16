@@ -156,21 +156,23 @@ const ScrambleSets = () => {
                 gap="5"
                 flexDirection={{ base: "column", md: "row" }}
             >
-                <Button
-                    colorScheme="green"
-                    width={{ base: "100%", md: "fit-content" }}
-                    onClick={() => setIsOpenAddScrambleSetModal(true)}
-                >
-                    Add scramble set
-                </Button>
                 {filters.roundId && (
-                    <Button
-                        colorScheme="purple"
-                        width={{ base: "100%", md: "fit-content" }}
-                        onClick={handleDeleteScrambleSetsByRound}
-                    >
-                        Delete scramble sets for this round
-                    </Button>
+                    <>
+                        <Button
+                            colorScheme="green"
+                            width={{ base: "100%", md: "fit-content" }}
+                            onClick={() => setIsOpenAddScrambleSetModal(true)}
+                        >
+                            Add scramble set
+                        </Button>
+                        <Button
+                            colorScheme="purple"
+                            width={{ base: "100%", md: "fit-content" }}
+                            onClick={handleDeleteScrambleSetsByRound}
+                        >
+                            Delete scramble sets for this round
+                        </Button>
+                    </>
                 )}
                 <Button
                     colorScheme="red"

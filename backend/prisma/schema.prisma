@@ -227,6 +227,7 @@ enum AttemptType {
 }
 
 enum AttemptStatus {
+  SCRAMBLED
   STANDARD
   UNRESOLVED
   RESOLVED

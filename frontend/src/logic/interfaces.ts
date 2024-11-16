@@ -199,6 +199,7 @@ export enum AttemptStatus {
     UNRESOLVED = "UNRESOLVED",
     RESOLVED = "RESOLVED",
     EXTRA_GIVEN = "EXTRA_GIVEN",
+    SCRAMBLED = "SCRAMBLED",
 }
 
 //eslint-disable-next-line
@@ -346,6 +347,13 @@ export interface Scramble {
     num: number;
     isExtra: boolean;
     encryptedScramble: string;
+}
+
+export interface DecryptedScramble {
+    id: string;
+    num: number;
+    isExtra: boolean;
+    scramble: string;
 }
 
 export interface ImportedScrambleSet {

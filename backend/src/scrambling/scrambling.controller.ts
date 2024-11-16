@@ -1,4 +1,14 @@
-import { Body, Controller, Get, HttpCode, HttpStatus, Param, Post, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  HttpCode,
+  HttpStatus,
+  Param,
+  Post,
+  UseGuards,
+} from '@nestjs/common';
+import { GetScramblingDeviceToken } from 'src/auth/decorator/getScramblingDeviceToken.decorator';
 import { ScramblingDeviceGuard } from 'src/auth/guards/scramblingDevice.guard';
 import { ScrambleSetService } from 'src/scramble-set/scramble-set.service';
 
@@ -12,6 +22,11 @@ export class ScramblingController {
     private readonly scramblingService: ScramblingService,
     private readonly scrambleSetService: ScrambleSetService,
   ) {}
+
+  @Get('room')
+  async getRoom(@GetScramblingDeviceToken() token: string) {
+    return this.scramblingService.getDeviceRoom(token);
+  }
 
   @Get('sets/round/:roundId')
   async getScrambleSets(@Param('roundId') roundId: string) {
@@ -30,5 +45,13 @@ export class ScramblingController {
     @Body() data: UnlockScrambleSetDto,
   ) {
     return this.scramblingService.unlockScrambleSet(id, data);
+  }
+
+  @Get('scramble/:cardId')
+  async getScrambleData(
+    @GetScramblingDeviceToken() token: string,
+    @Param('cardId') cardId: string,
+  ) {
+    return this.scramblingService.getScrambleData(token, cardId);
   }
 }

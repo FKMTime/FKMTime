@@ -5,6 +5,7 @@ import {
   AttemptType,
   Competition,
 } from '@prisma/client';
+import { getSortedStandardAttempts } from 'src/result/helpers';
 
 import { DbService } from '../db/db.service';
 
@@ -90,17 +91,15 @@ export class WcaService {
   }
 
   getAttemptsToEnterToWcaLive(result: any, competition: Competition) {
+    const attempts = result.attempts;
     const attemptsToReturn = [];
-    const sortedAttempts = result.attempts.sort(
-      (a: Attempt, b: Attempt) => a.attemptNumber - b.attemptNumber,
-    );
-    sortedAttempts.forEach((attempt) => {
+    const standardAttempts = getSortedStandardAttempts(attempts);
+    standardAttempts.forEach((attempt) => {
       if (
         attempt.replacedBy === null &&
-        attempt.type === AttemptType.STANDARD_ATTEMPT &&
-        (attempt.status === AttemptStatus.STANDARD ||
-          attempt.status === AttemptStatus.RESOLVED) &&
-        !attemptsToReturn.some((a) => a.id === attempt.id)
+        !attemptsToReturn.some((a) => a.id === attempt.id) &&
+        attempt.status !== AttemptStatus.UNRESOLVED &&
+        attempt.status !== AttemptStatus.SCRAMBLED
       ) {
         attemptsToReturn.push({
           ...attempt,
@@ -110,19 +109,17 @@ export class WcaService {
         attempt.replacedBy !== null &&
         attempt.status === AttemptStatus.EXTRA_GIVEN
       ) {
-        const extraAttempt = this.getExtra(attempt.id, sortedAttempts);
-        if (
-          extraAttempt &&
-          !attemptsToReturn.some((a) => a.id === extraAttempt.id)
-        ) {
+        const extraAttempt = this.getExtra(attempt.id, attempts);
+        if (extraAttempt && !attemptsToReturn.includes(extraAttempt)) {
           attemptsToReturn.push({
             ...extraAttempt,
-            number: attempt.attemptNumber,
+            number: attemptsToReturn.length + 1,
           });
         }
       }
     });
-    const timesToSubmit = attemptsToReturn.map((attempt) => {
+    const sorted = attemptsToReturn.sort((a, b) => a.number - b.number);
+    const timesToSubmit = sorted.map((attempt) => {
       return {
         result:
           attempt.penalty === -2

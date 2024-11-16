@@ -4,8 +4,19 @@ import { useNavigate, useParams } from "react-router-dom";
 
 import LoadingPage from "@/Components/LoadingPage";
 import { activityCodeToName } from "@/logic/activities";
-import { Scramble, ScrambleSet as IScrambleSet } from "@/logic/interfaces";
-import { getScrambleSetById, unlockScrambleSet } from "@/logic/scrambling";
+import {
+    DecryptedScramble,
+    Room,
+    ScrambleSet as IScrambleSet,
+} from "@/logic/interfaces";
+import {
+    decryptScrambles,
+    getScrambleSetById,
+    getScramblingDeviceRoom,
+    unlockScrambleSet,
+} from "@/logic/scrambling";
+
+import Scrambling from "./Components/Scrambling";
 
 const ScrambleSet = () => {
     const { id } = useParams<{ id: string }>();
@@ -14,7 +25,11 @@ const ScrambleSet = () => {
     const [isLocked, setIsLocked] = useState(true);
     const [password, setPassword] = useState("");
     const [scrambleSet, setScrambleSet] = useState<IScrambleSet | null>(null);
-    const [scrambles, setScrambles] = useState<Scramble[] | null>(null);
+    const [decryptedScrambles, setDecryptedScrambles] = useState<
+        DecryptedScramble[]
+    >([]);
+
+    const [room, setRoom] = useState<Room | null>(null);
 
     const fetchScrambleSet = useCallback(async () => {
         if (!id) {
@@ -25,9 +40,16 @@ const ScrambleSet = () => {
         });
     }, [id, navigate]);
 
+    const fetchRoom = useCallback(async () => {
+        getScramblingDeviceRoom().then((data) => {
+            setRoom(data);
+        });
+    }, []);
+
     useEffect(() => {
+        fetchRoom();
         fetchScrambleSet();
-    }, [fetchScrambleSet]);
+    }, [fetchRoom, fetchScrambleSet]);
 
     const handleUnlock = async () => {
         if (!scrambleSet) return;
@@ -38,7 +60,9 @@ const ScrambleSet = () => {
                 status: "success",
             });
             setIsLocked(false);
-            setScrambles(response.data.scrambles);
+            setDecryptedScrambles(
+                decryptScrambles(response.data.scrambles, password)
+            );
         } else if (response.status === 403) {
             toast({
                 title: "Invalid password",
@@ -52,12 +76,15 @@ const ScrambleSet = () => {
         }
     };
 
-    if (!scrambleSet) return <LoadingPage />;
+    if (!scrambleSet || !room) return <LoadingPage />;
 
     return (
         <Box display="flex" flexDirection="column" gap={3}>
             <Heading>
                 {activityCodeToName(scrambleSet.roundId)} Set {scrambleSet.set}
+            </Heading>
+            <Heading size="md">
+                Current group: {activityCodeToName(room?.currentGroupId || "")}
             </Heading>
             {isLocked ? (
                 <>
@@ -67,6 +94,7 @@ const ScrambleSet = () => {
                         placeholder="Password"
                         onChange={(e) => setPassword(e.target.value)}
                         type="password"
+                        autoComplete="off"
                     />
                     <Button
                         colorScheme="green"
@@ -77,7 +105,10 @@ const ScrambleSet = () => {
                     </Button>
                 </>
             ) : (
-                <Box>Unlocked</Box>
+                <Scrambling
+                    groupId={room.currentGroupId}
+                    scrambles={decryptedScrambles}
+                />
             )}
         </Box>
     );
