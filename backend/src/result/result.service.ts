@@ -29,6 +29,7 @@ export class ResultService {
     attempts: {
       include: {
         judge: publicPersonSelect,
+        scrambler: publicPersonSelect,
         device: true,
       },
     },
@@ -36,6 +37,7 @@ export class ResultService {
 
   attemptsInclude = {
     judge: publicPersonSelect,
+    scrambler: publicPersonSelect,
     result: {
       include: {
         person: publicPersonSelect,
@@ -157,6 +159,7 @@ export class ResultService {
         attempts: {
           include: {
             judge: publicPersonSelect,
+            scrambler: publicPersonSelect,
             updatedBy: {
               select: {
                 id: true,

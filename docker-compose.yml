@@ -37,6 +37,7 @@ services:
       - VITE_GIT_COMMIT=dummy-commit
     volumes:
       - ./frontend/src:/app/src
+      - ./frontend/index.html:/app/index.html
     ports:
       - "5173:5173"
     restart: unless-stopped

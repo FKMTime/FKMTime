@@ -50,3 +50,46 @@ export const decryptScrambles = (
         };
     });
 };
+
+export const getScrambleData = async (cardId: string) => {
+    const response = await scramblingDeviceBackendRequest(
+        `scrambling/scramble/${cardId}`,
+        "GET"
+    );
+    return {
+        status: response.status,
+        data: await response.json(),
+    };
+};
+
+export const getPersonByCardId = async (cardId: string) => {
+    const response = await scramblingDeviceBackendRequest(
+        `scrambling/person/${cardId}`,
+        "GET"
+    );
+    return await response.json();
+};
+
+export const createScrambledAttempt = async (
+    personId: string,
+    scramblerId: string,
+    roundId: string,
+    attemptNumber: number,
+    isExtra: boolean
+) => {
+    const response = await scramblingDeviceBackendRequest(
+        "scrambling/scramble",
+        "POST",
+        {
+            personId,
+            scramblerId,
+            roundId,
+            attemptNumber,
+            isExtra,
+        }
+    );
+    return {
+        status: response.status,
+        data: await response.json(),
+    };
+};

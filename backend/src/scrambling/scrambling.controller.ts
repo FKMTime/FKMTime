@@ -12,6 +12,7 @@ import { GetScramblingDeviceToken } from 'src/auth/decorator/getScramblingDevice
 import { ScramblingDeviceGuard } from 'src/auth/guards/scramblingDevice.guard';
 import { ScrambleSetService } from 'src/scramble-set/scramble-set.service';
 
+import { CreateScrambledAttemptDto } from './dto/createScrambledAttempt.dto';
 import { UnlockScrambleSetDto } from './dto/unlockScrambleSet.dto';
 import { ScramblingService } from './scrambling.service';
 
@@ -53,5 +54,21 @@ export class ScramblingController {
     @Param('cardId') cardId: string,
   ) {
     return this.scramblingService.getScrambleData(token, cardId);
+  }
+
+  @Post('scramble')
+  async createScrambledAttempt(
+    @GetScramblingDeviceToken() token: string,
+    @Body() data: CreateScrambledAttemptDto,
+  ) {
+    return this.scramblingService.createScrambledAttempt(token, data);
+  }
+
+  @Get('person/:cardId')
+  async getPersonDataByCardId(
+    @GetScramblingDeviceToken() token: string,
+    @Param('cardId') cardId: string,
+  ) {
+    return this.scramblingService.getPersonDataByCardId(token, cardId);
   }
 }

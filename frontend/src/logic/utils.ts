@@ -220,6 +220,10 @@ export const prettyAttemptStatus = (
                 : "Incident resolved, leave as is";
         case AttemptStatus.EXTRA_GIVEN:
             return "Extra given";
+        case AttemptStatus.SCRAMBLED:
+            return "Scrambled";
+        default:
+            return "Unknown";
     }
 };
 

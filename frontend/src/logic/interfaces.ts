@@ -188,6 +188,8 @@ export interface Attempt {
     sessionId?: string;
     judgeId?: string;
     judge?: Person;
+    scramblerId?: string;
+    scrambler?: Person;
     deviceId?: string;
     device?: Device;
     updatedBy?: User;
@@ -354,6 +356,11 @@ export interface DecryptedScramble {
     num: number;
     isExtra: boolean;
     scramble: string;
+}
+
+export interface ScrambleData {
+    num: number;
+    isExtra: boolean;
 }
 
 export interface ImportedScrambleSet {

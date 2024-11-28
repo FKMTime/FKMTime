@@ -8,7 +8,7 @@ import { competitionAtom } from "@/logic/atoms";
 import { ScrambleSet } from "@/logic/interfaces";
 import { getScrambleSetsForScramblingDevice } from "@/logic/scrambling";
 
-import ScrambleSetsList from "./Components/ScrambleSetsList";
+import ScrambleSetsTable from "./Components/ScrambleSetsTable";
 
 const ScramblingDeviceHome = () => {
     const competition = useAtomValue(competitionAtom);
@@ -55,7 +55,7 @@ const ScramblingDeviceHome = () => {
                     handleRoundChange={handleRoundChange}
                 />
             </Box>
-            <ScrambleSetsList scrambleSets={scrambleSets} />
+            <ScrambleSetsTable scrambleSets={scrambleSets} />
         </Box>
     );
 };

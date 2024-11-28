@@ -9,7 +9,12 @@ import DeleteButton from "@/Components/DeleteButton";
 import EditButton from "@/Components/EditButton";
 import SmallIconButton from "@/Components/SmallIconButton";
 import { deleteAttempt } from "@/logic/attempt";
-import { Attempt, AttemptType, Result } from "@/logic/interfaces";
+import {
+    Attempt,
+    AttemptStatus,
+    AttemptType,
+    Result,
+} from "@/logic/interfaces";
 import { getPersonNameAndRegistrantId } from "@/logic/persons.ts";
 import { attemptWithPenaltyToString } from "@/logic/resultFormatters";
 import { getResolvedStatus } from "@/logic/utils";
@@ -91,7 +96,11 @@ const AttemptRow = ({
                         ? `Extra ${attempt.attemptNumber}`
                         : attempt.attemptNumber}
                 </Td>
-                <Td>{attemptWithPenaltyToString(attempt)}</Td>
+                <Td>
+                    {attempt.status === AttemptStatus.SCRAMBLED
+                        ? "Scrambled, not solved yet"
+                        : attemptWithPenaltyToString(attempt)}
+                </Td>
                 {showExtraColumns && (
                     <>
                         <Td>
@@ -105,9 +114,17 @@ const AttemptRow = ({
                     {attempt.judge &&
                         getPersonNameAndRegistrantId(attempt.judge)}
                 </Td>
+                <Td>
+                    {attempt.scrambler &&
+                        getPersonNameAndRegistrantId(attempt.scrambler)}
+                </Td>
                 <Td>{attempt.device && attempt.device.name}</Td>
                 <Td>{attempt.comment}</Td>
-                <Td>{new Date(attempt.solvedAt).toLocaleString()}</Td>
+                <Td>
+                    {attempt.status === AttemptStatus.SCRAMBLED
+                        ? "Scrambled, not solved yet"
+                        : new Date(attempt.solvedAt).toLocaleString()}
+                </Td>
                 <Td>{attempt.updatedBy?.fullName}</Td>
                 <Td>
                     <EditButton
@@ -123,11 +140,16 @@ const AttemptRow = ({
                 </Td>
                 <Td>
                     <Box display="flex" gap={2}>
-                        {!attempt.sessionId && (
-                            <Badge colorScheme="orange" borderRadius="md" p="1">
-                                Entered manually
-                            </Badge>
-                        )}
+                        {!attempt.sessionId &&
+                            attempt.status !== AttemptStatus.SCRAMBLED && (
+                                <Badge
+                                    colorScheme="orange"
+                                    borderRadius="md"
+                                    p="1"
+                                >
+                                    Entered manually
+                                </Badge>
+                            )}
                         <AttemptWarnings attempt={attempt} />
                     </Box>
                 </Td>

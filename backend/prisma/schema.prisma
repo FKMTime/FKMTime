@@ -26,19 +26,20 @@ model User {
 }
 
 model Person {
-  id            String          @id @default(uuid())
-  registrantId  Int?            @unique @map("registrant_id")
-  name          String
-  wcaId         String?         @map("wca_id")
-  countryIso2   String?         @map("country_iso_2")
-  gender        String?
-  canCompete    Boolean         @default(true) @map("can_compete")
-  birthdate     DateTime?
-  checkedInAt   DateTime?       @map("checked_in_at")
-  cardId        String?         @unique @map("card_id")
-  Result        Result[]
-  Attempt       Attempt[]
-  StaffActivity StaffActivity[]
+  id                String          @id @default(uuid())
+  registrantId      Int?            @unique @map("registrant_id")
+  name              String
+  wcaId             String?         @map("wca_id")
+  countryIso2       String?         @map("country_iso_2")
+  gender            String?
+  canCompete        Boolean         @default(true) @map("can_compete")
+  birthdate         DateTime?
+  checkedInAt       DateTime?       @map("checked_in_at")
+  cardId            String?         @unique @map("card_id")
+  results           Result[]
+  judgedAttempts    Attempt[]       @relation(name: "attempt_judge")
+  StaffActivity     StaffActivity[]
+  scrambledAttempts Attempt[]       @relation(name: "attempt_scrambler")
 
   @@map("person")
 }
@@ -135,7 +136,10 @@ model Attempt {
   originalTime   Int?          @map("original_time")
   inspectionTime Int?          @map("inspection_time")
   judgeId        String?       @map("judge_id")
-  judge          Person?       @relation(fields: [judgeId], references: [id])
+  judge          Person?       @relation(fields: [judgeId], references: [id], name: "attempt_judge")
+  scramblerId    String?       @map("scrambler_id")
+  scrambler      Person?       @relation(fields: [scramblerId], references: [id], name: "attempt_scrambler")
+  scrambledAt    DateTime?     @map("scrambled_at")
   deviceId       String?       @map("device_id")
   device         Device?       @relation(fields: [deviceId], references: [id])
   solvedAt       DateTime?     @map("solved_at")

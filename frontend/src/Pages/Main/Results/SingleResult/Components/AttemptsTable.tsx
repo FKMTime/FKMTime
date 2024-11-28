@@ -32,6 +32,7 @@ const AttemptsTable = ({
                             </>
                         )}
                         <Th>Judge</Th>
+                        <Th>Scrambler</Th>
                         <Th>Station</Th>
                         <Th>Comment</Th>
                         <Th>Solved at</Th>

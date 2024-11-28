@@ -1,9 +1,12 @@
-import { forwardRef, Inject, Logger } from '@nestjs/common';
+import { forwardRef, HttpException, Inject, Logger } from '@nestjs/common';
 import {
   AttemptStatus,
   AttemptType,
   Competition,
+  Device,
   DeviceType,
+  Person,
+  Result,
   SendingResultsFrequency,
 } from '@prisma/client';
 import { AppGateway } from 'src/app.gateway';
@@ -13,6 +16,7 @@ import { DbService } from 'src/db/db.service';
 import { DeviceService } from 'src/device/device.service';
 import { isUnofficialEvent } from 'src/events';
 import { PersonService } from 'src/person/person.service';
+import { CreateScrambledAttemptDto } from 'src/scrambling/dto/createScrambledAttempt.dto';
 import { getTranslation, isLocaleAvailable } from 'src/translations';
 import { WcaService } from 'src/wca/wca.service';
 import { getPersonFromWcif, getRoundInfoFromWcif } from 'wcif-helpers';
@@ -168,6 +172,9 @@ export class ResultFromDeviceService {
     const attempts = await this.prisma.attempt.findMany({
       where: {
         resultId: result.id,
+        status: {
+          not: AttemptStatus.SCRAMBLED,
+        },
       },
     });
 
@@ -235,38 +242,15 @@ export class ResultFromDeviceService {
       if (lastAttempt) {
         attemptNumber = lastAttempt.attemptNumber + 1;
       }
-      const attempt = await this.prisma.attempt.create({
-        data: {
-          attemptNumber: attemptNumber,
-          sessionId: data.sessionId,
-          status: data.isDelegate
-            ? AttemptStatus.UNRESOLVED
-            : AttemptStatus.STANDARD,
-          type: AttemptType.STANDARD_ATTEMPT,
-          solvedAt: data.solvedAt,
-          penalty: finalData.penalty,
-          value: finalData.value,
-          originalTime: finalData.valueMs,
-          inspectionTime: finalData.inspectionTime,
-          judge: judge
-            ? {
-                connect: {
-                  id: judge.id,
-                },
-              }
-            : undefined,
-          device: {
-            connect: {
-              id: device.id,
-            },
-          },
-          result: {
-            connect: {
-              id: result.id,
-            },
-          },
-        },
-      });
+      const attempt = await this.createOrUpdateScrambledAttempt(
+        data,
+        AttemptType.STANDARD_ATTEMPT,
+        attemptNumber,
+        finalData,
+        device,
+        result,
+        judge as Person,
+      );
       if (!lastAttempt) {
         lastAttempt = attempt;
       }
@@ -305,6 +289,9 @@ export class ResultFromDeviceService {
 
   async getScrambleData(cardId: string, roundId: string) {
     const competitor = await this.personService.getPersonByCardId(cardId);
+    if (!competitor) {
+      throw new HttpException('Competitor not found', 404);
+    }
     const result = await this.resultService.getResultOrCreate(
       competitor.id,
       roundId,
@@ -318,8 +305,11 @@ export class ResultFromDeviceService {
     const sortedExtraAttempts = getSortedExtraAttempts(attempts);
     if (sortedAttempts.length === 0 && sortedExtraAttempts.length === 0) {
       return {
-        num: 1,
-        isExtra: false,
+        scrambleData: {
+          num: 1,
+          isExtra: false,
+        },
+        person: competitor,
       };
     }
     if (
@@ -331,8 +321,11 @@ export class ResultFromDeviceService {
     ) {
       const extrasCount = sortedExtraAttempts.length;
       return {
-        num: extrasCount + 1,
-        isExtra: true,
+        scrambleData: {
+          num: extrasCount + 1,
+          isExtra: true,
+        },
+        person: competitor,
       };
     }
     const competition = await this.prisma.competition.findFirst();
@@ -349,55 +342,129 @@ export class ResultFromDeviceService {
     if (lastAttempt && lastAttempt.attemptNumber === maxAttempts) {
       //No attempts left
       return {
-        num: -1,
-        isExtra: false,
+        scrambleData: {
+          num: -1,
+          isExtra: false,
+        },
+        person: competitor,
       };
     }
     if (lastAttempt) {
       attemptNumber = lastAttempt.attemptNumber + 1;
     }
     return {
-      num: attemptNumber,
-      isExtra: false,
+      scrambleData: {
+        num: attemptNumber,
+        isExtra: false,
+      },
+      person: competitor,
     };
+  }
+
+  async createScrambledAttempt(data: CreateScrambledAttemptDto) {
+    const result = await this.resultService.getResultOrCreate(
+      data.personId,
+      data.roundId,
+    );
+
+    return await this.prisma.attempt.create({
+      data: {
+        attemptNumber: data.attemptNumber,
+        value: 0,
+        penalty: 0,
+        status: AttemptStatus.SCRAMBLED,
+        scrambler: {
+          connect: {
+            id: data.scramblerId,
+          },
+        },
+        scrambledAt: new Date(),
+        type: data.isExtra
+          ? AttemptType.EXTRA_ATTEMPT
+          : AttemptType.STANDARD_ATTEMPT,
+        result: {
+          connect: {
+            id: result.id,
+          },
+        },
+      },
+    });
+  }
+
+  async createOrUpdateScrambledAttempt(
+    data: EnterAttemptDto,
+    type: AttemptType,
+    attemptNumber: number,
+    finalData: any,
+    device: Device,
+    result: Result,
+    judge?: Person,
+  ) {
+    const scrambledAttempt = await this.prisma.attempt.findFirst({
+      where: {
+        resultId: result.id,
+        attemptNumber: attemptNumber,
+        type: type,
+        status: AttemptStatus.SCRAMBLED,
+      },
+    });
+    const newData = {
+      attemptNumber: attemptNumber,
+      sessionId: data.sessionId,
+      status: data.isDelegate
+        ? AttemptStatus.UNRESOLVED
+        : AttemptStatus.STANDARD,
+      type: type,
+      solvedAt: data.solvedAt,
+      penalty: finalData.penalty,
+      value: finalData.value,
+      originalTime: finalData.valueMs,
+      inspectionTime: finalData.inspectionTime,
+      judge: judge
+        ? {
+            connect: {
+              id: judge.id,
+            },
+          }
+        : undefined,
+      device: {
+        connect: {
+          id: device.id,
+        },
+      },
+      result: {
+        connect: {
+          id: result.id,
+        },
+      },
+    };
+    if (scrambledAttempt) {
+      return await this.prisma.attempt.update({
+        where: {
+          id: scrambledAttempt.id,
+        },
+        data: newData,
+      });
+    } else {
+      return await this.prisma.attempt.create({
+        data: newData,
+      });
+    }
   }
 
   async createAnExtraAttemptAnReplaceTheOriginalOne(
     data: any,
     originalId: string,
   ) {
-    const extraAttempt = await this.prisma.attempt.create({
-      data: {
-        attemptNumber: data.attemptNumber,
-        sessionId: data.sessionId,
-        inspectionTime: data.inspectionTime,
-        solvedAt: data.solvedAt,
-        status: data.isDelegate
-          ? AttemptStatus.UNRESOLVED
-          : AttemptStatus.STANDARD,
-        type: AttemptType.EXTRA_ATTEMPT,
-        penalty: data.penalty,
-        value: data.value,
-        originalTime: data.valueMs,
-        judge: data.judge
-          ? {
-              connect: {
-                id: data.judge.id,
-              },
-            }
-          : undefined,
-        device: {
-          connect: {
-            id: data.device.id,
-          },
-        },
-        result: {
-          connect: {
-            id: data.result.id,
-          },
-        },
-      },
-    });
+    const extraAttempt = await this.createOrUpdateScrambledAttempt(
+      data,
+      AttemptType.EXTRA_ATTEMPT,
+      data.attemptNumber,
+      data,
+      data.device,
+      data.result,
+      data.judge,
+    );
 
     const attempt = await this.prisma.attempt.update({
       where: {

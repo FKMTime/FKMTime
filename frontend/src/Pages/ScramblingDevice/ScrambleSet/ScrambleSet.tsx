@@ -1,7 +1,15 @@
-import { Box, Button, Heading, Input, useToast } from "@chakra-ui/react";
+import {
+    Box,
+    Button,
+    Divider,
+    Heading,
+    Input,
+    useToast,
+} from "@chakra-ui/react";
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 
+import EventIcon from "@/Components/Icons/EventIcon";
 import LoadingPage from "@/Components/LoadingPage";
 import { activityCodeToName } from "@/logic/activities";
 import {
@@ -80,9 +88,17 @@ const ScrambleSet = () => {
 
     return (
         <Box display="flex" flexDirection="column" gap={3}>
-            <Heading>
-                {activityCodeToName(scrambleSet.roundId)} Set {scrambleSet.set}
-            </Heading>
+            <Box display="flex" gap={3} alignItems="center">
+                <EventIcon
+                    size={32}
+                    eventId={scrambleSet.roundId.split("-")[0]}
+                    selected
+                />
+                <Heading>
+                    {activityCodeToName(scrambleSet.roundId)} Set{" "}
+                    {scrambleSet.set}
+                </Heading>
+            </Box>
             <Heading size="md">
                 Current group: {activityCodeToName(room?.currentGroupId || "")}
             </Heading>
@@ -105,10 +121,13 @@ const ScrambleSet = () => {
                     </Button>
                 </>
             ) : (
-                <Scrambling
-                    groupId={room.currentGroupId}
-                    scrambles={decryptedScrambles}
-                />
+                <>
+                    <Divider />
+                    <Scrambling
+                        groupId={room.currentGroupId}
+                        scrambles={decryptedScrambles}
+                    />
+                </>
             )}
         </Box>
     );

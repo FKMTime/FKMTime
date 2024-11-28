@@ -21,7 +21,7 @@ export const best = (attempts: Attempt[]) => {
 
 export const formattedBest = (attempts: Attempt[]) => {
     const sorted = attempts.slice().sort(compareAttemptResults);
-    if (sorted.length === 0) return 0;
+    if (sorted.length === 0) return "";
     return attemptWithPenaltyToString(sorted[0]);
 };
 

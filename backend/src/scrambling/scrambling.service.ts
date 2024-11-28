@@ -5,6 +5,7 @@ import { DbService } from 'src/db/db.service';
 import { PersonService } from 'src/person/person.service';
 import { ResultFromDeviceService } from 'src/result/resultFromDevice.service';
 
+import { CreateScrambledAttemptDto } from './dto/createScrambledAttempt.dto';
 import { UnlockScrambleSetDto } from './dto/unlockScrambleSet.dto';
 @Injectable()
 export class ScramblingService {
@@ -45,6 +46,20 @@ export class ScramblingService {
       cardId,
       device.room.currentGroupId.split('-g')[0],
     );
+  }
+
+  async getPersonDataByCardId(token: string, cardId: string) {
+    await this.verifyToken(token);
+    const person = this.personService.getPersonByCardId(cardId);
+    if (!person) {
+      throw new HttpException('Person not found', 404);
+    }
+    return person;
+  }
+
+  async createScrambledAttempt(token: string, data: CreateScrambledAttemptDto) {
+    await this.verifyToken(token);
+    return await this.resultFromDeviceService.createScrambledAttempt(data);
   }
 
   private async verifyToken(token: string) {
