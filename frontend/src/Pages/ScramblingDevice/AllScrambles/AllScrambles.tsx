@@ -1,37 +1,30 @@
 import { Box, Button, Divider, Heading, useToast } from "@chakra-ui/react";
+import { activityCodeToName } from "@wca/helpers";
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 
 import EventIcon from "@/Components/Icons/EventIcon";
 import LoadingPage from "@/Components/LoadingPage";
 import PasswordInput from "@/Components/PasswordInput";
-import { activityCodeToName } from "@/logic/activities";
-import {
-    DecryptedScramble,
-    Room,
-    ScrambleSet as IScrambleSet,
-} from "@/logic/interfaces";
+import { DecryptedScramble, ScrambleSet } from "@/logic/interfaces";
 import {
     decryptScrambles,
     getScrambleSetById,
-    getScramblingDeviceRoom,
     unlockScrambleSet,
 } from "@/logic/scrambling";
 
-import Scrambling from "./Components/Scrambling";
+import ScramblesList from "./Components/ScramblesList";
 
-const ScrambleSet = () => {
+const AllScrambles = () => {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
     const toast = useToast();
     const [isLocked, setIsLocked] = useState(true);
     const [password, setPassword] = useState("");
-    const [scrambleSet, setScrambleSet] = useState<IScrambleSet | null>(null);
+    const [scrambleSet, setScrambleSet] = useState<ScrambleSet | null>(null);
     const [decryptedScrambles, setDecryptedScrambles] = useState<
         DecryptedScramble[]
     >([]);
-
-    const [room, setRoom] = useState<Room | null>(null);
 
     const fetchScrambleSet = useCallback(async () => {
         if (!id) {
@@ -42,16 +35,9 @@ const ScrambleSet = () => {
         });
     }, [id, navigate]);
 
-    const fetchRoom = useCallback(async () => {
-        getScramblingDeviceRoom().then((data) => {
-            setRoom(data);
-        });
-    }, []);
-
     useEffect(() => {
-        fetchRoom();
         fetchScrambleSet();
-    }, [fetchRoom, fetchScrambleSet]);
+    }, [fetchScrambleSet]);
 
     const handleUnlock = async () => {
         if (!scrambleSet) return;
@@ -78,7 +64,7 @@ const ScrambleSet = () => {
         }
     };
 
-    if (!scrambleSet || !room) return <LoadingPage />;
+    if (!scrambleSet) return <LoadingPage />;
 
     return (
         <Box display="flex" flexDirection="column" gap={3}>
@@ -93,9 +79,6 @@ const ScrambleSet = () => {
                     {scrambleSet.set}
                 </Heading>
             </Box>
-            <Heading size="md">
-                Current group: {activityCodeToName(room?.currentGroupId || "")}
-            </Heading>
             {isLocked ? (
                 <>
                     <Box width="fit-content">
@@ -122,9 +105,9 @@ const ScrambleSet = () => {
             ) : (
                 <>
                     <Divider />
-                    <Scrambling
-                        groupId={room.currentGroupId}
+                    <ScramblesList
                         scrambles={decryptedScrambles}
+                        roundId={scrambleSet.roundId}
                     />
                 </>
             )}
@@ -132,4 +115,4 @@ const ScrambleSet = () => {
     );
 };
 
-export default ScrambleSet;
+export default AllScrambles;

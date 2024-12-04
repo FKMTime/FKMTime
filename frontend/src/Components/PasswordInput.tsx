@@ -17,7 +17,6 @@ const PasswordInput = (props: InputProps) => {
                 type={show ? "text" : "password"}
                 placeholder="Enter password"
                 border="none"
-                _placeholder={{ color: "white" }}
                 _hover={{ border: "none" }}
                 {...props}
             />

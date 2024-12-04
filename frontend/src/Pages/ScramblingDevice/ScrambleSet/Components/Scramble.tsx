@@ -72,14 +72,25 @@ const Scramble = ({
                         {scrambleData.num}{" "}
                     </Heading>
                 </Box>
-                <Box display="flex" mt={5} alignItems="center">
+                <Box
+                    display="flex"
+                    flexDirection={{ base: "column", md: "row" }}
+                    mt={5}
+                    alignItems="center"
+                    gap={10}
+                >
+                    <Heading
+                        size="lg"
+                        as="pre"
+                        whiteSpace="pre-wrap"
+                        maxWidth="60%"
+                    >
+                        {currentScramble?.scramble || "Scramble not found"}
+                    </Heading>
                     <scramble-display
                         scramble={currentScramble?.scramble}
                         event={roundId.split("-")[0]}
                     ></scramble-display>
-                    <Heading size="lg" width="60%">
-                        {currentScramble?.scramble || "Scramble not found"}
-                    </Heading>
                 </Box>
             </CardBody>
             <Divider />
