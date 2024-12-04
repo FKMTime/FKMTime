@@ -245,6 +245,12 @@ const EditAttemptModal = ({
                         ))}
                     </Select>
                 </FormControl>
+                {attempt.scrambler ? (
+                    <Text>
+                        Scrambler:{" "}
+                        {getPersonNameAndRegistrantId(attempt.scrambler)}
+                    </Text>
+                ) : null}
                 <FormControl>
                     <FormLabel>Device</FormLabel>
                     <Select

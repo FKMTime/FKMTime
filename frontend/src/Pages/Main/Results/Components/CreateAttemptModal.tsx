@@ -50,6 +50,7 @@ const CreateAttemptModal = ({
     const [devices, setDevices] = useState<Device[]>([]);
     const [isLoading, setIsLoading] = useState<boolean>(false);
     const [selectedJudgeId, setSelectedJudgeId] = useState<string>("");
+    const [selectedScramblerId, setSelectedScramblerId] = useState<string>("");
     const [selectedCompetitorId, setSelectedCompetitorId] = useState<string>(
         competitorId || ""
     );
@@ -78,6 +79,21 @@ const CreateAttemptModal = ({
 
     const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
         e.preventDefault();
+        if (selectedJudgeId && selectedCompetitorId === selectedJudgeId) {
+            return toast({
+                title: "Judge cannot be the same as competitor",
+                status: "error",
+            });
+        }
+        if (
+            selectedScramblerId &&
+            selectedCompetitorId === selectedScramblerId
+        ) {
+            return toast({
+                title: "Scrambler cannot be the same as competitor",
+                status: "error",
+            });
+        }
         setIsLoading(true);
         const formData = new FormData(e.currentTarget);
         const data = {
@@ -216,6 +232,14 @@ const CreateAttemptModal = ({
                         onSelect={setSelectedJudgeId}
                         disabled={isLoading}
                         value={selectedJudgeId}
+                    />
+                </FormControl>
+                <FormControl>
+                    <FormLabel>Scrambler</FormLabel>
+                    <PersonAutocomplete
+                        onSelect={setSelectedScramblerId}
+                        disabled={isLoading}
+                        value={selectedScramblerId}
                     />
                 </FormControl>
                 <FormControl>

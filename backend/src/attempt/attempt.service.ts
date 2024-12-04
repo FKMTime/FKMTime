@@ -47,6 +47,13 @@ export class AttemptService {
               },
             }
           : undefined,
+        scrambler: data.scramblerId
+          ? {
+              connect: {
+                id: data.scramblerId,
+              },
+            }
+          : undefined,
         replacedBy: data.replacedBy ? data.replacedBy : null,
         status: data.status,
         type: data.type,
@@ -258,6 +265,7 @@ export class AttemptService {
       where: { id },
       include: {
         judge: publicPersonSelect,
+        scrambler: publicPersonSelect,
         device: true,
         result: {
           include: {

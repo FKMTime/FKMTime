@@ -4,7 +4,6 @@ import {
     FormControl,
     FormLabel,
     Input,
-    Select,
     Text,
     useToast,
 } from "@chakra-ui/react";
@@ -13,6 +12,7 @@ import { useEffect, useState } from "react";
 
 import AttemptResultInput from "@/Components/AttemptResultInput";
 import PenaltySelect from "@/Components/PenaltySelect";
+import Select from "@/Components/Select";
 import { competitionAtom } from "@/logic/atoms";
 import { DNF_VALUE } from "@/logic/constants";
 import { AttemptStatus, Incident, Person } from "@/logic/interfaces";
@@ -126,6 +126,12 @@ const IncidentForm = ({
                     ))}
                 </Select>
             </FormControl>
+            {editedIncident.scrambler ? (
+                <Text>
+                    Scrambler:{" "}
+                    {getPersonNameAndRegistrantId(editedIncident.scrambler)}
+                </Text>
+            ) : null}
             <FormControl>
                 <FormLabel>Comment</FormLabel>
                 <Input
