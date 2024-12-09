@@ -40,7 +40,7 @@
   "devDependencies": {
     "@types/crypto-js": "^4.2.2",
     "@types/node": "^20.14.8",
-    "@types/react": "^18.2.43",
+    "@types/react": "^18.3.12",
     "@types/react-dom": "^18.2.17",
     "@types/react-table": "^7.7.20",
     "@typescript-eslint/eslint-plugin": "^7.0.0",
