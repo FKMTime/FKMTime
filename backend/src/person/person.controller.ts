@@ -53,8 +53,10 @@ export class PersonController {
 
   @UseGuards(AuthGuard('jwt'))
   @Get('all')
-  async getAllPersons() {
-    return this.personService.getAllPersons();
+  async getAllPersons(
+    @Query('withoutCardAssigned') withoutCardAssigned = false,
+  ) {
+    return this.personService.getAllPersons(withoutCardAssigned);
   }
 
   @UseGuards(AuthGuard('jwt'))

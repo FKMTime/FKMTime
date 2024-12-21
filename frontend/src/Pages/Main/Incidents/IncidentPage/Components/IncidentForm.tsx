@@ -8,15 +8,14 @@ import {
     useToast,
 } from "@chakra-ui/react";
 import { useAtomValue } from "jotai";
-import { useEffect, useState } from "react";
 
 import AttemptResultInput from "@/Components/AttemptResultInput";
 import PenaltySelect from "@/Components/PenaltySelect";
-import Select from "@/Components/Select";
+import PersonAutocomplete from "@/Components/PersonAutocomplete";
 import { competitionAtom } from "@/logic/atoms";
 import { DNF_VALUE } from "@/logic/constants";
-import { AttemptStatus, Incident, Person } from "@/logic/interfaces";
-import { getAllPersons, getPersonNameAndRegistrantId } from "@/logic/persons";
+import { AttemptStatus, Incident } from "@/logic/interfaces";
+import { getPersonNameAndRegistrantId } from "@/logic/persons";
 import { milisecondsToClockFormat } from "@/logic/resultFormatters";
 import { checkTimeLimit } from "@/logic/results";
 
@@ -37,13 +36,6 @@ const IncidentForm = ({
 }: IncidentFormProps) => {
     const competition = useAtomValue(competitionAtom);
     const toast = useToast();
-    const [persons, setPersons] = useState<Person[]>([]);
-
-    useEffect(() => {
-        getAllPersons().then((data) => {
-            setPersons(data);
-        });
-    }, []);
 
     return (
         <>
@@ -108,23 +100,17 @@ const IncidentForm = ({
             ) : null}
             <FormControl>
                 <FormLabel>Judge</FormLabel>
-                <Select
-                    value={editedIncident.judgeId || ""}
-                    disabled={isLoading}
-                    placeholder="Select judge"
-                    onChange={(e) =>
+                <PersonAutocomplete
+                    onSelect={(person) =>
                         setEditedIncident({
                             ...editedIncident,
-                            judgeId: e.target.value,
+                            judgeId: person.id,
                         })
                     }
-                >
-                    {persons.map((person) => (
-                        <option key={person.id} value={person.id}>
-                            {getPersonNameAndRegistrantId(person)}
-                        </option>
-                    ))}
-                </Select>
+                    value={editedIncident.judge}
+                    autoFocus
+                    disabled={isLoading}
+                />
             </FormControl>
             {editedIncident.scrambler ? (
                 <Text>

@@ -374,3 +374,10 @@ export interface ImportedScramble {
     isExtra: boolean;
     encryptedScramble: string;
 }
+
+export interface Region {
+    id: string;
+    name: string;
+    continentId: string;
+    iso2: string;
+}

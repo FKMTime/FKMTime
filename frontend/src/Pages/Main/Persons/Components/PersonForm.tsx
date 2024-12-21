@@ -1,13 +1,8 @@
-import { Box, DarkMode, FormControl, FormLabel, Input } from "@chakra-ui/react";
-import {
-    AutoComplete,
-    AutoCompleteInput,
-    AutoCompleteItem,
-    AutoCompleteList,
-} from "@choc-ui/chakra-autocomplete";
+import { Box, FormControl, FormLabel, Input } from "@chakra-ui/react";
 
+import Autocomplete from "@/Components/Autocomplete";
 import Select from "@/Components/Select";
-import { AddPerson } from "@/logic/interfaces";
+import { AddPerson, Region } from "@/logic/interfaces";
 import regions from "@/logic/regions";
 
 interface PersonFormProps {
@@ -23,10 +18,17 @@ const PersonForm = ({
     newPersonData,
     setNewPersonData,
 }: PersonFormProps) => {
-    const countries = regions.filter(
+    const countries: Region[] = regions.filter(
         (region) =>
             !["_Multiple Continents", "Continent"].includes(region.continentId)
     );
+
+    const handleSelectCountry = (option: Region) => {
+        setNewPersonData({
+            ...newPersonData,
+            countryIso2: option.iso2,
+        });
+    };
 
     return (
         <Box display="flex" gap="5" flexDirection="column">
@@ -82,41 +84,19 @@ const PersonForm = ({
                     </FormControl>
                     <FormControl isRequired>
                         <FormLabel>Country</FormLabel>
-                        <DarkMode>
-                            <AutoComplete
-                                openOnFocus
-                                onChange={(value: string) =>
-                                    setNewPersonData({
-                                        ...newPersonData,
-                                        countryIso2: value,
-                                    })
-                                }
-                                value={newPersonData.countryIso2}
-                                isLoading={isLoading}
-                            >
-                                <AutoCompleteInput
-                                    autoFocus
-                                    autoComplete="off"
-                                    placeholder="Search for a country"
-                                    _placeholder={{
-                                        color: "gray.200",
-                                    }}
-                                    disabled={isLoading}
-                                    borderColor="white"
-                                />
-                                <AutoCompleteList>
-                                    {countries.map((region) => (
-                                        <AutoCompleteItem
-                                            key={region.iso2}
-                                            value={region.iso2}
-                                            label={region.name}
-                                        >
-                                            {region.name}
-                                        </AutoCompleteItem>
-                                    ))}
-                                </AutoCompleteList>
-                            </AutoComplete>
-                        </DarkMode>
+                        <Autocomplete
+                            options={countries}
+                            onOptionSelect={(option) =>
+                                handleSelectCountry(option as Region)
+                            }
+                            selectedValue={countries.find(
+                                (region) =>
+                                    region.iso2 === newPersonData.countryIso2
+                            )}
+                            placeholder="Search for a country"
+                            disabled={isLoading}
+                            getOptionLabel={(option) => option.name}
+                        />
                     </FormControl>
                 </>
             )}

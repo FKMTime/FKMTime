@@ -24,6 +24,7 @@ import {
     AttemptType,
     Device,
     DeviceType,
+    Person,
 } from "@/logic/interfaces";
 import {
     getSubmissionPlatformName,
@@ -49,10 +50,12 @@ const CreateAttemptModal = ({
     const toast = useToast();
     const [devices, setDevices] = useState<Device[]>([]);
     const [isLoading, setIsLoading] = useState<boolean>(false);
-    const [selectedJudgeId, setSelectedJudgeId] = useState<string>("");
-    const [selectedScramblerId, setSelectedScramblerId] = useState<string>("");
-    const [selectedCompetitorId, setSelectedCompetitorId] = useState<string>(
-        competitorId || ""
+    const [selectedJudge, setSelectedJudge] = useState<Person | null>(null);
+    const [selectedScrambler, setSelectedScrambler] = useState<Person | null>(
+        null
+    );
+    const [selectedCompetitor, setSelectedCompetitor] = useState<Person | null>(
+        null
     );
     const [attemptStatus, setAttemptStatus] = useState<AttemptStatus>(
         AttemptStatus.STANDARD
@@ -79,15 +82,21 @@ const CreateAttemptModal = ({
 
     const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
         e.preventDefault();
-        if (selectedJudgeId && selectedCompetitorId === selectedJudgeId) {
+        if (!selectedCompetitor) {
+            return toast({
+                title: "Competitor is required",
+                status: "error",
+            });
+        }
+        if (selectedJudge && selectedCompetitor.id === selectedJudge.id) {
             return toast({
                 title: "Judge cannot be the same as competitor",
                 status: "error",
             });
         }
         if (
-            selectedScramblerId &&
-            selectedCompetitorId === selectedScramblerId
+            selectedScrambler &&
+            selectedCompetitor.id === selectedScrambler.id
         ) {
             return toast({
                 title: "Scrambler cannot be the same as competitor",
@@ -99,8 +108,9 @@ const CreateAttemptModal = ({
         const data = {
             roundId,
             status: attemptStatus,
-            competitorId: selectedCompetitorId,
-            judgeId: selectedJudgeId,
+            competitorId: selectedCompetitor.id,
+            judgeId: selectedJudge ? selectedJudge.id : undefined,
+            scramblerId: selectedScrambler ? selectedScrambler.id : undefined,
             deviceId: deviceId,
             type: attemptType,
             attemptNumber: formData.get("attemptNumber")
@@ -152,9 +162,9 @@ const CreateAttemptModal = ({
                     <FormControl isRequired>
                         <FormLabel>Competitor</FormLabel>
                         <PersonAutocomplete
-                            value={selectedCompetitorId}
+                            value={selectedCompetitor}
                             disabled={isLoading}
-                            onSelect={setSelectedCompetitorId}
+                            onSelect={setSelectedCompetitor}
                         />
                     </FormControl>
                 )}
@@ -229,17 +239,17 @@ const CreateAttemptModal = ({
                 <FormControl>
                     <FormLabel>Judge</FormLabel>
                     <PersonAutocomplete
-                        onSelect={setSelectedJudgeId}
+                        onSelect={setSelectedJudge}
                         disabled={isLoading}
-                        value={selectedJudgeId}
+                        value={selectedJudge}
                     />
                 </FormControl>
                 <FormControl>
                     <FormLabel>Scrambler</FormLabel>
                     <PersonAutocomplete
-                        onSelect={setSelectedScramblerId}
+                        onSelect={setSelectedScrambler}
                         disabled={isLoading}
-                        value={selectedScramblerId}
+                        value={selectedScrambler}
                     />
                 </FormControl>
                 <FormControl>

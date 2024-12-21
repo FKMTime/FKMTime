@@ -9,7 +9,8 @@ interface CreateAttemptData {
     roundId: string;
     deviceId: string;
     competitorId: string;
-    judgeId: string;
+    judgeId?: string;
+    scramblerId?: string;
     attemptNumber: number;
     value: number;
     penalty: number;

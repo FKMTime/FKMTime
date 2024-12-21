@@ -1,12 +1,7 @@
-import { Box, DarkMode, FormControl, Input } from "@chakra-ui/react";
-import {
-    AutoComplete,
-    AutoCompleteInput,
-    AutoCompleteItem,
-    AutoCompleteList,
-} from "@choc-ui/chakra-autocomplete";
+import { Box, Input } from "@chakra-ui/react";
 import { ChangeEvent } from "react";
 
+import Autocomplete from "@/Components/Autocomplete";
 import { ResultToDoubleCheck } from "@/logic/interfaces";
 
 interface SelectCompetitorProps {
@@ -30,13 +25,10 @@ const SelectCompetitor = ({
     setInputValue,
     setJustSelected,
 }: SelectCompetitorProps) => {
-    const handleSelect = (value: string) => {
-        const selectedResult = resultsToDoubleCheck.find((r) => r.id === value);
-        if (selectedResult) {
-            setJustSelected(true);
-            setResult(selectedResult);
-            setInputValue(selectedResult.person.registrantId?.toString() || "");
-        }
+    const handleSelect = (value: ResultToDoubleCheck) => {
+        setJustSelected(true);
+        setResult(value);
+        setInputValue(value.person.registrantId?.toString() || "");
     };
 
     const handleChangeIdInput = (event: ChangeEvent<HTMLInputElement>) => {
@@ -64,34 +56,14 @@ const SelectCompetitor = ({
                 value={inputValue}
                 onChange={handleChangeIdInput}
             />
-            <DarkMode>
-                <FormControl>
-                    <AutoComplete
-                        openOnFocus
-                        onChange={handleSelect}
-                        value={result?.id || ""}
-                    >
-                        <AutoCompleteInput
-                            placeholder="Search"
-                            _placeholder={{
-                                color: "gray.200",
-                            }}
-                            borderColor="white"
-                        />
-                        <AutoCompleteList>
-                            {resultsToDoubleCheck.map((r) => (
-                                <AutoCompleteItem
-                                    key={r.id}
-                                    value={r.id}
-                                    label={r.combinedName}
-                                >
-                                    {r.combinedName}
-                                </AutoCompleteItem>
-                            ))}
-                        </AutoCompleteList>
-                    </AutoComplete>
-                </FormControl>
-            </DarkMode>
+            <Autocomplete
+                options={resultsToDoubleCheck}
+                selectedValue={result}
+                onOptionSelect={handleSelect}
+                getOptionLabel={(option) => option.person.name}
+                placeholder="Search for a person"
+                autoFocus
+            />
         </Box>
     );
 };

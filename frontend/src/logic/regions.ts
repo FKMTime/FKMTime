@@ -1,4 +1,6 @@
-const regions = [
+import { Region } from "./interfaces";
+
+const regions: Region[] = [
     {
         id: "WR",
         name: "World",

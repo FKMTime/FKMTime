@@ -168,12 +168,11 @@ const CreateUserModal = ({ isOpen, onClose }: CreateUserModalProps) => {
                         <TabPanel>
                             <Box display="flex" gap="5" flexDirection="column">
                                 <WCAPersonsAutocomplete
-                                    value={userData.wcaId || ""}
                                     onSelect={(person) =>
                                         setUserData({
                                             ...userData,
-                                            wcaId: person.wcaId,
-                                            fullName: person.name,
+                                            wcaId: person?.wcaId,
+                                            fullName: person?.name || "",
                                         })
                                     }
                                 />

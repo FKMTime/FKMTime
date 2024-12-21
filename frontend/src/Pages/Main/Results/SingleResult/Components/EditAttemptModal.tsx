@@ -11,6 +11,7 @@ import { useAtomValue } from "jotai";
 import { FormEvent, useEffect, useState } from "react";
 
 import AttemptResultInput from "@/Components/AttemptResultInput";
+import Autocomplete from "@/Components/Autocomplete";
 import { Modal } from "@/Components/Modal";
 import PenaltySelect from "@/Components/PenaltySelect";
 import Select from "@/Components/Select";
@@ -227,23 +228,20 @@ const EditAttemptModal = ({
                 />
                 <FormControl>
                     <FormLabel>Judge</FormLabel>
-                    <Select
-                        value={editedAttempt.judgeId || ""}
-                        disabled={isLoading}
-                        placeholder="Select judge"
-                        onChange={(e) =>
+                    <Autocomplete
+                        options={persons}
+                        selectedValue={editedAttempt.judge || null}
+                        onOptionSelect={(person) => {
                             setEditedAttempt({
                                 ...editedAttempt,
-                                judgeId: e.target.value,
-                            })
+                                judgeId: person.id,
+                                judge: person,
+                            });
+                        }}
+                        getOptionLabel={(option: Person) =>
+                            getPersonNameAndRegistrantId(option)
                         }
-                    >
-                        {persons.map((person) => (
-                            <option key={person.id} value={person.id}>
-                                {getPersonNameAndRegistrantId(person)}
-                            </option>
-                        ))}
-                    </Select>
+                    />
                 </FormControl>
                 {attempt.scrambler ? (
                     <Text>

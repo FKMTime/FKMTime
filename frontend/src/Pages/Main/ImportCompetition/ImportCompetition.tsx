@@ -22,7 +22,6 @@ const ImportCompetition = () => {
     const toast = useToast();
     const userInfo = getUserInfo();
     const [competitions, setCompetitions] = useState<WCACompetition[]>([]);
-    const [competitionId, setCompetitionId] = useState<string>("");
     const setCompetition = useSetAtom(competitionAtom);
 
     const handleSubmit = async (wcaId: string) => {
@@ -46,8 +45,8 @@ const ImportCompetition = () => {
         }
     };
 
-    const handleSelect = (competition: WCACompetition) => {
-        setCompetitionId(competition.id);
+    const handleSelect = (competition: WCACompetition | null) => {
+        if (!competition) return;
         setCompetitions((prev) => [...prev, competition]);
     };
 
@@ -91,10 +90,7 @@ const ImportCompetition = () => {
                 </Box>
             </Box>
             {userInfo.isWcaAdmin && (
-                <CompetitionsAutocomplete
-                    onSelect={handleSelect}
-                    value={competitionId}
-                />
+                <CompetitionsAutocomplete onSelect={handleSelect} />
             )}
             <Box display="flex" flexDirection="column" gap="5">
                 {competitions.length > 0 ? (
