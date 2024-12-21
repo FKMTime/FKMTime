@@ -12,7 +12,8 @@
     "format:check": "prettier --check \"src/**/*.ts\" \"src/**/*.tsx\"",
     "preview": "vite preview",
     "test": "vitest watch",
-    "test:no-watch": "vitest run"
+    "test:no-watch": "vitest run",
+    "preinstall": "node -e \"if (process.arch === 'arm64') { console.log('Installing arm64-specific dev dependencies...'); require('child_process').execSync('npm install @rollup/rollup-linux-arm64-gnu --save-dev --no-save', {stdio: 'inherit'}); }\""
   },
   "dependencies": {
     "@chakra-ui/react": "^2.8.2",
