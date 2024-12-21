@@ -108,7 +108,6 @@ const IncidentForm = ({
                         })
                     }
                     value={editedIncident.judge}
-                    autoFocus
                     disabled={isLoading}
                 />
             </FormControl>

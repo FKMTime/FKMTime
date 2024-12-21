@@ -82,13 +82,14 @@ const CreateAttemptModal = ({
 
     const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
         e.preventDefault();
-        if (!selectedCompetitor) {
+        const selectedCompetitorId = competitorId ? competitorId : selectedCompetitor?.id;
+        if (!selectedCompetitor && !competitorId) {
             return toast({
                 title: "Competitor is required",
                 status: "error",
             });
         }
-        if (selectedJudge && selectedCompetitor.id === selectedJudge.id) {
+        if (selectedJudge && selectedCompetitorId === selectedJudge.id) {
             return toast({
                 title: "Judge cannot be the same as competitor",
                 status: "error",
@@ -96,7 +97,7 @@ const CreateAttemptModal = ({
         }
         if (
             selectedScrambler &&
-            selectedCompetitor.id === selectedScrambler.id
+            selectedCompetitorId === selectedScrambler.id
         ) {
             return toast({
                 title: "Scrambler cannot be the same as competitor",
@@ -108,7 +109,7 @@ const CreateAttemptModal = ({
         const data = {
             roundId,
             status: attemptStatus,
-            competitorId: selectedCompetitor.id,
+            competitorId: selectedCompetitorId,
             judgeId: selectedJudge ? selectedJudge.id : undefined,
             scramblerId: selectedScrambler ? selectedScrambler.id : undefined,
             deviceId: deviceId,

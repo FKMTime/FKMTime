@@ -141,6 +141,7 @@ export const getSubmittedAttempts = (attempts: Attempt[]) => {
             attempt.replacedBy === null &&
             !attemptsToReturn.some((a) => a.id === attempt.id) &&
             attempt.status !== AttemptStatus.UNRESOLVED &&
+            attempt.status !== AttemptStatus.EXTRA_GIVEN &&
             attempt.status !== AttemptStatus.SCRAMBLED
         ) {
             attemptsToReturn.push({

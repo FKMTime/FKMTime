@@ -23,6 +23,13 @@ export const applicationQuickActions: ApplicationQuickAction[] = [
         giveExtra: true,
         comment: "Distraction",
     },
+    {
+        id: "timerMalfunction",
+        name: "Timer malfunction",
+        color: "orange",
+        giveExtra: true,
+        comment: "Timer malfunction",
+    },
 ];
 
 export const getQuickActions = async () => {
