@@ -17,7 +17,7 @@ import PenaltySelect from "@/Components/PenaltySelect";
 import PersonAutocomplete from "@/Components/PersonAutocomplete";
 import Select from "@/Components/Select";
 import { createAttempt } from "@/logic/attempt";
-import { DNF_VALUE } from "@/logic/constants";
+import { DNF_VALUE, DNS_VALUE } from "@/logic/constants";
 import { getAllDevices } from "@/logic/devices";
 import {
     AttemptStatus,
@@ -68,6 +68,10 @@ const CreateAttemptModal = ({
     const [deviceId, setDeviceId] = useState<string>("");
 
     const submissionPlatform = getSubmissionPlatformName(roundId.split("-")[0]);
+    const isTimeRequired =
+        attemptStatus !== AttemptStatus.EXTRA_GIVEN &&
+        penalty !== DNF_VALUE &&
+        penalty !== DNS_VALUE;
 
     useEffect(() => {
         if (isOpen) {
@@ -82,8 +86,10 @@ const CreateAttemptModal = ({
 
     const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
         e.preventDefault();
-        const selectedCompetitorId = competitorId ? competitorId : selectedCompetitor?.id;
-        if (!selectedCompetitor && !competitorId) {
+        const selectedCompetitorId = competitorId
+            ? competitorId
+            : selectedCompetitor?.id;
+        if (!selectedCompetitorId) {
             return toast({
                 title: "Competitor is required",
                 status: "error",
@@ -224,12 +230,13 @@ const CreateAttemptModal = ({
                         Time limit not passed, time should be replaced to DNF
                     </Alert>
                 )}
-                <FormControl>
+                <FormControl isRequired={isTimeRequired}>
                     <FormLabel>Time</FormLabel>
                     <AttemptResultInput
                         value={value}
                         onChange={setValue}
                         disabled={isLoading}
+                        required={isTimeRequired}
                     />
                 </FormControl>
                 <PenaltySelect
