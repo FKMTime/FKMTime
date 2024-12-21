@@ -27,7 +27,7 @@
     "chakra-ui-confirm": "^0.1.4",
     "crypto-js": "^4.2.0",
     "framer-motion": "^11.5.4",
-    "jotai": "^2.10.1",
+    "jotai": "^2.10.4",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-icons": "^5.0.1",
