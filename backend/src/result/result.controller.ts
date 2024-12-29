@@ -90,6 +90,7 @@ export class ResultController {
     );
   }
 
+  @HttpCode(HttpStatus.OK)
   @UseGuards(AuthGuard('jwt'), AdminGuard)
   @Get(':id/enter')
   async enterWholeScorecardToWcaLiveOrCubingContests(@Param('id') id: string) {

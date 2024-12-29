@@ -24,7 +24,7 @@ export class StatisticsService {
     const scorecardsCount = await this.prisma.result.count();
     const personsCompeted = await this.prisma.person.count({
       where: {
-        Result: {
+        results: {
           some: {},
         },
       },

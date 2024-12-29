@@ -29,6 +29,10 @@ export class CreateAttemptDto {
   @IsOptional()
   judgeId?: string;
 
+  @IsString()
+  @IsOptional()
+  scramblerId?: string;
+
   @IsInt()
   @IsOptional()
   replacedBy: number;

@@ -4,7 +4,7 @@ import { backendRequest } from "./request";
 const EVENTS_KEY = "fkmtime-events";
 
 export const getEvents = async () => {
-    const response = await backendRequest("events", "GET", true);
+    const response = await backendRequest("events", "GET", false);
     const data = await response.json();
     localStorage.setItem(EVENTS_KEY, JSON.stringify(data));
     return data;

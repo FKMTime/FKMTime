@@ -26,14 +26,10 @@ const CheckIn = () => {
     const [scannedCard, setScannedCard] = useState<string>("");
     const [totalPersons, setTotalPersons] = useState<number>(0);
     const [personsCheckedIn, setPersonsCheckedIn] = useState<number>(0);
-    const [
-        personsWithoutGiftpackCollected,
-        setPersonsWithoutGiftpackCollected,
-    ] = useState<Person[]>([]);
     const cardInputRef: RefObject<HTMLInputElement> =
         useRef<HTMLInputElement>(null);
     const [personData, setPersonData] = useState<Person | null>();
-    const [selectedPersonId, setSelectedPersonId] = useState<string>("");
+    const [selectedPerson, setSelectedPerson] = useState<Person | null>();
     const [cardShouldBeAssigned, setCardShouldBeAssigned] =
         useState<boolean>(false);
 
@@ -88,7 +84,7 @@ const CheckIn = () => {
             await fetchData();
             setPersonData(null);
             setScannedCard("");
-            setSelectedPersonId("");
+            setSelectedPerson(null);
             setCardShouldBeAssigned(false);
             cardInputRef.current?.focus();
         } else if (res.status === 409) {
@@ -106,9 +102,8 @@ const CheckIn = () => {
         }
     };
 
-    const handleSelectPerson = (id: string) => {
-        const person = personsWithoutGiftpackCollected.find((p) => p.id === id);
-        setSelectedPersonId(id);
+    const handleSelectPerson = (person: Person) => {
+        setSelectedPerson(person);
         if (!person) {
             toast({
                 title: "Already checked in",
@@ -116,7 +111,7 @@ const CheckIn = () => {
                 status: "warning",
             });
             setTimeout(() => {
-                setSelectedPersonId("");
+                setSelectedPerson(null);
             }, 500);
         }
         setPersonData(person);
@@ -131,7 +126,6 @@ const CheckIn = () => {
         const data = await checkedInCount();
         setPersonsCheckedIn(data.checkedInPersonsCount);
         setTotalPersons(data.totalPersonsCount);
-        setPersonsWithoutGiftpackCollected(data.personsWhoDidNotCheckIn);
     };
     useEffect(() => {
         fetchData();
@@ -154,7 +148,7 @@ const CheckIn = () => {
                 <Text>Scan the card of the competitor</Text>
                 <PersonAutocomplete
                     onSelect={handleSelectPerson}
-                    value={selectedPersonId}
+                    value={selectedPerson}
                 />
                 <FormControl
                     display="flex"

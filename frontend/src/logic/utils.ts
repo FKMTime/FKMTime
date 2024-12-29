@@ -1,4 +1,5 @@
 import { activityCodeToName, Competition } from "@wca/helpers";
+import * as CryptoJS from "crypto-js";
 
 import { DNF_VALUE } from "./constants";
 import { getEventShortName, isUnofficialEvent } from "./events";
@@ -132,36 +133,34 @@ export const getExtra = (originalAttemptId: string, attempts: Attempt[]) => {
 
 export const getSubmittedAttempts = (attempts: Attempt[]) => {
     const attemptsToReturn: AttemptWithNumber[] = [];
-    attempts
-        .sort((a, b) => a.attemptNumber - b.attemptNumber)
-        .forEach((attempt) => {
-            if (
-                attempt.replacedBy === null &&
-                attempt.type === AttemptType.STANDARD_ATTEMPT &&
-                (attempt.status === AttemptStatus.STANDARD ||
-                    attempt.status === AttemptStatus.RESOLVED) &&
-                !attemptsToReturn.some((a) => a.id === attempt.id)
-            ) {
+    const standardAttempts = attempts
+        .filter((attempt) => attempt.type === AttemptType.STANDARD_ATTEMPT)
+        .sort((a, b) => a.attemptNumber - b.attemptNumber);
+    standardAttempts.forEach((attempt) => {
+        if (
+            attempt.replacedBy === null &&
+            !attemptsToReturn.some((a) => a.id === attempt.id) &&
+            attempt.status !== AttemptStatus.UNRESOLVED &&
+            attempt.status !== AttemptStatus.EXTRA_GIVEN &&
+            attempt.status !== AttemptStatus.SCRAMBLED
+        ) {
+            attemptsToReturn.push({
+                ...attempt,
+                number: attemptsToReturn.length + 1,
+            });
+        } else if (
+            attempt.replacedBy !== null &&
+            attempt.status === AttemptStatus.EXTRA_GIVEN
+        ) {
+            const extraAttempt = getExtra(attempt.id, attempts);
+            if (extraAttempt && !attemptsToReturn.includes(extraAttempt)) {
                 attemptsToReturn.push({
-                    ...attempt,
+                    ...extraAttempt,
                     number: attemptsToReturn.length + 1,
                 });
-            } else if (
-                attempt.replacedBy !== null &&
-                attempt.status === AttemptStatus.EXTRA_GIVEN
-            ) {
-                const extraAttempt = getExtra(attempt.id, attempts);
-                if (
-                    extraAttempt &&
-                    !attemptsToReturn.some((a) => a.id === extraAttempt.id)
-                ) {
-                    attemptsToReturn.push({
-                        ...extraAttempt,
-                        number: attempt.attemptNumber,
-                    });
-                }
             }
-        });
+        }
+    });
     return attemptsToReturn
         .sort((a, b) => a.number - b.number)
         .map((a) => a as Attempt);
@@ -222,6 +221,10 @@ export const prettyAttemptStatus = (
                 : "Incident resolved, leave as is";
         case AttemptStatus.EXTRA_GIVEN:
             return "Extra given";
+        case AttemptStatus.SCRAMBLED:
+            return "Scrambled";
+        default:
+            return "Unknown";
     }
 };
 
@@ -291,4 +294,10 @@ export const numberToLetter = (number: number) => {
 
 export const letterToNumber = (letter: string) => {
     return letter.charCodeAt(0) - 64;
+};
+
+export const decryptText = (encryptedText: string, password: string) => {
+    return CryptoJS.AES.decrypt(encryptedText, password).toString(
+        CryptoJS.enc.Utf8
+    );
 };

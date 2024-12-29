@@ -18,6 +18,10 @@ export class LoggerMiddleware implements NestMiddleware {
         this.logger.log(
           `Logging HTTP request ${req.method} ${req.originalUrl} ${res.statusCode} from user ${user.userId}`,
         );
+      } else if (req.headers.authorization.startsWith('Token ')) {
+        this.logger.log(
+          `Logging HTTP request ${req.method} ${req.originalUrl} ${res.statusCode} with Token ${req.headers.authorization.split('Token ')[1]}`,
+        );
       } else {
         this.logger.log(
           `Logging HTTP request ${req.method} ${req.originalUrl} ${res.statusCode} with API Token ${req.method !== 'GET' ? JSON.stringify(req.body) : ''}`,

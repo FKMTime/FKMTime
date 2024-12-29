@@ -228,15 +228,6 @@ const SingleResult = () => {
                     )}
                 </Box>
                 <Box display="flex" flexDirection="column" gap={3}>
-                    {isDifferenceBetweenResults &&
-                        !isUnofficialEvent(result.eventId) && (
-                            <Alert status="error" color="black">
-                                <AlertIcon />
-                                There is a difference between results in WCA
-                                Live and FKM. Please check it manually, fix in
-                                FKM and resubmit scorecard to WCA Live.
-                            </Alert>
-                        )}
                     <Heading mt={3}>
                         Limits for {activityCodeToName(result.roundId)}
                     </Heading>
@@ -264,6 +255,16 @@ const SingleResult = () => {
                     Assign DNS on remaing attempts
                 </Button>
             )}
+            {isDifferenceBetweenResults &&
+                !isUnofficialEvent(result.eventId) && (
+                    <Alert status="error" color="black">
+                        <AlertIcon />
+                        There is a difference between results in WCA Live and
+                        FKM. Please check it manually, fix in FKM and resubmit
+                        scorecard to WCA Live.
+                    </Alert>
+                )}
+
             <Box display="flex" gap="5" alignItems="center">
                 <Heading mt={3}>Attempts</Heading>
                 <PlusButton

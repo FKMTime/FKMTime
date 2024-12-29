@@ -7,6 +7,15 @@ import App from "./App";
 import { ConfirmProvider } from "chakra-ui-confirm";
 import { Provider } from "./Components/ui/provider";
 
+declare global {
+    namespace JSX {
+        interface IntrinsicElements {
+            //eslint-disable-next-line @typescript-eslint/no-explicit-any
+            "scramble-display": any;
+        }
+    }
+}
+
 ReactDOM.createRoot(document.getElementById("root")!).render(
     <Provider>
         <ConfirmProvider>

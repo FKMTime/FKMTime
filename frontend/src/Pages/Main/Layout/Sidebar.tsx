@@ -68,7 +68,7 @@ const Sidebar = ({
             </Circle>
             <Box
                 height="fit-content"
-                width={{ base: "100%", "2xl": "20vh" }}
+                width={{ base: "100%", "2xl": "25vh" }}
                 display={{ base: "none", "2xl": "flex" }}
             >
                 <SidebarContent

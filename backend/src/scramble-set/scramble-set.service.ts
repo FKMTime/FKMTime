@@ -94,4 +94,21 @@ export class ScrambleSetService {
       message: 'All scramble sets deleted successfully',
     };
   }
+
+  async getScrambleSetById(id: string) {
+    const set = await this.prisma.scrambleSet.findUnique({
+      where: {
+        id,
+      },
+      select: {
+        id: true,
+        roundId: true,
+        set: true,
+      },
+    });
+    if (!set) {
+      throw new HttpException('Scramble set not found', HttpStatus.NOT_FOUND);
+    }
+    return set;
+  }
 }

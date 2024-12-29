@@ -1,10 +1,24 @@
 import { getUserInfo } from "@/logic/auth.ts";
+import { getScramblingDeviceToken } from "@/logic/scramblingDevicesAuth";
 
 import { Competition, WCACompetition } from "./interfaces";
-import { backendRequest, wcaApiRequest } from "./request";
+import {
+    backendRequest,
+    scramblingDeviceBackendRequest,
+    wcaApiRequest,
+} from "./request";
 
 export const getCompetitionInfo = async () => {
-    const response = await backendRequest("competition", "GET", true);
+    const isScramblignDeviceToken = getScramblingDeviceToken() !== null;
+    let response: Response | null = null;
+    if (isScramblignDeviceToken) {
+        response = await scramblingDeviceBackendRequest(
+            "competition/for/scrambling-device",
+            "GET"
+        );
+    } else {
+        response = await backendRequest("competition", "GET", true);
+    }
     const data = await response.json();
     return {
         status: response.status,

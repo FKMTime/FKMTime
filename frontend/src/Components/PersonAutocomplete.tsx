@@ -1,19 +1,18 @@
-import { DarkMode, FormControl } from "@chakra-ui/react";
-import {
-    AutoComplete,
-    AutoCompleteInput,
-    AutoCompleteItem,
-    AutoCompleteList,
-} from "@choc-ui/chakra-autocomplete";
-import { ChangeEvent, useState } from "react";
+import { FormControl } from "@chakra-ui/react";
+import { useCallback, useEffect, useState } from "react";
 
 import { Person } from "@/logic/interfaces";
-import { getPersonNameAndRegistrantId, getPersons } from "@/logic/persons.ts";
+import {
+    getAllPersons,
+    getPersonNameAndRegistrantId,
+} from "@/logic/persons.ts";
+
+import Autocomplete from "./Autocomplete";
 
 interface PersonAutocompleteProps {
-    onSelect: (value: string) => void;
+    onSelect: (value: Person) => void;
     autoFocus?: boolean;
-    value?: string;
+    value?: Person | null;
     disabled?: boolean;
     withoutCardAssigned?: boolean;
 }
@@ -26,62 +25,28 @@ const PersonAutocomplete = ({
     withoutCardAssigned,
 }: PersonAutocompleteProps) => {
     const [persons, setPersons] = useState<Person[]>([]);
-    const [isLoading, setIsLoading] = useState<boolean>(false);
 
-    const handleSearch = async (searchValue: string) => {
-        setIsLoading(true);
-        const response = await getPersons(
-            1,
-            10,
-            searchValue,
-            undefined,
-            withoutCardAssigned
-        );
-        if (response.data.length === 0) {
-            setIsLoading(false);
-            return;
-        }
-        setPersons(response.data);
-        setIsLoading(false);
-    };
+    const fetchPersons = useCallback(async () => {
+        const data = await getAllPersons(withoutCardAssigned);
+        setPersons(data);
+    }, [withoutCardAssigned]);
+
+    useEffect(() => {
+        fetchPersons();
+    }, [fetchPersons, withoutCardAssigned]);
 
     return (
-        <DarkMode>
-            <FormControl>
-                <AutoComplete
-                    openOnFocus
-                    onChange={onSelect}
-                    value={value}
-                    isLoading={isLoading}
-                >
-                    <AutoCompleteInput
-                        autoFocus={autoFocus}
-                        autoComplete="off"
-                        placeholder="Search for a person"
-                        _placeholder={{
-                            color: "gray.200",
-                        }}
-                        onChange={(e: ChangeEvent<HTMLInputElement>) =>
-                            handleSearch(e.target.value)
-                        }
-                        disabled={disabled}
-                        borderColor="white"
-                        id="searchInput"
-                    />
-                    <AutoCompleteList>
-                        {persons.map((person) => (
-                            <AutoCompleteItem
-                                key={person.id}
-                                value={person.id}
-                                label={getPersonNameAndRegistrantId(person)}
-                            >
-                                {getPersonNameAndRegistrantId(person)}
-                            </AutoCompleteItem>
-                        ))}
-                    </AutoCompleteList>
-                </AutoComplete>
-            </FormControl>
-        </DarkMode>
+        <FormControl>
+            <Autocomplete
+                options={persons}
+                selectedValue={value || null}
+                onOptionSelect={(option) => onSelect(option)}
+                getOptionLabel={getPersonNameAndRegistrantId}
+                placeholder="Search for a person"
+                disabled={disabled}
+                autoFocus={autoFocus}
+            />
+        </FormControl>
     );
 };
 

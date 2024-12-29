@@ -1,4 +1,5 @@
 import { getToken } from "./auth";
+import { getScramblingDeviceToken } from "./scramblingDevicesAuth";
 
 const DEV_BACKEND_URL = import.meta.env.VITE_BACKEND_ORIGIN
     ? import.meta.env.VITE_BACKEND_ORIGIN
@@ -36,6 +37,23 @@ export const backendRequest = (
     if (token && useAuth) {
         headers.append("Authorization", `Bearer ${token}`);
     }
+    return fetch(`${BACKEND_URL}/${path}`, {
+        method: method,
+        headers: headers,
+        redirect: "follow",
+        body: JSON.stringify(body),
+    });
+};
+
+export const scramblingDeviceBackendRequest = (
+    path: string,
+    method: string,
+    body?: unknown
+) => {
+    const token = getScramblingDeviceToken();
+    const headers = new Headers();
+    headers.append("Content-Type", "application/json");
+    headers.append("Authorization", `Token ${token}`);
     return fetch(`${BACKEND_URL}/${path}`, {
         method: method,
         headers: headers,

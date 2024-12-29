@@ -17,13 +17,14 @@ import PenaltySelect from "@/Components/PenaltySelect";
 import PersonAutocomplete from "@/Components/PersonAutocomplete";
 import Select from "@/Components/Select";
 import { createAttempt } from "@/logic/attempt";
-import { DNF_VALUE } from "@/logic/constants";
+import { DNF_VALUE, DNS_VALUE } from "@/logic/constants";
 import { getAllDevices } from "@/logic/devices";
 import {
     AttemptStatus,
     AttemptType,
     Device,
     DeviceType,
+    Person,
 } from "@/logic/interfaces";
 import {
     getSubmissionPlatformName,
@@ -49,9 +50,12 @@ const CreateAttemptModal = ({
     const toast = useToast();
     const [devices, setDevices] = useState<Device[]>([]);
     const [isLoading, setIsLoading] = useState<boolean>(false);
-    const [selectedJudgeId, setSelectedJudgeId] = useState<string>("");
-    const [selectedCompetitorId, setSelectedCompetitorId] = useState<string>(
-        competitorId || ""
+    const [selectedJudge, setSelectedJudge] = useState<Person | null>(null);
+    const [selectedScrambler, setSelectedScrambler] = useState<Person | null>(
+        null
+    );
+    const [selectedCompetitor, setSelectedCompetitor] = useState<Person | null>(
+        null
     );
     const [attemptStatus, setAttemptStatus] = useState<AttemptStatus>(
         AttemptStatus.STANDARD
@@ -64,6 +68,10 @@ const CreateAttemptModal = ({
     const [deviceId, setDeviceId] = useState<string>("");
 
     const submissionPlatform = getSubmissionPlatformName(roundId.split("-")[0]);
+    const isTimeRequired =
+        attemptStatus !== AttemptStatus.EXTRA_GIVEN &&
+        penalty !== DNF_VALUE &&
+        penalty !== DNS_VALUE;
 
     useEffect(() => {
         if (isOpen) {
@@ -78,13 +86,38 @@ const CreateAttemptModal = ({
 
     const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
         e.preventDefault();
+        const selectedCompetitorId = competitorId
+            ? competitorId
+            : selectedCompetitor?.id;
+        if (!selectedCompetitorId) {
+            return toast({
+                title: "Competitor is required",
+                status: "error",
+            });
+        }
+        if (selectedJudge && selectedCompetitorId === selectedJudge.id) {
+            return toast({
+                title: "Judge cannot be the same as competitor",
+                status: "error",
+            });
+        }
+        if (
+            selectedScrambler &&
+            selectedCompetitorId === selectedScrambler.id
+        ) {
+            return toast({
+                title: "Scrambler cannot be the same as competitor",
+                status: "error",
+            });
+        }
         setIsLoading(true);
         const formData = new FormData(e.currentTarget);
         const data = {
             roundId,
             status: attemptStatus,
             competitorId: selectedCompetitorId,
-            judgeId: selectedJudgeId,
+            judgeId: selectedJudge ? selectedJudge.id : undefined,
+            scramblerId: selectedScrambler ? selectedScrambler.id : undefined,
             deviceId: deviceId,
             type: attemptType,
             attemptNumber: formData.get("attemptNumber")
@@ -136,9 +169,9 @@ const CreateAttemptModal = ({
                     <FormControl isRequired>
                         <FormLabel>Competitor</FormLabel>
                         <PersonAutocomplete
-                            value={selectedCompetitorId}
+                            value={selectedCompetitor}
                             disabled={isLoading}
-                            onSelect={setSelectedCompetitorId}
+                            onSelect={setSelectedCompetitor}
                         />
                     </FormControl>
                 )}
@@ -197,12 +230,13 @@ const CreateAttemptModal = ({
                         Time limit not passed, time should be replaced to DNF
                     </Alert>
                 )}
-                <FormControl>
+                <FormControl isRequired={isTimeRequired}>
                     <FormLabel>Time</FormLabel>
                     <AttemptResultInput
                         value={value}
                         onChange={setValue}
                         disabled={isLoading}
+                        required={isTimeRequired}
                     />
                 </FormControl>
                 <PenaltySelect
@@ -213,9 +247,17 @@ const CreateAttemptModal = ({
                 <FormControl>
                     <FormLabel>Judge</FormLabel>
                     <PersonAutocomplete
-                        onSelect={setSelectedJudgeId}
+                        onSelect={setSelectedJudge}
                         disabled={isLoading}
-                        value={selectedJudgeId}
+                        value={selectedJudge}
+                    />
+                </FormControl>
+                <FormControl>
+                    <FormLabel>Scrambler</FormLabel>
+                    <PersonAutocomplete
+                        onSelect={setSelectedScrambler}
+                        disabled={isLoading}
+                        value={selectedScrambler}
                     />
                 </FormControl>
                 <FormControl>

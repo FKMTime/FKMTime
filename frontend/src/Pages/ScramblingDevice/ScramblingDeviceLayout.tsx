@@ -1,12 +1,18 @@
-import { Box } from "@chakra-ui/react";
-import { Suspense, useEffect } from "react";
+import { Box, Circle } from "@chakra-ui/react";
+import { useSetAtom } from "jotai";
+import { Suspense, useCallback, useEffect } from "react";
+import { MdHome } from "react-icons/md";
 import { Outlet, useNavigate } from "react-router-dom";
 
 import LoadingPage from "@/Components/LoadingPage";
+import { competitionAtom } from "@/logic/atoms";
+import { getCompetitionInfo } from "@/logic/competition";
+import { getEvents } from "@/logic/events";
 import { isScrambleDeviceTokenValid } from "@/logic/scramblingDevicesAuth";
 
 const ScramblingDeviceLayout = () => {
     const navigate = useNavigate();
+    const setCompetition = useSetAtom(competitionAtom);
 
     useEffect(() => {
         isScrambleDeviceTokenValid().then((isLoggedIn) => {
@@ -17,6 +23,26 @@ const ScramblingDeviceLayout = () => {
         });
     }, [navigate]);
 
+    const fetchCompetition = useCallback(async () => {
+        const response = await getCompetitionInfo();
+        if (response.status === 404) {
+            navigate("/competition/import");
+        }
+        setCompetition(response.data);
+    }, [navigate, setCompetition]);
+
+    const fetchEvents = async () => {
+        await getEvents();
+    };
+
+    useEffect(() => {
+        fetchCompetition();
+    }, [fetchCompetition]);
+
+    useEffect(() => {
+        fetchEvents();
+    }, []);
+
     return (
         <Box
             width="100%"
@@ -25,6 +51,21 @@ const ScramblingDeviceLayout = () => {
             height="100vh"
             overflowY="auto"
         >
+            <Circle
+                position="fixed"
+                top="1"
+                right="1"
+                backgroundColor="teal.500"
+                fontSize="3rem"
+                color="white"
+                p={2}
+                onClick={() => navigate("/scrambling-device")}
+                size="4rem"
+                zIndex={100}
+                cursor="pointer"
+            >
+                <MdHome />
+            </Circle>
             <Suspense fallback={<LoadingPage />}>
                 <Outlet />
             </Suspense>

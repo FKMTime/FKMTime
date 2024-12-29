@@ -188,6 +188,8 @@ export interface Attempt {
     sessionId?: string;
     judgeId?: string;
     judge?: Person;
+    scramblerId?: string;
+    scrambler?: Person;
     deviceId?: string;
     device?: Device;
     updatedBy?: User;
@@ -199,6 +201,7 @@ export enum AttemptStatus {
     UNRESOLVED = "UNRESOLVED",
     RESOLVED = "RESOLVED",
     EXTRA_GIVEN = "EXTRA_GIVEN",
+    SCRAMBLED = "SCRAMBLED",
 }
 
 //eslint-disable-next-line
@@ -348,6 +351,18 @@ export interface Scramble {
     encryptedScramble: string;
 }
 
+export interface DecryptedScramble {
+    id: string;
+    num: number;
+    isExtra: boolean;
+    scramble: string;
+}
+
+export interface ScrambleData {
+    num: number;
+    isExtra: boolean;
+}
+
 export interface ImportedScrambleSet {
     roundId: string;
     set: string;
@@ -358,4 +373,11 @@ export interface ImportedScramble {
     num: number;
     isExtra: boolean;
     encryptedScramble: string;
+}
+
+export interface Region {
+    id: string;
+    name: string;
+    continentId: string;
+    iso2: string;
 }

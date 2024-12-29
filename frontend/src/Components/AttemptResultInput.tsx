@@ -15,6 +15,7 @@ interface AttemptResultInputProps {
     onChange: (value: number) => void;
     disabled: boolean;
     placeholder?: string;
+    required?: boolean;
 }
 
 const AttemptResultInput = ({
@@ -22,6 +23,7 @@ const AttemptResultInput = ({
     onChange,
     disabled,
     placeholder,
+    required,
 }: AttemptResultInputProps) => {
     const [prevValue, setPrevValue] = useState<number>(value);
     const [draftInput, setDraftInput] = useState<string>(
@@ -53,6 +55,7 @@ const AttemptResultInput = ({
             placeholder={placeholder || "Time"}
             _placeholder={{ color: "white" }}
             disabled={disabled}
+            required={required}
         />
     );
 };

@@ -2,13 +2,14 @@ import { Box, Heading, Input, useToast } from "@chakra-ui/react";
 import { RefObject, useEffect, useRef, useState } from "react";
 
 import PersonAutocomplete from "@/Components/PersonAutocomplete.tsx";
+import { Person } from "@/logic/interfaces";
 import { assignCard, getPersonsWithoutCardAssigned } from "@/logic/persons";
 
 const AssignCards = () => {
     const toast = useToast();
     const [cardId, setCardId] = useState<string>("");
     const [personsWithoutCard, setPersonsWithoutCard] = useState<number>(0);
-    const [currentPersonId, setCurrentPersonId] = useState<string>("");
+    const [currentPerson, setCurrentPerson] = useState<Person | null>(null);
     const cardInputRef: RefObject<HTMLInputElement> =
         useRef<HTMLInputElement>(null);
 
@@ -21,8 +22,8 @@ const AssignCards = () => {
     }, []);
 
     const handleSubmit = async () => {
-        if (!currentPersonId) return;
-        const status = await assignCard(currentPersonId, cardId);
+        if (!currentPerson) return;
+        const status = await assignCard(currentPerson.id, cardId);
         if (status === 200) {
             toast({
                 title: "Card assigned",
@@ -30,7 +31,7 @@ const AssignCards = () => {
             });
             setCardId("");
             setPersonsWithoutCard(personsWithoutCard - 1);
-            setCurrentPersonId("");
+            setCurrentPerson(null);
             document.getElementById("searchInput")?.focus();
         } else if (status === 409) {
             toast({
@@ -47,8 +48,8 @@ const AssignCards = () => {
         }
     };
 
-    const handleChangePerson = (value: string) => {
-        setCurrentPersonId(value);
+    const handleChangePerson = (value: Person) => {
+        setCurrentPerson(value);
     };
 
     return (
@@ -66,11 +67,11 @@ const AssignCards = () => {
                 <PersonAutocomplete
                     onSelect={handleChangePerson}
                     withoutCardAssigned={true}
-                    value={currentPersonId}
+                    value={currentPerson}
                     autoFocus={true}
                 />
             </Box>
-            {currentPersonId && (
+            {currentPerson && (
                 <Input
                     placeholder="Card ID"
                     value={cardId}

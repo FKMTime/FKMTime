@@ -26,6 +26,14 @@ export const getPersons = async (
     return await response.json();
 };
 
+export const getAllPersons = async (withoutCardAssigned = false) => {
+    const path = withoutCardAssigned
+        ? "person/all?withoutCardAssigned=true"
+        : "person/all";
+    const response = await backendRequest(path, "GET", true);
+    return await response.json();
+};
+
 export const getPersonById = async (id: string) => {
     const response = await backendRequest(`person/${id}`, "GET", true);
     return await response.json();
@@ -64,11 +72,6 @@ export const checkIn = async (id: string, cardId: string) => {
 
 export const checkedInCount = async () => {
     const response = await backendRequest("person/check-in", "GET", true);
-    return await response.json();
-};
-
-export const getAllPersons = async () => {
-    const response = await backendRequest("person/all", "GET", true);
     return await response.json();
 };
 

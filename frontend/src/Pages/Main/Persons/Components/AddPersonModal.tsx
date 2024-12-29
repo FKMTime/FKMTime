@@ -1,4 +1,5 @@
 import {
+    Alert,
     Box,
     Button,
     Tab,
@@ -52,7 +53,7 @@ const AddPersonModal = ({ isOpen, onClose }: AddPersonModalProps) => {
     };
 
     return (
-        <Modal isOpen={isOpen} onClose={onClose} title="Add staff member">
+        <Modal isOpen={isOpen} onClose={onClose} title="Add person">
             <Box
                 display="flex"
                 flexDirection="column"
@@ -99,7 +100,13 @@ const AddPersonModal = ({ isOpen, onClose }: AddPersonModalProps) => {
                                 setNewPersonData={setNewPersonData}
                             />
                         </TabPanel>
-                        <TabPanel>
+                        <TabPanel display="flex" flexDirection="column" gap="5">
+                            <Alert status="info" textColor="black">
+                                Use this form only if the competitor compete
+                                only in unofficial events. If you want to add a
+                                competitor who registered on the spot please do
+                                it on the WCA Website and sync.
+                            </Alert>
                             <PersonForm
                                 canCompete
                                 isLoading={isLoading}
