@@ -128,7 +128,7 @@ const UnofficialEventCard = ({
                     <ButtonGroup spacing="2">
                         <Button
                             variant="solid"
-                            colorScheme="blue"
+                            colorPalette="blue"
                             onClick={() =>
                                 setIsOpenEditUnofficialEventModal(true)
                             }
@@ -137,7 +137,7 @@ const UnofficialEventCard = ({
                         </Button>
                         <Button
                             variant="solid"
-                            colorScheme="red"
+                            colorPalette="red"
                             onClick={handleDelete}
                         >
                             Delete

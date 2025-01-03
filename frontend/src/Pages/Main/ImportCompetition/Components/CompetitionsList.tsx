@@ -35,7 +35,7 @@ const CompetitionsList = ({
                             <Td>{competition.name}</Td>
                             <Td>
                                 <Button
-                                    colorScheme="green"
+                                    colorPalette="green"
                                     onClick={() =>
                                         handleImportCompetition(competition.id)
                                     }

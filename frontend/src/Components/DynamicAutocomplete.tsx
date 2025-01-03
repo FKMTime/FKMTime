@@ -1,6 +1,7 @@
-import { Box, Input, List, ListItem, useToast } from "@chakra-ui/react";
+import { Box, Input, List, ListItem } from "@chakra-ui/react";
 import React, { useEffect, useRef, useState } from "react";
 
+import { toaster } from "@/Components/ui/toaster";
 import useEscape from "@/hooks/useEscape";
 
 type DynamicAutocompleteProps<T> = {
@@ -20,7 +21,6 @@ const DynamicAutocomplete = <T,>({
     disabled,
     autoFocus,
 }: DynamicAutocompleteProps<T>) => {
-    const toast = useToast();
     const [query, setQuery] = useState<string>("");
     const [filteredOptions, setFilteredOptions] = useState<T[]>([]);
     const [isOpen, setIsOpen] = useState(false);
@@ -50,10 +50,10 @@ const DynamicAutocomplete = <T,>({
             setFilteredOptions(options);
             setIsOpen(true);
         } catch (error) {
-            toast({
+            toaster.create({
                 title: "Error",
                 description: "Failed to fetch options",
-                status: "error",
+                type: "error",
             });
         } finally {
             setIsLoading(false);
@@ -130,11 +130,15 @@ const DynamicAutocomplete = <T,>({
                     maxH="200px"
                     overflowY="auto"
                 >
-                    <List>
+                    <List.Root>
                         {isLoading ? (
-                            <ListItem p={2} textAlign="center" color="gray.500">
+                            <List.Item
+                                p={2}
+                                textAlign="center"
+                                color="gray.500"
+                            >
                                 Loading...
-                            </ListItem>
+                            </List.Item>
                         ) : filteredOptions.length > 0 ? (
                             filteredOptions.map((option, index) => (
                                 <ListItem
@@ -154,11 +158,15 @@ const DynamicAutocomplete = <T,>({
                                 </ListItem>
                             ))
                         ) : (
-                            <ListItem p={2} textAlign="center" color="gray.500">
+                            <List.Item
+                                p={2}
+                                textAlign="center"
+                                color="gray.500"
+                            >
                                 No options found
-                            </ListItem>
+                            </List.Item>
                         )}
-                    </List>
+                    </List.Root>
                 </Box>
             )}
         </Box>

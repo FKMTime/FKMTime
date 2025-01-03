@@ -184,7 +184,7 @@ const Results = () => {
                 {currentRounds.map((roundId) => (
                     <Button
                         key={roundId}
-                        colorScheme="blue"
+                        colorPalette="blue"
                         onClick={() => {
                             navigate(`/results/round/${roundId}`);
                         }}

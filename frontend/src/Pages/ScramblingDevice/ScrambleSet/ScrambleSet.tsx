@@ -112,7 +112,7 @@ const ScrambleSet = () => {
                         />
                     </Box>
                     <Button
-                        colorScheme="green"
+                        colorPalette="green"
                         width="fit-content"
                         onClick={handleUnlock}
                     >

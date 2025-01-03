@@ -31,13 +31,13 @@ const AvailableDeviceCard = ({
             <Text>Device ID: {device.espId}</Text>
             <Text>Type: {prettyAvailableDeviceType(device.type)}</Text>
             <Button
-                colorScheme="green"
+                colorPalette="green"
                 onClick={() => handleAddDeviceRequest(device)}
             >
                 Add
             </Button>
             <Button
-                colorScheme="red"
+                colorPalette="red"
                 onClick={() => handleRemoveDeviceRequest(device.espId)}
             >
                 Remove

@@ -1,19 +1,12 @@
-import {
-    Box,
-    Button,
-    FormControl,
-    FormLabel,
-    HStack,
-    Input,
-    PinInput,
-    PinInputField,
-    useToast,
-    VStack,
-} from "@chakra-ui/react";
-import { FormEvent, useState } from "react";
+import { Box, Input, VStack } from "@chakra-ui/react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import wca from "@/assets/wca.svg";
+import { Button } from "@/Components/ui/button";
+import { Field } from "@/Components/ui/field";
+import { PinInput } from "@/Components/ui/pin-input";
+import { toaster } from "@/Components/ui/toaster";
 import { getScramblingDeviceTokenFromCode } from "@/logic/scramblingDevicesAuth";
 
 interface LoginFormProps {
@@ -26,54 +19,44 @@ const LoginForm = ({
     handleWcaLogin,
     isLoading,
 }: LoginFormProps) => {
-    const toast = useToast();
     const navigate = useNavigate();
     const [enableScramblingDeviceLogin, setEnableScramblingDeviceLogin] =
         useState<boolean>(false);
-    const [code, setCode] = useState<string>("");
+    const [code, setCode] = useState<string[]>(["", "", "", "", "", ""]);
+    const [username, setUsername] = useState<string>("");
+    const [password, setPassword] = useState<string>("");
 
-    const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
-        event.preventDefault();
-        const data = new FormData(event.currentTarget);
-        const username = data.get("username") as string;
-        const password = data.get("password") as string;
+    const handleSubmit = () => {
         handleLogin(username, password);
     };
 
     const handleScramblingDeviceLogin = async () => {
-        const status = await getScramblingDeviceTokenFromCode(code);
+        const status = await getScramblingDeviceTokenFromCode(code.join(""));
         if (status === 201) {
-            toast({
+            toaster.create({
                 title: "Successfully logged in.",
                 description: "You have been successfully logged in.",
-                status: "success",
+                type: "success",
             });
             navigate("/scrambling-device");
         } else if (status === 404) {
-            toast({
+            toaster.create({
                 title: "Error",
-                description: "Wrong code",
-                status: "error",
+                description: "Scrambling device not found",
+                type: "error",
             });
         } else {
-            toast({
+            toaster.create({
                 title: "Error",
                 description: "Something went wrong",
-                status: "error",
+                type: "error",
             });
         }
     };
 
     return (
         <>
-            <Box
-                as="form"
-                width="100%"
-                display="flex"
-                flexDirection="column"
-                gap={3}
-                onSubmit={handleSubmit}
-            >
+            <Box width="100%" display="flex" flexDirection="column" gap={3}>
                 {enableScramblingDeviceLogin ? (
                     <>
                         <Box
@@ -81,37 +64,36 @@ const LoginForm = ({
                             flexDirection="column"
                             gap={3}
                             alignItems="center"
+                            justifyContent="center"
                         >
                             <Button
-                                colorScheme="teal"
                                 onClick={() =>
                                     setEnableScramblingDeviceLogin(false)
                                 }
                                 width="100%"
-                                isDisabled={isLoading}
+                                disabled={isLoading}
                             >
                                 Sign in
                             </Button>
-                            <FormLabel>Enter one-time code</FormLabel>
-
-                            <HStack alignItems="center">
+                            <Field
+                                label="Enter one-time code"
+                                justifyContent="center"
+                                display="flex"
+                                alignItems="center"
+                            >
                                 <PinInput
                                     size="lg"
+                                    type="numeric"
+                                    autoFocus
+                                    count={6}
                                     value={code}
-                                    onChange={setCode}
-                                >
-                                    <PinInputField />
-                                    <PinInputField />
-                                    <PinInputField />
-                                    <PinInputField />
-                                    <PinInputField />
-                                    <PinInputField />
-                                </PinInput>
-                            </HStack>
+                                    onValueChange={(e) => setCode(e.value)}
+                                />
+                            </Field>
                             <Button
-                                colorScheme="green"
+                                colorPalette="green"
                                 onClick={handleScramblingDeviceLogin}
-                                isDisabled={isLoading}
+                                disabled={isLoading}
                             >
                                 Submit
                             </Button>
@@ -120,46 +102,46 @@ const LoginForm = ({
                 ) : (
                     <>
                         <Button
-                            colorScheme="purple"
+                            colorPalette="purple"
                             mt={3}
-                            isDisabled={isLoading}
+                            disabled={isLoading}
                             onClick={() => setEnableScramblingDeviceLogin(true)}
                         >
                             Scrambling device
                         </Button>
-                        <FormControl isRequired>
-                            <FormLabel>Username</FormLabel>
+                        <Field required label="Username">
                             <Input
                                 type="text"
                                 placeholder="Enter username"
-                                name="username"
-                                isDisabled={isLoading}
+                                value={username}
+                                onChange={(e) => setUsername(e.target.value)}
+                                disabled={isLoading}
                             />
-                        </FormControl>
-                        <FormControl isRequired>
-                            <FormLabel>Password</FormLabel>
+                        </Field>
+                        <Field required label="Password">
                             <Input
                                 type="password"
                                 placeholder="Enter password"
-                                name="password"
-                                isDisabled={isLoading}
+                                value={password}
+                                onChange={(e) => setPassword(e.target.value)}
+                                disabled={isLoading}
                             />
-                        </FormControl>
-                        <VStack spacing={4} align="stretch" mt={3}>
+                        </Field>
+                        <VStack gap={4} align="stretch" mt={3}>
                             <Button
-                                colorScheme="green"
-                                type="submit"
-                                isDisabled={isLoading}
+                                disabled={isLoading}
+                                onClick={handleSubmit}
+                                colorPalette="green"
                             >
                                 Sign in
                             </Button>
                             <Button
-                                colorScheme="blue"
+                                colorPalette="cyan"
                                 mt={3}
                                 display="flex"
                                 gap="3"
                                 onClick={handleWcaLogin}
-                                isLoading={isLoading}
+                                disabled={isLoading}
                             >
                                 <img src={wca} alt="WCA" width="25" />
                                 Sign in with WCA

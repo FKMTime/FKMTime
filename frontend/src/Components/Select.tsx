@@ -1,5 +1,12 @@
-import { DarkMode, Select as ChakraSelect } from "@chakra-ui/react";
 import { ChangeEvent, ReactNode } from "react";
+
+import {
+    SelectContent,
+    SelectLabel,
+    SelectRoot,
+    SelectTrigger,
+    SelectValueText,
+} from "@/Components/ui/select";
 
 interface SelectProps {
     width?: string;
@@ -19,21 +26,19 @@ const Select = ({
     placeholder,
 }: SelectProps) => {
     return (
-        <DarkMode>
-            <ChakraSelect
-                width={width}
-                value={value}
-                onChange={onChange}
-                disabled={disabled}
-                borderColor="white"
-                _hover={{
-                    borderColor: "white",
-                }}
-                placeholder={placeholder}
-            >
-                {children}
-            </ChakraSelect>
-        </DarkMode>
+        <SelectRoot
+            onValueChange={onChange}
+            disabled={disabled}
+            value={value}
+            width={width}
+            placeholder={placeholder}
+        >
+            <SelectLabel>{placeholder}</SelectLabel>
+            <SelectTrigger>
+                <SelectValueText placeholder="Select movie" />
+            </SelectTrigger>
+            <SelectContent>{children}</SelectContent>
+        </SelectRoot>
     );
 };
 

@@ -1,9 +1,9 @@
-import { FormControl, FormLabel } from "@chakra-ui/react";
 import { ChangeEvent } from "react";
 
 import { AVAILABLE_PENALTIES } from "@/logic/constants";
 
 import Select from "./Select";
+import { Field } from "./ui/field";
 
 interface PenaltySelectProps {
     value: number;
@@ -23,8 +23,7 @@ const PenaltySelect = ({
     width,
 }: PenaltySelectProps) => {
     return (
-        <FormControl width={width}>
-            {showLabel && <FormLabel>Penalty</FormLabel>}
+        <Field label={showLabel ? "Penalty" : undefined} width={width}>
             <Select
                 value={value.toString()}
                 disabled={disabled}
@@ -42,7 +41,7 @@ const PenaltySelect = ({
                     </option>
                 ))}
             </Select>
-        </FormControl>
+        </Field>
     );
 };
 

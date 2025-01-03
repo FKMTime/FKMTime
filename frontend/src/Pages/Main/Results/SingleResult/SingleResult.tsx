@@ -240,7 +240,7 @@ const SingleResult = () => {
                 </Box>
             </Box>
             <Button
-                colorScheme="yellow"
+                colorPalette="yellow"
                 width={{ base: "100%", md: "fit-content" }}
                 onClick={handleResubmit}
             >
@@ -248,7 +248,7 @@ const SingleResult = () => {
             </Button>
             {standardAttempts.length < maxAttempts && (
                 <Button
-                    colorScheme="green"
+                    colorPalette="green"
                     width={{ base: "100%", md: "fit-content" }}
                     onClick={handleAssignDns}
                 >
@@ -338,7 +338,7 @@ const SingleResult = () => {
                                 />
                             )}
                             <Button
-                                colorScheme="yellow"
+                                colorPalette="yellow"
                                 onClick={() => setIsOpenSwapAttemptsModal(true)}
                                 width={{ base: "100%", md: "20%" }}
                             >

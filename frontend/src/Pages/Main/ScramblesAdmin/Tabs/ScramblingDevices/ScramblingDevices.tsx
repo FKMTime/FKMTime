@@ -43,7 +43,7 @@ const ScramblingDevices = () => {
                 title="Add new device"
             />
             <Button
-                colorScheme="green"
+                colorPalette="green"
                 onClick={() => setIsOpenCreateDeviceModal(true)}
                 display={{ base: "none", md: "flex" }}
                 width="fit-content"

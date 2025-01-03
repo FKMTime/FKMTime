@@ -1,13 +1,6 @@
-import {
-    Box,
-    Button,
-    Checkbox,
-    FormControl,
-    FormLabel,
-    useToast,
-} from "@chakra-ui/react";
+import { Box } from "@chakra-ui/react";
 import { Round, RoundFormat } from "@wca/helpers";
-import { FormEvent, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { MdDelete } from "react-icons/md";
 
 import AttemptResultInput from "@/Components/AttemptResultInput";
@@ -15,6 +8,10 @@ import { Modal } from "@/Components/Modal";
 import PlusButton from "@/Components/PlusButton";
 import RoundedIconButton from "@/Components/RoundedIconButton";
 import Select from "@/Components/Select";
+import { Button } from "@/Components/ui/button";
+import { Checkbox } from "@/Components/ui/checkbox";
+import { Field } from "@/Components/ui/field";
+import { toaster } from "@/Components/ui/toaster";
 import { CUTOFF_ALLOWED } from "@/logic/constants";
 import { getUnofficialEvents } from "@/logic/events";
 import { Event } from "@/logic/interfaces";
@@ -36,15 +33,13 @@ const CreateUnofficialEventModal = ({
     isOpen,
     onClose,
 }: CreateUnofficialEventModalProps) => {
-    const toast = useToast();
     const [isLoading, setIsLoading] = useState(false);
     const [events, setEvents] = useState<Event[]>([]);
     const [selectedEventId, setSelectedEventId] = useState<string>("");
     const [rounds, setRounds] = useState<Round[]>([]);
 
-    const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    const handleSubmit = async () => {
         setIsLoading(true);
-        event.preventDefault();
         const roundsToSend = rounds.map((round) => {
             if (round.cutoff?.attemptResult === 0) {
                 round.cutoff = null;
@@ -56,24 +51,24 @@ const CreateUnofficialEventModal = ({
             roundsToSend
         );
         if (status === 201) {
-            toast({
+            toaster.create({
                 title: "Successfully added unofficial event",
-                status: "success",
+                type: "success",
             });
             setRounds([]);
             setSelectedEventId("");
             onClose();
         } else if (status === 409) {
-            toast({
+            toaster.create({
                 title: "Error",
                 description: "Event already exists",
-                status: "error",
+                type: "error",
             });
         } else {
-            toast({
+            toaster.create({
                 title: "Error",
                 description: "Something went wrong",
-                status: "error",
+                type: "error",
             });
         }
         setIsLoading(false);
@@ -81,10 +76,10 @@ const CreateUnofficialEventModal = ({
 
     const addRound = () => {
         if (rounds.length >= 4) {
-            return toast({
+            return toaster.create({
                 title: "Error",
                 description: "You cannot add more than 4 rounds",
-                status: "error",
+                type: "error",
             });
         }
         setRounds((prev) => {
@@ -153,15 +148,8 @@ const CreateUnofficialEventModal = ({
 
     return (
         <Modal isOpen={isOpen} onClose={onClose} title="Add unofficial event">
-            <Box
-                display="flex"
-                flexDirection="column"
-                gap="5"
-                as="form"
-                onSubmit={handleSubmit}
-            >
-                <FormControl isRequired>
-                    <FormLabel>Event</FormLabel>
+            <Box display="flex" flexDirection="column" gap="5">
+                <Field required label="Event">
                     <Select
                         placeholder="Select event"
                         value={selectedEventId}
@@ -174,7 +162,7 @@ const CreateUnofficialEventModal = ({
                             </option>
                         ))}
                     </Select>
-                </FormControl>
+                </Field>
                 <Box display="flex" gap="3">
                     {selectedEventId && (
                         <PlusButton
@@ -193,10 +181,7 @@ const CreateUnofficialEventModal = ({
                     )}
                 </Box>
                 {rounds.map((round, index) => (
-                    <FormControl key={index}>
-                        <Box display="flex">
-                            <FormLabel>{`Round ${index + 1}`}</FormLabel>
-                        </Box>
+                    <Field key={index} label={`Round ${index + 1}`}>
                         <Box display="flex" flexDirection="column" gap="3">
                             <Select
                                 disabled={isLoading}
@@ -220,24 +205,21 @@ const CreateUnofficialEventModal = ({
                                     updateTimeLimit(round.id, value)
                                 }
                             />
-                            <FormControl>
+                            <Field>
                                 <Checkbox
-                                    isChecked={
+                                    checked={
                                         round.timeLimit?.cumulativeRoundIds &&
                                         round.timeLimit.cumulativeRoundIds
                                             .length > 0
                                     }
-                                    isDisabled={isLoading}
-                                    onChange={(e) =>
-                                        updateCumulative(
-                                            round.id,
-                                            e.target.checked
-                                        )
+                                    disabled={isLoading}
+                                    onCheckedChange={(e) =>
+                                        updateCumulative(round.id, !!e.checked)
                                     }
                                 >
                                     Cumulative
                                 </Checkbox>
-                            </FormControl>
+                            </Field>
                             {CUTOFF_ALLOWED.includes(round.format) && (
                                 <AttemptResultInput
                                     disabled={isLoading}
@@ -249,7 +231,7 @@ const CreateUnofficialEventModal = ({
                                 />
                             )}
                         </Box>
-                    </FormControl>
+                    </Field>
                 ))}
                 <Box
                     display="flex"
@@ -258,15 +240,15 @@ const CreateUnofficialEventModal = ({
                     gap="5"
                 >
                     {!isLoading && (
-                        <Button colorScheme="red" onClick={onClose}>
+                        <Button colorPalette="red" onClick={onClose}>
                             Cancel
                         </Button>
                     )}
                     <Button
-                        colorScheme="green"
-                        type="submit"
-                        isLoading={isLoading}
-                        isDisabled={rounds.length === 0}
+                        colorPalette="green"
+                        loading={isLoading}
+                        disabled={rounds.length === 0}
+                        onClick={handleSubmit}
                     >
                         Add
                     </Button>

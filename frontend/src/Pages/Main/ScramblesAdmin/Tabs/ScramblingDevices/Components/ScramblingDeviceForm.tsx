@@ -89,11 +89,11 @@ const ScramblingDeviceForm = ({
                 gap="5"
             >
                 {!isLoading && (
-                    <Button colorScheme="red" onClick={onCancel}>
+                    <Button colorPalette="red" onClick={onCancel}>
                         Cancel
                     </Button>
                 )}
-                <Button colorScheme="green" type="submit" isLoading={isLoading}>
+                <Button colorPalette="green" type="submit" isLoading={isLoading}>
                     Save
                 </Button>
             </Box>

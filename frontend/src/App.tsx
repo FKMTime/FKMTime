@@ -2,6 +2,7 @@ import { useState } from "react";
 import React from "react";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 
+import { Toaster } from "./Components/ui/toaster";
 import Login from "./Pages/Auth/Login/Login";
 import AssignCards from "./Pages/Main/AssignCards/AssignCards";
 import Attendance from "./Pages/Main/Attendance/Attendance";
@@ -47,10 +48,10 @@ const App = () => {
             path: "/auth/login",
             element: <Login />,
         },
-        {
-            path: "/competition/import",
-            element: <ImportCompetition />,
-        },
+        // {
+        //     path: "/competition/import",
+        //     element: <ImportCompetition />,
+        // },
         {
             path: "/",
             element: <Layout />,
@@ -59,126 +60,126 @@ const App = () => {
                     path: "",
                     element: <Home />,
                 },
-                {
-                    path: "users",
-                    element: <Users />,
-                },
-                {
-                    path: "competition",
-                    element: <Competition />,
-                },
-                {
-                    path: "incidents",
-                    element: <Incidents />,
-                },
-                {
-                    path: "incidents/resolved",
-                    element: <ResolvedIncidents />,
-                },
-                {
-                    path: "incidents/:id",
-                    element: <IncidentPage />,
-                },
-                {
-                    path: "persons",
-                    element: <Persons />,
-                },
-                {
-                    path: "persons/:id/results",
-                    element: <PersonResults />,
-                },
-                {
-                    path: "cards",
-                    element: <AssignCards />,
-                },
-                {
-                    path: "rooms",
-                    element: <Rooms />,
-                },
-                {
-                    path: "results",
-                    element: <Results />,
-                },
-                {
-                    path: "results/public",
-                    element: <PublicView />,
-                },
-                {
-                    path: "results/public/:id",
-                    element: <PublicView />,
-                },
-                {
-                    path: "results/round/:id",
-                    element: <Results />,
-                },
-                {
-                    path: "results/round/:id/double-check",
-                    element: <DoubleCheck />,
-                },
-                {
-                    path: "results/round",
-                    element: <Results />,
-                },
-                {
-                    path: "results/checks",
-                    element: <ResultsChecks />,
-                },
-                {
-                    path: "results/checks/:id",
-                    element: <ResultsChecks />,
-                },
-                {
-                    path: "results/:id",
-                    element: <SingleResult />,
-                },
-                {
-                    path: "settings",
-                    element: <Settings />,
-                },
-                {
-                    path: "devices",
-                    element: <Devices />,
-                },
-                {
-                    path: "scrambles",
-                    element: <ScramblesAdmin />,
-                },
-                {
-                    path: "attendance",
-                    element: <Attendance />,
-                },
-                {
-                    path: "attendance/statistics",
-                    element: <AttendanceStatistics />,
-                },
-                {
-                    path: "attendance/:id",
-                    element: <Attendance />,
-                },
-                {
-                    path: "check-in",
-                    element: <CheckIn />,
-                },
+                // {
+                //     path: "users",
+                //     element: <Users />,
+                // },
+                // {
+                //     path: "competition",
+                //     element: <Competition />,
+                // },
+                // {
+                //     path: "incidents",
+                //     element: <Incidents />,
+                // },
+                // {
+                //     path: "incidents/resolved",
+                //     element: <ResolvedIncidents />,
+                // },
+                // {
+                //     path: "incidents/:id",
+                //     element: <IncidentPage />,
+                // },
+                // {
+                //     path: "persons",
+                //     element: <Persons />,
+                // },
+                // {
+                //     path: "persons/:id/results",
+                //     element: <PersonResults />,
+                // },
+                // {
+                //     path: "cards",
+                //     element: <AssignCards />,
+                // },
+                // {
+                //     path: "rooms",
+                //     element: <Rooms />,
+                // },
+                // {
+                //     path: "results",
+                //     element: <Results />,
+                // },
+                // {
+                //     path: "results/public",
+                //     element: <PublicView />,
+                // },
+                // {
+                //     path: "results/public/:id",
+                //     element: <PublicView />,
+                // },
+                // {
+                //     path: "results/round/:id",
+                //     element: <Results />,
+                // },
+                // {
+                //     path: "results/round/:id/double-check",
+                //     element: <DoubleCheck />,
+                // },
+                // {
+                //     path: "results/round",
+                //     element: <Results />,
+                // },
+                // {
+                //     path: "results/checks",
+                //     element: <ResultsChecks />,
+                // },
+                // {
+                //     path: "results/checks/:id",
+                //     element: <ResultsChecks />,
+                // },
+                // {
+                //     path: "results/:id",
+                //     element: <SingleResult />,
+                // },
+                // {
+                //     path: "settings",
+                //     element: <Settings />,
+                // },
+                // {
+                //     path: "devices",
+                //     element: <Devices />,
+                // },
+                // {
+                //     path: "scrambles",
+                //     element: <ScramblesAdmin />,
+                // },
+                // {
+                //     path: "attendance",
+                //     element: <Attendance />,
+                // },
+                // {
+                //     path: "attendance/statistics",
+                //     element: <AttendanceStatistics />,
+                // },
+                // {
+                //     path: "attendance/:id",
+                //     element: <Attendance />,
+                // },
+                // {
+                //     path: "check-in",
+                //     element: <CheckIn />,
+                // },
             ],
         },
-        {
-            path: "/scrambling-device",
-            element: <ScramblingDeviceLayout />,
-            children: [
-                {
-                    path: "/scrambling-device",
-                    element: <ScramblingDeviceHome />,
-                },
-                {
-                    path: "/scrambling-device/set/:id",
-                    element: <ScrambleSet />,
-                },
-                {
-                    path: "/scrambling-device/set/:id/scrambles",
-                    element: <AllScrambles />,
-                },
-            ],
-        },
+        // {
+        //     path: "/scrambling-device",
+        //     element: <ScramblingDeviceLayout />,
+        //     children: [
+        //         {
+        //             path: "/scrambling-device",
+        //             element: <ScramblingDeviceHome />,
+        //         },
+        //         {
+        //             path: "/scrambling-device/set/:id",
+        //             element: <ScrambleSet />,
+        //         },
+        //         {
+        //             path: "/scrambling-device/set/:id/scrambles",
+        //             element: <AllScrambles />,
+        //         },
+        //     ],
+        // },
         {
             path: "*",
             element: <NotFound />,
@@ -188,6 +189,7 @@ const App = () => {
     return (
         <SocketContext.Provider value={[isConnected, setConnected]}>
             <RouterProvider router={router} />
+            <Toaster />
         </SocketContext.Provider>
     );
 };

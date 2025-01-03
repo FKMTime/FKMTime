@@ -1,8 +1,9 @@
-import { Box, FormControl, FormLabel, Heading } from "@chakra-ui/react";
+import { Box, Heading } from "@chakra-ui/react";
 import { Activity, Event, Round } from "@wca/helpers";
 import { useMemo, useState } from "react";
 
 import Select from "@/Components/Select";
+import { Field } from "@/Components/ui/field";
 import { getGroupsByRoundId } from "@/logic/activities";
 import { getEventName } from "@/logic/events";
 import { Competition, Room } from "@/logic/interfaces";
@@ -49,8 +50,7 @@ const RoomCard = ({
             width={{ base: "100%", md: "fit-content" }}
         >
             <Heading size="md">{room.name}</Heading>
-            <FormControl>
-                <FormLabel>Current event</FormLabel>
+            <Field label="Current event">
                 <Select
                     value={currentEvent}
                     onChange={(event) => {
@@ -78,10 +78,9 @@ const RoomCard = ({
                         </option>
                     ))}
                 </Select>
-            </FormControl>
+            </Field>
             {currentEvent && (
-                <FormControl>
-                    <FormLabel>Current round</FormLabel>
+                <Field label="Current round">
                     <Select
                         value={currentRound}
                         onChange={(event) => {
@@ -101,11 +100,10 @@ const RoomCard = ({
                                 </option>
                             ))}
                     </Select>
-                </FormControl>
+                </Field>
             )}
             {currentRound && (
-                <FormControl>
-                    <FormLabel>Current group</FormLabel>
+                <Field label="Current group">
                     <Select
                         value={currentGroupId}
                         onChange={(event) =>
@@ -125,7 +123,7 @@ const RoomCard = ({
                             </option>
                         ))}
                     </Select>
-                </FormControl>
+                </Field>
             )}
         </Box>
     );

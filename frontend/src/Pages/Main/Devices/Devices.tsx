@@ -177,7 +177,7 @@ const Devices = () => {
                                 title="Add new device"
                             />
                             <Button
-                                colorScheme="green"
+                                colorPalette="green"
                                 onClick={() => setIsOpenCreateDeviceModal(true)}
                                 display={{ base: "none", md: "flex" }}
                             >

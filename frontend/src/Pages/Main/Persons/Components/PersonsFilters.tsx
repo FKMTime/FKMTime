@@ -83,7 +83,7 @@ const PersonsFilters = ({
                         <Box display={{ base: "flex", md: "none" }} mt={2}>
                             <Button
                                 onClick={() => setIsOpenAddPersonModal(true)}
-                                colorScheme="blue"
+                                colorPalette="blue"
                                 width="100%"
                             >
                                 Add person

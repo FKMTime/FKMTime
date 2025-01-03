@@ -37,7 +37,7 @@ const Incidents = () => {
         <Box display="flex" flexDirection="column" gap="5">
             <Heading size="lg">Incidents</Heading>
             <Button
-                colorScheme="yellow"
+                colorPalette="yellow"
                 width={{ base: "100%", md: "fit-content" }}
                 onClick={() => navigate("/incidents/resolved")}
             >

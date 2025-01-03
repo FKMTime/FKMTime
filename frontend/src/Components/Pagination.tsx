@@ -51,32 +51,36 @@ const Pagination = ({
                     textAlign="center"
                 >
                     <IconButton
-                        icon={<FaAngleDoubleLeft />}
                         onClick={() => handlePageChangeWrapper(1)}
                         aria-label="Previous page"
-                        isDisabled={page === 1}
-                    />
+                        disabled={page === 1}
+                    >
+                        <FaAngleDoubleLeft />
+                    </IconButton>
                     <IconButton
-                        icon={<FaAngleLeft />}
                         onClick={() => handlePageChangeWrapper(page - 1)}
                         aria-label="First page"
-                        isDisabled={page === 1}
-                    />
+                        disabled={page === 1}
+                    >
+                        <FaAngleLeft />
+                    </IconButton>
                     <Text>
                         Page {page} of {totalPages}
                     </Text>
                     <IconButton
-                        icon={<FaAngleRight />}
                         onClick={() => handlePageChangeWrapper(page + 1)}
                         aria-label="Next page"
-                        isDisabled={page === totalPages}
-                    />
+                        disabled={page === totalPages}
+                    >
+                        <FaAngleRight />
+                    </IconButton>
                     <IconButton
-                        icon={<FaAngleDoubleRight />}
                         onClick={() => handlePageChangeWrapper(totalPages)}
                         aria-label="Last page"
-                        isDisabled={page === totalPages}
-                    />
+                        disabled={page === totalPages}
+                    >
+                        <FaAngleDoubleRight />
+                    </IconButton>
                 </Box>
             )}
             {totalPages !== 0 && (

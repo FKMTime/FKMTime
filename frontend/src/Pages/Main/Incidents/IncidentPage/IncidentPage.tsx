@@ -115,7 +115,7 @@ const IncidentPage = () => {
             minWidth="20%"
         >
             <Button
-                colorScheme="yellow"
+                colorPalette="yellow"
                 onClick={() =>
                     navigate(`/results/${editedIncident?.result.id}`)
                 }

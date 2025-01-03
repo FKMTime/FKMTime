@@ -1,9 +1,10 @@
-import { Box, useToast } from "@chakra-ui/react";
+import { Box } from "@chakra-ui/react";
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import background from "@/assets/background.jpg";
 import logo from "@/assets/logo.svg";
+import { toaster } from "@/Components/ui/toaster";
 import { login, loginWithWca } from "@/logic/auth";
 import { WCA_CLIENT_ID, WCA_ORIGIN } from "@/logic/request.ts";
 import LoginForm from "@/Pages/Auth/Login/Components/LoginForm";
@@ -14,7 +15,6 @@ const Login = () => {
     const searchParams = new URLSearchParams(window.location.search);
     const code = searchParams.get("code");
     const navigate = useNavigate();
-    const toast = useToast();
     const [isLoading, setIsLoading] = useState<boolean>(code ? true : false);
 
     const handleSubmit = async (username: string, password: string) => {
@@ -26,27 +26,27 @@ const Login = () => {
         (status: number, errorMessage?: string) => {
             setIsLoading(false);
             if (status === 200) {
-                toast({
+                toaster.create({
                     title: "Successfully logged in.",
                     description: "You have been successfully logged in.",
-                    status: "success",
+                    type: "success",
                 });
                 navigate("/");
             } else if (status === 401) {
-                toast({
+                toaster.create({
                     title: "Error",
                     description: "Wrong username or password",
-                    status: "error",
+                    type: "error",
                 });
             } else {
-                toast({
+                toaster.create({
                     title: "Error",
                     description: errorMessage || "Something went wrong",
-                    status: "error",
+                    type: "error",
                 });
             }
         },
-        [navigate, toast]
+        [navigate]
     );
 
     const handleWcaLogin = async () => {

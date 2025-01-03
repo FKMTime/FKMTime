@@ -1,4 +1,4 @@
-import { Box, FormControl, FormLabel, Heading, Text } from "@chakra-ui/react";
+import { Box, Heading, Text } from "@chakra-ui/react";
 import { Event, Room as WCIFRoom, Venue } from "@wca/helpers";
 import { useAtom } from "jotai";
 import { useCallback, useEffect, useState } from "react";
@@ -8,6 +8,7 @@ import { getCompetitionDates } from "wcif-helpers";
 import EventIcon from "@/Components/Icons/EventIcon";
 import LoadingPage from "@/Components/LoadingPage";
 import Select from "@/Components/Select";
+import { Field } from "@/Components/ui/field";
 import { competitionAtom } from "@/logic/atoms";
 import { isAdmin } from "@/logic/auth";
 import {
@@ -134,8 +135,7 @@ const Home = () => {
                         }}
                         gap="5"
                     >
-                        <FormControl width="fit-content">
-                            <FormLabel>Date</FormLabel>
+                        <Field width="fit-content" label="Date">
                             <Select
                                 onChange={(e) => {
                                     setSelectedDate(new Date(e.target.value));
@@ -156,9 +156,8 @@ const Home = () => {
                                     </option>
                                 ))}
                             </Select>
-                        </FormControl>
-                        <FormControl width="fit-content">
-                            <FormLabel>Venue</FormLabel>
+                        </Field>
+                        <Field width="fit-content" label="Venue">
                             <Select
                                 onChange={(e) => {
                                     setSelectedVenue(parseInt(e.target.value));
@@ -178,9 +177,8 @@ const Home = () => {
                                     )
                                 )}
                             </Select>
-                        </FormControl>
-                        <FormControl width="fit-content">
-                            <FormLabel>Room</FormLabel>
+                        </Field>
+                        <Field width="fit-content" label="Room">
                             <Select
                                 onChange={(e) => {
                                     setSelectedRoom(parseInt(e.target.value));
@@ -203,7 +201,7 @@ const Home = () => {
                                         </option>
                                     ))}
                             </Select>
-                        </FormControl>
+                        </Field>
                     </Box>
                 </Box>
                 <CompetitionStatistics />

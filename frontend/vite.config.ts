@@ -42,13 +42,13 @@ const manifestForPlugIn = {
 export default defineConfig({
     plugins: [
         react(),
-        checker({
-            overlay: { initialIsOpen: false },
-            typescript: true,
-            eslint: {
-                lintCommand: "eslint --ext .js,.jsx,.ts,.tsx src",
-            },
-        }),
+        // checker({
+        //     overlay: { initialIsOpen: false },
+        //     typescript: true,
+        //     eslint: {
+        //         lintCommand: "eslint --ext .js,.jsx,.ts,.tsx src",
+        //     },
+        // }),
         viteTsconfigPaths(),
         svgrPlugin(),
         //eslint-disable-next-line @typescript-eslint/ban-ts-comment

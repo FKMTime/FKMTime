@@ -86,7 +86,7 @@ const Scrambling = ({ groupId, scrambles }: ScramblingProps) => {
                     </Heading>
                     <Button
                         onClick={() => setScrambler(null)}
-                        colorScheme="yellow"
+                        colorPalette="yellow"
                     >
                         Change scrambler
                     </Button>

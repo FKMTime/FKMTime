@@ -1,4 +1,4 @@
-import { Td, Tr } from "@chakra-ui/react";
+import { Table } from "@chakra-ui/react";
 import { Event, Round } from "@wca/helpers";
 import { prettyRoundFormat } from "wcif-helpers";
 
@@ -28,22 +28,22 @@ const ScheduleRow = ({ activity, events }: ScheduleRowProps) => {
     );
 
     return (
-        <Tr key={activity.id}>
-            <Td>
+        <Table.Row key={activity.id}>
+            <Table.Cell>
                 {formatTime(activity.startTime)} -{" "}
                 {formatTime(activity.endTime)}
-            </Td>
-            <Td>{formattedRealTime}</Td>
-            <Td>{getActivityName(activity)}</Td>
-            <Td>
+            </Table.Cell>
+            <Table.Cell>{formattedRealTime}</Table.Cell>
+            <Table.Cell>{getActivityName(activity)}</Table.Cell>
+            <Table.Cell>
                 {round &&
                     round.format &&
                     prettyRoundFormat(
                         round?.format,
                         round?.cutoff?.numberOfAttempts
                     )}
-            </Td>
-            <Td
+            </Table.Cell>
+            <Table.Cell
                 title={`For ${cumulativeRoundsToString(round?.timeLimit?.cumulativeRoundIds || [])}`}
             >
                 {round?.timeLimit &&
@@ -51,20 +51,20 @@ const ScheduleRow = ({ activity, events }: ScheduleRowProps) => {
                 {round?.timeLimit?.cumulativeRoundIds?.length || 0 > 1
                     ? "(cumulative)"
                     : ""}
-            </Td>
-            <Td>
+            </Table.Cell>
+            <Table.Cell>
                 {round?.cutoff && resultToString(round?.cutoff?.attemptResult)}
-            </Td>
-            <Td>
+            </Table.Cell>
+            <Table.Cell>
                 {round?.advancementCondition &&
                     `Top ${round.advancementCondition.level}${round?.advancementCondition?.type === "percent" ? "%" : ""}`}
-            </Td>
-            <Td>
+            </Table.Cell>
+            <Table.Cell>
                 {activity.childActivities.length === 0
                     ? ""
                     : activity.childActivities.length}
-            </Td>
-        </Tr>
+            </Table.Cell>
+        </Table.Row>
     );
 };
 

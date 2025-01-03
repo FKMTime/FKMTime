@@ -1,4 +1,4 @@
-import { Box, Input, List, ListItem } from "@chakra-ui/react";
+import { Box, Input, List } from "@chakra-ui/react";
 import React, { useEffect, useRef, useState } from "react";
 
 import useEscape from "@/hooks/useEscape";
@@ -122,9 +122,9 @@ const Autocomplete = <T,>({
                     maxH="200px"
                     overflowY="auto"
                 >
-                    <List>
+                    <List.Root>
                         {filteredOptions.map((option, index) => (
-                            <ListItem
+                            <List.Item
                                 key={index}
                                 p={2}
                                 cursor="pointer"
@@ -138,14 +138,18 @@ const Autocomplete = <T,>({
                                 onClick={() => handleOptionClick(option)}
                             >
                                 {getOptionLabel(option)}
-                            </ListItem>
+                            </List.Item>
                         ))}
                         {filteredOptions.length === 0 && (
-                            <ListItem p={2} textAlign="center" color="gray.500">
+                            <List.Item
+                                p={2}
+                                textAlign="center"
+                                color="gray.500"
+                            >
                                 No options found
-                            </ListItem>
+                            </List.Item>
                         )}
-                    </List>
+                    </List.Root>
                 </Box>
             )}
         </Box>

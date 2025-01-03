@@ -5,7 +5,6 @@ const PlusButton = ({ ...props }: IconButtonProps) => {
     return (
         <IconButton
             {...props}
-            icon={<MdAdd />}
             aria-label="Add"
             bg="white"
             color="black"
@@ -16,7 +15,9 @@ const PlusButton = ({ ...props }: IconButtonProps) => {
                 background: "white",
                 color: "gray.700",
             }}
-        />
+        >
+            <MdAdd />
+        </IconButton>
     );
 };
 

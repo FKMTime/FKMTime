@@ -1,4 +1,4 @@
-import { Card, CardBody, Heading, Text } from "@chakra-ui/react";
+import { Card, Heading, Text } from "@chakra-ui/react";
 import { useNavigate } from "react-router-dom";
 
 import { getActivityName } from "@/logic/activities";
@@ -18,7 +18,7 @@ const ScheduleCard = ({ activity }: ScheduleCardProps) => {
     );
 
     return (
-        <Card
+        <Card.Root
             backgroundColor="teal.500"
             color="white"
             textAlign="center"
@@ -30,7 +30,7 @@ const ScheduleCard = ({ activity }: ScheduleCardProps) => {
                 }
             }}
         >
-            <CardBody display="flex" flexDirection="column" gap="2">
+            <Card.Body display="flex" flexDirection="column" gap="2">
                 <Heading size="md">{getActivityName(activity)}</Heading>
                 <Text>
                     {activity.childActivities.length === 0
@@ -45,8 +45,8 @@ const ScheduleCard = ({ activity }: ScheduleCardProps) => {
                     {formatTime(activity.startTime)} -{" "}
                     {formatTime(activity.endTime)}
                 </Text>
-            </CardBody>
-        </Card>
+            </Card.Body>
+        </Card.Root>
     );
 };
 

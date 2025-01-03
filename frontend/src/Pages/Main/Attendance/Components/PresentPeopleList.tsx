@@ -1,4 +1,4 @@
-import { Heading, IconButton, ListItem, UnorderedList } from "@chakra-ui/react";
+import { Heading, IconButton, List } from "@chakra-ui/react";
 import { MdClose } from "react-icons/md";
 
 import { StaffActivity } from "@/logic/interfaces.ts";
@@ -17,9 +17,9 @@ const PresentPeopleList = ({
     return (
         <>
             <Heading size="md">Present</Heading>
-            <UnorderedList>
+            <List.Root as="ul">
                 {staffActivities.map((activity) => (
-                    <ListItem
+                    <List.Item
                         key={activity.id}
                         display="flex"
                         gap="2"
@@ -40,9 +40,9 @@ const PresentPeopleList = ({
                             activity.device &&
                             ` - station ${activity.device.name}`}
                         {!activity.isAssigned && " (unassigned)"}
-                    </ListItem>
+                    </List.Item>
                 ))}
-            </UnorderedList>
+            </List.Root>
         </>
     );
 };

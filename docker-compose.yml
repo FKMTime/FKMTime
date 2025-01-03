@@ -38,6 +38,7 @@ services:
     volumes:
       - ./frontend/src:/app/src
       - ./frontend/index.html:/app/index.html
+      - ./frontend/vite.config.ts:/app/vite.config.ts
     ports:
       - "5173:5173"
     restart: unless-stopped

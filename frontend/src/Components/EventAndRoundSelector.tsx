@@ -1,10 +1,11 @@
-import { Box, FormLabel, IconButton } from "@chakra-ui/react";
+import { Box, IconButton } from "@chakra-ui/react";
 import { Event, Round } from "@wca/helpers";
 
 import EventIcon from "@/Components/Icons/EventIcon";
 import { Competition } from "@/logic/interfaces";
 
 import Select from "./Select";
+import { Field } from "./ui/field";
 
 interface EventAndRoundSelectorProps {
     competition: Competition;
@@ -37,22 +38,20 @@ const EventAndRoundSelector = ({
                     <IconButton
                         key={event.id}
                         aria-label={event.id}
-                        icon={
-                            <EventIcon
-                                eventId={event.id}
-                                selected={filters.eventId === event.id}
-                                size={20}
-                            />
-                        }
                         onClick={() => handleEventChange(event.id)}
                         justifyContent="center"
                         alignItems="center"
-                    />
+                    >
+                        <EventIcon
+                            eventId={event.id}
+                            selected={filters.eventId === event.id}
+                            size={20}
+                        />
+                    </IconButton>
                 ))}
             </Box>
             {filters.eventId && (
-                <Box>
-                    {showLabel && <FormLabel>Round</FormLabel>}
+                <Field label={showLabel ? "Round" : undefined}>
                     <Select
                         value={filters.roundId}
                         onChange={(event) =>
@@ -70,7 +69,7 @@ const EventAndRoundSelector = ({
                                 </option>
                             ))}
                     </Select>
-                </Box>
+                </Field>
             )}
         </>
     );

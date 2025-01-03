@@ -146,12 +146,12 @@ const CreateDeviceModal = ({
                     gap="5"
                 >
                     {!isLoading && (
-                        <Button colorScheme="red" onClick={onClose}>
+                        <Button colorPalette="red" onClick={onClose}>
                             Cancel
                         </Button>
                     )}
                     <Button
-                        colorScheme="green"
+                        colorPalette="green"
                         type="submit"
                         isLoading={isLoading}
                     >

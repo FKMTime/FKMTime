@@ -1,6 +1,6 @@
-import { Alert, AlertIcon, Box, Button, useToast } from "@chakra-ui/react";
-import { FormEvent } from "react";
+import { Alert, Box, Button } from "@chakra-ui/react";
 
+import { toaster } from "@/Components/ui/toaster";
 import {
     syncCompetition,
     updateCompetitionSettings,
@@ -20,10 +20,7 @@ const ManageCompetition = ({
     setCompetition,
     fetchCompetitionDataAndSetAtom,
 }: ManageCompetitionProps) => {
-    const toast = useToast();
-
-    const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
-        event.preventDefault();
+    const handleSubmit = async () => {
         if (!competition) {
             return;
         }
@@ -32,16 +29,16 @@ const ManageCompetition = ({
             competition
         );
         if (status === 200) {
-            toast({
+            toaster.create({
                 title: "Success",
                 description: "Competition updated",
-                status: "success",
+                type: "success",
             });
         } else {
-            toast({
+            toaster.create({
                 title: "Error",
                 description: "Something went wrong",
-                status: "error",
+                type: "error",
             });
         }
     };
@@ -52,17 +49,17 @@ const ManageCompetition = ({
         }
         const status = await syncCompetition(competition.wcaId);
         if (status === 200) {
-            toast({
+            toaster.create({
                 title: "Success",
                 description: "Competition synced",
-                status: "success",
+                type: "success",
             });
             await fetchCompetitionDataAndSetAtom();
         } else {
-            toast({
+            toaster.create({
                 title: "Error",
                 description: "Something went wrong",
-                status: "error",
+                type: "error",
             });
         }
     };
@@ -80,17 +77,23 @@ const ManageCompetition = ({
             {anyWarnings && (
                 <Box display="flex" flexDirection="column" gap="5">
                     {emptyScoretakingToken && (
-                        <Alert status="error" borderRadius="md" color="black">
-                            <AlertIcon />
+                        <Alert.Root
+                            status="error"
+                            borderRadius="md"
+                            color="black"
+                        >
                             You need to set the scoretaking token taken from WCA
                             Live before the competition
-                        </Alert>
+                        </Alert.Root>
                     )}
                     {scoretakingTokenMayExpired && (
-                        <Alert status="error" borderRadius="md" color="black">
-                            <AlertIcon />
+                        <Alert.Root
+                            status="error"
+                            borderRadius="md"
+                            color="black"
+                        >
                             The scoretaking token may have expired
-                        </Alert>
+                        </Alert.Root>
                     )}
                 </Box>
             )}
@@ -100,7 +103,7 @@ const ManageCompetition = ({
                 gap="2"
             >
                 <Button
-                    colorScheme="yellow"
+                    colorPalette="yellow"
                     onClick={handleSync}
                     width={{ base: "100%", md: "20%" }}
                 >

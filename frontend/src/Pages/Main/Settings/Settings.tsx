@@ -88,14 +88,14 @@ const Settings = () => {
                             />
                         </FormControl>
                         <Button
-                            colorScheme="green"
+                            colorPalette="green"
                             isLoading={isLoading}
                             type="submit"
                         >
                             Save
                         </Button>
                         <Button
-                            colorScheme="yellow"
+                            colorPalette="yellow"
                             onClick={() => setIsOpenChangePasswordModal(true)}
                         >
                             Change password

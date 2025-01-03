@@ -143,7 +143,7 @@ const AttemptRow = ({
                         {!attempt.sessionId &&
                             attempt.status !== AttemptStatus.SCRAMBLED && (
                                 <Badge
-                                    colorScheme="orange"
+                                    colorPalette="orange"
                                     borderRadius="md"
                                     p="1"
                                 >

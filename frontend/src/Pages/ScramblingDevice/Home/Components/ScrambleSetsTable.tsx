@@ -42,7 +42,7 @@ const ScrambleSetsTable = ({ scrambleSets }: ScrambleSetsTableProps) => {
                                             `/scrambling-device/set/${scrambleSet.id}`
                                         )
                                     }
-                                    colorScheme="yellow"
+                                    colorPalette="yellow"
                                 >
                                     Scramble
                                 </Button>
@@ -52,7 +52,7 @@ const ScrambleSetsTable = ({ scrambleSets }: ScrambleSetsTableProps) => {
                                             `/scrambling-device/set/${scrambleSet.id}/scrambles`
                                         )
                                     }
-                                    colorScheme="blue"
+                                    colorPalette="blue"
                                 >
                                     All scrambles
                                 </Button>

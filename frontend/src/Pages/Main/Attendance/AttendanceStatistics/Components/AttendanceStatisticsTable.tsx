@@ -1,13 +1,4 @@
-import {
-    chakra,
-    Flex,
-    Table,
-    Tbody,
-    Td,
-    Th,
-    Thead,
-    Tr,
-} from "@chakra-ui/react";
+import { chakra, Flex, Table } from "@chakra-ui/react";
 import {
     createColumnHelper,
     flexRender,
@@ -23,10 +14,6 @@ import { AttendanceStatistics } from "@/logic/interfaces.ts";
 
 interface AttendanceStatisticsTableProps {
     attendanceStatistics: AttendanceStatistics[];
-}
-
-interface Meta {
-    isNumeric?: boolean;
 }
 
 const AttendanceStatisticsTable = ({
@@ -83,18 +70,15 @@ const AttendanceStatisticsTable = ({
         },
     });
     return (
-        <Table>
-            <Thead>
+        <Table.Root>
+            <Table.Header>
                 {table.getHeaderGroups().map((headerGroup) => (
-                    <Tr key={headerGroup.id} bg="gray.400">
+                    <Table.Row key={headerGroup.id} bg="gray.400">
                         {headerGroup.headers.map((header) => {
-                            const meta: Meta = header.column.columnDef
-                                .meta as Meta;
                             return (
-                                <Th
+                                <Table.ColumnHeader
                                     key={header.id}
                                     onClick={header.column.getToggleSortingHandler()}
-                                    isNumeric={meta?.isNumeric}
                                 >
                                     <Flex>
                                         {flexRender(
@@ -112,31 +96,29 @@ const AttendanceStatisticsTable = ({
                                             ) : null}
                                         </chakra.span>
                                     </Flex>
-                                </Th>
+                                </Table.ColumnHeader>
                             );
                         })}
-                    </Tr>
+                    </Table.Row>
                 ))}
-            </Thead>
-            <Tbody>
+            </Table.Header>
+            <Table.Body>
                 {table.getRowModel().rows.map((row) => (
-                    <Tr key={row.id}>
+                    <Table.Row key={row.id}>
                         {row.getVisibleCells().map((cell) => {
-                            const meta: Meta = cell.column.columnDef
-                                .meta as Meta;
                             return (
-                                <Td key={cell.id} isNumeric={meta?.isNumeric}>
+                                <Table.Cell key={cell.id}>
                                     {flexRender(
                                         cell.column.columnDef.cell,
                                         cell.getContext()
                                     )}
-                                </Td>
+                                </Table.Cell>
                             );
                         })}
-                    </Tr>
+                    </Table.Row>
                 ))}
-            </Tbody>
-        </Table>
+            </Table.Body>
+        </Table.Root>
     );
 };
 

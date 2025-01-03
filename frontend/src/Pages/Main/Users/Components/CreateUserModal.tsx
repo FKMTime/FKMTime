@@ -216,12 +216,12 @@ const CreateUserModal = ({ isOpen, onClose }: CreateUserModalProps) => {
                     gap="5"
                 >
                     {!isLoading && (
-                        <Button colorScheme="red" onClick={onClose}>
+                        <Button colorPalette="red" onClick={onClose}>
                             Cancel
                         </Button>
                     )}
                     <Button
-                        colorScheme="green"
+                        colorPalette="green"
                         onClick={handleSubmit}
                         isLoading={isLoading}
                     >

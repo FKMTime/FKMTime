@@ -104,14 +104,14 @@ const DeviceCard = ({ device, fetchData }: DeviceCardProps) => {
                     <ButtonGroup spacing="2">
                         <Button
                             variant="solid"
-                            colorScheme="blue"
+                            colorPalette="blue"
                             onClick={() => setIsOpenEditDeviceModal(true)}
                         >
                             Edit
                         </Button>
                         <Button
                             variant="solid"
-                            colorScheme="red"
+                            colorPalette="red"
                             onClick={handleDelete}
                         >
                             Delete

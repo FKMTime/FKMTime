@@ -1,4 +1,3 @@
-import { FormControl } from "@chakra-ui/react";
 import { useCallback, useEffect, useState } from "react";
 
 import { Person } from "@/logic/interfaces";
@@ -36,17 +35,15 @@ const PersonAutocomplete = ({
     }, [fetchPersons, withoutCardAssigned]);
 
     return (
-        <FormControl>
-            <Autocomplete
-                options={persons}
-                selectedValue={value || null}
-                onOptionSelect={(option) => onSelect(option)}
-                getOptionLabel={getPersonNameAndRegistrantId}
-                placeholder="Search for a person"
-                disabled={disabled}
-                autoFocus={autoFocus}
-            />
-        </FormControl>
+        <Autocomplete
+            options={persons}
+            selectedValue={value || null}
+            onOptionSelect={(option) => onSelect(option)}
+            getOptionLabel={getPersonNameAndRegistrantId}
+            placeholder="Search for a person"
+            disabled={disabled}
+            autoFocus={autoFocus}
+        />
     );
 };
 

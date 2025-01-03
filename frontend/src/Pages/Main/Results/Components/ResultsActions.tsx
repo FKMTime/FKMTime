@@ -59,30 +59,30 @@ const ResultsActions = ({
     const resultsActions = [
         {
             title: "Enter attempt",
-            colorScheme: "green",
+            colorPalette: "green",
             onClick: () => setIsOpenCreateAttemptModal(true),
         },
         {
             title: "Public view",
-            colorScheme: "blue",
+            colorPalette: "blue",
             onClick: () => navigate(`/results/public/${filters.roundId}`),
         },
         {
             title: "Double check",
-            colorScheme: "purple",
+            colorPalette: "purple",
             onClick: () =>
                 navigate(`/results/round/${filters.roundId}/double-check`),
             resultsLength: resultsLength > 0,
         },
         {
             title: "Restart group",
-            colorScheme: "red",
+            colorPalette: "red",
             onClick: () => setIsOpenRestartGroupModal(true),
             resultsLength: resultsLength > 0,
         },
         {
             title: "Resubmit results to WCA Live",
-            colorScheme: "yellow",
+            colorPalette: "yellow",
             onClick: handleResubmitRound,
             colSpan: 2,
         },
@@ -104,7 +104,7 @@ const ResultsActions = ({
                             <GridItem colSpan={action.colSpan || 1}>
                                 <Button
                                     key={action.title}
-                                    colorScheme={action.colorScheme}
+                                    colorPalette={action.colorPalette}
                                     width="100%"
                                     wordBreak="break-word"
                                     onClick={action.onClick}
@@ -121,7 +121,7 @@ const ResultsActions = ({
                         (!action.resultsLength || resultsLength > 0) && (
                             <Button
                                 key={action.title}
-                                colorScheme={action.colorScheme}
+                                colorPalette={action.colorPalette}
                                 onClick={action.onClick}
                             >
                                 {action.title}

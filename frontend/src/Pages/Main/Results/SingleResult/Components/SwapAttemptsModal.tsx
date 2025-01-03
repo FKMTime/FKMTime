@@ -88,7 +88,7 @@ const SwapAttemptsModal = ({
                         ))}
                     </Select>
                 </FormControl>
-                <Button colorScheme="green" type="submit">
+                <Button colorPalette="green" type="submit">
                     Swap attempts
                 </Button>
             </Box>

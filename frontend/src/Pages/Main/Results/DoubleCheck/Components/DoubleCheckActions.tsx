@@ -22,16 +22,16 @@ const DoubleCheckActions = ({
                 If you want to make more changes please go to Details page
             </Alert>
             <ButtonGroup>
-                <Button colorScheme="green" onClick={handleSubmit}>
+                <Button colorPalette="green" onClick={handleSubmit}>
                     Save
                 </Button>
                 <Button
-                    colorScheme="purple"
+                    colorPalette="purple"
                     onClick={() => navigate(`/results/${result.id}`)}
                 >
                     Details
                 </Button>
-                <Button colorScheme="red" onClick={handleSkip}>
+                <Button colorPalette="red" onClick={handleSkip}>
                     Skip
                 </Button>
             </ButtonGroup>

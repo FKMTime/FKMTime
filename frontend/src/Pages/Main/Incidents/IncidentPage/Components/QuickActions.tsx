@@ -37,7 +37,7 @@ const QuickActions = ({ handleQuickAction }: QuickActionsProps) => {
                         <Button
                             key={quickAction.id}
                             width="100%"
-                            colorScheme={quickAction.color}
+                            colorPalette={quickAction.color}
                             onClick={() => handleQuickAction(quickAction)}
                         >
                             {quickAction.name}

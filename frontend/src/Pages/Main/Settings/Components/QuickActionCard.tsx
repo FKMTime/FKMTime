@@ -98,14 +98,14 @@ const QuickActionCard = ({ quickAction, fetchData }: QuickActionCardProps) => {
                     <ButtonGroup spacing="2">
                         <Button
                             variant="solid"
-                            colorScheme="blue"
+                            colorPalette="blue"
                             onClick={() => setIsOpenEditQuickActionModal(true)}
                         >
                             Edit
                         </Button>
                         <Button
                             variant="solid"
-                            colorScheme="red"
+                            colorPalette="red"
                             onClick={handleDelete}
                         >
                             Delete

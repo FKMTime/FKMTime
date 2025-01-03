@@ -110,7 +110,7 @@ const AddScrambleSetModal = ({
                     key={fileInputKey}
                 />
                 <Button
-                    colorScheme="green"
+                    colorPalette="green"
                     onClick={handleAdd}
                     isDisabled={preventFromImporting}
                 >

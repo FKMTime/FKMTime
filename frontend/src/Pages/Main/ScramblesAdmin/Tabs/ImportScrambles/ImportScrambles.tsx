@@ -90,7 +90,7 @@ const ImportScrambles = () => {
             {wcif && competition && (
                 <Box display="flex" gap="3">
                     <Button
-                        colorScheme="red"
+                        colorPalette="red"
                         onClick={() => clearUploadedScrambles()}
                         width={{ base: "100%", md: "fit-content" }}
                     >
@@ -98,7 +98,7 @@ const ImportScrambles = () => {
                     </Button>
                     <Button
                         isDisabled={preventFromImporting}
-                        colorScheme="green"
+                        colorPalette="green"
                         onClick={handleImport}
                         width={{ base: "100%", md: "fit-content" }}
                     >

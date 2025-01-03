@@ -1,6 +1,6 @@
-import { Tooltip } from "@chakra-ui/react";
 import { useState } from "react";
 
+import { Tooltip } from "@/Components/ui/tooltip";
 import { WCA_ORIGIN } from "@/logic/request.ts";
 
 import AvatarModal from "./AvatarModal";
@@ -24,7 +24,7 @@ const Avatar = ({
     return (
         <>
             {avatarUrl && !avatarUrl.includes(WCA_ORIGIN) ? (
-                <Tooltip label={username} aria-label="A tooltip">
+                <Tooltip content={username} aria-label="A tooltip">
                     <img
                         style={{
                             width: avatarSize,
@@ -38,7 +38,7 @@ const Avatar = ({
                     />
                 </Tooltip>
             ) : (
-                <Tooltip label={username} aria-label="A tooltip">
+                <Tooltip content={username} aria-label="A tooltip">
                     <DefaultAvatar size={avatarSize} username={username} />
                 </Tooltip>
             )}

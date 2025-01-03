@@ -1,6 +1,4 @@
 import {
-    Alert,
-    AlertIcon,
     Box,
     FormControl,
     Heading,
@@ -12,6 +10,7 @@ import { KeyboardEvent, RefObject, useEffect, useRef, useState } from "react";
 
 import LoadingPage from "@/Components/LoadingPage";
 import PersonAutocomplete from "@/Components/PersonAutocomplete";
+import { Alert } from "@/Components/ui/alert";
 import { Person } from "@/logic/interfaces";
 import {
     checkedInCount,
@@ -184,7 +183,6 @@ const CheckIn = () => {
                                 borderRadius="md"
                                 color="black"
                             >
-                                <AlertIcon />
                                 Please assign a card to the competitor
                             </Alert>
                         )}

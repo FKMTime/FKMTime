@@ -31,7 +31,7 @@ const ResolvedIncidents = () => {
         <Flex flexDirection="column" gap="5">
             <Heading size="lg">Resolved incidents</Heading>
             <Button
-                colorScheme="yellow"
+                colorPalette="yellow"
                 width={{ base: "100%", md: "fit-content" }}
                 onClick={() => setIsOpenSummaryModal(true)}
             >

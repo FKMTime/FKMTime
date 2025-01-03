@@ -1,16 +1,10 @@
 import {
-    Avatar,
     Box,
     Button,
-    DarkMode,
     Icon,
     IconButton,
     Image,
     Link,
-    Menu,
-    MenuButton,
-    MenuItem,
-    MenuList,
     Text,
 } from "@chakra-ui/react";
 import {
@@ -31,6 +25,13 @@ import {
 } from "react-icons/md";
 
 import logo from "@/assets/logo.svg";
+import { Avatar } from "@/Components/ui/avatar";
+import {
+    MenuContent,
+    MenuItem,
+    MenuRoot,
+    MenuTrigger,
+} from "@/Components/ui/menu";
 import { isAdmin } from "@/logic/auth.ts";
 import { GITHUB_URL } from "@/logic/constants";
 import { Competition, INotification, UserInfo } from "@/logic/interfaces";
@@ -55,7 +56,7 @@ const SidebarContent = ({
 }: SidebarContentProps) => {
     return (
         <Box
-            backgroundColor="gray.600"
+            backgroundColor="gray.900"
             overflowY="auto"
             display="flex"
             flexDirection="column"
@@ -75,50 +76,47 @@ const SidebarContent = ({
                 width="100%"
                 textAlign="center"
             >
-                <Menu>
-                    <MenuButton>
+                <MenuRoot>
+                    <MenuTrigger>
                         <Avatar
                             src={user.avatarUrl}
                             name={user.fullName ? user.fullName : user.username}
                         />
-                    </MenuButton>
-                    <DarkMode>
-                        <MenuList>
-                            <MenuItem onClick={handleLogout}>Logout</MenuItem>
-                        </MenuList>
-                    </DarkMode>
-                </Menu>
+                    </MenuTrigger>
+                    <MenuContent>
+                        <MenuItem onClick={handleLogout} value="logout">
+                            Logout
+                        </MenuItem>
+                    </MenuContent>
+                </MenuRoot>
                 <Box position="relative" display={isAdmin() ? "block" : "none"}>
                     <IconButton
-                        colorScheme="transparent"
-                        variant="solid"
+                        background="transparent"
                         cursor={
                             notifications.length > 0 ? "pointer" : "default"
                         }
                         onClick={onClickNotifications}
-                        icon={
-                            <>
-                                <IoMdNotifications size={32} />
-                                <Box position="absolute" top="-3" right="-3">
-                                    <Text
-                                        fontSize="sm"
-                                        color="white"
-                                        backgroundColor={
-                                            notifications.length > 0
-                                                ? "red.500"
-                                                : "green.500"
-                                        }
-                                        padding={1}
-                                        rounded="full"
-                                        width="30px"
-                                    >
-                                        {notifications.length}
-                                    </Text>
-                                </Box>
-                            </>
-                        }
-                        aria-label="Notifications"
-                    />
+                    >
+                        <>
+                            <IoMdNotifications size={32} />
+                            <Box position="absolute" top="-3" right="-3">
+                                <Text
+                                    fontSize="sm"
+                                    color="white"
+                                    backgroundColor={
+                                        notifications.length > 0
+                                            ? "red.500"
+                                            : "green.500"
+                                    }
+                                    padding={1}
+                                    rounded="full"
+                                    width="30px"
+                                >
+                                    {notifications.length}
+                                </Text>
+                            </Box>
+                        </>
+                    </IconButton>
                 </Box>
             </Box>
 
@@ -205,24 +203,25 @@ const SidebarContent = ({
             {import.meta.env.PROD && isAdmin() && (
                 <a href="/logs" style={{ width: "100%" }} target="_blank">
                     <Button
-                        leftIcon={<FaServer />}
-                        colorScheme="teal"
+                        colorPalette="teal"
                         variant="solid"
                         rounded="20"
                         width="100%"
                         textAlign="center"
                     >
+                        <FaServer />
                         Logs
                     </Button>
                 </a>
             )}
-            <Link href={GITHUB_URL} isExternal>
-                <Icon
-                    as={FaGithub}
+            <Link href={GITHUB_URL}>
+                <IconButton
                     color="white"
-                    boxSize="10"
+                    background="transparent"
                     _hover={{ opacity: 0.8 }}
-                />
+                >
+                    <FaGithub />
+                </IconButton>
             </Link>
         </Box>
     );

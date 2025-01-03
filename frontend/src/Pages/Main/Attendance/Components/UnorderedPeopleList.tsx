@@ -1,4 +1,4 @@
-import { Heading, ListItem, UnorderedList } from "@chakra-ui/react";
+import { Heading, List } from "@chakra-ui/react";
 
 import { StaffActivity } from "@/logic/interfaces";
 
@@ -16,17 +16,17 @@ const UnorderedPeopleList = ({
     return (
         <>
             <Heading size="md">{heading}</Heading>
-            <UnorderedList>
+            <List.Root as="ul">
                 {persons.map((attendance) => (
-                    <ListItem key={attendance.id}>
+                    <List.Item key={attendance.id}>
                         {attendance.person.name}{" "}
                         {showDevice &&
                             attendance.device &&
                             ` - station ${attendance.device.name}`}
                         {!attendance.isAssigned && " (unassigned)"}
-                    </ListItem>
+                    </List.Item>
                 ))}
-            </UnorderedList>
+            </List.Root>
         </>
     );
 };

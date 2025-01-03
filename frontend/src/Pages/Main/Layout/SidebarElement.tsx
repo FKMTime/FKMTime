@@ -1,6 +1,8 @@
-import { Box, Button } from "@chakra-ui/react";
+import { Box } from "@chakra-ui/react";
 import { ReactElement } from "react";
 import { useNavigate } from "react-router-dom";
+
+import { Button } from "@/Components/ui/button";
 
 interface SidebarElementProps {
     name: string;
@@ -14,10 +16,8 @@ const SidebarElement = ({ name, icon, link, onClick }: SidebarElementProps) => {
     return (
         <Box width="100%">
             <Button
-                leftIcon={icon}
-                colorScheme="teal"
                 variant="solid"
-                rounded="20"
+                rounded="lg"
                 width="100%"
                 textAlign="center"
                 onClick={() => {
@@ -27,6 +27,7 @@ const SidebarElement = ({ name, icon, link, onClick }: SidebarElementProps) => {
                     navigate(link);
                 }}
             >
+                <>{icon}</>
                 {name}
             </Button>
         </Box>

@@ -1,6 +1,7 @@
-import { Box, Button, Heading } from "@chakra-ui/react";
+import { Box, Heading } from "@chakra-ui/react";
 import { useNavigate } from "react-router-dom";
 
+import { Button } from "@/Components/ui/button";
 import { activityCodeToName } from "@/logic/activities";
 import { Room } from "@/logic/interfaces";
 
@@ -23,13 +24,13 @@ const HomeShortcuts = ({ rooms, currentRounds }: HomeShortcutsProps) => {
                 gap="4"
             >
                 <Button
-                    colorScheme="yellow"
+                    colorPalette="yellow"
                     onClick={() => navigate("/incidents")}
                 >
                     Incidents
                 </Button>
                 <Button
-                    colorScheme="purple"
+                    colorPalette="purple"
                     onClick={() => navigate("/competition?tab=rooms")}
                 >
                     Current groups
@@ -42,7 +43,7 @@ const HomeShortcuts = ({ rooms, currentRounds }: HomeShortcutsProps) => {
                         {activeRounds.map((room: Room) => (
                             <Button
                                 key={room.id}
-                                colorScheme="blue"
+                                colorPalette="blue"
                                 onClick={() => {
                                     navigate(
                                         `/attendance/${room.currentGroupId}`
@@ -62,7 +63,7 @@ const HomeShortcuts = ({ rooms, currentRounds }: HomeShortcutsProps) => {
                         {currentRounds.map((roundId) => (
                             <Button
                                 key={roundId}
-                                colorScheme="blue"
+                                colorPalette="blue"
                                 onClick={() => {
                                     navigate(`/results/round/${roundId}`);
                                 }}

@@ -14,18 +14,18 @@ const AttemptWarnings = ({ attempt }: AttemptsWarningProps) => {
     return (
         <>
             {inspectionExceeded ? (
-                <Badge colorScheme="red" borderRadius="md" p="1">
+                <Badge colorPalette="red" borderRadius="md" p="1">
                     Inspection:{" "}
                     {milisecondsToClockFormat(attempt.inspectionTime || 0)}
                 </Badge>
             ) : null}
             {attempt.penalty > 2 && (
-                <Badge colorScheme="red" borderRadius="md" p="1">
+                <Badge colorPalette="red" borderRadius="md" p="1">
                     +{attempt.penalty}
                 </Badge>
             )}
             {attempt.penalty === -2 && (
-                <Badge colorScheme="yellow" borderRadius="md" p="1">
+                <Badge colorPalette="yellow" borderRadius="md" p="1">
                     DNS
                 </Badge>
             )}

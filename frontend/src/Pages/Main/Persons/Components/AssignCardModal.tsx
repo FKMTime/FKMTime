@@ -78,13 +78,13 @@ const AssignCardModal = ({ isOpen, onClose, person }: AssignCardModalProps) => {
                     gap="5"
                 >
                     {!isLoading && (
-                        <Button colorScheme="red" onClick={onClose}>
+                        <Button colorPalette="red" onClick={onClose}>
                             Cancel
                         </Button>
                     )}
                     {isAdmin() && (
                         <Button
-                            colorScheme="green"
+                            colorPalette="green"
                             type="submit"
                             isLoading={isLoading}
                         >

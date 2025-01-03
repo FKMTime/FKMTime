@@ -207,7 +207,7 @@ const DoubleCheck = () => {
                         totalResults={totalResults}
                         roundId={id}
                     />
-                    <Button colorScheme="red" onClick={handleUndoDoubleCheck}>
+                    <Button colorPalette="red" onClick={handleUndoDoubleCheck}>
                         Mark results as not double checked
                     </Button>
                 </>

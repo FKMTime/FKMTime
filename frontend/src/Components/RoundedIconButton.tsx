@@ -16,7 +16,6 @@ const RoundedIconButton = ({
 }: RoundedIconButtonProps) => {
     return (
         <IconButton
-            icon={icon}
             aria-label={ariaLabel}
             bg="white"
             color="black"
@@ -29,7 +28,9 @@ const RoundedIconButton = ({
                 color: "gray.700",
             }}
             onClick={onClick}
-        />
+        >
+            {icon}
+        </IconButton>
     );
 };
 

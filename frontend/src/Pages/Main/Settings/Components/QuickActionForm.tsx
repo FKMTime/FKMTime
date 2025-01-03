@@ -92,12 +92,12 @@ const QuickActionForm = ({
                 gap="5"
             >
                 {!isLoading && (
-                    <Button colorScheme="red" onClick={handleCancel}>
+                    <Button colorPalette="red" onClick={handleCancel}>
                         Cancel
                     </Button>
                 )}
                 <Button
-                    colorScheme="green"
+                    colorPalette="green"
                     isLoading={isLoading}
                     onClick={onSubmit}
                 >

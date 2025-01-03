@@ -159,14 +159,14 @@ const ScrambleSets = () => {
                 {filters.roundId && (
                     <>
                         <Button
-                            colorScheme="green"
+                            colorPalette="green"
                             width={{ base: "100%", md: "fit-content" }}
                             onClick={() => setIsOpenAddScrambleSetModal(true)}
                         >
                             Add scramble set
                         </Button>
                         <Button
-                            colorScheme="purple"
+                            colorPalette="purple"
                             width={{ base: "100%", md: "fit-content" }}
                             onClick={handleDeleteScrambleSetsByRound}
                         >
@@ -175,7 +175,7 @@ const ScrambleSets = () => {
                     </>
                 )}
                 <Button
-                    colorScheme="red"
+                    colorPalette="red"
                     width={{ base: "100%", md: "fit-content" }}
                     onClick={handleDeleteAllScrambleSets}
                 >

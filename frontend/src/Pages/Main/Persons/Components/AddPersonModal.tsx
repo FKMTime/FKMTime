@@ -123,12 +123,12 @@ const AddPersonModal = ({ isOpen, onClose }: AddPersonModalProps) => {
                     gap="5"
                 >
                     {!isLoading && (
-                        <Button colorScheme="red" onClick={onClose}>
+                        <Button colorPalette="red" onClick={onClose}>
                             Cancel
                         </Button>
                     )}
                     <Button
-                        colorScheme="green"
+                        colorPalette="green"
                         isLoading={isLoading}
                         onClick={handleSubmit}
                     >

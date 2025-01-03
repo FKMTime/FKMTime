@@ -1,6 +1,7 @@
-import { Box, Button } from "@chakra-ui/react";
+import { Box } from "@chakra-ui/react";
 import { useEffect, useState } from "react";
 
+import { Button } from "@/Components/ui/button";
 import { UnofficialEvent } from "@/logic/interfaces";
 import { getCompetitionUnofficialEvents } from "@/logic/unofficialEvents";
 
@@ -35,7 +36,7 @@ const UnofficialEvents = () => {
         <Box display="flex" flexDirection="column" gap="5">
             <Box display="flex" gap="2">
                 <Button
-                    colorScheme="blue"
+                    colorPalette="blue"
                     width={{ base: "100%", md: "auto" }}
                     onClick={() => setIsOpenCreateUnofficialEventModal(true)}
                 >

@@ -18,7 +18,7 @@ const NotFound = () => {
                 Error 404
             </Heading>
             <Heading color="red.500">Page not found</Heading>
-            <Button colorScheme="blue" mt="5" onClick={() => navigate("/")}>
+            <Button colorPalette="blue" mt="5" onClick={() => navigate("/")}>
                 Home
             </Button>
         </Box>

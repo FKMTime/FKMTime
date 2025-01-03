@@ -123,7 +123,7 @@ const UserCard = ({ user, fetchData }: UserCardProps) => {
                     <ButtonGroup spacing="2">
                         <Button
                             variant="solid"
-                            colorScheme="blue"
+                            colorPalette="blue"
                             onClick={() => setIsOpenEditUserModal(true)}
                         >
                             Edit
@@ -131,7 +131,7 @@ const UserCard = ({ user, fetchData }: UserCardProps) => {
                         {!isWcaAccount && (
                             <Button
                                 variant="solid"
-                                colorScheme="purple"
+                                colorPalette="purple"
                                 onClick={() =>
                                     setIsOpenChangePasswordModal(true)
                                 }
@@ -141,7 +141,7 @@ const UserCard = ({ user, fetchData }: UserCardProps) => {
                         )}
                         <Button
                             variant="solid"
-                            colorScheme="red"
+                            colorPalette="red"
                             onClick={handleDelete}
                         >
                             Delete

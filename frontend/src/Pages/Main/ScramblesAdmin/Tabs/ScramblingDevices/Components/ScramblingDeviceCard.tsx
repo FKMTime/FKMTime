@@ -100,7 +100,7 @@ const ScramblingDeviceCard = ({
                         <GridItem>
                             <Button
                                 variant="solid"
-                                colorScheme="blue"
+                                colorPalette="blue"
                                 onClick={() => setIsOpenEditDeviceModal(true)}
                                 width="100%"
                             >
@@ -110,7 +110,7 @@ const ScramblingDeviceCard = ({
                         <GridItem>
                             <Button
                                 variant="solid"
-                                colorScheme="red"
+                                colorPalette="red"
                                 onClick={handleDelete}
                                 width="100%"
                             >
@@ -120,7 +120,7 @@ const ScramblingDeviceCard = ({
                         <GridItem colSpan={2}>
                             <Button
                                 variant="solid"
-                                colorScheme="yellow"
+                                colorPalette="yellow"
                                 onClick={() => setIsOpenOneTimeCodeModal(true)}
                                 width="100%"
                             >

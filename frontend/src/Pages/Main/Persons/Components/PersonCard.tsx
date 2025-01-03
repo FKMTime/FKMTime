@@ -135,7 +135,7 @@ const PersonCard = ({
                     <ButtonGroup spacing="2">
                         <Button
                             variant="solid"
-                            colorScheme="blue"
+                            colorPalette="blue"
                             onClick={() => setIsOpenAssignCardModal(true)}
                         >
                             Assign card
@@ -146,7 +146,7 @@ const PersonCard = ({
                                 <>
                                     <Button
                                         variant="solid"
-                                        colorScheme="green"
+                                        colorPalette="green"
                                         onClick={() =>
                                             setIsOpenDisplayGroupsModal(true)
                                         }
@@ -155,7 +155,7 @@ const PersonCard = ({
                                     </Button>
                                     <Button
                                         variant="solid"
-                                        colorScheme="purple"
+                                        colorPalette="purple"
                                         onClick={() =>
                                             navigate(
                                                 `/persons/${person.id}/results`

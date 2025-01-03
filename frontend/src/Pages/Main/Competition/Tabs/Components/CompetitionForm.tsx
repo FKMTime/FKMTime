@@ -1,23 +1,17 @@
-import {
-    Box,
-    Button,
-    Checkbox,
-    FormControl,
-    FormHelperText,
-    FormLabel,
-    Link,
-    Select,
-} from "@chakra-ui/react";
-import { FormEvent } from "react";
+import { Box, Link } from "@chakra-ui/react";
 
 import PasswordInput from "@/Components/PasswordInput.tsx";
+import Select from "@/Components/Select";
+import { Button } from "@/Components/ui/button";
+import { Checkbox } from "@/Components/ui/checkbox";
+import { Field } from "@/Components/ui/field";
 import { Competition, SendingResultsFrequency } from "@/logic/interfaces.ts";
 import { prettySendingResultsFrequency } from "@/logic/utils";
 
 interface CompetitionFormProps {
     competition: Competition;
     setCompetition: (competition: Competition) => void;
-    handleSubmit: (event: FormEvent<HTMLFormElement>) => void;
+    handleSubmit: () => void;
 }
 
 const CompetitionForm = ({
@@ -31,11 +25,24 @@ const CompetitionForm = ({
             flexDirection="column"
             gap="5"
             width={{ base: "100%", md: "20%" }}
-            as="form"
-            onSubmit={handleSubmit}
         >
-            <FormControl display="flex" flexDirection="column" gap="2">
-                <FormLabel>Scoretaking token</FormLabel>
+            <Field
+                display="flex"
+                flexDirection="column"
+                gap="2"
+                label="Scoretaking token"
+                helperText={
+                    <>
+                        You can get this token{" "}
+                        <Link
+                            color="blue.400"
+                            href="https://live.worldcubeassociation.org/account"
+                        >
+                            here
+                        </Link>
+                    </>
+                }
+            >
                 <PasswordInput
                     placeholder="Scoretaking token"
                     autoComplete="off"
@@ -47,19 +54,24 @@ const CompetitionForm = ({
                         })
                     }
                 />
-                <FormHelperText color="gray.300">
-                    You can get this token{" "}
-                    <Link
-                        color="blue.400"
-                        href="https://live.worldcubeassociation.org/account"
-                        isExternal
-                    >
-                        here
-                    </Link>
-                </FormHelperText>
-            </FormControl>
-            <FormControl display="flex" flexDirection="column" gap="2">
-                <FormLabel>CubingContests token</FormLabel>
+            </Field>
+            <Field
+                display="flex"
+                flexDirection="column"
+                gap="2"
+                label="Cubing contests token"
+                helperText={
+                    <>
+                        You can get this token{" "}
+                        <Link
+                            color="blue.400"
+                            href={`https://cubingcontests.com/mod/competition?edit_id=${competition.wcaId}`}
+                        >
+                            here
+                        </Link>
+                    </>
+                }
+            >
                 <PasswordInput
                     placeholder="Cubing contests API token"
                     autoComplete="off"
@@ -71,19 +83,13 @@ const CompetitionForm = ({
                         })
                     }
                 />
-                <FormHelperText color="gray.300">
-                    You can get this token{" "}
-                    <Link
-                        color="blue.400"
-                        href={`https://cubingcontests.com/mod/competition?edit_id=${competition.wcaId}`}
-                        isExternal
-                    >
-                        here
-                    </Link>
-                </FormHelperText>
-            </FormControl>
-            <FormControl display="flex" flexDirection="column" gap="2">
-                <FormLabel>Send results to WCA Live/CubingContests</FormLabel>
+            </Field>
+            <Field
+                display="flex"
+                flexDirection="column"
+                gap="2"
+                label="Send results to WCA Live/CubingContests"
+            >
                 <Select
                     value={competition.sendingResultsFrequency}
                     onChange={(event) =>
@@ -100,27 +106,27 @@ const CompetitionForm = ({
                         </option>
                     ))}
                 </Select>
-            </FormControl>
-            <FormControl display="flex" flexDirection="column" gap="2">
+            </Field>
+            <Field
+                display="flex"
+                flexDirection="column"
+                gap="2"
+                label="Change groups automatically"
+                helperText="Group will be automatically changed to the next one from schedule if all results are entered and there are no unresolved incidents"
+            >
                 <Checkbox
                     defaultChecked={competition.shouldChangeGroupsAutomatically}
-                    onChange={(event) =>
+                    onCheckedChange={(event) =>
                         setCompetition({
                             ...competition,
-                            shouldChangeGroupsAutomatically:
-                                event?.target.checked,
+                            shouldChangeGroupsAutomatically: !!event?.checked,
                         })
                     }
                 >
                     Change groups automatically
                 </Checkbox>
-                <FormHelperText color="gray.300">
-                    Group will be automatically changed to the next one from
-                    schedule if all results are entered and there are no
-                    unresolved incidents
-                </FormHelperText>
-            </FormControl>
-            <Button type="submit" colorScheme="green">
+            </Field>
+            <Button onClick={handleSubmit} colorPalette="green">
                 Save
             </Button>
         </Box>

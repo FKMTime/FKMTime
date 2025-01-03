@@ -95,7 +95,7 @@ const Scramble = ({
             </CardBody>
             <Divider />
             <CardFooter>
-                <Button variant="solid" colorScheme="blue" onClick={handleSign}>
+                <Button variant="solid" colorPalette="blue" onClick={handleSign}>
                     Sign
                 </Button>
             </CardFooter>

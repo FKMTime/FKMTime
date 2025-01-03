@@ -1,6 +1,8 @@
-import { Button, Checkbox, FormControl } from "@chakra-ui/react";
+import { Button } from "@chakra-ui/react";
 import { useState } from "react";
 
+import { Checkbox } from "@/Components/ui/checkbox";
+import { Field } from "@/Components/ui/field";
 import { Person } from "@/logic/interfaces.ts";
 import { isNewcomer, regionNameByIso2 } from "@/logic/utils.ts";
 
@@ -26,45 +28,45 @@ const SubmitActions = ({
         <>
             {newcomer && (
                 <>
-                    <FormControl display="flex" flexDirection="column" gap="2">
+                    <Field display="flex" flexDirection="column" gap="2">
                         <Checkbox
                             defaultChecked={false}
-                            onChange={(event) =>
-                                setDocumentChecked(event?.target.checked)
+                            onCheckedChange={(e) =>
+                                setDocumentChecked(!!e.checked)
                             }
                         >
                             I have checked the competitor's ID card and data
                             matches with those provided during registration
                         </Checkbox>
-                    </FormControl>
-                    <FormControl display="flex" flexDirection="column" gap="2">
+                    </Field>
+                    <Field display="flex" flexDirection="column" gap="2">
                         <Checkbox
                             defaultChecked={false}
-                            onChange={(event) =>
-                                setConfirmedIsNewcomer(event?.target.checked)
+                            onCheckedChange={(e) =>
+                                setConfirmedIsNewcomer(!!e.checked)
                             }
                         >
                             I have verbally confirmed that the competitor is a
                             newcomer
                         </Checkbox>
-                    </FormControl>
-                    <FormControl display="flex" flexDirection="column" gap="2">
+                    </Field>
+                    <Field display="flex" flexDirection="column" gap="2">
                         <Checkbox
                             defaultChecked={false}
-                            onChange={(event) =>
-                                setCitizienshipChecked(event?.target.checked)
+                            onCheckedChange={(e) =>
+                                setCitizienshipChecked(!!e.checked)
                             }
                         >
                             I have checked that the competitor is a citizien of{" "}
                             {regionNameByIso2(person.countryIso2 || "")}
                         </Checkbox>
-                    </FormControl>
+                    </Field>
                 </>
             )}
             <Button
-                colorScheme="green"
+                colorPalette="green"
                 onClick={() => handleCheckIn()}
-                isDisabled={
+                disabled={
                     (newcomer &&
                         (!documentChecked ||
                             !confirmedIsNewcomer ||
@@ -72,7 +74,7 @@ const SubmitActions = ({
                     !person.cardId
                 }
             >
-                Check in {cardShouldBeAssigned && "and assign card"}
+                Check in {cardShouldBeAssigned ? "and assign card" : ""}
             </Button>
         </>
     );

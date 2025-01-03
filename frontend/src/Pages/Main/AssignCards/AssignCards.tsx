@@ -1,12 +1,12 @@
-import { Box, Heading, Input, useToast } from "@chakra-ui/react";
+import { Box, Heading, Input } from "@chakra-ui/react";
 import { RefObject, useEffect, useRef, useState } from "react";
 
 import PersonAutocomplete from "@/Components/PersonAutocomplete.tsx";
+import { toaster } from "@/Components/ui/toaster";
 import { Person } from "@/logic/interfaces";
 import { assignCard, getPersonsWithoutCardAssigned } from "@/logic/persons";
 
 const AssignCards = () => {
-    const toast = useToast();
     const [cardId, setCardId] = useState<string>("");
     const [personsWithoutCard, setPersonsWithoutCard] = useState<number>(0);
     const [currentPerson, setCurrentPerson] = useState<Person | null>(null);
@@ -25,25 +25,25 @@ const AssignCards = () => {
         if (!currentPerson) return;
         const status = await assignCard(currentPerson.id, cardId);
         if (status === 200) {
-            toast({
+            toaster.create({
                 title: "Card assigned",
-                status: "success",
+                type: "success",
             });
             setCardId("");
             setPersonsWithoutCard(personsWithoutCard - 1);
             setCurrentPerson(null);
             document.getElementById("searchInput")?.focus();
         } else if (status === 409) {
-            toast({
+            toaster.create({
                 title: "Error",
                 description: "This card is already assigned to someone else",
-                status: "error",
+                type: "error",
             });
         } else {
-            toast({
+            toaster.create({
                 title: "Error",
                 description: "Something went wrong",
-                status: "error",
+                type: "error",
             });
         }
     };

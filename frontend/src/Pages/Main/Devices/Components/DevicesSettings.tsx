@@ -178,7 +178,7 @@ const DevicesSettings = () => {
                     }}
                 />
             </FormControl>
-            <Button type="submit" colorScheme="green">
+            <Button type="submit" colorPalette="green">
                 Save
             </Button>
         </Box>

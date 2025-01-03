@@ -1,4 +1,4 @@
-import { Heading, IconButton, ListItem, UnorderedList } from "@chakra-ui/react";
+import { Heading, IconButton, List } from "@chakra-ui/react";
 import { MdDone } from "react-icons/md";
 
 import { StaffActivity } from "@/logic/interfaces.ts";
@@ -15,9 +15,9 @@ const AbsentPeopleList = ({
     return (
         <>
             <Heading size="md">Absent</Heading>
-            <UnorderedList>
+            <List.Root as="ul">
                 {staffActivities.map((activity) => (
-                    <ListItem
+                    <List.Item
                         key={activity.id}
                         display="flex"
                         gap="2"
@@ -34,9 +34,9 @@ const AbsentPeopleList = ({
                             <MdDone />
                         </IconButton>
                         {activity.person.name}
-                    </ListItem>
+                    </List.Item>
                 ))}
-            </UnorderedList>
+            </List.Root>
         </>
     );
 };

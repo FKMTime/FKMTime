@@ -24,7 +24,7 @@ const AssignCardsAlert = ({
                 onClick={() => {
                     navigate("/cards");
                 }}
-                colorScheme="yellow"
+                colorPalette="yellow"
                 width={{ base: "100%", md: "20%" }}
             >
                 Assign cards

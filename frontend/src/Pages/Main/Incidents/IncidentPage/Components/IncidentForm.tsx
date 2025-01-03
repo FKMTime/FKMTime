@@ -144,7 +144,7 @@ const IncidentForm = ({
             />
             <Box display="flex" gap="5" flexDirection="column">
                 <Button
-                    colorScheme="green"
+                    colorPalette="green"
                     onClick={() =>
                         handleSubmit({
                             ...editedIncident,
@@ -155,7 +155,7 @@ const IncidentForm = ({
                     Mark as resolved
                 </Button>
                 <Button
-                    colorScheme="blue"
+                    colorPalette="blue"
                     onClick={() =>
                         handleSubmit({
                             ...editedIncident,
@@ -165,7 +165,7 @@ const IncidentForm = ({
                 >
                     Save and give extra
                 </Button>
-                <Button colorScheme="red" onClick={handleDelete}>
+                <Button colorPalette="red" onClick={handleDelete}>
                     Delete attempt
                 </Button>
             </Box>

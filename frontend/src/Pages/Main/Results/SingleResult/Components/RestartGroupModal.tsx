@@ -121,7 +121,7 @@ const RestartGroupModal = ({
                         </UnorderedList>
                     </>
                 )}
-                <Button colorScheme="red" onClick={handleRestartGroup}>
+                <Button colorPalette="red" onClick={handleRestartGroup}>
                     Restart group
                 </Button>
             </Box>

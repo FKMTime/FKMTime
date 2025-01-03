@@ -1,5 +1,6 @@
-import { Alert, AlertIcon, Text } from "@chakra-ui/react";
+import { Text } from "@chakra-ui/react";
 
+import { Alert } from "@/Components/ui/alert";
 import { Person } from "@/logic/interfaces.ts";
 import regions from "@/logic/regions.ts";
 import { isNewcomer } from "@/logic/utils";
@@ -12,8 +13,7 @@ const PersonInfo = ({ person }: PersonInfoProps) => {
     return (
         <>
             {isNewcomer(person) && (
-                <Alert status="warning" borderRadius="md" color="black">
-                    <AlertIcon />
+                <Alert status="warning">
                     Remember to check competitor's ID card
                 </Alert>
             )}

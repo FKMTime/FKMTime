@@ -1,12 +1,4 @@
-import {
-    Box,
-    Button,
-    Flex,
-    FormControl,
-    FormLabel,
-    Heading,
-    useToast,
-} from "@chakra-ui/react";
+import { Box, Button, Flex, Heading } from "@chakra-ui/react";
 import { Activity } from "@wca/helpers";
 import { useAtom } from "jotai";
 import { useCallback, useContext, useEffect, useMemo, useState } from "react";
@@ -14,6 +6,8 @@ import { useNavigate, useParams } from "react-router-dom";
 
 import LoadingPage from "@/Components/LoadingPage";
 import Select from "@/Components/Select";
+import { Field } from "@/Components/ui/field";
+import { toaster } from "@/Components/ui/toaster";
 import { activityCodeToName, getGroupsByRoundId } from "@/logic/activities";
 import { competitionAtom } from "@/logic/atoms";
 import {
@@ -34,7 +28,6 @@ import UnorderedPeopleList from "./Components/UnorderedPeopleList";
 const Attendance = () => {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
-    const toast = useToast();
     const selectedGroup = id ? id : "";
     const [competition, setCompetition] = useAtom(competitionAtom);
     const [attendance, setAttendance] = useState<StaffActivity[]>([]);
@@ -96,17 +89,17 @@ const Attendance = () => {
     const handleMarkAsPresent = async (staffActivityId: string) => {
         const status = await markAsPresent(staffActivityId);
         if (status === 201) {
-            toast({
+            toaster.create({
                 title: "Success",
                 description: "Marked as present",
-                status: "success",
+                type: "success",
             });
             fetchAttendanceData(selectedGroup);
         } else {
-            toast({
+            toaster.create({
                 title: "Error",
                 description: "Something went wrong",
-                status: "error",
+                type: "error",
             });
         }
     };
@@ -114,17 +107,17 @@ const Attendance = () => {
     const handleMarkAsAbsent = async (staffActivityId: string) => {
         const status = await markAsAbsent(staffActivityId);
         if (status === 201) {
-            toast({
+            toaster.create({
                 title: "Success",
                 description: "Marked as absent",
-                status: "success",
+                type: "success",
             });
             fetchAttendanceData(selectedGroup);
         } else {
-            toast({
+            toaster.create({
                 title: "Error",
                 description: "Something went wrong",
-                status: "error",
+                type: "error",
             });
         }
     };
@@ -184,7 +177,7 @@ const Attendance = () => {
         <Box display="flex" flexDirection="column" gap="5">
             <Heading size="lg">Attendance</Heading>
             <Button
-                colorScheme="yellow"
+                colorPalette="yellow"
                 onClick={() => navigate("/attendance/statistics")}
                 width={{ base: "100%", md: "fit-content" }}
             >
@@ -199,7 +192,7 @@ const Attendance = () => {
                             .map((room: Room) => (
                                 <Button
                                     key={room.id}
-                                    colorScheme="blue"
+                                    colorPalette="blue"
                                     width={{ base: "100%", md: "auto" }}
                                     onClick={() => {
                                         setSelectedEvent(
@@ -234,8 +227,7 @@ const Attendance = () => {
                 />
 
                 {selectedRound && (
-                    <FormControl width="fit-content">
-                        <FormLabel>Group</FormLabel>
+                    <Field width="fit-content" label="Group">
                         <Select
                             value={selectedGroup}
                             onChange={(event) =>
@@ -251,7 +243,7 @@ const Attendance = () => {
                                 </option>
                             ))}
                         </Select>
-                    </FormControl>
+                    </Field>
                 )}
             </Flex>
             {selectedGroup && (

@@ -1,16 +1,9 @@
-import {
-    Alert,
-    AlertIcon,
-    Box,
-    Button,
-    ListItem,
-    UnorderedList,
-    useToast,
-} from "@chakra-ui/react";
+import { Alert, Box, Button, List } from "@chakra-ui/react";
 import { useAtom } from "jotai";
 import { useCallback, useEffect, useState } from "react";
 
 import LoadingPage from "@/Components/LoadingPage";
+import { toaster } from "@/Components/ui/toaster";
 import { activityCodeToName } from "@/logic/activities";
 import { competitionAtom } from "@/logic/atoms";
 import { getCompetitionInfo } from "@/logic/competition";
@@ -21,7 +14,6 @@ import { getAllRooms, updateCurrentRound } from "@/logic/rooms";
 import RoomCard from "./Components/RoomCard";
 
 const Rooms = () => {
-    const toast = useToast();
     const [competition, setCompetition] = useAtom(competitionAtom);
     const [rooms, setRooms] = useState<Room[]>([]);
 
@@ -72,14 +64,14 @@ const Rooms = () => {
     const handleSubmit = async () => {
         const status = await updateCurrentRound(rooms);
         if (status === 200) {
-            toast({
+            toaster.create({
                 title: "Rooms updated",
-                status: "success",
+                type: "success",
             });
         } else {
-            toast({
+            toaster.create({
                 title: "Something went wrong!",
-                status: "error",
+                type: "error",
             });
         }
     };
@@ -96,7 +88,7 @@ const Rooms = () => {
             width={{ base: "100%", md: "fit-content" }}
         >
             {currentOfficialRounds.length > 0 && (
-                <Alert
+                <Alert.Root
                     status="warning"
                     borderRadius="md"
                     color="black"
@@ -104,20 +96,17 @@ const Rooms = () => {
                     flexDirection="column"
                     alignItems="flex-start"
                 >
-                    <Box display="flex">
-                        <AlertIcon />
-                        Remember to open the following rounds in WCA Live:
-                    </Box>
-                    <UnorderedList>
+                    Remember to open the following rounds in WCA Live:
+                    <List.Root as="ul">
                         {currentOfficialRounds.map((room) => (
-                            <ListItem>
+                            <List.Item>
                                 {activityCodeToName(
                                     room.currentGroupId?.split("-g")[0]
                                 )}
-                            </ListItem>
+                            </List.Item>
                         ))}
-                    </UnorderedList>
-                </Alert>
+                    </List.Root>
+                </Alert.Root>
             )}
 
             <Box display="flex" flexWrap="wrap" gap="5">
@@ -131,7 +120,7 @@ const Rooms = () => {
                     />
                 ))}
             </Box>
-            <Button onClick={handleSubmit} colorScheme="green" width="100%">
+            <Button onClick={handleSubmit} colorPalette="green" width="100%">
                 Save
             </Button>
         </Box>

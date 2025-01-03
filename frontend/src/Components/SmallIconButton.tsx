@@ -15,7 +15,6 @@ const SmallIconButton = ({
 }: SmallIconButtonProps) => {
     return (
         <IconButton
-            icon={icon}
             aria-label={ariaLabel}
             bg="none"
             color="white"
@@ -25,7 +24,9 @@ const SmallIconButton = ({
             }}
             title={title}
             onClick={onClick}
-        />
+        >
+            {icon}
+        </IconButton>
     );
 };
 
