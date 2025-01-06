@@ -17,3 +17,4 @@ export const AVAILABLE_PENALTIES = [
 export const CUTOFF_ALLOWED = ["a", "m"];
 export const GITHUB_URL = "https://github.com/FKMTime/FKMTime";
 export const THEME_STORAGE_KEY = "fkmtime-theme";
+export const POSSIBLE_GENDERS = ["m", "f", "o"];

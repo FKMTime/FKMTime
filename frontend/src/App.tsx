@@ -31,7 +31,7 @@ import ScramblingDeviceLayout from "./Pages/ScramblingDevice/ScramblingDeviceLay
 import { ConfirmProvider } from "./providers/ConfirmProvider";
 import { ThemeProvider } from "./providers/ThemeProvider";
 import { SocketContext } from "./socket";
-// const Persons = React.lazy(() => import("./Pages/Main/Persons/Persons"));
+const Persons = React.lazy(() => import("./Pages/Main/Persons/Persons"));
 // const Results = React.lazy(() => import("./Pages/Main/Results/Results"));
 // const SingleResult = React.lazy(
 //     () => import("./Pages/Main/Results/SingleResult/SingleResult")
@@ -39,9 +39,9 @@ import { SocketContext } from "./socket";
 // const IncidentPage = React.lazy(
 //     () => import("./Pages/Main/Incidents/IncidentPage/IncidentPage")
 // );
-// const PersonResults = React.lazy(
-//     () => import("./Pages/Main/Persons/PersonResults/PersonResults")
-// );
+const PersonResults = React.lazy(
+    () => import("./Pages/Main/Persons/PersonResults/PersonResults")
+);
 
 const App = () => {
     const [isConnected, setConnected] = useState(0);
@@ -67,10 +67,10 @@ const App = () => {
                     path: "users",
                     element: <Users />,
                 },
-                    {
-                        path: "competition",
-                        element: <Competition />,
-                    },
+                {
+                    path: "competition",
+                    element: <Competition />,
+                },
                 //     {
                 //         path: "incidents",
                 //         element: <Incidents />,
@@ -83,18 +83,18 @@ const App = () => {
                 //         path: "incidents/:id",
                 //         element: <IncidentPage />,
                 //     },
-                //     {
-                //         path: "persons",
-                //         element: <Persons />,
-                //     },
-                //     {
-                //         path: "persons/:id/results",
-                //         element: <PersonResults />,
-                //     },
-                //     {
-                //         path: "cards",
-                //         element: <AssignCards />,
-                //     },
+                {
+                    path: "persons",
+                    element: <Persons />,
+                },
+                {
+                    path: "persons/:id/results",
+                    element: <PersonResults />,
+                },
+                {
+                    path: "cards",
+                    element: <AssignCards />,
+                },
                 //     {
                 //         path: "rooms",
                 //         element: <Rooms />,

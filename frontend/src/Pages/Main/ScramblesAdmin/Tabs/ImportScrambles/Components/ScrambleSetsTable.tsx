@@ -4,7 +4,7 @@ import {
     Tbody,
     Td,
     Th,
-    Thead,
+    TableHead,
     Tr,
 } from "@chakra-ui/react";
 import { ScrambleSet } from "@wca/helpers";
@@ -16,14 +16,14 @@ interface ScrambleSetsTableProps {
 const ScrambleSetsTable = ({ scrambleSets }: ScrambleSetsTableProps) => {
     return (
         <TableContainer>
-            <Table variant="simple">
-                <Thead>
-                    <TableRow bg="gray.400">
+            <Table >
+                <TableHead>
+                    <TableRow>
                         <TableHead>Scramble set</TableHead>
                         <TableHead>Scrambles</TableHead>
                         <TableHead>Extra scrambles</TableHead>
                     </TableRow>
-                </Thead>
+                </TableHead>
                 <TableBody>
                     {scrambleSets.map((set: ScrambleSet) => (
                         <TableRow key={set.id}>
@@ -32,7 +32,7 @@ const ScrambleSetsTable = ({ scrambleSets }: ScrambleSetsTableProps) => {
                             <TableCell>{set.extraScrambles.length}</TableCell>
                         </TableRow>
                     ))}
-                </Tbody>
+                </TableBody>
             </Table>
         </TableContainer>
     );

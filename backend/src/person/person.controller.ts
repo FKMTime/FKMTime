@@ -55,8 +55,9 @@ export class PersonController {
   @Get('all')
   async getAllPersons(
     @Query('withoutCardAssigned') withoutCardAssigned = false,
+    @Query('search') search?: string,
   ) {
-    return this.personService.getAllPersons(withoutCardAssigned);
+    return this.personService.getAllPersons(withoutCardAssigned, search);
   }
 
   @UseGuards(AuthGuard('jwt'))

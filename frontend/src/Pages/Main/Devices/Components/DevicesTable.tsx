@@ -1,4 +1,4 @@
-import { Table, TableContainer, Tbody, Th, Thead, Tr } from "@chakra-ui/react";
+import { Table, TableContainer, Tbody, Th, TableHead, Tr } from "@chakra-ui/react";
 
 import { Device } from "@/lib/interfaces";
 
@@ -12,9 +12,9 @@ interface DevicesTableProps {
 const DevicesTable = ({ devices, fetchData }: DevicesTableProps) => {
     return (
         <TableContainer>
-            <Table variant="simple">
-                <Thead>
-                    <TableRow bg="gray.400">
+            <Table >
+                <TableHead>
+                    <TableRow>
                         <TableHead>Name</TableHead>
                         <TableHead>ESP ID</TableHead>
                         <TableHead>Battery</TableHead>
@@ -23,7 +23,7 @@ const DevicesTable = ({ devices, fetchData }: DevicesTableProps) => {
                         <TableHead>Last update</TableHead>
                         <TableHead>Actions</TableHead>
                     </TableRow>
-                </Thead>
+                </TableHead>
                 <TableBody>
                     {devices.map((device) => (
                         <DeviceRow
@@ -32,7 +32,7 @@ const DevicesTable = ({ devices, fetchData }: DevicesTableProps) => {
                             fetchData={fetchData}
                         />
                     ))}
-                </Tbody>
+                </TableBody>
             </Table>
         </TableContainer>
     );

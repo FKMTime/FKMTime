@@ -140,9 +140,62 @@ export class PersonService {
     };
   }
 
-  async getAllPersons(withoutCardAssigned?: boolean) {
+  async getAllPersons(withoutCardAssigned?: boolean, search?: string) {
     const whereParams = {};
-    if (withoutCardAssigned) {
+    if (withoutCardAssigned && search) {
+      whereParams['AND'] = [
+        {
+          OR: [
+            {
+              cardId: {
+                equals: null,
+              },
+            },
+            {
+              cardId: {
+                equals: '',
+              },
+            },
+            {
+              cardId: {
+                equals: '0',
+              },
+            },
+          ],
+        },
+        {
+          OR: [
+            {
+              name: {
+                contains: search,
+                mode: 'insensitive',
+              },
+            },
+            {
+              wcaId: {
+                contains: search,
+                mode: 'insensitive',
+              },
+            },
+          ],
+        },
+      ];
+    } else if (!withoutCardAssigned && search) {
+      whereParams['OR'].push(
+        {
+          name: {
+            contains: search,
+            mode: 'insensitive',
+          },
+        },
+        {
+          wcaId: {
+            contains: search,
+            mode: 'insensitive',
+          },
+        },
+      );
+    } else if (withoutCardAssigned && !search) {
       whereParams['OR'] = [
         {
           cardId: {
@@ -161,6 +214,7 @@ export class PersonService {
         },
       ];
     }
+
     return this.prisma.person.findMany({
       where: whereParams,
       orderBy: {

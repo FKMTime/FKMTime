@@ -25,6 +25,7 @@ const CreateUserModal = ({ isOpen, onClose }: CreateUserModalProps) => {
             toast({
                 title: "Success",
                 description: "User has been created successfully.",
+                variant: "success",
             });
             onClose();
         } else if (response.status === 409) {

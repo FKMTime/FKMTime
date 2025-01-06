@@ -5,7 +5,7 @@ import {
     Td,
     Text,
     Th,
-    Thead,
+    TableHead,
     Tr,
 } from "@chakra-ui/react";
 
@@ -19,14 +19,14 @@ interface ScramblesListProps {
 const ScramblesList = ({ scrambles, roundId }: ScramblesListProps) => {
     return (
         <TableContainer>
-            <Table variant="simple">
-                <Thead>
-                    <TableRow bg="gray.400">
+            <Table >
+                <TableHead>
+                    <TableRow>
                         <TableHead>#</TableHead>
                         <TableHead>Scramble</TableHead>
                         <TableHead>Image</TableHead>
                     </TableRow>
-                </Thead>
+                </TableHead>
                 <TableBody>
                     {scrambles.map((scramble) => (
                         <TableRow margin={0}>
@@ -51,7 +51,7 @@ const ScramblesList = ({ scrambles, roundId }: ScramblesListProps) => {
                             </TableCell>
                         </TableRow>
                     ))}
-                </Tbody>
+                </TableBody>
             </Table>
         </TableContainer>
     );

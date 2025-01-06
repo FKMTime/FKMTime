@@ -26,10 +26,14 @@ export const getPersons = async (
     return await response.json();
 };
 
-export const getAllPersons = async (withoutCardAssigned = false) => {
-    const path = withoutCardAssigned
-        ? "person/all?withoutCardAssigned=true"
-        : "person/all";
+export const getAllPersons = async (
+    withoutCardAssigned = false,
+    searchValue?: string
+) => {
+    const searchParams = new URLSearchParams();
+    if (searchValue) searchParams.append("search", searchValue);
+    if (withoutCardAssigned) searchParams.append("withoutCardAssigned", "true");
+    const path = `person/all?${searchParams.toString()}`;
     const response = await backendRequest(path, "GET", true);
     return await response.json();
 };

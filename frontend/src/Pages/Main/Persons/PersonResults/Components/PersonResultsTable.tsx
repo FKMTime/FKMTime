@@ -1,5 +1,10 @@
-import { Table, TableContainer, Tbody, Th, Thead, Tr } from "@chakra-ui/react";
-
+import {
+    Table,
+    TableBody,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from "@/Components/ui/table";
 import { isAdmin } from "@/lib/auth";
 import { Result } from "@/lib/interfaces";
 
@@ -11,23 +16,21 @@ interface PersonResultsTableProps {
 
 const PersonResultsTable = ({ results }: PersonResultsTableProps) => {
     return (
-        <TableContainer>
-            <Table variant="simple">
-                <Thead>
-                    <TableRow bg="gray.400">
-                        <TableHead>Round</TableHead>
-                        <TableHead>Average</TableHead>
-                        <TableHead>Best</TableHead>
-                        {isAdmin() && <TableHead>Actions</TableHead>}
-                    </TableRow>
-                </Thead>
-                <TableBody>
-                    {results.map((result: Result) => (
-                        <PersonResultRow key={result.id} result={result} />
-                    ))}
-                </Tbody>
-            </Table>
-        </TableContainer>
+        <Table>
+            <TableHeader>
+                <TableRow>
+                    <TableHead>Round</TableHead>
+                    <TableHead>Average</TableHead>
+                    <TableHead>Best</TableHead>
+                    {isAdmin() && <TableHead>Actions</TableHead>}
+                </TableRow>
+            </TableHeader>
+            <TableBody>
+                {results.map((result: Result) => (
+                    <PersonResultRow key={result.id} result={result} />
+                ))}
+            </TableBody>
+        </Table>
     );
 };
 

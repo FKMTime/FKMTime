@@ -1,4 +1,4 @@
-import { Table, TableContainer, Tbody, Th, Thead, Tr } from "@chakra-ui/react";
+import { Table, TableContainer, Tbody, Th, TableHead, Tr } from "@chakra-ui/react";
 
 import { ResultWithAverage } from "@/lib/interfaces";
 import { isMobileView } from "@/logic/utils.ts";
@@ -16,9 +16,9 @@ const PublicResultsTable = ({
 }: PublicResultsTableProps) => {
     return (
         <TableContainer>
-            <Table variant="simple">
-                <Thead>
-                    <TableRow bg="gray.400">
+            <Table >
+                <TableHead>
+                    <TableRow>
                         <TableHead>Pos</TableHead>
                         <TableHead>Name</TableHead>
                         {!isMobileView() &&
@@ -30,7 +30,7 @@ const PublicResultsTable = ({
                         <TableHead>Average</TableHead>
                         <TableHead>Best</TableHead>
                     </TableRow>
-                </Thead>
+                </TableHead>
                 <TableBody>
                     {results.map((result: ResultWithAverage, i: number) => (
                         <PublicResultRow
@@ -40,7 +40,7 @@ const PublicResultsTable = ({
                             pos={i + 1}
                         />
                     ))}
-                </Tbody>
+                </TableBody>
             </Table>
         </TableContainer>
     );

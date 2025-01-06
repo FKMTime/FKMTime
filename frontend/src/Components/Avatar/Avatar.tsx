@@ -20,7 +20,11 @@ const Avatar = ({ avatarUrl, fullAvatarUrl, username }: AvatarProps) => {
     return (
         <>
             <ShadcnAvatar>
-                <AvatarImage src={avatarUrl} />
+                <AvatarImage
+                    src={avatarUrl}
+                    onClick={() => setIsOpenAvatarModal(true)}
+                    className="cursor-pointer"
+                />
                 <AvatarFallback>
                     {username ? username[0].toUpperCase() : "U"}
                 </AvatarFallback>

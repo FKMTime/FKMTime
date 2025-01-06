@@ -2,6 +2,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 
+import ModalActions from "@/Components/ModalActions";
 import { Button } from "@/Components/ui/button";
 import {
     Form,
@@ -122,14 +123,15 @@ const CreateFKMAccountForm = ({
                         </FormItem>
                     )}
                 />
-                <Button
-                    type="submit"
-                    className="w-full"
-                    variant="success"
-                    disabled={isLoading}
-                >
-                    Create
-                </Button>
+                <ModalActions>
+                    <Button
+                        type="submit"
+                        variant="success"
+                        disabled={isLoading}
+                    >
+                        Create
+                    </Button>
+                </ModalActions>
             </form>
         </Form>
     );

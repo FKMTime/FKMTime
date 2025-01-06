@@ -1,4 +1,4 @@
-import { Table, TableContainer, Tbody, Th, Thead, Tr } from "@chakra-ui/react";
+import { Table, TableContainer, Tbody, Th, TableHead, Tr } from "@chakra-ui/react";
 
 import { Incident } from "@/lib/interfaces";
 
@@ -11,9 +11,9 @@ interface ResolvedIncidentsTableProps {
 const ResolvedIncidents = ({ data }: ResolvedIncidentsTableProps) => {
     return (
         <TableContainer>
-            <Table variant="simple">
-                <Thead>
-                    <TableRow bg="gray.400">
+            <Table >
+                <TableHead>
+                    <TableRow>
                         <TableHead>Person</TableHead>
                         <TableHead>Round</TableHead>
                         <TableHead>Attempt</TableHead>
@@ -25,7 +25,7 @@ const ResolvedIncidents = ({ data }: ResolvedIncidentsTableProps) => {
                         <TableHead>Judge</TableHead>
                         <TableHead>Actions</TableHead>
                     </TableRow>
-                </Thead>
+                </TableHead>
                 <TableBody>
                     {data.map((incident) => (
                         <ResolvedIncidentRow
@@ -33,7 +33,7 @@ const ResolvedIncidents = ({ data }: ResolvedIncidentsTableProps) => {
                             incident={incident}
                         />
                     ))}
-                </Tbody>
+                </TableBody>
             </Table>
         </TableContainer>
     );

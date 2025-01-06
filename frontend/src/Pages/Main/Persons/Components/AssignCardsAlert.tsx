@@ -1,5 +1,6 @@
-import { Alert, AlertIcon, Button } from "@chakra-ui/react";
-import { useNavigate } from "react-router-dom";
+import { AlertCircle } from "lucide-react";
+
+import { Alert, AlertTitle } from "@/Components/ui/alert";
 
 interface AssignCardsAlertProps {
     personsWithoutCardAssigned: number;
@@ -8,27 +9,15 @@ interface AssignCardsAlertProps {
 const AssignCardsAlert = ({
     personsWithoutCardAssigned,
 }: AssignCardsAlertProps) => {
-    const navigate = useNavigate();
     return (
         <>
-            <Alert
-                status="error"
-                color="black"
-                width={{ base: "100%", md: "40%" }}
-            >
-                <AlertIcon />
-                There are {personsWithoutCardAssigned} persons without a card
-                assigned. Please assign a card to them.
+            <Alert variant="warning">
+                <AlertCircle className="h-4 w-4" />
+                <AlertTitle>
+                    There are {personsWithoutCardAssigned} persons without a
+                    card assigned. Please assign a card to them.
+                </AlertTitle>
             </Alert>
-            <Button
-                onClick={() => {
-                    navigate("/cards");
-                }}
-                colorScheme="yellow"
-                width={{ base: "100%", md: "20%" }}
-            >
-                Assign cards
-            </Button>
         </>
     );
 };

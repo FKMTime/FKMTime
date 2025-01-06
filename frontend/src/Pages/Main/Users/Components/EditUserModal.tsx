@@ -4,6 +4,7 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 
 import { Modal } from "@/Components/Modal";
+import ModalActions from "@/Components/ModalActions";
 import { Button } from "@/Components/ui/button";
 import {
     Form,
@@ -58,6 +59,7 @@ const EditUserModal = ({ isOpen, onClose, user }: EditUserModalProps) => {
         if (status === 200) {
             toast({
                 title: "Successfully updated user.",
+                variant: "success",
             });
             onClose();
         } else if (status === 409) {
@@ -154,14 +156,15 @@ const EditUserModal = ({ isOpen, onClose, user }: EditUserModalProps) => {
                                 </FormItem>
                             )}
                         />
-                        <Button
-                            type="submit"
-                            className="w-full"
-                            variant="success"
-                            disabled={isLoading}
-                        >
-                            Edit
-                        </Button>
+                        <ModalActions>
+                            <Button
+                                type="submit"
+                                variant="success"
+                                disabled={isLoading}
+                            >
+                                Edit
+                            </Button>
+                        </ModalActions>
                     </form>
                 </Form>
             </div>

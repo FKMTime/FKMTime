@@ -5,7 +5,7 @@ import {
     Tbody,
     Td,
     Th,
-    Thead,
+    TableHead,
     Tr,
 } from "@chakra-ui/react";
 import { useNavigate } from "react-router-dom";
@@ -21,13 +21,13 @@ const ScrambleSetsTable = ({ scrambleSets }: ScrambleSetsTableProps) => {
     const navigate = useNavigate();
     return (
         <TableContainer>
-            <Table variant="simple">
-                <Thead>
-                    <TableRow bg="gray.400">
+            <Table >
+                <TableHead>
+                    <TableRow>
                         <TableHead>Name</TableHead>
                         <TableHead>Actions</TableHead>
                     </TableRow>
-                </Thead>
+                </TableHead>
                 <TableBody>
                     {scrambleSets.map((scrambleSet) => (
                         <TableRow key={scrambleSet.id}>
@@ -59,7 +59,7 @@ const ScrambleSetsTable = ({ scrambleSets }: ScrambleSetsTableProps) => {
                             </TableCell>
                         </TableRow>
                     ))}
-                </Tbody>
+                </TableBody>
             </Table>
         </TableContainer>
     );

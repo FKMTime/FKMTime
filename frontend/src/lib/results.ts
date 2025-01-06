@@ -5,7 +5,7 @@ import { average, best, formattedBest } from "./average";
 import { Attempt, Result, ResultWithAverage } from "./interfaces";
 import { backendRequest } from "./request";
 import { resultToString } from "./resultFormatters";
-import { getSubmittedAttempts } from "../logic/utils";
+import { getSubmittedAttempts } from "./utils";
 
 export const getResultsByRoundId = async (roundId: string, search?: string) => {
     let route = `result/round/${roundId}`;

@@ -1,4 +1,4 @@
-import { Table, TableContainer, Tbody, Th, Thead, Tr } from "@chakra-ui/react";
+import { Table, TableContainer, Tbody, Th, TableHead, Tr } from "@chakra-ui/react";
 
 import { Attempt, Result } from "@/lib/interfaces";
 
@@ -19,9 +19,9 @@ const AttemptsTable = ({
 }: AttemptsTableProps) => {
     return (
         <TableContainer overflowX="auto">
-            <Table variant="simple">
-                <Thead>
-                    <TableRow bg="gray.400">
+            <Table >
+                <TableHead>
+                    <TableRow>
                         <TableHead>No</TableHead>
                         <TableHead>Attempt number</TableHead>
                         <TableHead>Time</TableHead>
@@ -40,7 +40,7 @@ const AttemptsTable = ({
                         <TableHead>Actions</TableHead>
                         <TableHead></TableHead>
                     </TableRow>
-                </Thead>
+                </TableHead>
                 <TableBody>
                     {attempts.map((attempt: Attempt, i: number) => (
                         <AttemptRow
@@ -52,7 +52,7 @@ const AttemptsTable = ({
                             result={result}
                         />
                     ))}
-                </Tbody>
+                </TableBody>
             </Table>
         </TableContainer>
     );

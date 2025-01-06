@@ -4,6 +4,7 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 
 import { Modal } from "@/Components/Modal";
+import ModalActions from "@/Components/ModalActions";
 import { Button } from "@/Components/ui/button";
 import {
     Form,
@@ -43,6 +44,7 @@ const EditUserPasswordModal = ({
         if (status === 200) {
             toast({
                 title: "Successfully changed password.",
+                variant: "success",
             });
             onClose();
         } else {
@@ -79,14 +81,15 @@ const EditUserPasswordModal = ({
                             </FormItem>
                         )}
                     />
-                    <Button
-                        type="submit"
-                        className="w-full"
-                        variant="success"
-                        disabled={isLoading}
-                    >
-                        Create
-                    </Button>
+                    <ModalActions>
+                        <Button
+                            type="submit"
+                            variant="success"
+                            disabled={isLoading}
+                        >
+                            Edit
+                        </Button>
+                    </ModalActions>
                 </form>
             </Form>
         </Modal>

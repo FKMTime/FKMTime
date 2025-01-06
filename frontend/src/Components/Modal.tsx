@@ -23,7 +23,7 @@ export const Modal = ({ onClose, isOpen, title, children }: ModalProps) => {
                     <DialogHeader>
                         <DialogTitle>{title}</DialogTitle>
                     </DialogHeader>
-                    <DialogDescription>{children}</DialogDescription>
+                    {children}
                 </DialogContent>
             </Dialog>
         </>

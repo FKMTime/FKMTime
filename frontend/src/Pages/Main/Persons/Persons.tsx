@@ -1,14 +1,18 @@
-import { Box } from "@chakra-ui/react";
 import { useAtom } from "jotai";
 import { ChangeEvent, useCallback, useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 import LoadingPage from "@/Components/LoadingPage";
 import Pagination from "@/Components/Pagination";
+import PlusButton from "@/Components/PlusButton";
+import { Button } from "@/Components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/Components/ui/card";
 import { competitionAtom } from "@/lib/atoms";
+import { isAdmin } from "@/lib/auth";
 import { getCompetitionInfo } from "@/lib/competition";
 import { Person } from "@/lib/interfaces";
 import { getPersons } from "@/lib/persons";
-import { calculateTotalPages } from "@/logic/utils";
+import { calculateTotalPages } from "@/lib/utils";
 
 import AddPersonModal from "./Components/AddPersonModal";
 import AssignCardsAlert from "./Components/AssignCardsAlert";
@@ -17,6 +21,7 @@ import PersonsFilters from "./Components/PersonsFilters";
 import PersonsTable from "./Components/PersonsTable";
 
 const Persons = () => {
+    const navigate = useNavigate();
     const [competition, setCompetition] = useAtom(competitionAtom);
     const [persons, setPersons] = useState<Person[]>([]);
     const [page, setPage] = useState<number>(1);
@@ -137,6 +142,10 @@ const Persons = () => {
         );
     };
 
+    const handlePageSizeChange = (newValue: string) => {
+        changePageSize(parseInt(newValue));
+    };
+
     const handleCloseAddPersonModal = () => {
         fetchData(
             page,
@@ -157,42 +166,63 @@ const Persons = () => {
     }
 
     return (
-        <Box display="flex" flexDirection="column" gap="5">
+        <div className="flex flex-col gap-5">
             {personsWithoutCardAssigned !== 0 && (
                 <AssignCardsAlert
                     personsWithoutCardAssigned={personsWithoutCardAssigned}
                 />
             )}
-            <PersonsFilters
-                searchedId={searchedId}
-                handleSearchId={handleSearchId}
-                searchedCardId={searchedCardId}
-                handleSearchCardId={handleSearchCardId}
-                search={search}
-                handleSearch={handleSearch}
-                onlyNewcomers={onlyNewcomers}
-                handleOnlyNewcomers={handleOnlyNewcomers}
-                onlyNotCheckedIn={onlyNotCheckedIn}
-                handleOnlyNotCheckedIn={handleOnlyNotCheckedIn}
-                setIsOpenAddPersonModal={setIsOpenAddPersonModal}
-            />
-            <Box display={{ base: "none", md: "block" }}>
-                <PersonsTable
-                    persons={persons}
-                    competition={competition}
-                    handleCloseEditModal={handleCloseEditModal}
-                    changePageSize={changePageSize}
-                    handlePageChange={handlePageChange}
-                    page={page}
-                    totalPages={totalPages}
-                    pageSize={pageSize}
-                />
-            </Box>
-            <Box
-                display={{ base: "flex", md: "none" }}
-                flexDirection="column"
-                gap={3}
-            >
+            <Card>
+                <CardHeader>
+                    <CardTitle className="flex justify-between items-center">
+                        Persons
+                        {isAdmin() && (
+                            <>
+                                <PlusButton
+                                    aria-label="Add"
+                                    onClick={() =>
+                                        setIsOpenAddPersonModal(true)
+                                    }
+                                />
+                            </>
+                        )}
+                    </CardTitle>
+                </CardHeader>
+                <CardContent className="flex flex-col md:flex-row gap-5 md:justify-between">
+                    <PersonsFilters
+                        searchedId={searchedId}
+                        handleSearchId={handleSearchId}
+                        searchedCardId={searchedCardId}
+                        handleSearchCardId={handleSearchCardId}
+                        search={search}
+                        handleSearch={handleSearch}
+                        onlyNewcomers={onlyNewcomers}
+                        handleOnlyNewcomers={handleOnlyNewcomers}
+                        onlyNotCheckedIn={onlyNotCheckedIn}
+                        handleOnlyNotCheckedIn={handleOnlyNotCheckedIn}
+                        totalPages={totalPages}
+                        pageSize={pageSize}
+                        handlePageSizeChange={handlePageSizeChange}
+                    />
+                    <Button
+                        onClick={() => {
+                            navigate("/cards");
+                        }}
+                    >
+                        Assign cards
+                    </Button>
+                </CardContent>
+            </Card>
+            <Card className="hidden md:flex py-3">
+                <CardContent className="w-full">
+                    <PersonsTable
+                        persons={persons}
+                        competition={competition}
+                        handleCloseEditModal={handleCloseEditModal}
+                    />
+                </CardContent>
+            </Card>
+            <div className="flex md:hidden flex-col gap-3">
                 {persons.map((person) => (
                     <PersonCard
                         key={person.id}
@@ -201,21 +231,23 @@ const Persons = () => {
                         handleCloseEditModal={handleCloseEditModal}
                     />
                 ))}
-                <Pagination
-                    page={page}
-                    totalPages={totalPages}
-                    handlePageChange={handlePageChange}
-                    changePageSize={changePageSize}
-                    pageSize={pageSize}
-                />
-            </Box>
+            </div>
+            <Card>
+                <CardContent>
+                    <Pagination
+                        page={page}
+                        totalPages={totalPages}
+                        handlePageChange={handlePageChange}
+                    />
+                </CardContent>
+            </Card>
             {isOpenAddPersonModal && (
                 <AddPersonModal
                     isOpen={isOpenAddPersonModal}
                     onClose={handleCloseAddPersonModal}
                 />
             )}
-        </Box>
+        </div>
     );
 };
 

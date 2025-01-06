@@ -1,14 +1,11 @@
-import {
-    Box,
-    Button,
-    FormControl,
-    FormLabel,
-    Input,
-    useToast,
-} from "@chakra-ui/react";
-import { FormEvent, useState } from "react";
+import { useState } from "react";
+import { Label } from "recharts";
 
 import { Modal } from "@/Components/Modal";
+import ModalActions from "@/Components/ModalActions";
+import { Button } from "@/Components/ui/button";
+import { Input } from "@/Components/ui/input";
+import { useToast } from "@/hooks/useToast";
 import { isAdmin } from "@/lib/auth";
 import { Person } from "@/lib/interfaces";
 import { updatePerson } from "@/lib/persons";
@@ -20,19 +17,18 @@ interface AssignCardModalProps {
 }
 
 const AssignCardModal = ({ isOpen, onClose, person }: AssignCardModalProps) => {
-    const toast = useToast();
+    const { toast } = useToast();
     const [isLoading, setIsLoading] = useState(false);
     const [editedPerson, setEditedPerson] = useState<Person>(person);
 
-    const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    const handleSubmit = async () => {
         setIsLoading(true);
-        event.preventDefault();
 
         const status = await updatePerson(editedPerson);
         if (status === 200) {
             toast({
                 title: "Successfully updated person.",
-                
+                variant: "success",
             });
             onClose();
         } else {
@@ -47,19 +43,12 @@ const AssignCardModal = ({ isOpen, onClose, person }: AssignCardModalProps) => {
 
     return (
         <Modal isOpen={isOpen} onClose={onClose} title="Assign card">
-            <Box
-                display="flex"
-                flexDirection="column"
-                gap="5"
-                as="form"
-                onSubmit={handleSubmit}
-            >
-                <FormControl>
-                    <FormLabel>Card</FormLabel>
+            <div className="felx flex-col gap-5">
+                <div className="flex flex-col gap-2 mb-3">
+                    <Label>Card</Label>
                     <Input
                         placeholder="Card"
-                        isReadOnly={!isAdmin()}
-                        _placeholder={{ color: "white" }}
+                        readOnly={!isAdmin()}
                         value={editedPerson.cardId}
                         disabled={isLoading}
                         onChange={(e) =>
@@ -70,29 +59,21 @@ const AssignCardModal = ({ isOpen, onClose, person }: AssignCardModalProps) => {
                         }
                         autoFocus
                     />
-                </FormControl>
-                <Box
-                    display="flex"
-                    flexDirection="row"
-                    justifyContent="end"
-                    gap="5"
-                >
-                    {!isLoading && (
-                        <Button colorScheme="red" onClick={onClose}>
-                            Cancel
-                        </Button>
-                    )}
+                </div>
+                <ModalActions>
                     {isAdmin() && (
                         <Button
-                            colorScheme="green"
+                            variant="success"
                             type="submit"
-                            isLoading={isLoading}
+                            className=""
+                            onClick={handleSubmit}
+                            disabled={isLoading}
                         >
                             Save
                         </Button>
                     )}
-                </Box>
-            </Box>
+                </ModalActions>
+            </div>
         </Modal>
     );
 };

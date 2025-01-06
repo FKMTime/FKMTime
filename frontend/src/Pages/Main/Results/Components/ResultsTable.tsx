@@ -1,4 +1,4 @@
-import { Table, TableContainer, Tbody, Th, Thead, Tr } from "@chakra-ui/react";
+import { Table, TableContainer, Tbody, Th, TableHead, Tr } from "@chakra-ui/react";
 
 import { isAdmin } from "@/lib/auth";
 import { Result } from "@/lib/interfaces";
@@ -18,9 +18,9 @@ const ResultsTable = ({
 }: ResultsTableProps) => {
     return (
         <TableContainer>
-            <Table variant="simple">
-                <Thead>
-                    <TableRow bg="gray.400">
+            <Table >
+                <TableHead>
+                    <TableRow>
                         <TableHead>Name (ID)</TableHead>
                         {Array.from({ length: maxAttempts }, (_, i) => (
                             <Th
@@ -39,7 +39,7 @@ const ResultsTable = ({
                         </TableHead>
                         {isAdmin() && <TableHead>Actions</TableHead>}
                     </TableRow>
-                </Thead>
+                </TableHead>
                 <TableBody>
                     {results.map((result: Result) => (
                         <ResultRow
@@ -49,7 +49,7 @@ const ResultsTable = ({
                             fetchData={fetchData}
                         />
                     ))}
-                </Tbody>
+                </TableBody>
             </Table>
         </TableContainer>
     );

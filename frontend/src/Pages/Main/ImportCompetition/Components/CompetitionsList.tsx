@@ -5,7 +5,7 @@ import {
     Tbody,
     Td,
     Th,
-    Thead,
+    TableHead,
     Tr,
 } from "@chakra-ui/react";
 
@@ -22,13 +22,13 @@ const CompetitionsList = ({
 }: CompetitionsListProps) => {
     return (
         <TableContainer>
-            <Table variant="simple">
-                <Thead>
-                    <TableRow bg="gray.400">
+            <Table >
+                <TableHead>
+                    <TableRow>
                         <TableHead>Name</TableHead>
                         <TableHead>Actions</TableHead>
                     </TableRow>
-                </Thead>
+                </TableHead>
                 <TableBody>
                     {competitions.map((competition) => (
                         <TableRow>
@@ -45,7 +45,7 @@ const CompetitionsList = ({
                             </TableCell>
                         </TableRow>
                     ))}
-                </Tbody>
+                </TableBody>
             </Table>
         </TableContainer>
     );

@@ -1,16 +1,14 @@
-import {
-    Box,
-    Table,
-    TableContainer,
-    Tbody,
-    Td,
-    Th,
-    Thead,
-    Tr,
-} from "@chakra-ui/react";
 import { useEffect, useState } from "react";
 
 import { Modal } from "@/Components/Modal";
+import {
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from "@/Components/ui/table";
 import { activityCodeToName, prettyActivityName } from "@/lib/activities";
 import { getStaffActivitiesByPersonId } from "@/lib/attendance";
 import { Person, StaffActivity } from "@/lib/interfaces";
@@ -38,34 +36,36 @@ const DisplayGroupsModal = ({
 
     return (
         <Modal isOpen={isOpen} onClose={onClose} title="Groups">
-            <Box display="flex" flexDirection="column" gap="5">
-                <TableContainer>
-                    <Table variant="simple">
-                        <Thead>
-                            <TableRow bg="gray.400">
-                                <TableHead>Group</TableHead>
-                                <TableHead>Activity</TableHead>
-                                <TableHead>Was present</TableHead>
-                                <TableHead>Is assigned</TableHead>
+            <div className="overflow-y-auto h-96 w-fit">
+                <Table>
+                    <TableHeader>
+                        <TableRow>
+                            <TableHead>Group</TableHead>
+                            <TableHead>Activity</TableHead>
+                            <TableHead>Was present</TableHead>
+                            <TableHead>Is assigned</TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        {staffActivity.map((activity) => (
+                            <TableRow key={activity.id}>
+                                <TableCell>
+                                    {activityCodeToName(activity.groupId)}
+                                </TableCell>
+                                <TableCell>
+                                    {prettyActivityName(activity.role)}
+                                </TableCell>
+                                <TableCell>
+                                    {activity.isPresent ? "Yes" : "No"}
+                                </TableCell>
+                                <TableCell>
+                                    {activity.isAssigned ? "Yes" : "No"}
+                                </TableCell>
                             </TableRow>
-                        </Thead>
-                        <TableBody>
-                            {staffActivity.map((activity) => (
-                                <TableRow key={activity.id}>
-                                    <TableCell>
-                                        {activityCodeToName(activity.groupId)}
-                                    </TableCell>
-                                    <TableCell>{prettyActivityName(activity.role)}</TableCell>
-                                    <TableCell>{activity.isPresent ? "Yes" : "No"}</TableCell>
-                                    <TableCell>
-                                        {activity.isAssigned ? "Yes" : "No"}
-                                    </TableCell>
-                                </TableRow>
-                            ))}
-                        </Tbody>
-                    </Table>
-                </TableContainer>
-            </Box>
+                        ))}
+                    </TableBody>
+                </Table>
+            </div>
         </Modal>
     );
 };

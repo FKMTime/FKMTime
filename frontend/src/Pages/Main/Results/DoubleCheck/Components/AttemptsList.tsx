@@ -5,7 +5,7 @@ import {
     Tbody,
     Td,
     Th,
-    Thead,
+    TableHead,
     Tr,
     useToast,
 } from "@chakra-ui/react";
@@ -42,7 +42,7 @@ const AttemptsList: React.FC<AttemptsListProps> = ({
         <Box display="flex" flexDirection="column" gap={5}>
             <TableContainer>
                 <Table>
-                    <Thead>
+                    <TableHead>
                         <TableRow>
                             <Th
                                 display={{
@@ -66,7 +66,7 @@ const AttemptsList: React.FC<AttemptsListProps> = ({
                                 Warnings
                             </TableHead>
                         </TableRow>
-                    </Thead>
+                    </TableHead>
                     <TableBody>
                         {submittedAttempts.map((attempt) => (
                             <TableRow key={attempt.id}>
@@ -146,7 +146,7 @@ const AttemptsList: React.FC<AttemptsListProps> = ({
                                 </TableCell>
                             </TableRow>
                         ))}
-                    </Tbody>
+                    </TableBody>
                 </Table>
             </TableContainer>
         </Box>

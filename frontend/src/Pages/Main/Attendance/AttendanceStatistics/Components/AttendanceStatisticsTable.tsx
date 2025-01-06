@@ -5,7 +5,7 @@ import {
     Tbody,
     Td,
     Th,
-    Thead,
+    TableHead,
     Tr,
 } from "@chakra-ui/react";
 import {
@@ -84,8 +84,8 @@ const AttendanceStatisticsTable = ({
     });
     return (
         <Table>
-            <Thead>
-                {table.getHeaderGroups().map((headerGroup) => (
+            <TableHead>
+                {table.geTableHeaderGroups().map((headerGroup) => (
                     <TableRow key={headerGroup.id} bg="gray.400">
                         {headerGroup.headers.map((header) => {
                             const meta: Meta = header.column.columnDef
@@ -117,7 +117,7 @@ const AttendanceStatisticsTable = ({
                         })}
                     </TableRow>
                 ))}
-            </Thead>
+            </TableHead>
             <TableBody>
                 {table.getRowModel().rows.map((row) => (
                     <TableRow key={row.id}>
@@ -135,7 +135,7 @@ const AttendanceStatisticsTable = ({
                         })}
                     </TableRow>
                 ))}
-            </Tbody>
+            </TableBody>
         </Table>
     );
 };

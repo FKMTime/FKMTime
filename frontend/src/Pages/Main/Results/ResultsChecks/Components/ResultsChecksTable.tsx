@@ -1,4 +1,4 @@
-import { Table, TableContainer, Tbody, Th, Thead, Tr } from "@chakra-ui/react";
+import { Table, TableContainer, Tbody, Th, TableHead, Tr } from "@chakra-ui/react";
 
 import { Incident } from "@/lib/interfaces";
 
@@ -11,9 +11,9 @@ interface ResultsChecksTableProps {
 const ResultsChecksTable = ({ checks }: ResultsChecksTableProps) => {
     return (
         <TableContainer>
-            <Table variant="simple">
-                <Thead>
-                    <TableRow bg="gray.400">
+            <Table >
+                <TableHead>
+                    <TableRow>
                         <TableHead>Person</TableHead>
                         <TableHead>Round</TableHead>
                         <TableHead>Attempt</TableHead>
@@ -23,12 +23,12 @@ const ResultsChecksTable = ({ checks }: ResultsChecksTableProps) => {
                         <TableHead>Warnings</TableHead>
                         <TableHead>Actions</TableHead>
                     </TableRow>
-                </Thead>
+                </TableHead>
                 <TableBody>
                     {checks.map((item) => (
                         <ResultsCheckRow key={item.id} check={item} />
                     ))}
-                </Tbody>
+                </TableBody>
             </Table>
         </TableContainer>
     );
