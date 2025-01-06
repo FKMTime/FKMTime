@@ -1,6 +1,6 @@
 import { Box, ListItem, Text, UnorderedList } from "@chakra-ui/react";
 
-import { Incident } from "@/logic/interfaces";
+import { Incident } from "@/lib/interfaces";
 
 interface IncidentWarningsProps {
     previousIncidents: Incident[];

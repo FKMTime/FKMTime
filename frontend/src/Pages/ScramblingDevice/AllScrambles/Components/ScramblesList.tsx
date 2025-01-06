@@ -9,7 +9,7 @@ import {
     Tr,
 } from "@chakra-ui/react";
 
-import { DecryptedScramble } from "@/logic/interfaces";
+import { DecryptedScramble } from "@/lib/interfaces";
 
 interface ScramblesListProps {
     scrambles: DecryptedScramble[];
@@ -21,20 +21,20 @@ const ScramblesList = ({ scrambles, roundId }: ScramblesListProps) => {
         <TableContainer>
             <Table variant="simple">
                 <Thead>
-                    <Tr bg="gray.400">
-                        <Th>#</Th>
-                        <Th>Scramble</Th>
-                        <Th>Image</Th>
-                    </Tr>
+                    <TableRow bg="gray.400">
+                        <TableHead>#</TableHead>
+                        <TableHead>Scramble</TableHead>
+                        <TableHead>Image</TableHead>
+                    </TableRow>
                 </Thead>
-                <Tbody>
+                <TableBody>
                     {scrambles.map((scramble) => (
-                        <Tr margin={0}>
-                            <Td>
+                        <TableRow margin={0}>
+                            <TableCell>
                                 {scramble.isExtra ? "Extra" : null}{" "}
                                 {scramble.num}{" "}
-                            </Td>
-                            <Td>
+                            </TableCell>
+                            <TableCell>
                                 <Text
                                     as="pre"
                                     whiteSpace="pre-wrap"
@@ -42,14 +42,14 @@ const ScramblesList = ({ scrambles, roundId }: ScramblesListProps) => {
                                 >
                                     {scramble.scramble}
                                 </Text>
-                            </Td>
-                            <Td>
+                            </TableCell>
+                            <TableCell>
                                 <scramble-display
                                     scramble={scramble?.scramble}
                                     event={roundId.split("-")[0]}
                                 ></scramble-display>
-                            </Td>
-                        </Tr>
+                            </TableCell>
+                        </TableRow>
                     ))}
                 </Tbody>
             </Table>

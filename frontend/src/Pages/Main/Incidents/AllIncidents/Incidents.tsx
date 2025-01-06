@@ -2,8 +2,8 @@ import { Box, Button, Heading } from "@chakra-ui/react";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
-import { getUnresolvedAttempts } from "@/logic/attempt";
-import { Incident } from "@/logic/interfaces";
+import { getUnresolvedAttempts } from "@/lib/attempt";
+import { Incident } from "@/lib/interfaces";
 import { socket } from "@/socket";
 
 import IncidentCard from "./Components/IncidentCard";

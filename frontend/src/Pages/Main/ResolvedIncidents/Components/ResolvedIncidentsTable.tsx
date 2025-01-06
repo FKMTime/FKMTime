@@ -1,6 +1,6 @@
 import { Table, TableContainer, Tbody, Th, Thead, Tr } from "@chakra-ui/react";
 
-import { Incident } from "@/logic/interfaces.ts";
+import { Incident } from "@/lib/interfaces";
 
 import ResolvedIncidentRow from "./ResolvedIncidentRow";
 
@@ -13,20 +13,20 @@ const ResolvedIncidents = ({ data }: ResolvedIncidentsTableProps) => {
         <TableContainer>
             <Table variant="simple">
                 <Thead>
-                    <Tr bg="gray.400">
-                        <Th>Person</Th>
-                        <Th>Round</Th>
-                        <Th>Attempt</Th>
-                        <Th>Time</Th>
-                        <Th>Solved at</Th>
-                        <Th>Updated by</Th>
-                        <Th>Status</Th>
-                        <Th>Comment</Th>
-                        <Th>Judge</Th>
-                        <Th>Actions</Th>
-                    </Tr>
+                    <TableRow bg="gray.400">
+                        <TableHead>Person</TableHead>
+                        <TableHead>Round</TableHead>
+                        <TableHead>Attempt</TableHead>
+                        <TableHead>Time</TableHead>
+                        <TableHead>Solved at</TableHead>
+                        <TableHead>Updated by</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead>Comment</TableHead>
+                        <TableHead>Judge</TableHead>
+                        <TableHead>Actions</TableHead>
+                    </TableRow>
                 </Thead>
-                <Tbody>
+                <TableBody>
                     {data.map((incident) => (
                         <ResolvedIncidentRow
                             key={incident.id}

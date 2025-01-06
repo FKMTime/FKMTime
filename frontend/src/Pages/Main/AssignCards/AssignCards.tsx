@@ -2,8 +2,8 @@ import { Box, Heading, Input, useToast } from "@chakra-ui/react";
 import { RefObject, useEffect, useRef, useState } from "react";
 
 import PersonAutocomplete from "@/Components/PersonAutocomplete.tsx";
-import { Person } from "@/logic/interfaces";
-import { assignCard, getPersonsWithoutCardAssigned } from "@/logic/persons";
+import { Person } from "@/lib/interfaces";
+import { assignCard, getPersonsWithoutCardAssigned } from "@/lib/persons";
 
 const AssignCards = () => {
     const toast = useToast();
@@ -27,7 +27,7 @@ const AssignCards = () => {
         if (status === 200) {
             toast({
                 title: "Card assigned",
-                status: "success",
+                
             });
             setCardId("");
             setPersonsWithoutCard(personsWithoutCard - 1);
@@ -37,13 +37,13 @@ const AssignCards = () => {
             toast({
                 title: "Error",
                 description: "This card is already assigned to someone else",
-                status: "error",
+                variant: "destructive",
             });
         } else {
             toast({
                 title: "Error",
                 description: "Something went wrong",
-                status: "error",
+                variant: "destructive",
             });
         }
     };

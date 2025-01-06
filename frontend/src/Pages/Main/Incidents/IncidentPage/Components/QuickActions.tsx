@@ -1,8 +1,8 @@
 import { Button, GridItem, Heading, SimpleGrid } from "@chakra-ui/react";
 import { useEffect, useState } from "react";
 
-import { ApplicationQuickAction, QuickAction } from "@/logic/interfaces";
-import { applicationQuickActions, getQuickActions } from "@/logic/quickActions";
+import { ApplicationQuickAction, QuickAction } from "@/lib/interfaces";
+import { applicationQuickActions, getQuickActions } from "@/lib/quickActions";
 
 interface QuickActionsProps {
     handleQuickAction: (action: ApplicationQuickAction) => void;

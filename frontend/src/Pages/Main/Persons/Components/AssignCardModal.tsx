@@ -9,9 +9,9 @@ import {
 import { FormEvent, useState } from "react";
 
 import { Modal } from "@/Components/Modal";
-import { isAdmin } from "@/logic/auth";
-import { Person } from "@/logic/interfaces";
-import { updatePerson } from "@/logic/persons";
+import { isAdmin } from "@/lib/auth";
+import { Person } from "@/lib/interfaces";
+import { updatePerson } from "@/lib/persons";
 
 interface AssignCardModalProps {
     isOpen: boolean;
@@ -32,14 +32,14 @@ const AssignCardModal = ({ isOpen, onClose, person }: AssignCardModalProps) => {
         if (status === 200) {
             toast({
                 title: "Successfully updated person.",
-                status: "success",
+                
             });
             onClose();
         } else {
             toast({
                 title: "Error",
                 description: "Something went wrong",
-                status: "error",
+                variant: "destructive",
             });
         }
         setIsLoading(false);

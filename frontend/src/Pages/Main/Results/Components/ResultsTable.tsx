@@ -1,7 +1,7 @@
 import { Table, TableContainer, Tbody, Th, Thead, Tr } from "@chakra-ui/react";
 
-import { isAdmin } from "@/logic/auth";
-import { Result } from "@/logic/interfaces";
+import { isAdmin } from "@/lib/auth";
+import { Result } from "@/lib/interfaces";
 
 import ResultRow from "./ResultRow";
 
@@ -20,8 +20,8 @@ const ResultsTable = ({
         <TableContainer>
             <Table variant="simple">
                 <Thead>
-                    <Tr bg="gray.400">
-                        <Th>Name (ID)</Th>
+                    <TableRow bg="gray.400">
+                        <TableHead>Name (ID)</TableHead>
                         {Array.from({ length: maxAttempts }, (_, i) => (
                             <Th
                                 width={2}
@@ -29,18 +29,18 @@ const ResultsTable = ({
                                 display={{ base: "none", md: "table-cell" }}
                             >
                                 {i + 1}
-                            </Th>
+                            </TableHead>
                         ))}
                         <Th display={{ base: "none", md: "table-cell" }}>
                             Average
-                        </Th>
+                        </TableHead>
                         <Th display={{ base: "none", md: "table-cell" }}>
                             Best
-                        </Th>
-                        {isAdmin() && <Th>Actions</Th>}
-                    </Tr>
+                        </TableHead>
+                        {isAdmin() && <TableHead>Actions</TableHead>}
+                    </TableRow>
                 </Thead>
-                <Tbody>
+                <TableBody>
                     {results.map((result: Result) => (
                         <ResultRow
                             key={result.id}

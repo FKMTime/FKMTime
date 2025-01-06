@@ -1,4 +1,4 @@
-import { getEventIconClass } from "@/logic/events";
+import { getEventIconClass } from "@/lib/events";
 
 interface EventIconProps {
     eventId: string;

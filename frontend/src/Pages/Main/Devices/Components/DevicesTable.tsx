@@ -1,6 +1,6 @@
 import { Table, TableContainer, Tbody, Th, Thead, Tr } from "@chakra-ui/react";
 
-import { Device } from "@/logic/interfaces";
+import { Device } from "@/lib/interfaces";
 
 import DeviceRow from "./DeviceRow";
 
@@ -14,17 +14,17 @@ const DevicesTable = ({ devices, fetchData }: DevicesTableProps) => {
         <TableContainer>
             <Table variant="simple">
                 <Thead>
-                    <Tr bg="gray.400">
-                        <Th>Name</Th>
-                        <Th>ESP ID</Th>
-                        <Th>Battery</Th>
-                        <Th>Type</Th>
-                        <Th>Solves</Th>
-                        <Th>Last update</Th>
-                        <Th>Actions</Th>
-                    </Tr>
+                    <TableRow bg="gray.400">
+                        <TableHead>Name</TableHead>
+                        <TableHead>ESP ID</TableHead>
+                        <TableHead>Battery</TableHead>
+                        <TableHead>Type</TableHead>
+                        <TableHead>Solves</TableHead>
+                        <TableHead>Last update</TableHead>
+                        <TableHead>Actions</TableHead>
+                    </TableRow>
                 </Thead>
-                <Tbody>
+                <TableBody>
                     {devices.map((device) => (
                         <DeviceRow
                             key={device.id}

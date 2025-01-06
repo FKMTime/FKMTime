@@ -9,7 +9,7 @@ import {
     Tr,
 } from "@chakra-ui/react";
 
-import { WCACompetition } from "@/logic/interfaces.ts";
+import { WCACompetition } from "@/lib/interfaces";
 
 interface CompetitionsListProps {
     competitions: WCACompetition[];
@@ -24,16 +24,16 @@ const CompetitionsList = ({
         <TableContainer>
             <Table variant="simple">
                 <Thead>
-                    <Tr bg="gray.400">
-                        <Th>Name</Th>
-                        <Th>Actions</Th>
-                    </Tr>
+                    <TableRow bg="gray.400">
+                        <TableHead>Name</TableHead>
+                        <TableHead>Actions</TableHead>
+                    </TableRow>
                 </Thead>
-                <Tbody>
+                <TableBody>
                     {competitions.map((competition) => (
-                        <Tr>
-                            <Td>{competition.name}</Td>
-                            <Td>
+                        <TableRow>
+                            <TableCell>{competition.name}</TableCell>
+                            <TableCell>
                                 <Button
                                     colorScheme="green"
                                     onClick={() =>
@@ -42,8 +42,8 @@ const CompetitionsList = ({
                                 >
                                     Import
                                 </Button>
-                            </Td>
-                        </Tr>
+                            </TableCell>
+                        </TableRow>
                     ))}
                 </Tbody>
             </Table>

@@ -12,12 +12,12 @@ import { KeyboardEvent, RefObject, useEffect, useRef, useState } from "react";
 
 import LoadingPage from "@/Components/LoadingPage";
 import PersonAutocomplete from "@/Components/PersonAutocomplete";
-import { Person } from "@/logic/interfaces";
+import { Person } from "@/lib/interfaces";
 import {
     checkedInCount,
     checkIn,
     getPersonInfoByCardIdWithSensitiveData,
-} from "@/logic/persons";
+} from "@/lib/persons";
 import PersonInfo from "@/Pages/Main/CheckIn/Components/PersonInfo";
 import SubmitActions from "@/Pages/Main/CheckIn/Components/SubmitActions";
 
@@ -59,13 +59,13 @@ const CheckIn = () => {
                 toast({
                     title: "Card not found",
                     description: "The card was not found in the database.",
-                    status: "error",
+                    variant: "destructive",
                 });
             } else {
                 toast({
                     title: "Error",
                     description: "Something went wrong!",
-                    status: "error",
+                    variant: "destructive",
                 });
             }
         }
@@ -79,7 +79,7 @@ const CheckIn = () => {
             toast({
                 title: "Success",
                 description: `Competitor has been checked in successfully${cardShouldBeAssigned ? " and card was assigned" : ""}.`,
-                status: "success",
+                
             });
             await fetchData();
             setPersonData(null);
@@ -91,13 +91,13 @@ const CheckIn = () => {
             toast({
                 title: "Card not assigned",
                 description: "The card is already assigned to someone.",
-                status: "error",
+                variant: "destructive",
             });
         } else {
             toast({
                 title: "Error",
                 description: "Something went wrong!",
-                status: "error",
+                variant: "destructive",
             });
         }
     };

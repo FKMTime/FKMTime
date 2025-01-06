@@ -11,9 +11,9 @@ import {
 import { useEffect, useState } from "react";
 
 import { Modal } from "@/Components/Modal";
-import { activityCodeToName, prettyActivityName } from "@/logic/activities";
-import { getStaffActivitiesByPersonId } from "@/logic/attendance";
-import { Person, StaffActivity } from "@/logic/interfaces";
+import { activityCodeToName, prettyActivityName } from "@/lib/activities";
+import { getStaffActivitiesByPersonId } from "@/lib/attendance";
+import { Person, StaffActivity } from "@/lib/interfaces";
 
 interface DisplayGroupsModalProps {
     isOpen: boolean;
@@ -42,25 +42,25 @@ const DisplayGroupsModal = ({
                 <TableContainer>
                     <Table variant="simple">
                         <Thead>
-                            <Tr bg="gray.400">
-                                <Th>Group</Th>
-                                <Th>Activity</Th>
-                                <Th>Was present</Th>
-                                <Th>Is assigned</Th>
-                            </Tr>
+                            <TableRow bg="gray.400">
+                                <TableHead>Group</TableHead>
+                                <TableHead>Activity</TableHead>
+                                <TableHead>Was present</TableHead>
+                                <TableHead>Is assigned</TableHead>
+                            </TableRow>
                         </Thead>
-                        <Tbody>
+                        <TableBody>
                             {staffActivity.map((activity) => (
-                                <Tr key={activity.id}>
-                                    <Td>
+                                <TableRow key={activity.id}>
+                                    <TableCell>
                                         {activityCodeToName(activity.groupId)}
-                                    </Td>
-                                    <Td>{prettyActivityName(activity.role)}</Td>
-                                    <Td>{activity.isPresent ? "Yes" : "No"}</Td>
-                                    <Td>
+                                    </TableCell>
+                                    <TableCell>{prettyActivityName(activity.role)}</TableCell>
+                                    <TableCell>{activity.isPresent ? "Yes" : "No"}</TableCell>
+                                    <TableCell>
                                         {activity.isAssigned ? "Yes" : "No"}
-                                    </Td>
-                                </Tr>
+                                    </TableCell>
+                                </TableRow>
                             ))}
                         </Tbody>
                     </Table>

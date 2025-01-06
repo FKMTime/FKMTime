@@ -3,8 +3,8 @@ import { useEffect, useState } from "react";
 
 import LoadingPage from "@/Components/LoadingPage";
 import PlusButton from "@/Components/PlusButton";
-import { ScramblingDevice } from "@/logic/interfaces";
-import { getScramblingDevices } from "@/logic/scramblingDevices";
+import { ScramblingDevice } from "@/lib/interfaces";
+import { getScramblingDevices } from "@/lib/scramblingDevices";
 
 import CreateScramblingDeviceModal from "./Components/CreateScramblingDeviceModal";
 import ScramblingDeviceCard from "./Components/ScramblingDeviceCard";

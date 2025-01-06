@@ -4,10 +4,10 @@ import { ChangeEvent, useCallback, useEffect, useState } from "react";
 
 import LoadingPage from "@/Components/LoadingPage";
 import Pagination from "@/Components/Pagination";
-import { competitionAtom } from "@/logic/atoms";
-import { getCompetitionInfo } from "@/logic/competition";
-import { Person } from "@/logic/interfaces";
-import { getPersons } from "@/logic/persons";
+import { competitionAtom } from "@/lib/atoms";
+import { getCompetitionInfo } from "@/lib/competition";
+import { Person } from "@/lib/interfaces";
+import { getPersons } from "@/lib/persons";
 import { calculateTotalPages } from "@/logic/utils";
 
 import AddPersonModal from "./Components/AddPersonModal";

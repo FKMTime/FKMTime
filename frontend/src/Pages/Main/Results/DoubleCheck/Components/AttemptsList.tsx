@@ -13,15 +13,15 @@ import {
 import AttemptResultInput from "@/Components/AttemptResultInput";
 import AttemptWarnings from "@/Components/AttemptWarnings";
 import PenaltySelect from "@/Components/PenaltySelect";
-import { DNF_VALUE } from "@/logic/constants";
+import { DNF_VALUE } from "@/lib/constants";
 import {
     Attempt,
     AttemptType,
     Competition,
     ResultToDoubleCheck,
-} from "@/logic/interfaces";
-import { attemptWithPenaltyToString } from "@/logic/resultFormatters";
-import { checkTimeLimit } from "@/logic/results";
+} from "@/lib/interfaces";
+import { attemptWithPenaltyToString } from "@/lib/resultFormatters";
+import { checkTimeLimit } from "@/lib/results";
 import { getSubmittedAttempts } from "@/logic/utils";
 
 interface AttemptsListProps {
@@ -43,7 +43,7 @@ const AttemptsList: React.FC<AttemptsListProps> = ({
             <TableContainer>
                 <Table>
                     <Thead>
-                        <Tr>
+                        <TableRow>
                             <Th
                                 display={{
                                     base: "none",
@@ -52,10 +52,10 @@ const AttemptsList: React.FC<AttemptsListProps> = ({
                                 color="white"
                             >
                                 Attempt
-                            </Th>
-                            <Th color="white">Time</Th>
-                            <Th color="white">Penalty</Th>
-                            <Th color="white">Result</Th>
+                            </TableHead>
+                            <Th color="white">Time</TableHead>
+                            <Th color="white">Penalty</TableHead>
+                            <Th color="white">Result</TableHead>
                             <Th
                                 display={{
                                     base: "none",
@@ -64,13 +64,13 @@ const AttemptsList: React.FC<AttemptsListProps> = ({
                                 color="white"
                             >
                                 Warnings
-                            </Th>
-                        </Tr>
+                            </TableHead>
+                        </TableRow>
                     </Thead>
-                    <Tbody>
+                    <TableBody>
                         {submittedAttempts.map((attempt) => (
-                            <Tr key={attempt.id}>
-                                <Td
+                            <TableRow key={attempt.id}>
+                                <TableCell
                                     display={{
                                         base: "none",
                                         md: "table-cell",
@@ -79,8 +79,8 @@ const AttemptsList: React.FC<AttemptsListProps> = ({
                                     {attempt.type === AttemptType.EXTRA_ATTEMPT
                                         ? `E${attempt.attemptNumber}`
                                         : attempt.attemptNumber}
-                                </Td>
-                                <Td>
+                                </TableCell>
+                                <TableCell>
                                     <AttemptResultInput
                                         value={attempt.value}
                                         disabled={false}
@@ -103,7 +103,7 @@ const AttemptsList: React.FC<AttemptsListProps> = ({
                                                     title: "This attempt is over the time limit.",
                                                     description:
                                                         "This time is DNF.",
-                                                    status: "error",
+                                                    variant: "destructive",
                                                 });
                                                 updateAttempt({
                                                     ...attempt,
@@ -118,8 +118,8 @@ const AttemptsList: React.FC<AttemptsListProps> = ({
                                             });
                                         }}
                                     />
-                                </Td>
-                                <Td>
+                                </TableCell>
+                                <TableCell>
                                     <PenaltySelect
                                         value={attempt.penalty}
                                         showLabel={false}
@@ -132,9 +132,9 @@ const AttemptsList: React.FC<AttemptsListProps> = ({
                                         shortVersion
                                         disabled={false}
                                     />
-                                </Td>
-                                <Td>{attemptWithPenaltyToString(attempt)}</Td>
-                                <Td
+                                </TableCell>
+                                <TableCell>{attemptWithPenaltyToString(attempt)}</TableCell>
+                                <TableCell
                                     display={{
                                         base: "none",
                                         md: "table-cell",
@@ -143,8 +143,8 @@ const AttemptsList: React.FC<AttemptsListProps> = ({
                                     <Box display="flex" gap={1}>
                                         <AttemptWarnings attempt={attempt} />
                                     </Box>
-                                </Td>
-                            </Tr>
+                                </TableCell>
+                            </TableRow>
                         ))}
                     </Tbody>
                 </Table>

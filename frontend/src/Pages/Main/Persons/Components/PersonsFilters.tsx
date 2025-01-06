@@ -8,7 +8,7 @@ import {
 } from "@chakra-ui/react";
 
 import PlusButton from "@/Components/PlusButton";
-import { isAdmin } from "@/logic/auth";
+import { isAdmin } from "@/lib/auth";
 
 interface PersonsFiltersProps {
     searchedId: string;

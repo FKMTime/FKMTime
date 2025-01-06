@@ -5,18 +5,18 @@ import { useNavigate, useParams } from "react-router-dom";
 import EventIcon from "@/Components/Icons/EventIcon";
 import LoadingPage from "@/Components/LoadingPage";
 import PasswordInput from "@/Components/PasswordInput";
-import { activityCodeToName } from "@/logic/activities";
+import { activityCodeToName } from "@/lib/activities";
 import {
     DecryptedScramble,
     Room,
     ScrambleSet as IScrambleSet,
-} from "@/logic/interfaces";
+} from "@/lib/interfaces";
 import {
     decryptScrambles,
     getScrambleSetById,
     getScramblingDeviceRoom,
     unlockScrambleSet,
-} from "@/logic/scrambling";
+} from "@/lib/scrambling";
 
 import Scrambling from "./Components/Scrambling";
 
@@ -59,7 +59,7 @@ const ScrambleSet = () => {
         if (response.status === 200) {
             toast({
                 title: "Unlocked",
-                status: "success",
+                
             });
             setIsLocked(false);
             setDecryptedScrambles(
@@ -68,12 +68,12 @@ const ScrambleSet = () => {
         } else if (response.status === 403) {
             toast({
                 title: "Invalid password",
-                status: "error",
+                variant: "destructive",
             });
         } else {
             toast({
                 title: "Something went wrong",
-                status: "error",
+                variant: "destructive",
             });
         }
     };

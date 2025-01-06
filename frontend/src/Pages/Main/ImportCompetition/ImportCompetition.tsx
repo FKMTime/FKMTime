@@ -5,14 +5,14 @@ import { MdLogout } from "react-icons/md";
 import { useNavigate } from "react-router-dom";
 
 import RoundedIconButton from "@/Components/RoundedIconButton";
-import { competitionAtom } from "@/logic/atoms";
-import { getUserInfo, logout } from "@/logic/auth";
+import { competitionAtom } from "@/lib/atoms";
+import { getUserInfo, logout } from "@/lib/auth";
 import {
     getCompetitionInfo,
     getUpcomingManageableCompetitions,
     importCompetition,
-} from "@/logic/competition";
-import { WCACompetition } from "@/logic/interfaces";
+} from "@/lib/competition";
+import { WCACompetition } from "@/lib/interfaces";
 
 import CompetitionsAutocomplete from "./Components/CompetitionsAutocomplete";
 import CompetitionsList from "./Components/CompetitionsList";
@@ -29,7 +29,7 @@ const ImportCompetition = () => {
             toast({
                 title: "Error",
                 description: "Please enter a competition ID",
-                status: "error",
+                variant: "destructive",
             });
         }
         const response = await importCompetition(wcaId);
@@ -40,7 +40,7 @@ const ImportCompetition = () => {
             toast({
                 title: "Error",
                 description: "Competition has already been imported",
-                status: "error",
+                variant: "destructive",
             });
         }
     };
@@ -55,7 +55,7 @@ const ImportCompetition = () => {
         toast({
             title: "Logged out",
             description: "You have been logged out.",
-            status: "success",
+            
         });
         navigate("/auth/login");
     };

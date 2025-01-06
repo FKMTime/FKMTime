@@ -6,13 +6,13 @@ import { useSearchParams } from "react-router-dom";
 
 import EventAndRoundSelector from "@/Components/EventAndRoundSelector";
 import LoadingPage from "@/Components/LoadingPage";
-import { competitionAtom } from "@/logic/atoms";
-import { ScrambleSet } from "@/logic/interfaces";
+import { competitionAtom } from "@/lib/atoms";
+import { ScrambleSet } from "@/lib/interfaces";
 import {
     deleteAllScrambleSets,
     deleteScrambleSetsByRoundId,
     getScrambleSets,
-} from "@/logic/scrambleSets";
+} from "@/lib/scrambleSets";
 import { letterToNumber } from "@/logic/utils";
 
 import AddScrambleSetModal from "./Components/AddScrambleSetModal";
@@ -81,13 +81,13 @@ const ScrambleSets = () => {
                     if (status === 204) {
                         toast({
                             title: "Scramble sets deleted",
-                            status: "success",
+                            
                         });
                         fetchData();
                     } else {
                         toast({
                             title: "Something went wrong",
-                            status: "error",
+                            variant: "destructive",
                         });
                     }
                 })
@@ -111,13 +111,13 @@ const ScrambleSets = () => {
                 if (status === 204) {
                     toast({
                         title: "Scramble sets deleted",
-                        status: "success",
+                        
                     });
                     fetchData();
                 } else {
                     toast({
                         title: "Something went wrong",
-                        status: "error",
+                        variant: "destructive",
                     });
                 }
             })

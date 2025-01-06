@@ -1,7 +1,7 @@
 import { Box, Button, Text } from "@chakra-ui/react";
 import { MdDevices } from "react-icons/md";
 
-import { AvailableDevice } from "@/logic/interfaces";
+import { AvailableDevice } from "@/lib/interfaces";
 import { prettyAvailableDeviceType } from "@/logic/utils";
 
 interface AvailableDeviceCardProps {

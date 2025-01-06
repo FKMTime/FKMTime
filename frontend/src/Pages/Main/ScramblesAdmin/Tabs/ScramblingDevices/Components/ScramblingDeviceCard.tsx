@@ -15,8 +15,8 @@ import {
 import { useConfirm } from "chakra-ui-confirm";
 import { useState } from "react";
 
-import { ScramblingDevice } from "@/logic/interfaces";
-import { deleteScramblingDevice } from "@/logic/scramblingDevices";
+import { ScramblingDevice } from "@/lib/interfaces";
+import { deleteScramblingDevice } from "@/lib/scramblingDevices";
 
 import EditScramblingDeviceModal from "./EditScramblingDeviceModal";
 import OneTimeCodeModal from "./OneTimeCodeModal";
@@ -53,14 +53,14 @@ const ScramblingDeviceCard = ({
                 if (status === 204) {
                     toast({
                         title: "Successfully deleted device.",
-                        status: "success",
+                        
                     });
                     fetchData();
                 } else {
                     toast({
                         title: "Error",
                         description: "Something went wrong",
-                        status: "error",
+                        variant: "destructive",
                     });
                 }
             })

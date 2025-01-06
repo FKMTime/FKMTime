@@ -53,7 +53,7 @@ const DynamicAutocomplete = <T,>({
             toast({
                 title: "Error",
                 description: "Failed to fetch options",
-                status: "error",
+                variant: "destructive",
             });
         } finally {
             setIsLoading(false);

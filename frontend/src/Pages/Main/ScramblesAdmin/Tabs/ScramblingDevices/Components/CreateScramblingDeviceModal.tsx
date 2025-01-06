@@ -2,11 +2,11 @@ import { useToast } from "@chakra-ui/react";
 import { useState } from "react";
 
 import { Modal } from "@/Components/Modal";
-import { ScramblingDevice } from "@/logic/interfaces";
+import { ScramblingDevice } from "@/lib/interfaces";
 import {
     createScramblingDevice,
     defaultScramblingDevice,
-} from "@/logic/scramblingDevices";
+} from "@/lib/scramblingDevices";
 
 import ScramblingDeviceForm from "./ScramblingDeviceForm";
 
@@ -29,14 +29,14 @@ const CreateScramblingDeviceModal = ({
         if (status === 201) {
             toast({
                 title: "Successfully created new device.",
-                status: "success",
+                
             });
             onClose();
         } else {
             toast({
                 title: "Error",
                 description: "Something went wrong",
-                status: "error",
+                variant: "destructive",
             });
         }
         setIsLoading(false);

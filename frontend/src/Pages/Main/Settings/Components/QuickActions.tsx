@@ -2,8 +2,8 @@ import { Flex, Heading } from "@chakra-ui/react";
 import { useEffect, useState } from "react";
 
 import PlusButton from "@/Components/PlusButton.tsx";
-import { QuickAction } from "@/logic/interfaces.ts";
-import { getQuickActions } from "@/logic/quickActions.ts";
+import { QuickAction } from "@/lib/interfaces";
+import { getQuickActions } from "@/lib/quickActions";
 import CreateQuickActionModal from "@/Pages/Main/Settings/Components/CreateQuickActionModal";
 import QuickActionCard from "@/Pages/Main/Settings/Components/QuickActionCard";
 

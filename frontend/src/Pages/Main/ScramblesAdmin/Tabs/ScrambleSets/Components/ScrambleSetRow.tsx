@@ -1,9 +1,9 @@
 import { Button, Td, Tr, useToast } from "@chakra-ui/react";
 import { useConfirm } from "chakra-ui-confirm";
 
-import { activityCodeToName } from "@/logic/activities";
-import { ScrambleSet } from "@/logic/interfaces";
-import { deleteScrambleSet } from "@/logic/scrambleSets";
+import { activityCodeToName } from "@/lib/activities";
+import { ScrambleSet } from "@/lib/interfaces";
+import { deleteScrambleSet } from "@/lib/scrambleSets";
 
 interface ScrambleSetRowProps {
     scrambleSet: ScrambleSet;
@@ -24,13 +24,13 @@ const ScrambleSetRow = ({ scrambleSet, fetchData }: ScrambleSetRowProps) => {
                 if (status === 204) {
                     toast({
                         title: "Scramble set deleted",
-                        status: "success",
+                        
                     });
                     fetchData();
                 } else {
                     toast({
                         title: "Something went wrong",
-                        status: "error",
+                        variant: "destructive",
                     });
                 }
             })
@@ -43,18 +43,18 @@ const ScrambleSetRow = ({ scrambleSet, fetchData }: ScrambleSetRowProps) => {
     };
 
     return (
-        <Tr>
-            <Td>
+        <TableRow>
+            <TableCell>
                 {activityCodeToName(scrambleSet.roundId)} Set {scrambleSet.set}
-            </Td>
-            <Td>{scrambleSet.scramblesCount}</Td>
-            <Td>{scrambleSet.extraScramblesCount}</Td>
-            <Td display="flex" gap="2">
+            </TableCell>
+            <TableCell>{scrambleSet.scramblesCount}</TableCell>
+            <TableCell>{scrambleSet.extraScramblesCount}</TableCell>
+            <TableCell display="flex" gap="2">
                 <Button colorScheme="red" onClick={handleDelete}>
                     Delete
                 </Button>
-            </Td>
-        </Tr>
+            </TableCell>
+        </TableRow>
     );
 };
 

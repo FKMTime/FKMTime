@@ -1,12 +1,12 @@
-import {
-    Modal as ChakraModal,
-    ModalBody,
-    ModalCloseButton,
-    ModalContent,
-    ModalHeader,
-    ModalOverlay,
-} from "@chakra-ui/react";
 import { ReactNode } from "react";
+
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogHeader,
+    DialogTitle,
+} from "./ui/dialog";
 
 interface ModalProps {
     onClose: () => void;
@@ -18,14 +18,14 @@ interface ModalProps {
 export const Modal = ({ onClose, isOpen, title, children }: ModalProps) => {
     return (
         <>
-            <ChakraModal isOpen={isOpen} onClose={onClose}>
-                <ModalOverlay />
-                <ModalContent bg="gray.700" color="white" pb="3">
-                    <ModalHeader>{title}</ModalHeader>
-                    <ModalCloseButton />
-                    <ModalBody>{children}</ModalBody>
-                </ModalContent>
-            </ChakraModal>
+            <Dialog open={isOpen} onOpenChange={onClose}>
+                <DialogContent className="pb-3">
+                    <DialogHeader>
+                        <DialogTitle>{title}</DialogTitle>
+                    </DialogHeader>
+                    <DialogDescription>{children}</DialogDescription>
+                </DialogContent>
+            </Dialog>
         </>
     );
 };

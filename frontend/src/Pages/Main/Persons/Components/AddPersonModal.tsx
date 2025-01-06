@@ -12,8 +12,8 @@ import {
 import { useState } from "react";
 
 import { Modal } from "@/Components/Modal";
-import { AddPerson } from "@/logic/interfaces";
-import { addPerson } from "@/logic/persons";
+import { AddPerson } from "@/lib/interfaces";
+import { addPerson } from "@/lib/persons";
 
 import PersonForm from "./PersonForm";
 
@@ -39,14 +39,14 @@ const AddPersonModal = ({ isOpen, onClose }: AddPersonModalProps) => {
         if (status === 201) {
             toast({
                 title: "Successfully added new person",
-                status: "success",
+                
             });
             onClose();
         } else {
             toast({
                 title: "Error",
                 description: "Something went wrong",
-                status: "error",
+                variant: "destructive",
             });
         }
         setIsLoading(false);

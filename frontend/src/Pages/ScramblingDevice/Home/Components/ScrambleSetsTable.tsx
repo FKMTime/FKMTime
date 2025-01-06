@@ -10,8 +10,8 @@ import {
 } from "@chakra-ui/react";
 import { useNavigate } from "react-router-dom";
 
-import { activityCodeToName } from "@/logic/activities";
-import { ScrambleSet } from "@/logic/interfaces";
+import { activityCodeToName } from "@/lib/activities";
+import { ScrambleSet } from "@/lib/interfaces";
 
 interface ScrambleSetsTableProps {
     scrambleSets: ScrambleSet[];
@@ -23,19 +23,19 @@ const ScrambleSetsTable = ({ scrambleSets }: ScrambleSetsTableProps) => {
         <TableContainer>
             <Table variant="simple">
                 <Thead>
-                    <Tr bg="gray.400">
-                        <Th>Name</Th>
-                        <Th>Actions</Th>
-                    </Tr>
+                    <TableRow bg="gray.400">
+                        <TableHead>Name</TableHead>
+                        <TableHead>Actions</TableHead>
+                    </TableRow>
                 </Thead>
-                <Tbody>
+                <TableBody>
                     {scrambleSets.map((scrambleSet) => (
-                        <Tr key={scrambleSet.id}>
-                            <Td>
+                        <TableRow key={scrambleSet.id}>
+                            <TableCell>
                                 {activityCodeToName(scrambleSet.roundId)} Set{" "}
                                 {scrambleSet.set}
-                            </Td>
-                            <Td display="flex" gap="2">
+                            </TableCell>
+                            <TableCell display="flex" gap="2">
                                 <Button
                                     onClick={() =>
                                         navigate(
@@ -56,8 +56,8 @@ const ScrambleSetsTable = ({ scrambleSets }: ScrambleSetsTableProps) => {
                                 >
                                     All scrambles
                                 </Button>
-                            </Td>
-                        </Tr>
+                            </TableCell>
+                        </TableRow>
                     ))}
                 </Tbody>
             </Table>

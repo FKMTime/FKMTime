@@ -16,16 +16,16 @@ import { Modal } from "@/Components/Modal";
 import PenaltySelect from "@/Components/PenaltySelect";
 import PersonAutocomplete from "@/Components/PersonAutocomplete";
 import Select from "@/Components/Select";
-import { createAttempt } from "@/logic/attempt";
-import { DNF_VALUE, DNS_VALUE } from "@/logic/constants";
-import { getAllDevices } from "@/logic/devices";
+import { createAttempt } from "@/lib/attempt";
+import { DNF_VALUE, DNS_VALUE } from "@/lib/constants";
+import { getAllDevices } from "@/lib/devices";
 import {
     AttemptStatus,
     AttemptType,
     Device,
     DeviceType,
     Person,
-} from "@/logic/interfaces";
+} from "@/lib/interfaces";
 import {
     getSubmissionPlatformName,
     prettyAttemptStatus,
@@ -92,13 +92,13 @@ const CreateAttemptModal = ({
         if (!selectedCompetitorId) {
             return toast({
                 title: "Competitor is required",
-                status: "error",
+                variant: "destructive",
             });
         }
         if (selectedJudge && selectedCompetitorId === selectedJudge.id) {
             return toast({
                 title: "Judge cannot be the same as competitor",
-                status: "error",
+                variant: "destructive",
             });
         }
         if (
@@ -107,7 +107,7 @@ const CreateAttemptModal = ({
         ) {
             return toast({
                 title: "Scrambler cannot be the same as competitor",
-                status: "error",
+                variant: "destructive",
             });
         }
         setIsLoading(true);
@@ -143,14 +143,14 @@ const CreateAttemptModal = ({
         if (status === 201) {
             toast({
                 title: `Attempt created and submitted to ${submissionPlatform}`,
-                status: "success",
+                
             });
             onClose();
         } else {
             toast({
                 title: "Error",
                 description: "Something went wrong",
-                status: "error",
+                variant: "destructive",
             });
         }
         setIsLoading(false);

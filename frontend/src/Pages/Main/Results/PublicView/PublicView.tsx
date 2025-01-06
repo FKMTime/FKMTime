@@ -5,15 +5,15 @@ import { useNavigate, useParams } from "react-router-dom";
 import { getNumberOfAttemptsForRound } from "wcif-helpers";
 
 import LoadingPage from "@/Components/LoadingPage";
-import { competitionAtom } from "@/logic/atoms";
-import { getCompetitionInfo } from "@/logic/competition";
-import { ResultWithAverage, Room } from "@/logic/interfaces";
+import { competitionAtom } from "@/lib/atoms";
+import { getCompetitionInfo } from "@/lib/competition";
+import { ResultWithAverage, Room } from "@/lib/interfaces";
 import {
     getResultsByRoundId,
     orderResultsByAverage,
     resultsWithAverageProperty,
-} from "@/logic/results";
-import { getAllRooms } from "@/logic/rooms";
+} from "@/lib/results";
+import { getAllRooms } from "@/lib/rooms";
 import { socket, SocketContext } from "@/socket";
 
 import EventAndRoundSelector from "../../../../Components/EventAndRoundSelector";

@@ -9,8 +9,8 @@ import {
     useToast,
 } from "@chakra-ui/react";
 
-import { DecryptedScramble, Person, ScrambleData } from "@/logic/interfaces";
-import { createScrambledAttempt } from "@/logic/scrambling";
+import { DecryptedScramble, Person, ScrambleData } from "@/lib/interfaces";
+import { createScrambledAttempt } from "@/lib/scrambling";
 
 interface ScrambleProps {
     person: Person;
@@ -47,7 +47,7 @@ const Scramble = ({
         if (response.status === 201) {
             toast({
                 title: "Succesfully signed the attempt",
-                status: "success",
+                
             });
             onSign();
         }

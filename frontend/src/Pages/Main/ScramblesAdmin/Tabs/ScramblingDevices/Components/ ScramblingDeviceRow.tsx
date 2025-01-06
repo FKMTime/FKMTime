@@ -6,8 +6,8 @@ import { PiTimerDuotone } from "react-icons/pi";
 import DeleteButton from "@/Components/DeleteButton";
 import EditButton from "@/Components/EditButton";
 import SmallIconButton from "@/Components/SmallIconButton";
-import { ScramblingDevice } from "@/logic/interfaces";
-import { deleteScramblingDevice } from "@/logic/scramblingDevices";
+import { ScramblingDevice } from "@/lib/interfaces";
+import { deleteScramblingDevice } from "@/lib/scramblingDevices";
 
 import EditScramblingDeviceModal from "./EditScramblingDeviceModal";
 import OneTimeCodeModal from "./OneTimeCodeModal";
@@ -44,14 +44,14 @@ const ScramblingDeviceRow = ({
                 if (status === 204) {
                     toast({
                         title: "Successfully deleted scrambling device.",
-                        status: "success",
+                        
                     });
                     fetchData();
                 } else {
                     toast({
                         title: "Error",
                         description: "Something went wrong",
-                        status: "error",
+                        variant: "destructive",
                     });
                 }
             })
@@ -67,10 +67,10 @@ const ScramblingDeviceRow = ({
 
     return (
         <>
-            <Tr key={device.id}>
-                <Td>{device.name}</Td>
-                <Td>{device.room.name}</Td>
-                <Td>
+            <TableRow key={device.id}>
+                <TableCell>{device.name}</TableCell>
+                <TableCell>{device.room.name}</TableCell>
+                <TableCell>
                     <SmallIconButton
                         title={"Generate one time code"}
                         ariaLabel="Generate one time code"
@@ -81,8 +81,8 @@ const ScramblingDeviceRow = ({
                         onClick={() => setIsOpenEditDeviceModal(true)}
                     />
                     <DeleteButton onClick={handleDelete} />
-                </Td>
-            </Tr>
+                </TableCell>
+            </TableRow>
             <EditScramblingDeviceModal
                 isOpen={isOpenEditDeviceModal}
                 onClose={handleCloseEditDeviceModal}

@@ -1,9 +1,9 @@
 import { Card, CardBody, CardHeader, Heading, Text } from "@chakra-ui/react";
 import { useNavigate } from "react-router-dom";
 
-import { activityCodeToName } from "@/logic/activities";
-import { Incident } from "@/logic/interfaces";
-import { resultToString } from "@/logic/resultFormatters";
+import { activityCodeToName } from "@/lib/activities";
+import { Incident } from "@/lib/interfaces";
+import { resultToString } from "@/lib/resultFormatters";
 
 interface IncidentCardProps {
     incident: Incident;

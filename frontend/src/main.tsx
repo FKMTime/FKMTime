@@ -1,22 +1,13 @@
 import "@cubing/icons";
 import "./index.css";
 
-import { ChakraProvider, extendTheme } from "@chakra-ui/react";
 import ReactDOM from "react-dom/client";
 
 import App from "./App";
-import { ConfirmProvider } from "chakra-ui-confirm";
+import { Toaster } from "./Components/ui/toaster";
+import { ThemeProvider } from "./providers/ThemeProvider";
+import { THEME_STORAGE_KEY } from "./lib/constants";
 
-const theme = extendTheme({
-    styles: {
-        global: {
-            body: {
-                bg: "gray.700",
-                color: "white",
-            },
-        },
-    },
-});
 
 declare global {
     namespace JSX {
@@ -28,18 +19,5 @@ declare global {
 }
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
-    <ChakraProvider
-        theme={theme}
-        resetCSS
-        toastOptions={{
-            defaultOptions: {
-                duration: 3500,
-                isClosable: true,
-            },
-        }}
-    >
-        <ConfirmProvider>
-            <App />
-        </ConfirmProvider>
-    </ChakraProvider>
+    <App />
 );

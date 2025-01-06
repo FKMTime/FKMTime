@@ -1,6 +1,6 @@
 import { Table, TableContainer, Tbody, Th, Thead, Tr } from "@chakra-ui/react";
 
-import { Incident } from "@/logic/interfaces";
+import { Incident } from "@/lib/interfaces";
 
 import ResultsCheckRow from "./ResultsCheckRow";
 
@@ -13,18 +13,18 @@ const ResultsChecksTable = ({ checks }: ResultsChecksTableProps) => {
         <TableContainer>
             <Table variant="simple">
                 <Thead>
-                    <Tr bg="gray.400">
-                        <Th>Person</Th>
-                        <Th>Round</Th>
-                        <Th>Attempt</Th>
-                        <Th>Time</Th>
-                        <Th>Comment</Th>
-                        <Th>Judge</Th>
-                        <Th>Warnings</Th>
-                        <Th>Actions</Th>
-                    </Tr>
+                    <TableRow bg="gray.400">
+                        <TableHead>Person</TableHead>
+                        <TableHead>Round</TableHead>
+                        <TableHead>Attempt</TableHead>
+                        <TableHead>Time</TableHead>
+                        <TableHead>Comment</TableHead>
+                        <TableHead>Judge</TableHead>
+                        <TableHead>Warnings</TableHead>
+                        <TableHead>Actions</TableHead>
+                    </TableRow>
                 </Thead>
-                <Tbody>
+                <TableBody>
                     {checks.map((item) => (
                         <ResultsCheckRow key={item.id} check={item} />
                     ))}

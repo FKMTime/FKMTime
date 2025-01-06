@@ -25,16 +25,16 @@ import {
 import FlagIcon from "@/Components/Icons/FlagIcon";
 import LoadingPage from "@/Components/LoadingPage";
 import PlusButton from "@/Components/PlusButton";
-import { activityCodeToName } from "@/logic/activities";
-import { competitionAtom } from "@/logic/atoms";
-import { getCompetitionInfo } from "@/logic/competition";
-import { isUnofficialEvent } from "@/logic/events";
-import { Result } from "@/logic/interfaces";
+import { activityCodeToName } from "@/lib/activities";
+import { competitionAtom } from "@/lib/atoms";
+import { getCompetitionInfo } from "@/lib/competition";
+import { isUnofficialEvent } from "@/lib/events";
+import { Result } from "@/lib/interfaces";
 import {
     assignDnsOnRemainingSolves,
     getResultById,
     reSubmitScorecardToWcaLive,
-} from "@/logic/results";
+} from "@/lib/results";
 import {
     getSubmissionPlatformName,
     getSubmittedAttempts,
@@ -123,7 +123,7 @@ const SingleResult = () => {
             toast({
                 title: "Error",
                 description: "Result not found",
-                status: "error",
+                variant: "destructive",
             });
             navigate("/results");
         }
@@ -137,13 +137,13 @@ const SingleResult = () => {
             toast({
                 title: "Success",
                 description: `Scorecard resubmitted to ${submissionPlatformName}`,
-                status: "success",
+                
             });
         } else {
             toast({
                 title: "Error",
                 description: "Something went wrong",
-                status: "error",
+                variant: "destructive",
             });
         }
     };
@@ -167,14 +167,14 @@ const SingleResult = () => {
                     toast({
                         title: "Success",
                         description: "DNS assigned",
-                        status: "success",
+                        
                     });
                     fetchData();
                 } else {
                     toast({
                         title: "Error",
                         description: "Something went wrong",
-                        status: "error",
+                        variant: "destructive",
                     });
                 }
             })

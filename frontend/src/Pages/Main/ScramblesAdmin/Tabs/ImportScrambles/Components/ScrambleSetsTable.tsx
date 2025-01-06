@@ -18,19 +18,19 @@ const ScrambleSetsTable = ({ scrambleSets }: ScrambleSetsTableProps) => {
         <TableContainer>
             <Table variant="simple">
                 <Thead>
-                    <Tr bg="gray.400">
-                        <Th>Scramble set</Th>
-                        <Th>Scrambles</Th>
-                        <Th>Extra scrambles</Th>
-                    </Tr>
+                    <TableRow bg="gray.400">
+                        <TableHead>Scramble set</TableHead>
+                        <TableHead>Scrambles</TableHead>
+                        <TableHead>Extra scrambles</TableHead>
+                    </TableRow>
                 </Thead>
-                <Tbody>
+                <TableBody>
                     {scrambleSets.map((set: ScrambleSet) => (
-                        <Tr key={set.id}>
-                            <Td>{set.id}</Td>
-                            <Td>{set.scrambles.length}</Td>
-                            <Td>{set.extraScrambles.length}</Td>
-                        </Tr>
+                        <TableRow key={set.id}>
+                            <TableCell>{set.id}</TableCell>
+                            <TableCell>{set.scrambles.length}</TableCell>
+                            <TableCell>{set.extraScrambles.length}</TableCell>
+                        </TableRow>
                     ))}
                 </Tbody>
             </Table>

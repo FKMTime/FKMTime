@@ -1,11 +1,11 @@
 import { FormControl } from "@chakra-ui/react";
 import { useCallback, useEffect, useState } from "react";
 
-import { Person } from "@/logic/interfaces";
+import { Person } from "@/lib/interfaces";
 import {
     getAllPersons,
     getPersonNameAndRegistrantId,
-} from "@/logic/persons.ts";
+} from "@/lib/persons";
 
 import Autocomplete from "./Autocomplete";
 

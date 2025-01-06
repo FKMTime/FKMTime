@@ -2,8 +2,8 @@ import { Box, Heading, Text } from "@chakra-ui/react";
 import { useCallback, useEffect, useState } from "react";
 
 import { Modal } from "@/Components/Modal";
-import { ScramblingDevice } from "@/logic/interfaces";
-import { getOneTimeCode } from "@/logic/scramblingDevices";
+import { ScramblingDevice } from "@/lib/interfaces";
+import { getOneTimeCode } from "@/lib/scramblingDevices";
 
 interface OneTimeCodeModalProps {
     isOpen: boolean;

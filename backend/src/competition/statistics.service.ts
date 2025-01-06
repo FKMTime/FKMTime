@@ -84,9 +84,9 @@ export class StatisticsService {
       byEventStats.push({
         eventId: eventId.eventId,
         eventName: getEventShortName(eventId.eventId),
-        DNF: dnf,
-        Attempts: attempts,
-        Incidents: incidents,
+        dnf: dnf,
+        attempts: attempts,
+        incidents: incidents,
       });
     }
     for (const day of days) {
@@ -129,11 +129,12 @@ export class StatisticsService {
           new Date(firstResult.solvedAt).getTime() - startTime.getTime();
         roundsForDay.push({
           roundId: round.activityCode,
-          roundName: `${getEventShortName(round.activityCode.split('-r')[0])} - Round ${round.activityCode.split('-r')[1]}`,
-          Minutes: delay / 60000,
+          roundName: `${getEventShortName(round.activityCode.split('-r')[0])} - R${round.activityCode.split('-r')[1]}`,
+          delayInMinutes: (delay / 60000).toFixed(2),
         });
       }
       byRoundStats.push({
+        id: day.getTime(),
         date: day,
         roundsStatistics: roundsForDay,
       });
@@ -145,7 +146,7 @@ export class StatisticsService {
       attemptsByDevice: devices.map((device) => ({
         deviceId: device.id,
         deviceName: device.name,
-        Count:
+        count:
           attemptsByDevice.find((a) => a.deviceId === device.id)?._count
             ?._all || 0,
       })),

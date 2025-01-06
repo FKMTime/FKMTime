@@ -2,7 +2,7 @@ import { Box, FormLabel, IconButton } from "@chakra-ui/react";
 import { Event, Round } from "@wca/helpers";
 
 import EventIcon from "@/Components/Icons/EventIcon";
-import { Competition } from "@/logic/interfaces";
+import { Competition } from "@/lib/interfaces";
 
 import Select from "./Select";
 

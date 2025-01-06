@@ -4,10 +4,10 @@ import { useAtomValue } from "jotai";
 import { useRef, useState } from "react";
 
 import { Modal } from "@/Components/Modal";
-import { activityCodeToName } from "@/logic/activities";
-import { competitionAtom } from "@/logic/atoms";
-import { getEventName } from "@/logic/events";
-import { addScrambles, validateScrambles } from "@/logic/scramblesImport";
+import { activityCodeToName } from "@/lib/activities";
+import { competitionAtom } from "@/lib/atoms";
+import { getEventName } from "@/lib/events";
+import { addScrambles, validateScrambles } from "@/lib/scramblesImport";
 import { numberToLetter } from "@/logic/utils";
 
 import ScrambleSetsValidators from "../../ImportScrambles/Components/ScrambleSetsValidators";
@@ -65,7 +65,7 @@ const AddScrambleSetModal = ({
         if (response.status === 201) {
             toast({
                 title: "Scrambles imported",
-                status: "success",
+                
             });
             clearUploadedScrambles();
             onClose();
@@ -73,12 +73,12 @@ const AddScrambleSetModal = ({
             toast({
                 title: "Error",
                 description: "Something went wrong",
-                status: "error",
+                variant: "destructive",
             });
             toast({
                 title: "Error",
                 description: response.data.message,
-                status: "error",
+                variant: "destructive",
             });
         }
     };

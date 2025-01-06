@@ -1,7 +1,7 @@
 import { Alert, AlertIcon, Text } from "@chakra-ui/react";
 
-import { Person } from "@/logic/interfaces.ts";
-import regions from "@/logic/regions.ts";
+import { Person } from "@/lib/interfaces";
+import regions from "@/lib/regions";
 import { isNewcomer } from "@/logic/utils";
 
 interface PersonInfoProps {

@@ -15,10 +15,10 @@ import { Modal } from "@/Components/Modal";
 import PlusButton from "@/Components/PlusButton";
 import RoundedIconButton from "@/Components/RoundedIconButton";
 import Select from "@/Components/Select";
-import { CUTOFF_ALLOWED } from "@/logic/constants";
-import { getUnofficialEvents } from "@/logic/events";
-import { Event } from "@/logic/interfaces";
-import { createUnofficialEvent } from "@/logic/unofficialEvents";
+import { CUTOFF_ALLOWED } from "@/lib/constants";
+import { getUnofficialEvents } from "@/lib/events";
+import { Event } from "@/lib/interfaces";
+import { createUnofficialEvent } from "@/lib/unofficialEvents";
 
 import {
     updateCumulativeLimit,
@@ -58,7 +58,6 @@ const CreateUnofficialEventModal = ({
         if (status === 201) {
             toast({
                 title: "Successfully added unofficial event",
-                status: "success",
             });
             setRounds([]);
             setSelectedEventId("");
@@ -67,13 +66,13 @@ const CreateUnofficialEventModal = ({
             toast({
                 title: "Error",
                 description: "Event already exists",
-                status: "error",
+                variant: "destructive",
             });
         } else {
             toast({
                 title: "Error",
                 description: "Something went wrong",
-                status: "error",
+                variant: "destructive",
             });
         }
         setIsLoading(false);
@@ -84,7 +83,7 @@ const CreateUnofficialEventModal = ({
             return toast({
                 title: "Error",
                 description: "You cannot add more than 4 rounds",
-                status: "error",
+                variant: "destructive",
             });
         }
         setRounds((prev) => {
@@ -153,13 +152,7 @@ const CreateUnofficialEventModal = ({
 
     return (
         <Modal isOpen={isOpen} onClose={onClose} title="Add unofficial event">
-            <Box
-                display="flex"
-                flexDirection="column"
-                gap="5"
-                as="form"
-                onSubmit={handleSubmit}
-            >
+            <form className="flex flex-col gap-5" onSubmit={handleSubmit}>
                 <FormControl isRequired>
                     <FormLabel>Event</FormLabel>
                     <Select
@@ -271,7 +264,7 @@ const CreateUnofficialEventModal = ({
                         Add
                     </Button>
                 </Box>
-            </Box>
+            </form>
         </Modal>
     );
 };

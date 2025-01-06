@@ -2,7 +2,7 @@ import { Box, Button, GridItem, SimpleGrid, useToast } from "@chakra-ui/react";
 import { useConfirm } from "chakra-ui-confirm";
 import { useNavigate } from "react-router-dom";
 
-import { reSubmitRoundToWcaLive } from "@/logic/results";
+import { reSubmitRoundToWcaLive } from "@/lib/results";
 import { getSubmissionPlatformName } from "@/logic/utils";
 
 interface ResultsActionsProps {
@@ -36,13 +36,13 @@ const ResultsActions = ({
                 if (status === 200) {
                     toast({
                         title: `Successfully resubmitted round results to ${submissionPlatformName}`,
-                        status: "success",
+                        
                     });
                 } else {
                     toast({
                         title: "Error",
                         description: "Something went wrong",
-                        status: "error",
+                        variant: "destructive",
                     });
                 }
             })

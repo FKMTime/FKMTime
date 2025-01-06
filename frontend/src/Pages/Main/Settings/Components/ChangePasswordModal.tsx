@@ -9,7 +9,7 @@ import {
 import { FormEvent, RefObject, useRef, useState } from "react";
 
 import { Modal } from "@/Components/Modal";
-import { changePassword } from "@/logic/settings";
+import { changePassword } from "@/lib/settings";
 
 interface ChangePasswordModalProps {
     isOpen: boolean;
@@ -41,7 +41,7 @@ const ChangePasswordModal = ({ isOpen, onClose }: ChangePasswordModalProps) => {
             toast({
                 title: "Error",
                 description: "Passwords do not match",
-                status: "error",
+                variant: "destructive",
             });
             setIsLoading(false);
             return;
@@ -54,14 +54,14 @@ const ChangePasswordModal = ({ isOpen, onClose }: ChangePasswordModalProps) => {
         if (status === 200) {
             toast({
                 title: "Successfully changed password.",
-                status: "success",
+                
             });
             onClose();
         } else {
             toast({
                 title: "Error",
                 description: "Something went wrong",
-                status: "error",
+                variant: "destructive",
             });
         }
         setIsLoading(false);

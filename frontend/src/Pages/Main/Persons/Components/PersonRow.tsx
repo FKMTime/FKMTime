@@ -10,9 +10,9 @@ import Avatar from "@/Components/Avatar/Avatar";
 import EventIcon from "@/Components/Icons/EventIcon";
 import FlagIcon from "@/Components/Icons/FlagIcon.tsx";
 import SmallIconButton from "@/Components/SmallIconButton";
-import { isAdmin } from "@/logic/auth.ts";
-import { Person } from "@/logic/interfaces";
-import { WCA_ORIGIN } from "@/logic/request";
+import { isAdmin } from "@/lib/auth";
+import { Person } from "@/lib/interfaces";
+import { WCA_ORIGIN } from "@/lib/request";
 import { prettyGender, regionNameByIso2 } from "@/logic/utils";
 
 import AssignCardModal from "./AssignCardModal";
@@ -41,9 +41,9 @@ const PersonRow = ({ person, wcif, handleCloseEditModal }: PersonRowProps) => {
 
     return (
         <>
-            <Tr key={person.id}>
-                <Td>{person.registrantId}</Td>
-                <Td>
+            <TableRow key={person.id}>
+                <TableCell>{person.registrantId}</TableCell>
+                <TableCell>
                     <Box display="flex" alignItems="center" gap="1">
                         <Avatar
                             avatarSize={30}
@@ -53,25 +53,25 @@ const PersonRow = ({ person, wcif, handleCloseEditModal }: PersonRowProps) => {
                         />
                         <Text>{person.name}</Text>
                     </Box>
-                </Td>
-                <Td>
+                </TableCell>
+                <TableCell>
                     <Link
                         target="_blank"
                         href={`${WCA_ORIGIN}/persons/${person.wcaId}`}
                     >
                         {person.wcaId}
                     </Link>
-                </Td>
-                <Td>
+                </TableCell>
+                <TableCell>
                     {person.countryIso2 && (
                         <Box display="flex" alignItems="center" gap="1">
                             <FlagIcon country={person.countryIso2} size={20} />
                             <Text>{regionNameByIso2(person.countryIso2)}</Text>
                         </Box>
                     )}
-                </Td>
-                <Td>{prettyGender(person.gender)}</Td>
-                <Td>
+                </TableCell>
+                <TableCell>{prettyGender(person.gender)}</TableCell>
+                <TableCell>
                     <Box display="flex" flexDirection="row" gap="2">
                         {wcifInfo?.registration?.eventIds.map(
                             (event: string) => (
@@ -84,11 +84,11 @@ const PersonRow = ({ person, wcif, handleCloseEditModal }: PersonRowProps) => {
                             )
                         )}
                     </Box>
-                </Td>
-                <Td>{person.cardId && <MdDone />}</Td>
-                <Td>{person.checkedInAt && <MdDone />}</Td>
-                <Td>{person.canCompete && <MdDone />}</Td>
-                <Td>
+                </TableCell>
+                <TableCell>{person.cardId && <MdDone />}</TableCell>
+                <TableCell>{person.checkedInAt && <MdDone />}</TableCell>
+                <TableCell>{person.canCompete && <MdDone />}</TableCell>
+                <TableCell>
                     <SmallIconButton
                         icon={<FaAddressCard />}
                         ariaLabel="Card"
@@ -119,8 +119,8 @@ const PersonRow = ({ person, wcif, handleCloseEditModal }: PersonRowProps) => {
                                 />
                             </>
                         )}
-                </Td>
-            </Tr>
+                </TableCell>
+            </TableRow>
             <AssignCardModal
                 isOpen={isOpenAssignCardModal}
                 onClose={handleCloseAssignCardModal}

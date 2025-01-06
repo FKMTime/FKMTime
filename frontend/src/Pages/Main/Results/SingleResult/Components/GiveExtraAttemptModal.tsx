@@ -9,8 +9,8 @@ import {
 import { FormEvent, useState } from "react";
 
 import { Modal } from "@/Components/Modal.tsx";
-import { updateAttempt } from "@/logic/attempt.ts";
-import { Attempt, AttemptStatus } from "@/logic/interfaces.ts";
+import { updateAttempt } from "@/lib/attempt";
+import { Attempt, AttemptStatus } from "@/lib/interfaces";
 
 interface GiveExtraAttemptModalProps {
     isOpen: boolean;
@@ -36,14 +36,14 @@ const GiveExtraAttemptModal = ({
         if (status === 200) {
             toast({
                 title: "Successfully given extra.",
-                status: "success",
+                
             });
             onClose();
         } else {
             toast({
                 title: "Error",
                 description: "Something went wrong",
-                status: "error",
+                variant: "destructive",
             });
         }
         setIsLoading(false);

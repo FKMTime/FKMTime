@@ -2,8 +2,8 @@ import { Box, FormControl, FormLabel, Input } from "@chakra-ui/react";
 
 import Autocomplete from "@/Components/Autocomplete";
 import Select from "@/Components/Select";
-import { AddPerson, Region } from "@/logic/interfaces";
-import regions from "@/logic/regions";
+import { AddPerson, Region } from "@/lib/interfaces";
+import regions from "@/lib/regions";
 
 interface PersonFormProps {
     canCompete?: boolean;

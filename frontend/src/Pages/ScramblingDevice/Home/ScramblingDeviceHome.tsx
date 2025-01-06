@@ -4,9 +4,9 @@ import { useCallback, useState } from "react";
 
 import EventAndRoundSelector from "@/Components/EventAndRoundSelector";
 import LoadingPage from "@/Components/LoadingPage";
-import { competitionAtom } from "@/logic/atoms";
-import { ScrambleSet } from "@/logic/interfaces";
-import { getScrambleSetsForScramblingDevice } from "@/logic/scrambling";
+import { competitionAtom } from "@/lib/atoms";
+import { ScrambleSet } from "@/lib/interfaces";
+import { getScrambleSetsForScramblingDevice } from "@/lib/scrambling";
 
 import ScrambleSetsTable from "./Components/ScrambleSetsTable";
 

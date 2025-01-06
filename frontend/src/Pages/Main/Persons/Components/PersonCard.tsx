@@ -19,9 +19,9 @@ import { getPersonFromWcif } from "wcif-helpers";
 import Avatar from "@/Components/Avatar/Avatar";
 import EventIcon from "@/Components/Icons/EventIcon";
 import FlagIcon from "@/Components/Icons/FlagIcon";
-import { isAdmin } from "@/logic/auth";
-import { Person } from "@/logic/interfaces";
-import { WCA_ORIGIN } from "@/logic/request";
+import { isAdmin } from "@/lib/auth";
+import { Person } from "@/lib/interfaces";
+import { WCA_ORIGIN } from "@/lib/request";
 import { prettyGender, regionNameByIso2 } from "@/logic/utils";
 
 import AssignCardModal from "./AssignCardModal";

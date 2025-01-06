@@ -15,8 +15,8 @@ import { useConfirm } from "chakra-ui-confirm";
 import { useState } from "react";
 
 import BatteryIcon from "@/Components/Icons/BatteryIcon";
-import { deleteDevice } from "@/logic/devices";
-import { Device } from "@/logic/interfaces";
+import { deleteDevice } from "@/lib/devices";
+import { Device } from "@/lib/interfaces";
 import { prettyDeviceType } from "@/logic/utils";
 
 import EditDeviceModal from "./EditDeviceModal";
@@ -48,14 +48,14 @@ const DeviceCard = ({ device, fetchData }: DeviceCardProps) => {
                 if (status === 204) {
                     toast({
                         title: "Successfully deleted device.",
-                        status: "success",
+                        
                     });
                     fetchData();
                 } else {
                     toast({
                         title: "Error",
                         description: "Something went wrong",
-                        status: "error",
+                        variant: "destructive",
                     });
                 }
             })

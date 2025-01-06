@@ -3,11 +3,11 @@ import { FaList } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 
 import SmallIconButton from "@/Components/SmallIconButton";
-import { activityCodeToName } from "@/logic/activities";
-import { isAdmin } from "@/logic/auth";
-import { average, best } from "@/logic/average";
-import { Result } from "@/logic/interfaces";
-import { resultToString } from "@/logic/resultFormatters";
+import { activityCodeToName } from "@/lib/activities";
+import { isAdmin } from "@/lib/auth";
+import { average, best } from "@/lib/average";
+import { Result } from "@/lib/interfaces";
+import { resultToString } from "@/lib/resultFormatters";
 import { getSubmittedAttempts } from "@/logic/utils";
 
 interface PersonResultRowProps {
@@ -22,25 +22,25 @@ const PersonResultRow = ({ result }: PersonResultRowProps) => {
 
     return (
         <>
-            <Tr key={result.id}>
-                <Td>{activityCodeToName(result.roundId)}</Td>
-                <Td>
+            <TableRow key={result.id}>
+                <TableCell>{activityCodeToName(result.roundId)}</TableCell>
+                <TableCell>
                     {calculatedAverage
                         ? resultToString(calculatedAverage)
                         : "No average"}
-                </Td>
-                <Td>{resultToString(best(submittedAttempts))}</Td>
+                </TableCell>
+                <TableCell>{resultToString(best(submittedAttempts))}</TableCell>
                 {isAdmin() && (
-                    <Td>
+                    <TableCell>
                         <SmallIconButton
                             icon={<FaList />}
                             ariaLabel="List"
                             title="View attempts"
                             onClick={() => navigate(`/results/${result.id}`)}
                         />
-                    </Td>
+                    </TableCell>
                 )}
-            </Tr>
+            </TableRow>
         </>
     );
 };

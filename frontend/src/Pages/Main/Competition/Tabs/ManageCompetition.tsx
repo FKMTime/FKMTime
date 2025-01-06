@@ -1,68 +1,40 @@
-import { Alert, AlertIcon, Box, Button, useToast } from "@chakra-ui/react";
-import { FormEvent } from "react";
+import { AlertCircle } from "lucide-react";
 
-import {
-    syncCompetition,
-    updateCompetitionSettings,
-} from "@/logic/competition";
-import { Competition } from "@/logic/interfaces";
+import { Alert, AlertTitle } from "@/Components/ui/alert";
+import { Card, CardContent, CardHeader, CardTitle } from "@/Components/ui/card";
+import { useToast } from "@/hooks/useToast";
+import { updateCompetitionSettings } from "@/lib/competition";
+import { Competition } from "@/lib/interfaces";
 
 import CompetitionForm from "./Components/CompetitionForm";
 
 interface ManageCompetitionProps {
     competition: Competition;
     setCompetition: (competition: Competition) => void;
-    fetchCompetitionDataAndSetAtom: () => void;
 }
 
 const ManageCompetition = ({
     competition,
     setCompetition,
-    fetchCompetitionDataAndSetAtom,
 }: ManageCompetitionProps) => {
-    const toast = useToast();
+    const { toast } = useToast();
 
-    const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
-        event.preventDefault();
+    const handleSubmit = async (data: Competition) => {
         if (!competition) {
             return;
         }
-        const status = await updateCompetitionSettings(
-            competition.id,
-            competition
-        );
+        setCompetition(data);
+        const status = await updateCompetitionSettings(competition.id, data);
         if (status === 200) {
             toast({
                 title: "Success",
                 description: "Competition updated",
-                status: "success",
             });
         } else {
             toast({
                 title: "Error",
                 description: "Something went wrong",
-                status: "error",
-            });
-        }
-    };
-
-    const handleSync = async () => {
-        if (!competition || !competition.wcaId) {
-            return;
-        }
-        const status = await syncCompetition(competition.wcaId);
-        if (status === 200) {
-            toast({
-                title: "Success",
-                description: "Competition synced",
-                status: "success",
-            });
-            await fetchCompetitionDataAndSetAtom();
-        } else {
-            toast({
-                title: "Error",
-                description: "Something went wrong",
-                status: "error",
+                variant: "destructive",
             });
         }
     };
@@ -76,43 +48,41 @@ const ManageCompetition = ({
     const anyWarnings = emptyScoretakingToken || scoretakingTokenMayExpired;
 
     return (
-        <Box display="flex" flexDirection="column" gap="5" ml="-4">
-            {anyWarnings && (
-                <Box display="flex" flexDirection="column" gap="5">
-                    {emptyScoretakingToken && (
-                        <Alert status="error" borderRadius="md" color="black">
-                            <AlertIcon />
-                            You need to set the scoretaking token taken from WCA
-                            Live before the competition
-                        </Alert>
+        <Card>
+            <CardHeader>
+                <CardTitle>Manage competition</CardTitle>
+            </CardHeader>
+            <CardContent>
+                <div className="flex flex-col gap-5 md:w-1/3">
+                    {anyWarnings && (
+                        <div className="flex flex-col gap-5">
+                            {emptyScoretakingToken && (
+                                <Alert variant="destructive">
+                                    <AlertCircle className="h-4 w-4" />
+                                    <AlertTitle>
+                                        You need to set the scoretaking token
+                                        taken from WCA Live before the
+                                        competition
+                                    </AlertTitle>
+                                </Alert>
+                            )}
+                            {scoretakingTokenMayExpired && (
+                                <Alert variant="destructive">
+                                    <AlertCircle className="h-4 w-4" />
+                                    <AlertTitle>
+                                        The scoretaking token may have expired
+                                    </AlertTitle>
+                                </Alert>
+                            )}
+                        </div>
                     )}
-                    {scoretakingTokenMayExpired && (
-                        <Alert status="error" borderRadius="md" color="black">
-                            <AlertIcon />
-                            The scoretaking token may have expired
-                        </Alert>
-                    )}
-                </Box>
-            )}
-            <Box
-                display="flex"
-                flexDirection={{ base: "column", md: "row" }}
-                gap="2"
-            >
-                <Button
-                    colorScheme="yellow"
-                    onClick={handleSync}
-                    width={{ base: "100%", md: "20%" }}
-                >
-                    Sync
-                </Button>
-            </Box>
-            <CompetitionForm
-                competition={competition}
-                setCompetition={setCompetition}
-                handleSubmit={handleSubmit}
-            />
-        </Box>
+                    <CompetitionForm
+                        competition={competition}
+                        handleSubmit={handleSubmit}
+                    />
+                </div>
+            </CardContent>
+        </Card>
     );
 };
 

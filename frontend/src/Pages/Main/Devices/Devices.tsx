@@ -13,9 +13,9 @@ import { useSearchParams } from "react-router-dom";
 import LoadingPage from "@/Components/LoadingPage";
 import PlusButton from "@/Components/PlusButton.tsx";
 import Select from "@/Components/Select";
-import { getAllDevices } from "@/logic/devices";
-import { AvailableDevice, Device, Room } from "@/logic/interfaces";
-import { getAllRooms } from "@/logic/rooms";
+import { getAllDevices } from "@/lib/devices";
+import { AvailableDevice, Device, Room } from "@/lib/interfaces";
+import { getAllRooms } from "@/lib/rooms";
 import AvailableDevices from "@/Pages/Main/Devices/Components/AvailableDevices";
 import { socket, SocketContext } from "@/socket";
 

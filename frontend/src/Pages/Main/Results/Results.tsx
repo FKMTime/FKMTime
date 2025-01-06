@@ -16,13 +16,13 @@ import {
 } from "wcif-helpers";
 
 import LoadingPage from "@/Components/LoadingPage";
-import { activityCodeToName } from "@/logic/activities";
-import { competitionAtom } from "@/logic/atoms";
-import { isAdmin } from "@/logic/auth";
-import { getCompetitionInfo } from "@/logic/competition";
-import { Result, Room } from "@/logic/interfaces";
-import { getResultsByRoundId } from "@/logic/results";
-import { getAllRooms } from "@/logic/rooms";
+import { activityCodeToName } from "@/lib/activities";
+import { competitionAtom } from "@/lib/atoms";
+import { isAdmin } from "@/lib/auth";
+import { getCompetitionInfo } from "@/lib/competition";
+import { Result, Room } from "@/lib/interfaces";
+import { getResultsByRoundId } from "@/lib/results";
+import { getAllRooms } from "@/lib/rooms";
 import { socket, SocketContext } from "@/socket";
 
 import EventAndRoundSelector from "../../../Components/EventAndRoundSelector";

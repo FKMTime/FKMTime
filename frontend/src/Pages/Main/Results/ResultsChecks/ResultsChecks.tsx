@@ -4,9 +4,9 @@ import { useCallback, useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 
 import LoadingPage from "@/Components/LoadingPage";
-import { competitionAtom } from "@/logic/atoms";
-import { Incident } from "@/logic/interfaces";
-import { getResultsChecks } from "@/logic/results";
+import { competitionAtom } from "@/lib/atoms";
+import { Incident } from "@/lib/interfaces";
+import { getResultsChecks } from "@/lib/results";
 
 import EventAndRoundSelector from "../../../../Components/EventAndRoundSelector";
 import ResultsChecksTable from "./Components/ResultsChecksTable";

@@ -12,14 +12,14 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
 
 import LoadingPage from "@/Components/LoadingPage";
-import { activityCodeToName } from "@/logic/activities";
-import { competitionAtom } from "@/logic/atoms";
-import { Attempt, Result, ResultToDoubleCheck } from "@/logic/interfaces";
+import { activityCodeToName } from "@/lib/activities";
+import { competitionAtom } from "@/lib/atoms";
+import { Attempt, Result, ResultToDoubleCheck } from "@/lib/interfaces";
 import {
     doubleCheckResult,
     getResultsToDoubleCheckByRoundId,
     undoDoubleCheck,
-} from "@/logic/results";
+} from "@/lib/results";
 import { getSubmissionPlatformName } from "@/logic/utils";
 
 import AttemptsList from "./Components/AttemptsList";
@@ -75,7 +75,7 @@ const DoubleCheck = () => {
         if (status === 200) {
             toast({
                 title: "Successfully double checked result.",
-                status: "success",
+                
             });
             setResult(null);
             setInputValue("");
@@ -85,7 +85,7 @@ const DoubleCheck = () => {
             toast({
                 title: "Error",
                 description: "Something went wrong",
-                status: "error",
+                variant: "destructive",
             });
         }
     }, [fetchData, result, toast]);
@@ -152,14 +152,14 @@ const DoubleCheck = () => {
                 if (status === 204) {
                     toast({
                         title: "Successfully marked results as not double checked.",
-                        status: "success",
+                        
                     });
                     fetchData();
                 } else {
                     toast({
                         title: "Error",
                         description: "Something went wrong",
-                        status: "error",
+                        variant: "destructive",
                     });
                 }
             })

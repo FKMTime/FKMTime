@@ -1,16 +1,23 @@
-import {
-    Box,
-    Button,
-    FormControl,
-    FormLabel,
-    useToast,
-} from "@chakra-ui/react";
-import { FormEvent, useState } from "react";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useState } from "react";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
 
 import { Modal } from "@/Components/Modal";
-import PasswordInput from "@/Components/PasswordInput.tsx";
-import { User } from "@/logic/interfaces";
-import { updateUserPassword } from "@/logic/user";
+import { Button } from "@/Components/ui/button";
+import {
+    Form,
+    FormControl,
+    FormField,
+    FormItem,
+    FormLabel,
+    FormMessage,
+} from "@/Components/ui/form";
+import { Input } from "@/Components/ui/input";
+import { useToast } from "@/hooks/useToast";
+import { User } from "@/lib/interfaces";
+import { editUserPasswordSchema } from "@/lib/schema/userSchema";
+import { updateUserPassword } from "@/lib/user";
 
 interface EditUserPasswordModalProps {
     isOpen: boolean;
@@ -23,26 +30,26 @@ const EditUserPasswordModal = ({
     onClose,
     user,
 }: EditUserPasswordModalProps) => {
-    const toast = useToast();
+    const { toast } = useToast();
     const [isLoading, setIsLoading] = useState(false);
 
-    const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    const form = useForm<z.infer<typeof editUserPasswordSchema>>({
+        resolver: zodResolver(editUserPasswordSchema),
+    });
+
+    const onSubmit = async (values: z.infer<typeof editUserPasswordSchema>) => {
         setIsLoading(true);
-        event.preventDefault();
-        const data = new FormData(event.currentTarget);
-        const password = data.get("password") as string;
-        const status = await updateUserPassword(user.id, password);
+        const status = await updateUserPassword(user.id, values.password);
         if (status === 200) {
             toast({
                 title: "Successfully changed password.",
-                status: "success",
             });
             onClose();
         } else {
             toast({
                 title: "Error",
                 description: "Something went wrong",
-                status: "error",
+                variant: "destructive",
             });
         }
         setIsLoading(false);
@@ -50,42 +57,38 @@ const EditUserPasswordModal = ({
 
     return (
         <Modal isOpen={isOpen} onClose={onClose} title="Change password">
-            <Box
-                display="flex"
-                flexDirection="column"
-                gap="5"
-                as="form"
-                onSubmit={handleSubmit}
-            >
-                <FormControl isRequired>
-                    <FormLabel>New password</FormLabel>
-                    <PasswordInput
-                        placeholder="New password"
-                        isDisabled={isLoading}
-                        name="password"
-                        autoComplete="off"
-                    />
-                </FormControl>
-                <Box
-                    display="flex"
-                    flexDirection="row"
-                    justifyContent="end"
-                    gap="5"
+            <Form {...form}>
+                <form
+                    onSubmit={form.handleSubmit(onSubmit)}
+                    className="space-y-8 py-3"
                 >
-                    {!isLoading && (
-                        <Button colorScheme="red" onClick={onClose}>
-                            Cancel
-                        </Button>
-                    )}
+                    <FormField
+                        control={form.control}
+                        name="password"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Password</FormLabel>
+                                <FormControl>
+                                    <Input
+                                        type="password"
+                                        placeholder="Password"
+                                        {...field}
+                                    />
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
                     <Button
-                        colorScheme="green"
                         type="submit"
-                        isLoading={isLoading}
+                        className="w-full"
+                        variant="success"
+                        disabled={isLoading}
                     >
-                        Save
+                        Create
                     </Button>
-                </Box>
-            </Box>
+                </form>
+            </Form>
         </Modal>
     );
 };

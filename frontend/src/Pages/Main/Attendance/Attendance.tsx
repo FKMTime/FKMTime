@@ -14,16 +14,16 @@ import { useNavigate, useParams } from "react-router-dom";
 
 import LoadingPage from "@/Components/LoadingPage";
 import Select from "@/Components/Select";
-import { activityCodeToName, getGroupsByRoundId } from "@/logic/activities";
-import { competitionAtom } from "@/logic/atoms";
+import { activityCodeToName, getGroupsByRoundId } from "@/lib/activities";
+import { competitionAtom } from "@/lib/atoms";
 import {
     getAttendanceByGroupId,
     markAsAbsent,
     markAsPresent,
-} from "@/logic/attendance";
-import { getCompetitionInfo } from "@/logic/competition";
-import { Room, StaffActivity } from "@/logic/interfaces";
-import { getAllRooms } from "@/logic/rooms";
+} from "@/lib/attendance";
+import { getCompetitionInfo } from "@/lib/competition";
+import { Room, StaffActivity } from "@/lib/interfaces";
+import { getAllRooms } from "@/lib/rooms";
 import PresentPeopleList from "@/Pages/Main/Attendance/Components/PresentPeopleList";
 import { socket, SocketContext } from "@/socket";
 
@@ -99,14 +99,14 @@ const Attendance = () => {
             toast({
                 title: "Success",
                 description: "Marked as present",
-                status: "success",
+                
             });
             fetchAttendanceData(selectedGroup);
         } else {
             toast({
                 title: "Error",
                 description: "Something went wrong",
-                status: "error",
+                variant: "destructive",
             });
         }
     };
@@ -117,14 +117,14 @@ const Attendance = () => {
             toast({
                 title: "Success",
                 description: "Marked as absent",
-                status: "success",
+                
             });
             fetchAttendanceData(selectedGroup);
         } else {
             toast({
                 title: "Error",
                 description: "Something went wrong",
-                status: "error",
+                variant: "destructive",
             });
         }
     };

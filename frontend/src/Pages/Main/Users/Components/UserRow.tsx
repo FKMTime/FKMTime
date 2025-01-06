@@ -1,5 +1,3 @@
-import { Box, Td, Text, Tr, useToast } from "@chakra-ui/react";
-import { useConfirm } from "chakra-ui-confirm";
 import { useState } from "react";
 import { MdLock } from "react-icons/md";
 
@@ -8,9 +6,12 @@ import DeleteButton from "@/Components/DeleteButton";
 import EditButton from "@/Components/EditButton";
 import RoleIcon from "@/Components/Icons/RoleIcon.tsx";
 import SmallIconButton from "@/Components/SmallIconButton";
-import { User } from "@/logic/interfaces";
-import { deleteUser } from "@/logic/user";
-import { prettyUserRoleNameIncludingWCA } from "@/logic/utils.ts";
+import { TableCell, TableRow } from "@/Components/ui/table";
+import { useConfirm } from "@/hooks/useConfirm";
+import { useToast } from "@/hooks/useToast";
+import { User } from "@/lib/interfaces";
+import { deleteUser } from "@/lib/user";
+import { prettyUserRoleNameIncludingWCA } from "@/lib/utils.ts";
 
 import EditUserModal from "./EditUserModal";
 import EditUserPasswordModal from "./EditUserPasswordModal";
@@ -21,7 +22,7 @@ interface UserRowProps {
 }
 
 const UserRow = ({ user, fetchData }: UserRowProps) => {
-    const toast = useToast();
+    const { toast } = useToast();
     const confirm = useConfirm();
     const [isOpenEditUserModal, setIsOpenEditUserModal] =
         useState<boolean>(false);
@@ -45,14 +46,13 @@ const UserRow = ({ user, fetchData }: UserRowProps) => {
                 if (status === 204) {
                     toast({
                         title: "Successfully deleted user.",
-                        status: "success",
                     });
                     fetchData();
                 } else {
                     toast({
                         title: "Error",
                         description: "Something went wrong",
-                        status: "error",
+                        variant: "destructive",
                     });
                 }
             })
@@ -61,25 +61,24 @@ const UserRow = ({ user, fetchData }: UserRowProps) => {
                     title: "Cancelled",
                     description:
                         "You have cancelled the deletion of this user.",
-                    status: "info",
                 });
             });
     };
 
     return (
         <>
-            <Tr key={user.id}>
-                <Td>
+            <TableRow key={user.id}>
+                <TableCell>
                     {isWcaAccount ? <img src={wcaLogo} width="25" /> : "FKM"}
-                </Td>
-                <Td>{user.fullName}</Td>
-                <Td>
-                    <Box display="flex" alignItems="center" gap="1">
-                        <Text>{prettyUserRoleNameIncludingWCA(user)}</Text>
+                </TableCell>
+                <TableCell>{user.fullName}</TableCell>
+                <TableCell>
+                    <div className="flex items-center gap-1">
+                        <span>{prettyUserRoleNameIncludingWCA(user)}</span>
                         <RoleIcon role={user.role} />
-                    </Box>
-                </Td>
-                <Td>
+                    </div>
+                </TableCell>
+                <TableCell>
                     <EditButton onClick={() => setIsOpenEditUserModal(true)} />
                     {!isWcaAccount && (
                         <SmallIconButton
@@ -90,8 +89,8 @@ const UserRow = ({ user, fetchData }: UserRowProps) => {
                         />
                     )}
                     <DeleteButton onClick={handleDelete} />
-                </Td>
-            </Tr>
+                </TableCell>
+            </TableRow>
             <EditUserModal
                 isOpen={isOpenEditUserModal}
                 onClose={handleCloseEditUserModal}

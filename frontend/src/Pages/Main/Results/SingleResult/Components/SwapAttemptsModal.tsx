@@ -9,8 +9,8 @@ import { FormEvent, useState } from "react";
 
 import { Modal } from "@/Components/Modal";
 import Select from "@/Components/Select";
-import { swapAttempts } from "@/logic/attempt";
-import { Attempt } from "@/logic/interfaces";
+import { swapAttempts } from "@/lib/attempt";
+import { Attempt } from "@/lib/interfaces";
 
 interface SwapAttemptsModalProps {
     isOpen: boolean;
@@ -33,7 +33,7 @@ const SwapAttemptsModal = ({
             return toast({
                 title: "Error",
                 description: "You can't swap an attempt with itself",
-                status: "error",
+                variant: "destructive",
             });
         }
         const status = await swapAttempts(firstAttemptId, secondAttemptId);
@@ -41,14 +41,14 @@ const SwapAttemptsModal = ({
             toast({
                 title: "Success",
                 description: "Attempts swapped successfully",
-                status: "success",
+                
             });
             onClose();
         } else {
             toast({
                 title: "Error",
                 description: "Something went wrong",
-                status: "error",
+                variant: "destructive",
             });
         }
     };

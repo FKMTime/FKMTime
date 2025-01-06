@@ -10,9 +10,9 @@ import { FormEvent, useEffect, useState } from "react";
 
 import { Modal } from "@/Components/Modal";
 import Select from "@/Components/Select";
-import { updateDevice } from "@/logic/devices";
-import { Device, DeviceType, Room } from "@/logic/interfaces";
-import { getAllRooms } from "@/logic/rooms";
+import { updateDevice } from "@/lib/devices";
+import { Device, DeviceType, Room } from "@/lib/interfaces";
+import { getAllRooms } from "@/lib/rooms";
 
 interface EditDeviceModalProps {
     isOpen: boolean;
@@ -34,14 +34,14 @@ const EditDeviceModal = ({ isOpen, onClose, device }: EditDeviceModalProps) => {
         if (status === 200) {
             toast({
                 title: "Successfully updated this device.",
-                status: "success",
+                
             });
             onClose();
         } else {
             toast({
                 title: "Error",
                 description: "Something went wrong",
-                status: "error",
+                variant: "destructive",
             });
         }
         setIsLoading(false);

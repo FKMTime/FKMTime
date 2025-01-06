@@ -5,7 +5,7 @@ import {
     AlertTitle,
 } from "@chakra-ui/react";
 
-import { activityCodeToName } from "@/logic/activities";
+import { activityCodeToName } from "@/lib/activities";
 
 interface DoubleCheckFinishedProps {
     totalResults: number;

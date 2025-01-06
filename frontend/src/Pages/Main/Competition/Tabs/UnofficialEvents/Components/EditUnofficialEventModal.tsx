@@ -15,9 +15,9 @@ import { Modal } from "@/Components/Modal";
 import PlusButton from "@/Components/PlusButton";
 import RoundedIconButton from "@/Components/RoundedIconButton";
 import Select from "@/Components/Select";
-import { CUTOFF_ALLOWED } from "@/logic/constants";
-import { UnofficialEvent } from "@/logic/interfaces";
-import { updateUnofficialEvent } from "@/logic/unofficialEvents";
+import { CUTOFF_ALLOWED } from "@/lib/constants";
+import { UnofficialEvent } from "@/lib/interfaces";
+import { updateUnofficialEvent } from "@/lib/unofficialEvents";
 
 interface EditUnofficialEventModalProps {
     isOpen: boolean;
@@ -52,14 +52,14 @@ const EditUnofficialEventModal = ({
         if (status === 200) {
             toast({
                 title: "Successfully updated unofficial event",
-                status: "success",
+                
             });
             onClose();
         } else {
             toast({
                 title: "Error",
                 description: "Something went wrong",
-                status: "error",
+                variant: "destructive",
             });
         }
         setIsLoading(false);
@@ -70,7 +70,7 @@ const EditUnofficialEventModal = ({
             return toast({
                 title: "Error",
                 description: "You cannot add more than 4 rounds",
-                status: "error",
+                variant: "destructive",
             });
         }
         setEditedEvent((prev) => {

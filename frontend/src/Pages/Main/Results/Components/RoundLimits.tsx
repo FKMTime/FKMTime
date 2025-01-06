@@ -1,7 +1,7 @@
 import { Text } from "@chakra-ui/react";
 import { Cutoff, TimeLimit } from "@wca/helpers";
 
-import { resultToString } from "@/logic/resultFormatters";
+import { resultToString } from "@/lib/resultFormatters";
 import { cumulativeRoundsToString } from "@/logic/utils";
 
 interface RoundLimitsProps {

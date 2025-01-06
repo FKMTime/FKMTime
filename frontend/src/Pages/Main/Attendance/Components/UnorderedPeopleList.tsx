@@ -1,6 +1,6 @@
 import { Heading, ListItem, UnorderedList } from "@chakra-ui/react";
 
-import { StaffActivity } from "@/logic/interfaces";
+import { StaffActivity } from "@/lib/interfaces";
 
 interface PresentPeopleListProps {
     persons: StaffActivity[];

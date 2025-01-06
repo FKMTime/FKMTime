@@ -1,6 +1,6 @@
 import { Box, Flex, Heading, Text } from "@chakra-ui/react";
 
-import { AvailableDevice } from "@/logic/interfaces";
+import { AvailableDevice } from "@/lib/interfaces";
 
 import AvailableDeviceCard from "./AvailableDeviceCard";
 

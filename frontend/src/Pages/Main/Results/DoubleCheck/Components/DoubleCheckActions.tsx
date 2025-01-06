@@ -1,7 +1,7 @@
 import { Alert, AlertIcon, Button, ButtonGroup } from "@chakra-ui/react";
 import { useNavigate } from "react-router-dom";
 
-import { ResultToDoubleCheck } from "@/logic/interfaces";
+import { ResultToDoubleCheck } from "@/lib/interfaces";
 
 interface DoubleCheckActionsProps {
     handleSubmit: () => void;

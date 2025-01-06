@@ -1,8 +1,8 @@
 import { Button, Flex, Heading, Input } from "@chakra-ui/react";
 import { useCallback, useEffect, useState } from "react";
 
-import { getResolvedIncidents } from "@/logic/attempt";
-import { Incident } from "@/logic/interfaces";
+import { getResolvedIncidents } from "@/lib/attempt";
+import { Incident } from "@/lib/interfaces";
 import ResolvedIncidentsTable from "@/Pages/Main/ResolvedIncidents/Components/ResolvedIncidentsTable";
 
 import SummaryModal from "./Components/SummaryModal";

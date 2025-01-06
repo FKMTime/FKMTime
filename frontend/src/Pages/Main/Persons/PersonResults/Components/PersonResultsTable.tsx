@@ -1,7 +1,7 @@
 import { Table, TableContainer, Tbody, Th, Thead, Tr } from "@chakra-ui/react";
 
-import { isAdmin } from "@/logic/auth";
-import { Result } from "@/logic/interfaces";
+import { isAdmin } from "@/lib/auth";
+import { Result } from "@/lib/interfaces";
 
 import PersonResultRow from "./PersonResultRow";
 
@@ -14,14 +14,14 @@ const PersonResultsTable = ({ results }: PersonResultsTableProps) => {
         <TableContainer>
             <Table variant="simple">
                 <Thead>
-                    <Tr bg="gray.400">
-                        <Th>Round</Th>
-                        <Th>Average</Th>
-                        <Th>Best</Th>
-                        {isAdmin() && <Th>Actions</Th>}
-                    </Tr>
+                    <TableRow bg="gray.400">
+                        <TableHead>Round</TableHead>
+                        <TableHead>Average</TableHead>
+                        <TableHead>Best</TableHead>
+                        {isAdmin() && <TableHead>Actions</TableHead>}
+                    </TableRow>
                 </Thead>
-                <Tbody>
+                <TableBody>
                     {results.map((result: Result) => (
                         <PersonResultRow key={result.id} result={result} />
                     ))}

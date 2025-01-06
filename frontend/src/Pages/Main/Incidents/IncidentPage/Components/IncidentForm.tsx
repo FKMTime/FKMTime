@@ -12,12 +12,12 @@ import { useAtomValue } from "jotai";
 import AttemptResultInput from "@/Components/AttemptResultInput";
 import PenaltySelect from "@/Components/PenaltySelect";
 import PersonAutocomplete from "@/Components/PersonAutocomplete";
-import { competitionAtom } from "@/logic/atoms";
-import { DNF_VALUE } from "@/logic/constants";
-import { AttemptStatus, Incident } from "@/logic/interfaces";
-import { getPersonNameAndRegistrantId } from "@/logic/persons";
-import { milisecondsToClockFormat } from "@/logic/resultFormatters";
-import { checkTimeLimit } from "@/logic/results";
+import { competitionAtom } from "@/lib/atoms";
+import { DNF_VALUE } from "@/lib/constants";
+import { AttemptStatus, Incident } from "@/lib/interfaces";
+import { getPersonNameAndRegistrantId } from "@/lib/persons";
+import { milisecondsToClockFormat } from "@/lib/resultFormatters";
+import { checkTimeLimit } from "@/lib/results";
 
 interface IncidentFormProps {
     editedIncident: Incident;
@@ -75,7 +75,7 @@ const IncidentForm = ({
                             toast({
                                 title: "This attempt is over the time limit.",
                                 description: "This time is DNF.",
-                                status: "error",
+                                variant: "destructive",
                             });
                             setEditedIncident({
                                 ...editedIncident,

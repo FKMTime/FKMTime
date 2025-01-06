@@ -11,9 +11,9 @@ import {
 import { FormEvent, useEffect, useState } from "react";
 
 import LoadingPage from "@/Components/LoadingPage";
-import { isAdmin } from "@/logic/auth.ts";
-import { Settings as SettingsInterface } from "@/logic/interfaces";
-import { getSettings, updateSettings } from "@/logic/settings";
+import { isAdmin } from "@/lib/auth";
+import { Settings as SettingsInterface } from "@/lib/interfaces";
+import { getSettings, updateSettings } from "@/lib/settings";
 import QuickActions from "@/Pages/Main/Settings/Components/QuickActions";
 
 import ChangePasswordModal from "./Components/ChangePasswordModal";
@@ -40,13 +40,13 @@ const Settings = () => {
         if (status === 200) {
             toast({
                 title: "Successfully updated settings.",
-                status: "success",
+                
             });
         } else {
             toast({
                 title: "Error",
                 description: "Something went wrong",
-                status: "error",
+                variant: "destructive",
             });
         }
         setIsLoading(false);

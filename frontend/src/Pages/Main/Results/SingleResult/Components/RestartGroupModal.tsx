@@ -13,10 +13,10 @@ import { useConfirm } from "chakra-ui-confirm";
 import { useState } from "react";
 
 import { Modal } from "@/Components/Modal";
-import { activityCodeToName, getGroupsByRoundId } from "@/logic/activities";
-import { getAttendanceByGroupId } from "@/logic/attendance";
-import { StaffActivity } from "@/logic/interfaces";
-import { restartGroup } from "@/logic/results";
+import { activityCodeToName, getGroupsByRoundId } from "@/lib/activities";
+import { getAttendanceByGroupId } from "@/lib/attendance";
+import { StaffActivity } from "@/lib/interfaces";
+import { restartGroup } from "@/lib/results";
 
 interface RestartGroupModalProps {
     isOpen: boolean;
@@ -59,13 +59,13 @@ const RestartGroupModal = ({
                 if (status === 204) {
                     toast({
                         title: "Group restarted",
-                        status: "success",
+                        
                     });
                     onClose();
                 } else {
                     toast({
                         title: "Something went wrong",
-                        status: "error",
+                        variant: "destructive",
                     });
                 }
             })

@@ -6,12 +6,12 @@ import { useNavigate, useParams } from "react-router-dom";
 import EventIcon from "@/Components/Icons/EventIcon";
 import LoadingPage from "@/Components/LoadingPage";
 import PasswordInput from "@/Components/PasswordInput";
-import { DecryptedScramble, ScrambleSet } from "@/logic/interfaces";
+import { DecryptedScramble, ScrambleSet } from "@/lib/interfaces";
 import {
     decryptScrambles,
     getScrambleSetById,
     unlockScrambleSet,
-} from "@/logic/scrambling";
+} from "@/lib/scrambling";
 
 import ScramblesList from "./Components/ScramblesList";
 
@@ -45,7 +45,7 @@ const AllScrambles = () => {
         if (response.status === 200) {
             toast({
                 title: "Unlocked",
-                status: "success",
+                
             });
             setIsLocked(false);
             setDecryptedScrambles(
@@ -54,12 +54,12 @@ const AllScrambles = () => {
         } else if (response.status === 403) {
             toast({
                 title: "Invalid password",
-                status: "error",
+                variant: "destructive",
             });
         } else {
             toast({
                 title: "Something went wrong",
-                status: "error",
+                variant: "destructive",
             });
         }
     };

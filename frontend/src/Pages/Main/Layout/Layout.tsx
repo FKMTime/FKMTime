@@ -1,15 +1,14 @@
-import { Box } from "@chakra-ui/react";
 import { useAtom } from "jotai";
 import { Suspense, useCallback, useContext, useEffect, useState } from "react";
 import { Outlet, useNavigate } from "react-router-dom";
 
 import LoadingPage from "@/Components/LoadingPage";
-import { competitionAtom } from "@/logic/atoms";
-import { getToken, getUserInfo, isUserLoggedIn } from "@/logic/auth";
-import { getCompetitionInfo } from "@/logic/competition";
-import { getEvents } from "@/logic/events";
-import { INotification } from "@/logic/interfaces";
-import { isMobile, isNotificationsSupported } from "@/logic/utils";
+import { competitionAtom } from "@/lib/atoms";
+import { getToken, getUserInfo, isUserLoggedIn } from "@/lib/auth";
+import { getCompetitionInfo } from "@/lib/competition";
+import { getEvents } from "@/lib/events";
+import { INotification } from "@/lib/interfaces";
+import { isMobile, isNotificationsSupported } from "@/lib/utils";
 import { socket, SocketContext } from "@/socket";
 
 import NotificationsModal from "./NotificationsModal";
@@ -179,7 +178,7 @@ const Layout = () => {
         return <></>;
     }
     return (
-        <Box display="flex">
+        <div className="flex">
             <Sidebar
                 user={userInfo}
                 competition={competition}
@@ -189,13 +188,7 @@ const Layout = () => {
                     setIsOpenNotificationsModal(true)
                 }
             />
-            <Box
-                width="100%"
-                padding="5"
-                color="white"
-                height="100vh"
-                overflowY="auto"
-            >
+            <div className="w-full p-5 h-screen overflow-y-auto dark:bg-zinc-950">
                 <Suspense fallback={<LoadingPage />}>
                     <Outlet />
                 </Suspense>
@@ -211,8 +204,8 @@ const Layout = () => {
                     onClose={() => setIsOpenNotificationsModal(false)}
                     notifications={notifications}
                 />
-            </Box>
-        </Box>
+            </div>
+        </div>
     );
 };
 

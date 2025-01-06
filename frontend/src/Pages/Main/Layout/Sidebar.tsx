@@ -1,19 +1,10 @@
-import {
-    Box,
-    Circle,
-    Drawer,
-    DrawerBody,
-    DrawerCloseButton,
-    DrawerContent,
-    DrawerOverlay,
-    useToast,
-} from "@chakra-ui/react";
 import { useState } from "react";
-import { MdMenu } from "react-icons/md";
 import { useNavigate } from "react-router-dom";
 
-import { logout } from "@/logic/auth";
-import { Competition, INotification, UserInfo } from "@/logic/interfaces";
+import { Drawer, DrawerContent } from "@/Components/ui/drawer";
+import { useToast } from "@/hooks/useToast";
+import { logout } from "@/lib/auth";
+import { Competition, INotification, UserInfo } from "@/lib/interfaces";
 
 import SidebarContent from "./SidebarContent";
 
@@ -30,8 +21,8 @@ const Sidebar = ({
     notifications,
     onClickNotifications,
 }: SidebarProps) => {
+    const { toast } = useToast();
     const navigate = useNavigate();
-    const toast = useToast();
     const [isDrawerOpen, setDrawerOpen] = useState<boolean>(false);
 
     const handleLogout = () => {
@@ -39,7 +30,6 @@ const Sidebar = ({
         toast({
             title: "Logged out",
             description: "You have been logged out.",
-            status: "success",
         });
         navigate("/auth/login");
     };
@@ -50,7 +40,7 @@ const Sidebar = ({
 
     return (
         <>
-            <Circle
+            {/* <Circle
                 position="fixed"
                 display={{ base: "block", "2xl": "none" }}
                 top="1"
@@ -65,12 +55,8 @@ const Sidebar = ({
                 cursor="pointer"
             >
                 <MdMenu />
-            </Circle>
-            <Box
-                height="fit-content"
-                width={{ base: "100%", "2xl": "25vh" }}
-                display={{ base: "none", "2xl": "flex" }}
-            >
+            </Circle> */}
+            <div className="h-fit w-full 2xl:w-[25vh] hidden 2xl:flex">
                 <SidebarContent
                     user={user}
                     handleLogout={handleLogout}
@@ -78,25 +64,17 @@ const Sidebar = ({
                     onClickNotifications={onClickNotifications}
                     notifications={notifications}
                 />
-            </Box>
-            <Drawer
-                isOpen={isDrawerOpen}
-                placement="left"
-                onClose={toggleDrawer}
-            >
-                <DrawerOverlay />
-                <DrawerContent backgroundColor="gray.600" width="100vh">
-                    <DrawerCloseButton color="white" />
-                    <DrawerBody>
-                        <SidebarContent
-                            user={user}
-                            handleLogout={handleLogout}
-                            onElementClick={toggleDrawer}
-                            notifications={notifications}
-                            competition={competition}
-                            onClickNotifications={onClickNotifications}
-                        />
-                    </DrawerBody>
+            </div>
+            <Drawer open={isDrawerOpen} onClose={toggleDrawer}>
+                <DrawerContent className="w-screen">
+                    <SidebarContent
+                        user={user}
+                        handleLogout={handleLogout}
+                        onElementClick={toggleDrawer}
+                        notifications={notifications}
+                        competition={competition}
+                        onClickNotifications={onClickNotifications}
+                    />
                 </DrawerContent>
             </Drawer>
         </>

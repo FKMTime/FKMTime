@@ -2,7 +2,7 @@ import { Box, Input } from "@chakra-ui/react";
 import { ChangeEvent } from "react";
 
 import Autocomplete from "@/Components/Autocomplete";
-import { ResultToDoubleCheck } from "@/logic/interfaces";
+import { ResultToDoubleCheck } from "@/lib/interfaces";
 
 interface SelectCompetitorProps {
     idInputRef: React.RefObject<HTMLInputElement>;

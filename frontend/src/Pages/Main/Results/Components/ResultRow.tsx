@@ -5,14 +5,14 @@ import { Link, useNavigate } from "react-router-dom";
 
 import DeleteButton from "@/Components/DeleteButton";
 import SmallIconButton from "@/Components/SmallIconButton";
-import { isAdmin } from "@/logic/auth";
-import { average, formattedBest } from "@/logic/average";
-import { Result } from "@/logic/interfaces";
+import { isAdmin } from "@/lib/auth";
+import { average, formattedBest } from "@/lib/average";
+import { Result } from "@/lib/interfaces";
 import {
     attemptWithPenaltyToString,
     resultToString,
-} from "@/logic/resultFormatters";
-import { deleteResultById } from "@/logic/results.ts";
+} from "@/lib/resultFormatters";
+import { deleteResultById } from "@/lib/results";
 import { getSubmittedAttempts } from "@/logic/utils";
 
 interface ResultRowProps {
@@ -41,14 +41,14 @@ const ResultRow = ({ result, maxAttempts, fetchData }: ResultRowProps) => {
                 if (status === 204) {
                     toast({
                         title: "Successfully deleted result.",
-                        status: "success",
+                        
                     });
                     fetchData(result.roundId);
                 } else {
                     toast({
                         title: "Error",
                         description: "Something went wrong",
-                        status: "error",
+                        variant: "destructive",
                     });
                 }
             })
@@ -64,29 +64,29 @@ const ResultRow = ({ result, maxAttempts, fetchData }: ResultRowProps) => {
 
     return (
         <>
-            <Tr key={result.id}>
-                <Td>
+            <TableRow key={result.id}>
+                <TableCell>
                     <Link to={`/results/${result.id}`}>
                         {result.person.name}{" "}
                         {result.person.registrantId &&
                             `(${result.person.registrantId})`}
                     </Link>
-                </Td>
+                </TableCell>
                 {Array.from({ length: maxAttempts }, (_, i) => (
-                    <Td key={i} display={{ base: "none", md: "table-cell" }}>
+                    <TableCell key={i} display={{ base: "none", md: "table-cell" }}>
                         {submittedAttempts.length > i
                             ? attemptWithPenaltyToString(submittedAttempts[i])
                             : ""}
-                    </Td>
+                    </TableCell>
                 ))}
-                <Td display={{ base: "none", md: "table-cell" }}>
+                <TableCell display={{ base: "none", md: "table-cell" }}>
                     {calculatedAverage ? resultToString(calculatedAverage) : ""}
-                </Td>
-                <Td display={{ base: "none", md: "table-cell" }}>
+                </TableCell>
+                <TableCell display={{ base: "none", md: "table-cell" }}>
                     {formattedBest(submittedAttempts)}
-                </Td>
+                </TableCell>
                 {isAdmin() && (
-                    <Td>
+                    <TableCell>
                         <SmallIconButton
                             icon={<FaList />}
                             ariaLabel="List"
@@ -94,9 +94,9 @@ const ResultRow = ({ result, maxAttempts, fetchData }: ResultRowProps) => {
                             onClick={() => navigate(`/results/${result.id}`)}
                         />
                         <DeleteButton onClick={handleDelete} />
-                    </Td>
+                    </TableCell>
                 )}
-            </Tr>
+            </TableRow>
         </>
     );
 };

@@ -4,9 +4,9 @@ import { useParams } from "react-router-dom";
 
 import FlagIcon from "@/Components/Icons/FlagIcon";
 import LoadingPage from "@/Components/LoadingPage";
-import { Person, Result } from "@/logic/interfaces";
-import { getPersonById } from "@/logic/persons";
-import { getAllResultsByPersonId } from "@/logic/results";
+import { Person, Result } from "@/lib/interfaces";
+import { getPersonById } from "@/lib/persons";
+import { getAllResultsByPersonId } from "@/lib/results";
 import { regionNameByIso2 } from "@/logic/utils";
 
 import PersonResultsTable from "./Components/PersonResultsTable";

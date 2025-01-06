@@ -1,6 +1,6 @@
 import { Table, TableContainer, Tbody, Th, Thead, Tr } from "@chakra-ui/react";
 
-import { ScramblingDevice } from "@/logic/interfaces";
+import { ScramblingDevice } from "@/lib/interfaces";
 
 import ScramblingDeviceRow from "./ ScramblingDeviceRow";
 
@@ -17,13 +17,13 @@ const ScramblingDevicesTable = ({
         <TableContainer>
             <Table variant="simple">
                 <Thead>
-                    <Tr bg="gray.400">
-                        <Th>Name</Th>
-                        <Th>Room</Th>
-                        <Th>Actions</Th>
-                    </Tr>
+                    <TableRow bg="gray.400">
+                        <TableHead>Name</TableHead>
+                        <TableHead>Room</TableHead>
+                        <TableHead>Actions</TableHead>
+                    </TableRow>
                 </Thead>
-                <Tbody>
+                <TableBody>
                     {devices.map((device) => (
                         <ScramblingDeviceRow
                             key={device.id}

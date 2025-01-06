@@ -1,7 +1,7 @@
 import { Heading, IconButton, ListItem, UnorderedList } from "@chakra-ui/react";
 import { MdDone } from "react-icons/md";
 
-import { StaffActivity } from "@/logic/interfaces.ts";
+import { StaffActivity } from "@/lib/interfaces";
 
 interface AbsentPeopleListProps {
     staffActivities: StaffActivity[];

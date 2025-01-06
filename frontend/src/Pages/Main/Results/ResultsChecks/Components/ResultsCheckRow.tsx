@@ -4,9 +4,9 @@ import { useNavigate } from "react-router-dom";
 
 import AttemptWarnings from "@/Components/AttemptWarnings";
 import SmallIconButton from "@/Components/SmallIconButton";
-import { activityCodeToName } from "@/logic/activities";
-import { AttemptType, Incident } from "@/logic/interfaces.ts";
-import { attemptWithPenaltyToString } from "@/logic/resultFormatters.ts";
+import { activityCodeToName } from "@/lib/activities";
+import { AttemptType, Incident } from "@/lib/interfaces";
+import { attemptWithPenaltyToString } from "@/lib/resultFormatters";
 
 interface ResultsCheckRowProps {
     check: Incident;
@@ -15,9 +15,9 @@ interface ResultsCheckRowProps {
 const ResultsCheckRow = ({ check }: ResultsCheckRowProps) => {
     const navigate = useNavigate();
     return (
-        <Tr>
-            <Td>{check.result.person.name}</Td>
-            <Td>
+        <TableRow>
+            <TableCell>{check.result.person.name}</TableCell>
+            <TableCell>
                 <Link
                     onClick={() =>
                         navigate(`/results/round/${check.result.roundId}`)
@@ -25,29 +25,29 @@ const ResultsCheckRow = ({ check }: ResultsCheckRowProps) => {
                 >
                     {activityCodeToName(check.result.roundId)}
                 </Link>
-            </Td>
-            <Td>
+            </TableCell>
+            <TableCell>
                 {check.type === AttemptType.EXTRA_ATTEMPT
                     ? `E${check.attemptNumber}`
                     : check.attemptNumber}
-            </Td>
-            <Td>{attemptWithPenaltyToString(check)}</Td>
-            <Td>{check.comment}</Td>
-            <Td>{check.judge?.name}</Td>
-            <Td>
+            </TableCell>
+            <TableCell>{attemptWithPenaltyToString(check)}</TableCell>
+            <TableCell>{check.comment}</TableCell>
+            <TableCell>{check.judge?.name}</TableCell>
+            <TableCell>
                 <Box display="flex" gap={2}>
                     <AttemptWarnings attempt={check} />
                 </Box>
-            </Td>
-            <Td>
+            </TableCell>
+            <TableCell>
                 <SmallIconButton
                     icon={<FaList />}
                     ariaLabel="List"
                     title="View attempts"
                     onClick={() => navigate(`/results/${check.result.id}`)}
                 />
-            </Td>
-        </Tr>
+            </TableCell>
+        </TableRow>
     );
 };
 

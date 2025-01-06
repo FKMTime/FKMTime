@@ -4,12 +4,12 @@ import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 
 import LoadingPage from "@/Components/LoadingPage";
-import { deleteAttempt, getIncidentById, updateAttempt } from "@/logic/attempt";
+import { deleteAttempt, getIncidentById, updateAttempt } from "@/lib/attempt";
 import {
     ApplicationQuickAction,
     AttemptStatus,
     Incident,
-} from "@/logic/interfaces";
+} from "@/lib/interfaces";
 
 import IncidentForm from "./Components/IncidentForm";
 import IncidentWarnings from "./Components/IncidentWarnings";
@@ -60,7 +60,7 @@ const IncidentPage = () => {
                 title: "Error",
                 description:
                     "The time must be greater than 0 or DNF penalty should be applied",
-                status: "error",
+                variant: "destructive",
             });
         }
         setIsLoading(true);
@@ -68,14 +68,14 @@ const IncidentPage = () => {
         if (status === 200) {
             toast({
                 title: "Incident updated",
-                status: "success",
+                
             });
             navigate("/incidents");
         } else {
             toast({
                 title: "Error",
                 description: "An error occurred while updating the incident",
-                status: "error",
+                variant: "destructive",
             });
         }
         setIsLoading(false);
@@ -91,14 +91,14 @@ const IncidentPage = () => {
                 if (response.status === 200) {
                     toast({
                         title: "Successfully deleted attempt.",
-                        status: "success",
+                        
                     });
                     navigate("/incidents");
                 } else {
                     toast({
                         title: "Error",
                         description: "Something went wrong",
-                        status: "error",
+                        variant: "destructive",
                     });
                 }
                 setIsLoading(false);

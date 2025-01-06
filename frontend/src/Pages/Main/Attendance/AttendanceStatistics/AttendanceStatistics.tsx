@@ -1,8 +1,8 @@
 import { Box, Heading } from "@chakra-ui/react";
 import { useEffect, useState } from "react";
 
-import { getAttendanceStatistics } from "@/logic/attendance.ts";
-import { AttendanceStatistics as AttendanceStatisticsType } from "@/logic/interfaces.ts";
+import { getAttendanceStatistics } from "@/lib/attendance";
+import { AttendanceStatistics as AttendanceStatisticsType } from "@/lib/interfaces";
 import AttendanceStatisticsTable from "@/Pages/Main/Attendance/AttendanceStatistics/Components/AttendanceStatisticsTable";
 
 const AttendanceStatistics = () => {

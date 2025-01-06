@@ -10,9 +10,9 @@ import { FormEvent, useEffect, useState } from "react";
 
 import { Modal } from "@/Components/Modal";
 import Select from "@/Components/Select";
-import { createDevice } from "@/logic/devices";
-import { AvailableDevice, Room } from "@/logic/interfaces";
-import { getAllRooms } from "@/logic/rooms";
+import { createDevice } from "@/lib/devices";
+import { AvailableDevice, Room } from "@/lib/interfaces";
+import { getAllRooms } from "@/lib/rooms";
 import { prettyDeviceType } from "@/logic/utils.ts";
 
 interface CreateDeviceModalProps {
@@ -48,14 +48,14 @@ const CreateDeviceModal = ({
         if (status === 201) {
             toast({
                 title: "Successfully created new device.",
-                status: "success",
+                
             });
             onClose();
         } else {
             toast({
                 title: "Error",
                 description: "Something went wrong",
-                status: "error",
+                variant: "destructive",
             });
         }
         setIsLoading(false);

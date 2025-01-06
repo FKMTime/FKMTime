@@ -1,19 +1,4 @@
 import {
-    Avatar,
-    Box,
-    Button,
-    DarkMode,
-    Icon,
-    IconButton,
-    Image,
-    Link,
-    Menu,
-    MenuButton,
-    MenuItem,
-    MenuList,
-    Text,
-} from "@chakra-ui/react";
-import {
     FaClipboardList,
     FaGithub,
     FaPuzzlePiece,
@@ -31,9 +16,11 @@ import {
 } from "react-icons/md";
 
 import logo from "@/assets/logo.svg";
-import { isAdmin } from "@/logic/auth.ts";
-import { GITHUB_URL } from "@/logic/constants";
-import { Competition, INotification, UserInfo } from "@/logic/interfaces";
+import { Button } from "@/Components/ui/button";
+import { isAdmin } from "@/lib/auth";
+import { GITHUB_URL } from "@/lib/constants";
+import { Competition, INotification, UserInfo } from "@/lib/interfaces";
+import { cn } from "@/lib/utils";
 
 import SidebarElement from "./SidebarElement";
 
@@ -54,28 +41,10 @@ const SidebarContent = ({
     notifications,
 }: SidebarContentProps) => {
     return (
-        <Box
-            backgroundColor="gray.600"
-            overflowY="auto"
-            display="flex"
-            flexDirection="column"
-            gap="5"
-            alignItems="center"
-            padding={5}
-            height="100vh"
-        >
-            <Image src={logo} alt="Logo" width="100%" />
-            <Box
-                display="flex"
-                rounded="20"
-                padding={2}
-                gap={5}
-                alignItems="center"
-                justifyContent="center"
-                width="100%"
-                textAlign="center"
-            >
-                <Menu>
+        <div className="w-64 overflow-y-auto flex flex-col gap-5 items-center p-5 h-screen">
+            <img src={logo} alt="Logo" width="100%" />
+            <div className="flex items-center justify-center w-full rounded-md p-2 gap-5 text-center">
+                {/* <Menu>
                     <MenuButton>
                         <Avatar
                             src={user.avatarUrl}
@@ -87,40 +56,34 @@ const SidebarContent = ({
                             <MenuItem onClick={handleLogout}>Logout</MenuItem>
                         </MenuList>
                     </DarkMode>
-                </Menu>
-                <Box position="relative" display={isAdmin() ? "block" : "none"}>
-                    <IconButton
-                        colorScheme="transparent"
-                        variant="solid"
-                        cursor={
-                            notifications.length > 0 ? "pointer" : "default"
+                </Menu> */}
+                <div className={cn("relative", isAdmin() ? "block" : "hidden")}>
+                    <Button
+                        size="icon"
+                        variant="ghost"
+                        className={
+                            notifications.length > 0 ? "cursor-pointer" : ""
                         }
                         onClick={onClickNotifications}
-                        icon={
-                            <>
-                                <IoMdNotifications size={32} />
-                                <Box position="absolute" top="-3" right="-3">
-                                    <Text
-                                        fontSize="sm"
-                                        color="white"
-                                        backgroundColor={
-                                            notifications.length > 0
-                                                ? "red.500"
-                                                : "green.500"
-                                        }
-                                        padding={1}
-                                        rounded="full"
-                                        width="30px"
-                                    >
-                                        {notifications.length}
-                                    </Text>
-                                </Box>
-                            </>
-                        }
-                        aria-label="Notifications"
-                    />
-                </Box>
-            </Box>
+                    >
+                        <>
+                            <IoMdNotifications size={32} />
+                            <div className="absolute -top-3 -right-3">
+                                <p
+                                    className={cn(
+                                        "text-sm text-white p-1 rounded-full w-6 text-center",
+                                        notifications.length > 0
+                                            ? "bg-red-500"
+                                            : "bg-green-500"
+                                    )}
+                                >
+                                    {notifications.length}
+                                </p>
+                            </div>
+                        </>
+                    </Button>
+                </div>
+            </div>
 
             <SidebarElement
                 name="Home"
@@ -204,27 +167,16 @@ const SidebarContent = ({
             />
             {import.meta.env.PROD && isAdmin() && (
                 <a href="/logs" style={{ width: "100%" }} target="_blank">
-                    <Button
-                        leftIcon={<FaServer />}
-                        colorScheme="teal"
-                        variant="solid"
-                        rounded="20"
-                        width="100%"
-                        textAlign="center"
-                    >
+                    <Button className="w-full text-center">
+                        <FaServer />
                         Logs
                     </Button>
                 </a>
             )}
-            <Link href={GITHUB_URL} isExternal>
-                <Icon
-                    as={FaGithub}
-                    color="white"
-                    boxSize="10"
-                    _hover={{ opacity: 0.8 }}
-                />
-            </Link>
-        </Box>
+            <a href={GITHUB_URL} target="_blank">
+                <FaGithub size={32} />
+            </a>
+        </div>
     );
 };
 

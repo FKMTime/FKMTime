@@ -1,9 +1,7 @@
-import { Box } from "@chakra-ui/react";
-
 import DeleteButton from "@/Components/DeleteButton";
 import { Modal } from "@/Components/Modal";
-import { INotification } from "@/logic/interfaces";
-import { getNotificationColor } from "@/logic/notifications";
+import { INotification } from "@/lib/interfaces";
+import { getNotificationColor } from "@/lib/notifications";
 
 interface NotificationsModalProps {
     isOpen: boolean;
@@ -21,26 +19,19 @@ const NotificationsModal = ({
     return (
         <Modal isOpen={isOpen} onClose={onClose} title="Notifications">
             {notifications.map((notification) => (
-                <Box
+                <div
                     key={notification.id}
-                    padding={2}
-                    backgroundColor={getNotificationColor(notification.type)}
-                    color="white"
-                    rounded="md"
-                    marginBottom={2}
+                    className={`p-2 bg-${getNotificationColor(
+                        notification.type
+                    )} text-white rounded-md mb-2`}
                 >
                     {notification.message}
-                    <Box
-                        display="flex"
-                        justifyContent="flex-end"
-                        marginTop={2}
-                        gap={2}
-                    >
+                    <div className="flex justify-end mt-2 gap-2">
                         <DeleteButton
                             onClick={() => onDelete(notification.id)}
                         />
-                    </Box>
-                </Box>
+                    </div>
+                </div>
             ))}
         </Modal>
     );

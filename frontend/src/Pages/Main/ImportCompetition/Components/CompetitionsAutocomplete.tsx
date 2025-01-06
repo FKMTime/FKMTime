@@ -1,8 +1,8 @@
 import { FormControl } from "@chakra-ui/react";
 
 import DynamicAutocomplete from "@/Components/DynamicAutocomplete";
-import { searchCompetitions } from "@/logic/competition.ts";
-import { WCACompetition } from "@/logic/interfaces";
+import { searchCompetitions } from "@/lib/competition";
+import { WCACompetition } from "@/lib/interfaces";
 
 interface CompetitionsAutocompleteProps {
     onSelect: (competition: WCACompetition | null) => void;

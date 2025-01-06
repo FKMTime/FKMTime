@@ -8,15 +8,15 @@ import AttemptWarnings from "@/Components/AttemptWarnings";
 import DeleteButton from "@/Components/DeleteButton";
 import EditButton from "@/Components/EditButton";
 import SmallIconButton from "@/Components/SmallIconButton";
-import { deleteAttempt } from "@/logic/attempt";
+import { deleteAttempt } from "@/lib/attempt";
 import {
     Attempt,
     AttemptStatus,
     AttemptType,
     Result,
-} from "@/logic/interfaces";
-import { getPersonNameAndRegistrantId } from "@/logic/persons.ts";
-import { attemptWithPenaltyToString } from "@/logic/resultFormatters";
+} from "@/lib/interfaces";
+import { getPersonNameAndRegistrantId } from "@/lib/persons";
+import { attemptWithPenaltyToString } from "@/lib/resultFormatters";
 import { getResolvedStatus } from "@/logic/utils";
 
 import EditAttemptModal from "./EditAttemptModal";
@@ -56,7 +56,7 @@ const AttemptRow = ({
                 if (response.status === 200) {
                     toast({
                         title: "Successfully deleted attempt.",
-                        status: "success",
+                        
                     });
                     if (response.data.resultDeleted) {
                         navigate(`/results/round/${result.roundId}`);
@@ -67,7 +67,7 @@ const AttemptRow = ({
                     toast({
                         title: "Error",
                         description: "Something went wrong",
-                        status: "error",
+                        variant: "destructive",
                     });
                 }
             })
@@ -89,44 +89,44 @@ const AttemptRow = ({
 
     return (
         <>
-            <Tr key={attempt.id}>
-                <Td>{no}</Td>
-                <Td>
+            <TableRow key={attempt.id}>
+                <TableCell>{no}</TableCell>
+                <TableCell>
                     {attempt.type === AttemptType.EXTRA_ATTEMPT
                         ? `Extra ${attempt.attemptNumber}`
                         : attempt.attemptNumber}
-                </Td>
-                <Td>
+                </TableCell>
+                <TableCell>
                     {attempt.status === AttemptStatus.SCRAMBLED
                         ? "Scrambled, not solved yet"
                         : attemptWithPenaltyToString(attempt)}
-                </Td>
+                </TableCell>
                 {showExtraColumns && (
                     <>
-                        <Td>
+                        <TableCell>
                             {attempt.replacedBy &&
                                 `Extra ${attempt.replacedBy}`}
-                        </Td>
-                        <Td>{getResolvedStatus(attempt.status)}</Td>
+                        </TableCell>
+                        <TableCell>{getResolvedStatus(attempt.status)}</TableCell>
                     </>
                 )}
-                <Td>
+                <TableCell>
                     {attempt.judge &&
                         getPersonNameAndRegistrantId(attempt.judge)}
-                </Td>
-                <Td>
+                </TableCell>
+                <TableCell>
                     {attempt.scrambler &&
                         getPersonNameAndRegistrantId(attempt.scrambler)}
-                </Td>
-                <Td>{attempt.device && attempt.device.name}</Td>
-                <Td>{attempt.comment}</Td>
-                <Td>
+                </TableCell>
+                <TableCell>{attempt.device && attempt.device.name}</TableCell>
+                <TableCell>{attempt.comment}</TableCell>
+                <TableCell>
                     {attempt.status === AttemptStatus.SCRAMBLED
                         ? "Scrambled, not solved yet"
                         : new Date(attempt.solvedAt).toLocaleString()}
-                </Td>
-                <Td>{attempt.updatedBy?.fullName}</Td>
-                <Td>
+                </TableCell>
+                <TableCell>{attempt.updatedBy?.fullName}</TableCell>
+                <TableCell>
                     <EditButton
                         onClick={() => setIsOpenEditAttemptModal(true)}
                     />
@@ -137,8 +137,8 @@ const AttemptRow = ({
                         onClick={() => setIsOpenGiveExtraAttemptModal(true)}
                     />
                     <DeleteButton onClick={handleDelete} />
-                </Td>
-                <Td>
+                </TableCell>
+                <TableCell>
                     <Box display="flex" gap={2}>
                         {!attempt.sessionId &&
                             attempt.status !== AttemptStatus.SCRAMBLED && (
@@ -152,8 +152,8 @@ const AttemptRow = ({
                             )}
                         <AttemptWarnings attempt={attempt} />
                     </Box>
-                </Td>
-            </Tr>
+                </TableCell>
+            </TableRow>
             <EditAttemptModal
                 isOpen={isOpenEditAttemptModal}
                 onClose={handleCloseModal}

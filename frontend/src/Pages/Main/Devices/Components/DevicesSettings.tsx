@@ -17,8 +17,8 @@ import PasswordInput from "@/Components/PasswordInput.tsx";
 import {
     getCompetitionSettings,
     updateDevicesSettings,
-} from "@/logic/competition";
-import { Competition } from "@/logic/interfaces";
+} from "@/lib/competition";
+import { Competition } from "@/lib/interfaces";
 
 const DevicesSettings = () => {
     const toast = useToast();
@@ -46,13 +46,13 @@ const DevicesSettings = () => {
         if (status === 200) {
             toast({
                 title: "Successfully updated devices settings",
-                status: "success",
+                
             });
         } else {
             toast({
                 title: "Error",
                 description: "Something went wrong",
-                status: "error",
+                variant: "destructive",
             });
         }
     };

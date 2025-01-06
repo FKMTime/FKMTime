@@ -19,7 +19,7 @@ import {
 import { useMemo, useState } from "react";
 import { FaChevronDown, FaChevronUp } from "react-icons/fa";
 
-import { AttendanceStatistics } from "@/logic/interfaces.ts";
+import { AttendanceStatistics } from "@/lib/interfaces";
 
 interface AttendanceStatisticsTableProps {
     attendanceStatistics: AttendanceStatistics[];
@@ -86,7 +86,7 @@ const AttendanceStatisticsTable = ({
         <Table>
             <Thead>
                 {table.getHeaderGroups().map((headerGroup) => (
-                    <Tr key={headerGroup.id} bg="gray.400">
+                    <TableRow key={headerGroup.id} bg="gray.400">
                         {headerGroup.headers.map((header) => {
                             const meta: Meta = header.column.columnDef
                                 .meta as Meta;
@@ -112,28 +112,28 @@ const AttendanceStatisticsTable = ({
                                             ) : null}
                                         </chakra.span>
                                     </Flex>
-                                </Th>
+                                </TableHead>
                             );
                         })}
-                    </Tr>
+                    </TableRow>
                 ))}
             </Thead>
-            <Tbody>
+            <TableBody>
                 {table.getRowModel().rows.map((row) => (
-                    <Tr key={row.id}>
+                    <TableRow key={row.id}>
                         {row.getVisibleCells().map((cell) => {
                             const meta: Meta = cell.column.columnDef
                                 .meta as Meta;
                             return (
-                                <Td key={cell.id} isNumeric={meta?.isNumeric}>
+                                <TableCell key={cell.id} isNumeric={meta?.isNumeric}>
                                     {flexRender(
                                         cell.column.columnDef.cell,
                                         cell.getContext()
                                     )}
-                                </Td>
+                                </TableCell>
                             );
                         })}
-                    </Tr>
+                    </TableRow>
                 ))}
             </Tbody>
         </Table>

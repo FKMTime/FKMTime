@@ -1,10 +1,10 @@
-import { Box } from "@chakra-ui/react";
 import { useEffect, useState } from "react";
 import { MdEqualizer, MdPerson } from "react-icons/md";
 
 import StatCard from "@/Components/StatCard";
-import { getCompetitionStatistics } from "@/logic/competition";
-import { CompetitionStatistics as ICompetitionStatistics } from "@/logic/interfaces";
+import { getCompetitionStatistics } from "@/lib/competition";
+import { CompetitionStatistics as ICompetitionStatistics } from "@/lib/interfaces";
+import { cn } from "@/lib/utils";
 import { socket } from "@/socket";
 
 import Charts from "./Charts";
@@ -44,18 +44,9 @@ const CompetitionStatistics = ({
 
     if (!statistics) return null;
 
-    return (
-        <Box
-            display={{ base: enableMobile ? "flex" : "none", md: "flex" }}
-            gap={4}
-            flexDirection="column"
-        >
-            <Box
-                display="flex"
-                flexDirection={{ base: "column", md: "row" }}
-                flexWrap="wrap"
-                gap={4}
-            >
+    if (!showCharts) {
+        return (
+            <>
                 <StatCard
                     title="Total solves"
                     stat={statistics.allAttempts.toString() || "0"}
@@ -76,9 +67,36 @@ const CompetitionStatistics = ({
                     stat={statistics.personsCompeted.toString() || "0"}
                     icon={<MdPerson size={24} />}
                 />
-            </Box>
+            </>
+        );
+    }
+
+    return (
+        <div className="mt-2 flex flex-col gap-3">
+            <div className="flex gap-3">
+                <StatCard
+                    title="Total solves"
+                    stat={statistics.allAttempts.toString() || "0"}
+                    icon={<MdEqualizer size={24} />}
+                />
+                <StatCard
+                    title="Solves entered manually"
+                    stat={statistics.attemptsEnteredManually.toString() || "0"}
+                    icon={<MdEqualizer size={24} />}
+                />
+                <StatCard
+                    title="Scorecards"
+                    stat={statistics.scorecardsCount.toString() || "0"}
+                    icon={<MdEqualizer size={24} />}
+                />
+                <StatCard
+                    title="Competitors"
+                    stat={statistics.personsCompeted.toString() || "0"}
+                    icon={<MdPerson size={24} />}
+                />
+            </div>
             {showCharts && <Charts statistics={statistics} />}
-        </Box>
+        </div>
     );
 };
 

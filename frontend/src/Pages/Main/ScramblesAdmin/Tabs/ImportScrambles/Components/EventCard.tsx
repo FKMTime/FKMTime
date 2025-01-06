@@ -11,8 +11,8 @@ import {
 import { Event as IEvent } from "@wca/helpers";
 
 import EventIcon from "@/Components/Icons/EventIcon";
-import { activityCodeToName } from "@/logic/activities";
-import { getEventName } from "@/logic/events";
+import { activityCodeToName } from "@/lib/activities";
+import { getEventName } from "@/lib/events";
 import { numberToLetter } from "@/logic/utils";
 
 interface EventCardProps {

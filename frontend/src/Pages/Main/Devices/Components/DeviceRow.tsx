@@ -4,8 +4,8 @@ import { useState } from "react";
 
 import DeleteButton from "@/Components/DeleteButton";
 import EditButton from "@/Components/EditButton";
-import { deleteDevice } from "@/logic/devices";
-import { Device } from "@/logic/interfaces";
+import { deleteDevice } from "@/lib/devices";
+import { Device } from "@/lib/interfaces";
 import { prettyDeviceType } from "@/logic/utils";
 
 import BatteryIcon from "../../../../Components/Icons/BatteryIcon";
@@ -38,14 +38,14 @@ const DeviceRow = ({ device, fetchData }: DeviceRowProps) => {
                 if (status === 204) {
                     toast({
                         title: "Successfully deleted device.",
-                        status: "success",
+                        
                     });
                     fetchData();
                 } else {
                     toast({
                         title: "Error",
                         description: "Something went wrong",
-                        status: "error",
+                        variant: "destructive",
                     });
                 }
             })
@@ -61,10 +61,10 @@ const DeviceRow = ({ device, fetchData }: DeviceRowProps) => {
 
     return (
         <>
-            <Tr key={device.id}>
-                <Td>{device.name}</Td>
-                <Td>{device.espId}</Td>
-                <Td>
+            <TableRow key={device.id}>
+                <TableCell>{device.name}</TableCell>
+                <TableCell>{device.espId}</TableCell>
+                <TableCell>
                     {device.batteryPercentage && (
                         <Box display="flex" alignItems="center">
                             <BatteryIcon
@@ -73,17 +73,17 @@ const DeviceRow = ({ device, fetchData }: DeviceRowProps) => {
                             <Text>{`${device.batteryPercentage}%`}</Text>
                         </Box>
                     )}
-                </Td>
-                <Td>{prettyDeviceType(device.type)}</Td>
-                <Td>{device.count}</Td>
-                <Td>{new Date(device.updatedAt).toLocaleString()}</Td>
-                <Td>
+                </TableCell>
+                <TableCell>{prettyDeviceType(device.type)}</TableCell>
+                <TableCell>{device.count}</TableCell>
+                <TableCell>{new Date(device.updatedAt).toLocaleString()}</TableCell>
+                <TableCell>
                     <EditButton
                         onClick={() => setIsOpenEditDeviceModal(true)}
                     />
                     <DeleteButton onClick={handleDelete} />
-                </Td>
-            </Tr>
+                </TableCell>
+            </TableRow>
             <EditDeviceModal
                 isOpen={isOpenEditDeviceModal}
                 onClose={handleCloseEditDeviceModal}

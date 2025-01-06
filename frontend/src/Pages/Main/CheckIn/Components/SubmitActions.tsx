@@ -1,7 +1,7 @@
 import { Button, Checkbox, FormControl } from "@chakra-ui/react";
 import { useState } from "react";
 
-import { Person } from "@/logic/interfaces.ts";
+import { Person } from "@/lib/interfaces";
 import { isNewcomer, regionNameByIso2 } from "@/logic/utils.ts";
 
 interface SubmitActionsProps {

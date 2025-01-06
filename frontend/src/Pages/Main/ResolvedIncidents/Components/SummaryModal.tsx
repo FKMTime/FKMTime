@@ -1,8 +1,8 @@
 import { Box, ListItem, UnorderedList } from "@chakra-ui/react";
 
 import { Modal } from "@/Components/Modal";
-import { groupIncidents } from "@/logic/incidents";
-import { AttemptStatus, Incident } from "@/logic/interfaces";
+import { groupIncidents } from "@/lib/incidents";
+import { AttemptStatus, Incident } from "@/lib/interfaces";
 import { shortRoundName } from "@/logic/utils";
 
 interface SummaryModalProps {

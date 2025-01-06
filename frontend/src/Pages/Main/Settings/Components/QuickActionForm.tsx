@@ -9,7 +9,7 @@ import {
 } from "@chakra-ui/react";
 import { useState } from "react";
 
-import { QuickAction } from "@/logic/interfaces";
+import { QuickAction } from "@/lib/interfaces";
 
 interface QuickActionFormProps {
     quickAction: QuickAction;

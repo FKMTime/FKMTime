@@ -1,129 +1,181 @@
-import {
-    Box,
-    Button,
-    Checkbox,
-    FormControl,
-    FormHelperText,
-    FormLabel,
-    Link,
-    Select,
-} from "@chakra-ui/react";
-import { FormEvent } from "react";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
 
-import PasswordInput from "@/Components/PasswordInput.tsx";
-import { Competition, SendingResultsFrequency } from "@/logic/interfaces.ts";
-import { prettySendingResultsFrequency } from "@/logic/utils";
+import { Button } from "@/Components/ui/button";
+import { Checkbox } from "@/Components/ui/checkbox";
+import {
+    Form,
+    FormControl,
+    FormDescription,
+    FormField,
+    FormItem,
+    FormLabel,
+    FormMessage,
+} from "@/Components/ui/form";
+import { Input } from "@/Components/ui/input";
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/Components/ui/select";
+import { Competition, SendingResultsFrequency } from "@/lib/interfaces";
+import { competitionSchema } from "@/lib/schema/competitionSchema";
+import { prettySendingResultsFrequency } from "@/lib/utils";
 
 interface CompetitionFormProps {
     competition: Competition;
-    setCompetition: (competition: Competition) => void;
-    handleSubmit: (event: FormEvent<HTMLFormElement>) => void;
+    handleSubmit: (competition: Competition) => void;
 }
 
 const CompetitionForm = ({
     competition,
-    setCompetition,
     handleSubmit,
 }: CompetitionFormProps) => {
+    const form = useForm<z.infer<typeof competitionSchema>>({
+        resolver: zodResolver(competitionSchema),
+        defaultValues: {
+            scoretakingToken: competition.scoretakingToken,
+            cubingContestsToken: competition.cubingContestsToken,
+            sendingResultsFrequency: competition.sendingResultsFrequency,
+            shouldChangeGroupsAutomatically:
+                competition.shouldChangeGroupsAutomatically,
+        },
+    });
+
+    const onSubmit = (values: z.infer<typeof competitionSchema>) => {
+        handleSubmit({
+            ...competition,
+            ...values,
+            sendingResultsFrequency:
+                values.sendingResultsFrequency as SendingResultsFrequency,
+        });
+    };
     return (
-        <Box
-            display="flex"
-            flexDirection="column"
-            gap="5"
-            width={{ base: "100%", md: "20%" }}
-            as="form"
-            onSubmit={handleSubmit}
-        >
-            <FormControl display="flex" flexDirection="column" gap="2">
-                <FormLabel>Scoretaking token</FormLabel>
-                <PasswordInput
-                    placeholder="Scoretaking token"
-                    autoComplete="off"
-                    value={competition?.scoretakingToken}
-                    onChange={(event) =>
-                        setCompetition({
-                            ...competition,
-                            scoretakingToken: event?.target.value,
-                        })
-                    }
+        <Form {...form}>
+            <form
+                onSubmit={form.handleSubmit(onSubmit)}
+                className="space-y-8 py-3"
+            >
+                <FormField
+                    control={form.control}
+                    name="scoretakingToken"
+                    render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Scoretaking token</FormLabel>
+                            <FormControl>
+                                <Input
+                                    {...field}
+                                    placeholder="Scoretaking token"
+                                />
+                            </FormControl>
+                            <FormDescription>
+                                You can get this token{" "}
+                                <a
+                                    className="text-blue-500"
+                                    href="https://live.worldcubeassociation.org/account"
+                                    target="_blank"
+                                >
+                                    here
+                                </a>
+                            </FormDescription>
+                            <FormMessage />
+                        </FormItem>
+                    )}
                 />
-                <FormHelperText color="gray.300">
-                    You can get this token{" "}
-                    <Link
-                        color="blue.400"
-                        href="https://live.worldcubeassociation.org/account"
-                        isExternal
-                    >
-                        here
-                    </Link>
-                </FormHelperText>
-            </FormControl>
-            <FormControl display="flex" flexDirection="column" gap="2">
-                <FormLabel>CubingContests token</FormLabel>
-                <PasswordInput
-                    placeholder="Cubing contests API token"
-                    autoComplete="off"
-                    value={competition?.cubingContestsToken}
-                    onChange={(event) =>
-                        setCompetition({
-                            ...competition,
-                            cubingContestsToken: event?.target.value,
-                        })
-                    }
+                <FormField
+                    control={form.control}
+                    name="cubingContestsToken"
+                    render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>CubingContests token</FormLabel>
+                            <FormControl>
+                                <Input
+                                    {...field}
+                                    placeholder="Cubing contests API token"
+                                />
+                            </FormControl>
+                            <FormDescription>
+                                You can get this token{" "}
+                                <a
+                                    className="text-blue-500"
+                                    href={`https://cubingcontests.com/mod/competition?edit_id=${competition.wcaId}`}
+                                    target="_blank"
+                                >
+                                    here
+                                </a>
+                            </FormDescription>
+                            <FormMessage />
+                        </FormItem>
+                    )}
                 />
-                <FormHelperText color="gray.300">
-                    You can get this token{" "}
-                    <Link
-                        color="blue.400"
-                        href={`https://cubingcontests.com/mod/competition?edit_id=${competition.wcaId}`}
-                        isExternal
-                    >
-                        here
-                    </Link>
-                </FormHelperText>
-            </FormControl>
-            <FormControl display="flex" flexDirection="column" gap="2">
-                <FormLabel>Send results to WCA Live/CubingContests</FormLabel>
-                <Select
-                    value={competition.sendingResultsFrequency}
-                    onChange={(event) =>
-                        setCompetition({
-                            ...competition,
-                            sendingResultsFrequency: event?.target
-                                .value as SendingResultsFrequency,
-                        })
-                    }
-                >
-                    {Object.values(SendingResultsFrequency).map((frequency) => (
-                        <option key={frequency} value={frequency}>
-                            {prettySendingResultsFrequency(frequency)}
-                        </option>
-                    ))}
-                </Select>
-            </FormControl>
-            <FormControl display="flex" flexDirection="column" gap="2">
-                <Checkbox
-                    defaultChecked={competition.shouldChangeGroupsAutomatically}
-                    onChange={(event) =>
-                        setCompetition({
-                            ...competition,
-                            shouldChangeGroupsAutomatically:
-                                event?.target.checked,
-                        })
-                    }
-                >
-                    Change groups automatically
-                </Checkbox>
-                <FormHelperText color="gray.300">
-                    Group will be automatically changed to the next one from
-                    schedule if all results are entered and there are no
-                    unresolved incidents
-                </FormHelperText>
-            </FormControl>
-            <Button type="submit" colorScheme="green">
-                Save
-            </Button>
-        </Box>
+                <FormField
+                    control={form.control}
+                    name="sendingResultsFrequency"
+                    render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>
+                                Send results to WCA Live/CubingContests
+                            </FormLabel>
+                            <Select
+                                onValueChange={field.onChange}
+                                defaultValue={field.value}
+                            >
+                                <FormControl>
+                                    <SelectTrigger>
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                    {Object.values(SendingResultsFrequency).map(
+                                        (frequency) => (
+                                            <SelectItem
+                                                key={frequency}
+                                                value={frequency}
+                                            >
+                                                {prettySendingResultsFrequency(
+                                                    frequency
+                                                )}
+                                            </SelectItem>
+                                        )
+                                    )}
+                                </SelectContent>
+                            </Select>
+                            <FormMessage />
+                        </FormItem>
+                    )}
+                />
+                <FormField
+                    control={form.control}
+                    name="shouldChangeGroupsAutomatically"
+                    render={({ field }) => (
+                        <FormItem>
+                            <div className="flex items-center gap-2">
+                                <FormControl>
+                                    <Checkbox
+                                        checked={field.value}
+                                        onCheckedChange={field.onChange}
+                                    />
+                                </FormControl>
+                                <FormLabel>
+                                    Change groups automatically
+                                </FormLabel>
+                            </div>
+                            <FormDescription>
+                                Group will be automatically changed to the next
+                                one from schedule if all results are entered and
+                                there are no unresolved incidents
+                            </FormDescription>
+                        </FormItem>
+                    )}
+                />
+                <Button type="submit" variant="success">
+                    Save
+                </Button>
+            </form>
+        </Form>
     );
 };
 

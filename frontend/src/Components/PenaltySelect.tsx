@@ -1,7 +1,7 @@
 import { FormControl, FormLabel } from "@chakra-ui/react";
 import { ChangeEvent } from "react";
 
-import { AVAILABLE_PENALTIES } from "@/logic/constants";
+import { AVAILABLE_PENALTIES } from "@/lib/constants";
 
 import Select from "./Select";
 

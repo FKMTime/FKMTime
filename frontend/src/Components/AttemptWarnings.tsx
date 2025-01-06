@@ -1,7 +1,7 @@
 import { Badge } from "@chakra-ui/react";
 
-import { Attempt } from "@/logic/interfaces";
-import { milisecondsToClockFormat } from "@/logic/resultFormatters";
+import { Attempt } from "@/lib/interfaces";
+import { milisecondsToClockFormat } from "@/lib/resultFormatters";
 
 interface AttemptsWarningProps {
     attempt: Attempt;

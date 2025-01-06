@@ -10,7 +10,7 @@ import {
 } from "@chakra-ui/react";
 
 import Pagination from "@/Components/Pagination";
-import { Competition, Person } from "@/logic/interfaces";
+import { Competition, Person } from "@/lib/interfaces";
 
 import PersonRow from "./PersonRow";
 
@@ -47,20 +47,20 @@ const PersonsTable = ({
             <TableContainer>
                 <Table variant="simple">
                     <Thead>
-                        <Tr bg="gray.400">
-                            <Th>Registrant ID</Th>
-                            <Th>Name</Th>
-                            <Th>WCA ID</Th>
-                            <Th>Representing</Th>
-                            <Th>Gender</Th>
-                            <Th>Events</Th>
-                            <Th>Card assigned</Th>
-                            <Th>Checked in</Th>
-                            <Th>Can compete</Th>
-                            <Th>Actions</Th>
-                        </Tr>
+                        <TableRow bg="gray.400">
+                            <TableHead>Registrant ID</TableHead>
+                            <TableHead>Name</TableHead>
+                            <TableHead>WCA ID</TableHead>
+                            <TableHead>Representing</TableHead>
+                            <TableHead>Gender</TableHead>
+                            <TableHead>Events</TableHead>
+                            <TableHead>Card assigned</TableHead>
+                            <TableHead>Checked in</TableHead>
+                            <TableHead>Can compete</TableHead>
+                            <TableHead>Actions</TableHead>
+                        </TableRow>
                     </Thead>
-                    <Tbody>
+                    <TableBody>
                         {competition &&
                             persons.map((person: Person) => (
                                 <PersonRow

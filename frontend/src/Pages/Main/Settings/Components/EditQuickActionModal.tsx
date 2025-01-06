@@ -2,8 +2,8 @@ import { useToast } from "@chakra-ui/react";
 import { useState } from "react";
 
 import { Modal } from "@/Components/Modal";
-import { QuickAction } from "@/logic/interfaces.ts";
-import { updateQuickAction } from "@/logic/quickActions.ts";
+import { QuickAction } from "@/lib/interfaces";
+import { updateQuickAction } from "@/lib/quickActions";
 
 import QuickActionForm from "./QuickActionForm";
 
@@ -28,14 +28,14 @@ const EditQuickActionModal = ({
             toast({
                 title: "Success",
                 description: "Quick action has been updated successfully.",
-                status: "success",
+                
             });
             onClose();
         } else {
             toast({
                 title: "Error",
                 description: "Something went wrong",
-                status: "error",
+                variant: "destructive",
             });
         }
         setIsLoading(false);

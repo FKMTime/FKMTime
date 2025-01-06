@@ -15,10 +15,10 @@ import Autocomplete from "@/Components/Autocomplete";
 import { Modal } from "@/Components/Modal";
 import PenaltySelect from "@/Components/PenaltySelect";
 import Select from "@/Components/Select";
-import { competitionAtom } from "@/logic/atoms";
-import { updateAttempt } from "@/logic/attempt";
-import { DNF_VALUE } from "@/logic/constants";
-import { getAllDevices } from "@/logic/devices.ts";
+import { competitionAtom } from "@/lib/atoms";
+import { updateAttempt } from "@/lib/attempt";
+import { DNF_VALUE } from "@/lib/constants";
+import { getAllDevices } from "@/lib/devices";
 import {
     Attempt,
     AttemptStatus,
@@ -27,10 +27,10 @@ import {
     DeviceType,
     Person,
     Result,
-} from "@/logic/interfaces";
-import { getAllPersons, getPersonNameAndRegistrantId } from "@/logic/persons";
-import { milisecondsToClockFormat } from "@/logic/resultFormatters";
-import { checkTimeLimit } from "@/logic/results";
+} from "@/lib/interfaces";
+import { getAllPersons, getPersonNameAndRegistrantId } from "@/lib/persons";
+import { milisecondsToClockFormat } from "@/lib/resultFormatters";
+import { checkTimeLimit } from "@/lib/results";
 import {
     getSubmissionPlatformName,
     prettyAttemptStatus,
@@ -68,14 +68,14 @@ const EditAttemptModal = ({
         if (status === 200) {
             toast({
                 title: `Successfully updated attempt and resubmitted result to ${submissionPlatform}.`,
-                status: "success",
+                
             });
             onClose();
         } else {
             toast({
                 title: "Error",
                 description: "Something went wrong",
-                status: "error",
+                variant: "destructive",
             });
         }
         setIsLoading(false);
@@ -188,7 +188,7 @@ const EditAttemptModal = ({
                                 toast({
                                     title: "This attempt is over the time limit.",
                                     description: "This time is DNF.",
-                                    status: "error",
+                                    variant: "destructive",
                                 });
                                 setEditedAttempt({
                                     ...editedAttempt,

@@ -1,6 +1,11 @@
-import { Table, TableContainer, Tbody, Th, Thead, Tr } from "@chakra-ui/react";
-
-import { User } from "@/logic/interfaces";
+import {
+    Table,
+    TableBody,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from "@/Components/ui/table";
+import { User } from "@/lib/interfaces";
 
 import UserRow from "./UserRow";
 
@@ -11,27 +16,21 @@ interface UsersTableProps {
 
 const UsersTable = ({ users, fetchData }: UsersTableProps) => {
     return (
-        <TableContainer>
-            <Table variant="simple">
-                <Thead>
-                    <Tr bg="gray.400">
-                        <Th>Account type</Th>
-                        <Th>Full name</Th>
-                        <Th>Role</Th>
-                        <Th>Actions</Th>
-                    </Tr>
-                </Thead>
-                <Tbody>
-                    {users.map((user) => (
-                        <UserRow
-                            key={user.id}
-                            user={user}
-                            fetchData={fetchData}
-                        />
-                    ))}
-                </Tbody>
-            </Table>
-        </TableContainer>
+        <Table>
+            <TableHeader>
+                <TableRow>
+                    <TableHead>Account type</TableHead>
+                    <TableHead>Full name</TableHead>
+                    <TableHead>Role</TableHead>
+                    <TableHead>Actions</TableHead>
+                </TableRow>
+            </TableHeader>
+            <TableBody>
+                {users.map((user) => (
+                    <UserRow key={user.id} user={user} fetchData={fetchData} />
+                ))}
+            </TableBody>
+        </Table>
     );
 };
 

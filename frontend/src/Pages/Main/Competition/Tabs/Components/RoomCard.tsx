@@ -1,11 +1,19 @@
-import { Box, FormControl, FormLabel, Heading } from "@chakra-ui/react";
 import { Activity, Event, Round } from "@wca/helpers";
 import { useMemo, useState } from "react";
 
-import Select from "@/Components/Select";
-import { getGroupsByRoundId } from "@/logic/activities";
-import { getEventName } from "@/logic/events";
-import { Competition, Room } from "@/logic/interfaces";
+import { Button } from "@/Components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/Components/ui/card";
+import { Label } from "@/Components/ui/label";
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/Components/ui/select";
+import { getGroupsByRoundId } from "@/lib/activities";
+import { getEventName } from "@/lib/events";
+import { Competition, Room } from "@/lib/interfaces";
 
 interface RoomCardProps {
     room: Room;
@@ -39,95 +47,125 @@ const RoomCard = ({
     }, [competition, currentEvent, currentRound]);
 
     return (
-        <Box
-            key={room.id}
-            border="1px"
-            p="3"
-            display="flex"
-            flexDirection="column"
-            gap="3"
-            width={{ base: "100%", md: "fit-content" }}
-        >
-            <Heading size="md">{room.name}</Heading>
-            <FormControl>
-                <FormLabel>Current event</FormLabel>
-                <Select
-                    value={currentEvent}
-                    onChange={(event) => {
-                        if (!event?.target.value) {
-                            setCurrentEvent("");
-                            setCurrentRound("");
-                            updateCurrentGroup({
-                                ...room,
-                                currentGroupId: "",
-                            });
-                            return;
-                        }
-                        setCurrentEvent(event?.target.value);
-                        setCurrentRound(event?.target.value + "-r1");
-                        updateCurrentGroup({
-                            ...room,
-                            currentGroupId: event?.target.value + "-r1-g1",
-                        });
-                    }}
-                    placeholder="Select event"
-                >
-                    {competition.wcif.events.map((event: Event) => (
-                        <option key={event.id} value={event.id}>
-                            {getEventName(event.id)}
-                        </option>
-                    ))}
-                </Select>
-            </FormControl>
-            {currentEvent && (
-                <FormControl>
-                    <FormLabel>Current round</FormLabel>
+        <Card>
+            <CardHeader>
+                <CardTitle>{room.name}</CardTitle>
+            </CardHeader>
+            <CardContent>
+                <div className="flex flex-col gap-2 mb-3">
+                    <Label>Event</Label>
                     <Select
-                        value={currentRound}
-                        onChange={(event) => {
-                            setCurrentRound(event?.target.value);
+                        onValueChange={(value) => {
+                            if (value === "" || value === "NONE") {
+                                setCurrentEvent("");
+                                setCurrentRound("");
+                                updateCurrentGroup({
+                                    ...room,
+                                    currentGroupId: "",
+                                });
+                                return;
+                            }
+                            setCurrentEvent(value);
+                            setCurrentRound(value + "-r1");
                             updateCurrentGroup({
                                 ...room,
-                                currentGroupId: event?.target.value + "-g1",
+                                currentGroupId: value + "-r1-g1",
                             });
                         }}
-                        placeholder="Select round"
+                        value={currentEvent}
                     >
-                        {competition.wcif.events
-                            .find((event: Event) => event.id === currentEvent)
-                            ?.rounds.map((round: Round, i: number) => (
-                                <option key={round.id} value={round.id}>
-                                    {i + 1}
-                                </option>
+                        <SelectTrigger>
+                            <SelectValue placeholder="Select event" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {competition.wcif.events.map((event: Event) => (
+                                <SelectItem key={event.id} value={event.id}>
+                                    {getEventName(event.id)}
+                                </SelectItem>
                             ))}
+                        </SelectContent>
                     </Select>
-                </FormControl>
-            )}
-            {currentRound && (
-                <FormControl>
-                    <FormLabel>Current group</FormLabel>
-                    <Select
-                        value={currentGroupId}
-                        onChange={(event) =>
-                            updateCurrentGroup({
-                                ...room,
-                                currentGroupId: event?.target.value,
-                            })
-                        }
-                        placeholder="Select group"
-                    >
-                        {groups.map((group: Activity, i: number) => (
-                            <option
-                                key={group.activityCode}
-                                value={group.activityCode}
-                            >
-                                {i + 1}
-                            </option>
-                        ))}
-                    </Select>
-                </FormControl>
-            )}
-        </Box>
+                </div>
+                {currentEvent && (
+                    <div className="flex flex-col gap-2 mb-3">
+                        <Label>Round</Label>
+                        <Select
+                            onValueChange={(value) => {
+                                setCurrentRound(value);
+                                updateCurrentGroup({
+                                    ...room,
+                                    currentGroupId: value + "-g1",
+                                });
+                            }}
+                            value={currentRound}
+                        >
+                            <SelectTrigger>
+                                <SelectValue placeholder="Select round" />
+                            </SelectTrigger>
+
+                            <SelectContent>
+                                {competition.wcif.events
+                                    .find(
+                                        (event: Event) =>
+                                            event.id === currentEvent
+                                    )
+                                    ?.rounds.map((round: Round, i: number) => (
+                                        <SelectItem
+                                            key={round.id}
+                                            value={round.id}
+                                        >
+                                            {i + 1}
+                                        </SelectItem>
+                                    ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
+                )}
+                {currentRound && (
+                    <div className="flex flex-col gap-2 mb-3">
+                        <Label>Group</Label>
+                        <Select
+                            onValueChange={(value) => {
+                                updateCurrentGroup({
+                                    ...room,
+                                    currentGroupId: value,
+                                });
+                            }}
+                            value={currentGroupId}
+                        >
+                            <SelectTrigger>
+                                <SelectValue placeholder="Select group" />
+                            </SelectTrigger>
+
+                            <SelectContent>
+                                {groups.map((group: Activity, i: number) => (
+                                    <SelectItem
+                                        key={group.activityCode}
+                                        value={group.activityCode}
+                                    >
+                                        {i + 1}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
+                )}
+                <Button
+                    variant="destructive"
+                    className="w-full"
+                    onClick={() => {
+                        setCurrentEvent("");
+                        setCurrentRound("");
+                        updateCurrentGroup({
+                            ...room,
+                            currentGroupId: "",
+                        });
+                    }}
+                >
+                    Clear
+                </Button>
+            </CardContent>
+        </Card>
     );
 };
 

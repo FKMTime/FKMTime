@@ -1,11 +1,11 @@
-import { Box, useToast } from "@chakra-ui/react";
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import background from "@/assets/background.jpg";
 import logo from "@/assets/logo.svg";
-import { login, loginWithWca } from "@/logic/auth";
-import { WCA_CLIENT_ID, WCA_ORIGIN } from "@/logic/request.ts";
+import { useToast } from "@/hooks/useToast";
+import { login, loginWithWca } from "@/lib/auth";
+import { WCA_CLIENT_ID, WCA_ORIGIN } from "@/lib/request";
 import LoginForm from "@/Pages/Auth/Login/Components/LoginForm";
 
 import MobileLogin from "./MobileLogin";
@@ -14,7 +14,7 @@ const Login = () => {
     const searchParams = new URLSearchParams(window.location.search);
     const code = searchParams.get("code");
     const navigate = useNavigate();
-    const toast = useToast();
+    const { toast } = useToast();
     const [isLoading, setIsLoading] = useState<boolean>(code ? true : false);
 
     const handleSubmit = async (username: string, password: string) => {
@@ -29,20 +29,19 @@ const Login = () => {
                 toast({
                     title: "Successfully logged in.",
                     description: "You have been successfully logged in.",
-                    status: "success",
                 });
                 navigate("/");
             } else if (status === 401) {
                 toast({
                     title: "Error",
                     description: "Wrong username or password",
-                    status: "error",
+                    variant: "destructive",
                 });
             } else {
                 toast({
                     title: "Error",
                     description: errorMessage || "Something went wrong",
-                    status: "error",
+                    variant: "destructive",
                 });
             }
         },
@@ -72,34 +71,22 @@ const Login = () => {
 
     return (
         <>
-            <Box display={{ base: "block", lg: "none" }}>
+            <div className="block lg:hidden">
                 <MobileLogin
                     handleSubmit={handleSubmit}
                     handleWcaLogin={handleWcaLogin}
                     isLoading={isLoading}
                 />
-            </Box>
-            <Box
-                display={{ base: "none", lg: "flex" }}
-                backgroundColor="gray.800"
-                width="100%"
-                height="100vh"
-            >
-                <Box
-                    width="30%"
-                    p={5}
-                    alignItems="center"
-                    justifyContent="center"
-                    display="flex"
-                    flexDirection="column"
-                >
+            </div>
+            <div className="hidden lg:flex w-full h-screen">
+                <div className="w-[30%] pl-5 pr-5 flex items-center justify-center flex-col gap-5">
                     <img src={logo} width="300" alt="logo" />
                     <LoginForm
                         handleLogin={handleSubmit}
                         handleWcaLogin={handleWcaLogin}
                         isLoading={isLoading}
                     />
-                </Box>
+                </div>
                 <img
                     src={background}
                     alt="background"
@@ -107,7 +94,7 @@ const Login = () => {
                     height="100%"
                     style={{ objectFit: "cover" }}
                 />
-            </Box>
+            </div>
         </>
     );
 };

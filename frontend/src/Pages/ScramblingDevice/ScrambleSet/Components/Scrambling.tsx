@@ -9,8 +9,8 @@ import {
 } from "@chakra-ui/react";
 import { RefObject, useRef, useState } from "react";
 
-import { DecryptedScramble, Person, ScrambleData } from "@/logic/interfaces";
-import { getPersonByCardId, getScrambleData } from "@/logic/scrambling";
+import { DecryptedScramble, Person, ScrambleData } from "@/lib/interfaces";
+import { getPersonByCardId, getScrambleData } from "@/lib/scrambling";
 
 import Scramble from "./Scramble";
 
@@ -36,21 +36,21 @@ const Scrambling = ({ groupId, scrambles }: ScramblingProps) => {
         if (competitorCard === scrambler.cardId) {
             return toast({
                 title: "Scrambler and competitor cannot be the same",
-                status: "error",
+                variant: "destructive",
             });
         }
         const { data, status } = await getScrambleData(competitorCard);
         if (!data || status === 404) {
             return toast({
                 title: "Competitor not found",
-                status: "error",
+                variant: "destructive",
             });
         }
         if (data.scrambleData.num === -1) {
             setCompetitorCard("");
             return toast({
                 title: "No attempts left",
-                status: "error",
+                variant: "destructive",
             });
         }
         setScrambleData(data.scrambleData);
@@ -62,7 +62,7 @@ const Scrambling = ({ groupId, scrambles }: ScramblingProps) => {
         if (!data.id) {
             toast({
                 title: "Scrambler not found",
-                status: "error",
+                variant: "destructive",
             });
             return setScramblerCard("");
         }

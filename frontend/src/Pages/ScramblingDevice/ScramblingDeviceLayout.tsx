@@ -5,10 +5,10 @@ import { MdHome } from "react-icons/md";
 import { Outlet, useNavigate } from "react-router-dom";
 
 import LoadingPage from "@/Components/LoadingPage";
-import { competitionAtom } from "@/logic/atoms";
-import { getCompetitionInfo } from "@/logic/competition";
-import { getEvents } from "@/logic/events";
-import { isScrambleDeviceTokenValid } from "@/logic/scramblingDevicesAuth";
+import { competitionAtom } from "@/lib/atoms";
+import { getCompetitionInfo } from "@/lib/competition";
+import { getEvents } from "@/lib/events";
+import { isScrambleDeviceTokenValid } from "@/lib/scramblingDevicesAuth";
 
 const ScramblingDeviceLayout = () => {
     const navigate = useNavigate();

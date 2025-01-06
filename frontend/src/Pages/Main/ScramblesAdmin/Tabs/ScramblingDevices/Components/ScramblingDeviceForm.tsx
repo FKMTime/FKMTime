@@ -1,8 +1,8 @@
 import { Box, Button, Input, Select } from "@chakra-ui/react";
 import { FormEvent, useEffect, useState } from "react";
 
-import { Room, ScramblingDevice } from "@/logic/interfaces";
-import { getAllRooms } from "@/logic/rooms";
+import { Room, ScramblingDevice } from "@/lib/interfaces";
+import { getAllRooms } from "@/lib/rooms";
 
 interface ScramblingDeviceFormProps {
     onCancel: () => void;

@@ -3,8 +3,8 @@ import { Competition as WCIF } from "@wca/helpers";
 import { useAtomValue } from "jotai";
 import { useState } from "react";
 
-import { competitionAtom } from "@/logic/atoms";
-import { importScrambles, validateScrambles } from "@/logic/scramblesImport";
+import { competitionAtom } from "@/lib/atoms";
+import { importScrambles, validateScrambles } from "@/lib/scramblesImport";
 
 import ScrambleSetsList from "./Components/ScrambleSetsList";
 import ScrambleSetsWarnings from "./Components/ScrambleSetsValidators";
@@ -48,19 +48,19 @@ const ImportScrambles = () => {
         if (response.status === 201) {
             toast({
                 title: "Scrambles imported",
-                status: "success",
+                
             });
             clearUploadedScrambles();
         } else {
             toast({
                 title: "Error",
                 description: "Something went wrong",
-                status: "error",
+                variant: "destructive",
             });
             toast({
                 title: "Error",
                 description: response.data.message,
-                status: "error",
+                variant: "destructive",
             });
         }
     };

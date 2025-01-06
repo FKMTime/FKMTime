@@ -14,8 +14,8 @@ import {
 import { useConfirm } from "chakra-ui-confirm";
 import { useState } from "react";
 
-import { QuickAction } from "@/logic/interfaces.ts";
-import { deleteQuickAction } from "@/logic/quickActions.ts";
+import { QuickAction } from "@/lib/interfaces";
+import { deleteQuickAction } from "@/lib/quickActions";
 import EditQuickActionModal from "@/Pages/Main/Settings/Components/EditQuickActionModal";
 
 interface QuickActionCardProps {
@@ -40,14 +40,14 @@ const QuickActionCard = ({ quickAction, fetchData }: QuickActionCardProps) => {
                 if (status === 204) {
                     toast({
                         title: "Successfully deleted quick action.",
-                        status: "success",
+                        
                     });
                     fetchData();
                 } else {
                     toast({
                         title: "Error",
                         description: "Something went wrong",
-                        status: "error",
+                        variant: "destructive",
                     });
                 }
             })
