@@ -1,8 +1,15 @@
-import { Box, Button, Text } from "@chakra-ui/react";
 import { MdDevices } from "react-icons/md";
 
+import { Button } from "@/Components/ui/button";
+import {
+    Card,
+    CardContent,
+    CardFooter,
+    CardHeader,
+    CardTitle,
+} from "@/Components/ui/card";
 import { AvailableDevice } from "@/lib/interfaces";
-import { prettyAvailableDeviceType } from "@/logic/utils";
+import { prettyAvailableDeviceType } from "@/lib/utils";
 
 interface AvailableDeviceCardProps {
     device: AvailableDevice;
@@ -15,34 +22,32 @@ const AvailableDeviceCard = ({
     handleRemoveDeviceRequest,
 }: AvailableDeviceCardProps) => {
     return (
-        <Box
-            key={device.espId}
-            bg="gray.900"
-            p="5"
-            rounded="md"
-            color="white"
-            display="flex"
-            flexDirection="column"
-            gap="3"
-            alignItems="center"
-            justifyContent="center"
-        >
-            <MdDevices size={48} />
-            <Text>Device ID: {device.espId}</Text>
-            <Text>Type: {prettyAvailableDeviceType(device.type)}</Text>
-            <Button
-                colorScheme="green"
-                onClick={() => handleAddDeviceRequest(device)}
-            >
-                Add
-            </Button>
-            <Button
-                colorScheme="red"
-                onClick={() => handleRemoveDeviceRequest(device.espId)}
-            >
-                Remove
-            </Button>
-        </Box>
+        <Card>
+            <CardHeader>
+                <CardTitle className="flex justify-between items-center">
+                    ID: {device.espId}
+                    <MdDevices size={48} />
+                </CardTitle>
+            </CardHeader>
+            <CardContent>
+                <p>Device ID: {device.espId}</p>
+                <p>Type: {prettyAvailableDeviceType(device.type)}</p>
+            </CardContent>
+            <CardFooter className="flex gap-2">
+                <Button
+                    variant="success"
+                    onClick={() => handleAddDeviceRequest(device)}
+                >
+                    Add
+                </Button>
+                <Button
+                    variant="destructive"
+                    onClick={() => handleRemoveDeviceRequest(device.espId)}
+                >
+                    Remove
+                </Button>
+            </CardFooter>
+        </Card>
     );
 };
 

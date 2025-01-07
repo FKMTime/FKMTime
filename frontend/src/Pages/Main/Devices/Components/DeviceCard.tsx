@@ -1,23 +1,19 @@
-import {
-    Box,
-    Button,
-    ButtonGroup,
-    Card,
-    CardBody,
-    CardFooter,
-    Divider,
-    Heading,
-    Stack,
-    Text,
-    useToast,
-} from "@chakra-ui/react";
-import { useConfirm } from "chakra-ui-confirm";
 import { useState } from "react";
 
 import BatteryIcon from "@/Components/Icons/BatteryIcon";
+import { Button } from "@/Components/ui/button";
+import {
+    Card,
+    CardContent,
+    CardFooter,
+    CardHeader,
+    CardTitle,
+} from "@/Components/ui/card";
+import { useConfirm } from "@/hooks/useConfirm";
+import { useToast } from "@/hooks/useToast";
 import { deleteDevice } from "@/lib/devices";
 import { Device } from "@/lib/interfaces";
-import { prettyDeviceType } from "@/logic/utils";
+import { prettyDeviceType } from "@/lib/utils";
 
 import EditDeviceModal from "./EditDeviceModal";
 
@@ -27,7 +23,7 @@ interface DeviceCardProps {
 }
 
 const DeviceCard = ({ device, fetchData }: DeviceCardProps) => {
-    const toast = useToast();
+    const { toast } = useToast();
     const confirm = useConfirm();
     const [isOpenEditDeviceModal, setIsOpenEditDeviceModal] =
         useState<boolean>(false);
@@ -48,7 +44,6 @@ const DeviceCard = ({ device, fetchData }: DeviceCardProps) => {
                 if (status === 204) {
                     toast({
                         title: "Successfully deleted device.",
-                        
                     });
                     fetchData();
                 } else {
@@ -64,59 +59,42 @@ const DeviceCard = ({ device, fetchData }: DeviceCardProps) => {
                     title: "Cancelled",
                     description:
                         "You have cancelled the deletion of the device.",
-                    status: "info",
                 });
             });
     };
 
     return (
         <>
-            <Card backgroundColor="gray.400">
-                <CardBody>
-                    <Box
-                        display="flex"
-                        gap={2}
-                        alignItems="center"
-                        justifyContent="space-between"
-                    >
-                        <Heading size="md">Name: {device.name}</Heading>
+            <Card>
+                <CardHeader>
+                    <CardTitle className="flex justify-between items-center">
+                        {device.name}
                         {device.batteryPercentage && (
-                            <Box display="flex" alignItems="center">
+                            <div className="flex items-center">
                                 <BatteryIcon
                                     batteryPercentage={device.batteryPercentage}
                                 />{" "}
-                                <Text>{`${device.batteryPercentage}%`}</Text>
-                            </Box>
+                                <span>{`${device.batteryPercentage}%`}</span>
+                            </div>
                         )}
-                    </Box>
-                    <Stack mt="3" spacing="1">
-                        <Text>ESP ID: {device.espId}</Text>
-                        <Text>Type: {prettyDeviceType(device.type)}</Text>
-                        <Text>Attempts: {device.count}</Text>
-                        <Text>
-                            Updated at:{" "}
-                            {new Date(device.updatedAt).toLocaleString()}
-                        </Text>
-                    </Stack>
-                </CardBody>
-                <Divider />
-                <CardFooter>
-                    <ButtonGroup spacing="2">
-                        <Button
-                            variant="solid"
-                            colorScheme="blue"
-                            onClick={() => setIsOpenEditDeviceModal(true)}
-                        >
-                            Edit
-                        </Button>
-                        <Button
-                            variant="solid"
-                            colorScheme="red"
-                            onClick={handleDelete}
-                        >
-                            Delete
-                        </Button>
-                    </ButtonGroup>
+                    </CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <p>ESP ID: {device.espId}</p>
+                    <p>Type: {prettyDeviceType(device.type)}</p>
+                    <p>Attempts: {device.count}</p>
+                    <p>
+                        Updated at:{" "}
+                        {new Date(device.updatedAt).toLocaleString()}
+                    </p>
+                </CardContent>
+                <CardFooter className="flex gap-2">
+                    <Button onClick={() => setIsOpenEditDeviceModal(true)}>
+                        Edit
+                    </Button>
+                    <Button variant="destructive" onClick={handleDelete}>
+                        Delete
+                    </Button>
                 </CardFooter>
             </Card>
             <EditDeviceModal

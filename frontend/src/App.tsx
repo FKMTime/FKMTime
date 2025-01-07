@@ -96,10 +96,6 @@ const App = () => {
                     element: <AssignCards />,
                 },
                 //     {
-                //         path: "rooms",
-                //         element: <Rooms />,
-                //     },
-                //     {
                 //         path: "results",
                 //         element: <Results />,
                 //     },
@@ -139,10 +135,10 @@ const App = () => {
                 //         path: "settings",
                 //         element: <Settings />,
                 //     },
-                //     {
-                //         path: "devices",
-                //         element: <Devices />,
-                //     },
+                {
+                    path: "devices",
+                    element: <Devices />,
+                },
                 //     {
                 //         path: "scrambles",
                 //         element: <ScramblesAdmin />,

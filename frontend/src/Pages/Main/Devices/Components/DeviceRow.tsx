@@ -1,12 +1,13 @@
-import { Box, Td, Text, Tr, useToast } from "@chakra-ui/react";
-import { useConfirm } from "chakra-ui-confirm";
 import { useState } from "react";
 
 import DeleteButton from "@/Components/DeleteButton";
 import EditButton from "@/Components/EditButton";
+import { TableCell, TableRow } from "@/Components/ui/table";
+import { useConfirm } from "@/hooks/useConfirm";
+import { useToast } from "@/hooks/useToast";
 import { deleteDevice } from "@/lib/devices";
 import { Device } from "@/lib/interfaces";
-import { prettyDeviceType } from "@/logic/utils";
+import { prettyDeviceType } from "@/lib/utils";
 
 import BatteryIcon from "../../../../Components/Icons/BatteryIcon";
 import EditDeviceModal from "./EditDeviceModal";
@@ -17,7 +18,7 @@ interface DeviceRowProps {
 }
 
 const DeviceRow = ({ device, fetchData }: DeviceRowProps) => {
-    const toast = useToast();
+    const { toast } = useToast();
     const confirm = useConfirm();
     const [isOpenEditDeviceModal, setIsOpenEditDeviceModal] =
         useState<boolean>(false);
@@ -38,7 +39,7 @@ const DeviceRow = ({ device, fetchData }: DeviceRowProps) => {
                 if (status === 204) {
                     toast({
                         title: "Successfully deleted device.",
-                        
+                        variant: "success",
                     });
                     fetchData();
                 } else {
@@ -54,7 +55,6 @@ const DeviceRow = ({ device, fetchData }: DeviceRowProps) => {
                     title: "Cancelled",
                     description:
                         "You have cancelled the deletion of the device.",
-                    status: "info",
                 });
             });
     };
@@ -66,17 +66,19 @@ const DeviceRow = ({ device, fetchData }: DeviceRowProps) => {
                 <TableCell>{device.espId}</TableCell>
                 <TableCell>
                     {device.batteryPercentage && (
-                        <Box display="flex" alignItems="center">
+                        <div className="flex items-center">
                             <BatteryIcon
                                 batteryPercentage={device.batteryPercentage}
                             />{" "}
-                            <Text>{`${device.batteryPercentage}%`}</Text>
-                        </Box>
+                            <span>{`${device.batteryPercentage}%`}</span>
+                        </div>
                     )}
                 </TableCell>
                 <TableCell>{prettyDeviceType(device.type)}</TableCell>
                 <TableCell>{device.count}</TableCell>
-                <TableCell>{new Date(device.updatedAt).toLocaleString()}</TableCell>
+                <TableCell>
+                    {new Date(device.updatedAt).toLocaleString()}
+                </TableCell>
                 <TableCell>
                     <EditButton
                         onClick={() => setIsOpenEditDeviceModal(true)}

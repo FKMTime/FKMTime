@@ -41,7 +41,7 @@ const Users = () => {
             </div>
             <div className="hidden md:block">
                 <Card>
-                    <CardHeader className="">
+                    <CardHeader>
                         <CardTitle className="flex justify-between items-center">
                             Users
                             <PlusButton
