@@ -1,20 +1,13 @@
-import {
-    Box,
-    Button,
-    Flex,
-    FormControl,
-    FormLabel,
-    Heading,
-    useToast,
-} from "@chakra-ui/react";
-import { Activity } from "@wca/helpers";
 import { useAtom } from "jotai";
 import { useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 
+import EventRoundAndGroupSelector from "@/Components/EventRoundAndGroupSelector copy";
 import LoadingPage from "@/Components/LoadingPage";
-import Select from "@/Components/Select";
-import { activityCodeToName, getGroupsByRoundId } from "@/lib/activities";
+import { Button } from "@/Components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/Components/ui/card";
+import { useToast } from "@/hooks/useToast";
+import { activityCodeToName } from "@/lib/activities";
 import { competitionAtom } from "@/lib/atoms";
 import {
     getAttendanceByGroupId,
@@ -24,17 +17,16 @@ import {
 import { getCompetitionInfo } from "@/lib/competition";
 import { Room, StaffActivity } from "@/lib/interfaces";
 import { getAllRooms } from "@/lib/rooms";
-import PresentPeopleList from "@/Pages/Main/Attendance/Components/PresentPeopleList";
 import { socket, SocketContext } from "@/socket";
 
-import EventAndRoundSelector from "../../../Components/EventAndRoundSelector";
 import AbsentPeopleList from "./Components/AbsentPeopleList";
+import PresentPeopleList from "./Components/PresentPeopleList";
 import UnorderedPeopleList from "./Components/UnorderedPeopleList";
 
 const Attendance = () => {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
-    const toast = useToast();
+    const { toast } = useToast();
     const selectedGroup = id ? id : "";
     const [competition, setCompetition] = useAtom(competitionAtom);
     const [attendance, setAttendance] = useState<StaffActivity[]>([]);
@@ -42,17 +34,6 @@ const Attendance = () => {
 
     const [selectedEvent, setSelectedEvent] = useState<string>("");
     const [selectedRound, setSelectedRound] = useState<string>("");
-    const groups = useMemo(() => {
-        if (
-            !competition ||
-            !selectedRound ||
-            !selectedEvent ||
-            selectedEvent === ""
-        ) {
-            return [];
-        }
-        return getGroupsByRoundId(selectedRound, competition.wcif);
-    }, [competition, selectedRound, selectedEvent]);
     const presentScramblers = useMemo(() => {
         return attendance.filter((a) => a.role === "SCRAMBLER" && a.isPresent);
     }, [attendance]);
@@ -99,7 +80,6 @@ const Attendance = () => {
             toast({
                 title: "Success",
                 description: "Marked as present",
-                
             });
             fetchAttendanceData(selectedGroup);
         } else {
@@ -117,7 +97,6 @@ const Attendance = () => {
             toast({
                 title: "Success",
                 description: "Marked as absent",
-                
             });
             fetchAttendanceData(selectedGroup);
         } else {
@@ -181,131 +160,242 @@ const Attendance = () => {
         absentCompetitors.length === 0 && presentCompetitors.length === 0;
 
     return (
-        <Box display="flex" flexDirection="column" gap="5">
-            <Heading size="lg">Attendance</Heading>
-            <Button
-                colorScheme="yellow"
-                onClick={() => navigate("/attendance/statistics")}
-                width={{ base: "100%", md: "fit-content" }}
-            >
-                Statistics
-            </Button>
-            {rooms.filter((r) => r.currentGroupId).length > 0 && (
-                <>
-                    <Heading size="md">Current groups</Heading>
-                    <Box display="flex" gap="2" flexWrap="wrap">
-                        {rooms
-                            .filter((r) => r.currentGroupId)
-                            .map((room: Room) => (
-                                <Button
-                                    key={room.id}
-                                    colorScheme="blue"
-                                    width={{ base: "100%", md: "auto" }}
-                                    onClick={() => {
-                                        setSelectedEvent(
-                                            room.currentGroupId.split("-")[0]
-                                        );
-                                        setSelectedRound(
-                                            room.currentGroupId.split("-g")[0]
-                                        );
-                                        handleGroupChange(room.currentGroupId);
-                                    }}
-                                >
-                                    {activityCodeToName(room.currentGroupId)}
-                                </Button>
-                            ))}
-                    </Box>
-                </>
-            )}
-            <Flex flexDirection="column" gap="5">
-                <EventAndRoundSelector
-                    competition={competition}
-                    showLabel
-                    filters={{ eventId: selectedEvent, roundId: selectedRound }}
-                    handleEventChange={(eventId) => {
-                        setSelectedEvent(eventId);
-                        setSelectedRound(eventId + "-r1");
-                        handleGroupChange(`${eventId}-r1-g1`);
-                    }}
-                    handleRoundChange={(roundId) => {
-                        setSelectedRound(roundId);
-                        handleGroupChange(`${roundId}-g1`);
-                    }}
-                />
-
-                {selectedRound && (
-                    <FormControl width="fit-content">
-                        <FormLabel>Group</FormLabel>
-                        <Select
-                            value={selectedGroup}
-                            onChange={(event) =>
-                                handleGroupChange(event?.target.value)
-                            }
+        <div className="flex flex-col gap-3">
+            <Card>
+                <CardHeader>
+                    <CardTitle className="flex justify-between items-center">
+                        Attendance
+                        <Button
+                            onClick={() => navigate("/attendance/statistics")}
                         >
-                            {groups.map((group: Activity, i: number) => (
-                                <option
-                                    key={group.activityCode}
-                                    value={group.activityCode}
-                                >
-                                    {i + 1}
-                                </option>
-                            ))}
-                        </Select>
-                    </FormControl>
-                )}
-            </Flex>
-            {selectedGroup && (
+                            Statistics
+                        </Button>
+                    </CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <EventRoundAndGroupSelector
+                        competition={competition}
+                        filters={{
+                            eventId: selectedEvent,
+                            roundId: selectedRound,
+                            groupId: selectedGroup,
+                        }}
+                        handleEventChange={(eventId) => {
+                            setSelectedEvent(eventId);
+                            setSelectedRound(eventId + "-r1");
+                            handleGroupChange(`${eventId}-r1-g1`);
+                        }}
+                        handleRoundChange={(roundId) => {
+                            setSelectedRound(roundId);
+                            handleGroupChange(`${roundId}-g1`);
+                        }}
+                        handleGroupChange={handleGroupChange}
+                    />
+                </CardContent>
+            </Card>
+            {rooms.filter((r) => r.currentGroupId).length > 0 && (
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Current groups</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="flex flex-wrap gap-2">
+                            {rooms
+                                .filter((r) => r.currentGroupId)
+                                .map((room: Room) => (
+                                    <Button
+                                        key={room.id}
+                                        onClick={() => {
+                                            setSelectedEvent(
+                                                room.currentGroupId.split(
+                                                    "-"
+                                                )[0]
+                                            );
+                                            setSelectedRound(
+                                                room.currentGroupId.split(
+                                                    "-g"
+                                                )[0]
+                                            );
+                                            handleGroupChange(
+                                                room.currentGroupId
+                                            );
+                                        }}
+                                    >
+                                        {activityCodeToName(
+                                            room.currentGroupId
+                                        )}
+                                    </Button>
+                                ))}
+                        </div>
+                    </CardContent>
+                </Card>
+            )}
+            <div className="flex flex-col gap-5 md:grid md:grid-cols-4">
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Competitors</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        {noCompetitors ? (
+                            <h2 className="text-lg">
+                                No competitors in this group
+                            </h2>
+                        ) : (
+                            <div className="flex flex-col gap-5">
+                                {absentCompetitors.length > 0 && (
+                                    <div className="flex flex-col gap-2">
+                                        <h2 className="font-bold text-lg">
+                                            Absent
+                                        </h2>
+                                        <UnorderedPeopleList
+                                            persons={absentCompetitors}
+                                        />
+                                    </div>
+                                )}
+                                {presentCompetitors.length > 0 && (
+                                    <div className="flex flex-col gap-2">
+                                        <h2 className="font-bold text-lg">
+                                            Present
+                                        </h2>
+                                        <UnorderedPeopleList
+                                            persons={presentCompetitors}
+                                        />
+                                    </div>
+                                )}
+                            </div>
+                        )}
+                    </CardContent>
+                </Card>
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Scramblers</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        {noScramblers ? (
+                            <h2 className="text-lg">
+                                No scramblers in this group
+                            </h2>
+                        ) : (
+                            <div className="flex flex-col gap-5">
+                                {absentScramblers.length > 0 && (
+                                    <div className="flex flex-col gap-2">
+                                        <h2 className="font-bold text-lg">
+                                            Absent
+                                        </h2>
+                                        <AbsentPeopleList
+                                            staffActivities={absentScramblers}
+                                            handleMarkAsPresent={
+                                                handleMarkAsPresent
+                                            }
+                                        />
+                                    </div>
+                                )}
+                                {presentScramblers.length > 0 && (
+                                    <div className="flex flex-col gap-2">
+                                        <h2 className="font-bold text-lg">
+                                            Present
+                                        </h2>
+                                        <PresentPeopleList
+                                            staffActivities={presentScramblers}
+                                            handleMarkAsAbsent={
+                                                handleMarkAsAbsent
+                                            }
+                                        />
+                                    </div>
+                                )}
+                            </div>
+                        )}
+                    </CardContent>
+                </Card>
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Runners</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        {noRunners ? (
+                            <h2 className="text-lg">
+                                No runners in this group
+                            </h2>
+                        ) : (
+                            <div className="flex flex-col gap-5">
+                                {absentRunners.length > 0 && (
+                                    <div className="flex flex-col gap-2">
+                                        <h2 className="font-bold text-lg">
+                                            Absent
+                                        </h2>
+                                        <AbsentPeopleList
+                                            staffActivities={absentRunners}
+                                            handleMarkAsPresent={
+                                                handleMarkAsPresent
+                                            }
+                                        />
+                                    </div>
+                                )}
+                                {presentRunners.length > 0 && (
+                                    <div className="flex flex-col gap-2">
+                                        <h2 className="font-bold text-lg">
+                                            Present
+                                        </h2>
+                                        <PresentPeopleList
+                                            staffActivities={presentRunners}
+                                            handleMarkAsAbsent={
+                                                handleMarkAsAbsent
+                                            }
+                                        />
+                                    </div>
+                                )}
+                            </div>
+                        )}
+                    </CardContent>
+                </Card>
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Judges</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        {noJudges ? (
+                            <h2 className="text-lg">No judges in this group</h2>
+                        ) : (
+                            <div className="flex flex-col gap-5">
+                                {absentJudges.length > 0 && (
+                                    <div className="flex flex-col gap-2">
+                                        <h2 className="font-bold text-lg">
+                                            Absent
+                                        </h2>
+                                        <AbsentPeopleList
+                                            staffActivities={absentJudges}
+                                            handleMarkAsPresent={
+                                                handleMarkAsPresent
+                                            }
+                                        />
+                                    </div>
+                                )}
+                                {presentJudges.length > 0 && (
+                                    <div className="flex flex-col gap-2">
+                                        <h2 className="font-bold text-lg">
+                                            Present
+                                        </h2>
+                                        <PresentPeopleList
+                                            staffActivities={presentJudges}
+                                            handleMarkAsAbsent={
+                                                handleMarkAsAbsent
+                                            }
+                                            showDevice
+                                        />
+                                    </div>
+                                )}
+                            </div>
+                        )}
+                    </CardContent>
+                </Card>
+            </div>
+            {/* {selectedGroup && (
                 <Flex
                     gap={{ base: 3, md: 20 }}
                     flexDirection={{ base: "column", md: "row" }}
                 >
-                    <Box>
-                        {noCompetitors ? (
-                            <Heading size="md">
-                                No competitors in this group
-                            </Heading>
-                        ) : (
-                            <Box gap="5" display="flex" flexDirection="column">
-                                <Heading>Competitors</Heading>
-                                {presentCompetitors.length > 0 && (
-                                    <UnorderedPeopleList
-                                        persons={presentCompetitors}
-                                    />
-                                )}
-                                {absentCompetitors.length > 0 && (
-                                    <UnorderedPeopleList
-                                        persons={absentCompetitors}
-                                        heading="Absent"
-                                    />
-                                )}
-                            </Box>
-                        )}
-                    </Box>
-                    <Box>
-                        {noScramblers ? (
-                            <Heading size="md">
-                                No scramblers in this group
-                            </Heading>
-                        ) : (
-                            <Box gap="5" display="flex" flexDirection="column">
-                                <Heading>Scramblers</Heading>
-                                {presentScramblers.length > 0 && (
-                                    <PresentPeopleList
-                                        staffActivities={presentScramblers}
-                                        handleMarkAsAbsent={handleMarkAsAbsent}
-                                    />
-                                )}
-                                {absentScramblers.length > 0 && (
-                                    <AbsentPeopleList
-                                        staffActivities={absentScramblers}
-                                        handleMarkAsPresent={
-                                            handleMarkAsPresent
-                                        }
-                                    />
-                                )}
-                            </Box>
-                        )}
-                    </Box>
+
+
                     <Box>
                         {noRunners ? (
                             <Heading size="md">
@@ -356,8 +446,8 @@ const Attendance = () => {
                         )}
                     </Box>
                 </Flex>
-            )}
-        </Box>
+            )} */}
+        </div>
     );
 };
 

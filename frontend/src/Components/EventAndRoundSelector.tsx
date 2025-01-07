@@ -1,10 +1,17 @@
-import { Box, FormLabel, IconButton } from "@chakra-ui/react";
 import { Event, Round } from "@wca/helpers";
 
 import EventIcon from "@/Components/Icons/EventIcon";
 import { Competition } from "@/lib/interfaces";
 
-import Select from "./Select";
+import IconButton from "./IconButton";
+import { Label } from "./ui/label";
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "./ui/select";
 
 interface EventAndRoundSelectorProps {
     competition: Competition;
@@ -26,13 +33,7 @@ const EventAndRoundSelector = ({
 }: EventAndRoundSelectorProps) => {
     return (
         <>
-            <Box
-                display="flex"
-                flexDirection="row"
-                gap="5"
-                flexWrap="wrap"
-                width={{ base: "90%", md: "auto" }}
-            >
+            <div className="flex gap-5 flex-wrap w-full">
                 {competition.wcif.events.map((event: Event) => (
                     <IconButton
                         key={event.id}
@@ -45,32 +46,39 @@ const EventAndRoundSelector = ({
                             />
                         }
                         onClick={() => handleEventChange(event.id)}
-                        justifyContent="center"
-                        alignItems="center"
+                        className="flex items-center justify-center"
                     />
                 ))}
-            </Box>
+            </div>
             {filters.eventId && (
-                <Box>
-                    {showLabel && <FormLabel>Round</FormLabel>}
-                    <Select
-                        value={filters.roundId}
-                        onChange={(event) =>
-                            handleRoundChange(event.target.value as string)
-                        }
-                        width="fit-content"
-                    >
-                        {competition.wcif.events
-                            .find(
-                                (event: Event) => event.id === filters.eventId
-                            )
-                            ?.rounds.map((round: Round, i: number) => (
-                                <option key={round.id} value={round.id}>
-                                    Round {i + 1}
-                                </option>
-                            ))}
-                    </Select>
-                </Box>
+                <div>
+                    {showLabel && <Label>Round</Label>}
+                    <div className="w-24">
+                        <Select
+                            value={filters.roundId}
+                            onValueChange={(value) => handleRoundChange(value)}
+                        >
+                            <SelectTrigger>
+                                <SelectValue placeholder="Select round" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {competition.wcif.events
+                                    .find(
+                                        (event: Event) =>
+                                            event.id === filters.eventId
+                                    )
+                                    ?.rounds.map((round: Round, i: number) => (
+                                        <SelectItem
+                                            key={round.id}
+                                            value={round.id}
+                                        >
+                                            Round {i + 1}
+                                        </SelectItem>
+                                    ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
+                </div>
             )}
         </>
     );

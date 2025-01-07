@@ -143,18 +143,18 @@ const App = () => {
                 //         path: "scrambles",
                 //         element: <ScramblesAdmin />,
                 //     },
-                //     {
-                //         path: "attendance",
-                //         element: <Attendance />,
-                //     },
+                {
+                    path: "attendance",
+                    element: <Attendance />,
+                },
                 //     {
                 //         path: "attendance/statistics",
                 //         element: <AttendanceStatistics />,
                 //     },
-                //     {
-                //         path: "attendance/:id",
-                //         element: <Attendance />,
-                //     },
+                {
+                    path: "attendance/:id",
+                    element: <Attendance />,
+                },
                 //     {
                 //         path: "check-in",
                 //         element: <CheckIn />,
