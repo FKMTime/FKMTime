@@ -19,7 +19,6 @@ import Layout from "./Pages/Main/Layout/Layout";
 import NotFound from "./Pages/Main/NotFound/NotFound";
 import ResolvedIncidents from "./Pages/Main/ResolvedIncidents/ResolvedIncidents";
 import DoubleCheck from "./Pages/Main/Results/DoubleCheck/DoubleCheck";
-import PublicView from "./Pages/Main/Results/PublicView/PublicView";
 import ResultsChecks from "./Pages/Main/Results/ResultsChecks/ResultsChecks";
 import ScramblesAdmin from "./Pages/Main/ScramblesAdmin/ScramblesAdmin";
 import Settings from "./Pages/Main/Settings/Settings";
@@ -32,10 +31,13 @@ import { ConfirmProvider } from "./providers/ConfirmProvider";
 import { ThemeProvider } from "./providers/ThemeProvider";
 import { SocketContext } from "./socket";
 const Persons = React.lazy(() => import("./Pages/Main/Persons/Persons"));
-// const Results = React.lazy(() => import("./Pages/Main/Results/Results"));
-// const SingleResult = React.lazy(
-//     () => import("./Pages/Main/Results/SingleResult/SingleResult")
-// );
+const Results = React.lazy(() => import("./Pages/Main/Results/Results"));
+const PublicView = React.lazy(
+    () => import("./Pages/Main/Results/PublicView/PublicView")
+);
+const SingleResult = React.lazy(
+    () => import("./Pages/Main/Results/SingleResult/SingleResult")
+);
 // const IncidentPage = React.lazy(
 //     () => import("./Pages/Main/Incidents/IncidentPage/IncidentPage")
 // );
@@ -95,30 +97,30 @@ const App = () => {
                     path: "cards",
                     element: <AssignCards />,
                 },
-                //     {
-                //         path: "results",
-                //         element: <Results />,
-                //     },
-                //     {
-                //         path: "results/public",
-                //         element: <PublicView />,
-                //     },
-                //     {
-                //         path: "results/public/:id",
-                //         element: <PublicView />,
-                //     },
-                //     {
-                //         path: "results/round/:id",
-                //         element: <Results />,
-                //     },
+                {
+                    path: "results",
+                    element: <Results />,
+                },
+                {
+                    path: "results/public",
+                    element: <PublicView />,
+                },
+                {
+                    path: "results/public/:id",
+                    element: <PublicView />,
+                },
+                {
+                    path: "results/round/:id",
+                    element: <Results />,
+                },
                 //     {
                 //         path: "results/round/:id/double-check",
                 //         element: <DoubleCheck />,
                 //     },
-                //     {
-                //         path: "results/round",
-                //         element: <Results />,
-                //     },
+                {
+                    path: "results/round",
+                    element: <Results />,
+                },
                 //     {
                 //         path: "results/checks",
                 //         element: <ResultsChecks />,
@@ -127,10 +129,10 @@ const App = () => {
                 //         path: "results/checks/:id",
                 //         element: <ResultsChecks />,
                 //     },
-                //     {
-                //         path: "results/:id",
-                //         element: <SingleResult />,
-                //     },
+                {
+                    path: "results/:id",
+                    element: <SingleResult />,
+                },
                 //     {
                 //         path: "settings",
                 //         element: <Settings />,

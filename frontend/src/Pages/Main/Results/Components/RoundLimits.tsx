@@ -1,40 +1,39 @@
-import { Text } from "@chakra-ui/react";
 import { Cutoff, TimeLimit } from "@wca/helpers";
 
 import { resultToString } from "@/lib/resultFormatters";
-import { cumulativeRoundsToString } from "@/logic/utils";
+import { cumulativeRoundsToString } from "@/lib/utils";
 
 interface RoundLimitsProps {
     cutoff: Cutoff | null;
     limit: TimeLimit | null;
     maxAttempts: number;
-    fontSize?: string;
+    size: string;
 }
 
 const RoundLimits = ({
     cutoff,
     limit,
     maxAttempts,
-    fontSize,
+    size,
 }: RoundLimitsProps) => {
     return (
         <>
-            <Text fontSize={fontSize}>
+            <p className={`text-${size}`}>
                 Cutoff:{" "}
                 {cutoff
                     ? `${resultToString(cutoff.attemptResult)} (${cutoff.numberOfAttempts} attempts)`
                     : "None"}
-            </Text>
-            <Text
-                fontSize={fontSize}
+            </p>
+            <p
+                className={`text-${size}`}
                 title={`For ${cumulativeRoundsToString(limit?.cumulativeRoundIds || [])}`}
             >
                 Limit:{" "}
                 {limit
                     ? `${resultToString(limit.centiseconds)} ${limit.cumulativeRoundIds.length > 0 ? "(cumulative)" : ""}`
                     : "None"}
-            </Text>
-            <Text fontSize={fontSize}>Attempts: {maxAttempts}</Text>
+            </p>
+            <p className={`text-${size}`}>Attempts: {maxAttempts}</p>
         </>
     );
 };

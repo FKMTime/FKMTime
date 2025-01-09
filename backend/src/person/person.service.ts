@@ -181,7 +181,7 @@ export class PersonService {
         },
       ];
     } else if (!withoutCardAssigned && search) {
-      whereParams['OR'].push(
+      whereParams['OR'] = [
         {
           name: {
             contains: search,
@@ -194,7 +194,7 @@ export class PersonService {
             mode: 'insensitive',
           },
         },
-      );
+      ];
     } else if (withoutCardAssigned && !search) {
       whereParams['OR'] = [
         {

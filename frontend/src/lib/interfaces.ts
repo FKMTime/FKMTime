@@ -382,3 +382,18 @@ export interface Region {
     continentId: string;
     iso2: string;
 }
+
+export interface AttemptData {
+    roundId: string;
+    competitorId: string;
+    type: AttemptType;
+    status: AttemptStatus;
+    judgeId?: string;
+    scramblerId?: string;
+    deviceId: string;
+    attemptNumber: number;
+    value: number;
+    penalty: number;
+    comment: string;
+    replacedBy: number;
+}

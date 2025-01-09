@@ -1,8 +1,7 @@
-import { Td, Tr } from "@chakra-ui/react";
-
+import { TableCell, TableRow } from "@/Components/ui/table";
 import { ResultWithAverage } from "@/lib/interfaces";
 import { attemptWithPenaltyToString } from "@/lib/resultFormatters";
-import { getSubmittedAttempts, isMobileView } from "@/logic/utils";
+import { getSubmittedAttempts } from "@/lib/utils";
 
 interface PublicResultRowProps {
     result: ResultWithAverage;
@@ -21,16 +20,13 @@ const PublicResultRow = ({
             <TableRow key={result.id}>
                 <TableCell>{pos}</TableCell>
                 <TableCell>{result.person.name}</TableCell>
-                {!isMobileView() &&
-                    Array.from({ length: maxAttempts }, (_, i) => (
-                        <TableCell key={i}>
-                            {submittedAttempts.length > i
-                                ? attemptWithPenaltyToString(
-                                      submittedAttempts[i]
-                                  )
-                                : ""}
-                        </TableCell>
-                    ))}
+                {Array.from({ length: maxAttempts }, (_, i) => (
+                    <TableCell key={i} className="hidden md:table-cell">
+                        {submittedAttempts.length > i
+                            ? attemptWithPenaltyToString(submittedAttempts[i])
+                            : ""}
+                    </TableCell>
+                ))}
                 <TableCell>{result.averageString}</TableCell>
                 <TableCell>{result.bestString}</TableCell>
             </TableRow>

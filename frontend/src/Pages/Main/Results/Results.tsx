@@ -1,4 +1,3 @@
-import { Box, Button, Heading, Input } from "@chakra-ui/react";
 import { useAtom } from "jotai";
 import {
     ChangeEvent,
@@ -16,6 +15,9 @@ import {
 } from "wcif-helpers";
 
 import LoadingPage from "@/Components/LoadingPage";
+import { Button } from "@/Components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/Components/ui/card";
+import { Input } from "@/Components/ui/input";
 import { activityCodeToName } from "@/lib/activities";
 import { competitionAtom } from "@/lib/atoms";
 import { isAdmin } from "@/lib/auth";
@@ -26,11 +28,11 @@ import { getAllRooms } from "@/lib/rooms";
 import { socket, SocketContext } from "@/socket";
 
 import EventAndRoundSelector from "../../../Components/EventAndRoundSelector";
-import CreateAttemptModal from "./Components/CreateAttemptModal";
+import RestartGroupModal from "./Components/RestartGroupModal";
 import ResultsActions from "./Components/ResultsActions";
 import ResultsTable from "./Components/ResultsTable";
 import RoundLimits from "./Components/RoundLimits";
-import RestartGroupModal from "./SingleResult/Components/RestartGroupModal";
+import CreateAttemptModal from "./Components/CreateAttemptModal";
 
 const Results = () => {
     const { id } = useParams<{ id: string }>();
@@ -162,62 +164,90 @@ const Results = () => {
     }
 
     return (
-        <Box display="flex" flexDirection="column" gap="5">
-            <Box
-                display="flex"
-                flexDirection={{ base: "column", md: "row" }}
-                gap="5"
-            >
-                <EventAndRoundSelector
-                    competition={competition}
-                    filters={filters}
-                    handleEventChange={handleEventChange}
-                    handleRoundChange={handleRoundChange}
-                />
-                <Input
-                    placeholder="Search"
-                    _placeholder={{ color: "white" }}
-                    width={{ base: "100%", md: "20%" }}
-                    value={search}
-                    onChange={handleSearch}
-                />
-                {currentRounds.map((roundId) => (
-                    <Button
-                        key={roundId}
-                        colorScheme="blue"
-                        onClick={() => {
-                            navigate(`/results/round/${roundId}`);
-                        }}
-                    >
-                        {activityCodeToName(roundId)}
-                    </Button>
-                ))}
-            </Box>
+        <div className="flex flex-col gap-4">
+            <Card>
+                <CardHeader>
+                    <CardTitle>Results</CardTitle>
+                </CardHeader>
+                <CardContent className="flex flex-col gap-5">
+                    <div className="flex md:flex-row flex-col gap-5 justify-between items-start">
+                        <EventAndRoundSelector
+                            competition={competition}
+                            filters={filters}
+                            handleEventChange={handleEventChange}
+                            handleRoundChange={handleRoundChange}
+                        />
+                        {filters.roundId && (
+                            <div className="flex flex-col">
+                                <RoundLimits
+                                    cutoff={cutoff}
+                                    limit={limit}
+                                    maxAttempts={maxAttempts}
+                                    size="md"
+                                />
+                            </div>
+                        )}
+                    </div>
+                    {currentRounds.length > 1 && (
+                        <div className="flex gap-5">
+                            {currentRounds.map((roundId) => (
+                                <Button
+                                    key={roundId}
+                                    onClick={() => {
+                                        navigate(`/results/round/${roundId}`);
+                                    }}
+                                    className="w-fit"
+                                >
+                                    {activityCodeToName(roundId)}
+                                </Button>
+                            ))}
+                        </div>
+                    )}
+                    {filters.roundId && (
+                        <Input
+                            placeholder="Search"
+                            value={search}
+                            onChange={handleSearch}
+                        />
+                    )}
+                </CardContent>
+            </Card>
             {filters.roundId && (
-                <Box display="flex" flexDirection="column" gap="5">
-                    <RoundLimits
-                        cutoff={cutoff}
-                        limit={limit}
-                        maxAttempts={maxAttempts}
-                    />
-                    <ResultsActions
-                        filters={filters}
-                        setIsOpenCreateAttemptModal={
-                            setIsOpenCreateAttemptModal
-                        }
-                        setIsOpenRestartGroupModal={setIsOpenRestartGroupModal}
-                        resultsLength={results.length}
-                    />
-                </Box>
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Actions</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <ResultsActions
+                            filters={filters}
+                            setIsOpenCreateAttemptModal={
+                                setIsOpenCreateAttemptModal
+                            }
+                            setIsOpenRestartGroupModal={
+                                setIsOpenRestartGroupModal
+                            }
+                            resultsLength={results.length}
+                        />
+                    </CardContent>
+                </Card>
             )}
-            {results && results.length > 0 ? (
-                <ResultsTable
-                    results={results}
-                    maxAttempts={maxAttempts}
-                    fetchData={fetchData}
-                />
-            ) : (
-                <Heading size="lg">No results found</Heading>
+            {filters.roundId && (
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Results</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        {results && results.length > 0 ? (
+                            <ResultsTable
+                                results={results}
+                                maxAttempts={maxAttempts}
+                                fetchData={fetchData}
+                            />
+                        ) : (
+                            <h2 className="text-lg">No results found</h2>
+                        )}
+                    </CardContent>
+                </Card>
             )}
             <CreateAttemptModal
                 isOpen={isOpenCreateAttemptModal}
@@ -231,7 +261,7 @@ const Results = () => {
                 roundId={filters.roundId}
                 wcif={competition.wcif}
             />
-        </Box>
+        </div>
     );
 };
 

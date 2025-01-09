@@ -32,7 +32,7 @@ const EventAndRoundSelector = ({
     handleRoundChange,
 }: EventAndRoundSelectorProps) => {
     return (
-        <>
+        <div className="flex flex-col gap-5">
             <div className="flex gap-5 flex-wrap w-full">
                 {competition.wcif.events.map((event: Event) => (
                     <IconButton
@@ -80,7 +80,7 @@ const EventAndRoundSelector = ({
                     </div>
                 </div>
             )}
-        </>
+        </div>
     );
 };
 

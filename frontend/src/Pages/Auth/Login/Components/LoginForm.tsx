@@ -49,6 +49,7 @@ const LoginForm = ({
             toast({
                 title: "Successfully logged in.",
                 description: "You have been successfully logged in.",
+                variant: "success",
             });
             navigate("/scrambling-device");
         } else if (status === 404) {
@@ -110,6 +111,7 @@ const LoginForm = ({
                                             <FormControl>
                                                 <Input
                                                     placeholder="Username"
+                                                    disabled={isLoading}
                                                     {...field}
                                                 />
                                             </FormControl>
@@ -126,6 +128,7 @@ const LoginForm = ({
                                             <FormControl>
                                                 <Input
                                                     type="password"
+                                                    disabled={isLoading}
                                                     placeholder="Password"
                                                     {...field}
                                                 />
@@ -137,6 +140,7 @@ const LoginForm = ({
                                 <Button
                                     type="submit"
                                     className="w-full"
+                                    disabled={isLoading}
                                     variant="success"
                                 >
                                     Sign in

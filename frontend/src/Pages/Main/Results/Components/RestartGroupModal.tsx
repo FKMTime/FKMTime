@@ -1,18 +1,19 @@
-import {
-    Box,
-    Button,
-    FormControl,
-    FormLabel,
-    Heading,
-    Select,
-    UnorderedList,
-    useToast,
-} from "@chakra-ui/react";
 import { Activity, Competition as WCIF } from "@wca/helpers";
-import { useConfirm } from "chakra-ui-confirm";
 import { useState } from "react";
+import { Label } from "recharts";
 
 import { Modal } from "@/Components/Modal";
+import ModalActions from "@/Components/ModalActions";
+import { Button } from "@/Components/ui/button";
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/Components/ui/select";
+import { useConfirm } from "@/hooks/useConfirm";
+import { useToast } from "@/hooks/useToast";
 import { activityCodeToName, getGroupsByRoundId } from "@/lib/activities";
 import { getAttendanceByGroupId } from "@/lib/attendance";
 import { StaffActivity } from "@/lib/interfaces";
@@ -31,8 +32,8 @@ const RestartGroupModal = ({
     roundId,
     wcif,
 }: RestartGroupModalProps) => {
+    const { toast } = useToast();
     const confirm = useConfirm();
-    const toast = useToast();
     const [selectedGroup, setSelectedGroup] = useState<string>("");
     const groups = getGroupsByRoundId(roundId, wcif);
     const groupName = activityCodeToName(selectedGroup);
@@ -59,7 +60,7 @@ const RestartGroupModal = ({
                 if (status === 204) {
                     toast({
                         title: "Group restarted",
-                        
+                        variant: "success",
                     });
                     onClose();
                 } else {
@@ -72,59 +73,70 @@ const RestartGroupModal = ({
             .catch(() => {
                 toast({
                     title: "Group not restarted",
-                    status: "info",
                 });
             });
+    };
+
+    const handleClose = () => {
+        setSelectedGroup("");
+        setCompetitors([]);
+        onClose();
     };
 
     return (
         <Modal
             isOpen={isOpen}
-            onClose={onClose}
+            onClose={handleClose}
             title={
                 selectedGroup
                     ? `Restart ${groupName}`
                     : "Select group to restart"
             }
         >
-            <Box display="flex" flexDirection="column" gap="5">
-                <FormControl width="fit-content">
-                    <FormLabel>Group</FormLabel>
-                    <Select
-                        value={selectedGroup}
-                        onChange={(event) =>
-                            handleSelectGroup(event.target.value)
-                        }
-                        placeholder="Select group"
-                    >
-                        {groups.map((group: Activity, i: number) => (
-                            <option
-                                key={group.activityCode}
-                                value={group.activityCode}
-                            >
-                                {i + 1}
-                            </option>
-                        ))}
-                    </Select>
-                </FormControl>
+            <div className="flex flex-col gap-5">
+                <div>
+                    <Label>Group</Label>
+                    <div className="w-fit">
+                        <Select
+                            value={selectedGroup}
+                            onValueChange={(value) => handleSelectGroup(value)}
+                        >
+                            <SelectTrigger>
+                                <SelectValue placeholder="Select group" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {groups.map((group: Activity, i: number) => (
+                                    <SelectItem
+                                        key={group.activityCode}
+                                        value={group.activityCode}
+                                    >
+                                        Group {i + 1}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
+                </div>
                 {selectedGroup && (
-                    <>
-                        <Heading size="md">
+                    <div className="overflow-y-auto max-h-96">
+                        <h2 className="text-lg">
                             All results for this competitors will be deleted:
-                        </Heading>
-                        <UnorderedList spacing="3">
+                        </h2>
+                        <ul className="list-disc pl-5">
                             {competitors.map((competitor: StaffActivity) => (
                                 <li key={competitor.person.id}>
                                     {competitor.person.name}
                                 </li>
                             ))}
-                        </UnorderedList>
-                    </>
+                        </ul>
+                    </div>
                 )}
-                <Button colorScheme="red" onClick={handleRestartGroup}>
-                    Restart group
-                </Button>
-            </Box>
+                <ModalActions>
+                    <Button variant="destructive" onClick={handleRestartGroup}>
+                        Restart group
+                    </Button>
+                </ModalActions>
+            </div>
         </Modal>
     );
 };

@@ -1,10 +1,11 @@
-import { Td, Tr, useToast } from "@chakra-ui/react";
-import { useConfirm } from "chakra-ui-confirm";
 import { FaList } from "react-icons/fa";
 import { Link, useNavigate } from "react-router-dom";
 
 import DeleteButton from "@/Components/DeleteButton";
 import SmallIconButton from "@/Components/SmallIconButton";
+import { TableCell, TableRow } from "@/Components/ui/table";
+import { useConfirm } from "@/hooks/useConfirm";
+import { useToast } from "@/hooks/useToast";
 import { isAdmin } from "@/lib/auth";
 import { average, formattedBest } from "@/lib/average";
 import { Result } from "@/lib/interfaces";
@@ -13,7 +14,7 @@ import {
     resultToString,
 } from "@/lib/resultFormatters";
 import { deleteResultById } from "@/lib/results";
-import { getSubmittedAttempts } from "@/logic/utils";
+import { getSubmittedAttempts } from "@/lib/utils";
 
 interface ResultRowProps {
     result: Result;
@@ -23,7 +24,7 @@ interface ResultRowProps {
 
 const ResultRow = ({ result, maxAttempts, fetchData }: ResultRowProps) => {
     const navigate = useNavigate();
-    const toast = useToast();
+    const { toast } = useToast();
     const confirm = useConfirm();
 
     const submittedAttempts = getSubmittedAttempts(result.attempts);
@@ -41,7 +42,7 @@ const ResultRow = ({ result, maxAttempts, fetchData }: ResultRowProps) => {
                 if (status === 204) {
                     toast({
                         title: "Successfully deleted result.",
-                        
+                        variant: "success",
                     });
                     fetchData(result.roundId);
                 } else {
@@ -57,7 +58,6 @@ const ResultRow = ({ result, maxAttempts, fetchData }: ResultRowProps) => {
                     title: "Cancelled",
                     description:
                         "You have cancelled the deletion of the result.",
-                    status: "info",
                 });
             });
     };
@@ -73,16 +73,16 @@ const ResultRow = ({ result, maxAttempts, fetchData }: ResultRowProps) => {
                     </Link>
                 </TableCell>
                 {Array.from({ length: maxAttempts }, (_, i) => (
-                    <TableCell key={i} display={{ base: "none", md: "table-cell" }}>
+                    <TableCell key={i} className="hidden md:table-cell">
                         {submittedAttempts.length > i
                             ? attemptWithPenaltyToString(submittedAttempts[i])
                             : ""}
                     </TableCell>
                 ))}
-                <TableCell display={{ base: "none", md: "table-cell" }}>
+                <TableCell className="hidden md:table-cell">
                     {calculatedAverage ? resultToString(calculatedAverage) : ""}
                 </TableCell>
-                <TableCell display={{ base: "none", md: "table-cell" }}>
+                <TableCell className="hidden md:table-cell">
                     {formattedBest(submittedAttempts)}
                 </TableCell>
                 {isAdmin() && (

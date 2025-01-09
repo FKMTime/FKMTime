@@ -1,5 +1,3 @@
-import { Badge, Box, Td, Tr, useToast } from "@chakra-ui/react";
-import { useConfirm } from "chakra-ui-confirm";
 import { useState } from "react";
 import { MdNewLabel } from "react-icons/md";
 import { useNavigate } from "react-router-dom";
@@ -8,16 +6,15 @@ import AttemptWarnings from "@/Components/AttemptWarnings";
 import DeleteButton from "@/Components/DeleteButton";
 import EditButton from "@/Components/EditButton";
 import SmallIconButton from "@/Components/SmallIconButton";
+import { Badge } from "@/Components/ui/badge";
+import { TableCell, TableRow } from "@/Components/ui/table";
+import { useConfirm } from "@/hooks/useConfirm";
+import { useToast } from "@/hooks/useToast";
 import { deleteAttempt } from "@/lib/attempt";
-import {
-    Attempt,
-    AttemptStatus,
-    AttemptType,
-    Result,
-} from "@/lib/interfaces";
+import { Attempt, AttemptStatus, AttemptType, Result } from "@/lib/interfaces";
 import { getPersonNameAndRegistrantId } from "@/lib/persons";
 import { attemptWithPenaltyToString } from "@/lib/resultFormatters";
-import { getResolvedStatus } from "@/logic/utils";
+import { getResolvedStatus } from "@/lib/utils";
 
 import EditAttemptModal from "./EditAttemptModal";
 import GiveExtraAttemptModal from "./GiveExtraAttemptModal";
@@ -38,7 +35,7 @@ const AttemptRow = ({
     result,
 }: AttemptRowProps) => {
     const navigate = useNavigate();
-    const toast = useToast();
+    const { toast } = useToast();
     const confirm = useConfirm();
     const [isOpenEditAttemptModal, setIsOpenEditAttemptModal] =
         useState<boolean>(false);
@@ -56,7 +53,7 @@ const AttemptRow = ({
                 if (response.status === 200) {
                     toast({
                         title: "Successfully deleted attempt.",
-                        
+                        variant: "success",
                     });
                     if (response.data.resultDeleted) {
                         navigate(`/results/round/${result.roundId}`);
@@ -76,7 +73,6 @@ const AttemptRow = ({
                     title: "Cancelled",
                     description:
                         "You have cancelled the deletion of the attempt.",
-                    status: "info",
                 });
             });
     };
@@ -107,7 +103,9 @@ const AttemptRow = ({
                             {attempt.replacedBy &&
                                 `Extra ${attempt.replacedBy}`}
                         </TableCell>
-                        <TableCell>{getResolvedStatus(attempt.status)}</TableCell>
+                        <TableCell>
+                            {getResolvedStatus(attempt.status)}
+                        </TableCell>
                     </>
                 )}
                 <TableCell>
@@ -139,19 +137,13 @@ const AttemptRow = ({
                     <DeleteButton onClick={handleDelete} />
                 </TableCell>
                 <TableCell>
-                    <Box display="flex" gap={2}>
+                    <div className="flex gap-2">
                         {!attempt.sessionId &&
                             attempt.status !== AttemptStatus.SCRAMBLED && (
-                                <Badge
-                                    colorScheme="orange"
-                                    borderRadius="md"
-                                    p="1"
-                                >
-                                    Entered manually
-                                </Badge>
+                                <Badge>Entered manually</Badge>
                             )}
                         <AttemptWarnings attempt={attempt} />
-                    </Box>
+                    </div>
                 </TableCell>
             </TableRow>
             <EditAttemptModal
