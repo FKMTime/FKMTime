@@ -121,14 +121,14 @@ const App = () => {
                     path: "results/round",
                     element: <Results />,
                 },
-                //     {
-                //         path: "results/checks",
-                //         element: <ResultsChecks />,
-                //     },
-                //     {
-                //         path: "results/checks/:id",
-                //         element: <ResultsChecks />,
-                //     },
+                {
+                    path: "results/checks",
+                    element: <ResultsChecks />,
+                },
+                {
+                    path: "results/checks/:id",
+                    element: <ResultsChecks />,
+                },
                 {
                     path: "results/:id",
                     element: <SingleResult />,

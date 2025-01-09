@@ -204,7 +204,6 @@ const EditUnofficialEventModal = ({
                             icon={<MdDelete />}
                             onClick={deleteLastRound}
                             title="Delete last round"
-                            ariaLabel="Delete"
                         />
                     )}
                 </Box>

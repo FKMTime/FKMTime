@@ -1,9 +1,10 @@
-import { Box, Heading } from "@chakra-ui/react";
 import { useAtomValue } from "jotai";
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 
 import LoadingPage from "@/Components/LoadingPage";
+import { Card, CardContent, CardHeader, CardTitle } from "@/Components/ui/card";
+import { activityCodeToName } from "@/lib/activities";
 import { competitionAtom } from "@/lib/atoms";
 import { Incident } from "@/lib/interfaces";
 import { getResultsChecks } from "@/lib/results";
@@ -47,25 +48,33 @@ const ResultsChecks = () => {
     if (!competition) return <LoadingPage />;
 
     return (
-        <Box display="flex" flexDirection="column" gap="5">
-            <Heading size="lg">Suspicious times/penalties</Heading>
-            <Box
-                display="flex"
-                flexDirection={{
-                    base: "column",
-                    md: "row",
-                }}
-                gap="5"
-            >
-                <EventAndRoundSelector
-                    competition={competition}
-                    filters={filters}
-                    handleEventChange={handleEventChange}
-                    handleRoundChange={handleRoundChange}
-                />
-            </Box>
-            <ResultsChecksTable checks={checks} />
-        </Box>
+        <div className="flex flex-col gap-4">
+            <Card>
+                <CardHeader>
+                    <CardTitle>Suspicious times/penalties</CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <EventAndRoundSelector
+                        competition={competition}
+                        filters={filters}
+                        handleEventChange={handleEventChange}
+                        handleRoundChange={handleRoundChange}
+                    />
+                </CardContent>
+            </Card>
+            {filters.roundId ? (
+                <Card>
+                    <CardHeader>
+                        <CardTitle>
+                            {activityCodeToName(filters.roundId)}
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <ResultsChecksTable checks={checks} />
+                    </CardContent>
+                </Card>
+            ) : null}
+        </div>
     );
 };
 

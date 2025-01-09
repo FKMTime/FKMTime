@@ -83,7 +83,6 @@ const ImportCompetition = () => {
                     </Text>
                     <RoundedIconButton
                         title="Logout"
-                        ariaLabel="Logout"
                         onClick={handleLogout}
                         icon={<MdLogout />}
                     />

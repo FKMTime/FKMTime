@@ -73,7 +73,6 @@ const ScramblingDeviceRow = ({
                 <TableCell>
                     <SmallIconButton
                         title={"Generate one time code"}
-                        ariaLabel="Generate one time code"
                         icon={<PiTimerDuotone />}
                         onClick={() => setIsOpenOneTimeCodeModal(true)}
                     />

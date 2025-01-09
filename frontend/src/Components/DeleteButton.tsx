@@ -11,7 +11,6 @@ const DeleteButton = ({ onClick, title }: DeleteButtonProps) => {
     return (
         <SmallIconButton
             icon={<MdDelete />}
-            ariaLabel="Delete"
             title={title || "Delete"}
             onClick={onClick}
         />

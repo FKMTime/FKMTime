@@ -11,7 +11,6 @@ const EditButton = ({ onClick, title }: EditButtonProps) => {
     return (
         <SmallIconButton
             icon={<MdEdit />}
-            ariaLabel="Edit"
             title={title || "Edit"}
             onClick={onClick}
         />

@@ -84,7 +84,6 @@ const UserRow = ({ user, fetchData }: UserRowProps) => {
                         <SmallIconButton
                             icon={<MdLock />}
                             title="Change password"
-                            ariaLabel="Change password"
                             onClick={() => setIsOpenChangePasswordModal(true)}
                         />
                     )}

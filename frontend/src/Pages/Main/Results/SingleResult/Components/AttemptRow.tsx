@@ -130,7 +130,6 @@ const AttemptRow = ({
                     />
                     <SmallIconButton
                         icon={<MdNewLabel />}
-                        ariaLabel="Delete"
                         title="Give extra attempt"
                         onClick={() => setIsOpenGiveExtraAttemptModal(true)}
                     />

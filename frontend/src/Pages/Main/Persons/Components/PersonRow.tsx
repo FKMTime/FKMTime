@@ -97,7 +97,6 @@ const PersonRow = ({ person, wcif, handleCloseEditModal }: PersonRowProps) => {
             <TableCell>
                 <SmallIconButton
                     icon={<FaAddressCard />}
-                    ariaLabel="Card"
                     title="Assign card"
                     onClick={() => setIsOpenAssignCardModal(true)}
                 />
@@ -107,7 +106,6 @@ const PersonRow = ({ person, wcif, handleCloseEditModal }: PersonRowProps) => {
                         <>
                             <SmallIconButton
                                 icon={<MdAssignment />}
-                                ariaLabel="Groups"
                                 title="Display groups"
                                 onClick={() =>
                                     setIsOpenDisplayGroupsModal(true)
@@ -115,7 +113,6 @@ const PersonRow = ({ person, wcif, handleCloseEditModal }: PersonRowProps) => {
                             />
                             <SmallIconButton
                                 icon={<MdBarChart />}
-                                ariaLabel="Results"
                                 title="Display all results for this person"
                                 onClick={() =>
                                     navigate(`/persons/${person.id}/results`)

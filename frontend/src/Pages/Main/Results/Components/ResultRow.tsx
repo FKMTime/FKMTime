@@ -89,7 +89,6 @@ const ResultRow = ({ result, maxAttempts, fetchData }: ResultRowProps) => {
                     <TableCell>
                         <SmallIconButton
                             icon={<FaList />}
-                            ariaLabel="List"
                             title="View attempts"
                             onClick={() => navigate(`/results/${result.id}`)}
                         />

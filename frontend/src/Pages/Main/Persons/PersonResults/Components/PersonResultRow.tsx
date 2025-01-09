@@ -41,7 +41,6 @@ const PersonResultRow = ({ result }: PersonResultRowProps) => {
                     <TableCell>
                         <SmallIconButton
                             icon={<FaList />}
-                            ariaLabel="List"
                             title="View attempts"
                             onClick={() => navigate(`/results/${result.id}`)}
                         />

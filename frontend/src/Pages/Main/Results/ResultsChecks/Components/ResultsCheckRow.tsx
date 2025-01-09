@@ -1,9 +1,10 @@
-import { Box, Link, Td, Tr } from "@chakra-ui/react";
 import { FaList } from "react-icons/fa";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 import AttemptWarnings from "@/Components/AttemptWarnings";
+import EventIcon from "@/Components/Icons/EventIcon";
 import SmallIconButton from "@/Components/SmallIconButton";
+import { TableCell, TableRow } from "@/Components/ui/table";
 import { activityCodeToName } from "@/lib/activities";
 import { AttemptType, Incident } from "@/lib/interfaces";
 import { attemptWithPenaltyToString } from "@/lib/resultFormatters";
@@ -19,10 +20,13 @@ const ResultsCheckRow = ({ check }: ResultsCheckRowProps) => {
             <TableCell>{check.result.person.name}</TableCell>
             <TableCell>
                 <Link
-                    onClick={() =>
-                        navigate(`/results/round/${check.result.roundId}`)
-                    }
+                    className="text-blue-500 flex items-center gap-1"
+                    to={`/results/round/${check.result.roundId}`}
                 >
+                    <EventIcon
+                        selected
+                        eventId={check.result.roundId.split("-")[0]}
+                    />
                     {activityCodeToName(check.result.roundId)}
                 </Link>
             </TableCell>
@@ -35,14 +39,13 @@ const ResultsCheckRow = ({ check }: ResultsCheckRowProps) => {
             <TableCell>{check.comment}</TableCell>
             <TableCell>{check.judge?.name}</TableCell>
             <TableCell>
-                <Box display="flex" gap={2}>
+                <div className="flex gap-2">
                     <AttemptWarnings attempt={check} />
-                </Box>
+                </div>
             </TableCell>
             <TableCell>
                 <SmallIconButton
                     icon={<FaList />}
-                    ariaLabel="List"
                     title="View attempts"
                     onClick={() => navigate(`/results/${check.result.id}`)}
                 />

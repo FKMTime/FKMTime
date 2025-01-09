@@ -36,7 +36,6 @@ const ResolvedIncidentRow = ({ incident }: ResolvedIncidentRowProps) => {
             <TableCell>
                 <SmallIconButton
                     icon={<FaList />}
-                    ariaLabel="List"
                     title="View attempts"
                     onClick={() => navigate(`/results/${incident.result.id}`)}
                 />

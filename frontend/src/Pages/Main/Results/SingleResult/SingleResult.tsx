@@ -36,6 +36,7 @@ import {
 import CreateAttemptModal from "../Components/CreateAttemptModal";
 import RoundLimits from "../Components/RoundLimits";
 import AttemptsTable from "./Components/AttemptsTable";
+import SwapAttemptsModal from "./Components/SwapAttemptsModal";
 
 const SingleResult = () => {
     const { id } = useParams<{ id: string }>();
@@ -286,12 +287,22 @@ const SingleResult = () => {
                             {standardAttempts.length === 0 ? (
                                 <p>No attempts</p>
                             ) : (
-                                <AttemptsTable
-                                    attempts={standardAttempts}
-                                    showExtraColumns
-                                    fetchData={fetchData}
-                                    result={result}
-                                />
+                                <div className="flex flex-col gap-2">
+                                    <Button
+                                        className="w-fit"
+                                        onClick={() =>
+                                            setIsOpenSwapAttemptsModal(true)
+                                        }
+                                    >
+                                        Swap attempts
+                                    </Button>
+                                    <AttemptsTable
+                                        attempts={standardAttempts}
+                                        showExtraColumns
+                                        fetchData={fetchData}
+                                        result={result}
+                                    />
+                                </div>
                             )}
                         </CardContent>
                     </Card>
@@ -323,11 +334,11 @@ const SingleResult = () => {
                 competitorId={result.person.id}
                 timeLimit={limit!}
             />
-            {/* <SwapAttemptsModal
+            <SwapAttemptsModal
                 isOpen={isOpenSwapAttemptsModal}
                 onClose={handleCloseModal}
                 attempts={standardAttempts}
-            /> */}
+            />
         </div>
     );
 };
