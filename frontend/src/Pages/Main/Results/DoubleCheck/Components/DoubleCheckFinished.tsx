@@ -1,10 +1,4 @@
-import {
-    Alert,
-    AlertDescription,
-    AlertIcon,
-    AlertTitle,
-} from "@chakra-ui/react";
-
+import { Alert, AlertDescription, AlertTitle } from "@/Components/ui/alert";
 import { activityCodeToName } from "@/lib/activities";
 
 interface DoubleCheckFinishedProps {
@@ -17,21 +11,9 @@ const DoubleCheckFinished = ({
     roundId,
 }: DoubleCheckFinishedProps) => {
     return (
-        <Alert
-            status="success"
-            variant="subtle"
-            flexDirection="column"
-            alignItems="center"
-            justifyContent="center"
-            color="black"
-            textAlign="center"
-            width="fit-content"
-        >
-            <AlertIcon boxSize="40px" mr={0} />
-            <AlertTitle mt={4} mb={1} fontSize="lg">
-                Well done!
-            </AlertTitle>
-            <AlertDescription maxWidth="sm">
+        <Alert>
+            <AlertTitle>Well done!</AlertTitle>
+            <AlertDescription>
                 All {totalResults} scorecards for {activityCodeToName(roundId)}{" "}
                 have been double-checked.
             </AlertDescription>

@@ -1,6 +1,6 @@
-import { Alert, AlertIcon, Button, ButtonGroup } from "@chakra-ui/react";
 import { useNavigate } from "react-router-dom";
 
+import { Button } from "@/Components/ui/button";
 import { ResultToDoubleCheck } from "@/lib/interfaces";
 
 interface DoubleCheckActionsProps {
@@ -16,26 +16,17 @@ const DoubleCheckActions = ({
 }: DoubleCheckActionsProps) => {
     const navigate = useNavigate();
     return (
-        <>
-            <Alert status="info" color="black" width="fit-content">
-                <AlertIcon />
-                If you want to make more changes please go to Details page
-            </Alert>
-            <ButtonGroup>
-                <Button colorScheme="green" onClick={handleSubmit}>
-                    Save
-                </Button>
-                <Button
-                    colorScheme="purple"
-                    onClick={() => navigate(`/results/${result.id}`)}
-                >
-                    Details
-                </Button>
-                <Button colorScheme="red" onClick={handleSkip}>
-                    Skip
-                </Button>
-            </ButtonGroup>
-        </>
+        <div className="flex md:flex-row flex-col gap-3">
+            <Button variant="success" onClick={handleSubmit}>
+                Save
+            </Button>
+            <Button onClick={() => navigate(`/results/${result.id}`)}>
+                Details
+            </Button>
+            <Button variant="destructive" onClick={handleSkip}>
+                Skip
+            </Button>
+        </div>
     );
 };
 

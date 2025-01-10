@@ -113,10 +113,10 @@ const App = () => {
                     path: "results/round/:id",
                     element: <Results />,
                 },
-                //     {
-                //         path: "results/round/:id/double-check",
-                //         element: <DoubleCheck />,
-                //     },
+                {
+                    path: "results/round/:id/double-check",
+                    element: <DoubleCheck />,
+                },
                 {
                     path: "results/round",
                     element: <Results />,

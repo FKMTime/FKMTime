@@ -22,6 +22,7 @@ interface PersonAutocompleteProps {
     disabled?: boolean;
     withoutCardAssigned?: boolean;
     defaultValue?: string;
+    personsList?: Person[];
 }
 
 const PersonAutocomplete = forwardRef<
@@ -29,22 +30,39 @@ const PersonAutocomplete = forwardRef<
     PersonAutocompleteProps
 >(
     (
-        { onSelect, autoFocus, disabled, withoutCardAssigned, defaultValue },
+        {
+            onSelect,
+            autoFocus,
+            disabled,
+            withoutCardAssigned,
+            defaultValue,
+            personsList,
+        },
         ref
     ) => {
-        const [persons, setPersons] = useState<Person[]>([]);
+        const [persons, setPersons] = useState<Person[]>(personsList || []);
         const [open, setOpen] = useState(false);
         const [value, setValue] = useState(defaultValue);
 
         const handleSearch = useCallback(
             async (searchValue: string) => {
+                if (personsList) {
+                    setPersons(
+                        personsList.filter((person) =>
+                            person.name
+                                .toLowerCase()
+                                .includes(searchValue.toLowerCase())
+                        )
+                    );
+                    return;
+                }
                 const data = await getAllPersons(
                     withoutCardAssigned,
                     searchValue
                 );
                 setPersons(data);
             },
-            [withoutCardAssigned]
+            [personsList, withoutCardAssigned]
         );
 
         useEffect(() => {
