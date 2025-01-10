@@ -15,9 +15,10 @@ import Devices from "./Pages/Main/Devices/Devices";
 import Home from "./Pages/Main/Home/Home";
 import ImportCompetition from "./Pages/Main/ImportCompetition/ImportCompetition";
 import Incidents from "./Pages/Main/Incidents/AllIncidents/Incidents";
+import IncidentPage from "./Pages/Main/Incidents/IncidentPage/IncidentPage";
+import ResolvedIncidents from "./Pages/Main/Incidents/ResolvedIncidents/ResolvedIncidents";
 import Layout from "./Pages/Main/Layout/Layout";
 import NotFound from "./Pages/Main/NotFound/NotFound";
-import ResolvedIncidents from "./Pages/Main/ResolvedIncidents/ResolvedIncidents";
 import DoubleCheck from "./Pages/Main/Results/DoubleCheck/DoubleCheck";
 import ResultsChecks from "./Pages/Main/Results/ResultsChecks/ResultsChecks";
 import ScramblesAdmin from "./Pages/Main/ScramblesAdmin/ScramblesAdmin";
@@ -73,18 +74,18 @@ const App = () => {
                     path: "competition",
                     element: <Competition />,
                 },
-                //     {
-                //         path: "incidents",
-                //         element: <Incidents />,
-                //     },
-                //     {
-                //         path: "incidents/resolved",
-                //         element: <ResolvedIncidents />,
-                //     },
-                //     {
-                //         path: "incidents/:id",
-                //         element: <IncidentPage />,
-                //     },
+                {
+                    path: "incidents",
+                    element: <Incidents />,
+                },
+                {
+                    path: "incidents/resolved",
+                    element: <ResolvedIncidents />,
+                },
+                {
+                    path: "incidents/:id",
+                    element: <IncidentPage />,
+                },
                 {
                     path: "persons",
                     element: <Persons />,

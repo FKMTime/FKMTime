@@ -43,6 +43,9 @@ export const toInt = (string: string) => {
 };
 
 export const attemptWithPenaltyToString = (attempt: Attempt) => {
+    if (attempt.value === SKIPPED_VALUE) {
+        return "";
+    }
     if (attempt.penalty === DNF_VALUE) {
         return "DNF";
     }

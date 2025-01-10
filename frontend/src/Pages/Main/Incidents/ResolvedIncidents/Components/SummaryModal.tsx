@@ -1,9 +1,7 @@
-import { Box, ListItem, UnorderedList } from "@chakra-ui/react";
-
 import { Modal } from "@/Components/Modal";
 import { groupIncidents } from "@/lib/incidents";
 import { AttemptStatus, Incident } from "@/lib/interfaces";
-import { shortRoundName } from "@/logic/utils";
+import { shortRoundName } from "@/lib/utils";
 
 interface SummaryModalProps {
     incidents: Incident[];
@@ -16,18 +14,18 @@ const SummaryModal = ({ incidents, isOpen, onClose }: SummaryModalProps) => {
 
     return (
         <Modal isOpen={isOpen} onClose={onClose} title="Incidents summary">
-            <Box display="flex" flexDirection="column" gap="5">
+            <div className="flex flex-col gap-5 h-96 overflow-y-auto">
                 {groupedIncidents.map((group) => {
                     return (
-                        <Box key={group.category}>
-                            <Box fontWeight="bold">
+                        <div key={group.category}>
+                            <div className="font-bold">
                                 {group.category} - {group.incidents.length}{" "}
                                 incidents
-                            </Box>
-                            <UnorderedList>
+                            </div>
+                            <ul className="list-disc pl-5">
                                 {group.incidents.map((incident) => {
                                     return (
-                                        <ListItem key={incident.id}>
+                                        <li key={incident.id}>
                                             {incident.result.person.name} -{" "}
                                             {shortRoundName(
                                                 incident.result.roundId
@@ -39,14 +37,14 @@ const SummaryModal = ({ incidents, isOpen, onClose }: SummaryModalProps) => {
                                                 : incident.penalty === -1
                                                   ? "DNF"
                                                   : "Original time stands"}
-                                        </ListItem>
+                                        </li>
                                     );
                                 })}
-                            </UnorderedList>
-                        </Box>
+                            </ul>
+                        </div>
                     );
                 })}
-            </Box>
+            </div>
         </Modal>
     );
 };

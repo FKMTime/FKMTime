@@ -1,29 +1,46 @@
-import { Box, Button, Text, useToast } from "@chakra-ui/react";
-import { useConfirm } from "chakra-ui-confirm";
-import { useEffect, useState } from "react";
+import { useAtomValue } from "jotai";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import { getLimitByRoundId } from "wcif-helpers";
 
 import LoadingPage from "@/Components/LoadingPage";
+import QuickActions from "@/Components/QuickActions";
+import { Button } from "@/Components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/Components/ui/card";
+import { useConfirm } from "@/hooks/useConfirm";
+import { useToast } from "@/hooks/useToast";
+import { competitionAtom } from "@/lib/atoms";
 import { deleteAttempt, getIncidentById, updateAttempt } from "@/lib/attempt";
 import {
     ApplicationQuickAction,
     AttemptStatus,
     Incident,
 } from "@/lib/interfaces";
+import { milisecondsToClockFormat } from "@/lib/resultFormatters";
 
 import IncidentForm from "./Components/IncidentForm";
 import IncidentWarnings from "./Components/IncidentWarnings";
-import QuickActions from "./Components/QuickActions";
 
 const IncidentPage = () => {
     const navigate = useNavigate();
-    const toast = useToast();
+    const { toast } = useToast();
     const confirm = useConfirm();
     const { id } = useParams<{ id: string }>();
+    const competition = useAtomValue(competitionAtom);
 
     const [editedIncident, setEditedIncident] = useState<Incident | null>(null);
     const [previousIncidents, setPreviousIncidents] = useState<Incident[]>([]);
     const [isLoading, setIsLoading] = useState<boolean>(false);
+
+    const timeLimit = useMemo(() => {
+        if (!competition || !editedIncident) {
+            return null;
+        }
+        return getLimitByRoundId(
+            editedIncident.result.roundId,
+            competition.wcif
+        );
+    }, [competition, editedIncident]);
 
     useEffect(() => {
         if (!id) return;
@@ -68,7 +85,7 @@ const IncidentPage = () => {
         if (status === 200) {
             toast({
                 title: "Incident updated",
-                
+                variant: "success",
             });
             navigate("/incidents");
         } else {
@@ -91,7 +108,7 @@ const IncidentPage = () => {
                 if (response.status === 200) {
                     toast({
                         title: "Successfully deleted attempt.",
-                        
+                        variant: "success",
                     });
                     navigate("/incidents");
                 } else {
@@ -107,38 +124,62 @@ const IncidentPage = () => {
     };
 
     return (
-        <Box
-            display="flex"
-            flexDirection="column"
-            gap="5"
-            width={{ base: "100%", md: "fit-content" }}
-            minWidth="20%"
-        >
-            <Button
-                colorScheme="yellow"
-                onClick={() =>
-                    navigate(`/results/${editedIncident?.result.id}`)
-                }
-            >
-                All attempts from this average
-            </Button>
-            <QuickActions handleQuickAction={handleQuickAction} />
-            <Text>
-                Competitor: {editedIncident.result.person.name} (
-                {editedIncident.result.person.wcaId
-                    ? editedIncident.result.person.wcaId
-                    : "Newcomer"}
-                )
-            </Text>
-            <IncidentWarnings previousIncidents={previousIncidents} />
-            <IncidentForm
-                editedIncident={editedIncident}
-                setEditedIncident={setEditedIncident}
-                isLoading={isLoading}
-                handleSubmit={handleSubmit}
-                handleDelete={handleDelete}
-            />
-        </Box>
+        <div className="flex flex-col gap-4">
+            <Card>
+                <CardHeader>
+                    <CardTitle>
+                        {editedIncident.result.person.name} (
+                        {editedIncident.result.person.wcaId
+                            ? editedIncident.result.person.wcaId
+                            : "Newcomer"}
+                        )
+                    </CardTitle>
+                </CardHeader>
+                <CardContent className="flex flex-col gap-4">
+                    <Button
+                        className="w-fit"
+                        onClick={() =>
+                            navigate(`/results/${editedIncident?.result.id}`)
+                        }
+                    >
+                        All attempts from this average
+                    </Button>
+                    <IncidentWarnings previousIncidents={previousIncidents} />
+                </CardContent>
+            </Card>
+            <Card>
+                <CardHeader>
+                    <CardTitle>Quick actions</CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <div className="grid grid-cols-2 md:flex gap-4">
+                        <QuickActions handleQuickAction={handleQuickAction} />
+                    </div>
+                </CardContent>
+            </Card>
+            <Card>
+                <CardHeader>
+                    <CardTitle>Edit incident</CardTitle>
+                </CardHeader>
+                <CardContent>
+                    {editedIncident.inspectionTime ? (
+                        <p>
+                            Inspection time:{" "}
+                            {milisecondsToClockFormat(
+                                editedIncident.inspectionTime
+                            )}
+                        </p>
+                    ) : null}
+                    <IncidentForm
+                        editedIncident={editedIncident}
+                        handleSubmit={handleSubmit}
+                        isLoading={isLoading}
+                        timeLimit={timeLimit ? timeLimit : undefined}
+                        handleDelete={handleDelete}
+                    />
+                </CardContent>
+            </Card>
+        </div>
     );
 };
 

@@ -216,6 +216,12 @@ export interface Incident extends Attempt {
     updateReplacedBy?: boolean;
 }
 
+//eslint-disable-next-line
+export enum IncidentAction {
+    "RESOLVED" = "RESOLVED",
+    "EXTRA_GIVEN" = "EXTRA_GIVEN",
+}
+
 export interface Device {
     id: string;
     name: string;
@@ -267,7 +273,6 @@ export interface QuickAction {
 export interface ApplicationQuickAction {
     id: string;
     name: string;
-    color: string;
     comment?: string;
     giveExtra: boolean;
 }

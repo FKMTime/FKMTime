@@ -5,28 +5,24 @@ export const applicationQuickActions: ApplicationQuickAction[] = [
     {
         id: "a7g",
         name: "A7G",
-        color: "purple",
         giveExtra: true,
         comment: "A7G",
     },
     {
         id: "judgeFault",
         name: "Judge fault",
-        color: "blue",
         giveExtra: true,
         comment: "Judge fault",
     },
     {
         id: "distraction",
         name: "Distraction",
-        color: "pink",
         giveExtra: true,
         comment: "Distraction",
     },
     {
         id: "timerMalfunction",
         name: "Timer malfunction",
-        color: "orange",
         giveExtra: true,
         comment: "Timer malfunction",
     },

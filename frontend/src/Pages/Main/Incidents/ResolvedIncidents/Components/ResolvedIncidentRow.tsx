@@ -1,12 +1,13 @@
-import { Link, Td, Tr } from "@chakra-ui/react";
 import { FaList } from "react-icons/fa";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
+import EventIcon from "@/Components/Icons/EventIcon";
 import SmallIconButton from "@/Components/SmallIconButton";
+import { TableCell, TableRow } from "@/Components/ui/table";
 import { activityCodeToName } from "@/lib/activities";
 import { Incident } from "@/lib/interfaces";
 import { attemptWithPenaltyToString } from "@/lib/resultFormatters";
-import { prettyAttemptStatus } from "@/logic/utils.ts";
+import { prettyAttemptStatus } from "@/lib/utils.ts";
 
 interface ResolvedIncidentRowProps {
     incident: Incident;
@@ -19,16 +20,21 @@ const ResolvedIncidentRow = ({ incident }: ResolvedIncidentRowProps) => {
             <TableCell>{incident.result.person.name}</TableCell>
             <TableCell>
                 <Link
-                    onClick={() =>
-                        navigate(`/results/round/${incident.result.roundId}`)
-                    }
+                    className="text-blue-500 flex items-center gap-1"
+                    to={`/results/round/${incident.result.roundId}`}
                 >
+                    <EventIcon
+                        selected
+                        eventId={incident.result.roundId.split("-")[0]}
+                    />
                     {activityCodeToName(incident.result.roundId)}
                 </Link>
             </TableCell>
             <TableCell>{incident.attemptNumber}</TableCell>
             <TableCell>{attemptWithPenaltyToString(incident)}</TableCell>
-            <TableCell>{new Date(incident.solvedAt).toLocaleString()}</TableCell>
+            <TableCell>
+                {new Date(incident.solvedAt).toLocaleString()}
+            </TableCell>
             <TableCell>{incident.updatedBy?.fullName}</TableCell>
             <TableCell>{prettyAttemptStatus(incident.status, true)}</TableCell>
             <TableCell>{incident.comment}</TableCell>

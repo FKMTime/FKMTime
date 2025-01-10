@@ -1,6 +1,6 @@
-import { Button, GridItem, Heading, SimpleGrid } from "@chakra-ui/react";
 import { useEffect, useState } from "react";
 
+import { Button } from "@/Components/ui/button";
 import { ApplicationQuickAction, QuickAction } from "@/lib/interfaces";
 import { applicationQuickActions, getQuickActions } from "@/lib/quickActions";
 
@@ -20,7 +20,6 @@ const QuickActions = ({ handleQuickAction }: QuickActionsProps) => {
                     return {
                         id: q.id,
                         name: q.name,
-                        color: "gray",
                         giveExtra: q.giveExtra,
                         comment: q.comment,
                     };
@@ -28,25 +27,18 @@ const QuickActions = ({ handleQuickAction }: QuickActionsProps) => {
             ]);
         });
     }, []);
-    return (
-        <>
-            <Heading size="lg">Quick actions</Heading>
-            <SimpleGrid columns={2} spacing={4}>
-                {quickActions.map((quickAction) => (
-                    <GridItem key={quickAction.id}>
-                        <Button
-                            key={quickAction.id}
-                            width="100%"
-                            colorScheme={quickAction.color}
-                            onClick={() => handleQuickAction(quickAction)}
-                        >
-                            {quickAction.name}
-                        </Button>
-                    </GridItem>
-                ))}
-            </SimpleGrid>
-        </>
-    );
+    return quickActions.map((quickAction) => (
+        <div key={quickAction.id}>
+            <Button
+                key={quickAction.id}
+                className="w-full"
+                variant={quickAction.giveExtra ? "success" : "destructive"}
+                onClick={() => handleQuickAction(quickAction)}
+            >
+                {quickAction.name}
+            </Button>
+        </div>
+    ));
 };
 
 export default QuickActions;

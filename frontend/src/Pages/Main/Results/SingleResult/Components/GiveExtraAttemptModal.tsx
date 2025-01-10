@@ -4,6 +4,7 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 
 import { Modal } from "@/Components/Modal.tsx";
+import QuickActions from "@/Components/QuickActions";
 import { Button } from "@/Components/ui/button";
 import {
     Form,
@@ -15,7 +16,11 @@ import {
 import { Input } from "@/Components/ui/input";
 import { useToast } from "@/hooks/useToast";
 import { updateAttempt } from "@/lib/attempt";
-import { Attempt, AttemptStatus } from "@/lib/interfaces";
+import {
+    ApplicationQuickAction,
+    Attempt,
+    AttemptStatus,
+} from "@/lib/interfaces";
 import { giveExtraAttemptSchema } from "@/lib/schema/resultSchema";
 
 interface GiveExtraAttemptModalProps {
@@ -61,8 +66,23 @@ const GiveExtraAttemptModal = ({
         }
         setIsLoading(false);
     };
+
+    const handleQuickAction = (action: ApplicationQuickAction) => {
+        const data = {
+            ...attempt,
+            status: action.giveExtra
+                ? AttemptStatus.EXTRA_GIVEN
+                : AttemptStatus.RESOLVED,
+            comment: action.comment || "",
+        };
+        onSubmit(data);
+    };
+
     return (
         <Modal isOpen={isOpen} onClose={onClose} title="Give extra attempt">
+            <div className="grid grid-cols-2 gap-4">
+                <QuickActions handleQuickAction={handleQuickAction} />
+            </div>
             <Form {...form}>
                 <form
                     onSubmit={form.handleSubmit(onSubmit)}

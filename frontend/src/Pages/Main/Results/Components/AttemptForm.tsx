@@ -340,7 +340,7 @@ const AttemptForm = ({
                         )}
                     />
                 ) : null}
-                <Button type="submit" disabled={isLoading}>
+                <Button type="submit" variant="success" disabled={isLoading}>
                     Submit
                 </Button>
             </form>

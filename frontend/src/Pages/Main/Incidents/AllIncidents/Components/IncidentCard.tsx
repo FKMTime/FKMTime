@@ -1,6 +1,7 @@
-import { Card, CardBody, CardHeader, Heading, Text } from "@chakra-ui/react";
 import { useNavigate } from "react-router-dom";
 
+import EventIcon from "@/Components/Icons/EventIcon";
+import { Card, CardContent, CardHeader, CardTitle } from "@/Components/ui/card";
 import { activityCodeToName } from "@/lib/activities";
 import { Incident } from "@/lib/interfaces";
 import { resultToString } from "@/lib/resultFormatters";
@@ -14,28 +15,25 @@ const IncidentCard = ({ incident }: IncidentCardProps) => {
 
     return (
         <Card
-            backgroundColor="teal.500"
-            color="white"
-            textAlign="center"
-            width="fit-content"
-            cursor="pointer"
+            className="cursor-pointer"
             onClick={() => navigate(`/incidents/${incident.id}`)}
         >
             <CardHeader>
-                <Heading size="md">
+                <CardTitle>
                     {incident.result.person.name} (
                     {incident.result.person.registrantId})
-                </Heading>
+                </CardTitle>
             </CardHeader>
-            <CardBody>
-                <Text>{activityCodeToName(incident.result.roundId)}</Text>
-                <Text>Attempt: {incident.attemptNumber}</Text>
-                <Text>Time: {resultToString(incident.value)}</Text>
-                {incident.device && (
-                    <Text>Station: {incident.device.name}</Text>
-                )}
-                {incident.judge && <Text>Judge: {incident.judge.name}</Text>}
-            </CardBody>
+            <CardContent>
+                <div className="flex gap-1">
+                    <EventIcon selected eventId={incident.result.eventId} />
+                    {activityCodeToName(incident.result.roundId)}
+                </div>
+                <p>Attempt: {incident.attemptNumber}</p>
+                <p>Time: {resultToString(incident.value)}</p>
+                {incident.device && <p>Station: {incident.device.name}</p>}
+                {incident.judge && <p>Judge: {incident.judge.name}</p>}
+            </CardContent>
         </Card>
     );
 };
