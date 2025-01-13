@@ -1,14 +1,12 @@
+import { Button } from "@/Components/ui/button";
 import {
-    Button,
     Table,
-    TableContainer,
-    Tbody,
-    Td,
-    Th,
+    TableBody,
+    TableCell,
     TableHead,
-    Tr,
-} from "@chakra-ui/react";
-
+    TableHeader,
+    TableRow,
+} from "@/Components/ui/table";
 import { WCACompetition } from "@/lib/interfaces";
 
 interface CompetitionsListProps {
@@ -21,33 +19,31 @@ const CompetitionsList = ({
     handleImportCompetition,
 }: CompetitionsListProps) => {
     return (
-        <TableContainer>
-            <Table >
-                <TableHead>
+        <Table>
+            <TableHeader>
+                <TableRow>
+                    <TableHead>Name</TableHead>
+                    <TableHead>Actions</TableHead>
+                </TableRow>
+            </TableHeader>
+            <TableBody>
+                {competitions.map((competition) => (
                     <TableRow>
-                        <TableHead>Name</TableHead>
-                        <TableHead>Actions</TableHead>
+                        <TableCell>{competition.name}</TableCell>
+                        <TableCell>
+                            <Button
+                                variant="success"
+                                onClick={() =>
+                                    handleImportCompetition(competition.id)
+                                }
+                            >
+                                Import
+                            </Button>
+                        </TableCell>
                     </TableRow>
-                </TableHead>
-                <TableBody>
-                    {competitions.map((competition) => (
-                        <TableRow>
-                            <TableCell>{competition.name}</TableCell>
-                            <TableCell>
-                                <Button
-                                    colorScheme="green"
-                                    onClick={() =>
-                                        handleImportCompetition(competition.id)
-                                    }
-                                >
-                                    Import
-                                </Button>
-                            </TableCell>
-                        </TableRow>
-                    ))}
-                </TableBody>
-            </Table>
-        </TableContainer>
+                ))}
+            </TableBody>
+        </Table>
     );
 };
 

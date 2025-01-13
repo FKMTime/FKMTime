@@ -41,8 +41,8 @@ const PersonAutocomplete = forwardRef<
         ref
     ) => {
         const [persons, setPersons] = useState<Person[]>(personsList || []);
-        const [open, setOpen] = useState(false);
-        const [value, setValue] = useState(defaultValue);
+        const [open, setOpen] = useState<boolean>(false);
+        const [value, setValue] = useState<string | null>(defaultValue || null);
 
         const handleSearch = useCallback(
             async (searchValue: string) => {

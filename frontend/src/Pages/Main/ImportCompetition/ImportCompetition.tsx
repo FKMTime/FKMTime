@@ -1,10 +1,11 @@
-import { Box, Heading, Text, useToast } from "@chakra-ui/react";
 import { useSetAtom } from "jotai";
 import { useEffect, useState } from "react";
 import { MdLogout } from "react-icons/md";
 import { useNavigate } from "react-router-dom";
 
-import RoundedIconButton from "@/Components/RoundedIconButton";
+import { Button } from "@/Components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/Components/ui/card";
+import { useToast } from "@/hooks/useToast";
 import { competitionAtom } from "@/lib/atoms";
 import { getUserInfo, logout } from "@/lib/auth";
 import {
@@ -19,7 +20,7 @@ import CompetitionsList from "./Components/CompetitionsList";
 
 const ImportCompetition = () => {
     const navigate = useNavigate();
-    const toast = useToast();
+    const { toast } = useToast();
     const userInfo = getUserInfo();
     const [competitions, setCompetitions] = useState<WCACompetition[]>([]);
     const setCompetition = useSetAtom(competitionAtom);
@@ -47,7 +48,9 @@ const ImportCompetition = () => {
 
     const handleSelect = (competition: WCACompetition | null) => {
         if (!competition) return;
-        setCompetitions((prev) => [...prev, competition]);
+        if (!competitions.some((c) => c.id === competition.id)) {
+            setCompetitions((prev) => [...prev, competition]);
+        }
     };
 
     const handleLogout = () => {
@@ -55,16 +58,16 @@ const ImportCompetition = () => {
         toast({
             title: "Logged out",
             description: "You have been logged out.",
-            
+            variant: "success",
         });
         navigate("/auth/login");
     };
 
     useEffect(() => {
         getCompetitionInfo().then((res) => {
-            if (res.status === 200) {
-                navigate("/");
-            }
+            // if (res.status === 200) {
+            //     navigate("/");
+            // }
         });
         getUpcomingManageableCompetitions().then((data) => {
             setCompetitions(data);
@@ -72,38 +75,36 @@ const ImportCompetition = () => {
     }, [navigate]);
 
     return (
-        <Box display="flex" flexDirection="column" gap="5" p={5}>
-            <Box display="flex" justifyContent="space-between">
-                <Heading size="lg">
-                    Import competition from the WCA Website
-                </Heading>
-                <Box display="flex" gap="5" alignItems="center">
-                    <Text display={{ base: "none", md: "block" }}>
-                        Hi {userInfo.fullName}
-                    </Text>
-                    <RoundedIconButton
-                        title="Logout"
-                        onClick={handleLogout}
-                        icon={<MdLogout />}
-                    />
-                </Box>
-            </Box>
-            {userInfo.isWcaAdmin && (
-                <CompetitionsAutocomplete onSelect={handleSelect} />
-            )}
-            <Box display="flex" flexDirection="column" gap="5">
-                {competitions.length > 0 ? (
-                    <CompetitionsList
-                        competitions={competitions}
-                        handleImportCompetition={handleSubmit}
-                    />
-                ) : (
-                    <Heading size="md">
-                        You have no upcoming competitions to manage
-                    </Heading>
-                )}
-            </Box>
-        </Box>
+        <div className="flex flex-col gap-4">
+            <Card>
+                <CardHeader>
+                    <CardTitle className="flex justify-between items-center">
+                        Import competition from the WCA Website
+                        <Button onClick={handleLogout}>Logout</Button>
+                    </CardTitle>
+                </CardHeader>
+                <CardContent>
+                    {userInfo.isWcaAdmin && (
+                        <CompetitionsAutocomplete onSelect={handleSelect} />
+                    )}
+                </CardContent>
+            </Card>
+            <Card>
+                <CardHeader>
+                    <CardTitle>Upcoming Competitions</CardTitle>
+                </CardHeader>
+                <CardContent>
+                    {competitions.length > 0 ? (
+                        <CompetitionsList
+                            competitions={competitions}
+                            handleImportCompetition={handleSubmit}
+                        />
+                    ) : (
+                        <p>You have no upcoming competitions to manage</p>
+                    )}
+                </CardContent>
+            </Card>
+        </div>
     );
 };
 

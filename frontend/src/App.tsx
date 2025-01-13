@@ -15,7 +15,6 @@ import Devices from "./Pages/Main/Devices/Devices";
 import Home from "./Pages/Main/Home/Home";
 import ImportCompetition from "./Pages/Main/ImportCompetition/ImportCompetition";
 import Incidents from "./Pages/Main/Incidents/AllIncidents/Incidents";
-import IncidentPage from "./Pages/Main/Incidents/IncidentPage/IncidentPage";
 import ResolvedIncidents from "./Pages/Main/Incidents/ResolvedIncidents/ResolvedIncidents";
 import Layout from "./Pages/Main/Layout/Layout";
 import NotFound from "./Pages/Main/NotFound/NotFound";
@@ -39,9 +38,9 @@ const PublicView = React.lazy(
 const SingleResult = React.lazy(
     () => import("./Pages/Main/Results/SingleResult/SingleResult")
 );
-// const IncidentPage = React.lazy(
-//     () => import("./Pages/Main/Incidents/IncidentPage/IncidentPage")
-// );
+const IncidentPage = React.lazy(
+    () => import("./Pages/Main/Incidents/IncidentPage/IncidentPage")
+);
 const PersonResults = React.lazy(
     () => import("./Pages/Main/Persons/PersonResults/PersonResults")
 );
@@ -54,10 +53,10 @@ const App = () => {
             path: "/auth/login",
             element: <Login />,
         },
-        // {
-        //     path: "/competition/import",
-        //     element: <ImportCompetition />,
-        // },
+        {
+            path: "/competition/import",
+            element: <ImportCompetition />,
+        },
         {
             path: "/",
             element: <Layout />,
