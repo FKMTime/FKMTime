@@ -270,6 +270,13 @@ export interface QuickAction {
     giveExtra: boolean;
 }
 
+export interface QuickActionData {
+    name: string;
+    isShared: boolean;
+    comment?: string;
+    giveExtra: boolean;
+}
+
 export interface ApplicationQuickAction {
     id: string;
     name: string;

@@ -134,10 +134,10 @@ const App = () => {
                     path: "results/:id",
                     element: <SingleResult />,
                 },
-                //     {
-                //         path: "settings",
-                //         element: <Settings />,
-                //     },
+                {
+                    path: "settings",
+                    element: <Settings />,
+                },
                 {
                     path: "devices",
                     element: <Devices />,

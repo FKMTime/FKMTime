@@ -1,8 +1,8 @@
-import { useToast } from "@chakra-ui/react";
 import { useState } from "react";
 
 import { Modal } from "@/Components/Modal";
-import { QuickAction } from "@/lib/interfaces";
+import { useToast } from "@/hooks/useToast";
+import { QuickAction, QuickActionData } from "@/lib/interfaces";
 import { updateQuickAction } from "@/lib/quickActions";
 
 import QuickActionForm from "./QuickActionForm";
@@ -18,17 +18,20 @@ const EditQuickActionModal = ({
     onClose,
     quickAction,
 }: EditQuickActionModalProps) => {
-    const toast = useToast();
+    const { toast } = useToast();
     const [isLoading, setIsLoading] = useState(false);
 
-    const handleSubmit = async (data: QuickAction) => {
+    const handleSubmit = async (data: QuickActionData) => {
         setIsLoading(true);
-        const status = await updateQuickAction(data);
+        const status = await updateQuickAction({
+            ...quickAction,
+            ...data,
+        });
         if (status === 200) {
             toast({
                 title: "Success",
                 description: "Quick action has been updated successfully.",
-                
+                variant: "success",
             });
             onClose();
         } else {
@@ -46,7 +49,6 @@ const EditQuickActionModal = ({
             <QuickActionForm
                 quickAction={quickAction}
                 handleSubmit={handleSubmit}
-                handleCancel={onClose}
                 isLoading={isLoading}
             />
         </Modal>

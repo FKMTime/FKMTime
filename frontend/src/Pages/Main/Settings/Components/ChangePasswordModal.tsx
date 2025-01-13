@@ -1,14 +1,22 @@
-import {
-    Box,
-    Button,
-    FormControl,
-    FormLabel,
-    Input,
-    useToast,
-} from "@chakra-ui/react";
-import { FormEvent, RefObject, useRef, useState } from "react";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useState } from "react";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
 
 import { Modal } from "@/Components/Modal";
+import ModalActions from "@/Components/ModalActions";
+import { Button } from "@/Components/ui/button";
+import {
+    Form,
+    FormControl,
+    FormField,
+    FormItem,
+    FormLabel,
+    FormMessage,
+} from "@/Components/ui/form";
+import { Input } from "@/Components/ui/input";
+import { useToast } from "@/hooks/useToast";
+import { changePasswordSchema } from "@/lib/schema/settingsSchema";
 import { changePassword } from "@/lib/settings";
 
 interface ChangePasswordModalProps {
@@ -17,27 +25,16 @@ interface ChangePasswordModalProps {
 }
 
 const ChangePasswordModal = ({ isOpen, onClose }: ChangePasswordModalProps) => {
-    const toast = useToast();
+    const { toast } = useToast();
     const [isLoading, setIsLoading] = useState(false);
-    const currentPasswordRef: RefObject<HTMLInputElement> =
-        useRef<HTMLInputElement>(null);
-    const newPasswordRef: RefObject<HTMLInputElement> =
-        useRef<HTMLInputElement>(null);
-    const repeatNewPasswordRef: RefObject<HTMLInputElement> =
-        useRef<HTMLInputElement>(null);
 
-    const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    const form = useForm<z.infer<typeof changePasswordSchema>>({
+        resolver: zodResolver(changePasswordSchema),
+    });
+
+    const onSubmit = async (values: z.infer<typeof changePasswordSchema>) => {
         setIsLoading(true);
-        event.preventDefault();
-        if (
-            !currentPasswordRef.current ||
-            !newPasswordRef.current ||
-            !repeatNewPasswordRef.current
-        )
-            return;
-        if (
-            newPasswordRef.current.value !== repeatNewPasswordRef.current.value
-        ) {
+        if (values.newPassword !== values.confirmPassword) {
             toast({
                 title: "Error",
                 description: "Passwords do not match",
@@ -48,13 +45,13 @@ const ChangePasswordModal = ({ isOpen, onClose }: ChangePasswordModalProps) => {
         }
 
         const status = await changePassword(
-            currentPasswordRef.current.value,
-            newPasswordRef.current.value
+            values.currentPassword,
+            values.newPassword
         );
         if (status === 200) {
             toast({
                 title: "Successfully changed password.",
-                
+                variant: "success",
             });
             onClose();
         } else {
@@ -69,63 +66,73 @@ const ChangePasswordModal = ({ isOpen, onClose }: ChangePasswordModalProps) => {
 
     return (
         <Modal isOpen={isOpen} onClose={onClose} title="Change password">
-            <Box
-                display="flex"
-                flexDirection="column"
-                gap="5"
-                as="form"
-                onSubmit={handleSubmit}
-            >
-                <FormControl isRequired>
-                    <FormLabel>Current password</FormLabel>
-                    <Input
-                        placeholder="Current password"
-                        type="password"
-                        _placeholder={{ color: "white" }}
-                        disabled={isLoading}
-                        ref={currentPasswordRef}
-                    />
-                </FormControl>
-                <FormControl isRequired>
-                    <FormLabel>New password</FormLabel>
-                    <Input
-                        placeholder="New password"
-                        type="password"
-                        _placeholder={{ color: "white" }}
-                        disabled={isLoading}
-                        ref={newPasswordRef}
-                    />
-                </FormControl>
-                <FormControl isRequired>
-                    <FormLabel>Repeat new password</FormLabel>
-                    <Input
-                        placeholder="Repeat new password"
-                        type="password"
-                        _placeholder={{ color: "white" }}
-                        disabled={isLoading}
-                        ref={repeatNewPasswordRef}
-                    />
-                </FormControl>
-                <Box
-                    display="flex"
-                    flexDirection="row"
-                    justifyContent="end"
-                    gap="5"
+            <Form {...form}>
+                <form
+                    onSubmit={form.handleSubmit(onSubmit)}
+                    className="space-y-8 py-3"
                 >
-                    {!isLoading && (
-                        <Button colorScheme="red" onClick={onClose}>
-                            Cancel
+                    <FormField
+                        control={form.control}
+                        name="currentPassword"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Current password</FormLabel>
+                                <FormControl>
+                                    <Input
+                                        type="password"
+                                        placeholder="Current password"
+                                        {...field}
+                                    />
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+                    <FormField
+                        control={form.control}
+                        name="newPassword"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>New password</FormLabel>
+                                <FormControl>
+                                    <Input
+                                        type="password"
+                                        placeholder="New password"
+                                        {...field}
+                                    />
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+                    <FormField
+                        control={form.control}
+                        name="confirmPassword"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Confirm new password</FormLabel>
+                                <FormControl>
+                                    <Input
+                                        type="password"
+                                        placeholder="Confirm new password"
+                                        {...field}
+                                    />
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+                    <ModalActions>
+                        <Button
+                            variant="success"
+                            type="submit"
+                            disabled={isLoading}
+                        >
+                            Save
                         </Button>
-                    )}
-                    <Button
-                        colorScheme="green"
-                        type="submit"
-                        isLoading={isLoading}
-                    >
-                        Save
-                    </Button>
-                </Box>
-            </Box>
+                    </ModalActions>
+                </form>
+            </Form>
         </Modal>
     );
 };

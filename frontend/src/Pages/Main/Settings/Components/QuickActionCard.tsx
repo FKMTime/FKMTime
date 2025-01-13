@@ -24,47 +24,7 @@ interface QuickActionCardProps {
 }
 
 const QuickActionCard = ({ quickAction, fetchData }: QuickActionCardProps) => {
-    const confirm = useConfirm();
-    const toast = useToast();
-    const [isOpenEditQuickActionModal, setIsOpenEditQuickActionModal] =
-        useState(false);
 
-    const handleDelete = async () => {
-        confirm({
-            title: "Delete quick action",
-            description:
-                "Are you sure you want to delete this quick action? This action cannot be undone",
-        })
-            .then(async () => {
-                const status = await deleteQuickAction(quickAction.id);
-                if (status === 204) {
-                    toast({
-                        title: "Successfully deleted quick action.",
-                        
-                    });
-                    fetchData();
-                } else {
-                    toast({
-                        title: "Error",
-                        description: "Something went wrong",
-                        variant: "destructive",
-                    });
-                }
-            })
-            .catch(() => {
-                toast({
-                    title: "Cancelled",
-                    description:
-                        "You have cancelled the deletion of the quick action.",
-                    status: "info",
-                });
-            });
-    };
-
-    const handleCloseEditModal = () => {
-        setIsOpenEditQuickActionModal(false);
-        fetchData();
-    };
     return (
         <>
             <Card backgroundColor="gray.400">

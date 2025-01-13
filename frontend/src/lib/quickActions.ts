@@ -1,4 +1,8 @@
-import { ApplicationQuickAction, QuickAction } from "@/lib/interfaces";
+import {
+    ApplicationQuickAction,
+    QuickAction,
+    QuickActionData,
+} from "@/lib/interfaces";
 import { backendRequest } from "@/lib/request";
 
 export const applicationQuickActions: ApplicationQuickAction[] = [
@@ -37,7 +41,7 @@ export const getQuickActions = async () => {
     return await response.json();
 };
 
-export const createQuickAction = async (data: QuickAction) => {
+export const createQuickAction = async (data: QuickActionData) => {
     const response = await backendRequest(
         "settings/quick-actions",
         "POST",
