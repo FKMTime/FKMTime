@@ -158,10 +158,10 @@ const App = () => {
                     path: "attendance/:id",
                     element: <Attendance />,
                 },
-                //     {
-                //         path: "check-in",
-                //         element: <CheckIn />,
-                //     },
+                {
+                    path: "check-in",
+                    element: <CheckIn />,
+                },
             ],
         },
         // {

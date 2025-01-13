@@ -1,28 +1,31 @@
-import {
-    Alert,
-    AlertIcon,
-    Box,
-    FormControl,
-    Heading,
-    Input,
-    Text,
-    useToast,
-} from "@chakra-ui/react";
 import { KeyboardEvent, RefObject, useEffect, useRef, useState } from "react";
 
+import FlagIcon from "@/Components/Icons/FlagIcon";
 import LoadingPage from "@/Components/LoadingPage";
 import PersonAutocomplete from "@/Components/PersonAutocomplete";
+import { Alert, AlertTitle } from "@/Components/ui/alert";
+import {
+    Card,
+    CardContent,
+    CardDescription,
+    CardHeader,
+    CardTitle,
+} from "@/Components/ui/card";
+import { Input } from "@/Components/ui/input";
+import { Label } from "@/Components/ui/label";
+import { useToast } from "@/hooks/useToast";
 import { Person } from "@/lib/interfaces";
 import {
     checkedInCount,
     checkIn,
     getPersonInfoByCardIdWithSensitiveData,
 } from "@/lib/persons";
-import PersonInfo from "@/Pages/Main/CheckIn/Components/PersonInfo";
-import SubmitActions from "@/Pages/Main/CheckIn/Components/SubmitActions";
+import { WCA_ORIGIN } from "@/lib/request";
+
+import SubmitActions from "./Components/SubmitActions";
 
 const CheckIn = () => {
-    const toast = useToast();
+    const { toast } = useToast();
     const [scannedCard, setScannedCard] = useState<string>("");
     const [totalPersons, setTotalPersons] = useState<number>(0);
     const [personsCheckedIn, setPersonsCheckedIn] = useState<number>(0);
@@ -47,7 +50,6 @@ const CheckIn = () => {
                     toast({
                         title: "Something went wrong",
                         description: "Competitor has been already checked in",
-                        status: "warning",
                     });
                     setScannedCard("");
                     cardInputRef.current?.focus();
@@ -79,7 +81,7 @@ const CheckIn = () => {
             toast({
                 title: "Success",
                 description: `Competitor has been checked in successfully${cardShouldBeAssigned ? " and card was assigned" : ""}.`,
-                
+                variant: "success",
             });
             await fetchData();
             setPersonData(null);
@@ -102,13 +104,21 @@ const CheckIn = () => {
         }
     };
 
-    const handleSelectPerson = (person: Person) => {
+    const handleSelectPerson = (person: Person | null) => {
+        if (!person) return;
+        if (person.checkedInAt) {
+            toast({
+                title: "Already checked in",
+                description: "This person has already been checked in",
+            });
+            setSelectedPerson(null);
+            return;
+        }
         setSelectedPerson(person);
         if (!person) {
             toast({
                 title: "Already checked in",
                 description: "This person has already been checked in",
-                status: "warning",
             });
             setTimeout(() => {
                 setSelectedPerson(null);
@@ -135,69 +145,89 @@ const CheckIn = () => {
         return <LoadingPage />;
     }
     return (
-        <Box
-            display="flex"
-            justifyContent="space-between"
-            gap="5"
-            flexDirection={{ base: "column", md: "row" }}
-        >
-            <Box display="flex" flexDirection="column" gap="5">
-                <Heading size="lg">
-                    Checked in {`${personsCheckedIn}/${totalPersons}`}
-                </Heading>
-                <Text>Scan the card of the competitor</Text>
-                <PersonAutocomplete
-                    onSelect={handleSelectPerson}
-                    value={selectedPerson}
-                />
-                <FormControl
-                    display="flex"
-                    flexDirection="column"
-                    gap="2"
-                    width="100%"
-                >
-                    <Input
-                        placeholder="Card"
-                        autoFocus
-                        _placeholder={{ color: "white" }}
-                        value={scannedCard}
-                        onChange={(event) => {
-                            setScannedCard(event.target.value);
-                            if (personData?.id) {
-                                setPersonData({
-                                    ...personData,
-                                    cardId: event.target.value,
-                                });
-                            }
-                        }}
-                        ref={cardInputRef}
-                        onKeyDown={(event: KeyboardEvent<HTMLInputElement>) =>
-                            event.key === "Enter" && handleSubmitCard()
-                        }
+        <div className="flex flex-col gap-4">
+            <Card>
+                <CardHeader>
+                    <CardTitle>
+                        Checked in {`${personsCheckedIn}/${totalPersons}`}
+                    </CardTitle>
+                </CardHeader>
+                <CardContent className="flex flex-col gap-3">
+                    <PersonAutocomplete
+                        onSelect={handleSelectPerson}
+                        defaultValue={selectedPerson?.id}
+                        key={selectedPerson?.id}
                     />
-                </FormControl>
-                {personData && (
-                    <>
-                        {!personData.cardId && (
-                            <Alert
-                                status="warning"
-                                borderRadius="md"
-                                color="black"
-                            >
-                                <AlertIcon />
-                                Please assign a card to the competitor
+                    <div className="flex flex-col gap-2">
+                        <Label>Scan the card of the competitor</Label>
+                        <Input
+                            placeholder="Card"
+                            autoFocus
+                            value={scannedCard}
+                            onChange={(event) => {
+                                setScannedCard(event.target.value);
+                                if (personData?.id) {
+                                    setPersonData({
+                                        ...personData,
+                                        cardId: event.target.value,
+                                    });
+                                }
+                            }}
+                            ref={cardInputRef}
+                            onKeyDown={(
+                                event: KeyboardEvent<HTMLInputElement>
+                            ) => event.key === "Enter" && handleSubmitCard()}
+                        />
+                    </div>
+                </CardContent>
+            </Card>
+            {personData ? (
+                <Card>
+                    <CardHeader>
+                        <CardTitle className="flex justify-between items-center">
+                            {personData.name}{" "}
+                            {personData.registrantId
+                                ? `(${personData.registrantId})`
+                                : ""}
+                            <FlagIcon
+                                country={personData.countryIso2}
+                                size={40}
+                            />
+                        </CardTitle>
+                        <CardDescription>
+                            <p>
+                                {personData.wcaId ? (
+                                    <a
+                                        className="text-blue-500"
+                                        href={`${WCA_ORIGIN}/persons/${personData.wcaId}`}
+                                        target="_blank"
+                                        rel="noreferrer"
+                                    >
+                                        {personData.wcaId}
+                                    </a>
+                                ) : (
+                                    "Newcomer"
+                                )}
+                            </p>
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        {!personData.cardId ? (
+                            <Alert variant="destructive">
+                                <AlertTitle>
+                                    Please assign a card to the competitor
+                                </AlertTitle>
                             </Alert>
-                        )}
-                        <PersonInfo person={personData} />
+                        ) : null}
                         <SubmitActions
                             person={personData}
                             handleCheckIn={handleCheckIn}
                             cardShouldBeAssigned={cardShouldBeAssigned}
                         />
-                    </>
-                )}
-            </Box>
-        </Box>
+                    </CardContent>
+                </Card>
+            ) : null}
+        </div>
     );
 };
 
