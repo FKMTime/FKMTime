@@ -1,12 +1,4 @@
-import {
-    Alert,
-    AlertIcon,
-    AlertTitle,
-    Box,
-    ListItem,
-    Text,
-    UnorderedList,
-} from "@chakra-ui/react";
+import { Alert, AlertDescription, AlertTitle } from "@/Components/ui/alert";
 
 interface ScrambleSetsValidatorsProps {
     warnings: string[];
@@ -20,33 +12,27 @@ const ScrambleSetsValidators = ({
     return (
         <>
             {errorsList.length > 0 && (
-                <Alert status="error" borderRadius="md" color="black">
-                    <Box>
-                        <AlertTitle display="flex" gap={2}>
-                            <AlertIcon m={0} />
-                            <Text>Errors detected during import</Text>
-                        </AlertTitle>
-                        <UnorderedList>
+                <Alert variant="destructive">
+                    <AlertTitle>Errors detected during import</AlertTitle>
+                    <AlertDescription>
+                        <ul className="list-disc pl-5">
                             {errorsList.map((error, i) => (
-                                <ListItem key={i}>{error}</ListItem>
+                                <li key={i}>{error}</li>
                             ))}
-                        </UnorderedList>
-                    </Box>
+                        </ul>
+                    </AlertDescription>
                 </Alert>
             )}
             {warningsList.length > 0 && (
-                <Alert status="warning" borderRadius="md" color="black">
-                    <Box>
-                        <AlertTitle display="flex" gap={2}>
-                            <AlertIcon m={0} />
-                            <Text>Warnings detected during import</Text>
-                        </AlertTitle>
-                        <UnorderedList>
+                <Alert>
+                    <AlertTitle>Warnings detected during import</AlertTitle>
+                    <AlertDescription>
+                        <ul className="list-disc pl-5">
                             {warningsList.map((warning, i) => (
-                                <ListItem key={i}>{warning}</ListItem>
+                                <li key={i}>{warning}</li>
                             ))}
-                        </UnorderedList>
-                    </Box>
+                        </ul>
+                    </AlertDescription>
                 </Alert>
             )}
         </>

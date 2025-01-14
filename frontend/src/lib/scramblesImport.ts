@@ -5,7 +5,7 @@ import { activityCodeToName } from "./activities";
 import { getUsualExtraScramblesCount, getUsualScramblesCount } from "./events";
 import { ImportedScramble, ImportedScrambleSet } from "./interfaces";
 import { backendRequest } from "./request";
-import { numberToLetter } from "../logic/utils";
+import { numberToLetter } from "./utils";
 
 export const validateScrambles = (
     wcifWithScrambles: WCIF,

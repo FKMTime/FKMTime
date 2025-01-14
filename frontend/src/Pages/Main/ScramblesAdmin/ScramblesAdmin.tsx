@@ -14,11 +14,11 @@ const tabs = [
         name: "Scrambling devices",
         component: <ScramblingDevices />,
     },
-    // {
-    //     id: "importScrambles",
-    //     name: "Import scrambles",
-    //     component: <ImportScrambles />,
-    // },
+    {
+        id: "importScrambles",
+        name: "Import scrambles",
+        component: <ImportScrambles />,
+    },
     // {
     //     id: "scrambleSets",
     //     name: "Scramble sets",
