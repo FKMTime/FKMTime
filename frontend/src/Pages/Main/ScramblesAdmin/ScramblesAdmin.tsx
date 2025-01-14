@@ -19,11 +19,11 @@ const tabs = [
         name: "Import scrambles",
         component: <ImportScrambles />,
     },
-    // {
-    //     id: "scrambleSets",
-    //     name: "Scramble sets",
-    //     component: <ScrambleSets />,
-    // },
+    {
+        id: "scrambleSets",
+        name: "Scramble sets",
+        component: <ScrambleSets />,
+    },
 ];
 const ScramblesAdmin = () => {
     const [tabIndex, setTabIndex] = useState<string>(tabs[0].id);

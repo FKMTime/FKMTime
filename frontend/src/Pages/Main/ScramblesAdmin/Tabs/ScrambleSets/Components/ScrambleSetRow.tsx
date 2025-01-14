@@ -1,6 +1,7 @@
-import { Button, Td, Tr, useToast } from "@chakra-ui/react";
-import { useConfirm } from "chakra-ui-confirm";
-
+import DeleteButton from "@/Components/DeleteButton";
+import { TableCell, TableRow } from "@/Components/ui/table";
+import { useConfirm } from "@/hooks/useConfirm";
+import { useToast } from "@/hooks/useToast";
 import { activityCodeToName } from "@/lib/activities";
 import { ScrambleSet } from "@/lib/interfaces";
 import { deleteScrambleSet } from "@/lib/scrambleSets";
@@ -11,7 +12,7 @@ interface ScrambleSetRowProps {
 }
 
 const ScrambleSetRow = ({ scrambleSet, fetchData }: ScrambleSetRowProps) => {
-    const toast = useToast();
+    const { toast } = useToast();
     const confirm = useConfirm();
 
     const handleDelete = async () => {
@@ -24,7 +25,7 @@ const ScrambleSetRow = ({ scrambleSet, fetchData }: ScrambleSetRowProps) => {
                 if (status === 204) {
                     toast({
                         title: "Scramble set deleted",
-                        
+                        variant: "success",
                     });
                     fetchData();
                 } else {
@@ -37,7 +38,6 @@ const ScrambleSetRow = ({ scrambleSet, fetchData }: ScrambleSetRowProps) => {
             .catch(() => {
                 toast({
                     title: "Scramble set not deleted",
-                    status: "info",
                 });
             });
     };
@@ -49,10 +49,11 @@ const ScrambleSetRow = ({ scrambleSet, fetchData }: ScrambleSetRowProps) => {
             </TableCell>
             <TableCell>{scrambleSet.scramblesCount}</TableCell>
             <TableCell>{scrambleSet.extraScramblesCount}</TableCell>
-            <TableCell display="flex" gap="2">
-                <Button colorScheme="red" onClick={handleDelete}>
-                    Delete
-                </Button>
+            <TableCell>
+                <DeleteButton
+                    onClick={handleDelete}
+                    title="Delete scramble set"
+                />
             </TableCell>
         </TableRow>
     );

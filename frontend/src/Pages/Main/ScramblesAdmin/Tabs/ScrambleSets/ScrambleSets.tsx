@@ -1,11 +1,14 @@
-import { Box, Button, useToast } from "@chakra-ui/react";
-import { useConfirm } from "chakra-ui-confirm";
 import { useAtomValue } from "jotai";
 import { useCallback, useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 
 import EventAndRoundSelector from "@/Components/EventAndRoundSelector";
 import LoadingPage from "@/Components/LoadingPage";
+import { Button } from "@/Components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/Components/ui/card";
+import { useConfirm } from "@/hooks/useConfirm";
+import { useToast } from "@/hooks/useToast";
+import { activityCodeToName } from "@/lib/activities";
 import { competitionAtom } from "@/lib/atoms";
 import { ScrambleSet } from "@/lib/interfaces";
 import {
@@ -13,14 +16,14 @@ import {
     deleteScrambleSetsByRoundId,
     getScrambleSets,
 } from "@/lib/scrambleSets";
-import { letterToNumber } from "@/logic/utils";
+import { letterToNumber } from "@/lib/utils";
 
 import AddScrambleSetModal from "./Components/AddScrambleSetModal";
 import ScrambleSetsTable from "./Components/ScrambleSetsTable";
 
 const ScrambleSets = () => {
     const confirm = useConfirm();
-    const toast = useToast();
+    const { toast } = useToast();
     const competition = useAtomValue(competitionAtom);
     const [searchParams, setSearchParams] = useSearchParams();
     const [scrambleSets, setScrambleSets] = useState<ScrambleSet[]>([]);
@@ -81,7 +84,7 @@ const ScrambleSets = () => {
                     if (status === 204) {
                         toast({
                             title: "Scramble sets deleted",
-                            
+                            variant: "success",
                         });
                         fetchData();
                     } else {
@@ -94,7 +97,6 @@ const ScrambleSets = () => {
                 .catch(() => {
                     toast({
                         title: "Scramble sets not deleted",
-                        status: "info",
                     });
                 });
             fetchData();
@@ -111,7 +113,7 @@ const ScrambleSets = () => {
                 if (status === 204) {
                     toast({
                         title: "Scramble sets deleted",
-                        
+                        variant: "success",
                     });
                     fetchData();
                 } else {
@@ -124,7 +126,6 @@ const ScrambleSets = () => {
             .catch(() => {
                 toast({
                     title: "Scramble sets not deleted",
-                    status: "info",
                 });
             });
     };
@@ -138,61 +139,67 @@ const ScrambleSets = () => {
     if (!competition) return <LoadingPage />;
 
     return (
-        <Box display="flex" flexDirection="column" gap="5">
-            <Box
-                display="flex"
-                gap="5"
-                flexDirection={{ base: "column", lg: "row" }}
-            >
-                <EventAndRoundSelector
-                    competition={competition}
-                    filters={filters}
-                    handleEventChange={handleEventChange}
-                    handleRoundChange={handleRoundChange}
-                />
-            </Box>
-            <Box
-                display="flex"
-                gap="5"
-                flexDirection={{ base: "column", md: "row" }}
-            >
-                {filters.roundId && (
-                    <>
+        <div className="flex flex-col gap-4">
+            <Card>
+                <CardHeader>
+                    <CardTitle>Scramble sets</CardTitle>
+                </CardHeader>
+                <CardContent className="flex flex-col gap-5">
+                    <EventAndRoundSelector
+                        competition={competition}
+                        filters={filters}
+                        handleEventChange={handleEventChange}
+                        handleRoundChange={handleRoundChange}
+                    />
+                    <div className="flex gap-3">
+                        {filters.roundId && (
+                            <>
+                                <Button
+                                    variant="success"
+                                    onClick={() =>
+                                        setIsOpenAddScrambleSetModal(true)
+                                    }
+                                >
+                                    Add scramble set
+                                </Button>
+                                <Button
+                                    onClick={handleDeleteScrambleSetsByRound}
+                                >
+                                    Delete scramble sets for this round
+                                </Button>
+                            </>
+                        )}
                         <Button
-                            colorScheme="green"
-                            width={{ base: "100%", md: "fit-content" }}
-                            onClick={() => setIsOpenAddScrambleSetModal(true)}
+                            variant="destructive"
+                            onClick={handleDeleteAllScrambleSets}
                         >
-                            Add scramble set
+                            Delete all scramble sets
                         </Button>
-                        <Button
-                            colorScheme="purple"
-                            width={{ base: "100%", md: "fit-content" }}
-                            onClick={handleDeleteScrambleSetsByRound}
-                        >
-                            Delete scramble sets for this round
-                        </Button>
-                    </>
-                )}
-                <Button
-                    colorScheme="red"
-                    width={{ base: "100%", md: "fit-content" }}
-                    onClick={handleDeleteAllScrambleSets}
-                >
-                    Delete all scramble sets
-                </Button>
-            </Box>
-            <ScrambleSetsTable
-                scrambleSets={scrambleSets}
-                fetchData={fetchData}
-            />
+                    </div>
+                </CardContent>
+            </Card>
+            {filters.roundId ? (
+                <Card>
+                    <CardHeader>
+                        <CardTitle>
+                            {activityCodeToName(filters.roundId)}
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <ScrambleSetsTable
+                            scrambleSets={scrambleSets}
+                            fetchData={fetchData}
+                        />
+                    </CardContent>
+                </Card>
+            ) : null}
             <AddScrambleSetModal
                 isOpen={isOpenAddScrambleSetModal}
                 onClose={handleCloseAddScrambleSetModal}
                 lastSet={lastSetNumber}
                 roundId={filters.roundId}
             />
-        </Box>
+        </div>
     );
 };
 
