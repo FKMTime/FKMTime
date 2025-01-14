@@ -1,5 +1,10 @@
-import { Table, TableContainer, Tbody, Th, TableHead, Tr } from "@chakra-ui/react";
-
+import {
+    Table,
+    TableBody,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from "@/Components/ui/table";
 import { ScramblingDevice } from "@/lib/interfaces";
 
 import ScramblingDeviceRow from "./ ScramblingDeviceRow";
@@ -14,26 +19,24 @@ const ScramblingDevicesTable = ({
     fetchData,
 }: ScramblingDevicesTableProps) => {
     return (
-        <TableContainer>
-            <Table >
-                <TableHead>
-                    <TableRow>
-                        <TableHead>Name</TableHead>
-                        <TableHead>Room</TableHead>
-                        <TableHead>Actions</TableHead>
-                    </TableRow>
-                </TableHead>
-                <TableBody>
-                    {devices.map((device) => (
-                        <ScramblingDeviceRow
-                            key={device.id}
-                            device={device}
-                            fetchData={fetchData}
-                        />
-                    ))}
-                </TableBody>
-            </Table>
-        </TableContainer>
+        <Table>
+            <TableHeader>
+                <TableRow>
+                    <TableHead>Name</TableHead>
+                    <TableHead>Room</TableHead>
+                    <TableHead>Actions</TableHead>
+                </TableRow>
+            </TableHeader>
+            <TableBody>
+                {devices.map((device) => (
+                    <ScramblingDeviceRow
+                        key={device.id}
+                        device={device}
+                        fetchData={fetchData}
+                    />
+                ))}
+            </TableBody>
+        </Table>
     );
 };
 

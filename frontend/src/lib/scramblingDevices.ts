@@ -1,4 +1,4 @@
-import { ScramblingDevice } from "./interfaces";
+import { ScramblingDevice, ScramblingDeviceData } from "./interfaces";
 import { backendRequest } from "./request";
 
 export const defaultScramblingDevice: ScramblingDevice = {
@@ -20,7 +20,7 @@ export const getScramblingDevices = async () => {
     return await response.json();
 };
 
-export const createScramblingDevice = async (data: ScramblingDevice) => {
+export const createScramblingDevice = async (data: ScramblingDeviceData) => {
     const response = await backendRequest(
         `scrambling-device`,
         "POST",

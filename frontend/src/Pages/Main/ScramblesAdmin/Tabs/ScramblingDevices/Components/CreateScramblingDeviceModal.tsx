@@ -1,8 +1,8 @@
-import { useToast } from "@chakra-ui/react";
 import { useState } from "react";
 
 import { Modal } from "@/Components/Modal";
-import { ScramblingDevice } from "@/lib/interfaces";
+import { useToast } from "@/hooks/useToast";
+import { ScramblingDeviceData } from "@/lib/interfaces";
 import {
     createScramblingDevice,
     defaultScramblingDevice,
@@ -19,17 +19,17 @@ const CreateScramblingDeviceModal = ({
     isOpen,
     onClose,
 }: CreateScramblingDeviceModalProps) => {
-    const toast = useToast();
+    const { toast } = useToast();
     const [isLoading, setIsLoading] = useState(false);
 
-    const handleSubmit = async (newDevice: ScramblingDevice) => {
+    const handleSubmit = async (newDevice: ScramblingDeviceData) => {
         setIsLoading(true);
 
         const status = await createScramblingDevice(newDevice);
         if (status === 201) {
             toast({
                 title: "Successfully created new device.",
-                
+                variant: "success",
             });
             onClose();
         } else {
@@ -51,8 +51,7 @@ const CreateScramblingDeviceModal = ({
             title="Create scrambling device"
         >
             <ScramblingDeviceForm
-                onCancel={onClose}
-                onSubmit={handleSubmit}
+                handleSubmit={handleSubmit}
                 device={defaultScramblingDevice}
                 isLoading={isLoading}
             />

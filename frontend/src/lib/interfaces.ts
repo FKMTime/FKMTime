@@ -340,13 +340,16 @@ export interface WCAPerson {
     combinedName: string;
 }
 
-export interface ScramblingDevice {
+export interface ScramblingDevice extends ScramblingDeviceData {
     id: string;
-    name: string;
-    roomId: string;
     room: Room;
     createdAt: Date;
     updatedAt: Date;
+}
+
+export interface ScramblingDeviceData {
+    name: string;
+    roomId: string;
 }
 
 export interface ScrambleSet {

@@ -1,6 +1,5 @@
 import { useSetAtom } from "jotai";
 import { useEffect, useState } from "react";
-import { MdLogout } from "react-icons/md";
 import { useNavigate } from "react-router-dom";
 
 import { Button } from "@/Components/ui/button";
@@ -65,9 +64,9 @@ const ImportCompetition = () => {
 
     useEffect(() => {
         getCompetitionInfo().then((res) => {
-            // if (res.status === 200) {
-            //     navigate("/");
-            // }
+            if (res.status === 200) {
+                navigate("/");
+            }
         });
         getUpcomingManageableCompetitions().then((data) => {
             setCompetitions(data);

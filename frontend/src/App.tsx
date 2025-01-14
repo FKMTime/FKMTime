@@ -141,10 +141,10 @@ const App = () => {
                     path: "devices",
                     element: <Devices />,
                 },
-                //     {
-                //         path: "scrambles",
-                //         element: <ScramblesAdmin />,
-                //     },
+                {
+                    path: "scrambles",
+                    element: <ScramblesAdmin />,
+                },
                 {
                     path: "attendance",
                     element: <Attendance />,

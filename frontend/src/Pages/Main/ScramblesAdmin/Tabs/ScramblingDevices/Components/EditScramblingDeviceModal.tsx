@@ -1,7 +1,7 @@
-import { useToast } from "@chakra-ui/react";
 import { useState } from "react";
 
 import { Modal } from "@/Components/Modal";
+import { useToast } from "@/hooks/useToast";
 import { ScramblingDevice } from "@/lib/interfaces";
 import { updateScramblingDevice } from "@/lib/scramblingDevices";
 
@@ -18,7 +18,7 @@ const EditScramblingDeviceModal = ({
     onClose,
     device,
 }: EditScramblingDeviceModalProps) => {
-    const toast = useToast();
+    const { toast } = useToast();
     const [isLoading, setIsLoading] = useState(false);
 
     const handleSubmit = async (editedDevice: ScramblingDevice) => {
@@ -28,7 +28,7 @@ const EditScramblingDeviceModal = ({
         if (status === 200) {
             toast({
                 title: "Successfully updated this device.",
-                
+                variant: "success",
             });
             onClose();
         } else {
@@ -44,8 +44,7 @@ const EditScramblingDeviceModal = ({
     return (
         <Modal isOpen={isOpen} onClose={onClose} title="Edit scrambling device">
             <ScramblingDeviceForm
-                onCancel={onClose}
-                onSubmit={handleSubmit}
+                handleSubmit={handleSubmit}
                 device={device}
                 isLoading={isLoading}
             />

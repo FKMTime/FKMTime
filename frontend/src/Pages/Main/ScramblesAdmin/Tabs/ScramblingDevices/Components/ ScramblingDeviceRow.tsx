@@ -1,11 +1,12 @@
-import { Td, Tr, useToast } from "@chakra-ui/react";
-import { useConfirm } from "chakra-ui-confirm";
 import { useState } from "react";
 import { PiTimerDuotone } from "react-icons/pi";
 
 import DeleteButton from "@/Components/DeleteButton";
 import EditButton from "@/Components/EditButton";
 import SmallIconButton from "@/Components/SmallIconButton";
+import { TableCell, TableRow } from "@/Components/ui/table";
+import { useConfirm } from "@/hooks/useConfirm";
+import { useToast } from "@/hooks/useToast";
 import { ScramblingDevice } from "@/lib/interfaces";
 import { deleteScramblingDevice } from "@/lib/scramblingDevices";
 
@@ -21,7 +22,7 @@ const ScramblingDeviceRow = ({
     device,
     fetchData,
 }: ScramblingDeviceRowProps) => {
-    const toast = useToast();
+    const { toast } = useToast();
     const confirm = useConfirm();
     const [isOpenEditDeviceModal, setIsOpenEditDeviceModal] =
         useState<boolean>(false);
@@ -44,7 +45,7 @@ const ScramblingDeviceRow = ({
                 if (status === 204) {
                     toast({
                         title: "Successfully deleted scrambling device.",
-                        
+                        variant: "success",
                     });
                     fetchData();
                 } else {
@@ -60,7 +61,6 @@ const ScramblingDeviceRow = ({
                     title: "Cancelled",
                     description:
                         "You have cancelled the deletion of the device.",
-                    status: "info",
                 });
             });
     };
