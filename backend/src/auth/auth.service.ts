@@ -41,6 +41,7 @@ export class AuthService {
         username: user.username,
         fullName: user.fullName,
         role: user.role,
+        avatarUrl: user.avatarUrl || undefined,
       },
     };
   }

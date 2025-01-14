@@ -16,7 +16,14 @@ import {
 } from "react-icons/md";
 
 import logo from "@/assets/logo.svg";
+import Avatar from "@/Components/Avatar/Avatar";
 import { Button } from "@/Components/ui/button";
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from "@/Components/ui/dropdown-menu";
 import { isAdmin } from "@/lib/auth";
 import { GITHUB_URL } from "@/lib/constants";
 import { Competition, INotification, UserInfo } from "@/lib/interfaces";
@@ -44,19 +51,22 @@ const SidebarContent = ({
         <div className="w-64 overflow-y-auto flex flex-col gap-5 items-center p-5 h-screen">
             <img src={logo} alt="Logo" width="100%" />
             <div className="flex items-center justify-center w-full rounded-md p-2 gap-5 text-center">
-                {/* <Menu>
-                    <MenuButton>
+                <DropdownMenu>
+                    <DropdownMenuTrigger>
                         <Avatar
-                            src={user.avatarUrl}
-                            name={user.fullName ? user.fullName : user.username}
+                            avatarUrl={user.avatarUrl}
+                            username={
+                                user.fullName ? user.fullName : user.username
+                            }
                         />
-                    </MenuButton>
-                    <DarkMode>
-                        <MenuList>
-                            <MenuItem onClick={handleLogout}>Logout</MenuItem>
-                        </MenuList>
-                    </DarkMode>
-                </Menu> */}
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent>
+                        <DropdownMenuItem onClick={handleLogout}>
+                            Logout
+                        </DropdownMenuItem>
+                    </DropdownMenuContent>
+                </DropdownMenu>
+
                 <div className={cn("relative", isAdmin() ? "block" : "hidden")}>
                     <Button
                         size="icon"
