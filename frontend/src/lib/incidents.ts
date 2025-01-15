@@ -1,4 +1,5 @@
 import { Incident } from "./interfaces";
+import { backendRequest } from "./request";
 
 export const groupIncidents = (incidents: Incident[]) => {
     const grouped: { [key: string]: Incident[] } = {};
@@ -15,4 +16,13 @@ export const groupIncidents = (incidents: Incident[]) => {
         category,
         incidents: grouped[category],
     }));
+};
+
+export const getUnresolvedIncidentsCount = async () => {
+    const response = await backendRequest(
+        "attempt/unresolved/count",
+        "GET",
+        true
+    );
+    return await response.json();
 };

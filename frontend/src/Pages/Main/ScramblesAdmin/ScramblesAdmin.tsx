@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/Components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/Components/ui/tabs";
 
 import ImportScrambles from "./Tabs/ImportScrambles/ImportScrambles";
@@ -46,25 +45,18 @@ const ScramblesAdmin = () => {
 
     return (
         <div className="flex flex-col gap-4">
-            <Tabs defaultValue={tabIndex}>
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Scrambles admin</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <TabsList>
-                            {tabs.map((tab) => (
-                                <TabsTrigger
-                                    key={tab.id}
-                                    value={tab.id}
-                                    onClick={() => onChangeTab(tab.id)}
-                                >
-                                    {tab.name}
-                                </TabsTrigger>
-                            ))}
-                        </TabsList>
-                    </CardContent>
-                </Card>
+            <Tabs defaultValue={tabIndex} className="flex flex-col gap-4">
+                <TabsList>
+                    {tabs.map((tab) => (
+                        <TabsTrigger
+                            key={tab.id}
+                            value={tab.id}
+                            onClick={() => onChangeTab(tab.id)}
+                        >
+                            {tab.name}
+                        </TabsTrigger>
+                    ))}
+                </TabsList>
                 {tabs.map((tab) => (
                     <TabsContent key={tab.id} value={tab.id}>
                         {tab.component}

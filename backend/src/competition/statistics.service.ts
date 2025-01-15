@@ -1,4 +1,4 @@
-import { Inject } from '@nestjs/common';
+import { forwardRef, Inject } from '@nestjs/common';
 import { AttemptStatus } from '@prisma/client';
 import { Activity, Room as WCIFRoom, Venue } from '@wca/helpers';
 import { DbService } from 'src/db/db.service';

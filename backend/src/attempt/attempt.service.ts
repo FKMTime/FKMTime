@@ -356,4 +356,13 @@ export class AttemptService {
       },
     });
   }
+
+  async getUnresolvedIncidentsCount() {
+    const count = await this.prisma.attempt.count({
+      where: { status: AttemptStatus.UNRESOLVED },
+    });
+    return {
+      count,
+    };
+  }
 }

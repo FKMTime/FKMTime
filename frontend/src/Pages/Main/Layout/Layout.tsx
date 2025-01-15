@@ -3,6 +3,8 @@ import { Suspense, useCallback, useContext, useEffect, useState } from "react";
 import { Outlet, useNavigate } from "react-router-dom";
 
 import LoadingPage from "@/Components/LoadingPage";
+import ModeToggle from "@/Components/ModeToggle";
+import { SidebarProvider, SidebarTrigger } from "@/Components/ui/sidebar";
 import { competitionAtom } from "@/lib/atoms";
 import { getToken, getUserInfo, isUserLoggedIn } from "@/lib/auth";
 import { getCompetitionInfo } from "@/lib/competition";
@@ -11,8 +13,9 @@ import { INotification } from "@/lib/interfaces";
 import { isMobile, isNotificationsSupported } from "@/lib/utils";
 import { socket, SocketContext } from "@/socket";
 
+import AppSidebar from "./AppSidebar";
 import NotificationsModal from "./NotificationsModal";
-import Sidebar from "./Sidebar";
+import ProfileDropdown from "./ProfileDropdown";
 
 const Layout = () => {
     const userInfo = getUserInfo();
@@ -178,8 +181,8 @@ const Layout = () => {
         return <></>;
     }
     return (
-        <div className="flex">
-            <Sidebar
+        <SidebarProvider>
+            <AppSidebar
                 user={userInfo}
                 competition={competition}
                 notifications={notifications}
@@ -188,7 +191,14 @@ const Layout = () => {
                     setIsOpenNotificationsModal(true)
                 }
             />
-            <div className="w-full p-5 h-screen overflow-y-auto dark:bg-zinc-950">
+            <main className="w-full p-5 h-screen overflow-y-auto flex flex-col gap-5">
+                <div className="flex justify-between">
+                    <SidebarTrigger />
+                    <div className="flex items-center gap-5">
+                        <ModeToggle />
+                        <ProfileDropdown />
+                    </div>
+                </div>
                 <Suspense fallback={<LoadingPage />}>
                     <Outlet />
                 </Suspense>
@@ -204,8 +214,8 @@ const Layout = () => {
                     onClose={() => setIsOpenNotificationsModal(false)}
                     notifications={notifications}
                 />
-            </div>
-        </div>
+            </main>
+        </SidebarProvider>
     );
 };
 
