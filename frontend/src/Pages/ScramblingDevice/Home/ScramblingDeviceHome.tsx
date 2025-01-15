@@ -1,9 +1,10 @@
-import { Box } from "@chakra-ui/react";
 import { useAtomValue } from "jotai";
 import { useCallback, useState } from "react";
 
 import EventAndRoundSelector from "@/Components/EventAndRoundSelector";
 import LoadingPage from "@/Components/LoadingPage";
+import { Card, CardContent, CardHeader, CardTitle } from "@/Components/ui/card";
+import { activityCodeToName } from "@/lib/activities";
 import { competitionAtom } from "@/lib/atoms";
 import { ScrambleSet } from "@/lib/interfaces";
 import { getScrambleSetsForScramblingDevice } from "@/lib/scrambling";
@@ -39,24 +40,36 @@ const ScramblingDeviceHome = () => {
     if (!competition) return <LoadingPage />;
 
     return (
-        <Box display="flex" flexDirection="column" gap={3}>
-            <Box
-                display="flex"
-                gap={3}
-                flexDirection={{ base: "column", md: "row" }}
-            >
-                <EventAndRoundSelector
-                    competition={competition}
-                    filters={{
-                        eventId: roundId.split("-")[0],
-                        roundId: roundId,
-                    }}
-                    handleEventChange={handleEventChange}
-                    handleRoundChange={handleRoundChange}
-                />
-            </Box>
-            <ScrambleSetsTable scrambleSets={scrambleSets} />
-        </Box>
+        <div className="flex flex-col gap-4">
+            <Card>
+                <CardHeader>
+                    <CardTitle className="flex items-center justify-between">
+                        Scrambling device
+                    </CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <EventAndRoundSelector
+                        competition={competition}
+                        filters={{
+                            eventId: roundId.split("-")[0],
+                            roundId: roundId,
+                        }}
+                        handleEventChange={handleEventChange}
+                        handleRoundChange={handleRoundChange}
+                    />
+                </CardContent>
+            </Card>
+            {roundId ? (
+                <Card>
+                    <CardHeader>
+                        <CardTitle>{activityCodeToName(roundId)}</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <ScrambleSetsTable scrambleSets={scrambleSets} />
+                    </CardContent>
+                </Card>
+            ) : null}
+        </div>
     );
 };
 

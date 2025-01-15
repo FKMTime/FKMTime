@@ -1,11 +1,13 @@
-import { Box, Button, Divider, Heading, useToast } from "@chakra-ui/react";
 import { activityCodeToName } from "@wca/helpers";
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 
 import EventIcon from "@/Components/Icons/EventIcon";
 import LoadingPage from "@/Components/LoadingPage";
-import PasswordInput from "@/Components/PasswordInput";
+import { Button } from "@/Components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/Components/ui/card";
+import { Input } from "@/Components/ui/input";
+import { useToast } from "@/hooks/useToast";
 import { DecryptedScramble, ScrambleSet } from "@/lib/interfaces";
 import {
     decryptScrambles,
@@ -18,7 +20,7 @@ import ScramblesList from "./Components/ScramblesList";
 const AllScrambles = () => {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
-    const toast = useToast();
+    const { toast } = useToast();
     const [isLocked, setIsLocked] = useState(true);
     const [password, setPassword] = useState("");
     const [scrambleSet, setScrambleSet] = useState<ScrambleSet | null>(null);
@@ -45,7 +47,7 @@ const AllScrambles = () => {
         if (response.status === 200) {
             toast({
                 title: "Unlocked",
-                
+                variant: "success",
             });
             setIsLocked(false);
             setDecryptedScrambles(
@@ -67,51 +69,56 @@ const AllScrambles = () => {
     if (!scrambleSet) return <LoadingPage />;
 
     return (
-        <Box display="flex" flexDirection="column" gap={3}>
-            <Box display="flex" gap={3} alignItems="center">
-                <EventIcon
-                    size={32}
-                    eventId={scrambleSet.roundId.split("-")[0]}
-                    selected
-                />
-                <Heading>
-                    {activityCodeToName(scrambleSet.roundId)} Set{" "}
-                    {scrambleSet.set}
-                </Heading>
-            </Box>
-            {isLocked ? (
-                <>
-                    <Box width="fit-content">
-                        <PasswordInput
-                            value={password}
-                            placeholder="Password"
-                            onChange={(e) => setPassword(e.target.value)}
-                            autoComplete="off"
-                            onKeyDown={(e) => {
-                                if (e.key === "Enter") {
-                                    handleUnlock();
-                                }
-                            }}
+        <div className="flex flex-col gap-4">
+            <Card>
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-2 ">
+                        <EventIcon
+                            size={20}
+                            eventId={scrambleSet.roundId.split("-")[0]}
+                            selected
                         />
-                    </Box>
-                    <Button
-                        colorScheme="green"
-                        width="fit-content"
-                        onClick={handleUnlock}
-                    >
-                        Unlock
-                    </Button>
-                </>
-            ) : (
-                <>
-                    <Divider />
-                    <ScramblesList
-                        scrambles={decryptedScrambles}
-                        roundId={scrambleSet.roundId}
-                    />
-                </>
-            )}
-        </Box>
+                        {activityCodeToName(scrambleSet.roundId)} Set{" "}
+                        {scrambleSet.set}
+                    </CardTitle>
+                </CardHeader>
+                <CardContent>
+                    {isLocked ? (
+                        <div className="flex flex-col gap-3 w-fit">
+                            <Input
+                                value={password}
+                                type="password"
+                                autoFocus
+                                placeholder="Password"
+                                onChange={(e) => setPassword(e.target.value)}
+                                autoComplete="off"
+                                onKeyDown={(e) => {
+                                    if (e.key === "Enter") {
+                                        handleUnlock();
+                                    }
+                                }}
+                            />
+                            <Button variant="success" onClick={handleUnlock}>
+                                Unlock
+                            </Button>
+                        </div>
+                    ) : null}
+                </CardContent>
+            </Card>
+            {!isLocked ? (
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Scrambles</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <ScramblesList
+                            scrambles={decryptedScrambles}
+                            roundId={scrambleSet.roundId}
+                        />
+                    </CardContent>
+                </Card>
+            ) : null}
+        </div>
     );
 };
 

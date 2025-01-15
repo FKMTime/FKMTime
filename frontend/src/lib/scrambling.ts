@@ -1,6 +1,6 @@
 import { Scramble } from "./interfaces";
 import { scramblingDeviceBackendRequest } from "./request";
-import { decryptText } from "../logic/utils";
+import { decryptText } from "./utils";
 
 export const getScrambleSetsForScramblingDevice = async (roundId: string) => {
     const response = await scramblingDeviceBackendRequest(

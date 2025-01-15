@@ -1,15 +1,14 @@
-import {
-    Button,
-    Table,
-    TableContainer,
-    Tbody,
-    Td,
-    Th,
-    TableHead,
-    Tr,
-} from "@chakra-ui/react";
 import { useNavigate } from "react-router-dom";
 
+import { Button } from "@/Components/ui/button";
+import {
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from "@/Components/ui/table";
 import { activityCodeToName } from "@/lib/activities";
 import { ScrambleSet } from "@/lib/interfaces";
 
@@ -20,48 +19,45 @@ interface ScrambleSetsTableProps {
 const ScrambleSetsTable = ({ scrambleSets }: ScrambleSetsTableProps) => {
     const navigate = useNavigate();
     return (
-        <TableContainer>
-            <Table >
-                <TableHead>
-                    <TableRow>
-                        <TableHead>Name</TableHead>
-                        <TableHead>Actions</TableHead>
+        <Table>
+            <TableHeader>
+                <TableRow>
+                    <TableHead>Name</TableHead>
+                    <TableHead>Actions</TableHead>
+                </TableRow>
+            </TableHeader>
+            <TableBody>
+                {scrambleSets.map((scrambleSet) => (
+                    <TableRow key={scrambleSet.id}>
+                        <TableCell>
+                            {activityCodeToName(scrambleSet.roundId)} Set{" "}
+                            {scrambleSet.set}
+                        </TableCell>
+                        <TableCell className="flex gap-2">
+                            <Button
+                                onClick={() =>
+                                    navigate(
+                                        `/scrambling-device/set/${scrambleSet.id}`
+                                    )
+                                }
+                            >
+                                Scramble
+                            </Button>
+                            <Button
+                                onClick={() =>
+                                    navigate(
+                                        `/scrambling-device/set/${scrambleSet.id}/scrambles`
+                                    )
+                                }
+                                variant="success"
+                            >
+                                All scrambles
+                            </Button>
+                        </TableCell>
                     </TableRow>
-                </TableHead>
-                <TableBody>
-                    {scrambleSets.map((scrambleSet) => (
-                        <TableRow key={scrambleSet.id}>
-                            <TableCell>
-                                {activityCodeToName(scrambleSet.roundId)} Set{" "}
-                                {scrambleSet.set}
-                            </TableCell>
-                            <TableCell display="flex" gap="2">
-                                <Button
-                                    onClick={() =>
-                                        navigate(
-                                            `/scrambling-device/set/${scrambleSet.id}`
-                                        )
-                                    }
-                                    colorScheme="yellow"
-                                >
-                                    Scramble
-                                </Button>
-                                <Button
-                                    onClick={() =>
-                                        navigate(
-                                            `/scrambling-device/set/${scrambleSet.id}/scrambles`
-                                        )
-                                    }
-                                    colorScheme="blue"
-                                >
-                                    All scrambles
-                                </Button>
-                            </TableCell>
-                        </TableRow>
-                    ))}
-                </TableBody>
-            </Table>
-        </TableContainer>
+                ))}
+            </TableBody>
+        </Table>
     );
 };
 

@@ -4,20 +4,15 @@ import { MdEqualizer, MdPerson } from "react-icons/md";
 import StatCard from "@/Components/StatCard";
 import { getCompetitionStatistics } from "@/lib/competition";
 import { CompetitionStatistics as ICompetitionStatistics } from "@/lib/interfaces";
-import { cn } from "@/lib/utils";
 import { socket } from "@/socket";
 
 import Charts from "./Charts";
 
 interface CompetitionStatisticsProps {
-    enableMobile?: boolean;
     showCharts?: boolean;
 }
 
-const CompetitionStatistics = ({
-    enableMobile,
-    showCharts,
-}: CompetitionStatisticsProps) => {
+const CompetitionStatistics = ({ showCharts }: CompetitionStatisticsProps) => {
     const [statistics, setStatistics] = useState<ICompetitionStatistics | null>(
         null
     );

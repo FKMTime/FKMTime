@@ -1,7 +1,5 @@
-import { Box, Circle } from "@chakra-ui/react";
 import { useSetAtom } from "jotai";
 import { Suspense, useCallback, useEffect } from "react";
-import { MdHome } from "react-icons/md";
 import { Outlet, useNavigate } from "react-router-dom";
 
 import LoadingPage from "@/Components/LoadingPage";
@@ -44,14 +42,8 @@ const ScramblingDeviceLayout = () => {
     }, []);
 
     return (
-        <Box
-            width="100%"
-            padding="5"
-            color="white"
-            height="100vh"
-            overflowY="auto"
-        >
-            <Circle
+        <div className="flex flex-col h-screen p-5">
+            {/* <Circle
                 position="fixed"
                 top="1"
                 right="1"
@@ -65,11 +57,11 @@ const ScramblingDeviceLayout = () => {
                 cursor="pointer"
             >
                 <MdHome />
-            </Circle>
+            </Circle> */}
             <Suspense fallback={<LoadingPage />}>
                 <Outlet />
             </Suspense>
-        </Box>
+        </div>
     );
 };
 
