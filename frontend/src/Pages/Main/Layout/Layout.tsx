@@ -1,5 +1,5 @@
 import { useAtom } from "jotai";
-import { Suspense, useCallback, useContext, useEffect, useState } from "react";
+import { Suspense, useCallback, useContext, useEffect } from "react";
 import { Outlet, useNavigate } from "react-router-dom";
 
 import LoadingPage from "@/Components/LoadingPage";
@@ -9,21 +9,16 @@ import { competitionAtom } from "@/lib/atoms";
 import { getToken, getUserInfo, isUserLoggedIn } from "@/lib/auth";
 import { getCompetitionInfo } from "@/lib/competition";
 import { getEvents } from "@/lib/events";
-import { INotification } from "@/lib/interfaces";
 import { isMobile, isNotificationsSupported } from "@/lib/utils";
 import { socket, SocketContext } from "@/socket";
 
 import AppSidebar from "./AppSidebar";
-import NotificationsModal from "./NotificationsModal";
 import ProfileDropdown from "./ProfileDropdown";
 
 const Layout = () => {
     const userInfo = getUserInfo();
     const navigate = useNavigate();
     const [competition, setCompetition] = useAtom(competitionAtom);
-    const [notifications, setNotifications] = useState<INotification[]>([]);
-    const [isOpenNotificationsModal, setIsOpenNotificationsModal] =
-        useState<boolean>(false);
 
     const [isConnected, setConnected] = useContext(SocketContext) as [
         number,
@@ -42,16 +37,6 @@ const Layout = () => {
             socket.emit("joinCompetition");
             socket.on("newIncident", (data) => {
                 const message = `Competitor ${data.competitorName} on station ${data.deviceName}`;
-                if (!notifications.some((n) => n.message === data.message)) {
-                    setNotifications((prev) => [
-                        {
-                            id: data.id,
-                            message,
-                            type: "incident",
-                        },
-                        ...prev.filter((n) => n.message !== data.message),
-                    ]);
-                }
                 Notification.requestPermission().then((permission) => {
                     if (permission === "granted") {
                         if (isMobile()) {
@@ -92,14 +77,6 @@ const Layout = () => {
             });
 
             socket.on("groupShouldBeChanged", (data) => {
-                setNotifications((prev) => [
-                    {
-                        id: "groupShouldBeChanged",
-                        message: data.message,
-                        type: "info",
-                    },
-                    ...prev.filter((n) => n.message !== data.message),
-                ]);
                 Notification.requestPermission().then((permission) => {
                     if (permission === "granted") {
                         if (isMobile()) {
@@ -136,7 +113,7 @@ const Layout = () => {
                 socket.emit("leaveCompetition");
             };
         }
-    }, [navigate, userInfo, isConnected, notifications]);
+    }, [navigate, userInfo, isConnected]);
 
     useEffect(() => {
         isUserLoggedIn().then((isLoggedIn) => {
@@ -182,15 +159,7 @@ const Layout = () => {
     }
     return (
         <SidebarProvider>
-            <AppSidebar
-                user={userInfo}
-                competition={competition}
-                notifications={notifications}
-                onClickNotifications={() =>
-                    notifications.length > 0 &&
-                    setIsOpenNotificationsModal(true)
-                }
-            />
+            <AppSidebar />
             <main className="w-full p-5 h-screen overflow-y-auto flex flex-col gap-5">
                 <div className="flex justify-between">
                     <SidebarTrigger />
@@ -202,18 +171,6 @@ const Layout = () => {
                 <Suspense fallback={<LoadingPage />}>
                     <Outlet />
                 </Suspense>
-                <NotificationsModal
-                    isOpen={isOpenNotificationsModal}
-                    onDelete={(id) =>
-                        setNotifications((prev) =>
-                            prev.filter(
-                                (notification) => notification.id !== id
-                            )
-                        )
-                    }
-                    onClose={() => setIsOpenNotificationsModal(false)}
-                    notifications={notifications}
-                />
             </main>
         </SidebarProvider>
     );

@@ -13,8 +13,9 @@ import {
     Users,
 } from "lucide-react";
 import { useEffect, useState } from "react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 
+import github from "@/assets/github.svg";
 import logo from "@/assets/logo.svg";
 import { Badge } from "@/Components/ui/badge";
 import {
@@ -31,38 +32,14 @@ import {
     SidebarMenuItem,
     SidebarRail,
 } from "@/Components/ui/sidebar";
-import { useToast } from "@/hooks/useToast";
-import { isAdmin, logout } from "@/lib/auth";
+import { isAdmin } from "@/lib/auth";
+import { GITHUB_URL } from "@/lib/constants";
 import { getUnresolvedIncidentsCount } from "@/lib/incidents";
-import { Competition, INotification, UserInfo } from "@/lib/interfaces";
 
-interface SidebarProps {
-    user: UserInfo;
-    competition: Competition;
-    notifications: INotification[];
-    onClickNotifications: () => void;
-}
-
-const AppSidebar = ({
-    user,
-    competition,
-    notifications,
-    onClickNotifications,
-}: SidebarProps) => {
-    const { toast } = useToast();
-    const navigate = useNavigate();
+const AppSidebar = () => {
     const location = useLocation();
     const [unresolvedIncidentsCount, setUnresolvedIncidentsCount] =
         useState<number>(0);
-
-    const handleLogout = () => {
-        logout();
-        toast({
-            title: "Logged out",
-            description: "You have been logged out.",
-        });
-        navigate("/auth/login");
-    };
 
     const items = [
         {
@@ -191,8 +168,10 @@ const AppSidebar = ({
                     </SidebarGroupContent>
                 </SidebarGroup>
             </SidebarContent>
-            <SidebarFooter>
-                {/* <NavUser user={sidebarData.user} /> */}
+            <SidebarFooter className="flex items-center justify-center pb-5">
+                <a href={GITHUB_URL} target="_blank">
+                    <img src={github} alt="GitHub" width="32" color="white" />
+                </a>
             </SidebarFooter>
             <SidebarRail />
         </Sidebar>
