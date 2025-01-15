@@ -13,18 +13,11 @@ import {
     FormMessage,
 } from "@/Components/ui/form";
 import { Input } from "@/Components/ui/input";
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from "@/Components/ui/select";
-import { POSSIBLE_GENDERS } from "@/lib/constants";
-import { AddPerson, Region } from "@/lib/interfaces";
-import regions from "@/lib/regions";
+import { AddPerson } from "@/lib/interfaces";
 import { addPersonSchema } from "@/lib/schema/personSchema";
-import { prettyGender } from "@/lib/utils";
+
+import CountrySelect from "./CountrySelect";
+import GenderSelect from "./GenderSelect";
 
 interface PersonFormProps {
     canCompete?: boolean;
@@ -37,11 +30,6 @@ const PersonForm = ({
     isLoading,
     handleSubmit,
 }: PersonFormProps) => {
-    const countries: Region[] = regions.filter(
-        (region) =>
-            !["_Multiple Continents", "Continent"].includes(region.continentId)
-    );
-
     const form = useForm<z.infer<typeof addPersonSchema>>({
         resolver: zodResolver(addPersonSchema),
     });
@@ -78,23 +66,10 @@ const PersonForm = ({
                     render={({ field }) => (
                         <FormItem>
                             <FormLabel>Gender</FormLabel>
-                            <Select
-                                onValueChange={field.onChange}
-                                defaultValue={field.value}
-                            >
-                                <FormControl>
-                                    <SelectTrigger>
-                                        <SelectValue placeholder="Select gender" />
-                                    </SelectTrigger>
-                                </FormControl>
-                                <SelectContent>
-                                    {POSSIBLE_GENDERS.map((gender) => (
-                                        <SelectItem key={gender} value={gender}>
-                                            {prettyGender(gender)}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
+                            <GenderSelect
+                                value={field.value}
+                                onChange={field.onChange}
+                            />
                             <FormMessage />
                         </FormItem>
                     )}
@@ -123,26 +98,11 @@ const PersonForm = ({
                             render={({ field }) => (
                                 <FormItem>
                                     <FormLabel>Country</FormLabel>
-                                    <Select
-                                        onValueChange={field.onChange}
-                                        defaultValue={field.value}
-                                    >
-                                        <FormControl>
-                                            <SelectTrigger>
-                                                <SelectValue placeholder="Select country" />
-                                            </SelectTrigger>
-                                        </FormControl>
-                                        <SelectContent>
-                                            {countries.map((country) => (
-                                                <SelectItem
-                                                    key={country.iso2}
-                                                    value={country.iso2}
-                                                >
-                                                    {country.name}
-                                                </SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
+                                    <CountrySelect
+                                        value={field.value || ""}
+                                        onChange={field.onChange}
+                                    />
+
                                     <FormMessage />
                                 </FormItem>
                             )}
