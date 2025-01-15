@@ -1,9 +1,9 @@
 import {
-    FaAngleDoubleLeft,
-    FaAngleDoubleRight,
-    FaAngleLeft,
-    FaAngleRight,
-} from "react-icons/fa";
+    ArrowLeft,
+    ArrowRight,
+    ChevronsLeft,
+    ChevronsRight,
+} from "lucide-react";
 
 import IconButton from "./IconButton";
 
@@ -33,13 +33,13 @@ const Pagination = ({
             {totalPages > 1 && (
                 <div className="flex flex-row gap-3 items-center justify-center w-full">
                     <IconButton
-                        icon={<FaAngleDoubleLeft />}
+                        icon={<ChevronsLeft />}
                         onClick={() => handlePageChangeWrapper(1)}
                         aria-label="Previous page"
                         disabled={page === 1}
                     />
                     <IconButton
-                        icon={<FaAngleLeft />}
+                        icon={<ArrowLeft />}
                         onClick={() => handlePageChangeWrapper(page - 1)}
                         aria-label="First page"
                         disabled={page === 1}
@@ -48,13 +48,13 @@ const Pagination = ({
                         Page {page} of {totalPages}
                     </span>
                     <IconButton
-                        icon={<FaAngleRight />}
+                        icon={<ArrowRight />}
                         onClick={() => handlePageChangeWrapper(page + 1)}
                         aria-label="Next page"
                         disabled={page === totalPages}
                     />
                     <IconButton
-                        icon={<FaAngleDoubleRight />}
+                        icon={<ChevronsRight />}
                         onClick={() => handlePageChangeWrapper(totalPages)}
                         aria-label="Last page"
                         disabled={page === totalPages}

@@ -213,7 +213,10 @@ const Persons = () => {
                     </Button>
                 </CardContent>
             </Card>
-            <Card className="hidden md:flex py-3">
+            <Card className="hidden md:block py-3">
+                <CardHeader>
+                    <CardTitle>Persons</CardTitle>
+                </CardHeader>
                 <CardContent className="w-full">
                     <PersonsTable
                         persons={persons}

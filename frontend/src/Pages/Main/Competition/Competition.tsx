@@ -1,4 +1,5 @@
 import { useSetAtom } from "jotai";
+import { RefreshCw, Server } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 
@@ -125,14 +126,21 @@ const Competition = () => {
                             Version: {getGitCommitValue()}
                         </CardDescription>
                     </div>
-                    <div>
+                    <div className="flex gap-2">
                         <Button
                             variant="success"
                             onClick={handleSync}
                             className="w-full"
                         >
+                            <RefreshCw />
                             Sync
                         </Button>
+                        {import.meta.env.PROD && (
+                            <Button onClick={() => window.open("/logs")}>
+                                <Server />
+                                Logs
+                            </Button>
+                        )}
                     </div>
                 </CardHeader>
                 <CardContent>
@@ -162,7 +170,7 @@ const Competition = () => {
                 <UnofficialEvents />
             </TabsContent>
             <TabsContent value={tabs[3].id}>
-                <CompetitionStatistics enableMobile showCharts />
+                <CompetitionStatistics showCharts />
             </TabsContent>
         </Tabs>
     );

@@ -1,20 +1,20 @@
 import {
-    FaClipboardList,
-    FaGithub,
-    FaPuzzlePiece,
-    FaServer,
-} from "react-icons/fa";
-import { GrDocumentVerified } from "react-icons/gr";
-import { IoMdNotifications, IoMdTrophy, IoMdWarning } from "react-icons/io";
-import {
-    MdDone,
-    MdHome,
-    MdPerson,
-    MdPersonAdd,
-    MdSettings,
-    MdTimer,
-} from "react-icons/md";
+    AlarmClock,
+    Bell,
+    BookCheck,
+    ClipboardList,
+    House,
+    Microchip,
+    Puzzle,
+    Settings,
+    SquareCheckBig,
+    TriangleAlert,
+    Trophy,
+    UserCog,
+    Users,
+} from "lucide-react";
 
+import github from "@/assets/github.svg";
 import logo from "@/assets/logo.svg";
 import Avatar from "@/Components/Avatar/Avatar";
 import { Button } from "@/Components/ui/button";
@@ -77,7 +77,7 @@ const SidebarContent = ({
                         onClick={onClickNotifications}
                     >
                         <>
-                            <IoMdNotifications size={32} />
+                            <Bell size={32} />
                             <div className="absolute -top-3 -right-3">
                                 <p
                                     className={cn(
@@ -97,7 +97,7 @@ const SidebarContent = ({
 
             <SidebarElement
                 name="Home"
-                icon={<MdHome />}
+                icon={<House />}
                 link="/"
                 onClick={onElementClick}
             />
@@ -105,31 +105,31 @@ const SidebarContent = ({
                 <>
                     <SidebarElement
                         name="Incidents"
-                        icon={<IoMdWarning />}
+                        icon={<TriangleAlert />}
                         link="/incidents"
                         onClick={onElementClick}
                     />
                     <SidebarElement
                         name="Users"
-                        icon={<MdPersonAdd />}
+                        icon={<UserCog />}
                         link="/users"
                         onClick={onElementClick}
                     />
                     <SidebarElement
                         name="Devices"
-                        icon={<MdSettings />}
+                        icon={<Microchip />}
                         link="/devices"
                         onClick={onElementClick}
                     />
                     <SidebarElement
                         name="Competition"
-                        icon={<IoMdTrophy />}
+                        icon={<Trophy />}
                         link="/competition"
                         onClick={onElementClick}
                     />
                     <SidebarElement
                         name="Scrambles"
-                        icon={<FaPuzzlePiece />}
+                        icon={<Puzzle />}
                         link="/scrambles"
                         onClick={onElementClick}
                     />
@@ -137,54 +137,46 @@ const SidebarContent = ({
             )}
             <SidebarElement
                 name="Persons"
-                icon={<MdPerson />}
+                icon={<Users />}
                 link="/persons"
                 onClick={onElementClick}
             />
             {isAdmin() && (
                 <SidebarElement
                     name="Attendance"
-                    icon={<FaClipboardList />}
+                    icon={<ClipboardList />}
                     link="/attendance"
                     onClick={onElementClick}
                 />
             )}
             <SidebarElement
                 name="Check in"
-                icon={<MdDone />}
+                icon={<SquareCheckBig />}
                 link="/check-in"
                 onClick={onElementClick}
             />
             <SidebarElement
                 name="Results"
-                icon={<MdTimer />}
+                icon={<AlarmClock />}
                 link={isAdmin() ? "/results" : "/results/public"}
                 onClick={onElementClick}
             />
             {isAdmin() && (
                 <SidebarElement
                     name="Checks"
-                    icon={<GrDocumentVerified />}
+                    icon={<BookCheck />}
                     link="/results/checks"
                     onClick={onElementClick}
                 />
             )}
             <SidebarElement
                 name="Settings"
-                icon={<MdSettings />}
+                icon={<Settings />}
                 link="/settings"
                 onClick={onElementClick}
             />
-            {import.meta.env.PROD && isAdmin() && (
-                <a href="/logs" style={{ width: "100%" }} target="_blank">
-                    <Button className="w-full text-center">
-                        <FaServer />
-                        Logs
-                    </Button>
-                </a>
-            )}
             <a href={GITHUB_URL} target="_blank">
-                <FaGithub size={32} />
+                <img src={github} alt="GitHub" width="32" color="white" />
             </a>
         </div>
     );

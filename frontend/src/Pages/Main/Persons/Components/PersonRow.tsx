@@ -1,8 +1,12 @@
 import { Competition } from "@wca/helpers";
-import { PersonStanding } from "lucide-react";
+import {
+    ChartNoAxesColumn,
+    Check,
+    FileText,
+    IdCard,
+    PersonStanding,
+} from "lucide-react";
 import { useState } from "react";
-import { FaAddressCard } from "react-icons/fa";
-import { MdAssignment, MdBarChart, MdDone } from "react-icons/md";
 import { useNavigate } from "react-router-dom";
 import { getPersonFromWcif } from "wcif-helpers";
 
@@ -90,12 +94,12 @@ const PersonRow = ({ person, wcif, handleCloseEditModal }: PersonRowProps) => {
                     ))}
                 </div>
             </TableCell>
-            <TableCell>{person.cardId && <MdDone />}</TableCell>
-            <TableCell>{person.checkedInAt && <MdDone />}</TableCell>
-            <TableCell>{person.canCompete && <MdDone />}</TableCell>
+            <TableCell>{person.cardId && <Check />}</TableCell>
+            <TableCell>{person.checkedInAt && <Check />}</TableCell>
+            <TableCell>{person.canCompete && <Check />}</TableCell>
             <TableCell>
                 <SmallIconButton
-                    icon={<FaAddressCard />}
+                    icon={<IdCard />}
                     title="Assign card"
                     onClick={() => setIsOpenAssignCardModal(true)}
                 />
@@ -104,14 +108,14 @@ const PersonRow = ({ person, wcif, handleCloseEditModal }: PersonRowProps) => {
                     isAdmin() && (
                         <>
                             <SmallIconButton
-                                icon={<MdAssignment />}
+                                icon={<FileText />}
                                 title="Display groups"
                                 onClick={() =>
                                     setIsOpenDisplayGroupsModal(true)
                                 }
                             />
                             <SmallIconButton
-                                icon={<MdBarChart />}
+                                icon={<ChartNoAxesColumn />}
                                 title="Display all results for this person"
                                 onClick={() =>
                                     navigate(`/persons/${person.id}/results`)

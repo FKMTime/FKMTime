@@ -1,5 +1,3 @@
-import { MdDevices } from "react-icons/md";
-
 import { Button } from "@/Components/ui/button";
 import {
     Card,
@@ -24,10 +22,7 @@ const AvailableDeviceCard = ({
     return (
         <Card>
             <CardHeader>
-                <CardTitle className="flex justify-between items-center">
-                    ID: {device.espId}
-                    <MdDevices size={48} />
-                </CardTitle>
+                <CardTitle>ID: {device.espId}</CardTitle>
             </CardHeader>
             <CardContent>
                 <p>Device ID: {device.espId}</p>

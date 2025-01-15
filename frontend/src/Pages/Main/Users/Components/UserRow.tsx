@@ -1,5 +1,5 @@
+import { Lock } from "lucide-react";
 import { useState } from "react";
-import { MdLock } from "react-icons/md";
 
 import wcaLogo from "@/assets/wca.svg";
 import DeleteButton from "@/Components/DeleteButton";
@@ -82,7 +82,7 @@ const UserRow = ({ user, fetchData }: UserRowProps) => {
                     <EditButton onClick={() => setIsOpenEditUserModal(true)} />
                     {!isWcaAccount && (
                         <SmallIconButton
-                            icon={<MdLock />}
+                            icon={<Lock />}
                             title="Change password"
                             onClick={() => setIsOpenChangePasswordModal(true)}
                         />

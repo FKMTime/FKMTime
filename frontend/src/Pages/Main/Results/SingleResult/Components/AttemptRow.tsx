@@ -1,5 +1,5 @@
+import { MessageSquarePlus } from "lucide-react";
 import { useState } from "react";
-import { MdNewLabel } from "react-icons/md";
 import { useNavigate } from "react-router-dom";
 
 import AttemptWarnings from "@/Components/AttemptWarnings";
@@ -129,7 +129,7 @@ const AttemptRow = ({
                         onClick={() => setIsOpenEditAttemptModal(true)}
                     />
                     <SmallIconButton
-                        icon={<MdNewLabel />}
+                        icon={<MessageSquarePlus />}
                         title="Give extra attempt"
                         onClick={() => setIsOpenGiveExtraAttemptModal(true)}
                     />

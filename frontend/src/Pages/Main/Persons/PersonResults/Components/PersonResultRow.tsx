@@ -1,4 +1,4 @@
-import { FaList } from "react-icons/fa";
+import { List } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 import EventIcon from "@/Components/Icons/EventIcon";
@@ -40,7 +40,7 @@ const PersonResultRow = ({ result }: PersonResultRowProps) => {
                 {isAdmin() && (
                     <TableCell>
                         <SmallIconButton
-                            icon={<FaList />}
+                            icon={<List />}
                             title="View attempts"
                             onClick={() => navigate(`/results/${result.id}`)}
                         />

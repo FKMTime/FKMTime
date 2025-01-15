@@ -1,4 +1,4 @@
-import { forwardRef, Inject } from '@nestjs/common';
+import { Inject } from '@nestjs/common';
 import { AttemptStatus } from '@prisma/client';
 import { Activity, Room as WCIFRoom, Venue } from '@wca/helpers';
 import { DbService } from 'src/db/db.service';
@@ -14,10 +14,23 @@ export class StatisticsService {
   async getCompetitionStatistics() {
     const competition = await this.prisma.competition.findFirst();
     const wcif = JSON.parse(JSON.stringify(competition.wcif));
-    const allAttempts = await this.prisma.attempt.count();
+    const allAttempts = await this.prisma.attempt.count({
+      where: {
+        status: {
+          not: AttemptStatus.SCRAMBLED,
+        },
+      },
+    });
     const attemptsEnteredManually = await this.prisma.attempt.count({
       where: {
-        sessionId: null,
+        AND: [
+          {
+            status: AttemptStatus.SCRAMBLED,
+          },
+          {
+            sessionId: null,
+          },
+        ],
       },
     });
     //This is there until we're still using scorecards ;D

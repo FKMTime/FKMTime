@@ -1,4 +1,4 @@
-import { MdClose } from "react-icons/md";
+import { X } from "lucide-react";
 
 import IconButton from "@/Components/IconButton";
 import { StaffActivity } from "@/lib/interfaces";
@@ -21,7 +21,7 @@ const PresentPeopleList = ({
                     <IconButton
                         color="white"
                         onClick={() => handleMarkAsAbsent(activity.id)}
-                        icon={<MdClose />}
+                        icon={<X />}
                     />
                     {activity.person.name}
                     {showDevice &&

@@ -1,5 +1,5 @@
+import { AlarmClockPlus } from "lucide-react";
 import { useState } from "react";
-import { PiTimerDuotone } from "react-icons/pi";
 
 import DeleteButton from "@/Components/DeleteButton";
 import EditButton from "@/Components/EditButton";
@@ -73,7 +73,7 @@ const ScramblingDeviceRow = ({
                 <TableCell>
                     <SmallIconButton
                         title={"Generate one time code"}
-                        icon={<PiTimerDuotone />}
+                        icon={<AlarmClockPlus />}
                         onClick={() => setIsOpenOneTimeCodeModal(true)}
                     />
                     <EditButton

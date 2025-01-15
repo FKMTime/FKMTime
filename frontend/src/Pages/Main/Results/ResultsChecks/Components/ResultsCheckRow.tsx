@@ -1,4 +1,4 @@
-import { FaList } from "react-icons/fa";
+import { List } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 
 import AttemptWarnings from "@/Components/AttemptWarnings";
@@ -45,7 +45,7 @@ const ResultsCheckRow = ({ check }: ResultsCheckRowProps) => {
             </TableCell>
             <TableCell>
                 <SmallIconButton
-                    icon={<FaList />}
+                    icon={<List />}
                     title="View attempts"
                     onClick={() => navigate(`/results/${check.result.id}`)}
                 />

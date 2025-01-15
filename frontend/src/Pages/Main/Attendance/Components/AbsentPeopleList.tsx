@@ -1,4 +1,4 @@
-import { MdDone } from "react-icons/md";
+import { Check } from "lucide-react";
 
 import IconButton from "@/Components/IconButton";
 import { StaffActivity } from "@/lib/interfaces";
@@ -18,7 +18,7 @@ const AbsentPeopleList = ({
                 <li key={activity.id} className="flex items-center gap-2">
                     <IconButton
                         onClick={() => handleMarkAsPresent(activity.id)}
-                        icon={<MdDone />}
+                        icon={<Check />}
                     />
                     {activity.person.name}
                 </li>

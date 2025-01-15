@@ -1,4 +1,4 @@
-import { FaList } from "react-icons/fa";
+import { List } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 
 import DeleteButton from "@/Components/DeleteButton";
@@ -88,7 +88,7 @@ const ResultRow = ({ result, maxAttempts, fetchData }: ResultRowProps) => {
                 {isAdmin() && (
                     <TableCell>
                         <SmallIconButton
-                            icon={<FaList />}
+                            icon={<List />}
                             title="View attempts"
                             onClick={() => navigate(`/results/${result.id}`)}
                         />
