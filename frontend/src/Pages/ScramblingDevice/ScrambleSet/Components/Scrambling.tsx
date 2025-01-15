@@ -1,14 +1,9 @@
-import {
-    Alert,
-    AlertIcon,
-    Box,
-    Button,
-    Heading,
-    Input,
-    useToast,
-} from "@chakra-ui/react";
 import { RefObject, useRef, useState } from "react";
 
+import { Button } from "@/Components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/Components/ui/card";
+import { Input } from "@/Components/ui/input";
+import { useToast } from "@/hooks/useToast";
 import { DecryptedScramble, Person, ScrambleData } from "@/lib/interfaces";
 import { getPersonByCardId, getScrambleData } from "@/lib/scrambling";
 
@@ -20,7 +15,7 @@ interface ScramblingProps {
 }
 
 const Scrambling = ({ groupId, scrambles }: ScramblingProps) => {
-    const toast = useToast();
+    const { toast } = useToast();
     const [competitorCard, setCompetitorCard] = useState<string>("");
     const [scramblerCard, setScramblerCard] = useState<string>("");
     const [person, setPerson] = useState<Person | null>(null);
@@ -78,51 +73,53 @@ const Scrambling = ({ groupId, scrambles }: ScramblingProps) => {
     };
 
     return (
-        <Box display="flex" flexDirection="column" gap={3}>
-            {scrambler ? (
-                <Box display="flex" gap={3} alignItems="center">
-                    <Heading size="lg">
-                        Current scrambler: {scrambler.name} ({scrambler.wcaId})
-                    </Heading>
-                    <Button
-                        onClick={() => setScrambler(null)}
-                        colorScheme="yellow"
-                    >
-                        Change scrambler
-                    </Button>
-                </Box>
-            ) : (
-                <Alert status="warning" color="black">
-                    <AlertIcon /> Scan the scrambler's card to start
-                </Alert>
-            )}
-            <Box display="flex" justifyContent="space-between">
-                <Input
-                    placeholder="Scan the competitor's card"
-                    width="fit-content"
-                    ref={competitorCardInputRef}
-                    value={competitorCard}
-                    onChange={(e) => setCompetitorCard(e.target.value)}
-                    onKeyDown={(e) => {
-                        if (e.key === "Enter") {
-                            fetchScrambleData();
-                        }
-                    }}
-                />
-                <Input
-                    placeholder="Scan the scrambler's card"
-                    width="fit-content"
-                    autoFocus
-                    disabled={scrambler !== null}
-                    value={scramblerCard}
-                    onChange={(e) => setScramblerCard(e.target.value)}
-                    onKeyDown={(e) => {
-                        if (e.key === "Enter") {
-                            fetchScramblerData();
-                        }
-                    }}
-                />
-            </Box>
+        <>
+            <Card>
+                <CardHeader>
+                    <CardTitle className="flex items-center justify-between">
+                        {scrambler ? (
+                            <>
+                                Current scrambler: {scrambler.name} (
+                                {scrambler.wcaId})
+                                <Button onClick={() => setScrambler(null)}>
+                                    Change scrambler
+                                </Button>
+                            </>
+                        ) : (
+                            "Scan the scrambler's card to start"
+                        )}
+                    </CardTitle>
+                </CardHeader>
+                <CardContent className="flex flex-col items-center gap-4">
+                    {!scrambler && (
+                        <Input
+                            placeholder="Scan the scrambler's card"
+                            width="fit-content"
+                            autoFocus
+                            disabled={scrambler !== null}
+                            value={scramblerCard}
+                            onChange={(e) => setScramblerCard(e.target.value)}
+                            onKeyDown={(e) => {
+                                if (e.key === "Enter") {
+                                    fetchScramblerData();
+                                }
+                            }}
+                        />
+                    )}
+                    <Input
+                        placeholder="Scan the competitor's card"
+                        width="fit-content"
+                        ref={competitorCardInputRef}
+                        value={competitorCard}
+                        onChange={(e) => setCompetitorCard(e.target.value)}
+                        onKeyDown={(e) => {
+                            if (e.key === "Enter") {
+                                fetchScrambleData();
+                            }
+                        }}
+                    />
+                </CardContent>
+            </Card>
             {person && scrambleData && scrambler && (
                 <Scramble
                     person={person}
@@ -133,7 +130,7 @@ const Scrambling = ({ groupId, scrambles }: ScramblingProps) => {
                     onSign={clearScrambleData}
                 />
             )}
-        </Box>
+        </>
     );
 };
 

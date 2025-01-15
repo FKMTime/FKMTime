@@ -1,12 +1,8 @@
-import { activityCodeToName } from "@wca/helpers";
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 
-import EventIcon from "@/Components/Icons/EventIcon";
 import LoadingPage from "@/Components/LoadingPage";
-import { Button } from "@/Components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/Components/ui/card";
-import { Input } from "@/Components/ui/input";
 import { useToast } from "@/hooks/useToast";
 import { DecryptedScramble, ScrambleSet } from "@/lib/interfaces";
 import {
@@ -15,6 +11,7 @@ import {
     unlockScrambleSet,
 } from "@/lib/scrambling";
 
+import ScrambleSetHeaderCard from "../Components/ScrambleSetHeaderCard";
 import ScramblesList from "./Components/ScramblesList";
 
 const AllScrambles = () => {
@@ -22,7 +19,6 @@ const AllScrambles = () => {
     const navigate = useNavigate();
     const { toast } = useToast();
     const [isLocked, setIsLocked] = useState(true);
-    const [password, setPassword] = useState("");
     const [scrambleSet, setScrambleSet] = useState<ScrambleSet | null>(null);
     const [decryptedScrambles, setDecryptedScrambles] = useState<
         DecryptedScramble[]
@@ -41,7 +37,7 @@ const AllScrambles = () => {
         fetchScrambleSet();
     }, [fetchScrambleSet]);
 
-    const handleUnlock = async () => {
+    const handleUnlock = async (password: string) => {
         if (!scrambleSet) return;
         const response = await unlockScrambleSet(scrambleSet.id, password);
         if (response.status === 200) {
@@ -70,41 +66,11 @@ const AllScrambles = () => {
 
     return (
         <div className="flex flex-col gap-4">
-            <Card>
-                <CardHeader>
-                    <CardTitle className="flex items-center gap-2 ">
-                        <EventIcon
-                            size={20}
-                            eventId={scrambleSet.roundId.split("-")[0]}
-                            selected
-                        />
-                        {activityCodeToName(scrambleSet.roundId)} Set{" "}
-                        {scrambleSet.set}
-                    </CardTitle>
-                </CardHeader>
-                <CardContent>
-                    {isLocked ? (
-                        <div className="flex flex-col gap-3 w-fit">
-                            <Input
-                                value={password}
-                                type="password"
-                                autoFocus
-                                placeholder="Password"
-                                onChange={(e) => setPassword(e.target.value)}
-                                autoComplete="off"
-                                onKeyDown={(e) => {
-                                    if (e.key === "Enter") {
-                                        handleUnlock();
-                                    }
-                                }}
-                            />
-                            <Button variant="success" onClick={handleUnlock}>
-                                Unlock
-                            </Button>
-                        </div>
-                    ) : null}
-                </CardContent>
-            </Card>
+            <ScrambleSetHeaderCard
+                scrambleSet={scrambleSet}
+                isLocked={isLocked}
+                handleUnlock={handleUnlock}
+            />
             {!isLocked ? (
                 <Card>
                     <CardHeader>

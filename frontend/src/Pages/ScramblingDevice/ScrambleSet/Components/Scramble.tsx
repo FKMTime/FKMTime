@@ -1,14 +1,13 @@
+import { Button } from "@/Components/ui/button";
 import {
-    Box,
-    Button,
     Card,
-    CardBody,
+    CardContent,
+    CardDescription,
     CardFooter,
-    Divider,
-    Heading,
-    useToast,
-} from "@chakra-ui/react";
-
+    CardHeader,
+    CardTitle,
+} from "@/Components/ui/card";
+import { useToast } from "@/hooks/useToast";
 import { DecryptedScramble, Person, ScrambleData } from "@/lib/interfaces";
 import { createScrambledAttempt } from "@/lib/scrambling";
 
@@ -29,7 +28,7 @@ const Scramble = ({
     roundId,
     onSign,
 }: ScrambleProps) => {
-    const toast = useToast();
+    const { toast } = useToast();
     const currentScramble = scrambles.find(
         (scramble) =>
             scramble.num === scrambleData.num &&
@@ -47,57 +46,34 @@ const Scramble = ({
         if (response.status === 201) {
             toast({
                 title: "Succesfully signed the attempt",
-                
+                variant: "success",
             });
             onSign();
         }
     };
 
     return (
-        <Card backgroundColor="gray.400">
-            <CardBody>
-                <Box
-                    display="flex"
-                    gap={2}
-                    alignItems="center"
-                    justifyContent="space-between"
-                >
-                    <Box display="flex" gap={2} alignItems="center">
-                        <Heading size="lg">
-                            {person.name} ({person.wcaId})
-                        </Heading>
-                    </Box>
-                    <Heading size="md">
-                        Scramble {scrambleData.isExtra ? "Extra" : null}{" "}
-                        {scrambleData.num}{" "}
-                    </Heading>
-                </Box>
-                <Box
-                    display="flex"
-                    flexDirection={{ base: "column", md: "row" }}
-                    mt={5}
-                    alignItems="center"
-                    gap={10}
-                >
-                    <Heading
-                        size="lg"
-                        as="pre"
-                        whiteSpace="pre-wrap"
-                        maxWidth="60%"
-                    >
-                        {currentScramble?.scramble || "Scramble not found"}
-                    </Heading>
-                    <scramble-display
-                        scramble={currentScramble?.scramble}
-                        event={roundId.split("-")[0]}
-                    ></scramble-display>
-                </Box>
-            </CardBody>
-            <Divider />
+        <Card>
+            <CardHeader>
+                <CardTitle>
+                    {person.name} ({person.wcaId})
+                </CardTitle>
+                <CardDescription>
+                    Scramble {scrambleData.isExtra ? "Extra" : null}{" "}
+                    {scrambleData.num}{" "}
+                </CardDescription>
+            </CardHeader>
+            <CardContent className="flex items-center justify-between">
+                <pre className="text-wrap max-w-[60%] text-2xl">
+                    {currentScramble?.scramble || "Scramble not found"}
+                </pre>
+                <scramble-display
+                    scramble={currentScramble?.scramble}
+                    event={roundId.split("-")[0]}
+                ></scramble-display>
+            </CardContent>
             <CardFooter>
-                <Button variant="solid" colorScheme="blue" onClick={handleSign}>
-                    Sign
-                </Button>
+                <Button onClick={handleSign}>Sign</Button>
             </CardFooter>
         </Card>
     );

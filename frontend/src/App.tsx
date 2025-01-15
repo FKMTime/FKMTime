@@ -171,10 +171,10 @@ const App = () => {
                     path: "/scrambling-device",
                     element: <ScramblingDeviceHome />,
                 },
-                // {
-                //     path: "/scrambling-device/set/:id",
-                //     element: <ScrambleSet />,
-                // },
+                {
+                    path: "/scrambling-device/set/:id",
+                    element: <ScrambleSet />,
+                },
                 {
                     path: "/scrambling-device/set/:id/scrambles",
                     element: <AllScrambles />,

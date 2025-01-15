@@ -1,13 +1,16 @@
 import { useAtomValue } from "jotai";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 import EventAndRoundSelector from "@/Components/EventAndRoundSelector";
 import LoadingPage from "@/Components/LoadingPage";
 import { Card, CardContent, CardHeader, CardTitle } from "@/Components/ui/card";
 import { activityCodeToName } from "@/lib/activities";
 import { competitionAtom } from "@/lib/atoms";
-import { ScrambleSet } from "@/lib/interfaces";
-import { getScrambleSetsForScramblingDevice } from "@/lib/scrambling";
+import { Room, ScrambleSet } from "@/lib/interfaces";
+import {
+    getScrambleSetsForScramblingDevice,
+    getScramblingDeviceRoom,
+} from "@/lib/scrambling";
 
 import ScrambleSetsTable from "./Components/ScrambleSetsTable";
 
@@ -15,6 +18,7 @@ const ScramblingDeviceHome = () => {
     const competition = useAtomValue(competitionAtom);
     const [roundId, setRoundId] = useState<string>("");
     const [scrambleSets, setScrambleSets] = useState<ScrambleSet[]>([]);
+    const [room, setRoom] = useState<Room | null>(null);
 
     const handleEventChange = async (eventId: string) => {
         const id = eventId + "-r1";
@@ -36,6 +40,15 @@ const ScramblingDeviceHome = () => {
         },
         [roundId]
     );
+    useEffect(() => {
+        getScramblingDeviceRoom().then((data: Room) => {
+            setRoom(data);
+            if (data.currentGroupId && !roundId) {
+                setRoundId(data.currentGroupId.split("-g")[0]);
+                fetchData(data.currentGroupId.split("-g")[0]);
+            }
+        });
+    }, [fetchData, roundId]);
 
     if (!competition) return <LoadingPage />;
 
@@ -65,7 +78,12 @@ const ScramblingDeviceHome = () => {
                         <CardTitle>{activityCodeToName(roundId)}</CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <ScrambleSetsTable scrambleSets={scrambleSets} />
+                        <ScrambleSetsTable
+                            scrambleSets={scrambleSets}
+                            showScrambleButton={
+                                roundId === room?.currentGroupId.split("-g")[0]
+                            }
+                        />
                     </CardContent>
                 </Card>
             ) : null}

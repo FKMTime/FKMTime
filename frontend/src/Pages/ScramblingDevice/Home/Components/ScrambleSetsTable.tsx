@@ -14,9 +14,13 @@ import { ScrambleSet } from "@/lib/interfaces";
 
 interface ScrambleSetsTableProps {
     scrambleSets: ScrambleSet[];
+    showScrambleButton: boolean;
 }
 
-const ScrambleSetsTable = ({ scrambleSets }: ScrambleSetsTableProps) => {
+const ScrambleSetsTable = ({
+    scrambleSets,
+    showScrambleButton,
+}: ScrambleSetsTableProps) => {
     const navigate = useNavigate();
     return (
         <Table>
@@ -34,15 +38,17 @@ const ScrambleSetsTable = ({ scrambleSets }: ScrambleSetsTableProps) => {
                             {scrambleSet.set}
                         </TableCell>
                         <TableCell className="flex gap-2">
-                            <Button
-                                onClick={() =>
-                                    navigate(
-                                        `/scrambling-device/set/${scrambleSet.id}`
-                                    )
-                                }
-                            >
-                                Scramble
-                            </Button>
+                            {showScrambleButton ? (
+                                <Button
+                                    onClick={() =>
+                                        navigate(
+                                            `/scrambling-device/set/${scrambleSet.id}`
+                                        )
+                                    }
+                                >
+                                    Scramble
+                                </Button>
+                            ) : null}
                             <Button
                                 onClick={() =>
                                     navigate(

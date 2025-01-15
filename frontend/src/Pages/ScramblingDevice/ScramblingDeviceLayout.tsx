@@ -43,21 +43,6 @@ const ScramblingDeviceLayout = () => {
 
     return (
         <div className="flex flex-col h-screen p-5">
-            {/* <Circle
-                position="fixed"
-                top="1"
-                right="1"
-                backgroundColor="teal.500"
-                fontSize="3rem"
-                color="white"
-                p={2}
-                onClick={() => navigate("/scrambling-device")}
-                size="4rem"
-                zIndex={100}
-                cursor="pointer"
-            >
-                <MdHome />
-            </Circle> */}
             <Suspense fallback={<LoadingPage />}>
                 <Outlet />
             </Suspense>
