@@ -116,3 +116,8 @@ export const getPersonsFromWCA = async (search: string) => {
         };
     });
 };
+
+export const getPersonFromWCAByWcaId = async (wcaId: string) => {
+    const response = await wcaApiRequest(`persons/${wcaId}`);
+    return await response.json();
+};

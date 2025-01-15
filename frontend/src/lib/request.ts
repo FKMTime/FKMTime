@@ -5,7 +5,7 @@ const DEV_BACKEND_URL = import.meta.env.VITE_BACKEND_ORIGIN
     ? import.meta.env.VITE_BACKEND_ORIGIN
     : "http://localhost:5000";
 const DEV_WCA_URL =
-    import.meta.env.VITE_WCA_ORIGIN ||
+    // import.meta.env.VITE_WCA_ORIGIN ||
     "https://staging.worldcubeassociation.org";
 
 export const WCA_ORIGIN = import.meta.env.PROD
