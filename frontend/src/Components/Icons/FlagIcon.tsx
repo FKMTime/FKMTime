@@ -1,5 +1,9 @@
 import { Flag64 as Flag } from "@weston/react-world-flags";
-import { MdPublic } from "react-icons/md";
+import { Globe } from "lucide-react";
+
+import { regionNameByIso2 } from "@/lib/utils";
+
+import Tooltip from "../Tooltip";
 
 interface FlagIconProps {
     country?: string;
@@ -8,9 +12,13 @@ interface FlagIconProps {
 
 const FlagIcon = ({ country, size }: FlagIconProps) => {
     if (country) {
-        return <Flag code={country.toLowerCase()} width={size} height={size} />;
+        return (
+            <Tooltip content={regionNameByIso2(country) || ""}>
+                <Flag code={country.toLowerCase()} width={size} height={size} />
+            </Tooltip>
+        );
     } else {
-        return <MdPublic />;
+        return <Globe />;
     }
 };
 

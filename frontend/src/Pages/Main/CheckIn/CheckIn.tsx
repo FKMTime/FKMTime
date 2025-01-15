@@ -211,7 +211,7 @@ const CheckIn = () => {
                             </p>
                         </CardDescription>
                     </CardHeader>
-                    <CardContent>
+                    <CardContent className="flex flex-col gap-3">
                         {!personData.cardId ? (
                             <Alert variant="destructive">
                                 <AlertTitle>

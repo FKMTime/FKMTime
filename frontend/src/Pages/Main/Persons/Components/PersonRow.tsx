@@ -1,12 +1,8 @@
 import { Competition } from "@wca/helpers";
+import { PersonStanding } from "lucide-react";
 import { useState } from "react";
 import { FaAddressCard } from "react-icons/fa";
-import {
-    MdAssignment,
-    MdBarChart,
-    MdDone,
-    MdEmojiPeople,
-} from "react-icons/md";
+import { MdAssignment, MdBarChart, MdDone } from "react-icons/md";
 import { useNavigate } from "react-router-dom";
 import { getPersonFromWcif } from "wcif-helpers";
 
@@ -14,6 +10,7 @@ import Avatar from "@/Components/Avatar/Avatar";
 import EventIcon from "@/Components/Icons/EventIcon";
 import FlagIcon from "@/Components/Icons/FlagIcon.tsx";
 import SmallIconButton from "@/Components/SmallIconButton";
+import Tooltip from "@/Components/Tooltip";
 import { TableCell, TableRow } from "@/Components/ui/table";
 import { isAdmin } from "@/lib/auth";
 import { Person } from "@/lib/interfaces";
@@ -67,7 +64,9 @@ const PersonRow = ({ person, wcif, handleCloseEditModal }: PersonRowProps) => {
                         {person.wcaId}
                     </a>
                 ) : person.canCompete ? (
-                    <MdEmojiPeople />
+                    <Tooltip content="Newcomer">
+                        <PersonStanding />
+                    </Tooltip>
                 ) : null}
             </TableCell>
             <TableCell>
