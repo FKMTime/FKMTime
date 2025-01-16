@@ -98,6 +98,7 @@ const ImportScrambles = () => {
                         <label>Upload encrypted scrambles JSON</label>
                         <Input
                             type="file"
+                            accept=".json"
                             onChange={handleFileUpload}
                             key={fileInputKey}
                         />
