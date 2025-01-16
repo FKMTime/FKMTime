@@ -1,5 +1,5 @@
-import { useAtomValue } from "jotai";
-import { useEffect, useMemo, useState } from "react";
+import { useAtomValue, useSetAtom } from "jotai";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { getLimitByRoundId } from "wcif-helpers";
 
@@ -9,8 +9,9 @@ import { Button } from "@/Components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/Components/ui/card";
 import { useConfirm } from "@/hooks/useConfirm";
 import { useToast } from "@/hooks/useToast";
-import { competitionAtom } from "@/lib/atoms";
+import { competitionAtom, unresolvedIncidentsCountAtom } from "@/lib/atoms";
 import { deleteAttempt, getIncidentById, updateAttempt } from "@/lib/attempt";
+import { getUnresolvedIncidentsCount } from "@/lib/incidents";
 import {
     ApplicationQuickAction,
     AttemptStatus,
@@ -32,6 +33,10 @@ const IncidentPage = () => {
     const [previousIncidents, setPreviousIncidents] = useState<Incident[]>([]);
     const [isLoading, setIsLoading] = useState<boolean>(false);
 
+    const setUnresolvedIncidentsCount = useSetAtom(
+        unresolvedIncidentsCountAtom
+    );
+
     const timeLimit = useMemo(() => {
         if (!competition || !editedIncident) {
             return null;
@@ -50,11 +55,14 @@ const IncidentPage = () => {
         });
     }, [id]);
 
-    if (!editedIncident) {
-        return <LoadingPage />;
-    }
+    const fetchUnresolvedIncidentsCount = useCallback(() => {
+        getUnresolvedIncidentsCount().then((data) =>
+            setUnresolvedIncidentsCount(data.count)
+        );
+    }, [setUnresolvedIncidentsCount]);
 
     const handleQuickAction = (action: ApplicationQuickAction) => {
+        if (!editedIncident) return;
         const data = {
             ...editedIncident,
             status: action.giveExtra
@@ -83,6 +91,7 @@ const IncidentPage = () => {
         setIsLoading(true);
         const status = await updateAttempt(data);
         if (status === 200) {
+            fetchUnresolvedIncidentsCount();
             toast({
                 title: "Incident updated",
                 variant: "success",
@@ -99,6 +108,7 @@ const IncidentPage = () => {
     };
 
     const handleDelete = async () => {
+        if (!editedIncident) return;
         confirm({
             title: "Are you sure you want to delete this attempt?",
             description: "This action cannot be undone.",
@@ -122,6 +132,10 @@ const IncidentPage = () => {
             },
         });
     };
+
+    if (!editedIncident) {
+        return <LoadingPage />;
+    }
 
     return (
         <div className="flex flex-col gap-4">

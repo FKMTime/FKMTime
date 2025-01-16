@@ -4,4 +4,6 @@ import { Competition } from "./interfaces";
 
 const competitionAtom = atom<Competition | null>(null);
 
-export { competitionAtom };
+const unresolvedIncidentsCountAtom = atom<number>(0);
+
+export { competitionAtom, unresolvedIncidentsCountAtom };

@@ -22,6 +22,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/Components/ui/card";
 import { Input } from "@/Components/ui/input";
 import { activityCodeToName } from "@/lib/activities";
 import { competitionAtom } from "@/lib/atoms";
+import { isAdmin } from "@/lib/auth";
 import { getCompetitionInfo } from "@/lib/competition";
 import { Result, Room } from "@/lib/interfaces";
 import { getResultsByRoundId } from "@/lib/results";
@@ -128,6 +129,12 @@ const Results = () => {
         Dispatch<SetStateAction<number>>,
     ];
     useEffect(() => {
+        if (filters.roundId) {
+            if (!isAdmin()) {
+                navigate(`/results/public/${filters.roundId}`);
+            }
+            fetchData(filters.roundId);
+        }
         socket.emit("joinResults", { roundId: filters.roundId });
         socket.on("resultEntered", () => {
             fetchData(filters.roundId);

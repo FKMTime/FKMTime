@@ -44,21 +44,19 @@ import { activityCodeToName } from "@/lib/activities";
 import { competitionAtom } from "@/lib/atoms";
 import { isAdmin } from "@/lib/auth";
 import { GITHUB_URL } from "@/lib/constants";
-import { getUnresolvedIncidentsCount } from "@/lib/incidents";
 import { Room } from "@/lib/interfaces";
 import { getAllRooms } from "@/lib/rooms";
 
-const AppSidebar = () => {
+interface AppSidebarProps {
+    unresolvedIncidentsCount: number;
+}
+
+const AppSidebar = ({ unresolvedIncidentsCount }: AppSidebarProps) => {
     const location = useLocation();
-    const [unresolvedIncidentsCount, setUnresolvedIncidentsCount] =
-        useState<number>(0);
     const [currentRounds, setCurrentRounds] = useState<string[]>([]);
     const competition = useAtomValue(competitionAtom);
 
     useEffect(() => {
-        getUnresolvedIncidentsCount().then((data) =>
-            setUnresolvedIncidentsCount(data.count)
-        );
         getAllRooms().then((data) => {
             const ids = new Set<string>(
                 data

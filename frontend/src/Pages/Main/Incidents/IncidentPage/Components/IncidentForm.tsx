@@ -59,7 +59,7 @@ const IncidentForm = ({
             attemptNumber: editedIncident.attemptNumber,
             value: editedIncident.value,
             penalty: editedIncident.penalty,
-            comment: editedIncident.comment,
+            comment: editedIncident.comment ? editedIncident.comment : "",
             replacedBy: editedIncident.replacedBy
                 ? editedIncident.replacedBy.toString()
                 : "",

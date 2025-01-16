@@ -5,10 +5,11 @@ import { Outlet, useNavigate } from "react-router-dom";
 import LoadingPage from "@/Components/LoadingPage";
 import ModeToggle from "@/Components/ModeToggle";
 import { SidebarProvider, SidebarTrigger } from "@/Components/ui/sidebar";
-import { competitionAtom } from "@/lib/atoms";
+import { competitionAtom, unresolvedIncidentsCountAtom } from "@/lib/atoms";
 import { getToken, getUserInfo, isUserLoggedIn } from "@/lib/auth";
 import { getCompetitionInfo } from "@/lib/competition";
 import { getEvents } from "@/lib/events";
+import { getUnresolvedIncidentsCount } from "@/lib/incidents";
 import { isMobile, isNotificationsSupported } from "@/lib/utils";
 import { socket, SocketContext } from "@/socket";
 
@@ -19,11 +20,32 @@ const Layout = () => {
     const userInfo = getUserInfo();
     const navigate = useNavigate();
     const [competition, setCompetition] = useAtom(competitionAtom);
+    const [unresolvedIncidentsCount, setUnresolvedIncidentsCount] = useAtom(
+        unresolvedIncidentsCountAtom
+    );
 
     const [isConnected, setConnected] = useContext(SocketContext) as [
         number,
         React.Dispatch<React.SetStateAction<number>>,
     ];
+
+    const fetchUnresolvedIncidentsCount = useCallback(() => {
+        getUnresolvedIncidentsCount().then((data) =>
+            setUnresolvedIncidentsCount(data.count)
+        );
+    }, [setUnresolvedIncidentsCount]);
+
+    const fetchCompetition = useCallback(async () => {
+        const response = await getCompetitionInfo();
+        if (response.status === 404) {
+            navigate("/competition/import");
+        }
+        setCompetition(response.data);
+    }, [navigate, setCompetition]);
+
+    const fetchEvents = async () => {
+        await getEvents();
+    };
 
     useEffect(() => {
         if (!userInfo) return;
@@ -36,6 +58,7 @@ const Layout = () => {
             socket.emit("joinIncidents");
             socket.emit("joinCompetition");
             socket.on("newIncident", (data) => {
+                fetchUnresolvedIncidentsCount();
                 const message = `Competitor ${data.competitorName} on station ${data.deviceName}`;
                 Notification.requestPermission().then((permission) => {
                     if (permission === "granted") {
@@ -113,7 +136,7 @@ const Layout = () => {
                 socket.emit("leaveCompetition");
             };
         }
-    }, [navigate, userInfo, isConnected]);
+    }, [navigate, userInfo, isConnected, fetchUnresolvedIncidentsCount]);
 
     useEffect(() => {
         isUserLoggedIn().then((isLoggedIn) => {
@@ -134,18 +157,6 @@ const Layout = () => {
         });
     }, [navigate, isConnected, setConnected]);
 
-    const fetchCompetition = useCallback(async () => {
-        const response = await getCompetitionInfo();
-        if (response.status === 404) {
-            navigate("/competition/import");
-        }
-        setCompetition(response.data);
-    }, [navigate, setCompetition]);
-
-    const fetchEvents = async () => {
-        await getEvents();
-    };
-
     useEffect(() => {
         fetchCompetition();
     }, [fetchCompetition]);
@@ -154,12 +165,16 @@ const Layout = () => {
         fetchEvents();
     }, []);
 
+    useEffect(() => {
+        fetchUnresolvedIncidentsCount();
+    }, [fetchUnresolvedIncidentsCount]);
+
     if (!userInfo || !competition) {
         return <></>;
     }
     return (
         <SidebarProvider>
-            <AppSidebar />
+            <AppSidebar unresolvedIncidentsCount={unresolvedIncidentsCount} />
             <main className="w-full p-5 h-screen overflow-y-auto flex flex-col gap-5">
                 <div className="flex justify-between">
                     <SidebarTrigger />
