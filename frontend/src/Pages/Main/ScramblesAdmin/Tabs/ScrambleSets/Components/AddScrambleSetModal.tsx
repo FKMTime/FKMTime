@@ -113,6 +113,7 @@ const AddScrambleSetModal = ({
                     <Label htmlFor="add-scramble-set">Upload scrambles</Label>
                     <Input
                         type="file"
+                        accept=".json"
                         onChange={handleFileUpload}
                         id="add-scramble-set"
                         ref={inputRef}
