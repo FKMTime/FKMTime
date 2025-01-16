@@ -89,7 +89,7 @@ const ResultsActions = ({
             resultsLength: resultsLength > 0,
         },
         {
-            title: "Resubmit results to WCA Live",
+            title: `Resubmit results to ${getSubmissionPlatformName(filters.eventId)}`,
             variant: "success",
             onClick: handleResubmitRound,
             colSpan: 2,
@@ -103,7 +103,10 @@ const ResultsActions = ({
                         (!action.resultsLength || resultsLength > 0) && (
                             <Button
                                 key={action.title}
-                                variant={action.variant as any}
+                                variant={
+                                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                                    action.variant as any
+                                }
                                 onClick={action.onClick}
                             >
                                 {action.title}
@@ -115,9 +118,11 @@ const ResultsActions = ({
                 {resultsActions.map(
                     (action) =>
                         (!action.resultsLength || resultsLength > 0) && (
-                            <div className={action.colSpan ? "col-span-2" : ""}>
+                            <div
+                                className={action.colSpan ? "col-span-2" : ""}
+                                key={action.title}
+                            >
                                 <Button
-                                    key={action.title}
                                     variant={
                                         // eslint-disable-next-line @typescript-eslint/no-explicit-any
                                         action.variant as any

@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/Components/ui/card";
 import { UnofficialEvent } from "@/lib/interfaces";
 import { getCompetitionUnofficialEvents } from "@/lib/unofficialEvents";
 
+import CreateUnofficialEventModal from "./Components/CreateUnofficialEventModal";
 import UnofficialEventsTable from "./Components/UnofficialEventsTable";
 
 const UnofficialEvents = () => {
@@ -48,10 +49,10 @@ const UnofficialEvents = () => {
                     events={unofficialEvents}
                     fetchData={fetchData}
                 />
-                {/* <CreateUnofficialEventModal
-                isOpen={isOpenCreateUnofficialEventModal}
-                onClose={handleCloseCreateModal}
-            /> */}
+                <CreateUnofficialEventModal
+                    isOpen={isOpenCreateUnofficialEventModal}
+                    onClose={handleCloseCreateModal}
+                />
             </CardContent>
         </Card>
     );

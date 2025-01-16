@@ -1,4 +1,4 @@
-import { activityCodeToName, Competition } from "@wca/helpers";
+import { Competition } from "@wca/helpers";
 import { type ClassValue, clsx } from "clsx";
 import * as CryptoJS from "crypto-js";
 import { twMerge } from "tailwind-merge";
@@ -14,6 +14,7 @@ import {
     User,
 } from "../lib/interfaces";
 import regions from "../lib/regions";
+import { activityCodeToName } from "./activities";
 
 export function cn(...inputs: ClassValue[]) {
     return twMerge(clsx(inputs));

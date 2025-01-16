@@ -1,6 +1,8 @@
 import { useAtom } from "jotai";
 import {
     ChangeEvent,
+    Dispatch,
+    SetStateAction,
     useCallback,
     useContext,
     useEffect,
@@ -28,11 +30,11 @@ import { getAllRooms } from "@/lib/rooms";
 import { socket, SocketContext } from "@/socket";
 
 import EventAndRoundSelector from "../../../Components/EventAndRoundSelector";
+import CreateAttemptModal from "./Components/CreateAttemptModal";
 import RestartGroupModal from "./Components/RestartGroupModal";
 import ResultsActions from "./Components/ResultsActions";
 import ResultsTable from "./Components/ResultsTable";
 import RoundLimits from "./Components/RoundLimits";
-import CreateAttemptModal from "./Components/CreateAttemptModal";
 
 const Results = () => {
     const { id } = useParams<{ id: string }>();
@@ -124,7 +126,7 @@ const Results = () => {
 
     const [isConnected] = useContext(SocketContext) as [
         number,
-        React.Dispatch<React.SetStateAction<number>>,
+        Dispatch<SetStateAction<number>>,
     ];
     useEffect(() => {
         if (filters.roundId) {

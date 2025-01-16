@@ -2,14 +2,14 @@ import { useState } from "react";
 
 import DeleteButton from "@/Components/DeleteButton";
 import EditButton from "@/Components/EditButton";
+import { TableCell, TableRow } from "@/Components/ui/table";
+import { useConfirm } from "@/hooks/useConfirm";
+import { useToast } from "@/hooks/useToast";
 import { getEventName } from "@/lib/events";
 import { UnofficialEvent } from "@/lib/interfaces";
 import { deleteUnofficialEvent } from "@/lib/unofficialEvents";
 
 import EditUnofficialEventModal from "./EditUnofficialEventModal";
-import { useConfirm } from "@/hooks/useConfirm";
-import { useToast } from "@/hooks/useToast";
-import { TableRow, TableCell } from "@/Components/ui/table";
 
 interface UnofficialEventRowProps {
     event: UnofficialEvent;
@@ -18,7 +18,7 @@ interface UnofficialEventRowProps {
 
 const UnofficialEventRow = ({ event, fetchData }: UnofficialEventRowProps) => {
     const confirm = useConfirm();
-    const {toast} = useToast();
+    const { toast } = useToast();
     const [isOpenEditUnofficialEventModal, setIsOpenEditUnofficialEventModal] =
         useState<boolean>(false);
 
@@ -32,7 +32,6 @@ const UnofficialEventRow = ({ event, fetchData }: UnofficialEventRowProps) => {
                 if (status === 204) {
                     toast({
                         title: "Successfully deleted event.",
-                        
                     });
                     fetchData();
                 } else if (status === 409) {
@@ -54,7 +53,6 @@ const UnofficialEventRow = ({ event, fetchData }: UnofficialEventRowProps) => {
                     title: "Cancelled",
                     description:
                         "You have cancelled the deletion of the event.",
-                 
                 });
             });
     };
@@ -74,11 +72,11 @@ const UnofficialEventRow = ({ event, fetchData }: UnofficialEventRowProps) => {
                     <DeleteButton onClick={handleDelete} />
                 </TableCell>
             </TableRow>
-            {/* <EditUnofficialEventModal
+            <EditUnofficialEventModal
                 isOpen={isOpenEditUnofficialEventModal}
                 onClose={handleCloseEditModal}
                 unofficialEvent={event}
-            /> */}
+            />
         </>
     );
 };

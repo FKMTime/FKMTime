@@ -4,11 +4,12 @@ import { Button } from "./ui/button";
 
 interface IconButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
     icon: ReactNode;
+    filled?: boolean;
 }
 
-const IconButton = ({ icon, ...props }: IconButtonProps) => {
+const IconButton = ({ icon, filled, ...props }: IconButtonProps) => {
     return (
-        <Button {...props} variant="ghost">
+        <Button {...props} variant={filled ? "default" : "ghost"}>
             {icon}
         </Button>
     );
