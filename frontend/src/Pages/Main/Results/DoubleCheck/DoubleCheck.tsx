@@ -225,7 +225,6 @@ const DoubleCheck = () => {
                                 <SelectCompetitor
                                     idInputRef={idInputRef}
                                     handleSubmit={handleSubmit}
-                                    result={result}
                                     resultsToDoubleCheck={resultsToDoubleCheck}
                                     setResult={setResult}
                                     inputValue={inputValue}

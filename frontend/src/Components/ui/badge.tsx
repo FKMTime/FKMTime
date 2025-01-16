@@ -35,4 +35,5 @@ function Badge({ className, variant, ...props }: BadgeProps) {
     );
 }
 
+//eslint-disable-next-line
 export { Badge, badgeVariants };

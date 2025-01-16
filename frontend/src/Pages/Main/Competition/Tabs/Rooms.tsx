@@ -5,7 +5,7 @@ import { useCallback, useEffect, useState } from "react";
 import LoadingPage from "@/Components/LoadingPage";
 import { Alert, AlertDescription, AlertTitle } from "@/Components/ui/alert";
 import { Button } from "@/Components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/Components/ui/card";
+import { Card, CardHeader, CardTitle } from "@/Components/ui/card";
 import { useToast } from "@/hooks/useToast";
 import { activityCodeToName } from "@/lib/activities";
 import { competitionAtom } from "@/lib/atoms";
@@ -119,7 +119,6 @@ const Rooms = () => {
                         </AlertDescription>
                     </Alert>
                 )}
-
                 <div className="flex flex-wrap gap-5">
                     {rooms.map((room: Room) => (
                         <RoomCard

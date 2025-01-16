@@ -7,7 +7,6 @@ import { Person, ResultToDoubleCheck } from "@/lib/interfaces";
 interface SelectCompetitorProps {
     idInputRef: React.RefObject<HTMLInputElement>;
     handleSubmit: () => void;
-    result: ResultToDoubleCheck | null;
     resultsToDoubleCheck: ResultToDoubleCheck[];
     setResult: (result: ResultToDoubleCheck | null) => void;
     inputValue: string;
@@ -18,7 +17,6 @@ interface SelectCompetitorProps {
 const SelectCompetitor = ({
     idInputRef,
     handleSubmit,
-    result,
     resultsToDoubleCheck,
     setResult,
     inputValue,
@@ -64,6 +62,7 @@ const SelectCompetitor = ({
                 disabled={false}
                 defaultValue={inputValue}
                 personsList={resultsToDoubleCheck.map((r) => r.person)}
+                key={inputValue}
             />
         </div>
     );

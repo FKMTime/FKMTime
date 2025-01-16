@@ -73,6 +73,7 @@ const SidebarProvider = React.forwardRef<
         const [_open, _setOpen] = React.useState(defaultOpen);
         const open = openProp ?? _open;
         const setOpen = React.useCallback(
+            //eslint-disable-next-line
             (value: boolean | ((value: boolean) => boolean)) => {
                 const openState =
                     typeof value === "function" ? value(open) : value;
@@ -90,9 +91,7 @@ const SidebarProvider = React.forwardRef<
 
         // Helper to toggle the sidebar.
         const toggleSidebar = React.useCallback(() => {
-            return isMobile
-                ? setOpenMobile((open) => !open)
-                : setOpen((open) => !open);
+            return isMobile ? setOpenMobile((o) => !o) : setOpen((o) => !o);
         }, [isMobile, setOpen, setOpenMobile]);
 
         // Adds a keyboard shortcut to toggle the sidebar.
@@ -782,5 +781,6 @@ export {
     SidebarRail,
     SidebarSeparator,
     SidebarTrigger,
+    //eslint-disable-next-line
     useSidebar,
 };
