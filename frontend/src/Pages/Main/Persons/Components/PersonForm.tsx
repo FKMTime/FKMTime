@@ -1,121 +1,161 @@
-import { Box, FormControl, FormLabel, Input } from "@chakra-ui/react";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
 
-import Autocomplete from "@/Components/Autocomplete";
-import Select from "@/Components/Select";
-import { AddPerson, Region } from "@/logic/interfaces";
-import regions from "@/logic/regions";
+import ModalActions from "@/Components/ModalActions";
+import { Button } from "@/Components/ui/button";
+import {
+    Form,
+    FormControl,
+    FormField,
+    FormItem,
+    FormLabel,
+    FormMessage,
+} from "@/Components/ui/form";
+import { Input } from "@/Components/ui/input";
+import { AddPerson } from "@/lib/interfaces";
+import { getPersonFromWCAByWcaId } from "@/lib/persons";
+import { addPersonSchema } from "@/lib/schema/personSchema";
+
+import CountrySelect from "./CountrySelect";
+import GenderSelect from "./GenderSelect";
 
 interface PersonFormProps {
     canCompete?: boolean;
     isLoading: boolean;
-    newPersonData: AddPerson;
-    setNewPersonData: (data: AddPerson) => void;
+    handleSubmit: (data: AddPerson) => void;
 }
 
 const PersonForm = ({
     canCompete = false,
     isLoading,
-    newPersonData,
-    setNewPersonData,
+    handleSubmit,
 }: PersonFormProps) => {
-    const countries: Region[] = regions.filter(
-        (region) =>
-            !["_Multiple Continents", "Continent"].includes(region.continentId)
-    );
+    const form = useForm<z.infer<typeof addPersonSchema>>({
+        resolver: zodResolver(addPersonSchema),
+    });
 
-    const handleSelectCountry = (option: Region) => {
-        setNewPersonData({
-            ...newPersonData,
-            countryIso2: option.iso2,
+    const onSubmit = (values: z.infer<typeof addPersonSchema>) => {
+        handleSubmit({
+            ...values,
+            canCompete,
         });
     };
 
+    const prefillValuesFromWca = async (wcaId: string) => {
+        if (!wcaId || wcaId.length !== 10) return;
+        const { person: personFromWca } = await getPersonFromWCAByWcaId(wcaId);
+        form.setValue("name", personFromWca.name);
+        form.setValue("gender", personFromWca.gender);
+        form.setValue("countryIso2", personFromWca.country.iso2);
+    };
+
     return (
-        <Box display="flex" gap="5" flexDirection="column">
-            <FormControl isRequired>
-                <FormLabel>Name</FormLabel>
-                <Input
-                    placeholder="Name"
-                    disabled={isLoading}
-                    value={newPersonData.name}
-                    _placeholder={{ color: "white" }}
-                    onChange={(event) =>
-                        setNewPersonData({
-                            ...newPersonData,
-                            name: event.target.value,
-                        })
-                    }
-                />
-            </FormControl>
-            <FormControl isRequired>
-                <FormLabel>Gender</FormLabel>
-                <Select
-                    value={newPersonData.gender}
-                    onChange={(e) =>
-                        setNewPersonData({
-                            ...newPersonData,
-                            gender: e.target.value,
-                        })
-                    }
-                    placeholder="Select gender"
-                    disabled={isLoading}
-                >
-                    <option value="m">Male</option>
-                    <option value="f">Female</option>
-                    <option value="o">Other</option>
-                </Select>
-            </FormControl>
-            {canCompete && (
-                <>
-                    <FormControl>
-                        <FormLabel>WCA ID</FormLabel>
-                        <Input
-                            placeholder="WCA ID"
-                            disabled={isLoading}
-                            value={newPersonData.wcaId}
-                            _placeholder={{ color: "white" }}
-                            onChange={(event) =>
-                                setNewPersonData({
-                                    ...newPersonData,
-                                    wcaId: event.target.value,
-                                })
-                            }
-                        />
-                    </FormControl>
-                    <FormControl isRequired>
-                        <FormLabel>Country</FormLabel>
-                        <Autocomplete
-                            options={countries}
-                            onOptionSelect={(option) =>
-                                handleSelectCountry(option as Region)
-                            }
-                            selectedValue={countries.find(
-                                (region) =>
-                                    region.iso2 === newPersonData.countryIso2
+        <Form {...form}>
+            <form
+                onSubmit={form.handleSubmit(onSubmit)}
+                className="space-y-8 py-3"
+            >
+                {canCompete && (
+                    <>
+                        <FormField
+                            control={form.control}
+                            name="wcaId"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>WCA ID</FormLabel>
+                                    <FormControl>
+                                        <Input
+                                            placeholder="WCA ID"
+                                            {...field}
+                                        />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
                             )}
-                            placeholder="Search for a country"
-                            disabled={isLoading}
-                            getOptionLabel={(option) => option.name}
                         />
-                    </FormControl>
-                </>
-            )}
-            <FormControl>
-                <FormLabel>Card</FormLabel>
-                <Input
-                    placeholder="Scan card"
-                    disabled={isLoading}
-                    value={newPersonData.cardId}
-                    _placeholder={{ color: "white" }}
-                    onChange={(event) =>
-                        setNewPersonData({
-                            ...newPersonData,
-                            cardId: event.target.value,
-                        })
-                    }
+                        <Button
+                            type="button"
+                            onClick={() =>
+                                prefillValuesFromWca(
+                                    form.getValues().wcaId || ""
+                                )
+                            }
+                        >
+                            Get person data from WCA
+                        </Button>
+                    </>
+                )}
+                <FormField
+                    control={form.control}
+                    name="name"
+                    render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Name</FormLabel>
+                            <FormControl>
+                                <Input placeholder="Name" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                        </FormItem>
+                    )}
                 />
-            </FormControl>
-        </Box>
+                <FormField
+                    control={form.control}
+                    name="gender"
+                    render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Gender</FormLabel>
+                            <GenderSelect
+                                value={field.value}
+                                onChange={field.onChange}
+                                key={field.value}
+                            />
+                            <FormMessage />
+                        </FormItem>
+                    )}
+                />
+                {canCompete && (
+                    <FormField
+                        control={form.control}
+                        name="countryIso2"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Country</FormLabel>
+                                <CountrySelect
+                                    value={field.value || ""}
+                                    onChange={field.onChange}
+                                    key={field.value}
+                                />
+
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+                )}
+                <FormField
+                    control={form.control}
+                    name="cardId"
+                    render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Card</FormLabel>
+                            <FormControl>
+                                <Input placeholder="Scan card" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                        </FormItem>
+                    )}
+                />
+                <ModalActions>
+                    <Button
+                        type="submit"
+                        variant="success"
+                        disabled={isLoading}
+                    >
+                        Add person
+                    </Button>
+                </ModalActions>
+            </form>
+        </Form>
     );
 };
 

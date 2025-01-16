@@ -1,14 +1,12 @@
-import { Box, Circle } from "@chakra-ui/react";
 import { useSetAtom } from "jotai";
 import { Suspense, useCallback, useEffect } from "react";
-import { MdHome } from "react-icons/md";
 import { Outlet, useNavigate } from "react-router-dom";
 
 import LoadingPage from "@/Components/LoadingPage";
-import { competitionAtom } from "@/logic/atoms";
-import { getCompetitionInfo } from "@/logic/competition";
-import { getEvents } from "@/logic/events";
-import { isScrambleDeviceTokenValid } from "@/logic/scramblingDevicesAuth";
+import { competitionAtom } from "@/lib/atoms";
+import { getCompetitionInfo } from "@/lib/competition";
+import { getEvents } from "@/lib/events";
+import { isScrambleDeviceTokenValid } from "@/lib/scramblingDevicesAuth";
 
 const ScramblingDeviceLayout = () => {
     const navigate = useNavigate();
@@ -44,32 +42,11 @@ const ScramblingDeviceLayout = () => {
     }, []);
 
     return (
-        <Box
-            width="100%"
-            padding="5"
-            color="white"
-            height="100vh"
-            overflowY="auto"
-        >
-            <Circle
-                position="fixed"
-                top="1"
-                right="1"
-                backgroundColor="teal.500"
-                fontSize="3rem"
-                color="white"
-                p={2}
-                onClick={() => navigate("/scrambling-device")}
-                size="4rem"
-                zIndex={100}
-                cursor="pointer"
-            >
-                <MdHome />
-            </Circle>
+        <div className="flex flex-col h-screen p-5">
             <Suspense fallback={<LoadingPage />}>
                 <Outlet />
             </Suspense>
-        </Box>
+        </div>
     );
 };
 

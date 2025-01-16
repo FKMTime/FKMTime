@@ -1,12 +1,13 @@
-import { Td, Tr, useToast } from "@chakra-ui/react";
-import { useConfirm } from "chakra-ui-confirm";
 import { useState } from "react";
 
 import DeleteButton from "@/Components/DeleteButton";
 import EditButton from "@/Components/EditButton";
-import { getEventName } from "@/logic/events";
-import { UnofficialEvent } from "@/logic/interfaces";
-import { deleteUnofficialEvent } from "@/logic/unofficialEvents";
+import { TableCell, TableRow } from "@/Components/ui/table";
+import { useConfirm } from "@/hooks/useConfirm";
+import { useToast } from "@/hooks/useToast";
+import { getEventName } from "@/lib/events";
+import { UnofficialEvent } from "@/lib/interfaces";
+import { deleteUnofficialEvent } from "@/lib/unofficialEvents";
 
 import EditUnofficialEventModal from "./EditUnofficialEventModal";
 
@@ -17,7 +18,7 @@ interface UnofficialEventRowProps {
 
 const UnofficialEventRow = ({ event, fetchData }: UnofficialEventRowProps) => {
     const confirm = useConfirm();
-    const toast = useToast();
+    const { toast } = useToast();
     const [isOpenEditUnofficialEventModal, setIsOpenEditUnofficialEventModal] =
         useState<boolean>(false);
 
@@ -31,20 +32,19 @@ const UnofficialEventRow = ({ event, fetchData }: UnofficialEventRowProps) => {
                 if (status === 204) {
                     toast({
                         title: "Successfully deleted event.",
-                        status: "success",
                     });
                     fetchData();
                 } else if (status === 409) {
                     toast({
                         title: "Error",
                         description: "Cannot delete event with results",
-                        status: "error",
+                        variant: "destructive",
                     });
                 } else {
                     toast({
                         title: "Error",
                         description: "Something went wrong",
-                        status: "error",
+                        variant: "destructive",
                     });
                 }
             })
@@ -53,7 +53,6 @@ const UnofficialEventRow = ({ event, fetchData }: UnofficialEventRowProps) => {
                     title: "Cancelled",
                     description:
                         "You have cancelled the deletion of the event.",
-                    status: "info",
                 });
             });
     };
@@ -64,15 +63,15 @@ const UnofficialEventRow = ({ event, fetchData }: UnofficialEventRowProps) => {
     };
     return (
         <>
-            <Tr key={event.id}>
-                <Td>{getEventName(event.eventId)}</Td>
-                <Td>
+            <TableRow key={event.id}>
+                <TableCell>{getEventName(event.eventId)}</TableCell>
+                <TableCell>
                     <EditButton
                         onClick={() => setIsOpenEditUnofficialEventModal(true)}
                     />
                     <DeleteButton onClick={handleDelete} />
-                </Td>
-            </Tr>
+                </TableCell>
+            </TableRow>
             <EditUnofficialEventModal
                 isOpen={isOpenEditUnofficialEventModal}
                 onClose={handleCloseEditModal}

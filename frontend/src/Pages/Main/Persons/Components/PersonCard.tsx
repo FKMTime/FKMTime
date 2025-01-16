@@ -1,16 +1,3 @@
-import {
-    Box,
-    Button,
-    ButtonGroup,
-    Card,
-    CardBody,
-    CardFooter,
-    Divider,
-    Heading,
-    Link,
-    Stack,
-    Text,
-} from "@chakra-ui/react";
 import { Competition } from "@wca/helpers";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -19,10 +6,18 @@ import { getPersonFromWcif } from "wcif-helpers";
 import Avatar from "@/Components/Avatar/Avatar";
 import EventIcon from "@/Components/Icons/EventIcon";
 import FlagIcon from "@/Components/Icons/FlagIcon";
-import { isAdmin } from "@/logic/auth";
-import { Person } from "@/logic/interfaces";
-import { WCA_ORIGIN } from "@/logic/request";
-import { prettyGender, regionNameByIso2 } from "@/logic/utils";
+import { Button } from "@/Components/ui/button";
+import {
+    Card,
+    CardContent,
+    CardFooter,
+    CardHeader,
+    CardTitle,
+} from "@/Components/ui/card";
+import { isAdmin } from "@/lib/auth";
+import { Person } from "@/lib/interfaces";
+import { WCA_ORIGIN } from "@/lib/request";
+import { prettyGender, regionNameByIso2 } from "@/lib/utils";
 
 import AssignCardModal from "./AssignCardModal";
 import DisplayGroupsModal from "./DisplayGroupsModal";
@@ -53,120 +48,89 @@ const PersonCard = ({
     };
     return (
         <>
-            <Card backgroundColor="gray.400">
-                <CardBody>
-                    <Box
-                        display="flex"
-                        gap={2}
-                        alignItems="center"
-                        justifyContent="space-between"
-                    >
-                        <Box display="flex" gap={2} alignItems="center">
+            <Card>
+                <CardHeader>
+                    <CardTitle className="flex gap-2 justify-between items-center">
+                        <div className="flex items-center gap-2">
                             <Avatar
-                                avatarSize={30}
                                 avatarUrl={wcifInfo?.avatar?.thumbUrl}
                                 fullAvatarUrl={wcifInfo?.avatar?.url}
                                 username={person.name}
                             />
-                            <Heading size="md">
-                                {person.name}{" "}
-                                {person.registrantId &&
-                                    `(${person.registrantId})`}
-                            </Heading>
-                        </Box>
+                            {person.name}{" "}
+                            {person.registrantId && `(${person.registrantId})`}
+                        </div>
                         {person.countryIso2 && (
-                            <Box display="flex" alignItems="center" gap="1">
+                            <div className="flex items-center gap-1">
                                 <FlagIcon
                                     country={person.countryIso2}
                                     size={40}
                                 />
-                            </Box>
+                            </div>
                         )}
-                    </Box>
-                    <Stack mt="6" spacing="3">
-                        {person.wcaId && (
-                            <Text>
-                                WCA ID:{" "}
-                                <Link
-                                    target="_blank"
-                                    href={`${WCA_ORIGIN}/persons/${person.wcaId}`}
+                    </CardTitle>
+                </CardHeader>
+                <CardContent>
+                    {person.wcaId && (
+                        <p>
+                            WCA ID:{" "}
+                            <a
+                                className="text-blue-500"
+                                href={`${WCA_ORIGIN}/persons/${person.wcaId}`}
+                                target="_blank"
+                            >
+                                {person.wcaId}
+                            </a>
+                        </p>
+                    )}
+                    {person.countryIso2 && (
+                        <p>
+                            Representing: {regionNameByIso2(person.countryIso2)}
+                        </p>
+                    )}
+                    <p>Gender: {prettyGender(person.gender)}</p>
+                    <p>Card assigned: {person.cardId ? "Yes" : "No"}</p>
+                    <p>Checked in: {person.checkedInAt ? "Yes" : "No"}</p>
+                    <p>Can compete: {person.canCompete ? "Yes" : "No"}</p>
+                    <div className="flex flex-row gap-2 flex-wrap mt-2">
+                        {wcifInfo?.registration?.eventIds.map(
+                            (event: string) => (
+                                <EventIcon
+                                    key={event}
+                                    eventId={event}
+                                    selected={true}
+                                    size={20}
+                                />
+                            )
+                        )}
+                    </div>
+                </CardContent>
+                <CardFooter className="flex gap-2">
+                    <Button onClick={() => setIsOpenAssignCardModal(true)}>
+                        Assign card
+                    </Button>
+                    {person.registrantId &&
+                        person.registrantId !== 0 &&
+                        isAdmin() && (
+                            <>
+                                <Button
+                                    onClick={() =>
+                                        setIsOpenDisplayGroupsModal(true)
+                                    }
                                 >
-                                    {person.wcaId}
-                                </Link>
-                            </Text>
+                                    Groups
+                                </Button>
+                                <Button
+                                    onClick={() =>
+                                        navigate(
+                                            `/persons/${person.id}/results`
+                                        )
+                                    }
+                                >
+                                    Results
+                                </Button>
+                            </>
                         )}
-                        {person.countryIso2 && (
-                            <Text>
-                                Representing:{" "}
-                                {regionNameByIso2(person.countryIso2)}
-                            </Text>
-                        )}
-                        <Text>Gender: {prettyGender(person.gender)}</Text>
-                        <Box
-                            display="flex"
-                            flexDirection="row"
-                            gap="2"
-                            flexWrap="wrap"
-                        >
-                            {wcifInfo?.registration?.eventIds.map(
-                                (event: string) => (
-                                    <EventIcon
-                                        key={event}
-                                        eventId={event}
-                                        selected={true}
-                                        size={20}
-                                    />
-                                )
-                            )}
-                        </Box>
-                        <Text>
-                            Card assigned: {person.cardId ? "Yes" : "No"}
-                        </Text>
-                        <Text>
-                            Checked in: {person.checkedInAt ? "Yes" : "No"}
-                        </Text>
-                        <Text>
-                            Can compete: {person.canCompete ? "Yes" : "No"}
-                        </Text>
-                    </Stack>
-                </CardBody>
-                <Divider />
-                <CardFooter>
-                    <ButtonGroup spacing="2">
-                        <Button
-                            variant="solid"
-                            colorScheme="blue"
-                            onClick={() => setIsOpenAssignCardModal(true)}
-                        >
-                            Assign card
-                        </Button>
-                        {person.registrantId &&
-                            person.registrantId !== 0 &&
-                            isAdmin() && (
-                                <>
-                                    <Button
-                                        variant="solid"
-                                        colorScheme="green"
-                                        onClick={() =>
-                                            setIsOpenDisplayGroupsModal(true)
-                                        }
-                                    >
-                                        Groups
-                                    </Button>
-                                    <Button
-                                        variant="solid"
-                                        colorScheme="purple"
-                                        onClick={() =>
-                                            navigate(
-                                                `/persons/${person.id}/results`
-                                            )
-                                        }
-                                    >
-                                        Results
-                                    </Button>
-                                </>
-                            )}
-                    </ButtonGroup>
                 </CardFooter>
             </Card>
             <AssignCardModal

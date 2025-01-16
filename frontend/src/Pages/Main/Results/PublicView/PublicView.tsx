@@ -1,19 +1,19 @@
-import { Box, Heading } from "@chakra-ui/react";
 import { useAtom } from "jotai";
 import { useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { getNumberOfAttemptsForRound } from "wcif-helpers";
 
 import LoadingPage from "@/Components/LoadingPage";
-import { competitionAtom } from "@/logic/atoms";
-import { getCompetitionInfo } from "@/logic/competition";
-import { ResultWithAverage, Room } from "@/logic/interfaces";
+import { Card, CardContent, CardHeader, CardTitle } from "@/Components/ui/card";
+import { competitionAtom } from "@/lib/atoms";
+import { getCompetitionInfo } from "@/lib/competition";
+import { ResultWithAverage, Room } from "@/lib/interfaces";
 import {
     getResultsByRoundId,
     orderResultsByAverage,
     resultsWithAverageProperty,
-} from "@/logic/results";
-import { getAllRooms } from "@/logic/rooms";
+} from "@/lib/results";
+import { getAllRooms } from "@/lib/rooms";
 import { socket, SocketContext } from "@/socket";
 
 import EventAndRoundSelector from "../../../../Components/EventAndRoundSelector";
@@ -116,28 +116,36 @@ const PublicView = () => {
     }
 
     return (
-        <Box display="flex" flexDirection="column" gap="5">
-            <Box
-                display="flex"
-                flexDirection={{ base: "column", md: "row" }}
-                gap="5"
-            >
-                <EventAndRoundSelector
-                    competition={competition}
-                    filters={filters}
-                    handleEventChange={handleEventChange}
-                    handleRoundChange={handleRoundChange}
-                />
-            </Box>
-            {results && results.length > 0 ? (
-                <PublicResultsTable
-                    results={results}
-                    maxAttempts={maxAttempts}
-                />
-            ) : (
-                <Heading size="lg">No results found</Heading>
-            )}
-        </Box>
+        <div className="flex flex-col gap-4">
+            <Card>
+                <CardHeader>
+                    <CardTitle>Results</CardTitle>
+                </CardHeader>
+                <CardContent className="flex flex-col gap-5">
+                    <EventAndRoundSelector
+                        competition={competition}
+                        filters={filters}
+                        handleEventChange={handleEventChange}
+                        handleRoundChange={handleRoundChange}
+                    />
+                </CardContent>
+            </Card>
+            <Card>
+                <CardHeader>
+                    <CardTitle>Results</CardTitle>
+                </CardHeader>
+                <CardContent>
+                    {results && results.length > 0 ? (
+                        <PublicResultsTable
+                            results={results}
+                            maxAttempts={maxAttempts}
+                        />
+                    ) : (
+                        <h2 className="text-lg">No results found</h2>
+                    )}
+                </CardContent>
+            </Card>
+        </div>
     );
 };
 

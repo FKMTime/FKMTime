@@ -1,16 +1,14 @@
-import {
-    Box,
-    Button,
-    FormControl,
-    FormLabel,
-    useToast,
-} from "@chakra-ui/react";
-import { FormEvent, useState } from "react";
+import { useState } from "react";
 
 import { Modal } from "@/Components/Modal";
-import Select from "@/Components/Select";
-import { swapAttempts } from "@/logic/attempt";
-import { Attempt } from "@/logic/interfaces";
+import ModalActions from "@/Components/ModalActions";
+import { Button } from "@/Components/ui/button";
+import { Label } from "@/Components/ui/label";
+import { useToast } from "@/hooks/useToast";
+import { swapAttempts } from "@/lib/attempt";
+import { Attempt } from "@/lib/interfaces";
+
+import AttemptSelect from "./AttemptSelect";
 
 interface SwapAttemptsModalProps {
     isOpen: boolean;
@@ -23,17 +21,16 @@ const SwapAttemptsModal = ({
     onClose,
     attempts,
 }: SwapAttemptsModalProps) => {
-    const toast = useToast();
+    const { toast } = useToast();
     const [firstAttemptId, setFirstAttemptId] = useState<string>("");
     const [secondAttemptId, setSecondAttemptId] = useState<string>("");
 
-    const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
-        e.preventDefault();
+    const handleSubmit = async () => {
         if (firstAttemptId === secondAttemptId) {
             return toast({
                 title: "Error",
                 description: "You can't swap an attempt with itself",
-                status: "error",
+                variant: "destructive",
             });
         }
         const status = await swapAttempts(firstAttemptId, secondAttemptId);
@@ -41,57 +38,43 @@ const SwapAttemptsModal = ({
             toast({
                 title: "Success",
                 description: "Attempts swapped successfully",
-                status: "success",
+                variant: "success",
             });
             onClose();
         } else {
             toast({
                 title: "Error",
                 description: "Something went wrong",
-                status: "error",
+                variant: "destructive",
             });
         }
     };
 
     return (
         <Modal isOpen={isOpen} onClose={onClose} title="Swap two attempts">
-            <Box
-                display="flex"
-                flexDirection="column"
-                gap="5"
-                as="form"
-                onSubmit={handleSubmit}
-            >
-                <FormControl>
-                    <FormLabel>First attempt</FormLabel>
-                    <Select
+            <div className="flex flex-col gap-5">
+                <div className="flex flex-col gap-2">
+                    <Label>First attempt</Label>
+                    <AttemptSelect
                         value={firstAttemptId}
-                        onChange={(e) => setFirstAttemptId(e.target.value)}
-                    >
-                        {attempts.map((attempt) => (
-                            <option key={attempt.id} value={attempt.id}>
-                                Attempt {attempt.attemptNumber}
-                            </option>
-                        ))}
-                    </Select>
-                </FormControl>
-                <FormControl>
-                    <FormLabel>Second attempt</FormLabel>
-                    <Select
+                        attempts={attempts}
+                        onChange={setFirstAttemptId}
+                    />
+                </div>
+                <div className="flex flex-col gap-2">
+                    <Label>Second attempt</Label>
+                    <AttemptSelect
                         value={secondAttemptId}
-                        onChange={(e) => setSecondAttemptId(e.target.value)}
-                    >
-                        {attempts.map((attempt) => (
-                            <option key={attempt.id} value={attempt.id}>
-                                Attempt {attempt.attemptNumber}
-                            </option>
-                        ))}
-                    </Select>
-                </FormControl>
-                <Button colorScheme="green" type="submit">
-                    Swap attempts
-                </Button>
-            </Box>
+                        attempts={attempts}
+                        onChange={setSecondAttemptId}
+                    />
+                </div>
+                <ModalActions>
+                    <Button onClick={handleSubmit} variant="success">
+                        Swap attempts
+                    </Button>
+                </ModalActions>
+            </div>
         </Modal>
     );
 };

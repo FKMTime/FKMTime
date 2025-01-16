@@ -1,110 +1,118 @@
-import {
-    Box,
-    Button,
-    Checkbox,
-    FormControl,
-    FormLabel,
-    Input,
-    Text,
-} from "@chakra-ui/react";
-import { useState } from "react";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
 
-import { QuickAction } from "@/logic/interfaces";
+import { Button } from "@/Components/ui/button";
+import { Checkbox } from "@/Components/ui/checkbox";
+import {
+    Form,
+    FormControl,
+    FormField,
+    FormItem,
+    FormLabel,
+    FormMessage,
+} from "@/Components/ui/form";
+import { Input } from "@/Components/ui/input";
+import { QuickAction, QuickActionData } from "@/lib/interfaces";
+import { quickActionSchema } from "@/lib/schema/quickActionsSchema";
 
 interface QuickActionFormProps {
-    quickAction: QuickAction;
-    handleSubmit: (data: QuickAction) => void;
-    handleCancel: () => void;
+    quickAction?: QuickAction;
+    handleSubmit: (data: QuickActionData) => void;
     isLoading: boolean;
 }
 
 const QuickActionForm = ({
     quickAction,
     handleSubmit,
-    handleCancel,
     isLoading,
 }: QuickActionFormProps) => {
-    const [editedQuickAction, setEditedQuickAction] =
-        useState<QuickAction>(quickAction);
+    const form = useForm<z.infer<typeof quickActionSchema>>({
+        resolver: zodResolver(quickActionSchema),
+        defaultValues: {
+            name: quickAction ? quickAction.name : "",
+            comment: quickAction ? quickAction.comment : "",
+            giveExtra: quickAction ? quickAction.giveExtra : false,
+            isShared: quickAction ? quickAction.isShared : false,
+        },
+    });
 
-    const onSubmit = () => {
-        handleSubmit(editedQuickAction);
+    const onSubmit = (values: z.infer<typeof quickActionSchema>) => {
+        handleSubmit(values);
     };
     return (
-        <Box display="flex" flexDirection="column" gap="5" as="form">
-            <FormControl isRequired>
-                <FormLabel>Name</FormLabel>
-                <Input
-                    placeholder="Name"
-                    _placeholder={{ color: "white" }}
-                    disabled={isLoading}
-                    value={editedQuickAction.name}
-                    onChange={(e) =>
-                        setEditedQuickAction({
-                            ...editedQuickAction,
-                            name: e.target.value,
-                        })
-                    }
+        <Form {...form}>
+            <form
+                onSubmit={form.handleSubmit(onSubmit)}
+                className="space-y-8 py-3"
+            >
+                <FormField
+                    control={form.control}
+                    name="name"
+                    render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Name</FormLabel>
+                            <FormControl>
+                                <Input placeholder="Name" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                        </FormItem>
+                    )}
                 />
-            </FormControl>
-            <FormControl>
-                <FormLabel>Comment</FormLabel>
-                <Input
-                    placeholder="Comment"
-                    _placeholder={{ color: "white" }}
-                    disabled={isLoading}
-                    value={editedQuickAction.comment}
-                    onChange={(e) =>
-                        setEditedQuickAction({
-                            ...editedQuickAction,
-                            comment: e.target.value,
-                        })
-                    }
+                <FormField
+                    control={form.control}
+                    name="comment"
+                    render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Comment</FormLabel>
+                            <FormControl>
+                                <Input placeholder="Comment" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                        </FormItem>
+                    )}
                 />
-            </FormControl>
-            <Checkbox
-                isChecked={editedQuickAction.giveExtra}
-                onChange={(e) =>
-                    setEditedQuickAction({
-                        ...editedQuickAction,
-                        giveExtra: e.target.checked,
-                    })
-                }
-            >
-                Give extra attempt
-            </Checkbox>
-            <Checkbox
-                isChecked={editedQuickAction.isShared}
-                onChange={(e) =>
-                    setEditedQuickAction({
-                        ...editedQuickAction,
-                        isShared: e.target.checked,
-                    })
-                }
-            >
-                Share with other delegates
-            </Checkbox>
-            <Text>Created by: {quickAction.user.fullName}</Text>
-            <Box
-                display="flex"
-                flexDirection="row"
-                justifyContent="end"
-                gap="5"
-            >
-                {!isLoading && (
-                    <Button colorScheme="red" onClick={handleCancel}>
-                        Cancel
-                    </Button>
-                )}
-                <Button
-                    colorScheme="green"
-                    isLoading={isLoading}
-                    onClick={onSubmit}
-                >
-                    Submit
+                <FormField
+                    control={form.control}
+                    name="giveExtra"
+                    render={({ field }) => (
+                        <FormItem>
+                            <div className="flex items-center gap-2">
+                                <FormControl>
+                                    <Checkbox
+                                        checked={field.value}
+                                        onCheckedChange={field.onChange}
+                                    />
+                                </FormControl>
+                                <FormLabel>Give extra attempt</FormLabel>
+                            </div>
+                        </FormItem>
+                    )}
+                />
+                <FormField
+                    control={form.control}
+                    name="isShared"
+                    render={({ field }) => (
+                        <FormItem>
+                            <div className="flex items-center gap-2">
+                                <FormControl>
+                                    <Checkbox
+                                        checked={field.value}
+                                        onCheckedChange={field.onChange}
+                                    />
+                                </FormControl>
+                                <FormLabel>
+                                    Share with other delegates
+                                </FormLabel>
+                            </div>
+                        </FormItem>
+                    )}
+                />
+                <Button variant="success" type="submit" disabled={isLoading}>
+                    Save
                 </Button>
-            </Box>
-        </Box>
+            </form>
+        </Form>
     );
 };
 

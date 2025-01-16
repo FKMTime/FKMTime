@@ -1,15 +1,12 @@
 import {
     Table,
-    TableContainer,
-    Tbody,
-    Td,
-    Text,
-    Th,
-    Thead,
-    Tr,
-} from "@chakra-ui/react";
-
-import { DecryptedScramble } from "@/logic/interfaces";
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from "@/Components/ui/table";
+import { DecryptedScramble } from "@/lib/interfaces";
 
 interface ScramblesListProps {
     scrambles: DecryptedScramble[];
@@ -18,42 +15,35 @@ interface ScramblesListProps {
 
 const ScramblesList = ({ scrambles, roundId }: ScramblesListProps) => {
     return (
-        <TableContainer>
-            <Table variant="simple">
-                <Thead>
-                    <Tr bg="gray.400">
-                        <Th>#</Th>
-                        <Th>Scramble</Th>
-                        <Th>Image</Th>
-                    </Tr>
-                </Thead>
-                <Tbody>
-                    {scrambles.map((scramble) => (
-                        <Tr margin={0}>
-                            <Td>
-                                {scramble.isExtra ? "Extra" : null}{" "}
-                                {scramble.num}{" "}
-                            </Td>
-                            <Td>
-                                <Text
-                                    as="pre"
-                                    whiteSpace="pre-wrap"
-                                    maxWidth="60%"
-                                >
-                                    {scramble.scramble}
-                                </Text>
-                            </Td>
-                            <Td>
-                                <scramble-display
-                                    scramble={scramble?.scramble}
-                                    event={roundId.split("-")[0]}
-                                ></scramble-display>
-                            </Td>
-                        </Tr>
-                    ))}
-                </Tbody>
-            </Table>
-        </TableContainer>
+        <Table>
+            <TableHeader>
+                <TableRow>
+                    <TableHead>#</TableHead>
+                    <TableHead>Scramble</TableHead>
+                    <TableHead>Image</TableHead>
+                </TableRow>
+            </TableHeader>
+            <TableBody>
+                {scrambles.map((scramble) => (
+                    <TableRow>
+                        <TableCell>
+                            {`${scramble.isExtra ? "E" : ""}${scramble.num}`}
+                        </TableCell>
+                        <TableCell>
+                            <pre className="text-wrap max-w-[60%] text-2xl">
+                                {scramble.scramble}
+                            </pre>
+                        </TableCell>
+                        <TableCell>
+                            <scramble-display
+                                scramble={scramble?.scramble}
+                                event={roundId.split("-")[0]}
+                            ></scramble-display>
+                        </TableCell>
+                    </TableRow>
+                ))}
+            </TableBody>
+        </Table>
     );
 };
 

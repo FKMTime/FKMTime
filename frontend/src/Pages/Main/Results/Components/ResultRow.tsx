@@ -1,19 +1,20 @@
-import { Td, Tr, useToast } from "@chakra-ui/react";
-import { useConfirm } from "chakra-ui-confirm";
-import { FaList } from "react-icons/fa";
+import { List } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 
 import DeleteButton from "@/Components/DeleteButton";
 import SmallIconButton from "@/Components/SmallIconButton";
-import { isAdmin } from "@/logic/auth";
-import { average, formattedBest } from "@/logic/average";
-import { Result } from "@/logic/interfaces";
+import { TableCell, TableRow } from "@/Components/ui/table";
+import { useConfirm } from "@/hooks/useConfirm";
+import { useToast } from "@/hooks/useToast";
+import { isAdmin } from "@/lib/auth";
+import { average, formattedBest } from "@/lib/average";
+import { Result } from "@/lib/interfaces";
 import {
     attemptWithPenaltyToString,
     resultToString,
-} from "@/logic/resultFormatters";
-import { deleteResultById } from "@/logic/results.ts";
-import { getSubmittedAttempts } from "@/logic/utils";
+} from "@/lib/resultFormatters";
+import { deleteResultById } from "@/lib/results";
+import { getSubmittedAttempts } from "@/lib/utils";
 
 interface ResultRowProps {
     result: Result;
@@ -23,7 +24,7 @@ interface ResultRowProps {
 
 const ResultRow = ({ result, maxAttempts, fetchData }: ResultRowProps) => {
     const navigate = useNavigate();
-    const toast = useToast();
+    const { toast } = useToast();
     const confirm = useConfirm();
 
     const submittedAttempts = getSubmittedAttempts(result.attempts);
@@ -41,14 +42,14 @@ const ResultRow = ({ result, maxAttempts, fetchData }: ResultRowProps) => {
                 if (status === 204) {
                     toast({
                         title: "Successfully deleted result.",
-                        status: "success",
+                        variant: "success",
                     });
                     fetchData(result.roundId);
                 } else {
                     toast({
                         title: "Error",
                         description: "Something went wrong",
-                        status: "error",
+                        variant: "destructive",
                     });
                 }
             })
@@ -57,46 +58,44 @@ const ResultRow = ({ result, maxAttempts, fetchData }: ResultRowProps) => {
                     title: "Cancelled",
                     description:
                         "You have cancelled the deletion of the result.",
-                    status: "info",
                 });
             });
     };
 
     return (
         <>
-            <Tr key={result.id}>
-                <Td>
+            <TableRow key={result.id}>
+                <TableCell>
                     <Link to={`/results/${result.id}`}>
                         {result.person.name}{" "}
                         {result.person.registrantId &&
                             `(${result.person.registrantId})`}
                     </Link>
-                </Td>
+                </TableCell>
                 {Array.from({ length: maxAttempts }, (_, i) => (
-                    <Td key={i} display={{ base: "none", md: "table-cell" }}>
+                    <TableCell key={i} className="hidden md:table-cell">
                         {submittedAttempts.length > i
                             ? attemptWithPenaltyToString(submittedAttempts[i])
                             : ""}
-                    </Td>
+                    </TableCell>
                 ))}
-                <Td display={{ base: "none", md: "table-cell" }}>
+                <TableCell className="hidden md:table-cell">
                     {calculatedAverage ? resultToString(calculatedAverage) : ""}
-                </Td>
-                <Td display={{ base: "none", md: "table-cell" }}>
+                </TableCell>
+                <TableCell className="hidden md:table-cell">
                     {formattedBest(submittedAttempts)}
-                </Td>
+                </TableCell>
                 {isAdmin() && (
-                    <Td>
+                    <TableCell>
                         <SmallIconButton
-                            icon={<FaList />}
-                            ariaLabel="List"
+                            icon={<List />}
                             title="View attempts"
                             onClick={() => navigate(`/results/${result.id}`)}
                         />
                         <DeleteButton onClick={handleDelete} />
-                    </Td>
+                    </TableCell>
                 )}
-            </Tr>
+            </TableRow>
         </>
     );
 };

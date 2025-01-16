@@ -1,29 +1,32 @@
-import { Input } from "@chakra-ui/react";
 import { ChangeEvent, useState } from "react";
 
-import { SKIPPED_VALUE } from "@/logic/constants";
+import { SKIPPED_VALUE } from "@/lib/constants";
 import {
     attemptResultToInput,
     autocompleteTimeAttemptResult,
     inputToAttemptResult,
     isValid,
     reformatInput,
-} from "@/logic/resultFormatters";
+} from "@/lib/resultFormatters";
+
+import { Input } from "./ui/input";
 
 interface AttemptResultInputProps {
     value: number;
     onChange: (value: number) => void;
-    disabled: boolean;
+    disabled?: boolean;
     placeholder?: string;
     required?: boolean;
+    className?: string;
 }
 
 const AttemptResultInput = ({
     value,
     onChange,
-    disabled,
+    disabled = false,
     placeholder,
     required,
+    className,
 }: AttemptResultInputProps) => {
     const [prevValue, setPrevValue] = useState<number>(value);
     const [draftInput, setDraftInput] = useState<string>(
@@ -53,9 +56,9 @@ const AttemptResultInput = ({
             onChange={handleChange}
             onBlur={handleBlur}
             placeholder={placeholder || "Time"}
-            _placeholder={{ color: "white" }}
             disabled={disabled}
             required={required}
+            className={className}
         />
     );
 };

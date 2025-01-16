@@ -1,4 +1,3 @@
-import { Box } from "@chakra-ui/react";
 import { Competition as WCIF } from "@wca/helpers";
 
 import EventCard from "./EventCard";
@@ -9,11 +8,11 @@ interface ScrambleSetsListProps {
 
 const ScrambleSetsList = ({ wcif }: ScrambleSetsListProps) => {
     return (
-        <Box display="flex" flexDirection="row" gap="5" flexWrap="wrap">
+        <div className="flex flex-row flex-wrap gap-5">
             {wcif.events.map((event) => (
                 <EventCard key={event.id} eventData={event} />
             ))}
-        </Box>
+        </div>
     );
 };
 

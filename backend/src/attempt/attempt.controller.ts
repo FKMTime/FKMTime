@@ -29,6 +29,11 @@ export class AttemptController {
     return this.attemptService.getUnresolvedAttempts();
   }
 
+  @Get('unresolved/count')
+  async getUnresolvedIncidentsCount() {
+    return this.attemptService.getUnresolvedIncidentsCount();
+  }
+
   @Get('incidents')
   async getResolvedAttempts(@Query('search') search: string) {
     return this.attemptService.getIncidents(search);

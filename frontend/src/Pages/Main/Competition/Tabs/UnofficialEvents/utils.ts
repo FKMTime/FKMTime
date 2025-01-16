@@ -1,6 +1,6 @@
 import { Round, RoundFormat } from "@wca/helpers";
 
-import { CUTOFF_ALLOWED } from "@/logic/constants";
+import { CUTOFF_ALLOWED } from "@/lib/constants";
 
 export const updateTimeLimitInRounds = (
     roundId: string,

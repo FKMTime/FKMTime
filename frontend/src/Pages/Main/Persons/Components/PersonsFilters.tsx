@@ -1,14 +1,13 @@
+import { Input } from "@/Components/ui/input";
+import { Label } from "@/Components/ui/label";
 import {
-    Box,
-    Button,
-    FormControl,
-    FormLabel,
-    Input,
-    Switch,
-} from "@chakra-ui/react";
-
-import PlusButton from "@/Components/PlusButton";
-import { isAdmin } from "@/logic/auth";
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/Components/ui/select";
+import { Switch } from "@/Components/ui/switch";
 
 interface PersonsFiltersProps {
     searchedId: string;
@@ -21,7 +20,9 @@ interface PersonsFiltersProps {
     handleOnlyNewcomers: () => void;
     onlyNotCheckedIn: boolean;
     handleOnlyNotCheckedIn: () => void;
-    setIsOpenAddPersonModal: (value: boolean) => void;
+    totalPages: number;
+    pageSize: number;
+    handlePageSizeChange: (newValue: string) => void;
 }
 
 const PersonsFilters = ({
@@ -35,86 +36,64 @@ const PersonsFilters = ({
     handleOnlyNewcomers,
     onlyNotCheckedIn,
     handleOnlyNotCheckedIn,
-    setIsOpenAddPersonModal,
+    totalPages,
+    pageSize,
+    handlePageSizeChange,
 }: PersonsFiltersProps) => {
     return (
-        <>
-            <Box
-                display="flex"
-                flexDirection={{ base: "column", md: "row" }}
-                justifyContent={{ base: "center", md: "space-between" }}
-                marginRight={{ base: "0", md: "5" }}
-            >
-                <Box
-                    display="flex"
-                    gap="2"
-                    flexDirection={{ base: "column", md: "row" }}
-                >
-                    <Input
-                        placeholder="ID"
-                        _placeholder={{ color: "white" }}
-                        value={searchedId}
-                        onChange={handleSearchId}
-                        width={{ base: "auto", md: "20%" }}
-                    />
-                    <Input
-                        placeholder="Card"
-                        _placeholder={{ color: "white" }}
-                        value={searchedCardId}
-                        onChange={handleSearchCardId}
-                        width={{ base: "auto", md: "30%" }}
-                    />
-                    <Input
-                        placeholder="Search"
-                        _placeholder={{ color: "white" }}
-                        value={search}
-                        onChange={handleSearch}
-                        width="100%"
-                    />
-                </Box>
-                {isAdmin() && (
-                    <>
-                        <Box display={{ base: "none", md: "flex" }} gap="2">
-                            <PlusButton
-                                aria-label="Add"
-                                onClick={() => setIsOpenAddPersonModal(true)}
-                            />
-                        </Box>
-                        <Box display={{ base: "flex", md: "none" }} mt={2}>
-                            <Button
-                                onClick={() => setIsOpenAddPersonModal(true)}
-                                colorScheme="blue"
-                                width="100%"
-                            >
-                                Add person
-                            </Button>
-                        </Box>
-                    </>
-                )}
-            </Box>
-            <Box display="flex" gap="2" flexDirection="column">
-                <FormControl display="flex" alignItems="center" gap="2">
-                    <Switch
-                        id="onlyNewcomers"
-                        onChange={handleOnlyNewcomers}
-                        isChecked={onlyNewcomers}
-                    />
-                    <FormLabel htmlFor="onlyNewcomers" mb="0">
-                        Newcomers
-                    </FormLabel>
-                </FormControl>
-                <FormControl display="flex" alignItems="center" gap="2">
-                    <Switch
-                        id="onlyNotCheckedIn"
-                        onChange={handleOnlyNotCheckedIn}
-                        isChecked={onlyNotCheckedIn}
-                    />
-                    <FormLabel htmlFor="onlyNotCheckedIn" mb="0">
-                        Not checked in
-                    </FormLabel>
-                </FormControl>
-            </Box>
-        </>
+        <div className="flex flex-col md:flex-row gap-3">
+            {totalPages !== 0 && (
+                <div className="w-24">
+                    <Select
+                        value={pageSize.toString()}
+                        onValueChange={handlePageSizeChange}
+                    >
+                        <SelectTrigger>
+                            <SelectValue placeholder="Page size" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="10">10</SelectItem>
+                            <SelectItem value="25">25</SelectItem>
+                            <SelectItem value="50">50</SelectItem>
+                        </SelectContent>
+                    </Select>
+                </div>
+            )}
+            <Input
+                placeholder="ID"
+                value={searchedId}
+                onChange={handleSearchId}
+                className="w-full md:w-16"
+            />
+            <Input
+                placeholder="Card"
+                value={searchedCardId}
+                onChange={handleSearchCardId}
+                className="w-full md:w-32"
+            />
+            <Input
+                placeholder="Search"
+                value={search}
+                onChange={handleSearch}
+                className="w-full md:w-64"
+            />
+            <div className="flex items-center space-x-2">
+                <Switch
+                    id="onlyNewcomers"
+                    checked={onlyNewcomers}
+                    onCheckedChange={handleOnlyNewcomers}
+                />
+                <Label htmlFor="onlyNewcomers">Newcomers</Label>
+            </div>
+            <div className="flex items-center space-x-2">
+                <Switch
+                    id="onlyNotCheckedIn"
+                    checked={onlyNotCheckedIn}
+                    onCheckedChange={handleOnlyNotCheckedIn}
+                />
+                <Label htmlFor="onlyNotCheckedIn">Not checked in</Label>
+            </div>
+        </div>
     );
 };
 

@@ -1,15 +1,13 @@
+import { Button } from "@/Components/ui/button";
 import {
-    Button,
     Table,
-    TableContainer,
-    Tbody,
-    Td,
-    Th,
-    Thead,
-    Tr,
-} from "@chakra-ui/react";
-
-import { WCACompetition } from "@/logic/interfaces.ts";
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from "@/Components/ui/table";
+import { WCACompetition } from "@/lib/interfaces";
 
 interface CompetitionsListProps {
     competitions: WCACompetition[];
@@ -21,33 +19,31 @@ const CompetitionsList = ({
     handleImportCompetition,
 }: CompetitionsListProps) => {
     return (
-        <TableContainer>
-            <Table variant="simple">
-                <Thead>
-                    <Tr bg="gray.400">
-                        <Th>Name</Th>
-                        <Th>Actions</Th>
-                    </Tr>
-                </Thead>
-                <Tbody>
-                    {competitions.map((competition) => (
-                        <Tr>
-                            <Td>{competition.name}</Td>
-                            <Td>
-                                <Button
-                                    colorScheme="green"
-                                    onClick={() =>
-                                        handleImportCompetition(competition.id)
-                                    }
-                                >
-                                    Import
-                                </Button>
-                            </Td>
-                        </Tr>
-                    ))}
-                </Tbody>
-            </Table>
-        </TableContainer>
+        <Table>
+            <TableHeader>
+                <TableRow>
+                    <TableHead>Name</TableHead>
+                    <TableHead>Actions</TableHead>
+                </TableRow>
+            </TableHeader>
+            <TableBody>
+                {competitions.map((competition) => (
+                    <TableRow>
+                        <TableCell>{competition.name}</TableCell>
+                        <TableCell>
+                            <Button
+                                variant="success"
+                                onClick={() =>
+                                    handleImportCompetition(competition.id)
+                                }
+                            >
+                                Import
+                            </Button>
+                        </TableCell>
+                    </TableRow>
+                ))}
+            </TableBody>
+        </Table>
     );
 };
 

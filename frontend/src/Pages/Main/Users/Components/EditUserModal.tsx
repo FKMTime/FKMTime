@@ -1,18 +1,32 @@
-import {
-    Box,
-    Button,
-    FormControl,
-    FormLabel,
-    Input,
-    useToast,
-} from "@chakra-ui/react";
-import { FormEvent, useState } from "react";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useState } from "react";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
 
 import { Modal } from "@/Components/Modal";
-import Select from "@/Components/Select";
-import { User, UserRole } from "@/logic/interfaces";
-import { updateUser } from "@/logic/user";
-import { prettyUserRoleName } from "@/logic/utils.ts";
+import ModalActions from "@/Components/ModalActions";
+import { Button } from "@/Components/ui/button";
+import {
+    Form,
+    FormControl,
+    FormField,
+    FormItem,
+    FormLabel,
+    FormMessage,
+} from "@/Components/ui/form";
+import { Input } from "@/Components/ui/input";
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/Components/ui/select";
+import { useToast } from "@/hooks/useToast";
+import { User, UserRole } from "@/lib/interfaces";
+import { editUserSchema } from "@/lib/schema/userSchema";
+import { updateUser } from "@/lib/user";
+import { prettyUserRoleName } from "@/lib/utils.ts";
 
 interface EditUserModalProps {
     isOpen: boolean;
@@ -21,33 +35,44 @@ interface EditUserModalProps {
 }
 
 const EditUserModal = ({ isOpen, onClose, user }: EditUserModalProps) => {
-    const toast = useToast();
+    const { toast } = useToast();
     const [isLoading, setIsLoading] = useState(false);
-    const [editedUser, setEditedUser] = useState<User>(user);
     const isWcaAccount = user.wcaUserId !== null;
 
-    const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
-        setIsLoading(true);
-        event.preventDefault();
+    const form = useForm<z.infer<typeof editUserSchema>>({
+        resolver: zodResolver(editUserSchema),
+        defaultValues: {
+            username: user.username,
+            fullName: user.fullName,
+            role: user.role as UserRole,
+        },
+    });
 
-        const status = await updateUser(editedUser);
+    const onSubmit = async (values: z.infer<typeof editUserSchema>) => {
+        setIsLoading(true);
+
+        const status = await updateUser({
+            ...user,
+            ...values,
+            role: values.role as UserRole,
+        });
         if (status === 200) {
             toast({
                 title: "Successfully updated user.",
-                status: "success",
+                variant: "success",
             });
             onClose();
         } else if (status === 409) {
             toast({
                 title: "Error",
                 description: "Username already taken!",
-                status: "error",
+                variant: "destructive",
             });
         } else {
             toast({
                 title: "Error",
                 description: "Something went wrong",
-                status: "error",
+                variant: "destructive",
             });
         }
         setIsLoading(false);
@@ -55,86 +80,94 @@ const EditUserModal = ({ isOpen, onClose, user }: EditUserModalProps) => {
 
     return (
         <Modal isOpen={isOpen} onClose={onClose} title="Edit user">
-            <Box
-                display="flex"
-                flexDirection="column"
-                gap="5"
-                as="form"
-                onSubmit={handleSubmit}
-            >
-                {!isWcaAccount && (
-                    <>
-                        <FormControl isRequired>
-                            <FormLabel>Username</FormLabel>
-                            <Input
-                                placeholder="Username"
-                                _placeholder={{ color: "white" }}
-                                value={editedUser.username}
-                                disabled={isLoading}
-                                onChange={(e) =>
-                                    setEditedUser({
-                                        ...editedUser,
-                                        username: e.target.value,
-                                    })
-                                }
-                            />
-                        </FormControl>
-                        <FormControl>
-                            <FormLabel>Full name</FormLabel>
-                            <Input
-                                placeholder="Full name"
-                                _placeholder={{ color: "white" }}
-                                value={editedUser.fullName}
-                                disabled={isLoading}
-                                onChange={(e) =>
-                                    setEditedUser({
-                                        ...editedUser,
-                                        fullName: e.target.value,
-                                    })
-                                }
-                            />
-                        </FormControl>
-                    </>
-                )}
-                <FormControl isRequired>
-                    <FormLabel>Role</FormLabel>
-                    <Select
-                        value={editedUser.role}
-                        disabled={isLoading}
-                        onChange={(e) =>
-                            setEditedUser({
-                                ...editedUser,
-                                role: e.target.value,
-                            })
-                        }
+            <div className="flex flex-col gap-5">
+                <Form {...form}>
+                    <form
+                        onSubmit={form.handleSubmit(onSubmit)}
+                        className="space-y-8 py-3"
                     >
-                        {Object.keys(UserRole).map((userRole) => (
-                            <option key={userRole} value={userRole}>
-                                {prettyUserRoleName(userRole)}
-                            </option>
-                        ))}
-                    </Select>
-                </FormControl>
-                <Box
-                    display="flex"
-                    flexDirection="row"
-                    justifyContent="end"
-                    gap="5"
-                >
-                    {!isLoading && (
-                        <Button colorScheme="red" onClick={onClose}>
-                            Cancel
-                        </Button>
-                    )}
-                    <Button
-                        colorScheme="green"
-                        type="submit"
-                        isLoading={isLoading}
-                    >
-                        Save
-                    </Button>
-                </Box>
-            </Box>
+                        {!isWcaAccount && (
+                            <>
+                                <FormField
+                                    control={form.control}
+                                    name="username"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Username</FormLabel>
+                                            <FormControl>
+                                                <Input
+                                                    placeholder="Username"
+                                                    {...field}
+                                                />
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                                <FormField
+                                    control={form.control}
+                                    name="fullName"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Full name</FormLabel>
+                                            <FormControl>
+                                                <Input
+                                                    placeholder="Full name"
+                                                    {...field}
+                                                />
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                            </>
+                        )}
+                        <FormField
+                            control={form.control}
+                            name="role"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Role</FormLabel>
+                                    <Select
+                                        onValueChange={field.onChange}
+                                        defaultValue={field.value}
+                                    >
+                                        <FormControl>
+                                            <SelectTrigger>
+                                                <SelectValue placeholder="Select role" />
+                                            </SelectTrigger>
+                                        </FormControl>
+                                        <SelectContent>
+                                            {Object.keys(UserRole).map(
+                                                (userRole) => (
+                                                    <SelectItem
+                                                        key={userRole}
+                                                        value={userRole}
+                                                    >
+                                                        {prettyUserRoleName(
+                                                            userRole
+                                                        )}
+                                                    </SelectItem>
+                                                )
+                                            )}
+                                        </SelectContent>
+                                    </Select>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                        <ModalActions>
+                            <Button
+                                type="submit"
+                                variant="success"
+                                disabled={isLoading}
+                            >
+                                Edit
+                            </Button>
+                        </ModalActions>
+                    </form>
+                </Form>
+            </div>
         </Modal>
     );
 };

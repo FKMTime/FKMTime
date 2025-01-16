@@ -1,13 +1,12 @@
-import { Box, Input } from "@chakra-ui/react";
 import { ChangeEvent } from "react";
 
-import Autocomplete from "@/Components/Autocomplete";
-import { ResultToDoubleCheck } from "@/logic/interfaces";
+import PersonAutocomplete from "@/Components/PersonAutocomplete";
+import { Input } from "@/Components/ui/input";
+import { Person, ResultToDoubleCheck } from "@/lib/interfaces";
 
 interface SelectCompetitorProps {
     idInputRef: React.RefObject<HTMLInputElement>;
     handleSubmit: () => void;
-    result: ResultToDoubleCheck | null;
     resultsToDoubleCheck: ResultToDoubleCheck[];
     setResult: (result: ResultToDoubleCheck | null) => void;
     inputValue: string;
@@ -18,17 +17,20 @@ interface SelectCompetitorProps {
 const SelectCompetitor = ({
     idInputRef,
     handleSubmit,
-    result,
     resultsToDoubleCheck,
     setResult,
     inputValue,
     setInputValue,
     setJustSelected,
 }: SelectCompetitorProps) => {
-    const handleSelect = (value: ResultToDoubleCheck) => {
+    const handleSelect = (value: Person | null) => {
+        if (!value) return;
         setJustSelected(true);
-        setResult(value);
-        setInputValue(value.person.registrantId?.toString() || "");
+        const selectedResult = resultsToDoubleCheck.find(
+            (r) => r.person.registrantId === value.registrantId
+        );
+        setResult(selectedResult || null);
+        setInputValue(value.registrantId?.toString() || "");
     };
 
     const handleChangeIdInput = (event: ChangeEvent<HTMLInputElement>) => {
@@ -39,15 +41,13 @@ const SelectCompetitor = ({
         setResult(selectedResult || null);
     };
     return (
-        <Box display="flex" gap={3}>
+        <div className="flex gap-3">
             <Input
                 placeholder="ID"
+                className="w-[20%]"
                 width="20%"
                 autoFocus
                 ref={idInputRef}
-                _placeholder={{
-                    color: "gray.200",
-                }}
                 onKeyDown={(e) => {
                     if (e.key === "Enter") {
                         handleSubmit();
@@ -56,15 +56,15 @@ const SelectCompetitor = ({
                 value={inputValue}
                 onChange={handleChangeIdInput}
             />
-            <Autocomplete
-                options={resultsToDoubleCheck}
-                selectedValue={result}
-                onOptionSelect={handleSelect}
-                getOptionLabel={(option) => option.person.name}
-                placeholder="Search for a person"
+            <PersonAutocomplete
+                onSelect={handleSelect}
                 autoFocus
+                disabled={false}
+                defaultValue={inputValue}
+                personsList={resultsToDoubleCheck.map((r) => r.person)}
+                key={inputValue}
             />
-        </Box>
+        </div>
     );
 };
 

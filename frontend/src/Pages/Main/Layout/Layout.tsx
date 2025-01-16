@@ -1,27 +1,24 @@
-import { Box } from "@chakra-ui/react";
 import { useAtom } from "jotai";
-import { Suspense, useCallback, useContext, useEffect, useState } from "react";
+import { Suspense, useCallback, useContext, useEffect } from "react";
 import { Outlet, useNavigate } from "react-router-dom";
 
 import LoadingPage from "@/Components/LoadingPage";
-import { competitionAtom } from "@/logic/atoms";
-import { getToken, getUserInfo, isUserLoggedIn } from "@/logic/auth";
-import { getCompetitionInfo } from "@/logic/competition";
-import { getEvents } from "@/logic/events";
-import { INotification } from "@/logic/interfaces";
-import { isMobile, isNotificationsSupported } from "@/logic/utils";
+import ModeToggle from "@/Components/ModeToggle";
+import { SidebarProvider, SidebarTrigger } from "@/Components/ui/sidebar";
+import { competitionAtom } from "@/lib/atoms";
+import { getToken, getUserInfo, isUserLoggedIn } from "@/lib/auth";
+import { getCompetitionInfo } from "@/lib/competition";
+import { getEvents } from "@/lib/events";
+import { isMobile, isNotificationsSupported } from "@/lib/utils";
 import { socket, SocketContext } from "@/socket";
 
-import NotificationsModal from "./NotificationsModal";
-import Sidebar from "./Sidebar";
+import AppSidebar from "./AppSidebar";
+import ProfileDropdown from "./ProfileDropdown";
 
 const Layout = () => {
     const userInfo = getUserInfo();
     const navigate = useNavigate();
     const [competition, setCompetition] = useAtom(competitionAtom);
-    const [notifications, setNotifications] = useState<INotification[]>([]);
-    const [isOpenNotificationsModal, setIsOpenNotificationsModal] =
-        useState<boolean>(false);
 
     const [isConnected, setConnected] = useContext(SocketContext) as [
         number,
@@ -40,16 +37,6 @@ const Layout = () => {
             socket.emit("joinCompetition");
             socket.on("newIncident", (data) => {
                 const message = `Competitor ${data.competitorName} on station ${data.deviceName}`;
-                if (!notifications.some((n) => n.message === data.message)) {
-                    setNotifications((prev) => [
-                        {
-                            id: data.id,
-                            message,
-                            type: "incident",
-                        },
-                        ...prev.filter((n) => n.message !== data.message),
-                    ]);
-                }
                 Notification.requestPermission().then((permission) => {
                     if (permission === "granted") {
                         if (isMobile()) {
@@ -90,14 +77,6 @@ const Layout = () => {
             });
 
             socket.on("groupShouldBeChanged", (data) => {
-                setNotifications((prev) => [
-                    {
-                        id: "groupShouldBeChanged",
-                        message: data.message,
-                        type: "info",
-                    },
-                    ...prev.filter((n) => n.message !== data.message),
-                ]);
                 Notification.requestPermission().then((permission) => {
                     if (permission === "granted") {
                         if (isMobile()) {
@@ -134,7 +113,7 @@ const Layout = () => {
                 socket.emit("leaveCompetition");
             };
         }
-    }, [navigate, userInfo, isConnected, notifications]);
+    }, [navigate, userInfo, isConnected]);
 
     useEffect(() => {
         isUserLoggedIn().then((isLoggedIn) => {
@@ -179,40 +158,21 @@ const Layout = () => {
         return <></>;
     }
     return (
-        <Box display="flex">
-            <Sidebar
-                user={userInfo}
-                competition={competition}
-                notifications={notifications}
-                onClickNotifications={() =>
-                    notifications.length > 0 &&
-                    setIsOpenNotificationsModal(true)
-                }
-            />
-            <Box
-                width="100%"
-                padding="5"
-                color="white"
-                height="100vh"
-                overflowY="auto"
-            >
+        <SidebarProvider>
+            <AppSidebar />
+            <main className="w-full p-5 h-screen overflow-y-auto flex flex-col gap-5">
+                <div className="flex justify-between">
+                    <SidebarTrigger />
+                    <div className="flex items-center gap-5">
+                        <ModeToggle />
+                        <ProfileDropdown />
+                    </div>
+                </div>
                 <Suspense fallback={<LoadingPage />}>
                     <Outlet />
                 </Suspense>
-                <NotificationsModal
-                    isOpen={isOpenNotificationsModal}
-                    onDelete={(id) =>
-                        setNotifications((prev) =>
-                            prev.filter(
-                                (notification) => notification.id !== id
-                            )
-                        )
-                    }
-                    onClose={() => setIsOpenNotificationsModal(false)}
-                    notifications={notifications}
-                />
-            </Box>
-        </Box>
+            </main>
+        </SidebarProvider>
     );
 };
 

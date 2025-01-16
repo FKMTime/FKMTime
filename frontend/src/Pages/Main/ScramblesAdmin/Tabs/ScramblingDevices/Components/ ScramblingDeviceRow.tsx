@@ -1,13 +1,14 @@
-import { Td, Tr, useToast } from "@chakra-ui/react";
-import { useConfirm } from "chakra-ui-confirm";
+import { AlarmClockPlus } from "lucide-react";
 import { useState } from "react";
-import { PiTimerDuotone } from "react-icons/pi";
 
 import DeleteButton from "@/Components/DeleteButton";
 import EditButton from "@/Components/EditButton";
 import SmallIconButton from "@/Components/SmallIconButton";
-import { ScramblingDevice } from "@/logic/interfaces";
-import { deleteScramblingDevice } from "@/logic/scramblingDevices";
+import { TableCell, TableRow } from "@/Components/ui/table";
+import { useConfirm } from "@/hooks/useConfirm";
+import { useToast } from "@/hooks/useToast";
+import { ScramblingDevice } from "@/lib/interfaces";
+import { deleteScramblingDevice } from "@/lib/scramblingDevices";
 
 import EditScramblingDeviceModal from "./EditScramblingDeviceModal";
 import OneTimeCodeModal from "./OneTimeCodeModal";
@@ -21,7 +22,7 @@ const ScramblingDeviceRow = ({
     device,
     fetchData,
 }: ScramblingDeviceRowProps) => {
-    const toast = useToast();
+    const { toast } = useToast();
     const confirm = useConfirm();
     const [isOpenEditDeviceModal, setIsOpenEditDeviceModal] =
         useState<boolean>(false);
@@ -44,14 +45,14 @@ const ScramblingDeviceRow = ({
                 if (status === 204) {
                     toast({
                         title: "Successfully deleted scrambling device.",
-                        status: "success",
+                        variant: "success",
                     });
                     fetchData();
                 } else {
                     toast({
                         title: "Error",
                         description: "Something went wrong",
-                        status: "error",
+                        variant: "destructive",
                     });
                 }
             })
@@ -60,29 +61,27 @@ const ScramblingDeviceRow = ({
                     title: "Cancelled",
                     description:
                         "You have cancelled the deletion of the device.",
-                    status: "info",
                 });
             });
     };
 
     return (
         <>
-            <Tr key={device.id}>
-                <Td>{device.name}</Td>
-                <Td>{device.room.name}</Td>
-                <Td>
+            <TableRow key={device.id}>
+                <TableCell>{device.name}</TableCell>
+                <TableCell>{device.room.name}</TableCell>
+                <TableCell>
                     <SmallIconButton
                         title={"Generate one time code"}
-                        ariaLabel="Generate one time code"
-                        icon={<PiTimerDuotone />}
+                        icon={<AlarmClockPlus />}
                         onClick={() => setIsOpenOneTimeCodeModal(true)}
                     />
                     <EditButton
                         onClick={() => setIsOpenEditDeviceModal(true)}
                     />
                     <DeleteButton onClick={handleDelete} />
-                </Td>
-            </Tr>
+                </TableCell>
+            </TableRow>
             <EditScramblingDeviceModal
                 isOpen={isOpenEditDeviceModal}
                 onClose={handleCloseEditDeviceModal}

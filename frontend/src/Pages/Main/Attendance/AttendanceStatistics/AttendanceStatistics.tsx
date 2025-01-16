@@ -1,8 +1,8 @@
-import { Box, Heading } from "@chakra-ui/react";
 import { useEffect, useState } from "react";
 
-import { getAttendanceStatistics } from "@/logic/attendance.ts";
-import { AttendanceStatistics as AttendanceStatisticsType } from "@/logic/interfaces.ts";
+import { Card, CardContent, CardHeader, CardTitle } from "@/Components/ui/card";
+import { getAttendanceStatistics } from "@/lib/attendance";
+import { AttendanceStatistics as AttendanceStatisticsType } from "@/lib/interfaces";
 import AttendanceStatisticsTable from "@/Pages/Main/Attendance/AttendanceStatistics/Components/AttendanceStatisticsTable";
 
 const AttendanceStatistics = () => {
@@ -17,10 +17,14 @@ const AttendanceStatistics = () => {
     }, []);
 
     return (
-        <Box display="flex" flexDirection="column" gap="5">
-            <Heading size="lg">Attendance statistics</Heading>
-            <AttendanceStatisticsTable attendanceStatistics={statistics} />
-        </Box>
+        <Card>
+            <CardHeader>
+                <CardTitle>Attendance statistics</CardTitle>
+            </CardHeader>
+            <CardContent>
+                <AttendanceStatisticsTable attendanceStatistics={statistics} />
+            </CardContent>
+        </Card>
     );
 };
 export default AttendanceStatistics;

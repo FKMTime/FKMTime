@@ -1,11 +1,11 @@
-import { Box, Button } from "@chakra-ui/react";
 import { useEffect, useState } from "react";
 
-import { UnofficialEvent } from "@/logic/interfaces";
-import { getCompetitionUnofficialEvents } from "@/logic/unofficialEvents";
+import PlusButton from "@/Components/PlusButton";
+import { Card, CardContent, CardHeader, CardTitle } from "@/Components/ui/card";
+import { UnofficialEvent } from "@/lib/interfaces";
+import { getCompetitionUnofficialEvents } from "@/lib/unofficialEvents";
 
 import CreateUnofficialEventModal from "./Components/CreateUnofficialEventModal";
-import UnofficialEventCard from "./Components/UnofficialEventCard";
 import UnofficialEventsTable from "./Components/UnofficialEventsTable";
 
 const UnofficialEvents = () => {
@@ -32,40 +32,29 @@ const UnofficialEvents = () => {
     }, []);
 
     return (
-        <Box display="flex" flexDirection="column" gap="5">
-            <Box display="flex" gap="2">
-                <Button
-                    colorScheme="blue"
-                    width={{ base: "100%", md: "auto" }}
-                    onClick={() => setIsOpenCreateUnofficialEventModal(true)}
-                >
-                    Add new event
-                </Button>
-            </Box>
-            <Box
-                display={{ base: "flex", md: "none" }}
-                gap="5"
-                flexDirection="column"
-            >
-                {unofficialEvents.map((event) => (
-                    <UnofficialEventCard
-                        key={event.id}
-                        event={event}
-                        fetchData={fetchData}
+        <Card>
+            <CardHeader>
+                <CardTitle className="flex justify-between items-center">
+                    Unofficial events
+                    <PlusButton
+                        aria-label="Add"
+                        onClick={() =>
+                            setIsOpenCreateUnofficialEventModal(true)
+                        }
                     />
-                ))}
-            </Box>
-            <Box display={{ base: "none", md: "block" }}>
+                </CardTitle>
+            </CardHeader>
+            <CardContent>
                 <UnofficialEventsTable
                     events={unofficialEvents}
                     fetchData={fetchData}
                 />
-            </Box>
-            <CreateUnofficialEventModal
-                isOpen={isOpenCreateUnofficialEventModal}
-                onClose={handleCloseCreateModal}
-            />
-        </Box>
+                <CreateUnofficialEventModal
+                    isOpen={isOpenCreateUnofficialEventModal}
+                    onClose={handleCloseCreateModal}
+                />
+            </CardContent>
+        </Card>
     );
 };
 

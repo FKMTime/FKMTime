@@ -1,27 +1,23 @@
-import {
-    Alert,
-    AlertIcon,
-    Box,
-    Button,
-    ListItem,
-    UnorderedList,
-    useToast,
-} from "@chakra-ui/react";
 import { useAtom } from "jotai";
+import { AlertCircle } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 
 import LoadingPage from "@/Components/LoadingPage";
-import { activityCodeToName } from "@/logic/activities";
-import { competitionAtom } from "@/logic/atoms";
-import { getCompetitionInfo } from "@/logic/competition";
-import { isUnofficialEvent } from "@/logic/events";
-import { Room } from "@/logic/interfaces";
-import { getAllRooms, updateCurrentRound } from "@/logic/rooms";
+import { Alert, AlertDescription, AlertTitle } from "@/Components/ui/alert";
+import { Button } from "@/Components/ui/button";
+import { Card, CardHeader, CardTitle } from "@/Components/ui/card";
+import { useToast } from "@/hooks/useToast";
+import { activityCodeToName } from "@/lib/activities";
+import { competitionAtom } from "@/lib/atoms";
+import { getCompetitionInfo } from "@/lib/competition";
+import { isUnofficialEvent } from "@/lib/events";
+import { Room } from "@/lib/interfaces";
+import { getAllRooms, updateCurrentRound } from "@/lib/rooms";
 
 import RoomCard from "./Components/RoomCard";
 
 const Rooms = () => {
-    const toast = useToast();
+    const { toast } = useToast();
     const [competition, setCompetition] = useAtom(competitionAtom);
     const [rooms, setRooms] = useState<Room[]>([]);
 
@@ -74,12 +70,11 @@ const Rooms = () => {
         if (status === 200) {
             toast({
                 title: "Rooms updated",
-                status: "success",
             });
         } else {
             toast({
                 title: "Something went wrong!",
-                status: "error",
+                variant: "destructive",
             });
         }
     };
@@ -89,52 +84,54 @@ const Rooms = () => {
     }
 
     return (
-        <Box
-            display="flex"
-            flexDirection="column"
-            gap="5"
-            width={{ base: "100%", md: "fit-content" }}
-        >
-            {currentOfficialRounds.length > 0 && (
-                <Alert
-                    status="warning"
-                    borderRadius="md"
-                    color="black"
-                    display="flex"
-                    flexDirection="column"
-                    alignItems="flex-start"
-                >
-                    <Box display="flex">
-                        <AlertIcon />
-                        Remember to open the following rounds in WCA Live:
-                    </Box>
-                    <UnorderedList>
-                        {currentOfficialRounds.map((room) => (
-                            <ListItem>
-                                {activityCodeToName(
-                                    room.currentGroupId?.split("-g")[0]
-                                )}
-                            </ListItem>
-                        ))}
-                    </UnorderedList>
-                </Alert>
-            )}
-
-            <Box display="flex" flexWrap="wrap" gap="5">
-                {rooms.map((room: Room) => (
-                    <RoomCard
-                        room={room}
-                        key={room.id}
-                        competition={competition}
-                        updateCurrentGroup={updateCurrentGroup}
-                        currentGroupId={room.currentGroupId}
-                    />
-                ))}
-            </Box>
-            <Button onClick={handleSubmit} colorScheme="green" width="100%">
-                Save
-            </Button>
-        </Box>
+        <div className="flex flex-col gap-3 w-full">
+            <Card>
+                <CardHeader>
+                    <CardTitle className="flex justify-between items-center">
+                        Manage current groups
+                        <Button
+                            onClick={handleSubmit}
+                            variant="success"
+                            className="w-fit"
+                        >
+                            Save
+                        </Button>
+                    </CardTitle>
+                </CardHeader>
+            </Card>
+            <div className="flex flex-col gap-5 w-full md:w-fit">
+                {currentOfficialRounds.length > 0 && (
+                    <Alert variant="warning">
+                        <AlertCircle className="h-4 w-4" />
+                        <AlertTitle>
+                            Remember to open the following rounds in WCA Live:
+                        </AlertTitle>
+                        <AlertDescription>
+                            <ul>
+                                {currentOfficialRounds.map((room) => (
+                                    <ol>
+                                        {activityCodeToName(
+                                            room.currentGroupId?.split("-g")[0]
+                                        )}
+                                    </ol>
+                                ))}
+                            </ul>
+                        </AlertDescription>
+                    </Alert>
+                )}
+                <div className="flex flex-wrap gap-5">
+                    {rooms.map((room: Room) => (
+                        <RoomCard
+                            room={room}
+                            key={room.id}
+                            competition={competition}
+                            updateCurrentGroup={updateCurrentGroup}
+                            currentGroupId={room.currentGroupId}
+                        />
+                    ))}
+                </div>
+            </div>
+        </div>
     );
 };
 

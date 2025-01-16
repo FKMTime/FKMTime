@@ -1,7 +1,7 @@
 import { createContext } from "react";
 import { io } from "socket.io-client";
 
-import { WEBSOCKET_PATH, WEBSOCKET_URL } from "./logic/request";
+import { WEBSOCKET_PATH, WEBSOCKET_URL } from "./lib/request";
 
 export const SocketContext = createContext(
     undefined as

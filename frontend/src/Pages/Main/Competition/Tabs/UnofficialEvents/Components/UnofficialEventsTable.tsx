@@ -1,6 +1,11 @@
-import { Table, TableContainer, Tbody, Th, Thead, Tr } from "@chakra-ui/react";
-
-import { UnofficialEvent } from "@/logic/interfaces";
+import {
+    Table,
+    TableBody,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from "@/Components/ui/table";
+import { UnofficialEvent } from "@/lib/interfaces";
 
 import UnofficialEventRow from "./UnofficialEventRow";
 
@@ -15,25 +20,23 @@ const UnofficialEventsTable = ({
 }: UnofficialEventsTableProps) => {
     return (
         <>
-            <TableContainer>
-                <Table variant="simple">
-                    <Thead>
-                        <Tr bg="gray.400">
-                            <Th>Event</Th>
-                            <Th>Actions</Th>
-                        </Tr>
-                    </Thead>
-                    <Tbody>
-                        {events.map((event) => (
-                            <UnofficialEventRow
-                                key={event.id}
-                                event={event}
-                                fetchData={fetchData}
-                            />
-                        ))}
-                    </Tbody>
-                </Table>
-            </TableContainer>
+            <Table>
+                <TableHeader>
+                    <TableRow>
+                        <TableHead>Event</TableHead>
+                        <TableHead>Actions</TableHead>
+                    </TableRow>
+                </TableHeader>
+                <TableBody>
+                    {events.map((event) => (
+                        <UnofficialEventRow
+                            key={event.id}
+                            event={event}
+                            fetchData={fetchData}
+                        />
+                    ))}
+                </TableBody>
+            </Table>
         </>
     );
 };

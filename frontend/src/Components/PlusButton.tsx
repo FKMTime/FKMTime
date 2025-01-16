@@ -1,22 +1,13 @@
-import { IconButton, IconButtonProps } from "@chakra-ui/react";
-import { MdAdd } from "react-icons/md";
+import { Plus } from "lucide-react";
 
-const PlusButton = ({ ...props }: IconButtonProps) => {
+import { Button } from "./ui/button";
+
+interface PlusButtonProps extends React.ComponentProps<typeof Button> {}
+const PlusButton = ({ ...props }: PlusButtonProps) => {
     return (
-        <IconButton
-            {...props}
-            icon={<MdAdd />}
-            aria-label="Add"
-            bg="white"
-            color="black"
-            rounded="20"
-            width="5"
-            height="10"
-            _hover={{
-                background: "white",
-                color: "gray.700",
-            }}
-        />
+        <Button size="icon" {...props}>
+            <Plus />
+        </Button>
     );
 };
 
