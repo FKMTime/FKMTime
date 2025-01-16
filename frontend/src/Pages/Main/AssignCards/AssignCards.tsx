@@ -71,6 +71,7 @@ const AssignCards = () => {
                         autoFocus={true}
                         key={personsWithoutCard}
                         ref={cardInputRef}
+                        defaultOpen={true}
                     />
 
                     {currentPerson && (

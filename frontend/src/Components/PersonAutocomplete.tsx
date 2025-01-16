@@ -23,6 +23,7 @@ interface PersonAutocompleteProps {
     withoutCardAssigned?: boolean;
     defaultValue?: string;
     personsList?: Person[];
+    defaultOpen?: boolean;
 }
 
 const PersonAutocomplete = forwardRef<
@@ -37,11 +38,12 @@ const PersonAutocomplete = forwardRef<
             withoutCardAssigned,
             defaultValue,
             personsList,
+            defaultOpen = false,
         },
         ref
     ) => {
         const [persons, setPersons] = useState<Person[]>(personsList || []);
-        const [open, setOpen] = useState<boolean>(false);
+        const [open, setOpen] = useState<boolean>(defaultOpen);
         const [value, setValue] = useState<string | null>(defaultValue || null);
 
         const handleSearch = useCallback(
@@ -78,6 +80,7 @@ const PersonAutocomplete = forwardRef<
                         aria-expanded={open}
                         className="justify-between"
                         disabled={disabled}
+                        onClick={() => setOpen(true)}
                     >
                         {value
                             ? persons?.find((person) => person.id === value)
@@ -87,7 +90,7 @@ const PersonAutocomplete = forwardRef<
                     </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-full p-0 min-w-[var(--radix-popper-anchor-width)]">
-                    <Command className="w-full">
+                    <Command className="w-full" shouldFilter={false}>
                         <CommandInput
                             ref={ref}
                             id="personAutocompleteSearchInput"
