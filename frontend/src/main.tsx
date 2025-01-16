@@ -8,7 +8,6 @@ import { Toaster } from "./Components/ui/toaster";
 import { ThemeProvider } from "./providers/ThemeProvider";
 import { THEME_STORAGE_KEY } from "./lib/constants";
 
-
 declare global {
     namespace JSX {
         interface IntrinsicElements {
@@ -18,6 +17,4 @@ declare global {
     }
 }
 
-ReactDOM.createRoot(document.getElementById("root")!).render(
-    <App />
-);
+ReactDOM.createRoot(document.getElementById("root")!).render(<App />);

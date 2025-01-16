@@ -24,7 +24,6 @@ interface QuickActionCardProps {
 }
 
 const QuickActionCard = ({ quickAction, fetchData }: QuickActionCardProps) => {
-
     return (
         <>
             <Card backgroundColor="gray.400">
