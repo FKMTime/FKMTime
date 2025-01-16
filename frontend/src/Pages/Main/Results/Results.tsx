@@ -18,7 +18,13 @@ import {
 
 import LoadingPage from "@/Components/LoadingPage";
 import { Button } from "@/Components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/Components/ui/card";
+import {
+    Card,
+    CardContent,
+    CardDescription,
+    CardHeader,
+    CardTitle,
+} from "@/Components/ui/card";
 import { Input } from "@/Components/ui/input";
 import { activityCodeToName } from "@/lib/activities";
 import { competitionAtom } from "@/lib/atoms";
@@ -165,6 +171,7 @@ const Results = () => {
             <Card>
                 <CardHeader>
                     <CardTitle>Results</CardTitle>
+                    <CardDescription>Choose event and round</CardDescription>
                 </CardHeader>
                 <CardContent className="flex flex-col gap-5">
                     <div className="flex md:flex-row flex-col gap-5 justify-between items-start">

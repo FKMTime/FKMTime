@@ -3,7 +3,13 @@ import { useCallback, useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 
 import LoadingPage from "@/Components/LoadingPage";
-import { Card, CardContent, CardHeader, CardTitle } from "@/Components/ui/card";
+import {
+    Card,
+    CardContent,
+    CardDescription,
+    CardHeader,
+    CardTitle,
+} from "@/Components/ui/card";
 import { activityCodeToName } from "@/lib/activities";
 import { competitionAtom } from "@/lib/atoms";
 import { Incident } from "@/lib/interfaces";
@@ -52,6 +58,7 @@ const ResultsChecks = () => {
             <Card>
                 <CardHeader>
                     <CardTitle>Suspicious times/penalties</CardTitle>
+                    <CardDescription>Choose event and round</CardDescription>
                 </CardHeader>
                 <CardContent>
                     <EventAndRoundSelector
