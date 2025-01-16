@@ -7,7 +7,7 @@ import {
     prettyGender,
     prettyUserRoleName,
     regionNameByIso2,
-} from "@/logic/utils.ts";
+} from "@/lib/utils.ts";
 
 describe("calculateTotalPages", () => {
     it("calculates the total number of pages", () => {
