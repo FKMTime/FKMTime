@@ -10,7 +10,6 @@ import Attendance from "./Pages/Main/Attendance/Attendance";
 import AttendanceStatistics from "./Pages/Main/Attendance/AttendanceStatistics/AttendanceStatistics";
 import CheckIn from "./Pages/Main/CheckIn/CheckIn";
 import Competition from "./Pages/Main/Competition/Competition";
-import Rooms from "./Pages/Main/Competition/Tabs/Rooms";
 import Devices from "./Pages/Main/Devices/Devices";
 import Home from "./Pages/Main/Home/Home";
 import ImportCompetition from "./Pages/Main/ImportCompetition/ImportCompetition";
@@ -149,10 +148,10 @@ const App = () => {
                     path: "attendance",
                     element: <Attendance />,
                 },
-                //     {
-                //         path: "attendance/statistics",
-                //         element: <AttendanceStatistics />,
-                //     },
+                {
+                    path: "attendance/statistics",
+                    element: <AttendanceStatistics />,
+                },
                 {
                     path: "attendance/:id",
                     element: <Attendance />,
