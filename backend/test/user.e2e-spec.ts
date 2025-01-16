@@ -46,6 +46,7 @@ describe('UserController (e2e)', () => {
         updatedAt: expect.any(String),
         isWcaAdmin: false,
         wcaUserId: null,
+        avatarUrl: null,
       },
     ]);
   });
