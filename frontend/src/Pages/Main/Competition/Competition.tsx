@@ -3,7 +3,6 @@ import { RefreshCw, Server } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 
-import CompetitionStatistics from "@/Components/CompetitionStatistics/CompetitionStatistics";
 import LoadingPage from "@/Components/LoadingPage";
 import { Button } from "@/Components/ui/button";
 import {
@@ -26,7 +25,6 @@ import { getGitCommitValue } from "@/lib/utils";
 
 import ManageCompetition from "./Tabs/ManageCompetition";
 import Rooms from "./Tabs/Rooms";
-import UnofficialEvents from "./Tabs/UnofficialEvents/UnofficialEvents";
 
 const tabs = [
     {
@@ -36,14 +34,6 @@ const tabs = [
     {
         id: "rooms",
         name: "Current groups",
-    },
-    {
-        id: "unofficialEvents",
-        name: "Unofficial events",
-    },
-    {
-        id: "statistics",
-        name: "Statistics",
     },
 ];
 
@@ -165,12 +155,6 @@ const Competition = () => {
             </TabsContent>
             <TabsContent value={tabs[1].id}>
                 <Rooms />
-            </TabsContent>
-            <TabsContent value={tabs[2].id}>
-                <UnofficialEvents />
-            </TabsContent>
-            <TabsContent value={tabs[3].id}>
-                <CompetitionStatistics showCharts />
             </TabsContent>
         </Tabs>
     );

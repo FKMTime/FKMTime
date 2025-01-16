@@ -8,7 +8,6 @@ import CompetitionStatistics from "@/Components/CompetitionStatistics/Competitio
 import LoadingPage from "@/Components/LoadingPage";
 import { Card, CardContent, CardHeader, CardTitle } from "@/Components/ui/card";
 import { competitionAtom } from "@/lib/atoms";
-import { isAdmin } from "@/lib/auth";
 import {
     getActivitiesWithRealEndTime,
     getCompetitionInfo,
@@ -16,10 +15,8 @@ import {
 import { Activity, Room } from "@/lib/interfaces";
 import { getAllRooms } from "@/lib/rooms";
 
-import AttendanceCard from "./Components/AttendanceCard";
 import CompetitionDateSelect from "./Components/CompetitionDateSelect";
 import InfoCard from "./Components/InfoCard";
-import ResultsCard from "./Components/ResultsCard";
 import RoomSelect from "./Components/RoomSelect";
 import MobileSchedule from "./Components/Schedule/MobileSchedule";
 import ScheduleTable from "./Components/Schedule/ScheduleTable";
@@ -29,14 +26,11 @@ const Home = () => {
     const navigate = useNavigate();
     const [competition, setCompetition] = useAtom(competitionAtom);
     const [rooms, setRooms] = useState<Room[]>([]);
-    const [currentRounds, setCurrentRounds] = useState<string[]>([]);
     const [selectedVenue, setSelectedVenue] = useState<number>(0);
     const [selectedRoom, setSelectedRoom] = useState<number>(0);
     const [selectedDate, setSelectedDate] = useState<Date>(new Date());
     const [possibleDates, setPossibleDates] = useState<Date[]>([]);
     const [activities, setActivities] = useState<Activity[]>([]);
-    const showAttendanceCard = isAdmin() && rooms.some((r) => r.currentGroupId);
-    const showResultsCard = isAdmin() && currentRounds.length > 0;
 
     const fetchActivitiesData = (
         selectedVenueId: number,
@@ -82,12 +76,6 @@ const Home = () => {
     useEffect(() => {
         getAllRooms().then((data) => {
             setRooms(data);
-            const ids = new Set<string>(
-                data
-                    .filter((room: Room) => room.currentGroupId)
-                    .map((room: Room) => room.currentGroupId.split("-g")[0])
-            );
-            setCurrentRounds([...ids]);
             fetchActivitiesData(selectedVenue, selectedRoom, selectedDate);
         });
     }, [selectedDate, selectedRoom, selectedVenue]);
@@ -100,10 +88,6 @@ const Home = () => {
         <div className="flex flex-col gap-5">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 auto-rows-auto">
                 <InfoCard competition={competition} />
-                {showAttendanceCard ? <AttendanceCard rooms={rooms} /> : null}
-                {showResultsCard ? (
-                    <ResultsCard currentRounds={currentRounds} />
-                ) : null}
                 <div className="md:col-span-2 grid grid-cols-2 gap-4">
                     <CompetitionStatistics />
                 </div>

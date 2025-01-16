@@ -65,14 +65,14 @@ const DeviceRow = ({ device, fetchData }: DeviceRowProps) => {
                 <TableCell>{device.name}</TableCell>
                 <TableCell>{device.espId}</TableCell>
                 <TableCell>
-                    {device.batteryPercentage && (
-                        <div className="flex items-center">
+                    {device.batteryPercentage ? (
+                        <div className="flex items-center gap-1">
                             <BatteryIcon
                                 batteryPercentage={device.batteryPercentage}
                             />{" "}
                             <span>{`${device.batteryPercentage}%`}</span>
                         </div>
-                    )}
+                    ) : null}
                 </TableCell>
                 <TableCell>{prettyDeviceType(device.type)}</TableCell>
                 <TableCell>{device.count}</TableCell>
