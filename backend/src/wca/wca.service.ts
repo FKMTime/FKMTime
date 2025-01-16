@@ -178,7 +178,11 @@ export class WcaService {
       },
     );
     this.wcaLogger.log(`Fetching WCIF ${response.status}`);
-    return await response.json();
+    const data = await response.json();
+    return {
+      ...data,
+      statusCode: response.status,
+    };
   }
 
   async getAccessToken(code: string, redirectUrl: string) {

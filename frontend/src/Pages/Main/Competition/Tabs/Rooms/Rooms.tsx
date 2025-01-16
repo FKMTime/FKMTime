@@ -1,11 +1,15 @@
 import { useAtom } from "jotai";
-import { AlertCircle } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 
 import LoadingPage from "@/Components/LoadingPage";
-import { Alert, AlertDescription, AlertTitle } from "@/Components/ui/alert";
 import { Button } from "@/Components/ui/button";
-import { Card, CardHeader, CardTitle } from "@/Components/ui/card";
+import {
+    Card,
+    CardContent,
+    CardDescription,
+    CardHeader,
+    CardTitle,
+} from "@/Components/ui/card";
 import { useToast } from "@/hooks/useToast";
 import { activityCodeToName } from "@/lib/activities";
 import { competitionAtom } from "@/lib/atoms";
@@ -14,7 +18,7 @@ import { isUnofficialEvent } from "@/lib/events";
 import { Room } from "@/lib/interfaces";
 import { getAllRooms, updateCurrentRound } from "@/lib/rooms";
 
-import RoomCard from "./Components/RoomCard";
+import RoomsTable from "./Components/RoomsTable";
 
 const Rooms = () => {
     const { toast } = useToast();
@@ -89,48 +93,42 @@ const Rooms = () => {
                 <CardHeader>
                     <CardTitle className="flex justify-between items-center">
                         Manage current groups
-                        <Button
-                            onClick={handleSubmit}
-                            variant="success"
-                            className="w-fit"
-                        >
-                            Save
-                        </Button>
                     </CardTitle>
+                    <CardDescription>
+                        {currentOfficialRounds.length > 0 && (
+                            <>
+                                Remember to open the following rounds in WCA
+                                Live:
+                                <ul className="list-disc ml-5">
+                                    {currentOfficialRounds.map((room) => (
+                                        <li>
+                                            {activityCodeToName(
+                                                room.currentGroupId?.split(
+                                                    "-g"
+                                                )[0]
+                                            )}
+                                        </li>
+                                    ))}
+                                </ul>
+                            </>
+                        )}
+                    </CardDescription>
                 </CardHeader>
+                <CardContent className="flex flex-col gap-3">
+                    <RoomsTable
+                        competition={competition}
+                        rooms={rooms}
+                        updateCurrentGroup={updateCurrentGroup}
+                    />
+                    <Button
+                        onClick={handleSubmit}
+                        variant="success"
+                        className="w-fit"
+                    >
+                        Save
+                    </Button>
+                </CardContent>
             </Card>
-            <div className="flex flex-col gap-5 w-full md:w-fit">
-                {currentOfficialRounds.length > 0 && (
-                    <Alert variant="warning">
-                        <AlertCircle className="h-4 w-4" />
-                        <AlertTitle>
-                            Remember to open the following rounds in WCA Live:
-                        </AlertTitle>
-                        <AlertDescription>
-                            <ul>
-                                {currentOfficialRounds.map((room) => (
-                                    <ol>
-                                        {activityCodeToName(
-                                            room.currentGroupId?.split("-g")[0]
-                                        )}
-                                    </ol>
-                                ))}
-                            </ul>
-                        </AlertDescription>
-                    </Alert>
-                )}
-                <div className="flex flex-wrap gap-5">
-                    {rooms.map((room: Room) => (
-                        <RoomCard
-                            room={room}
-                            key={room.id}
-                            competition={competition}
-                            updateCurrentGroup={updateCurrentGroup}
-                            currentGroupId={room.currentGroupId}
-                        />
-                    ))}
-                </div>
-            </div>
         </div>
     );
 };

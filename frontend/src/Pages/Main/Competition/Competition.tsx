@@ -23,8 +23,8 @@ import {
 import { Competition as CompetitionInterface } from "@/lib/interfaces";
 import { getGitCommitValue } from "@/lib/utils";
 
-import ManageCompetition from "./Tabs/ManageCompetition";
-import Rooms from "./Tabs/Rooms";
+import ManageCompetition from "./Tabs/ManageCompetition/ManageCompetition";
+import Rooms from "./Tabs/Rooms/Rooms";
 
 const tabs = [
     {
@@ -74,6 +74,13 @@ const Competition = () => {
                 description: "Competition synced",
             });
             await fetchCompetitionDataAndSetAtom();
+        } else if (status === 403) {
+            toast({
+                title: "Error",
+                description:
+                    "You don't have permission to sync this competition",
+                variant: "destructive",
+            });
         } else {
             toast({
                 title: "Error",

@@ -6,7 +6,13 @@ import LoadingPage from "@/Components/LoadingPage";
 import Pagination from "@/Components/Pagination";
 import PlusButton from "@/Components/PlusButton";
 import { Button } from "@/Components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/Components/ui/card";
+import {
+    Card,
+    CardContent,
+    CardDescription,
+    CardHeader,
+    CardTitle,
+} from "@/Components/ui/card";
 import { competitionAtom } from "@/lib/atoms";
 import { isAdmin } from "@/lib/auth";
 import { getCompetitionInfo } from "@/lib/competition";
@@ -15,7 +21,6 @@ import { getPersons } from "@/lib/persons";
 import { calculateTotalPages } from "@/lib/utils";
 
 import AddPersonModal from "./Components/AddPersonModal";
-import AssignCardsAlert from "./Components/AssignCardsAlert";
 import PersonCard from "./Components/PersonCard";
 import PersonsFilters from "./Components/PersonsFilters";
 import PersonsTable from "./Components/PersonsTable";
@@ -24,6 +29,7 @@ const Persons = () => {
     const navigate = useNavigate();
     const [competition, setCompetition] = useAtom(competitionAtom);
     const [persons, setPersons] = useState<Person[]>([]);
+    const [totalPersonsCount, setTotalPersonsCount] = useState<number>(0);
     const [page, setPage] = useState<number>(1);
     const [totalPages, setTotalPages] = useState<number>(1);
     const [pageSize, setPageSize] = useState<number>(10);
@@ -63,6 +69,7 @@ const Persons = () => {
             }
             setPersons(response.data);
             setPersonsWithoutCardAssigned(response.personsWithoutCardAssigned);
+            setTotalPersonsCount(response.count);
             const totalPagesCalculation = calculateTotalPages(
                 response.count,
                 pageSizeParam
@@ -161,17 +168,12 @@ const Persons = () => {
         fetchData();
     }, [fetchData]);
 
-    if (!competition) {
+    if (!competition || !totalPersonsCount) {
         return <LoadingPage />;
     }
 
     return (
         <div className="flex flex-col gap-5">
-            {personsWithoutCardAssigned !== 0 && (
-                <AssignCardsAlert
-                    personsWithoutCardAssigned={personsWithoutCardAssigned}
-                />
-            )}
             <Card>
                 <CardHeader>
                     <CardTitle className="flex justify-between items-center">
@@ -179,7 +181,6 @@ const Persons = () => {
                         {isAdmin() && (
                             <>
                                 <PlusButton
-                                    aria-label="Add"
                                     onClick={() =>
                                         setIsOpenAddPersonModal(true)
                                     }
@@ -187,6 +188,11 @@ const Persons = () => {
                             </>
                         )}
                     </CardTitle>
+                    <CardDescription>
+                        Assigned cards:{" "}
+                        {totalPersonsCount - personsWithoutCardAssigned}/
+                        {totalPersonsCount}
+                    </CardDescription>
                 </CardHeader>
                 <CardContent className="flex flex-col md:flex-row gap-5 md:justify-between">
                     <PersonsFilters
