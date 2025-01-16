@@ -13,6 +13,7 @@ RUN npm run build
 
 FROM node:lts-alpine
 RUN apk add --no-cache curl
+RUN apk add --no-cache openssl
 
 WORKDIR /app
 COPY --from=build /app/dist/src /app
