@@ -2,11 +2,14 @@ import {
     Activity,
     activityCodeToName as wcifActivityCodeToName,
     Competition,
+    Room as WCIFRoom,
 } from "@wca/helpers";
-import { Room as WCIFRoom } from "@wca/helpers/lib/models/room";
-import { getEventIdFromRoundId } from "wcif-helpers";
 
 import { getEventName, isUnofficialEvent } from "./events";
+
+export const getEventIdFromRoundId = (roundId: string) => {
+    return roundId.split("-")[0];
+};
 
 export const prettyActivityName = (activity: string) => {
     switch (activity) {
