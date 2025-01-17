@@ -14,6 +14,7 @@ import {
     resultsWithAverageProperty,
 } from "@/lib/results";
 import { getAllRooms } from "@/lib/rooms";
+import PageTransition from "@/Pages/PageTransition";
 import { socket, SocketContext } from "@/socket";
 
 import EventAndRoundSelector from "../../../../Components/EventAndRoundSelector";
@@ -116,36 +117,38 @@ const PublicView = () => {
     }
 
     return (
-        <div className="flex flex-col gap-4">
-            <Card>
-                <CardHeader>
-                    <CardTitle>Results</CardTitle>
-                </CardHeader>
-                <CardContent className="flex flex-col gap-5">
-                    <EventAndRoundSelector
-                        competition={competition}
-                        filters={filters}
-                        handleEventChange={handleEventChange}
-                        handleRoundChange={handleRoundChange}
-                    />
-                </CardContent>
-            </Card>
-            <Card>
-                <CardHeader>
-                    <CardTitle>Results</CardTitle>
-                </CardHeader>
-                <CardContent>
-                    {results && results.length > 0 ? (
-                        <PublicResultsTable
-                            results={results}
-                            maxAttempts={maxAttempts}
+        <PageTransition>
+            <div className="flex flex-col gap-4">
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Results</CardTitle>
+                    </CardHeader>
+                    <CardContent className="flex flex-col gap-5">
+                        <EventAndRoundSelector
+                            competition={competition}
+                            filters={filters}
+                            handleEventChange={handleEventChange}
+                            handleRoundChange={handleRoundChange}
                         />
-                    ) : (
-                        <h2 className="text-lg">No results found</h2>
-                    )}
-                </CardContent>
-            </Card>
-        </div>
+                    </CardContent>
+                </Card>
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Results</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        {results && results.length > 0 ? (
+                            <PublicResultsTable
+                                results={results}
+                                maxAttempts={maxAttempts}
+                            />
+                        ) : (
+                            <h2 className="text-lg">No results found</h2>
+                        )}
+                    </CardContent>
+                </Card>
+            </div>
+        </PageTransition>
     );
 };
 

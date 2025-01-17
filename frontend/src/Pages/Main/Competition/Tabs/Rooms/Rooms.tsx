@@ -17,6 +17,7 @@ import { getCompetitionInfo } from "@/lib/competition";
 import { isUnofficialEvent } from "@/lib/events";
 import { Room } from "@/lib/interfaces";
 import { getAllRooms, updateCurrentRound } from "@/lib/rooms";
+import PageTransition from "@/Pages/PageTransition";
 
 import RoomsTable from "./Components/RoomsTable";
 
@@ -74,6 +75,7 @@ const Rooms = () => {
         if (status === 200) {
             toast({
                 title: "Rooms updated",
+                variant: "success",
             });
         } else {
             toast({
@@ -88,48 +90,50 @@ const Rooms = () => {
     }
 
     return (
-        <div className="flex flex-col gap-3 w-full">
-            <Card>
-                <CardHeader>
-                    <CardTitle className="flex justify-between items-center">
-                        Manage current groups
-                    </CardTitle>
-                    <CardDescription>
-                        {currentOfficialRounds.length > 0 && (
-                            <>
-                                Remember to open the following rounds in WCA
-                                Live:
-                                <ul className="list-disc ml-5">
-                                    {currentOfficialRounds.map((room) => (
-                                        <li>
-                                            {activityCodeToName(
-                                                room.currentGroupId?.split(
-                                                    "-g"
-                                                )[0]
-                                            )}
-                                        </li>
-                                    ))}
-                                </ul>
-                            </>
-                        )}
-                    </CardDescription>
-                </CardHeader>
-                <CardContent className="flex flex-col gap-3">
-                    <RoomsTable
-                        competition={competition}
-                        rooms={rooms}
-                        updateCurrentGroup={updateCurrentGroup}
-                    />
-                    <Button
-                        onClick={handleSubmit}
-                        variant="success"
-                        className="w-fit"
-                    >
-                        Save
-                    </Button>
-                </CardContent>
-            </Card>
-        </div>
+        <PageTransition>
+            <div className="flex flex-col gap-3 w-full">
+                <Card>
+                    <CardHeader>
+                        <CardTitle className="flex justify-between items-center">
+                            Manage current groups
+                        </CardTitle>
+                        <CardDescription>
+                            {currentOfficialRounds.length > 0 && (
+                                <>
+                                    Remember to open the following rounds in WCA
+                                    Live:
+                                    <ul className="list-disc ml-5">
+                                        {currentOfficialRounds.map((room) => (
+                                            <li>
+                                                {activityCodeToName(
+                                                    room.currentGroupId?.split(
+                                                        "-g"
+                                                    )[0]
+                                                )}
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </>
+                            )}
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent className="flex flex-col gap-3">
+                        <RoomsTable
+                            competition={competition}
+                            rooms={rooms}
+                            updateCurrentGroup={updateCurrentGroup}
+                        />
+                        <Button
+                            onClick={handleSubmit}
+                            variant="success"
+                            className="w-fit"
+                        >
+                            Save
+                        </Button>
+                    </CardContent>
+                </Card>
+            </div>
+        </PageTransition>
     );
 };
 

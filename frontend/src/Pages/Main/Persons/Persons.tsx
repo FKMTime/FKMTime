@@ -19,6 +19,7 @@ import { getCompetitionInfo } from "@/lib/competition";
 import { Person } from "@/lib/interfaces";
 import { getPersons } from "@/lib/persons";
 import { calculateTotalPages } from "@/lib/utils";
+import PageTransition from "@/Pages/PageTransition";
 
 import AddPersonModal from "./Components/AddPersonModal";
 import PersonCard from "./Components/PersonCard";
@@ -173,90 +174,92 @@ const Persons = () => {
     }
 
     return (
-        <div className="flex flex-col gap-5">
-            <Card>
-                <CardHeader>
-                    <CardTitle className="flex justify-between items-center">
-                        Persons
-                        {isAdmin() && (
-                            <>
-                                <PlusButton
-                                    onClick={() =>
-                                        setIsOpenAddPersonModal(true)
-                                    }
-                                />
-                            </>
-                        )}
-                    </CardTitle>
-                    <CardDescription>
-                        Assigned cards:{" "}
-                        {totalPersonsCount - personsWithoutCardAssigned}/
-                        {totalPersonsCount}
-                    </CardDescription>
-                </CardHeader>
-                <CardContent className="flex flex-col md:flex-row gap-5 md:justify-between">
-                    <PersonsFilters
-                        searchedId={searchedId}
-                        handleSearchId={handleSearchId}
-                        searchedCardId={searchedCardId}
-                        handleSearchCardId={handleSearchCardId}
-                        search={search}
-                        handleSearch={handleSearch}
-                        onlyNewcomers={onlyNewcomers}
-                        handleOnlyNewcomers={handleOnlyNewcomers}
-                        onlyNotCheckedIn={onlyNotCheckedIn}
-                        handleOnlyNotCheckedIn={handleOnlyNotCheckedIn}
-                        totalPages={totalPages}
-                        pageSize={pageSize}
-                        handlePageSizeChange={handlePageSizeChange}
+        <PageTransition>
+            <div className="flex flex-col gap-5">
+                <Card>
+                    <CardHeader>
+                        <CardTitle className="flex justify-between items-center">
+                            Persons
+                            {isAdmin() && (
+                                <>
+                                    <PlusButton
+                                        onClick={() =>
+                                            setIsOpenAddPersonModal(true)
+                                        }
+                                    />
+                                </>
+                            )}
+                        </CardTitle>
+                        <CardDescription>
+                            Assigned cards:{" "}
+                            {totalPersonsCount - personsWithoutCardAssigned}/
+                            {totalPersonsCount}
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent className="flex flex-col md:flex-row gap-5 md:justify-between">
+                        <PersonsFilters
+                            searchedId={searchedId}
+                            handleSearchId={handleSearchId}
+                            searchedCardId={searchedCardId}
+                            handleSearchCardId={handleSearchCardId}
+                            search={search}
+                            handleSearch={handleSearch}
+                            onlyNewcomers={onlyNewcomers}
+                            handleOnlyNewcomers={handleOnlyNewcomers}
+                            onlyNotCheckedIn={onlyNotCheckedIn}
+                            handleOnlyNotCheckedIn={handleOnlyNotCheckedIn}
+                            totalPages={totalPages}
+                            pageSize={pageSize}
+                            handlePageSizeChange={handlePageSizeChange}
+                        />
+                        <Button
+                            onClick={() => {
+                                navigate("/cards");
+                            }}
+                        >
+                            Assign cards
+                        </Button>
+                    </CardContent>
+                </Card>
+                <Card className="hidden md:block py-3">
+                    <CardHeader>
+                        <CardTitle>Persons</CardTitle>
+                    </CardHeader>
+                    <CardContent className="w-full">
+                        <PersonsTable
+                            persons={persons}
+                            competition={competition}
+                            handleCloseEditModal={handleCloseEditModal}
+                        />
+                    </CardContent>
+                </Card>
+                <div className="flex md:hidden flex-col gap-3">
+                    {persons.map((person) => (
+                        <PersonCard
+                            key={person.id}
+                            wcif={competition.wcif}
+                            person={person}
+                            handleCloseEditModal={handleCloseEditModal}
+                        />
+                    ))}
+                </div>
+                <Card>
+                    <CardContent>
+                        <Pagination
+                            page={page}
+                            totalPages={totalPages}
+                            handlePageChange={handlePageChange}
+                        />
+                    </CardContent>
+                </Card>
+                {isOpenAddPersonModal && (
+                    <AddPersonModal
+                        isOpen={isOpenAddPersonModal}
+                        onClose={handleCloseAddPersonModal}
                     />
-                    <Button
-                        onClick={() => {
-                            navigate("/cards");
-                        }}
-                    >
-                        Assign cards
-                    </Button>
-                </CardContent>
-            </Card>
-            <Card className="hidden md:block py-3">
-                <CardHeader>
-                    <CardTitle>Persons</CardTitle>
-                </CardHeader>
-                <CardContent className="w-full">
-                    <PersonsTable
-                        persons={persons}
-                        competition={competition}
-                        handleCloseEditModal={handleCloseEditModal}
-                    />
-                </CardContent>
-            </Card>
-            <div className="flex md:hidden flex-col gap-3">
-                {persons.map((person) => (
-                    <PersonCard
-                        key={person.id}
-                        wcif={competition.wcif}
-                        person={person}
-                        handleCloseEditModal={handleCloseEditModal}
-                    />
-                ))}
+                )}
             </div>
-            <Card>
-                <CardContent>
-                    <Pagination
-                        page={page}
-                        totalPages={totalPages}
-                        handlePageChange={handlePageChange}
-                    />
-                </CardContent>
-            </Card>
-            {isOpenAddPersonModal && (
-                <AddPersonModal
-                    isOpen={isOpenAddPersonModal}
-                    onClose={handleCloseAddPersonModal}
-                />
-            )}
-        </div>
+        </PageTransition>
     );
 };
 

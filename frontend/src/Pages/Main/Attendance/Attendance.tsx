@@ -17,6 +17,7 @@ import {
 import { getCompetitionInfo } from "@/lib/competition";
 import { Room, StaffActivity } from "@/lib/interfaces";
 import { getAllRooms } from "@/lib/rooms";
+import PageTransition from "@/Pages/PageTransition";
 import { socket, SocketContext } from "@/socket";
 
 import AbsentPeopleList from "./Components/AbsentPeopleList";
@@ -160,244 +161,256 @@ const Attendance = () => {
         absentCompetitors.length === 0 && presentCompetitors.length === 0;
 
     return (
-        <div className="flex flex-col gap-3">
-            <Card>
-                <CardHeader>
-                    <CardTitle className="flex justify-between items-center">
-                        Attendance
-                        <Button
-                            onClick={() => navigate("/attendance/statistics")}
-                        >
-                            Statistics
-                        </Button>
-                    </CardTitle>
-                </CardHeader>
-                <CardContent>
-                    <EventRoundAndGroupSelector
-                        competition={competition}
-                        filters={{
-                            eventId: selectedEvent,
-                            roundId: selectedRound,
-                            groupId: selectedGroup,
-                        }}
-                        handleEventChange={(eventId) => {
-                            setSelectedEvent(eventId);
-                            setSelectedRound(eventId + "-r1");
-                            handleGroupChange(`${eventId}-r1-g1`);
-                        }}
-                        handleRoundChange={(roundId) => {
-                            setSelectedRound(roundId);
-                            handleGroupChange(`${roundId}-g1`);
-                        }}
-                        handleGroupChange={handleGroupChange}
-                    />
-                </CardContent>
-            </Card>
-            {rooms.filter((r) => r.currentGroupId).length > 0 && (
+        <PageTransition>
+            <div className="flex flex-col gap-3">
                 <Card>
                     <CardHeader>
-                        <CardTitle>Current groups</CardTitle>
+                        <CardTitle className="flex justify-between items-center">
+                            Attendance
+                            <Button
+                                onClick={() =>
+                                    navigate("/attendance/statistics")
+                                }
+                            >
+                                Statistics
+                            </Button>
+                        </CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <div className="flex flex-wrap gap-2">
-                            {rooms
-                                .filter((r) => r.currentGroupId)
-                                .map((room: Room) => (
-                                    <Button
-                                        key={room.id}
-                                        onClick={() => {
-                                            setSelectedEvent(
-                                                room.currentGroupId.split(
-                                                    "-"
-                                                )[0]
-                                            );
-                                            setSelectedRound(
-                                                room.currentGroupId.split(
-                                                    "-g"
-                                                )[0]
-                                            );
-                                            handleGroupChange(
-                                                room.currentGroupId
-                                            );
-                                        }}
-                                    >
-                                        {activityCodeToName(
-                                            room.currentGroupId
-                                        )}
-                                    </Button>
-                                ))}
-                        </div>
+                        <EventRoundAndGroupSelector
+                            competition={competition}
+                            filters={{
+                                eventId: selectedEvent,
+                                roundId: selectedRound,
+                                groupId: selectedGroup,
+                            }}
+                            handleEventChange={(eventId) => {
+                                setSelectedEvent(eventId);
+                                setSelectedRound(eventId + "-r1");
+                                handleGroupChange(`${eventId}-r1-g1`);
+                            }}
+                            handleRoundChange={(roundId) => {
+                                setSelectedRound(roundId);
+                                handleGroupChange(`${roundId}-g1`);
+                            }}
+                            handleGroupChange={handleGroupChange}
+                        />
                     </CardContent>
                 </Card>
-            )}
-            {selectedGroup ? (
-                <div className="flex flex-col gap-5 md:grid md:grid-cols-4">
+                {rooms.filter((r) => r.currentGroupId).length > 0 && (
                     <Card>
                         <CardHeader>
-                            <CardTitle>Competitors</CardTitle>
+                            <CardTitle>Current groups</CardTitle>
                         </CardHeader>
                         <CardContent>
-                            {noCompetitors ? (
-                                <h2 className="text-lg">
-                                    No competitors in this group
-                                </h2>
-                            ) : (
-                                <div className="flex flex-col gap-5">
-                                    {absentCompetitors.length > 0 && (
-                                        <div className="flex flex-col gap-2">
-                                            <h2 className="font-bold text-lg">
-                                                Absent
-                                            </h2>
-                                            <UnorderedPeopleList
-                                                persons={absentCompetitors}
-                                            />
-                                        </div>
-                                    )}
-                                    {presentCompetitors.length > 0 && (
-                                        <div className="flex flex-col gap-2">
-                                            <h2 className="font-bold text-lg">
-                                                Present
-                                            </h2>
-                                            <UnorderedPeopleList
-                                                persons={presentCompetitors}
-                                            />
-                                        </div>
-                                    )}
-                                </div>
-                            )}
+                            <div className="flex flex-wrap gap-2">
+                                {rooms
+                                    .filter((r) => r.currentGroupId)
+                                    .map((room: Room) => (
+                                        <Button
+                                            key={room.id}
+                                            onClick={() => {
+                                                setSelectedEvent(
+                                                    room.currentGroupId.split(
+                                                        "-"
+                                                    )[0]
+                                                );
+                                                setSelectedRound(
+                                                    room.currentGroupId.split(
+                                                        "-g"
+                                                    )[0]
+                                                );
+                                                handleGroupChange(
+                                                    room.currentGroupId
+                                                );
+                                            }}
+                                        >
+                                            {activityCodeToName(
+                                                room.currentGroupId
+                                            )}
+                                        </Button>
+                                    ))}
+                            </div>
                         </CardContent>
                     </Card>
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Scramblers</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            {noScramblers ? (
-                                <h2 className="text-lg">
-                                    No scramblers in this group
-                                </h2>
-                            ) : (
-                                <div className="flex flex-col gap-5">
-                                    {absentScramblers.length > 0 && (
-                                        <div className="flex flex-col gap-2">
-                                            <h2 className="font-bold text-lg">
-                                                Absent
-                                            </h2>
-                                            <AbsentPeopleList
-                                                staffActivities={
-                                                    absentScramblers
-                                                }
-                                                handleMarkAsPresent={
-                                                    handleMarkAsPresent
-                                                }
-                                            />
-                                        </div>
-                                    )}
-                                    {presentScramblers.length > 0 && (
-                                        <div className="flex flex-col gap-2">
-                                            <h2 className="font-bold text-lg">
-                                                Present
-                                            </h2>
-                                            <PresentPeopleList
-                                                staffActivities={
-                                                    presentScramblers
-                                                }
-                                                handleMarkAsAbsent={
-                                                    handleMarkAsAbsent
-                                                }
-                                            />
-                                        </div>
-                                    )}
-                                </div>
-                            )}
-                        </CardContent>
-                    </Card>
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Runners</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            {noRunners ? (
-                                <h2 className="text-lg">
-                                    No runners in this group
-                                </h2>
-                            ) : (
-                                <div className="flex flex-col gap-5">
-                                    {absentRunners.length > 0 && (
-                                        <div className="flex flex-col gap-2">
-                                            <h2 className="font-bold text-lg">
-                                                Absent
-                                            </h2>
-                                            <AbsentPeopleList
-                                                staffActivities={absentRunners}
-                                                handleMarkAsPresent={
-                                                    handleMarkAsPresent
-                                                }
-                                            />
-                                        </div>
-                                    )}
-                                    {presentRunners.length > 0 && (
-                                        <div className="flex flex-col gap-2">
-                                            <h2 className="font-bold text-lg">
-                                                Present
-                                            </h2>
-                                            <PresentPeopleList
-                                                staffActivities={presentRunners}
-                                                handleMarkAsAbsent={
-                                                    handleMarkAsAbsent
-                                                }
-                                            />
-                                        </div>
-                                    )}
-                                </div>
-                            )}
-                        </CardContent>
-                    </Card>
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Judges</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            {noJudges ? (
-                                <h2 className="text-lg">
-                                    No judges in this group
-                                </h2>
-                            ) : (
-                                <div className="flex flex-col gap-5">
-                                    {absentJudges.length > 0 && (
-                                        <div className="flex flex-col gap-2">
-                                            <h2 className="font-bold text-lg">
-                                                Absent
-                                            </h2>
-                                            <AbsentPeopleList
-                                                staffActivities={absentJudges}
-                                                handleMarkAsPresent={
-                                                    handleMarkAsPresent
-                                                }
-                                            />
-                                        </div>
-                                    )}
-                                    {presentJudges.length > 0 && (
-                                        <div className="flex flex-col gap-2">
-                                            <h2 className="font-bold text-lg">
-                                                Present
-                                            </h2>
-                                            <PresentPeopleList
-                                                staffActivities={presentJudges}
-                                                handleMarkAsAbsent={
-                                                    handleMarkAsAbsent
-                                                }
-                                                showDevice
-                                            />
-                                        </div>
-                                    )}
-                                </div>
-                            )}
-                        </CardContent>
-                    </Card>
-                </div>
-            ) : null}
-        </div>
+                )}
+                {selectedGroup ? (
+                    <div className="flex flex-col gap-5 md:grid md:grid-cols-4">
+                        <Card>
+                            <CardHeader>
+                                <CardTitle>Competitors</CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                {noCompetitors ? (
+                                    <h2 className="text-lg">
+                                        No competitors in this group
+                                    </h2>
+                                ) : (
+                                    <div className="flex flex-col gap-5">
+                                        {absentCompetitors.length > 0 && (
+                                            <div className="flex flex-col gap-2">
+                                                <h2 className="font-bold text-lg">
+                                                    Absent
+                                                </h2>
+                                                <UnorderedPeopleList
+                                                    persons={absentCompetitors}
+                                                />
+                                            </div>
+                                        )}
+                                        {presentCompetitors.length > 0 && (
+                                            <div className="flex flex-col gap-2">
+                                                <h2 className="font-bold text-lg">
+                                                    Present
+                                                </h2>
+                                                <UnorderedPeopleList
+                                                    persons={presentCompetitors}
+                                                />
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+                            </CardContent>
+                        </Card>
+                        <Card>
+                            <CardHeader>
+                                <CardTitle>Scramblers</CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                {noScramblers ? (
+                                    <h2 className="text-lg">
+                                        No scramblers in this group
+                                    </h2>
+                                ) : (
+                                    <div className="flex flex-col gap-5">
+                                        {absentScramblers.length > 0 && (
+                                            <div className="flex flex-col gap-2">
+                                                <h2 className="font-bold text-lg">
+                                                    Absent
+                                                </h2>
+                                                <AbsentPeopleList
+                                                    staffActivities={
+                                                        absentScramblers
+                                                    }
+                                                    handleMarkAsPresent={
+                                                        handleMarkAsPresent
+                                                    }
+                                                />
+                                            </div>
+                                        )}
+                                        {presentScramblers.length > 0 && (
+                                            <div className="flex flex-col gap-2">
+                                                <h2 className="font-bold text-lg">
+                                                    Present
+                                                </h2>
+                                                <PresentPeopleList
+                                                    staffActivities={
+                                                        presentScramblers
+                                                    }
+                                                    handleMarkAsAbsent={
+                                                        handleMarkAsAbsent
+                                                    }
+                                                />
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+                            </CardContent>
+                        </Card>
+                        <Card>
+                            <CardHeader>
+                                <CardTitle>Runners</CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                {noRunners ? (
+                                    <h2 className="text-lg">
+                                        No runners in this group
+                                    </h2>
+                                ) : (
+                                    <div className="flex flex-col gap-5">
+                                        {absentRunners.length > 0 && (
+                                            <div className="flex flex-col gap-2">
+                                                <h2 className="font-bold text-lg">
+                                                    Absent
+                                                </h2>
+                                                <AbsentPeopleList
+                                                    staffActivities={
+                                                        absentRunners
+                                                    }
+                                                    handleMarkAsPresent={
+                                                        handleMarkAsPresent
+                                                    }
+                                                />
+                                            </div>
+                                        )}
+                                        {presentRunners.length > 0 && (
+                                            <div className="flex flex-col gap-2">
+                                                <h2 className="font-bold text-lg">
+                                                    Present
+                                                </h2>
+                                                <PresentPeopleList
+                                                    staffActivities={
+                                                        presentRunners
+                                                    }
+                                                    handleMarkAsAbsent={
+                                                        handleMarkAsAbsent
+                                                    }
+                                                />
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+                            </CardContent>
+                        </Card>
+                        <Card>
+                            <CardHeader>
+                                <CardTitle>Judges</CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                {noJudges ? (
+                                    <h2 className="text-lg">
+                                        No judges in this group
+                                    </h2>
+                                ) : (
+                                    <div className="flex flex-col gap-5">
+                                        {absentJudges.length > 0 && (
+                                            <div className="flex flex-col gap-2">
+                                                <h2 className="font-bold text-lg">
+                                                    Absent
+                                                </h2>
+                                                <AbsentPeopleList
+                                                    staffActivities={
+                                                        absentJudges
+                                                    }
+                                                    handleMarkAsPresent={
+                                                        handleMarkAsPresent
+                                                    }
+                                                />
+                                            </div>
+                                        )}
+                                        {presentJudges.length > 0 && (
+                                            <div className="flex flex-col gap-2">
+                                                <h2 className="font-bold text-lg">
+                                                    Present
+                                                </h2>
+                                                <PresentPeopleList
+                                                    staffActivities={
+                                                        presentJudges
+                                                    }
+                                                    handleMarkAsAbsent={
+                                                        handleMarkAsAbsent
+                                                    }
+                                                    showDevice
+                                                />
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+                            </CardContent>
+                        </Card>
+                    </div>
+                ) : null}
+            </div>
+        </PageTransition>
     );
 };
 

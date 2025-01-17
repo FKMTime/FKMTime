@@ -21,6 +21,7 @@ import {
     getPersonInfoByCardIdWithSensitiveData,
 } from "@/lib/persons";
 import { WCA_ORIGIN } from "@/lib/request";
+import PageTransition from "@/Pages/PageTransition";
 
 import SubmitActions from "./Components/SubmitActions";
 
@@ -145,89 +146,93 @@ const CheckIn = () => {
         return <LoadingPage />;
     }
     return (
-        <div className="flex flex-col gap-4">
-            <Card>
-                <CardHeader>
-                    <CardTitle>
-                        Checked in {`${personsCheckedIn}/${totalPersons}`}
-                    </CardTitle>
-                </CardHeader>
-                <CardContent className="flex flex-col gap-3">
-                    <PersonAutocomplete
-                        onSelect={handleSelectPerson}
-                        defaultValue={selectedPerson?.id}
-                        key={selectedPerson?.id}
-                    />
-                    <div className="flex flex-col gap-2">
-                        <Label>Scan the card of the competitor</Label>
-                        <Input
-                            placeholder="Card"
-                            autoFocus
-                            value={scannedCard}
-                            onChange={(event) => {
-                                setScannedCard(event.target.value);
-                                if (personData?.id) {
-                                    setPersonData({
-                                        ...personData,
-                                        cardId: event.target.value,
-                                    });
-                                }
-                            }}
-                            ref={cardInputRef}
-                            onKeyDown={(
-                                event: KeyboardEvent<HTMLInputElement>
-                            ) => event.key === "Enter" && handleSubmitCard()}
-                        />
-                    </div>
-                </CardContent>
-            </Card>
-            {personData ? (
+        <PageTransition>
+            <div className="flex flex-col gap-4">
                 <Card>
                     <CardHeader>
-                        <CardTitle className="flex justify-between items-center">
-                            {personData.name}{" "}
-                            {personData.registrantId
-                                ? `(${personData.registrantId})`
-                                : ""}
-                            <FlagIcon
-                                country={personData.countryIso2}
-                                size={40}
-                            />
+                        <CardTitle>
+                            Checked in {`${personsCheckedIn}/${totalPersons}`}
                         </CardTitle>
-                        <CardDescription>
-                            <p>
-                                {personData.wcaId ? (
-                                    <a
-                                        className="text-blue-500"
-                                        href={`${WCA_ORIGIN}/persons/${personData.wcaId}`}
-                                        target="_blank"
-                                        rel="noreferrer"
-                                    >
-                                        {personData.wcaId}
-                                    </a>
-                                ) : (
-                                    "Newcomer"
-                                )}
-                            </p>
-                        </CardDescription>
                     </CardHeader>
                     <CardContent className="flex flex-col gap-3">
-                        {!personData.cardId ? (
-                            <Alert variant="destructive">
-                                <AlertTitle>
-                                    Please assign a card to the competitor
-                                </AlertTitle>
-                            </Alert>
-                        ) : null}
-                        <SubmitActions
-                            person={personData}
-                            handleCheckIn={handleCheckIn}
-                            cardShouldBeAssigned={cardShouldBeAssigned}
+                        <PersonAutocomplete
+                            onSelect={handleSelectPerson}
+                            defaultValue={selectedPerson?.id}
+                            key={selectedPerson?.id}
                         />
+                        <div className="flex flex-col gap-2">
+                            <Label>Scan the card of the competitor</Label>
+                            <Input
+                                placeholder="Card"
+                                autoFocus
+                                value={scannedCard}
+                                onChange={(event) => {
+                                    setScannedCard(event.target.value);
+                                    if (personData?.id) {
+                                        setPersonData({
+                                            ...personData,
+                                            cardId: event.target.value,
+                                        });
+                                    }
+                                }}
+                                ref={cardInputRef}
+                                onKeyDown={(
+                                    event: KeyboardEvent<HTMLInputElement>
+                                ) =>
+                                    event.key === "Enter" && handleSubmitCard()
+                                }
+                            />
+                        </div>
                     </CardContent>
                 </Card>
-            ) : null}
-        </div>
+                {personData ? (
+                    <Card>
+                        <CardHeader>
+                            <CardTitle className="flex justify-between items-center">
+                                {personData.name}{" "}
+                                {personData.registrantId
+                                    ? `(${personData.registrantId})`
+                                    : ""}
+                                <FlagIcon
+                                    country={personData.countryIso2}
+                                    size={40}
+                                />
+                            </CardTitle>
+                            <CardDescription>
+                                <p>
+                                    {personData.wcaId ? (
+                                        <a
+                                            className="text-blue-500"
+                                            href={`${WCA_ORIGIN}/persons/${personData.wcaId}`}
+                                            target="_blank"
+                                            rel="noreferrer"
+                                        >
+                                            {personData.wcaId}
+                                        </a>
+                                    ) : (
+                                        "Newcomer"
+                                    )}
+                                </p>
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent className="flex flex-col gap-3">
+                            {!personData.cardId ? (
+                                <Alert variant="destructive">
+                                    <AlertTitle>
+                                        Please assign a card to the competitor
+                                    </AlertTitle>
+                                </Alert>
+                            ) : null}
+                            <SubmitActions
+                                person={personData}
+                                handleCheckIn={handleCheckIn}
+                                cardShouldBeAssigned={cardShouldBeAssigned}
+                            />
+                        </CardContent>
+                    </Card>
+                ) : null}
+            </div>
+        </PageTransition>
     );
 };
 

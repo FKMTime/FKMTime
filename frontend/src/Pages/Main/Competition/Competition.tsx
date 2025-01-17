@@ -22,6 +22,7 @@ import {
 } from "@/lib/competition";
 import { Competition as CompetitionInterface } from "@/lib/interfaces";
 import { getGitCommitValue } from "@/lib/utils";
+import PageTransition from "@/Pages/PageTransition";
 
 import ManageCompetition from "./Tabs/ManageCompetition/ManageCompetition";
 import Rooms from "./Tabs/Rooms/Rooms";
@@ -114,56 +115,58 @@ const Competition = () => {
     }
 
     return (
-        <Tabs defaultValue={tabIndex}>
-            <Card>
-                <CardHeader className="flex flex-row justify-between items-center">
-                    <div className="flex flex-col gap-2">
-                        <CardTitle>{competition.name}</CardTitle>
-                        <CardDescription>
-                            Version: {getGitCommitValue()}
-                        </CardDescription>
-                    </div>
-                    <div className="flex gap-2">
-                        <Button
-                            variant="success"
-                            onClick={handleSync}
-                            className="w-full"
-                        >
-                            <RefreshCw />
-                            Sync
-                        </Button>
-                        {import.meta.env.PROD && (
-                            <Button onClick={() => window.open("/logs")}>
-                                <Server />
-                                Logs
-                            </Button>
-                        )}
-                    </div>
-                </CardHeader>
-                <CardContent>
-                    <TabsList>
-                        {tabs.map((tab) => (
-                            <TabsTrigger
-                                key={tab.id}
-                                value={tab.id}
-                                onClick={() => onChangeTab(tab.id)}
+        <PageTransition>
+            <Tabs defaultValue={tabIndex}>
+                <Card>
+                    <CardHeader className="flex flex-row justify-between items-center">
+                        <div className="flex flex-col gap-2">
+                            <CardTitle>{competition.name}</CardTitle>
+                            <CardDescription>
+                                Version: {getGitCommitValue()}
+                            </CardDescription>
+                        </div>
+                        <div className="flex gap-2">
+                            <Button
+                                variant="success"
+                                onClick={handleSync}
+                                className="w-full"
                             >
-                                {tab.name}
-                            </TabsTrigger>
-                        ))}
-                    </TabsList>
-                </CardContent>
-            </Card>
-            <TabsContent value={tabs[0].id}>
-                <ManageCompetition
-                    competition={competition}
-                    setCompetition={setCompetition}
-                />
-            </TabsContent>
-            <TabsContent value={tabs[1].id}>
-                <Rooms />
-            </TabsContent>
-        </Tabs>
+                                <RefreshCw />
+                                Sync
+                            </Button>
+                            {import.meta.env.PROD && (
+                                <Button onClick={() => window.open("/logs")}>
+                                    <Server />
+                                    Logs
+                                </Button>
+                            )}
+                        </div>
+                    </CardHeader>
+                    <CardContent>
+                        <TabsList>
+                            {tabs.map((tab) => (
+                                <TabsTrigger
+                                    key={tab.id}
+                                    value={tab.id}
+                                    onClick={() => onChangeTab(tab.id)}
+                                >
+                                    {tab.name}
+                                </TabsTrigger>
+                            ))}
+                        </TabsList>
+                    </CardContent>
+                </Card>
+                <TabsContent value={tabs[0].id}>
+                    <ManageCompetition
+                        competition={competition}
+                        setCompetition={setCompetition}
+                    />
+                </TabsContent>
+                <TabsContent value={tabs[1].id}>
+                    <Rooms />
+                </TabsContent>
+            </Tabs>
+        </PageTransition>
     );
 };
 

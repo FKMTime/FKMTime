@@ -13,6 +13,7 @@ import {
     importCompetition,
 } from "@/lib/competition";
 import { WCACompetition } from "@/lib/interfaces";
+import PageTransition from "@/Pages/PageTransition";
 
 import CompetitionsAutocomplete from "./Components/CompetitionsAutocomplete";
 import CompetitionsList from "./Components/CompetitionsList";
@@ -74,36 +75,38 @@ const ImportCompetition = () => {
     }, [navigate]);
 
     return (
-        <div className="flex flex-col gap-4">
-            <Card>
-                <CardHeader>
-                    <CardTitle className="flex justify-between items-center">
-                        Import competition from the WCA Website
-                        <Button onClick={handleLogout}>Logout</Button>
-                    </CardTitle>
-                </CardHeader>
-                <CardContent>
-                    {userInfo.isWcaAdmin && (
-                        <CompetitionsAutocomplete onSelect={handleSelect} />
-                    )}
-                </CardContent>
-            </Card>
-            <Card>
-                <CardHeader>
-                    <CardTitle>Upcoming Competitions</CardTitle>
-                </CardHeader>
-                <CardContent>
-                    {competitions.length > 0 ? (
-                        <CompetitionsList
-                            competitions={competitions}
-                            handleImportCompetition={handleSubmit}
-                        />
-                    ) : (
-                        <p>You have no upcoming competitions to manage</p>
-                    )}
-                </CardContent>
-            </Card>
-        </div>
+        <PageTransition>
+            <div className="flex flex-col gap-4">
+                <Card>
+                    <CardHeader>
+                        <CardTitle className="flex justify-between items-center">
+                            Import competition from the WCA Website
+                            <Button onClick={handleLogout}>Logout</Button>
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        {userInfo.isWcaAdmin && (
+                            <CompetitionsAutocomplete onSelect={handleSelect} />
+                        )}
+                    </CardContent>
+                </Card>
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Upcoming Competitions</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        {competitions.length > 0 ? (
+                            <CompetitionsList
+                                competitions={competitions}
+                                handleImportCompetition={handleSubmit}
+                            />
+                        ) : (
+                            <p>You have no upcoming competitions to manage</p>
+                        )}
+                    </CardContent>
+                </Card>
+            </div>
+        </PageTransition>
     );
 };
 

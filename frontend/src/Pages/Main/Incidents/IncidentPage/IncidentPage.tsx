@@ -18,6 +18,7 @@ import {
     Incident,
 } from "@/lib/interfaces";
 import { milisecondsToClockFormat } from "@/lib/resultFormatters";
+import PageTransition from "@/Pages/PageTransition";
 
 import IncidentForm from "./Components/IncidentForm";
 import IncidentWarnings from "./Components/IncidentWarnings";
@@ -138,62 +139,70 @@ const IncidentPage = () => {
     }
 
     return (
-        <div className="flex flex-col gap-4">
-            <Card>
-                <CardHeader>
-                    <CardTitle>
-                        {editedIncident.result.person.name} (
-                        {editedIncident.result.person.wcaId
-                            ? editedIncident.result.person.wcaId
-                            : "Newcomer"}
-                        )
-                    </CardTitle>
-                </CardHeader>
-                <CardContent className="flex flex-col gap-4">
-                    <Button
-                        className="w-fit"
-                        onClick={() =>
-                            navigate(`/results/${editedIncident?.result.id}`)
-                        }
-                    >
-                        All attempts from this average
-                    </Button>
-                    <IncidentWarnings previousIncidents={previousIncidents} />
-                </CardContent>
-            </Card>
-            <Card>
-                <CardHeader>
-                    <CardTitle>Quick actions</CardTitle>
-                </CardHeader>
-                <CardContent>
-                    <div className="grid grid-cols-2 md:flex gap-4">
-                        <QuickActions handleQuickAction={handleQuickAction} />
-                    </div>
-                </CardContent>
-            </Card>
-            <Card>
-                <CardHeader>
-                    <CardTitle>Edit incident</CardTitle>
-                </CardHeader>
-                <CardContent>
-                    {editedIncident.inspectionTime ? (
-                        <p>
-                            Inspection time:{" "}
-                            {milisecondsToClockFormat(
-                                editedIncident.inspectionTime
-                            )}
-                        </p>
-                    ) : null}
-                    <IncidentForm
-                        editedIncident={editedIncident}
-                        handleSubmit={handleSubmit}
-                        isLoading={isLoading}
-                        timeLimit={timeLimit ? timeLimit : undefined}
-                        handleDelete={handleDelete}
-                    />
-                </CardContent>
-            </Card>
-        </div>
+        <PageTransition>
+            <div className="flex flex-col gap-4">
+                <Card>
+                    <CardHeader>
+                        <CardTitle>
+                            {editedIncident.result.person.name} (
+                            {editedIncident.result.person.wcaId
+                                ? editedIncident.result.person.wcaId
+                                : "Newcomer"}
+                            )
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent className="flex flex-col gap-4">
+                        <Button
+                            className="w-fit"
+                            onClick={() =>
+                                navigate(
+                                    `/results/${editedIncident?.result.id}`
+                                )
+                            }
+                        >
+                            All attempts from this average
+                        </Button>
+                        <IncidentWarnings
+                            previousIncidents={previousIncidents}
+                        />
+                    </CardContent>
+                </Card>
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Quick actions</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="grid grid-cols-2 md:flex gap-4">
+                            <QuickActions
+                                handleQuickAction={handleQuickAction}
+                            />
+                        </div>
+                    </CardContent>
+                </Card>
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Edit incident</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        {editedIncident.inspectionTime ? (
+                            <p>
+                                Inspection time:{" "}
+                                {milisecondsToClockFormat(
+                                    editedIncident.inspectionTime
+                                )}
+                            </p>
+                        ) : null}
+                        <IncidentForm
+                            editedIncident={editedIncident}
+                            handleSubmit={handleSubmit}
+                            isLoading={isLoading}
+                            timeLimit={timeLimit ? timeLimit : undefined}
+                            handleDelete={handleDelete}
+                        />
+                    </CardContent>
+                </Card>
+            </div>
+        </PageTransition>
     );
 };
 

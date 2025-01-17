@@ -7,6 +7,7 @@ import {
     updateDevicesSettings,
 } from "@/lib/competition";
 import { Competition } from "@/lib/interfaces";
+import PageTransition from "@/Pages/PageTransition";
 
 import DeviceSettingsForm from "./DeviceSettingsForm";
 
@@ -51,17 +52,19 @@ const DevicesSettings = () => {
     }
 
     return (
-        <Card>
-            <CardHeader>
-                <CardTitle>Settings</CardTitle>
-            </CardHeader>
-            <CardContent>
-                <DeviceSettingsForm
-                    competition={competition}
-                    handleSubmit={handleSubmit}
-                />
-            </CardContent>
-        </Card>
+        <PageTransition>
+            <Card>
+                <CardHeader>
+                    <CardTitle>Settings</CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <DeviceSettingsForm
+                        competition={competition}
+                        handleSubmit={handleSubmit}
+                    />
+                </CardContent>
+            </Card>
+        </PageTransition>
     );
 };
 

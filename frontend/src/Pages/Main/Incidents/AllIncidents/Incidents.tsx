@@ -5,6 +5,7 @@ import { Button } from "@/Components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/Components/ui/card";
 import { getUnresolvedAttempts } from "@/lib/attempt";
 import { Incident } from "@/lib/interfaces";
+import PageTransition from "@/Pages/PageTransition";
 import { socket } from "@/socket";
 
 import IncidentCard from "./Components/IncidentCard";
@@ -35,26 +36,28 @@ const Incidents = () => {
     }, []);
 
     return (
-        <div className="flex flex-col gap-4">
-            <Card>
-                <CardHeader>
-                    <CardTitle>Incidents</CardTitle>
-                </CardHeader>
-                <CardContent>
-                    <Button onClick={() => navigate("/incidents/resolved")}>
-                        Resolved incidents
-                    </Button>
-                </CardContent>
-            </Card>
-            <div className="flex flex-row gap-4 flex-wrap justify-center md:justify-start">
-                {incidents.length === 0 && (
-                    <h2 className="text-lg">No incidents</h2>
-                )}
-                {incidents.map((incident) => (
-                    <IncidentCard incident={incident} key={incident.id} />
-                ))}
+        <PageTransition>
+            <div className="flex flex-col gap-4">
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Incidents</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <Button onClick={() => navigate("/incidents/resolved")}>
+                            Resolved incidents
+                        </Button>
+                    </CardContent>
+                </Card>
+                <div className="flex flex-row gap-4 flex-wrap justify-center md:justify-start">
+                    {incidents.length === 0 && (
+                        <h2 className="text-lg">No incidents</h2>
+                    )}
+                    {incidents.map((incident) => (
+                        <IncidentCard incident={incident} key={incident.id} />
+                    ))}
+                </div>
             </div>
-        </div>
+        </PageTransition>
     );
 };
 

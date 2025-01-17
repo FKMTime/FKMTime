@@ -5,6 +5,7 @@ import PlusButton from "@/Components/PlusButton";
 import { Card, CardContent, CardHeader, CardTitle } from "@/Components/ui/card";
 import { ScramblingDevice } from "@/lib/interfaces";
 import { getScramblingDevices } from "@/lib/scramblingDevices";
+import PageTransition from "@/Pages/PageTransition";
 
 import CreateScramblingDeviceModal from "./Components/CreateScramblingDeviceModal";
 import ScramblingDevicesTable from "./Components/ScramblingDevicesTable";
@@ -34,29 +35,31 @@ const ScramblingDevices = () => {
     if (isLoading) return <LoadingPage />;
 
     return (
-        <div className="flex flex-col gap-4">
-            <Card>
-                <CardHeader>
-                    <CardTitle className="flex items-center justify-between">
-                        Scrambling devices
-                        <PlusButton
-                            onClick={() => setIsOpenCreateDeviceModal(true)}
-                            title="Add new device"
+        <PageTransition>
+            <div className="flex flex-col gap-4">
+                <Card>
+                    <CardHeader>
+                        <CardTitle className="flex items-center justify-between">
+                            Scrambling devices
+                            <PlusButton
+                                onClick={() => setIsOpenCreateDeviceModal(true)}
+                                title="Add new device"
+                            />
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <ScramblingDevicesTable
+                            devices={devices}
+                            fetchData={fetchData}
                         />
-                    </CardTitle>
-                </CardHeader>
-                <CardContent>
-                    <ScramblingDevicesTable
-                        devices={devices}
-                        fetchData={fetchData}
-                    />
-                </CardContent>
-            </Card>
-            <CreateScramblingDeviceModal
-                isOpen={isOpenCreateDeviceModal}
-                onClose={handleCloseCreateDeviceModal}
-            />
-        </div>
+                    </CardContent>
+                </Card>
+                <CreateScramblingDeviceModal
+                    isOpen={isOpenCreateDeviceModal}
+                    onClose={handleCloseCreateDeviceModal}
+                />
+            </div>
+        </PageTransition>
     );
 };
 

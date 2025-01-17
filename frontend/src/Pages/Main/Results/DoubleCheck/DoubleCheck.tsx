@@ -18,6 +18,7 @@ import {
     undoDoubleCheck,
 } from "@/lib/results";
 import { getSubmissionPlatformName } from "@/lib/utils";
+import PageTransition from "@/Pages/PageTransition";
 
 import AttemptsList from "./Components/AttemptsList";
 import DoubleCheckActions from "./Components/DoubleCheckActions";
@@ -186,83 +187,90 @@ const DoubleCheck = () => {
     if (!resultsToDoubleCheck || !id) return <LoadingPage />;
 
     return (
-        <div className="flex flex-col gap-4">
-            <Card>
-                <CardHeader>
-                    <CardTitle>
-                        {roundName} - {doubleCheckedResults}/{totalResults}
-                    </CardTitle>
-                </CardHeader>
-                <CardContent className="flex flex-col gap-4">
-                    {doubleCheckedResults === totalResults ? (
-                        <>
-                            <DoubleCheckFinished
-                                totalResults={totalResults}
-                                roundId={id}
-                            />
-                            <Button
-                                variant="destructive"
-                                onClick={handleUndoDoubleCheck}
-                            >
-                                Mark results as not double checked
-                            </Button>
-                        </>
-                    ) : (
-                        <>
-                            <Alert>
-                                <AlertTitle>
-                                    Clicking enter on the ID field will mark
-                                    result as double-checked
-                                </AlertTitle>
-                            </Alert>
-                            <Alert>
-                                <AlertTitle>
-                                    If you want to make more changes please go
-                                    to Details page
-                                </AlertTitle>
-                            </Alert>
-                            {resultsToDoubleCheck ? (
-                                <SelectCompetitor
-                                    idInputRef={idInputRef}
-                                    handleSubmit={handleSubmit}
-                                    resultsToDoubleCheck={resultsToDoubleCheck}
-                                    setResult={setResult}
-                                    inputValue={inputValue}
-                                    setJustSelected={setJustSelected}
-                                    setInputValue={setInputValue}
-                                />
-                            ) : (
-                                <Heading>No results to double check</Heading>
-                            )}
-                        </>
-                    )}
-                </CardContent>
-            </Card>
-
-            {result && (
+        <PageTransition>
+            <div className="flex flex-col gap-4">
                 <Card>
                     <CardHeader>
                         <CardTitle>
-                            {result.person.name} ({result.person.registrantId})
+                            {roundName} - {doubleCheckedResults}/{totalResults}
                         </CardTitle>
                     </CardHeader>
                     <CardContent className="flex flex-col gap-4">
-                        {competition && (
-                            <AttemptsList
-                                result={result}
-                                competition={competition}
-                                updateAttempt={handleUpdateAttempt}
-                            />
+                        {doubleCheckedResults === totalResults ? (
+                            <>
+                                <DoubleCheckFinished
+                                    totalResults={totalResults}
+                                    roundId={id}
+                                />
+                                <Button
+                                    variant="destructive"
+                                    onClick={handleUndoDoubleCheck}
+                                >
+                                    Mark results as not double checked
+                                </Button>
+                            </>
+                        ) : (
+                            <>
+                                <Alert>
+                                    <AlertTitle>
+                                        Clicking enter on the ID field will mark
+                                        result as double-checked
+                                    </AlertTitle>
+                                </Alert>
+                                <Alert>
+                                    <AlertTitle>
+                                        If you want to make more changes please
+                                        go to Details page
+                                    </AlertTitle>
+                                </Alert>
+                                {resultsToDoubleCheck ? (
+                                    <SelectCompetitor
+                                        idInputRef={idInputRef}
+                                        handleSubmit={handleSubmit}
+                                        resultsToDoubleCheck={
+                                            resultsToDoubleCheck
+                                        }
+                                        setResult={setResult}
+                                        inputValue={inputValue}
+                                        setJustSelected={setJustSelected}
+                                        setInputValue={setInputValue}
+                                    />
+                                ) : (
+                                    <Heading>
+                                        No results to double check
+                                    </Heading>
+                                )}
+                            </>
                         )}
-                        <DoubleCheckActions
-                            handleSubmit={handleSubmit}
-                            handleSkip={handleSkip}
-                            result={result}
-                        />
                     </CardContent>
                 </Card>
-            )}
-        </div>
+
+                {result && (
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>
+                                {result.person.name} (
+                                {result.person.registrantId})
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent className="flex flex-col gap-4">
+                            {competition && (
+                                <AttemptsList
+                                    result={result}
+                                    competition={competition}
+                                    updateAttempt={handleUpdateAttempt}
+                                />
+                            )}
+                            <DoubleCheckActions
+                                handleSubmit={handleSubmit}
+                                handleSkip={handleSkip}
+                                result={result}
+                            />
+                        </CardContent>
+                    </Card>
+                )}
+            </div>
+        </PageTransition>
     );
 };
 

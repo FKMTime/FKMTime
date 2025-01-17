@@ -32,6 +32,7 @@ import {
     getSubmittedAttempts,
     isThereADifferenceBetweenResults,
 } from "@/lib/utils";
+import PageTransition from "@/Pages/PageTransition";
 
 import CreateAttemptModal from "../Components/CreateAttemptModal";
 import RoundLimits from "../Components/RoundLimits";
@@ -183,163 +184,175 @@ const SingleResult = () => {
     if (!result) return <LoadingPage />;
 
     return (
-        <div className="flex flex-col gap-4">
-            <Card>
-                <CardHeader>
-                    <CardTitle className="flex justify-between items-center">
-                        <div className="flex items-center gap-2">
-                            <FlagIcon
-                                country={result.person.countryIso2}
-                                size={30}
-                            />
-                            {result.person.name} ({result.person.registrantId})
-                            - {activityCodeToName(result.roundId)}
-                        </div>
-
-                        <PlusButton
-                            onClick={() => setIsOpenCreateAttemptModal(true)}
-                        />
-                    </CardTitle>
-                </CardHeader>
-                <CardContent className="flex flex-col md:flex-row gap-4">
-                    <Button onClick={handleResubmit} variant="success">
-                        Resubmit scorecard to {submissionPlatformName}
-                    </Button>
-                    {standardAttempts.length <= maxAttempts && (
-                        <Button onClick={handleAssignDns}>
-                            Assign DNS on remaing attempts
-                        </Button>
-                    )}
-                </CardContent>
-            </Card>
-            <Card>
-                <CardHeader>
-                    <CardTitle>{activityCodeToName(result.roundId)}</CardTitle>
-                </CardHeader>
-                <CardContent className="flex flex-col gap-4">
-                    {!isDifferenceBetweenResults &&
-                        !isUnofficialEvent(result.eventId) && (
-                            <Alert
-                                variant="destructive"
-                                className="flex gap-2 items-center"
-                            >
-                                <div>
-                                    <AlertCircle />
-                                </div>
-                                <AlertTitle>
-                                    There is a difference between results in WCA
-                                    Live and FKM. Please check it manually, fix
-                                    in FKM and resubmit scorecard to WCA Live.
-                                </AlertTitle>
-                            </Alert>
-                        )}
-                    <RoundLimits
-                        cutoff={cutoff}
-                        limit={limit}
-                        maxAttempts={maxAttempts}
-                        size={"lg"}
-                    />
-                </CardContent>
-            </Card>
-            <Tabs defaultValue="submitted">
+        <PageTransition>
+            <div className="flex flex-col gap-4">
                 <Card>
                     <CardHeader>
-                        <CardTitle>Results</CardTitle>
+                        <CardTitle className="flex justify-between items-center">
+                            <div className="flex items-center gap-2">
+                                <FlagIcon
+                                    country={result.person.countryIso2}
+                                    size={30}
+                                />
+                                {result.person.name} (
+                                {result.person.registrantId}) -{" "}
+                                {activityCodeToName(result.roundId)}
+                            </div>
+
+                            <PlusButton
+                                onClick={() =>
+                                    setIsOpenCreateAttemptModal(true)
+                                }
+                            />
+                        </CardTitle>
                     </CardHeader>
-                    <CardContent>
-                        <TabsList>
-                            <TabsTrigger value="submitted">
-                                Submitted to WCA Live
-                            </TabsTrigger>
-                            <TabsTrigger value="standard">Standard</TabsTrigger>
-                            {extraAttempts.length > 0 && (
-                                <TabsTrigger value="extra">Extra</TabsTrigger>
-                            )}
-                        </TabsList>
+                    <CardContent className="flex flex-col md:flex-row gap-4">
+                        <Button onClick={handleResubmit} variant="success">
+                            Resubmit scorecard to {submissionPlatformName}
+                        </Button>
+                        {standardAttempts.length <= maxAttempts && (
+                            <Button onClick={handleAssignDns}>
+                                Assign DNS on remaing attempts
+                            </Button>
+                        )}
                     </CardContent>
                 </Card>
-                <TabsContent value="submitted">
+                <Card>
+                    <CardHeader>
+                        <CardTitle>
+                            {activityCodeToName(result.roundId)}
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent className="flex flex-col gap-4">
+                        {!isDifferenceBetweenResults &&
+                            !isUnofficialEvent(result.eventId) && (
+                                <Alert
+                                    variant="destructive"
+                                    className="flex gap-2 items-center"
+                                >
+                                    <div>
+                                        <AlertCircle />
+                                    </div>
+                                    <AlertTitle>
+                                        There is a difference between results in
+                                        WCA Live and FKM. Please check it
+                                        manually, fix in FKM and resubmit
+                                        scorecard to WCA Live.
+                                    </AlertTitle>
+                                </Alert>
+                            )}
+                        <RoundLimits
+                            cutoff={cutoff}
+                            limit={limit}
+                            maxAttempts={maxAttempts}
+                            size={"lg"}
+                        />
+                    </CardContent>
+                </Card>
+                <Tabs defaultValue="submitted">
                     <Card>
                         <CardHeader>
-                            <CardTitle>
-                                Attempts submitted to WCA Live
-                            </CardTitle>
+                            <CardTitle>Results</CardTitle>
                         </CardHeader>
                         <CardContent>
-                            {submittedAttempts.length === 0 ? (
-                                <p>No attempts submitted to WCA Live</p>
-                            ) : (
-                                <AttemptsTable
-                                    attempts={submittedAttempts as never}
-                                    fetchData={fetchData}
-                                    result={result}
-                                />
-                            )}
+                            <TabsList>
+                                <TabsTrigger value="submitted">
+                                    Submitted to WCA Live
+                                </TabsTrigger>
+                                <TabsTrigger value="standard">
+                                    Standard
+                                </TabsTrigger>
+                                {extraAttempts.length > 0 && (
+                                    <TabsTrigger value="extra">
+                                        Extra
+                                    </TabsTrigger>
+                                )}
+                            </TabsList>
                         </CardContent>
                     </Card>
-                </TabsContent>
-                <TabsContent value="standard">
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Standard attempts</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            {standardAttempts.length === 0 ? (
-                                <p>No attempts</p>
-                            ) : (
-                                <div className="flex flex-col gap-2">
-                                    <Button
-                                        className="w-fit"
-                                        onClick={() =>
-                                            setIsOpenSwapAttemptsModal(true)
-                                        }
-                                    >
-                                        Swap attempts
-                                    </Button>
+                    <TabsContent value="submitted">
+                        <Card>
+                            <CardHeader>
+                                <CardTitle>
+                                    Attempts submitted to WCA Live
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                {submittedAttempts.length === 0 ? (
+                                    <p>No attempts submitted to WCA Live</p>
+                                ) : (
                                     <AttemptsTable
-                                        attempts={standardAttempts}
-                                        showExtraColumns
+                                        attempts={submittedAttempts as never}
                                         fetchData={fetchData}
                                         result={result}
                                     />
-                                </div>
-                            )}
-                        </CardContent>
-                    </Card>
-                </TabsContent>
-                <TabsContent value="extra">
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Extra attempts</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            {extraAttempts.length === 0 ? (
-                                <p>No extra attempts</p>
-                            ) : (
-                                <AttemptsTable
-                                    attempts={extraAttempts}
-                                    fetchData={fetchData}
-                                    result={result}
-                                    showExtraColumns
-                                />
-                            )}
-                        </CardContent>
-                    </Card>
-                </TabsContent>
-            </Tabs>
-            <CreateAttemptModal
-                isOpen={isOpenCreateAttemptModal}
-                onClose={handleCloseModal}
-                roundId={result.roundId}
-                competitorId={result.person.id}
-                timeLimit={limit!}
-            />
-            <SwapAttemptsModal
-                isOpen={isOpenSwapAttemptsModal}
-                onClose={handleCloseModal}
-                attempts={standardAttempts}
-            />
-        </div>
+                                )}
+                            </CardContent>
+                        </Card>
+                    </TabsContent>
+                    <TabsContent value="standard">
+                        <Card>
+                            <CardHeader>
+                                <CardTitle>Standard attempts</CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                {standardAttempts.length === 0 ? (
+                                    <p>No attempts</p>
+                                ) : (
+                                    <div className="flex flex-col gap-2">
+                                        <Button
+                                            className="w-fit"
+                                            onClick={() =>
+                                                setIsOpenSwapAttemptsModal(true)
+                                            }
+                                        >
+                                            Swap attempts
+                                        </Button>
+                                        <AttemptsTable
+                                            attempts={standardAttempts}
+                                            showExtraColumns
+                                            fetchData={fetchData}
+                                            result={result}
+                                        />
+                                    </div>
+                                )}
+                            </CardContent>
+                        </Card>
+                    </TabsContent>
+                    <TabsContent value="extra">
+                        <Card>
+                            <CardHeader>
+                                <CardTitle>Extra attempts</CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                {extraAttempts.length === 0 ? (
+                                    <p>No extra attempts</p>
+                                ) : (
+                                    <AttemptsTable
+                                        attempts={extraAttempts}
+                                        fetchData={fetchData}
+                                        result={result}
+                                        showExtraColumns
+                                    />
+                                )}
+                            </CardContent>
+                        </Card>
+                    </TabsContent>
+                </Tabs>
+                <CreateAttemptModal
+                    isOpen={isOpenCreateAttemptModal}
+                    onClose={handleCloseModal}
+                    roundId={result.roundId}
+                    competitorId={result.person.id}
+                    timeLimit={limit!}
+                />
+                <SwapAttemptsModal
+                    isOpen={isOpenSwapAttemptsModal}
+                    onClose={handleCloseModal}
+                    attempts={standardAttempts}
+                />
+            </div>
+        </PageTransition>
     );
 };
 

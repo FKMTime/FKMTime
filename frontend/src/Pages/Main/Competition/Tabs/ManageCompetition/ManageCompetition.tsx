@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/Components/ui/card";
 import { useToast } from "@/hooks/useToast";
 import { updateCompetitionSettings } from "@/lib/competition";
 import { Competition } from "@/lib/interfaces";
+import PageTransition from "@/Pages/PageTransition";
 
 import CompetitionForm from "./Components/CompetitionForm";
 
@@ -48,41 +49,44 @@ const ManageCompetition = ({
     const anyWarnings = emptyScoretakingToken || scoretakingTokenMayExpired;
 
     return (
-        <Card>
-            <CardHeader>
-                <CardTitle>Manage competition</CardTitle>
-            </CardHeader>
-            <CardContent>
-                <div className="flex flex-col gap-5 md:w-1/3">
-                    {anyWarnings && (
-                        <div className="flex flex-col gap-5">
-                            {emptyScoretakingToken && (
-                                <Alert variant="destructive">
-                                    <AlertCircle className="h-4 w-4" />
-                                    <AlertTitle>
-                                        You need to set the scoretaking token
-                                        taken from WCA Live before the
-                                        competition
-                                    </AlertTitle>
-                                </Alert>
-                            )}
-                            {scoretakingTokenMayExpired && (
-                                <Alert variant="destructive">
-                                    <AlertCircle className="h-4 w-4" />
-                                    <AlertTitle>
-                                        The scoretaking token may have expired
-                                    </AlertTitle>
-                                </Alert>
-                            )}
-                        </div>
-                    )}
-                    <CompetitionForm
-                        competition={competition}
-                        handleSubmit={handleSubmit}
-                    />
-                </div>
-            </CardContent>
-        </Card>
+        <PageTransition>
+            <Card>
+                <CardHeader>
+                    <CardTitle>Manage competition</CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <div className="flex flex-col gap-5 md:w-1/3">
+                        {anyWarnings && (
+                            <div className="flex flex-col gap-5">
+                                {emptyScoretakingToken && (
+                                    <Alert variant="destructive">
+                                        <AlertCircle className="h-4 w-4" />
+                                        <AlertTitle>
+                                            You need to set the scoretaking
+                                            token taken from WCA Live before the
+                                            competition
+                                        </AlertTitle>
+                                    </Alert>
+                                )}
+                                {scoretakingTokenMayExpired && (
+                                    <Alert variant="destructive">
+                                        <AlertCircle className="h-4 w-4" />
+                                        <AlertTitle>
+                                            The scoretaking token may have
+                                            expired
+                                        </AlertTitle>
+                                    </Alert>
+                                )}
+                            </div>
+                        )}
+                        <CompetitionForm
+                            competition={competition}
+                            handleSubmit={handleSubmit}
+                        />
+                    </div>
+                </CardContent>
+            </Card>
+        </PageTransition>
     );
 };
 

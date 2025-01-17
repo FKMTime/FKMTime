@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/Components/ui/tabs";
+import PageTransition from "@/Pages/PageTransition";
 
 import ImportScrambles from "./Tabs/ImportScrambles/ImportScrambles";
 import ScrambleSets from "./Tabs/ScrambleSets/ScrambleSets";
@@ -44,26 +45,28 @@ const ScramblesAdmin = () => {
     }, [searchParams]);
 
     return (
-        <div className="flex flex-col gap-4">
-            <Tabs defaultValue={tabIndex} className="flex flex-col gap-4">
-                <TabsList>
+        <PageTransition>
+            <div className="flex flex-col gap-4">
+                <Tabs defaultValue={tabIndex} className="flex flex-col gap-4">
+                    <TabsList>
+                        {tabs.map((tab) => (
+                            <TabsTrigger
+                                key={tab.id}
+                                value={tab.id}
+                                onClick={() => onChangeTab(tab.id)}
+                            >
+                                {tab.name}
+                            </TabsTrigger>
+                        ))}
+                    </TabsList>
                     {tabs.map((tab) => (
-                        <TabsTrigger
-                            key={tab.id}
-                            value={tab.id}
-                            onClick={() => onChangeTab(tab.id)}
-                        >
-                            {tab.name}
-                        </TabsTrigger>
+                        <TabsContent key={tab.id} value={tab.id}>
+                            {tab.component}
+                        </TabsContent>
                     ))}
-                </TabsList>
-                {tabs.map((tab) => (
-                    <TabsContent key={tab.id} value={tab.id}>
-                        {tab.component}
-                    </TabsContent>
-                ))}
-            </Tabs>
-        </div>
+                </Tabs>
+            </div>
+        </PageTransition>
     );
 };
 

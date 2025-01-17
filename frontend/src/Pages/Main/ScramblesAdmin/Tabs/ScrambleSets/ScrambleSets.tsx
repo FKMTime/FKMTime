@@ -17,6 +17,7 @@ import {
     getScrambleSets,
 } from "@/lib/scrambleSets";
 import { letterToNumber } from "@/lib/utils";
+import PageTransition from "@/Pages/PageTransition";
 
 import AddScrambleSetModal from "./Components/AddScrambleSetModal";
 import ScrambleSetsTable from "./Components/ScrambleSetsTable";
@@ -139,67 +140,71 @@ const ScrambleSets = () => {
     if (!competition) return <LoadingPage />;
 
     return (
-        <div className="flex flex-col gap-4">
-            <Card>
-                <CardHeader>
-                    <CardTitle>Scramble sets</CardTitle>
-                </CardHeader>
-                <CardContent className="flex flex-col gap-5">
-                    <EventAndRoundSelector
-                        competition={competition}
-                        filters={filters}
-                        handleEventChange={handleEventChange}
-                        handleRoundChange={handleRoundChange}
-                    />
-                    <div className="flex gap-3">
-                        {filters.roundId && (
-                            <>
-                                <Button
-                                    variant="success"
-                                    onClick={() =>
-                                        setIsOpenAddScrambleSetModal(true)
-                                    }
-                                >
-                                    Add scramble set
-                                </Button>
-                                <Button
-                                    onClick={handleDeleteScrambleSetsByRound}
-                                >
-                                    Delete scramble sets for this round
-                                </Button>
-                            </>
-                        )}
-                        <Button
-                            variant="destructive"
-                            onClick={handleDeleteAllScrambleSets}
-                        >
-                            Delete all scramble sets
-                        </Button>
-                    </div>
-                </CardContent>
-            </Card>
-            {filters.roundId ? (
+        <PageTransition>
+            <div className="flex flex-col gap-4">
                 <Card>
                     <CardHeader>
-                        <CardTitle>
-                            {activityCodeToName(filters.roundId)}
-                        </CardTitle>
+                        <CardTitle>Scramble sets</CardTitle>
                     </CardHeader>
-                    <CardContent>
-                        <ScrambleSetsTable
-                            scrambleSets={scrambleSets}
-                            fetchData={fetchData}
+                    <CardContent className="flex flex-col gap-5">
+                        <EventAndRoundSelector
+                            competition={competition}
+                            filters={filters}
+                            handleEventChange={handleEventChange}
+                            handleRoundChange={handleRoundChange}
                         />
+                        <div className="flex gap-3">
+                            {filters.roundId && (
+                                <>
+                                    <Button
+                                        variant="success"
+                                        onClick={() =>
+                                            setIsOpenAddScrambleSetModal(true)
+                                        }
+                                    >
+                                        Add scramble set
+                                    </Button>
+                                    <Button
+                                        onClick={
+                                            handleDeleteScrambleSetsByRound
+                                        }
+                                    >
+                                        Delete scramble sets for this round
+                                    </Button>
+                                </>
+                            )}
+                            <Button
+                                variant="destructive"
+                                onClick={handleDeleteAllScrambleSets}
+                            >
+                                Delete all scramble sets
+                            </Button>
+                        </div>
                     </CardContent>
                 </Card>
-            ) : null}
-            <AddScrambleSetModal
-                isOpen={isOpenAddScrambleSetModal}
-                onClose={handleCloseAddScrambleSetModal}
-                lastSet={lastSetNumber}
-                roundId={filters.roundId}
-            />
-        </div>
+                {filters.roundId ? (
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>
+                                {activityCodeToName(filters.roundId)}
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <ScrambleSetsTable
+                                scrambleSets={scrambleSets}
+                                fetchData={fetchData}
+                            />
+                        </CardContent>
+                    </Card>
+                ) : null}
+                <AddScrambleSetModal
+                    isOpen={isOpenAddScrambleSetModal}
+                    onClose={handleCloseAddScrambleSetModal}
+                    lastSet={lastSetNumber}
+                    roundId={filters.roundId}
+                />
+            </div>
+        </PageTransition>
     );
 };
 

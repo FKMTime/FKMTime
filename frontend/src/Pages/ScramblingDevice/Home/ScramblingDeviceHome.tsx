@@ -15,6 +15,7 @@ import {
     getScrambleSetsForScramblingDevice,
     getScramblingDeviceRoom,
 } from "@/lib/scrambling";
+import PageTransition from "@/Pages/PageTransition";
 
 import ScrambleSetsTable from "./Components/ScrambleSetsTable";
 
@@ -69,42 +70,45 @@ const ScramblingDeviceHome = () => {
     if (!competition) return <LoadingPage />;
 
     return (
-        <div className="flex flex-col gap-4">
-            <Card>
-                <CardHeader>
-                    <CardTitle className="flex items-center justify-between">
-                        Scrambling device
-                        <Button onClick={handleLogout}>Logout</Button>
-                    </CardTitle>
-                </CardHeader>
-                <CardContent>
-                    <EventAndRoundSelector
-                        competition={competition}
-                        filters={{
-                            eventId: roundId.split("-")[0],
-                            roundId: roundId,
-                        }}
-                        handleEventChange={handleEventChange}
-                        handleRoundChange={handleRoundChange}
-                    />
-                </CardContent>
-            </Card>
-            {roundId ? (
+        <PageTransition>
+            <div className="flex flex-col gap-4">
                 <Card>
                     <CardHeader>
-                        <CardTitle>{activityCodeToName(roundId)}</CardTitle>
+                        <CardTitle className="flex items-center justify-between">
+                            Scrambling device
+                            <Button onClick={handleLogout}>Logout</Button>
+                        </CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <ScrambleSetsTable
-                            scrambleSets={scrambleSets}
-                            showScrambleButton={
-                                roundId === room?.currentGroupId.split("-g")[0]
-                            }
+                        <EventAndRoundSelector
+                            competition={competition}
+                            filters={{
+                                eventId: roundId.split("-")[0],
+                                roundId: roundId,
+                            }}
+                            handleEventChange={handleEventChange}
+                            handleRoundChange={handleRoundChange}
                         />
                     </CardContent>
                 </Card>
-            ) : null}
-        </div>
+                {roundId ? (
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>{activityCodeToName(roundId)}</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <ScrambleSetsTable
+                                scrambleSets={scrambleSets}
+                                showScrambleButton={
+                                    roundId ===
+                                    room?.currentGroupId.split("-g")[0]
+                                }
+                            />
+                        </CardContent>
+                    </Card>
+                ) : null}
+            </div>
+        </PageTransition>
     );
 };
 

@@ -33,6 +33,7 @@ import { getCompetitionInfo } from "@/lib/competition";
 import { Result, Room } from "@/lib/interfaces";
 import { getResultsByRoundId } from "@/lib/results";
 import { getAllRooms } from "@/lib/rooms";
+import PageTransition from "@/Pages/PageTransition";
 import { socket, SocketContext } from "@/socket";
 
 import EventAndRoundSelector from "../../../Components/EventAndRoundSelector";
@@ -167,105 +168,111 @@ const Results = () => {
     }
 
     return (
-        <div className="flex flex-col gap-4">
-            <Card>
-                <CardHeader>
-                    <CardTitle>Results</CardTitle>
-                    <CardDescription>Choose event and round</CardDescription>
-                </CardHeader>
-                <CardContent className="flex flex-col gap-5">
-                    <div className="flex md:flex-row flex-col gap-5 justify-between items-start">
-                        <EventAndRoundSelector
-                            competition={competition}
-                            filters={filters}
-                            handleEventChange={handleEventChange}
-                            handleRoundChange={handleRoundChange}
-                        />
-                        {filters.roundId && (
-                            <div className="flex flex-col">
-                                <RoundLimits
-                                    cutoff={cutoff}
-                                    limit={limit}
-                                    maxAttempts={maxAttempts}
-                                    size="md"
-                                />
-                            </div>
-                        )}
-                    </div>
-                    {currentRounds.length > 1 && (
-                        <div className="flex gap-5">
-                            {currentRounds.map((roundId) => (
-                                <Button
-                                    key={roundId}
-                                    onClick={() => {
-                                        navigate(`/results/round/${roundId}`);
-                                    }}
-                                    className="w-fit"
-                                >
-                                    {activityCodeToName(roundId)}
-                                </Button>
-                            ))}
-                        </div>
-                    )}
-                    {filters.roundId && (
-                        <Input
-                            placeholder="Search"
-                            value={search}
-                            onChange={handleSearch}
-                        />
-                    )}
-                </CardContent>
-            </Card>
-            {filters.roundId && (
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Actions</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <ResultsActions
-                            filters={filters}
-                            setIsOpenCreateAttemptModal={
-                                setIsOpenCreateAttemptModal
-                            }
-                            setIsOpenRestartGroupModal={
-                                setIsOpenRestartGroupModal
-                            }
-                            resultsLength={results.length}
-                        />
-                    </CardContent>
-                </Card>
-            )}
-            {filters.roundId && (
+        <PageTransition>
+            <div className="flex flex-col gap-4">
                 <Card>
                     <CardHeader>
                         <CardTitle>Results</CardTitle>
+                        <CardDescription>
+                            Choose event and round
+                        </CardDescription>
                     </CardHeader>
-                    <CardContent>
-                        {results && results.length > 0 ? (
-                            <ResultsTable
-                                results={results}
-                                maxAttempts={maxAttempts}
-                                fetchData={fetchData}
+                    <CardContent className="flex flex-col gap-5">
+                        <div className="flex md:flex-row flex-col gap-5 justify-between items-start">
+                            <EventAndRoundSelector
+                                competition={competition}
+                                filters={filters}
+                                handleEventChange={handleEventChange}
+                                handleRoundChange={handleRoundChange}
                             />
-                        ) : (
-                            <h2 className="text-lg">No results found</h2>
+                            {filters.roundId && (
+                                <div className="flex flex-col">
+                                    <RoundLimits
+                                        cutoff={cutoff}
+                                        limit={limit}
+                                        maxAttempts={maxAttempts}
+                                        size="md"
+                                    />
+                                </div>
+                            )}
+                        </div>
+                        {currentRounds.length > 1 && (
+                            <div className="flex gap-5">
+                                {currentRounds.map((roundId) => (
+                                    <Button
+                                        key={roundId}
+                                        onClick={() => {
+                                            navigate(
+                                                `/results/round/${roundId}`
+                                            );
+                                        }}
+                                        className="w-fit"
+                                    >
+                                        {activityCodeToName(roundId)}
+                                    </Button>
+                                ))}
+                            </div>
+                        )}
+                        {filters.roundId && (
+                            <Input
+                                placeholder="Search"
+                                value={search}
+                                onChange={handleSearch}
+                            />
                         )}
                     </CardContent>
                 </Card>
-            )}
-            <CreateAttemptModal
-                isOpen={isOpenCreateAttemptModal}
-                onClose={handleCloseCreateAttemptModal}
-                roundId={filters.roundId}
-                timeLimit={limit!}
-            />
-            <RestartGroupModal
-                isOpen={isOpenRestartGroupModal}
-                onClose={handleCloseRestartGroupModal}
-                roundId={filters.roundId}
-                wcif={competition.wcif}
-            />
-        </div>
+                {filters.roundId && (
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Actions</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <ResultsActions
+                                filters={filters}
+                                setIsOpenCreateAttemptModal={
+                                    setIsOpenCreateAttemptModal
+                                }
+                                setIsOpenRestartGroupModal={
+                                    setIsOpenRestartGroupModal
+                                }
+                                resultsLength={results.length}
+                            />
+                        </CardContent>
+                    </Card>
+                )}
+                {filters.roundId && (
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Results</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            {results && results.length > 0 ? (
+                                <ResultsTable
+                                    results={results}
+                                    maxAttempts={maxAttempts}
+                                    fetchData={fetchData}
+                                />
+                            ) : (
+                                <h2 className="text-lg">No results found</h2>
+                            )}
+                        </CardContent>
+                    </Card>
+                )}
+                <CreateAttemptModal
+                    isOpen={isOpenCreateAttemptModal}
+                    onClose={handleCloseCreateAttemptModal}
+                    roundId={filters.roundId}
+                    timeLimit={limit!}
+                />
+                <RestartGroupModal
+                    isOpen={isOpenRestartGroupModal}
+                    onClose={handleCloseRestartGroupModal}
+                    roundId={filters.roundId}
+                    wcif={competition.wcif}
+                />
+            </div>
+        </PageTransition>
     );
 };
 

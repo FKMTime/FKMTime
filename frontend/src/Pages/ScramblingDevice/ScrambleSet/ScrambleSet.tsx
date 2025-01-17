@@ -14,6 +14,7 @@ import {
     getScramblingDeviceRoom,
     unlockScrambleSet,
 } from "@/lib/scrambling";
+import PageTransition from "@/Pages/PageTransition";
 
 import ScrambleSetHeaderCard from "../Components/ScrambleSetHeaderCard";
 import Scrambling from "./Components/Scrambling";
@@ -78,19 +79,21 @@ const ScrambleSet = () => {
     if (!scrambleSet || !room) return <LoadingPage />;
 
     return (
-        <div className="flex flex-col gap-4">
-            <ScrambleSetHeaderCard
-                scrambleSet={scrambleSet}
-                isLocked={isLocked}
-                handleUnlock={handleUnlock}
-            />
-            {!isLocked ? (
-                <Scrambling
-                    groupId={room.currentGroupId}
-                    scrambles={decryptedScrambles}
+        <PageTransition>
+            <div className="flex flex-col gap-4">
+                <ScrambleSetHeaderCard
+                    scrambleSet={scrambleSet}
+                    isLocked={isLocked}
+                    handleUnlock={handleUnlock}
                 />
-            ) : null}
-        </div>
+                {!isLocked ? (
+                    <Scrambling
+                        groupId={room.currentGroupId}
+                        scrambles={decryptedScrambles}
+                    />
+                ) : null}
+            </div>
+        </PageTransition>
     );
 };
 

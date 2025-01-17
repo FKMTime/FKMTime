@@ -10,6 +10,7 @@ import {
     getScrambleSetById,
     unlockScrambleSet,
 } from "@/lib/scrambling";
+import PageTransition from "@/Pages/PageTransition";
 
 import ScrambleSetHeaderCard from "../Components/ScrambleSetHeaderCard";
 import ScramblesList from "./Components/ScramblesList";
@@ -65,26 +66,28 @@ const AllScrambles = () => {
     if (!scrambleSet) return <LoadingPage />;
 
     return (
-        <div className="flex flex-col gap-4">
-            <ScrambleSetHeaderCard
-                scrambleSet={scrambleSet}
-                isLocked={isLocked}
-                handleUnlock={handleUnlock}
-            />
-            {!isLocked ? (
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Scrambles</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <ScramblesList
-                            scrambles={decryptedScrambles}
-                            roundId={scrambleSet.roundId}
-                        />
-                    </CardContent>
-                </Card>
-            ) : null}
-        </div>
+        <PageTransition>
+            <div className="flex flex-col gap-4">
+                <ScrambleSetHeaderCard
+                    scrambleSet={scrambleSet}
+                    isLocked={isLocked}
+                    handleUnlock={handleUnlock}
+                />
+                {!isLocked ? (
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Scrambles</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <ScramblesList
+                                scrambles={decryptedScrambles}
+                                roundId={scrambleSet.roundId}
+                            />
+                        </CardContent>
+                    </Card>
+                ) : null}
+            </div>
+        </PageTransition>
     );
 };
 

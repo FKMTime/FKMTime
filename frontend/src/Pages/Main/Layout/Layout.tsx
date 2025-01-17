@@ -183,6 +183,7 @@ const Layout = () => {
                         <ProfileDropdown />
                     </div>
                 </div>
+
                 <Suspense fallback={<LoadingPage />}>
                     <Outlet />
                 </Suspense>

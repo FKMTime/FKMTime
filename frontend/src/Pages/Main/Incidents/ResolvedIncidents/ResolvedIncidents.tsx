@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/Components/ui/card";
 import { Input } from "@/Components/ui/input";
 import { getResolvedIncidents } from "@/lib/attempt";
 import { Incident } from "@/lib/interfaces";
+import PageTransition from "@/Pages/PageTransition";
 
 import ResolvedIncidentsTable from "./Components/ResolvedIncidentsTable";
 import SummaryModal from "./Components/SummaryModal";
@@ -30,42 +31,46 @@ const ResolvedIncidents = () => {
     }, [fetchData, search]);
 
     return (
-        <div className="flex flex-col gap-4">
-            <Card>
-                <CardHeader>
-                    <CardTitle className="flex justify-between items-center">
-                        Resolved incidents
-                        <Button onClick={() => setIsOpenSummaryModal(true)}>
-                            Summary
-                        </Button>
-                    </CardTitle>
-                </CardHeader>
-                <CardContent>
-                    <Input
-                        placeholder="Search"
-                        value={search}
-                        onChange={handleSearch}
-                    />
-                </CardContent>
-            </Card>
-            <Card>
-                <CardHeader>
-                    <CardTitle>Resolved incidents</CardTitle>
-                </CardHeader>
-                <CardContent>
-                    {incidents.length > 0 ? (
-                        <ResolvedIncidentsTable data={incidents} />
-                    ) : (
-                        <h2 className="text-lg">No resolved incidents found</h2>
-                    )}
-                </CardContent>
-            </Card>
-            <SummaryModal
-                incidents={incidents}
-                isOpen={isOpenSummaryModal}
-                onClose={() => setIsOpenSummaryModal(false)}
-            />
-        </div>
+        <PageTransition>
+            <div className="flex flex-col gap-4">
+                <Card>
+                    <CardHeader>
+                        <CardTitle className="flex justify-between items-center">
+                            Resolved incidents
+                            <Button onClick={() => setIsOpenSummaryModal(true)}>
+                                Summary
+                            </Button>
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <Input
+                            placeholder="Search"
+                            value={search}
+                            onChange={handleSearch}
+                        />
+                    </CardContent>
+                </Card>
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Resolved incidents</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        {incidents.length > 0 ? (
+                            <ResolvedIncidentsTable data={incidents} />
+                        ) : (
+                            <h2 className="text-lg">
+                                No resolved incidents found
+                            </h2>
+                        )}
+                    </CardContent>
+                </Card>
+                <SummaryModal
+                    incidents={incidents}
+                    isOpen={isOpenSummaryModal}
+                    onClose={() => setIsOpenSummaryModal(false)}
+                />
+            </div>
+        </PageTransition>
     );
 };
 

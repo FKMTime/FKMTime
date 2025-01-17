@@ -6,6 +6,7 @@ import { Input } from "@/Components/ui/input";
 import { useToast } from "@/hooks/useToast";
 import { Person } from "@/lib/interfaces";
 import { assignCard, getPersonsWithoutCardAssigned } from "@/lib/persons";
+import PageTransition from "@/Pages/PageTransition";
 
 const AssignCards = () => {
     const { toast } = useToast();
@@ -57,38 +58,41 @@ const AssignCards = () => {
     };
 
     return (
-        <Card>
-            <CardHeader>
-                <CardTitle>
-                    There are {personsWithoutCard} persons without card assigned
-                </CardTitle>
-            </CardHeader>
-            <CardContent>
-                <div className="w-1/3 flex flex-col gap-2">
-                    <PersonAutocomplete
-                        onSelect={handleChangePerson}
-                        withoutCardAssigned={true}
-                        autoFocus={true}
-                        key={personsWithoutCard}
-                        ref={cardInputRef}
-                        defaultOpen={true}
-                    />
-
-                    {currentPerson && (
-                        <Input
-                            placeholder="Card ID"
-                            value={cardId}
-                            onChange={(e) => setCardId(e.target.value)}
-                            onKeyDown={(e) =>
-                                e.key === "Enter" && handleSubmit()
-                            }
-                            autoFocus
+        <PageTransition>
+            <Card>
+                <CardHeader>
+                    <CardTitle>
+                        There are {personsWithoutCard} persons without card
+                        assigned
+                    </CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <div className="w-1/3 flex flex-col gap-2">
+                        <PersonAutocomplete
+                            onSelect={handleChangePerson}
+                            withoutCardAssigned={true}
+                            autoFocus={true}
+                            key={personsWithoutCard}
                             ref={cardInputRef}
+                            defaultOpen={true}
                         />
-                    )}
-                </div>
-            </CardContent>
-        </Card>
+
+                        {currentPerson && (
+                            <Input
+                                placeholder="Card ID"
+                                value={cardId}
+                                onChange={(e) => setCardId(e.target.value)}
+                                onKeyDown={(e) =>
+                                    e.key === "Enter" && handleSubmit()
+                                }
+                                autoFocus
+                                ref={cardInputRef}
+                            />
+                        )}
+                    </div>
+                </CardContent>
+            </Card>
+        </PageTransition>
     );
 };
 

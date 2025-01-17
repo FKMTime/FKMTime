@@ -14,6 +14,7 @@ import { Input } from "@/Components/ui/input";
 import { useToast } from "@/hooks/useToast";
 import { competitionAtom } from "@/lib/atoms";
 import { importScrambles, validateScrambles } from "@/lib/scramblesImport";
+import PageTransition from "@/Pages/PageTransition";
 
 import ScrambleSetsList from "./Components/ScrambleSetsList";
 import ScrambleSetsWarnings from "./Components/ScrambleSetsValidators";
@@ -81,55 +82,58 @@ const ImportScrambles = () => {
     };
 
     return (
-        <div className="flex flex-col gap-4">
-            <Card>
-                <CardHeader>
-                    <CardTitle className="flex items-center justify-between">
-                        Import scrambles
-                    </CardTitle>
-                    <CardDescription>
-                        Use this page only for importing scrambles for the round
-                        that doesn't have them yet. If you want to add an extra
-                        scramble/set please do it in the Scramble Sets tab.
-                    </CardDescription>
-                </CardHeader>
-                <CardContent className="flex flex-col gap-4">
-                    <div className="w-fit flex flex-col gap-3">
-                        <label>Upload encrypted scrambles JSON</label>
-                        <Input
-                            type="file"
-                            accept=".json"
-                            onChange={handleFileUpload}
-                            key={fileInputKey}
-                        />
-                    </div>
-                    {wcif && competition && (
-                        <ScrambleSetsWarnings
-                            warnings={warningsList}
-                            errors={errorsList}
-                        />
-                    )}
-                    {wcif && competition && (
-                        <div className="flex gap-3">
-                            <Button
-                                variant="destructive"
-                                onClick={() => clearUploadedScrambles()}
-                            >
-                                Clear
-                            </Button>
-                            <Button
-                                disabled={preventFromImporting}
-                                variant="success"
-                                onClick={handleImport}
-                            >
-                                Import
-                            </Button>
+        <PageTransition>
+            <div className="flex flex-col gap-4">
+                <Card>
+                    <CardHeader>
+                        <CardTitle className="flex items-center justify-between">
+                            Import scrambles
+                        </CardTitle>
+                        <CardDescription>
+                            Use this page only for importing scrambles for the
+                            round that doesn't have them yet. If you want to add
+                            an extra scramble/set please do it in the Scramble
+                            Sets tab.
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent className="flex flex-col gap-4">
+                        <div className="w-fit flex flex-col gap-3">
+                            <label>Upload encrypted scrambles JSON</label>
+                            <Input
+                                type="file"
+                                accept=".json"
+                                onChange={handleFileUpload}
+                                key={fileInputKey}
+                            />
                         </div>
-                    )}
-                </CardContent>
-            </Card>
-            {wcif && <ScrambleSetsList wcif={wcif} />}
-        </div>
+                        {wcif && competition && (
+                            <ScrambleSetsWarnings
+                                warnings={warningsList}
+                                errors={errorsList}
+                            />
+                        )}
+                        {wcif && competition && (
+                            <div className="flex gap-3">
+                                <Button
+                                    variant="destructive"
+                                    onClick={() => clearUploadedScrambles()}
+                                >
+                                    Clear
+                                </Button>
+                                <Button
+                                    disabled={preventFromImporting}
+                                    variant="success"
+                                    onClick={handleImport}
+                                >
+                                    Import
+                                </Button>
+                            </div>
+                        )}
+                    </CardContent>
+                </Card>
+                {wcif && <ScrambleSetsList wcif={wcif} />}
+            </div>
+        </PageTransition>
     );
 };
 

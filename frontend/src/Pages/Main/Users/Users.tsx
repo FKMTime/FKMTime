@@ -4,6 +4,7 @@ import PlusButton from "@/Components/PlusButton.tsx";
 import { Card, CardContent, CardHeader, CardTitle } from "@/Components/ui/card";
 import { User } from "@/lib/interfaces";
 import { getAllUsers } from "@/lib/user";
+import PageTransition from "@/Pages/PageTransition";
 
 import CreateUserModal from "./Components/CreateUser/CreateUserModal";
 import UserCard from "./Components/UserCard";
@@ -29,37 +30,45 @@ const Users = () => {
     }, []);
 
     return (
-        <div className="flex flex-col gap-5">
-            <div className="flex md:hidden flex-col gap-3">
-                <PlusButton
-                    aria-label="Add"
-                    onClick={() => setIsOpenCreateUserModal(true)}
+        <PageTransition>
+            <div className="flex flex-col gap-5">
+                <div className="flex md:hidden flex-col gap-3">
+                    <PlusButton
+                        aria-label="Add"
+                        onClick={() => setIsOpenCreateUserModal(true)}
+                    />
+                    {users.map((user) => (
+                        <UserCard
+                            key={user.id}
+                            user={user}
+                            fetchData={fetchData}
+                        />
+                    ))}
+                </div>
+                <div className="hidden md:block">
+                    <Card>
+                        <CardHeader>
+                            <CardTitle className="flex justify-between items-center">
+                                Users
+                                <PlusButton
+                                    aria-label="Add"
+                                    onClick={() =>
+                                        setIsOpenCreateUserModal(true)
+                                    }
+                                />
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <UsersTable users={users} fetchData={fetchData} />
+                        </CardContent>
+                    </Card>
+                </div>
+                <CreateUserModal
+                    isOpen={isOpenCreateUserModal}
+                    onClose={handleCloseCreateUserModal}
                 />
-                {users.map((user) => (
-                    <UserCard key={user.id} user={user} fetchData={fetchData} />
-                ))}
             </div>
-            <div className="hidden md:block">
-                <Card>
-                    <CardHeader>
-                        <CardTitle className="flex justify-between items-center">
-                            Users
-                            <PlusButton
-                                aria-label="Add"
-                                onClick={() => setIsOpenCreateUserModal(true)}
-                            />
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <UsersTable users={users} fetchData={fetchData} />
-                    </CardContent>
-                </Card>
-            </div>
-            <CreateUserModal
-                isOpen={isOpenCreateUserModal}
-                onClose={handleCloseCreateUserModal}
-            />
-        </div>
+        </PageTransition>
     );
 };
 

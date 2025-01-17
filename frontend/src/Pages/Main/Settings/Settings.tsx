@@ -7,6 +7,7 @@ import { useToast } from "@/hooks/useToast";
 import { isAdmin } from "@/lib/auth";
 import { Settings as SettingsInterface } from "@/lib/interfaces";
 import { getSettings, updateSettings } from "@/lib/settings";
+import PageTransition from "@/Pages/PageTransition";
 
 import ChangePasswordModal from "./Components/ChangePasswordModal";
 import QuickActions from "./Components/QuickActions";
@@ -52,36 +53,38 @@ const Settings = () => {
     if (!settings) return <LoadingPage />;
 
     return (
-        <div className="flex flex-col gap-4">
-            {!settings.wcaUserId ? (
-                <Card>
-                    <CardHeader>
-                        <CardTitle className="flex justify-between items-center">
-                            Settings
-                            <Button
-                                onClick={() =>
-                                    setIsOpenChangePasswordModal(true)
-                                }
-                            >
-                                Change password
-                            </Button>
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <SettingsForm
-                            settings={settings}
-                            handleSubmit={handleSubmit}
-                            isLoading={isLoading}
-                        />
-                    </CardContent>
-                </Card>
-            ) : null}
-            {isAdmin() && <QuickActions />}
-            <ChangePasswordModal
-                isOpen={isOpenChangePasswordModal}
-                onClose={() => setIsOpenChangePasswordModal(false)}
-            />
-        </div>
+        <PageTransition>
+            <div className="flex flex-col gap-4">
+                {!settings.wcaUserId ? (
+                    <Card>
+                        <CardHeader>
+                            <CardTitle className="flex justify-between items-center">
+                                Settings
+                                <Button
+                                    onClick={() =>
+                                        setIsOpenChangePasswordModal(true)
+                                    }
+                                >
+                                    Change password
+                                </Button>
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <SettingsForm
+                                settings={settings}
+                                handleSubmit={handleSubmit}
+                                isLoading={isLoading}
+                            />
+                        </CardContent>
+                    </Card>
+                ) : null}
+                {isAdmin() && <QuickActions />}
+                <ChangePasswordModal
+                    isOpen={isOpenChangePasswordModal}
+                    onClose={() => setIsOpenChangePasswordModal(false)}
+                />
+            </div>
+        </PageTransition>
     );
 };
 
