@@ -1,4 +1,3 @@
-import { activityCodeToName } from "@wca/helpers";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
@@ -6,6 +5,7 @@ import EventIcon from "@/Components/Icons/EventIcon";
 import { Button } from "@/Components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/Components/ui/card";
 import { Input } from "@/Components/ui/input";
+import { activityCodeToName } from "@/lib/activities";
 import { ScrambleSet } from "@/lib/interfaces";
 
 interface ScrambleSetHeaderCardProps {
