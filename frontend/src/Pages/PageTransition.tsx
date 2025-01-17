@@ -11,7 +11,7 @@ const pageVariants = {
         transition: {
             type: "tween",
             ease: "easeOut",
-            duration: 0.6,
+            duration: 0.25,
         },
     },
     exit: {
@@ -19,7 +19,7 @@ const pageVariants = {
         y: -50,
         transition: {
             ease: "easeIn",
-            duration: 0.4,
+            duration: 0.15,
         },
     },
 };
