@@ -49,7 +49,7 @@ const CreateUserModal = ({ isOpen, onClose }: CreateUserModalProps) => {
             <div className="flex flex-col gap-5">
                 <Tabs defaultValue="fkm">
                     <TabsList>
-                        <TabsTrigger value="fkm">FKM Account</TabsTrigger>
+                        <TabsTrigger value="fkm">FKMTime Account</TabsTrigger>
                         <TabsTrigger value="wca">WCA Login</TabsTrigger>
                     </TabsList>
                     <TabsContent value="fkm">

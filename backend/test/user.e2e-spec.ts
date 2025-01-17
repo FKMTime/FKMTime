@@ -51,7 +51,7 @@ describe('UserController (e2e)', () => {
     ]);
   });
 
-  it('creates FKM user', async () => {
+  it('creates FKMTime user', async () => {
     const user = await loginWithFKMAccount(app, {
       username: 'admin',
       password: 'admin',

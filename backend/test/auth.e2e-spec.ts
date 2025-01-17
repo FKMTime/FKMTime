@@ -28,7 +28,7 @@ describe('AuthController (e2e)', () => {
     await prismaClient.$disconnect();
   }, 30000);
 
-  describe('FKM Auth', () => {
+  describe('FKMTime Auth', () => {
     it('should login a user', async () => {
       const user = {
         username: 'admin',
