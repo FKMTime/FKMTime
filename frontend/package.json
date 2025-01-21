@@ -44,7 +44,7 @@
     "crypto-js": "^4.2.0",
     "framer-motion": "^11.18.0",
     "input-otp": "^1.4.1",
-    "jotai": "^2.11.0",
+    "jotai": "^2.11.1",
     "lucide-react": "^0.469.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
