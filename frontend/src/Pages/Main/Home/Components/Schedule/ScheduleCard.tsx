@@ -1,9 +1,16 @@
-import { Card, CardBody, Heading, Text } from "@chakra-ui/react";
 import { useNavigate } from "react-router-dom";
 
-import { getActivityName } from "@/logic/activities";
-import { Activity } from "@/logic/interfaces.ts";
-import { formatTime, getFormattedRealActivityTime } from "@/logic/utils";
+import {
+    Card,
+    CardContent,
+    CardDescription,
+    CardFooter,
+    CardHeader,
+    CardTitle,
+} from "@/Components/ui/card";
+import { getActivityName } from "@/lib/activities";
+import { Activity } from "@/lib/interfaces";
+import { cn, formatTime, getFormattedRealActivityTime } from "@/lib/utils";
 
 interface ScheduleCardProps {
     activity: Activity;
@@ -19,33 +26,31 @@ const ScheduleCard = ({ activity }: ScheduleCardProps) => {
 
     return (
         <Card
-            backgroundColor="teal.500"
-            color="white"
-            textAlign="center"
-            cursor={isRound ? "pointer" : "default"}
-            width="100%"
             onClick={() => {
                 if (isRound) {
                     navigate(`/results/round/${activity.activityCode}`);
                 }
             }}
+            className={cn("w-full", isRound ? "cursor-pointer" : "")}
         >
-            <CardBody display="flex" flexDirection="column" gap="2">
-                <Heading size="md">{getActivityName(activity)}</Heading>
-                <Text>
+            <CardHeader>
+                <CardTitle>{getActivityName(activity)}</CardTitle>
+                <CardDescription>Card Description</CardDescription>
+            </CardHeader>
+            <CardContent>
+                <p>
                     {activity.childActivities.length === 0
                         ? ""
                         : `${activity.childActivities.length} ${activity.childActivities.length === 1 ? "group" : "groups"}`}
-                </Text>
-                {formattedRealTime && (
-                    <Text>Real time: {formattedRealTime}</Text>
-                )}
-                <Text>
-                    {" "}
+                </p>
+                {formattedRealTime && <p>Real time: {formattedRealTime}</p>}
+            </CardContent>
+            <CardFooter>
+                <p>
                     {formatTime(activity.startTime)} -{" "}
                     {formatTime(activity.endTime)}
-                </Text>
-            </CardBody>
+                </p>
+            </CardFooter>
         </Card>
     );
 };

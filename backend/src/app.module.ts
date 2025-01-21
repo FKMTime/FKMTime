@@ -17,12 +17,12 @@ import { LoggerMiddleware } from './middleware/logger.middleware';
 import { PersonModule } from './person/person.module';
 import { ResultModule } from './result/result.module';
 import { ScrambleSetModule } from './scramble-set/scramble-set.module';
+import { ScramblingModule } from './scrambling/scrambling.module';
 import { ScramblingDeviceModule } from './scrambling-device/scrambling-device.module';
 import { SettingsModule } from './settings/settings.module';
 import { SocketModule } from './socket/socket.module';
 import { UserModule } from './user/user.module';
 import { WcaModule } from './wca/wca.module';
-import { ScramblingModule } from './scrambling/scrambling.module';
 
 @Module({
   providers: [AppGateway],

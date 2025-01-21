@@ -1,8 +1,7 @@
-import { Td, Tr } from "@chakra-ui/react";
-
-import { ResultWithAverage } from "@/logic/interfaces";
-import { attemptWithPenaltyToString } from "@/logic/resultFormatters";
-import { getSubmittedAttempts, isMobileView } from "@/logic/utils";
+import { TableCell, TableRow } from "@/Components/ui/table";
+import { ResultWithAverage } from "@/lib/interfaces";
+import { attemptWithPenaltyToString } from "@/lib/resultFormatters";
+import { getSubmittedAttempts } from "@/lib/utils";
 
 interface PublicResultRowProps {
     result: ResultWithAverage;
@@ -18,22 +17,19 @@ const PublicResultRow = ({
     const submittedAttempts = getSubmittedAttempts(result.attempts);
     return (
         <>
-            <Tr key={result.id}>
-                <Td>{pos}</Td>
-                <Td>{result.person.name}</Td>
-                {!isMobileView() &&
-                    Array.from({ length: maxAttempts }, (_, i) => (
-                        <Td key={i}>
-                            {submittedAttempts.length > i
-                                ? attemptWithPenaltyToString(
-                                      submittedAttempts[i]
-                                  )
-                                : ""}
-                        </Td>
-                    ))}
-                <Td>{result.averageString}</Td>
-                <Td>{result.bestString}</Td>
-            </Tr>
+            <TableRow key={result.id}>
+                <TableCell>{pos}</TableCell>
+                <TableCell>{result.person.name}</TableCell>
+                {Array.from({ length: maxAttempts }, (_, i) => (
+                    <TableCell key={i} className="hidden md:table-cell">
+                        {submittedAttempts.length > i
+                            ? attemptWithPenaltyToString(submittedAttempts[i])
+                            : ""}
+                    </TableCell>
+                ))}
+                <TableCell>{result.averageString}</TableCell>
+                <TableCell>{result.bestString}</TableCell>
+            </TableRow>
         </>
     );
 };

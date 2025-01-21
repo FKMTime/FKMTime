@@ -1,6 +1,11 @@
-import { Table, TableContainer, Tbody, Th, Thead, Tr } from "@chakra-ui/react";
-
-import { Attempt, Result } from "@/logic/interfaces";
+import {
+    Table,
+    TableBody,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from "@/Components/ui/table";
+import { Attempt, Result } from "@/lib/interfaces";
 
 import AttemptRow from "./AttemptRow";
 
@@ -18,43 +23,41 @@ const AttemptsTable = ({
     result,
 }: AttemptsTableProps) => {
     return (
-        <TableContainer overflowX="auto">
-            <Table variant="simple">
-                <Thead>
-                    <Tr bg="gray.400">
-                        <Th>No</Th>
-                        <Th>Attempt number</Th>
-                        <Th>Time</Th>
-                        {showExtraColumns && (
-                            <>
-                                <Th>Replaced by</Th>
-                                <Th>Status</Th>
-                            </>
-                        )}
-                        <Th>Judge</Th>
-                        <Th>Scrambler</Th>
-                        <Th>Station</Th>
-                        <Th>Comment</Th>
-                        <Th>Solved at</Th>
-                        <Th>Updated by</Th>
-                        <Th>Actions</Th>
-                        <Th></Th>
-                    </Tr>
-                </Thead>
-                <Tbody>
-                    {attempts.map((attempt: Attempt, i: number) => (
-                        <AttemptRow
-                            key={attempt.id}
-                            attempt={attempt}
-                            showExtraColumns={showExtraColumns}
-                            fetchData={fetchData}
-                            no={i + 1}
-                            result={result}
-                        />
-                    ))}
-                </Tbody>
-            </Table>
-        </TableContainer>
+        <Table>
+            <TableHeader>
+                <TableRow>
+                    <TableHead>No</TableHead>
+                    <TableHead>Attempt number</TableHead>
+                    <TableHead>Time</TableHead>
+                    {showExtraColumns && (
+                        <>
+                            <TableHead>Replaced by</TableHead>
+                            <TableHead>Status</TableHead>
+                        </>
+                    )}
+                    <TableHead>Judge</TableHead>
+                    <TableHead>Scrambler</TableHead>
+                    <TableHead>Station</TableHead>
+                    <TableHead>Comment</TableHead>
+                    <TableHead>Solved at</TableHead>
+                    <TableHead>Updated by</TableHead>
+                    <TableHead>Actions</TableHead>
+                    <TableHead></TableHead>
+                </TableRow>
+            </TableHeader>
+            <TableBody>
+                {attempts.map((attempt: Attempt, i: number) => (
+                    <AttemptRow
+                        key={attempt.id}
+                        attempt={attempt}
+                        showExtraColumns={showExtraColumns}
+                        fetchData={fetchData}
+                        no={i + 1}
+                        result={result}
+                    />
+                ))}
+            </TableBody>
+        </Table>
     );
 };
 

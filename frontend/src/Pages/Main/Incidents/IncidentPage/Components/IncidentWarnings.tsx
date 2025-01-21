@@ -1,6 +1,4 @@
-import { Box, ListItem, Text, UnorderedList } from "@chakra-ui/react";
-
-import { Incident } from "@/logic/interfaces";
+import { Incident } from "@/lib/interfaces";
 
 interface IncidentWarningsProps {
     previousIncidents: Incident[];
@@ -12,11 +10,11 @@ const IncidentWarnings = ({ previousIncidents }: IncidentWarningsProps) => {
     const incidentsReason = new Set(previousIncidents.map((i) => i.comment));
 
     return (
-        <Box>
-            <Text>Previous extras:</Text>
-            <UnorderedList>
+        <div>
+            <p>Previous extras:</p>
+            <ul className="list-disc pl-5">
                 {Array.from(incidentsReason).map((reason) => (
-                    <ListItem key={reason} fontWeight="bold">
+                    <li key={reason}>
                         {reason} -{" "}
                         {
                             previousIncidents.filter(
@@ -27,10 +25,10 @@ const IncidentWarnings = ({ previousIncidents }: IncidentWarningsProps) => {
                             .length === 1
                             ? "time"
                             : "times"}
-                    </ListItem>
+                    </li>
                 ))}
-            </UnorderedList>
-        </Box>
+            </ul>
+        </div>
     );
 };
 

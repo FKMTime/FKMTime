@@ -1,16 +1,17 @@
-import { FormControl, FormLabel } from "@chakra-ui/react";
-import { ChangeEvent } from "react";
+import { AVAILABLE_PENALTIES } from "@/lib/constants";
 
-import { AVAILABLE_PENALTIES } from "@/logic/constants";
-
-import Select from "./Select";
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "./ui/select";
 
 interface PenaltySelectProps {
     value: number;
     onChange: (value: number) => void;
     disabled?: boolean;
-    showLabel?: boolean;
-    width?: string;
     shortVersion?: boolean;
 }
 
@@ -18,31 +19,32 @@ const PenaltySelect = ({
     value,
     onChange,
     disabled = false,
-    showLabel = true,
     shortVersion,
-    width,
 }: PenaltySelectProps) => {
     return (
-        <FormControl width={width}>
-            {showLabel && <FormLabel>Penalty</FormLabel>}
-            <Select
-                value={value.toString()}
-                disabled={disabled}
-                onChange={(event: ChangeEvent<HTMLSelectElement>) =>
-                    onChange(+event.target.value)
-                }
-            >
+        <Select
+            onValueChange={(newValue) => onChange(+newValue)}
+            defaultValue={value.toString()}
+            disabled={disabled}
+        >
+            <SelectTrigger>
+                <SelectValue placeholder="Select penalty" />
+            </SelectTrigger>
+            <SelectContent>
                 {AVAILABLE_PENALTIES.map((penalty) => (
-                    <option key={penalty.value} value={penalty.value}>
+                    <SelectItem
+                        key={penalty.value}
+                        value={penalty.value.toString()}
+                    >
                         {shortVersion
                             ? penalty.shortVersion
                                 ? penalty.shortVersion
                                 : penalty.label
                             : penalty.label}
-                    </option>
+                    </SelectItem>
                 ))}
-            </Select>
-        </FormControl>
+            </SelectContent>
+        </Select>
     );
 };
 

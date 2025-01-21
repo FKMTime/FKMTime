@@ -1,7 +1,11 @@
-import { Table, TableContainer, Tbody, Th, Thead, Tr } from "@chakra-ui/react";
-
-import { ResultWithAverage } from "@/logic/interfaces";
-import { isMobileView } from "@/logic/utils.ts";
+import {
+    Table,
+    TableBody,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from "@/Components/ui/table";
+import { ResultWithAverage } from "@/lib/interfaces";
 
 import PublicResultRow from "./PublicResultRow";
 
@@ -15,34 +19,32 @@ const PublicResultsTable = ({
     maxAttempts,
 }: PublicResultsTableProps) => {
     return (
-        <TableContainer>
-            <Table variant="simple">
-                <Thead>
-                    <Tr bg="gray.400">
-                        <Th>Pos</Th>
-                        <Th>Name</Th>
-                        {!isMobileView() &&
-                            Array.from({ length: maxAttempts }, (_, i) => (
-                                <Th width={2} key={i}>
-                                    {i + 1}
-                                </Th>
-                            ))}
-                        <Th>Average</Th>
-                        <Th>Best</Th>
-                    </Tr>
-                </Thead>
-                <Tbody>
-                    {results.map((result: ResultWithAverage, i: number) => (
-                        <PublicResultRow
-                            key={result.id}
-                            result={result}
-                            maxAttempts={maxAttempts}
-                            pos={i + 1}
-                        />
+        <Table>
+            <TableHeader>
+                <TableRow>
+                    <TableHead>Pos</TableHead>
+                    <TableHead>Name</TableHead>
+
+                    {Array.from({ length: maxAttempts }, (_, i) => (
+                        <TableHead key={i} className="w-2 hidden md:table-cell">
+                            {i + 1}
+                        </TableHead>
                     ))}
-                </Tbody>
-            </Table>
-        </TableContainer>
+                    <TableHead>Average</TableHead>
+                    <TableHead>Best</TableHead>
+                </TableRow>
+            </TableHeader>
+            <TableBody>
+                {results.map((result: ResultWithAverage, i: number) => (
+                    <PublicResultRow
+                        key={result.id}
+                        result={result}
+                        maxAttempts={maxAttempts}
+                        pos={i + 1}
+                    />
+                ))}
+            </TableBody>
+        </Table>
     );
 };
 

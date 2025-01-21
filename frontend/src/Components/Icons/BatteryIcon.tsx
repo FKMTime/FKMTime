@@ -1,35 +1,26 @@
 import {
-    MdBattery0Bar,
-    MdBattery1Bar,
-    MdBattery2Bar,
-    MdBattery3Bar,
-    MdBattery4Bar,
-    MdBattery5Bar,
-    MdBattery6Bar,
-    MdBatteryFull,
-} from "react-icons/md";
+    Battery,
+    BatteryFull,
+    BatteryLow,
+    BatteryMedium,
+    BatteryWarning,
+} from "lucide-react";
 
 interface BatteryIconProps {
     batteryPercentage: number;
 }
 
 const BatteryIcon = ({ batteryPercentage }: BatteryIconProps) => {
-    if (batteryPercentage >= 98) {
-        return <MdBatteryFull />;
-    } else if (batteryPercentage >= 85) {
-        return <MdBattery6Bar />;
-    } else if (batteryPercentage >= 70) {
-        return <MdBattery5Bar />;
-    } else if (batteryPercentage >= 55) {
-        return <MdBattery4Bar />;
-    } else if (batteryPercentage >= 45) {
-        return <MdBattery3Bar />;
+    if (batteryPercentage >= 95) {
+        return <BatteryFull />;
+    } else if (batteryPercentage >= 60) {
+        return <BatteryMedium />;
     } else if (batteryPercentage >= 30) {
-        return <MdBattery2Bar />;
+        return <BatteryLow />;
     } else if (batteryPercentage >= 15) {
-        return <MdBattery1Bar />;
+        return <BatteryWarning />;
     } else {
-        return <MdBattery0Bar />;
+        return <Battery />;
     }
 };
 

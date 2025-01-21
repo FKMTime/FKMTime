@@ -96,10 +96,19 @@ export class ResultFromDeviceService {
       });
     if (previousAttemptWithSameSessionId) {
       if (previousAttemptWithSameSessionId.status === AttemptStatus.RESOLVED) {
-        return this.updateResolvedIncident(
-          previousAttemptWithSameSessionId.id,
-          data.judgeId.toString(),
-        );
+        if (data.judgeId) {
+          return this.updateResolvedIncident(
+            previousAttemptWithSameSessionId.id,
+            data.judgeId.toString(),
+          );
+        } else {
+          return {
+            message: getTranslation('judgeCardNotScanned', locale),
+            shouldResetTime: false,
+            status: 400,
+            error: true,
+          };
+        }
       }
       return {
         message: getTranslation('attemptAlreadyEntered', locale),

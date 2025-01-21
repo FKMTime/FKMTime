@@ -1,26 +1,24 @@
-import {
-    Alert,
-    AlertIcon,
-    Box,
-    Button,
-    Heading,
-    useToast,
-} from "@chakra-ui/react";
-import { useConfirm } from "chakra-ui-confirm";
 import { useAtomValue } from "jotai";
+import { Heading } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
 
 import LoadingPage from "@/Components/LoadingPage";
-import { activityCodeToName } from "@/logic/activities";
-import { competitionAtom } from "@/logic/atoms";
-import { Attempt, Result, ResultToDoubleCheck } from "@/logic/interfaces";
+import { Alert, AlertTitle } from "@/Components/ui/alert";
+import { Button } from "@/Components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/Components/ui/card";
+import { useConfirm } from "@/hooks/useConfirm";
+import { useToast } from "@/hooks/useToast";
+import { activityCodeToName } from "@/lib/activities";
+import { competitionAtom } from "@/lib/atoms";
+import { Attempt, Result, ResultToDoubleCheck } from "@/lib/interfaces";
 import {
     doubleCheckResult,
     getResultsToDoubleCheckByRoundId,
     undoDoubleCheck,
-} from "@/logic/results";
-import { getSubmissionPlatformName } from "@/logic/utils";
+} from "@/lib/results";
+import { getSubmissionPlatformName } from "@/lib/utils";
+import PageTransition from "@/Pages/PageTransition";
 
 import AttemptsList from "./Components/AttemptsList";
 import DoubleCheckActions from "./Components/DoubleCheckActions";
@@ -30,7 +28,7 @@ import SelectCompetitor from "./Components/SelectCompetitor";
 const DoubleCheck = () => {
     const { id } = useParams<{ id: string }>();
     const confirm = useConfirm();
-    const toast = useToast();
+    const { toast } = useToast();
     const [resultsToDoubleCheck, setResultsToDoubleCheck] = useState<
         ResultToDoubleCheck[]
     >([]);
@@ -75,7 +73,7 @@ const DoubleCheck = () => {
         if (status === 200) {
             toast({
                 title: "Successfully double checked result.",
-                status: "success",
+                variant: "success",
             });
             setResult(null);
             setInputValue("");
@@ -85,7 +83,7 @@ const DoubleCheck = () => {
             toast({
                 title: "Error",
                 description: "Something went wrong",
-                status: "error",
+                variant: "destructive",
             });
         }
     }, [fetchData, result, toast]);
@@ -120,7 +118,6 @@ const DoubleCheck = () => {
                         title: "Cancelled",
                         description:
                             "You have cancelled the resubmission of the result.",
-                        status: "info",
                     });
                 });
         } else {
@@ -152,14 +149,14 @@ const DoubleCheck = () => {
                 if (status === 204) {
                     toast({
                         title: "Successfully marked results as not double checked.",
-                        status: "success",
+                        variant: "success",
                     });
                     fetchData();
                 } else {
                     toast({
                         title: "Error",
                         description: "Something went wrong",
-                        status: "error",
+                        variant: "destructive",
                     });
                 }
             })
@@ -167,7 +164,6 @@ const DoubleCheck = () => {
                 toast({
                     title: "Cancelled",
                     description: "You have cancelled the undoing.",
-                    status: "info",
                 });
             });
     };
@@ -191,49 +187,73 @@ const DoubleCheck = () => {
     if (!resultsToDoubleCheck || !id) return <LoadingPage />;
 
     return (
-        <Box
-            display="flex"
-            flexDirection="column"
-            alignItems="center"
-            gap={5}
-            textAlign="center"
-        >
-            <Heading>
-                {roundName} - {doubleCheckedResults}/{totalResults}
-            </Heading>
-            {doubleCheckedResults === totalResults ? (
-                <>
-                    <DoubleCheckFinished
-                        totalResults={totalResults}
-                        roundId={id}
-                    />
-                    <Button colorScheme="red" onClick={handleUndoDoubleCheck}>
-                        Mark results as not double checked
-                    </Button>
-                </>
-            ) : (
-                <>
-                    <Alert status="info" color="black" width="fit-content">
-                        <AlertIcon />
-                        Clicking enter on the ID field will mark result as
-                        double-checked
-                    </Alert>
-                    {resultsToDoubleCheck ? (
-                        <SelectCompetitor
-                            idInputRef={idInputRef}
-                            handleSubmit={handleSubmit}
-                            result={result}
-                            resultsToDoubleCheck={resultsToDoubleCheck}
-                            setResult={setResult}
-                            inputValue={inputValue}
-                            setJustSelected={setJustSelected}
-                            setInputValue={setInputValue}
-                        />
-                    ) : (
-                        <Heading>No results to double check</Heading>
-                    )}
-                    {result && (
-                        <>
+        <PageTransition>
+            <div className="flex flex-col gap-4">
+                <Card>
+                    <CardHeader>
+                        <CardTitle>
+                            {roundName} - {doubleCheckedResults}/{totalResults}
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent className="flex flex-col gap-4">
+                        {doubleCheckedResults === totalResults ? (
+                            <>
+                                <DoubleCheckFinished
+                                    totalResults={totalResults}
+                                    roundId={id}
+                                />
+                                <Button
+                                    variant="destructive"
+                                    onClick={handleUndoDoubleCheck}
+                                >
+                                    Mark results as not double checked
+                                </Button>
+                            </>
+                        ) : (
+                            <>
+                                <Alert>
+                                    <AlertTitle>
+                                        Clicking enter on the ID field will mark
+                                        result as double-checked
+                                    </AlertTitle>
+                                </Alert>
+                                <Alert>
+                                    <AlertTitle>
+                                        If you want to make more changes please
+                                        go to Details page
+                                    </AlertTitle>
+                                </Alert>
+                                {resultsToDoubleCheck ? (
+                                    <SelectCompetitor
+                                        idInputRef={idInputRef}
+                                        handleSubmit={handleSubmit}
+                                        resultsToDoubleCheck={
+                                            resultsToDoubleCheck
+                                        }
+                                        setResult={setResult}
+                                        inputValue={inputValue}
+                                        setJustSelected={setJustSelected}
+                                        setInputValue={setInputValue}
+                                    />
+                                ) : (
+                                    <Heading>
+                                        No results to double check
+                                    </Heading>
+                                )}
+                            </>
+                        )}
+                    </CardContent>
+                </Card>
+
+                {result && (
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>
+                                {result.person.name} (
+                                {result.person.registrantId})
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent className="flex flex-col gap-4">
                             {competition && (
                                 <AttemptsList
                                     result={result}
@@ -246,11 +266,11 @@ const DoubleCheck = () => {
                                 handleSkip={handleSkip}
                                 result={result}
                             />
-                        </>
-                    )}
-                </>
-            )}
-        </Box>
+                        </CardContent>
+                    </Card>
+                )}
+            </div>
+        </PageTransition>
     );
 };
 

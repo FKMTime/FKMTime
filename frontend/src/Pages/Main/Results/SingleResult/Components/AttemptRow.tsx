@@ -1,23 +1,20 @@
-import { Badge, Box, Td, Tr, useToast } from "@chakra-ui/react";
-import { useConfirm } from "chakra-ui-confirm";
+import { MessageSquarePlus } from "lucide-react";
 import { useState } from "react";
-import { MdNewLabel } from "react-icons/md";
 import { useNavigate } from "react-router-dom";
 
 import AttemptWarnings from "@/Components/AttemptWarnings";
 import DeleteButton from "@/Components/DeleteButton";
 import EditButton from "@/Components/EditButton";
 import SmallIconButton from "@/Components/SmallIconButton";
-import { deleteAttempt } from "@/logic/attempt";
-import {
-    Attempt,
-    AttemptStatus,
-    AttemptType,
-    Result,
-} from "@/logic/interfaces";
-import { getPersonNameAndRegistrantId } from "@/logic/persons.ts";
-import { attemptWithPenaltyToString } from "@/logic/resultFormatters";
-import { getResolvedStatus } from "@/logic/utils";
+import { Badge } from "@/Components/ui/badge";
+import { TableCell, TableRow } from "@/Components/ui/table";
+import { useConfirm } from "@/hooks/useConfirm";
+import { useToast } from "@/hooks/useToast";
+import { deleteAttempt } from "@/lib/attempt";
+import { Attempt, AttemptStatus, AttemptType, Result } from "@/lib/interfaces";
+import { getPersonNameAndRegistrantId } from "@/lib/persons";
+import { attemptWithPenaltyToString } from "@/lib/resultFormatters";
+import { getResolvedStatus } from "@/lib/utils";
 
 import EditAttemptModal from "./EditAttemptModal";
 import GiveExtraAttemptModal from "./GiveExtraAttemptModal";
@@ -38,7 +35,7 @@ const AttemptRow = ({
     result,
 }: AttemptRowProps) => {
     const navigate = useNavigate();
-    const toast = useToast();
+    const { toast } = useToast();
     const confirm = useConfirm();
     const [isOpenEditAttemptModal, setIsOpenEditAttemptModal] =
         useState<boolean>(false);
@@ -56,7 +53,7 @@ const AttemptRow = ({
                 if (response.status === 200) {
                     toast({
                         title: "Successfully deleted attempt.",
-                        status: "success",
+                        variant: "success",
                     });
                     if (response.data.resultDeleted) {
                         navigate(`/results/round/${result.roundId}`);
@@ -67,7 +64,7 @@ const AttemptRow = ({
                     toast({
                         title: "Error",
                         description: "Something went wrong",
-                        status: "error",
+                        variant: "destructive",
                     });
                 }
             })
@@ -76,7 +73,6 @@ const AttemptRow = ({
                     title: "Cancelled",
                     description:
                         "You have cancelled the deletion of the attempt.",
-                    status: "info",
                 });
             });
     };
@@ -89,71 +85,66 @@ const AttemptRow = ({
 
     return (
         <>
-            <Tr key={attempt.id}>
-                <Td>{no}</Td>
-                <Td>
+            <TableRow key={attempt.id}>
+                <TableCell>{no}</TableCell>
+                <TableCell>
                     {attempt.type === AttemptType.EXTRA_ATTEMPT
                         ? `Extra ${attempt.attemptNumber}`
                         : attempt.attemptNumber}
-                </Td>
-                <Td>
+                </TableCell>
+                <TableCell>
                     {attempt.status === AttemptStatus.SCRAMBLED
                         ? "Scrambled, not solved yet"
                         : attemptWithPenaltyToString(attempt)}
-                </Td>
+                </TableCell>
                 {showExtraColumns && (
                     <>
-                        <Td>
+                        <TableCell>
                             {attempt.replacedBy &&
                                 `Extra ${attempt.replacedBy}`}
-                        </Td>
-                        <Td>{getResolvedStatus(attempt.status)}</Td>
+                        </TableCell>
+                        <TableCell>
+                            {getResolvedStatus(attempt.status)}
+                        </TableCell>
                     </>
                 )}
-                <Td>
+                <TableCell>
                     {attempt.judge &&
                         getPersonNameAndRegistrantId(attempt.judge)}
-                </Td>
-                <Td>
+                </TableCell>
+                <TableCell>
                     {attempt.scrambler &&
                         getPersonNameAndRegistrantId(attempt.scrambler)}
-                </Td>
-                <Td>{attempt.device && attempt.device.name}</Td>
-                <Td>{attempt.comment}</Td>
-                <Td>
+                </TableCell>
+                <TableCell>{attempt.device && attempt.device.name}</TableCell>
+                <TableCell>{attempt.comment}</TableCell>
+                <TableCell>
                     {attempt.status === AttemptStatus.SCRAMBLED
                         ? "Scrambled, not solved yet"
                         : new Date(attempt.solvedAt).toLocaleString()}
-                </Td>
-                <Td>{attempt.updatedBy?.fullName}</Td>
-                <Td>
+                </TableCell>
+                <TableCell>{attempt.updatedBy?.fullName}</TableCell>
+                <TableCell>
                     <EditButton
                         onClick={() => setIsOpenEditAttemptModal(true)}
                     />
                     <SmallIconButton
-                        icon={<MdNewLabel />}
-                        ariaLabel="Delete"
+                        icon={<MessageSquarePlus />}
                         title="Give extra attempt"
                         onClick={() => setIsOpenGiveExtraAttemptModal(true)}
                     />
                     <DeleteButton onClick={handleDelete} />
-                </Td>
-                <Td>
-                    <Box display="flex" gap={2}>
+                </TableCell>
+                <TableCell>
+                    <div className="flex gap-2">
                         {!attempt.sessionId &&
                             attempt.status !== AttemptStatus.SCRAMBLED && (
-                                <Badge
-                                    colorScheme="orange"
-                                    borderRadius="md"
-                                    p="1"
-                                >
-                                    Entered manually
-                                </Badge>
+                                <Badge>Entered manually</Badge>
                             )}
                         <AttemptWarnings attempt={attempt} />
-                    </Box>
-                </Td>
-            </Tr>
+                    </div>
+                </TableCell>
+            </TableRow>
             <EditAttemptModal
                 isOpen={isOpenEditAttemptModal}
                 onClose={handleCloseModal}

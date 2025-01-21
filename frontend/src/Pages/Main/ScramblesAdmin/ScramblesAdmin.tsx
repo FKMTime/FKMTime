@@ -1,6 +1,8 @@
-import { Box, Tab, TabList, TabPanel, TabPanels, Tabs } from "@chakra-ui/react";
 import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
+
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/Components/ui/tabs";
+import PageTransition from "@/Pages/PageTransition";
 
 import ImportScrambles from "./Tabs/ImportScrambles/ImportScrambles";
 import ScrambleSets from "./Tabs/ScrambleSets/ScrambleSets";
@@ -10,71 +12,61 @@ const tabs = [
     {
         id: "scramblingDevices",
         name: "Scrambling devices",
-        value: 0,
         component: <ScramblingDevices />,
     },
     {
         id: "importScrambles",
         name: "Import scrambles",
-        value: 1,
         component: <ImportScrambles />,
     },
     {
         id: "scrambleSets",
         name: "Scramble sets",
-        value: 2,
         component: <ScrambleSets />,
     },
 ];
 const ScramblesAdmin = () => {
-    const [tabIndex, setTabIndex] = useState<number>(tabs[0].value);
+    const [tabIndex, setTabIndex] = useState<string>(tabs[0].id);
     const [searchParams, setSearchParams] = useSearchParams();
 
-    const onChangeTabIndex = (index: number) => {
-        setTabIndex(index);
-        const tab = tabs.find((t) => t.value === index)?.id;
+    const onChangeTab = (id: string) => {
+        setTabIndex(id);
+        const tab = tabs.find((t) => t.id === id)?.id;
         if (!tab) return;
         setSearchParams({ tab: tab });
     };
 
     useEffect(() => {
         const tab = searchParams.get("tab");
-        const index = tabs.find((t) => t.id === tab)?.value;
+        const index = tabs.find((t) => t.id === tab)?.id;
         if (index) {
             setTabIndex(index);
         }
     }, [searchParams]);
 
     return (
-        <Box display="flex" flexDirection="column" gap="5">
-            <Tabs
-                variant="enclosed"
-                index={tabIndex}
-                onChange={onChangeTabIndex}
-                isFitted
-            >
-                <TabList>
+        <PageTransition>
+            <div className="flex flex-col gap-4">
+                <Tabs defaultValue={tabIndex} className="flex flex-col gap-4">
+                    <TabsList>
+                        {tabs.map((tab) => (
+                            <TabsTrigger
+                                key={tab.id}
+                                value={tab.id}
+                                onClick={() => onChangeTab(tab.id)}
+                            >
+                                {tab.name}
+                            </TabsTrigger>
+                        ))}
+                    </TabsList>
                     {tabs.map((tab) => (
-                        <Tab
-                            key={tab.id}
-                            _selected={{
-                                color: "white",
-                                bg: "blue.500",
-                            }}
-                        >
-                            {tab.name}
-                        </Tab>
-                    ))}
-                </TabList>
-                <TabPanels>
-                    {tabs.map((tab) => (
-                        <TabPanel key={tab.id} ml={-4}>
+                        <TabsContent key={tab.id} value={tab.id}>
                             {tab.component}
-                        </TabPanel>
+                        </TabsContent>
                     ))}
-                </TabPanels>
-            </Tabs>
-        </Box>
+                </Tabs>
+            </div>
+        </PageTransition>
     );
 };
 

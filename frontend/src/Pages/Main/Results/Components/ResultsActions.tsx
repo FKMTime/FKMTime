@@ -1,9 +1,10 @@
-import { Box, Button, GridItem, SimpleGrid, useToast } from "@chakra-ui/react";
-import { useConfirm } from "chakra-ui-confirm";
 import { useNavigate } from "react-router-dom";
 
-import { reSubmitRoundToWcaLive } from "@/logic/results";
-import { getSubmissionPlatformName } from "@/logic/utils";
+import { Button, buttonVariants } from "@/Components/ui/button";
+import { useConfirm } from "@/hooks/useConfirm";
+import { useToast } from "@/hooks/useToast";
+import { reSubmitRoundToWcaLive } from "@/lib/results";
+import { getSubmissionPlatformName } from "@/lib/utils";
 
 interface ResultsActionsProps {
     setIsOpenCreateAttemptModal: (value: boolean) => void;
@@ -15,13 +16,21 @@ interface ResultsActionsProps {
     resultsLength: number;
 }
 
+interface ResultsAction {
+    title: string;
+    variant: string | typeof buttonVariants;
+    onClick: () => void;
+    colSpan?: number;
+    resultsLength?: boolean;
+}
+
 const ResultsActions = ({
     setIsOpenCreateAttemptModal,
     setIsOpenRestartGroupModal,
     filters,
     resultsLength,
 }: ResultsActionsProps) => {
-    const toast = useToast();
+    const { toast } = useToast();
     const navigate = useNavigate();
     const confirm = useConfirm();
     const submissionPlatformName = getSubmissionPlatformName(filters.eventId);
@@ -36,13 +45,13 @@ const ResultsActions = ({
                 if (status === 200) {
                     toast({
                         title: `Successfully resubmitted round results to ${submissionPlatformName}`,
-                        status: "success",
+                        variant: "success",
                     });
                 } else {
                     toast({
                         title: "Error",
                         description: "Something went wrong",
-                        status: "error",
+                        variant: "destructive",
                     });
                 }
             })
@@ -51,85 +60,83 @@ const ResultsActions = ({
                     title: "Cancelled",
                     description:
                         "You have cancelled the resubmission of the results.",
-                    status: "info",
                 });
             });
     };
 
-    const resultsActions = [
+    const resultsActions: ResultsAction[] = [
         {
             title: "Enter attempt",
-            colorScheme: "green",
+            variant: "success",
             onClick: () => setIsOpenCreateAttemptModal(true),
         },
         {
             title: "Public view",
-            colorScheme: "blue",
+            variant: "secondary",
             onClick: () => navigate(`/results/public/${filters.roundId}`),
         },
         {
             title: "Double check",
-            colorScheme: "purple",
+            variant: "default",
             onClick: () =>
                 navigate(`/results/round/${filters.roundId}/double-check`),
             resultsLength: resultsLength > 0,
         },
         {
             title: "Restart group",
-            colorScheme: "red",
+            variant: "destructive",
             onClick: () => setIsOpenRestartGroupModal(true),
             resultsLength: resultsLength > 0,
         },
         {
-            title: "Resubmit results to WCA Live",
-            colorScheme: "yellow",
+            title: `Resubmit results to ${getSubmissionPlatformName(filters.eventId)}`,
+            variant: "success",
             onClick: handleResubmitRound,
             colSpan: 2,
         },
     ];
     return (
-        <Box
-            display="flex"
-            gap="3"
-            flexDirection={{ base: "column", md: "row" }}
-        >
-            <SimpleGrid
-                gap={3}
-                columns={2}
-                display={{ base: "grid", md: "none" }}
-            >
-                {resultsActions.map(
-                    (action) =>
-                        (!action.resultsLength || resultsLength > 0) && (
-                            <GridItem colSpan={action.colSpan || 1}>
-                                <Button
-                                    key={action.title}
-                                    colorScheme={action.colorScheme}
-                                    width="100%"
-                                    wordBreak="break-word"
-                                    onClick={action.onClick}
-                                >
-                                    {action.title}
-                                </Button>
-                            </GridItem>
-                        )
-                )}
-            </SimpleGrid>
-            <Box display={{ base: "none", md: "flex" }} gap="3">
+        <>
+            <div className="md:flex hidden gap-5">
                 {resultsActions.map(
                     (action) =>
                         (!action.resultsLength || resultsLength > 0) && (
                             <Button
                                 key={action.title}
-                                colorScheme={action.colorScheme}
+                                variant={
+                                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                                    action.variant as any
+                                }
                                 onClick={action.onClick}
                             >
                                 {action.title}
                             </Button>
                         )
                 )}
-            </Box>
-        </Box>
+            </div>
+            <div className="md:hidden grid grid-cols-2 gap-3 w-full">
+                {resultsActions.map(
+                    (action) =>
+                        (!action.resultsLength || resultsLength > 0) && (
+                            <div
+                                className={action.colSpan ? "col-span-2" : ""}
+                                key={action.title}
+                            >
+                                <Button
+                                    variant={
+                                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                                        action.variant as any
+                                    }
+                                    className="w-full break-words"
+                                    onClick={action.onClick}
+                                >
+                                    {action.title}
+                                </Button>
+                            </div>
+                        )
+                )}
+            </div>
+        </>
     );
 };
 

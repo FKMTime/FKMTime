@@ -1,9 +1,11 @@
-import { Box, Button, Heading } from "@chakra-ui/react";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
-import { getUnresolvedAttempts } from "@/logic/attempt";
-import { Incident } from "@/logic/interfaces";
+import { Button } from "@/Components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/Components/ui/card";
+import { getUnresolvedAttempts } from "@/lib/attempt";
+import { Incident } from "@/lib/interfaces";
+import PageTransition from "@/Pages/PageTransition";
 import { socket } from "@/socket";
 
 import IncidentCard from "./Components/IncidentCard";
@@ -34,30 +36,28 @@ const Incidents = () => {
     }, []);
 
     return (
-        <Box display="flex" flexDirection="column" gap="5">
-            <Heading size="lg">Incidents</Heading>
-            <Button
-                colorScheme="yellow"
-                width={{ base: "100%", md: "fit-content" }}
-                onClick={() => navigate("/incidents/resolved")}
-            >
-                Resolved incidents
-            </Button>
-            <Box
-                display="flex"
-                flexDirection="row"
-                gap="5"
-                flexWrap="wrap"
-                justifyContent={{ base: "center", md: "left" }}
-            >
-                {incidents.length === 0 && (
-                    <Heading size="md">No incidents</Heading>
-                )}
-                {incidents.map((incident) => (
-                    <IncidentCard incident={incident} key={incident.id} />
-                ))}
-            </Box>
-        </Box>
+        <PageTransition>
+            <div className="flex flex-col gap-4">
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Incidents</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <Button onClick={() => navigate("/incidents/resolved")}>
+                            Resolved incidents
+                        </Button>
+                    </CardContent>
+                </Card>
+                <div className="flex flex-row gap-4 flex-wrap justify-center md:justify-start">
+                    {incidents.length === 0 && (
+                        <h2 className="text-lg">No incidents</h2>
+                    )}
+                    {incidents.map((incident) => (
+                        <IncidentCard incident={incident} key={incident.id} />
+                    ))}
+                </div>
+            </div>
+        </PageTransition>
     );
 };
 

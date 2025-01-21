@@ -1,6 +1,4 @@
-import { Box } from "@chakra-ui/react";
-
-import { Activity } from "@/logic/interfaces.ts";
+import { Activity } from "@/lib/interfaces";
 
 import ScheduleCard from "./ScheduleCard";
 
@@ -10,11 +8,12 @@ interface MobileScheduleProps {
 
 const MobileSchedule = ({ activities }: MobileScheduleProps) => {
     return (
-        <Box display="flex" flexDirection="column" alignItems="center" gap="5">
+        <div className="flex flex-col gap-5 items-center">
+            <h2 className="text-2xl font-bold">Schedule</h2>
             {activities.map((activity: Activity) => (
                 <ScheduleCard key={activity.id} activity={activity} />
             ))}
-        </Box>
+        </div>
     );
 };
 

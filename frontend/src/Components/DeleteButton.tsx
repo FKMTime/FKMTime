@@ -1,4 +1,4 @@
-import { MdDelete } from "react-icons/md";
+import { Trash2 } from "lucide-react";
 
 import SmallIconButton from "./SmallIconButton";
 
@@ -10,8 +10,7 @@ interface DeleteButtonProps {
 const DeleteButton = ({ onClick, title }: DeleteButtonProps) => {
     return (
         <SmallIconButton
-            icon={<MdDelete />}
-            ariaLabel="Delete"
+            icon={<Trash2 />}
             title={title || "Delete"}
             onClick={onClick}
         />

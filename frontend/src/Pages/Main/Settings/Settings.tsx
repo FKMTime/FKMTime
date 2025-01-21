@@ -1,25 +1,20 @@
-import {
-    Box,
-    Button,
-    Flex,
-    FormControl,
-    FormLabel,
-    Heading,
-    Input,
-    useToast,
-} from "@chakra-ui/react";
-import { FormEvent, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 
 import LoadingPage from "@/Components/LoadingPage";
-import { isAdmin } from "@/logic/auth.ts";
-import { Settings as SettingsInterface } from "@/logic/interfaces";
-import { getSettings, updateSettings } from "@/logic/settings";
-import QuickActions from "@/Pages/Main/Settings/Components/QuickActions";
+import { Button } from "@/Components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/Components/ui/card";
+import { useToast } from "@/hooks/useToast";
+import { isAdmin } from "@/lib/auth";
+import { Settings as SettingsInterface } from "@/lib/interfaces";
+import { getSettings, updateSettings } from "@/lib/settings";
+import PageTransition from "@/Pages/PageTransition";
 
 import ChangePasswordModal from "./Components/ChangePasswordModal";
+import QuickActions from "./Components/QuickActions";
+import SettingsForm from "./Components/SettingsForm";
 
 const Settings = () => {
-    const toast = useToast();
+    const { toast } = useToast();
     const [settings, setSettings] = useState<SettingsInterface | null>(null);
     const [isLoading, setIsLoading] = useState<boolean>(false);
     const [isOpenChangePasswordModal, setIsOpenChangePasswordModal] =
@@ -32,21 +27,20 @@ const Settings = () => {
         setIsLoading(false);
     };
 
-    const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
-        event.preventDefault();
+    const handleSubmit = async (data: SettingsInterface) => {
         if (!settings) return;
         setIsLoading(true);
-        const status = await updateSettings(settings);
+        const status = await updateSettings(data);
         if (status === 200) {
             toast({
                 title: "Successfully updated settings.",
-                status: "success",
+                variant: "success",
             });
         } else {
             toast({
                 title: "Error",
                 description: "Something went wrong",
-                status: "error",
+                variant: "destructive",
             });
         }
         setIsLoading(false);
@@ -59,56 +53,38 @@ const Settings = () => {
     if (!settings) return <LoadingPage />;
 
     return (
-        <Flex flexDirection="column" gap="5">
-            {!settings.wcaUserId && (
-                <Box>
-                    <Heading fontSize="3xl">Settings</Heading>
-                    <Box
-                        display="flex"
-                        flexDirection="column"
-                        gap={3}
-                        as="form"
-                        width={{ base: "100%", md: "20%" }}
-                        mt={5}
-                        onSubmit={handleSubmit}
-                    >
-                        <FormControl isRequired>
-                            <FormLabel>Username</FormLabel>
-                            <Input
-                                placeholder="Username"
-                                _placeholder={{ color: "white" }}
-                                value={settings.username}
-                                disabled={isLoading}
-                                onChange={(e) =>
-                                    setSettings({
-                                        ...settings,
-                                        username: e.target.value,
-                                    })
-                                }
+        <PageTransition>
+            <div className="flex flex-col gap-4">
+                {!settings.wcaUserId ? (
+                    <Card>
+                        <CardHeader>
+                            <CardTitle className="flex justify-between items-center">
+                                Settings
+                                <Button
+                                    onClick={() =>
+                                        setIsOpenChangePasswordModal(true)
+                                    }
+                                >
+                                    Change password
+                                </Button>
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <SettingsForm
+                                settings={settings}
+                                handleSubmit={handleSubmit}
+                                isLoading={isLoading}
                             />
-                        </FormControl>
-                        <Button
-                            colorScheme="green"
-                            isLoading={isLoading}
-                            type="submit"
-                        >
-                            Save
-                        </Button>
-                        <Button
-                            colorScheme="yellow"
-                            onClick={() => setIsOpenChangePasswordModal(true)}
-                        >
-                            Change password
-                        </Button>
-                    </Box>
-                </Box>
-            )}
-            {isAdmin() && <QuickActions />}
-            <ChangePasswordModal
-                isOpen={isOpenChangePasswordModal}
-                onClose={() => setIsOpenChangePasswordModal(false)}
-            />
-        </Flex>
+                        </CardContent>
+                    </Card>
+                ) : null}
+                {isAdmin() && <QuickActions />}
+                <ChangePasswordModal
+                    isOpen={isOpenChangePasswordModal}
+                    onClose={() => setIsOpenChangePasswordModal(false)}
+                />
+            </div>
+        </PageTransition>
     );
 };
 
