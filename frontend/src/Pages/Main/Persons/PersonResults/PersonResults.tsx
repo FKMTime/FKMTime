@@ -1,13 +1,13 @@
-import { Box, Heading, Text } from "@chakra-ui/react";
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 
 import FlagIcon from "@/Components/Icons/FlagIcon";
 import LoadingPage from "@/Components/LoadingPage";
-import { Person, Result } from "@/logic/interfaces";
-import { getPersonById } from "@/logic/persons";
-import { getAllResultsByPersonId } from "@/logic/results";
-import { regionNameByIso2 } from "@/logic/utils";
+import { Card, CardContent, CardHeader, CardTitle } from "@/Components/ui/card";
+import { Person, Result } from "@/lib/interfaces";
+import { getPersonById } from "@/lib/persons";
+import { getAllResultsByPersonId } from "@/lib/results";
+import PageTransition from "@/Pages/PageTransition";
 
 import PersonResultsTable from "./Components/PersonResultsTable";
 
@@ -36,38 +36,43 @@ const PersonResults = () => {
     }
 
     return (
-        <Box display="flex" flexDirection="column" gap="5" mt="2">
-            <Heading>{person.name}</Heading>
-            {person && (
-                <>
-                    <Text fontSize="xl">
-                        Registrant ID: {person.registrantId}
-                    </Text>
-                    <Text fontSize="xl">WCA ID: {person.wcaId}</Text>
-                    {person.countryIso2 && (
-                        <Text fontSize="xl">
-                            <Box display="flex" alignItems="center" gap="1">
-                                <Text>
-                                    Representing:{" "}
-                                    {regionNameByIso2(person.countryIso2)}
-                                </Text>
-                                <FlagIcon
-                                    country={person.countryIso2}
-                                    size={20}
-                                />
-                            </Box>
-                        </Text>
-                    )}
-                </>
-            )}
-            {results.length > 0 ? (
-                <PersonResultsTable results={results} />
-            ) : (
-                <Box display="flex" alignItems="center" justifyContent="center">
-                    <Text fontSize="3xl">No results found</Text>
-                </Box>
-            )}
-        </Box>
+        <PageTransition>
+            <div className="flex flex-col gap-5">
+                <Card>
+                    <CardHeader>
+                        <CardTitle className="flex gap-2 justify-between items-center">
+                            {person.name}
+                            {person.countryIso2 && (
+                                <div className="flex items-center gap-1">
+                                    <FlagIcon
+                                        country={person.countryIso2}
+                                        size={40}
+                                    />
+                                </div>
+                            )}
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <p>Registrant ID: {person.registrantId}</p>
+                        <p>WCA ID: {person.wcaId}</p>
+                    </CardContent>
+                </Card>
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Results</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        {results.length > 0 ? (
+                            <PersonResultsTable results={results} />
+                        ) : (
+                            <div className="flex items-center justify-center">
+                                <p className="text-lg">No results found</p>
+                            </div>
+                        )}
+                    </CardContent>
+                </Card>
+            </div>
+        </PageTransition>
     );
 };
 

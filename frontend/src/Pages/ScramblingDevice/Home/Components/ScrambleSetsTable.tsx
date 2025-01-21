@@ -1,67 +1,69 @@
-import {
-    Button,
-    Table,
-    TableContainer,
-    Tbody,
-    Td,
-    Th,
-    Thead,
-    Tr,
-} from "@chakra-ui/react";
 import { useNavigate } from "react-router-dom";
 
-import { activityCodeToName } from "@/logic/activities";
-import { ScrambleSet } from "@/logic/interfaces";
+import { Button } from "@/Components/ui/button";
+import {
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from "@/Components/ui/table";
+import { activityCodeToName } from "@/lib/activities";
+import { ScrambleSet } from "@/lib/interfaces";
 
 interface ScrambleSetsTableProps {
     scrambleSets: ScrambleSet[];
+    showScrambleButton: boolean;
 }
 
-const ScrambleSetsTable = ({ scrambleSets }: ScrambleSetsTableProps) => {
+const ScrambleSetsTable = ({
+    scrambleSets,
+    showScrambleButton,
+}: ScrambleSetsTableProps) => {
     const navigate = useNavigate();
     return (
-        <TableContainer>
-            <Table variant="simple">
-                <Thead>
-                    <Tr bg="gray.400">
-                        <Th>Name</Th>
-                        <Th>Actions</Th>
-                    </Tr>
-                </Thead>
-                <Tbody>
-                    {scrambleSets.map((scrambleSet) => (
-                        <Tr key={scrambleSet.id}>
-                            <Td>
-                                {activityCodeToName(scrambleSet.roundId)} Set{" "}
-                                {scrambleSet.set}
-                            </Td>
-                            <Td display="flex" gap="2">
+        <Table>
+            <TableHeader>
+                <TableRow>
+                    <TableHead>Name</TableHead>
+                    <TableHead>Actions</TableHead>
+                </TableRow>
+            </TableHeader>
+            <TableBody>
+                {scrambleSets.map((scrambleSet) => (
+                    <TableRow key={scrambleSet.id}>
+                        <TableCell>
+                            {activityCodeToName(scrambleSet.roundId)} Set{" "}
+                            {scrambleSet.set}
+                        </TableCell>
+                        <TableCell className="flex gap-2">
+                            {showScrambleButton ? (
                                 <Button
                                     onClick={() =>
                                         navigate(
                                             `/scrambling-device/set/${scrambleSet.id}`
                                         )
                                     }
-                                    colorScheme="yellow"
                                 >
                                     Scramble
                                 </Button>
-                                <Button
-                                    onClick={() =>
-                                        navigate(
-                                            `/scrambling-device/set/${scrambleSet.id}/scrambles`
-                                        )
-                                    }
-                                    colorScheme="blue"
-                                >
-                                    All scrambles
-                                </Button>
-                            </Td>
-                        </Tr>
-                    ))}
-                </Tbody>
-            </Table>
-        </TableContainer>
+                            ) : null}
+                            <Button
+                                onClick={() =>
+                                    navigate(
+                                        `/scrambling-device/set/${scrambleSet.id}/scrambles`
+                                    )
+                                }
+                                variant="success"
+                            >
+                                All scrambles
+                            </Button>
+                        </TableCell>
+                    </TableRow>
+                ))}
+            </TableBody>
+        </Table>
     );
 };
 

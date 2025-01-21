@@ -1,141 +1,115 @@
-import {
-    chakra,
-    Flex,
-    Table,
-    Tbody,
-    Td,
-    Th,
-    Thead,
-    Tr,
-} from "@chakra-ui/react";
-import {
-    createColumnHelper,
-    flexRender,
-    getCoreRowModel,
-    getSortedRowModel,
-    SortingState,
-    useReactTable,
-} from "@tanstack/react-table";
-import { useMemo, useState } from "react";
-import { FaChevronDown, FaChevronUp } from "react-icons/fa";
+import { useState } from "react";
 
-import { AttendanceStatistics } from "@/logic/interfaces.ts";
+import { Label } from "@/Components/ui/label";
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/Components/ui/select";
+import { Switch } from "@/Components/ui/switch";
+import {
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from "@/Components/ui/table";
+import { AttendanceStatistics } from "@/lib/interfaces";
 
 interface AttendanceStatisticsTableProps {
     attendanceStatistics: AttendanceStatistics[];
 }
 
-interface Meta {
-    isNumeric?: boolean;
-}
-
 const AttendanceStatisticsTable = ({
     attendanceStatistics,
 }: AttendanceStatisticsTableProps) => {
-    const data = useMemo(() => attendanceStatistics, [attendanceStatistics]);
+    const [sortBy, setSortBy] =
+        useState<keyof AttendanceStatistics>("personName");
+    const [descending, setDescending] = useState(false);
 
-    const columnHelper = createColumnHelper<AttendanceStatistics>();
+    const sortedAttendanceStatistics = [...attendanceStatistics].sort(
+        (a, b) => {
+            const aValue = a[sortBy];
+            const bValue = b[sortBy];
 
-    const columns = [
-        columnHelper.accessor("personName", {
-            cell: (info) => info.getValue(),
-            header: "Name",
-        }),
-        columnHelper.accessor("presentPercentage", {
-            cell: (info) => `${info.getValue()}%`,
-            header: "Present percentage",
-            meta: {
-                isNumeric: true,
-            },
-        }),
-        columnHelper.accessor("totalPresentAtStaffingComparedToRounds", {
-            cell: (info) => info.getValue(),
-            header: "Total present staffing",
-            meta: {
-                isNumeric: true,
-            },
-        }),
-        columnHelper.accessor("totalStaffingComparedToRounds", {
-            cell: (info) => info.getValue(),
-            header: "Total assigned staffing (from rounds that have been started)",
-            meta: {
-                isNumeric: true,
-            },
-        }),
-        columnHelper.accessor("totalAssignedStaffing", {
-            cell: (info) => info.getValue(),
-            header: "Total assigned staffing",
-            meta: {
-                isNumeric: true,
-            },
-        }),
-    ];
+            if (typeof aValue === "number" && typeof bValue === "number") {
+                return aValue - bValue;
+            }
+            if (typeof aValue === "string" && typeof bValue === "string") {
+                return aValue.localeCompare(bValue);
+            }
+            return 0;
+        }
+    );
 
-    const [sorting, setSorting] = useState<SortingState>([]);
-    const table = useReactTable({
-        columns,
-        data,
-        getCoreRowModel: getCoreRowModel(),
-        onSortingChange: setSorting,
-        getSortedRowModel: getSortedRowModel(),
-        state: {
-            sorting,
-        },
-    });
+    if (descending) {
+        sortedAttendanceStatistics.reverse();
+    }
+
     return (
         <Table>
-            <Thead>
-                {table.getHeaderGroups().map((headerGroup) => (
-                    <Tr key={headerGroup.id} bg="gray.400">
-                        {headerGroup.headers.map((header) => {
-                            const meta: Meta = header.column.columnDef
-                                .meta as Meta;
-                            return (
-                                <Th
-                                    key={header.id}
-                                    onClick={header.column.getToggleSortingHandler()}
-                                    isNumeric={meta?.isNumeric}
-                                >
-                                    <Flex>
-                                        {flexRender(
-                                            header.column.columnDef.header,
-                                            header.getContext()
-                                        )}
-                                        <chakra.span pl="4">
-                                            {header.column.getIsSorted() ? (
-                                                header.column.getIsSorted() ===
-                                                "desc" ? (
-                                                    <FaChevronDown aria-label="sorted descending" />
-                                                ) : (
-                                                    <FaChevronUp aria-label="sorted ascending" />
-                                                )
-                                            ) : null}
-                                        </chakra.span>
-                                    </Flex>
-                                </Th>
-                            );
-                        })}
-                    </Tr>
+            <TableHeader>
+                <div className="flex items-center space-x-2">
+                    <Select
+                        onValueChange={(value) => {
+                            setSortBy(value as keyof AttendanceStatistics);
+                        }}
+                    >
+                        <SelectTrigger>
+                            <SelectValue placeholder="Sort by" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="personName">Name</SelectItem>
+                            <SelectItem value="presentPercentage">
+                                Present Percentage
+                            </SelectItem>
+                            <SelectItem value="totalPresentAtStaffingComparedToRounds">
+                                Total Present Staffing
+                            </SelectItem>
+                            <SelectItem value="totalAssignedStaffing">
+                                Total Assigned Staffing
+                            </SelectItem>
+                        </SelectContent>
+                    </Select>
+
+                    <div className="flex items-center space-x-2">
+                        <Switch
+                            id="descending"
+                            checked={descending}
+                            onCheckedChange={() => setDescending(!descending)}
+                        />
+                        <Label htmlFor="airplane-mode">Descending</Label>
+                    </div>
+                </div>
+
+                <TableRow>
+                    <TableHead>Name</TableHead>
+                    <TableHead>Present Percentage</TableHead>
+                    <TableHead>Total Present Staffing</TableHead>
+                    <TableHead>Total Assigned Staffing</TableHead>
+                </TableRow>
+            </TableHeader>
+            <TableBody>
+                {sortedAttendanceStatistics.map((attendanceStatistic) => (
+                    <TableRow key={attendanceStatistic.personName}>
+                        <TableCell>{attendanceStatistic.personName}</TableCell>
+                        <TableCell>
+                            {attendanceStatistic.presentPercentage}
+                        </TableCell>
+                        <TableCell>
+                            {
+                                attendanceStatistic.totalPresentAtStaffingComparedToRounds
+                            }
+                        </TableCell>
+                        <TableCell>
+                            {attendanceStatistic.totalAssignedStaffing}
+                        </TableCell>
+                    </TableRow>
                 ))}
-            </Thead>
-            <Tbody>
-                {table.getRowModel().rows.map((row) => (
-                    <Tr key={row.id}>
-                        {row.getVisibleCells().map((cell) => {
-                            const meta: Meta = cell.column.columnDef
-                                .meta as Meta;
-                            return (
-                                <Td key={cell.id} isNumeric={meta?.isNumeric}>
-                                    {flexRender(
-                                        cell.column.columnDef.cell,
-                                        cell.getContext()
-                                    )}
-                                </Td>
-                            );
-                        })}
-                    </Tr>
-                ))}
-            </Tbody>
+            </TableBody>
         </Table>
     );
 };

@@ -1,14 +1,18 @@
-import { Box, Heading, Input, useToast } from "@chakra-ui/react";
 import { RefObject, useEffect, useRef, useState } from "react";
 
 import PersonAutocomplete from "@/Components/PersonAutocomplete.tsx";
-import { assignCard, getPersonsWithoutCardAssigned } from "@/logic/persons";
+import { Card, CardContent, CardHeader, CardTitle } from "@/Components/ui/card";
+import { Input } from "@/Components/ui/input";
+import { useToast } from "@/hooks/useToast";
+import { Person } from "@/lib/interfaces";
+import { assignCard, getPersonsWithoutCardAssigned } from "@/lib/persons";
+import PageTransition from "@/Pages/PageTransition";
 
 const AssignCards = () => {
-    const toast = useToast();
+    const { toast } = useToast();
     const [cardId, setCardId] = useState<string>("");
     const [personsWithoutCard, setPersonsWithoutCard] = useState<number>(0);
-    const [currentPersonId, setCurrentPersonId] = useState<string>("");
+    const [currentPerson, setCurrentPerson] = useState<Person | null>(null);
     const cardInputRef: RefObject<HTMLInputElement> =
         useRef<HTMLInputElement>(null);
 
@@ -21,67 +25,74 @@ const AssignCards = () => {
     }, []);
 
     const handleSubmit = async () => {
-        if (!currentPersonId) return;
-        const status = await assignCard(currentPersonId, cardId);
+        if (!currentPerson) return;
+        const status = await assignCard(currentPerson.id, cardId);
         if (status === 200) {
             toast({
                 title: "Card assigned",
-                status: "success",
+                variant: "success",
             });
             setCardId("");
             setPersonsWithoutCard(personsWithoutCard - 1);
-            setCurrentPersonId("");
-            document.getElementById("searchInput")?.focus();
+            setCurrentPerson(null);
+            cardInputRef.current?.focus();
+            document.getElementById("personAutocompleteSearchInput")?.focus();
         } else if (status === 409) {
             toast({
                 title: "Error",
                 description: "This card is already assigned to someone else",
-                status: "error",
+                variant: "destructive",
             });
         } else {
             toast({
                 title: "Error",
                 description: "Something went wrong",
-                status: "error",
+                variant: "destructive",
             });
         }
     };
 
-    const handleChangePerson = (value: string) => {
-        setCurrentPersonId(value);
+    const handleChangePerson = (value: Person | null) => {
+        if (!value) return;
+        setCurrentPerson(value);
     };
 
     return (
-        <Box
-            display="flex"
-            flexDirection="column"
-            gap="5"
-            alignItems="center"
-            justifyContent="center"
-        >
-            <Heading size="lg">
-                There are {personsWithoutCard} persons without card assigned
-            </Heading>
-            <Box width={{ base: "100%", md: "20%" }}>
-                <PersonAutocomplete
-                    onSelect={handleChangePerson}
-                    withoutCardAssigned={true}
-                    value={currentPersonId}
-                    autoFocus={true}
-                />
-            </Box>
-            {currentPersonId && (
-                <Input
-                    placeholder="Card ID"
-                    value={cardId}
-                    onChange={(e) => setCardId(e.target.value)}
-                    width="20%"
-                    onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
-                    autoFocus
-                    ref={cardInputRef}
-                />
-            )}
-        </Box>
+        <PageTransition>
+            <Card>
+                <CardHeader>
+                    <CardTitle>
+                        There are {personsWithoutCard} persons without card
+                        assigned
+                    </CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <div className="w-1/3 flex flex-col gap-2">
+                        <PersonAutocomplete
+                            onSelect={handleChangePerson}
+                            withoutCardAssigned={true}
+                            autoFocus={true}
+                            key={personsWithoutCard}
+                            ref={cardInputRef}
+                            defaultOpen={true}
+                        />
+
+                        {currentPerson && (
+                            <Input
+                                placeholder="Card ID"
+                                value={cardId}
+                                onChange={(e) => setCardId(e.target.value)}
+                                onKeyDown={(e) =>
+                                    e.key === "Enter" && handleSubmit()
+                                }
+                                autoFocus
+                                ref={cardInputRef}
+                            />
+                        )}
+                    </div>
+                </CardContent>
+            </Card>
+        </PageTransition>
     );
 };
 

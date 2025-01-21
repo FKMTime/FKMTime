@@ -16,6 +16,7 @@ const translations = [
       attemptAlreadyEntered: 'This attempt has already been entered',
       alreadyCheckedIn: 'You have already checked in',
       attendanceConfirmed: 'Attendance confirmed',
+      judgeCardNotScanned: "Judge's card was not scanned",
     },
   },
   {
@@ -36,6 +37,7 @@ const translations = [
       attemptAlreadyEntered: 'To ulozenie zostalo juz wprowadzone',
       alreadyCheckedIn: 'Twoja obecnosc zostala juz potwierdzona',
       attendanceConfirmed: 'Obecnosc zostala potwierdzona',
+      judgeCardNotScanned: 'Karta sedziego nie zostala zeskanowana',
     },
   },
 ];

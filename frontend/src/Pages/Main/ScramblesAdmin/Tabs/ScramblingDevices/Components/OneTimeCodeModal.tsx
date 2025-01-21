@@ -1,9 +1,8 @@
-import { Box, Heading, Text } from "@chakra-ui/react";
 import { useCallback, useEffect, useState } from "react";
 
 import { Modal } from "@/Components/Modal";
-import { ScramblingDevice } from "@/logic/interfaces";
-import { getOneTimeCode } from "@/logic/scramblingDevices";
+import { ScramblingDevice } from "@/lib/interfaces";
+import { getOneTimeCode } from "@/lib/scramblingDevices";
 
 interface OneTimeCodeModalProps {
     isOpen: boolean;
@@ -29,11 +28,12 @@ const OneTimeCodeModal: React.FC<OneTimeCodeModalProps> = ({
     }, [generateOneTimeCode, isOpen]);
 
     return (
-        <Modal isOpen={isOpen} onClose={onClose} title="New one time code">
-            <Box display="flex" flexDirection="column" gap="5">
-                <Text>Enter this code to log in</Text>
-                <Heading>{oneTimeCode}</Heading>
-            </Box>
+        <Modal
+            isOpen={isOpen}
+            onClose={onClose}
+            title="Enter this code to log in"
+        >
+            <h2 className="text-lg">{oneTimeCode}</h2>
         </Modal>
     );
 };

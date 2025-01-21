@@ -2,32 +2,41 @@ import { useState } from "react";
 import React from "react";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 
+import { Toaster } from "@/Components/ui/toaster";
+import { ConfirmProvider } from "@/providers/ConfirmProvider";
+import { ThemeProvider } from "@/providers/ThemeProvider";
+
+import CompetitionStatistics from "./Components/CompetitionStatistics/CompetitionStatistics";
+import { THEME_STORAGE_KEY } from "./lib/constants";
 import Login from "./Pages/Auth/Login/Login";
 import AssignCards from "./Pages/Main/AssignCards/AssignCards";
 import Attendance from "./Pages/Main/Attendance/Attendance";
 import AttendanceStatistics from "./Pages/Main/Attendance/AttendanceStatistics/AttendanceStatistics";
 import CheckIn from "./Pages/Main/CheckIn/CheckIn";
 import Competition from "./Pages/Main/Competition/Competition";
-import Rooms from "./Pages/Main/Competition/Tabs/Rooms";
 import Devices from "./Pages/Main/Devices/Devices";
 import Home from "./Pages/Main/Home/Home";
 import ImportCompetition from "./Pages/Main/ImportCompetition/ImportCompetition";
 import Incidents from "./Pages/Main/Incidents/AllIncidents/Incidents";
+import ResolvedIncidents from "./Pages/Main/Incidents/ResolvedIncidents/ResolvedIncidents";
 import Layout from "./Pages/Main/Layout/Layout";
 import NotFound from "./Pages/Main/NotFound/NotFound";
-import ResolvedIncidents from "./Pages/Main/ResolvedIncidents/ResolvedIncidents";
 import DoubleCheck from "./Pages/Main/Results/DoubleCheck/DoubleCheck";
-import PublicView from "./Pages/Main/Results/PublicView/PublicView";
 import ResultsChecks from "./Pages/Main/Results/ResultsChecks/ResultsChecks";
 import ScramblesAdmin from "./Pages/Main/ScramblesAdmin/ScramblesAdmin";
 import Settings from "./Pages/Main/Settings/Settings";
+import UnofficialEvents from "./Pages/Main/UnofficialEvents/UnofficialEvents";
 import Users from "./Pages/Main/Users/Users";
+import AllScrambles from "./Pages/ScramblingDevice/AllScrambles/AllScrambles";
 import ScramblingDeviceHome from "./Pages/ScramblingDevice/Home/ScramblingDeviceHome";
 import ScrambleSet from "./Pages/ScramblingDevice/ScrambleSet/ScrambleSet";
 import ScramblingDeviceLayout from "./Pages/ScramblingDevice/ScramblingDeviceLayout";
 import { SocketContext } from "./socket";
 const Persons = React.lazy(() => import("./Pages/Main/Persons/Persons"));
 const Results = React.lazy(() => import("./Pages/Main/Results/Results"));
+const PublicView = React.lazy(
+    () => import("./Pages/Main/Results/PublicView/PublicView")
+);
 const SingleResult = React.lazy(
     () => import("./Pages/Main/Results/SingleResult/SingleResult")
 );
@@ -89,10 +98,6 @@ const App = () => {
                 {
                     path: "cards",
                     element: <AssignCards />,
-                },
-                {
-                    path: "rooms",
-                    element: <Rooms />,
                 },
                 {
                     path: "results",
@@ -158,6 +163,14 @@ const App = () => {
                     path: "check-in",
                     element: <CheckIn />,
                 },
+                {
+                    path: "statistics",
+                    element: <CompetitionStatistics showCharts />,
+                },
+                {
+                    path: "events",
+                    element: <UnofficialEvents />,
+                },
             ],
         },
         {
@@ -172,6 +185,10 @@ const App = () => {
                     path: "/scrambling-device/set/:id",
                     element: <ScrambleSet />,
                 },
+                {
+                    path: "/scrambling-device/set/:id/scrambles",
+                    element: <AllScrambles />,
+                },
             ],
         },
         {
@@ -181,9 +198,14 @@ const App = () => {
     ]);
 
     return (
-        <SocketContext.Provider value={[isConnected, setConnected]}>
-            <RouterProvider router={router} />
-        </SocketContext.Provider>
+        <ThemeProvider defaultTheme="dark" storageKey={THEME_STORAGE_KEY}>
+            <ConfirmProvider>
+                <SocketContext.Provider value={[isConnected, setConnected]}>
+                    <RouterProvider router={router} />
+                    <Toaster />
+                </SocketContext.Provider>
+            </ConfirmProvider>
+        </ThemeProvider>
     );
 };
 

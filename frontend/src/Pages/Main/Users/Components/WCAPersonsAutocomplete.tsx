@@ -1,24 +1,31 @@
-import { DarkMode, FormControl } from "@chakra-ui/react";
-import {
-    AutoComplete,
-    AutoCompleteInput,
-    AutoCompleteItem,
-    AutoCompleteList,
-} from "@choc-ui/chakra-autocomplete";
-import { ChangeEvent, useState } from "react";
+import { Check, ChevronsUpDown } from "lucide-react";
+import { useState } from "react";
 
-import { WCAPerson } from "@/logic/interfaces";
-import { getPersonsFromWCA } from "@/logic/persons";
+import { Button } from "@/Components/ui/button";
+import {
+    Command,
+    CommandEmpty,
+    CommandGroup,
+    CommandInput,
+    CommandItem,
+    CommandList,
+} from "@/Components/ui/command";
+import {
+    Popover,
+    PopoverContent,
+    PopoverTrigger,
+} from "@/Components/ui/popover";
+import { WCAPerson } from "@/lib/interfaces";
+import { getPersonsFromWCA } from "@/lib/persons";
+import { cn } from "@/lib/utils";
 
 interface WCAPersonsAutocompleteProps {
-    value: string;
-    onSelect: (person: WCAPerson) => void;
+    onSelect: (person: WCAPerson | null) => void;
 }
 
-const WCAPersonsAutocomplete = ({
-    value,
-    onSelect,
-}: WCAPersonsAutocompleteProps) => {
+const WCAPersonsAutocomplete = ({ onSelect }: WCAPersonsAutocompleteProps) => {
+    const [open, setOpen] = useState(false);
+    const [value, setValue] = useState("");
     const [persons, setPersons] = useState<WCAPerson[]>([]);
 
     const handleSearch = async (searchValue: string) => {
@@ -26,40 +33,68 @@ const WCAPersonsAutocomplete = ({
         setPersons(data);
     };
 
-    const handleSelect = (id: string) => {
-        const person = persons.find((p) => p.wcaId === id);
-        if (person) onSelect(person);
-    };
-
     return (
-        <DarkMode>
-            <FormControl>
-                <AutoComplete openOnFocus onChange={handleSelect} value={value}>
-                    <AutoCompleteInput
-                        autoFocus
-                        placeholder="Search for a person"
-                        _placeholder={{
-                            color: "gray.200",
-                        }}
-                        onChange={(e: ChangeEvent<HTMLInputElement>) =>
-                            handleSearch(e.target.value)
-                        }
-                        borderColor="white"
+        <Popover open={open} onOpenChange={setOpen}>
+            <PopoverTrigger asChild className="w-full">
+                <Button
+                    variant="outline"
+                    role="combobox"
+                    aria-expanded={open}
+                    className="justify-between"
+                >
+                    {value
+                        ? persons?.find((person) => person.wcaId === value)
+                              ?.combinedName
+                        : "Select person..."}
+                    <ChevronsUpDown className="opacity-50" />
+                </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-full p-0 min-w-[var(--radix-popper-anchor-width)]">
+                <Command className="w-full">
+                    <CommandInput
+                        placeholder="Search for a person..."
+                        className="h-9 w-full"
+                        onValueChange={handleSearch}
                     />
-                    <AutoCompleteList>
-                        {persons.map((person) => (
-                            <AutoCompleteItem
-                                key={person.wcaId}
-                                value={person.wcaId}
-                                label={person.combinedName}
-                            >
-                                {person.combinedName}
-                            </AutoCompleteItem>
-                        ))}
-                    </AutoCompleteList>
-                </AutoComplete>
-            </FormControl>
-        </DarkMode>
+                    <CommandList className="w-full">
+                        <CommandEmpty>No persons found.</CommandEmpty>
+                        <CommandGroup>
+                            {persons &&
+                                persons?.map((person) => (
+                                    <CommandItem
+                                        key={person.wcaId}
+                                        value={person.wcaId}
+                                        onSelect={(currentValue) => {
+                                            setValue(
+                                                currentValue === value
+                                                    ? ""
+                                                    : currentValue
+                                            );
+                                            setOpen(false);
+                                            onSelect(
+                                                persons.find(
+                                                    (p) =>
+                                                        p.wcaId === currentValue
+                                                ) || null
+                                            );
+                                        }}
+                                    >
+                                        {person.combinedName}
+                                        <Check
+                                            className={cn(
+                                                "ml-auto",
+                                                value === person.wcaId
+                                                    ? "opacity-100"
+                                                    : "opacity-0"
+                                            )}
+                                        />
+                                    </CommandItem>
+                                ))}
+                        </CommandGroup>
+                    </CommandList>
+                </Command>
+            </PopoverContent>
+        </Popover>
     );
 };
 

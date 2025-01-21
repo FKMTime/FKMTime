@@ -1,5 +1,5 @@
 ## BUILD FRONTEND ##
-FROM node:18 AS frontend-app-builder
+FROM node:lts AS frontend-app-builder
 
 WORKDIR /app
 COPY frontend/package*.json ./

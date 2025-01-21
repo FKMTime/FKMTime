@@ -46,11 +46,12 @@ describe('UserController (e2e)', () => {
         updatedAt: expect.any(String),
         isWcaAdmin: false,
         wcaUserId: null,
+        avatarUrl: null,
       },
     ]);
   });
 
-  it('creates FKM user', async () => {
+  it('creates FKMTime user', async () => {
     const user = await loginWithFKMAccount(app, {
       username: 'admin',
       password: 'admin',

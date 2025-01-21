@@ -1,13 +1,13 @@
-import { Box, Button } from "@chakra-ui/react";
 import { useEffect, useState } from "react";
 
 import LoadingPage from "@/Components/LoadingPage";
 import PlusButton from "@/Components/PlusButton";
-import { ScramblingDevice } from "@/logic/interfaces";
-import { getScramblingDevices } from "@/logic/scramblingDevices";
+import { Card, CardContent, CardHeader, CardTitle } from "@/Components/ui/card";
+import { ScramblingDevice } from "@/lib/interfaces";
+import { getScramblingDevices } from "@/lib/scramblingDevices";
+import PageTransition from "@/Pages/PageTransition";
 
 import CreateScramblingDeviceModal from "./Components/CreateScramblingDeviceModal";
-import ScramblingDeviceCard from "./Components/ScramblingDeviceCard";
 import ScramblingDevicesTable from "./Components/ScramblingDevicesTable";
 
 const ScramblingDevices = () => {
@@ -35,45 +35,31 @@ const ScramblingDevices = () => {
     if (isLoading) return <LoadingPage />;
 
     return (
-        <Box display="flex" flexDirection="column" gap="3">
-            <PlusButton
-                display={{ base: "flex", md: "none" }}
-                aria-label="Add"
-                onClick={() => setIsOpenCreateDeviceModal(true)}
-                title="Add new device"
-            />
-            <Button
-                colorScheme="green"
-                onClick={() => setIsOpenCreateDeviceModal(true)}
-                display={{ base: "none", md: "flex" }}
-                width="fit-content"
-            >
-                Add new device
-            </Button>
-            <Box display={{ base: "none", md: "block" }}>
-                <ScramblingDevicesTable
-                    devices={devices}
-                    fetchData={fetchData}
+        <PageTransition>
+            <div className="flex flex-col gap-4">
+                <Card>
+                    <CardHeader>
+                        <CardTitle className="flex items-center justify-between">
+                            Scrambling devices
+                            <PlusButton
+                                onClick={() => setIsOpenCreateDeviceModal(true)}
+                                title="Add new device"
+                            />
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <ScramblingDevicesTable
+                            devices={devices}
+                            fetchData={fetchData}
+                        />
+                    </CardContent>
+                </Card>
+                <CreateScramblingDeviceModal
+                    isOpen={isOpenCreateDeviceModal}
+                    onClose={handleCloseCreateDeviceModal}
                 />
-            </Box>
-            <Box
-                display={{ base: "flex", md: "none" }}
-                flexDirection="column"
-                gap={3}
-            >
-                {devices.map((device) => (
-                    <ScramblingDeviceCard
-                        key={device.id}
-                        device={device}
-                        fetchData={fetchData}
-                    />
-                ))}
-            </Box>
-            <CreateScramblingDeviceModal
-                isOpen={isOpenCreateDeviceModal}
-                onClose={handleCloseCreateDeviceModal}
-            />
-        </Box>
+            </div>
+        </PageTransition>
     );
 };
 

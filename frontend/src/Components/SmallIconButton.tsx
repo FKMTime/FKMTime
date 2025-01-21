@@ -1,31 +1,16 @@
-import { IconButton } from "@chakra-ui/react";
+import { Button } from "./ui/button";
 
 interface SmallIconButtonProps {
-    ariaLabel: string;
     icon: React.ReactElement;
     onClick: () => void;
     title: string;
 }
 
-const SmallIconButton = ({
-    ariaLabel,
-    icon,
-    onClick,
-    title,
-}: SmallIconButtonProps) => {
+const SmallIconButton = ({ icon, onClick, title }: SmallIconButtonProps) => {
     return (
-        <IconButton
-            icon={icon}
-            aria-label={ariaLabel}
-            bg="none"
-            color="white"
-            _hover={{
-                background: "none",
-                color: "gray.400",
-            }}
-            title={title}
-            onClick={onClick}
-        />
+        <Button size="icon" variant="ghost" title={title} onClick={onClick}>
+            {icon}
+        </Button>
     );
 };
 

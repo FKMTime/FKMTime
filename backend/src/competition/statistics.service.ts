@@ -14,10 +14,23 @@ export class StatisticsService {
   async getCompetitionStatistics() {
     const competition = await this.prisma.competition.findFirst();
     const wcif = JSON.parse(JSON.stringify(competition.wcif));
-    const allAttempts = await this.prisma.attempt.count();
+    const allAttempts = await this.prisma.attempt.count({
+      where: {
+        status: {
+          not: AttemptStatus.SCRAMBLED,
+        },
+      },
+    });
     const attemptsEnteredManually = await this.prisma.attempt.count({
       where: {
-        sessionId: null,
+        AND: [
+          {
+            status: AttemptStatus.SCRAMBLED,
+          },
+          {
+            sessionId: null,
+          },
+        ],
       },
     });
     //This is there until we're still using scorecards ;D
@@ -84,9 +97,9 @@ export class StatisticsService {
       byEventStats.push({
         eventId: eventId.eventId,
         eventName: getEventShortName(eventId.eventId),
-        DNF: dnf,
-        Attempts: attempts,
-        Incidents: incidents,
+        dnf: dnf,
+        attempts: attempts,
+        incidents: incidents,
       });
     }
     for (const day of days) {
@@ -129,11 +142,12 @@ export class StatisticsService {
           new Date(firstResult.solvedAt).getTime() - startTime.getTime();
         roundsForDay.push({
           roundId: round.activityCode,
-          roundName: `${getEventShortName(round.activityCode.split('-r')[0])} - Round ${round.activityCode.split('-r')[1]}`,
-          Minutes: delay / 60000,
+          roundName: `${getEventShortName(round.activityCode.split('-r')[0])} - R${round.activityCode.split('-r')[1]}`,
+          delayInMinutes: (delay / 60000).toFixed(2),
         });
       }
       byRoundStats.push({
+        id: day.getTime(),
         date: day,
         roundsStatistics: roundsForDay,
       });
@@ -145,7 +159,7 @@ export class StatisticsService {
       attemptsByDevice: devices.map((device) => ({
         deviceId: device.id,
         deviceName: device.name,
-        Count:
+        count:
           attemptsByDevice.find((a) => a.deviceId === device.id)?._count
             ?._all || 0,
       })),

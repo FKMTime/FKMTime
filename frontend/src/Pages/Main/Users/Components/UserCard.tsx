@@ -1,25 +1,21 @@
-import {
-    Avatar,
-    Box,
-    Button,
-    ButtonGroup,
-    Card,
-    CardBody,
-    CardFooter,
-    Divider,
-    Heading,
-    Stack,
-    Text,
-    useToast,
-} from "@chakra-ui/react";
-import { useConfirm } from "chakra-ui-confirm";
 import { useState } from "react";
 
 import wcaLogo from "@/assets/wca.svg";
+import Avatar from "@/Components/Avatar/Avatar";
 import RoleIcon from "@/Components/Icons/RoleIcon";
-import { User } from "@/logic/interfaces";
-import { deleteUser } from "@/logic/user";
-import { prettyUserRoleNameIncludingWCA } from "@/logic/utils";
+import { Button } from "@/Components/ui/button";
+import {
+    Card,
+    CardContent,
+    CardFooter,
+    CardHeader,
+    CardTitle,
+} from "@/Components/ui/card";
+import { useConfirm } from "@/hooks/useConfirm";
+import { useToast } from "@/hooks/useToast";
+import { User } from "@/lib/interfaces";
+import { deleteUser } from "@/lib/user";
+import { prettyUserRoleNameIncludingWCA } from "@/lib/utils";
 
 import EditUserModal from "./EditUserModal";
 import EditUserPasswordModal from "./EditUserPasswordModal";
@@ -30,7 +26,7 @@ interface UserCardProps {
 }
 
 const UserCard = ({ user, fetchData }: UserCardProps) => {
-    const toast = useToast();
+    const { toast } = useToast();
     const confirm = useConfirm();
     const [isOpenEditUserModal, setIsOpenEditUserModal] =
         useState<boolean>(false);
@@ -54,14 +50,13 @@ const UserCard = ({ user, fetchData }: UserCardProps) => {
                 if (status === 204) {
                     toast({
                         title: "Successfully deleted user.",
-                        status: "success",
                     });
                     fetchData();
                 } else {
                     toast({
                         title: "Error",
                         description: "Something went wrong",
-                        status: "error",
+                        variant: "destructive",
                     });
                 }
             })
@@ -70,83 +65,58 @@ const UserCard = ({ user, fetchData }: UserCardProps) => {
                     title: "Cancelled",
                     description:
                         "You have cancelled the deletion of this user.",
-                    status: "info",
                 });
             });
     };
 
     return (
         <>
-            <Card backgroundColor="gray.400">
-                <CardBody>
-                    <Box
-                        display="flex"
-                        gap={2}
-                        alignItems="center"
-                        justifyContent="space-between"
-                    >
-                        <Box display="flex" gap={2} alignItems="center">
-                            <Avatar
-                                src={user.avatarUrl}
-                                name={
-                                    user.fullName
-                                        ? user.fullName
-                                        : user.username
-                                }
-                            />
-                            <Heading size="md">{user.fullName} </Heading>
-                        </Box>
-                        <Box display="flex" alignItems="center" gap="1">
-                            <Heading size="sm">
-                                {prettyUserRoleNameIncludingWCA(user)}
-                            </Heading>
-                            <RoleIcon role={user.role} />
-                        </Box>
-                    </Box>
-                    <Stack mt="6" spacing="3">
-                        <Box display="flex" gap={1}>
-                            <Text>Logged in with: </Text>
-                            {isWcaAccount ? (
-                                <img src={wcaLogo} width="25" />
-                            ) : (
-                                <Text>FKM</Text>
-                            )}
-                        </Box>
-                        <Text>
-                            Updated at:{" "}
-                            {new Date(user.updatedAt).toLocaleString()}
-                        </Text>
-                    </Stack>
-                </CardBody>
-                <Divider />
-                <CardFooter>
-                    <ButtonGroup spacing="2">
-                        <Button
-                            variant="solid"
-                            colorScheme="blue"
-                            onClick={() => setIsOpenEditUserModal(true)}
-                        >
-                            Edit
-                        </Button>
-                        {!isWcaAccount && (
-                            <Button
-                                variant="solid"
-                                colorScheme="purple"
-                                onClick={() =>
-                                    setIsOpenChangePasswordModal(true)
-                                }
-                            >
-                                Change password
-                            </Button>
+            <Card>
+                <CardHeader>
+                    <CardTitle className="flex gap-2 justify-between items-center">
+                        {user.fullName ? user.fullName : user.username}
+                        <Avatar
+                            avatarUrl={user.avatarUrl}
+                            username={
+                                user.fullName ? user.fullName : user.username
+                            }
+                        />
+                    </CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <div className="flex gap-2 items-center">
+                        <span>
+                            Role: {prettyUserRoleNameIncludingWCA(user)}
+                        </span>
+                        <RoleIcon role={user.role} />
+                    </div>
+                    <div className="flex gap-2 items-center">
+                        Logged in with:{" "}
+                        {isWcaAccount ? (
+                            <img src={wcaLogo} width="16" />
+                        ) : (
+                            "FKM"
                         )}
+                    </div>
+                    <p>
+                        Updated at: {new Date(user.updatedAt).toLocaleString()}
+                    </p>
+                </CardContent>
+                <CardFooter className="flex gap-2">
+                    <Button onClick={() => setIsOpenEditUserModal(true)}>
+                        Edit
+                    </Button>
+                    {!isWcaAccount && (
                         <Button
-                            variant="solid"
-                            colorScheme="red"
-                            onClick={handleDelete}
+                            variant="secondary"
+                            onClick={() => setIsOpenChangePasswordModal(true)}
                         >
-                            Delete
+                            Change password
                         </Button>
-                    </ButtonGroup>
+                    )}
+                    <Button variant="destructive" onClick={handleDelete}>
+                        Delete
+                    </Button>
                 </CardFooter>
             </Card>
             <EditUserModal

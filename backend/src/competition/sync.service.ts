@@ -24,6 +24,9 @@ export class SyncService {
     const transactions = [];
     if (user.wcaUserId) {
       const wcif = await this.wcaService.getWcif(wcaId, user.wcaAccessToken);
+      if (wcif.statusCode === 403) {
+        throw new HttpException("You don't have access to that WCIF", 403);
+      }
       wcif.persons.forEach((person: Person) => {
         if (person.registrantId && person.registration.status === 'accepted') {
           transactions.push(

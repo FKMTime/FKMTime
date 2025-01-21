@@ -1,11 +1,12 @@
-import { Flex, Heading } from "@chakra-ui/react";
 import { useEffect, useState } from "react";
 
 import PlusButton from "@/Components/PlusButton.tsx";
-import { QuickAction } from "@/logic/interfaces.ts";
-import { getQuickActions } from "@/logic/quickActions.ts";
-import CreateQuickActionModal from "@/Pages/Main/Settings/Components/CreateQuickActionModal";
-import QuickActionCard from "@/Pages/Main/Settings/Components/QuickActionCard";
+import { Card, CardContent, CardHeader, CardTitle } from "@/Components/ui/card";
+import { QuickAction } from "@/lib/interfaces";
+import { getQuickActions } from "@/lib/quickActions";
+
+import CreateQuickActionModal from "./CreateQuickActionModal";
+import QuickActionsTable from "./QuickActionsTable";
 
 const QuickActions = () => {
     const [quickActions, setQuickActions] = useState<QuickAction[]>([]);
@@ -27,32 +28,30 @@ const QuickActions = () => {
     }, []);
 
     return (
-        <Flex flexDirection="column" gap="5s">
-            <Flex
-                gap="3"
-                flexDirection={{ base: "column", md: "row" }}
-                alignItems={{ base: "flex-start", md: "center" }}
-            >
-                <Heading fontSize="3xl">Quick incident actions</Heading>
-                <PlusButton
-                    aria-label="Add quick action"
-                    onClick={() => setIsOpenCreateQuickActionModal(true)}
-                />
-            </Flex>
-            <Flex flexDirection="row" flexWrap="wrap" gap="5" mt="5">
-                {quickActions.map((action) => (
-                    <QuickActionCard
-                        key={action.id}
-                        quickAction={action}
+        <>
+            <Card>
+                <CardHeader>
+                    <CardTitle className="flex justify-between items-center">
+                        Quick incident actions
+                        <PlusButton
+                            onClick={() =>
+                                setIsOpenCreateQuickActionModal(true)
+                            }
+                        />
+                    </CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <QuickActionsTable
+                        quickActions={quickActions}
                         fetchData={fetchData}
                     />
-                ))}
-            </Flex>
+                </CardContent>
+            </Card>
             <CreateQuickActionModal
                 isOpen={isOpenCreateQuickActionModal}
                 onClose={handleCloseCreateQuickActionModal}
             />
-        </Flex>
+        </>
     );
 };
 
