@@ -1,19 +1,17 @@
-import {
-    Box,
-    Table,
-    TableContainer,
-    Tbody,
-    Td,
-    Th,
-    Thead,
-    Tr,
-} from "@chakra-ui/react";
 import { useEffect, useState } from "react";
 
 import { Modal } from "@/Components/Modal";
-import { activityCodeToName, prettyActivityName } from "@/logic/activities";
-import { getStaffActivitiesByPersonId } from "@/logic/attendance";
-import { Person, StaffActivity } from "@/logic/interfaces";
+import {
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from "@/Components/ui/table";
+import { activityCodeToName, prettyActivityName } from "@/lib/activities";
+import { getStaffActivitiesByPersonId } from "@/lib/attendance";
+import { Person, StaffActivity } from "@/lib/interfaces";
 
 interface DisplayGroupsModalProps {
     isOpen: boolean;
@@ -38,34 +36,36 @@ const DisplayGroupsModal = ({
 
     return (
         <Modal isOpen={isOpen} onClose={onClose} title="Groups">
-            <Box display="flex" flexDirection="column" gap="5">
-                <TableContainer>
-                    <Table variant="simple">
-                        <Thead>
-                            <Tr bg="gray.400">
-                                <Th>Group</Th>
-                                <Th>Activity</Th>
-                                <Th>Was present</Th>
-                                <Th>Is assigned</Th>
-                            </Tr>
-                        </Thead>
-                        <Tbody>
-                            {staffActivity.map((activity) => (
-                                <Tr key={activity.id}>
-                                    <Td>
-                                        {activityCodeToName(activity.groupId)}
-                                    </Td>
-                                    <Td>{prettyActivityName(activity.role)}</Td>
-                                    <Td>{activity.isPresent ? "Yes" : "No"}</Td>
-                                    <Td>
-                                        {activity.isAssigned ? "Yes" : "No"}
-                                    </Td>
-                                </Tr>
-                            ))}
-                        </Tbody>
-                    </Table>
-                </TableContainer>
-            </Box>
+            <div className="overflow-y-auto h-96 w-fit">
+                <Table>
+                    <TableHeader>
+                        <TableRow>
+                            <TableHead>Group</TableHead>
+                            <TableHead>Activity</TableHead>
+                            <TableHead>Was present</TableHead>
+                            <TableHead>Is assigned</TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        {staffActivity.map((activity) => (
+                            <TableRow key={activity.id}>
+                                <TableCell>
+                                    {activityCodeToName(activity.groupId)}
+                                </TableCell>
+                                <TableCell>
+                                    {prettyActivityName(activity.role)}
+                                </TableCell>
+                                <TableCell>
+                                    {activity.isPresent ? "Yes" : "No"}
+                                </TableCell>
+                                <TableCell>
+                                    {activity.isAssigned ? "Yes" : "No"}
+                                </TableCell>
+                            </TableRow>
+                        ))}
+                    </TableBody>
+                </Table>
+            </div>
         </Modal>
     );
 };

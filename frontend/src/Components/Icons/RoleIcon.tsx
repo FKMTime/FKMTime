@@ -1,4 +1,4 @@
-import { MdAdminPanelSettings, MdPerson } from "react-icons/md";
+import { ShieldCheck, User } from "lucide-react";
 
 interface RoleIconProps {
     role: string;
@@ -7,9 +7,9 @@ interface RoleIconProps {
 const RoleIcon = ({ role }: RoleIconProps) => {
     switch (role) {
         case "ADMIN":
-            return <MdAdminPanelSettings />;
+            return <ShieldCheck />;
         default:
-            return <MdPerson />;
+            return <User />;
     }
 };
 

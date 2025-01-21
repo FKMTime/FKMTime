@@ -25,6 +25,7 @@ export class UserService {
         isWcaAdmin: true,
         createdAt: true,
         updatedAt: true,
+        avatarUrl: true,
       },
       orderBy: {
         username: 'asc',

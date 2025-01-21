@@ -1,6 +1,11 @@
-import { Table, TableContainer, Tbody, Th, Thead, Tr } from "@chakra-ui/react";
-
-import { ScrambleSet } from "@/logic/interfaces";
+import {
+    Table,
+    TableBody,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from "@/Components/ui/table";
+import { ScrambleSet } from "@/lib/interfaces";
 
 import ScrambleSetRow from "./ScrambleSetRow";
 
@@ -14,27 +19,25 @@ const ScrambleSetsTable = ({
     fetchData,
 }: ScrambleSetsTableProps) => {
     return (
-        <TableContainer>
-            <Table variant="simple">
-                <Thead>
-                    <Tr bg="gray.400">
-                        <Th>Name</Th>
-                        <Th>Scrambles</Th>
-                        <Th>Extra scrambles</Th>
-                        <Th>Actions</Th>
-                    </Tr>
-                </Thead>
-                <Tbody>
-                    {scrambleSets.map((set) => (
-                        <ScrambleSetRow
-                            key={set.id}
-                            scrambleSet={set}
-                            fetchData={fetchData}
-                        />
-                    ))}
-                </Tbody>
-            </Table>
-        </TableContainer>
+        <Table>
+            <TableHeader>
+                <TableRow>
+                    <TableHead>Name</TableHead>
+                    <TableHead>Scrambles</TableHead>
+                    <TableHead>Extra scrambles</TableHead>
+                    <TableHead>Actions</TableHead>
+                </TableRow>
+            </TableHeader>
+            <TableBody>
+                {scrambleSets.map((set) => (
+                    <ScrambleSetRow
+                        key={set.id}
+                        scrambleSet={set}
+                        fetchData={fetchData}
+                    />
+                ))}
+            </TableBody>
+        </Table>
     );
 };
 

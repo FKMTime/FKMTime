@@ -1,15 +1,15 @@
-import { Td, Tr } from "@chakra-ui/react";
 import { Event, Round } from "@wca/helpers";
 import { prettyRoundFormat } from "wcif-helpers";
 
-import { getActivityName } from "@/logic/activities";
-import { Activity } from "@/logic/interfaces.ts";
-import { resultToString } from "@/logic/resultFormatters";
+import { TableCell, TableRow } from "@/Components/ui/table";
+import { getActivityName } from "@/lib/activities";
+import { Activity } from "@/lib/interfaces";
+import { resultToString } from "@/lib/resultFormatters";
 import {
     cumulativeRoundsToString,
     formatTime,
     getFormattedRealActivityTime,
-} from "@/logic/utils";
+} from "@/lib/utils";
 
 interface ScheduleRowProps {
     activity: Activity;
@@ -28,22 +28,22 @@ const ScheduleRow = ({ activity, events }: ScheduleRowProps) => {
     );
 
     return (
-        <Tr key={activity.id}>
-            <Td>
+        <TableRow key={activity.id}>
+            <TableCell>
                 {formatTime(activity.startTime)} -{" "}
                 {formatTime(activity.endTime)}
-            </Td>
-            <Td>{formattedRealTime}</Td>
-            <Td>{getActivityName(activity)}</Td>
-            <Td>
+            </TableCell>
+            <TableCell>{formattedRealTime}</TableCell>
+            <TableCell>{getActivityName(activity)}</TableCell>
+            <TableCell>
                 {round &&
                     round.format &&
                     prettyRoundFormat(
                         round?.format,
                         round?.cutoff?.numberOfAttempts
                     )}
-            </Td>
-            <Td
+            </TableCell>
+            <TableCell
                 title={`For ${cumulativeRoundsToString(round?.timeLimit?.cumulativeRoundIds || [])}`}
             >
                 {round?.timeLimit &&
@@ -51,20 +51,20 @@ const ScheduleRow = ({ activity, events }: ScheduleRowProps) => {
                 {round?.timeLimit?.cumulativeRoundIds?.length || 0 > 1
                     ? "(cumulative)"
                     : ""}
-            </Td>
-            <Td>
+            </TableCell>
+            <TableCell>
                 {round?.cutoff && resultToString(round?.cutoff?.attemptResult)}
-            </Td>
-            <Td>
+            </TableCell>
+            <TableCell>
                 {round?.advancementCondition &&
                     `Top ${round.advancementCondition.level}${round?.advancementCondition?.type === "percent" ? "%" : ""}`}
-            </Td>
-            <Td>
+            </TableCell>
+            <TableCell>
                 {activity.childActivities.length === 0
                     ? ""
                     : activity.childActivities.length}
-            </Td>
-        </Tr>
+            </TableCell>
+        </TableRow>
     );
 };
 

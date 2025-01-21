@@ -1,40 +1,62 @@
-import { Table, TableContainer, Tbody, Th, Thead, Tr } from "@chakra-ui/react";
+import {
+    Table,
+    TableBody,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from "@/Components/ui/table";
+import { AvailableDevice, Device } from "@/lib/interfaces";
 
-import { Device } from "@/logic/interfaces";
-
+import AvailableDeviceRow from "./AvailableDeviceRow";
 import DeviceRow from "./DeviceRow";
 
 interface DevicesTableProps {
     devices: Device[];
+    availableDevices: AvailableDevice[];
+    handleAddDeviceRequest: (device: AvailableDevice) => void;
+    handleRemoveDeviceRequest: (deviceEspId: number) => void;
+
     fetchData: () => void;
 }
 
-const DevicesTable = ({ devices, fetchData }: DevicesTableProps) => {
+const DevicesTable = ({
+    devices,
+    fetchData,
+    availableDevices,
+    handleAddDeviceRequest,
+    handleRemoveDeviceRequest,
+}: DevicesTableProps) => {
     return (
-        <TableContainer>
-            <Table variant="simple">
-                <Thead>
-                    <Tr bg="gray.400">
-                        <Th>Name</Th>
-                        <Th>ESP ID</Th>
-                        <Th>Battery</Th>
-                        <Th>Type</Th>
-                        <Th>Solves</Th>
-                        <Th>Last update</Th>
-                        <Th>Actions</Th>
-                    </Tr>
-                </Thead>
-                <Tbody>
-                    {devices.map((device) => (
-                        <DeviceRow
-                            key={device.id}
-                            device={device}
-                            fetchData={fetchData}
-                        />
-                    ))}
-                </Tbody>
-            </Table>
-        </TableContainer>
+        <Table>
+            <TableHeader>
+                <TableRow>
+                    <TableHead>Name</TableHead>
+                    <TableHead>ESP ID</TableHead>
+                    <TableHead>Battery</TableHead>
+                    <TableHead>Type</TableHead>
+                    <TableHead>Solves</TableHead>
+                    <TableHead>Last update</TableHead>
+                    <TableHead>Actions</TableHead>
+                </TableRow>
+            </TableHeader>
+            <TableBody>
+                {availableDevices.map((device) => (
+                    <AvailableDeviceRow
+                        key={device.espId}
+                        device={device}
+                        handleAddDeviceRequest={handleAddDeviceRequest}
+                        handleRemoveDeviceRequest={handleRemoveDeviceRequest}
+                    />
+                ))}
+                {devices.map((device) => (
+                    <DeviceRow
+                        key={device.id}
+                        device={device}
+                        fetchData={fetchData}
+                    />
+                ))}
+            </TableBody>
+        </Table>
     );
 };
 

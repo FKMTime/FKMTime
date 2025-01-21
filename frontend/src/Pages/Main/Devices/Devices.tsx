@@ -1,22 +1,28 @@
-import {
-    Box,
-    Button,
-    Tab,
-    TabList,
-    TabPanel,
-    TabPanels,
-    Tabs,
-} from "@chakra-ui/react";
+import { TabsContent } from "@radix-ui/react-tabs";
 import { useContext, useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 
 import LoadingPage from "@/Components/LoadingPage";
 import PlusButton from "@/Components/PlusButton.tsx";
-import Select from "@/Components/Select";
-import { getAllDevices } from "@/logic/devices";
-import { AvailableDevice, Device, Room } from "@/logic/interfaces";
-import { getAllRooms } from "@/logic/rooms";
-import AvailableDevices from "@/Pages/Main/Devices/Components/AvailableDevices";
+import {
+    Card,
+    CardContent,
+    CardDescription,
+    CardHeader,
+    CardTitle,
+} from "@/Components/ui/card";
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/Components/ui/select";
+import { Tabs, TabsList, TabsTrigger } from "@/Components/ui/tabs";
+import { getAllDevices } from "@/lib/devices";
+import { AvailableDevice, Device, Room } from "@/lib/interfaces";
+import { getAllRooms } from "@/lib/rooms";
+import PageTransition from "@/Pages/PageTransition";
 import { socket, SocketContext } from "@/socket";
 
 import CreateDeviceModal from "./Components/CreateDeviceModal";
@@ -28,17 +34,10 @@ const tabs = [
     {
         id: "allDevices",
         name: "All devices",
-        value: 0,
-    },
-    {
-        id: "availableDevices",
-        name: "Available devices",
-        value: 1,
     },
     {
         id: "settings",
         name: "Settings",
-        value: 2,
     },
 ];
 
@@ -48,7 +47,7 @@ const Devices = () => {
     const [availableDevices, setAvailableDevices] = useState<AvailableDevice[]>(
         []
     );
-    const [tabIndex, setTabIndex] = useState<number>(tabs[0].value);
+    const [tabIndex, setTabIndex] = useState<string>(tabs[0].id);
     const [rooms, setRooms] = useState<Room[]>([]);
     const [selectedRoomId, setSelectedRoomId] = useState<string>("");
     const [deviceToAdd, setDeviceToAdd] = useState<AvailableDevice | null>(
@@ -65,7 +64,13 @@ const Devices = () => {
         setIsLoading(false);
     };
 
-    const handleCloseCreateDeviceModal = async () => {
+    const handleCloseCreateDeviceModal = async (espId?: string) => {
+        if (
+            espId &&
+            availableDevices.some((device) => device.espId === +espId)
+        ) {
+            handleRemoveDeviceRequest(+espId);
+        }
         await fetchData(selectedRoomId);
         setIsOpenCreateDeviceModal(false);
         setDeviceToAdd(null);
@@ -109,16 +114,16 @@ const Devices = () => {
         };
     }, [isConnected]);
 
-    const onChangeTabIndex = (index: number) => {
-        setTabIndex(index);
-        const tab = tabs.find((t) => t.value === index)?.id;
+    const onChangeTab = (id: string) => {
+        setTabIndex(id);
+        const tab = tabs.find((t) => t.id === id)?.id;
         if (!tab) return;
         setSearchParams({ tab: tab });
     };
 
     useEffect(() => {
         const tab = searchParams.get("tab");
-        const index = tabs.find((t) => t.id === tab)?.value;
+        const index = tabs.find((t) => t.id === tab)?.id;
         if (index) {
             setTabIndex(index);
         }
@@ -134,96 +139,96 @@ const Devices = () => {
     if (isLoading && devices.length === 0) return <LoadingPage />;
 
     return (
-        <Box display="flex" flexDirection="column" gap="5">
-            <Tabs isFitted index={tabIndex} onChange={onChangeTabIndex}>
-                <TabList>
-                    {tabs.map((tab) => (
-                        <Tab
-                            key={tab.id}
-                            _selected={{
-                                color: "white",
-                                bg: "blue.500",
-                            }}
-                        >
-                            {tab.name}
-                        </Tab>
-                    ))}
-                </TabList>
-                <TabPanels>
-                    <TabPanel
-                        display="flex"
-                        flexDirection="column"
-                        gap={3}
-                        ml={-4}
-                    >
-                        <Box display="flex" gap="2">
-                            <Select
-                                placeholder="Select room"
-                                value={selectedRoomId}
-                                onChange={(e) =>
-                                    handleSelectRoom(e.target.value)
-                                }
-                            >
-                                {rooms.map((room) => (
-                                    <option key={room.id} value={room.id}>
-                                        {room.name}
-                                    </option>
-                                ))}
-                            </Select>
+        <PageTransition>
+            <Tabs defaultValue={tabIndex} className="flex flex-col gap-3">
+                <Card>
+                    <CardHeader>
+                        <CardTitle className="flex justify-between items-center">
+                            Devices
                             <PlusButton
-                                display={{ base: "flex", md: "none" }}
-                                aria-label="Add"
                                 onClick={() => setIsOpenCreateDeviceModal(true)}
                                 title="Add new device"
                             />
-                            <Button
-                                colorScheme="green"
-                                onClick={() => setIsOpenCreateDeviceModal(true)}
-                                display={{ base: "none", md: "flex" }}
-                            >
-                                Add new device
-                            </Button>
-                        </Box>
-                        <Box display={{ base: "none", md: "block" }}>
-                            <DevicesTable
-                                devices={devices}
+                        </CardTitle>
+                        <CardDescription>
+                            If you want to connect a new device press submit
+                            button on this device
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <TabsList>
+                            {tabs.map((tab) => (
+                                <TabsTrigger
+                                    key={tab.id}
+                                    value={tab.id}
+                                    onClick={() => onChangeTab(tab.id)}
+                                >
+                                    {tab.name}
+                                </TabsTrigger>
+                            ))}
+                        </TabsList>
+                    </CardContent>
+                </Card>
+                <TabsContent value={tabs[0].id}>
+                    <div className="hidden md:block">
+                        <Card>
+                            <CardHeader>
+                                <CardTitle className="flex justify-between items-center">
+                                    Devices list
+                                    <div className="w-64">
+                                        <Select
+                                            value={selectedRoomId}
+                                            onValueChange={handleSelectRoom}
+                                        >
+                                            <SelectTrigger>
+                                                <SelectValue placeholder="Select room" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                {rooms.map((room) => (
+                                                    <SelectItem value={room.id}>
+                                                        {room.name}
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <DevicesTable
+                                    devices={devices}
+                                    fetchData={fetchData}
+                                    availableDevices={availableDevices}
+                                    handleAddDeviceRequest={
+                                        handleAddDeviceRequest
+                                    }
+                                    handleRemoveDeviceRequest={
+                                        handleRemoveDeviceRequest
+                                    }
+                                />
+                            </CardContent>
+                        </Card>
+                    </div>
+                    <div className="flex md:hidden flex-col gap-3">
+                        {devices.map((device) => (
+                            <DeviceCard
+                                device={device}
+                                key={device.espId}
                                 fetchData={fetchData}
                             />
-                        </Box>
-                        <Box
-                            display={{ base: "flex", md: "none" }}
-                            flexDirection="column"
-                            gap={3}
-                        >
-                            {devices.map((device) => (
-                                <DeviceCard
-                                    device={device}
-                                    key={device.espId}
-                                    fetchData={fetchData}
-                                />
-                            ))}
-                        </Box>
-                    </TabPanel>
-                    <TabPanel ml={-4}>
-                        <AvailableDevices
-                            devices={availableDevices}
-                            handleAddDeviceRequest={handleAddDeviceRequest}
-                            handleRemoveDeviceRequest={
-                                handleRemoveDeviceRequest
-                            }
-                        />
-                    </TabPanel>
-                    <TabPanel width="fit-content" ml={-4}>
-                        <DevicesSettings />
-                    </TabPanel>
-                </TabPanels>
+                        ))}
+                    </div>
+                </TabsContent>
+                <TabsContent value={tabs[1].id}>
+                    <DevicesSettings />
+                </TabsContent>
+                <CreateDeviceModal
+                    isOpen={isOpenCreateDeviceModal}
+                    onClose={handleCloseCreateDeviceModal}
+                    deviceToAdd={deviceToAdd || undefined}
+                />
             </Tabs>
-            <CreateDeviceModal
-                isOpen={isOpenCreateDeviceModal}
-                onClose={handleCloseCreateDeviceModal}
-                deviceToAdd={deviceToAdd || undefined}
-            />
-        </Box>
+        </PageTransition>
     );
 };
 

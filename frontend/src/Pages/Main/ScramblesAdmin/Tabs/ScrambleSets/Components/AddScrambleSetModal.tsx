@@ -1,14 +1,18 @@
-import { Box, Button, Heading, Text, useToast } from "@chakra-ui/react";
 import { Competition as WCIF } from "@wca/helpers";
 import { useAtomValue } from "jotai";
 import { useRef, useState } from "react";
 
 import { Modal } from "@/Components/Modal";
-import { activityCodeToName } from "@/logic/activities";
-import { competitionAtom } from "@/logic/atoms";
-import { getEventName } from "@/logic/events";
-import { addScrambles, validateScrambles } from "@/logic/scramblesImport";
-import { numberToLetter } from "@/logic/utils";
+import ModalActions from "@/Components/ModalActions";
+import { Button } from "@/Components/ui/button";
+import { Input } from "@/Components/ui/input";
+import { Label } from "@/Components/ui/label";
+import { useToast } from "@/hooks/useToast";
+import { activityCodeToName } from "@/lib/activities";
+import { competitionAtom } from "@/lib/atoms";
+import { getEventName } from "@/lib/events";
+import { addScrambles, validateScrambles } from "@/lib/scramblesImport";
+import { numberToLetter } from "@/lib/utils";
 
 import ScrambleSetsValidators from "../../ImportScrambles/Components/ScrambleSetsValidators";
 
@@ -25,7 +29,7 @@ const AddScrambleSetModal = ({
     lastSet,
     roundId,
 }: AddScrambleSetModalProps) => {
-    const toast = useToast();
+    const { toast } = useToast();
     const [wcif, setWcif] = useState<WCIF>();
     const [fileInputKey, setFileInputKey] = useState(0);
     const [preventFromImporting, setPreventFromImporting] = useState(false);
@@ -65,7 +69,7 @@ const AddScrambleSetModal = ({
         if (response.status === 201) {
             toast({
                 title: "Scrambles imported",
-                status: "success",
+                variant: "success",
             });
             clearUploadedScrambles();
             onClose();
@@ -73,12 +77,12 @@ const AddScrambleSetModal = ({
             toast({
                 title: "Error",
                 description: "Something went wrong",
-                status: "error",
+                variant: "destructive",
             });
             toast({
                 title: "Error",
                 description: response.data.message,
-                status: "error",
+                variant: "destructive",
             });
         }
     };
@@ -90,33 +94,42 @@ const AddScrambleSetModal = ({
     };
 
     return (
-        <Modal isOpen={isOpen} onClose={onClose} title="Add scramble set">
-            <Box display="flex" flexDirection="column" gap="5">
-                <Heading size="sm">{activityCodeToName(roundId)}</Heading>
+        <Modal
+            isOpen={isOpen}
+            onClose={onClose}
+            title={`Add scramble set for ${activityCodeToName(roundId)}`}
+        >
+            <div className="flex flex-col gap-3">
+                <p>
+                    Sets generated for {getEventName(roundId.split("-")[0])}{" "}
+                    Round 1 will be added to this round, starting from set{" "}
+                    {numberToLetter(lastSet + 1)}.
+                </p>
                 <ScrambleSetsValidators
                     warnings={warningsList}
                     errors={errorsList}
                 />
-                <Text>
-                    Sets generated for {getEventName(roundId.split("-")[0])}{" "}
-                    Round 1 will be added to this round, starting from set{" "}
-                    {numberToLetter(lastSet + 1)}.
-                </Text>
-                <input
-                    type="file"
-                    onChange={handleFileUpload}
-                    id="add-scramble-set"
-                    ref={inputRef}
-                    key={fileInputKey}
-                />
-                <Button
-                    colorScheme="green"
-                    onClick={handleAdd}
-                    isDisabled={preventFromImporting}
-                >
-                    Add
-                </Button>
-            </Box>
+                <div className="flex flex-col gap-3 w-fit">
+                    <Label htmlFor="add-scramble-set">Upload scrambles</Label>
+                    <Input
+                        type="file"
+                        accept=".json"
+                        onChange={handleFileUpload}
+                        id="add-scramble-set"
+                        ref={inputRef}
+                        key={fileInputKey}
+                    />
+                </div>
+                <ModalActions>
+                    <Button
+                        variant="success"
+                        onClick={handleAdd}
+                        disabled={preventFromImporting}
+                    >
+                        Add
+                    </Button>
+                </ModalActions>
+            </div>
         </Modal>
     );
 };

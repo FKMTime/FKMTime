@@ -140,8 +140,87 @@ export class PersonService {
     };
   }
 
-  async getAllPersons() {
-    return this.prisma.person.findMany();
+  async getAllPersons(withoutCardAssigned?: boolean, search?: string) {
+    const whereParams = {};
+    if (withoutCardAssigned && search) {
+      whereParams['AND'] = [
+        {
+          OR: [
+            {
+              cardId: {
+                equals: null,
+              },
+            },
+            {
+              cardId: {
+                equals: '',
+              },
+            },
+            {
+              cardId: {
+                equals: '0',
+              },
+            },
+          ],
+        },
+        {
+          OR: [
+            {
+              name: {
+                contains: search,
+                mode: 'insensitive',
+              },
+            },
+            {
+              wcaId: {
+                contains: search,
+                mode: 'insensitive',
+              },
+            },
+          ],
+        },
+      ];
+    } else if (!withoutCardAssigned && search) {
+      whereParams['OR'] = [
+        {
+          name: {
+            contains: search,
+            mode: 'insensitive',
+          },
+        },
+        {
+          wcaId: {
+            contains: search,
+            mode: 'insensitive',
+          },
+        },
+      ];
+    } else if (withoutCardAssigned && !search) {
+      whereParams['OR'] = [
+        {
+          cardId: {
+            equals: null,
+          },
+        },
+        {
+          cardId: {
+            equals: '',
+          },
+        },
+        {
+          cardId: {
+            equals: '0',
+          },
+        },
+      ];
+    }
+
+    return this.prisma.person.findMany({
+      where: whereParams,
+      orderBy: {
+        registrantId: 'asc',
+      },
+    });
   }
 
   async checkIn(personId: string, data: UpdatePersonDto) {

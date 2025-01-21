@@ -1,43 +1,56 @@
-import { Box, Button, Input, Select } from "@chakra-ui/react";
-import { FormEvent, useEffect, useState } from "react";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useEffect, useState } from "react";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
 
-import { Room, ScramblingDevice } from "@/logic/interfaces";
-import { getAllRooms } from "@/logic/rooms";
+import ModalActions from "@/Components/ModalActions";
+import { Button } from "@/Components/ui/button";
+import {
+    Form,
+    FormControl,
+    FormField,
+    FormItem,
+    FormLabel,
+    FormMessage,
+} from "@/Components/ui/form";
+import { Input } from "@/Components/ui/input";
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/Components/ui/select";
+import { Room, ScramblingDevice } from "@/lib/interfaces";
+import { getAllRooms } from "@/lib/rooms";
+import { scramblingDeviceSchema } from "@/lib/schema/scramblingDeviceSchema";
 
 interface ScramblingDeviceFormProps {
-    onCancel: () => void;
-    onSubmit: (device: ScramblingDevice) => void;
+    handleSubmit: (device: ScramblingDevice) => void;
     device: ScramblingDevice;
     isLoading: boolean;
 }
 
 const ScramblingDeviceForm = ({
-    onCancel,
-    onSubmit,
+    handleSubmit,
     device,
     isLoading,
 }: ScramblingDeviceFormProps) => {
-    const [editedDevice, setEditedDevice] = useState<ScramblingDevice>(device);
     const [rooms, setRooms] = useState<Room[]>([]);
 
-    const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
-        let deviceToSubmit = editedDevice;
-        if (
-            (!editedDevice.roomId || editedDevice.roomId === "") &&
-            rooms.length > 0
-        ) {
-            deviceToSubmit = {
-                ...editedDevice,
-                roomId: rooms[0].id,
-            };
-        }
-        event.preventDefault();
-        onSubmit(deviceToSubmit);
+    const form = useForm<z.infer<typeof scramblingDeviceSchema>>({
+        resolver: zodResolver(scramblingDeviceSchema),
+        defaultValues: {
+            name: device ? device.name : "",
+            roomId: device ? device.room.id : "",
+        },
+    });
+    const onSubmit = (values: z.infer<typeof scramblingDeviceSchema>) => {
+        handleSubmit({
+            ...device,
+            ...values,
+        });
     };
-
-    useEffect(() => {
-        setEditedDevice(device);
-    }, [device]);
 
     useEffect(() => {
         getAllRooms().then((data: Room[]) => {
@@ -46,58 +59,65 @@ const ScramblingDeviceForm = ({
     }, []);
 
     return (
-        <Box
-            display="flex"
-            flexDirection="column"
-            gap="5"
-            as="form"
-            onSubmit={handleSubmit}
-        >
-            <Input
-                placeholder="Name"
-                _placeholder={{
-                    color: "white",
-                }}
-                value={editedDevice.name}
-                onChange={(e) =>
-                    setEditedDevice({
-                        ...editedDevice,
-                        name: e.target.value,
-                    })
-                }
-            />
-            <Select
-                disabled={isLoading}
-                value={editedDevice.roomId}
-                onChange={(e) =>
-                    setEditedDevice({
-                        ...editedDevice,
-                        roomId: e.target.value,
-                    })
-                }
+        <Form {...form}>
+            <form
+                onSubmit={form.handleSubmit(onSubmit)}
+                className="space-y-8 py-3"
             >
-                {rooms.map((room: Room) => (
-                    <option key={room.id} value={room.id}>
-                        {room.name}
-                    </option>
-                ))}
-            </Select>
-            <Box
-                display="flex"
-                flexDirection="row"
-                justifyContent="end"
-                gap="5"
-            >
-                {!isLoading && (
-                    <Button colorScheme="red" onClick={onCancel}>
-                        Cancel
+                <FormField
+                    control={form.control}
+                    name="name"
+                    render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Name</FormLabel>
+                            <FormControl>
+                                <Input placeholder="Name" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                        </FormItem>
+                    )}
+                />
+                <FormField
+                    control={form.control}
+                    name="roomId"
+                    render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Room</FormLabel>
+                            <Select
+                                onValueChange={field.onChange}
+                                defaultValue={field.value}
+                            >
+                                <FormControl>
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Select room" />
+                                    </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                    {rooms.map((room) => (
+                                        <SelectItem
+                                            key={room.id}
+                                            value={room.id}
+                                        >
+                                            {room.name}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                            <FormMessage />
+                        </FormItem>
+                    )}
+                />
+                <ModalActions>
+                    <Button
+                        type="submit"
+                        variant="success"
+                        disabled={isLoading}
+                    >
+                        Save
                     </Button>
-                )}
-                <Button colorScheme="green" type="submit" isLoading={isLoading}>
-                    Save
-                </Button>
-            </Box>
-        </Box>
+                </ModalActions>
+            </form>
+        </Form>
     );
 };
 

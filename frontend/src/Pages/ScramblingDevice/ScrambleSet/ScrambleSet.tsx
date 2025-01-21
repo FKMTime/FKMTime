@@ -1,37 +1,29 @@
-import {
-    Box,
-    Button,
-    Divider,
-    Heading,
-    Input,
-    useToast,
-} from "@chakra-ui/react";
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 
-import EventIcon from "@/Components/Icons/EventIcon";
 import LoadingPage from "@/Components/LoadingPage";
-import { activityCodeToName } from "@/logic/activities";
+import { useToast } from "@/hooks/useToast";
 import {
     DecryptedScramble,
     Room,
     ScrambleSet as IScrambleSet,
-} from "@/logic/interfaces";
+} from "@/lib/interfaces";
 import {
     decryptScrambles,
     getScrambleSetById,
     getScramblingDeviceRoom,
     unlockScrambleSet,
-} from "@/logic/scrambling";
+} from "@/lib/scrambling";
+import PageTransition from "@/Pages/PageTransition";
 
+import ScrambleSetHeaderCard from "../Components/ScrambleSetHeaderCard";
 import Scrambling from "./Components/Scrambling";
 
 const ScrambleSet = () => {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
-    const toast = useToast();
+    const { toast } = useToast();
     const [isLocked, setIsLocked] = useState(true);
-    const [password, setPassword] = useState("");
     const [scrambleSet, setScrambleSet] = useState<IScrambleSet | null>(null);
     const [decryptedScrambles, setDecryptedScrambles] = useState<
         DecryptedScramble[]
@@ -59,13 +51,13 @@ const ScrambleSet = () => {
         fetchScrambleSet();
     }, [fetchRoom, fetchScrambleSet]);
 
-    const handleUnlock = async () => {
+    const handleUnlock = async (password: string) => {
         if (!scrambleSet) return;
         const response = await unlockScrambleSet(scrambleSet.id, password);
         if (response.status === 200) {
             toast({
                 title: "Unlocked",
-                status: "success",
+                variant: "success",
             });
             setIsLocked(false);
             setDecryptedScrambles(
@@ -74,12 +66,12 @@ const ScrambleSet = () => {
         } else if (response.status === 403) {
             toast({
                 title: "Invalid password",
-                status: "error",
+                variant: "destructive",
             });
         } else {
             toast({
                 title: "Something went wrong",
-                status: "error",
+                variant: "destructive",
             });
         }
     };
@@ -87,49 +79,21 @@ const ScrambleSet = () => {
     if (!scrambleSet || !room) return <LoadingPage />;
 
     return (
-        <Box display="flex" flexDirection="column" gap={3}>
-            <Box display="flex" gap={3} alignItems="center">
-                <EventIcon
-                    size={32}
-                    eventId={scrambleSet.roundId.split("-")[0]}
-                    selected
+        <PageTransition>
+            <div className="flex flex-col gap-4">
+                <ScrambleSetHeaderCard
+                    scrambleSet={scrambleSet}
+                    isLocked={isLocked}
+                    handleUnlock={handleUnlock}
                 />
-                <Heading>
-                    {activityCodeToName(scrambleSet.roundId)} Set{" "}
-                    {scrambleSet.set}
-                </Heading>
-            </Box>
-            <Heading size="md">
-                Current group: {activityCodeToName(room?.currentGroupId || "")}
-            </Heading>
-            {isLocked ? (
-                <>
-                    <Input
-                        value={password}
-                        width="fit-content"
-                        placeholder="Password"
-                        onChange={(e) => setPassword(e.target.value)}
-                        type="password"
-                        autoComplete="off"
-                    />
-                    <Button
-                        colorScheme="green"
-                        width="fit-content"
-                        onClick={handleUnlock}
-                    >
-                        Unlock
-                    </Button>
-                </>
-            ) : (
-                <>
-                    <Divider />
+                {!isLocked ? (
                     <Scrambling
                         groupId={room.currentGroupId}
                         scrambles={decryptedScrambles}
                     />
-                </>
-            )}
-        </Box>
+                ) : null}
+            </div>
+        </PageTransition>
     );
 };
 
