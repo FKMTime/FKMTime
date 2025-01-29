@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 
 import { Modal } from "@/Components/Modal";
+import ModalLoading from "@/Components/ModalLoading";
 import { useToast } from "@/hooks/useToast";
 import { createDevice } from "@/lib/devices";
 import {
@@ -97,14 +98,18 @@ const CreateDeviceModal = ({
 
     return (
         <Modal isOpen={isOpen} onClose={onClose} title="Create device">
-            <DeviceForm
-                isLoading={isLoading}
-                handleSubmit={handleSubmit}
-                rooms={rooms}
-                availableTypes={availableTypes}
-                defaultValues={defaultValues}
-                submitText="Add"
-            />
+            {rooms.length ? (
+                <DeviceForm
+                    isLoading={isLoading}
+                    handleSubmit={handleSubmit}
+                    rooms={rooms}
+                    availableTypes={availableTypes}
+                    defaultValues={defaultValues}
+                    submitText="Add"
+                />
+            ) : (
+                <ModalLoading />
+            )}
         </Modal>
     );
 };

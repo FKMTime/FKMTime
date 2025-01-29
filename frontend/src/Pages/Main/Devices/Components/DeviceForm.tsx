@@ -96,26 +96,26 @@ const DeviceForm = ({
                     render={({ field }) => (
                         <FormItem>
                             <FormLabel>Room</FormLabel>
-                            <Select
-                                onValueChange={field.onChange}
-                                defaultValue={field.value}
-                            >
-                                <FormControl>
+                            <FormControl>
+                                <Select
+                                    onValueChange={field.onChange}
+                                    defaultValue={field.value}
+                                >
                                     <SelectTrigger>
                                         <SelectValue placeholder="Select room" />
                                     </SelectTrigger>
-                                </FormControl>
-                                <SelectContent>
-                                    {rooms.map((room) => (
-                                        <SelectItem
-                                            key={room.id}
-                                            value={room.id}
-                                        >
-                                            {room.name}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
+                                    <SelectContent>
+                                        {rooms.map((room) => (
+                                            <SelectItem
+                                                key={room.id}
+                                                value={room.id}
+                                            >
+                                                {room.name}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </FormControl>
                             <FormMessage />
                         </FormItem>
                     )}

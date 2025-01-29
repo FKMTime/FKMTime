@@ -3,7 +3,9 @@ import { z } from "zod";
 export const deviceSchema = z.object({
     name: z.string().nonempty(),
     espId: z.string(),
-    roomId: z.string(),
+    roomId: z.string().nonempty({
+        message: "Please select a room",
+    }),
     type: z.enum(["STATION", "ATTENDANCE_SCRAMBLER", "ATTENDANCE_RUNNER"]),
 });
 
