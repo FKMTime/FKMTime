@@ -31,9 +31,7 @@ const DeviceSettingsForm = ({
         defaultValues: {
             shouldUpdateDevices: competition.shouldUpdateDevices,
             mdns: competition.mdns,
-            ipAddress: competition.ipAddress,
-            port: competition.port,
-            secure: competition.secure,
+            wsUrl: competition.wsUrl,
             wifiSsid: competition.wifiSsid,
             wifiPassword: competition.wifiPassword,
         },
@@ -98,44 +96,15 @@ const DeviceSettingsForm = ({
                     <>
                         <FormField
                             control={form.control}
-                            name="ipAddress"
+                            name="wsUrl"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>Server IP</FormLabel>
+                                    <FormLabel>
+                                        micro-connector ws URL
+                                    </FormLabel>
                                     <FormControl>
                                         <Input {...field} />
                                     </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-                        <FormField
-                            control={form.control}
-                            name="port"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Server port</FormLabel>
-                                    <FormControl>
-                                        <Input {...field} />
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-                        <FormField
-                            control={form.control}
-                            name="secure"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <div className="flex items-center gap-2">
-                                        <FormControl>
-                                            <Checkbox
-                                                checked={field.value}
-                                                onCheckedChange={field.onChange}
-                                            />
-                                        </FormControl>
-                                        <FormLabel>Use SSL</FormLabel>
-                                    </div>
                                     <FormMessage />
                                 </FormItem>
                             )}

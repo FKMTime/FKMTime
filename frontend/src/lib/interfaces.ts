@@ -52,9 +52,7 @@ export interface Competition {
     wifiSsid?: string;
     wifiPassword?: string;
     mdns?: boolean;
-    ipAddress?: string;
-    port?: number;
-    secure?: boolean;
+    wsUrl?: string;
     wcif: WCIF;
     createdAt?: Date;
     updatedAt?: Date;

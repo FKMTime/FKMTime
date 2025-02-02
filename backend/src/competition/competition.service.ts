@@ -29,9 +29,7 @@ const autoSetupSettingsSelect = {
   wifiSsid: true,
   wifiPassword: true,
   mdns: true,
-  ipAddress: true,
-  port: true,
-  secure: true,
+  wsUrl: true,
 };
 
 @Injectable()
@@ -263,9 +261,7 @@ export class CompetitionService {
       psk: competition.wifiPassword,
       data: {
         mdns: competition.mdns,
-        ip: competition.ipAddress,
-        port: competition.port,
-        secure: competition.secure,
+        wsUrl: competition.wsUrl,
       },
     };
   }
@@ -280,9 +276,7 @@ export class CompetitionService {
         wifiSsid: data.wifiSsid,
         wifiPassword: data.wifiPassword,
         mdns: data.mdns,
-        ipAddress: data.ipAddress,
-        port: data.port,
-        secure: data.secure,
+        wsUrl: data.wsUrl,
       },
     });
     await this.socketController.sendAutoSetupStatus();

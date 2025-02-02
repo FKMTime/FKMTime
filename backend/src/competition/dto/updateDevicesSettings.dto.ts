@@ -1,4 +1,4 @@
-import { IsBoolean, IsNumber, IsOptional, IsString } from 'class-validator';
+import { IsBoolean, IsOptional, IsString } from 'class-validator';
 
 export class UpdateDevicesSettingsDto {
   @IsBoolean()
@@ -17,12 +17,5 @@ export class UpdateDevicesSettingsDto {
 
   @IsString()
   @IsOptional()
-  ipAddress: string;
-
-  @IsNumber()
-  @IsOptional()
-  port: number;
-
-  @IsBoolean()
-  secure: boolean;
+  wsUrl: string;
 }

@@ -72,9 +72,7 @@ model Competition {
   wifiSsid                        String?                 @map("wifi_ssid")
   wifiPassword                    String?                 @map("wifi_password")
   mdns                            Boolean                 @default(true)
-  ipAddress                       String?
-  port                            Int?
-  secure                          Boolean                 @default(false)
+  wsUrl                           String?                 @map("ws_url")
   wcif                            Json?
   scoretakingToken                String?                 @map("scoretaking_token")
   scoretakingTokenUpdatedAt       DateTime?               @map("scoretaking_token_updated_at")

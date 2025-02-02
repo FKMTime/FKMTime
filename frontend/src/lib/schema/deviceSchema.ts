@@ -12,9 +12,7 @@ export const deviceSchema = z.object({
 export const deviceSettingsSchema = z.object({
     shouldUpdateDevices: z.boolean(),
     mdns: z.boolean(),
-    ipAddress: z.string().optional(),
-    port: z.number().optional(),
-    secure: z.boolean().optional(),
+    wsUrl: z.string().optional(),
     wifiSsid: z.string().optional(),
     wifiPassword: z.string().optional(),
 });
