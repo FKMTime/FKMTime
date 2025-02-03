@@ -31,7 +31,7 @@ const DeviceSettingsForm = ({
         defaultValues: {
             shouldUpdateDevices: competition.shouldUpdateDevices,
             mdns: competition.mdns,
-            wsUrl: competition.wsUrl,
+            wsUrl: competition.wsUrl || "",
             wifiSsid: competition.wifiSsid,
             wifiPassword: competition.wifiPassword,
         },
@@ -93,23 +93,19 @@ const DeviceSettingsForm = ({
                     )}
                 />
                 {form.watch("mdns") === false && (
-                    <>
-                        <FormField
-                            control={form.control}
-                            name="wsUrl"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>
-                                        micro-connector ws URL
-                                    </FormLabel>
-                                    <FormControl>
-                                        <Input {...field} />
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-                    </>
+                    <FormField
+                        control={form.control}
+                        name="wsUrl"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>micro-connector ws URL</FormLabel>
+                                <FormControl>
+                                    <Input {...field} />
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
                 )}
                 <FormField
                     control={form.control}
