@@ -163,6 +163,7 @@ export class SocketServer {
     } else if (request.type === 'PersonInfo') {
       const responseData = await this.socketService.getPersonInfo(
         request.data.cardId,
+        request.data.espId,
       );
       this.sendResponseWithTag(socket, {
         type: 'PersonInfo',

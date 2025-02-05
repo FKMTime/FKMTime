@@ -17,6 +17,7 @@ const translations = [
       alreadyCheckedIn: 'You have already checked in',
       attendanceConfirmed: 'Attendance confirmed',
       judgeCardNotScanned: "Judge's card was not scanned",
+      groupNotFound: 'Group not found',
     },
   },
   {
@@ -38,6 +39,7 @@ const translations = [
       alreadyCheckedIn: 'Twoja obecnosc zostala juz potwierdzona',
       attendanceConfirmed: 'Obecnosc zostala potwierdzona',
       judgeCardNotScanned: 'Karta sedziego nie zostala zeskanowana',
+      groupNotFound: 'Grupa nie zostala znaleziona',
     },
   },
 ];

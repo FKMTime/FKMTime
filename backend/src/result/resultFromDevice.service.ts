@@ -54,13 +54,13 @@ export class ResultFromDeviceService {
     const device = await this.getStationByEspId(data.espId);
     if (!device) {
       return {
-        message: 'Device not found',
+        message: getTranslation('stationNotFound', 'en'),
         shouldResetTime: false,
         status: 404,
         error: true,
       };
     }
-    if (!device.room.currentGroupId) {
+    if (device.room.currentGroupIds.length === 0) {
       return {
         message: 'No group in this room',
         status: 400,
@@ -68,6 +68,29 @@ export class ResultFromDeviceService {
         error: true,
       };
     }
+    let groupId = '';
+
+    if (device.room.currentGroupIds.length === 1) {
+      groupId = device.room.currentGroupIds[0];
+    } else if (device.room.currentGroupIds.length > 1 && !data.groupId) {
+      return {
+        message: getTranslation('groupNotFound', 'en'),
+        shouldResetTime: false,
+        status: 400,
+        error: true,
+      };
+    } else if (device.room.currentGroupIds.length > 1 && data.groupId) {
+      if (!device.room.currentGroupIds.includes(data.groupId)) {
+        return {
+          message: getTranslation('groupNotFound', 'en'),
+          shouldResetTime: false,
+          status: 404,
+          error: true,
+        };
+      }
+      groupId = data.groupId;
+    }
+
     const competitor = await this.personService.getPersonByCardId(
       data.competitorId.toString(),
     );
@@ -82,7 +105,7 @@ export class ResultFromDeviceService {
     }
     await this.attendanceService.markCompetitorAsPresent(
       competitor.id,
-      device.room.currentGroupId,
+      groupId,
       device.id,
     );
     locale = competitor.countryIso2;
@@ -133,7 +156,7 @@ export class ResultFromDeviceService {
     if (judge) {
       await this.attendanceService.markJudgeAsPresent(
         judge.id,
-        device.room.currentGroupId,
+        groupId,
         device.id,
       );
       if (judge.countryIso2 === competitor.countryIso2) {
@@ -155,7 +178,7 @@ export class ResultFromDeviceService {
       };
     }
     const wcif = JSON.parse(JSON.stringify(competition.wcif));
-    const currentRoundId = device.room.currentGroupId.split('-g')[0];
+    const currentRoundId = groupId.split('-g')[0];
     const roundInfo = getRoundInfoFromWcif(currentRoundId, wcif);
     const competitorWcifInfo = getPersonFromWcif(competitor.registrantId, wcif);
     const competitorSignedInForEvent = isCompetitorSignedInForEvent(

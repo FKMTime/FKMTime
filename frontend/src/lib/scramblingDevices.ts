@@ -8,7 +8,7 @@ export const defaultScramblingDevice: ScramblingDevice = {
     room: {
         id: "",
         name: "",
-        currentGroupId: "",
+        currentGroupIds: [],
         color: "",
     },
     createdAt: new Date(),

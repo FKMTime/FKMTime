@@ -24,7 +24,7 @@ export class RoomsService {
             id: room.id,
           },
           data: {
-            currentGroupId: room.currentGroupId,
+            currentGroupIds: room.currentGroupIds,
           },
         }),
       );

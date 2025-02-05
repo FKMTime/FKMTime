@@ -40,12 +40,9 @@ export class ScramblingService {
     return device.room;
   }
 
-  async getScrambleData(token: string, cardId: string) {
-    const device = await this.verifyToken(token);
-    return this.resultFromDeviceService.getScrambleData(
-      cardId,
-      device.room.currentGroupId.split('-g')[0],
-    );
+  async getScrambleData(token: string, cardId: string, roundId: string) {
+    await this.verifyToken(token);
+    return this.resultFromDeviceService.getScrambleData(cardId, roundId);
   }
 
   async getPersonDataByCardId(token: string, cardId: string) {

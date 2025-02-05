@@ -214,55 +214,57 @@ export class AttendanceService {
         : device.type === 'ATTENDANCE_RUNNER'
           ? 'RUNNER'
           : 'JUDGE';
-    this.appGateway.handleNewAttendance(device.room.currentGroupId, person.id);
-    try {
-      await this.prisma.staffActivity.upsert({
-        where: {
-          personId_groupId_role: {
-            groupId: device.room.currentGroupId,
-            personId: person.id,
+    for (const groupId of device.room.currentGroupIds) {
+      this.appGateway.handleNewAttendance(groupId, person.id);
+      try {
+        await this.prisma.staffActivity.upsert({
+          where: {
+            personId_groupId_role: {
+              groupId: groupId,
+              personId: person.id,
+              role: role,
+            },
+          },
+          create: {
+            groupId: groupId,
             role: role,
-          },
-        },
-        create: {
-          groupId: device.room.currentGroupId,
-          role: role,
-          person: {
-            connect: {
-              id: person.id,
+            person: {
+              connect: {
+                id: person.id,
+              },
             },
-          },
-          device: {
-            connect: {
-              id: device.id,
+            device: {
+              connect: {
+                id: device.id,
+              },
             },
+            isAssigned: false,
+            isPresent: true,
           },
-          isAssigned: false,
-          isPresent: true,
-        },
-        update: {
-          device: {
-            connect: {
-              id: device.id,
+          update: {
+            device: {
+              connect: {
+                id: device.id,
+              },
             },
+            isPresent: true,
           },
-          isPresent: true,
-        },
-      });
-    } catch (e) {
-      return {
-        message: getTranslation('attendanceConfirmed', person.countryIso2),
-      };
-      // if (e instanceof PrismaClientKnownRequestError) {
-      //   if (e.code === 'P2002') {
-      //     throw new HttpException(
-      //       {
-      //         message: getTranslation('alreadyCheckedIn', person.countryIso2),
-      //       },
-      //       409,
-      //     );
-      //   }
-      // }
+        });
+      } catch (e) {
+        return {
+          message: getTranslation('attendanceConfirmed', person.countryIso2),
+        };
+        // if (e instanceof PrismaClientKnownRequestError) {
+        //   if (e.code === 'P2002') {
+        //     throw new HttpException(
+        //       {
+        //         message: getTranslation('alreadyCheckedIn', person.countryIso2),
+        //       },
+        //       409,
+        //     );
+        //   }
+        // }
+      }
     }
     return {
       message: getTranslation('attendanceConfirmed', person.countryIso2),

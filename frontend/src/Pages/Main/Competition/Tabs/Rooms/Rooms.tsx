@@ -43,27 +43,30 @@ const Rooms = () => {
         });
     }, []);
 
-    const currentOfficialRounds: Room[] = [];
+    const currentOfficialRounds: string[] = [];
 
     rooms.filter((room) => {
-        if (room.currentGroupId) {
-            const roundId = room.currentGroupId?.split("-g")[0];
-            if (
-                !isUnofficialEvent(roundId.split("-")[0]) &&
-                !currentOfficialRounds.some(
-                    (r) => r.currentGroupId.split("-g")[0] === roundId
-                )
-            ) {
-                currentOfficialRounds.push(room);
+        if (room.currentGroupIds.length > 0) {
+            for (const currentGroup of room.currentGroupIds) {
+                const roundId = currentGroup.split("-g")[0];
+                if (
+                    !isUnofficialEvent(roundId.split("-")[0]) &&
+                    !currentOfficialRounds.some((r) => r === roundId)
+                ) {
+                    currentOfficialRounds.push(roundId);
+                }
             }
         }
     });
 
-    const updateCurrentGroup = (room: Room) => {
+    const updateCurrentGroups = (roomId: string, groups: string[]) => {
         setRooms(
             rooms.map((r) => {
-                if (r.id === room.id) {
-                    return room;
+                if (r.id === roomId) {
+                    return {
+                        ...r,
+                        currentGroupIds: groups,
+                    };
                 }
                 return r;
             })
@@ -103,14 +106,8 @@ const Rooms = () => {
                                     Remember to open the following rounds in WCA
                                     Live:
                                     <ul className="list-disc ml-5">
-                                        {currentOfficialRounds.map((room) => (
-                                            <li>
-                                                {activityCodeToName(
-                                                    room.currentGroupId?.split(
-                                                        "-g"
-                                                    )[0]
-                                                )}
-                                            </li>
+                                        {currentOfficialRounds.map((round) => (
+                                            <li>{activityCodeToName(round)}</li>
                                         ))}
                                     </ul>
                                 </>
@@ -121,7 +118,7 @@ const Rooms = () => {
                         <RoomsTable
                             competition={competition}
                             rooms={rooms}
-                            updateCurrentGroup={updateCurrentGroup}
+                            updateCurrentGroups={updateCurrentGroups}
                         />
                         <Button
                             onClick={handleSubmit}

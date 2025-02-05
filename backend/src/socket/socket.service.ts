@@ -1,4 +1,5 @@
 import { forwardRef, Inject, Injectable } from '@nestjs/common';
+import { PersonForDeviceService } from 'src/person/personForDevice.service';
 import { ResultFromDeviceService } from 'src/result/resultFromDevice.service';
 
 import { AttendanceService } from '../attendance/attendance.service';
@@ -7,7 +8,6 @@ import { CompetitionService } from '../competition/competition.service';
 import { DeviceService } from '../device/device.service';
 import { RequestToConnectDto } from '../device/dto/requestToConnect.dto';
 import { UpdateBatteryPercentageDto } from '../device/dto/updateBatteryPercentage.dto';
-import { PersonService } from '../person/person.service';
 import { CheckIfAttemptEnteredDto } from '../result/dto/checkIfAttemptEntered.dto';
 import { EnterAttemptDto } from '../result/dto/enterAttempt.dto';
 import { ResultService } from '../result/result.service';
@@ -24,7 +24,7 @@ export class SocketService {
     private readonly attendanceService: AttendanceService,
     @Inject(forwardRef(() => CompetitionService))
     private readonly competitionService: CompetitionService,
-    private readonly personService: PersonService,
+    private readonly personForDevice: PersonForDeviceService,
   ) {}
 
   async enterAttempt(data: EnterAttemptDto) {
@@ -51,8 +51,8 @@ export class SocketService {
     return await this.competitionService.getAutoSetupSettings();
   }
 
-  async getPersonInfo(cardId: string) {
-    return await this.personService.getPersonInfo(cardId);
+  async getPersonInfo(cardId: string, espId: number) {
+    return await this.personForDevice.getPersonInfo(cardId, espId);
   }
 
   async checkIfAttemptEntered(data: CheckIfAttemptEnteredDto) {

@@ -41,4 +41,8 @@ export class EnterAttemptDto {
 
   @IsString()
   sessionId: string;
+
+  @IsString()
+  @IsOptional()
+  groupId: string;
 }

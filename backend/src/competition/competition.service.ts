@@ -195,31 +195,14 @@ export class CompetitionService {
         error: true,
       };
     }
-    const rooms = await this.prisma.room.findMany({
-      include: {
-        devices: true,
+    const devices = await this.prisma.device.findMany({
+      where: {
+        type: 'STATION',
       },
     });
     return {
       shouldUpdate: competition.shouldUpdateDevices,
-      rooms: rooms.map((room) => {
-        let useInspection = true;
-        if (room.currentGroupId) {
-          const eventId = room.currentGroupId.split('-')[0];
-          useInspection = eventsData.find(
-            (e) => e.id === eventId,
-          ).useInspection;
-        }
-        return {
-          id: room.id,
-          name: room.name,
-          useInspection: useInspection,
-          secondaryText: this.computeSecondaryText(room.currentGroupId),
-          devices: room.devices
-            .filter((d) => d.type === 'STATION')
-            .map((device) => device.espId),
-        };
-      }),
+      devices: devices.map((d) => d.espId),
     };
   }
 
@@ -306,8 +289,12 @@ export class CompetitionService {
     });
     for (const room of rooms) {
       let currentGroupIdInSchedule = '';
+      if (room.currentGroupIds.length > 1) {
+        continue;
+      }
+      const currentGroupId = room.currentGroupIds[0];
       const activity: Activity | null = getActivityInfoFromSchedule(
-        room.currentGroupId,
+        currentGroupId,
         wcif,
       );
       if (!activity) {
@@ -322,7 +309,7 @@ export class CompetitionService {
       const lastAttemptEntered = await this.prisma.attempt.findFirst({
         where: {
           result: {
-            roundId: room.currentGroupId.split('-g')[0],
+            roundId: currentGroupId.split('-g')[0],
           },
         },
         orderBy: {
@@ -333,7 +320,7 @@ export class CompetitionService {
         new Date().getTime() - new Date(lastAttemptEntered.solvedAt).getTime() >
         300000;
       if (
-        (currentGroupIdInSchedule !== room.currentGroupId &&
+        (currentGroupIdInSchedule !== currentGroupId &&
           currentGroupIdInSchedule !== '') ||
         isLastAttemptMoreThan5MinutesAgo
       ) {
@@ -358,19 +345,21 @@ export class CompetitionService {
         id: roomId,
       },
     });
-    const roundId = room.currentGroupId.split('-g')[0];
+    if (room.currentGroupIds.length > 1) {
+      return;
+    }
+    const currentGroupId = room.currentGroupIds[0];
+
+    const roundId = currentGroupId.split('-g')[0];
 
     const resultsFromDb =
       await this.resultService.getAllResultsByRound(roundId);
 
     const competition = await this.prisma.competition.findFirst();
     const wcif = JSON.parse(JSON.stringify(competition.wcif));
-    const roundInfo = getRoundInfoFromWcif(
-      room.currentGroupId.split('-g')[0],
-      wcif,
-    );
+    const roundInfo = getRoundInfoFromWcif(currentGroupId.split('-g')[0], wcif);
     const maxAttempts = getNumberOfAttemptsForRound(
-      room.currentGroupId.split('-g')[0],
+      currentGroupId.split('-g')[0],
       wcif,
     );
     let finished = true;
@@ -406,7 +395,7 @@ export class CompetitionService {
     }
     if (finished) {
       this.logger.log(`Group in room ${room.name} can be changed`);
-      await this.changeGroup(room.id, room.currentGroupId);
+      await this.changeGroup(room.id, currentGroupId);
     } else {
       const message = `Group in room ${room.name} should be changed, but not all results are entered.`;
       this.appGateway.server.to(`competition`).emit('groupShouldBeChanged', {
@@ -444,7 +433,7 @@ export class CompetitionService {
           id: roomId,
         },
         data: {
-          currentGroupId: potentialNextGroupId,
+          currentGroupIds: [potentialNextGroupId],
         },
       });
       const message = `Group in room ${room.name} was changed to ${potentialNextGroupId}`;
@@ -477,7 +466,7 @@ export class CompetitionService {
             id: roomId,
           },
           data: {
-            currentGroupId: nextGroupId,
+            currentGroupIds: [nextGroupId],
           },
         });
         const message = `Group in room ${room.name} was changed to ${nextGroupId}`;
@@ -492,20 +481,14 @@ export class CompetitionService {
   async sendResultsToWcaLive() {
     const rooms = await this.prisma.room.findMany();
     for (const room of rooms) {
-      if (room.currentGroupId) {
-        const roundId = room.currentGroupId.split('-g')[0];
-        const results = await this.resultService.getAllResultsByRound(roundId);
-        await this.wcaService.enterRoundToWcaLive(results);
+      if (room.currentGroupIds.length > 0) {
+        for (const currentGroupId of room.currentGroupIds) {
+          const roundId = currentGroupId.split('-g')[0];
+          const results =
+            await this.resultService.getAllResultsByRound(roundId);
+          await this.wcaService.enterRoundToWcaLive(results);
+        }
       }
     }
-  }
-
-  computeSecondaryText(groupId?: string) {
-    if (!groupId) return '';
-    const roundId = groupId.split('-g')[0];
-    const eventId = roundId.split('-r')[0];
-    const roundNumber = roundId.split('-r')[1];
-    const eventData = eventsData.find((e) => e.id === eventId);
-    return `${eventData.shortName ? eventData.shortName : eventData.name} - R${roundNumber}`;
   }
 }

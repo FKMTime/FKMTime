@@ -52,8 +52,9 @@ export class ScramblingController {
   async getScrambleData(
     @GetScramblingDeviceToken() token: string,
     @Param('cardId') cardId: string,
+    @Param('roundId') roundId: string,
   ) {
-    return this.scramblingService.getScrambleData(token, cardId);
+    return this.scramblingService.getScrambleData(token, cardId, roundId);
   }
 
   @Post('scramble')

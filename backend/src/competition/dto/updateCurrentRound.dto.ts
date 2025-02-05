@@ -1,7 +1,8 @@
-import { IsArray, IsNotEmpty, IsString } from 'class-validator';
+import { IsArray, IsNotEmpty, IsString, ValidateNested } from 'class-validator';
 
 export class UpdateRoomsDto {
   @IsArray()
+  @ValidateNested({ each: true })
   rooms: RoomDto[];
 }
 
@@ -10,6 +11,6 @@ class RoomDto {
   @IsNotEmpty()
   id: string;
 
-  @IsString()
-  currentGroupId: string;
+  @IsArray()
+  currentGroupIds: string[];
 }

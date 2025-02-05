@@ -84,10 +84,11 @@ const Attendance = () => {
     useEffect(() => {
         getAllRooms().then((data: Room[]) => {
             setRooms(data);
-            if (data.filter((r) => r.currentGroupId).length === 1) {
-                handleGroupChange(
-                    data.filter((r) => r.currentGroupId)[0].currentGroupId
-                );
+            const roomsWithOneGroup = data.filter(
+                (r) => r.currentGroupIds.length === 1
+            );
+            if (roomsWithOneGroup.length === 1) {
+                handleGroupChange(roomsWithOneGroup[0].currentGroupIds[0]);
             }
         });
     }, [handleGroupChange]);
@@ -137,7 +138,8 @@ const Attendance = () => {
                     setSelectedRound={setSelectedRound}
                     handleGroupChange={handleGroupChange}
                 />
-                {rooms.filter((r) => r.currentGroupId).length > 0 && (
+                {rooms.filter((r) => r.currentGroupIds.length > 0).length >
+                    0 && (
                     <CurrentGroupsCard
                         rooms={rooms}
                         setSelectedEvent={setSelectedEvent}

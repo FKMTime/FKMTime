@@ -96,7 +96,7 @@ model Room {
   id                String             @id @default(uuid())
   name              String
   color             String
-  currentGroupId    String?            @map("current_group_id")
+  currentGroupIds   String[]           @map("current_group_ids")
   createdAt         DateTime           @default(now()) @map("created_at")
   updatedAt         DateTime           @updatedAt @map("updated_at")
   devices           Device[]

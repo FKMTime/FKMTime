@@ -72,7 +72,7 @@ export interface Activity extends WCIFActivity {
 export interface Room {
     id: string;
     name: string;
-    currentGroupId: string;
+    currentGroupIds: string[];
     color: string;
 }
 

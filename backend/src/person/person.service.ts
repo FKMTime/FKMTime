@@ -2,7 +2,6 @@ import { HttpException, Injectable } from '@nestjs/common';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 
 import { DbService } from '../db/db.service';
-import { convertToLatin, getTranslation } from '../translations';
 import { AddPersonDto } from './dto/addPerson.dto';
 import { UpdatePersonDto } from './dto/updatePerson.dto';
 
@@ -377,22 +376,6 @@ export class PersonService {
         canCompete: true,
       },
     });
-  }
-
-  async getPersonInfo(cardId: string) {
-    const person = await this.getPersonByCardId(cardId);
-    if (!person) {
-      return {
-        message: getTranslation('competitorNotFound', 'en'),
-        shouldResetTime: false,
-        status: 404,
-        error: true,
-      };
-    }
-    return {
-      ...person,
-      name: convertToLatin(person.name),
-    };
   }
 
   async addPerson(data: AddPersonDto) {

@@ -11,21 +11,20 @@ import RoomRow from "./RoomRow";
 interface RoomsTableProps {
     competition: Competition;
     rooms: Room[];
-    updateCurrentGroup: (room: Room) => void;
+    updateCurrentGroups: (roomId: string, groups: string[]) => void;
 }
 
 const RoomsTable = ({
     competition,
     rooms,
-    updateCurrentGroup,
+    updateCurrentGroups,
 }: RoomsTableProps) => {
     return (
         <Table>
             <TableHeader>
                 <TableHead>Room</TableHead>
-                <TableHead>Event</TableHead>
-                <TableHead>Round</TableHead>
-                <TableHead>Group</TableHead>
+                <TableHead>Groups</TableHead>
+                <TableHead>Actions</TableHead>
             </TableHeader>
             <TableBody>
                 {rooms.map((room) => (
@@ -33,7 +32,7 @@ const RoomsTable = ({
                         key={room.id}
                         competition={competition}
                         room={room}
-                        updateCurrentGroup={updateCurrentGroup}
+                        updateCurrentGroups={updateCurrentGroups}
                     />
                 ))}
             </TableBody>

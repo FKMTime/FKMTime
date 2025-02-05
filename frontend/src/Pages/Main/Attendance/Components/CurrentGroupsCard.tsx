@@ -16,6 +16,7 @@ const CurrentGroupsCard = ({
     setSelectedRound,
     handleGroupChange,
 }: CurrentGroupsCardProps) => {
+    const groups = rooms.flatMap((room) => room.currentGroupIds);
     return (
         <Card>
             <CardHeader>
@@ -23,24 +24,18 @@ const CurrentGroupsCard = ({
             </CardHeader>
             <CardContent>
                 <div className="flex flex-wrap gap-2">
-                    {rooms
-                        .filter((r) => r.currentGroupId)
-                        .map((room: Room) => (
-                            <Button
-                                key={room.id}
-                                onClick={() => {
-                                    setSelectedEvent(
-                                        room.currentGroupId.split("-")[0]
-                                    );
-                                    setSelectedRound(
-                                        room.currentGroupId.split("-g")[0]
-                                    );
-                                    handleGroupChange(room.currentGroupId);
-                                }}
-                            >
-                                {activityCodeToName(room.currentGroupId)}
-                            </Button>
-                        ))}
+                    {groups.map((group) => (
+                        <Button
+                            key={group}
+                            onClick={() => {
+                                setSelectedEvent(group.split("-")[0]);
+                                setSelectedRound(group.split("-g")[0]);
+                                handleGroupChange(group);
+                            }}
+                        >
+                            {activityCodeToName(group)}
+                        </Button>
+                    ))}
                 </div>
             </CardContent>
         </Card>
