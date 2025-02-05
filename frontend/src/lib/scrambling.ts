@@ -51,9 +51,9 @@ export const decryptScrambles = (
     });
 };
 
-export const getScrambleData = async (cardId: string) => {
+export const getScrambleData = async (cardId: string, roundId: string) => {
     const response = await scramblingDeviceBackendRequest(
-        `scrambling/scramble/${cardId}`,
+        `scrambling/scramble/${cardId}/${roundId}`,
         "GET"
     );
     return {

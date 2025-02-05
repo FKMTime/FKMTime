@@ -156,8 +156,8 @@ const Results = () => {
         getAllRooms().then((rooms: Room[]) => {
             const ids = new Set<string>(
                 rooms
-                    .filter((room) => room.currentGroupId)
-                    .map((room) => room.currentGroupId.split("-g")[0])
+                    .flatMap((room: Room) => room.currentGroupIds)
+                    .map((groupId: string) => groupId.split("-g")[0])
             );
             setCurrentRounds([...ids]);
         });

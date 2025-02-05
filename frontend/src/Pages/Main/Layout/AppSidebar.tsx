@@ -60,8 +60,8 @@ const AppSidebar = ({ unresolvedIncidentsCount }: AppSidebarProps) => {
         getAllRooms().then((data) => {
             const ids = new Set<string>(
                 data
-                    .filter((room: Room) => room.currentGroupId)
-                    .map((room: Room) => room.currentGroupId.split("-g")[0])
+                    .flatMap((room: Room) => room.currentGroupIds)
+                    .map((id: string) => id.split("-g")[0])
             );
             setCurrentRounds([...ids]);
         });

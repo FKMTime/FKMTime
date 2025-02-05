@@ -48,7 +48,7 @@ export class ScramblingController {
     return this.scramblingService.unlockScrambleSet(id, data);
   }
 
-  @Get('scramble/:cardId')
+  @Get('scramble/:cardId/:roundId')
   async getScrambleData(
     @GetScramblingDeviceToken() token: string,
     @Param('cardId') cardId: string,

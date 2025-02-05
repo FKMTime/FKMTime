@@ -60,9 +60,11 @@ const ScramblingDeviceHome = () => {
     useEffect(() => {
         getScramblingDeviceRoom().then((data: Room) => {
             setRoom(data);
-            if (data.currentGroupId && !roundId) {
-                setRoundId(data.currentGroupId.split("-g")[0]);
-                fetchData(data.currentGroupId.split("-g")[0]);
+            if (data.currentGroupIds.length > 0 && !roundId) {
+                if (data.currentGroupIds.length === 1) {
+                    setRoundId(data.currentGroupIds[0].split("-g")[0]);
+                    fetchData(data.currentGroupIds[0].split("-g")[0]);
+                }
             }
         });
     }, [fetchData, roundId]);
@@ -100,8 +102,9 @@ const ScramblingDeviceHome = () => {
                             <ScrambleSetsTable
                                 scrambleSets={scrambleSets}
                                 showScrambleButton={
-                                    roundId ===
-                                    room?.currentGroupId.split("-g")[0]
+                                    room?.currentGroupIds.some(
+                                        (g) => g.split("-g")[0] === roundId
+                                    ) || false
                                 }
                             />
                         </CardContent>

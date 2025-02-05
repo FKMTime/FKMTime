@@ -34,7 +34,10 @@ const Scrambling = ({ groupId, scrambles }: ScramblingProps) => {
                 variant: "destructive",
             });
         }
-        const { data, status } = await getScrambleData(competitorCard);
+        const { data, status } = await getScrambleData(
+            competitorCard,
+            groupId.split("-g")[0]
+        );
         if (!data || status === 404) {
             return toast({
                 title: "Competitor not found",

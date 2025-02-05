@@ -78,6 +78,10 @@ const ScrambleSet = () => {
 
     if (!scrambleSet || !room) return <LoadingPage />;
 
+    const currentGrouopId = room.currentGroupIds.find(
+        (group) => group.split("-g")[0] === scrambleSet.roundId
+    );
+
     return (
         <PageTransition>
             <div className="flex flex-col gap-4">
@@ -88,7 +92,7 @@ const ScrambleSet = () => {
                 />
                 {!isLocked ? (
                     <Scrambling
-                        groupId={room.currentGroupId}
+                        groupId={currentGrouopId || ""}
                         scrambles={decryptedScrambles}
                     />
                 ) : null}
