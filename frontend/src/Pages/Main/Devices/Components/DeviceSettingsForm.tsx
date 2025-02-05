@@ -114,7 +114,7 @@ const DeviceSettingsForm = ({
                         <FormItem>
                             <FormLabel>WiFi SSID</FormLabel>
                             <FormControl>
-                                <Input {...field} />
+                                <Input autoComplete="off" {...field} />
                             </FormControl>
                             <FormMessage />
                         </FormItem>
@@ -127,7 +127,11 @@ const DeviceSettingsForm = ({
                         <FormItem>
                             <FormLabel>WiFi password</FormLabel>
                             <FormControl>
-                                <Input {...field} type="password" />
+                                <Input
+                                    autoComplete="off"
+                                    {...field}
+                                    type="password"
+                                />
                             </FormControl>
                             <FormMessage />
                         </FormItem>

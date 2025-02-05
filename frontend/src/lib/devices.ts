@@ -1,4 +1,4 @@
-import { Device } from "./interfaces";
+import { Device, DeviceData } from "./interfaces";
 import { backendRequest } from "./request";
 
 export const getAllDevices = async (type?: string, roomId?: string) => {
@@ -12,18 +12,8 @@ export const getAllDevices = async (type?: string, roomId?: string) => {
     return await response.json();
 };
 
-export const createDevice = async (
-    name: string,
-    espId: number,
-    type: string,
-    roomId: string
-) => {
-    const response = await backendRequest("device", "POST", true, {
-        name,
-        espId,
-        roomId,
-        type,
-    });
+export const createDevice = async (data: DeviceData) => {
+    const response = await backendRequest("device", "POST", true, data);
     return response.status;
 };
 

@@ -1,4 +1,4 @@
-import { forwardRef, Inject } from '@nestjs/common';
+import { forwardRef, HttpException, Inject } from '@nestjs/common';
 import { DbService } from 'src/db/db.service';
 import { SocketController } from 'src/socket/socket.controller';
 
@@ -18,6 +18,18 @@ export class RoomsService {
   async updateRooms(data: UpdateRoomsDto) {
     const transactions = [];
     for (const room of data.rooms) {
+      //If there are 2 or more groups in the room with same roundId
+      const roundIds = [];
+      for (const groupId of room.currentGroupIds) {
+        const roundId = groupId.split('-g')[0];
+        if (roundIds.includes(roundId)) {
+          throw new HttpException(
+            'There are 2 or more groups in the room with same roundId',
+            400,
+          );
+        }
+        roundIds.push(roundId);
+      }
       transactions.push(
         this.prisma.room.update({
           where: {

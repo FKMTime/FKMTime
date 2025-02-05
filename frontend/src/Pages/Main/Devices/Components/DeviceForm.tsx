@@ -20,13 +20,13 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/Components/ui/select";
-import { Device, DeviceType, Room } from "@/lib/interfaces";
+import { DeviceData, DeviceType, Room } from "@/lib/interfaces";
 import { deviceSchema } from "@/lib/schema/deviceSchema";
 import { prettyDeviceType } from "@/lib/utils";
 
 interface DeviceFormProps {
-    defaultValues: Device;
-    handleSubmit: (data: Device) => void;
+    defaultValues: DeviceData;
+    handleSubmit: (data: DeviceData) => void;
     rooms: Room[];
     availableTypes: DeviceType[];
     submitText: string;

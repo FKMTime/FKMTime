@@ -7,7 +7,7 @@ import { createDevice } from "@/lib/devices";
 import {
     AvailableDevice,
     AvailableDeviceType,
-    Device,
+    DeviceData,
     DeviceType,
     Room,
 } from "@/lib/interfaces";
@@ -35,14 +35,9 @@ const CreateDeviceModal = ({
         DeviceType.ATTENDANCE_RUNNER,
     ]);
 
-    const handleSubmit = async (data: Device) => {
+    const handleSubmit = async (data: DeviceData) => {
         setIsLoading(true);
-        const status = await createDevice(
-            data.name,
-            data.espId,
-            data.type,
-            data.roomId
-        );
+        const status = await createDevice(data);
         if (status === 201) {
             toast({
                 title: "Successfully created new device.",
@@ -75,8 +70,7 @@ const CreateDeviceModal = ({
         }
     }, [deviceToAdd, isOpen]);
 
-    const defaultValues: Device = {
-        id: "",
+    const defaultValues: DeviceData = {
         name: "",
         espId: deviceToAdd ? deviceToAdd.espId : 0,
         roomId: rooms.length === 1 ? rooms[0].id : "",
@@ -85,15 +79,6 @@ const CreateDeviceModal = ({
                 ? DeviceType.ATTENDANCE_SCRAMBLER
                 : DeviceType.STATION
             : DeviceType.STATION,
-        room: {
-            id: "",
-            name: "",
-            currentGroupId: "",
-            color: "",
-        },
-        batteryPercentage: 0,
-        updatedAt: new Date(),
-        createdAt: new Date(),
     };
 
     return (

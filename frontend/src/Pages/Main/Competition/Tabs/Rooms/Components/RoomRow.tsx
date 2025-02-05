@@ -20,7 +20,7 @@ const RoomRow = ({ competition, room, updateCurrentGroups }: RoomRowProps) => {
         <TableRow>
             <TableCell>{room.name}</TableCell>
             <TableCell>
-                <div className="flex gap-2">
+                <div className="flex md:flex-row flex-col gap-2">
                     {room.currentGroupIds.map((groupId) => (
                         <div
                             className="px-3 py-1 rounded-full text-sm flex items-center gap-2 bg-primary text-secondary dark:text-secondary-foreground"

@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { Modal } from "@/Components/Modal";
 import { useToast } from "@/hooks/useToast";
 import { updateDevice } from "@/lib/devices";
-import { Device, DeviceType, Room } from "@/lib/interfaces";
+import { Device, DeviceData, DeviceType, Room } from "@/lib/interfaces";
 import { getAllRooms } from "@/lib/rooms";
 
 import DeviceForm from "./DeviceForm";
@@ -19,10 +19,13 @@ const EditDeviceModal = ({ isOpen, onClose, device }: EditDeviceModalProps) => {
     const [isLoading, setIsLoading] = useState(false);
     const [rooms, setRooms] = useState<Room[]>([]);
 
-    const handleSubmit = async (data: Device) => {
+    const handleSubmit = async (data: DeviceData) => {
         setIsLoading(true);
 
-        const status = await updateDevice(data);
+        const status = await updateDevice({
+            ...device,
+            ...data,
+        });
         if (status === 200) {
             toast({
                 title: "Successfully updated this device.",

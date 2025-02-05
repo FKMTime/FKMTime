@@ -220,14 +220,9 @@ export enum IncidentAction {
     "EXTRA_GIVEN" = "EXTRA_GIVEN",
 }
 
-export interface Device {
+export interface Device extends DeviceData {
     id: string;
-    name: string;
-    espId: number;
-    type: DeviceType;
     batteryPercentage?: number;
-    roomId: string;
-    room: Room;
     count?: number;
     createdAt: Date;
     updatedAt: Date;
@@ -238,6 +233,13 @@ export enum DeviceType {
     STATION = "STATION",
     ATTENDANCE_SCRAMBLER = "ATTENDANCE_SCRAMBLER",
     ATTENDANCE_RUNNER = "ATTENDANCE_RUNNER",
+}
+
+export interface DeviceData {
+    name: string;
+    espId: number;
+    type: DeviceType;
+    roomId: string;
 }
 
 export interface AvailableDevice {
@@ -259,13 +261,9 @@ export interface Settings {
     updatedAt: Date;
 }
 
-export interface QuickAction {
+export interface QuickAction extends QuickActionData {
     id: string;
-    name: string;
     user: User;
-    isShared: boolean;
-    comment?: string;
-    giveExtra: boolean;
 }
 
 export interface QuickActionData {

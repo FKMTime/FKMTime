@@ -60,6 +60,18 @@ const Rooms = () => {
     });
 
     const updateCurrentGroups = (roomId: string, groups: string[]) => {
+        const roundIds: string[] = [];
+        for (const groupId of groups) {
+            const roundId = groupId.split("-g")[0];
+            if (roundIds.includes(roundId)) {
+                toast({
+                    title: "You cannot have 2 or more groups in the room for the same round",
+                    variant: "destructive",
+                });
+                return;
+            }
+            roundIds.push(roundId);
+        }
         setRooms(
             rooms.map((r) => {
                 if (r.id === roomId) {
@@ -79,6 +91,11 @@ const Rooms = () => {
             toast({
                 title: "Rooms updated",
                 variant: "success",
+            });
+        } else if (status === 400) {
+            toast({
+                title: "There are 2 or more groups in the room for the same round",
+                variant: "destructive",
             });
         } else {
             toast({
