@@ -1,11 +1,4 @@
-import {
-  IsArray,
-  IsNotEmpty,
-  IsString,
-  Matches,
-  ValidateNested,
-} from 'class-validator';
-import { groupIdRegex } from 'src/constants';
+import { IsArray, IsNotEmpty, IsString, ValidateNested } from 'class-validator';
 
 export class UpdateRoomsDto {
   @IsArray()
