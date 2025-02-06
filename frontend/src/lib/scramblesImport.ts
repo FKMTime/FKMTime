@@ -7,6 +7,18 @@ import { ImportedScramble, ImportedScrambleSet } from "./interfaces";
 import { backendRequest } from "./request";
 import { numberToLetter } from "./utils";
 
+export const removeUnusedScramblesFromWcif = (
+    scramblesWcif: WCIF,
+    competitionWcif: WCIF
+) => {
+    const events = competitionWcif.events.map((event) => event.id);
+    return {
+        ...scramblesWcif,
+        events: scramblesWcif.events.filter((event) =>
+            events.includes(event.id)
+        ),
+    };
+};
 export const validateScrambles = (
     wcifWithScrambles: WCIF,
     competitionWCIF: WCIF,

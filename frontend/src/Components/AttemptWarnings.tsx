@@ -1,3 +1,4 @@
+import { DNS_VALUE } from "@/lib/constants";
 import { Attempt } from "@/lib/interfaces";
 import { milisecondsToClockFormat } from "@/lib/resultFormatters";
 
@@ -22,7 +23,7 @@ const AttemptWarnings = ({ attempt }: AttemptsWarningProps) => {
             {attempt.penalty > 2 && (
                 <Badge variant="destructive">+{attempt.penalty}</Badge>
             )}
-            {attempt.penalty === -2 && <Badge>DNS</Badge>}
+            {attempt.penalty === DNS_VALUE && <Badge>DNS</Badge>}
         </>
     );
 };

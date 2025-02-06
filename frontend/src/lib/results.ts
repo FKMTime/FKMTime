@@ -2,6 +2,7 @@ import { Competition } from "@wca/helpers";
 import { getLimitByRoundId, getNumberOfAttemptsForRound } from "wcif-helpers";
 
 import { average, best, formattedBest } from "./average";
+import { DNF_VALUE } from "./constants";
 import { Attempt, Result, ResultWithAverage } from "./interfaces";
 import { backendRequest } from "./request";
 import { resultToString } from "./resultFormatters";
@@ -98,7 +99,7 @@ export const orderResultsByAverage = (results: ResultWithAverage[]) => {
             if (a.average === b.average) {
                 return a.best - b.best;
             }
-            if (a.average === -1) {
+            if (a.average === DNF_VALUE) {
                 return 1;
             }
             return a.average - b.average;

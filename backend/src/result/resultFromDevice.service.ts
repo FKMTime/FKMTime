@@ -11,6 +11,7 @@ import {
 } from '@prisma/client';
 import { AppGateway } from 'src/app.gateway';
 import { AttendanceService } from 'src/attendance/attendance.service';
+import { DNS_VALUE } from 'src/constants';
 import { ContestsService } from 'src/contests/contests.service';
 import { DbService } from 'src/db/db.service';
 import { DeviceService } from 'src/device/device.service';
@@ -562,7 +563,7 @@ export class ResultFromDeviceService {
           attemptNumber: attemptNumber + i + 1,
           status: AttemptStatus.STANDARD,
           type: AttemptType.STANDARD_ATTEMPT,
-          penalty: -2,
+          penalty: DNS_VALUE,
           value: 0,
           result: {
             connect: {

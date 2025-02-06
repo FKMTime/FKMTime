@@ -1,5 +1,6 @@
 import { Attempt, AttemptType } from '@prisma/client';
 import { EventId, Person } from '@wca/helpers';
+import { DNF_VALUE } from 'src/constants';
 
 export const isCompetitorSignedInForEvent = (
   competitorWcif: Person,
@@ -22,7 +23,7 @@ export const checkCutoff = (
   else {
     return attempts.some(
       (attempt) =>
-        attempt.penalty !== -1 &&
+        attempt.penalty !== DNF_VALUE &&
         attempt.value + attempt.penalty * 100 < cutoff,
     );
   }

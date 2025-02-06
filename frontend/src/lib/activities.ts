@@ -5,7 +5,7 @@ import {
     Room as WCIFRoom,
 } from "@wca/helpers";
 
-import { getEventName, isUnofficialEvent } from "./events";
+import { getEventName, getEventShortName, isUnofficialEvent } from "./events";
 
 export const getEventIdFromRoundId = (roundId: string) => {
     return roundId.split("-")[0];
@@ -60,12 +60,34 @@ export const getActivityName = (activity: Activity) => {
         : activityCodeToName(activity.activityCode);
 };
 
-export const activityCodeToName = (activityCode: string) => {
-    if (activityCode === "") return "";
-    const eventId = activityCode.split("-r")[0];
-    if (isUnofficialEvent(eventId)) {
-        return `${getEventName(eventId)}, Round ${activityCode.split("-g")[0].split("-r")[1]}`;
-    } else {
-        return wcifActivityCodeToName(activityCode);
+export const activityCodeToName = (
+    activityCode: string,
+    shortEvent?: boolean,
+    shortRound?: boolean,
+    shortGroup?: boolean
+): string => {
+    if (!activityCode) return "";
+
+    const [eventId, roundAndGroup] = activityCode.split("-r");
+    const eventName = getEventName(eventId);
+
+    let finalName = isUnofficialEvent(eventId)
+        ? `${eventName}, Round ${roundAndGroup?.split("-g")[0]}`
+        : wcifActivityCodeToName(activityCode);
+
+    if (shortEvent) {
+        finalName = finalName.replace(
+            eventName || "",
+            getEventShortName(eventId) || ""
+        );
     }
+    if (shortRound) {
+        finalName = finalName.replace("Round ", "R");
+    }
+
+    if (shortGroup) {
+        finalName = finalName.replace("Group ", "G");
+    }
+
+    return finalName;
 };

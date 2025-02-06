@@ -5,6 +5,7 @@ import {
   AttemptType,
   Competition,
 } from '@prisma/client';
+import { DNF_VALUE, DNS_VALUE } from 'src/constants';
 import { getSortedStandardAttempts } from 'src/result/helpers';
 
 import { DbService } from '../db/db.service';
@@ -123,10 +124,10 @@ export class WcaService {
     const timesToSubmit = sorted.map((attempt) => {
       return {
         result:
-          attempt.penalty === -2
-            ? -2
-            : attempt.penalty === -1
-              ? -1
+          attempt.penalty === DNS_VALUE
+            ? DNS_VALUE
+            : attempt.penalty === DNF_VALUE
+              ? DNF_VALUE
               : attempt.penalty * 100 + attempt.value,
       };
     });

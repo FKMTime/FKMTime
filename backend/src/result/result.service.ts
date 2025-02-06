@@ -2,7 +2,7 @@ import { HttpException, Injectable } from '@nestjs/common';
 import { AttemptStatus, AttemptType, StaffRole } from '@prisma/client';
 import { Event, Round } from '@wca/helpers';
 import { AppGateway } from 'src/app.gateway';
-import { publicPersonSelect } from 'src/constants';
+import { DNS_VALUE, publicPersonSelect } from 'src/constants';
 import { ContestsService } from 'src/contests/contests.service';
 import { DbService } from 'src/db/db.service';
 import { isUnofficialEvent } from 'src/events';
@@ -315,7 +315,7 @@ export class ResultService {
           attemptNumber: i,
           status: AttemptStatus.STANDARD,
           type: AttemptType.STANDARD_ATTEMPT,
-          penalty: -2,
+          penalty: DNS_VALUE,
           solvedAt: new Date(),
           value: 0,
           result: {
@@ -417,7 +417,7 @@ export class ResultService {
     });
     const dns = await this.prisma.attempt.findMany({
       where: {
-        penalty: -2,
+        penalty: DNS_VALUE,
         status: AttemptStatus.STANDARD,
         ...whereParams,
       },

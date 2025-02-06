@@ -1,6 +1,7 @@
 import { Competition as WCIF } from "@wca/helpers";
 import { useAtomValue } from "jotai";
 import { useState } from "react";
+import { Link } from "react-router-dom";
 
 import { Button } from "@/Components/ui/button";
 import {
@@ -13,7 +14,11 @@ import {
 import { Input } from "@/Components/ui/input";
 import { useToast } from "@/hooks/useToast";
 import { competitionAtom } from "@/lib/atoms";
-import { importScrambles, validateScrambles } from "@/lib/scramblesImport";
+import {
+    importScrambles,
+    removeUnusedScramblesFromWcif,
+    validateScrambles,
+} from "@/lib/scramblesImport";
 import PageTransition from "@/Pages/PageTransition";
 
 import ScrambleSetsList from "./Components/ScrambleSetsList";
@@ -29,13 +34,18 @@ const ImportScrambles = () => {
     const [errorsList, setErrorsList] = useState<string[]>([]);
 
     const handleFileUpload = () => {
+        if (!competition) return;
         clearUploadedScrambles(false);
         const file = document.querySelector("input")?.files?.[0];
         if (file) {
             const reader = new FileReader();
             reader.onload = () => {
                 const result = reader.result as string;
-                const parsedWCIF = JSON.parse(result).wcif;
+                const parsedWCIF = removeUnusedScramblesFromWcif(
+                    JSON.parse(result).wcif,
+                    competition.wcif
+                );
+
                 if (!parsedWCIF || !competition) return;
                 const { warnings, errors } = validateScrambles(
                     parsedWCIF,
@@ -46,7 +56,7 @@ const ImportScrambles = () => {
                 if (errors.length > 0) {
                     setPreventFromImporting(true);
                 }
-                setWcif(JSON.parse(result).wcif);
+                setWcif(parsedWCIF);
             };
             reader.readAsText(file);
         }
@@ -93,7 +103,16 @@ const ImportScrambles = () => {
                             Use this page only for importing scrambles for the
                             round that doesn't have them yet. If you want to add
                             an extra scramble/set please do it in the Scramble
-                            Sets tab.
+                            Sets tab. If you generated scrambles for unofficial
+                            events please remember to add them first in the {""}
+                            <Link
+                                to="/events"
+                                className="text-blue-500
+                            "
+                            >
+                                Unofficial Events
+                            </Link>{" "}
+                            tab.
                         </CardDescription>
                     </CardHeader>
                     <CardContent className="flex flex-col gap-4">
