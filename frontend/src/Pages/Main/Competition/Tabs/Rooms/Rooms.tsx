@@ -61,7 +61,17 @@ const Rooms = () => {
 
     const updateCurrentGroups = (roomId: string, groups: string[]) => {
         const roundIds: string[] = [];
+        const eventIds: string[] = [];
         for (const groupId of groups) {
+            const eventId = groupId.split("-r")[0];
+            if (eventIds.includes(eventId)) {
+                toast({
+                    title: "You cannot have 2 or more groups in the room for the same event",
+                    variant: "destructive",
+                });
+                return;
+            }
+            eventIds.push(eventId);
             const roundId = groupId.split("-g")[0];
             if (roundIds.includes(roundId)) {
                 toast({
@@ -86,15 +96,15 @@ const Rooms = () => {
     };
 
     const handleSubmit = async () => {
-        const status = await updateCurrentRound(rooms);
-        if (status === 200) {
+        const response = await updateCurrentRound(rooms);
+        if (response.status === 200) {
             toast({
                 title: "Rooms updated",
                 variant: "success",
             });
-        } else if (status === 400) {
+        } else if (response.status === 400) {
             toast({
-                title: "There are 2 or more groups in the room for the same round",
+                title: response.data.message,
                 variant: "destructive",
             });
         } else {

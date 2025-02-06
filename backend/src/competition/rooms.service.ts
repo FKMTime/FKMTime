@@ -20,11 +20,20 @@ export class RoomsService {
     for (const room of data.rooms) {
       //If there are 2 or more groups in the room with same roundId
       const roundIds = [];
+      const eventIds = [];
       for (const groupId of room.currentGroupIds) {
+        const eventId = groupId.split('-r')[0];
+        if (eventIds.includes(eventId)) {
+          throw new HttpException(
+            'There are 2 or more groups in the room from the same event',
+            400,
+          );
+        }
+        eventIds.push(eventId);
         const roundId = groupId.split('-g')[0];
         if (roundIds.includes(roundId)) {
           throw new HttpException(
-            'There are 2 or more groups in the room with same roundId',
+            'There are 2 or more groups in the room from the same round',
             400,
           );
         }

@@ -10,5 +10,8 @@ export const updateCurrentRound = async (rooms: Room[]) => {
     const response = await backendRequest("competition/rooms", "PUT", true, {
         rooms,
     });
-    return response.status;
+    return {
+        status: response.status,
+        data: await response.json(),
+    };
 };
