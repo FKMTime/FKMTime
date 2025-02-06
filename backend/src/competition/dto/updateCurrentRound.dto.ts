@@ -1,4 +1,11 @@
-import { IsArray, IsNotEmpty, IsString, ValidateNested } from 'class-validator';
+import {
+  IsArray,
+  IsNotEmpty,
+  IsString,
+  Matches,
+  ValidateNested,
+} from 'class-validator';
+import { groupIdRegex } from 'src/constants';
 
 export class UpdateRoomsDto {
   @IsArray()
@@ -12,5 +19,6 @@ class RoomDto {
   id: string;
 
   @IsArray()
+  @IsString({ each: true })
   currentGroupIds: string[];
 }

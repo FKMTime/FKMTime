@@ -11,3 +11,6 @@ export const publicPersonSelect = {
     countryIso2: true,
   },
 };
+
+export const roundIdRegex = '.*-r\\d+';
+export const groupIdRegex = '.*-r\d+-g\d+';

@@ -5,7 +5,9 @@ import {
   IsNotEmpty,
   IsOptional,
   IsString,
+  Matches,
 } from 'class-validator';
+import { roundIdRegex } from 'src/constants';
 
 export class CreateAttemptDto {
   @IsInt()
@@ -18,6 +20,7 @@ export class CreateAttemptDto {
   penalty: number;
 
   @IsString()
+  @Matches(roundIdRegex)
   @IsNotEmpty()
   roundId: string;
 

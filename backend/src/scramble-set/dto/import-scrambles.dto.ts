@@ -5,8 +5,10 @@ import {
   IsBoolean,
   IsNumber,
   IsString,
+  Matches,
   ValidateNested,
 } from 'class-validator';
+import { roundIdRegex } from 'src/constants';
 
 export class ImportScramblesDto {
   @IsArray()
@@ -18,6 +20,7 @@ export class ImportScramblesDto {
 
 class ScrambleSet {
   @IsString()
+  @Matches(roundIdRegex)
   roundId: string;
 
   @IsString()

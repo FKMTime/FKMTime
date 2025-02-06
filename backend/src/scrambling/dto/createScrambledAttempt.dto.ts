@@ -1,4 +1,11 @@
-import { IsBoolean, IsNotEmpty, IsNumber, IsString } from 'class-validator';
+import {
+  IsBoolean,
+  IsNotEmpty,
+  IsNumber,
+  IsString,
+  Matches,
+} from 'class-validator';
+import { roundIdRegex } from 'src/constants';
 
 export class CreateScrambledAttemptDto {
   @IsString()
@@ -10,6 +17,7 @@ export class CreateScrambledAttemptDto {
   scramblerId: string;
 
   @IsString()
+  @Matches(roundIdRegex)
   @IsNotEmpty()
   roundId: string;
 

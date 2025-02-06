@@ -4,7 +4,9 @@ import {
   IsInt,
   IsOptional,
   IsString,
+  Matches,
 } from 'class-validator';
+import { groupIdRegex } from 'src/constants';
 
 export class EnterAttemptDto {
   @IsInt()
@@ -43,6 +45,7 @@ export class EnterAttemptDto {
   sessionId: string;
 
   @IsString()
+  @Matches(groupIdRegex)
   @IsOptional()
   groupId: string;
 }
