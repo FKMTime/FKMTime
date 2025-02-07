@@ -7,6 +7,7 @@ import { SocketController } from '../socket/socket.controller';
 import { DeviceDto } from './dto/device.dto';
 import { RequestToConnectDto } from './dto/requestToConnect.dto';
 import { UpdateBatteryPercentageDto } from './dto/updateBatteryPercentage.dto';
+import { UploadFirmwareDto } from './dto/uploadFirmware.dto';
 
 @Injectable()
 export class DeviceService {
@@ -158,5 +159,9 @@ export class DeviceService {
     return {
       message: 'Device deleted',
     };
+  }
+
+  async uploadFirmware(data: UploadFirmwareDto) {
+    this.socketController.sendFirmware(data.fileName, data.fileData);
   }
 }

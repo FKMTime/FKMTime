@@ -100,11 +100,21 @@ export class SocketServer {
     });
   }
 
-  async semdAutoSetupStatus() {
+  async sendAutoSetupStatus() {
     const autoSetupStatus = await this.socketService.getAutoSetupSettings();
     this.sendToAll({
       type: 'AutoSetupSettings',
       data: autoSetupStatus,
+    });
+  }
+
+  async sendFirmware(fileName: string, fileData: string) {
+    this.sendToAll({
+      type: 'UploadFirmware',
+      data: {
+        fileName,
+        fileData,
+      },
     });
   }
 

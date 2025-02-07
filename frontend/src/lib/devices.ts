@@ -31,3 +31,16 @@ export const deleteDevice = async (id: string) => {
     const response = await backendRequest(`device/${id}`, "DELETE", true);
     return response.status;
 };
+
+export const uploadFirmware = async (fileName: string, fileData: string) => {
+    const response = await backendRequest(
+        "device/upload-firmware",
+        "POST",
+        true,
+        {
+            fileName,
+            fileData,
+        }
+    );
+    return response.status;
+};

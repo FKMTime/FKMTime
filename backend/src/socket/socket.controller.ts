@@ -29,7 +29,11 @@ export class SocketController implements OnModuleInit, OnModuleDestroy {
     await this.socketServer.sendServerStatus();
   }
 
+  async sendFirmware(fileName: string, fileData: string) {
+    await this.socketServer.sendFirmware(fileName, fileData);
+  }
+
   async sendAutoSetupStatus() {
-    await this.socketServer.semdAutoSetupStatus();
+    await this.socketServer.sendAutoSetupStatus();
   }
 }

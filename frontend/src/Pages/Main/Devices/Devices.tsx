@@ -27,8 +27,9 @@ import { socket, SocketContext } from "@/socket";
 
 import CreateDeviceModal from "./Components/CreateDeviceModal";
 import DeviceCard from "./Components/DeviceCard";
-import DevicesSettings from "./Components/DevicesSettings";
 import DevicesTable from "./Components/DevicesTable";
+import DevicesSettings from "./Tabs/DeviceSettings/DevicesSettings";
+import UploadFirmware from "./Tabs/UploadFirmware/UploadFirmware";
 
 const tabs = [
     {
@@ -38,6 +39,10 @@ const tabs = [
     {
         id: "settings",
         name: "Settings",
+    },
+    {
+        id: "uploadFirmware",
+        name: "Upload firmware",
     },
 ];
 
@@ -221,6 +226,9 @@ const Devices = () => {
                 </TabsContent>
                 <TabsContent value={tabs[1].id}>
                     <DevicesSettings />
+                </TabsContent>
+                <TabsContent value={tabs[2].id}>
+                    <UploadFirmware />
                 </TabsContent>
                 <CreateDeviceModal
                     isOpen={isOpenCreateDeviceModal}
