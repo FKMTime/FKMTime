@@ -216,13 +216,11 @@ const AppSidebar = ({ unresolvedIncidentsCount }: AppSidebarProps) => {
                                                                     roundId
                                                                 )}
                                                             >
-                                                                {
-                                                                    activityCodeToName(
-                                                                        roundId
-                                                                    ).split(
-                                                                        ", Round"
-                                                                    )[0]
-                                                                }
+                                                                {activityCodeToName(
+                                                                    roundId,
+                                                                    true,
+                                                                    true
+                                                                )}
                                                             </Tooltip>
                                                         </Link>
                                                     </SidebarMenuSubButton>
