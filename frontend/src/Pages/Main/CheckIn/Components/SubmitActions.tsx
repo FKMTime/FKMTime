@@ -39,22 +39,25 @@ const SubmitActions = ({
                             of the competitor is {person.name}
                         </Label>
                     </div>
-                    <div className="flex items-center gap-2">
-                        <Checkbox
-                            checked={dobChecked}
-                            onCheckedChange={(value) => setDobChecked(!!value)}
-                        />
-                        <Label>
-                            I have checked the competitor's ID card and the date
-                            of birth is{" "}
-                            {
-                                new Date(person.birthdate || "")
-                                    .toISOString()
-                                    .split("T")[0]
-                            }
-                        </Label>
-                    </div>
-
+                    {person.birthdate && (
+                        <div className="flex items-center gap-2">
+                            <Checkbox
+                                checked={dobChecked}
+                                onCheckedChange={(value) =>
+                                    setDobChecked(!!value)
+                                }
+                            />
+                            <Label>
+                                I have checked the competitor's ID card and the
+                                date of birth is{" "}
+                                {
+                                    new Date(person.birthdate || "")
+                                        .toISOString()
+                                        .split("T")[0]
+                                }
+                            </Label>
+                        </div>
+                    )}
                     <div className="flex items-center gap-2">
                         <Checkbox
                             checked={confirmedIsNewcomer}
@@ -88,7 +91,7 @@ const SubmitActions = ({
                 disabled={
                     (newcomer &&
                         (!nameChecked ||
-                            !dobChecked ||
+                            (!dobChecked && person.birthdate !== null) ||
                             !confirmedIsNewcomer ||
                             !citizienshipChecked)) ||
                     !person.cardId
