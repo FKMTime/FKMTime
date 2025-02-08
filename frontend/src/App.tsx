@@ -1,49 +1,77 @@
-import { useState } from "react";
-import React from "react";
+import { lazy, useState } from "react";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 
 import { Toaster } from "@/Components/ui/toaster";
 import { ConfirmProvider } from "@/providers/ConfirmProvider";
 import { ThemeProvider } from "@/providers/ThemeProvider";
 
-import CompetitionStatistics from "./Components/CompetitionStatistics/CompetitionStatistics";
 import { THEME_STORAGE_KEY } from "./lib/constants";
-import Login from "./Pages/Auth/Login/Login";
-import AssignCards from "./Pages/Main/AssignCards/AssignCards";
-import Attendance from "./Pages/Main/Attendance/Attendance";
-import AttendanceStatistics from "./Pages/Main/Attendance/AttendanceStatistics/AttendanceStatistics";
-import CheckIn from "./Pages/Main/CheckIn/CheckIn";
-import Competition from "./Pages/Main/Competition/Competition";
-import Devices from "./Pages/Main/Devices/Devices";
-import Home from "./Pages/Main/Home/Home";
-import ImportCompetition from "./Pages/Main/ImportCompetition/ImportCompetition";
-import Incidents from "./Pages/Main/Incidents/AllIncidents/Incidents";
-import ResolvedIncidents from "./Pages/Main/Incidents/ResolvedIncidents/ResolvedIncidents";
-import Layout from "./Pages/Main/Layout/Layout";
-import NotFound from "./Pages/Main/NotFound/NotFound";
-import DoubleCheck from "./Pages/Main/Results/DoubleCheck/DoubleCheck";
-import ResultsChecks from "./Pages/Main/Results/ResultsChecks/ResultsChecks";
-import ScramblesAdmin from "./Pages/Main/ScramblesAdmin/ScramblesAdmin";
-import Settings from "./Pages/Main/Settings/Settings";
-import UnofficialEvents from "./Pages/Main/UnofficialEvents/UnofficialEvents";
-import Users from "./Pages/Main/Users/Users";
-import AllScrambles from "./Pages/ScramblingDevice/AllScrambles/AllScrambles";
-import ScramblingDeviceHome from "./Pages/ScramblingDevice/Home/ScramblingDeviceHome";
-import ScrambleSet from "./Pages/ScramblingDevice/ScrambleSet/ScrambleSet";
-import ScramblingDeviceLayout from "./Pages/ScramblingDevice/ScramblingDeviceLayout";
 import { SocketContext } from "./socket";
-const Persons = React.lazy(() => import("./Pages/Main/Persons/Persons"));
-const Results = React.lazy(() => import("./Pages/Main/Results/Results"));
-const PublicView = React.lazy(
+const CompetitionStatistics = lazy(
+    () => import("./Components/CompetitionStatistics/CompetitionStatistics")
+);
+const Login = lazy(() => import("./Pages/Auth/Login/Login"));
+const AssignCards = lazy(() => import("./Pages/Main/AssignCards/AssignCards"));
+const Attendance = lazy(() => import("./Pages/Main/Attendance/Attendance"));
+const AttendanceStatistics = lazy(
+    () =>
+        import(
+            "./Pages/Main/Attendance/AttendanceStatistics/AttendanceStatistics"
+        )
+);
+const CheckIn = lazy(() => import("./Pages/Main/CheckIn/CheckIn"));
+const Competition = lazy(() => import("./Pages/Main/Competition/Competition"));
+const Devices = lazy(() => import("./Pages/Main/Devices/Devices"));
+const Home = lazy(() => import("./Pages/Main/Home/Home"));
+const ImportCompetition = lazy(
+    () => import("./Pages/Main/ImportCompetition/ImportCompetition")
+);
+const Incidents = lazy(
+    () => import("./Pages/Main/Incidents/AllIncidents/Incidents")
+);
+const ResolvedIncidents = lazy(
+    () => import("./Pages/Main/Incidents/ResolvedIncidents/ResolvedIncidents")
+);
+const Layout = lazy(() => import("./Pages/Main/Layout/Layout"));
+const NotFound = lazy(() => import("./Pages/Main/NotFound/NotFound"));
+const DoubleCheck = lazy(
+    () => import("./Pages/Main/Results/DoubleCheck/DoubleCheck")
+);
+const ResultsChecks = lazy(
+    () => import("./Pages/Main/Results/ResultsChecks/ResultsChecks")
+);
+const ScramblesAdmin = lazy(
+    () => import("./Pages/Main/ScramblesAdmin/ScramblesAdmin")
+);
+const Settings = lazy(() => import("./Pages/Main/Settings/Settings"));
+const UnofficialEvents = lazy(
+    () => import("./Pages/Main/UnofficialEvents/UnofficialEvents")
+);
+const Users = lazy(() => import("./Pages/Main/Users/Users"));
+const AllScrambles = lazy(
+    () => import("./Pages/ScramblingDevice/AllScrambles/AllScrambles")
+);
+const ScramblingDeviceHome = lazy(
+    () => import("./Pages/ScramblingDevice/Home/ScramblingDeviceHome")
+);
+const ScrambleSet = lazy(
+    () => import("./Pages/ScramblingDevice/ScrambleSet/ScrambleSet")
+);
+const ScramblingDeviceLayout = lazy(
+    () => import("./Pages/ScramblingDevice/ScramblingDeviceLayout")
+);
+const Persons = lazy(() => import("./Pages/Main/Persons/Persons"));
+const Results = lazy(() => import("./Pages/Main/Results/Results"));
+const PublicView = lazy(
     () => import("./Pages/Main/Results/PublicView/PublicView")
 );
-const SingleResult = React.lazy(
+const SingleResult = lazy(
     () => import("./Pages/Main/Results/SingleResult/SingleResult")
 );
-const IncidentPage = React.lazy(
+const IncidentPage = lazy(
     () => import("./Pages/Main/Incidents/IncidentPage/IncidentPage")
 );
-const PersonResults = React.lazy(
+const PersonResults = lazy(
     () => import("./Pages/Main/Persons/PersonResults/PersonResults")
 );
 
