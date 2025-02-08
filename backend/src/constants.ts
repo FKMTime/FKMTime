@@ -13,4 +13,4 @@ export const publicPersonSelect = {
 };
 
 export const roundIdRegex = '.*-r\\d+';
-export const groupIdRegex = '.*-r\d+-g\d+';
+export const groupIdRegex = '.*-r\\d+-g\\d+';

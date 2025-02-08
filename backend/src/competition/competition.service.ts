@@ -262,7 +262,7 @@ export class CompetitionService {
         wsUrl: data.wsUrl,
       },
     });
-    
+
     await this.socketController.sendServerStatus();
     return {
       message: 'Devices settings updated',
