@@ -247,6 +247,7 @@ enum StaffRole {
   JUDGE
   RUNNER
   SCRAMBLER
+  STAFF_OTHER
 }
 
 enum SendingResultsFrequency {

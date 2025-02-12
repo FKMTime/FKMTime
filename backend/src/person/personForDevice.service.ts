@@ -1,8 +1,16 @@
 import { Injectable } from '@nestjs/common';
+import { Competition } from '@prisma/client';
+import { Competition as WCIF } from '@wca/helpers';
+import { publicPersonSelect } from 'src/constants';
 import { DbService } from 'src/db/db.service';
 import { eventsData } from 'src/events';
 import { convertToLatin, getTranslation } from 'src/translations';
-import { getGroupInfoByActivityId, getPersonFromWcif } from 'wcif-helpers';
+import { WcaService } from 'src/wca/wca.service';
+import {
+  getGroupInfoByActivityId,
+  getPersonFromWcif,
+  getRoundInfoFromWcif,
+} from 'wcif-helpers';
 
 import { PersonService } from './person.service';
 
@@ -11,6 +19,7 @@ export class PersonForDeviceService {
   constructor(
     private readonly prisma: DbService,
     private readonly personService: PersonService,
+    private readonly wcaService: WcaService,
   ) {}
 
   async getPersonInfo(cardId: string, espId: number) {
@@ -54,8 +63,15 @@ export class PersonForDeviceService {
       );
       competitorGroups.push(activityFromSchedule.activityCode);
     }
+    const finishedRoundsIds = await this.getFinishedRoundIds(
+      person.id,
+      competition,
+      wcif,
+    );
+
     const finalGroups = possibleGroups
       .filter((g) => competitorGroups.includes(g))
+      .filter((g) => !finishedRoundsIds.includes(g.split('-g')[0]))
       .map((g) => {
         const eventId = g.split('-')[0];
         return {
@@ -69,6 +85,39 @@ export class PersonForDeviceService {
       name: convertToLatin(person.name),
       possibleGroups: finalGroups,
     };
+  }
+
+  private async getFinishedRoundIds(
+    personId: string,
+    competition: Competition,
+    wcif: WCIF,
+  ) {
+    const results = await this.prisma.result.findMany({
+      where: {
+        personId: personId,
+      },
+      select: {
+        roundId: true,
+        attempts: true,
+        person: publicPersonSelect,
+      },
+    });
+    const finishedRoundsIds = [];
+    for (const result of results) {
+      if (result.attempts.length === 0) {
+        continue;
+      }
+      const roundInfo = getRoundInfoFromWcif(result.roundId, wcif);
+      const maxAttempts = roundInfo.format === 'a' ? 5 : 3;
+      const submittedAttempts = this.wcaService.getAttemptsToEnterToWcaLive(
+        result,
+        competition,
+      );
+      if (submittedAttempts.results[0].attempts.length === maxAttempts) {
+        finishedRoundsIds.push(result.roundId);
+      }
+    }
+    return finishedRoundsIds;
   }
 
   computeSecondaryText(groupId?: string) {

@@ -2,6 +2,7 @@ import { useState } from "react";
 
 import DeleteButton from "@/Components/DeleteButton";
 import EditButton from "@/Components/EditButton";
+import EventIcon from "@/Components/Icons/EventIcon";
 import { TableCell, TableRow } from "@/Components/ui/table";
 import { useConfirm } from "@/hooks/useConfirm";
 import { useToast } from "@/hooks/useToast";
@@ -31,7 +32,9 @@ const UnofficialEventRow = ({ event, fetchData }: UnofficialEventRowProps) => {
                 const status = await deleteUnofficialEvent(event.id);
                 if (status === 204) {
                     toast({
-                        title: "Successfully deleted event.",
+                        title: "Success",
+                        description: "Successfully deleted event.",
+                        variant: "success",
                     });
                     fetchData();
                 } else if (status === 409) {
@@ -64,7 +67,10 @@ const UnofficialEventRow = ({ event, fetchData }: UnofficialEventRowProps) => {
     return (
         <>
             <TableRow key={event.id}>
-                <TableCell>{getEventName(event.eventId)}</TableCell>
+                <TableCell className="flex items-center gap-2">
+                    <EventIcon eventId={event.eventId} selected />
+                    {getEventName(event.eventId)}
+                </TableCell>
                 <TableCell>
                     <EditButton
                         onClick={() => setIsOpenEditUnofficialEventModal(true)}

@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { WcaModule } from 'src/wca/wca.module';
 
 import { AuthModule } from '../auth/auth.module';
 import { PersonController } from './person.controller';
@@ -9,6 +10,6 @@ import { PersonForDeviceService } from './personForDevice.service';
   providers: [PersonService, PersonForDeviceService],
   controllers: [PersonController],
   exports: [PersonService, PersonForDeviceService],
-  imports: [AuthModule],
+  imports: [AuthModule, WcaModule],
 })
 export class PersonModule {}

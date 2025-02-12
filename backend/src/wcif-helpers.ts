@@ -9,8 +9,10 @@ export const wcifRoleToAttendanceRole = (role: string) => {
       return 'RUNNER';
     case 'staff-scrambler':
       return 'SCRAMBLER';
-    default:
+    case 'competitor':
       return 'COMPETITOR';
+    default:
+      return 'STAFF_OTHER';
   }
 };
 

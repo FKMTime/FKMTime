@@ -53,6 +53,7 @@ const Attendance = () => {
             toast({
                 title: "Success",
                 description: "Marked as present",
+                variant: "success",
             });
             fetchAttendanceData(selectedGroup);
         } else {

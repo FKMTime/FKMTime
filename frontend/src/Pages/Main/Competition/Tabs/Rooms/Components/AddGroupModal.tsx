@@ -125,6 +125,7 @@ const AddGroupModal = ({
                 <Button
                     variant="success"
                     onClick={() => onSubmit(currentGroup)}
+                    disabled={currentGroup === ""}
                 >
                     Add
                 </Button>

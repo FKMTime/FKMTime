@@ -30,6 +30,7 @@ const ManageCompetition = ({
             toast({
                 title: "Success",
                 description: "Competition updated",
+                variant: "success",
             });
         } else {
             toast({
