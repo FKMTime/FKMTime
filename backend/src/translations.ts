@@ -1,60 +1,299 @@
 const translations = [
   {
     locale: 'en',
-    translations: {
-      stationNotFound: 'Station not found',
-      competitorNotFound: 'Competitor not found',
-      competitionNotFound: 'Competition not found',
-      judgeNotFound: 'Judge not found',
-      competitorIsNotInThisGroup: 'Competitor is not in this group',
-      cutoffNotPassed: 'Cutoff not passed',
-      delegateWasNotified: 'Delegate was notified',
-      attemptEntered: 'Attempt entered',
-      attemptEnteredButReplacedToDnf: 'Attempt entered but replaced to DNF',
-      noAttemptsLeft: 'No attempts left',
-      competitorIsNotSignedInForEvent: 'You are not signed for this event',
-      attemptAlreadyEntered: 'This attempt has already been entered',
-      alreadyCheckedIn: 'You have already checked in',
-      attendanceConfirmed: 'Attendance confirmed',
-      judgeCardNotScanned: "Judge's card was not scanned",
-      groupNotFound: 'Group not found',
-    },
+    translations: [
+      { key: 'stationNotFound', translation: 'Station not found' },
+      { key: 'competitorNotFound', translation: 'Competitor not found' },
+      { key: 'competitionNotFound', translation: 'Competition not found' },
+      { key: 'judgeNotFound', translation: 'Judge not found' },
+      {
+        key: 'competitorIsNotInThisGroup',
+        translation: 'Competitor is not in this group',
+      },
+      { key: 'cutoffNotPassed', translation: 'Cutoff not passed' },
+      { key: 'delegateWasNotified', translation: 'Delegate was notified' },
+      { key: 'attemptEntered', translation: 'Attempt entered' },
+      {
+        key: 'attemptEnteredButReplacedToDnf',
+        translation: 'Attempt entered but replaced to DNF',
+      },
+      { key: 'noAttemptsLeft', translation: 'No attempts left' },
+      {
+        key: 'competitorIsNotSignedInForEvent',
+        translation: 'You are not signed for this event',
+      },
+      {
+        key: 'attemptAlreadyEntered',
+        translation: 'This attempt has already been entered',
+      },
+      { key: 'alreadyCheckedIn', translation: 'You have already checked in' },
+      { key: 'attendanceConfirmed', translation: 'Attendance confirmed' },
+      {
+        key: 'judgeCardNotScanned',
+        translation: "Judge's card was not scanned",
+      },
+      { key: 'groupNotFound', translation: 'Group not found' },
+      {
+        key: 'scanCompetitorCardHeader',
+        translation: 'Scan card',
+      },
+      {
+        key: 'scanCompetitorCardFooter',
+        translation: 'of the competitor',
+      },
+      {
+        key: 'scanCompetitorCardWithTimeFooter',
+        translation: 'of the competitor ({0})',
+      },
+      {
+        key: 'selectGroup',
+        translation: 'Select round',
+      },
+      {
+        key: 'confirmTime',
+        translation: 'Confirm the time',
+      },
+      {
+        key: 'scanJudgeCard',
+        translation: "Scan the judge's card",
+      },
+      {
+        key: 'scanCompetitorCard',
+        translation: "Scan the competitor's card",
+      },
+      {
+        key: 'waitingForWifiHeader',
+        translation: 'Waiting for',
+      },
+      {
+        key: 'waitingForWifiFooter',
+        translation: 'WiFi connection',
+      },
+      {
+        key: 'waitingForMdnsHeader',
+        translation: 'Waiting for',
+      },
+      {
+        key: 'waitingForMdnsFooter',
+        translation: 'Server Discovery',
+      },
+      {
+        key: 'wifiSetupHeader',
+        translation: 'Connect to:',
+      },
+      {
+        key: 'callingForDelegateHeader',
+        translation: 'Calling delegate',
+      },
+      {
+        key: 'callingForDelegateFooter',
+        translation: 'In: {0}',
+      },
+      {
+        key: 'waitingForDelegateHeader',
+        translation: 'Waiting for',
+      },
+      {
+        key: 'waitingForDelegateFooter',
+        translation: 'Delegate',
+      },
+      {
+        key: 'errorHeader',
+        translation: 'Error',
+      },
+      {
+        key: 'deviceNotAddedHeader',
+        translation: 'Device not added',
+      },
+      {
+        key: 'deviceNotAddedFooter',
+        translation: 'Press submit to connect',
+      },
+      {
+        key: 'emptyGroupsError',
+        translation: "You don't have any groups to select",
+      },
+      {
+        key: 'serverDisconnectedHeader',
+        translation: 'Server',
+      },
+      {
+        key: 'stackmatDisconnectedHeader',
+        translation: 'Stackmat',
+      },
+      {
+        key: 'stackmatDisconnectedFooter',
+        translation: 'Disconnected',
+      },
+      {
+        key: 'serverDisconnectedFooter',
+        translation: 'Disconnected',
+      },
+    ],
   },
   {
     locale: 'pl',
-    translations: {
-      stationNotFound: 'Stanowisko nie zostalo znalezione',
-      competitorNotFound: 'Zawodnik nie zostal znaleziony',
-      competitionNotFound: 'Zawody nie istnieja',
-      judgeNotFound: 'Sedzia nie zostal znaleziony',
-      competitorIsNotInThisGroup: 'Zawodnik nie jest w tej grupie',
-      cutoffNotPassed: 'Nie zrobiles cutoffa',
-      delegateWasNotified: 'Delegat został powiadomiony',
-      attemptEntered: 'Ulozenie zostalo wprowadzone',
-      attemptEnteredButReplacedToDnf:
-        "Ulozenie zostalo wprowadzona, ale zastąpione DNF'em",
-      noAttemptsLeft: 'Wykonales juz wszystkie ulozenia',
-      competitorIsNotSignedInForEvent: 'Nie jestes zapisany na ta konkurencje',
-      attemptAlreadyEntered: 'To ulozenie zostalo juz wprowadzone',
-      alreadyCheckedIn: 'Twoja obecnosc zostala juz potwierdzona',
-      attendanceConfirmed: 'Obecnosc zostala potwierdzona',
-      judgeCardNotScanned: 'Karta sedziego nie zostala zeskanowana',
-      groupNotFound: 'Grupa nie zostala znaleziona',
-    },
+    translations: [
+      {
+        key: 'stationNotFound',
+        translation: 'Stanowisko nie zostalo znalezione',
+      },
+      {
+        key: 'competitorNotFound',
+        translation: 'Zawodnik nie zostal znaleziony',
+      },
+      { key: 'competitionNotFound', translation: 'Zawody nie istnieja' },
+      { key: 'judgeNotFound', translation: 'Sedzia nie zostal znaleziony' },
+      {
+        key: 'competitorIsNotInThisGroup',
+        translation: 'Zawodnik nie jest w tej grupie',
+      },
+      { key: 'cutoffNotPassed', translation: 'Nie zrobiles cutoffa' },
+      {
+        key: 'delegateWasNotified',
+        translation: 'Delegat został powiadomiony',
+      },
+      { key: 'attemptEntered', translation: 'Ulozenie zostalo wprowadzone' },
+      {
+        key: 'attemptEnteredButReplacedToDnf',
+        translation: "Ulozenie zostalo wprowadzona, ale zastąpione DNF'em",
+      },
+      {
+        key: 'noAttemptsLeft',
+        translation: 'Wykonales juz wszystkie ulozenia',
+      },
+      {
+        key: 'competitorIsNotSignedInForEvent',
+        translation: 'Nie jestes zapisany na ta konkurencje',
+      },
+      {
+        key: 'attemptAlreadyEntered',
+        translation: 'To ulozenie zostalo juz wprowadzone',
+      },
+      {
+        key: 'alreadyCheckedIn',
+        translation: 'Twoja obecnosc zostala juz potwierdzona',
+      },
+      {
+        key: 'attendanceConfirmed',
+        translation: 'Obecnosc zostala potwierdzona',
+      },
+      {
+        key: 'judgeCardNotScanned',
+        translation: 'Karta sedziego nie zostala zeskanowana',
+      },
+      { key: 'groupNotFound', translation: 'Grupa nie zostala znaleziona' },
+      {
+        key: 'scanCompetitorCardHeader',
+        translation: 'Zeskanuj karte',
+      },
+      {
+        key: 'scanCompetitorCardFooter',
+        translation: 'zawodnika',
+      },
+      {
+        key: 'scanCompetitorCardWithTimeFooter',
+        translation: 'zawodnika ({0})',
+      },
+      {
+        key: 'selectGroup',
+        translation: 'Wybierz runde',
+      },
+      {
+        key: 'confirmTime',
+        translation: 'Potwierdz czas',
+      },
+      {
+        key: 'scanJudgeCard',
+        translation: 'Zeskanuj karte sedziego',
+      },
+      {
+        key: 'scanCompetitorCard',
+        translation: 'Zeskanuj karte zawodnika',
+      },
+      {
+        key: 'waitingForWifiHeader',
+        translation: 'Oczekiwanie na',
+      },
+      {
+        key: 'waitingForWifiFooter',
+        translation: 'połączenie WiFi',
+      },
+      {
+        key: 'waitingForMdnsHeader',
+        translation: 'Oczekiwanie na',
+      },
+      {
+        key: 'waitingForMdnsFooter',
+        translation: 'polaczenie z serwerem',
+      },
+      {
+        key: 'wifiSetupHeader',
+        translation: 'Polacz z:',
+      },
+      {
+        key: 'callingForDelegateHeader',
+        translation: 'Wezwanie delegata',
+      },
+      {
+        key: 'callingForDelegateFooter',
+        translation: 'Za: {0}',
+      },
+      {
+        key: 'waitingForDelegateHeader',
+        translation: 'Oczekiwanie na',
+      },
+      {
+        key: 'waitingForDelegateFooter',
+        translation: 'delegata',
+      },
+      {
+        key: 'errorHeader',
+        translation: 'Blad',
+      },
+      {
+        key: 'deviceNotAddedHeader',
+        translation: 'Urzadzenie nie zostało dodane',
+      },
+      {
+        key: 'deviceNotAddedFooter',
+        translation: 'Nacisnij wyslij, aby polaczyc',
+      },
+      {
+        key: 'emptyGroupsError',
+        translation: 'Nie masz zadnych rund do wyboru',
+      },
+      {
+        key: 'serverDisconnectedHeader',
+        translation: 'Brak polaczenia',
+      },
+      {
+        key: 'stackmatDisconnectedHeader',
+        translation: 'Timer',
+      },
+      {
+        key: 'stackmatDisconnectedFooter',
+        translation: 'Odlaczony',
+      },
+      {
+        key: 'serverDisconnectedFooter',
+        translation: 'z serwerem',
+      },
+    ],
   },
 ];
 
-export const getTranslation = (key: string, locale: string) => {
-  switch (locale.toLowerCase()) {
-    case 'pl':
-      return (
-        translations.find((t) => t.locale === 'pl')?.translations[key] || key
-      );
-    default:
-      return (
-        translations.find((t) => t.locale === 'en')?.translations[key] || key
-      );
-  }
+export const getTranslation = (
+  key: string,
+  locale: string,
+  defaultLanguage = 'en',
+) => {
+  const localeOrDefault = isLocaleAvailable(locale) ? locale : defaultLanguage;
+  return (
+    translations
+      .find((t) => t.locale === localeOrDefault)
+      ?.translations.find((t) => t.key === key)?.translation ?? key
+  );
 };
 
 export const isLocaleAvailable = (locale: string) => {
