@@ -1,4 +1,5 @@
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 
@@ -14,7 +15,15 @@ import {
     FormMessage,
 } from "@/Components/ui/form";
 import { Input } from "@/Components/ui/input";
-import { Competition } from "@/lib/interfaces";
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/Components/ui/select";
+import { getAvailableLocales } from "@/lib/competition";
+import { AvailableLocale, Competition } from "@/lib/interfaces";
 import { deviceSettingsSchema } from "@/lib/schema/deviceSchema";
 
 interface DeviceSettingsFormProps {
@@ -26,6 +35,10 @@ const DeviceSettingsForm = ({
     competition,
     handleSubmit,
 }: DeviceSettingsFormProps) => {
+    const [availableLocales, setAvailableLocales] = useState<AvailableLocale[]>(
+        []
+    );
+
     const form = useForm<z.infer<typeof deviceSettingsSchema>>({
         resolver: zodResolver(deviceSettingsSchema),
         defaultValues: {
@@ -34,6 +47,7 @@ const DeviceSettingsForm = ({
             wsUrl: competition.wsUrl || "",
             wifiSsid: competition.wifiSsid,
             wifiPassword: competition.wifiPassword,
+            defaultLocale: competition.defaultLocale,
         },
     });
 
@@ -43,6 +57,10 @@ const DeviceSettingsForm = ({
             ...values,
         });
     };
+
+    useEffect(() => {
+        getAvailableLocales().then(setAvailableLocales);
+    }, []);
 
     return (
         <Form {...form}>
@@ -107,6 +125,36 @@ const DeviceSettingsForm = ({
                         )}
                     />
                 )}
+                <FormField
+                    control={form.control}
+                    name="defaultLocale"
+                    render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Default locale</FormLabel>
+                            <Select
+                                onValueChange={field.onChange}
+                                defaultValue={field.value}
+                            >
+                                <FormControl>
+                                    <SelectTrigger>
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                    {availableLocales.map((locale) => (
+                                        <SelectItem
+                                            key={locale.locale}
+                                            value={locale.locale}
+                                        >
+                                            {locale.localeName}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                            <FormMessage />
+                        </FormItem>
+                    )}
+                />
                 <FormField
                     control={form.control}
                     name="wifiSsid"

@@ -52,10 +52,20 @@ export class ResultFromDeviceService {
   }
 
   async enterAttempt(data: EnterAttemptDto) {
+    const competition = await this.prisma.competition.findFirst();
+    if (!competition) {
+      return {
+        message: getTranslation('competitionNotFound', 'en'),
+        shouldResetTime: true,
+        status: 404,
+        error: true,
+      };
+    }
+
     const device = await this.getStationByEspId(data.espId);
     if (!device) {
       return {
-        message: getTranslation('stationNotFound', 'en'),
+        message: getTranslation('stationNotFound', competition.defaultLocale),
         shouldResetTime: false,
         status: 404,
         error: true,
@@ -63,7 +73,7 @@ export class ResultFromDeviceService {
     }
     if (device.room.currentGroupIds.length === 0) {
       return {
-        message: 'No group in this room',
+        message: getTranslation('noGroups', competition.defaultLocale),
         status: 400,
         shouldResetTime: false,
         error: true,
@@ -75,7 +85,7 @@ export class ResultFromDeviceService {
       groupId = device.room.currentGroupIds[0];
     } else if (device.room.currentGroupIds.length > 1 && !data.groupId) {
       return {
-        message: getTranslation('groupNotFound', 'en'),
+        message: getTranslation('groupNotFound', competition.defaultLocale),
         shouldResetTime: false,
         status: 400,
         error: true,
@@ -83,7 +93,7 @@ export class ResultFromDeviceService {
     } else if (device.room.currentGroupIds.length > 1 && data.groupId) {
       if (!device.room.currentGroupIds.includes(data.groupId)) {
         return {
-          message: getTranslation('groupNotFound', 'en'),
+          message: getTranslation('groupNotFound', competition.defaultLocale),
           shouldResetTime: false,
           status: 404,
           error: true,
@@ -95,7 +105,7 @@ export class ResultFromDeviceService {
     const competitor = await this.personService.getPersonByCardId(
       data.competitorId.toString(),
     );
-    let locale = 'PL';
+    let locale = competition.defaultLocale;
     if (!competitor) {
       return {
         message: getTranslation('competitorNotFound', locale),
@@ -165,19 +175,10 @@ export class ResultFromDeviceService {
           locale = judge.countryIso2.toLowerCase();
         }
       } else {
-        locale = 'en';
+        locale = competition.defaultLocale;
       }
     }
 
-    const competition = await this.prisma.competition.findFirst();
-    if (!competition) {
-      return {
-        message: getTranslation('competitionNotFound', locale),
-        shouldResetTime: true,
-        status: 404,
-        error: true,
-      };
-    }
     const wcif = JSON.parse(JSON.stringify(competition.wcif));
     const currentRoundId = groupId.split('-g')[0];
     const roundInfo = getRoundInfoFromWcif(currentRoundId, wcif);

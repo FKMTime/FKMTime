@@ -1,6 +1,7 @@
-const translations = [
+export const translations = [
   {
     locale: 'en',
+    localeName: 'English',
     translations: [
       { key: 'stationNotFound', translation: 'Station not found' },
       { key: 'competitorNotFound', translation: 'Competitor not found' },
@@ -33,6 +34,10 @@ const translations = [
         translation: "Judge's card was not scanned",
       },
       { key: 'groupNotFound', translation: 'Group not found' },
+      {
+        key: 'noGroups',
+        translation: 'There are no active rounds at the moment',
+      },
       {
         key: 'scanCompetitorCardHeader',
         translation: 'Scan card',
@@ -133,6 +138,7 @@ const translations = [
   },
   {
     locale: 'pl',
+    localeName: 'Polski',
     translations: [
       {
         key: 'stationNotFound',
@@ -183,6 +189,10 @@ const translations = [
         translation: 'Karta sedziego nie zostala zeskanowana',
       },
       { key: 'groupNotFound', translation: 'Grupa nie zostala znaleziona' },
+      {
+        key: 'noGroups',
+        translation: 'W tym momencie nie rozgrywa sie zadna runda',
+      },
       {
         key: 'scanCompetitorCardHeader',
         translation: 'Zeskanuj karte',
@@ -283,21 +293,23 @@ const translations = [
   },
 ];
 
-export const getTranslation = (
-  key: string,
-  locale: string,
-  defaultLanguage = 'en',
-) => {
-  const localeOrDefault = isLocaleAvailable(locale) ? locale : defaultLanguage;
+export const getTranslation = (key: string, locale: string) => {
   return (
     translations
-      .find((t) => t.locale === localeOrDefault)
+      .find((t) => t.locale === locale.toLowerCase())
       ?.translations.find((t) => t.key === key)?.translation ?? key
   );
 };
 
 export const isLocaleAvailable = (locale: string) => {
   return translations.some((t) => t.locale === locale);
+};
+
+export const getLocales = () => {
+  return translations.map((t) => ({
+    locale: t.locale,
+    localeName: t.localeName,
+  }));
 };
 
 export const convertToLatin = (text: string) => {

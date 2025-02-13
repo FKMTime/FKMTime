@@ -56,6 +56,7 @@ export interface Competition {
     wcif: WCIF;
     createdAt?: Date;
     updatedAt?: Date;
+    defaultLocale: string;
 }
 
 //eslint-disable-next-line
@@ -407,4 +408,9 @@ export interface AttemptData {
     penalty: number;
     comment: string;
     replacedBy: number;
+}
+
+export interface AvailableLocale {
+    locale: string;
+    localeName: string;
 }

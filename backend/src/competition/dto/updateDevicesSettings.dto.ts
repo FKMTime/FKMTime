@@ -18,4 +18,8 @@ export class UpdateDevicesSettingsDto {
   @IsString()
   @IsOptional()
   wsUrl: string;
+
+  @IsString()
+  @IsOptional()
+  defaultLocale: string;
 }

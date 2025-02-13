@@ -96,6 +96,12 @@ export class CompetitionController {
   }
 
   @UseGuards(AuthGuard('jwt'), AdminGuard)
+  @Get('available-locales')
+  async getAvailableLocales() {
+    return this.competitionService.getAvailableLocales();
+  }
+
+  @UseGuards(AuthGuard('jwt'), AdminGuard)
   @Put('rooms')
   async updateRooms(@Body() dto: UpdateRoomsDto) {
     return this.roomsService.updateRooms(dto);

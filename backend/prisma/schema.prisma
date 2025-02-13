@@ -78,6 +78,7 @@ model Competition {
   scoretakingToken                String?                 @map("scoretaking_token")
   scoretakingTokenUpdatedAt       DateTime?               @map("scoretaking_token_updated_at")
   cubingContestsToken             String?                 @map("cubing_contests_token")
+  defaultLocale                   String?                 @map("default_locale") @default("en")
 
   @@map("competition")
 }

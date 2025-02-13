@@ -173,3 +173,12 @@ export const getCompetitionStatistics = async () => {
     );
     return await response.json();
 };
+
+export const getAvailableLocales = async () => {
+    const response = await backendRequest(
+        `competition/available-locales/`,
+        "GET",
+        true
+    );
+    return await response.json();
+};

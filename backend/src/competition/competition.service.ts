@@ -10,6 +10,7 @@ import { AttemptStatus, SendingResultsFrequency } from '@prisma/client';
 import { Activity, Event, Room as WCIFRoom, Venue } from '@wca/helpers';
 import { AppGateway } from 'src/app.gateway';
 import { ResultService } from 'src/result/result.service';
+import { getLocales, translations } from 'src/translations';
 import {
   getActivityInfoFromSchedule,
   getActivityInfoFromScheduleWithRoom,
@@ -203,6 +204,8 @@ export class CompetitionService {
     return {
       shouldUpdate: competition.shouldUpdateDevices,
       devices: devices.map((d) => d.espId),
+      translations: translations,
+      defaultLocale: competition.defaultLocale,
     };
   }
 
@@ -235,6 +238,10 @@ export class CompetitionService {
     });
   }
 
+  async getAvailableLocales() {
+    return getLocales();
+  }
+
   async getAutoSetupSettings() {
     const competition = await this.prisma.competition.findFirst({
       select: autoSetupSettingsSelect,
@@ -260,6 +267,7 @@ export class CompetitionService {
         wifiPassword: data.wifiPassword,
         mdns: data.mdns,
         wsUrl: data.wsUrl,
+        defaultLocale: data.defaultLocale,
       },
     });
 

@@ -53,6 +53,7 @@ const CompetitionForm = ({
                 values.sendingResultsFrequency as SendingResultsFrequency,
         });
     };
+
     return (
         <Form {...form}>
             <form
