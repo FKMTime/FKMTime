@@ -4,7 +4,7 @@ import { Competition as WCIF } from '@wca/helpers';
 import { publicPersonSelect } from 'src/constants';
 import { DbService } from 'src/db/db.service';
 import { eventsData } from 'src/events';
-import { convertToLatin, getTranslation } from 'src/translations';
+import { convertToLatin, getTranslation } from 'src/translations/translations';
 import { WcaService } from 'src/wca/wca.service';
 import {
   getGroupInfoByActivityId,
