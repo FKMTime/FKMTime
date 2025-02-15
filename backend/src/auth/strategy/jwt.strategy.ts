@@ -2,6 +2,7 @@ import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { Strategy } from 'passport-jwt';
 
+import { AuthService } from '../auth.service';
 import { JwtAuthDto } from '../dto/jwt-auth.dto';
 
 const { SECRET = 'secret' } = process.env;
@@ -18,7 +19,7 @@ const extractFromHeader = (req: any): string | null => {
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
-  constructor() {
+  constructor(private readonly authService: AuthService) {
     super({
       jwtFromRequest: extractFromHeader,
       secretOrKey: SECRET,
@@ -30,6 +31,12 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
 
     if (!userId || !role) {
       throw new UnauthorizedException('Invalid token payload');
+    }
+
+    const userExists = await this.authService.userExists(userId);
+
+    if (!userExists) {
+      throw new UnauthorizedException('User not found');
     }
 
     return { userId, role };

@@ -168,6 +168,14 @@ export class AuthService {
     return await this.jwtService.verifyAsync(token);
   }
 
+  async userExists(userId: string) {
+    return this.prisma.user.findFirst({
+      where: {
+        id: userId,
+      },
+    });
+  }
+
   async getUserInfo(userId: string) {
     return this.prisma.user.findFirst({
       where: {
