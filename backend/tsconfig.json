@@ -19,5 +19,5 @@
     "noFallthroughCasesInSwitch": false,
     "allowJs": true,
   },
-  "include": ["src/**/*.ts", "prisma/**/*.ts", "test/*.ts"]
+  "include": ["src/**/*.ts", "prisma/**/*.ts", "test/*.ts", "src/**/*", "src/translations/locales/*.json"],
 }

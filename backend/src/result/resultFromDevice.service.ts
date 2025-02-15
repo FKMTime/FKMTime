@@ -18,7 +18,10 @@ import { DeviceService } from 'src/device/device.service';
 import { isUnofficialEvent } from 'src/events';
 import { PersonService } from 'src/person/person.service';
 import { CreateScrambledAttemptDto } from 'src/scrambling/dto/createScrambledAttempt.dto';
-import { getTranslation, isLocaleAvailable } from 'src/translations';
+import {
+  getTranslation,
+  isLocaleAvailable,
+} from 'src/translations/translations';
 import { WcaService } from 'src/wca/wca.service';
 import { getPersonFromWcif, getRoundInfoFromWcif } from 'wcif-helpers';
 

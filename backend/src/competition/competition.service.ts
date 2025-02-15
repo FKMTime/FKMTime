@@ -10,7 +10,7 @@ import { AttemptStatus, SendingResultsFrequency } from '@prisma/client';
 import { Activity, Event, Room as WCIFRoom, Venue } from '@wca/helpers';
 import { AppGateway } from 'src/app.gateway';
 import { ResultService } from 'src/result/result.service';
-import { getLocales, translations } from 'src/translations';
+import { getAllTranslations, getLocales } from 'src/translations/translations';
 import {
   getActivityInfoFromSchedule,
   getActivityInfoFromScheduleWithRoom,
@@ -204,7 +204,7 @@ export class CompetitionService {
     return {
       shouldUpdate: competition.shouldUpdateDevices,
       devices: devices.map((d) => d.espId),
-      translations: translations,
+      translations: getAllTranslations(),
       defaultLocale: competition.defaultLocale,
     };
   }

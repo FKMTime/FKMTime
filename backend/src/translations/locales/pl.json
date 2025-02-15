@@ -1,0 +1,168 @@
+{
+    "translations": [
+        {
+            "key": "stationNotFound",
+            "translation": "Stanowisko nie zostalo znalezione"
+        },
+        {
+            "key": "competitorNotFound",
+            "translation": "Zawodnik nie zostal znaleziony"
+        },
+        {
+            "key": "competitionNotFound",
+            "translation": "Zawody nie istnieja"
+        },
+        {
+            "key": "judgeNotFound",
+            "translation": "Sedzia nie zostal znaleziony"
+        },
+        {
+            "key": "competitorIsNotInThisGroup",
+            "translation": "Zawodnik nie jest w tej grupie"
+        },
+        {
+            "key": "cutoffNotPassed",
+            "translation": "Nie zrobiles cutoffa"
+        },
+        {
+            "key": "delegateWasNotified",
+            "translation": "Delegat został powiadomiony"
+        },
+        {
+            "key": "attemptEntered",
+            "translation": "Ulozenie zostalo wprowadzone"
+        },
+        {
+            "key": "attemptEnteredButReplacedToDnf",
+            "translation": "Ulozenie zostalo wprowadzona, ale zastąpione DNF'em"
+        },
+        {
+            "key": "noAttemptsLeft",
+            "translation": "Wykonales juz wszystkie ulozenia"
+        },
+        {
+            "key": "competitorIsNotSignedInForEvent",
+            "translation": "Nie jestes zapisany na ta konkurencje"
+        },
+        {
+            "key": "attemptAlreadyEntered",
+            "translation": "To ulozenie zostalo juz wprowadzone"
+        },
+        {
+            "key": "alreadyCheckedIn",
+            "translation": "Twoja obecnosc zostala juz potwierdzona"
+        },
+        {
+            "key": "attendanceConfirmed",
+            "translation": "Obecnosc zostala potwierdzona"
+        },
+        {
+            "key": "judgeCardNotScanned",
+            "translation": "Karta sedziego nie zostala zeskanowana"
+        },
+        {
+            "key": "groupNotFound",
+            "translation": "Grupa nie zostala znaleziona"
+        },
+        {
+            "key": "noGroups",
+            "translation": "W tym momencie nie rozgrywa sie zadna runda"
+        },
+        {
+            "key": "scanCompetitorCardHeader",
+            "translation": "Zeskanuj karte"
+        },
+        {
+            "key": "scanCompetitorCardFooter",
+            "translation": "zawodnika"
+        },
+        {
+            "key": "scanCompetitorCardWithTimeFooter",
+            "translation": "zawodnika ({0})"
+        },
+        {
+            "key": "selectGroup",
+            "translation": "Wybierz runde"
+        },
+        {
+            "key": "confirmTime",
+            "translation": "Potwierdz czas"
+        },
+        {
+            "key": "scanJudgeCard",
+            "translation": "Zeskanuj karte sedziego"
+        },
+        {
+            "key": "scanCompetitorCard",
+            "translation": "Zeskanuj karte zawodnika"
+        },
+        {
+            "key": "waitingForWifiHeader",
+            "translation": "Oczekiwanie na"
+        },
+        {
+            "key": "waitingForWifiFooter",
+            "translation": "połączenie WiFi"
+        },
+        {
+            "key": "waitingForMdnsHeader",
+            "translation": "Oczekiwanie na"
+        },
+        {
+            "key": "waitingForMdnsFooter",
+            "translation": "polaczenie z serwerem"
+        },
+        {
+            "key": "wifiSetupHeader",
+            "translation": "Polacz z:"
+        },
+        {
+            "key": "callingForDelegateHeader",
+            "translation": "Wezwanie delegata"
+        },
+        {
+            "key": "callingForDelegateFooter",
+            "translation": "Za: {0}"
+        },
+        {
+            "key": "waitingForDelegateHeader",
+            "translation": "Oczekiwanie na"
+        },
+        {
+            "key": "waitingForDelegateFooter",
+            "translation": "delegata"
+        },
+        {
+            "key": "errorHeader",
+            "translation": "Blad"
+        },
+        {
+            "key": "deviceNotAddedHeader",
+            "translation": "Urzadzenie nie zostało dodane"
+        },
+        {
+            "key": "deviceNotAddedFooter",
+            "translation": "Nacisnij wyslij, aby polaczyc"
+        },
+        {
+            "key": "emptyGroupsError",
+            "translation": "Nie masz zadnych rund do wyboru"
+        },
+        {
+            "key": "serverDisconnectedHeader",
+            "translation": "Brak polaczenia"
+        },
+        {
+            "key": "stackmatDisconnectedHeader",
+            "translation": "Timer"
+        },
+        {
+            "key": "stackmatDisconnectedFooter",
+            "translation": "Odlaczony"
+        },
+        {
+            "key": "serverDisconnectedFooter",
+            "translation": "z serwerem"
+        }
+    ]
+}

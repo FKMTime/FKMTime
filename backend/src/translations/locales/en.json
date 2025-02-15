@@ -1,0 +1,168 @@
+{
+    "translations": [
+        {
+            "key": "stationNotFound",
+            "translation": "Station not found"
+        },
+        {
+            "key": "competitorNotFound",
+            "translation": "Competitor not found"
+        },
+        {
+            "key": "competitionNotFound",
+            "translation": "Competition not found"
+        },
+        {
+            "key": "judgeNotFound",
+            "translation": "Judge not found"
+        },
+        {
+            "key": "competitorIsNotInThisGroup",
+            "translation": "Competitor is not in this group"
+        },
+        {
+            "key": "cutoffNotPassed",
+            "translation": "Cutoff not passed"
+        },
+        {
+            "key": "delegateWasNotified",
+            "translation": "Delegate was notified"
+        },
+        {
+            "key": "attemptEntered",
+            "translation": "Attempt entered"
+        },
+        {
+            "key": "attemptEnteredButReplacedToDnf",
+            "translation": "Attempt entered but replaced to DNF"
+        },
+        {
+            "key": "noAttemptsLeft",
+            "translation": "No attempts left"
+        },
+        {
+            "key": "competitorIsNotSignedInForEvent",
+            "translation": "You are not signed for this event"
+        },
+        {
+            "key": "attemptAlreadyEntered",
+            "translation": "This attempt has already been entered"
+        },
+        {
+            "key": "alreadyCheckedIn",
+            "translation": "You have already checked in"
+        },
+        {
+            "key": "attendanceConfirmed",
+            "translation": "Attendance confirmed"
+        },
+        {
+            "key": "judgeCardNotScanned",
+            "translation": "Judge's card was not scanned"
+        },
+        {
+            "key": "groupNotFound",
+            "translation": "Group not found"
+        },
+        {
+            "key": "noGroups",
+            "translation": "There are no active rounds at the moment"
+        },
+        {
+            "key": "scanCompetitorCardHeader",
+            "translation": "Scan card"
+        },
+        {
+            "key": "scanCompetitorCardFooter",
+            "translation": "of the competitor"
+        },
+        {
+            "key": "scanCompetitorCardWithTimeFooter",
+            "translation": "of the competitor ({0})"
+        },
+        {
+            "key": "selectGroup",
+            "translation": "Select round"
+        },
+        {
+            "key": "confirmTime",
+            "translation": "Confirm the time"
+        },
+        {
+            "key": "scanJudgeCard",
+            "translation": "Scan the judge's card"
+        },
+        {
+            "key": "scanCompetitorCard",
+            "translation": "Scan the competitor's card"
+        },
+        {
+            "key": "waitingForWifiHeader",
+            "translation": "Waiting for"
+        },
+        {
+            "key": "waitingForWifiFooter",
+            "translation": "WiFi connection"
+        },
+        {
+            "key": "waitingForMdnsHeader",
+            "translation": "Waiting for"
+        },
+        {
+            "key": "waitingForMdnsFooter",
+            "translation": "Server Discovery"
+        },
+        {
+            "key": "wifiSetupHeader",
+            "translation": "Connect to:"
+        },
+        {
+            "key": "callingForDelegateHeader",
+            "translation": "Calling delegate"
+        },
+        {
+            "key": "callingForDelegateFooter",
+            "translation": "In: {0}"
+        },
+        {
+            "key": "waitingForDelegateHeader",
+            "translation": "Waiting for"
+        },
+        {
+            "key": "waitingForDelegateFooter",
+            "translation": "Delegate"
+        },
+        {
+            "key": "errorHeader",
+            "translation": "Error"
+        },
+        {
+            "key": "deviceNotAddedHeader",
+            "translation": "Device not added"
+        },
+        {
+            "key": "deviceNotAddedFooter",
+            "translation": "Press submit to connect"
+        },
+        {
+            "key": "emptyGroupsError",
+            "translation": "You don't have any groups to select"
+        },
+        {
+            "key": "serverDisconnectedHeader",
+            "translation": "Server"
+        },
+        {
+            "key": "stackmatDisconnectedHeader",
+            "translation": "Stackmat"
+        },
+        {
+            "key": "stackmatDisconnectedFooter",
+            "translation": "Disconnected"
+        },
+        {
+            "key": "serverDisconnectedFooter",
+            "translation": "Disconnected"
+        }
+    ]
+}
