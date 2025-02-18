@@ -78,8 +78,7 @@ describe('AuthController (e2e)', () => {
         id: expect.any(String),
         username: user.userInfo.username,
         fullName: user.userInfo.fullName,
-        role: user.userInfo.role,
-        isWcaAdmin: false,
+        roles: user.userInfo.roles,
         avatarUrl: null,
       });
     });

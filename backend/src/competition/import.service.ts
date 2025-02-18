@@ -1,6 +1,7 @@
 import { forwardRef, HttpException, Inject } from '@nestjs/common';
-import { SendingResultsFrequency } from '@prisma/client';
+import { Role, SendingResultsFrequency } from '@prisma/client';
 import { Assignment, Person } from '@wca/helpers';
+import { ADMIN_WCA_USER_IDS } from 'src/constants';
 import { DbService } from 'src/db/db.service';
 import { WcaService } from 'src/wca/wca.service';
 import { wcifRoleToAttendanceRole } from 'src/wcif-helpers';
@@ -23,8 +24,56 @@ export class ImportService {
         id: userId,
       },
     });
+    await this.prisma.user.deleteMany({
+      where: {
+        id: {
+          not: userId,
+        },
+      },
+    });
     const wcifPublic = await this.wcaService.getPublicWcif(wcaId);
     const wcif = await this.wcaService.getWcif(wcaId, user.wcaAccessToken);
+    const competitionInfo = await this.wcaService.getCompetitionInfo(wcaId);
+    if (user.wcaAccessToken) {
+      if (ADMIN_WCA_USER_IDS.includes(user.wcaUserId)) {
+        await this.prisma.user.update({
+          where: {
+            id: user.id,
+          },
+          data: {
+            roles: [...user.roles, 'ADMIN'],
+          },
+        });
+      } else {
+        const isDelegate = competitionInfo.delegates.some(
+          (delegate) => delegate.id === user.wcaUserId,
+        );
+        const isOrganizer = competitionInfo.organizers.some(
+          (organizer) => organizer.id === user.wcaUserId,
+        );
+        const roles = [];
+        if (isDelegate) {
+          roles.push(Role.DELEGATE);
+        }
+        if (isOrganizer) {
+          roles.push(Role.ORGANIZER);
+        }
+        if (roles.length === 0) {
+          throw new HttpException(
+            'You are not allowed to import this competition',
+            403,
+          );
+        }
+        await this.prisma.user.update({
+          where: {
+            id: user.id,
+          },
+          data: {
+            roles,
+          },
+        });
+      }
+    }
     const competition = await this.prisma.competition.create({
       data: {
         name: wcifPublic.name,

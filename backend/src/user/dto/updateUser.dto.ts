@@ -1,5 +1,5 @@
 import { Role } from '@prisma/client';
-import { IsEnum, IsNotEmpty, IsString } from 'class-validator';
+import { IsArray, IsNotEmpty, IsString } from 'class-validator';
 
 export class UpdateUserDto {
   @IsString()
@@ -10,6 +10,6 @@ export class UpdateUserDto {
   @IsNotEmpty()
   fullName: string;
 
-  @IsEnum(Role)
-  role: Role;
+  @IsArray()
+  roles: Role[];
 }

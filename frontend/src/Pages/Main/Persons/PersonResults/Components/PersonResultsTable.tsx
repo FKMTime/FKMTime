@@ -5,8 +5,8 @@ import {
     TableHeader,
     TableRow,
 } from "@/Components/ui/table";
-import { isAdmin } from "@/lib/auth";
 import { Result } from "@/lib/interfaces";
+import { isOrganizerOrDelegate } from "@/lib/permissions";
 
 import PersonResultRow from "./PersonResultRow";
 
@@ -22,7 +22,7 @@ const PersonResultsTable = ({ results }: PersonResultsTableProps) => {
                     <TableHead>Round</TableHead>
                     <TableHead>Average</TableHead>
                     <TableHead>Best</TableHead>
-                    {isAdmin() && <TableHead>Actions</TableHead>}
+                    {isOrganizerOrDelegate() && <TableHead>Actions</TableHead>}
                 </TableRow>
             </TableHeader>
             <TableBody>

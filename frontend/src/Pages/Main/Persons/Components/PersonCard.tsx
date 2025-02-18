@@ -14,8 +14,8 @@ import {
     CardHeader,
     CardTitle,
 } from "@/Components/ui/card";
-import { isAdmin } from "@/lib/auth";
 import { Person } from "@/lib/interfaces";
+import { isStageLeaderOrOrganizerOrDelegate } from "@/lib/permissions";
 import { WCA_ORIGIN } from "@/lib/request";
 import { prettyGender, regionNameByIso2 } from "@/lib/utils";
 
@@ -111,7 +111,7 @@ const PersonCard = ({
                     </Button>
                     {person.registrantId &&
                         person.registrantId !== 0 &&
-                        isAdmin() && (
+                        isStageLeaderOrOrganizerOrDelegate() && (
                             <>
                                 <Button
                                     onClick={() =>

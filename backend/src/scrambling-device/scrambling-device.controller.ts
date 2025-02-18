@@ -10,7 +10,7 @@ import {
   Put,
   UseGuards,
 } from '@nestjs/common';
-import { AdminGuard } from 'src/auth/guards/admin.guard';
+import { DelegateGuard } from 'src/auth/guards/delegate.guard';
 
 import { CheckTokenDto } from './dto/checkToken.dto';
 import { GetTokenDto } from './dto/getToken.dto';
@@ -23,19 +23,19 @@ export class ScramblingDeviceController {
     private readonly scramblingDeviceService: ScramblingDeviceService,
   ) {}
 
-  @UseGuards(AdminGuard)
+  @UseGuards(DelegateGuard)
   @Get()
   async getScramblingDevicesByRoom() {
     return this.scramblingDeviceService.getScramblingDevicesByRoom();
   }
 
-  @UseGuards(AdminGuard)
+  @UseGuards(DelegateGuard)
   @Post()
   async createScramblingDevice(@Body() data: ScramblingDeviceDto) {
     return this.scramblingDeviceService.createScramblingDevice(data);
   }
 
-  @UseGuards(AdminGuard)
+  @UseGuards(DelegateGuard)
   @Get(':id/code')
   async generateOneTimeCode(@Param('id') scramblingDeviceId: string) {
     return this.scramblingDeviceService.generateOneTimeCode(scramblingDeviceId);
@@ -52,6 +52,7 @@ export class ScramblingDeviceController {
     return this.scramblingDeviceService.isTokenValid(data);
   }
 
+  @UseGuards(DelegateGuard)
   @Put(':id')
   async updateScramblingDevice(
     @Param('id') id: string,
@@ -60,6 +61,7 @@ export class ScramblingDeviceController {
     return this.scramblingDeviceService.updateScramblingDevice(id, data);
   }
 
+  @UseGuards(DelegateGuard)
   @HttpCode(HttpStatus.NO_CONTENT)
   @Delete(':id')
   async deleteScramblingDevice(@Param('id') id: string) {

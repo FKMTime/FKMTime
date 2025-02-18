@@ -1,6 +1,8 @@
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
+import { Role } from '@prisma/client';
 import { sha512 } from 'js-sha512';
+import { ADMIN_WCA_USER_IDS } from 'src/constants';
 
 import { DbService } from '../db/db.service';
 import { WcaService } from '../wca/wca.service';
@@ -31,7 +33,7 @@ export class AuthService {
 
     const jwt = await this.generateAuthJwt({
       userId: user.id,
-      role: user.role,
+      roles: user.roles,
     });
 
     return {
@@ -40,14 +42,13 @@ export class AuthService {
         id: user.id,
         username: user.username,
         fullName: user.fullName,
-        role: user.role,
+        roles: user.roles,
         avatarUrl: user.avatarUrl || undefined,
       },
     };
   }
 
   async loginWithWca(data: WcaLoginDto) {
-    const WCA_ADMIN = ['wst', 'wrt', 'wcat'];
     const token = await this.wcaService.getAccessToken(
       data.code,
       data.redirectUri,
@@ -61,9 +62,8 @@ export class AuthService {
         wcaUserId: userInfo.me.id,
       },
     });
-    const isWcaAdmin = userInfo.me.teams.some((t) =>
-      WCA_ADMIN.includes(t.friendly_id),
-    );
+    const isDelegate = !!userInfo.me.delegate_status;
+
     if (existingUser) {
       await this.prisma.user.update({
         where: {
@@ -72,13 +72,12 @@ export class AuthService {
         data: {
           fullName: userInfo.me.name,
           wcaAccessToken: token,
-          isWcaAdmin: isWcaAdmin,
           avatarUrl: userInfo.me.avatar.thumb_url,
         },
       });
       const jwt = await this.generateAuthJwt({
         userId: existingUser.id,
-        role: existingUser.role,
+        roles: existingUser.roles,
       });
       return {
         token: jwt,
@@ -86,9 +85,8 @@ export class AuthService {
           id: existingUser.id,
           username: existingUser.username,
           fullName: existingUser.fullName,
-          role: existingUser.role,
+          roles: existingUser.roles,
           wcaAccessToken: token,
-          isWcaAdmin: isWcaAdmin,
           avatarUrl: userInfo.me.avatar.thumb_url,
         },
       };
@@ -96,30 +94,34 @@ export class AuthService {
       const competition = await this.prisma.competition.findFirst();
       const manageableCompetitions =
         await this.wcaService.getUpcomingManageableCompetitions(token);
+      const isGlobalAdmin = ADMIN_WCA_USER_IDS.includes(userInfo.me.id);
       if (!competition) {
         return await this.createAndReturnUser(
           userInfo.me.id,
           userInfo.me.name,
           token,
-          isWcaAdmin,
+          Role.ADMIN,
           userInfo.me.avatar.thumb_url,
         );
       } else {
         if (
-          (manageableCompetitions.length === 0 ||
-            !manageableCompetitions.some((c) => c.id === competition.wcaId)) &&
-          !userInfo.me.teams.some((t) => WCA_ADMIN.includes(t.friendly_id))
+          manageableCompetitions.some((c) => c.id === competition.wcaId) ||
+          isGlobalAdmin
         ) {
-          throw new HttpException(
-            'You are not allowed to manage this competition',
-            403,
-          );
-        } else {
           return await this.createAndReturnUser(
             userInfo.me.id,
             userInfo.me.name,
             token,
-            isWcaAdmin,
+            isGlobalAdmin
+              ? Role.ADMIN
+              : isDelegate
+                ? Role.DELEGATE
+                : Role.ORGANIZER,
+          );
+        } else {
+          throw new HttpException(
+            'You are not allowed to manage this competition',
+            403,
           );
         }
       }
@@ -130,22 +132,21 @@ export class AuthService {
     wcaUserId: number,
     fullName: string,
     wcaAccessToken: string,
-    isWcaAdmin = false,
+    role: Role,
     avatarUrl?: string,
   ) {
     const user = await this.prisma.user.create({
       data: {
         wcaUserId: wcaUserId,
         fullName: fullName,
-        role: 'ADMIN',
+        roles: [role],
         wcaAccessToken: wcaAccessToken,
-        isWcaAdmin: isWcaAdmin,
         avatarUrl: avatarUrl,
       },
     });
     const jwt = await this.generateAuthJwt({
       userId: user.id,
-      role: user.role,
+      roles: user.roles,
     });
     return {
       token: jwt,
@@ -153,9 +154,8 @@ export class AuthService {
         id: user.id,
         username: user.username,
         fullName: user.fullName,
-        role: user.role,
+        roles: user.roles,
         wcaAccessToken: user.wcaAccessToken,
-        isWcaAdmin: user.isWcaAdmin,
       },
     };
   }
@@ -165,7 +165,16 @@ export class AuthService {
   }
 
   async validateJwt(token: string): Promise<JwtAuthDto> {
-    return await this.jwtService.verifyAsync(token);
+    const verifiedUser = await this.jwtService.verifyAsync(token);
+    const userFromDb = await this.prisma.user.findFirst({
+      where: {
+        id: verifiedUser.userId,
+      },
+    });
+    return {
+      userId: userFromDb.id,
+      roles: userFromDb.roles,
+    };
   }
 
   async userExists(userId: string) {
@@ -185,8 +194,8 @@ export class AuthService {
         id: true,
         username: true,
         fullName: true,
-        role: true,
-        isWcaAdmin: true,
+        roles: true,
+        wcaAccessToken: true,
         avatarUrl: true,
       },
     });

@@ -11,8 +11,8 @@ import {
   Query,
   UseGuards,
 } from '@nestjs/common';
-import { AuthGuard } from '@nestjs/passport';
 import { DeviceType } from '@prisma/client';
+import { OrganizerGuard } from 'src/auth/guards/organizer.guard';
 
 import { AdminGuard } from '../auth/guards/admin.guard';
 import { DeviceService } from './device.service';
@@ -23,7 +23,7 @@ import { UploadFirmwareDto } from './dto/uploadFirmware.dto';
 export class DeviceController {
   constructor(private readonly deviceService: DeviceService) {}
 
-  @UseGuards(AuthGuard('jwt'), AdminGuard)
+  @UseGuards(OrganizerGuard)
   @Get()
   async getAllDevices(
     @Query('type') type: DeviceType,
@@ -32,19 +32,19 @@ export class DeviceController {
     return this.deviceService.getAllDevices(type, roomId);
   }
 
-  @UseGuards(AdminGuard)
+  @UseGuards(OrganizerGuard)
   @Post()
   async createDevice(@Body() data: DeviceDto) {
     return this.deviceService.createDevice(data);
   }
 
-  @UseGuards(AdminGuard)
+  @UseGuards(OrganizerGuard)
   @Put(':id')
   async updateDevice(@Param('id') id: string, @Body() data: DeviceDto) {
     return this.deviceService.updateDevice(id, data);
   }
 
-  @UseGuards(AdminGuard)
+  @UseGuards(OrganizerGuard)
   @HttpCode(HttpStatus.NO_CONTENT)
   @Delete(':id')
   async deleteDevice(@Param('id') id: string) {

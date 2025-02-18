@@ -7,22 +7,15 @@ import ModalActions from "@/Components/ModalActions";
 import { Button } from "@/Components/ui/button";
 import {
     Form,
-    FormControl,
     FormField,
     FormItem,
     FormLabel,
     FormMessage,
 } from "@/Components/ui/form";
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from "@/Components/ui/select";
-import { NewUserData, UserRole, WCAPerson } from "@/lib/interfaces";
+import { MultiSelect } from "@/Components/ui/multi-select";
+import { NewUserData, WCAPerson } from "@/lib/interfaces";
 import { createWCAUserSchema } from "@/lib/schema/userSchema";
-import { prettyUserRoleName } from "@/lib/utils";
+import { getAvailableRoles } from "@/lib/utils";
 
 import WCAPersonsAutocomplete from "../WCAPersonsAutocomplete";
 
@@ -47,7 +40,7 @@ const CreateWCAUserForm = ({
             ...values,
             wcaId: selectedPerson?.wcaId ?? values.wcaId,
             fullName: selectedPerson?.name ?? "",
-            role: values.role as UserRole,
+            roles: values.roles,
         });
     };
 
@@ -74,30 +67,17 @@ const CreateWCAUserForm = ({
                 />
                 <FormField
                     control={form.control}
-                    name="role"
+                    name="roles"
                     render={({ field }) => (
                         <FormItem>
-                            <FormLabel>Role</FormLabel>
-                            <Select
+                            <FormLabel>Roles</FormLabel>
+                            <MultiSelect
+                                options={getAvailableRoles()}
                                 onValueChange={field.onChange}
                                 defaultValue={field.value}
-                            >
-                                <FormControl>
-                                    <SelectTrigger>
-                                        <SelectValue placeholder="Select role" />
-                                    </SelectTrigger>
-                                </FormControl>
-                                <SelectContent>
-                                    {Object.keys(UserRole).map((userRole) => (
-                                        <SelectItem
-                                            key={userRole}
-                                            value={userRole}
-                                        >
-                                            {prettyUserRoleName(userRole)}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
+                                placeholder="Select roles"
+                                variant="inverted"
+                            />
                             <FormMessage />
                         </FormItem>
                     )}

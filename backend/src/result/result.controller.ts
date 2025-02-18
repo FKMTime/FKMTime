@@ -11,16 +11,17 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
+import { DelegateGuard } from 'src/auth/guards/delegate.guard';
+import { OrganizerGuard } from 'src/auth/guards/organizer.guard';
 
-import { AdminGuard } from '../auth/guards/admin.guard';
 import { DoubleCheckDto } from './dto/doubleCheck.dto';
 import { ResultService } from './result.service';
 
+@UseGuards(AuthGuard('jwt'))
 @Controller('result')
 export class ResultController {
   constructor(private readonly resultService: ResultService) {}
 
-  @UseGuards(AuthGuard('jwt'))
   @Get('round/:roundId')
   async getAllResultsByRoundId(
     @Param('roundId') roundId: string,
@@ -29,21 +30,21 @@ export class ResultController {
     return this.resultService.getAllResultsByRound(roundId, search);
   }
 
-  @UseGuards(AuthGuard('jwt'), AdminGuard)
+  @UseGuards(DelegateGuard)
   @Get('round/:roundId/double-check')
   async getResultsToDoubleCheckByRoundId(@Param('roundId') roundId: string) {
     return this.resultService.getResultsToDoubleCheckByRoundId(roundId);
   }
 
   @HttpCode(HttpStatus.OK)
-  @UseGuards(AuthGuard('jwt'), AdminGuard)
+  @UseGuards(DelegateGuard)
   @Post('double-check')
   async doubleCheckResultsByRoundId(@Body() data: DoubleCheckDto) {
     return this.resultService.doubleCheckResult(data);
   }
 
   @HttpCode(HttpStatus.NO_CONTENT)
-  @UseGuards(AuthGuard('jwt'), AdminGuard)
+  @UseGuards(DelegateGuard)
   @Delete('round/:roundId/double-check')
   async undoDoubleCheckResultsByRoundId(@Param('roundId') roundId: string) {
     return this.resultService.undoDoubleCheckResultsByRoundId(roundId);
@@ -55,34 +56,34 @@ export class ResultController {
     return this.resultService.getAllResultsByPerson(id);
   }
 
-  @UseGuards(AuthGuard('jwt'), AdminGuard)
+  @UseGuards(DelegateGuard)
   @Get('checks')
   async getResultsChecks(@Query('roundId') roundId: string) {
     return await this.resultService.getResultsChecks(roundId);
   }
 
-  @UseGuards(AuthGuard('jwt'), AdminGuard)
+  @UseGuards(OrganizerGuard)
   @Get(':id')
   async getResultById(@Param('id') id: string) {
     return await this.resultService.getResultById(id);
   }
 
   @HttpCode(HttpStatus.OK)
-  @UseGuards(AuthGuard('jwt'), AdminGuard)
+  @UseGuards(OrganizerGuard)
   @Post(':id/assign-dns')
   async assignDnsOnRemainingAttempts(@Param('id') id: string) {
     return await this.resultService.assignDnsOnRemainingAttempts(id);
   }
 
   @HttpCode(HttpStatus.NO_CONTENT)
-  @UseGuards(AuthGuard('jwt'), AdminGuard)
+  @UseGuards(DelegateGuard)
   @Delete(':id')
   async deleteResultById(@Param('id') id: string) {
     return await this.resultService.deleteResultById(id);
   }
 
   @HttpCode(HttpStatus.OK)
-  @UseGuards(AuthGuard('jwt'), AdminGuard)
+  @UseGuards(OrganizerGuard)
   @Post('round/:roundId/enter')
   async enterRoundToWcaLiveOrCubingContests(@Param('roundId') roundId: string) {
     return await this.resultService.enterRoundToWcaLiveOrCubingContests(
@@ -91,7 +92,7 @@ export class ResultController {
   }
 
   @HttpCode(HttpStatus.OK)
-  @UseGuards(AuthGuard('jwt'), AdminGuard)
+  @UseGuards(OrganizerGuard)
   @Get(':id/enter')
   async enterWholeScorecardToWcaLiveOrCubingContests(@Param('id') id: string) {
     return await this.resultService.enterWholeScorecardToWcaLiveOrCubingContests(
@@ -100,7 +101,7 @@ export class ResultController {
   }
 
   @HttpCode(HttpStatus.NO_CONTENT)
-  @UseGuards(AuthGuard('jwt'), AdminGuard)
+  @UseGuards(DelegateGuard)
   @Delete('group/:id/restart')
   async restartGroup(@Param('id') id: string) {
     return await this.resultService.restartGroup(id);

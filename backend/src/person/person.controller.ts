@@ -11,17 +11,17 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
+import { OrganizerGuard } from 'src/auth/guards/organizer.guard';
 
-import { AdminGuard } from '../auth/guards/admin.guard';
 import { AddPersonDto } from './dto/addPerson.dto';
 import { UpdatePersonDto } from './dto/updatePerson.dto';
 import { PersonService } from './person.service';
 
+@UseGuards(AuthGuard('jwt'))
 @Controller('person')
 export class PersonController {
   constructor(private readonly personService: PersonService) {}
 
-  @UseGuards(AuthGuard('jwt'))
   @Get()
   async getPersons(
     @Query('page') page = 1,
@@ -45,13 +45,12 @@ export class PersonController {
     );
   }
 
-  @UseGuards(AuthGuard('jwt'), AdminGuard)
+  @UseGuards(OrganizerGuard)
   @Post()
   async addPerson(@Body() data: AddPersonDto) {
     return await this.personService.addPerson(data);
   }
 
-  @UseGuards(AuthGuard('jwt'))
   @Get('all')
   async getAllPersons(
     @Query('withoutCardAssigned') withoutCardAssigned = false,
@@ -60,38 +59,32 @@ export class PersonController {
     return this.personService.getAllPersons(withoutCardAssigned, search);
   }
 
-  @UseGuards(AuthGuard('jwt'))
   @Get('without-card')
   async getPersonsWithoutCardAssigned() {
     return this.personService.getPersonsWithoutCardAssigned();
   }
 
-  @UseGuards(AuthGuard('jwt'))
   @Get('card/:cardId/sensitive')
   async getPersonInfoSensitive(@Param('cardId') cardId: string) {
     return await this.personService.getPersonInfoWithSensitiveData(cardId);
   }
 
-  @UseGuards(AuthGuard('jwt'))
   @HttpCode(HttpStatus.OK)
   @Post('check-in/:id')
   async checkIn(@Param('id') id: string, @Body() data: UpdatePersonDto) {
     return await this.personService.checkIn(id, data);
   }
 
-  @UseGuards(AuthGuard('jwt'))
   @Get('check-in')
   async checkedInCount() {
     return await this.personService.checkedInCount();
   }
 
-  @UseGuards(AuthGuard('jwt'))
   @Get(':id')
   async getPersonById(@Param('id') id: string) {
     return await this.personService.getPersonById(id);
   }
 
-  @UseGuards(AuthGuard('jwt'))
   @Put(':id')
   async updatePerson(@Param('id') id: string, @Body() data: UpdatePersonDto) {
     return await this.personService.updatePerson(id, data);

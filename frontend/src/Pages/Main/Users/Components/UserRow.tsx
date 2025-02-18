@@ -4,14 +4,13 @@ import { useState } from "react";
 import wcaLogo from "@/assets/wca.svg";
 import DeleteButton from "@/Components/DeleteButton";
 import EditButton from "@/Components/EditButton";
-import RoleIcon from "@/Components/Icons/RoleIcon.tsx";
 import SmallIconButton from "@/Components/SmallIconButton";
 import { TableCell, TableRow } from "@/Components/ui/table";
 import { useConfirm } from "@/hooks/useConfirm";
 import { useToast } from "@/hooks/useToast";
 import { User } from "@/lib/interfaces";
 import { deleteUser } from "@/lib/user";
-import { prettyUserRoleNameIncludingWCA } from "@/lib/utils.ts";
+import { prettyUserRoleName } from "@/lib/utils";
 
 import EditUserModal from "./EditUserModal";
 import EditUserPasswordModal from "./EditUserPasswordModal";
@@ -73,10 +72,9 @@ const UserRow = ({ user, fetchData }: UserRowProps) => {
                 </TableCell>
                 <TableCell>{user.fullName}</TableCell>
                 <TableCell>
-                    <div className="flex items-center gap-1">
-                        <span>{prettyUserRoleNameIncludingWCA(user)}</span>
-                        <RoleIcon role={user.role} />
-                    </div>
+                    {user.roles
+                        .map((role) => prettyUserRoleName(role))
+                        .join(", ")}
                 </TableCell>
                 <TableCell>
                     <EditButton onClick={() => setIsOpenEditUserModal(true)} />

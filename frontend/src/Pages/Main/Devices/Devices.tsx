@@ -21,6 +21,7 @@ import {
 import { Tabs, TabsList, TabsTrigger } from "@/Components/ui/tabs";
 import { getAllDevices } from "@/lib/devices";
 import { AvailableDevice, Device, Room } from "@/lib/interfaces";
+import { isAdmin } from "@/lib/permissions";
 import { getAllRooms } from "@/lib/rooms";
 import PageTransition from "@/Pages/PageTransition";
 import { socket, SocketContext } from "@/socket";
@@ -43,6 +44,7 @@ const tabs = [
     {
         id: "uploadFirmware",
         name: "Upload firmware",
+        disabled: !isAdmin(),
     },
 ];
 
@@ -167,6 +169,7 @@ const Devices = () => {
                                     key={tab.id}
                                     value={tab.id}
                                     onClick={() => onChangeTab(tab.id)}
+                                    disabled={tab.disabled}
                                 >
                                     {tab.name}
                                 </TabsTrigger>

@@ -13,6 +13,8 @@ import {
 } from "@/Components/ui/dropdown-menu";
 import { useToast } from "@/hooks/useToast";
 import { getUserInfo, logout } from "@/lib/auth";
+import { isDelegate } from "@/lib/permissions";
+import { loggedInWithWca } from "@/lib/utils";
 
 const ProfileDropdown = () => {
     const { toast } = useToast();
@@ -54,11 +56,13 @@ const ProfileDropdown = () => {
                     </div>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                <DropdownMenuGroup>
-                    <DropdownMenuItem asChild>
-                        <Link to="/settings">Settings</Link>
-                    </DropdownMenuItem>
-                </DropdownMenuGroup>
+                {(isDelegate() || !loggedInWithWca()) && (
+                    <DropdownMenuGroup>
+                        <DropdownMenuItem asChild>
+                            <Link to="/settings">Settings</Link>
+                        </DropdownMenuItem>
+                    </DropdownMenuGroup>
+                )}
                 <DropdownMenuItem onClick={handleLogout}>
                     Log out
                 </DropdownMenuItem>

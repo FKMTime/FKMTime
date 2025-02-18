@@ -15,18 +15,12 @@ import {
     FormMessage,
 } from "@/Components/ui/form";
 import { Input } from "@/Components/ui/input";
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from "@/Components/ui/select";
+import { MultiSelect } from "@/Components/ui/multi-select";
 import { useToast } from "@/hooks/useToast";
-import { User, UserRole } from "@/lib/interfaces";
+import { User } from "@/lib/interfaces";
 import { editUserSchema } from "@/lib/schema/userSchema";
 import { updateUser } from "@/lib/user";
-import { prettyUserRoleName } from "@/lib/utils.ts";
+import { getAvailableRoles } from "@/lib/utils";
 
 interface EditUserModalProps {
     isOpen: boolean;
@@ -44,7 +38,7 @@ const EditUserModal = ({ isOpen, onClose, user }: EditUserModalProps) => {
         defaultValues: {
             username: user.username,
             fullName: user.fullName,
-            role: user.role as UserRole,
+            roles: user.roles,
         },
     });
 
@@ -54,7 +48,6 @@ const EditUserModal = ({ isOpen, onClose, user }: EditUserModalProps) => {
         const status = await updateUser({
             ...user,
             ...values,
-            role: values.role as UserRole,
         });
         if (status === 200) {
             toast({
@@ -62,6 +55,12 @@ const EditUserModal = ({ isOpen, onClose, user }: EditUserModalProps) => {
                 variant: "success",
             });
             onClose();
+        } else if (status == 403) {
+            toast({
+                title: "Error",
+                description: "You cannot assign roles higher than your own",
+                variant: "destructive",
+            });
         } else if (status === 409) {
             toast({
                 title: "Error",
@@ -124,34 +123,17 @@ const EditUserModal = ({ isOpen, onClose, user }: EditUserModalProps) => {
                         )}
                         <FormField
                             control={form.control}
-                            name="role"
+                            name="roles"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>Role</FormLabel>
-                                    <Select
+                                    <FormLabel>Roles</FormLabel>
+                                    <MultiSelect
+                                        options={getAvailableRoles()}
                                         onValueChange={field.onChange}
                                         defaultValue={field.value}
-                                    >
-                                        <FormControl>
-                                            <SelectTrigger>
-                                                <SelectValue placeholder="Select role" />
-                                            </SelectTrigger>
-                                        </FormControl>
-                                        <SelectContent>
-                                            {Object.keys(UserRole).map(
-                                                (userRole) => (
-                                                    <SelectItem
-                                                        key={userRole}
-                                                        value={userRole}
-                                                    >
-                                                        {prettyUserRoleName(
-                                                            userRole
-                                                        )}
-                                                    </SelectItem>
-                                                )
-                                            )}
-                                        </SelectContent>
-                                    </Select>
+                                        placeholder="Select roles"
+                                        variant="inverted"
+                                    />
                                     <FormMessage />
                                 </FormItem>
                             )}

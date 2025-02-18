@@ -4,7 +4,7 @@ import { Role } from '@prisma/client';
 import { AuthService } from '../auth.service';
 
 @Injectable()
-export class AdminGuard implements CanActivate {
+export class DelegateGuard implements CanActivate {
   constructor(private readonly authService: AuthService) {}
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const req = context.switchToHttp().getRequest();
@@ -18,7 +18,7 @@ export class AdminGuard implements CanActivate {
     const user = await this.authService.validateJwt(token);
     return !(
       !user ||
-      ![Role.ADMIN].some(
+      ![Role.DELEGATE].some(
         (role) =>
           user.roles.includes(role as Role) || user.roles.includes(Role.ADMIN),
       )

@@ -28,6 +28,12 @@ const CreateUserModal = ({ isOpen, onClose }: CreateUserModalProps) => {
                 variant: "success",
             });
             onClose();
+        } else if (response.status == 403) {
+            toast({
+                title: "Error",
+                description: "You cannot assign roles higher than your own",
+                variant: "destructive",
+            });
         } else if (response.status === 409) {
             toast({
                 title: "Error",

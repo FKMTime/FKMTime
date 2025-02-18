@@ -5,6 +5,7 @@ import EventIcon from "@/Components/Icons/EventIcon";
 import { Button } from "@/Components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/Components/ui/card";
 import { Competition } from "@/lib/interfaces";
+import { isDelegate, isOrganizerOrDelegate } from "@/lib/permissions";
 
 interface InfoCardProps {
     competition: Competition;
@@ -28,15 +29,19 @@ const InfoCard = ({ competition }: InfoCardProps) => {
             </CardHeader>
             <CardContent>
                 <div className="flex flex-col gap-4">
-                    <Button onClick={() => navigate("/incidents")}>
-                        Incidents
-                    </Button>
-                    <Button
-                        onClick={() => navigate("/competition?tab=rooms")}
-                        variant="success"
-                    >
-                        Current groups
-                    </Button>
+                    {isDelegate() && (
+                        <Button onClick={() => navigate("/incidents")}>
+                            Incidents
+                        </Button>
+                    )}
+                    {isOrganizerOrDelegate() && (
+                        <Button
+                            onClick={() => navigate("/competition?tab=rooms")}
+                            variant="success"
+                        >
+                            Current groups
+                        </Button>
+                    )}
                 </div>
             </CardContent>
         </Card>

@@ -13,6 +13,7 @@ import {
     getCompetitionInfo,
 } from "@/lib/competition";
 import { Activity, Room } from "@/lib/interfaces";
+import { isOrganizerOrDelegate } from "@/lib/permissions";
 import { getAllRooms } from "@/lib/rooms";
 import PageTransition from "@/Pages/PageTransition";
 
@@ -88,12 +89,14 @@ const Home = () => {
     return (
         <PageTransition>
             <div className="flex flex-col gap-5">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 auto-rows-auto">
-                    <InfoCard competition={competition} />
-                    <div className="md:col-span-2 grid grid-cols-2 gap-4">
-                        <CompetitionStatistics />
+                {isOrganizerOrDelegate() && (
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 auto-rows-auto">
+                        <InfoCard competition={competition} />
+                        <div className="md:col-span-2 grid grid-cols-2 gap-4">
+                            <CompetitionStatistics />
+                        </div>
                     </div>
-                </div>
+                )}
                 {activities && activities.length > 0 ? (
                     <>
                         <div className="hidden md:block">

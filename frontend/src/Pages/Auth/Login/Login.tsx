@@ -29,6 +29,7 @@ const Login = () => {
                 toast({
                     title: "Successfully logged in.",
                     description: "You have been successfully logged in.",
+                    variant: "success",
                 });
                 navigate("/");
             } else if (status === 401) {

@@ -2,7 +2,6 @@ import { useState } from "react";
 
 import wcaLogo from "@/assets/wca.svg";
 import Avatar from "@/Components/Avatar/Avatar";
-import RoleIcon from "@/Components/Icons/RoleIcon";
 import { Button } from "@/Components/ui/button";
 import {
     Card,
@@ -15,7 +14,7 @@ import { useConfirm } from "@/hooks/useConfirm";
 import { useToast } from "@/hooks/useToast";
 import { User } from "@/lib/interfaces";
 import { deleteUser } from "@/lib/user";
-import { prettyUserRoleNameIncludingWCA } from "@/lib/utils";
+import { prettyUserRoleName } from "@/lib/utils";
 
 import EditUserModal from "./EditUserModal";
 import EditUserPasswordModal from "./EditUserPasswordModal";
@@ -85,10 +84,9 @@ const UserCard = ({ user, fetchData }: UserCardProps) => {
                 </CardHeader>
                 <CardContent>
                     <div className="flex gap-2 items-center">
-                        <span>
-                            Role: {prettyUserRoleNameIncludingWCA(user)}
-                        </span>
-                        <RoleIcon role={user.role} />
+                        {user.roles
+                            .map((role) => prettyUserRoleName(role))
+                            .join(", ")}
                     </div>
                     <div className="flex gap-2 items-center">
                         Logged in with:{" "}

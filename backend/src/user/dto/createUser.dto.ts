@@ -1,5 +1,5 @@
 import { Role } from '@prisma/client';
-import { IsEnum, IsOptional, IsString } from 'class-validator';
+import { IsArray, IsOptional, IsString } from 'class-validator';
 
 export class CreateUserDto {
   @IsString()
@@ -18,6 +18,6 @@ export class CreateUserDto {
   @IsOptional()
   password: string;
 
-  @IsEnum(Role)
-  role: Role;
+  @IsArray()
+  roles: Role[];
 }

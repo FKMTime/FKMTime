@@ -6,7 +6,7 @@ import { Button } from "@/Components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/Components/ui/card";
 import { useToast } from "@/hooks/useToast";
 import { competitionAtom } from "@/lib/atoms";
-import { getUserInfo, logout } from "@/lib/auth";
+import { getUserInfo, logout, updateUserInfo } from "@/lib/auth";
 import {
     getCompetitionInfo,
     getUpcomingManageableCompetitions,
@@ -35,6 +35,7 @@ const ImportCompetition = () => {
         }
         const response = await importCompetition(wcaId);
         if (response.status === 200) {
+            await updateUserInfo();
             setCompetition(response.data);
             navigate(`/competition/`);
         } else if (response.status === 400) {

@@ -13,16 +13,10 @@ import {
     FormMessage,
 } from "@/Components/ui/form";
 import { Input } from "@/Components/ui/input";
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from "@/Components/ui/select";
-import { NewUserData, UserRole } from "@/lib/interfaces";
+import { MultiSelect } from "@/Components/ui/multi-select";
+import { NewUserData } from "@/lib/interfaces";
 import { createFKMUserSchema } from "@/lib/schema/userSchema";
-import { prettyUserRoleName } from "@/lib/utils";
+import { getAvailableRoles } from "@/lib/utils";
 
 interface CreateFKMAccountFormProps {
     handleSubmit: (data: NewUserData) => void;
@@ -38,10 +32,7 @@ const CreateFKMAccountForm = ({
     });
 
     const onSubmit = (values: z.infer<typeof createFKMUserSchema>) => {
-        handleSubmit({
-            ...values,
-            role: values.role as UserRole,
-        });
+        handleSubmit(values);
     };
 
     return (
@@ -95,30 +86,17 @@ const CreateFKMAccountForm = ({
                 />
                 <FormField
                     control={form.control}
-                    name="role"
+                    name="roles"
                     render={({ field }) => (
                         <FormItem>
-                            <FormLabel>Role</FormLabel>
-                            <Select
+                            <FormLabel>Roles</FormLabel>
+                            <MultiSelect
+                                options={getAvailableRoles()}
                                 onValueChange={field.onChange}
                                 defaultValue={field.value}
-                            >
-                                <FormControl>
-                                    <SelectTrigger>
-                                        <SelectValue placeholder="Select role" />
-                                    </SelectTrigger>
-                                </FormControl>
-                                <SelectContent>
-                                    {Object.keys(UserRole).map((userRole) => (
-                                        <SelectItem
-                                            key={userRole}
-                                            value={userRole}
-                                        >
-                                            {prettyUserRoleName(userRole)}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
+                                placeholder="Select roles"
+                                variant="inverted"
+                            />
                             <FormMessage />
                         </FormItem>
                     )}

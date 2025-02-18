@@ -6,8 +6,8 @@ import ModalActions from "@/Components/ModalActions";
 import { Button } from "@/Components/ui/button";
 import { Input } from "@/Components/ui/input";
 import { useToast } from "@/hooks/useToast";
-import { isAdmin } from "@/lib/auth";
 import { Person } from "@/lib/interfaces";
+import { isOrganizerOrDelegate } from "@/lib/permissions";
 import { updatePerson } from "@/lib/persons";
 
 interface AssignCardModalProps {
@@ -48,7 +48,7 @@ const AssignCardModal = ({ isOpen, onClose, person }: AssignCardModalProps) => {
                     <Label>Card</Label>
                     <Input
                         placeholder="Card"
-                        readOnly={!isAdmin()}
+                        readOnly={!isOrganizerOrDelegate()}
                         value={editedPerson.cardId}
                         disabled={isLoading}
                         onChange={(e) =>
@@ -61,7 +61,7 @@ const AssignCardModal = ({ isOpen, onClose, person }: AssignCardModalProps) => {
                     />
                 </div>
                 <ModalActions>
-                    {isAdmin() && (
+                    {isOrganizerOrDelegate() && (
                         <Button
                             variant="success"
                             type="submit"
