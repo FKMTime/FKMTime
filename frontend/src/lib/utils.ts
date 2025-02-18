@@ -11,10 +11,12 @@ import {
     AttemptType,
     Person,
     Result,
-    User,
+    UserRole,
 } from "../lib/interfaces";
 import regions from "../lib/regions";
 import { activityCodeToName } from "./activities";
+import { getUserInfo } from "./auth";
+import { isAdmin, isDelegate, isOrganizer } from "./permissions";
 
 export function cn(...inputs: ClassValue[]) {
     return twMerge(clsx(inputs));
@@ -100,20 +102,44 @@ export const prettyAvailableDeviceType = (type: string) => {
             return "Unknown";
     }
 };
-export const prettyUserRoleNameIncludingWCA = (user: User) => {
-    if (user.isWcaAdmin) return "WCA Admin";
-    return prettyUserRoleName(user.role);
-};
 
 export const prettyUserRoleName = (role: string) => {
     switch (role) {
         case "ADMIN":
             return "Admin";
+        case "DELEGATE":
+            return "Delegate";
+        case "ORGANIZER":
+            return "Organizer";
+        case "STAGE_LEADER":
+            return "Stage leader";
         case "STAFF":
             return "Staff";
         default:
             return "Unknown";
     }
+};
+
+export const getAvailableRoles = () => {
+    const roles = Object.keys(UserRole).map((role) => ({
+        value: role,
+        label: prettyUserRoleName(role),
+    }));
+    if (isAdmin()) return roles;
+    if (isDelegate())
+        return roles.filter((role) => role.value !== UserRole.ADMIN);
+    if (isOrganizer() && !isDelegate())
+        return roles.filter(
+            (role) =>
+                role.value !== UserRole.ADMIN &&
+                role.value !== UserRole.DELEGATE
+        );
+    else return [];
+};
+
+export const loggedInWithWca = () => {
+    const userInfo = getUserInfo();
+    return userInfo?.wcaAccessToken && userInfo.wcaAccessToken !== null;
 };
 
 interface AttemptWithNumber extends Attempt {

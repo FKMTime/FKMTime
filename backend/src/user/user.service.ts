@@ -1,4 +1,5 @@
 import { HttpException, Injectable } from '@nestjs/common';
+import { Role } from '@prisma/client';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 import { sha512 } from 'js-sha512';
 import { WcaService } from 'src/wca/wca.service';
@@ -20,9 +21,8 @@ export class UserService {
         id: true,
         username: true,
         fullName: true,
-        role: true,
+        roles: true,
         wcaUserId: true,
-        isWcaAdmin: true,
         createdAt: true,
         updatedAt: true,
         avatarUrl: true,
@@ -33,14 +33,21 @@ export class UserService {
     });
   }
 
-  async createUser(data: CreateUserDto) {
+  async createUser(data: CreateUserDto, userId: string) {
+    const filteredRoles = await this.getFilteredRoles(userId, data.roles);
+    if (filteredRoles.length !== data.roles.length) {
+      throw new HttpException(
+        'You cannot assign roles higher than your own',
+        403,
+      );
+    }
     if (data.wcaId) {
       const userInfo = await this.wcaService.getUserInfoByWcaId(data.wcaId);
       await this.prisma.user.create({
         data: {
           fullName: data.fullName,
           wcaUserId: userInfo.user.id,
-          role: data.role,
+          roles: data.roles,
         },
       });
       return {
@@ -56,7 +63,7 @@ export class UserService {
           username: data.username ? data.username : null,
           fullName: data.fullName,
           password: sha512(data.password),
-          role: data.role,
+          roles: data.roles,
         },
       });
     } catch (e) {
@@ -71,14 +78,21 @@ export class UserService {
     };
   }
 
-  async updateUser(id: string, data: UpdateUserDto) {
+  async updateUser(id: string, data: UpdateUserDto, userId: string) {
+    const filteredRoles = await this.getFilteredRoles(userId, data.roles);
+    if (filteredRoles.length !== data.roles.length) {
+      throw new HttpException(
+        'You cannot assign roles higher than your own',
+        403,
+      );
+    }
     try {
       await this.prisma.user.update({
         where: { id: id },
         data: {
           username: data.username,
           fullName: data.fullName,
-          role: data.role,
+          roles: data.roles,
         },
       });
     } catch (e) {
@@ -106,5 +120,24 @@ export class UserService {
     return this.prisma.user.delete({
       where: { id: id },
     });
+  }
+
+  async getFilteredRoles(userId: string, roles: Role[]) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { roles: true },
+    });
+    if (!user) return [];
+    if (user.roles.includes(Role.ADMIN)) return roles;
+    if (user.roles.includes(Role.DELEGATE))
+      return roles.filter((role) => role !== Role.ADMIN);
+    if (
+      user.roles.includes(Role.ORGANIZER) &&
+      !user.roles.includes(Role.DELEGATE)
+    )
+      return roles.filter(
+        (role) => role !== Role.ADMIN && role !== Role.DELEGATE,
+      );
+    else return [];
   }
 }

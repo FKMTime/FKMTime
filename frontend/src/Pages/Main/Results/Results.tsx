@@ -28,9 +28,9 @@ import {
 import { Input } from "@/Components/ui/input";
 import { activityCodeToName } from "@/lib/activities";
 import { competitionAtom } from "@/lib/atoms";
-import { isAdmin } from "@/lib/auth";
 import { getCompetitionInfo } from "@/lib/competition";
 import { Result, Room } from "@/lib/interfaces";
+import { isOrganizerOrDelegate } from "@/lib/permissions";
 import { getResultsByRoundId } from "@/lib/results";
 import { getAllRooms } from "@/lib/rooms";
 import PageTransition from "@/Pages/PageTransition";
@@ -137,7 +137,7 @@ const Results = () => {
     ];
     useEffect(() => {
         if (filters.roundId) {
-            if (!isAdmin()) {
+            if (!isOrganizerOrDelegate()) {
                 navigate(`/results/public/${filters.roundId}`);
             }
             fetchData(filters.roundId);

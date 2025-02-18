@@ -2,6 +2,7 @@ import { backendRequest } from "./request";
 
 const TOKEN_NAME = "fkmtime-token";
 const USER_INFO_NAME = "fkmtime-userInfo";
+
 export const login = async (
     username: string,
     password: string
@@ -34,6 +35,12 @@ export const loginWithWca = async (code: string, redirectUri: string) => {
     };
 };
 
+export const updateUserInfo = async () => {
+    const me = await backendRequest("auth/me", "GET", true);
+    const userInfo = await me.json();
+    localStorage.setItem(USER_INFO_NAME, JSON.stringify(userInfo));
+};
+
 export const getToken = () => {
     return localStorage.getItem(TOKEN_NAME);
 };
@@ -50,14 +57,6 @@ export const isUserLoggedIn = async () => {
     } catch (error) {
         return false;
     }
-};
-
-export const isAdmin = () => {
-    const userInfo = getUserInfo();
-    if (userInfo === null) {
-        return false;
-    }
-    return userInfo.role === "ADMIN";
 };
 
 export const getUserInfo = () => {

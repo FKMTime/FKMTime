@@ -4,8 +4,8 @@ import LoadingPage from "@/Components/LoadingPage";
 import { Button } from "@/Components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/Components/ui/card";
 import { useToast } from "@/hooks/useToast";
-import { isAdmin } from "@/lib/auth";
 import { Settings as SettingsInterface } from "@/lib/interfaces";
+import { isDelegate } from "@/lib/permissions";
 import { getSettings, updateSettings } from "@/lib/settings";
 import PageTransition from "@/Pages/PageTransition";
 
@@ -78,7 +78,7 @@ const Settings = () => {
                         </CardContent>
                     </Card>
                 ) : null}
-                {isAdmin() && <QuickActions />}
+                {isDelegate() && <QuickActions />}
                 <ChangePasswordModal
                     isOpen={isOpenChangePasswordModal}
                     onClose={() => setIsOpenChangePasswordModal(false)}

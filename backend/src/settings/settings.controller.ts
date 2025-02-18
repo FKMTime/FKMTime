@@ -12,24 +12,23 @@ import {
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { GetUser } from 'src/auth/decorator/getUser.decorator';
+import { DelegateGuard } from 'src/auth/guards/delegate.guard';
 
 import { JwtAuthDto } from '../auth/dto/jwt-auth.dto';
-import { AdminGuard } from '../auth/guards/admin.guard';
 import { QuickActionDto } from './dto/quickAction.dto';
 import { UpdateSettingsDto } from './dto/updateSettings.dto';
 import { SettingsService } from './settings.service';
 
+@UseGuards(AuthGuard('jwt'))
 @Controller('settings')
 export class SettingsController {
   constructor(private readonly settingsService: SettingsService) {}
 
-  @UseGuards(AuthGuard('jwt'))
   @Get()
   async getSettings(@GetUser() user: JwtAuthDto) {
     return await this.settingsService.getSettings(user.userId);
   }
 
-  @UseGuards(AuthGuard('jwt'))
   @Put()
   async updateSettings(
     @Body() data: UpdateSettingsDto,
@@ -38,13 +37,13 @@ export class SettingsController {
     return await this.settingsService.updateSettings(user.userId, data);
   }
 
-  @UseGuards(AuthGuard('jwt'), AdminGuard)
+  @UseGuards(DelegateGuard)
   @Get('quick-actions')
   async getMyQuickActions(@GetUser() user: JwtAuthDto) {
     return this.settingsService.getMyQuickActions(user.userId);
   }
 
-  @UseGuards(AuthGuard('jwt'), AdminGuard)
+  @UseGuards(DelegateGuard)
   @Post('quick-actions')
   async createQuickAction(
     @Body() data: QuickActionDto,
@@ -53,7 +52,7 @@ export class SettingsController {
     return await this.settingsService.createQuickAction(user.userId, data);
   }
 
-  @UseGuards(AuthGuard('jwt'), AdminGuard)
+  @UseGuards(DelegateGuard)
   @Put('quick-actions/:id')
   async updateQuickAction(
     @Body() data: QuickActionDto,
@@ -67,7 +66,7 @@ export class SettingsController {
     );
   }
 
-  @UseGuards(AuthGuard('jwt'), AdminGuard)
+  @UseGuards(DelegateGuard)
   @HttpCode(HttpStatus.NO_CONTENT)
   @Delete('quick-actions/:id')
   async deleteQuickAction(

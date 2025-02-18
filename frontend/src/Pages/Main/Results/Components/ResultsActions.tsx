@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Button, buttonVariants } from "@/Components/ui/button";
 import { useConfirm } from "@/hooks/useConfirm";
 import { useToast } from "@/hooks/useToast";
+import { isDelegate } from "@/lib/permissions";
 import { reSubmitRoundToWcaLive } from "@/lib/results";
 import { getSubmissionPlatformName } from "@/lib/utils";
 
@@ -21,7 +22,7 @@ interface ResultsAction {
     variant: string | typeof buttonVariants;
     onClick: () => void;
     colSpan?: number;
-    resultsLength?: boolean;
+    show?: boolean;
 }
 
 const ResultsActions = ({
@@ -69,30 +70,33 @@ const ResultsActions = ({
             title: "Enter attempt",
             variant: "success",
             onClick: () => setIsOpenCreateAttemptModal(true),
+            show: true,
         },
         {
             title: "Public view",
             variant: "secondary",
             onClick: () => navigate(`/results/public/${filters.roundId}`),
+            show: true,
         },
         {
             title: "Double check",
             variant: "default",
             onClick: () =>
                 navigate(`/results/round/${filters.roundId}/double-check`),
-            resultsLength: resultsLength > 0,
+            show: resultsLength > 0 && isDelegate(),
         },
         {
             title: "Restart group",
             variant: "destructive",
             onClick: () => setIsOpenRestartGroupModal(true),
-            resultsLength: resultsLength > 0,
+            show: resultsLength > 0 && isDelegate(),
         },
         {
             title: `Resubmit results to ${getSubmissionPlatformName(filters.eventId)}`,
             variant: "success",
             onClick: handleResubmitRound,
             colSpan: 2,
+            show: true,
         },
     ];
     return (
@@ -100,7 +104,7 @@ const ResultsActions = ({
             <div className="md:flex hidden gap-5">
                 {resultsActions.map(
                     (action) =>
-                        (!action.resultsLength || resultsLength > 0) && (
+                        action.show && (
                             <Button
                                 key={action.title}
                                 variant={
@@ -117,7 +121,7 @@ const ResultsActions = ({
             <div className="md:hidden grid grid-cols-2 gap-3 w-full">
                 {resultsActions.map(
                     (action) =>
-                        (!action.resultsLength || resultsLength > 0) && (
+                        action.show && (
                             <div
                                 className={action.colSpan ? "col-span-2" : ""}
                                 key={action.title}

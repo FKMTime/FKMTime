@@ -9,12 +9,12 @@ import {
   Post,
   UseGuards,
 } from '@nestjs/common';
-import { AdminGuard } from 'src/auth/guards/admin.guard';
+import { DelegateGuard } from 'src/auth/guards/delegate.guard';
 
 import { ImportScramblesDto } from './dto/import-scrambles.dto';
 import { ScrambleSetService } from './scramble-set.service';
 
-@UseGuards(AdminGuard)
+@UseGuards(DelegateGuard)
 @Controller('scramble-set')
 export class ScrambleSetController {
   constructor(private readonly scrambleSetService: ScrambleSetService) {}

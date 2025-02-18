@@ -5,8 +5,8 @@ import {
     TableHeader,
     TableRow,
 } from "@/Components/ui/table";
-import { isAdmin } from "@/lib/auth";
 import { Result } from "@/lib/interfaces";
+import { isOrganizerOrDelegate } from "@/lib/permissions";
 
 import ResultRow from "./ResultRow";
 
@@ -35,7 +35,7 @@ const ResultsTable = ({
                         Average
                     </TableHead>
                     <TableHead className="hidden md:table-cell">Best</TableHead>
-                    {isAdmin() && <TableHead>Actions</TableHead>}
+                    {isOrganizerOrDelegate() && <TableHead>Actions</TableHead>}
                 </TableRow>
             </TableHeader>
             <TableBody>

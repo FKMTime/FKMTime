@@ -7,11 +7,10 @@ import {
 export interface UserInfo {
     username: string;
     fullName?: string;
-    role: UserRole;
+    roles: UserRole[];
     wcaUserId?: number;
     wcaAccessToken?: string;
     avatarUrl?: string;
-    isWcaAdmin: boolean;
 }
 
 export interface User {
@@ -19,9 +18,8 @@ export interface User {
     username?: string;
     wcaUserId?: number;
     avatarUrl?: string;
-    isWcaAdmin: boolean;
     fullName?: string;
-    role: string;
+    roles: string[];
     createdAt: Date;
     updatedAt: Date;
 }
@@ -35,6 +33,9 @@ export interface INotification {
 //eslint-disable-next-line
 export enum UserRole {
     ADMIN = "ADMIN",
+    DELEGATE = "DELEGATE",
+    ORGANIZER = "ORGANIZER",
+    STAGE_LEADER = "STAGE_LEADER",
     STAFF = "STAFF",
 }
 
@@ -256,7 +257,7 @@ export enum AvailableDeviceType {
 
 export interface Settings {
     username: string;
-    role: UserRole;
+    roles: UserRole[];
     wcaUserId?: number;
     createdAt: Date;
     updatedAt: Date;
@@ -327,7 +328,7 @@ export interface NewUserData {
     username?: string;
     password?: string;
     fullName: string;
-    role: UserRole;
+    roles: string[];
     wcaId?: string;
 }
 

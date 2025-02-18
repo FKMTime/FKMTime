@@ -11,6 +11,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { AdminGuard } from 'src/auth/guards/admin.guard';
+import { OrganizerGuard } from 'src/auth/guards/organizer.guard';
 
 import { CreateUnofficialEventDto } from './dto/createUnofficialEvent.dto';
 import { EventsService } from './events.service';
@@ -24,7 +25,7 @@ export class EventsController {
     return this.eventsService.getAllEvents();
   }
 
-  @UseGuards(AdminGuard)
+  @UseGuards(OrganizerGuard)
   @Get('unofficial')
   getUnofficialEvents() {
     return this.eventsService.getUnofficialEvents();

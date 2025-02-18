@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, Role } from '@prisma/client';
 import { sha512 } from 'js-sha512';
 const prisma = new PrismaClient();
 
@@ -10,7 +10,7 @@ export async function seedDb() {
     create: {
       username: 'admin',
       fullName: 'Admin',
-      role: 'ADMIN',
+      roles: [Role.ADMIN],
       password: adminPassword,
     },
   });

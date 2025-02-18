@@ -27,9 +27,9 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   }
 
   async validate(payload: any): Promise<JwtAuthDto> {
-    const { userId, role } = payload;
+    const { userId, roles } = payload;
 
-    if (!userId || !role) {
+    if (!userId || !roles) {
       throw new UnauthorizedException('Invalid token payload');
     }
 
@@ -39,6 +39,6 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       throw new UnauthorizedException('User not found');
     }
 
-    return { userId, role };
+    return { userId, roles };
   }
 }

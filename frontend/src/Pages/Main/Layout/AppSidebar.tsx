@@ -42,10 +42,15 @@ import {
 } from "@/Components/ui/sidebar";
 import { activityCodeToName } from "@/lib/activities";
 import { competitionAtom } from "@/lib/atoms";
-import { isAdmin } from "@/lib/auth";
 import { GITHUB_URL } from "@/lib/constants";
 import { Room } from "@/lib/interfaces";
+import {
+    isDelegate,
+    isOrganizerOrDelegate,
+    isStageLeaderOrOrganizerOrDelegate,
+} from "@/lib/permissions";
 import { getAllRooms } from "@/lib/rooms";
+import { loggedInWithWca } from "@/lib/utils";
 
 interface AppSidebarProps {
     unresolvedIncidentsCount: number;
@@ -89,7 +94,7 @@ const AppSidebar = ({ unresolvedIncidentsCount }: AppSidebarProps) => {
                                     </Link>
                                 </SidebarMenuButton>
                             </SidebarMenuItem>
-                            {isAdmin() ? (
+                            {isDelegate() ? (
                                 <SidebarMenuItem>
                                     <SidebarMenuButton
                                         asChild
@@ -137,7 +142,7 @@ const AppSidebar = ({ unresolvedIncidentsCount }: AppSidebarProps) => {
                                     </Link>
                                 </SidebarMenuButton>
                             </SidebarMenuItem>
-                            {isAdmin() ? (
+                            {isStageLeaderOrOrganizerOrDelegate() ? (
                                 <SidebarMenuItem>
                                     <SidebarMenuButton
                                         asChild
@@ -175,7 +180,7 @@ const AppSidebar = ({ unresolvedIncidentsCount }: AppSidebarProps) => {
                                 >
                                     <Link
                                         to={
-                                            isAdmin()
+                                            isOrganizerOrDelegate()
                                                 ? "/results"
                                                 : "/results/public"
                                         }
@@ -198,7 +203,7 @@ const AppSidebar = ({ unresolvedIncidentsCount }: AppSidebarProps) => {
                                                         <Link
                                                             className="flex gap-2 items-center"
                                                             to={
-                                                                isAdmin()
+                                                                isOrganizerOrDelegate()
                                                                     ? `/results/round/${roundId}`
                                                                     : `/results/public/${roundId}`
                                                             }
@@ -230,7 +235,7 @@ const AppSidebar = ({ unresolvedIncidentsCount }: AppSidebarProps) => {
                                     </SidebarMenuSub>
                                 ) : null}
                             </SidebarMenuItem>
-                            {isAdmin() ? (
+                            {isDelegate() ? (
                                 <>
                                     <SidebarMenuItem>
                                         <SidebarMenuButton
@@ -251,7 +256,7 @@ const AppSidebar = ({ unresolvedIncidentsCount }: AppSidebarProps) => {
                         </SidebarMenu>
                     </SidebarGroupContent>
                 </SidebarGroup>
-                {isAdmin() ? (
+                {isOrganizerOrDelegate() ? (
                     <SidebarGroup>
                         <SidebarGroupLabel>
                             Manage competition
@@ -297,19 +302,22 @@ const AppSidebar = ({ unresolvedIncidentsCount }: AppSidebarProps) => {
                                         </Link>
                                     </SidebarMenuButton>
                                 </SidebarMenuItem>
-                                <SidebarMenuItem>
-                                    <SidebarMenuButton
-                                        asChild
-                                        isActive={
-                                            location.pathname === "/scrambles"
-                                        }
-                                    >
-                                        <Link to="/scrambles">
-                                            <Puzzle />
-                                            <span>Scrambles</span>
-                                        </Link>
-                                    </SidebarMenuButton>
-                                </SidebarMenuItem>
+                                {isDelegate() ? (
+                                    <SidebarMenuItem>
+                                        <SidebarMenuButton
+                                            asChild
+                                            isActive={
+                                                location.pathname ===
+                                                "/scrambles"
+                                            }
+                                        >
+                                            <Link to="/scrambles">
+                                                <Puzzle />
+                                                <span>Scrambles</span>
+                                            </Link>
+                                        </SidebarMenuButton>
+                                    </SidebarMenuItem>
+                                ) : null}
                                 <SidebarMenuItem>
                                     <SidebarMenuButton
                                         asChild
@@ -327,38 +335,47 @@ const AppSidebar = ({ unresolvedIncidentsCount }: AppSidebarProps) => {
                         </SidebarGroupContent>
                     </SidebarGroup>
                 ) : null}
-                <SidebarGroup>
-                    <SidebarGroupLabel>Other</SidebarGroupLabel>
-                    <SidebarGroupContent>
-                        <SidebarMenu>
-                            <SidebarMenuItem>
-                                <SidebarMenuButton
-                                    asChild
-                                    isActive={
-                                        location.pathname === "/statistics"
-                                    }
-                                >
-                                    <Link to="/statistics">
-                                        <ChartNoAxesColumn />
-                                        <span>Statistics</span>
-                                    </Link>
-                                </SidebarMenuButton>
-                            </SidebarMenuItem>
-
-                            <SidebarMenuItem>
-                                <SidebarMenuButton
-                                    asChild
-                                    isActive={location.pathname === "/settings"}
-                                >
-                                    <Link to="/settings">
-                                        <Settings />
-                                        <span>Settings</span>
-                                    </Link>
-                                </SidebarMenuButton>
-                            </SidebarMenuItem>
-                        </SidebarMenu>
-                    </SidebarGroupContent>
-                </SidebarGroup>
+                {isOrganizerOrDelegate() || !loggedInWithWca() ? (
+                    <SidebarGroup>
+                        <SidebarGroupLabel>Other</SidebarGroupLabel>
+                        <SidebarGroupContent>
+                            <SidebarMenu>
+                                {isOrganizerOrDelegate() ? (
+                                    <SidebarMenuItem>
+                                        <SidebarMenuButton
+                                            asChild
+                                            isActive={
+                                                location.pathname ===
+                                                "/statistics"
+                                            }
+                                        >
+                                            <Link to="/statistics">
+                                                <ChartNoAxesColumn />
+                                                <span>Statistics</span>
+                                            </Link>
+                                        </SidebarMenuButton>
+                                    </SidebarMenuItem>
+                                ) : null}
+                                {(isDelegate() || !loggedInWithWca()) && (
+                                    <SidebarMenuItem>
+                                        <SidebarMenuButton
+                                            asChild
+                                            isActive={
+                                                location.pathname ===
+                                                "/settings"
+                                            }
+                                        >
+                                            <Link to="/settings">
+                                                <Settings />
+                                                <span>Settings</span>
+                                            </Link>
+                                        </SidebarMenuButton>
+                                    </SidebarMenuItem>
+                                )}
+                            </SidebarMenu>
+                        </SidebarGroupContent>
+                    </SidebarGroup>
+                ) : null}
             </SidebarContent>
             <SidebarFooter className="flex items-center justify-center pb-5">
                 <a href={GITHUB_URL} target="_blank">

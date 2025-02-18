@@ -14,9 +14,9 @@ import {
     CardTitle,
 } from "@/Components/ui/card";
 import { competitionAtom } from "@/lib/atoms";
-import { isAdmin } from "@/lib/auth";
 import { getCompetitionInfo } from "@/lib/competition";
 import { Person } from "@/lib/interfaces";
+import { isOrganizerOrDelegate } from "@/lib/permissions";
 import { getPersons } from "@/lib/persons";
 import { calculateTotalPages } from "@/lib/utils";
 import PageTransition from "@/Pages/PageTransition";
@@ -180,7 +180,7 @@ const Persons = () => {
                     <CardHeader>
                         <CardTitle className="flex justify-between items-center">
                             Persons
-                            {isAdmin() && (
+                            {isOrganizerOrDelegate() && (
                                 <>
                                     <PlusButton
                                         onClick={() =>

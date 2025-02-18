@@ -5,9 +5,9 @@ import EventIcon from "@/Components/Icons/EventIcon";
 import SmallIconButton from "@/Components/SmallIconButton";
 import { TableCell, TableRow } from "@/Components/ui/table";
 import { activityCodeToName } from "@/lib/activities";
-import { isAdmin } from "@/lib/auth";
 import { average, best } from "@/lib/average";
 import { Result } from "@/lib/interfaces";
+import { isOrganizerOrDelegate } from "@/lib/permissions";
 import { resultToString } from "@/lib/resultFormatters";
 import { getSubmittedAttempts } from "@/lib/utils";
 
@@ -37,7 +37,7 @@ const PersonResultRow = ({ result }: PersonResultRowProps) => {
                         : "No average"}
                 </TableCell>
                 <TableCell>{resultToString(best(submittedAttempts))}</TableCell>
-                {isAdmin() && (
+                {isOrganizerOrDelegate() && (
                     <TableCell>
                         <SmallIconButton
                             icon={<List />}

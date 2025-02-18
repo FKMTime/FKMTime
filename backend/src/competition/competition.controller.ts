@@ -9,6 +9,8 @@ import {
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { AdminGuard } from 'src/auth/guards/admin.guard';
+import { OrganizerGuard } from 'src/auth/guards/organizer.guard';
+import { ScramblingDeviceGuard } from 'src/auth/guards/scramblingDevice.guard';
 
 import { GetUser } from '../auth/decorator/getUser.decorator';
 import { JwtAuthDto } from '../auth/dto/jwt-auth.dto';
@@ -37,6 +39,7 @@ export class CompetitionController {
     return await this.competitionService.getCompetitionInfo();
   }
 
+  @UseGuards(ScramblingDeviceGuard)
   @Get('for/scrambling-device')
   async getCompetitionInfoForScramblingDevice() {
     return await this.competitionService.getCompetitionInfo();
@@ -54,7 +57,7 @@ export class CompetitionController {
     return await this.competitionService.getRoundsInfo();
   }
 
-  @UseGuards(AdminGuard)
+  @UseGuards(OrganizerGuard)
   @Get('settings')
   async getCompetitionSettings() {
     return await this.competitionService.getCompetitionSettings();
@@ -69,7 +72,7 @@ export class CompetitionController {
     return await this.importService.importCompetition(id, user.userId);
   }
 
-  @UseGuards(AuthGuard('jwt'), AdminGuard)
+  @UseGuards(OrganizerGuard)
   @Get('sync/:id')
   async syncCompetition(@Param('id') id: string, @GetUser() user: JwtAuthDto) {
     return await this.syncService.updateWcif(id, user.userId);
@@ -95,19 +98,19 @@ export class CompetitionController {
     return this.roomsService.getAllRooms();
   }
 
-  @UseGuards(AuthGuard('jwt'), AdminGuard)
+  @UseGuards(OrganizerGuard)
   @Get('available-locales')
   async getAvailableLocales() {
     return this.competitionService.getAvailableLocales();
   }
 
-  @UseGuards(AuthGuard('jwt'), AdminGuard)
+  @UseGuards(OrganizerGuard)
   @Put('rooms')
   async updateRooms(@Body() dto: UpdateRoomsDto) {
     return this.roomsService.updateRooms(dto);
   }
 
-  @UseGuards(AuthGuard('jwt'), AdminGuard)
+  @UseGuards(OrganizerGuard)
   @Put('settings/:id')
   async updateCompetition(
     @Param('id') id: string,
@@ -116,13 +119,13 @@ export class CompetitionController {
     return await this.competitionService.updateCompetition(id, dto);
   }
 
-  @UseGuards(AuthGuard('jwt'), AdminGuard)
+  @UseGuards(OrganizerGuard)
   @Get('settings/:id/devices')
   async getDevicesSettings() {
     return await this.competitionService.getDevicesSettings();
   }
 
-  @UseGuards(AuthGuard('jwt'), AdminGuard)
+  @UseGuards(OrganizerGuard)
   @Put('settings/:id/devices')
   async updateDevicesSettings(
     @Param('id') id: string,

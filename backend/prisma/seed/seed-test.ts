@@ -1,7 +1,8 @@
-import { PrismaClient, SendingResultsFrequency } from '@prisma/client';
+import { PrismaClient, Role, SendingResultsFrequency } from '@prisma/client';
 import { Activity, Assignment, Competition, Person } from '@wca/helpers';
 import * as fs from 'fs';
 import { sha512 } from 'js-sha512';
+
 import { wcifRoleToAttendanceRole } from '../../src/wcif-helpers';
 
 const prisma = new PrismaClient();
@@ -38,7 +39,7 @@ export async function seedDb() {
     data: {
       username: 'admin',
       fullName: 'Admin',
-      role: 'ADMIN',
+      roles: [Role.ADMIN],
       password: adminPassword,
     },
   });

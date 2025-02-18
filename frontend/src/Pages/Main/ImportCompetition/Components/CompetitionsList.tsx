@@ -28,7 +28,7 @@ const CompetitionsList = ({
             </TableHeader>
             <TableBody>
                 {competitions.map((competition) => (
-                    <TableRow>
+                    <TableRow key={competition.id}>
                         <TableCell>{competition.name}</TableCell>
                         <TableCell>
                             <Button

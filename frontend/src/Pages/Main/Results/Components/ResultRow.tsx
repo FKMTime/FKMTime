@@ -6,9 +6,9 @@ import SmallIconButton from "@/Components/SmallIconButton";
 import { TableCell, TableRow } from "@/Components/ui/table";
 import { useConfirm } from "@/hooks/useConfirm";
 import { useToast } from "@/hooks/useToast";
-import { isAdmin } from "@/lib/auth";
 import { average, formattedBest } from "@/lib/average";
 import { Result } from "@/lib/interfaces";
+import { isOrganizerOrDelegate } from "@/lib/permissions";
 import {
     attemptWithPenaltyToString,
     resultToString,
@@ -85,7 +85,7 @@ const ResultRow = ({ result, maxAttempts, fetchData }: ResultRowProps) => {
                 <TableCell className="hidden md:table-cell">
                     {formattedBest(submittedAttempts)}
                 </TableCell>
-                {isAdmin() && (
+                {isOrganizerOrDelegate() && (
                     <TableCell>
                         <SmallIconButton
                             icon={<List />}

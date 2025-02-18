@@ -13,7 +13,7 @@ export class SettingsService {
       where: { id: userId },
       select: {
         username: true,
-        role: true,
+        roles: true,
         wcaUserId: true,
         createdAt: true,
         updatedAt: true,
@@ -26,7 +26,7 @@ export class SettingsService {
       data: data,
       select: {
         username: true,
-        role: true,
+        roles: true,
         createdAt: true,
         updatedAt: true,
       },

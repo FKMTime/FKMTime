@@ -16,8 +16,8 @@ import FlagIcon from "@/Components/Icons/FlagIcon.tsx";
 import SmallIconButton from "@/Components/SmallIconButton";
 import Tooltip from "@/Components/Tooltip";
 import { TableCell, TableRow } from "@/Components/ui/table";
-import { isAdmin } from "@/lib/auth";
 import { Person } from "@/lib/interfaces";
+import { isStageLeaderOrOrganizerOrDelegate } from "@/lib/permissions";
 import { WCA_ORIGIN } from "@/lib/request";
 import { prettyGender, regionNameByIso2 } from "@/lib/utils";
 
@@ -105,7 +105,7 @@ const PersonRow = ({ person, wcif, handleCloseEditModal }: PersonRowProps) => {
                 />
                 {person.registrantId &&
                     person.registrantId !== 0 &&
-                    isAdmin() && (
+                    isStageLeaderOrOrganizerOrDelegate() && (
                         <>
                             <SmallIconButton
                                 icon={<FileText />}

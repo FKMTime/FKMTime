@@ -186,6 +186,14 @@ export class WcaService {
     };
   }
 
+  async getCompetitionInfo(competitionId: string) {
+    const response = await fetch(
+      `${WCA_ORIGIN}/api/v0/competitions/${competitionId}`,
+    );
+    this.wcaLogger.log(`Fetching competition info ${response.status}`);
+    return await response.json();
+  }
+
   async getAccessToken(code: string, redirectUrl: string) {
     const tokenResponse = await fetch(`${WCA_ORIGIN}/oauth/token`, {
       method: 'POST',
