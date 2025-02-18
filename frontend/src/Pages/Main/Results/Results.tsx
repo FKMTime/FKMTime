@@ -30,7 +30,7 @@ import { activityCodeToName } from "@/lib/activities";
 import { competitionAtom } from "@/lib/atoms";
 import { getCompetitionInfo } from "@/lib/competition";
 import { Result, Room } from "@/lib/interfaces";
-import { isOrganizerOrDelegate } from "@/lib/permissions";
+import { isDelegate } from "@/lib/permissions";
 import { getResultsByRoundId } from "@/lib/results";
 import { getAllRooms } from "@/lib/rooms";
 import PageTransition from "@/Pages/PageTransition";
@@ -137,7 +137,7 @@ const Results = () => {
     ];
     useEffect(() => {
         if (filters.roundId) {
-            if (!isOrganizerOrDelegate()) {
+            if (!isDelegate()) {
                 navigate(`/results/public/${filters.roundId}`);
             }
             fetchData(filters.roundId);

@@ -62,7 +62,7 @@ export class ResultController {
     return await this.resultService.getResultsChecks(roundId);
   }
 
-  @UseGuards(OrganizerGuard)
+  @UseGuards(DelegateGuard)
   @Get(':id')
   async getResultById(@Param('id') id: string) {
     return await this.resultService.getResultById(id);
@@ -83,7 +83,7 @@ export class ResultController {
   }
 
   @HttpCode(HttpStatus.OK)
-  @UseGuards(OrganizerGuard)
+  @UseGuards(DelegateGuard)
   @Post('round/:roundId/enter')
   async enterRoundToWcaLiveOrCubingContests(@Param('roundId') roundId: string) {
     return await this.resultService.enterRoundToWcaLiveOrCubingContests(
@@ -92,7 +92,7 @@ export class ResultController {
   }
 
   @HttpCode(HttpStatus.OK)
-  @UseGuards(OrganizerGuard)
+  @UseGuards(DelegateGuard)
   @Get(':id/enter')
   async enterWholeScorecardToWcaLiveOrCubingContests(@Param('id') id: string) {
     return await this.resultService.enterWholeScorecardToWcaLiveOrCubingContests(

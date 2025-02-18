@@ -3,7 +3,6 @@ import { useNavigate } from "react-router-dom";
 import { Button, buttonVariants } from "@/Components/ui/button";
 import { useConfirm } from "@/hooks/useConfirm";
 import { useToast } from "@/hooks/useToast";
-import { isDelegate } from "@/lib/permissions";
 import { reSubmitRoundToWcaLive } from "@/lib/results";
 import { getSubmissionPlatformName } from "@/lib/utils";
 
@@ -83,13 +82,13 @@ const ResultsActions = ({
             variant: "default",
             onClick: () =>
                 navigate(`/results/round/${filters.roundId}/double-check`),
-            show: resultsLength > 0 && isDelegate(),
+            show: resultsLength > 0,
         },
         {
             title: "Restart group",
             variant: "destructive",
             onClick: () => setIsOpenRestartGroupModal(true),
-            show: resultsLength > 0 && isDelegate(),
+            show: resultsLength > 0,
         },
         {
             title: `Resubmit results to ${getSubmissionPlatformName(filters.eventId)}`,

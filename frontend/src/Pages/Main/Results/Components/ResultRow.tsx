@@ -8,7 +8,7 @@ import { useConfirm } from "@/hooks/useConfirm";
 import { useToast } from "@/hooks/useToast";
 import { average, formattedBest } from "@/lib/average";
 import { Result } from "@/lib/interfaces";
-import { isOrganizerOrDelegate } from "@/lib/permissions";
+import { isDelegate } from "@/lib/permissions";
 import {
     attemptWithPenaltyToString,
     resultToString,
@@ -85,7 +85,7 @@ const ResultRow = ({ result, maxAttempts, fetchData }: ResultRowProps) => {
                 <TableCell className="hidden md:table-cell">
                     {formattedBest(submittedAttempts)}
                 </TableCell>
-                {isOrganizerOrDelegate() && (
+                {isDelegate() && (
                     <TableCell>
                         <SmallIconButton
                             icon={<List />}

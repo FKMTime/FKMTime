@@ -180,7 +180,7 @@ const AppSidebar = ({ unresolvedIncidentsCount }: AppSidebarProps) => {
                                 >
                                     <Link
                                         to={
-                                            isOrganizerOrDelegate()
+                                            isDelegate()
                                                 ? "/results"
                                                 : "/results/public"
                                         }
@@ -203,7 +203,7 @@ const AppSidebar = ({ unresolvedIncidentsCount }: AppSidebarProps) => {
                                                         <Link
                                                             className="flex gap-2 items-center"
                                                             to={
-                                                                isOrganizerOrDelegate()
+                                                                isDelegate()
                                                                     ? `/results/round/${roundId}`
                                                                     : `/results/public/${roundId}`
                                                             }
