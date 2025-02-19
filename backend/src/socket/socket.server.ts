@@ -1,6 +1,7 @@
 import { Logger } from '@nestjs/common';
 import * as fs from 'fs';
 import * as net from 'net';
+import * as wasm from "../wasm/hil_processor_wasm.js";
 
 import { RequestDto } from './dto/request.dto';
 import { ResponseDto } from './dto/response.dto';
@@ -30,6 +31,10 @@ export class SocketServer {
       fs.chmodSync(this.path, '777');
       this.logger.log('Unix socket server started at ' + this.path);
       callback();
+
+      let state = wasm.init();
+      let res = state.test('{"tag":null,"type":"RequestToConnectDevice","data":{"espId":123456789,"type":"STATION"}}');
+      console.log(res.split('\0'));
     });
 
     this.server.on('connection', async (socket) => {
