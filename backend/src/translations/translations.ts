@@ -1,13 +1,26 @@
 import * as fs from 'fs';
 import * as path from 'path';
 
-const getAvailableLocales = () => {
-  const localesPath = path.join(
-    process.cwd(),
-    'src',
-    'translations',
-    'locales',
+const getLocalesPath = () => {
+  const rootPath = process.cwd();
+  const possiblePaths = [
+    path.join(rootPath, 'translations', 'locales'),
+    path.join(rootPath, 'src', 'translations', 'locales'),
+  ];
+
+  for (const ppath of possiblePaths) {
+    if (fs.existsSync(ppath)) {
+      return ppath;
+    }
+  }
+
+  throw new Error(
+    'Locales directory not found in any of the expected locations',
   );
+};
+
+const getAvailableLocales = () => {
+  const localesPath = getLocalesPath();
   const files = fs.readdirSync(localesPath);
 
   return files

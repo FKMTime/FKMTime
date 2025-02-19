@@ -1,8 +1,8 @@
 import { Logger } from '@nestjs/common';
 import * as fs from 'fs';
 import * as net from 'net';
-import * as wasm from "../wasm/hil_processor_wasm.js";
 
+import * as wasm from '../wasm/hil_processor_wasm.js';
 import { RequestDto } from './dto/request.dto';
 import { ResponseDto } from './dto/response.dto';
 import { SocketService } from './socket.service';
@@ -38,11 +38,11 @@ export class SocketServer {
       this.hilProcessor = wasm.init();
       this.hilRunning = true;
       setInterval(() => {
-        let res = this.hilProcessor.test("");
+        const res = this.hilProcessor.test('');
 
         if (res.length > 0) {
-          this.connectedSockets.forEach((socket) => {
-            socket.write(res);
+          this.connectedSockets.forEach((cs) => {
+            cs.write(res);
           });
         }
       }, 50);
@@ -62,10 +62,10 @@ export class SocketServer {
         while (nullIdx !== -1) {
           const packet = buffer.subarray(0, nullIdx);
 
-          let res = this.hilProcessor.test(packet.toString());
+          const res = this.hilProcessor.test(packet.toString());
           if (res.length > 0) {
-            this.connectedSockets.forEach((socket) => {
-              socket.write(res);
+            this.connectedSockets.forEach((cs) => {
+              cs.write(res);
             });
           }
 
