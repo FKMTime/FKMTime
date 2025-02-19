@@ -12,6 +12,9 @@ export class SocketServer {
   private logger = new Logger('socket-server');
   private connectedSockets: net.Socket[] = [];
 
+  private hilProcessor: any;
+  private hilRunning: boolean;
+
   constructor(
     private readonly path: string,
     private readonly socketService: SocketService,
@@ -32,9 +35,17 @@ export class SocketServer {
       this.logger.log('Unix socket server started at ' + this.path);
       callback();
 
-      let state = wasm.init();
-      let res = state.test('{"tag":null,"type":"RequestToConnectDevice","data":{"espId":123456789,"type":"STATION"}}');
-      console.log(res.split('\0'));
+      this.hilProcessor = wasm.init();
+      this.hilRunning = true;
+      setInterval(() => {
+        let res = this.hilProcessor.test("");
+
+        if (res.length > 0) {
+          this.connectedSockets.forEach((socket) => {
+            socket.write(res);
+          });
+        }
+      }, 50);
     });
 
     this.server.on('connection', async (socket) => {
@@ -50,8 +61,16 @@ export class SocketServer {
         let nullIdx = buffer.indexOf(0x00);
         while (nullIdx !== -1) {
           const packet = buffer.subarray(0, nullIdx);
-          const request: RequestDto<any> = JSON.parse(packet.toString());
-          this.parsePacket(socket, request);
+
+          let res = this.hilProcessor.test(packet.toString());
+          if (res.length > 0) {
+            this.connectedSockets.forEach((socket) => {
+              socket.write(res);
+            });
+          }
+
+          //const request: RequestDto<any> = JSON.parse(packet.toString());
+          //this.parsePacket(socket, request);
 
           buffer = buffer.subarray(nullIdx + 1);
           nullIdx = buffer.indexOf(0x00);
@@ -68,6 +87,8 @@ export class SocketServer {
   }
 
   private sendResponseWithTag<T>(socket: net.Socket, request: RequestDto<T>) {
+    if (this.hilRunning) return;
+
     this.logger.log(
       `Sending response of type ${request.type} to socket, tag ${request.tag}, data ${JSON.stringify(request.data)}`,
     );
@@ -75,6 +96,8 @@ export class SocketServer {
   }
 
   private sendResponse<T>(socket: net.Socket, response: ResponseDto<T>) {
+    if (this.hilRunning) return;
+
     this.logger.log(
       `Sending response of type ${response.type} to socket, data ${JSON.stringify(response.data)}`,
     );
@@ -82,6 +105,8 @@ export class SocketServer {
   }
 
   sendToAll<T>(response: ResponseDto<T>) {
+    if (this.hilRunning) return;
+
     this.logger.log(`Sending ${response.type} to all connected sockets`);
     this.connectedSockets.forEach((socket) => {
       socket.write(JSON.stringify(response) + '\0');
@@ -89,6 +114,8 @@ export class SocketServer {
   }
 
   async sendInitData(socket: net.Socket) {
+    if (this.hilRunning) return;
+
     this.logger.log('Sending init data to socket');
     const serverStatus = await this.socketService.getServerStatus();
     this.sendResponse(socket, {
