@@ -72,7 +72,7 @@ const NoteworthyIncidents = () => {
                 </Card>
                 <Card>
                     <CardHeader>
-                        <CardTitle>Resolved incidents</CardTitle>
+                        <CardTitle>Noteworthy incidents</CardTitle>
                     </CardHeader>
                     <CardContent>
                         {incidents.length > 0 ? (
