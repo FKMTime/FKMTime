@@ -97,12 +97,19 @@ function passStringToWasm0(arg, malloc, realloc) {
     WASM_VECTOR_LEN = offset;
     return ptr;
 }
+
+function isLikeNone(x) {
+    return x === undefined || x === null;
+}
 /**
  * @param {Function} log_func
+ * @param {string | null} [initial_status]
  * @returns {WasmState}
  */
-module.exports.init = function(log_func) {
-    const ret = wasm.init(log_func);
+module.exports.init = function(log_func, initial_status) {
+    var ptr0 = isLikeNone(initial_status) ? 0 : passStringToWasm0(initial_status, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+    var len0 = WASM_VECTOR_LEN;
+    const ret = wasm.init(log_func, ptr0, len0);
     return WasmState.__wrap(ret);
 };
 
@@ -153,6 +160,14 @@ class WasmState {
         } finally {
             wasm.__wbindgen_free(deferred1_0, deferred1_1, 1);
         }
+    }
+    /**
+     * @param {string} status
+     */
+    set_status(status) {
+        const ptr0 = passStringToWasm0(status, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+        const len0 = WASM_VECTOR_LEN;
+        wasm.wasmstate_set_status(this.__wbg_ptr, ptr0, len0);
     }
 }
 module.exports.WasmState = WasmState;

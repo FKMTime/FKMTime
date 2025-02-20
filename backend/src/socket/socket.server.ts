@@ -35,18 +35,21 @@ export class SocketServer {
       this.logger.log('Unix socket server started at ' + this.path);
       callback();
 
-      this.hilProcessor = wasm.init((tag, msg) => {
-        console.log(`[${tag}] ${msg}`);
+      this.socketService.getServerStatus().then((status) => {
+          this.hilProcessor = wasm.init((tag, msg) => {
+              console.log(`[${tag}] ${msg}`);
+          }, JSON.stringify(status));
+
+          this.hilRunning = true;
+          setInterval(() => {
+              const res = this.hilProcessor.generate_output();
+              if (res.length > 0) {
+                  this.connectedSockets.forEach((cs) => {
+                      cs.write(res);
+                  });
+              }
+          }, 50);
       });
-      this.hilRunning = true;
-      setInterval(() => {
-        const res = this.hilProcessor.generate_output();
-        if (res.length > 0) {
-          this.connectedSockets.forEach((cs) => {
-            cs.write(res);
-          });
-        }
-      }, 50);
     });
 
     this.server.on('connection', async (socket) => {
@@ -121,6 +124,10 @@ export class SocketServer {
 
   async sendServerStatus() {
     const serverStatus = await this.socketService.getServerStatus();
+    if (this.hilRunning) {
+      this.hilProcessor.set_status(JSON.stringify(serverStatus));
+    }
+
     this.sendToAll({
       type: 'ServerStatus',
       data: serverStatus,
