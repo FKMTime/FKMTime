@@ -35,11 +35,12 @@ export class SocketServer {
       this.logger.log('Unix socket server started at ' + this.path);
       callback();
 
-      this.hilProcessor = wasm.init();
+      this.hilProcessor = wasm.init((tag, msg) => {
+        console.log(`[${tag}] ${msg}`);
+      });
       this.hilRunning = true;
       setInterval(() => {
-        const res = this.hilProcessor.test('');
-
+        const res = this.hilProcessor.generate_output();
         if (res.length > 0) {
           this.connectedSockets.forEach((cs) => {
             cs.write(res);
@@ -61,13 +62,7 @@ export class SocketServer {
         let nullIdx = buffer.indexOf(0x00);
         while (nullIdx !== -1) {
           const packet = buffer.subarray(0, nullIdx);
-
-          const res = this.hilProcessor.test(packet.toString());
-          if (res.length > 0) {
-            this.connectedSockets.forEach((cs) => {
-              cs.write(res);
-            });
-          }
+          this.hilProcessor.feed_packet(packet.toString());
 
           //const request: RequestDto<any> = JSON.parse(packet.toString());
           //this.parsePacket(socket, request);
