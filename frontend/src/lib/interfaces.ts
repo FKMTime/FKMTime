@@ -222,6 +222,19 @@ export enum IncidentAction {
     "EXTRA_GIVEN" = "EXTRA_GIVEN",
 }
 
+export interface NoteworthyIncidentData {
+    title: string;
+    description?: string;
+}
+
+export interface NoteworthyIncident extends NoteworthyIncidentData {
+    id: string;
+    attempt?: Attempt;
+    createdBy: User;
+    createdAt: Date;
+    updatedAt: Date;
+}
+
 export interface Device extends DeviceData {
     id: string;
     batteryPercentage?: number;

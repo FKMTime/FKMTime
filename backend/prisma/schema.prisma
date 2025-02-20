@@ -9,18 +9,19 @@ datasource db {
 }
 
 model User {
-  id             String        @id @default(uuid())
-  password       String?
-  username       String?       @unique
-  roles          Role[]        @default([])
-  fullName       String?       @map("full_name")
-  wcaUserId      Int?          @map("wca_user_id")
-  wcaAccessToken String?       @map("wca_access_token")
-  avatarUrl      String?       @map("avatar_url")
-  createdAt      DateTime      @default(now()) @map("created_at")
-  updatedAt      DateTime      @updatedAt @map("updated_at")
-  quickActions   QuickAction[]
-  Attempt        Attempt[]
+  id                         String               @id @default(uuid())
+  password                   String?
+  username                   String?              @unique
+  roles                      Role[]               @default([])
+  fullName                   String?              @map("full_name")
+  wcaUserId                  Int?                 @map("wca_user_id")
+  wcaAccessToken             String?              @map("wca_access_token")
+  avatarUrl                  String?              @map("avatar_url")
+  createdAt                  DateTime             @default(now()) @map("created_at")
+  updatedAt                  DateTime             @updatedAt @map("updated_at")
+  quickActions               QuickAction[]
+  updatedAttempts            Attempt[]
+  createdNoteworthyIncidents NoteworthyIncident[]
 
   @@map("users")
 }
@@ -121,33 +122,49 @@ model Result {
 }
 
 model Attempt {
-  id             String        @id @default(uuid())
-  sessionId      String?       @map("session_id")
-  resultId       String        @map("result_id")
-  result         Result?       @relation(fields: [resultId], references: [id], onDelete: Cascade)
-  attemptNumber  Int           @map("attempt_number")
-  replacedBy     Int?          @map("replaced_by")
-  comment        String?
-  type           AttemptType   @default(STANDARD_ATTEMPT)
-  status         AttemptStatus @default(STANDARD)
-  penalty        Int?
-  value          Int
-  originalTime   Int?          @map("original_time")
-  inspectionTime Int?          @map("inspection_time")
-  judgeId        String?       @map("judge_id")
-  judge          Person?       @relation(fields: [judgeId], references: [id], name: "attempt_judge")
-  scramblerId    String?       @map("scrambler_id")
-  scrambler      Person?       @relation(fields: [scramblerId], references: [id], name: "attempt_scrambler")
-  scrambledAt    DateTime?     @map("scrambled_at")
-  deviceId       String?       @map("device_id")
-  device         Device?       @relation(fields: [deviceId], references: [id])
-  solvedAt       DateTime?     @map("solved_at")
-  createdAt      DateTime      @default(now()) @map("created_at")
-  updatedAt      DateTime      @updatedAt @map("updated_at")
-  updatedById    String?       @map("updated_by_id")
-  updatedBy      User?         @relation(fields: [updatedById], references: [id])
+  id                 String               @id @default(uuid())
+  sessionId          String?              @map("session_id")
+  resultId           String               @map("result_id")
+  result             Result?              @relation(fields: [resultId], references: [id], onDelete: Cascade)
+  attemptNumber      Int                  @map("attempt_number")
+  replacedBy         Int?                 @map("replaced_by")
+  comment            String?
+  type               AttemptType          @default(STANDARD_ATTEMPT)
+  status             AttemptStatus        @default(STANDARD)
+  penalty            Int?
+  value              Int
+  originalTime       Int?                 @map("original_time")
+  inspectionTime     Int?                 @map("inspection_time")
+  judgeId            String?              @map("judge_id")
+  judge              Person?              @relation(fields: [judgeId], references: [id], name: "attempt_judge")
+  scramblerId        String?              @map("scrambler_id")
+  scrambler          Person?              @relation(fields: [scramblerId], references: [id], name: "attempt_scrambler")
+  scrambledAt        DateTime?            @map("scrambled_at")
+  deviceId           String?              @map("device_id")
+  device             Device?              @relation(fields: [deviceId], references: [id])
+  solvedAt           DateTime?            @map("solved_at")
+  createdAt          DateTime             @default(now()) @map("created_at")
+  updatedAt          DateTime             @updatedAt @map("updated_at")
+  updatedById        String?              @map("updated_by_id")
+  updatedBy          User?                @relation(fields: [updatedById], references: [id])
+  noteworthyIncident NoteworthyIncident[]
 
   @@map("attempt")
+}
+
+model NoteworthyIncident {
+  id          String   @id @default(uuid())
+  title       String
+  description String?  @db.Text
+  attemptId   String?  @map("attempt_id")
+  attempt     Attempt? @relation(fields: [attemptId], references: [id])
+  createdById String   @map("created_by")
+  createdBy   User     @relation(fields: [createdById], references: [id])
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@unique([attemptId])
+  @@map("noteworthy_incident")
 }
 
 model Device {

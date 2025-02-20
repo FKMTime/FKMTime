@@ -1,10 +1,12 @@
-import { List } from "lucide-react";
+import { List, Save } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 
 import EventIcon from "@/Components/Icons/EventIcon";
 import SmallIconButton from "@/Components/SmallIconButton";
 import { TableCell, TableRow } from "@/Components/ui/table";
+import { useToast } from "@/hooks/useToast";
 import { activityCodeToName } from "@/lib/activities";
+import { saveAttemptAsNoteworthyIncident } from "@/lib/incidents";
 import { Incident } from "@/lib/interfaces";
 import { attemptWithPenaltyToString } from "@/lib/resultFormatters";
 import { prettyAttemptStatus } from "@/lib/utils.ts";
@@ -15,6 +17,29 @@ interface ResolvedIncidentRowProps {
 
 const ResolvedIncidentRow = ({ incident }: ResolvedIncidentRowProps) => {
     const navigate = useNavigate();
+    const { toast } = useToast();
+
+    const handleSaveAsNoteworthy = async () => {
+        const status = await saveAttemptAsNoteworthyIncident(incident.id);
+
+        if (status === 201) {
+            toast({
+                title: "Incident saved as noteworthy",
+                variant: "success",
+            });
+        } else if (status === 409) {
+            toast({
+                title: "This attempt is already marked as noteworthy",
+                variant: "destructive",
+            });
+        } else {
+            toast({
+                title: "Failed to save incident as noteworthy",
+                variant: "destructive",
+            });
+        }
+    };
+
     return (
         <TableRow>
             <TableCell>{incident.result.person.name}</TableCell>
@@ -40,6 +65,11 @@ const ResolvedIncidentRow = ({ incident }: ResolvedIncidentRowProps) => {
             <TableCell>{incident.comment}</TableCell>
             <TableCell>{incident.judge?.name}</TableCell>
             <TableCell>
+                <SmallIconButton
+                    icon={<Save />}
+                    title="Save as noteworthy"
+                    onClick={handleSaveAsNoteworthy}
+                />
                 <SmallIconButton
                     icon={<List />}
                     title="View attempts"

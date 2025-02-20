@@ -32,6 +32,10 @@ const Incidents = lazy(
 const ResolvedIncidents = lazy(
     () => import("./Pages/Main/Incidents/ResolvedIncidents/ResolvedIncidents")
 );
+const NoteworthyIncidents = lazy(
+    () =>
+        import("./Pages/Main/Incidents/NoteworthyIncidents/NoteworthyIncidents")
+);
 const Layout = lazy(() => import("./Pages/Main/Layout/Layout"));
 const NotFound = lazy(() => import("./Pages/Main/NotFound/NotFound"));
 const DoubleCheck = lazy(
@@ -110,6 +114,10 @@ const App = () => {
                 {
                     path: "incidents/resolved",
                     element: <ResolvedIncidents />,
+                },
+                {
+                    path: "incidents/noteworthy",
+                    element: <NoteworthyIncidents />,
                 },
                 {
                     path: "incidents/:id",

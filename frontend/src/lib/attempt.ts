@@ -24,21 +24,6 @@ export const createAttempt = async (data: CreateAttemptData) => {
     return response.status;
 };
 
-export const getUnresolvedAttempts = async (): Promise<Incident[]> => {
-    const response = await backendRequest("attempt/unresolved", "GET", true);
-    return await response.json();
-};
-
-export const getResolvedIncidents = async (
-    search?: string
-): Promise<Incident[]> => {
-    const url = search
-        ? `attempt/incidents?search=${search}`
-        : "attempt/incidents";
-    const response = await backendRequest(url, "GET", true);
-    return await response.json();
-};
-
 export const getIncidentById = async (
     id: string
 ): Promise<{

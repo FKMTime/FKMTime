@@ -3,7 +3,7 @@ import { useCallback, useEffect, useState } from "react";
 import { Button } from "@/Components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/Components/ui/card";
 import { Input } from "@/Components/ui/input";
-import { getResolvedIncidents } from "@/lib/attempt";
+import { getResolvedIncidents } from "@/lib/incidents";
 import { Incident } from "@/lib/interfaces";
 import PageTransition from "@/Pages/PageTransition";
 

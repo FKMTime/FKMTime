@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 
 import { Button } from "@/Components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/Components/ui/card";
-import { getUnresolvedAttempts } from "@/lib/attempt";
+import { getUnresolvedIncidents } from "@/lib/incidents";
 import { Incident } from "@/lib/interfaces";
 import PageTransition from "@/Pages/PageTransition";
 import { socket } from "@/socket";
@@ -15,7 +15,7 @@ const Incidents = () => {
     const [incidents, setIncidents] = useState<Incident[]>([]);
 
     const fetchData = async () => {
-        const data = await getUnresolvedAttempts();
+        const data = await getUnresolvedIncidents();
         setIncidents(data);
     };
     useEffect(() => {
@@ -42,9 +42,14 @@ const Incidents = () => {
                     <CardHeader>
                         <CardTitle>Incidents</CardTitle>
                     </CardHeader>
-                    <CardContent>
+                    <CardContent className="flex flex-col md:flex-row gap-4">
                         <Button onClick={() => navigate("/incidents/resolved")}>
                             Resolved incidents
+                        </Button>
+                        <Button
+                            onClick={() => navigate("/incidents/noteworthy")}
+                        >
+                            Noteworthy incidents
                         </Button>
                     </CardContent>
                 </Card>

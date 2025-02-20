@@ -1,4 +1,8 @@
-import { Incident } from "./interfaces";
+import {
+    Incident,
+    NoteworthyIncident,
+    NoteworthyIncidentData,
+} from "./interfaces";
 import { backendRequest } from "./request";
 
 export const groupIncidents = (incidents: Incident[]) => {
@@ -20,9 +24,77 @@ export const groupIncidents = (incidents: Incident[]) => {
 
 export const getUnresolvedIncidentsCount = async () => {
     const response = await backendRequest(
-        "attempt/unresolved/count",
+        "incident/unresolved/count",
         "GET",
         true
     );
     return await response.json();
+};
+
+export const getUnresolvedIncidents = async (): Promise<Incident[]> => {
+    const response = await backendRequest("incident/unresolved", "GET", true);
+    return await response.json();
+};
+
+export const getResolvedIncidents = async (
+    search?: string
+): Promise<Incident[]> => {
+    const url = search
+        ? `incident/resolved?search=${search}`
+        : "incident/resolved";
+    const response = await backendRequest(url, "GET", true);
+    return await response.json();
+};
+
+export const saveAttemptAsNoteworthyIncident = async (id: string) => {
+    const response = await backendRequest(
+        `incident/noteworthy/save/${id}`,
+        "POST",
+        true
+    );
+    return response.status;
+};
+
+export const getNoteworthyIncidents = async (
+    search?: string
+): Promise<NoteworthyIncident[]> => {
+    const url = search
+        ? `incident/noteworthy?search=${search}`
+        : "incident/noteworthy";
+    const response = await backendRequest(url, "GET", true);
+    return await response.json();
+};
+
+export const createNoteworthyIncident = async (
+    data: NoteworthyIncidentData
+) => {
+    const response = await backendRequest(
+        "incident/noteworthy",
+        "POST",
+        true,
+        data
+    );
+    return response.status;
+};
+
+export const updateNoteworthyIncident = async (
+    id: string,
+    data: NoteworthyIncidentData
+) => {
+    const response = await backendRequest(
+        `incident/noteworthy/${id}`,
+        "PUT",
+        true,
+        data
+    );
+    return response.status;
+};
+
+export const deleteNoteworthyIncident = async (id: string) => {
+    const response = await backendRequest(
+        `incident/noteworthy/${id}`,
+        "DELETE",
+        true
+    );
+    return response.status;
 };
