@@ -38,13 +38,9 @@ export const getTranslation = (key: string, locale: string) => {
 };
 
 export const getTranslationsJSON = (locale: string) => {
-  const filePath = path.join(
-    process.cwd(),
-    'src',
-    'translations',
-    'locales',
-    `${locale}.json`,
-  );
+  const localesPath = getLocalesPath();
+  const filePath = path.join(localesPath, `${locale}.json`);
+
   try {
     const rawData = fs.readFileSync(filePath, 'utf-8');
     return JSON.parse(rawData);
