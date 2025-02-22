@@ -12,8 +12,8 @@ export class SocketServer {
   private logger = new Logger('socket-server');
   private connectedSockets: net.Socket[] = [];
 
+  hilRunning: boolean = false;
   private hilProcessor: any;
-  private hilRunning: boolean;
   private hilInterval: any | null = null;
 
   constructor(

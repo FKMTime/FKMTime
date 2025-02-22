@@ -40,4 +40,8 @@ export class SocketController implements OnModuleInit, OnModuleDestroy {
   async toggleHil(state: boolean) {
     await this.socketServer.toggleHil(state);
   }
+
+  hilRunning(): boolean {
+    return this.socketServer.hilRunning;
+  }
 }

@@ -158,7 +158,7 @@ export class CompetitionService {
     if (!competition) {
       throw new HttpException('Competition not found', 404);
     }
-    return competition;
+    return { ...competition, hilTesting: this.socketController.hilRunning() };
   }
 
   async getRoundsInfo() {
