@@ -14,6 +14,7 @@ export class SocketServer {
 
   private hilProcessor: any;
   private hilRunning: boolean;
+  private hilInterval: any | null = null;
 
   constructor(
     private readonly path: string,
@@ -34,22 +35,6 @@ export class SocketServer {
       fs.chmodSync(this.path, '777');
       this.logger.log('Unix socket server started at ' + this.path);
       callback();
-
-      this.socketService.getServerStatus().then((status) => {
-          this.hilProcessor = wasm.init((tag, msg) => {
-              console.log(`[${tag}] ${msg}`);
-          }, JSON.stringify(status));
-
-          this.hilRunning = true;
-          setInterval(() => {
-              const res = this.hilProcessor.generate_output();
-              if (res.length > 0) {
-                  this.connectedSockets.forEach((cs) => {
-                      cs.write(res);
-                  });
-              }
-          }, 50);
-      });
     });
 
     this.server.on('connection', async (socket) => {
@@ -65,10 +50,13 @@ export class SocketServer {
         let nullIdx = buffer.indexOf(0x00);
         while (nullIdx !== -1) {
           const packet = buffer.subarray(0, nullIdx);
-          this.hilProcessor.feed_packet(packet.toString());
 
-          //const request: RequestDto<any> = JSON.parse(packet.toString());
-          //this.parsePacket(socket, request);
+          if (this.hilRunning) {
+            this.hilProcessor.feed_packet(packet.toString());
+          } else {
+            const request: RequestDto<any> = JSON.parse(packet.toString());
+            this.parsePacket(socket, request);
+          }
 
           buffer = buffer.subarray(nullIdx + 1);
           nullIdx = buffer.indexOf(0x00);
@@ -150,6 +138,30 @@ export class SocketServer {
         fileData,
       },
     });
+  }
+
+  async toggleHil(state: boolean) {
+    this.logger.log('HIL testing state change: ' + state);
+    if (this.hilInterval != null) clearInterval(this.hilInterval);
+
+    if (state) {
+      const status = await this.socketService.getServerStatus();
+      this.hilProcessor = wasm.init((tag, msg) => {
+        console.log(`[${tag}] ${msg}`);
+      }, JSON.stringify(status));
+
+      this.hilRunning = true;
+      this.hilInterval = setInterval(() => {
+        const res = this.hilProcessor.generate_output();
+        if (res.length > 0) {
+          this.connectedSockets.forEach((cs) => {
+            cs.write(res);
+          });
+        }
+      }, 50);
+    } else {
+      this.hilRunning = false;
+    }
   }
 
   private async parsePacket(socket: net.Socket, request: RequestDto<any>) {
