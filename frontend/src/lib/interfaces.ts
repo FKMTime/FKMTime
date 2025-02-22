@@ -58,6 +58,7 @@ export interface Competition {
     createdAt?: Date;
     updatedAt?: Date;
     defaultLocale: string;
+    hilTesting: boolean;
 }
 
 //eslint-disable-next-line

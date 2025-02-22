@@ -48,6 +48,7 @@ const DeviceSettingsForm = ({
             wifiSsid: competition.wifiSsid,
             wifiPassword: competition.wifiPassword,
             defaultLocale: competition.defaultLocale,
+            hilTesting: competition.hilTesting,
         },
     });
 
@@ -68,6 +69,27 @@ const DeviceSettingsForm = ({
                 onSubmit={form.handleSubmit(onSubmit)}
                 className="space-y-8 py-3"
             >
+                <FormField
+                    control={form.control}
+                    name="hilTesting"
+                    render={({ field }) => (
+                        <FormItem>
+                            <div className="flex items-center gap-2">
+                                <FormControl>
+                                    <Checkbox
+                                        checked={field.value}
+                                        onCheckedChange={field.onChange}
+                                    />
+                                </FormControl>
+                                <FormLabel>HIL Testing</FormLabel>
+                            </div>
+                            <FormMessage />
+                            <FormDescription>
+                                If enabled, hil testing will be enabled
+                            </FormDescription>
+                        </FormItem>
+                    )}
+                />
                 <FormField
                     control={form.control}
                     name="shouldUpdateDevices"

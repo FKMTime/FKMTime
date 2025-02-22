@@ -18,7 +18,7 @@ import { SocketService } from './socket.service';
     forwardRef(() => PersonModule),
   ],
   providers: [SocketServer, SocketService, SocketController],
-  controllers: [SocketController],
+  controllers: [],
   exports: [SocketServer, SocketController],
 })
 export class SocketModule {}

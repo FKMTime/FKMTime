@@ -8,6 +8,7 @@ export class RoomsService {
   constructor(
     @Inject(forwardRef(() => DbService))
     private readonly prisma: DbService,
+    @Inject(forwardRef(() => SocketController))
     private readonly socketController: SocketController,
   ) {}
 

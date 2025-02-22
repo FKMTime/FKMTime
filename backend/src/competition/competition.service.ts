@@ -257,6 +257,7 @@ export class CompetitionService {
   }
 
   async updateDevicesSettings(id: string, data: UpdateDevicesSettingsDto) {
+    this.socketController.toggleHil(data.hilTesting);
     await this.prisma.competition.update({
       where: {
         id: id,

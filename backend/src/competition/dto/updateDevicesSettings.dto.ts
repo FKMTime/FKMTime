@@ -22,4 +22,7 @@ export class UpdateDevicesSettingsDto {
   @IsString()
   @IsOptional()
   defaultLocale: string;
+
+  @IsBoolean()
+  hilTesting: boolean;
 }

@@ -9,6 +9,11 @@
             "include": "translations/locales",
             "outDir": "dist/src",
             "watchAssets": true
+        },
+        {
+            "include": "wasm",
+            "outDir": "dist/src",
+            "watchAssets": true
         }
     ]
   }
