@@ -140,6 +140,7 @@ export class AttemptService {
       status: data.status,
       type: data.type,
       value: data.value,
+      orginalTime: data.value * 10,
       comment: data.comment,
     };
 
@@ -187,7 +188,7 @@ export class AttemptService {
       this.socketController.sendResponseToAllSockets({
         type: 'IncidentResolved',
         data: {
-          attempt: attempt,
+          attempt,
           espId: attempt.device.espId,
           shouldScanCards: attempt.status === AttemptStatus.RESOLVED,
         },
@@ -227,7 +228,7 @@ export class AttemptService {
       this.socketController.sendResponseToAllSockets({
         type: 'IncidentResolved',
         data: {
-          attempt: attempt,
+          attempt,
           espId: attempt.device.espId,
           shouldScanCards: false,
         },
