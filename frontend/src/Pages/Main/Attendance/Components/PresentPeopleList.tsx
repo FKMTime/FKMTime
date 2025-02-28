@@ -15,7 +15,7 @@ const PresentPeopleList = ({
     showDevice,
 }: PresentPeopleListProps) => {
     return (
-        <ul className="">
+        <ul>
             {staffActivities.map((activity) => (
                 <li key={activity.id} className="flex items-center gap-2">
                     <IconButton

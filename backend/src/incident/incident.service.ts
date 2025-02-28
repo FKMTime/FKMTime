@@ -6,6 +6,7 @@ import { publicPersonSelect } from 'src/constants';
 import { DbService } from 'src/db/db.service';
 
 import { NoteworthyIncidentDto } from './dto/noteworthyIncident.dto';
+import { WarningDto } from './dto/warning.dto';
 
 @Injectable()
 export class IncidentService {
@@ -181,6 +182,68 @@ export class IncidentService {
 
   async deleteNoteworthyIncident(id: string) {
     await this.prisma.noteworthyIncident.delete({
+      where: { id },
+    });
+  }
+
+  async getAllWarnings(search?: string) {
+    const whereParams = {};
+    if (search) {
+      whereParams['OR'] = [
+        {
+          description: {
+            contains: search,
+            mode: 'insensitive',
+          },
+        },
+      ];
+    }
+    return this.prisma.warning.findMany({
+      where: whereParams,
+      orderBy: {
+        createdAt: 'desc',
+      },
+      include: {
+        person: publicPersonSelect,
+        createdBy: {
+          select: {
+            id: true,
+            fullName: true,
+          },
+        },
+      },
+    });
+  }
+
+  async getWarningsForPerson(personId: string) {
+    return this.prisma.warning.findMany({
+      where: { personId },
+      orderBy: {
+        createdAt: 'desc',
+      },
+      include: {
+        createdBy: {
+          select: {
+            id: true,
+            fullName: true,
+          },
+        },
+      },
+    });
+  }
+
+  async issueWarning(personId: string, data: WarningDto, userId: string) {
+    return this.prisma.warning.create({
+      data: {
+        description: data.description,
+        person: { connect: { id: personId } },
+        createdBy: { connect: { id: userId } },
+      },
+    });
+  }
+
+  async deleteWarning(id: string) {
+    await this.prisma.warning.delete({
       where: { id },
     });
   }

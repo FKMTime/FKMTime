@@ -43,7 +43,7 @@ const AssignCardModal = ({ isOpen, onClose, person }: AssignCardModalProps) => {
 
     return (
         <Modal isOpen={isOpen} onClose={onClose} title="Assign card">
-            <div className="felx flex-col gap-5">
+            <div className="flex flex-col gap-5">
                 <div className="flex flex-col gap-2 mb-3">
                     <Label>Card</Label>
                     <Input

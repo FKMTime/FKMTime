@@ -3,8 +3,10 @@ import {
     ChartNoAxesColumn,
     Check,
     FileText,
+    FileWarning,
     IdCard,
     PersonStanding,
+    ShieldAlert,
 } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -17,12 +19,17 @@ import SmallIconButton from "@/Components/SmallIconButton";
 import Tooltip from "@/Components/Tooltip";
 import { TableCell, TableRow } from "@/Components/ui/table";
 import { Person } from "@/lib/interfaces";
-import { isStageLeaderOrOrganizerOrDelegate } from "@/lib/permissions";
+import {
+    isDelegate,
+    isStageLeaderOrOrganizerOrDelegate,
+} from "@/lib/permissions";
 import { WCA_ORIGIN } from "@/lib/request";
 import { prettyGender, regionNameByIso2 } from "@/lib/utils";
 
 import AssignCardModal from "./AssignCardModal";
 import DisplayGroupsModal from "./DisplayGroupsModal";
+import DisplayWarningsModal from "./DisplayWarningsModal";
+import IssueWarningModal from "./IssueWarningModal";
 
 interface PersonRowProps {
     person: Person;
@@ -35,6 +42,10 @@ const PersonRow = ({ person, wcif, handleCloseEditModal }: PersonRowProps) => {
     const [isOpenAssignCardModal, setIsOpenAssignCardModal] =
         useState<boolean>(false);
     const [isOpenDisplayGroupsModal, setIsOpenDisplayGroupsModal] =
+        useState<boolean>(false);
+    const [isOpenDisplayWarningsModal, setIsOpenDisplayWarningsModal] =
+        useState<boolean>(false);
+    const [isOpenIssueWarningModal, setIsOpenIssueWarningModal] =
         useState<boolean>(false);
     const wcifInfo = person.registrantId
         ? getPersonFromWcif(person.registrantId, wcif)
@@ -103,26 +114,48 @@ const PersonRow = ({ person, wcif, handleCloseEditModal }: PersonRowProps) => {
                     title="Assign card"
                     onClick={() => setIsOpenAssignCardModal(true)}
                 />
-                {person.registrantId &&
-                    person.registrantId !== 0 &&
-                    isStageLeaderOrOrganizerOrDelegate() && (
-                        <>
-                            <SmallIconButton
-                                icon={<FileText />}
-                                title="Display groups"
-                                onClick={() =>
-                                    setIsOpenDisplayGroupsModal(true)
-                                }
-                            />
-                            <SmallIconButton
-                                icon={<ChartNoAxesColumn />}
-                                title="Display all results for this person"
-                                onClick={() =>
-                                    navigate(`/persons/${person.id}/results`)
-                                }
-                            />
-                        </>
-                    )}
+                {person.registrantId && person.registrantId !== 0 && (
+                    <>
+                        {isStageLeaderOrOrganizerOrDelegate() && (
+                            <>
+                                <SmallIconButton
+                                    icon={<FileText />}
+                                    title="Display groups"
+                                    onClick={() =>
+                                        setIsOpenDisplayGroupsModal(true)
+                                    }
+                                />
+                                <SmallIconButton
+                                    icon={<ChartNoAxesColumn />}
+                                    title="Display all results for this person"
+                                    onClick={() =>
+                                        navigate(
+                                            `/persons/${person.id}/results`
+                                        )
+                                    }
+                                />
+                            </>
+                        )}
+                        {isDelegate() && (
+                            <>
+                                <SmallIconButton
+                                    icon={<FileWarning />}
+                                    title="Display all warnings for this person"
+                                    onClick={() =>
+                                        setIsOpenDisplayWarningsModal(true)
+                                    }
+                                />
+                                <SmallIconButton
+                                    icon={<ShieldAlert />}
+                                    title="Issue warning"
+                                    onClick={() =>
+                                        setIsOpenIssueWarningModal(true)
+                                    }
+                                />
+                            </>
+                        )}
+                    </>
+                )}
             </TableCell>
             <AssignCardModal
                 isOpen={isOpenAssignCardModal}
@@ -136,6 +169,16 @@ const PersonRow = ({ person, wcif, handleCloseEditModal }: PersonRowProps) => {
                     person={person}
                 />
             )}
+            <IssueWarningModal
+                isOpen={isOpenIssueWarningModal}
+                onClose={() => setIsOpenIssueWarningModal(false)}
+                person={person}
+            />
+            <DisplayWarningsModal
+                isOpen={isOpenDisplayWarningsModal}
+                onClose={() => setIsOpenDisplayWarningsModal(false)}
+                person={person}
+            />
         </TableRow>
     );
 };

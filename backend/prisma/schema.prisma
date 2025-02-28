@@ -22,6 +22,7 @@ model User {
   quickActions               QuickAction[]
   updatedAttempts            Attempt[]
   createdNoteworthyIncidents NoteworthyIncident[]
+  createdWarnings            Warning[]
 
   @@map("users")
 }
@@ -41,6 +42,7 @@ model Person {
   judgedAttempts    Attempt[]       @relation(name: "attempt_judge")
   StaffActivity     StaffActivity[]
   scrambledAttempts Attempt[]       @relation(name: "attempt_scrambler")
+  receivedWarnings  Warning[]
 
   @@map("person")
 }
@@ -165,6 +167,17 @@ model NoteworthyIncident {
 
   @@unique([attemptId])
   @@map("noteworthy_incident")
+}
+
+model Warning {
+  id          String   @id @default(uuid())
+  description String  @db.Text
+  personId    String   @map("person_id")
+  person      Person   @relation(fields: [personId], references: [id])
+  createdById String   @map("created_by")
+  createdBy   User     @relation(fields: [createdById], references: [id])
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
 }
 
 model Device {

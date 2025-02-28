@@ -17,6 +17,7 @@ import { JwtAuthDto } from 'src/auth/dto/jwt-auth.dto';
 import { DelegateGuard } from 'src/auth/guards/delegate.guard';
 
 import { NoteworthyIncidentDto } from './dto/noteworthyIncident.dto';
+import { WarningDto } from './dto/warning.dto';
 import { IncidentService } from './incident.service';
 
 @UseGuards(AuthGuard('jwt'), DelegateGuard)
@@ -75,5 +76,30 @@ export class IncidentController {
   @Delete('noteworthy/:id')
   async deleteNoteworthyIncident(@Param('id') id: string) {
     return this.incidentService.deleteNoteworthyIncident(id);
+  }
+
+  @Get('warnings')
+  async getAllWarnings(@Query('search') search: string) {
+    return this.incidentService.getAllWarnings(search);
+  }
+
+  @Get('warnings/person/:id')
+  async getWarningsByPerson(@Param('id') personId: string) {
+    return this.incidentService.getWarningsForPerson(personId);
+  }
+
+  @Post('warnings/person/:id')
+  async addWarningToPerson(
+    @Param('id') personId: string,
+    @Body() data: WarningDto,
+    @GetUser() user: JwtAuthDto,
+  ) {
+    return this.incidentService.issueWarning(personId, data, user.userId);
+  }
+
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @Delete('warnings/:id')
+  async deleteWarning(@Param('id') id: string) {
+    return this.incidentService.deleteWarning(id);
   }
 }

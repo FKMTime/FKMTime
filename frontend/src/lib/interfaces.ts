@@ -235,6 +235,18 @@ export interface NoteworthyIncident extends NoteworthyIncidentData {
     updatedAt: Date;
 }
 
+export interface WarningData {
+    description: string;
+}
+
+export interface Warning extends WarningData {
+    id: string;
+    createdBy: User;
+    person: Person;
+    createdAt: Date;
+    updatedAt: Date;
+}
+
 export interface Device extends DeviceData {
     id: string;
     batteryPercentage?: number;
