@@ -2,6 +2,7 @@ import { Logger } from '@nestjs/common';
 import * as fs from 'fs';
 import * as net from 'net';
 
+import * as wasm from '../wasm/hil_processor_wasm.js';
 import { RequestDto } from './dto/request.dto';
 import { ResponseDto } from './dto/response.dto';
 import { SocketService } from './socket.service';
@@ -10,6 +11,10 @@ export class SocketServer {
   private server: net.Server;
   private logger = new Logger('socket-server');
   private connectedSockets: net.Socket[] = [];
+
+  hilRunning: boolean = false;
+  private hilProcessor: any;
+  private hilInterval: any | null = null;
 
   constructor(
     private readonly path: string,
@@ -45,8 +50,13 @@ export class SocketServer {
         let nullIdx = buffer.indexOf(0x00);
         while (nullIdx !== -1) {
           const packet = buffer.subarray(0, nullIdx);
-          const request: RequestDto<any> = JSON.parse(packet.toString());
-          this.parsePacket(socket, request);
+
+          if (this.hilRunning) {
+            this.hilProcessor.feed_packet(packet.toString());
+          } else {
+            const request: RequestDto<any> = JSON.parse(packet.toString());
+            this.parsePacket(socket, request);
+          }
 
           buffer = buffer.subarray(nullIdx + 1);
           nullIdx = buffer.indexOf(0x00);
@@ -63,6 +73,8 @@ export class SocketServer {
   }
 
   private sendResponseWithTag<T>(socket: net.Socket, request: RequestDto<T>) {
+    if (this.hilRunning) return;
+
     this.logger.log(
       `Sending response of type ${request.type} to socket, tag ${request.tag}, data ${JSON.stringify(request.data)}`,
     );
@@ -70,6 +82,8 @@ export class SocketServer {
   }
 
   private sendResponse<T>(socket: net.Socket, response: ResponseDto<T>) {
+    if (this.hilRunning) return;
+
     this.logger.log(
       `Sending response of type ${response.type} to socket, data ${JSON.stringify(response.data)}`,
     );
@@ -77,6 +91,8 @@ export class SocketServer {
   }
 
   sendToAll<T>(response: ResponseDto<T>) {
+    if (this.hilRunning) return;
+
     this.logger.log(`Sending ${response.type} to all connected sockets`);
     this.connectedSockets.forEach((socket) => {
       socket.write(JSON.stringify(response) + '\0');
@@ -84,6 +100,8 @@ export class SocketServer {
   }
 
   async sendInitData(socket: net.Socket) {
+    if (this.hilRunning) return;
+
     this.logger.log('Sending init data to socket');
     const serverStatus = await this.socketService.getServerStatus();
     this.sendResponse(socket, {
@@ -94,6 +112,10 @@ export class SocketServer {
 
   async sendServerStatus() {
     const serverStatus = await this.socketService.getServerStatus();
+    if (this.hilRunning) {
+      this.hilProcessor.set_status(JSON.stringify(serverStatus));
+    }
+
     this.sendToAll({
       type: 'ServerStatus',
       data: serverStatus,
@@ -116,6 +138,30 @@ export class SocketServer {
         fileData,
       },
     });
+  }
+
+  async toggleHil(state: boolean) {
+    this.logger.log('HIL testing state change: ' + state);
+    if (this.hilInterval != null) clearInterval(this.hilInterval);
+
+    if (state) {
+      const status = await this.socketService.getServerStatus();
+      this.hilProcessor = wasm.init((tag, msg) => {
+        console.log(`[${tag}] ${msg}`);
+      }, JSON.stringify(status));
+
+      this.hilRunning = true;
+      this.hilInterval = setInterval(() => {
+        const res = this.hilProcessor.generate_output();
+        if (res.length > 0) {
+          this.connectedSockets.forEach((cs) => {
+            cs.write(res);
+          });
+        }
+      }, 50);
+    } else {
+      this.hilRunning = false;
+    }
   }
 
   private async parsePacket(socket: net.Socket, request: RequestDto<any>) {

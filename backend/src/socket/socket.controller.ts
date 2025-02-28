@@ -36,4 +36,12 @@ export class SocketController implements OnModuleInit, OnModuleDestroy {
   async sendAutoSetupStatus() {
     await this.socketServer.sendAutoSetupStatus();
   }
+
+  async toggleHil(state: boolean) {
+    await this.socketServer.toggleHil(state);
+  }
+
+  hilRunning(): boolean {
+    return this.socketServer.hilRunning;
+  }
 }
