@@ -54,7 +54,9 @@ const PersonResults = () => {
                     </CardHeader>
                     <CardContent>
                         <p>Registrant ID: {person.registrantId}</p>
-                        <p>WCA ID: {person.wcaId}</p>
+                        <p>
+                            WCA ID: {person.wcaId ? person.wcaId : "Newcomer"}
+                        </p>
                     </CardContent>
                 </Card>
                 <Card>

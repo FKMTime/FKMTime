@@ -83,7 +83,8 @@ const Scrambling = ({ groupId, scrambles }: ScramblingProps) => {
                         {scrambler ? (
                             <>
                                 Current scrambler: {scrambler.name} (
-                                {scrambler.wcaId})
+                                {scrambler.wcaId ? scrambler.wcaId : "Newcomer"}
+                                )
                                 <Button onClick={() => setScrambler(null)}>
                                     Change scrambler
                                 </Button>

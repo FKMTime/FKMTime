@@ -56,7 +56,7 @@ const Scramble = ({
         <Card>
             <CardHeader>
                 <CardTitle>
-                    {person.name} ({person.wcaId})
+                    {person.name} ({person.wcaId ? person.wcaId : "Newcomer"})
                 </CardTitle>
                 <CardDescription>
                     Scramble {scrambleData.isExtra ? "Extra" : null}{" "}

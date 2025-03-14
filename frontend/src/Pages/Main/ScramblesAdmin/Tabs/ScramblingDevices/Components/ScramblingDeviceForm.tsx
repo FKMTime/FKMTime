@@ -42,7 +42,11 @@ const ScramblingDeviceForm = ({
         resolver: zodResolver(scramblingDeviceSchema),
         defaultValues: {
             name: device ? device.name : "",
-            roomId: device ? device.room.id : "",
+            roomId: device.id
+                ? device.room.id
+                : rooms.length === 1
+                  ? rooms[0].id
+                  : "",
         },
     });
     const onSubmit = (values: z.infer<typeof scramblingDeviceSchema>) => {
@@ -56,7 +60,7 @@ const ScramblingDeviceForm = ({
         getAllRooms().then((data: Room[]) => {
             setRooms(data);
         });
-    }, []);
+    }, [form]);
 
     return (
         <Form {...form}>
