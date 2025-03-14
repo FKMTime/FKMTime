@@ -1,5 +1,6 @@
 import { forwardRef, HttpException, Inject, Injectable } from '@nestjs/common';
 import { DeviceType } from '@prisma/client';
+import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 import { AppGateway } from 'src/app.gateway';
 
 import { DbService } from '../db/db.service';
@@ -54,18 +55,31 @@ export class DeviceService {
   }
 
   async createDevice(data: DeviceDto) {
-    await this.prisma.device.create({
-      data: {
-        name: data.name,
-        espId: data.espId,
-        type: data.type,
-        room: {
-          connect: {
-            id: data.roomId,
+    try {
+      await this.prisma.device.create({
+        data: {
+          name: data.name,
+          espId: data.espId,
+          type: data.type,
+          room: {
+            connect: {
+              id: data.roomId,
+            },
           },
         },
-      },
-    });
+      });
+    } catch (e) {
+      if (e instanceof PrismaClientKnownRequestError) {
+        if (e.code === 'P2002') {
+          throw new HttpException(
+            {
+              message: 'Device with this name or ESP ID already exists',
+            },
+            409,
+          );
+        }
+      }
+    }
     this.appGateway.handleAddDeviceToDb(data.espId);
     await this.socketController.sendServerStatus();
     return {
@@ -107,19 +121,32 @@ export class DeviceService {
   }
 
   async updateDevice(id: string, data: DeviceDto) {
-    await this.prisma.device.update({
-      where: { id },
-      data: {
-        name: data.name,
-        espId: data.espId,
-        type: data.type,
-        room: {
-          connect: {
-            id: data.roomId,
+    try {
+      await this.prisma.device.update({
+        where: { id },
+        data: {
+          name: data.name,
+          espId: data.espId,
+          type: data.type,
+          room: {
+            connect: {
+              id: data.roomId,
+            },
           },
         },
-      },
-    });
+      });
+    } catch (e) {
+      if (e instanceof PrismaClientKnownRequestError) {
+        if (e.code === 'P2002') {
+          throw new HttpException(
+            {
+              message: 'Device with this name or ESP ID already exists',
+            },
+            409,
+          );
+        }
+      }
+    }
     await this.socketController.sendServerStatus();
     this.appGateway.handleDeviceUpdated();
     return {

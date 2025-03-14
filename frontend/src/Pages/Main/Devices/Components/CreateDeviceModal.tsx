@@ -43,6 +43,13 @@ const CreateDeviceModal = ({
                 title: "Successfully created new device.",
             });
             onClose();
+        } else if (status === 409) {
+            toast({
+                title: "Error",
+                description:
+                    "Device with this name or ESP ID already exists in database",
+                variant: "destructive",
+            });
         } else {
             toast({
                 title: "Error",

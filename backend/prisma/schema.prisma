@@ -182,7 +182,7 @@ model Warning {
 
 model Device {
   id                String          @id @default(uuid())
-  name              String
+  name              String          @unique
   espId             Int?            @unique @map("esp_id")
   type              DeviceType
   batteryPercentage Int?            @map("battery_percentage")
