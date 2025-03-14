@@ -319,11 +319,12 @@ export class PersonService {
   }
 
   async updatePerson(id: string, data: UpdatePersonDto) {
+    const cardId = data.cardId.toString() || null;
     try {
       await this.prisma.person.update({
         where: { id },
         data: {
-          cardId: data.cardId.toString() || null,
+          cardId,
         },
       });
     } catch (e) {
@@ -331,7 +332,7 @@ export class PersonService {
         if (e.code === 'P2002') {
           throw new HttpException(
             {
-              message: 'Card already assigned',
+              message: 'This card is already assigned to someone else',
             },
             409,
           );

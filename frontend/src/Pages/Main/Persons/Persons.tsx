@@ -169,7 +169,7 @@ const Persons = () => {
         fetchData();
     }, [fetchData]);
 
-    if (!competition || !totalPersonsCount) {
+    if (!competition || !persons) {
         return <LoadingPage />;
     }
 
@@ -191,8 +191,7 @@ const Persons = () => {
                             )}
                         </CardTitle>
                         <CardDescription>
-                            Assigned cards:{" "}
-                            {totalPersonsCount - personsWithoutCardAssigned}/
+                            Assigned cards: {personsWithoutCardAssigned}/
                             {totalPersonsCount}
                         </CardDescription>
                     </CardHeader>
@@ -243,15 +242,17 @@ const Persons = () => {
                         />
                     ))}
                 </div>
-                <Card>
-                    <CardContent>
-                        <Pagination
-                            page={page}
-                            totalPages={totalPages}
-                            handlePageChange={handlePageChange}
-                        />
-                    </CardContent>
-                </Card>
+                {persons.length > 0 && (
+                    <Card>
+                        <CardContent>
+                            <Pagination
+                                page={page}
+                                totalPages={totalPages}
+                                handlePageChange={handlePageChange}
+                            />
+                        </CardContent>
+                    </Card>
+                )}
                 {isOpenAddPersonModal && (
                     <AddPersonModal
                         isOpen={isOpenAddPersonModal}

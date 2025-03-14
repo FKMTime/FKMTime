@@ -31,6 +31,12 @@ const AssignCardModal = ({ isOpen, onClose, person }: AssignCardModalProps) => {
                 variant: "success",
             });
             onClose();
+        } else if (status === 409) {
+            toast({
+                title: "Error",
+                description: "This card is already assigned to another person",
+                variant: "destructive",
+            });
         } else {
             toast({
                 title: "Error",
