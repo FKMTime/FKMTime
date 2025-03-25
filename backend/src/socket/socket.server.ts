@@ -147,7 +147,7 @@ export class SocketServer {
     if (state) {
       const status = await this.socketService.getServerStatus();
       this.hilProcessor = wasm.init((tag, msg) => {
-        console.log(`[${tag}] ${msg}`);
+        this.logger.log(`[${tag}] ${msg}`);
       }, JSON.stringify(status));
 
       this.hilRunning = true;

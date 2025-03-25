@@ -28,6 +28,18 @@ router.post('/attempt/enter', (req, res) => {
     res.send(data.subarray(0, data.length - 1)); // -1 because of null byte
   });
 });
+router.post('/person/info', (req, res) => {
+  const randomTag = Math.floor(Math.random() * 1000);
+  client = net.createConnection({ path: socketPath });
+  client.write(
+    JSON.stringify({ type: 'PersonInfo', tag: randomTag, data: req.body }) + '\0'
+  );
+
+  client.on('data', (data) => {
+    client.end();
+    res.send(data.subarray(0, data.length - 1)); // -1 because of null byte
+  });
+});
 router.post('/device/connect', (req, res) => {
   const randomTag = Math.floor(Math.random() * 1000);
   client = net.createConnection({ path: socketPath });

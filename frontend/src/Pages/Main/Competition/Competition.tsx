@@ -73,6 +73,7 @@ const Competition = () => {
             toast({
                 title: "Success",
                 description: "Competition synced",
+                variant: "success",
             });
             await fetchCompetitionDataAndSetAtom();
         } else if (status === 403) {

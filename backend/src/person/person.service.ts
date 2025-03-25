@@ -364,7 +364,7 @@ export class PersonService {
   async getPersonByCardId(cardId: string) {
     return this.prisma.person.findFirst({
       where: {
-        cardId,
+        cardId: cardId.toString(),
       },
       select: {
         id: true,

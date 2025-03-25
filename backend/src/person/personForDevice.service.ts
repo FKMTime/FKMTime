@@ -40,7 +40,7 @@ export class PersonForDeviceService {
         room: true,
       },
     });
-    const possibleGroups = device.room.currentGroupIds;
+    const possibleGroups = device?.room.currentGroupIds || [];
     const competition = await this.prisma.competition.findFirst();
     if (!competition) {
       return {
@@ -69,8 +69,31 @@ export class PersonForDeviceService {
       wcif,
     );
 
+    if (possibleGroups.length === 1) {
+      if (
+        competitorGroups.some(
+          (g) => g.split('-g')[0] === possibleGroups[0].split('-g')[0],
+        )
+      ) {
+        return {
+          ...person,
+          name: convertToLatin(person.name),
+          possibleGroups: possibleGroups.map((g) => ({
+            groupId: g,
+            useInspection: eventsData.find((e) => e.id === g.split('-')[0])
+              .useInspection,
+            secondaryText: this.computeSecondaryText(g),
+          })),
+        };
+      }
+    }
+
     const finalGroups = possibleGroups
-      .filter((g) => competitorGroups.includes(g))
+      .filter(
+        (g) =>
+          competitorGroups.includes(g) ||
+          eventsData.find((e) => e.id === g.split('-')[0]).isUnofficial,
+      )
       .filter((g) => !finishedRoundsIds.includes(g.split('-g')[0]))
       .map((g) => {
         const eventId = g.split('-')[0];

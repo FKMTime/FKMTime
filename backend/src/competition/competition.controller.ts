@@ -72,7 +72,7 @@ export class CompetitionController {
     return await this.importService.importCompetition(id, user.userId);
   }
 
-  @UseGuards(OrganizerGuard)
+  @UseGuards(AuthGuard('jwt'), OrganizerGuard)
   @Get('sync/:id')
   async syncCompetition(@Param('id') id: string, @GetUser() user: JwtAuthDto) {
     return await this.syncService.updateWcif(id, user.userId);

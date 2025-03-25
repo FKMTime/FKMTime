@@ -10,7 +10,6 @@ import {
   Put,
   UseGuards,
 } from '@nestjs/common';
-import { AdminGuard } from 'src/auth/guards/admin.guard';
 import { OrganizerGuard } from 'src/auth/guards/organizer.guard';
 
 import { CreateUnofficialEventDto } from './dto/createUnofficialEvent.dto';
@@ -31,19 +30,19 @@ export class EventsController {
     return this.eventsService.getUnofficialEvents();
   }
 
-  @UseGuards(AdminGuard)
+  @UseGuards(OrganizerGuard)
   @Post()
   async createUnofficialEvent(@Body() data: CreateUnofficialEventDto) {
     return this.eventsService.createUnofficialEvent(data);
   }
 
-  @UseGuards(AdminGuard)
+  @UseGuards(OrganizerGuard)
   @Put(':id')
   async updateUnofficialEvent(@Param('id') id: string, @Body() data: any) {
     return this.eventsService.updateUnofficialEvent(id, data);
   }
 
-  @UseGuards(AdminGuard)
+  @UseGuards(OrganizerGuard)
   @HttpCode(HttpStatus.NO_CONTENT)
   @Delete(':id')
   async deleteUnofficialEvent(@Param('id') id: string) {

@@ -110,6 +110,22 @@
         <button type="submit">Submit</button>
     </form>
     <div id="connectDeviceResponse" class="response" hidden></div>
+    <form id="getPersonInfoForm">
+        <h1>Get person info</h1>
+        <ul>
+            <li>Type: GetPersonInfo</li>
+        </ul>
+        <div>
+            <label for="personId">Card ID</label>
+            <input type="text" name="cardId" placeholder="Card ID" value=""/>
+        </div>
+        <div>
+            <label for="espId">ESP ID</label>
+            <input type="text" name="espId" placeholder="ESP ID" value=""/>
+        </div>
+        <button type="submit">Submit</button>
+    </form>
+    <div id="getPersonInfoResponse" class="response" hidden></div>
 </div>
 <script>
     const form = document.getElementById('enterAttemptForm');
@@ -161,6 +177,31 @@
         });
         const json = await response.json();
         const responseDiv = document.querySelector('#connectDeviceResponse');
+        responseDiv.hidden = false;
+        responseDiv.style.backgroundColor = json.data.status >= 200 && json.data.status < 400 ? '#125b06' : '#b00020';
+        responseDiv.innerHTML = JSON.stringify(json, null, 2);
+    });
+</script>
+<script>
+    const getPersonInfoForm = document.getElementById('getPersonInfoForm');
+    getPersonInfoForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const formData = new FormData(getPersonInfoForm);
+        const data = {};
+        formData.forEach((value, key) => {
+            data[key] = value;
+        });
+        data['cardId'] = +data['cardId'];
+        data['espId'] = +data['espId'];
+        const response = await fetch('/person/info/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(data)
+        });
+        const json = await response.json();
+        const responseDiv = document.querySelector('#getPersonInfoResponse');
         responseDiv.hidden = false;
         responseDiv.style.backgroundColor = json.data.status >= 200 && json.data.status < 400 ? '#125b06' : '#b00020';
         responseDiv.innerHTML = JSON.stringify(json, null, 2);
