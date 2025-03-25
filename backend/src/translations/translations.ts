@@ -39,7 +39,7 @@ export const getTranslation = (key: string, locale: string) => {
 
 export const getTranslationsJSON = (locale: string) => {
   const localesPath = getLocalesPath();
-  const filePath = path.join(localesPath, `${locale}.json`);
+  const filePath = path.join(localesPath, `${locale.toLowerCase()}.json`);
 
   try {
     const rawData = fs.readFileSync(filePath, 'utf-8');
