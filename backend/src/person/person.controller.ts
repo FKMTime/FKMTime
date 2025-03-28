@@ -11,9 +11,12 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
+import { GetUser } from 'src/auth/decorator/getUser.decorator';
+import { JwtAuthDto } from 'src/auth/dto/jwt-auth.dto';
 import { OrganizerGuard } from 'src/auth/guards/organizer.guard';
 
 import { AddPersonDto } from './dto/addPerson.dto';
+import { ChangeCompetingGroupDto } from './dto/changeCompetingGroup.dto';
 import { UpdatePersonDto } from './dto/updatePerson.dto';
 import { PersonService } from './person.service';
 
@@ -88,5 +91,15 @@ export class PersonController {
   @Put(':id')
   async updatePerson(@Param('id') id: string, @Body() data: UpdatePersonDto) {
     return await this.personService.updatePerson(id, data);
+  }
+
+  @UseGuards(OrganizerGuard)
+  @HttpCode(HttpStatus.OK)
+  @Post('change-group')
+  async changeCompetingGroup(
+    @GetUser() user: JwtAuthDto,
+    @Body() data: ChangeCompetingGroupDto,
+  ) {
+    return await this.personService.changeCompetingGroup(user.userId, data);
   }
 }

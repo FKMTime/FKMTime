@@ -1,4 +1,5 @@
 import { zodResolver } from "@hookform/resolvers/zod";
+import { Globe, KeyRound, Wifi } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -152,7 +153,9 @@ const DeviceSettingsForm = ({
                     name="defaultLocale"
                     render={({ field }) => (
                         <FormItem>
-                            <FormLabel>Default locale</FormLabel>
+                            <FormLabel className="flex items-center gap-1">
+                                <Globe /> Default locale
+                            </FormLabel>
                             <Select
                                 onValueChange={field.onChange}
                                 defaultValue={field.value}
@@ -182,7 +185,9 @@ const DeviceSettingsForm = ({
                     name="wifiSsid"
                     render={({ field }) => (
                         <FormItem>
-                            <FormLabel>WiFi SSID</FormLabel>
+                            <FormLabel className="flex items-center gap-1">
+                                <Wifi /> WiFi SSID
+                            </FormLabel>
                             <FormControl>
                                 <Input autoComplete="off" {...field} />
                             </FormControl>
@@ -195,7 +200,9 @@ const DeviceSettingsForm = ({
                     name="wifiPassword"
                     render={({ field }) => (
                         <FormItem>
-                            <FormLabel>WiFi password</FormLabel>
+                            <FormLabel className="flex items-center gap-1">
+                                <KeyRound /> WiFi password
+                            </FormLabel>
                             <FormControl>
                                 <Input
                                     autoComplete="off"

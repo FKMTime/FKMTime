@@ -142,7 +142,7 @@
         },
         {
             "key": "deviceNotAddedFooter",
-            "translation": "Nacisnij wyslij, aby polaczyc"
+            "translation": "Nacisnij submit, aby polaczyc"
         },
         {
             "key": "emptyGroupsError",

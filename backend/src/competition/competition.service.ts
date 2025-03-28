@@ -326,6 +326,9 @@ export class CompetitionService {
           solvedAt: 'desc',
         },
       });
+      if (!lastAttemptEntered) {
+        continue;
+      }
       const isLastAttemptMoreThan5MinutesAgo =
         new Date().getTime() - new Date(lastAttemptEntered.solvedAt).getTime() >
         300000;
