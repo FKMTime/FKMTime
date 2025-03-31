@@ -535,7 +535,7 @@ export class PersonService {
           },
         });
         return {
-          message: 'Succesfully moved the competitor to another group',
+          message: 'Successfully moved the competitor to another group',
         };
       } else {
         throw new HttpException(response.message, response.statusCode || 500);
