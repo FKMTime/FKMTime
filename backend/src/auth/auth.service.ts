@@ -23,6 +23,7 @@ export class AuthService {
       where: { username: dto.username },
     });
 
+    await this.removeDuplicatedRoles(user.id);
     if (!user || (user && !(sha512(dto.password) === user.password))) {
       throw new HttpException('Wrong credentials!', 403);
     }
@@ -65,6 +66,7 @@ export class AuthService {
     const isDelegate = !!userInfo.me.delegate_status;
 
     if (existingUser) {
+      await this.removeDuplicatedRoles(existingUser.id);
       await this.prisma.user.update({
         where: {
           id: existingUser.id,
@@ -126,6 +128,28 @@ export class AuthService {
         }
       }
     }
+  }
+
+  async removeDuplicatedRoles(userId: string) {
+    const user = await this.prisma.user.findFirst({
+      where: {
+        id: userId,
+      },
+    });
+    if (!user) {
+      throw new HttpException('User not found', 404);
+    }
+    const roles = user.roles.filter(
+      (role, index, self) => self.indexOf(role) === index,
+    );
+    await this.prisma.user.update({
+      where: {
+        id: userId,
+      },
+      data: {
+        roles: roles,
+      },
+    });
   }
 
   async createAndReturnUser(
