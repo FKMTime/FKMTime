@@ -3,12 +3,14 @@ import { useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/Components/ui/card";
 import { StaffActivity } from "@/lib/interfaces";
 
+import AbsentCompetitorsList from "./AbsentCompetitors/AbsentCompetitorsList";
 import UnorderedPeopleList from "./UnorderedPeopleList";
 
 interface CompetitorsCardProps {
     attendance: StaffActivity[];
+    fetchData: () => void;
 }
-const CompetitorsCard = ({ attendance }: CompetitorsCardProps) => {
+const CompetitorsCard = ({ attendance, fetchData }: CompetitorsCardProps) => {
     const presentCompetitors = useMemo(() => {
         return attendance.filter((a) => a.role === "COMPETITOR" && a.isPresent);
     }, [attendance]);
@@ -34,8 +36,9 @@ const CompetitorsCard = ({ attendance }: CompetitorsCardProps) => {
                         {absentCompetitors.length > 0 && (
                             <div className="flex flex-col gap-2">
                                 <h2 className="font-bold text-lg">Absent</h2>
-                                <UnorderedPeopleList
-                                    persons={absentCompetitors}
+                                <AbsentCompetitorsList
+                                    staffActivities={absentCompetitors}
+                                    fetchData={fetchData}
                                 />
                             </div>
                         )}

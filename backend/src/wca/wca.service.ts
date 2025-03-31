@@ -5,6 +5,7 @@ import {
   AttemptType,
   Competition,
 } from '@prisma/client';
+import { Person } from '@wca/helpers';
 import { DNF_VALUE, DNS_VALUE } from 'src/constants';
 import { getSortedStandardAttempts } from 'src/result/helpers';
 
@@ -180,6 +181,34 @@ export class WcaService {
     );
     this.wcaLogger.log(`Fetching WCIF ${response.status}`);
     const data = await response.json();
+    return {
+      ...data,
+      statusCode: response.status,
+    };
+  }
+
+  async patchWcif(
+    competitionId: string,
+    wcif: {
+      persons: Person[];
+    },
+    token: string,
+  ) {
+    const response = await fetch(
+      `${WCA_ORIGIN}/api/v0/competitions/${competitionId}/wcif`,
+      {
+        method: 'PATCH',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(wcif),
+      },
+    );
+    const data = await response.json();
+    this.wcaLogger.log(
+      `Patching WCIF ${response.status}, ${response.url}, ${JSON.stringify(data)}`,
+    );
     return {
       ...data,
       statusCode: response.status,

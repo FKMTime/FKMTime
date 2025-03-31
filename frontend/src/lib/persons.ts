@@ -121,3 +121,14 @@ export const getPersonFromWCAByWcaId = async (wcaId: string) => {
     const response = await wcaApiRequest(`persons/${wcaId}`);
     return await response.json();
 };
+
+export const changeCompetingGroup = async (
+    personId: string,
+    newGroupId: string
+) => {
+    const response = await backendRequest("person/change-group", "POST", true, {
+        personId,
+        newGroupId,
+    });
+    return response.status;
+};
