@@ -8,8 +8,9 @@ import UnorderedPeopleList from "./UnorderedPeopleList";
 
 interface CompetitorsCardProps {
     attendance: StaffActivity[];
+    fetchData: () => void;
 }
-const CompetitorsCard = ({ attendance }: CompetitorsCardProps) => {
+const CompetitorsCard = ({ attendance, fetchData }: CompetitorsCardProps) => {
     const presentCompetitors = useMemo(() => {
         return attendance.filter((a) => a.role === "COMPETITOR" && a.isPresent);
     }, [attendance]);
@@ -37,6 +38,7 @@ const CompetitorsCard = ({ attendance }: CompetitorsCardProps) => {
                                 <h2 className="font-bold text-lg">Absent</h2>
                                 <AbsentCompetitorsList
                                     staffActivities={absentCompetitors}
+                                    fetchData={fetchData}
                                 />
                             </div>
                         )}

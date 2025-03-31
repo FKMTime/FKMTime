@@ -8,9 +8,13 @@ import ChangeCompetingGroupModal from "./ChangeCompetingGroupModal";
 
 interface AbsentCompetitorItemProps {
     activity: StaffActivity;
+    fetchData: () => void;
 }
 
-const AbsentCompetitorItem = ({ activity }: AbsentCompetitorItemProps) => {
+const AbsentCompetitorItem = ({
+    activity,
+    fetchData,
+}: AbsentCompetitorItemProps) => {
     const [
         isOpenChangeCompetingGroupModal,
         setIsOpenChangeCompetingGroupModal,
@@ -18,6 +22,7 @@ const AbsentCompetitorItem = ({ activity }: AbsentCompetitorItemProps) => {
 
     const handleCloseChangeCompetingGroupModal = () => {
         setIsOpenChangeCompetingGroupModal(false);
+        fetchData();
     };
 
     return (
@@ -31,7 +36,7 @@ const AbsentCompetitorItem = ({ activity }: AbsentCompetitorItemProps) => {
             </li>
             <ChangeCompetingGroupModal
                 isOpen={isOpenChangeCompetingGroupModal}
-                onClose={() => handleCloseChangeCompetingGroupModal()}
+                onClose={handleCloseChangeCompetingGroupModal}
                 activity={activity}
             />
         </>

@@ -62,6 +62,7 @@ const ChangeCompetingGroupModal = ({
                         variant: "success",
                     });
                     setIsLoading(false);
+                    onClose();
                 } else {
                     toast({
                         title: "Something went wrong!",

@@ -512,15 +512,14 @@ export class PersonService {
       );
       newPersons.push(newPerson);
       const newWcif = {
-        ...wcif,
         persons: newPersons,
       };
       const response = await this.wcaService.patchWcif(
-        competition.id,
+        competition.wcaId,
         newWcif,
         user.wcaAccessToken,
       );
-      if (response.status === 200) {
+      if (response.statusCode === 200) {
         await this.prisma.staffActivity.deleteMany({
           where: {
             personId: currentGroup.personId,
@@ -539,7 +538,7 @@ export class PersonService {
           message: 'Succesfully moved the competitor to another group',
         };
       } else {
-        throw new HttpException(response.message, response.status);
+        throw new HttpException(response.status, response.message);
       }
     }
   }
