@@ -1,5 +1,4 @@
-import { Link, useNavigate } from "react-router-dom";
-import { startTransition } from 'react';
+import { Link } from "react-router-dom";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/Components/ui/avatar";
 import { Button } from "@/Components/ui/button";
@@ -19,7 +18,6 @@ import { loggedInWithWca } from "@/lib/utils";
 
 const ProfileDropdown = () => {
     const { toast } = useToast();
-    const navigate = useNavigate();
     const userInfo = getUserInfo();
 
     const handleLogout = () => {
@@ -29,7 +27,7 @@ const ProfileDropdown = () => {
             description: "You have been logged out.",
             variant: "success",
         });
-        navigate("/auth/login");
+        window.location.href = "/auth/login";
     };
 
     return (
