@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import background from "@/assets/background.jpg";
 import logo from "@/assets/logo.svg";
 import { useToast } from "@/hooks/useToast";
-import { login, loginWithWca } from "@/lib/auth";
+import { isUserLoggedIn, login, loginWithWca } from "@/lib/auth";
 import { WCA_CLIENT_ID, WCA_ORIGIN } from "@/lib/request";
 import LoginForm from "@/Pages/Auth/Login/Components/LoginForm";
 
@@ -70,6 +70,14 @@ const Login = () => {
         handleCode();
     }, [code, handleCode, navigate]);
 
+    useEffect(() => {
+        const isLoggedIn = async () => {
+            if (await isUserLoggedIn()) {
+                navigate("/");
+            }
+        };
+        isLoggedIn();
+    }, [navigate]);
     return (
         <>
             <div className="block lg:hidden">
