@@ -1,13 +1,13 @@
-import { lazy, useState, Suspense } from "react";
+import { lazy, Suspense, useState } from "react";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 
+import LoadingPage from "@/Components/LoadingPage";
 import { Toaster } from "@/Components/ui/toaster";
 import { ConfirmProvider } from "@/providers/ConfirmProvider";
 import { ThemeProvider } from "@/providers/ThemeProvider";
 
 import { THEME_STORAGE_KEY } from "./lib/constants";
 import { SocketContext } from "./socket";
-import LoadingPage from "@/Components/LoadingPage"
 const CompetitionStatistics = lazy(
     () => import("./Components/CompetitionStatistics/CompetitionStatistics")
 );
