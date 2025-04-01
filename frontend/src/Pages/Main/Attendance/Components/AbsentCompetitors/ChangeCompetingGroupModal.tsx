@@ -101,7 +101,10 @@ const ChangeCompetingGroupModal = ({
                     </SelectTrigger>
                     <SelectContent>
                         {groups.map((group) => (
-                            <SelectItem value={group.activityCode}>
+                            <SelectItem
+                                value={group.activityCode}
+                                key={group.id}
+                            >
                                 {activityCodeToName(group.activityCode)}
                             </SelectItem>
                         ))}

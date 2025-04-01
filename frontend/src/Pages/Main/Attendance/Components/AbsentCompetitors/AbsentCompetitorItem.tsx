@@ -1,4 +1,4 @@
-import { LucideTimerReset } from "lucide-react";
+import { ArrowLeftRight } from "lucide-react";
 import { useState } from "react";
 
 import IconButton from "@/Components/IconButton";
@@ -29,7 +29,7 @@ const AbsentCompetitorItem = ({
         <>
             <li key={activity.id} className="flex items-center gap-2">
                 <IconButton
-                    icon={<LucideTimerReset />}
+                    icon={<ArrowLeftRight />}
                     onClick={() => setIsOpenChangeCompetingGroupModal(true)}
                 />
                 {activity.person.name}

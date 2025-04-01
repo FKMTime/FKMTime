@@ -144,7 +144,6 @@ const AttemptForm = ({
                                 defaultValue={field.value}
                                 disabled={!!competitorId}
                             />
-
                             <FormMessage />
                         </FormItem>
                     )}

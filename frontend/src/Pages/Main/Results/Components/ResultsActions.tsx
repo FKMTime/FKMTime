@@ -100,7 +100,7 @@ const ResultsActions = ({
     ];
     return (
         <>
-            <div className="md:flex hidden gap-5">
+            <div className="md:flex flex-wrap hidden gap-5">
                 {resultsActions.map(
                     (action) =>
                         action.show && (

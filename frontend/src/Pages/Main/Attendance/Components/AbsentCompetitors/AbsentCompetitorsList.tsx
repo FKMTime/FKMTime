@@ -15,6 +15,7 @@ const AbsentCompetitorsList = ({
         <ul>
             {staffActivities.map((activity) => (
                 <AbsentCompetitorItem
+                    key={activity.id}
                     activity={activity}
                     fetchData={fetchData}
                 />

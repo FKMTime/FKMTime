@@ -1,4 +1,5 @@
 import { backendRequest } from "./request";
+import { logoutScramblingDevice } from "./scramblingDevicesAuth";
 
 const TOKEN_NAME = "fkmtime-token";
 const USER_INFO_NAME = "fkmtime-userInfo";
@@ -13,6 +14,7 @@ export const login = async (
     });
     if (response.status === 200) {
         const data = await response.json();
+        logoutScramblingDevice();
         localStorage.setItem(TOKEN_NAME, data.token);
         localStorage.setItem(USER_INFO_NAME, JSON.stringify(data.userInfo));
     }
@@ -26,6 +28,7 @@ export const loginWithWca = async (code: string, redirectUri: string) => {
     });
     const data = await response.json();
     if (response.status === 200) {
+        logoutScramblingDevice();
         localStorage.setItem(TOKEN_NAME, data.token);
         localStorage.setItem(USER_INFO_NAME, JSON.stringify(data.userInfo));
     }

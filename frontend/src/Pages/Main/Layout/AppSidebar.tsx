@@ -193,12 +193,16 @@ const AppSidebar = ({ unresolvedIncidentsCount }: AppSidebarProps) => {
                                     <SidebarMenuSub>
                                         {currentRounds.map(
                                             (roundId: string) => (
-                                                <SidebarMenuSubItem>
+                                                <SidebarMenuSubItem
+                                                    key={roundId}
+                                                >
                                                     <SidebarMenuSubButton
                                                         isActive={
                                                             location.pathname ===
                                                             `/results/round/${roundId}`
                                                         }
+                                                        key={`results-${roundId}`}
+                                                        asChild
                                                     >
                                                         <Link
                                                             className="flex gap-2 items-center"

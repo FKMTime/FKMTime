@@ -1,3 +1,4 @@
+import { logout } from "./auth";
 import { backendRequest } from "./request";
 
 const SCRAMBLING_DEVICE_TOKEN_NAME = "fkmtime-scrambling-device-token";
@@ -12,6 +13,7 @@ export const getScramblingDeviceTokenFromCode = async (code: string) => {
     );
     const data = await response.json();
     if (response.status === 201) {
+        logout();
         localStorage.setItem(SCRAMBLING_DEVICE_TOKEN_NAME, data.token);
         localStorage.setItem(
             SCRAMBLING_DEVICE_INFO_NAME,
