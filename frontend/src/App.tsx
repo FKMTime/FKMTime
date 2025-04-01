@@ -1,4 +1,4 @@
-import { lazy, useState } from "react";
+import { lazy, useState, Suspense } from "react";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 
 import { Toaster } from "@/Components/ui/toaster";
@@ -7,6 +7,7 @@ import { ThemeProvider } from "@/providers/ThemeProvider";
 
 import { THEME_STORAGE_KEY } from "./lib/constants";
 import { SocketContext } from "./socket";
+import LoadingPage from "@/Components/LoadingPage"
 const CompetitionStatistics = lazy(
     () => import("./Components/CompetitionStatistics/CompetitionStatistics")
 );
@@ -242,7 +243,9 @@ const App = () => {
         <ThemeProvider defaultTheme="dark" storageKey={THEME_STORAGE_KEY}>
             <ConfirmProvider>
                 <SocketContext.Provider value={[isConnected, setConnected]}>
-                    <RouterProvider router={router} />
+                    <Suspense fallback={<LoadingPage />}>
+                        <RouterProvider router={router} />
+                    </Suspense>
                     <Toaster />
                 </SocketContext.Provider>
             </ConfirmProvider>
