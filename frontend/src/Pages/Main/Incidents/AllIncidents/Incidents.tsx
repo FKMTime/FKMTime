@@ -6,17 +6,42 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/Components/ui/card";
 import { getUnresolvedIncidents } from "@/lib/incidents";
 import { Incident } from "@/lib/interfaces";
 import PageTransition from "@/Pages/PageTransition";
+import { useToast } from "@/hooks/useToast";
 import { socket } from "@/socket";
 
 import IncidentCard from "./Components/IncidentCard";
 
 const Incidents = () => {
     const navigate = useNavigate();
+    const { toast } = useToast();
     const [incidents, setIncidents] = useState<Incident[]>([]);
+
+    function isApiError(obj) {
+  return (
+    obj &&
+    typeof obj === 'object' &&
+    typeof obj.message === 'string' &&
+    typeof obj.error === 'string' &&
+    typeof obj.statusCode === 'number' &&
+    obj.statusCode >= 400 &&
+    obj.statusCode < 600
+  );
+}
 
     const fetchData = async () => {
         const data = await getUnresolvedIncidents();
-        setIncidents(data);
+        if (isApiError(data)) {
+            setIncidents([]);
+            navigate("/");
+
+            toast({
+                title: data.error,
+                description: data.message,
+                variant: "destructive",
+            });
+        } else {
+            setIncidents(data);
+        }
     };
     useEffect(() => {
         fetchData();
