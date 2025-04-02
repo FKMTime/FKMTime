@@ -1,6 +1,7 @@
-import { lazy, useState } from "react";
+import { lazy, Suspense, useState } from "react";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 
+import LoadingPage from "@/Components/LoadingPage";
 import { Toaster } from "@/Components/ui/toaster";
 import { ConfirmProvider } from "@/providers/ConfirmProvider";
 import { ThemeProvider } from "@/providers/ThemeProvider";
@@ -242,7 +243,9 @@ const App = () => {
         <ThemeProvider defaultTheme="dark" storageKey={THEME_STORAGE_KEY}>
             <ConfirmProvider>
                 <SocketContext.Provider value={[isConnected, setConnected]}>
-                    <RouterProvider router={router} />
+                    <Suspense fallback={<LoadingPage />}>
+                        <RouterProvider router={router} />
+                    </Suspense>
                     <Toaster />
                 </SocketContext.Provider>
             </ConfirmProvider>

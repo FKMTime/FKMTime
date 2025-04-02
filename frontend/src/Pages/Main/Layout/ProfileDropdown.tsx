@@ -1,3 +1,4 @@
+import { startTransition } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/Components/ui/avatar";
@@ -22,13 +23,15 @@ const ProfileDropdown = () => {
     const userInfo = getUserInfo();
 
     const handleLogout = () => {
-        logout();
-        toast({
-            title: "Logged out",
-            description: "You have been logged out.",
-            variant: "success",
+        startTransition(() => {
+            logout();
+            toast({
+                title: "Logged out",
+                description: "You have been logged out.",
+                variant: "success",
+            });
+            navigate("/auth/login");
         });
-        navigate("/auth/login");
     };
 
     return (
