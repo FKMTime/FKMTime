@@ -43,14 +43,14 @@ export const toInt = (string: string) => {
 };
 
 export const attemptWithPenaltyToString = (attempt: Attempt) => {
-    if (attempt.value === SKIPPED_VALUE) {
-        return "";
-    }
     if (attempt.penalty === DNF_VALUE) {
         return "DNF";
     }
     if (attempt.penalty === DNS_VALUE) {
         return "DNS";
+    }
+    if (attempt.value === SKIPPED_VALUE) {
+        return "";
     }
     if (attempt.penalty === 0) {
         return resultToString(attempt.value);

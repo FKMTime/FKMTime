@@ -24,14 +24,12 @@ interface AttemptRowProps {
     result: Result;
     showExtraColumns?: boolean;
     fetchData: () => void;
-    no: number;
 }
 
 const AttemptRow = ({
     attempt,
     showExtraColumns = false,
     fetchData,
-    no,
     result,
 }: AttemptRowProps) => {
     const navigate = useNavigate();
@@ -86,7 +84,6 @@ const AttemptRow = ({
     return (
         <>
             <TableRow key={attempt.id}>
-                <TableCell>{no}</TableCell>
                 <TableCell>
                     {attempt.type === AttemptType.EXTRA_ATTEMPT
                         ? `Extra ${attempt.attemptNumber}`

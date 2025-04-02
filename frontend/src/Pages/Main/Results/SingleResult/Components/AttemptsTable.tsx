@@ -26,7 +26,6 @@ const AttemptsTable = ({
         <Table>
             <TableHeader>
                 <TableRow>
-                    <TableHead>No</TableHead>
                     <TableHead>Attempt number</TableHead>
                     <TableHead>Time</TableHead>
                     {showExtraColumns && (
@@ -46,13 +45,12 @@ const AttemptsTable = ({
                 </TableRow>
             </TableHeader>
             <TableBody>
-                {attempts.map((attempt: Attempt, i: number) => (
+                {attempts.map((attempt: Attempt) => (
                     <AttemptRow
                         key={attempt.id}
                         attempt={attempt}
                         showExtraColumns={showExtraColumns}
                         fetchData={fetchData}
-                        no={i + 1}
                         result={result}
                     />
                 ))}
