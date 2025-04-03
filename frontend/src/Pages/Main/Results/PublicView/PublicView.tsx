@@ -1,10 +1,13 @@
 import { useAtom } from "jotai";
+import { AlarmClock } from "lucide-react";
 import { useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { getNumberOfAttemptsForRound } from "wcif-helpers";
 
+import EventIcon from "@/Components/Icons/EventIcon";
 import LoadingPage from "@/Components/LoadingPage";
 import { Card, CardContent, CardHeader, CardTitle } from "@/Components/ui/card";
+import { activityCodeToName } from "@/lib/activities";
 import { competitionAtom } from "@/lib/atoms";
 import { getCompetitionInfo } from "@/lib/competition";
 import { ResultWithAverage, Room } from "@/lib/interfaces";
@@ -121,7 +124,10 @@ const PublicView = () => {
             <div className="flex flex-col gap-4">
                 <Card>
                     <CardHeader>
-                        <CardTitle>Results</CardTitle>
+                        <CardTitle className="flex items-center gap-2">
+                            <AlarmClock size={20} />
+                            Results
+                        </CardTitle>
                     </CardHeader>
                     <CardContent className="flex flex-col gap-5">
                         <EventAndRoundSelector
@@ -134,7 +140,14 @@ const PublicView = () => {
                 </Card>
                 <Card>
                     <CardHeader>
-                        <CardTitle>Results</CardTitle>
+                        <CardTitle className="flex items-center gap-2">
+                            <EventIcon
+                                eventId={filters.eventId}
+                                size={20}
+                                selected
+                            />
+                            {activityCodeToName(filters.roundId)}
+                        </CardTitle>
                     </CardHeader>
                     <CardContent>
                         {results && results.length > 0 ? (

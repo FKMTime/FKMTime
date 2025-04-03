@@ -1,3 +1,4 @@
+import { FolderCode } from "lucide-react";
 import { useState } from "react";
 
 import { Button } from "@/Components/ui/button";
@@ -54,7 +55,10 @@ const UploadFirmware = () => {
         <PageTransition>
             <Card>
                 <CardHeader>
-                    <CardTitle>Upload Firmware</CardTitle>
+                    <CardTitle className="flex gap-2 items-center">
+                        <FolderCode size={20} />
+                        Upload Firmware
+                    </CardTitle>
                 </CardHeader>
                 <CardContent>
                     <div className="w-fit flex flex-col gap-3">

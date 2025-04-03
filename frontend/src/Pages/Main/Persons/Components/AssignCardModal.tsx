@@ -63,6 +63,7 @@ const AssignCardModal = ({ isOpen, onClose, person }: AssignCardModalProps) => {
                                 cardId: e.target.value,
                             })
                         }
+                        onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
                         autoFocus
                     />
                 </div>

@@ -1,3 +1,4 @@
+import { ChartNoAxesColumn, ClipboardList } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 import EventRoundAndGroupSelector from "@/Components/EventRoundAndGroupSelector copy";
@@ -28,8 +29,12 @@ const AttendanceHeaderCard = ({
         <Card>
             <CardHeader>
                 <CardTitle className="flex justify-between items-center">
-                    Attendance
+                    <div className="flex gap-2 items-center">
+                        <ClipboardList size={20} />
+                        Attendance
+                    </div>
                     <Button onClick={() => navigate("/attendance/statistics")}>
+                        <ChartNoAxesColumn />
                         Statistics
                     </Button>
                 </CardTitle>

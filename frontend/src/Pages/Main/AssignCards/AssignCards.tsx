@@ -1,3 +1,4 @@
+import { IdCard } from "lucide-react";
 import { RefObject, useEffect, useRef, useState } from "react";
 
 import PersonAutocomplete from "@/Components/PersonAutocomplete.tsx";
@@ -61,7 +62,8 @@ const AssignCards = () => {
         <PageTransition>
             <Card>
                 <CardHeader>
-                    <CardTitle>
+                    <CardTitle className="flex gap-2 items-center">
+                        <IdCard size={20} />
                         There are {personsWithoutCard} persons without card
                         assigned
                     </CardTitle>

@@ -1,4 +1,4 @@
-import { AlertCircle } from "lucide-react";
+import { AlertCircle, Wrench } from "lucide-react";
 
 import { Alert, AlertTitle } from "@/Components/ui/alert";
 import { Card, CardContent, CardHeader, CardTitle } from "@/Components/ui/card";
@@ -53,7 +53,10 @@ const ManageCompetition = ({
         <PageTransition>
             <Card>
                 <CardHeader>
-                    <CardTitle>Manage competition</CardTitle>
+                    <CardTitle className="flex items-center gap-2">
+                        <Wrench size={20} />
+                        Manage competition
+                    </CardTitle>
                 </CardHeader>
                 <CardContent>
                     <div className="flex flex-col gap-5 md:w-1/3">

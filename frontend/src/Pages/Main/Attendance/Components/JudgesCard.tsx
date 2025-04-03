@@ -1,3 +1,4 @@
+import { Gavel } from "lucide-react";
 import { useMemo } from "react";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/Components/ui/card";
@@ -29,7 +30,9 @@ const JudgesCard = ({
     return (
         <Card>
             <CardHeader>
-                <CardTitle>Judges</CardTitle>
+                <CardTitle className="flex gap-1 items-center">
+                    <Gavel /> Judges
+                </CardTitle>
             </CardHeader>
             <CardContent>
                 {noJudges ? (

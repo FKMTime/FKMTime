@@ -1,4 +1,5 @@
 import { TabsContent } from "@radix-ui/react-tabs";
+import { Microchip } from "lucide-react";
 import { useContext, useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 
@@ -148,10 +149,13 @@ const Devices = () => {
     return (
         <PageTransition>
             <Tabs defaultValue={tabIndex} className="flex flex-col gap-3">
-                <Card>
+                <Card className="mb-2">
                     <CardHeader>
                         <CardTitle className="flex justify-between items-center">
-                            Devices
+                            <div className="flex gap-2 items-center">
+                                <Microchip size={20} />
+                                Devices
+                            </div>
                             <PlusButton
                                 onClick={() => setIsOpenCreateDeviceModal(true)}
                                 title="Add new device"
@@ -182,7 +186,10 @@ const Devices = () => {
                         <Card>
                             <CardHeader>
                                 <CardTitle className="flex justify-between items-center">
-                                    Devices list
+                                    <div className="flex gap-2 items-center">
+                                        <Microchip size={20} />
+                                        Devices
+                                    </div>
                                     <div className="w-64">
                                         <Select
                                             value={selectedRoomId}

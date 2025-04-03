@@ -1,4 +1,5 @@
 import { useAtomValue } from "jotai";
+import { BookText } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 
@@ -144,7 +145,10 @@ const ScrambleSets = () => {
             <div className="flex flex-col gap-4">
                 <Card>
                     <CardHeader>
-                        <CardTitle>Scramble sets</CardTitle>
+                        <CardTitle className="flex items-center gap-2">
+                            <BookText size={20} />
+                            Scramble sets
+                        </CardTitle>
                     </CardHeader>
                     <CardContent className="flex flex-col gap-5">
                         <EventAndRoundSelector
@@ -171,14 +175,14 @@ const ScrambleSets = () => {
                                     >
                                         Delete scramble sets for this round
                                     </Button>
+                                    <Button
+                                        variant="destructive"
+                                        onClick={handleDeleteAllScrambleSets}
+                                    >
+                                        Delete all scramble sets
+                                    </Button>
                                 </>
                             )}
-                            <Button
-                                variant="destructive"
-                                onClick={handleDeleteAllScrambleSets}
-                            >
-                                Delete all scramble sets
-                            </Button>
                         </div>
                     </CardContent>
                 </Card>
@@ -190,10 +194,14 @@ const ScrambleSets = () => {
                             </CardTitle>
                         </CardHeader>
                         <CardContent>
-                            <ScrambleSetsTable
-                                scrambleSets={scrambleSets}
-                                fetchData={fetchData}
-                            />
+                            {scrambleSets.length === 0 ? (
+                                <p>No scramble sets found</p>
+                            ) : (
+                                <ScrambleSetsTable
+                                    scrambleSets={scrambleSets}
+                                    fetchData={fetchData}
+                                />
+                            )}
                         </CardContent>
                     </Card>
                 ) : null}

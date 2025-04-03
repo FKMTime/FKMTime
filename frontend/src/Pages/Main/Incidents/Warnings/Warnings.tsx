@@ -1,3 +1,4 @@
+import { FileWarning } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/Components/ui/card";
@@ -31,7 +32,10 @@ const Warnings = () => {
             <div className="flex flex-col gap-4">
                 <Card>
                     <CardHeader>
-                        <CardTitle>Warnings</CardTitle>
+                        <CardTitle className="flex gap-2 items-center">
+                            <FileWarning size={20} />
+                            Warnings
+                        </CardTitle>
                     </CardHeader>
                     <CardContent>
                         <Input
@@ -43,7 +47,10 @@ const Warnings = () => {
                 </Card>
                 <Card>
                     <CardHeader>
-                        <CardTitle>Warnings</CardTitle>
+                        <CardTitle className="flex gap-2 items-center">
+                            <FileWarning size={20} />
+                            Warnings
+                        </CardTitle>
                     </CardHeader>
                     <CardContent>
                         {warnings.length > 0 ? (

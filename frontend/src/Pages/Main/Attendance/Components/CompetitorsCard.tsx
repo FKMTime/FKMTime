@@ -1,3 +1,4 @@
+import { Users } from "lucide-react";
 import { useMemo } from "react";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/Components/ui/card";
@@ -26,7 +27,10 @@ const CompetitorsCard = ({ attendance, fetchData }: CompetitorsCardProps) => {
     return (
         <Card>
             <CardHeader>
-                <CardTitle>Competitors</CardTitle>
+                <CardTitle className="flex gap-1 items-center">
+                    <Users />
+                    Competitors
+                </CardTitle>
             </CardHeader>
             <CardContent>
                 {noCompetitors ? (

@@ -1,3 +1,4 @@
+import { SquareCheckBig } from "lucide-react";
 import { KeyboardEvent, RefObject, useEffect, useRef, useState } from "react";
 
 import FlagIcon from "@/Components/Icons/FlagIcon";
@@ -150,7 +151,8 @@ const CheckIn = () => {
             <div className="flex flex-col gap-4">
                 <Card>
                     <CardHeader>
-                        <CardTitle>
+                        <CardTitle className="flex gap-2 items-center">
+                            <SquareCheckBig size={20} />
                             Checked in {`${personsCheckedIn}/${totalPersons}`}
                         </CardTitle>
                     </CardHeader>

@@ -118,7 +118,7 @@ const Competition = () => {
     return (
         <PageTransition>
             <Tabs defaultValue={tabIndex}>
-                <Card>
+                <Card className="mb-5">
                     <CardHeader className="flex flex-row justify-between items-center">
                         <div className="flex flex-col gap-2">
                             <CardTitle>{competition.name}</CardTitle>

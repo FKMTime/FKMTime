@@ -1,3 +1,4 @@
+import { Puzzle } from "lucide-react";
 import { useMemo } from "react";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/Components/ui/card";
@@ -30,7 +31,10 @@ const ScramblersCard = ({
     return (
         <Card>
             <CardHeader>
-                <CardTitle>Scramblers</CardTitle>
+                <CardTitle className="flex gap-1 items-center">
+                    <Puzzle />
+                    Scramblers
+                </CardTitle>
             </CardHeader>
             <CardContent>
                 {noScramblers ? (

@@ -1,3 +1,4 @@
+import { NotebookPen } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 
 import PlusButton from "@/Components/PlusButton";
@@ -49,7 +50,10 @@ const NoteworthyIncidents = () => {
                 <Card>
                     <CardHeader>
                         <CardTitle className="flex justify-between items-center">
-                            Noteworthy incidents
+                            <div className="flex gap-2 items-center">
+                                <NotebookPen size={20} />
+                                Noteworthy incidents
+                            </div>
                             <PlusButton
                                 onClick={() =>
                                     setIsOpenCreateNoteworthyIncidentModal(true)
@@ -72,7 +76,10 @@ const NoteworthyIncidents = () => {
                 </Card>
                 <Card>
                     <CardHeader>
-                        <CardTitle>Noteworthy incidents</CardTitle>
+                        <CardTitle className="flex gap-2 items-center">
+                            <NotebookPen size={20} />
+                            Noteworthy incidents
+                        </CardTitle>
                     </CardHeader>
                     <CardContent>
                         {incidents.length > 0 ? (

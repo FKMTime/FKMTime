@@ -1,3 +1,4 @@
+import { UserCog } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import PlusButton from "@/Components/PlusButton.tsx";
@@ -49,7 +50,10 @@ const Users = () => {
                     <Card>
                         <CardHeader>
                             <CardTitle className="flex justify-between items-center">
-                                Users
+                                <div className="flex gap-2 items-center">
+                                    <UserCog size={20} />
+                                    Users
+                                </div>
                                 <PlusButton
                                     aria-label="Add"
                                     onClick={() =>

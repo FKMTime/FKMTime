@@ -1,7 +1,9 @@
 import { useAtomValue } from "jotai";
+import { BookCheck } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 
+import EventIcon from "@/Components/Icons/EventIcon";
 import LoadingPage from "@/Components/LoadingPage";
 import {
     Card,
@@ -59,7 +61,10 @@ const ResultsChecks = () => {
             <div className="flex flex-col gap-4">
                 <Card>
                     <CardHeader>
-                        <CardTitle>Suspicious times/penalties</CardTitle>
+                        <CardTitle className="flex items-center gap-2">
+                            <BookCheck size={20} />
+                            Suspicious times/penalties
+                        </CardTitle>
                         <CardDescription>
                             Choose event and round
                         </CardDescription>
@@ -76,7 +81,12 @@ const ResultsChecks = () => {
                 {filters.roundId ? (
                     <Card>
                         <CardHeader>
-                            <CardTitle>
+                            <CardTitle className="flex items-center gap-2">
+                                <EventIcon
+                                    eventId={filters.eventId}
+                                    size={20}
+                                    selected
+                                />
                                 {activityCodeToName(filters.roundId)}
                             </CardTitle>
                         </CardHeader>

@@ -1,3 +1,4 @@
+import { PersonStanding } from "lucide-react";
 import { useMemo } from "react";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/Components/ui/card";
@@ -29,7 +30,10 @@ const RunnersCard = ({
     return (
         <Card>
             <CardHeader>
-                <CardTitle>Runners</CardTitle>
+                <CardTitle className="flex gap-1 items-center">
+                    <PersonStanding />
+                    Runners
+                </CardTitle>
             </CardHeader>
             <CardContent>
                 {noRunners ? (

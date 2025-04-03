@@ -1,4 +1,5 @@
 import { Event as WCIFEvent } from "@wca/helpers";
+import { TriangleAlert } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 import EventIcon from "@/Components/Icons/EventIcon";
@@ -31,6 +32,7 @@ const InfoCard = ({ competition }: InfoCardProps) => {
                 <div className="flex flex-col gap-4">
                     {isDelegate() && (
                         <Button onClick={() => navigate("/incidents")}>
+                            <TriangleAlert />
                             Incidents
                         </Button>
                     )}

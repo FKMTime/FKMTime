@@ -1,4 +1,5 @@
 import { useAtom } from "jotai";
+import { IdCard, Users } from "lucide-react";
 import { ChangeEvent, useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
@@ -179,7 +180,10 @@ const Persons = () => {
                 <Card>
                     <CardHeader>
                         <CardTitle className="flex justify-between items-center">
-                            Persons
+                            <div className="flex gap-2 items-center">
+                                <Users size={20} />
+                                Persons
+                            </div>
                             {isOrganizerOrDelegate() && (
                                 <>
                                     <PlusButton
@@ -216,13 +220,17 @@ const Persons = () => {
                                 navigate("/cards");
                             }}
                         >
+                            <IdCard />
                             Assign cards
                         </Button>
                     </CardContent>
                 </Card>
                 <Card className="hidden md:block py-3">
                     <CardHeader>
-                        <CardTitle>Persons</CardTitle>
+                        <CardTitle className="flex gap-2 items-center">
+                            <Users size={20} />
+                            Persons
+                        </CardTitle>
                     </CardHeader>
                     <CardContent className="w-full">
                         <PersonsTable

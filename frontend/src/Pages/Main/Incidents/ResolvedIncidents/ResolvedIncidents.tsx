@@ -1,3 +1,4 @@
+import { MessageSquareDot, NotebookText } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 
 import { Button } from "@/Components/ui/button";
@@ -36,8 +37,12 @@ const ResolvedIncidents = () => {
                 <Card>
                     <CardHeader>
                         <CardTitle className="flex justify-between items-center">
-                            Resolved incidents
+                            <div className="flex gap-2 items-center">
+                                <MessageSquareDot size={20} />
+                                Resolved incidents
+                            </div>
                             <Button onClick={() => setIsOpenSummaryModal(true)}>
+                                <NotebookText />
                                 Summary
                             </Button>
                         </CardTitle>
@@ -52,7 +57,10 @@ const ResolvedIncidents = () => {
                 </Card>
                 <Card>
                     <CardHeader>
-                        <CardTitle>Resolved incidents</CardTitle>
+                        <CardTitle className="flex gap-2 items-center">
+                            <MessageSquareDot size={20} />
+                            Resolved incidents
+                        </CardTitle>
                     </CardHeader>
                     <CardContent>
                         {incidents.length > 0 ? (

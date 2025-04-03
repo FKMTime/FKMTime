@@ -1,5 +1,6 @@
 import { Competition as WCIF } from "@wca/helpers";
 import { useAtomValue } from "jotai";
+import { FileUp } from "lucide-react";
 import { useState } from "react";
 import { Link } from "react-router-dom";
 
@@ -96,7 +97,8 @@ const ImportScrambles = () => {
             <div className="flex flex-col gap-4">
                 <Card>
                     <CardHeader>
-                        <CardTitle className="flex items-center justify-between">
+                        <CardTitle className="flex items-center gap-2">
+                            <FileUp size={20} />
                             Import scrambles
                         </CardTitle>
                         <CardDescription>

@@ -1,4 +1,5 @@
 import { useAtom } from "jotai";
+import { CalendarCog } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 
 import LoadingPage from "@/Components/LoadingPage";
@@ -124,7 +125,8 @@ const Rooms = () => {
             <div className="flex flex-col gap-3 w-full">
                 <Card>
                     <CardHeader>
-                        <CardTitle className="flex justify-between items-center">
+                        <CardTitle className="flex gap-2 items-center">
+                            <CalendarCog size={20} />
                             Manage current groups
                         </CardTitle>
                         <CardDescription>

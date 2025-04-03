@@ -1,4 +1,3 @@
-import { Venue } from "@wca/helpers";
 import { useAtom } from "jotai";
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -6,7 +5,6 @@ import { getCompetitionDates } from "wcif-helpers";
 
 import CompetitionStatistics from "@/Components/CompetitionStatistics/CompetitionStatistics";
 import LoadingPage from "@/Components/LoadingPage";
-import { Card, CardContent, CardHeader, CardTitle } from "@/Components/ui/card";
 import { competitionAtom } from "@/lib/atoms";
 import {
     getActivitiesWithRealEndTime,
@@ -17,12 +15,9 @@ import { isOrganizerOrDelegate } from "@/lib/permissions";
 import { getAllRooms } from "@/lib/rooms";
 import PageTransition from "@/Pages/PageTransition";
 
-import CompetitionDateSelect from "./Components/CompetitionDateSelect";
 import InfoCard from "./Components/InfoCard";
-import RoomSelect from "./Components/RoomSelect";
 import MobileSchedule from "./Components/Schedule/MobileSchedule";
-import ScheduleTable from "./Components/Schedule/ScheduleTable";
-import VenueSelect from "./Components/VenueSelect";
+import ScheduleInfoCard from "./Components/ScheduleInfoCard";
 
 const Home = () => {
     const navigate = useNavigate();
@@ -100,65 +95,18 @@ const Home = () => {
                 {activities && activities.length > 0 ? (
                     <>
                         <div className="hidden md:block">
-                            <Card>
-                                <CardHeader>
-                                    <CardTitle className="mb-3">
-                                        Schedule
-                                    </CardTitle>
-                                    <div className="flex flex-col md:flex-row gap-5">
-                                        <CompetitionDateSelect
-                                            onChange={(date) => {
-                                                setSelectedDate(new Date(date));
-                                                fetchActivitiesData(
-                                                    selectedVenue,
-                                                    selectedRoom,
-                                                    new Date(date)
-                                                );
-                                            }}
-                                            possibleDates={possibleDates}
-                                            selectedDate={selectedDate}
-                                        />
-                                        <VenueSelect
-                                            venues={
-                                                competition.wcif.schedule.venues
-                                            }
-                                            selectedVenueId={selectedVenue.toString()}
-                                            onChange={(id) => {
-                                                setSelectedVenue(parseInt(id));
-                                                fetchActivitiesData(
-                                                    parseInt(id),
-                                                    selectedRoom,
-                                                    selectedDate
-                                                );
-                                            }}
-                                        />
-                                        <RoomSelect
-                                            rooms={
-                                                competition.wcif.schedule.venues.find(
-                                                    (venue: Venue) =>
-                                                        venue.id ===
-                                                        selectedVenue
-                                                )?.rooms || []
-                                            }
-                                            selectedRoomId={selectedRoom.toString()}
-                                            onChange={(id) => {
-                                                setSelectedRoom(parseInt(id));
-                                                fetchActivitiesData(
-                                                    selectedVenue,
-                                                    parseInt(id),
-                                                    selectedDate
-                                                );
-                                            }}
-                                        />
-                                    </div>
-                                </CardHeader>
-                                <CardContent>
-                                    <ScheduleTable
-                                        activities={activities}
-                                        events={competition.wcif.events}
-                                    />
-                                </CardContent>
-                            </Card>
+                            <ScheduleInfoCard
+                                competition={competition}
+                                fetchActivitiesData={fetchActivitiesData}
+                                activities={activities}
+                                possibleDates={possibleDates}
+                                selectedDate={selectedDate}
+                                setSelectedDate={setSelectedDate}
+                                selectedVenue={selectedVenue}
+                                setSelectedVenue={setSelectedVenue}
+                                selectedRoom={selectedRoom}
+                                setSelectedRoom={setSelectedRoom}
+                            />
                         </div>
                         <div className="block md:hidden">
                             <MobileSchedule activities={activities} />

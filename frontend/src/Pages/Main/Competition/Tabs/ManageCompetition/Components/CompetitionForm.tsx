@@ -1,4 +1,5 @@
 import { zodResolver } from "@hookform/resolvers/zod";
+import { KeyRound, Send } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 
@@ -65,7 +66,10 @@ const CompetitionForm = ({
                     name="scoretakingToken"
                     render={({ field }) => (
                         <FormItem>
-                            <FormLabel>Scoretaking token</FormLabel>
+                            <FormLabel className="flex items-center gap-2">
+                                <KeyRound size={16} />
+                                Scoretaking token
+                            </FormLabel>
                             <FormControl>
                                 <Input
                                     {...field}
@@ -91,7 +95,10 @@ const CompetitionForm = ({
                     name="cubingContestsToken"
                     render={({ field }) => (
                         <FormItem>
-                            <FormLabel>CubingContests token</FormLabel>
+                            <FormLabel className="flex items-center gap-2">
+                                <KeyRound size={16} />
+                                CubingContests token
+                            </FormLabel>
                             <FormControl>
                                 <Input
                                     {...field}
@@ -117,7 +124,8 @@ const CompetitionForm = ({
                     name="sendingResultsFrequency"
                     render={({ field }) => (
                         <FormItem>
-                            <FormLabel>
+                            <FormLabel className="flex items-center gap-2">
+                                <Send size={16} />
                                 Send results to WCA Live/CubingContests
                             </FormLabel>
                             <Select

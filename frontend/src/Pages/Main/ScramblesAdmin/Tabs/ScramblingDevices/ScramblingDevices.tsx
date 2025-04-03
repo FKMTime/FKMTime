@@ -1,3 +1,4 @@
+import { Laptop } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import LoadingPage from "@/Components/LoadingPage";
@@ -40,7 +41,10 @@ const ScramblingDevices = () => {
                 <Card>
                     <CardHeader>
                         <CardTitle className="flex items-center justify-between">
-                            Scrambling devices
+                            <div className="flex gap-2 items-center">
+                                <Laptop size={20} />
+                                Scrambling devices
+                            </div>
                             <PlusButton
                                 onClick={() => setIsOpenCreateDeviceModal(true)}
                                 title="Add new device"
@@ -48,10 +52,14 @@ const ScramblingDevices = () => {
                         </CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <ScramblingDevicesTable
-                            devices={devices}
-                            fetchData={fetchData}
-                        />
+                        {devices.length === 0 ? (
+                            <p>No scrambling devices found</p>
+                        ) : (
+                            <ScramblingDevicesTable
+                                devices={devices}
+                                fetchData={fetchData}
+                            />
+                        )}
                     </CardContent>
                 </Card>
                 <CreateScramblingDeviceModal

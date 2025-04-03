@@ -3,6 +3,7 @@ import { Heading } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
 
+import EventIcon from "@/Components/Icons/EventIcon";
 import LoadingPage from "@/Components/LoadingPage";
 import { Alert, AlertTitle } from "@/Components/ui/alert";
 import { Button } from "@/Components/ui/button";
@@ -191,7 +192,12 @@ const DoubleCheck = () => {
             <div className="flex flex-col gap-4">
                 <Card>
                     <CardHeader>
-                        <CardTitle>
+                        <CardTitle className="flex items-center gap-2">
+                            <EventIcon
+                                eventId={id.split("-r")[0]}
+                                size={20}
+                                selected
+                            />
                             {roundName} - {doubleCheckedResults}/{totalResults}
                         </CardTitle>
                     </CardHeader>

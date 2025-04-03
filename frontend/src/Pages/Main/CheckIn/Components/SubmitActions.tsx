@@ -1,3 +1,4 @@
+import { SquareCheckBig } from "lucide-react";
 import { useState } from "react";
 
 import { Button } from "@/Components/ui/button";
@@ -97,6 +98,7 @@ const SubmitActions = ({
                     !person.cardId
                 }
             >
+                <SquareCheckBig />
                 Check in {cardShouldBeAssigned && "and assign card"}
             </Button>
         </div>

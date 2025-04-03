@@ -1,3 +1,4 @@
+import { Settings } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/Components/ui/card";
@@ -55,7 +56,10 @@ const DevicesSettings = () => {
         <PageTransition>
             <Card>
                 <CardHeader>
-                    <CardTitle>Settings</CardTitle>
+                    <CardTitle className="flex gap-2 items-center">
+                        <Settings size={20} />
+                        Settings
+                    </CardTitle>
                 </CardHeader>
                 <CardContent>
                     <DeviceSettingsForm

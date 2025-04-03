@@ -1,4 +1,5 @@
 import { useAtom } from "jotai";
+import { AlarmClock, Pencil } from "lucide-react";
 import {
     ChangeEvent,
     Dispatch,
@@ -16,6 +17,7 @@ import {
     getNumberOfAttemptsForRound,
 } from "wcif-helpers";
 
+import EventIcon from "@/Components/Icons/EventIcon";
 import LoadingPage from "@/Components/LoadingPage";
 import { Button } from "@/Components/ui/button";
 import {
@@ -172,7 +174,10 @@ const Results = () => {
             <div className="flex flex-col gap-4">
                 <Card>
                     <CardHeader>
-                        <CardTitle>Results</CardTitle>
+                        <CardTitle className="flex items-center gap-2">
+                            <AlarmClock size={20} />
+                            Results
+                        </CardTitle>
                         <CardDescription>
                             Choose event and round
                         </CardDescription>
@@ -225,7 +230,10 @@ const Results = () => {
                 {filters.roundId && (
                     <Card>
                         <CardHeader>
-                            <CardTitle>Actions</CardTitle>
+                            <CardTitle className="flex items-center gap-2">
+                                <Pencil size={20} />
+                                Actions
+                            </CardTitle>
                         </CardHeader>
                         <CardContent>
                             <ResultsActions
@@ -244,7 +252,14 @@ const Results = () => {
                 {filters.roundId && (
                     <Card>
                         <CardHeader>
-                            <CardTitle>Results</CardTitle>
+                            <CardTitle className="flex items-center gap-2">
+                                <EventIcon
+                                    eventId={filters.eventId}
+                                    size={20}
+                                    selected
+                                />
+                                {activityCodeToName(filters.roundId)}
+                            </CardTitle>
                         </CardHeader>
                         <CardContent>
                             {results && results.length > 0 ? (

@@ -1,3 +1,9 @@
+import {
+    AlertTriangle,
+    FileWarning,
+    MessageSquareDot,
+    NotebookPen,
+} from "lucide-react";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
@@ -40,18 +46,24 @@ const Incidents = () => {
             <div className="flex flex-col gap-4">
                 <Card>
                     <CardHeader>
-                        <CardTitle>Incidents</CardTitle>
+                        <CardTitle className="flex gap-2 items-center">
+                            <AlertTriangle size={20} />
+                            Incidents
+                        </CardTitle>
                     </CardHeader>
                     <CardContent className="flex flex-col md:flex-row gap-4">
                         <Button onClick={() => navigate("/incidents/resolved")}>
+                            <MessageSquareDot />
                             Resolved incidents
                         </Button>
                         <Button
                             onClick={() => navigate("/incidents/noteworthy")}
                         >
+                            <NotebookPen />
                             Noteworthy incidents
                         </Button>
                         <Button onClick={() => navigate("/incidents/warnings")}>
+                            <FileWarning />
                             Warnings
                         </Button>
                     </CardContent>

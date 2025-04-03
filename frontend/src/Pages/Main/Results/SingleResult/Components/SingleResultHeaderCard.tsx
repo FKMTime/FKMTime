@@ -1,4 +1,5 @@
 import { activityCodeToName } from "@wca/helpers";
+import { OctagonX, Send } from "lucide-react";
 
 import FlagIcon from "@/Components/Icons/FlagIcon";
 import PlusButton from "@/Components/PlusButton";
@@ -104,10 +105,12 @@ const SingleResultHeaderCard = ({
             </CardHeader>
             <CardContent className="flex flex-col md:flex-row gap-4">
                 <Button onClick={handleResubmit} variant="success">
+                    <Send />
                     Resubmit scorecard to {submissionPlatformName}
                 </Button>
                 {standardAttempts.length < maxAttempts && (
                     <Button onClick={handleAssignDns}>
+                        <OctagonX />
                         Assign DNS on remaing attempts
                     </Button>
                 )}

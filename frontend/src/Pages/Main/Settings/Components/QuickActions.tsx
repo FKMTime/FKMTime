@@ -1,3 +1,4 @@
+import { SquarePen } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import PlusButton from "@/Components/PlusButton.tsx";
@@ -32,7 +33,10 @@ const QuickActions = () => {
             <Card>
                 <CardHeader>
                     <CardTitle className="flex justify-between items-center">
-                        Quick incident actions
+                        <div className="flex gap-2 items-center">
+                            <SquarePen size={20} />
+                            Quick incident actions
+                        </div>
                         <PlusButton
                             onClick={() =>
                                 setIsOpenCreateQuickActionModal(true)
@@ -41,10 +45,14 @@ const QuickActions = () => {
                     </CardTitle>
                 </CardHeader>
                 <CardContent>
-                    <QuickActionsTable
-                        quickActions={quickActions}
-                        fetchData={fetchData}
-                    />
+                    {quickActions.length === 0 ? (
+                        <p>No quick actions found.</p>
+                    ) : (
+                        <QuickActionsTable
+                            quickActions={quickActions}
+                            fetchData={fetchData}
+                        />
+                    )}
                 </CardContent>
             </Card>
             <CreateQuickActionModal

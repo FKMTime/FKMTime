@@ -1,3 +1,4 @@
+import { CircleCheckBig, Eye, Plus, RotateCcw, Send } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 import { Button, buttonVariants } from "@/Components/ui/button";
@@ -22,6 +23,7 @@ interface ResultsAction {
     onClick: () => void;
     colSpan?: number;
     show?: boolean;
+    icon?: React.ReactNode;
 }
 
 const ResultsActions = ({
@@ -70,12 +72,14 @@ const ResultsActions = ({
             variant: "success",
             onClick: () => setIsOpenCreateAttemptModal(true),
             show: true,
+            icon: <Plus />,
         },
         {
             title: "Public view",
             variant: "secondary",
             onClick: () => navigate(`/results/public/${filters.roundId}`),
             show: true,
+            icon: <Eye />,
         },
         {
             title: "Double check",
@@ -83,12 +87,14 @@ const ResultsActions = ({
             onClick: () =>
                 navigate(`/results/round/${filters.roundId}/double-check`),
             show: resultsLength > 0,
+            icon: <CircleCheckBig />,
         },
         {
             title: "Restart group",
             variant: "destructive",
             onClick: () => setIsOpenRestartGroupModal(true),
             show: resultsLength > 0,
+            icon: <RotateCcw />,
         },
         {
             title: `Resubmit results to ${getSubmissionPlatformName(filters.eventId)}`,
@@ -96,6 +102,7 @@ const ResultsActions = ({
             onClick: handleResubmitRound,
             colSpan: 2,
             show: true,
+            icon: <Send />,
         },
     ];
     return (
@@ -112,6 +119,7 @@ const ResultsActions = ({
                                 }
                                 onClick={action.onClick}
                             >
+                                {action.icon}
                                 {action.title}
                             </Button>
                         )

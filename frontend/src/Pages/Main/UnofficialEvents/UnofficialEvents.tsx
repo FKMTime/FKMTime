@@ -1,3 +1,4 @@
+import { Medal } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import PlusButton from "@/Components/PlusButton";
@@ -37,7 +38,10 @@ const UnofficialEvents = () => {
             <Card>
                 <CardHeader>
                     <CardTitle className="flex justify-between items-center">
-                        Unofficial events
+                        <div className="flex gap-2 items-center">
+                            <Medal size={20} />
+                            Unofficial events
+                        </div>
                         <PlusButton
                             aria-label="Add"
                             onClick={() =>
