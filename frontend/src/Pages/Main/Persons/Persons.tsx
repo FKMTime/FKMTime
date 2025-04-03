@@ -37,7 +37,7 @@ const Persons = () => {
     const [search, setSearch] = useState<string>("");
     const [searchedId, setSearchedId] = useState<string>("");
     const [searchedCardId, setSearchedCardId] = useState<string>("");
-    const [personsWithoutCardAssigned, setPersonsWithoutCardAssigned] =
+    const [personsWithCardAssigned, setPersonsWithCardAssigned] =
         useState<number>(0);
     const [onlyNewcomers, setOnlyNewcomers] = useState<boolean>(false);
     const [onlyNotCheckedIn, setOnlyNotCheckedIn] = useState<boolean>(false);
@@ -69,7 +69,7 @@ const Persons = () => {
                 setCompetition(competitionData.data);
             }
             setPersons(response.data);
-            setPersonsWithoutCardAssigned(response.personsWithoutCardAssigned);
+            setPersonsWithCardAssigned(response.personsWithCardAssigned);
             setTotalPersonsCount(response.count);
             const totalPagesCalculation = calculateTotalPages(
                 response.count,
@@ -191,7 +191,7 @@ const Persons = () => {
                             )}
                         </CardTitle>
                         <CardDescription>
-                            Assigned cards: {personsWithoutCardAssigned}/
+                            Assigned cards: {personsWithCardAssigned}/
                             {totalPersonsCount}
                         </CardDescription>
                     </CardHeader>

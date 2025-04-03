@@ -119,9 +119,9 @@ export class PersonService {
     const totalPersons = await this.prisma.person.count({
       where: whereParams,
     });
-    const personsWithoutCardAssigned = await this.prisma.person.count({
+    const personsWithCardAssigned = await this.prisma.person.count({
       where: {
-        OR: [
+        NOT: [
           {
             cardId: {
               equals: null,
@@ -143,7 +143,7 @@ export class PersonService {
     return {
       data: persons,
       count: totalPersons,
-      personsWithoutCardAssigned,
+      personsWithCardAssigned,
     };
   }
 
