@@ -1,5 +1,7 @@
 import { useNavigate } from "react-router-dom";
 
+import EventIcon from "@/Components/Icons/EventIcon";
+import { Button } from "@/Components/ui/button";
 import {
     Card,
     CardContent,
@@ -34,15 +36,33 @@ const ScheduleCard = ({ activity }: ScheduleCardProps) => {
             className={cn("w-full", isRound ? "cursor-pointer" : "")}
         >
             <CardHeader>
-                <CardTitle>{getActivityName(activity)}</CardTitle>
-                <CardDescription>Card Description</CardDescription>
-            </CardHeader>
-            <CardContent>
-                <p>
+                <CardTitle className="flex gap-1 items-center">
+                    {!activity.activityCode.startsWith("other") && (
+                        <EventIcon
+                            eventId={activity.activityCode.split("-r")[0]}
+                            selected
+                            size={20}
+                        />
+                    )}
+                    {getActivityName(activity)}
+                </CardTitle>
+                <CardDescription>
                     {activity.childActivities.length === 0
                         ? ""
                         : `${activity.childActivities.length} ${activity.childActivities.length === 1 ? "group" : "groups"}`}
-                </p>
+                </CardDescription>
+            </CardHeader>
+            <CardContent>
+                {!activity.activityCode.startsWith("other") && (
+                    <Button
+                        onClick={() =>
+                            navigate(`/results/round/${activity.activityCode}`)
+                        }
+                        variant="success"
+                    >
+                        Results
+                    </Button>
+                )}
                 {formattedRealTime && <p>Real time: {formattedRealTime}</p>}
             </CardContent>
             <CardFooter>

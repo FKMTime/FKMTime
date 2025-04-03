@@ -1,6 +1,7 @@
 import { Event, Round } from "@wca/helpers";
 import { prettyRoundFormat } from "wcif-helpers";
 
+import EventIcon from "@/Components/Icons/EventIcon";
 import { TableCell, TableRow } from "@/Components/ui/table";
 import { getActivityName } from "@/lib/activities";
 import { Activity } from "@/lib/interfaces";
@@ -34,7 +35,16 @@ const ScheduleRow = ({ activity, events }: ScheduleRowProps) => {
                 {formatTime(activity.endTime)}
             </TableCell>
             <TableCell>{formattedRealTime}</TableCell>
-            <TableCell>{getActivityName(activity)}</TableCell>
+            <TableCell className="flex gap-1 items-center">
+                {!activity.activityCode.startsWith("other") && (
+                    <EventIcon
+                        eventId={activity.activityCode.split("-r")[0]}
+                        selected
+                        size={16}
+                    />
+                )}
+                {getActivityName(activity)}
+            </TableCell>
             <TableCell>
                 {round &&
                     round.format &&
