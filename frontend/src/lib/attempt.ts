@@ -45,13 +45,14 @@ export const swapAttempts = async (
     return response.status;
 };
 
-export const updateAttempt = async (data: UpdateAttemptData) => {
-    const response = await backendRequest(
-        `attempt/${data.id}`,
-        "PUT",
-        true,
-        data
-    );
+export const updateAttempt = async (
+    data: UpdateAttemptData,
+    isNoteworthy?: boolean
+) => {
+    const response = await backendRequest(`attempt/${data.id}`, "PUT", true, {
+        ...data,
+        noteworthy: isNoteworthy,
+    });
     return response.status;
 };
 

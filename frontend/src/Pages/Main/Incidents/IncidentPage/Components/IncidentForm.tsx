@@ -8,6 +8,7 @@ import AttemptResultInput from "@/Components/AttemptResultInput";
 import PenaltySelect from "@/Components/PenaltySelect";
 import PersonAutocomplete from "@/Components/PersonAutocomplete";
 import { Button } from "@/Components/ui/button";
+import { Checkbox } from "@/Components/ui/checkbox";
 import {
     Form,
     FormField,
@@ -16,6 +17,7 @@ import {
     FormMessage,
 } from "@/Components/ui/form";
 import { Input } from "@/Components/ui/input";
+import { Label } from "@/Components/ui/label";
 import { useToast } from "@/hooks/useToast";
 import { DNF_VALUE } from "@/lib/constants";
 import {
@@ -30,7 +32,7 @@ import { createAttemptSchema } from "@/lib/schema/resultSchema";
 interface IncidentFormProps {
     editedIncident: Incident;
     isLoading: boolean;
-    handleSubmit: (incident: Incident) => void;
+    handleSubmit: (incident: Incident, isNoteworthy?: boolean) => void;
     handleDelete: () => void;
     timeLimit?: TimeLimit;
 }
@@ -44,6 +46,7 @@ const IncidentForm = ({
 }: IncidentFormProps) => {
     const { toast } = useToast();
     const [action, setAction] = useState<IncidentAction | null>(null);
+    const [isNoteworthy, setIsNoteworthy] = useState<boolean>(false);
 
     const form = useForm<z.infer<typeof createAttemptSchema>>({
         resolver: zodResolver(createAttemptSchema),
@@ -103,7 +106,7 @@ const IncidentForm = ({
                 });
             }
         }
-        handleSubmit(data);
+        handleSubmit(data, isNoteworthy);
     };
 
     return (
@@ -198,6 +201,13 @@ const IncidentForm = ({
                         </FormItem>
                     )}
                 />
+                <div className="flex items-center gap-2">
+                    <Checkbox
+                        checked={isNoteworthy}
+                        onCheckedChange={(value) => setIsNoteworthy(!!value)}
+                    />
+                    <Label>Mark as noteworthy incident</Label>
+                </div>
                 <div className="flex gap-4">
                     <Button
                         variant="secondary"

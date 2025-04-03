@@ -44,4 +44,8 @@ export class UpdateAttemptDto {
   @IsOptional()
   @IsBoolean()
   updateReplacedBy: boolean;
+
+  @IsOptional()
+  @IsBoolean()
+  noteworthy: boolean;
 }

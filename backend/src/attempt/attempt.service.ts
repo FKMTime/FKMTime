@@ -4,6 +4,7 @@ import { AppGateway } from 'src/app.gateway';
 import { AttendanceService } from 'src/attendance/attendance.service';
 import { publicPersonSelect } from 'src/constants';
 import { isUnofficialEvent } from 'src/events';
+import { IncidentService } from 'src/incident/incident.service';
 
 import { DbService } from '../db/db.service';
 import { ResultService } from '../result/result.service';
@@ -21,6 +22,7 @@ export class AttemptService {
     private readonly resultService: ResultService,
     @Inject(forwardRef(() => SocketController))
     private readonly socketController: SocketController,
+    private readonly incidentService: IncidentService,
   ) {}
 
   async createAttempt(data: CreateAttemptDto) {
@@ -184,6 +186,12 @@ export class AttemptService {
       attemptToUpdate.status === AttemptStatus.UNRESOLVED &&
       attempt.status !== AttemptStatus.UNRESOLVED
     ) {
+      if (data.noteworthy) {
+        await this.incidentService.addAttemptAsNoteworthyIncident(
+          attempt.id,
+          userId,
+        );
+      }
       this.socketController.sendResponseToAllSockets({
         type: 'IncidentResolved',
         data: {
