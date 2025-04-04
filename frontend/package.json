@@ -52,7 +52,7 @@
     "react-router-dom": "^7.1.5",
     "react-spinners": "^0.15.0",
     "recharts": "^2.15.0",
-    "scramble-display": "^0.5.5",
+    "scramble-display": "^0.6.2",
     "socket.io-client": "^4.7.5",
     "tailwind-merge": "^3.0.2",
     "tailwindcss-animate": "^1.0.7",
