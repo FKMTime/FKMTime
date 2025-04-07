@@ -1,6 +1,7 @@
 import { forwardRef, Inject } from '@nestjs/common';
 import { AttemptStatus } from '@prisma/client';
 import { Activity, Room as WCIFRoom, Venue } from '@wca/helpers';
+import { DNS_VALUE } from 'src/constants';
 import { DbService } from 'src/db/db.service';
 import { getEventShortName } from 'src/events';
 import { getActivityInfoFromSchedule, getCompetitionDates } from 'wcif-helpers';
@@ -25,10 +26,17 @@ export class StatisticsService {
       where: {
         AND: [
           {
-            status: AttemptStatus.SCRAMBLED,
+            status: {
+              not: AttemptStatus.SCRAMBLED,
+            },
           },
           {
             sessionId: null,
+          },
+          {
+            penalty: {
+              not: DNS_VALUE,
+            },
           },
         ],
       },
