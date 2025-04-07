@@ -155,6 +155,18 @@ export class DeviceService {
   }
 
   async updateBatteryPercentage(data: UpdateBatteryPercentageDto) {
+    const device = await this.prisma.device.findFirst({
+      where: {
+        espId: data.espId,
+      },
+    });
+    if (!device) {
+      return {
+        message: 'Device not found',
+        status: 404,
+        error: true,
+      };
+    }
     try {
       await this.prisma.device.update({
         where: { espId: data.espId },
@@ -164,8 +176,8 @@ export class DeviceService {
       });
     } catch (error) {
       return {
-        message: 'Device not found',
-        status: 404,
+        message: 'Error updating battery percentage',
+        status: 500,
         error: true,
       };
     }
