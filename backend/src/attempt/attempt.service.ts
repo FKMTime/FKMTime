@@ -37,11 +37,13 @@ export class AttemptService {
         value: data.value,
         penalty: data.penalty,
         solvedAt: new Date(),
-        device: {
-          connect: {
-            id: data.deviceId,
-          },
-        },
+        device: data.deviceId
+          ? {
+              connect: {
+                id: data.deviceId,
+              },
+            }
+          : undefined,
         judge: data.judgeId
           ? {
               connect: {
@@ -86,7 +88,7 @@ export class AttemptService {
     await this.attendanceService.markCompetitorAsPresent(
       result.person.id,
       groupId,
-      data.deviceId,
+      data.deviceId ? data.deviceId : '',
     );
 
     if (data.status !== AttemptStatus.EXTRA_GIVEN) {

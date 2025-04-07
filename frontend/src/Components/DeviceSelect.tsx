@@ -12,7 +12,7 @@ import {
 } from "./ui/select";
 
 interface DeviceSelectProps {
-    value: string;
+    value?: string;
     onChange: (value: string) => void;
     disabled?: boolean;
 }

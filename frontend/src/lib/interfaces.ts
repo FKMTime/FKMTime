@@ -435,7 +435,7 @@ export interface AttemptData {
     status: AttemptStatus;
     judgeId?: string;
     scramblerId?: string;
-    deviceId: string;
+    deviceId?: string;
     attemptNumber: number;
     value: number;
     penalty: number;

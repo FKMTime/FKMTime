@@ -56,7 +56,7 @@ export class AttendanceService {
   async markCompetitorAsPresent(
     competitorId: string,
     groupId: string,
-    deviceId: string,
+    deviceId?: string,
   ) {
     await this.prisma.staffActivity.upsert({
       where: {
@@ -67,11 +67,13 @@ export class AttendanceService {
         },
       },
       update: {
-        device: {
-          connect: {
-            id: deviceId,
-          },
-        },
+        device: deviceId
+          ? {
+              connect: {
+                id: deviceId,
+              },
+            }
+          : undefined,
         isPresent: true,
       },
       create: {
@@ -81,11 +83,13 @@ export class AttendanceService {
             id: competitorId,
           },
         },
-        device: {
-          connect: {
-            id: deviceId,
-          },
-        },
+        device: deviceId
+          ? {
+              connect: {
+                id: deviceId,
+              },
+            }
+          : undefined,
         role: 'COMPETITOR',
         isPresent: true,
         isAssigned: false,

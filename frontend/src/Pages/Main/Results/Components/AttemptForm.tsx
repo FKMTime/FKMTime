@@ -72,12 +72,6 @@ const AttemptForm = ({
     });
 
     const onSubmit = (values: z.infer<typeof createAttemptSchema>) => {
-        if (!values.deviceId) {
-            return toast({
-                title: "Device is required",
-                variant: "destructive",
-            });
-        }
         if (values.judgeId && values.competitorId === values.judgeId) {
             return toast({
                 title: "Judge cannot be the same as competitor",
@@ -100,6 +94,7 @@ const AttemptForm = ({
             status: values.status as AttemptStatus,
             comment: values.comment ? values.comment : "",
             replacedBy: values.replacedBy ? +values.replacedBy : 0,
+            deviceId: values.deviceId ? values.deviceId : undefined,
         };
 
         const isTimeRequired =
@@ -299,7 +294,7 @@ const AttemptForm = ({
                         <FormItem>
                             <FormLabel>Device</FormLabel>
                             <DeviceSelect
-                                value={field.value}
+                                value={field.value || ""}
                                 onChange={field.onChange}
                                 disabled={isLoading}
                             />
@@ -317,6 +312,7 @@ const AttemptForm = ({
                                 type="text"
                                 placeholder="Comment"
                                 {...field}
+                                value={field.value || ""}
                             />
                             <FormMessage />
                         </FormItem>

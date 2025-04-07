@@ -25,8 +25,8 @@ export class CreateAttemptDto {
   roundId: string;
 
   @IsString()
-  @IsNotEmpty()
-  deviceId: string;
+  @IsOptional()
+  deviceId?: string;
 
   @IsString()
   @IsOptional()

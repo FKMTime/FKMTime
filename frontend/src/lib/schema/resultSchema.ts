@@ -12,7 +12,7 @@ export const createAttemptSchema = z.object({
     competitorId: z.string(),
     judgeId: z.string().optional(),
     scramblerId: z.string().optional(),
-    deviceId: z.string(),
+    deviceId: z.string().nullable(),
     attemptNumber: z.number(),
     value: z.number(),
     penalty: z.number(),
