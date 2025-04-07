@@ -16,10 +16,10 @@ export const createAttemptSchema = z.object({
     attemptNumber: z.number(),
     value: z.number(),
     penalty: z.number(),
-    comment: z.string().optional(),
+    comment: z.string().nullable(),
     replacedBy: z.string().optional(),
 });
 
 export const giveExtraAttemptSchema = z.object({
-    comment: z.string().optional(),
+    comment: z.string().nullable(),
 });
