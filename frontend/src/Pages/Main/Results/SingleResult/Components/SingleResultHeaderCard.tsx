@@ -1,5 +1,5 @@
 import { activityCodeToName } from "@wca/helpers";
-import { OctagonX, Send } from "lucide-react";
+import { CircleCheckBig, OctagonX, Send } from "lucide-react";
 
 import FlagIcon from "@/Components/Icons/FlagIcon";
 import PlusButton from "@/Components/PlusButton";
@@ -98,23 +98,31 @@ const SingleResultHeaderCard = ({
                         {result.person.name} ({result.person.registrantId}) -{" "}
                         {activityCodeToName(result.roundId)}
                     </div>
-
                     <PlusButton
                         onClick={() => setIsOpenCreateAttemptModal(true)}
                     />
                 </CardTitle>
             </CardHeader>
-            <CardContent className="flex flex-col md:flex-row gap-4">
-                <Button onClick={handleResubmit} variant="success">
-                    <Send />
-                    Resubmit scorecard to {submissionPlatformName}
-                </Button>
-                {standardAttempts.length < maxAttempts && (
-                    <Button onClick={handleAssignDns}>
-                        <OctagonX />
-                        Assign DNS on remaing attempts
-                    </Button>
+            <CardContent className="flex flex-col gap-3">
+                {result.isDoubleChecked && result.doubleCheckedAt && (
+                    <div className="flex flex-row gap-2 text-green-500 font-semibold items-center">
+                        <CircleCheckBig /> Double checked at{" "}
+                        {new Date(result.doubleCheckedAt).toLocaleString()} by{" "}
+                        {result.doubleCheckedBy?.fullName}
+                    </div>
                 )}
+                <div className="flex flex-col md:flex-row gap-4">
+                    <Button onClick={handleResubmit} variant="success">
+                        <Send />
+                        Resubmit scorecard to {submissionPlatformName}
+                    </Button>
+                    {standardAttempts.length < maxAttempts && (
+                        <Button onClick={handleAssignDns}>
+                            <OctagonX />
+                            Assign DNS on remaing attempts
+                        </Button>
+                    )}
+                </div>
             </CardContent>
         </Card>
     );

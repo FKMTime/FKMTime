@@ -11,7 +11,7 @@ const DoubleCheckFinished = ({
     roundId,
 }: DoubleCheckFinishedProps) => {
     return (
-        <Alert>
+        <Alert variant="success">
             <AlertTitle>Well done!</AlertTitle>
             <AlertDescription>
                 All {totalResults} scorecards for {activityCodeToName(roundId)}{" "}

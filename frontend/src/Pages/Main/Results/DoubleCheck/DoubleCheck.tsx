@@ -210,9 +210,10 @@ const DoubleCheck = () => {
                                 />
                                 <Button
                                     variant="destructive"
+                                    className="w-fit"
                                     onClick={handleUndoDoubleCheck}
                                 >
-                                    Mark results as not double checked
+                                    Mark results as NOT double checked
                                 </Button>
                             </>
                         ) : (
@@ -227,6 +228,16 @@ const DoubleCheck = () => {
                                     <AlertTitle>
                                         If you want to make more changes please
                                         go to Details page
+                                    </AlertTitle>
+                                </Alert>
+                                <Alert variant="warning">
+                                    <AlertTitle>
+                                        When double-checking, focus on the final
+                                        time, which is located in the{" "}
+                                        <span className="font-bold">
+                                            Result
+                                        </span>{" "}
+                                        column
                                     </AlertTitle>
                                 </Alert>
                                 {resultsToDoubleCheck ? (

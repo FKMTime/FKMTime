@@ -40,15 +40,22 @@ const AttemptsList: React.FC<AttemptsListProps> = ({
             <Table>
                 <TableHeader>
                     <TableRow>
+                        <TableHead color="white">Attempt</TableHead>
                         <TableHead
-                            className="hidden md:table-cell"
                             color="white"
+                            className="hidden md:table-cell"
                         >
-                            Attempt
+                            Time
                         </TableHead>
-                        <TableHead color="white">Time</TableHead>
-                        <TableHead color="white">Penalty</TableHead>
-                        <TableHead color="white">Result</TableHead>
+                        <TableHead
+                            color="white"
+                            className="hidden md:table-cell"
+                        >
+                            Penalty
+                        </TableHead>
+                        <TableHead color="white" className="font-bold">
+                            Result
+                        </TableHead>
                         <TableHead
                             className="hidden md:table-cell"
                             color="white"
@@ -60,12 +67,12 @@ const AttemptsList: React.FC<AttemptsListProps> = ({
                 <TableBody>
                     {submittedAttempts.map((attempt) => (
                         <TableRow key={attempt.id}>
-                            <TableCell className="hidden md:table-cell">
+                            <TableCell>
                                 {attempt.type === AttemptType.EXTRA_ATTEMPT
                                     ? `E${attempt.attemptNumber}`
                                     : attempt.attemptNumber}
                             </TableCell>
-                            <TableCell>
+                            <TableCell className="hidden md:table-cell">
                                 <AttemptResultInput
                                     value={attempt.value}
                                     disabled={false}
@@ -103,7 +110,7 @@ const AttemptsList: React.FC<AttemptsListProps> = ({
                                     }}
                                 />
                             </TableCell>
-                            <TableCell>
+                            <TableCell className="hidden md:table-cell">
                                 <PenaltySelect
                                     value={attempt.penalty}
                                     onChange={(value) =>
@@ -116,7 +123,7 @@ const AttemptsList: React.FC<AttemptsListProps> = ({
                                     disabled={false}
                                 />
                             </TableCell>
-                            <TableCell>
+                            <TableCell className="font-bold">
                                 {attemptWithPenaltyToString(attempt)}
                             </TableCell>
                             <TableCell className="hidden md:table-cell">

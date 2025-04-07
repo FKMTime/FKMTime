@@ -11,6 +11,8 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
+import { GetUser } from 'src/auth/decorator/getUser.decorator';
+import { JwtAuthDto } from 'src/auth/dto/jwt-auth.dto';
 import { DelegateGuard } from 'src/auth/guards/delegate.guard';
 import { OrganizerGuard } from 'src/auth/guards/organizer.guard';
 
@@ -39,8 +41,11 @@ export class ResultController {
   @HttpCode(HttpStatus.OK)
   @UseGuards(DelegateGuard)
   @Post('double-check')
-  async doubleCheckResultsByRoundId(@Body() data: DoubleCheckDto) {
-    return this.resultService.doubleCheckResult(data);
+  async doubleCheckResultsByRoundId(
+    @Body() data: DoubleCheckDto,
+    @GetUser() user: JwtAuthDto,
+  ) {
+    return this.resultService.doubleCheckResult(data, user.userId);
   }
 
   @HttpCode(HttpStatus.NO_CONTENT)

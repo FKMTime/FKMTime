@@ -2,7 +2,7 @@ import { HttpException, Injectable } from '@nestjs/common';
 import { AttemptStatus, AttemptType, StaffRole } from '@prisma/client';
 import { Event, Round } from '@wca/helpers';
 import { AppGateway } from 'src/app.gateway';
-import { DNS_VALUE, publicPersonSelect } from 'src/constants';
+import { DNS_VALUE, publicPersonSelect, publicUserSelect } from 'src/constants';
 import { ContestsService } from 'src/contests/contests.service';
 import { DbService } from 'src/db/db.service';
 import { isUnofficialEvent } from 'src/events';
@@ -150,12 +150,13 @@ export class ResultService {
   }
 
   async getResultById(id: string) {
-    const result = await this.prisma.result.findUnique({
+    return this.prisma.result.findUnique({
       where: {
         id: id,
       },
       include: {
         person: publicPersonSelect,
+        doubleCheckedBy: publicUserSelect,
         attempts: {
           include: {
             judge: publicPersonSelect,
@@ -171,7 +172,6 @@ export class ResultService {
         },
       },
     });
-    return result;
   }
 
   async getResultOrCreate(personId: string, roundId: string) {
@@ -361,13 +361,19 @@ export class ResultService {
     };
   }
 
-  async doubleCheckResult(data: DoubleCheckDto) {
+  async doubleCheckResult(data: DoubleCheckDto, userId: string) {
     const result = await this.prisma.result.update({
       where: {
         id: data.resultId,
       },
       data: {
         isDoubleChecked: true,
+        doubleCheckedAt: new Date(),
+        doubleCheckedBy: {
+          connect: {
+            id: userId,
+          },
+        },
       },
     });
     for (const attempt of data.attempts) {

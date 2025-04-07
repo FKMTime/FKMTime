@@ -13,12 +13,15 @@ export interface UserInfo {
     avatarUrl?: string;
 }
 
-export interface User {
+export interface PublicUser {
     id: string;
+    fullName?: string;
+    avatarUrl?: string;
+}
+
+export interface User extends PublicUser {
     username?: string;
     wcaUserId?: number;
-    avatarUrl?: string;
-    fullName?: string;
     roles: string[];
     createdAt: Date;
     updatedAt: Date;
@@ -159,6 +162,9 @@ export interface Result {
     groupId: string;
     createdAt: Date;
     updatedAt: Date;
+    isDoubleChecked: boolean;
+    doubleCheckedAt?: Date;
+    doubleCheckedBy?: PublicUser;
     person: Person;
     attempts: Attempt[];
 }

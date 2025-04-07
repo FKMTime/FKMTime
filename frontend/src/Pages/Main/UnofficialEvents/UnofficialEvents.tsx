@@ -51,16 +51,20 @@ const UnofficialEvents = () => {
                     </CardTitle>
                 </CardHeader>
                 <CardContent>
-                    <UnofficialEventsTable
-                        events={unofficialEvents}
-                        fetchData={fetchData}
-                    />
-                    <CreateUnofficialEventModal
-                        isOpen={isOpenCreateUnofficialEventModal}
-                        onClose={handleCloseCreateModal}
-                    />
+                    {unofficialEvents.length === 0 ? (
+                        <p>No unofficial events found</p>
+                    ) : (
+                        <UnofficialEventsTable
+                            events={unofficialEvents}
+                            fetchData={fetchData}
+                        />
+                    )}
                 </CardContent>
             </Card>
+            <CreateUnofficialEventModal
+                isOpen={isOpenCreateUnofficialEventModal}
+                onClose={handleCloseCreateModal}
+            />
         </PageTransition>
     );
 };

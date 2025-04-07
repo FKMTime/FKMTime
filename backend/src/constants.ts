@@ -12,6 +12,14 @@ export const publicPersonSelect = {
   },
 };
 
+export const publicUserSelect = {
+  select: {
+    id: true,
+    fullName: true,
+    avatarUrl: true,
+  },
+};
+
 export const roundIdRegex = '.*-r\\d+';
 export const groupIdRegex = '.*-r\\d+-g\\d+';
 

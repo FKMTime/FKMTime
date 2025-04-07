@@ -91,7 +91,11 @@ const ResultsChecks = () => {
                             </CardTitle>
                         </CardHeader>
                         <CardContent>
-                            <ResultsChecksTable checks={checks} />
+                            {checks.length === 0 ? (
+                                <p>No suspicious results found</p>
+                            ) : (
+                                <ResultsChecksTable checks={checks} />
+                            )}
                         </CardContent>
                     </Card>
                 ) : null}
