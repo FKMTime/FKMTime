@@ -43,6 +43,7 @@ const SingleResultHeaderCard = ({
             toast({
                 title: "Success",
                 description: `Scorecard resubmitted to ${submissionPlatformName}`,
+                variant: "success",
             });
         } else {
             toast({
