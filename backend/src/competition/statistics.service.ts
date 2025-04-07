@@ -1,5 +1,5 @@
 import { forwardRef, Inject } from '@nestjs/common';
-import { AttemptStatus } from '@prisma/client';
+import { AttemptStatus, DeviceType } from '@prisma/client';
 import { Activity, Room as WCIFRoom, Venue } from '@wca/helpers';
 import { DNS_VALUE } from 'src/constants';
 import { DbService } from 'src/db/db.service';
@@ -164,13 +164,15 @@ export class StatisticsService {
       allAttempts,
       byEventStats,
       byRoundStats,
-      attemptsByDevice: devices.map((device) => ({
-        deviceId: device.id,
-        deviceName: device.name,
-        count:
-          attemptsByDevice.find((a) => a.deviceId === device.id)?._count
-            ?._all || 0,
-      })),
+      attemptsByDevice: devices
+        .filter((d) => d.type === DeviceType.STATION)
+        .map((device) => ({
+          deviceId: device.id,
+          deviceName: device.name,
+          count:
+            attemptsByDevice.find((a) => a.deviceId === device.id)?._count
+              ?._all || 0,
+        })),
       attemptsEnteredManually,
       scorecardsCount,
       personsCompeted,
