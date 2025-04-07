@@ -48,7 +48,7 @@ const GiveExtraAttemptModal = ({
         setIsLoading(true);
         const status = await updateAttempt({
             ...attempt,
-            comment: values.comment,
+            comment: values.comment || "",
             status: AttemptStatus.EXTRA_GIVEN,
         });
         if (status === 200) {
@@ -98,6 +98,7 @@ const GiveExtraAttemptModal = ({
                                     type="text"
                                     placeholder="Comment"
                                     {...field}
+                                    value={field.value || ""}
                                 />
                                 <FormMessage />
                             </FormItem>

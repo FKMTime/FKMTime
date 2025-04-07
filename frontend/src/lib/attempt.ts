@@ -1,25 +1,11 @@
-import { Attempt, AttemptStatus, Incident } from "./interfaces";
+import { Attempt, AttemptData, Incident } from "./interfaces";
 import { backendRequest } from "./request";
 
 interface UpdateAttemptData extends Attempt {
     updateReplacedBy?: boolean;
 }
 
-interface CreateAttemptData {
-    roundId: string;
-    deviceId: string;
-    competitorId: string;
-    judgeId?: string;
-    scramblerId?: string;
-    attemptNumber: number;
-    value: number;
-    penalty: number;
-    comment: string;
-    replacedBy: number;
-    status: AttemptStatus;
-}
-
-export const createAttempt = async (data: CreateAttemptData) => {
+export const createAttempt = async (data: AttemptData) => {
     const response = await backendRequest("attempt", "POST", true, data);
     return response.status;
 };

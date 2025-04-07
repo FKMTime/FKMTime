@@ -82,6 +82,7 @@ const IncidentForm = ({
             ...values,
             penalty: values.penalty ? +values.penalty : 0,
             judgeId: values.judgeId ? values.judgeId : undefined,
+            deviceId: values.deviceId ? values.deviceId : undefined,
             scramblerId: values.scramblerId ? values.scramblerId : undefined,
             type: values.type as AttemptType,
             status: values.status as AttemptStatus,
@@ -196,6 +197,7 @@ const IncidentForm = ({
                                 type="text"
                                 placeholder="Comment"
                                 {...field}
+                                value={field.value || ""}
                             />
                             <FormMessage />
                         </FormItem>
