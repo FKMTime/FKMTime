@@ -58,6 +58,7 @@ jobs:
           working-directory: 'backend'
           run: npm run format:check
         - name: Generate prisma
+          working-directory: 'backend'
           run: npx prisma generate
         - name: Build backend
           working-directory: 'backend'
