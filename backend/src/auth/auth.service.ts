@@ -97,12 +97,16 @@ export class AuthService {
       const manageableCompetitions =
         await this.wcaService.getUpcomingManageableCompetitions(token);
       const isGlobalAdmin = ADMIN_WCA_USER_IDS.includes(userInfo.me.id);
+      const roles = [];
+      if (isGlobalAdmin) {
+        roles.push(Role.ADMIN);
+      }
       if (!competition) {
         return await this.createAndReturnUser(
           userInfo.me.id,
           userInfo.me.name,
           token,
-          Role.ADMIN,
+          roles,
           userInfo.me.avatar.thumb_url,
         );
       } else {
@@ -110,15 +114,16 @@ export class AuthService {
           manageableCompetitions.some((c) => c.id === competition.wcaId) ||
           isGlobalAdmin
         ) {
+          if (isDelegate) {
+            roles.push(Role.DELEGATE);
+          } else {
+            roles.push(Role.ORGANIZER);
+          }
           return await this.createAndReturnUser(
             userInfo.me.id,
             userInfo.me.name,
             token,
-            isGlobalAdmin
-              ? Role.ADMIN
-              : isDelegate
-                ? Role.DELEGATE
-                : Role.ORGANIZER,
+            roles,
           );
         } else {
           throw new HttpException(
@@ -156,14 +161,14 @@ export class AuthService {
     wcaUserId: number,
     fullName: string,
     wcaAccessToken: string,
-    role: Role,
+    roles: Role[],
     avatarUrl?: string,
   ) {
     const user = await this.prisma.user.create({
       data: {
         wcaUserId: wcaUserId,
         fullName: fullName,
-        roles: [role],
+        roles: roles,
         wcaAccessToken: wcaAccessToken,
         avatarUrl: avatarUrl,
       },
