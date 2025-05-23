@@ -447,3 +447,9 @@ export interface AvailableLocale {
     locale: string;
     localeName: string;
 }
+
+export interface MissedAssignments {
+    person: Person;
+    missedAssignments: StaffActivity[];
+    missedAssignmentsCount: number;
+}

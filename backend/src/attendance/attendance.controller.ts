@@ -1,8 +1,10 @@
 import { Controller, Get, Param, Post, UseGuards } from '@nestjs/common';
+import { AuthGuard } from '@nestjs/passport';
 import { StageLeaderGuard } from 'src/auth/guards/stageLeader.guard';
 
 import { AttendanceService } from './attendance.service';
 
+@UseGuards(AuthGuard('jwt'))
 @Controller('attendance')
 export class AttendanceController {
   constructor(private readonly attendanceService: AttendanceService) {}
@@ -17,6 +19,12 @@ export class AttendanceController {
   @Get('statistics')
   async getAttendanceStatistics() {
     return this.attendanceService.getAttendanceStatistics();
+  }
+
+  @UseGuards(StageLeaderGuard)
+  @Get('missed')
+  async getMostMissedAssignments() {
+    return this.attendanceService.getMostMissedAssignments();
   }
 
   @UseGuards(StageLeaderGuard)

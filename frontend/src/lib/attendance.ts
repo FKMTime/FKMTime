@@ -40,3 +40,8 @@ export const getAttendanceStatistics = async () => {
     const response = await backendRequest(`attendance/statistics`, "GET", true);
     return await response.json();
 };
+
+export const getMostMissedAssignments = async () => {
+    const response = await backendRequest(`attendance/missed`, "GET", true);
+    return await response.json();
+};

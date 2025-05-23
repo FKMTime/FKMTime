@@ -47,6 +47,7 @@ const IssueWarningModal = ({
                 variant: "success",
             });
             setIsLoading(false);
+            form.reset();
             onClose();
         } else {
             toast({

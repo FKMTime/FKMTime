@@ -20,6 +20,12 @@ const AttendanceStatistics = lazy(
             "./Pages/Main/Attendance/AttendanceStatistics/AttendanceStatistics"
         )
 );
+const MostMissedAssignments = lazy(
+    () =>
+        import(
+            "./Pages/Main/Attendance/MostMissedAssignments/MostMissedAssignments"
+        )
+);
 const CheckIn = lazy(() => import("./Pages/Main/CheckIn/CheckIn"));
 const Competition = lazy(() => import("./Pages/Main/Competition/Competition"));
 const Devices = lazy(() => import("./Pages/Main/Devices/Devices"));
@@ -196,6 +202,10 @@ const App = () => {
                 {
                     path: "attendance/statistics",
                     element: <AttendanceStatistics />,
+                },
+                {
+                    path: "attendance/missed",
+                    element: <MostMissedAssignments />,
                 },
                 {
                     path: "attendance/:id",

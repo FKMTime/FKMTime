@@ -1,5 +1,7 @@
 import { Injectable } from '@nestjs/common';
+import { StaffRole } from '@prisma/client';
 import { AppGateway } from 'src/app.gateway';
+import { publicPersonSelect } from 'src/constants';
 
 import { DbService } from '../db/db.service';
 import { getTranslation } from '../translations/translations';
@@ -22,6 +24,62 @@ export class AttendanceService {
         device: true,
       },
     });
+  }
+
+  async getMostMissedAssignments() {
+    const mostMissed = await this.prisma.staffActivity.groupBy({
+      by: ['personId'],
+      where: {
+        isPresent: false,
+        isAssigned: true,
+        role: {
+          not: StaffRole.COMPETITOR,
+        },
+      },
+      _count: {
+        personId: true,
+      },
+      orderBy: {
+        _count: {
+          personId: 'desc',
+        },
+      },
+    });
+    const data = [];
+    for (const item of mostMissed) {
+      const person = await this.prisma.person.findUnique({
+        where: {
+          id: item.personId,
+        },
+        select: publicPersonSelect.select,
+      });
+      const hasCompeted = await this.prisma.staffActivity.findFirst({
+        where: {
+          personId: person.id,
+          isPresent: true,
+          role: StaffRole.COMPETITOR,
+        },
+      });
+      if (hasCompeted || !person.canCompete) {
+        const missedAssignments = await this.prisma.staffActivity.findMany({
+          where: {
+            isPresent: false,
+            role: {
+              not: StaffRole.COMPETITOR,
+            },
+            personId: person.id,
+          },
+        });
+        data.push({
+          person,
+          missedAssignments: missedAssignments,
+          missedAssignmentsCount: item._count.personId,
+        });
+      }
+    }
+    return data.sort(
+      (a, b) => b.missedAssignmentsCount - a.missedAssignmentsCount,
+    );
   }
 
   async getStaffActivitiesByPersonId(id: string) {

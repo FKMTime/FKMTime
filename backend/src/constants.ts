@@ -9,6 +9,7 @@ export const publicPersonSelect = {
     wcaId: true,
     registrantId: true,
     countryIso2: true,
+    canCompete: true,
   },
 };
 
