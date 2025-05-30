@@ -54,6 +54,7 @@ export class CompetitionService {
         wcaId: true,
         countryIso2: true,
         wcif: true,
+        useFkmTimeDevices: true,
       },
     });
     if (!competition) {
@@ -228,6 +229,7 @@ export class CompetitionService {
         cubingContestsToken: dto.cubingContestsToken,
         sendingResultsFrequency: dto.sendingResultsFrequency,
         shouldChangeGroupsAutomatically: dto.shouldChangeGroupsAutomatically,
+        useFkmTimeDevices: dto.useFkmTimeDevices,
       },
     });
   }
@@ -282,7 +284,7 @@ export class CompetitionService {
   async checkIfGroupShouldBeChanged() {
     this.logger.log('Checking if group should be changed');
     const competition = await this.prisma.competition.findFirst();
-    if (!competition) {
+    if (!competition || !competition.useFkmTimeDevices) {
       return;
     }
     if (

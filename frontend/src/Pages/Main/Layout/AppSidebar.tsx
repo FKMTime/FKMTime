@@ -4,6 +4,7 @@ import {
     BookCheck,
     ChartNoAxesColumn,
     ClipboardList,
+    FileWarning,
     House,
     Medal,
     Microchip,
@@ -95,30 +96,67 @@ const AppSidebar = ({ unresolvedIncidentsCount }: AppSidebarProps) => {
                                 </SidebarMenuButton>
                             </SidebarMenuItem>
                             {isDelegate() ? (
-                                <SidebarMenuItem>
-                                    <SidebarMenuButton
-                                        asChild
-                                        isActive={
-                                            location.pathname === "/incidents"
-                                        }
-                                    >
-                                        <Link to="/incidents">
-                                            <TriangleAlert />
-                                            <span>Incidents</span>
-                                        </Link>
-                                    </SidebarMenuButton>
-                                    <SidebarMenuBadge>
-                                        <Badge
-                                            variant={
-                                                unresolvedIncidentsCount === 0
-                                                    ? "success"
-                                                    : "destructive"
-                                            }
-                                        >
-                                            {unresolvedIncidentsCount}
-                                        </Badge>
-                                    </SidebarMenuBadge>
-                                </SidebarMenuItem>
+                                <>
+                                    {competition?.useFkmTimeDevices ? (
+                                        <SidebarMenuItem>
+                                            <SidebarMenuButton
+                                                asChild
+                                                isActive={
+                                                    location.pathname ===
+                                                    "/incidents"
+                                                }
+                                            >
+                                                <Link to="/incidents">
+                                                    <TriangleAlert />
+                                                    <span>Incidents</span>
+                                                </Link>
+                                            </SidebarMenuButton>
+                                            <SidebarMenuBadge>
+                                                <Badge
+                                                    variant={
+                                                        unresolvedIncidentsCount ===
+                                                        0
+                                                            ? "success"
+                                                            : "destructive"
+                                                    }
+                                                >
+                                                    {unresolvedIncidentsCount}
+                                                </Badge>
+                                            </SidebarMenuBadge>
+                                        </SidebarMenuItem>
+                                    ) : (
+                                        <>
+                                            <SidebarMenuItem>
+                                                <SidebarMenuButton
+                                                    asChild
+                                                    isActive={
+                                                        location.pathname ===
+                                                        "/incidents"
+                                                    }
+                                                >
+                                                    <Link to="/incidents">
+                                                        <TriangleAlert />
+                                                        <span>Incidents</span>
+                                                    </Link>
+                                                </SidebarMenuButton>
+                                            </SidebarMenuItem>
+                                            <SidebarMenuItem>
+                                                <SidebarMenuButton
+                                                    asChild
+                                                    isActive={
+                                                        location.pathname ===
+                                                        "/incidents/warnings"
+                                                    }
+                                                >
+                                                    <Link to="/incidents/warnings">
+                                                        <FileWarning />
+                                                        <span>Warnings</span>
+                                                    </Link>
+                                                </SidebarMenuButton>
+                                            </SidebarMenuItem>
+                                        </>
+                                    )}
+                                </>
                             ) : null}
                             <SidebarMenuItem>
                                 <SidebarMenuButton
@@ -160,106 +198,110 @@ const AppSidebar = ({ unresolvedIncidentsCount }: AppSidebarProps) => {
                         </SidebarMenu>
                     </SidebarGroupContent>
                 </SidebarGroup>
-                <SidebarGroup>
-                    <SidebarGroupLabel>Results</SidebarGroupLabel>
-                    <SidebarGroupContent>
-                        <SidebarMenu>
-                            <SidebarMenuItem>
-                                <SidebarMenuButton
-                                    asChild
-                                    isActive={
-                                        location.pathname.includes(
-                                            "/results"
-                                        ) &&
-                                        location.pathname !==
-                                            "/results/checks" &&
-                                        !currentRounds.some((roundId) =>
-                                            location.pathname.includes(roundId)
-                                        )
-                                    }
-                                >
-                                    <Link
-                                        to={
-                                            isDelegate()
-                                                ? "/results"
-                                                : "/results/public"
+                {competition?.useFkmTimeDevices && (
+                    <SidebarGroup>
+                        <SidebarGroupLabel>Results</SidebarGroupLabel>
+                        <SidebarGroupContent>
+                            <SidebarMenu>
+                                <SidebarMenuItem>
+                                    <SidebarMenuButton
+                                        asChild
+                                        isActive={
+                                            location.pathname.includes(
+                                                "/results"
+                                            ) &&
+                                            location.pathname !==
+                                                "/results/checks" &&
+                                            !currentRounds.some((roundId) =>
+                                                location.pathname.includes(
+                                                    roundId
+                                                )
+                                            )
                                         }
                                     >
-                                        <AlarmClock />
-                                        <span>Results</span>
-                                    </Link>
-                                </SidebarMenuButton>
-                                {currentRounds.length > 0 ? (
-                                    <SidebarMenuSub>
-                                        {currentRounds.map(
-                                            (roundId: string) => (
-                                                <SidebarMenuSubItem
-                                                    key={roundId}
-                                                >
-                                                    <SidebarMenuSubButton
-                                                        isActive={
-                                                            location.pathname ===
-                                                            `/results/round/${roundId}`
-                                                        }
-                                                        key={`results-${roundId}`}
-                                                        asChild
-                                                    >
-                                                        <Link
-                                                            className="flex gap-2 items-center"
-                                                            to={
-                                                                isDelegate()
-                                                                    ? `/results/round/${roundId}`
-                                                                    : `/results/public/${roundId}`
-                                                            }
-                                                        >
-                                                            <EventIcon
-                                                                selected
-                                                                eventId={
-                                                                    roundId.split(
-                                                                        "-"
-                                                                    )[0]
-                                                                }
-                                                            />
-                                                            <Tooltip
-                                                                content={activityCodeToName(
-                                                                    roundId
-                                                                )}
-                                                            >
-                                                                {activityCodeToName(
-                                                                    roundId,
-                                                                    true,
-                                                                    true
-                                                                )}
-                                                            </Tooltip>
-                                                        </Link>
-                                                    </SidebarMenuSubButton>
-                                                </SidebarMenuSubItem>
-                                            )
-                                        )}
-                                    </SidebarMenuSub>
-                                ) : null}
-                            </SidebarMenuItem>
-                            {isDelegate() ? (
-                                <>
-                                    <SidebarMenuItem>
-                                        <SidebarMenuButton
-                                            asChild
-                                            isActive={
-                                                location.pathname ===
-                                                "/results/checks"
+                                        <Link
+                                            to={
+                                                isDelegate()
+                                                    ? "/results"
+                                                    : "/results/public"
                                             }
                                         >
-                                            <Link to={"/results/checks"}>
-                                                <BookCheck />
-                                                <span>Results checks</span>
-                                            </Link>
-                                        </SidebarMenuButton>
-                                    </SidebarMenuItem>
-                                </>
-                            ) : null}
-                        </SidebarMenu>
-                    </SidebarGroupContent>
-                </SidebarGroup>
+                                            <AlarmClock />
+                                            <span>Results</span>
+                                        </Link>
+                                    </SidebarMenuButton>
+                                    {currentRounds.length > 0 ? (
+                                        <SidebarMenuSub>
+                                            {currentRounds.map(
+                                                (roundId: string) => (
+                                                    <SidebarMenuSubItem
+                                                        key={roundId}
+                                                    >
+                                                        <SidebarMenuSubButton
+                                                            isActive={
+                                                                location.pathname ===
+                                                                `/results/round/${roundId}`
+                                                            }
+                                                            key={`results-${roundId}`}
+                                                            asChild
+                                                        >
+                                                            <Link
+                                                                className="flex gap-2 items-center"
+                                                                to={
+                                                                    isDelegate()
+                                                                        ? `/results/round/${roundId}`
+                                                                        : `/results/public/${roundId}`
+                                                                }
+                                                            >
+                                                                <EventIcon
+                                                                    selected
+                                                                    eventId={
+                                                                        roundId.split(
+                                                                            "-"
+                                                                        )[0]
+                                                                    }
+                                                                />
+                                                                <Tooltip
+                                                                    content={activityCodeToName(
+                                                                        roundId
+                                                                    )}
+                                                                >
+                                                                    {activityCodeToName(
+                                                                        roundId,
+                                                                        true,
+                                                                        true
+                                                                    )}
+                                                                </Tooltip>
+                                                            </Link>
+                                                        </SidebarMenuSubButton>
+                                                    </SidebarMenuSubItem>
+                                                )
+                                            )}
+                                        </SidebarMenuSub>
+                                    ) : null}
+                                </SidebarMenuItem>
+                                {isDelegate() ? (
+                                    <>
+                                        <SidebarMenuItem>
+                                            <SidebarMenuButton
+                                                asChild
+                                                isActive={
+                                                    location.pathname ===
+                                                    "/results/checks"
+                                                }
+                                            >
+                                                <Link to={"/results/checks"}>
+                                                    <BookCheck />
+                                                    <span>Results checks</span>
+                                                </Link>
+                                            </SidebarMenuButton>
+                                        </SidebarMenuItem>
+                                    </>
+                                ) : null}
+                            </SidebarMenu>
+                        </SidebarGroupContent>
+                    </SidebarGroup>
+                )}
                 {isOrganizerOrDelegate() ? (
                     <SidebarGroup>
                         <SidebarGroupLabel>
@@ -280,19 +322,21 @@ const AppSidebar = ({ unresolvedIncidentsCount }: AppSidebarProps) => {
                                         </Link>
                                     </SidebarMenuButton>
                                 </SidebarMenuItem>
-                                <SidebarMenuItem>
-                                    <SidebarMenuButton
-                                        asChild
-                                        isActive={
-                                            location.pathname === "/events"
-                                        }
-                                    >
-                                        <Link to="/events">
-                                            <Medal />
-                                            <span>Unofficial events</span>
-                                        </Link>
-                                    </SidebarMenuButton>
-                                </SidebarMenuItem>
+                                {competition?.useFkmTimeDevices ? (
+                                    <SidebarMenuItem>
+                                        <SidebarMenuButton
+                                            asChild
+                                            isActive={
+                                                location.pathname === "/events"
+                                            }
+                                        >
+                                            <Link to="/events">
+                                                <Medal />
+                                                <span>Unofficial events</span>
+                                            </Link>
+                                        </SidebarMenuButton>
+                                    </SidebarMenuItem>
+                                ) : null}
                                 <SidebarMenuItem>
                                     <SidebarMenuButton
                                         asChild
@@ -306,7 +350,8 @@ const AppSidebar = ({ unresolvedIncidentsCount }: AppSidebarProps) => {
                                         </Link>
                                     </SidebarMenuButton>
                                 </SidebarMenuItem>
-                                {isDelegate() ? (
+                                {isDelegate() &&
+                                competition?.useFkmTimeDevices ? (
                                     <SidebarMenuItem>
                                         <SidebarMenuButton
                                             asChild
@@ -322,19 +367,21 @@ const AppSidebar = ({ unresolvedIncidentsCount }: AppSidebarProps) => {
                                         </SidebarMenuButton>
                                     </SidebarMenuItem>
                                 ) : null}
-                                <SidebarMenuItem>
-                                    <SidebarMenuButton
-                                        asChild
-                                        isActive={
-                                            location.pathname === "/devices"
-                                        }
-                                    >
-                                        <Link to="/devices">
-                                            <Microchip />
-                                            <span>Devices</span>
-                                        </Link>
-                                    </SidebarMenuButton>
-                                </SidebarMenuItem>
+                                {competition?.useFkmTimeDevices ? (
+                                    <SidebarMenuItem>
+                                        <SidebarMenuButton
+                                            asChild
+                                            isActive={
+                                                location.pathname === "/devices"
+                                            }
+                                        >
+                                            <Link to="/devices">
+                                                <Microchip />
+                                                <span>Devices</span>
+                                            </Link>
+                                        </SidebarMenuButton>
+                                    </SidebarMenuItem>
+                                ) : null}
                             </SidebarMenu>
                         </SidebarGroupContent>
                     </SidebarGroup>
@@ -344,7 +391,8 @@ const AppSidebar = ({ unresolvedIncidentsCount }: AppSidebarProps) => {
                         <SidebarGroupLabel>Other</SidebarGroupLabel>
                         <SidebarGroupContent>
                             <SidebarMenu>
-                                {isOrganizerOrDelegate() ? (
+                                {isOrganizerOrDelegate() &&
+                                competition?.useFkmTimeDevices ? (
                                     <SidebarMenuItem>
                                         <SidebarMenuButton
                                             asChild

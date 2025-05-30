@@ -109,7 +109,10 @@ const Home = () => {
                             />
                         </div>
                         <div className="block md:hidden">
-                            <MobileSchedule activities={activities} />
+                            <MobileSchedule
+                                activities={activities}
+                                competition={competition}
+                            />
                         </div>
                     </>
                 ) : (
