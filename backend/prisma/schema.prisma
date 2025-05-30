@@ -23,9 +23,9 @@ model User {
   updatedAttempts            Attempt[]
   createdNoteworthyIncidents NoteworthyIncident[]
   createdWarnings            Warning[]
+  Result                     Result[]
 
   @@map("users")
-  Result Result[]
 }
 
 model Person {
@@ -82,6 +82,7 @@ model Competition {
   scoretakingTokenUpdatedAt       DateTime?               @map("scoretaking_token_updated_at")
   cubingContestsToken             String?                 @map("cubing_contests_token")
   defaultLocale                   String?                 @default("en") @map("default_locale")
+  useFkmTimeDevices               Boolean                 @default(true) @map("use_fkm_time_devices")
 
   @@map("competition")
 }
@@ -115,7 +116,7 @@ model Result {
   person            Person    @relation(fields: [personId], references: [id], onDelete: Cascade)
   eventId           String    @map("event_id")
   roundId           String    @map("round_id")
-  doubleCheckedBy   User?   @relation(fields: [doubleCheckedById], references: [id], onDelete: SetNull)
+  doubleCheckedBy   User?     @relation(fields: [doubleCheckedById], references: [id], onDelete: SetNull)
   doubleCheckedById String?   @map("double_checked_by")
   doubleCheckedAt   DateTime? @map("double_checked_at")
   isDoubleChecked   Boolean   @default(false) @map("is_double_checked")

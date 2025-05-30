@@ -43,6 +43,7 @@ const CompetitionForm = ({
             sendingResultsFrequency: competition.sendingResultsFrequency,
             shouldChangeGroupsAutomatically:
                 competition.shouldChangeGroupsAutomatically,
+            useFkmTimeDevices: competition.useFkmTimeDevices,
         },
     });
 
@@ -61,104 +62,133 @@ const CompetitionForm = ({
                 onSubmit={form.handleSubmit(onSubmit)}
                 className="space-y-8 py-3"
             >
+                {form.watch("useFkmTimeDevices") && (
+                    <>
+                        <FormField
+                            control={form.control}
+                            name="scoretakingToken"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel className="flex items-center gap-2">
+                                        <KeyRound size={16} />
+                                        Scoretaking token
+                                    </FormLabel>
+                                    <FormControl>
+                                        <Input
+                                            {...field}
+                                            placeholder="Scoretaking token"
+                                        />
+                                    </FormControl>
+                                    <FormDescription>
+                                        You can get this token{" "}
+                                        <a
+                                            className="text-blue-500"
+                                            href="https://live.worldcubeassociation.org/account"
+                                            target="_blank"
+                                        >
+                                            here
+                                        </a>
+                                    </FormDescription>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                        <FormField
+                            control={form.control}
+                            name="cubingContestsToken"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel className="flex items-center gap-2">
+                                        <KeyRound size={16} />
+                                        CubingContests token
+                                    </FormLabel>
+                                    <FormControl>
+                                        <Input
+                                            {...field}
+                                            placeholder="Cubing contests API token"
+                                        />
+                                    </FormControl>
+                                    <FormDescription>
+                                        You can get this token{" "}
+                                        <a
+                                            className="text-blue-500"
+                                            href={`https://cubingcontests.com/mod/competition?edit_id=${competition.wcaId}`}
+                                            target="_blank"
+                                        >
+                                            here
+                                        </a>
+                                    </FormDescription>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                        <FormField
+                            control={form.control}
+                            name="sendingResultsFrequency"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel className="flex items-center gap-2">
+                                        <Send size={16} />
+                                        Send results to WCA Live/CubingContests
+                                    </FormLabel>
+                                    <Select
+                                        onValueChange={field.onChange}
+                                        defaultValue={field.value}
+                                    >
+                                        <FormControl>
+                                            <SelectTrigger>
+                                                <SelectValue />
+                                            </SelectTrigger>
+                                        </FormControl>
+                                        <SelectContent>
+                                            {Object.values(
+                                                SendingResultsFrequency
+                                            ).map((frequency) => (
+                                                <SelectItem
+                                                    key={frequency}
+                                                    value={frequency}
+                                                >
+                                                    {prettySendingResultsFrequency(
+                                                        frequency
+                                                    )}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                        <FormField
+                            control={form.control}
+                            name="shouldChangeGroupsAutomatically"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <div className="flex items-center gap-2">
+                                        <FormControl>
+                                            <Checkbox
+                                                checked={field.value}
+                                                onCheckedChange={field.onChange}
+                                            />
+                                        </FormControl>
+                                        <FormLabel>
+                                            Change groups automatically
+                                        </FormLabel>
+                                    </div>
+                                    <FormDescription>
+                                        Group will be automatically changed to
+                                        the next one from schedule if all
+                                        results are entered and there are no
+                                        unresolved incidents
+                                    </FormDescription>
+                                </FormItem>
+                            )}
+                        />
+                    </>
+                )}
                 <FormField
                     control={form.control}
-                    name="scoretakingToken"
-                    render={({ field }) => (
-                        <FormItem>
-                            <FormLabel className="flex items-center gap-2">
-                                <KeyRound size={16} />
-                                Scoretaking token
-                            </FormLabel>
-                            <FormControl>
-                                <Input
-                                    {...field}
-                                    placeholder="Scoretaking token"
-                                />
-                            </FormControl>
-                            <FormDescription>
-                                You can get this token{" "}
-                                <a
-                                    className="text-blue-500"
-                                    href="https://live.worldcubeassociation.org/account"
-                                    target="_blank"
-                                >
-                                    here
-                                </a>
-                            </FormDescription>
-                            <FormMessage />
-                        </FormItem>
-                    )}
-                />
-                <FormField
-                    control={form.control}
-                    name="cubingContestsToken"
-                    render={({ field }) => (
-                        <FormItem>
-                            <FormLabel className="flex items-center gap-2">
-                                <KeyRound size={16} />
-                                CubingContests token
-                            </FormLabel>
-                            <FormControl>
-                                <Input
-                                    {...field}
-                                    placeholder="Cubing contests API token"
-                                />
-                            </FormControl>
-                            <FormDescription>
-                                You can get this token{" "}
-                                <a
-                                    className="text-blue-500"
-                                    href={`https://cubingcontests.com/mod/competition?edit_id=${competition.wcaId}`}
-                                    target="_blank"
-                                >
-                                    here
-                                </a>
-                            </FormDescription>
-                            <FormMessage />
-                        </FormItem>
-                    )}
-                />
-                <FormField
-                    control={form.control}
-                    name="sendingResultsFrequency"
-                    render={({ field }) => (
-                        <FormItem>
-                            <FormLabel className="flex items-center gap-2">
-                                <Send size={16} />
-                                Send results to WCA Live/CubingContests
-                            </FormLabel>
-                            <Select
-                                onValueChange={field.onChange}
-                                defaultValue={field.value}
-                            >
-                                <FormControl>
-                                    <SelectTrigger>
-                                        <SelectValue />
-                                    </SelectTrigger>
-                                </FormControl>
-                                <SelectContent>
-                                    {Object.values(SendingResultsFrequency).map(
-                                        (frequency) => (
-                                            <SelectItem
-                                                key={frequency}
-                                                value={frequency}
-                                            >
-                                                {prettySendingResultsFrequency(
-                                                    frequency
-                                                )}
-                                            </SelectItem>
-                                        )
-                                    )}
-                                </SelectContent>
-                            </Select>
-                            <FormMessage />
-                        </FormItem>
-                    )}
-                />
-                <FormField
-                    control={form.control}
-                    name="shouldChangeGroupsAutomatically"
+                    name="useFkmTimeDevices"
                     render={({ field }) => (
                         <FormItem>
                             <div className="flex items-center gap-2">
@@ -168,14 +198,11 @@ const CompetitionForm = ({
                                         onCheckedChange={field.onChange}
                                     />
                                 </FormControl>
-                                <FormLabel>
-                                    Change groups automatically
-                                </FormLabel>
+                                <FormLabel>Use FKMTime devices</FormLabel>
                             </div>
                             <FormDescription>
-                                Group will be automatically changed to the next
-                                one from schedule if all results are entered and
-                                there are no unresolved incidents
+                                If you do not use FKMTime devices, you can
+                                disable some features of the app.
                             </FormDescription>
                         </FormItem>
                     )}

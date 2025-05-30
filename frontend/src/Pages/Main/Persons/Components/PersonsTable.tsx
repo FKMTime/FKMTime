@@ -38,9 +38,13 @@ const PersonsTable = ({
                         <TableHead>Representing</TableHead>
                         <TableHead>Gender</TableHead>
                         <TableHead>Events</TableHead>
-                        <TableHead>Card assigned</TableHead>
+                        {competition?.useFkmTimeDevices && (
+                            <TableHead>Card assigned</TableHead>
+                        )}
                         <TableHead>Checked in</TableHead>
-                        <TableHead>Can compete</TableHead>
+                        {competition?.useFkmTimeDevices && (
+                            <TableHead>Can compete</TableHead>
+                        )}
                         <TableHead>Actions</TableHead>
                     </TableRow>
                 </TableHeader>
@@ -48,7 +52,7 @@ const PersonsTable = ({
                     {competition &&
                         persons.map((person: Person) => (
                             <PersonRow
-                                wcif={competition.wcif}
+                                competition={competition}
                                 key={person.id}
                                 person={person}
                                 handleCloseEditModal={handleCloseEditModal}

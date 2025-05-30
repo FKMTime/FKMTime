@@ -11,14 +11,15 @@ import {
     CardTitle,
 } from "@/Components/ui/card";
 import { getActivityName } from "@/lib/activities";
-import { Activity } from "@/lib/interfaces";
+import { Activity, Competition } from "@/lib/interfaces";
 import { cn, formatTime, getFormattedRealActivityTime } from "@/lib/utils";
 
 interface ScheduleCardProps {
     activity: Activity;
+    competition: Competition;
 }
 
-const ScheduleCard = ({ activity }: ScheduleCardProps) => {
+const ScheduleCard = ({ activity, competition }: ScheduleCardProps) => {
     const navigate = useNavigate();
     const isRound = activity.activityCode.includes("-r");
     const formattedRealTime = getFormattedRealActivityTime(
@@ -53,16 +54,19 @@ const ScheduleCard = ({ activity }: ScheduleCardProps) => {
                 </CardDescription>
             </CardHeader>
             <CardContent>
-                {!activity.activityCode.startsWith("other") && (
-                    <Button
-                        onClick={() =>
-                            navigate(`/results/round/${activity.activityCode}`)
-                        }
-                        variant="success"
-                    >
-                        Results
-                    </Button>
-                )}
+                {!activity.activityCode.startsWith("other") &&
+                    competition.useFkmTimeDevices && (
+                        <Button
+                            onClick={() =>
+                                navigate(
+                                    `/results/round/${activity.activityCode}`
+                                )
+                            }
+                            variant="success"
+                        >
+                            Results
+                        </Button>
+                    )}
                 {formattedRealTime && <p>Real time: {formattedRealTime}</p>}
             </CardContent>
             <CardFooter>

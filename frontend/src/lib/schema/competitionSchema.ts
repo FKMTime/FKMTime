@@ -9,4 +9,5 @@ export const competitionSchema = z.object({
         .enum(["AFTER_SOLVE", "NEVER", "EVERY_5_MINUTES"])
         .default(SendingResultsFrequency.AFTER_SOLVE),
     shouldChangeGroupsAutomatically: z.boolean().default(true),
+    useFkmTimeDevices: z.boolean().default(false),
 });

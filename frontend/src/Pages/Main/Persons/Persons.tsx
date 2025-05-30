@@ -184,20 +184,23 @@ const Persons = () => {
                                 <Users size={20} />
                                 Persons
                             </div>
-                            {isOrganizerOrDelegate() && (
-                                <>
-                                    <PlusButton
-                                        onClick={() =>
-                                            setIsOpenAddPersonModal(true)
-                                        }
-                                    />
-                                </>
-                            )}
+                            {isOrganizerOrDelegate() &&
+                                competition.useFkmTimeDevices && (
+                                    <>
+                                        <PlusButton
+                                            onClick={() =>
+                                                setIsOpenAddPersonModal(true)
+                                            }
+                                        />
+                                    </>
+                                )}
                         </CardTitle>
-                        <CardDescription>
-                            Assigned cards: {personsWithCardAssigned}/
-                            {totalPersonsCount}
-                        </CardDescription>
+                        {competition.useFkmTimeDevices && (
+                            <CardDescription>
+                                Assigned cards: {personsWithCardAssigned}/
+                                {totalPersonsCount}
+                            </CardDescription>
+                        )}
                     </CardHeader>
                     <CardContent className="flex flex-col md:flex-row gap-5 md:justify-between">
                         <PersonsFilters
@@ -214,15 +217,18 @@ const Persons = () => {
                             totalPages={totalPages}
                             pageSize={pageSize}
                             handlePageSizeChange={handlePageSizeChange}
+                            competition={competition}
                         />
-                        <Button
-                            onClick={() => {
-                                navigate("/cards");
-                            }}
-                        >
-                            <IdCard />
-                            Assign cards
-                        </Button>
+                        {competition.useFkmTimeDevices && (
+                            <Button
+                                onClick={() => {
+                                    navigate("/cards");
+                                }}
+                            >
+                                <IdCard />
+                                Assign cards
+                            </Button>
+                        )}
                     </CardContent>
                 </Card>
                 <Card className="hidden md:block py-3">
@@ -250,7 +256,7 @@ const Persons = () => {
                         />
                     ))}
                 </div>
-                {persons.length > 0 && (
+                {persons.length > 0 && totalPages > 1 && (
                     <Card>
                         <CardContent>
                             <Pagination

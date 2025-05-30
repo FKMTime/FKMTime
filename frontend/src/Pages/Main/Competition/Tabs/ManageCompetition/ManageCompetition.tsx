@@ -60,7 +60,7 @@ const ManageCompetition = ({
                 </CardHeader>
                 <CardContent>
                     <div className="flex flex-col gap-5 md:w-1/3">
-                        {anyWarnings && (
+                        {anyWarnings && competition.useFkmTimeDevices && (
                             <div className="flex flex-col gap-5">
                                 {emptyScoretakingToken && (
                                     <Alert variant="destructive">

@@ -8,6 +8,7 @@ import {
     SelectValue,
 } from "@/Components/ui/select";
 import { Switch } from "@/Components/ui/switch";
+import { Competition } from "@/lib/interfaces";
 
 interface PersonsFiltersProps {
     searchedId: string;
@@ -23,6 +24,7 @@ interface PersonsFiltersProps {
     totalPages: number;
     pageSize: number;
     handlePageSizeChange: (newValue: string) => void;
+    competition: Competition;
 }
 
 const PersonsFilters = ({
@@ -39,6 +41,7 @@ const PersonsFilters = ({
     totalPages,
     pageSize,
     handlePageSizeChange,
+    competition,
 }: PersonsFiltersProps) => {
     return (
         <div className="flex flex-col md:flex-row gap-3">
@@ -65,12 +68,14 @@ const PersonsFilters = ({
                 onChange={handleSearchId}
                 className="w-full md:w-16"
             />
-            <Input
-                placeholder="Card"
-                value={searchedCardId}
-                onChange={handleSearchCardId}
-                className="w-full md:w-32"
-            />
+            {competition.useFkmTimeDevices && (
+                <Input
+                    placeholder="Card"
+                    value={searchedCardId}
+                    onChange={handleSearchCardId}
+                    className="w-full md:w-32"
+                />
+            )}
             <Input
                 placeholder="Search"
                 value={search}

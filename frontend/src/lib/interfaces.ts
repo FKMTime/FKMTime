@@ -62,6 +62,7 @@ export interface Competition {
     updatedAt?: Date;
     defaultLocale: string;
     hilTesting?: boolean;
+    useFkmTimeDevices: boolean;
 }
 
 //eslint-disable-next-line
