@@ -63,6 +63,22 @@ export class CompetitionService {
     return competition;
   }
 
+  async getInfoForLoginPage() {
+    const competition = await this.prisma.competition.findFirst({
+      select: {
+        id: true,
+        name: true,
+        wcaId: true,
+        countryIso2: true,
+        useFkmTimeDevices: true,
+      },
+    });
+    if (!competition) {
+      throw new HttpException('Competition not found', 404);
+    }
+    return competition;
+  }
+
   async getActivitiesWithRealEndTime(
     venueId: number,
     roomId: number,
