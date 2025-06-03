@@ -131,10 +131,10 @@ const AppSidebar = ({ unresolvedIncidentsCount }: AppSidebarProps) => {
                                                     asChild
                                                     isActive={
                                                         location.pathname ===
-                                                        "/incidents"
+                                                        "/incidents/manual"
                                                     }
                                                 >
-                                                    <Link to="/incidents">
+                                                    <Link to="/incidents/manual">
                                                         <TriangleAlert />
                                                         <span>Incidents</span>
                                                     </Link>

@@ -243,6 +243,22 @@ export interface NoteworthyIncident extends NoteworthyIncidentData {
     updatedAt: Date;
 }
 
+export interface ManualIncidentData {
+    personId: string;
+    roundId: string;
+    description: string;
+    attempt?: string;
+}
+
+export interface ManualIncident extends ManualIncidentData {
+    id: string;
+    person: Person;
+    round: Round;
+    createdAt: Date;
+    updatedAt: Date;
+    createdBy: User;
+}
+
 export interface WarningData {
     description: string;
 }

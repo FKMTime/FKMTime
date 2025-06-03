@@ -24,26 +24,28 @@ model User {
   createdNoteworthyIncidents NoteworthyIncident[]
   createdWarnings            Warning[]
   Result                     Result[]
+  ManualIncident             ManualIncident[]
 
   @@map("users")
 }
 
 model Person {
-  id                String          @id @default(uuid())
-  registrantId      Int?            @unique @map("registrant_id")
+  id                String           @id @default(uuid())
+  registrantId      Int?             @unique @map("registrant_id")
   name              String
-  wcaId             String?         @map("wca_id")
-  countryIso2       String?         @map("country_iso_2")
+  wcaId             String?          @map("wca_id")
+  countryIso2       String?          @map("country_iso_2")
   gender            String?
-  canCompete        Boolean         @default(true) @map("can_compete")
+  canCompete        Boolean          @default(true) @map("can_compete")
   birthdate         DateTime?
-  checkedInAt       DateTime?       @map("checked_in_at")
-  cardId            String?         @unique @map("card_id")
+  checkedInAt       DateTime?        @map("checked_in_at")
+  cardId            String?          @unique @map("card_id")
   results           Result[]
-  judgedAttempts    Attempt[]       @relation(name: "attempt_judge")
+  judgedAttempts    Attempt[]        @relation(name: "attempt_judge")
   StaffActivity     StaffActivity[]
-  scrambledAttempts Attempt[]       @relation(name: "attempt_scrambler")
+  scrambledAttempts Attempt[]        @relation(name: "attempt_scrambler")
   receivedWarnings  Warning[]
+  manualIncidents   ManualIncident[]
 
   @@map("person")
 }
@@ -183,6 +185,24 @@ model Warning {
   createdBy   User     @relation(fields: [createdById], references: [id])
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@map("warning")
+}
+
+model ManualIncident {
+  id           String   @id @default(uuid())
+  personId     String   @map("person_id")
+  person       Person   @relation(fields: [personId], references: [id], onDelete: Cascade)
+  roundId      String?
+  description  String
+  attempt      String? 
+  isNoteworthy Boolean  @default(false)
+  createdById  String   @map("created_by")
+  createdBy    User     @relation(fields: [createdById], references: [id])
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  @@map("manual_incident")
 }
 
 model Device {

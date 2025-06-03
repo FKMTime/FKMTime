@@ -86,6 +86,15 @@ const IncidentPage = lazy(
 const PersonResults = lazy(
     () => import("./Pages/Main/Persons/PersonResults/PersonResults")
 );
+const ManualIncidents = lazy(
+    () => import("./Pages/Main/Incidents/ManualIncidents/ManualIncidents")
+);
+const CreateManualIncident = lazy(
+    () =>
+        import(
+            "./Pages/Main/Incidents/ManualIncidents/CreateManualIncident/CreateManualIncident"
+        )
+);
 
 const App = () => {
     const [isConnected, setConnected] = useState(0);
@@ -130,6 +139,14 @@ const App = () => {
                 {
                     path: "incidents/warnings",
                     element: <Warnings />,
+                },
+                {
+                    path: "incidents/manual",
+                    element: <ManualIncidents />,
+                },
+                {
+                    path: "incidents/manual/create",
+                    element: <CreateManualIncident />,
                 },
                 {
                     path: "incidents/:id",
