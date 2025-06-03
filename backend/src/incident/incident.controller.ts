@@ -106,7 +106,6 @@ export class IncidentController {
 
   @Get('manual')
   async getManualIncidents(@Query('search') search: string) {
-    console.log('Fetching manual incidents with search:', search);
     return this.incidentService.getManualIncidents(search);
   }
 
