@@ -182,3 +182,12 @@ export const getAvailableLocales = async () => {
     );
     return await response.json();
 };
+
+export const getInfoForLoginPage = async () => {
+    const response = await backendRequest(
+        `competition/login-info/`,
+        "GET",
+        false
+    );
+    return await response.json();
+};

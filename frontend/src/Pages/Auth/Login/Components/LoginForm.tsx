@@ -16,6 +16,7 @@ import {
 } from "@/Components/ui/form";
 import { Input } from "@/Components/ui/input";
 import { useToast } from "@/hooks/useToast";
+import { CompetitionDataForLoginPage } from "@/lib/interfaces";
 import { loginFormSchema } from "@/lib/schema/authSchema";
 import { getScramblingDeviceTokenFromCode } from "@/lib/scramblingDevicesAuth";
 
@@ -25,11 +26,13 @@ interface LoginFormProps {
     handleLogin: (username: string, password: string) => void;
     handleWcaLogin: () => void;
     isLoading?: boolean;
+    competition?: CompetitionDataForLoginPage;
 }
 const LoginForm = ({
     handleLogin,
     handleWcaLogin,
     isLoading,
+    competition,
 }: LoginFormProps) => {
     const { toast } = useToast();
     const navigate = useNavigate();
@@ -90,13 +93,17 @@ const LoginForm = ({
                     </>
                 ) : (
                     <>
-                        <Button
-                            className="mt-3"
-                            disabled={isLoading}
-                            onClick={() => setEnableScramblingDeviceLogin(true)}
-                        >
-                            Scrambling device
-                        </Button>
+                        {competition?.useFkmTimeDevices && (
+                            <Button
+                                className="mt-3"
+                                disabled={isLoading}
+                                onClick={() =>
+                                    setEnableScramblingDeviceLogin(true)
+                                }
+                            >
+                                Scrambling device
+                            </Button>
+                        )}
                         <Form {...form}>
                             <form
                                 onSubmit={form.handleSubmit(onSubmit)}

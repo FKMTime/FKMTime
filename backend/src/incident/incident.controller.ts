@@ -16,6 +16,7 @@ import { GetUser } from 'src/auth/decorator/getUser.decorator';
 import { JwtAuthDto } from 'src/auth/dto/jwt-auth.dto';
 import { DelegateGuard } from 'src/auth/guards/delegate.guard';
 
+import { ManualIncidentDto } from './dto/manualIncident.dto';
 import { NoteworthyIncidentDto } from './dto/noteworthyIncident.dto';
 import { WarningDto } from './dto/warning.dto';
 import { IncidentService } from './incident.service';
@@ -101,5 +102,32 @@ export class IncidentController {
   @Delete('warnings/:id')
   async deleteWarning(@Param('id') id: string) {
     return this.incidentService.deleteWarning(id);
+  }
+
+  @Get('manual')
+  async getManualIncidents(@Query('search') search: string) {
+    return this.incidentService.getManualIncidents(search);
+  }
+
+  @Post('manual')
+  async createManualIncident(
+    @GetUser() user: JwtAuthDto,
+    @Body() data: ManualIncidentDto,
+  ) {
+    return this.incidentService.createManualIncident(data, user.userId);
+  }
+
+  @Put('manual/:id')
+  async updateManualIncident(
+    @Param('id') id: string,
+    @Body() data: ManualIncidentDto,
+  ) {
+    return this.incidentService.updateManualIncident(id, data);
+  }
+
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @Delete('manual/:id')
+  async deleteManualIncident(@Param('id') id: string) {
+    return this.incidentService.deleteManualIncident(id);
   }
 }

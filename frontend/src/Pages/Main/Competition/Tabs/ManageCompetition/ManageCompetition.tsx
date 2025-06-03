@@ -1,8 +1,10 @@
+import { useSetAtom } from "jotai";
 import { AlertCircle, Wrench } from "lucide-react";
 
 import { Alert, AlertTitle } from "@/Components/ui/alert";
 import { Card, CardContent, CardHeader, CardTitle } from "@/Components/ui/card";
 import { useToast } from "@/hooks/useToast";
+import { competitionAtom } from "@/lib/atoms";
 import { updateCompetitionSettings } from "@/lib/competition";
 import { Competition } from "@/lib/interfaces";
 import PageTransition from "@/Pages/PageTransition";
@@ -19,6 +21,7 @@ const ManageCompetition = ({
     setCompetition,
 }: ManageCompetitionProps) => {
     const { toast } = useToast();
+    const setCompetitionAtom = useSetAtom(competitionAtom);
 
     const handleSubmit = async (data: Competition) => {
         if (!competition) {
@@ -27,6 +30,7 @@ const ManageCompetition = ({
         setCompetition(data);
         const status = await updateCompetitionSettings(competition.id, data);
         if (status === 200) {
+            setCompetitionAtom(data);
             toast({
                 title: "Success",
                 description: "Competition updated",
@@ -60,7 +64,7 @@ const ManageCompetition = ({
                 </CardHeader>
                 <CardContent>
                     <div className="flex flex-col gap-5 md:w-1/3">
-                        {anyWarnings && (
+                        {anyWarnings && competition.useFkmTimeDevices && (
                             <div className="flex flex-col gap-5">
                                 {emptyScoretakingToken && (
                                     <Alert variant="destructive">

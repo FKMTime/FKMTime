@@ -21,4 +21,7 @@ export class UpdateCompetitionDto {
 
   @IsBoolean()
   shouldChangeGroupsAutomatically: boolean;
+
+  @IsBoolean()
+  useFkmTimeDevices: boolean;
 }

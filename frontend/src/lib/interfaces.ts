@@ -42,14 +42,18 @@ export enum UserRole {
     STAFF = "STAFF",
 }
 
-export interface Competition {
+export interface CompetitionDataForLoginPage {
     id: string;
     wcaId: string;
     name: string;
+    useFkmTimeDevices: boolean;
+    countryIso2: string;
+}
+
+export interface Competition extends CompetitionDataForLoginPage {
     sendingResultsFrequency: SendingResultsFrequency;
     shouldChangeGroupsAutomatically: boolean;
     shouldUpdateDevices: boolean;
-    countryIso2: string;
     scoretakingToken?: string;
     scoretakingTokenUpdatedAt?: Date;
     cubingContestsToken?: string;
@@ -240,6 +244,22 @@ export interface NoteworthyIncident extends NoteworthyIncidentData {
     createdBy: User;
     createdAt: Date;
     updatedAt: Date;
+}
+
+export interface ManualIncidentData {
+    personId: string;
+    roundId: string;
+    description: string;
+    attempt?: string;
+}
+
+export interface ManualIncident extends ManualIncidentData {
+    id: string;
+    person: Person;
+    round: Round;
+    createdAt: Date;
+    updatedAt: Date;
+    createdBy: User;
 }
 
 export interface WarningData {

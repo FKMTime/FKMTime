@@ -33,6 +33,11 @@ export class CompetitionController {
     private readonly statisticsService: StatisticsService,
   ) {}
 
+  @Get('login-info')
+  async getCompetitionLoginInfo() {
+    return await this.competitionService.getInfoForLoginPage();
+  }
+
   @UseGuards(AuthGuard('jwt'))
   @Get()
   async getCompetitionInfo() {
