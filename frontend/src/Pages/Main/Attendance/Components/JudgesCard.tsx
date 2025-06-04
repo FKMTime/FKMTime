@@ -2,7 +2,7 @@ import { Gavel } from "lucide-react";
 import { useMemo } from "react";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/Components/ui/card";
-import { StaffActivity } from "@/lib/interfaces";
+import { StaffActivity, StaffActivityStatus } from "@/lib/interfaces";
 
 import AbsentPeopleList from "./AbsentPeopleList";
 import PresentPeopleList from "./PresentPeopleList";
@@ -19,11 +19,21 @@ const JudgesCard = ({
     handleMarkAsAbsent,
 }: JudgesCardProps) => {
     const presentJudges = useMemo(() => {
-        return attendance.filter((a) => a.role === "JUDGE" && a.isPresent);
+        return attendance.filter(
+            (a) =>
+                a.role === "JUDGE" &&
+                [
+                    StaffActivityStatus.PRESENT,
+                    StaffActivityStatus.REPLACED,
+                    StaffActivityStatus.LATE,
+                ].includes(a.status)
+        );
     }, [attendance]);
 
     const absentJudges = useMemo(() => {
-        return attendance.filter((a) => a.role === "JUDGE" && !a.isPresent);
+        return attendance.filter(
+            (a) => a.role === "JUDGE" && a.status === StaffActivityStatus.ABSENT
+        );
     }, [attendance]);
 
     const noJudges = absentJudges.length === 0 && presentJudges.length === 0;

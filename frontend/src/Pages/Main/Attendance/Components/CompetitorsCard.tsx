@@ -2,7 +2,7 @@ import { Users } from "lucide-react";
 import { useMemo } from "react";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/Components/ui/card";
-import { StaffActivity } from "@/lib/interfaces";
+import { StaffActivity, StaffActivityStatus } from "@/lib/interfaces";
 
 import AbsentCompetitorsList from "./AbsentCompetitors/AbsentCompetitorsList";
 import UnorderedPeopleList from "./UnorderedPeopleList";
@@ -13,11 +13,17 @@ interface CompetitorsCardProps {
 }
 const CompetitorsCard = ({ attendance, fetchData }: CompetitorsCardProps) => {
     const presentCompetitors = useMemo(() => {
-        return attendance.filter((a) => a.role === "COMPETITOR" && a.isPresent);
+        return attendance.filter(
+            (a) =>
+                a.role === "COMPETITOR" &&
+                a.status === StaffActivityStatus.PRESENT
+        );
     }, [attendance]);
     const absentCompetitors = useMemo(() => {
         return attendance.filter(
-            (a) => a.role === "COMPETITOR" && !a.isPresent
+            (a) =>
+                a.role === "COMPETITOR" &&
+                a.status === StaffActivityStatus.ABSENT
         );
     }, [attendance]);
 

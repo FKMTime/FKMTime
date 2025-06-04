@@ -2,7 +2,7 @@ import { Puzzle } from "lucide-react";
 import { useMemo } from "react";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/Components/ui/card";
-import { StaffActivity } from "@/lib/interfaces";
+import { StaffActivity, StaffActivityStatus } from "@/lib/interfaces";
 
 import AbsentPeopleList from "./AbsentPeopleList";
 import PresentPeopleList from "./PresentPeopleList";
@@ -19,10 +19,22 @@ const ScramblersCard = ({
     handleMarkAsAbsent,
 }: ScramblersCardProps) => {
     const presentScramblers = useMemo(() => {
-        return attendance.filter((a) => a.role === "SCRAMBLER" && a.isPresent);
+        return attendance.filter(
+            (a) =>
+                a.role === "SCRAMBLER" &&
+                [
+                    StaffActivityStatus.PRESENT,
+                    StaffActivityStatus.REPLACED,
+                    StaffActivityStatus.LATE,
+                ].includes(a.status)
+        );
     }, [attendance]);
     const absentScramblers = useMemo(() => {
-        return attendance.filter((a) => a.role === "SCRAMBLER" && !a.isPresent);
+        return attendance.filter(
+            (a) =>
+                a.role === "SCRAMBLER" &&
+                a.status === StaffActivityStatus.ABSENT
+        );
     }, [attendance]);
 
     const noScramblers =

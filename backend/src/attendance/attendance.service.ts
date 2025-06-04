@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { StaffRole } from '@prisma/client';
+import { StaffActivityStatus, StaffRole } from '@prisma/client';
 import { AppGateway } from 'src/app.gateway';
 import { publicPersonSelect } from 'src/constants';
 
@@ -30,7 +30,7 @@ export class AttendanceService {
     const mostMissed = await this.prisma.staffActivity.groupBy({
       by: ['personId'],
       where: {
-        isPresent: false,
+        status: StaffActivityStatus.ABSENT,
         isAssigned: true,
         role: {
           not: StaffRole.COMPETITOR,
@@ -56,14 +56,14 @@ export class AttendanceService {
       const hasCompeted = await this.prisma.staffActivity.findFirst({
         where: {
           personId: person.id,
-          isPresent: true,
+          status: StaffActivityStatus.PRESENT,
           role: StaffRole.COMPETITOR,
         },
       });
       if (hasCompeted || !person.canCompete) {
         const missedAssignments = await this.prisma.staffActivity.findMany({
           where: {
-            isPresent: false,
+            status: StaffActivityStatus.ABSENT,
             role: {
               not: StaffRole.COMPETITOR,
             },
@@ -101,7 +101,7 @@ export class AttendanceService {
         id,
       },
       data: {
-        isPresent: true,
+        status: StaffActivityStatus.PRESENT,
       },
     });
     this.appGateway.handleNewAttendance(
@@ -121,7 +121,7 @@ export class AttendanceService {
         personId_groupId_role: {
           groupId: groupId,
           personId: competitorId,
-          role: 'COMPETITOR',
+          role: StaffRole.COMPETITOR,
         },
       },
       update: {
@@ -132,7 +132,7 @@ export class AttendanceService {
               },
             }
           : undefined,
-        isPresent: true,
+        status: StaffActivityStatus.PRESENT,
       },
       create: {
         groupId: groupId,
@@ -148,8 +148,8 @@ export class AttendanceService {
               },
             }
           : undefined,
-        role: 'COMPETITOR',
-        isPresent: true,
+        role: StaffRole.COMPETITOR,
+        status: StaffActivityStatus.PRESENT,
         isAssigned: false,
       },
     });
@@ -171,7 +171,7 @@ export class AttendanceService {
             id: deviceId,
           },
         },
-        isPresent: true,
+        status: StaffActivityStatus.PRESENT,
       },
       create: {
         groupId: groupId,
@@ -186,7 +186,7 @@ export class AttendanceService {
           },
         },
         role: 'JUDGE',
-        isPresent: true,
+        status: StaffActivityStatus.PRESENT,
         isAssigned: false,
       },
     });
@@ -212,7 +212,7 @@ export class AttendanceService {
       const totalPresentAtStaffingComparedToRounds =
         person.StaffActivity.filter(
           (activity) =>
-            activity.isPresent &&
+            activity.status === StaffActivityStatus.PRESENT &&
             activity.role !== 'COMPETITOR' &&
             roundsThatTookPlace.some(
               (round) => round.roundId === activity.groupId.split('-g')[0],
@@ -301,7 +301,7 @@ export class AttendanceService {
               },
             },
             isAssigned: false,
-            isPresent: true,
+            status: StaffActivityStatus.PRESENT,
           },
           update: {
             device: {
@@ -309,7 +309,7 @@ export class AttendanceService {
                 id: device.id,
               },
             },
-            isPresent: true,
+            status: StaffActivityStatus.PRESENT,
           },
         });
       } catch (e) {
@@ -339,7 +339,7 @@ export class AttendanceService {
         id: id,
       },
       data: {
-        isPresent: false,
+        status: StaffActivityStatus.ABSENT,
       },
     });
     this.appGateway.handleNewAttendance(

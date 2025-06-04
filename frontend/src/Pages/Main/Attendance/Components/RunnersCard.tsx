@@ -2,7 +2,7 @@ import { PersonStanding } from "lucide-react";
 import { useMemo } from "react";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/Components/ui/card";
-import { StaffActivity } from "@/lib/interfaces";
+import { StaffActivity, StaffActivityStatus } from "@/lib/interfaces";
 
 import AbsentPeopleList from "./AbsentPeopleList";
 import PresentPeopleList from "./PresentPeopleList";
@@ -19,10 +19,21 @@ const RunnersCard = ({
     handleMarkAsAbsent,
 }: RunnersCardProps) => {
     const presentRunners = useMemo(() => {
-        return attendance.filter((a) => a.role === "RUNNER" && a.isPresent);
+        return attendance.filter(
+            (a) =>
+                a.role === "RUNNER" &&
+                [
+                    StaffActivityStatus.PRESENT,
+                    StaffActivityStatus.REPLACED,
+                    StaffActivityStatus.LATE,
+                ].includes(a.status)
+        );
     }, [attendance]);
     const absentRunners = useMemo(() => {
-        return attendance.filter((a) => a.role === "RUNNER" && !a.isPresent);
+        return attendance.filter(
+            (a) =>
+                a.role === "RUNNER" && a.status === StaffActivityStatus.ABSENT
+        );
     }, [attendance]);
 
     const noRunners = absentRunners.length === 0 && presentRunners.length === 0;

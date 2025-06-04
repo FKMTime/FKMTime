@@ -16,7 +16,7 @@ import { useConfirm } from "@/hooks/useConfirm";
 import { useToast } from "@/hooks/useToast";
 import { activityCodeToName, getGroupsByRoundId } from "@/lib/activities";
 import { getAttendanceByGroupId } from "@/lib/attendance";
-import { StaffActivity } from "@/lib/interfaces";
+import { StaffActivity, StaffActivityStatus } from "@/lib/interfaces";
 import { restartGroup } from "@/lib/results";
 
 interface RestartGroupModalProps {
@@ -44,7 +44,8 @@ const RestartGroupModal = ({
         const attendanceData = await getAttendanceByGroupId(id);
         const alreadyCompeted = attendanceData.filter(
             (activity: StaffActivity) =>
-                activity.isPresent && activity.role === "COMPETITOR"
+                activity.status === StaffActivityStatus.PRESENT &&
+                activity.role === "COMPETITOR"
         );
         setCompetitors(alreadyCompeted);
     };
