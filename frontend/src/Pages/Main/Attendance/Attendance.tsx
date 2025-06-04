@@ -149,31 +149,27 @@ const Attendance = () => {
                     />
                 )}
                 {selectedGroup ? (
-                    <PageTransition>
-                        <div className="flex flex-col gap-5 md:grid md:grid-cols-4">
-                            <CompetitorsCard
-                                attendance={attendance}
-                                fetchData={() =>
-                                    fetchAttendanceData(selectedGroup)
-                                }
-                            />
-                            <ScramblersCard
-                                attendance={attendance}
-                                handleMarkAsPresent={handleMarkAsPresent}
-                                handleMarkAsAbsent={handleMarkAsAbsent}
-                            />
-                            <RunnersCard
-                                attendance={attendance}
-                                handleMarkAsPresent={handleMarkAsPresent}
-                                handleMarkAsAbsent={handleMarkAsAbsent}
-                            />
-                            <JudgesCard
-                                attendance={attendance}
-                                handleMarkAsPresent={handleMarkAsPresent}
-                                handleMarkAsAbsent={handleMarkAsAbsent}
-                            />
-                        </div>
-                    </PageTransition>
+                    <div className="flex flex-col gap-5 md:grid md:grid-cols-4">
+                        <CompetitorsCard
+                            attendance={attendance}
+                            fetchData={() => fetchAttendanceData(selectedGroup)}
+                        />
+                        <ScramblersCard
+                            attendance={attendance}
+                            handleMarkAsPresent={handleMarkAsPresent}
+                            handleMarkAsAbsent={handleMarkAsAbsent}
+                        />
+                        <RunnersCard
+                            attendance={attendance}
+                            handleMarkAsPresent={handleMarkAsPresent}
+                            handleMarkAsAbsent={handleMarkAsAbsent}
+                        />
+                        <JudgesCard
+                            attendance={attendance}
+                            handleMarkAsPresent={handleMarkAsPresent}
+                            handleMarkAsAbsent={handleMarkAsAbsent}
+                        />
+                    </div>
                 ) : null}
             </div>
         </PageTransition>

@@ -1,3 +1,4 @@
+import { StaffActivityStatus } from "./interfaces";
 import { backendRequest } from "./request";
 
 export const getAttendanceByGroupId = async (groupId: string) => {
@@ -44,4 +45,19 @@ export const getAttendanceStatistics = async () => {
 export const getMostMissedAssignments = async () => {
     const response = await backendRequest(`attendance/missed`, "GET", true);
     return await response.json();
+};
+
+export const prettyStaffActivityStatus = (status: StaffActivityStatus) => {
+    switch (status) {
+        case StaffActivityStatus.PRESENT:
+            return "Present";
+        case StaffActivityStatus.ABSENT:
+            return "Absent";
+        case StaffActivityStatus.LATE:
+            return "Late";
+        case StaffActivityStatus.REPLACED:
+            return "Replaced";
+        default:
+            return "Unknown";
+    }
 };

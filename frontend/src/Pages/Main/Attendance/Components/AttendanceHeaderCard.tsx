@@ -33,7 +33,7 @@ const AttendanceHeaderCard = ({
                         <ClipboardList size={20} />
                         Attendance
                     </div>
-                    <div className="flex gap-3">
+                    <div className="md:flex gap-3 hidden">
                         <Button
                             onClick={() => navigate("/attendance/missed")}
                             variant="destructive"
@@ -50,7 +50,7 @@ const AttendanceHeaderCard = ({
                     </div>
                 </CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="flex flex-col gap-5">
                 <EventRoundAndGroupSelector
                     competition={competition}
                     filters={{
@@ -69,6 +69,19 @@ const AttendanceHeaderCard = ({
                     }}
                     handleGroupChange={handleGroupChange}
                 />
+                <div className="flex flex-col gap-3 md:hidden">
+                    <Button
+                        onClick={() => navigate("/attendance/missed")}
+                        variant="destructive"
+                    >
+                        <FileWarning />
+                        Most missed assignments
+                    </Button>
+                    <Button onClick={() => navigate("/attendance/statistics")}>
+                        <ChartNoAxesColumn />
+                        Statistics
+                    </Button>
+                </div>
             </CardContent>
         </Card>
     );

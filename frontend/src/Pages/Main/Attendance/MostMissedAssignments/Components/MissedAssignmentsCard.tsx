@@ -112,13 +112,14 @@ const MissedAssignmentsCard = ({
                         ))}
                     </ul>
                 </CardContent>
-                <CardFooter className="flex gap-2">
+                <CardFooter className="flex md:flex-row flex-col gap-2">
                     {isDelegate() && (
                         <>
                             <Button
                                 onClick={() =>
                                     setIsOpenDisplayWarningsModal(true)
                                 }
+                                className="w-full md:w-fit"
                             >
                                 <FileWarning />
                                 Display all warnings for this person
@@ -126,6 +127,7 @@ const MissedAssignmentsCard = ({
                             <Button
                                 variant="destructive"
                                 onClick={() => setIsOpenIssueWarningModal(true)}
+                                className="w-full md:w-fit"
                             >
                                 <ShieldAlert />
                                 Issue warning
@@ -135,6 +137,7 @@ const MissedAssignmentsCard = ({
                     <Button
                         variant="success"
                         onClick={() => setIsOpenDisplayGroupsModal(true)}
+                        className="w-full md:w-fit"
                     >
                         <FileText />
                         Groups

@@ -153,10 +153,18 @@ export interface StaffActivity {
     person: Person;
     role: string;
     device: Device;
-    isPresent: boolean;
+    status: StaffActivityStatus;
     isAssigned: boolean;
     createdAt: Date;
     updatedAt: Date;
+}
+
+//eslint-disable-next-line
+export enum StaffActivityStatus {
+    PRESENT = "PRESENT",
+    ABSENT = "ABSENT",
+    LATE = "LATE",
+    REPLACED = "REPLACED",
 }
 
 export interface Result {

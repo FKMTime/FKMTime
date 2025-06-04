@@ -57,7 +57,7 @@ model StaffActivity {
   deviceId   String?   @map("device_id")
   device     Device?   @relation(fields: [deviceId], references: [id])
   isAssigned Boolean   @default(false) @map("is_assigned")
-  isPresent  Boolean   @default(false) @map("is_present")
+  status     StaffActivityStatus @default(ABSENT)
   groupId    String    @map("group_id")
   role       StaffRole
   createdAt  DateTime  @default(now()) @map("created_at")
@@ -312,4 +312,11 @@ enum SendingResultsFrequency {
   AFTER_SOLVE
   EVERY_5_MINUTES
   NEVER
+}
+
+enum StaffActivityStatus {
+  PRESENT
+  ABSENT
+  LATE
+  REPLACED
 }
