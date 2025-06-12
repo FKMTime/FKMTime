@@ -37,6 +37,24 @@ export const markAsAbsent = async (id: string) => {
     return response.status;
 };
 
+export const markAsLate = async (id: string) => {
+    const response = await backendRequest(
+        `attendance/late/${id}`,
+        "POST",
+        true
+    );
+    return response.status;
+};
+
+export const markAsPresentButReplaced = async (id: string) => {
+    const response = await backendRequest(
+        `attendance/present-replaced/${id}`,
+        "POST",
+        true
+    );
+    return response.status;
+};
+
 export const getAttendanceStatistics = async () => {
     const response = await backendRequest(`attendance/statistics`, "GET", true);
     return await response.json();

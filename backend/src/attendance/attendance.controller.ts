@@ -44,4 +44,16 @@ export class AttendanceController {
   async markAsAbsent(@Param('id') id: string) {
     return this.attendanceService.markAsAbsent(id);
   }
+
+  @UseGuards(StageLeaderGuard)
+  @Post('present-replaced/:id')
+  async markAsPresentButReplaced(@Param('id') id: string) {
+    return this.attendanceService.markAsPresentButReplaced(id);
+  }
+
+  @UseGuards(StageLeaderGuard)
+  @Post('late/:id')
+  async markAsLate(@Param('id') id: string) {
+    return this.attendanceService.markAsLate(id);
+  }
 }

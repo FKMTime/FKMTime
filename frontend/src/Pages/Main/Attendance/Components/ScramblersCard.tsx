@@ -11,12 +11,16 @@ interface ScramblersCardProps {
     attendance: StaffActivity[];
     handleMarkAsPresent: (staffActivityId: string) => void;
     handleMarkAsAbsent: (staffActivityId: string) => void;
+    handleMarkAsLate: (staffActivityId: string) => void;
+    handleMarkAsPresentButReplaced: (staffActivityId: string) => void;
 }
 
 const ScramblersCard = ({
     attendance,
     handleMarkAsPresent,
     handleMarkAsAbsent,
+    handleMarkAsLate,
+    handleMarkAsPresentButReplaced,
 }: ScramblersCardProps) => {
     const presentScramblers = useMemo(() => {
         return attendance.filter(
@@ -59,6 +63,10 @@ const ScramblersCard = ({
                                 <AbsentPeopleList
                                     staffActivities={absentScramblers}
                                     handleMarkAsPresent={handleMarkAsPresent}
+                                    handleMarkAsLate={handleMarkAsLate}
+                                    handleMarkAsPresentButReplaced={
+                                        handleMarkAsPresentButReplaced
+                                    }
                                 />
                             </div>
                         )}

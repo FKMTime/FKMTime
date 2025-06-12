@@ -61,6 +61,25 @@ export class AttendanceService {
         },
       });
       if (hasCompeted || !person.canCompete) {
+        const lateAssignments = await this.prisma.staffActivity.findMany({
+          where: {
+            status: StaffActivityStatus.LATE,
+            role: {
+              not: StaffRole.COMPETITOR,
+            },
+            personId: person.id,
+          },
+        });
+        const presentButReplacedAssignments =
+          await this.prisma.staffActivity.findMany({
+            where: {
+              status: StaffActivityStatus.REPLACED,
+              role: {
+                not: StaffRole.COMPETITOR,
+              },
+              personId: person.id,
+            },
+          });
         const missedAssignments = await this.prisma.staffActivity.findMany({
           where: {
             status: StaffActivityStatus.ABSENT,
@@ -74,9 +93,15 @@ export class AttendanceService {
           person,
           missedAssignments: missedAssignments,
           missedAssignmentsCount: item._count.personId,
+          lateAssignments: lateAssignments,
+          lateAssignmentsCount: lateAssignments.length,
+          presentButReplacedAssignments: presentButReplacedAssignments,
+          presentButReplacedAssignmentsCount:
+            presentButReplacedAssignments.length,
         });
       }
     }
+
     return data.sort(
       (a, b) => b.missedAssignmentsCount - a.missedAssignmentsCount,
     );
@@ -340,6 +365,38 @@ export class AttendanceService {
       },
       data: {
         status: StaffActivityStatus.ABSENT,
+      },
+    });
+    this.appGateway.handleNewAttendance(
+      attendance.groupId,
+      attendance.personId,
+    );
+    return attendance;
+  }
+
+  async markAsLate(id: string) {
+    const attendance = await this.prisma.staffActivity.update({
+      where: {
+        id: id,
+      },
+      data: {
+        status: StaffActivityStatus.LATE,
+      },
+    });
+    this.appGateway.handleNewAttendance(
+      attendance.groupId,
+      attendance.personId,
+    );
+    return attendance;
+  }
+
+  async markAsPresentButReplaced(id: string) {
+    const attendance = await this.prisma.staffActivity.update({
+      where: {
+        id: id,
+      },
+      data: {
+        status: StaffActivityStatus.REPLACED,
       },
     });
     this.appGateway.handleNewAttendance(

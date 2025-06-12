@@ -1,7 +1,7 @@
 import { X } from "lucide-react";
 
 import IconButton from "@/Components/IconButton";
-import { StaffActivity } from "@/lib/interfaces";
+import { StaffActivity, StaffActivityStatus } from "@/lib/interfaces";
 
 interface PresentPeopleListProps {
     staffActivities: StaffActivity[];
@@ -28,6 +28,9 @@ const PresentPeopleList = ({
                         activity.device &&
                         ` - station ${activity.device.name}`}
                     {!activity.isAssigned && " (unassigned)"}
+                    {activity.status === StaffActivityStatus.REPLACED &&
+                        " (replaced)"}
+                    {activity.status === StaffActivityStatus.LATE && " (late)"}
                 </li>
             ))}
         </ul>

@@ -480,4 +480,8 @@ export interface MissedAssignments {
     person: Person;
     missedAssignments: StaffActivity[];
     missedAssignmentsCount: number;
+    lateAssignmentsCount: number;
+    lateAssignments: StaffActivity[];
+    presentButReplacedAssignments: StaffActivity[];
+    presentButReplacedAssignmentsCount: number;
 }

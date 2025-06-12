@@ -111,6 +111,42 @@ const MissedAssignmentsCard = ({
                             </li>
                         ))}
                     </ul>
+                    <h3>
+                        Late for {assignments.lateAssignmentsCount} assignments
+                    </h3>
+                    <ul className="list-disc ml-8">
+                        {assignments.lateAssignments.map((item) => (
+                            <li>
+                                {activityCodeToName(
+                                    item.groupId,
+                                    true,
+                                    true,
+                                    true
+                                )}{" "}
+                                - {prettyActivityName(item.role)}
+                            </li>
+                        ))}
+                    </ul>
+                    <h3>
+                        Replaced by someone for{" "}
+                        {assignments.presentButReplacedAssignmentsCount}{" "}
+                        assignments
+                    </h3>
+                    <ul className="list-disc ml-8">
+                        {assignments.presentButReplacedAssignments.map(
+                            (item) => (
+                                <li>
+                                    {activityCodeToName(
+                                        item.groupId,
+                                        true,
+                                        true,
+                                        true
+                                    )}{" "}
+                                    - {prettyActivityName(item.role)}
+                                </li>
+                            )
+                        )}
+                    </ul>
                 </CardContent>
                 <CardFooter className="flex md:flex-row flex-col gap-2">
                     {isDelegate() && (

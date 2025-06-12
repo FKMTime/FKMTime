@@ -8,7 +8,9 @@ import { competitionAtom } from "@/lib/atoms";
 import {
     getAttendanceByGroupId,
     markAsAbsent,
+    markAsLate,
     markAsPresent,
+    markAsPresentButReplaced,
 } from "@/lib/attendance";
 import { getCompetitionInfo } from "@/lib/competition";
 import { Room, StaffActivity } from "@/lib/interfaces";
@@ -71,6 +73,43 @@ const Attendance = () => {
             toast({
                 title: "Success",
                 description: "Marked as absent",
+                variant: "success",
+            });
+            fetchAttendanceData(selectedGroup);
+        } else {
+            toast({
+                title: "Error",
+                description: "Something went wrong",
+                variant: "destructive",
+            });
+        }
+    };
+
+    const handleMarkAsLate = async (staffActivityId: string) => {
+        const status = await markAsLate(staffActivityId);
+        if (status === 201) {
+            toast({
+                title: "Success",
+                description: "Marked as late",
+                variant: "success",
+            });
+            fetchAttendanceData(selectedGroup);
+        } else {
+            toast({
+                title: "Error",
+                description: "Something went wrong",
+                variant: "destructive",
+            });
+        }
+    };
+
+    const handleMarkAsPresentButReplaced = async (staffActivityId: string) => {
+        const status = await markAsPresentButReplaced(staffActivityId);
+        if (status === 201) {
+            toast({
+                title: "Success",
+                description: "Marked as present but replaced",
+                variant: "success",
             });
             fetchAttendanceData(selectedGroup);
         } else {
@@ -158,16 +197,28 @@ const Attendance = () => {
                             attendance={attendance}
                             handleMarkAsPresent={handleMarkAsPresent}
                             handleMarkAsAbsent={handleMarkAsAbsent}
+                            handleMarkAsLate={handleMarkAsLate}
+                            handleMarkAsPresentButReplaced={
+                                handleMarkAsPresentButReplaced
+                            }
                         />
                         <RunnersCard
                             attendance={attendance}
                             handleMarkAsPresent={handleMarkAsPresent}
                             handleMarkAsAbsent={handleMarkAsAbsent}
+                            handleMarkAsLate={handleMarkAsLate}
+                            handleMarkAsPresentButReplaced={
+                                handleMarkAsPresentButReplaced
+                            }
                         />
                         <JudgesCard
                             attendance={attendance}
                             handleMarkAsPresent={handleMarkAsPresent}
                             handleMarkAsAbsent={handleMarkAsAbsent}
+                            handleMarkAsLate={handleMarkAsLate}
+                            handleMarkAsPresentButReplaced={
+                                handleMarkAsPresentButReplaced
+                            }
                         />
                     </div>
                 ) : null}
