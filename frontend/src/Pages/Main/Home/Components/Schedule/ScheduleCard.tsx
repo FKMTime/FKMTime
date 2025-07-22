@@ -28,14 +28,7 @@ const ScheduleCard = ({ activity, competition }: ScheduleCardProps) => {
     );
 
     return (
-        <Card
-            onClick={() => {
-                if (isRound) {
-                    navigate(`/results/round/${activity.activityCode}`);
-                }
-            }}
-            className={cn("w-full", isRound ? "cursor-pointer" : "")}
-        >
+        <Card className={cn("w-full", isRound ? "cursor-pointer" : "")}>
             <CardHeader>
                 <CardTitle className="flex gap-1 items-center">
                     {!activity.activityCode.startsWith("other") && (
@@ -54,19 +47,30 @@ const ScheduleCard = ({ activity, competition }: ScheduleCardProps) => {
                 </CardDescription>
             </CardHeader>
             <CardContent>
-                {!activity.activityCode.startsWith("other") &&
-                    competition.useFkmTimeDevices && (
+                {!activity.activityCode.startsWith("other") && (
+                    <>
+                        {competition.useFkmTimeDevices && (
+                            <Button
+                                onClick={() =>
+                                    navigate(
+                                        `/results/round/${activity.activityCode}`
+                                    )
+                                }
+                                variant="success"
+                            >
+                                Results
+                            </Button>
+                        )}
                         <Button
                             onClick={() =>
-                                navigate(
-                                    `/results/round/${activity.activityCode}`
-                                )
+                                navigate(`/attendance/${activity.activityCode}`)
                             }
-                            variant="success"
                         >
-                            Results
+                            Attendance
                         </Button>
-                    )}
+                    </>
+                )}
+
                 {formattedRealTime && <p>Real time: {formattedRealTime}</p>}
             </CardContent>
             <CardFooter>

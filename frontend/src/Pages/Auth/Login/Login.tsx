@@ -124,13 +124,15 @@ const Login = () => {
                         competition={competition}
                     />
                 </div>
-                <img
-                    src={background}
-                    alt="background"
-                    width="100%"
-                    height="100%"
-                    style={{ objectFit: "cover" }}
-                />
+                <div className="flex sm:w-[50%] md:w-[60%] lg:w-[80%]">
+                    <img
+                        src={background}
+                        alt="background"
+                        width="100%"
+                        height="100%"
+                        style={{ objectFit: "cover" }}
+                    />
+                </div>
             </div>
         </>
     );
