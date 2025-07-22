@@ -1,7 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { StaffActivityStatus, StaffRole } from '@prisma/client';
 import { AppGateway } from 'src/app.gateway';
-import { publicPersonSelect } from 'src/constants';
 
 import { DbService } from '../db/db.service';
 import { getTranslation } from '../translations/translations';
@@ -27,79 +26,47 @@ export class AttendanceService {
   }
 
   async getMostMissedAssignments() {
-    const mostMissed = await this.prisma.staffActivity.groupBy({
-      by: ['personId'],
-      where: {
-        status: StaffActivityStatus.ABSENT,
-        isAssigned: true,
-        role: {
-          not: StaffRole.COMPETITOR,
-        },
-      },
-      _count: {
-        personId: true,
-      },
-      orderBy: {
-        _count: {
-          personId: 'desc',
-        },
-      },
-    });
+    const persons = await this.prisma.person.findMany();
     const data = [];
-    for (const item of mostMissed) {
-      const person = await this.prisma.person.findUnique({
+    for (const person of persons) {
+      const lateAssignments = await this.prisma.staffActivity.findMany({
         where: {
-          id: item.personId,
-        },
-        select: publicPersonSelect.select,
-      });
-      const hasCompeted = await this.prisma.staffActivity.findFirst({
-        where: {
+          status: StaffActivityStatus.LATE,
+          role: {
+            not: StaffRole.COMPETITOR,
+          },
           personId: person.id,
-          status: StaffActivityStatus.PRESENT,
-          role: StaffRole.COMPETITOR,
         },
       });
-      if (hasCompeted || !person.canCompete) {
-        const lateAssignments = await this.prisma.staffActivity.findMany({
+      const presentButReplacedAssignments =
+        await this.prisma.staffActivity.findMany({
           where: {
-            status: StaffActivityStatus.LATE,
+            status: StaffActivityStatus.REPLACED,
             role: {
               not: StaffRole.COMPETITOR,
             },
             personId: person.id,
           },
         });
-        const presentButReplacedAssignments =
-          await this.prisma.staffActivity.findMany({
-            where: {
-              status: StaffActivityStatus.REPLACED,
-              role: {
-                not: StaffRole.COMPETITOR,
-              },
-              personId: person.id,
-            },
-          });
-        const missedAssignments = await this.prisma.staffActivity.findMany({
-          where: {
-            status: StaffActivityStatus.ABSENT,
-            role: {
-              not: StaffRole.COMPETITOR,
-            },
-            personId: person.id,
+      const missedAssignments = await this.prisma.staffActivity.findMany({
+        where: {
+          status: StaffActivityStatus.ABSENT,
+          role: {
+            not: StaffRole.COMPETITOR,
           },
-        });
-        data.push({
-          person,
-          missedAssignments: missedAssignments,
-          missedAssignmentsCount: item._count.personId,
-          lateAssignments: lateAssignments,
-          lateAssignmentsCount: lateAssignments.length,
-          presentButReplacedAssignments: presentButReplacedAssignments,
-          presentButReplacedAssignmentsCount:
-            presentButReplacedAssignments.length,
-        });
-      }
+          personId: person.id,
+        },
+      });
+      data.push({
+        person,
+        missedAssignments: missedAssignments,
+        missedAssignmentsCount: missedAssignments.length,
+        lateAssignments: lateAssignments,
+        lateAssignmentsCount: lateAssignments.length,
+        presentButReplacedAssignments: presentButReplacedAssignments,
+        presentButReplacedAssignmentsCount:
+          presentButReplacedAssignments.length,
+      });
     }
 
     return data.sort(
