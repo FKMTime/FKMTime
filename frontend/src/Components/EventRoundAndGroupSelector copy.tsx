@@ -115,16 +115,15 @@ const EventRoundAndGroupSelector = ({
                                     <SelectValue placeholder="Select group" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    {groups.map(
-                                        (group: Activity, i: number) => (
-                                            <SelectItem
-                                                key={group.activityCode}
-                                                value={group.activityCode}
-                                            >
-                                                Group {i + 1}
-                                            </SelectItem>
-                                        )
-                                    )}
+                                    {groups.map((group: Activity) => (
+                                        <SelectItem
+                                            key={group.activityCode}
+                                            value={group.activityCode}
+                                        >
+                                            Group{" "}
+                                            {group.activityCode.split("-g")[1]}
+                                        </SelectItem>
+                                    ))}
                                 </SelectContent>
                             </Select>
                         </div>
