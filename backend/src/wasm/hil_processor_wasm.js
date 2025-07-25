@@ -177,7 +177,7 @@ module.exports.__wbg_call_833bed5770ea2041 = function() { return handleError(fun
     return ret;
 }, arguments) };
 
-module.exports.__wbg_getRandomValues_78e016fdd1d721cf = function() { return handleError(function (arg0, arg1) {
+module.exports.__wbg_getRandomValues_3c9c0d586e575a16 = function() { return handleError(function (arg0, arg1) {
     globalThis.crypto.getRandomValues(getArrayU8FromWasm0(arg0, arg1));
 }, arguments) };
 
