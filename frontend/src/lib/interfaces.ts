@@ -154,6 +154,7 @@ export interface StaffActivity {
     role: string;
     device: Device;
     status: StaffActivityStatus;
+    comment?: string;
     isAssigned: boolean;
     createdAt: Date;
     updatedAt: Date;
@@ -484,4 +485,6 @@ export interface MissedAssignments {
     lateAssignments: StaffActivity[];
     presentButReplacedAssignments: StaffActivity[];
     presentButReplacedAssignmentsCount: number;
+    comments: StaffActivity[];
+    commentsCount: number;
 }

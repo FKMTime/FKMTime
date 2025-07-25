@@ -41,12 +41,16 @@ const AttendanceHeaderCard = ({
                             <FileWarning />
                             Most missed assignments
                         </Button>
-                        <Button
-                            onClick={() => navigate("/attendance/statistics")}
-                        >
-                            <ChartNoAxesColumn />
-                            Statistics
-                        </Button>
+                        {competition.useFkmTimeDevices && (
+                            <Button
+                                onClick={() =>
+                                    navigate("/attendance/statistics")
+                                }
+                            >
+                                <ChartNoAxesColumn />
+                                Statistics
+                            </Button>
+                        )}
                     </div>
                 </CardTitle>
             </CardHeader>

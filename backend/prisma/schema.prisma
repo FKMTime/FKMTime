@@ -59,6 +59,7 @@ model StaffActivity {
   isAssigned Boolean   @default(false) @map("is_assigned")
   status     StaffActivityStatus @default(ABSENT)
   groupId    String    @map("group_id")
+  comment    String?
   role       StaffRole
   createdAt  DateTime  @default(now()) @map("created_at")
   updatedAt  DateTime  @updatedAt @map("updated_at")

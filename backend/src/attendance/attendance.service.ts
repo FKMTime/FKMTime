@@ -1,10 +1,12 @@
-import { Injectable } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { StaffActivityStatus, StaffRole } from '@prisma/client';
 import { AppGateway } from 'src/app.gateway';
 
 import { DbService } from '../db/db.service';
 import { getTranslation } from '../translations/translations';
+import { AddNotAssignedPersonDto } from './dto/addNotAssignedPerson.dto';
 import { CreateAttendaceDto } from './dto/createAttendance.dto';
+import { UpdateCommentDto } from './dto/updateComment.dto';
 
 @Injectable()
 export class AttendanceService {
@@ -57,6 +59,14 @@ export class AttendanceService {
           personId: person.id,
         },
       });
+      const comments = await this.prisma.staffActivity.findMany({
+        where: {
+          personId: person.id,
+          comment: {
+            not: null,
+          },
+        },
+      });
       data.push({
         person,
         missedAssignments: missedAssignments,
@@ -66,12 +76,69 @@ export class AttendanceService {
         presentButReplacedAssignments: presentButReplacedAssignments,
         presentButReplacedAssignmentsCount:
           presentButReplacedAssignments.length,
+        comments: comments,
+        commentsCount: comments.length,
       });
     }
 
     return data.sort(
       (a, b) => b.missedAssignmentsCount - a.missedAssignmentsCount,
     );
+  }
+
+  async addNotAssignedPerson(groupId: string, data: AddNotAssignedPersonDto) {
+    const person = await this.prisma.person.findUnique({
+      where: {
+        id: data.personId,
+      },
+    });
+
+    if (!person) {
+      throw new HttpException('Person not found', HttpStatus.NOT_FOUND);
+    }
+
+    const activityForGroup = await this.prisma.staffActivity.findFirst({
+      where: {
+        groupId: groupId,
+        personId: person.id,
+        role: data.role,
+        status: StaffActivityStatus.PRESENT,
+      },
+    });
+
+    if (activityForGroup) {
+      throw new HttpException(
+        'This person is already marked as present in this group in another role.',
+        HttpStatus.CONFLICT,
+      );
+    }
+
+    const attendance = await this.prisma.staffActivity.upsert({
+      where: {
+        personId_groupId_role: {
+          groupId: groupId,
+          personId: person.id,
+          role: data.role,
+        },
+      },
+      update: {
+        status: StaffActivityStatus.PRESENT,
+      },
+      create: {
+        groupId: groupId,
+        person: {
+          connect: {
+            id: person.id,
+          },
+        },
+        role: data.role,
+        status: StaffActivityStatus.PRESENT,
+        isAssigned: false,
+      },
+    });
+
+    this.appGateway.handleNewAttendance(groupId, person.id);
+    return attendance;
   }
 
   async getStaffActivitiesByPersonId(id: string) {
@@ -325,15 +392,47 @@ export class AttendanceService {
     };
   }
 
-  async markAsAbsent(id: string) {
+  async updateComment(id: string, data: UpdateCommentDto) {
     const attendance = await this.prisma.staffActivity.update({
       where: {
         id: id,
       },
       data: {
-        status: StaffActivityStatus.ABSENT,
+        comment: data.comment,
       },
     });
+    this.appGateway.handleNewAttendance(
+      attendance.groupId,
+      attendance.personId,
+    );
+    return attendance;
+  }
+
+  async markAsAbsent(id: string) {
+    const attendance = await this.prisma.staffActivity.findUnique({
+      where: {
+        id: id,
+      },
+    });
+    if (!attendance) {
+      throw new HttpException('Attendance not found', HttpStatus.NOT_FOUND);
+    }
+    if (attendance.isAssigned) {
+      await this.prisma.staffActivity.update({
+        where: {
+          id: id,
+        },
+        data: {
+          status: StaffActivityStatus.ABSENT,
+        },
+      });
+    } else {
+      await this.prisma.staffActivity.delete({
+        where: {
+          id: id,
+        },
+      });
+    }
     this.appGateway.handleNewAttendance(
       attendance.groupId,
       attendance.personId,

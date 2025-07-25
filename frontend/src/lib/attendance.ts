@@ -79,3 +79,27 @@ export const prettyStaffActivityStatus = (status: StaffActivityStatus) => {
             return "Unknown";
     }
 };
+
+export const updateComment = async (id: string, comment: string) => {
+    const response = await backendRequest(
+        `attendance/comment/${id}`,
+        "PUT",
+        true,
+        { comment }
+    );
+    return response.status;
+};
+
+export const addUnassignedPerson = async (
+    groupId: string,
+    personId: string,
+    role: string
+) => {
+    const response = await backendRequest(
+        `attendance/unassigned/${groupId}`,
+        "POST",
+        true,
+        { personId, role }
+    );
+    return response.status;
+};

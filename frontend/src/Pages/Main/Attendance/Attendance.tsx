@@ -3,6 +3,7 @@ import { useCallback, useContext, useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 
 import LoadingPage from "@/Components/LoadingPage";
+import { useConfirm } from "@/hooks/useConfirm";
 import { useToast } from "@/hooks/useToast";
 import { competitionAtom } from "@/lib/atoms";
 import {
@@ -28,6 +29,7 @@ import ScramblersCard from "./Components/ScramblersCard";
 const Attendance = () => {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
+    const confirm = useConfirm();
     const { toast } = useToast();
     const selectedGroup = id ? id : "";
     const [competition, setCompetition] = useAtom(competitionAtom);
@@ -68,6 +70,20 @@ const Attendance = () => {
     };
 
     const handleMarkAsAbsent = async (staffActivityId: string) => {
+        const activity = attendance.find((a) => a.id === staffActivityId);
+
+        if (activity && !activity.isAssigned) {
+            const confirmed = await confirm({
+                title: "Are you sure you want to mark this person as absent?",
+                description:
+                    "This person is not assigned to this group. Are you sure you want to mark them as absent? This would completely remove them from the attendance list for this group.",
+            })
+                .then(() => true)
+                .catch(() => false);
+
+            if (!confirmed) return;
+        }
+
         const status = await markAsAbsent(staffActivityId);
         if (status === 201) {
             toast({
@@ -192,6 +208,7 @@ const Attendance = () => {
                         <CompetitorsCard
                             attendance={attendance}
                             fetchData={() => fetchAttendanceData(selectedGroup)}
+                            groupId={selectedGroup}
                         />
                         <ScramblersCard
                             attendance={attendance}
@@ -201,6 +218,8 @@ const Attendance = () => {
                             handleMarkAsPresentButReplaced={
                                 handleMarkAsPresentButReplaced
                             }
+                            fetchData={() => fetchAttendanceData(selectedGroup)}
+                            groupId={selectedGroup}
                         />
                         <RunnersCard
                             attendance={attendance}
@@ -210,6 +229,8 @@ const Attendance = () => {
                             handleMarkAsPresentButReplaced={
                                 handleMarkAsPresentButReplaced
                             }
+                            fetchData={() => fetchAttendanceData(selectedGroup)}
+                            groupId={selectedGroup}
                         />
                         <JudgesCard
                             attendance={attendance}
@@ -219,6 +240,8 @@ const Attendance = () => {
                             handleMarkAsPresentButReplaced={
                                 handleMarkAsPresentButReplaced
                             }
+                            fetchData={() => fetchAttendanceData(selectedGroup)}
+                            groupId={selectedGroup}
                         />
                     </div>
                 ) : null}

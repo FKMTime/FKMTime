@@ -1,10 +1,12 @@
 import { Gavel } from "lucide-react";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 
+import PlusButton from "@/Components/PlusButton";
 import { Card, CardContent, CardHeader, CardTitle } from "@/Components/ui/card";
 import { StaffActivity, StaffActivityStatus } from "@/lib/interfaces";
 
 import AbsentPeopleList from "./AbsentPeopleList";
+import AddNotAssignedPersonModal from "./AddNotAssignedPersonModal";
 import PresentPeopleList from "./PresentPeopleList";
 
 interface JudgesCardProps {
@@ -13,6 +15,8 @@ interface JudgesCardProps {
     handleMarkAsAbsent: (staffActivityId: string) => void;
     handleMarkAsLate: (staffActivityId: string) => void;
     handleMarkAsPresentButReplaced: (staffActivityId: string) => void;
+    fetchData: () => void;
+    groupId: string;
 }
 
 const JudgesCard = ({
@@ -21,7 +25,14 @@ const JudgesCard = ({
     handleMarkAsAbsent,
     handleMarkAsLate,
     handleMarkAsPresentButReplaced,
+    fetchData,
+    groupId,
 }: JudgesCardProps) => {
+    const [
+        isOpenAddNotAssignedPersonModal,
+        setIsOpenAddNotAssignedPersonModal,
+    ] = useState<boolean>(false);
+
     const presentJudges = useMemo(() => {
         return attendance.filter(
             (a) =>
@@ -41,11 +52,23 @@ const JudgesCard = ({
     }, [attendance]);
 
     const noJudges = absentJudges.length === 0 && presentJudges.length === 0;
+
+    const handleCloseAddNotAssignedPersonModal = () => {
+        setIsOpenAddNotAssignedPersonModal(false);
+        fetchData();
+    };
+
     return (
         <Card>
             <CardHeader>
-                <CardTitle className="flex gap-1 items-center">
-                    <Gavel /> Judges
+                <CardTitle className="flex justify-between">
+                    <div className="flex gap-1 items-center">
+                        <Gavel />
+                        Judges
+                    </div>
+                    <PlusButton
+                        onClick={() => setIsOpenAddNotAssignedPersonModal(true)}
+                    />
                 </CardTitle>
             </CardHeader>
             <CardContent>
@@ -79,6 +102,12 @@ const JudgesCard = ({
                     </div>
                 )}
             </CardContent>
+            <AddNotAssignedPersonModal
+                isOpen={isOpenAddNotAssignedPersonModal}
+                onClose={() => handleCloseAddNotAssignedPersonModal()}
+                role="JUDGE"
+                groupId={groupId}
+            />
         </Card>
     );
 };

@@ -1,5 +1,9 @@
 import { Competition } from "@wca/helpers";
-import { getLimitByRoundId, getNumberOfAttemptsForRound } from "wcif-helpers";
+import {
+    getLimitByRoundId,
+    getNumberOfAttemptsForRound,
+    getRoundInfoFromWcif,
+} from "wcif-helpers";
 
 import { average, best, formattedBest } from "./average";
 import { DNF_VALUE } from "./constants";
@@ -172,4 +176,22 @@ export const getResultsChecks = async (roundId?: string) => {
         true
     );
     return await response.json();
+};
+
+export const getRankingFromPreviousRound = (
+    roundId: string,
+    registrantId: number,
+    wcif?: Competition
+) => {
+    if (!wcif) return null;
+    const previousRoundId =
+        roundId.split("-")[0] +
+        "-r" +
+        (parseInt(roundId.split("-")[1].replace("r", "")) - 1);
+    const round = getRoundInfoFromWcif(previousRoundId, wcif);
+    if (!round) {
+        return null;
+    }
+    const pos = round.results.find((r) => r.personId === registrantId)?.ranking;
+    return pos !== undefined ? pos : null;
 };

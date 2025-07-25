@@ -147,6 +147,21 @@ const MissedAssignmentsCard = ({
                             )
                         )}
                     </ul>
+                    <h3>Has comments for {assignments.commentsCount}</h3>
+                    <ul className="list-disc ml-8">
+                        {assignments.comments.map((item) => (
+                            <li>
+                                {activityCodeToName(
+                                    item.groupId,
+                                    true,
+                                    true,
+                                    true
+                                )}{" "}
+                                - {prettyActivityName(item.role)}:{" "}
+                                {item.comment || "No comment"}
+                            </li>
+                        ))}
+                    </ul>
                 </CardContent>
                 <CardFooter className="flex md:flex-row flex-col gap-2">
                     {isDelegate() && (

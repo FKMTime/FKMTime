@@ -1,8 +1,18 @@
-import { Controller, Get, Param, Post, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  Post,
+  Put,
+  UseGuards,
+} from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { StageLeaderGuard } from 'src/auth/guards/stageLeader.guard';
 
 import { AttendanceService } from './attendance.service';
+import { AddNotAssignedPersonDto } from './dto/addNotAssignedPerson.dto';
+import { UpdateCommentDto } from './dto/updateComment.dto';
 
 @UseGuards(AuthGuard('jwt'))
 @Controller('attendance')
@@ -34,6 +44,15 @@ export class AttendanceController {
   }
 
   @UseGuards(StageLeaderGuard)
+  @Post('unassigned/:groupId')
+  async addUnassignedPerson(
+    @Param('groupId') groupId: string,
+    @Body() data: AddNotAssignedPersonDto,
+  ) {
+    return this.attendanceService.addNotAssignedPerson(groupId, data);
+  }
+
+  @UseGuards(StageLeaderGuard)
   @Post('present/:id')
   async markAsPresent(@Param('id') id: string) {
     return this.attendanceService.markAsPresent(id);
@@ -55,5 +74,14 @@ export class AttendanceController {
   @Post('late/:id')
   async markAsLate(@Param('id') id: string) {
     return this.attendanceService.markAsLate(id);
+  }
+
+  @UseGuards(StageLeaderGuard)
+  @Put('comment/:id')
+  async updateComment(
+    @Param('id') id: string,
+    @Body() updateCommentDto: UpdateCommentDto,
+  ) {
+    return this.attendanceService.updateComment(id, updateCommentDto);
   }
 }
