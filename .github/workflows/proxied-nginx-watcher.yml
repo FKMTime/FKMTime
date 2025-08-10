@@ -1,0 +1,171 @@
+name: Watch proxied-nginx GHCR image and run on update
+
+on:
+  schedule:
+    - cron: "*/15 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: write
+
+concurrency:
+  group: watch-external-ghcr
+  cancel-in-progress: false
+
+env:
+  IMAGE_REPO: fkmtime/fkmtime-proxied-nginx
+  IMAGE_TAG: master
+  STATE_VAR: FKMTIME_PROXIED_NGINX_MASTER_DIGEST
+  EVENT_TYPE: ghcr-image-updated
+  DISPATCH_REPOS: ""
+  TARGET_WORKFLOWS: ""
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    outputs:
+      digest: ${{ steps.get.outputs.digest }}
+      changed: ${{ steps.diff.outputs.changed }}
+      previous: ${{ steps.diff.outputs.previous }}
+    steps:
+      - name: Set up Docker
+        uses: docker/setup-buildx-action@v3
+
+      - name: Get current digest (via docker manifest inspect)
+        id: get
+        shell: bash
+        run: |
+          set -euo pipefail
+          REPO="${{ env.IMAGE_REPO }}"
+          TAG="${{ env.IMAGE_TAG }}"
+          MANIFEST=$(docker manifest inspect ghcr.io/${REPO}:${TAG})
+          DIGEST=$(echo "${MANIFEST}" | jq -r '.manifests[] | select(.platform.architecture == "amd64" and .platform.os == "linux") | .digest')
+          if [ -z "${DIGEST}" ]; then
+            echo "Failed to resolve digest for ${REPO}:${TAG}" >&2
+            exit 1
+          fi
+          echo "digest=${DIGEST}" >> "${GITHUB_OUTPUT}"
+          echo "Current digest: ${DIGEST}"
+
+      - name: Compare with last stored digest
+        id: diff
+        shell: bash
+        env:
+          LAST: ${{ vars.FKMTIME_PROXIED_NGINX_MASTER_DIGEST }}
+        run: |
+          set -euo pipefail
+          CUR='${{ steps.get.outputs.digest }}'
+          echo "previous=${LAST:-}" >> "${GITHUB_OUTPUT}"
+          if [ -z "${LAST:-}" ]; then
+            echo "No previous digest stored."
+            echo "changed=true" >> "${GITHUB_OUTPUT}"
+          elif [ "${CUR}" != "${LAST}" ]; then
+            echo "Digest changed: ${LAST} -> ${CUR}"
+            echo "changed=true" >> "${GITHUB_OUTPUT}"
+          else
+            echo "No change."
+            echo "changed=false" >> "${GITHUB_OUTPUT}"
+
+  run_in_image:
+    needs: check
+    if: needs.check.outputs.changed == 'true'
+    runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/fkmtime/fkmtime-proxied-nginx:master
+    defaults:
+      run:
+        shell: sh
+    steps:
+      - name: Show container details
+        run: |
+          uname -a || true
+          cat /etc/os-release || true
+          nginx -v 2>&1 || true
+
+      - name: Your tasks
+        run: |
+          echo "Running inside ghcr.io/${{ env.IMAGE_REPO }}:${{ env.IMAGE_TAG }}"
+
+  trigger_downstreams:
+    needs: check
+    if: needs.check.outputs.changed == 'true'
+    runs-on: ubuntu-latest
+    env:
+      MY_PAT: ${{ secrets.REPO_DISPATCH_PAT }}
+    steps:
+      - name: repository_dispatch in this repo
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          IMAGE: ghcr.io/${{ env.IMAGE_REPO }}:${{ env.IMAGE_TAG }}
+          TAG: ${{ env.IMAGE_TAG }}
+          DIGEST: ${{ needs.check.outputs.digest }}
+          PREV: ${{ needs.check.outputs.previous }}
+          OWNER_REPO: ${{ github.repository }}
+          EVENT_TYPE: ${{ env.EVENT_TYPE }}
+        run: |
+          set -euo pipefail
+          curl -sS -X POST \
+            -H "Authorization: Bearer ${GH_TOKEN}" \
+            -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/${OWNER_REPO}/dispatches" \
+            -d "{\"event_type\": \"${EVENT_TYPE}\", \"client_payload\": {\"image\": \"${IMAGE}\", \"tag\": \"${TAG}\", \"digest\": \"${DIGEST}\", \"previous\": \"${PREV}\"}}"
+          echo "Dispatched ${EVENT_TYPE} to ${OWNER_REPO}"
+
+      - name: Fan out to other repos (optional)
+        if: ${{ env.DISPATCH_REPOS != '' && env.MY_PAT != '' }}
+        env:
+          PAT: ${{ env.MY_PAT }}
+          IMAGE: ghcr.io/${{ env.IMAGE_REPO }}:${{ env.IMAGE_TAG }}
+          TAG: ${{ env.IMAGE_TAG }}
+          DIGEST: ${{ needs.check.outputs.digest }}
+          PREV: ${{ needs.check.outputs.previous }}
+          EVENT_TYPE: ${{ env.EVENT_TYPE }}
+          TARGETS: ${{ env.DISPATCH_REPOS }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          for r in ${TARGETS}; do
+            echo "Dispatching to ${r}"
+            curl -sS -X POST \
+              -H "Authorization: Bearer ${PAT}" \
+              -H "Accept: application/vnd.github+json" \
+              "https://api.github.com/repos/${r}/dispatches" \
+              -d "{\"event_type\": \"${EVENT_TYPE}\", \"client_payload\": {\"image\": \"${IMAGE}\", \"tag\": \"${TAG}\", \"digest\": \"${DIGEST}\", \"previous\": \"${PREV}\"}}"
+          done
+
+      - name: Trigger specific workflow files in this repo (optional)
+        if: ${{ env.TARGET_WORKFLOWS != '' }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          IMAGE: ghcr.io/${{ env.IMAGE_REPO }}:${{ env.IMAGE_TAG }}
+          TAG: ${{ env.IMAGE_TAG }}
+          DIGEST: ${{ needs.check.outputs.digest }}
+          REF: ${{ github.ref_name }}
+          WORKFLOWS: ${{ env.TARGET_WORKFLOWS }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          for wf in ${WORKFLOWS}; do
+            echo "Dispatching workflow ${wf}"
+            curl -sS -X POST \
+              -H "Authorization: Bearer ${GH_TOKEN}" \
+              -H "Accept: application/vnd.github+json" \
+              "https://api.github.com/repos/${{ github.repository }}/actions/workflows/${wf}/dispatches" \
+              -d "{\"ref\": \"${REF}\", \"inputs\": {\"image\": \"${IMAGE}\", \"tag\": \"${TAG}\", \"digest\": \"${DIGEST}\"}}"
+          done
+
+  persist_state:
+    needs: check
+    if: needs.check.outputs.changed == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Update stored digest (repo variable)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NEW_DIGEST: ${{ needs.check.outputs.digest }}
+          STATE_VAR: ${{ env.STATE_VAR }}
+        run: |
+          set -euo pipefail
+          gh variable set "${STATE_VAR}" --body "${NEW_DIGEST}"
+          echo "Saved digest to ${STATE_VAR}: ${NEW_DIGEST}"
