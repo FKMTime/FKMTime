@@ -2,7 +2,7 @@ name: Watch proxied-nginx GHCR image and run on update
 
 on:
   schedule:
-    - cron: "*/15 * * * *"
+    - cron: "0 */6 * * *"
   workflow_dispatch:
 
 permissions:
