@@ -8,6 +8,7 @@ on:
 permissions:
   contents: write
   actions: write
+  repository-projects: write
 
 concurrency:
   group: watch-external-ghcr
@@ -48,23 +49,29 @@ jobs:
           echo "digest=${DIGEST}" >> "${GITHUB_OUTPUT}"
           echo "Current digest: ${DIGEST}"
 
-      - name: Compare with last stored digest
-        id: diff
-        shell: bash
-        env:
-          LAST: ${{ vars.FKMTIME_PROXIED_NGINX_MASTER_DIGEST }}
+      - name: Get previous digest from artifact
+        id: get-previous
+        continue-on-error: true
         run: |
-          set -euo pipefail
+          # Try to download previous digest
+          if gh run download --name digest-state --dir ./state 2>/dev/null; then
+            PREV=$(cat ./state/digest.txt 2>/dev/null || echo "")
+            echo "previous=${PREV}" >> "${GITHUB_OUTPUT}"
+          else
+            echo "previous=" >> "${GITHUB_OUTPUT}"
+          fi
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Compare digests
+        id: diff
+        run: |
           CUR='${{ steps.get.outputs.digest }}'
-          echo "previous=${LAST:-}" >> "${GITHUB_OUTPUT}"
-          if [ -z "${LAST:-}" ]; then
-            echo "No previous digest stored."
-            echo "changed=true" >> "${GITHUB_OUTPUT}"
-          elif [ "${CUR}" != "${LAST}" ]; then
-            echo "Digest changed: ${LAST} -> ${CUR}"
+          PREV='${{ steps.get-previous.outputs.previous }}'
+          echo "previous=${PREV}" >> "${GITHUB_OUTPUT}"
+          if [ "${CUR}" != "${PREV}" ]; then
             echo "changed=true" >> "${GITHUB_OUTPUT}"
           else
-            echo "No change."
             echo "changed=false" >> "${GITHUB_OUTPUT}"
           fi
 
@@ -95,15 +102,14 @@ jobs:
     if: needs.check.outputs.changed == 'true'
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-        
-      - name: Update stored digest (repo variable)
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          NEW_DIGEST: ${{ needs.check.outputs.digest }}
-          STATE_VAR: ${{ env.STATE_VAR }}
+      - name: Save digest as artifact
         run: |
-          set -euo pipefail
-          gh variable set "${STATE_VAR}" --body "${NEW_DIGEST}"
-          echo "Saved digest to ${STATE_VAR}: ${NEW_DIGEST}"
+          mkdir -p ./state
+          echo "${{ needs.check.outputs.digest }}" > ./state/digest.txt
+          
+      - name: Upload digest state
+        uses: actions/upload-artifact@v4
+        with:
+          name: digest-state
+          path: ./state/digest.txt
+          retention-days: 30
