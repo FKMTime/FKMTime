@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
   actions: write
 
 concurrency:
@@ -66,100 +66,38 @@ jobs:
           else
             echo "No change."
             echo "changed=false" >> "${GITHUB_OUTPUT}"
-
-  run_in_image:
-    needs: check
-    if: needs.check.outputs.changed == 'true'
-    runs-on: ubuntu-latest
-    container:
-      image: ghcr.io/fkmtime/fkmtime-proxied-nginx:master
-    defaults:
-      run:
-        shell: sh
-    steps:
-      - name: Show container details
-        run: |
-          uname -a || true
-          cat /etc/os-release || true
-          nginx -v 2>&1 || true
-
-      - name: Your tasks
-        run: |
-          echo "Running inside ghcr.io/${{ env.IMAGE_REPO }}:${{ env.IMAGE_TAG }}"
+          fi
 
   trigger_downstreams:
     needs: check
     if: needs.check.outputs.changed == 'true'
     runs-on: ubuntu-latest
-    env:
-      MY_PAT: ${{ secrets.REPO_DISPATCH_PAT }}
     steps:
       - name: repository_dispatch in this repo
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          IMAGE: ghcr.io/${{ env.IMAGE_REPO }}:${{ env.IMAGE_TAG }}
-          TAG: ${{ env.IMAGE_TAG }}
-          DIGEST: ${{ needs.check.outputs.digest }}
-          PREV: ${{ needs.check.outputs.previous }}
-          OWNER_REPO: ${{ github.repository }}
-          EVENT_TYPE: ${{ env.EVENT_TYPE }}
-        run: |
-          set -euo pipefail
-          curl -sS -X POST \
-            -H "Authorization: Bearer ${GH_TOKEN}" \
-            -H "Accept: application/vnd.github+json" \
-            "https://api.github.com/repos/${OWNER_REPO}/dispatches" \
-            -d "{\"event_type\": \"${EVENT_TYPE}\", \"client_payload\": {\"image\": \"${IMAGE}\", \"tag\": \"${TAG}\", \"digest\": \"${DIGEST}\", \"previous\": \"${PREV}\"}}"
-          echo "Dispatched ${EVENT_TYPE} to ${OWNER_REPO}"
-
-      - name: Fan out to other repos (optional)
-        if: ${{ env.DISPATCH_REPOS != '' && env.MY_PAT != '' }}
-        env:
-          PAT: ${{ env.MY_PAT }}
-          IMAGE: ghcr.io/${{ env.IMAGE_REPO }}:${{ env.IMAGE_TAG }}
-          TAG: ${{ env.IMAGE_TAG }}
-          DIGEST: ${{ needs.check.outputs.digest }}
-          PREV: ${{ needs.check.outputs.previous }}
-          EVENT_TYPE: ${{ env.EVENT_TYPE }}
-          TARGETS: ${{ env.DISPATCH_REPOS }}
-        shell: bash
-        run: |
-          set -euo pipefail
-          for r in ${TARGETS}; do
-            echo "Dispatching to ${r}"
-            curl -sS -X POST \
-              -H "Authorization: Bearer ${PAT}" \
-              -H "Accept: application/vnd.github+json" \
-              "https://api.github.com/repos/${r}/dispatches" \
-              -d "{\"event_type\": \"${EVENT_TYPE}\", \"client_payload\": {\"image\": \"${IMAGE}\", \"tag\": \"${TAG}\", \"digest\": \"${DIGEST}\", \"previous\": \"${PREV}\"}}"
-          done
-
-      - name: Trigger specific workflow files in this repo (optional)
-        if: ${{ env.TARGET_WORKFLOWS != '' }}
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          IMAGE: ghcr.io/${{ env.IMAGE_REPO }}:${{ env.IMAGE_TAG }}
-          TAG: ${{ env.IMAGE_TAG }}
-          DIGEST: ${{ needs.check.outputs.digest }}
-          REF: ${{ github.ref_name }}
-          WORKFLOWS: ${{ env.TARGET_WORKFLOWS }}
-        shell: bash
-        run: |
-          set -euo pipefail
-          for wf in ${WORKFLOWS}; do
-            echo "Dispatching workflow ${wf}"
-            curl -sS -X POST \
-              -H "Authorization: Bearer ${GH_TOKEN}" \
-              -H "Accept: application/vnd.github+json" \
-              "https://api.github.com/repos/${{ github.repository }}/actions/workflows/${wf}/dispatches" \
-              -d "{\"ref\": \"${REF}\", \"inputs\": {\"image\": \"${IMAGE}\", \"tag\": \"${TAG}\", \"digest\": \"${DIGEST}\"}}"
-          done
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.repos.createDispatchEvent({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              event_type: '${{ env.EVENT_TYPE }}',
+              client_payload: {
+                image: 'ghcr.io/${{ env.IMAGE_REPO }}:${{ env.IMAGE_TAG }}',
+                tag: '${{ env.IMAGE_TAG }}',
+                digest: '${{ needs.check.outputs.digest }}',
+                previous: '${{ needs.check.outputs.previous }}'
+              }
+            });
+            console.log('Dispatched ${{ env.EVENT_TYPE }} to ${{ github.repository }}');
 
   persist_state:
     needs: check
     if: needs.check.outputs.changed == 'true'
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        
       - name: Update stored digest (repo variable)
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
