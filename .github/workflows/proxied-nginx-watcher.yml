@@ -30,6 +30,9 @@ jobs:
       changed: ${{ steps.diff.outputs.changed }}
       previous: ${{ steps.diff.outputs.previous }}
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
       - name: Set up Docker
         uses: docker/setup-buildx-action@v3
 
@@ -56,6 +59,7 @@ jobs:
           # Try to download previous digest
           if gh run download --name digest-state --dir ./state 2>/dev/null; then
             PREV=$(cat ./state/digest.txt 2>/dev/null || echo "")
+            echo "previous found ${PREV}"
             echo "previous=${PREV}" >> "${GITHUB_OUTPUT}"
           else
             echo "previous=" >> "${GITHUB_OUTPUT}"
@@ -68,6 +72,7 @@ jobs:
         run: |
           CUR='${{ steps.get.outputs.digest }}'
           PREV='${{ steps.get-previous.outputs.previous }}'
+          echo "CUR: ${CUR} PREV: ${PREV}"
           echo "previous=${PREV}" >> "${GITHUB_OUTPUT}"
           if [ "${CUR}" != "${PREV}" ]; then
             echo "changed=true" >> "${GITHUB_OUTPUT}"
