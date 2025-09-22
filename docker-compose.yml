@@ -34,7 +34,7 @@ services:
       dockerfile: Dockerfile.dev
     container_name: fkmtime-dev-frontend
     environment:
-      - VITE_WCA_ORIGIN=http://0.0.0.0:3005
+      - VITE_WCA_ORIGIN=http://127.0.0.1:3005
       - VITE_GIT_COMMIT=dummy-commit
     volumes:
       - ./frontend/src:/app/src
