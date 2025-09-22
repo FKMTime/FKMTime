@@ -11,9 +11,9 @@ services:
     restart: unless-stopped
     environment:
       - DATABASE_URL=postgres://root:password@database:5432/fkm_time
-      - WCA_LIVE_API_ORIGIN=http://127.0.0.1:4000/api
-      - CUBING_CONTESTS_API_ORIGIN=http://127.0.0.1:5001/api
-      - WCA_ORIGIN=http://127.0.0.1:3005
+      - WCA_LIVE_API_ORIGIN=http://dummy_wca_live:4000/api
+      - CUBING_CONTESTS_API_ORIGIN=http://api_tester:5001/api
+      - WCA_ORIGIN=http://dummy_wca:3000
       - WCA_CLIENT_ID=example-application-id
       - WCA_CLIENT_SECRET=example-secret
       - SOCKET_PATH=/app/sock/socket.sock
