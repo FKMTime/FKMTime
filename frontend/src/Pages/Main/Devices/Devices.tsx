@@ -113,7 +113,7 @@ const Devices = () => {
             fetchData();
         });
 
-        socket.on("deviceRequests", (data) => {
+        socket.on("deviceRequests", (data: AvailableDevice[]) => {
             setAvailableDevices(data);
         });
 

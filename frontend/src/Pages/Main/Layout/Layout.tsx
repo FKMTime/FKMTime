@@ -16,6 +16,12 @@ import { socket, SocketContext } from "@/socket";
 import AppSidebar from "./AppSidebar";
 import ProfileDropdown from "./ProfileDropdown";
 
+interface NewIncidentSocketData {
+    id: string;
+    competitorName: string;
+    deviceName: string;
+}
+
 const Layout = () => {
     const userInfo = getUserInfo();
     const navigate = useNavigate();
@@ -57,7 +63,7 @@ const Layout = () => {
 
             socket.emit("joinIncidents");
             socket.emit("joinCompetition");
-            socket.on("newIncident", (data) => {
+            socket.on("newIncident", (data: NewIncidentSocketData) => {
                 fetchUnresolvedIncidentsCount();
                 const message = `Competitor ${data.competitorName} on station ${data.deviceName}`;
                 Notification.requestPermission().then((permission) => {
@@ -99,7 +105,7 @@ const Layout = () => {
                 });
             });
 
-            socket.on("groupShouldBeChanged", (data) => {
+            socket.on("groupShouldBeChanged", (data: { message: string }) => {
                 Notification.requestPermission().then((permission) => {
                     if (permission === "granted") {
                         if (isMobile()) {
