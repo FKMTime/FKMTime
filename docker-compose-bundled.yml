@@ -1,0 +1,102 @@
+services:
+  backend:
+    image: "ghcr.io/fkmtime/fkmtime-backend:main"
+    container_name: fkmtime-backend
+    restart: unless-stopped
+    environment:
+      - DATABASE_URL=postgres://root:password@database:5432/fkm_time
+      - SOCKET_PATH=/app/sock/socket.sock
+      - WCA_CLIENT_ID=example-application-id
+      - WCA_CLIENT_SECRET=example-secret
+      - WCA_LIVE_API_ORIGIN=http://nginx:80/dummy-wca-live/api
+      - WCA_ORIGIN=http://nginx:80/dummy-wca
+    volumes:
+      - sock:/app/sock
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:5000/health || exit 1"]
+      interval: 5s
+      timeout: 20s
+      retries: 50
+    depends_on:
+      database:
+        condition: service_healthy
+
+  database:
+    image: postgres:16
+    container_name: fkmtime-database
+    restart: unless-stopped
+    environment:
+      - POSTGRES_USER=root
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=fkm_time
+    volumes:
+      - database:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -d postgres"]
+      interval: 5s
+      timeout: 20s
+      retries: 50
+
+  dummy_wca:
+    restart: unless-stopped
+    image: maxidragon/dummy-wca:main
+
+  dummy_wca_live:
+    restart: unless-stopped
+    image: maxidragon/dummy-wca-live:main
+
+  nginx:
+    image: "ghcr.io/fkmtime/fkmtime-nginx:main"
+    restart: unless-stopped
+    container_name: fkmtime-nginx
+    environment:
+      - BACKEND_ORIGIN=/api
+      - WCA_CLIENT_ID=example-application-id
+      - WCA_CLIENT_SECRET=example-secret
+      - WCA_LIVE_API_ORIGIN=/dummy-wca-live/api
+      - WCA_ORIGIN=/dummy-wca
+      - REDIRECT_SSL=true
+      - TOKEN=1234
+    ports:
+      - "80:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+
+ # dozzle:
+ #   container_name: dozzle
+ #   image: amir20/dozzle:latest
+ #   restart: unless-stopped
+ #   volumes:
+ #     - /var/run/docker.sock:/var/run/docker.sock
+ #     - ./dozzle:/data
+ #   ports:
+ #     - "8080:8080"
+ #   environment:
+ #     DOZZLE_BASE: /logs
+ #     DOZZLE_AUTH_PROVIDER: simple
+
+  micro_connector:
+    image: "ghcr.io/fkmtime/fkmtime-micro-connector:master"
+    container_name: micro-connector
+    network_mode: host
+    volumes:
+      - /run/dbus:/run/dbus:ro
+      - logs:/logs
+      - sock:/app/sock
+    environment:
+      - PORT=8081
+      - FIRMWARE_DIR=/app/firmware
+      - RUST_LOG=none,backend=debug
+      - DEVICE_LOGS=/logs
+      - SOCKET_PATH=/app/sock/socket.sock
+      - NO_BT=true
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_healthy
+
+volumes:
+  database:
+  sock:
+  logs:
