@@ -3,6 +3,7 @@ import { getScramblingDeviceToken } from "./scramblingDevicesAuth";
 
 // this will be changed inside docker env
 const dockerBackendOrigin = "{{BACKEND_ORIGIN}}";
+const dockerWebsocketUrl = "{{WEBSOCKET_URL}}";
 const dockerWcaOrigin = "{{WCA_ORIGIN}}";
 const dockerWcaClientId = "{{WCA_CLIENT_ID}}";
 
@@ -29,8 +30,8 @@ export const BACKEND_ORIGIN = import.meta.env.VITE_DOCKERBUILD
 export const WEBSOCKET_PATH = import.meta.env.PROD ? "/api/socket.io/" : "";
 
 export const WEBSOCKET_URL = import.meta.env.VITE_DOCKERBUILD
-    ? dockerBackendOrigin
-        ? `${dockerBackendOrigin}/`
+    ? dockerWebsocketUrl
+        ? `${dockerWebsocketUrl}/`
         : "/"
     : import.meta.env.PROD
       ? "/"
