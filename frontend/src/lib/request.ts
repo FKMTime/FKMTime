@@ -14,11 +14,11 @@ export const WCA_ORIGIN = import.meta.env.VITE_DOCKERBUILD
         "https://staging.worldcubeassociation.org";
 
 export const WCA_CLIENT_ID = import.meta.env.VITE_DOCKERBUILD
-    ? dockerWcaClientId || "empty-wca-client-id"
+    ? dockerWcaClientId || "example-application-id"
     : import.meta.env.PROD
       ? import.meta.env.VITE_WCA_CLIENT_ID ||
         "ZODPEQQjPyCnAO-GAXtaHjN7iQyosQfSzPMZG6RcVJ0"
-      : "example-client-id";
+      : "example-application-id";
 
 export const BACKEND_ORIGIN = import.meta.env.VITE_DOCKERBUILD
     ? dockerBackendOrigin || "/api"
