@@ -75,6 +75,14 @@ export class PersonForDeviceService {
           (g) => g.split('-g')[0] === possibleGroups[0].split('-g')[0],
         )
       ) {
+        if (possibleGroups.length === finishedRoundsIds.length) {
+          return {
+            message: getTranslation('noAttemptsLeft', person.countryIso2),
+            shouldResetTime: true,
+            status: 400,
+            error: true,
+          };
+        }
         return {
           ...person,
           name: convertToLatin(person.name),
@@ -86,7 +94,7 @@ export class PersonForDeviceService {
           })),
         };
       }
-    }
+    } 
 
     const finalGroups = possibleGroups
       .filter(
