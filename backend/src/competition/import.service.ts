@@ -3,6 +3,7 @@ import { Role, SendingResultsFrequency } from '@prisma/client';
 import { Assignment, Person } from '@wca/helpers';
 import { ADMIN_WCA_USER_IDS } from 'src/constants';
 import { DbService } from 'src/db/db.service';
+import { SocketController } from 'src/socket/socket.controller';
 import { WcaService } from 'src/wca/wca.service';
 import { wcifRoleToAttendanceRole } from 'src/wcif-helpers';
 import { getGroupInfoByActivityId } from 'wcif-helpers';
@@ -12,6 +13,8 @@ export class ImportService {
     @Inject(forwardRef(() => DbService))
     private readonly prisma: DbService,
     private readonly wcaService: WcaService,
+    @Inject(forwardRef(() => SocketController))
+    private readonly socketController: SocketController,
   ) {}
 
   async importCompetition(wcaId: string, userId: string) {
@@ -138,6 +141,7 @@ export class ImportService {
     await this.prisma.room.createMany({
       data: rooms,
     });
+    await this.socketController.sendServerStatus();
     return competition;
   }
 }

@@ -94,7 +94,7 @@ export class PersonForDeviceService {
           })),
         };
       }
-    } 
+    }
 
     const finalGroups = possibleGroups
       .filter(
