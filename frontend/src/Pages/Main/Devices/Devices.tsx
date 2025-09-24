@@ -57,7 +57,7 @@ const Devices = () => {
     );
     const [tabIndex, setTabIndex] = useState<string>(tabs[0].id);
     const [rooms, setRooms] = useState<Room[]>([]);
-    const [selectedRoomId, setSelectedRoomId] = useState<string>("");
+    const [selectedRoomId, setSelectedRoomId] = useState<string>("ALL");
     const [deviceToAdd, setDeviceToAdd] = useState<AvailableDevice | null>(
         null
     );
@@ -140,7 +140,9 @@ const Devices = () => {
     useEffect(() => {
         getAllRooms().then((data) => {
             setRooms(data);
-            setSelectedRoomId(data[0].id);
+            if (data.length === 1) {
+                setSelectedRoomId(data[0].id);
+            }
         });
     }, []);
 
@@ -199,6 +201,9 @@ const Devices = () => {
                                                 <SelectValue placeholder="Select room" />
                                             </SelectTrigger>
                                             <SelectContent>
+                                                <SelectItem value="ALL">
+                                                    All rooms
+                                                </SelectItem>
                                                 {rooms.map((room) => (
                                                     <SelectItem value={room.id}>
                                                         {room.name}
