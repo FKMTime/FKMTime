@@ -213,14 +213,13 @@ export class CompetitionService {
         error: true,
       };
     }
-    const devices = await this.prisma.device.findMany({
-      where: {
-        type: 'STATION',
-      },
-    });
+    const devices = await this.prisma.device.findMany();
     return {
       shouldUpdate: competition.shouldUpdateDevices,
-      devices: devices.map((d) => d.espId),
+      devices: devices.map((d) => ({
+        espId: d.espId,
+        signKey: d.signKey,
+      })),
       translations: getAllTranslations(),
       defaultLocale: competition.defaultLocale,
     };
