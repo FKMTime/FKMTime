@@ -301,12 +301,14 @@ export enum DeviceType {
 export interface DeviceData {
     name: string;
     espId: number;
+    signKey?: number;
     type: DeviceType;
     roomId: string;
 }
 
 export interface AvailableDevice {
     espId: number;
+    signKey: number;
     type: AvailableDeviceType;
 }
 

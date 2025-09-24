@@ -60,6 +60,7 @@ export class DeviceService {
         data: {
           name: data.name,
           espId: data.espId,
+          signKey: data.signKey,
           type: data.type,
           room: {
             connect: {

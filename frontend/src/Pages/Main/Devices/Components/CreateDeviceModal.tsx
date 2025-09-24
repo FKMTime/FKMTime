@@ -80,6 +80,7 @@ const CreateDeviceModal = ({
     const defaultValues: DeviceData = {
         name: "",
         espId: deviceToAdd ? deviceToAdd.espId : 0,
+        signKey: deviceToAdd ? deviceToAdd.signKey : undefined,
         roomId: rooms.length === 1 ? rooms[0].id : "",
         type: deviceToAdd
             ? deviceToAdd.type === AvailableDeviceType.STAFF_ATTENDANCE

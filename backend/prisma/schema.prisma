@@ -210,6 +210,7 @@ model Device {
   id                String          @id @default(uuid())
   name              String          @unique
   espId             Int?            @unique @map("esp_id")
+  signKey           Int?            @unique @map("sign_key")
   type              DeviceType
   batteryPercentage Int?            @map("battery_percentage")
   roomId            String          @map("room_id")
