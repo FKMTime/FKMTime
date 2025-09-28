@@ -85,6 +85,7 @@ model Competition {
   scoretakingTokenUpdatedAt       DateTime?               @map("scoretaking_token_updated_at")
   cubingContestsToken             String?                 @map("cubing_contests_token")
   defaultLocale                   String?                 @default("en") @map("default_locale")
+  fkmToken                        Int                     @map("fkm_token")
   useFkmTimeDevices               Boolean                 @default(true) @map("use_fkm_time_devices")
 
   @@map("competition")

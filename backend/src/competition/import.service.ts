@@ -77,6 +77,9 @@ export class ImportService {
         });
       }
     }
+
+    const fkmToken = new Int32Array(1);
+    crypto.getRandomValues(fkmToken);
     const competition = await this.prisma.competition.create({
       data: {
         name: wcifPublic.name,
@@ -84,6 +87,7 @@ export class ImportService {
         countryIso2: wcifPublic.countryIso2,
         wcif: wcifPublic,
         sendingResultsFrequency: SendingResultsFrequency.AFTER_SOLVE,
+        fkmToken: fkmToken[0],
       },
     });
     await this.prisma.person.createMany({

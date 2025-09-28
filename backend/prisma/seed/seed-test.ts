@@ -57,6 +57,7 @@ export async function seedDb() {
       scoretakingToken: 'wca-live-token',
       scoretakingTokenUpdatedAt: new Date(),
       wcif: JSON.parse(wcifFile),
+      fkmToken: 69420
     },
   });
   await prisma.person.createMany({

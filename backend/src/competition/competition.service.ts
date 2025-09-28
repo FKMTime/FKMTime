@@ -222,6 +222,7 @@ export class CompetitionService {
       })),
       translations: getAllTranslations(),
       defaultLocale: competition.defaultLocale,
+      fkmToken: competition.fkmToken,
     };
   }
 
