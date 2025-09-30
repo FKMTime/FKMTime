@@ -223,6 +223,7 @@ export class CompetitionService {
       translations: getAllTranslations(),
       defaultLocale: competition.defaultLocale,
       fkmToken: competition.fkmToken,
+      secureRfid: competition.secureRfid,
     };
   }
 
@@ -287,6 +288,7 @@ export class CompetitionService {
         mdns: data.mdns,
         wsUrl: data.wsUrl,
         defaultLocale: data.defaultLocale,
+        secureRfid: data.secureRfid,
       },
     });
 

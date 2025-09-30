@@ -66,6 +66,8 @@ export interface Competition extends CompetitionDataForLoginPage {
     updatedAt?: Date;
     defaultLocale: string;
     hilTesting?: boolean;
+    fkmToken: number;
+    secureRfid: boolean;
 }
 
 //eslint-disable-next-line

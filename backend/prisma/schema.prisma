@@ -86,6 +86,7 @@ model Competition {
   cubingContestsToken             String?                 @map("cubing_contests_token")
   defaultLocale                   String?                 @default("en") @map("default_locale")
   fkmToken                        Int                     @map("fkm_token")
+  secureRfid                      Boolean                 @default(false) @map("secure_rfid")
   useFkmTimeDevices               Boolean                 @default(true) @map("use_fkm_time_devices")
 
   @@map("competition")

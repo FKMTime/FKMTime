@@ -25,4 +25,7 @@ export class UpdateDevicesSettingsDto {
 
   @IsBoolean()
   hilTesting: boolean;
+
+  @IsBoolean()
+  secureRfid: boolean;
 }
