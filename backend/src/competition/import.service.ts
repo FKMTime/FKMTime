@@ -87,6 +87,8 @@ export class ImportService {
         countryIso2: wcifPublic.countryIso2,
         wcif: wcifPublic,
         sendingResultsFrequency: SendingResultsFrequency.AFTER_SOLVE,
+        wifiSsid: '',
+        wifiPassword: '',
         fkmToken: fkmToken[0],
       },
     });
