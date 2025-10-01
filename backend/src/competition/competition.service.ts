@@ -45,6 +45,28 @@ export class CompetitionService {
   ) {}
 
   private logger = new Logger(CompetitionService.name);
+  private autoSetup = false;
+  private lastHeartbeat: Date | null = null;
+
+  async handleAutoSetupHeartbeat() {
+    this.autoSetup = true;
+    this.lastHeartbeat = new Date();
+    await this.socketController.sendServerStatus();
+  }
+
+  async stopAutoSetup() {
+    this.autoSetup = false;
+    this.lastHeartbeat = null;
+    await this.socketController.sendServerStatus();
+  }
+
+  @Cron(CronExpression.EVERY_10_SECONDS)
+  async checkHeartbeat() {
+    if (this.autoSetup && this.lastHeartbeat && new Date().getTime() - this.lastHeartbeat.getTime() > 10000) {
+      this.autoSetup = false;
+      await this.socketController.sendServerStatus();
+    }
+  }
 
   async getCompetitionInfo() {
     const competition = await this.prisma.competition.findFirst({
@@ -224,6 +246,7 @@ export class CompetitionService {
       defaultLocale: competition.defaultLocale,
       fkmToken: competition.fkmToken,
       secureRfid: competition.secureRfid,
+      autoSetup: this.autoSetup,
     };
   }
 

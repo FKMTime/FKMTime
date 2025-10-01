@@ -27,6 +27,8 @@ import { getAvailableLocales } from "@/lib/competition";
 import { AvailableLocale, Competition } from "@/lib/interfaces";
 import { deviceSettingsSchema } from "@/lib/schema/deviceSchema";
 
+import { AutoSetupModal } from "./AutoSetupModal";
+
 interface DeviceSettingsFormProps {
     competition: Competition;
     handleSubmit: (competition: Competition) => void;
@@ -39,6 +41,7 @@ const DeviceSettingsForm = ({
     const [availableLocales, setAvailableLocales] = useState<AvailableLocale[]>(
         []
     );
+    const [isAutoSetupModalOpen, setIsAutoSetupModalOpen] = useState(false);
 
     const form = useForm<z.infer<typeof deviceSettingsSchema>>({
         resolver: zodResolver(deviceSettingsSchema),
@@ -67,6 +70,10 @@ const DeviceSettingsForm = ({
 
     return (
         <Form {...form}>
+            <AutoSetupModal
+                open={isAutoSetupModalOpen}
+                onClose={() => setIsAutoSetupModalOpen(false)}
+            />
             <form
                 onSubmit={form.handleSubmit(onSubmit)}
                 className="space-y-8 py-3"
@@ -152,6 +159,7 @@ const DeviceSettingsForm = ({
                             <FormDescription>
                                 Use MDNS to search for a server in local network
                             </FormDescription>
+                            .
                         </FormItem>
                     )}
                 />
@@ -236,13 +244,21 @@ const DeviceSettingsForm = ({
                         </FormItem>
                     )}
                 />
-                <Button
-                    type="submit"
-                    variant="success"
-                    disabled={form.formState.isSubmitting}
-                >
-                    Save
-                </Button>
+                <div className="flex gap-2">
+                    <Button
+                        type="submit"
+                        variant="success"
+                        disabled={form.formState.isSubmitting}
+                    >
+                        Save
+                    </Button>
+                    <Button
+                        type="button"
+                        onClick={() => setIsAutoSetupModalOpen(true)}
+                    >
+                        Auto Setup Devices
+                    </Button>
+                </div>
             </form>
         </Form>
     );
