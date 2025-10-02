@@ -62,7 +62,11 @@ export class CompetitionService {
 
   @Cron(CronExpression.EVERY_10_SECONDS)
   async checkHeartbeat() {
-    if (this.autoSetup && this.lastHeartbeat && new Date().getTime() - this.lastHeartbeat.getTime() > 10000) {
+    if (
+      this.autoSetup &&
+      this.lastHeartbeat &&
+      new Date().getTime() - this.lastHeartbeat.getTime() > 10000
+    ) {
       this.autoSetup = false;
       await this.socketController.sendServerStatus();
     }
