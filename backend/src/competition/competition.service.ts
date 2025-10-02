@@ -49,9 +49,12 @@ export class CompetitionService {
   private lastHeartbeat: Date | null = null;
 
   async handleAutoSetupHeartbeat() {
-    this.autoSetup = true;
     this.lastHeartbeat = new Date();
-    await this.socketController.sendServerStatus();
+
+    if (!this.autoSetup) {
+      this.autoSetup = true;
+      await this.socketController.sendServerStatus();
+    }
   }
 
   async stopAutoSetup() {
