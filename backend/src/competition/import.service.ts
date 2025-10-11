@@ -121,28 +121,47 @@ export class ImportService {
     }
     const staffActivitiesTransactions = [];
 
-    wcifPublic.persons.forEach((person: Person) => {
-      person.assignments.forEach((assignment: Assignment) => {
-        const group = getGroupInfoByActivityId(
-          assignment.activityId,
-          wcifPublic,
-        );
-        staffActivitiesTransactions.push(
-          this.prisma.staffActivity.create({
-            data: {
-              person: {
-                connect: {
-                  registrantId: person.registrantId,
+    wcifPublic.persons
+      .filter(
+        (p: Person) => p.registrantId && p.registration.status === 'accepted',
+      )
+      .forEach(async (person: Person) => {
+        const personData = await this.prisma.person.findUnique({
+          where: { registrantId: person.registrantId },
+          select: { id: true },
+        });
+
+        person.assignments.forEach((assignment: Assignment) => {
+          const group = getGroupInfoByActivityId(
+            assignment.activityId,
+            wcifPublic,
+          );
+          staffActivitiesTransactions.push(
+            this.prisma.staffActivity.upsert({
+              where: {
+                personId_groupId_role: {
+                  personId: personData.id,
+                  groupId: group.activityCode,
+                  role: wcifRoleToAttendanceRole(assignment.assignmentCode),
                 },
               },
-              role: wcifRoleToAttendanceRole(assignment.assignmentCode),
-              groupId: group.activityCode,
-              isAssigned: true,
-            },
-          }),
-        );
+              create: {
+                person: {
+                  connect: {
+                    registrantId: person.registrantId,
+                  },
+                },
+                role: wcifRoleToAttendanceRole(assignment.assignmentCode),
+                groupId: group.activityCode,
+                isAssigned: true,
+              },
+              update: {
+                isAssigned: true,
+              },
+            }),
+          );
+        });
       });
-    });
     await this.prisma.$transaction(staffActivitiesTransactions);
     await this.prisma.room.createMany({
       data: rooms,
