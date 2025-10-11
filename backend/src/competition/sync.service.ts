@@ -96,43 +96,47 @@ export class SyncService {
     }
     const activitiesTransactions = [];
     const persons = await this.prisma.person.findMany();
-    wcifPublic.persons.forEach((person: Person) => {
-      person.assignments.forEach((assignment: Assignment) => {
-        const group = getGroupInfoByActivityId(
-          assignment.activityId,
-          wcifPublic,
-        );
-        const personData = persons.find(
-          (p) => p.registrantId === person.registrantId,
-        );
-        activitiesTransactions.push(
-          this.prisma.staffActivity.upsert({
-            where: {
-              personId_groupId_role: {
-                groupId: group.activityCode,
-                personId: personData.id,
-                role: wcifRoleToAttendanceRole(assignment.assignmentCode),
-              },
-            },
-            update: {
-              isAssigned: true,
-            },
-            create: {
-              person: {
-                connect: {
-                  registrantId: person.registrantId,
+    wcifPublic.persons
+      .filter(
+        (p: Person) => p.registrantId && p.registration.status === 'accepted',
+      )
+      .forEach(async (person: Person) => {
+        person.assignments.forEach((assignment: Assignment) => {
+          const group = getGroupInfoByActivityId(
+            assignment.activityId,
+            wcifPublic,
+          );
+          const personData = persons.find(
+            (p) => p.registrantId === person.registrantId,
+          );
+          activitiesTransactions.push(
+            this.prisma.staffActivity.upsert({
+              where: {
+                personId_groupId_role: {
+                  groupId: group.activityCode,
+                  personId: personData.id,
+                  role: wcifRoleToAttendanceRole(assignment.assignmentCode),
                 },
               },
-              role: wcifRoleToAttendanceRole(
-                assignment.assignmentCode,
-              ) as StaffRole,
-              groupId: group.activityCode,
-              isAssigned: true,
-            },
-          }),
-        );
+              update: {
+                isAssigned: true,
+              },
+              create: {
+                person: {
+                  connect: {
+                    registrantId: person.registrantId,
+                  },
+                },
+                role: wcifRoleToAttendanceRole(
+                  assignment.assignmentCode,
+                ) as StaffRole,
+                groupId: group.activityCode,
+                isAssigned: true,
+              },
+            }),
+          );
+        });
       });
-    });
     await this.prisma.$transaction(transactions);
     await this.prisma.$transaction(activitiesTransactions);
     await this.prisma.competition.updateMany({
