@@ -113,7 +113,7 @@ jobs:
           echo "${{ needs.check.outputs.digest }}" > ./state/digest.txt
           
       - name: Upload digest state
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: digest-state
           path: ./state/digest.txt
