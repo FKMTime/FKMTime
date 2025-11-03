@@ -72,3 +72,6 @@ jobs:
         # - name: Run E2E tests
         #   working-directory: 'backend'
         #   run: npm run test:e2e
+        - name: Run unit tests
+          working-directory: 'backend'
+          run: npm run test:no-watch
