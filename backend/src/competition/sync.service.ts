@@ -108,8 +108,8 @@ export class SyncService {
         activitiesTransactions.push(
           this.prisma.staffActivity.upsert({
             where: {
-              personId_groupId_role: {
-                groupId: group.activityCode,
+              personId_activityId_role: {
+                activityId: group.id,
                 personId: personData.id,
                 role: wcifRoleToAttendanceRole(assignment.assignmentCode),
               },

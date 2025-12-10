@@ -1,5 +1,5 @@
 import { forwardRef, HttpException, Inject } from '@nestjs/common';
-import { Role, SendingResultsFrequency } from '@prisma/client';
+import { Role, SendingResultsFrequency, StaffRole } from '@prisma/client';
 import { Assignment, Person } from '@wca/helpers';
 import { ADMIN_WCA_USER_IDS } from 'src/constants';
 import { DbService } from 'src/db/db.service';
@@ -109,6 +109,7 @@ export class ImportService {
             : person.birthdate && new Date(person.birthdate),
         })),
     });
+    const persons = await this.prisma.person.findMany();
     const rooms = [];
 
     for (const venue of wcifPublic.schedule.venues) {
@@ -121,7 +122,10 @@ export class ImportService {
     }
     const staffActivitiesTransactions = [];
 
-    wcifPublic.persons.forEach((person: Person) => {
+    wcifPublic.persons.filter((p) => p.registration.status === "accepted").forEach((person: Person) => {
+      const personFromDb = persons.find((p) => p.registrantId === person.registrantId);
+      console.log(person);
+      console.log(personFromDb);
       person.assignments.forEach((assignment: Assignment) => {
         const group = getGroupInfoByActivityId(
           assignment.activityId,
@@ -132,11 +136,12 @@ export class ImportService {
             data: {
               person: {
                 connect: {
-                  registrantId: person.registrantId,
+                  id: personFromDb.id,
                 },
               },
               role: wcifRoleToAttendanceRole(assignment.assignmentCode),
               groupId: group.activityCode,
+              activityId: assignment.activityId,
               isAssigned: true,
             },
           }),

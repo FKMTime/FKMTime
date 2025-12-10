@@ -109,7 +109,6 @@ services:
       - RUST_LOG=none,backend=debug
       - SOCKET_PATH=/app/sock/socket.sock
       - DEVICE_LOGS=/logs
-      - NO_BT=true
     restart: unless-stopped
     depends_on:
       backend:
