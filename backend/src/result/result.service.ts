@@ -11,7 +11,7 @@ import { DNS_VALUE, publicPersonSelect, publicUserSelect } from 'src/constants';
 import { ContestsService } from 'src/contests/contests.service';
 import { DbService } from 'src/db/db.service';
 import { isUnofficialEvent } from 'src/events';
-import { isCumulativeLimit } from 'src/wcif-helpers';
+import { getMaxAttempts, isCumulativeLimit } from 'src/wcif-helpers';
 
 import { AttendanceService } from '../attendance/attendance.service';
 import { WcaService } from '../wca/wca.service';
@@ -305,7 +305,7 @@ export class ResultService {
     const roundInfo = eventInfo.rounds.find(
       (round: Round) => round.id === result.roundId,
     );
-    const maxAttempts = roundInfo.format === 'a' ? 5 : 3;
+    const maxAttempts = getMaxAttempts(roundInfo.format);
     const sortedAttempts = getSortedStandardAttempts(attempts);
     const lastAttempt = sortedAttempts[sortedAttempts.length - 1];
     if (lastAttempt.attemptNumber === maxAttempts) {

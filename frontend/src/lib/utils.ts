@@ -3,7 +3,7 @@ import { type ClassValue, clsx } from "clsx";
 import * as CryptoJS from "crypto-js";
 import { twMerge } from "tailwind-merge";
 
-import { DNF_VALUE } from "../lib/constants";
+import { DNF_VALUE, roundFormats } from "../lib/constants";
 import { getEventShortName, isUnofficialEvent } from "../lib/events";
 import {
     Attempt,
@@ -305,16 +305,8 @@ export const prettySendingResultsFrequency = (frequency: string) => {
 };
 
 export const prettyRoundFormat = (format: string) => {
-    switch (format) {
-        case "a":
-            return "Average of 5";
-        case "m":
-            return "Mean of 3";
-        case "3":
-            return "Best of 3";
-        default:
-            return "Unknown";
-    }
+    const foundFormat = roundFormats.find((f) => f.format === format);
+    return foundFormat ? foundFormat.name : "Unknown format";
 };
 
 export const getSubmissionPlatformName = (eventId: string) => {

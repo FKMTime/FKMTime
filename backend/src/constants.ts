@@ -24,5 +24,14 @@ export const publicUserSelect = {
 export const roundIdRegex = '.*-r\\d+';
 export const groupIdRegex = '.*-r\\d+-g\\d+';
 
+export const roundFormatMap = {
+  '1': 1,
+  '2': 2,
+  '3': 3,
+  '5': 5,
+  a: 5,
+  m: 3,
+};
+
 //FKMTime developers are always allowed to log in using their WCA accounts
 export const ADMIN_WCA_USER_IDS = [259132, 470248];

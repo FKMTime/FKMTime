@@ -13,6 +13,7 @@ import {
 } from 'wcif-helpers';
 
 import { PersonService } from './person.service';
+import { getMaxAttempts } from 'src/wcif-helpers';
 
 @Injectable()
 export class PersonForDeviceService {
@@ -139,7 +140,7 @@ export class PersonForDeviceService {
         continue;
       }
       const roundInfo = getRoundInfoFromWcif(result.roundId, wcif);
-      const maxAttempts = roundInfo.format === 'a' ? 5 : 3;
+      const maxAttempts = getMaxAttempts(roundInfo.format);
       const submittedAttempts = this.wcaService.getAttemptsToEnterToWcaLive(
         result,
         competition,
