@@ -1,5 +1,5 @@
 import { forwardRef, HttpException, Inject } from '@nestjs/common';
-import { Role, SendingResultsFrequency, StaffRole } from '@prisma/client';
+import { Role, SendingResultsFrequency } from '@prisma/client';
 import { Assignment, Person } from '@wca/helpers';
 import { ADMIN_WCA_USER_IDS } from 'src/constants';
 import { DbService } from 'src/db/db.service';
@@ -122,32 +122,36 @@ export class ImportService {
     }
     const staffActivitiesTransactions = [];
 
-    wcifPublic.persons.filter((p) => p.registration.status === "accepted").forEach((person: Person) => {
-      const personFromDb = persons.find((p) => p.registrantId === person.registrantId);
-      console.log(person);
-      console.log(personFromDb);
-      person.assignments.forEach((assignment: Assignment) => {
-        const group = getGroupInfoByActivityId(
-          assignment.activityId,
-          wcifPublic,
+    wcifPublic.persons
+      .filter((p) => p.registration.status === 'accepted')
+      .forEach((person: Person) => {
+        const personFromDb = persons.find(
+          (p) => p.registrantId === person.registrantId,
         );
-        staffActivitiesTransactions.push(
-          this.prisma.staffActivity.create({
-            data: {
-              person: {
-                connect: {
-                  id: personFromDb.id,
+        console.log(person);
+        console.log(personFromDb);
+        person.assignments.forEach((assignment: Assignment) => {
+          const group = getGroupInfoByActivityId(
+            assignment.activityId,
+            wcifPublic,
+          );
+          staffActivitiesTransactions.push(
+            this.prisma.staffActivity.create({
+              data: {
+                person: {
+                  connect: {
+                    id: personFromDb.id,
+                  },
                 },
+                role: wcifRoleToAttendanceRole(assignment.assignmentCode),
+                groupId: group.activityCode,
+                activityId: assignment.activityId,
+                isAssigned: true,
               },
-              role: wcifRoleToAttendanceRole(assignment.assignmentCode),
-              groupId: group.activityCode,
-              activityId: assignment.activityId,
-              isAssigned: true,
-            },
-          }),
-        );
+            }),
+          );
+        });
       });
-    });
     await this.prisma.$transaction(staffActivitiesTransactions);
     await this.prisma.room.createMany({
       data: rooms,

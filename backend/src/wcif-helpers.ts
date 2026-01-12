@@ -1,5 +1,6 @@
 import { Competition, Event, Round } from '@wca/helpers';
 import { getEventInfoFromWcif } from 'wcif-helpers';
+
 import { roundFormatMap } from './constants';
 
 export const wcifRoleToAttendanceRole = (role: string) => {

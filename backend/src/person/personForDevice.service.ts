@@ -6,6 +6,7 @@ import { DbService } from 'src/db/db.service';
 import { eventsData } from 'src/events';
 import { convertToLatin, getTranslation } from 'src/translations/translations';
 import { WcaService } from 'src/wca/wca.service';
+import { getMaxAttempts } from 'src/wcif-helpers';
 import {
   getGroupInfoByActivityId,
   getPersonFromWcif,
@@ -13,7 +14,6 @@ import {
 } from 'wcif-helpers';
 
 import { PersonService } from './person.service';
-import { getMaxAttempts } from 'src/wcif-helpers';
 
 @Injectable()
 export class PersonForDeviceService {
@@ -23,7 +23,11 @@ export class PersonForDeviceService {
     private readonly wcaService: WcaService,
   ) {}
 
-  async getPersonInfo(cardId: string, espId: number) {
+  async getPersonInfo(
+    cardId: string,
+    espId: number,
+    isCompetitor: boolean = false,
+  ) {
     const person = await this.personService.getPersonByCardId(cardId);
     if (!person) {
       return {
@@ -76,7 +80,10 @@ export class PersonForDeviceService {
           (g) => g.split('-g')[0] === possibleGroups[0].split('-g')[0],
         )
       ) {
-        if (possibleGroups.length === finishedRoundsIds.length) {
+        if (
+          possibleGroups.length === finishedRoundsIds.length &&
+          isCompetitor
+        ) {
           return {
             message: getTranslation('noAttemptsLeft', person.countryIso2),
             shouldResetTime: true,

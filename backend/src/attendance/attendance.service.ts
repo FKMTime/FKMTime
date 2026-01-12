@@ -1,14 +1,14 @@
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { StaffActivityStatus, StaffRole } from '@prisma/client';
+import { Activity } from '@wca/helpers';
 import { AppGateway } from 'src/app.gateway';
+import { getActivityInfoFromSchedule } from 'wcif-helpers';
 
 import { DbService } from '../db/db.service';
 import { getTranslation } from '../translations/translations';
 import { AddNotAssignedPersonDto } from './dto/addNotAssignedPerson.dto';
 import { CreateAttendaceDto } from './dto/createAttendance.dto';
 import { UpdateCommentDto } from './dto/updateComment.dto';
-import { getActivityInfoFromSchedule } from 'wcif-helpers';
-import { Activity } from '@wca/helpers';
 
 @Injectable()
 export class AttendanceService {

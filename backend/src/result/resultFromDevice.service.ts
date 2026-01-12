@@ -23,6 +23,7 @@ import {
   isLocaleAvailable,
 } from 'src/translations/translations';
 import { WcaService } from 'src/wca/wca.service';
+import { getMaxAttempts } from 'src/wcif-helpers';
 import { getPersonFromWcif, getRoundInfoFromWcif } from 'wcif-helpers';
 
 import { EnterAttemptDto } from './dto/enterAttempt.dto';
@@ -34,7 +35,6 @@ import {
   isCompetitorSignedInForEvent,
 } from './helpers';
 import { ResultService } from './result.service';
-import { getMaxAttempts } from 'src/wcif-helpers';
 
 export class ResultFromDeviceService {
   constructor(
