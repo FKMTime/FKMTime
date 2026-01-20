@@ -115,17 +115,10 @@ export class AttendanceService {
       );
     }
 
-    const competition = await this.prisma.competition.findFirst();
-    const wcif = JSON.parse(JSON.stringify(competition.wcif));
-    const groupFromWcif: Activity | null = getActivityInfoFromSchedule(
-      groupId,
-      wcif,
-    );
-
     const attendance = await this.prisma.staffActivity.upsert({
       where: {
-        personId_activityId_role: {
-          activityId: groupFromWcif.id,
+        personId_groupId_role: {
+          groupId: groupId,
           personId: person.id,
           role: data.role,
         },
@@ -184,17 +177,10 @@ export class AttendanceService {
     groupId: string,
     deviceId?: string,
   ) {
-    const competition = await this.prisma.competition.findFirst();
-    const wcif = JSON.parse(JSON.stringify(competition.wcif));
-    const groupFromWcif: Activity | null = getActivityInfoFromSchedule(
-      groupId,
-      wcif,
-    );
-
     await this.prisma.staffActivity.upsert({
       where: {
-        personId_activityId_role: {
-          activityId: groupFromWcif.id,
+        personId_groupId_role: {
+          groupId: groupId,
           personId: competitorId,
           role: StaffRole.COMPETITOR,
         },
@@ -232,17 +218,10 @@ export class AttendanceService {
   }
 
   async markJudgeAsPresent(judgeId: string, groupId: string, deviceId: string) {
-    const competition = await this.prisma.competition.findFirst();
-    const wcif = JSON.parse(JSON.stringify(competition.wcif));
-    const groupFromWcif: Activity | null = getActivityInfoFromSchedule(
-      groupId,
-      wcif,
-    );
-
     await this.prisma.staffActivity.upsert({
       where: {
-        personId_activityId_role: {
-          activityId: groupFromWcif.id,
+        personId_groupId_role: {
+          groupId: groupId,
           personId: judgeId,
           role: 'JUDGE',
         },
@@ -358,65 +337,56 @@ export class AttendanceService {
         : device.type === 'ATTENDANCE_RUNNER'
           ? 'RUNNER'
           : 'JUDGE';
-    const competition = await this.prisma.competition.findFirst();
-    const wcif = JSON.parse(JSON.stringify(competition.wcif));
-
     for (const groupId of device.room.currentGroupIds) {
-      const groupFromWcif: Activity | null = getActivityInfoFromSchedule(
-        groupId,
-        wcif,
-      );
-      if (groupFromWcif) {
-        this.appGateway.handleNewAttendance(groupId, person.id);
-        try {
-          await this.prisma.staffActivity.upsert({
-            where: {
-              personId_activityId_role: {
-                activityId: groupFromWcif.id,
-                personId: person.id,
-                role: role,
-              },
-            },
-            create: {
+      this.appGateway.handleNewAttendance(groupId, person.id);
+      try {
+        await this.prisma.staffActivity.upsert({
+          where: {
+            personId_groupId_role: {
               groupId: groupId,
+              personId: person.id,
               role: role,
-              person: {
-                connect: {
-                  id: person.id,
-                },
-              },
-              device: {
-                connect: {
-                  id: device.id,
-                },
-              },
-              isAssigned: false,
-              status: StaffActivityStatus.PRESENT,
             },
-            update: {
-              device: {
-                connect: {
-                  id: device.id,
-                },
+          },
+          create: {
+            groupId: groupId,
+            role: role,
+            person: {
+              connect: {
+                id: person.id,
               },
-              status: StaffActivityStatus.PRESENT,
             },
-          });
-        } catch (e) {
-          return {
-            message: getTranslation('attendanceConfirmed', person.countryIso2),
-          };
-          // if (e instanceof PrismaClientKnownRequestError) {
-          //   if (e.code === 'P2002') {
-          //     throw new HttpException(
-          //       {
-          //         message: getTranslation('alreadyCheckedIn', person.countryIso2),
-          //       },
-          //       409,
-          //     );
-          //   }
-          // }
-        }
+            device: {
+              connect: {
+                id: device.id,
+              },
+            },
+            isAssigned: false,
+            status: StaffActivityStatus.PRESENT,
+          },
+          update: {
+            device: {
+              connect: {
+                id: device.id,
+              },
+            },
+            status: StaffActivityStatus.PRESENT,
+          },
+        });
+      } catch (e) {
+        return {
+          message: getTranslation('attendanceConfirmed', person.countryIso2),
+        };
+        // if (e instanceof PrismaClientKnownRequestError) {
+        //   if (e.code === 'P2002') {
+        //     throw new HttpException(
+        //       {
+        //         message: getTranslation('alreadyCheckedIn', person.countryIso2),
+        //       },
+        //       409,
+        //     );
+        //   }
+        // }
       }
     }
     return {

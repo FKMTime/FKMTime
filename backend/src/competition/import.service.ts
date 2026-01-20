@@ -109,7 +109,6 @@ export class ImportService {
             : person.birthdate && new Date(person.birthdate),
         })),
     });
-    const persons = await this.prisma.person.findMany();
     const rooms = [];
 
     for (const venue of wcifPublic.schedule.venues) {
@@ -121,6 +120,8 @@ export class ImportService {
       }
     }
     const staffActivitiesTransactions = [];
+
+    const persons = await this.prisma.person.findMany();
 
     wcifPublic.persons
       .filter((p) => p.registration.status === 'accepted')
