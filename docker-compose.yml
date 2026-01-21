@@ -9,6 +9,10 @@ services:
       - ./backend/prisma:/app/prisma
       - sock:/app/sock
     restart: unless-stopped
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
+      - 1.1.1.1
     environment:
       - DATABASE_URL=postgres://root:password@database:5432/fkm_time
       - WCA_LIVE_API_ORIGIN=http://dummy_wca_live:4000/api
@@ -42,6 +46,10 @@ services:
     ports:
       - "5173:5173"
     restart: unless-stopped
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
+      - 1.1.1.1
 
   database:
     image: postgres:16
@@ -49,6 +57,10 @@ services:
     ports:
       - "5433:5432"
     restart: unless-stopped
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
+      - 1.1.1.1
     environment:
       - POSTGRES_USER=root
       - POSTGRES_PASSWORD=password
@@ -75,6 +87,10 @@ services:
       - ./backend/api-tester/src:/app/src
       - sock:/app/sock
     restart: unless-stopped
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
+      - 1.1.1.1
     depends_on:
       backend:
         condition: service_healthy
@@ -83,6 +99,10 @@ services:
     container_name: fkmtime-dev-dummy-wca
     restart: unless-stopped
     image: maxidragon/dummy-wca:main
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
+      - 1.1.1.1
     # Feel free to change this if you are not using CubingContests
     ports:
     - "3005:3000"
@@ -91,6 +111,10 @@ services:
     container_name: fkmtime-dev-dummy-wca-live
     restart: unless-stopped
     image: maxidragon/dummy-wca-live:main
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
+      - 1.1.1.1
     ports:
       - "4000:4000"
   
@@ -98,6 +122,10 @@ services:
     image: "ghcr.io/fkmtime/fkmtime-micro-connector:master"
     container_name: micro-connector
     network_mode: host
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
+      - 1.1.1.1
     volumes:
       - /run/dbus:/run/dbus:ro
       - sock:/app/sock

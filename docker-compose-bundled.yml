@@ -3,6 +3,10 @@ services:
     image: "ghcr.io/fkmtime/fkmtime-backend:main"
     container_name: fkmtime-backend
     restart: unless-stopped
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
+      - 1.1.1.1
     environment:
       - DATABASE_URL=postgres://root:password@database:5432/fkm_time
       - SOCKET_PATH=/app/sock/socket.sock
@@ -20,11 +24,14 @@ services:
     depends_on:
       database:
         condition: service_healthy
-
   database:
     image: postgres:16
     container_name: fkmtime-database
     restart: unless-stopped
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
+      - 1.1.1.1
     environment:
       - POSTGRES_USER=root
       - POSTGRES_PASSWORD=password
@@ -36,19 +43,28 @@ services:
       interval: 5s
       timeout: 20s
       retries: 50
-
   dummy_wca:
     restart: unless-stopped
     image: maxidragon/dummy-wca:main
-
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
+      - 1.1.1.1
   dummy_wca_live:
     restart: unless-stopped
     image: maxidragon/dummy-wca-live:main
-
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
+      - 1.1.1.1
   nginx:
     image: "ghcr.io/fkmtime/fkmtime-nginx:main"
     restart: unless-stopped
     container_name: fkmtime-nginx
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
+      - 1.1.1.1
     environment:
       - BACKEND_ORIGIN=/api
       - WCA_CLIENT_ID=example-application-id
@@ -62,11 +78,14 @@ services:
     depends_on:
       backend:
         condition: service_healthy
-
  # dozzle:
  #   container_name: dozzle
  #   image: amir20/dozzle:latest
  #   restart: unless-stopped
+ #   dns:
+ #     - 8.8.8.8
+ #     - 8.8.4.4
+ #     - 1.1.1.1
  #   volumes:
  #     - /var/run/docker.sock:/var/run/docker.sock
  #     - ./dozzle:/data
@@ -75,11 +94,14 @@ services:
  #   environment:
  #     DOZZLE_BASE: /logs
  #     DOZZLE_AUTH_PROVIDER: simple
-
   micro_connector:
     image: "ghcr.io/fkmtime/fkmtime-micro-connector:master"
     container_name: micro-connector
     network_mode: host
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
+      - 1.1.1.1
     volumes:
       - /run/dbus:/run/dbus:ro
       - logs:/logs
@@ -95,7 +117,6 @@ services:
     depends_on:
       backend:
         condition: service_healthy
-
 volumes:
   database:
   sock:
