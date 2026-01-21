@@ -146,7 +146,6 @@ export class ImportService {
                 },
                 role: wcifRoleToAttendanceRole(assignment.assignmentCode),
                 groupId: group.activityCode,
-                activityId: assignment.activityId,
                 isAssigned: true,
               },
             }),
