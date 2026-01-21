@@ -84,12 +84,12 @@ export class PersonForDeviceService {
           possibleGroups.length === finishedRoundsIds.length &&
           isCompetitor
         ) {
-          return {
-            message: getTranslation('noAttemptsLeft', person.countryIso2),
-            shouldResetTime: true,
-            status: 400,
-            error: true,
-          };
+          // return {
+          //   message: getTranslation('noAttemptsLeft', person.countryIso2),
+          //   shouldResetTime: true,
+          //   status: 400,
+          //   error: true,
+          // };
         }
         return {
           ...person,
