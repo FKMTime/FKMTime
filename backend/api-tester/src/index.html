@@ -123,6 +123,11 @@
             <label for="espId">ESP ID</label>
             <input type="text" name="espId" placeholder="ESP ID" value=""/>
         </div>
+        <div>
+            <label for="isCompetitor">Competitor</label>
+            <input type="checkbox" name="isCompetitor" value="1"/>
+        </div>
+
         <button type="submit">Submit</button>
     </form>
     <div id="getPersonInfoResponse" class="response" hidden></div>
@@ -193,6 +198,7 @@
         });
         data['cardId'] = +data['cardId'];
         data['espId'] = +data['espId'];
+        data['isCompetitor'] = !!data["isCompetitor"];
         const response = await fetch('/person/info/', {
             method: 'POST',
             headers: {

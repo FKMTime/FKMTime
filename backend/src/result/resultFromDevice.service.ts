@@ -270,12 +270,12 @@ export class ResultFromDeviceService {
       const maxAttempts = getMaxAttempts(roundInfo.format);
       let lastAttempt = sortedAttempts[sortedAttempts.length - 1];
       if (lastAttempt && lastAttempt.attemptNumber === maxAttempts) {
-        // return {
-        //   message: getTranslation('noAttemptsLeft', locale),
-        //   shouldResetTime: false,
-        //   status: 400,
-        //   error: true,
-        // };
+        return {
+          message: getTranslation('noAttemptsLeft', locale),
+          shouldResetTime: false,
+          status: 400,
+          error: true,
+        };
       }
       if (lastAttempt) {
         attemptNumber = lastAttempt.attemptNumber + 1;

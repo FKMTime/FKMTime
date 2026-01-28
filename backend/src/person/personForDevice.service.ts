@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { Competition } from '@prisma/client';
-import { Competition as WCIF } from '@wca/helpers';
-import { publicPersonSelect } from 'src/constants';
+import { Round, Competition as WCIF } from '@wca/helpers';
+import { ResultWithAttempts, publicPersonSelect } from 'src/constants';
 import { DbService } from 'src/db/db.service';
 import { eventsData } from 'src/events';
 import { convertToLatin, getTranslation } from 'src/translations/translations';
@@ -14,6 +14,7 @@ import {
 } from 'wcif-helpers';
 
 import { PersonService } from './person.service';
+import { checkCutoff } from 'src/result/helpers';
 
 @Injectable()
 export class PersonForDeviceService {
@@ -81,15 +82,15 @@ export class PersonForDeviceService {
         )
       ) {
         if (
-          possibleGroups.length === finishedRoundsIds.length &&
-          isCompetitor
+          isCompetitor &&
+          !this.competitorHasAnyPossibleRounds(possibleGroups, competitorGroups, finishedRoundsIds)
         ) {
-          // return {
-          //   message: getTranslation('noAttemptsLeft', person.countryIso2),
-          //   shouldResetTime: true,
-          //   status: 400,
-          //   error: true,
-          // };
+          return {
+            message: getTranslation('noAttemptsLeft', person.countryIso2),
+            shouldResetTime: true,
+            status: 400,
+            error: true,
+          };
         }
         return {
           ...person,
@@ -107,8 +108,9 @@ export class PersonForDeviceService {
     const finalGroups = possibleGroups
       .filter(
         (g) =>
-          competitorGroups.includes(g) ||
-          eventsData.find((e) => e.id === g.split('-')[0]).isUnofficial,
+          competitorGroups.some(
+            (g) => g.split('-g')[0] === possibleGroups[0].split('-g')[0],
+          ) || eventsData.find((e) => e.id === g.split('-')[0]).isUnofficial,
       )
       .filter((g) => !finishedRoundsIds.includes(g.split('-g')[0]))
       .map((g) => {
@@ -124,6 +126,18 @@ export class PersonForDeviceService {
       name: convertToLatin(person.name),
       possibleGroups: finalGroups,
     };
+  }
+
+  private competitorHasAnyPossibleRounds (
+    possibleGroups: string[],
+    competitorGroups: string[],
+    finishedRoundsIds: string[],
+  ) {
+    return possibleGroups.some(
+      (g) =>
+        competitorGroups.some((cg) => cg.split('-g')[0] === g.split('-g')[0]) &&
+        !finishedRoundsIds.some((fr) => fr === g.split('-g')[0]),
+    );
   }
 
   private async getFinishedRoundIds(
@@ -147,7 +161,11 @@ export class PersonForDeviceService {
         continue;
       }
       const roundInfo = getRoundInfoFromWcif(result.roundId, wcif);
-      const maxAttempts = getMaxAttempts(roundInfo.format);
+      let maxAttempts = getMaxAttempts(roundInfo.format);
+      if (roundInfo.cutoff) {
+        const cutoffPassed = checkCutoff(result.attempts, roundInfo.cutoff.attemptResult, roundInfo.cutoff.numberOfAttempts);
+        if (!cutoffPassed) maxAttempts = roundInfo.cutoff.numberOfAttempts;
+      }
       const submittedAttempts = this.wcaService.getAttemptsToEnterToWcaLive(
         result,
         competition,
