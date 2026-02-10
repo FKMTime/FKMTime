@@ -124,7 +124,7 @@ export class ImportService {
     const persons = await this.prisma.person.findMany();
 
     wcifPublic.persons
-      .filter((p) => p.registration.status === 'accepted')
+      .filter((p) => p.registration && p.registration.status === 'accepted')
       .forEach((person: Person) => {
         const personFromDb = persons.find(
           (p) => p.registrantId === person.registrantId,

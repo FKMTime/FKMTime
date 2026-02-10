@@ -58,7 +58,7 @@ export class SyncService {
         }
       });
       wcif.persons
-        .filter((p) => p.registration.status !== 'accepted')
+        .filter((p) => p.registration && p.registration?.status !== 'accepted')
         .forEach((p) => {
           transactions.push(
             this.prisma.person.deleteMany({
