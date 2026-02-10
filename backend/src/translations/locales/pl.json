@@ -90,11 +90,11 @@
         },
         {
             "key": "scanJudgeCard",
-            "translation": "Zeskanuj karte sedziego"
+            "translation": "Karta sedziego"
         },
         {
             "key": "scanCompetitorCard",
-            "translation": "Zeskanuj karte zawodnika"
+            "translation": "Karta zawodnika"
         },
         {
             "key": "waitingForWifiHeader",
