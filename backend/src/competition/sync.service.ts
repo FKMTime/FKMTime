@@ -27,6 +27,9 @@ export class SyncService {
       if (wcif.statusCode === 403) {
         throw new HttpException("You don't have access to that WCIF", 403);
       }
+      else if (wcif.statusCode === 401) {
+        throw new HttpException("WCA token expired. Please log in again.", 401);
+      }
       wcif.persons.forEach((person: Person) => {
         if (person.registrantId && person.registration.status === 'accepted') {
           transactions.push(
