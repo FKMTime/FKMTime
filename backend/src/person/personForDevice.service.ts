@@ -1,9 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { Competition } from '@prisma/client';
-import { Round, Competition as WCIF } from '@wca/helpers';
-import { ResultWithAttempts, publicPersonSelect } from 'src/constants';
+import { Competition as WCIF } from '@wca/helpers';
+import { publicPersonSelect } from 'src/constants';
 import { DbService } from 'src/db/db.service';
 import { eventsData } from 'src/events';
+import { checkCutoff } from 'src/result/helpers';
 import { convertToLatin, getTranslation } from 'src/translations/translations';
 import { WcaService } from 'src/wca/wca.service';
 import { getMaxAttempts } from 'src/wcif-helpers';
@@ -14,7 +15,6 @@ import {
 } from 'wcif-helpers';
 
 import { PersonService } from './person.service';
-import { checkCutoff } from 'src/result/helpers';
 
 @Injectable()
 export class PersonForDeviceService {
@@ -83,7 +83,11 @@ export class PersonForDeviceService {
       ) {
         if (
           isCompetitor &&
-          !this.competitorHasAnyPossibleRounds(possibleGroups, competitorGroups, finishedRoundsIds)
+          !this.competitorHasAnyPossibleRounds(
+            possibleGroups,
+            competitorGroups,
+            finishedRoundsIds,
+          )
         ) {
           return {
             message: getTranslation('noAttemptsLeft', person.countryIso2),
@@ -128,7 +132,7 @@ export class PersonForDeviceService {
     };
   }
 
-  private competitorHasAnyPossibleRounds (
+  private competitorHasAnyPossibleRounds(
     possibleGroups: string[],
     competitorGroups: string[],
     finishedRoundsIds: string[],
@@ -163,7 +167,11 @@ export class PersonForDeviceService {
       const roundInfo = getRoundInfoFromWcif(result.roundId, wcif);
       let maxAttempts = getMaxAttempts(roundInfo.format);
       if (roundInfo.cutoff) {
-        const cutoffPassed = checkCutoff(result.attempts, roundInfo.cutoff.attemptResult, roundInfo.cutoff.numberOfAttempts);
+        const cutoffPassed = checkCutoff(
+          result.attempts,
+          roundInfo.cutoff.attemptResult,
+          roundInfo.cutoff.numberOfAttempts,
+        );
         if (!cutoffPassed) maxAttempts = roundInfo.cutoff.numberOfAttempts;
       }
       const submittedAttempts = this.wcaService.getAttemptsToEnterToWcaLive(

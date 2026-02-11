@@ -75,6 +75,14 @@ const ResultsActions = ({
             icon: <Plus />,
         },
         {
+            title: "Enter scorecard",
+            variant: "default",
+            onClick: () =>
+                navigate(`/results/round/${filters.roundId}/enter-scorecard`),
+            show: true,
+            icon: <Plus />,
+        },
+        {
             title: "Public view",
             variant: "secondary",
             onClick: () => navigate(`/results/public/${filters.roundId}`),
@@ -125,7 +133,7 @@ const ResultsActions = ({
                         )
                 )}
             </div>
-            <div className="md:hidden grid grid-cols-2 gap-3 w-full">
+            <div className="md:hidden grid grid-cols-2 gap-3 justify-center w-full">
                 {resultsActions.map(
                     (action) =>
                         action.show && (
