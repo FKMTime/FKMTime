@@ -21,7 +21,7 @@ import {
     SelectValue,
 } from "@/Components/ui/select";
 import { Tabs, TabsList, TabsTrigger } from "@/Components/ui/tabs";
-import { getAllDevices } from "@/lib/devices";
+import { getAllDevices, sortDevicesByName } from "@/lib/devices";
 import { AvailableDevice, Device, Room } from "@/lib/interfaces";
 import { isAdmin } from "@/lib/permissions";
 import { getAllRooms } from "@/lib/rooms";
@@ -71,7 +71,7 @@ const Devices = () => {
     const fetchData = async (roomIdParam?: string) => {
         setIsLoading(true);
         const data = await getAllDevices(undefined, roomIdParam);
-        setDevices(data);
+        setDevices(sortDevicesByName(data));
         setIsLoading(false);
     };
 
