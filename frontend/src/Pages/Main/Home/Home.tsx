@@ -87,9 +87,11 @@ const Home = () => {
                 {isOrganizerOrDelegate() && (
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 auto-rows-auto">
                         <InfoCard competition={competition} />
-                        <div className="md:col-span-2 grid grid-cols-2 gap-4">
-                            <CompetitionStatistics />
-                        </div>
+                        {competition.useFkmTimeDevices ? (
+                            <div className="md:col-span-2 grid grid-cols-2 gap-4">
+                                <CompetitionStatistics />
+                            </div>
+                        ) : null}
                     </div>
                 )}
                 {activities && activities.length > 0 ? (
@@ -109,7 +111,10 @@ const Home = () => {
                             />
                         </div>
                         <div className="block md:hidden">
-                            <MobileSchedule activities={activities} />
+                            <MobileSchedule
+                                activities={activities}
+                                competition={competition}
+                            />
                         </div>
                     </>
                 ) : (

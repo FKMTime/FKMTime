@@ -9,6 +9,9 @@ on:
       - 'nginx/**'
       - 'nginx.Dockerfile'
       - '.github/workflows/publish-nginx-image.yml'
+  repository_dispatch:
+    types:
+      - ghcr-image-updated
   workflow_dispatch:
 
       

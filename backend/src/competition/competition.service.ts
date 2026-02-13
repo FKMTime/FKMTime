@@ -45,6 +45,35 @@ export class CompetitionService {
   ) {}
 
   private logger = new Logger(CompetitionService.name);
+  private autoSetup = false;
+  private lastHeartbeat: Date | null = null;
+
+  async handleAutoSetupHeartbeat() {
+    this.lastHeartbeat = new Date();
+
+    if (!this.autoSetup) {
+      this.autoSetup = true;
+      await this.socketController.sendServerStatus();
+    }
+  }
+
+  async stopAutoSetup() {
+    this.autoSetup = false;
+    this.lastHeartbeat = null;
+    await this.socketController.sendServerStatus();
+  }
+
+  @Cron(CronExpression.EVERY_10_SECONDS)
+  async checkHeartbeat() {
+    if (
+      this.autoSetup &&
+      this.lastHeartbeat &&
+      new Date().getTime() - this.lastHeartbeat.getTime() > 10000
+    ) {
+      this.autoSetup = false;
+      await this.socketController.sendServerStatus();
+    }
+  }
 
   async getCompetitionInfo() {
     const competition = await this.prisma.competition.findFirst({
@@ -54,6 +83,23 @@ export class CompetitionService {
         wcaId: true,
         countryIso2: true,
         wcif: true,
+        useFkmTimeDevices: true,
+      },
+    });
+    if (!competition) {
+      throw new HttpException('Competition not found', 404);
+    }
+    return competition;
+  }
+
+  async getInfoForLoginPage() {
+    const competition = await this.prisma.competition.findFirst({
+      select: {
+        id: true,
+        name: true,
+        wcaId: true,
+        countryIso2: true,
+        useFkmTimeDevices: true,
       },
     });
     if (!competition) {
@@ -196,16 +242,18 @@ export class CompetitionService {
         error: true,
       };
     }
-    const devices = await this.prisma.device.findMany({
-      where: {
-        type: 'STATION',
-      },
-    });
+    const devices = await this.prisma.device.findMany();
     return {
       shouldUpdate: competition.shouldUpdateDevices,
-      devices: devices.map((d) => d.espId),
+      devices: devices.map((d) => ({
+        espId: d.espId,
+        signKey: d.signKey,
+      })),
       translations: getAllTranslations(),
       defaultLocale: competition.defaultLocale,
+      fkmToken: competition.fkmToken,
+      secureRfid: competition.secureRfid,
+      autoSetup: this.autoSetup,
     };
   }
 
@@ -228,6 +276,7 @@ export class CompetitionService {
         cubingContestsToken: dto.cubingContestsToken,
         sendingResultsFrequency: dto.sendingResultsFrequency,
         shouldChangeGroupsAutomatically: dto.shouldChangeGroupsAutomatically,
+        useFkmTimeDevices: dto.useFkmTimeDevices,
       },
     });
   }
@@ -269,6 +318,7 @@ export class CompetitionService {
         mdns: data.mdns,
         wsUrl: data.wsUrl,
         defaultLocale: data.defaultLocale,
+        secureRfid: data.secureRfid,
       },
     });
 
@@ -282,7 +332,7 @@ export class CompetitionService {
   async checkIfGroupShouldBeChanged() {
     this.logger.log('Checking if group should be changed');
     const competition = await this.prisma.competition.findFirst();
-    if (!competition) {
+    if (!competition || !competition.useFkmTimeDevices) {
       return;
     }
     if (

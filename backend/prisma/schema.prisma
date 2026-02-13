@@ -1,6 +1,6 @@
 generator client {
   provider      = "prisma-client-js"
-  binaryTargets = ["native", "linux-musl-arm64-openssl-3.0.x"]
+  binaryTargets = ["native", "linux-musl-arm64-openssl-3.0.x", "linux-musl-openssl-3.0.x"]
 }
 
 datasource db {
@@ -23,27 +23,29 @@ model User {
   updatedAttempts            Attempt[]
   createdNoteworthyIncidents NoteworthyIncident[]
   createdWarnings            Warning[]
+  Result                     Result[]
+  ManualIncident             ManualIncident[]
 
   @@map("users")
-  Result Result[]
 }
 
 model Person {
-  id                String          @id @default(uuid())
-  registrantId      Int?            @unique @map("registrant_id")
+  id                String           @id @default(uuid())
+  registrantId      Int?             @unique @map("registrant_id")
   name              String
-  wcaId             String?         @map("wca_id")
-  countryIso2       String?         @map("country_iso_2")
+  wcaId             String?          @map("wca_id")
+  countryIso2       String?          @map("country_iso_2")
   gender            String?
-  canCompete        Boolean         @default(true) @map("can_compete")
+  canCompete        Boolean          @default(true) @map("can_compete")
   birthdate         DateTime?
-  checkedInAt       DateTime?       @map("checked_in_at")
-  cardId            String?         @unique @map("card_id")
+  checkedInAt       DateTime?        @map("checked_in_at")
+  cardId            String?          @unique @map("card_id")
   results           Result[]
-  judgedAttempts    Attempt[]       @relation(name: "attempt_judge")
+  judgedAttempts    Attempt[]        @relation(name: "attempt_judge")
   StaffActivity     StaffActivity[]
-  scrambledAttempts Attempt[]       @relation(name: "attempt_scrambler")
+  scrambledAttempts Attempt[]        @relation(name: "attempt_scrambler")
   receivedWarnings  Warning[]
+  manualIncidents   ManualIncident[]
 
   @@map("person")
 }
@@ -55,8 +57,9 @@ model StaffActivity {
   deviceId   String?   @map("device_id")
   device     Device?   @relation(fields: [deviceId], references: [id])
   isAssigned Boolean   @default(false) @map("is_assigned")
-  isPresent  Boolean   @default(false) @map("is_present")
+  status     StaffActivityStatus @default(ABSENT)
   groupId    String    @map("group_id")
+  comment    String?
   role       StaffRole
   createdAt  DateTime  @default(now()) @map("created_at")
   updatedAt  DateTime  @updatedAt @map("updated_at")
@@ -82,6 +85,9 @@ model Competition {
   scoretakingTokenUpdatedAt       DateTime?               @map("scoretaking_token_updated_at")
   cubingContestsToken             String?                 @map("cubing_contests_token")
   defaultLocale                   String?                 @default("en") @map("default_locale")
+  fkmToken                        Int                     @map("fkm_token")
+  secureRfid                      Boolean                 @default(false) @map("secure_rfid")
+  useFkmTimeDevices               Boolean                 @default(true) @map("use_fkm_time_devices")
 
   @@map("competition")
 }
@@ -115,7 +121,7 @@ model Result {
   person            Person    @relation(fields: [personId], references: [id], onDelete: Cascade)
   eventId           String    @map("event_id")
   roundId           String    @map("round_id")
-  doubleCheckedBy   User?   @relation(fields: [doubleCheckedById], references: [id], onDelete: SetNull)
+  doubleCheckedBy   User?     @relation(fields: [doubleCheckedById], references: [id], onDelete: SetNull)
   doubleCheckedById String?   @map("double_checked_by")
   doubleCheckedAt   DateTime? @map("double_checked_at")
   isDoubleChecked   Boolean   @default(false) @map("is_double_checked")
@@ -182,12 +188,31 @@ model Warning {
   createdBy   User     @relation(fields: [createdById], references: [id])
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@map("warning")
+}
+
+model ManualIncident {
+  id           String   @id @default(uuid())
+  personId     String   @map("person_id")
+  person       Person   @relation(fields: [personId], references: [id], onDelete: Cascade)
+  roundId      String?
+  description  String
+  attempt      String? 
+  isNoteworthy Boolean  @default(false)
+  createdById  String   @map("created_by")
+  createdBy    User     @relation(fields: [createdById], references: [id])
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  @@map("manual_incident")
 }
 
 model Device {
   id                String          @id @default(uuid())
   name              String          @unique
   espId             Int?            @unique @map("esp_id")
+  signKey           Int?            @unique @map("sign_key")
   type              DeviceType
   batteryPercentage Int?            @map("battery_percentage")
   roomId            String          @map("room_id")
@@ -291,4 +316,11 @@ enum SendingResultsFrequency {
   AFTER_SOLVE
   EVERY_5_MINUTES
   NEVER
+}
+
+enum StaffActivityStatus {
+  PRESENT
+  ABSENT
+  LATE
+  REPLACED
 }

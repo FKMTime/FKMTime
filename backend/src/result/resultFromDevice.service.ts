@@ -23,6 +23,7 @@ import {
   isLocaleAvailable,
 } from 'src/translations/translations';
 import { WcaService } from 'src/wca/wca.service';
+import { getMaxAttempts } from 'src/wcif-helpers';
 import { getPersonFromWcif, getRoundInfoFromWcif } from 'wcif-helpers';
 
 import { EnterAttemptDto } from './dto/enterAttempt.dto';
@@ -266,7 +267,7 @@ export class ResultFromDeviceService {
     }
     if (!extraEntered) {
       let attemptNumber = 1;
-      const maxAttempts = roundInfo.format === 'a' ? 5 : 3;
+      const maxAttempts = getMaxAttempts(roundInfo.format);
       let lastAttempt = sortedAttempts[sortedAttempts.length - 1];
       if (lastAttempt && lastAttempt.attemptNumber === maxAttempts) {
         return {
@@ -374,7 +375,7 @@ export class ResultFromDeviceService {
     const roundInfo = getRoundInfoFromWcif(currentRoundId, wcif);
 
     let attemptNumber = 1;
-    const maxAttempts = roundInfo.format === 'a' ? 5 : 3;
+    const maxAttempts = getMaxAttempts(roundInfo.format);
     const lastAttempt = sortedAttempts[sortedAttempts.length - 1];
     if (lastAttempt && lastAttempt.attemptNumber === maxAttempts) {
       //No attempts left

@@ -42,14 +42,18 @@ export enum UserRole {
     STAFF = "STAFF",
 }
 
-export interface Competition {
+export interface CompetitionDataForLoginPage {
     id: string;
     wcaId: string;
     name: string;
+    useFkmTimeDevices: boolean;
+    countryIso2: string;
+}
+
+export interface Competition extends CompetitionDataForLoginPage {
     sendingResultsFrequency: SendingResultsFrequency;
     shouldChangeGroupsAutomatically: boolean;
     shouldUpdateDevices: boolean;
-    countryIso2: string;
     scoretakingToken?: string;
     scoretakingTokenUpdatedAt?: Date;
     cubingContestsToken?: string;
@@ -62,6 +66,8 @@ export interface Competition {
     updatedAt?: Date;
     defaultLocale: string;
     hilTesting?: boolean;
+    fkmToken: number;
+    secureRfid: boolean;
 }
 
 //eslint-disable-next-line
@@ -149,10 +155,19 @@ export interface StaffActivity {
     person: Person;
     role: string;
     device: Device;
-    isPresent: boolean;
+    status: StaffActivityStatus;
+    comment?: string;
     isAssigned: boolean;
     createdAt: Date;
     updatedAt: Date;
+}
+
+//eslint-disable-next-line
+export enum StaffActivityStatus {
+    PRESENT = "PRESENT",
+    ABSENT = "ABSENT",
+    LATE = "LATE",
+    REPLACED = "REPLACED",
 }
 
 export interface Result {
@@ -182,10 +197,10 @@ export interface ResultWithAverage extends Result {
 
 export interface Attempt {
     id: string;
-    resultId: number;
+    resultId: string;
     attemptNumber: number;
     comment?: string;
-    replacedBy: number;
+    replacedBy?: number | null;
     penalty: number;
     status: AttemptStatus;
     type: AttemptType;
@@ -201,6 +216,10 @@ export interface Attempt {
     deviceId?: string;
     device?: Device;
     updatedBy?: User;
+}
+
+export interface AttemptToEnterWithScorecard extends Attempt {
+    isNew?: boolean;
 }
 
 //eslint-disable-next-line
@@ -242,6 +261,22 @@ export interface NoteworthyIncident extends NoteworthyIncidentData {
     updatedAt: Date;
 }
 
+export interface ManualIncidentData {
+    personId: string;
+    roundId: string;
+    description: string;
+    attempt?: string;
+}
+
+export interface ManualIncident extends ManualIncidentData {
+    id: string;
+    person: Person;
+    round: Round;
+    createdAt: Date;
+    updatedAt: Date;
+    createdBy: User;
+}
+
 export interface WarningData {
     description: string;
 }
@@ -272,12 +307,14 @@ export enum DeviceType {
 export interface DeviceData {
     name: string;
     espId: number;
+    signKey?: number;
     type: DeviceType;
     roomId: string;
 }
 
 export interface AvailableDevice {
     espId: number;
+    signKey: number;
     type: AvailableDeviceType;
 }
 
@@ -440,10 +477,22 @@ export interface AttemptData {
     value: number;
     penalty: number;
     comment: string;
-    replacedBy: number;
+    replacedBy?: number;
 }
 
 export interface AvailableLocale {
     locale: string;
     localeName: string;
+}
+
+export interface MissedAssignments {
+    person: Person;
+    missedAssignments: StaffActivity[];
+    missedAssignmentsCount: number;
+    lateAssignmentsCount: number;
+    lateAssignments: StaffActivity[];
+    presentButReplacedAssignments: StaffActivity[];
+    presentButReplacedAssignmentsCount: number;
+    comments: StaffActivity[];
+    commentsCount: number;
 }

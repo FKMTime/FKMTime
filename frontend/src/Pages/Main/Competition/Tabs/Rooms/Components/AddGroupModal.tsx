@@ -110,12 +110,12 @@ const AddGroupModal = ({
                     </SelectTrigger>
 
                     <SelectContent>
-                        {groups.map((group: Activity, i: number) => (
+                        {groups.map((group: Activity) => (
                             <SelectItem
                                 key={group.activityCode}
                                 value={group.activityCode}
                             >
-                                {i + 1}
+                                {group.activityCode.split("-g")[1]}
                             </SelectItem>
                         ))}
                     </SelectContent>

@@ -10,7 +10,10 @@ import {
     TableRow,
 } from "@/Components/ui/table";
 import { activityCodeToName, prettyActivityName } from "@/lib/activities";
-import { getStaffActivitiesByPersonId } from "@/lib/attendance";
+import {
+    getStaffActivitiesByPersonId,
+    prettyStaffActivityStatus,
+} from "@/lib/attendance";
 import { Person, StaffActivity } from "@/lib/interfaces";
 
 interface DisplayGroupsModalProps {
@@ -56,7 +59,7 @@ const DisplayGroupsModal = ({
                                     {prettyActivityName(activity.role)}
                                 </TableCell>
                                 <TableCell>
-                                    {activity.isPresent ? "Yes" : "No"}
+                                    {prettyStaffActivityStatus(activity.status)}
                                 </TableCell>
                                 <TableCell>
                                     {activity.isAssigned ? "Yes" : "No"}

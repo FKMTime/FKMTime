@@ -220,6 +220,7 @@ export class SocketServer {
       const responseData = await this.socketService.getPersonInfo(
         request.data.cardId,
         request.data.espId,
+        request.data.isCompetitor,
       );
       this.sendResponseWithTag(socket, {
         type: 'PersonInfo',

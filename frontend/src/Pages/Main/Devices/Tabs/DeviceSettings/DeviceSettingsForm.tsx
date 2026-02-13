@@ -50,6 +50,7 @@ const DeviceSettingsForm = ({
             wifiPassword: competition.wifiPassword,
             defaultLocale: competition.defaultLocale,
             hilTesting: competition.hilTesting,
+            secureRfid: competition.secureRfid,
         },
     });
 
@@ -93,6 +94,27 @@ const DeviceSettingsForm = ({
                 />
                 <FormField
                     control={form.control}
+                    name="secureRfid"
+                    render={({ field }) => (
+                        <FormItem>
+                            <div className="flex items-center gap-2">
+                                <FormControl>
+                                    <Checkbox
+                                        checked={field.value}
+                                        onCheckedChange={field.onChange}
+                                    />
+                                </FormControl>
+                                <FormLabel>Secure RFID</FormLabel>
+                            </div>
+                            <FormMessage />
+                            <FormDescription>
+                                Secure RFID cards with token
+                            </FormDescription>
+                        </FormItem>
+                    )}
+                />
+                <FormField
+                    control={form.control}
                     name="shouldUpdateDevices"
                     render={({ field }) => (
                         <FormItem>
@@ -130,6 +152,7 @@ const DeviceSettingsForm = ({
                             <FormDescription>
                                 Use MDNS to search for a server in local network
                             </FormDescription>
+                            .
                         </FormItem>
                     )}
                 />
@@ -214,13 +237,15 @@ const DeviceSettingsForm = ({
                         </FormItem>
                     )}
                 />
-                <Button
-                    type="submit"
-                    variant="success"
-                    disabled={form.formState.isSubmitting}
-                >
-                    Save
-                </Button>
+                <div className="flex gap-2">
+                    <Button
+                        type="submit"
+                        variant="success"
+                        disabled={form.formState.isSubmitting}
+                    >
+                        Save
+                    </Button>
+                </div>
             </form>
         </Form>
     );

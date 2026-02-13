@@ -1,4 +1,3 @@
-import { Competition } from "@wca/helpers";
 import {
     ChartNoAxesColumn,
     Check,
@@ -18,7 +17,7 @@ import FlagIcon from "@/Components/Icons/FlagIcon.tsx";
 import SmallIconButton from "@/Components/SmallIconButton";
 import Tooltip from "@/Components/Tooltip";
 import { TableCell, TableRow } from "@/Components/ui/table";
-import { Person } from "@/lib/interfaces";
+import { Competition, Person } from "@/lib/interfaces";
 import {
     isDelegate,
     isStageLeaderOrOrganizerOrDelegate,
@@ -33,11 +32,15 @@ import IssueWarningModal from "./IssueWarningModal";
 
 interface PersonRowProps {
     person: Person;
-    wcif: Competition;
+    competition: Competition;
     handleCloseEditModal: () => void;
 }
 
-const PersonRow = ({ person, wcif, handleCloseEditModal }: PersonRowProps) => {
+const PersonRow = ({
+    person,
+    competition,
+    handleCloseEditModal,
+}: PersonRowProps) => {
     const navigate = useNavigate();
     const [isOpenAssignCardModal, setIsOpenAssignCardModal] =
         useState<boolean>(false);
@@ -48,7 +51,7 @@ const PersonRow = ({ person, wcif, handleCloseEditModal }: PersonRowProps) => {
     const [isOpenIssueWarningModal, setIsOpenIssueWarningModal] =
         useState<boolean>(false);
     const wcifInfo = person.registrantId
-        ? getPersonFromWcif(person.registrantId, wcif)
+        ? getPersonFromWcif(person.registrantId, competition.wcif)
         : null;
 
     const handleCloseAssignCardModal = async () => {
@@ -105,15 +108,21 @@ const PersonRow = ({ person, wcif, handleCloseEditModal }: PersonRowProps) => {
                     ))}
                 </div>
             </TableCell>
-            <TableCell>{person.cardId && <Check />}</TableCell>
+            {competition.useFkmTimeDevices && (
+                <TableCell>{person.cardId && <Check />}</TableCell>
+            )}
             <TableCell>{person.checkedInAt && <Check />}</TableCell>
-            <TableCell>{person.canCompete && <Check />}</TableCell>
+            {competition.useFkmTimeDevices && (
+                <TableCell>{person.canCompete && <Check />}</TableCell>
+            )}
             <TableCell>
-                <SmallIconButton
-                    icon={<IdCard />}
-                    title="Assign card"
-                    onClick={() => setIsOpenAssignCardModal(true)}
-                />
+                {competition.useFkmTimeDevices && (
+                    <SmallIconButton
+                        icon={<IdCard />}
+                        title="Assign card"
+                        onClick={() => setIsOpenAssignCardModal(true)}
+                    />
+                )}
                 {person.registrantId && person.registrantId !== 0 && (
                     <>
                         {isStageLeaderOrOrganizerOrDelegate() && (
@@ -125,15 +134,17 @@ const PersonRow = ({ person, wcif, handleCloseEditModal }: PersonRowProps) => {
                                         setIsOpenDisplayGroupsModal(true)
                                     }
                                 />
-                                <SmallIconButton
-                                    icon={<ChartNoAxesColumn />}
-                                    title="Display all results for this person"
-                                    onClick={() =>
-                                        navigate(
-                                            `/persons/${person.id}/results`
-                                        )
-                                    }
-                                />
+                                {competition.useFkmTimeDevices && (
+                                    <SmallIconButton
+                                        icon={<ChartNoAxesColumn />}
+                                        title="Display all results for this person"
+                                        onClick={() =>
+                                            navigate(
+                                                `/persons/${person.id}/results`
+                                            )
+                                        }
+                                    />
+                                )}
                             </>
                         )}
                         {isDelegate() && (

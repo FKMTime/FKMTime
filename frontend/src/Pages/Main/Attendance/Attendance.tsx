@@ -3,12 +3,15 @@ import { useCallback, useContext, useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 
 import LoadingPage from "@/Components/LoadingPage";
+import { useConfirm } from "@/hooks/useConfirm";
 import { useToast } from "@/hooks/useToast";
 import { competitionAtom } from "@/lib/atoms";
 import {
     getAttendanceByGroupId,
     markAsAbsent,
+    markAsLate,
     markAsPresent,
+    markAsPresentButReplaced,
 } from "@/lib/attendance";
 import { getCompetitionInfo } from "@/lib/competition";
 import { Room, StaffActivity } from "@/lib/interfaces";
@@ -26,6 +29,7 @@ import ScramblersCard from "./Components/ScramblersCard";
 const Attendance = () => {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
+    const confirm = useConfirm();
     const { toast } = useToast();
     const selectedGroup = id ? id : "";
     const [competition, setCompetition] = useAtom(competitionAtom);
@@ -66,11 +70,62 @@ const Attendance = () => {
     };
 
     const handleMarkAsAbsent = async (staffActivityId: string) => {
+        const activity = attendance.find((a) => a.id === staffActivityId);
+
+        if (activity && !activity.isAssigned) {
+            const confirmed = await confirm({
+                title: "Are you sure you want to mark this person as absent?",
+                description:
+                    "This person is not assigned to this group. Are you sure you want to mark them as absent? This would completely remove them from the attendance list for this group.",
+            })
+                .then(() => true)
+                .catch(() => false);
+
+            if (!confirmed) return;
+        }
+
         const status = await markAsAbsent(staffActivityId);
         if (status === 201) {
             toast({
                 title: "Success",
                 description: "Marked as absent",
+                variant: "success",
+            });
+            fetchAttendanceData(selectedGroup);
+        } else {
+            toast({
+                title: "Error",
+                description: "Something went wrong",
+                variant: "destructive",
+            });
+        }
+    };
+
+    const handleMarkAsLate = async (staffActivityId: string) => {
+        const status = await markAsLate(staffActivityId);
+        if (status === 201) {
+            toast({
+                title: "Success",
+                description: "Marked as late",
+                variant: "success",
+            });
+            fetchAttendanceData(selectedGroup);
+        } else {
+            toast({
+                title: "Error",
+                description: "Something went wrong",
+                variant: "destructive",
+            });
+        }
+    };
+
+    const handleMarkAsPresentButReplaced = async (staffActivityId: string) => {
+        const status = await markAsPresentButReplaced(staffActivityId);
+        if (status === 201) {
+            toast({
+                title: "Success",
+                description: "Marked as present but replaced",
+                variant: "success",
             });
             fetchAttendanceData(selectedGroup);
         } else {
@@ -149,31 +204,46 @@ const Attendance = () => {
                     />
                 )}
                 {selectedGroup ? (
-                    <PageTransition>
-                        <div className="flex flex-col gap-5 md:grid md:grid-cols-4">
-                            <CompetitorsCard
-                                attendance={attendance}
-                                fetchData={() =>
-                                    fetchAttendanceData(selectedGroup)
-                                }
-                            />
-                            <ScramblersCard
-                                attendance={attendance}
-                                handleMarkAsPresent={handleMarkAsPresent}
-                                handleMarkAsAbsent={handleMarkAsAbsent}
-                            />
-                            <RunnersCard
-                                attendance={attendance}
-                                handleMarkAsPresent={handleMarkAsPresent}
-                                handleMarkAsAbsent={handleMarkAsAbsent}
-                            />
-                            <JudgesCard
-                                attendance={attendance}
-                                handleMarkAsPresent={handleMarkAsPresent}
-                                handleMarkAsAbsent={handleMarkAsAbsent}
-                            />
-                        </div>
-                    </PageTransition>
+                    <div className="flex flex-col gap-5 md:grid md:grid-cols-4">
+                        <CompetitorsCard
+                            attendance={attendance}
+                            fetchData={() => fetchAttendanceData(selectedGroup)}
+                            groupId={selectedGroup}
+                        />
+                        <ScramblersCard
+                            attendance={attendance}
+                            handleMarkAsPresent={handleMarkAsPresent}
+                            handleMarkAsAbsent={handleMarkAsAbsent}
+                            handleMarkAsLate={handleMarkAsLate}
+                            handleMarkAsPresentButReplaced={
+                                handleMarkAsPresentButReplaced
+                            }
+                            fetchData={() => fetchAttendanceData(selectedGroup)}
+                            groupId={selectedGroup}
+                        />
+                        <RunnersCard
+                            attendance={attendance}
+                            handleMarkAsPresent={handleMarkAsPresent}
+                            handleMarkAsAbsent={handleMarkAsAbsent}
+                            handleMarkAsLate={handleMarkAsLate}
+                            handleMarkAsPresentButReplaced={
+                                handleMarkAsPresentButReplaced
+                            }
+                            fetchData={() => fetchAttendanceData(selectedGroup)}
+                            groupId={selectedGroup}
+                        />
+                        <JudgesCard
+                            attendance={attendance}
+                            handleMarkAsPresent={handleMarkAsPresent}
+                            handleMarkAsAbsent={handleMarkAsAbsent}
+                            handleMarkAsLate={handleMarkAsLate}
+                            handleMarkAsPresentButReplaced={
+                                handleMarkAsPresentButReplaced
+                            }
+                            fetchData={() => fetchAttendanceData(selectedGroup)}
+                            groupId={selectedGroup}
+                        />
+                    </div>
                 ) : null}
             </div>
         </PageTransition>

@@ -1,20 +1,26 @@
+import { useAtomValue } from "jotai";
 import { ArrowLeftRight } from "lucide-react";
 import { useState } from "react";
 
 import IconButton from "@/Components/IconButton";
+import { competitionAtom } from "@/lib/atoms";
 import { StaffActivity } from "@/lib/interfaces";
+import { getRankingFromPreviousRound } from "@/lib/results";
 
 import ChangeCompetingGroupModal from "./ChangeCompetingGroupModal";
 
 interface AbsentCompetitorItemProps {
     activity: StaffActivity;
     fetchData: () => void;
+    roundId: string;
 }
 
 const AbsentCompetitorItem = ({
     activity,
     fetchData,
+    roundId,
 }: AbsentCompetitorItemProps) => {
+    const competition = useAtomValue(competitionAtom);
     const [
         isOpenChangeCompetingGroupModal,
         setIsOpenChangeCompetingGroupModal,
@@ -25,6 +31,8 @@ const AbsentCompetitorItem = ({
         fetchData();
     };
 
+    const showRankingsFromPreviousRounds = +roundId.split("-r")[1] > 1;
+
     return (
         <>
             <li key={activity.id} className="flex items-center gap-2">
@@ -32,7 +40,9 @@ const AbsentCompetitorItem = ({
                     icon={<ArrowLeftRight />}
                     onClick={() => setIsOpenChangeCompetingGroupModal(true)}
                 />
-                {activity.person.name}
+                {activity.person.name}{" "}
+                {showRankingsFromPreviousRounds &&
+                    `(${getRankingFromPreviousRound(roundId, activity?.person?.registrantId || 0, competition?.wcif)})`}
             </li>
             <ChangeCompetingGroupModal
                 isOpen={isOpenChangeCompetingGroupModal}

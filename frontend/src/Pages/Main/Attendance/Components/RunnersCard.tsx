@@ -1,38 +1,74 @@
 import { PersonStanding } from "lucide-react";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 
+import PlusButton from "@/Components/PlusButton";
 import { Card, CardContent, CardHeader, CardTitle } from "@/Components/ui/card";
-import { StaffActivity } from "@/lib/interfaces";
+import { StaffActivity, StaffActivityStatus } from "@/lib/interfaces";
 
 import AbsentPeopleList from "./AbsentPeopleList";
+import AddNotAssignedPersonModal from "./AddNotAssignedPersonModal";
 import PresentPeopleList from "./PresentPeopleList";
 
 interface RunnersCardProps {
     attendance: StaffActivity[];
     handleMarkAsPresent: (staffActivityId: string) => void;
     handleMarkAsAbsent: (staffActivityId: string) => void;
+    handleMarkAsLate: (staffActivityId: string) => void;
+    handleMarkAsPresentButReplaced: (staffActivityId: string) => void;
+    fetchData: () => void;
+    groupId: string;
 }
 
 const RunnersCard = ({
     attendance,
     handleMarkAsPresent,
     handleMarkAsAbsent,
+    handleMarkAsLate,
+    handleMarkAsPresentButReplaced,
+    fetchData,
+    groupId,
 }: RunnersCardProps) => {
+    const [
+        isOpenAddNotAssignedPersonModal,
+        setIsOpenAddNotAssignedPersonModal,
+    ] = useState<boolean>(false);
+
     const presentRunners = useMemo(() => {
-        return attendance.filter((a) => a.role === "RUNNER" && a.isPresent);
+        return attendance.filter(
+            (a) =>
+                a.role === "RUNNER" &&
+                [
+                    StaffActivityStatus.PRESENT,
+                    StaffActivityStatus.REPLACED,
+                    StaffActivityStatus.LATE,
+                ].includes(a.status)
+        );
     }, [attendance]);
     const absentRunners = useMemo(() => {
-        return attendance.filter((a) => a.role === "RUNNER" && !a.isPresent);
+        return attendance.filter(
+            (a) =>
+                a.role === "RUNNER" && a.status === StaffActivityStatus.ABSENT
+        );
     }, [attendance]);
 
     const noRunners = absentRunners.length === 0 && presentRunners.length === 0;
 
+    const handleCloseAddNotAssignedPersonModal = () => {
+        setIsOpenAddNotAssignedPersonModal(false);
+        fetchData();
+    };
+
     return (
         <Card>
             <CardHeader>
-                <CardTitle className="flex gap-1 items-center">
-                    <PersonStanding />
-                    Runners
+                <CardTitle className="flex justify-between">
+                    <div className="flex gap-1 items-center">
+                        <PersonStanding />
+                        Runners
+                    </div>
+                    <PlusButton
+                        onClick={() => setIsOpenAddNotAssignedPersonModal(true)}
+                    />
                 </CardTitle>
             </CardHeader>
             <CardContent>
@@ -46,6 +82,10 @@ const RunnersCard = ({
                                 <AbsentPeopleList
                                     staffActivities={absentRunners}
                                     handleMarkAsPresent={handleMarkAsPresent}
+                                    handleMarkAsLate={handleMarkAsLate}
+                                    handleMarkAsPresentButReplaced={
+                                        handleMarkAsPresentButReplaced
+                                    }
                                 />
                             </div>
                         )}
@@ -61,6 +101,12 @@ const RunnersCard = ({
                     </div>
                 )}
             </CardContent>
+            <AddNotAssignedPersonModal
+                isOpen={isOpenAddNotAssignedPersonModal}
+                onClose={() => handleCloseAddNotAssignedPersonModal()}
+                role="RUNNER"
+                groupId={groupId}
+            />
         </Card>
     );
 };

@@ -7,6 +7,7 @@ import { ConfirmProvider } from "@/providers/ConfirmProvider";
 import { ThemeProvider } from "@/providers/ThemeProvider";
 
 import { THEME_STORAGE_KEY } from "./lib/constants";
+import EnterScorecard from "./Pages/Main/Results/EnterScorecard/EnterScorecard";
 import { SocketContext } from "./socket";
 const CompetitionStatistics = lazy(
     () => import("./Components/CompetitionStatistics/CompetitionStatistics")
@@ -18,6 +19,12 @@ const AttendanceStatistics = lazy(
     () =>
         import(
             "./Pages/Main/Attendance/AttendanceStatistics/AttendanceStatistics"
+        )
+);
+const MostMissedAssignments = lazy(
+    () =>
+        import(
+            "./Pages/Main/Attendance/MostMissedAssignments/MostMissedAssignments"
         )
 );
 const CheckIn = lazy(() => import("./Pages/Main/CheckIn/CheckIn"));
@@ -80,6 +87,15 @@ const IncidentPage = lazy(
 const PersonResults = lazy(
     () => import("./Pages/Main/Persons/PersonResults/PersonResults")
 );
+const ManualIncidents = lazy(
+    () => import("./Pages/Main/Incidents/ManualIncidents/ManualIncidents")
+);
+const CreateManualIncident = lazy(
+    () =>
+        import(
+            "./Pages/Main/Incidents/ManualIncidents/CreateManualIncident/CreateManualIncident"
+        )
+);
 
 const App = () => {
     const [isConnected, setConnected] = useState(0);
@@ -126,6 +142,14 @@ const App = () => {
                     element: <Warnings />,
                 },
                 {
+                    path: "incidents/manual",
+                    element: <ManualIncidents />,
+                },
+                {
+                    path: "incidents/manual/create",
+                    element: <CreateManualIncident />,
+                },
+                {
                     path: "incidents/:id",
                     element: <IncidentPage />,
                 },
@@ -162,6 +186,10 @@ const App = () => {
                     element: <DoubleCheck />,
                 },
                 {
+                    path: "results/round/:id/enter-scorecard",
+                    element: <EnterScorecard />,
+                },
+                {
                     path: "results/round",
                     element: <Results />,
                 },
@@ -196,6 +224,10 @@ const App = () => {
                 {
                     path: "attendance/statistics",
                     element: <AttendanceStatistics />,
+                },
+                {
+                    path: "attendance/missed",
+                    element: <MostMissedAssignments />,
                 },
                 {
                     path: "attendance/:id",

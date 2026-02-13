@@ -1,5 +1,6 @@
 import {
     Incident,
+    ManualIncident,
     NoteworthyIncident,
     NoteworthyIncidentData,
 } from "./interfaces";
@@ -95,6 +96,50 @@ export const deleteNoteworthyIncident = async (id: string) => {
         `incident/noteworthy/${id}`,
         "DELETE",
         true
+    );
+    return response.status;
+};
+
+export const getManualIncidents = async (
+    search?: string
+): Promise<ManualIncident[]> => {
+    const url = search ? `incident/manual?search=${search}` : "incident/manual";
+    const response = await backendRequest(url, "GET", true);
+    return await response.json();
+};
+
+export const createManualIncident = async (data: {
+    personId: string;
+    roundId: string;
+    description: string;
+}) => {
+    const response = await backendRequest(
+        "incident/manual",
+        "POST",
+        true,
+        data
+    );
+    return response.status;
+};
+
+export const deleteManualIncident = async (id: string) => {
+    const response = await backendRequest(
+        `incident/manual/${id}`,
+        "DELETE",
+        true
+    );
+    return response.status;
+};
+
+export const updateManualIncident = async (
+    id: string,
+    data: { personId: string; roundId: string; description: string }
+) => {
+    const response = await backendRequest(
+        `incident/manual/${id}`,
+        "PUT",
+        true,
+        data
     );
     return response.status;
 };

@@ -5,6 +5,8 @@ import background from "@/assets/background.jpg";
 import logo from "@/assets/logo.svg";
 import { useToast } from "@/hooks/useToast";
 import { isUserLoggedIn, login, loginWithWca } from "@/lib/auth";
+import { getInfoForLoginPage } from "@/lib/competition";
+import { CompetitionDataForLoginPage } from "@/lib/interfaces";
 import { WCA_CLIENT_ID, WCA_ORIGIN } from "@/lib/request";
 import LoginForm from "@/Pages/Auth/Login/Components/LoginForm";
 
@@ -16,6 +18,9 @@ const Login = () => {
     const navigate = useNavigate();
     const { toast } = useToast();
     const [isLoading, setIsLoading] = useState<boolean>(code ? true : false);
+    const [competition, setCompetition] = useState<
+        CompetitionDataForLoginPage | undefined
+    >(undefined);
 
     const handleSubmit = async (username: string, password: string) => {
         const status = await login(username, password);
@@ -78,6 +83,24 @@ const Login = () => {
         };
         isLoggedIn();
     }, [navigate]);
+
+    useEffect(() => {
+        getInfoForLoginPage()
+            .then((data) => {
+                setCompetition(data);
+                setIsLoading(false);
+            })
+            .catch((error) => {
+                if (error !== 404) {
+                    toast({
+                        title: "Error",
+                        description: "Failed to fetch competition data.",
+                        variant: "destructive",
+                    });
+                }
+                setIsLoading(false);
+            });
+    }, [toast]);
     return (
         <>
             <div className="block lg:hidden">
@@ -85,24 +108,31 @@ const Login = () => {
                     handleSubmit={handleSubmit}
                     handleWcaLogin={handleWcaLogin}
                     isLoading={isLoading}
+                    competition={competition}
                 />
             </div>
             <div className="hidden lg:flex w-full h-screen">
                 <div className="w-[30%] pl-5 pr-5 flex items-center justify-center flex-col gap-5">
                     <img src={logo} width="300" alt="logo" />
+                    <h2 className="text-2xl font-bold text-center">
+                        {competition?.name}
+                    </h2>
                     <LoginForm
                         handleLogin={handleSubmit}
                         handleWcaLogin={handleWcaLogin}
                         isLoading={isLoading}
+                        competition={competition}
                     />
                 </div>
-                <img
-                    src={background}
-                    alt="background"
-                    width="100%"
-                    height="100%"
-                    style={{ objectFit: "cover" }}
-                />
+                <div className="flex sm:w-[50%] md:w-[60%] lg:w-[80%]">
+                    <img
+                        src={background}
+                        alt="background"
+                        width="100%"
+                        height="100%"
+                        style={{ objectFit: "cover" }}
+                    />
+                </div>
             </div>
         </>
     );

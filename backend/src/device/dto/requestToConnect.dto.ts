@@ -9,6 +9,9 @@ export class RequestToConnectDto {
   @IsInt()
   espId: number;
 
+  @IsInt()
+  signKey: number;
+
   @IsEnum(DeviceType)
   type: DeviceType;
 }

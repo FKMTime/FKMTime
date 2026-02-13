@@ -5,6 +5,7 @@ import { activityCodeToName } from '@wca/helpers';
 import { publicPersonSelect } from 'src/constants';
 import { DbService } from 'src/db/db.service';
 
+import { ManualIncidentDto } from './dto/manualIncident.dto';
 import { NoteworthyIncidentDto } from './dto/noteworthyIncident.dto';
 import { WarningDto } from './dto/warning.dto';
 
@@ -244,6 +245,73 @@ export class IncidentService {
 
   async deleteWarning(id: string) {
     await this.prisma.warning.delete({
+      where: { id },
+    });
+  }
+
+  async getManualIncidents(search?: string) {
+    const whereParams = {};
+    if (search) {
+      whereParams['OR'] = [
+        {
+          description: {
+            contains: search,
+            mode: 'insensitive',
+          },
+        },
+        {
+          person: {
+            name: {
+              contains: search,
+              mode: 'insensitive',
+            },
+          },
+        },
+      ];
+    }
+    return this.prisma.manualIncident.findMany({
+      where: whereParams,
+      orderBy: {
+        createdAt: 'desc',
+      },
+      include: {
+        person: publicPersonSelect,
+        createdBy: {
+          select: {
+            id: true,
+            fullName: true,
+          },
+        },
+      },
+    });
+  }
+
+  async createManualIncident(data: ManualIncidentDto, userId: string) {
+    return this.prisma.manualIncident.create({
+      data: {
+        person: { connect: { id: data.personId } },
+        roundId: data.roundId,
+        attempt: data.attempt,
+        description: data.description,
+        createdBy: { connect: { id: userId } },
+      },
+    });
+  }
+
+  async updateManualIncident(id: string, data: ManualIncidentDto) {
+    return this.prisma.manualIncident.update({
+      where: { id },
+      data: {
+        personId: data.personId,
+        attempt: data.attempt,
+        roundId: data.roundId,
+        description: data.description,
+      },
+    });
+  }
+
+  async deleteManualIncident(id: string) {
+    await this.prisma.manualIncident.delete({
       where: { id },
     });
   }

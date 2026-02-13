@@ -1,12 +1,17 @@
 import { HttpException, Injectable } from '@nestjs/common';
-import { AttemptStatus, AttemptType, StaffRole } from '@prisma/client';
+import {
+  AttemptStatus,
+  AttemptType,
+  StaffActivityStatus,
+  StaffRole,
+} from '@prisma/client';
 import { Event, Round } from '@wca/helpers';
 import { AppGateway } from 'src/app.gateway';
 import { DNS_VALUE, publicPersonSelect, publicUserSelect } from 'src/constants';
 import { ContestsService } from 'src/contests/contests.service';
 import { DbService } from 'src/db/db.service';
 import { isUnofficialEvent } from 'src/events';
-import { isCumulativeLimit } from 'src/wcif-helpers';
+import { getMaxAttempts, isCumulativeLimit } from 'src/wcif-helpers';
 
 import { AttendanceService } from '../attendance/attendance.service';
 import { WcaService } from '../wca/wca.service';
@@ -112,7 +117,7 @@ export class ResultService {
                 id: activity.id,
               },
               data: {
-                isPresent: false,
+                status: StaffActivityStatus.ABSENT,
               },
             });
           } else {
@@ -254,7 +259,8 @@ export class ResultService {
       await this.attendanceService.getAttendanceByGroupId(groupId);
     const competitors = staffActivity.filter(
       (activity) =>
-        activity.isPresent && activity.role === StaffRole.COMPETITOR,
+        activity.status === StaffActivityStatus.PRESENT &&
+        activity.role === StaffRole.COMPETITOR,
     );
     const roundId = groupId.split('-g')[0];
     const results = await this.prisma.result.findMany({
@@ -270,7 +276,7 @@ export class ResultService {
         groupId: groupId,
       },
       data: {
-        isPresent: false,
+        status: StaffActivityStatus.ABSENT,
       },
     });
     await this.prisma.result.deleteMany({
@@ -299,7 +305,7 @@ export class ResultService {
     const roundInfo = eventInfo.rounds.find(
       (round: Round) => round.id === result.roundId,
     );
-    const maxAttempts = roundInfo.format === 'a' ? 5 : 3;
+    const maxAttempts = getMaxAttempts(roundInfo.format);
     const sortedAttempts = getSortedStandardAttempts(attempts);
     const lastAttempt = sortedAttempts[sortedAttempts.length - 1];
     if (lastAttempt.attemptNumber === maxAttempts) {

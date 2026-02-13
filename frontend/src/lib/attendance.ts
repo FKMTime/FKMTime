@@ -1,3 +1,4 @@
+import { StaffActivityStatus } from "./interfaces";
 import { backendRequest } from "./request";
 
 export const getAttendanceByGroupId = async (groupId: string) => {
@@ -36,7 +37,69 @@ export const markAsAbsent = async (id: string) => {
     return response.status;
 };
 
+export const markAsLate = async (id: string) => {
+    const response = await backendRequest(
+        `attendance/late/${id}`,
+        "POST",
+        true
+    );
+    return response.status;
+};
+
+export const markAsPresentButReplaced = async (id: string) => {
+    const response = await backendRequest(
+        `attendance/present-replaced/${id}`,
+        "POST",
+        true
+    );
+    return response.status;
+};
+
 export const getAttendanceStatistics = async () => {
     const response = await backendRequest(`attendance/statistics`, "GET", true);
     return await response.json();
+};
+
+export const getMostMissedAssignments = async () => {
+    const response = await backendRequest(`attendance/missed`, "GET", true);
+    return await response.json();
+};
+
+export const prettyStaffActivityStatus = (status: StaffActivityStatus) => {
+    switch (status) {
+        case StaffActivityStatus.PRESENT:
+            return "Present";
+        case StaffActivityStatus.ABSENT:
+            return "Absent";
+        case StaffActivityStatus.LATE:
+            return "Late";
+        case StaffActivityStatus.REPLACED:
+            return "Replaced";
+        default:
+            return "Unknown";
+    }
+};
+
+export const updateComment = async (id: string, comment: string) => {
+    const response = await backendRequest(
+        `attendance/comment/${id}`,
+        "PUT",
+        true,
+        { comment }
+    );
+    return response.status;
+};
+
+export const addUnassignedPerson = async (
+    groupId: string,
+    personId: string,
+    role: string
+) => {
+    const response = await backendRequest(
+        `attendance/unassigned/${groupId}`,
+        "POST",
+        true,
+        { personId, role }
+    );
+    return response.status;
 };

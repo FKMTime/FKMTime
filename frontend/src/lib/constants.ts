@@ -14,6 +14,38 @@ export const AVAILABLE_PENALTIES = [
     { value: 14, label: "+14" },
     { value: 16, label: "+16" },
 ];
+export const roundFormats = [
+    {
+        format: "a",
+        numberOfAttempts: 5,
+        name: "Average of 5",
+    },
+    {
+        format: "m",
+        numberOfAttempts: 3,
+        name: "Mean of 3",
+    },
+    {
+        format: "1",
+        numberOfAttempts: 1,
+        name: "Best of 1",
+    },
+    {
+        format: "2",
+        numberOfAttempts: 2,
+        name: "Best of 2",
+    },
+    {
+        format: "3",
+        numberOfAttempts: 3,
+        name: "Best of 3",
+    },
+    {
+        format: "5",
+        numberOfAttempts: 5,
+        name: "Best of 5",
+    },
+];
 export const CUTOFF_ALLOWED = ["a", "m"];
 export const GITHUB_URL = "https://github.com/FKMTime/FKMTime";
 export const THEME_STORAGE_KEY = "fkmtime-theme";
