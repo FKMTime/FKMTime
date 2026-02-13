@@ -27,7 +27,7 @@ export class DeviceService {
     if (type) {
       whereParams['type'] = type;
     }
-    if (roomId) {
+    if (roomId && roomId !== 'ALL') {
       whereParams['roomId'] = roomId;
     }
     const devices = await this.prisma.device.findMany({
@@ -60,6 +60,7 @@ export class DeviceService {
         data: {
           name: data.name,
           espId: data.espId,
+          signKey: data.signKey,
           type: data.type,
           room: {
             connect: {

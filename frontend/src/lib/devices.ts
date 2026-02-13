@@ -44,3 +44,22 @@ export const uploadFirmware = async (fileName: string, fileData: string) => {
     );
     return response.status;
 };
+
+export const sortDevicesByName = (devices: Device[]) => {
+    return devices.sort((a: Device, b: Device) => {
+        const na = Number(a.name);
+        const nb = Number(b.name);
+
+        const aIsNum = !Number.isNaN(na);
+        const bIsNum = !Number.isNaN(nb);
+
+        if (aIsNum && bIsNum) {
+            return na - nb;
+        }
+
+        if (aIsNum) return -1;
+        if (bIsNum) return 1;
+
+        return a.name.localeCompare(b.name);
+    });
+};

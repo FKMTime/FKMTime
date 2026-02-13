@@ -1,0 +1,120 @@
+name: Watch proxied-nginx GHCR image and run on update
+
+on:
+  schedule:
+    - cron: "0 */6 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  actions: write
+  repository-projects: write
+
+concurrency:
+  group: watch-external-ghcr
+  cancel-in-progress: false
+
+env:
+  IMAGE_REPO: fkmtime/fkmtime-proxied-nginx
+  IMAGE_TAG: master
+  STATE_VAR: FKMTIME_PROXIED_NGINX_MASTER_DIGEST
+  EVENT_TYPE: ghcr-image-updated
+  DISPATCH_REPOS: ""
+  TARGET_WORKFLOWS: ""
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    outputs:
+      digest: ${{ steps.get.outputs.digest }}
+      changed: ${{ steps.diff.outputs.changed }}
+      previous: ${{ steps.diff.outputs.previous }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker
+        uses: docker/setup-buildx-action@v3
+
+      - name: Get current digest (via docker manifest inspect)
+        id: get
+        shell: bash
+        run: |
+          set -euo pipefail
+          REPO="${{ env.IMAGE_REPO }}"
+          TAG="${{ env.IMAGE_TAG }}"
+          MANIFEST=$(docker manifest inspect ghcr.io/${REPO}:${TAG})
+          DIGEST=$(echo "${MANIFEST}" | jq -r '.manifests[] | select(.platform.architecture == "amd64" and .platform.os == "linux") | .digest')
+          if [ -z "${DIGEST}" ]; then
+            echo "Failed to resolve digest for ${REPO}:${TAG}" >&2
+            exit 1
+          fi
+          echo "digest=${DIGEST}" >> "${GITHUB_OUTPUT}"
+          echo "Current digest: ${DIGEST}"
+
+      - name: Get previous digest from artifact
+        id: get-previous
+        continue-on-error: true
+        run: |
+          # Try to download previous digest
+          if gh run download --name digest-state --dir ./state 2>/dev/null; then
+            PREV=$(cat ./state/digest.txt 2>/dev/null || echo "")
+            echo "previous found ${PREV}"
+            echo "previous=${PREV}" >> "${GITHUB_OUTPUT}"
+          else
+            echo "previous=" >> "${GITHUB_OUTPUT}"
+          fi
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Compare digests
+        id: diff
+        run: |
+          CUR='${{ steps.get.outputs.digest }}'
+          PREV='${{ steps.get-previous.outputs.previous }}'
+          echo "CUR: ${CUR} PREV: ${PREV}"
+          echo "previous=${PREV}" >> "${GITHUB_OUTPUT}"
+          if [ "${CUR}" != "${PREV}" ]; then
+            echo "changed=true" >> "${GITHUB_OUTPUT}"
+          else
+            echo "changed=false" >> "${GITHUB_OUTPUT}"
+          fi
+
+  trigger_downstreams:
+    needs: check
+    if: needs.check.outputs.changed == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: repository_dispatch in this repo
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.repos.createDispatchEvent({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              event_type: '${{ env.EVENT_TYPE }}',
+              client_payload: {
+                image: 'ghcr.io/${{ env.IMAGE_REPO }}:${{ env.IMAGE_TAG }}',
+                tag: '${{ env.IMAGE_TAG }}',
+                digest: '${{ needs.check.outputs.digest }}',
+                previous: '${{ needs.check.outputs.previous }}'
+              }
+            });
+            console.log('Dispatched ${{ env.EVENT_TYPE }} to ${{ github.repository }}');
+
+  persist_state:
+    needs: check
+    if: needs.check.outputs.changed == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Save digest as artifact
+        run: |
+          mkdir -p ./state
+          echo "${{ needs.check.outputs.digest }}" > ./state/digest.txt
+          
+      - name: Upload digest state
+        uses: actions/upload-artifact@v4
+        with:
+          name: digest-state
+          path: ./state/digest.txt
+          retention-days: 30

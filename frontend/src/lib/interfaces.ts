@@ -66,6 +66,8 @@ export interface Competition extends CompetitionDataForLoginPage {
     updatedAt?: Date;
     defaultLocale: string;
     hilTesting?: boolean;
+    fkmToken: number;
+    secureRfid: boolean;
 }
 
 //eslint-disable-next-line
@@ -195,10 +197,10 @@ export interface ResultWithAverage extends Result {
 
 export interface Attempt {
     id: string;
-    resultId: number;
+    resultId: string;
     attemptNumber: number;
     comment?: string;
-    replacedBy: number;
+    replacedBy?: number | null;
     penalty: number;
     status: AttemptStatus;
     type: AttemptType;
@@ -214,6 +216,10 @@ export interface Attempt {
     deviceId?: string;
     device?: Device;
     updatedBy?: User;
+}
+
+export interface AttemptToEnterWithScorecard extends Attempt {
+    isNew?: boolean;
 }
 
 //eslint-disable-next-line
@@ -301,12 +307,14 @@ export enum DeviceType {
 export interface DeviceData {
     name: string;
     espId: number;
+    signKey?: number;
     type: DeviceType;
     roomId: string;
 }
 
 export interface AvailableDevice {
     espId: number;
+    signKey: number;
     type: AvailableDeviceType;
 }
 
@@ -469,7 +477,7 @@ export interface AttemptData {
     value: number;
     penalty: number;
     comment: string;
-    replacedBy: number;
+    replacedBy?: number;
 }
 
 export interface AvailableLocale {

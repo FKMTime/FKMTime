@@ -3,6 +3,8 @@ import {
   Controller,
   Delete,
   Get,
+  HttpCode,
+  HttpStatus,
   Param,
   Post,
   Put,
@@ -15,6 +17,7 @@ import { DelegateGuard } from 'src/auth/guards/delegate.guard';
 
 import { AttemptService } from './attempt.service';
 import { CreateAttemptDto } from './dto/createAttempt.dto';
+import { EnterScorecardDto } from './dto/enterScorecard.dto';
 import { SwapAttemptsDto } from './dto/swapAttempts.dto';
 import { UpdateAttemptDto } from './dto/updateAttempt.dto';
 
@@ -24,8 +27,11 @@ export class AttemptController {
   constructor(private readonly attemptService: AttemptService) {}
 
   @Post()
-  async createAttempt(@Body() data: CreateAttemptDto) {
-    return await this.attemptService.createAttempt(data);
+  async createAttempt(
+    @Body() data: CreateAttemptDto,
+    @GetUser() user: JwtAuthDto,
+  ) {
+    return await this.attemptService.createAttempt(data, user.userId);
   }
 
   @Put('swap')
@@ -34,6 +40,15 @@ export class AttemptController {
       data.firstAttemptId,
       data.secondAttemptId,
     );
+  }
+
+  @HttpCode(HttpStatus.OK)
+  @Post('scorecard')
+  async enterScorecard(
+    @Body() data: EnterScorecardDto,
+    @GetUser() user: JwtAuthDto,
+  ) {
+    return await this.attemptService.enterScorecard(data, user.userId);
   }
 
   @Get(':id')

@@ -4,8 +4,10 @@ import { Competition as WCIF } from '@wca/helpers';
 import { publicPersonSelect } from 'src/constants';
 import { DbService } from 'src/db/db.service';
 import { eventsData } from 'src/events';
+import { checkCutoff } from 'src/result/helpers';
 import { convertToLatin, getTranslation } from 'src/translations/translations';
 import { WcaService } from 'src/wca/wca.service';
+import { getMaxAttempts } from 'src/wcif-helpers';
 import {
   getGroupInfoByActivityId,
   getPersonFromWcif,
@@ -22,7 +24,11 @@ export class PersonForDeviceService {
     private readonly wcaService: WcaService,
   ) {}
 
-  async getPersonInfo(cardId: string, espId: number) {
+  async getPersonInfo(
+    cardId: string,
+    espId: number,
+    isCompetitor: boolean = false,
+  ) {
     const person = await this.personService.getPersonByCardId(cardId);
     if (!person) {
       return {
@@ -75,6 +81,21 @@ export class PersonForDeviceService {
           (g) => g.split('-g')[0] === possibleGroups[0].split('-g')[0],
         )
       ) {
+        if (
+          isCompetitor &&
+          !this.competitorHasAnyPossibleRounds(
+            possibleGroups,
+            competitorGroups,
+            finishedRoundsIds,
+          )
+        ) {
+          return {
+            message: getTranslation('noAttemptsLeft', person.countryIso2),
+            shouldResetTime: true,
+            status: 400,
+            error: true,
+          };
+        }
         return {
           ...person,
           name: convertToLatin(person.name),
@@ -91,8 +112,9 @@ export class PersonForDeviceService {
     const finalGroups = possibleGroups
       .filter(
         (g) =>
-          competitorGroups.includes(g) ||
-          eventsData.find((e) => e.id === g.split('-')[0]).isUnofficial,
+          competitorGroups.some(
+            (g) => g.split('-g')[0] === possibleGroups[0].split('-g')[0],
+          ) || eventsData.find((e) => e.id === g.split('-')[0]).isUnofficial,
       )
       .filter((g) => !finishedRoundsIds.includes(g.split('-g')[0]))
       .map((g) => {
@@ -108,6 +130,18 @@ export class PersonForDeviceService {
       name: convertToLatin(person.name),
       possibleGroups: finalGroups,
     };
+  }
+
+  private competitorHasAnyPossibleRounds(
+    possibleGroups: string[],
+    competitorGroups: string[],
+    finishedRoundsIds: string[],
+  ) {
+    return possibleGroups.some(
+      (g) =>
+        competitorGroups.some((cg) => cg.split('-g')[0] === g.split('-g')[0]) &&
+        !finishedRoundsIds.some((fr) => fr === g.split('-g')[0]),
+    );
   }
 
   private async getFinishedRoundIds(
@@ -131,7 +165,15 @@ export class PersonForDeviceService {
         continue;
       }
       const roundInfo = getRoundInfoFromWcif(result.roundId, wcif);
-      const maxAttempts = roundInfo.format === 'a' ? 5 : 3;
+      let maxAttempts = getMaxAttempts(roundInfo.format);
+      if (roundInfo.cutoff) {
+        const cutoffPassed = checkCutoff(
+          result.attempts,
+          roundInfo.cutoff.attemptResult,
+          roundInfo.cutoff.numberOfAttempts,
+        );
+        if (!cutoffPassed) maxAttempts = roundInfo.cutoff.numberOfAttempts;
+      }
       const submittedAttempts = this.wcaService.getAttemptsToEnterToWcaLive(
         result,
         competition,

@@ -5,6 +5,7 @@ import { useSearchParams } from "react-router-dom";
 
 import LoadingPage from "@/Components/LoadingPage";
 import PlusButton from "@/Components/PlusButton.tsx";
+import { Button } from "@/Components/ui/button";
 import {
     Card,
     CardContent,
@@ -20,13 +21,14 @@ import {
     SelectValue,
 } from "@/Components/ui/select";
 import { Tabs, TabsList, TabsTrigger } from "@/Components/ui/tabs";
-import { getAllDevices } from "@/lib/devices";
+import { getAllDevices, sortDevicesByName } from "@/lib/devices";
 import { AvailableDevice, Device, Room } from "@/lib/interfaces";
 import { isAdmin } from "@/lib/permissions";
 import { getAllRooms } from "@/lib/rooms";
 import PageTransition from "@/Pages/PageTransition";
 import { socket, SocketContext } from "@/socket";
 
+import { AutoSetupModal } from "./Components/AutoSetupModal";
 import CreateDeviceModal from "./Components/CreateDeviceModal";
 import DeviceCard from "./Components/DeviceCard";
 import DevicesTable from "./Components/DevicesTable";
@@ -57,18 +59,19 @@ const Devices = () => {
     );
     const [tabIndex, setTabIndex] = useState<string>(tabs[0].id);
     const [rooms, setRooms] = useState<Room[]>([]);
-    const [selectedRoomId, setSelectedRoomId] = useState<string>("");
+    const [selectedRoomId, setSelectedRoomId] = useState<string>("ALL");
     const [deviceToAdd, setDeviceToAdd] = useState<AvailableDevice | null>(
         null
     );
     const [isOpenCreateDeviceModal, setIsOpenCreateDeviceModal] =
         useState<boolean>(false);
+    const [isAutoSetupModalOpen, setIsAutoSetupModalOpen] = useState(false);
     const [searchParams, setSearchParams] = useSearchParams();
 
     const fetchData = async (roomIdParam?: string) => {
         setIsLoading(true);
         const data = await getAllDevices(undefined, roomIdParam);
-        setDevices(data);
+        setDevices(sortDevicesByName(data));
         setIsLoading(false);
     };
 
@@ -113,7 +116,7 @@ const Devices = () => {
             fetchData();
         });
 
-        socket.on("deviceRequests", (data) => {
+        socket.on("deviceRequests", (data: AvailableDevice[]) => {
             setAvailableDevices(data);
         });
 
@@ -140,7 +143,9 @@ const Devices = () => {
     useEffect(() => {
         getAllRooms().then((data) => {
             setRooms(data);
-            setSelectedRoomId(data[0].id);
+            if (data.length === 1) {
+                setSelectedRoomId(data[0].id);
+            }
         });
     }, []);
 
@@ -156,10 +161,23 @@ const Devices = () => {
                                 <Microchip size={20} />
                                 Devices
                             </div>
-                            <PlusButton
-                                onClick={() => setIsOpenCreateDeviceModal(true)}
-                                title="Add new device"
-                            />
+                            <div className="flex gap-2">
+                                <Button
+                                    type="button"
+                                    onClick={() =>
+                                        setIsAutoSetupModalOpen(true)
+                                    }
+                                >
+                                    Auto Setup Devices
+                                </Button>
+
+                                <PlusButton
+                                    onClick={() =>
+                                        setIsOpenCreateDeviceModal(true)
+                                    }
+                                    title="Add new device"
+                                />
+                            </div>
                         </CardTitle>
                         <CardDescription>
                             If you want to connect a new device press submit
@@ -199,6 +217,9 @@ const Devices = () => {
                                                 <SelectValue placeholder="Select room" />
                                             </SelectTrigger>
                                             <SelectContent>
+                                                <SelectItem value="ALL">
+                                                    All rooms
+                                                </SelectItem>
                                                 {rooms.map((room) => (
                                                     <SelectItem value={room.id}>
                                                         {room.name}
@@ -244,6 +265,10 @@ const Devices = () => {
                     isOpen={isOpenCreateDeviceModal}
                     onClose={handleCloseCreateDeviceModal}
                     deviceToAdd={deviceToAdd || undefined}
+                />
+                <AutoSetupModal
+                    open={isAutoSetupModalOpen}
+                    onClose={() => setIsAutoSetupModalOpen(false)}
                 />
             </Tabs>
         </PageTransition>

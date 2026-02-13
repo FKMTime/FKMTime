@@ -3,6 +3,7 @@ import { Role, SendingResultsFrequency } from '@prisma/client';
 import { Assignment, Person } from '@wca/helpers';
 import { ADMIN_WCA_USER_IDS } from 'src/constants';
 import { DbService } from 'src/db/db.service';
+import { SocketController } from 'src/socket/socket.controller';
 import { WcaService } from 'src/wca/wca.service';
 import { wcifRoleToAttendanceRole } from 'src/wcif-helpers';
 import { getGroupInfoByActivityId } from 'wcif-helpers';
@@ -12,6 +13,8 @@ export class ImportService {
     @Inject(forwardRef(() => DbService))
     private readonly prisma: DbService,
     private readonly wcaService: WcaService,
+    @Inject(forwardRef(() => SocketController))
+    private readonly socketController: SocketController,
   ) {}
 
   async importCompetition(wcaId: string, userId: string) {
@@ -74,6 +77,9 @@ export class ImportService {
         });
       }
     }
+
+    const fkmToken = new Int32Array(1);
+    crypto.getRandomValues(fkmToken);
     const competition = await this.prisma.competition.create({
       data: {
         name: wcifPublic.name,
@@ -81,6 +87,9 @@ export class ImportService {
         countryIso2: wcifPublic.countryIso2,
         wcif: wcifPublic,
         sendingResultsFrequency: SendingResultsFrequency.AFTER_SOLVE,
+        wifiSsid: '',
+        wifiPassword: '',
+        fkmToken: fkmToken[0],
       },
     });
     await this.prisma.person.createMany({
@@ -112,32 +121,42 @@ export class ImportService {
     }
     const staffActivitiesTransactions = [];
 
-    wcifPublic.persons.forEach((person: Person) => {
-      person.assignments.forEach((assignment: Assignment) => {
-        const group = getGroupInfoByActivityId(
-          assignment.activityId,
-          wcifPublic,
+    const persons = await this.prisma.person.findMany();
+
+    wcifPublic.persons
+      .filter((p) => p.registration && p.registration.status === 'accepted')
+      .forEach((person: Person) => {
+        const personFromDb = persons.find(
+          (p) => p.registrantId === person.registrantId,
         );
-        staffActivitiesTransactions.push(
-          this.prisma.staffActivity.create({
-            data: {
-              person: {
-                connect: {
-                  registrantId: person.registrantId,
+        console.log(person);
+        console.log(personFromDb);
+        person.assignments.forEach((assignment: Assignment) => {
+          const group = getGroupInfoByActivityId(
+            assignment.activityId,
+            wcifPublic,
+          );
+          staffActivitiesTransactions.push(
+            this.prisma.staffActivity.create({
+              data: {
+                person: {
+                  connect: {
+                    id: personFromDb.id,
+                  },
                 },
+                role: wcifRoleToAttendanceRole(assignment.assignmentCode),
+                groupId: group.activityCode,
+                isAssigned: true,
               },
-              role: wcifRoleToAttendanceRole(assignment.assignmentCode),
-              groupId: group.activityCode,
-              isAssigned: true,
-            },
-          }),
-        );
+            }),
+          );
+        });
       });
-    });
     await this.prisma.$transaction(staffActivitiesTransactions);
     await this.prisma.room.createMany({
       data: rooms,
     });
+    await this.socketController.sendServerStatus();
     return competition;
   }
 }

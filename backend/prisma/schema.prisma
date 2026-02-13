@@ -1,6 +1,6 @@
 generator client {
   provider      = "prisma-client-js"
-  binaryTargets = ["native", "linux-musl-arm64-openssl-3.0.x"]
+  binaryTargets = ["native", "linux-musl-arm64-openssl-3.0.x", "linux-musl-openssl-3.0.x"]
 }
 
 datasource db {
@@ -85,6 +85,8 @@ model Competition {
   scoretakingTokenUpdatedAt       DateTime?               @map("scoretaking_token_updated_at")
   cubingContestsToken             String?                 @map("cubing_contests_token")
   defaultLocale                   String?                 @default("en") @map("default_locale")
+  fkmToken                        Int                     @map("fkm_token")
+  secureRfid                      Boolean                 @default(false) @map("secure_rfid")
   useFkmTimeDevices               Boolean                 @default(true) @map("use_fkm_time_devices")
 
   @@map("competition")
@@ -210,6 +212,7 @@ model Device {
   id                String          @id @default(uuid())
   name              String          @unique
   espId             Int?            @unique @map("esp_id")
+  signKey           Int?            @unique @map("sign_key")
   type              DeviceType
   batteryPercentage Int?            @map("battery_percentage")
   roomId            String          @map("room_id")

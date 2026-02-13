@@ -4,20 +4,25 @@ services:
       context: ./backend
       dockerfile: Dockerfile.dev
     container_name: fkmtime-dev-backend
-    network_mode: host
     volumes:
       - ./backend/src:/app/src
       - ./backend/prisma:/app/prisma
       - sock:/app/sock
     restart: unless-stopped
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
+      - 1.1.1.1
     environment:
-      - DATABASE_URL=postgres://root:password@127.0.0.1:5433/fkm_time
-      - WCA_LIVE_API_ORIGIN=http://0.0.0.0:4000/api
-      - CUBING_CONTESTS_API_ORIGIN=http://0.0.0.0:5001/api
-      - WCA_ORIGIN=http://0.0.0.0:3005
+      - DATABASE_URL=postgres://root:password@database:5432/fkm_time
+      - WCA_LIVE_API_ORIGIN=http://dummy_wca_live:4000/api
+      - CUBING_CONTESTS_API_ORIGIN=http://api_tester:5001/api
+      - WCA_ORIGIN=http://dummy_wca:3000
       - WCA_CLIENT_ID=example-application-id
       - WCA_CLIENT_SECRET=example-secret
       - SOCKET_PATH=/app/sock/socket.sock
+    ports:
+      - "5000:5000"
     depends_on:
       database:
         condition: service_healthy
@@ -33,7 +38,7 @@ services:
       dockerfile: Dockerfile.dev
     container_name: fkmtime-dev-frontend
     environment:
-      - VITE_WCA_ORIGIN=http://0.0.0.0:3005
+      - VITE_WCA_ORIGIN=http://127.0.0.1:3005
       - VITE_GIT_COMMIT=dummy-commit
     volumes:
       - ./frontend/src:/app/src
@@ -41,6 +46,10 @@ services:
     ports:
       - "5173:5173"
     restart: unless-stopped
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
+      - 1.1.1.1
 
   database:
     image: postgres:16
@@ -48,6 +57,10 @@ services:
     ports:
       - "5433:5432"
     restart: unless-stopped
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
+      - 1.1.1.1
     environment:
       - POSTGRES_USER=root
       - POSTGRES_PASSWORD=password
@@ -74,14 +87,22 @@ services:
       - ./backend/api-tester/src:/app/src
       - sock:/app/sock
     restart: unless-stopped
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
+      - 1.1.1.1
     depends_on:
       backend:
         condition: service_healthy
-  
+
   dummy_wca:
     container_name: fkmtime-dev-dummy-wca
     restart: unless-stopped
     image: maxidragon/dummy-wca:main
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
+      - 1.1.1.1
     # Feel free to change this if you are not using CubingContests
     ports:
     - "3005:3000"
@@ -90,13 +111,21 @@ services:
     container_name: fkmtime-dev-dummy-wca-live
     restart: unless-stopped
     image: maxidragon/dummy-wca-live:main
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
+      - 1.1.1.1
     ports:
       - "4000:4000"
-
+  
   micro_connector:
     image: "ghcr.io/fkmtime/fkmtime-micro-connector:master"
     container_name: micro-connector
     network_mode: host
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
+      - 1.1.1.1
     volumes:
       - /run/dbus:/run/dbus:ro
       - sock:/app/sock

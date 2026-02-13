@@ -17,4 +17,5 @@ export const deviceSettingsSchema = z.object({
     wifiPassword: z.string().optional(),
     defaultLocale: z.string().default("en"),
     hilTesting: z.boolean(),
+    secureRfid: z.boolean(),
 });

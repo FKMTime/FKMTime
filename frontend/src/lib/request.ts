@@ -1,29 +1,41 @@
 import { getToken } from "./auth";
 import { getScramblingDeviceToken } from "./scramblingDevicesAuth";
 
-const DEV_BACKEND_URL = import.meta.env.VITE_BACKEND_ORIGIN
-    ? import.meta.env.VITE_BACKEND_ORIGIN
-    : "http://localhost:5000";
-const DEV_WCA_URL =
-    import.meta.env.VITE_WCA_ORIGIN ||
-    "https://staging.worldcubeassociation.org";
+// this will be changed inside docker env
+const dockerBackendOrigin = "{{BACKEND_ORIGIN}}";
+const dockerWebsocketUrl = "{{WEBSOCKET_URL}}";
+const dockerWcaOrigin = "{{WCA_ORIGIN}}";
+const dockerWcaClientId = "{{WCA_CLIENT_ID}}";
 
-export const WCA_ORIGIN = import.meta.env.PROD
-    ? "https://www.worldcubeassociation.org"
-    : DEV_WCA_URL;
+export const WCA_ORIGIN = import.meta.env.VITE_DOCKERBUILD
+    ? dockerWcaOrigin || "https://www.worldcubeassociation.org"
+    : import.meta.env.PROD
+      ? "https://www.worldcubeassociation.org"
+      : import.meta.env.VITE_WCA_ORIGIN ||
+        "https://staging.worldcubeassociation.org";
 
-const PRODUCTION_WCA_CLIENT_ID = import.meta.env.VITE_WCA_CLIENT_ID
-    ? import.meta.env.VITE_WCA_CLIENT_ID
-    : "ZODPEQQjPyCnAO-GAXtaHjN7iQyosQfSzPMZG6RcVJ0";
+export const WCA_CLIENT_ID = import.meta.env.VITE_DOCKERBUILD
+    ? dockerWcaClientId || "example-application-id"
+    : import.meta.env.PROD
+      ? import.meta.env.VITE_WCA_CLIENT_ID ||
+        "ZODPEQQjPyCnAO-GAXtaHjN7iQyosQfSzPMZG6RcVJ0"
+      : "example-application-id";
 
-export const WCA_CLIENT_ID = import.meta.env.PROD
-    ? PRODUCTION_WCA_CLIENT_ID
-    : "example-application-id";
-
-const BACKEND_URL = import.meta.env.PROD ? "/api" : DEV_BACKEND_URL;
+export const BACKEND_ORIGIN = import.meta.env.VITE_DOCKERBUILD
+    ? dockerBackendOrigin || "/api"
+    : import.meta.env.PROD
+      ? "/api"
+      : import.meta.env.VITE_BACKEND_ORIGIN || "http://localhost:5000";
 
 export const WEBSOCKET_PATH = import.meta.env.PROD ? "/api/socket.io/" : "";
-export const WEBSOCKET_URL = import.meta.env.PROD ? "/" : `${DEV_BACKEND_URL}/`;
+
+export const WEBSOCKET_URL = import.meta.env.VITE_DOCKERBUILD
+    ? dockerWebsocketUrl
+        ? `${dockerWebsocketUrl}/`
+        : "/"
+    : import.meta.env.PROD
+      ? "/"
+      : `${import.meta.env.VITE_BACKEND_ORIGIN || "http://localhost:5000"}/`;
 
 export const backendRequest = (
     path: string,
@@ -37,7 +49,7 @@ export const backendRequest = (
     if (token && useAuth) {
         headers.append("Authorization", `Bearer ${token}`);
     }
-    return fetch(`${BACKEND_URL}/${path}`, {
+    return fetch(`${BACKEND_ORIGIN}/${path}`, {
         method: method,
         headers: headers,
         redirect: "follow",
@@ -54,7 +66,7 @@ export const scramblingDeviceBackendRequest = (
     const headers = new Headers();
     headers.append("Content-Type", "application/json");
     headers.append("Authorization", `Token ${token}`);
-    return fetch(`${BACKEND_URL}/${path}`, {
+    return fetch(`${BACKEND_ORIGIN}/${path}`, {
         method: method,
         headers: headers,
         redirect: "follow",
