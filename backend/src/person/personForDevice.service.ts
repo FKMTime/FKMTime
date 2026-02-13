@@ -113,7 +113,8 @@ export class PersonForDeviceService {
       .filter(
         (g) =>
           competitorGroups.some(
-            (g) => g.split('-g')[0] === possibleGroups[0].split('-g')[0],
+            (group) =>
+              group.split('-g')[0] === possibleGroups[0].split('-g')[0],
           ) || eventsData.find((e) => e.id === g.split('-')[0]).isUnofficial,
       )
       .filter((g) => !finishedRoundsIds.includes(g.split('-g')[0]))
