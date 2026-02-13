@@ -1,5 +1,4 @@
 @import "tailwindcss";
-@import "tailwind-animate";
 @config "../tailwind.config.js";
 
 /* Animation keyframes and utilities */
@@ -107,6 +106,8 @@ html,
 body,
 :root {
   height: 100%;
+  /* Prevent scrollbar from appearing/disappearing during tab transitions */
+  scrollbar-gutter: stable;
 } 
 
 @layer base {
