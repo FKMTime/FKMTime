@@ -44,7 +44,7 @@ export class SocketServer {
       this.connectedSockets.push(socket);
       await this.sendInitData(socket);
       socket.on('data', async (data) => {
-        buffer = Buffer.concat([buffer, data]);
+        buffer = Buffer.concat([buffer, Buffer.from(data)]);
         this.logger.log('buff length: ' + buffer.length);
 
         let nullIdx = buffer.indexOf(0x00);
