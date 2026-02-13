@@ -19,7 +19,7 @@ import { cn } from "@/lib/utils";
 
 const SIDEBAR_COOKIE_NAME = "sidebar:state";
 const SIDEBAR_COOKIE_MAX_AGE = 60 * 60 * 24 * 7;
-const SIDEBAR_WIDTH = "12rem";
+const SIDEBAR_WIDTH = "14rem";
 const SIDEBAR_WIDTH_MOBILE = "18rem";
 const SIDEBAR_WIDTH_ICON = "3rem";
 const SIDEBAR_KEYBOARD_SHORTCUT = "b";
@@ -190,9 +190,6 @@ const Sidebar = React.forwardRef<
                         "flex h-full w-[--sidebar-width] flex-col bg-sidebar text-sidebar-foreground",
                         className
                     )}
-                    style={{
-                        backgroundColor: "hsl(var(--sidebar-background))",
-                    }}
                     ref={ref}
                     {...props}
                 >
@@ -215,7 +212,6 @@ const Sidebar = React.forwardRef<
                         style={
                             {
                                 "--sidebar-width": SIDEBAR_WIDTH_MOBILE,
-                                backgroundColor: "hsl(var(--sidebar-background))",
                             } as React.CSSProperties
                         }
                         side={side}
@@ -265,9 +261,6 @@ const Sidebar = React.forwardRef<
                     <div
                         data-sidebar="sidebar"
                         className="flex h-full w-full flex-col bg-sidebar group-data-[variant=floating]:rounded-lg group-data-[variant=floating]:border group-data-[variant=floating]:border-sidebar-border group-data-[variant=floating]:shadow"
-                        style={{
-                            backgroundColor: "hsl(var(--sidebar-background))",
-                        }}
                     >
                         {children}
                     </div>
