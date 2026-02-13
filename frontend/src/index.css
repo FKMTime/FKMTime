@@ -2,6 +2,21 @@
 @import "tailwind-animate";
 @config "../tailwind.config.js";
 
+/* Ensure animate-in and animate-out utilities work */
+@layer utilities {
+  .animate-in {
+    animation-name: enter;
+    animation-duration: var(--tw-duration, 0.15s);
+    animation-timing-function: var(--tw-ease, ease);
+  }
+  
+  .animate-out {
+    animation-name: exit;
+    animation-duration: var(--tw-duration, 0.15s);
+    animation-timing-function: var(--tw-ease, ease);
+  }
+}
+
 html,
 body,
 :root {
