@@ -7,7 +7,7 @@ import {
 
 import { average, best, formattedBest } from "./average";
 import { DNF_VALUE } from "./constants";
-import { Attempt, Result, ResultWithAverage } from "./interfaces";
+import { Attempt, AttemptData, Result, ResultWithAverage } from "./interfaces";
 import { backendRequest } from "./request";
 import { resultToString } from "./resultFormatters";
 import { getSubmittedAttempts } from "./utils";
@@ -194,4 +194,36 @@ export const getRankingFromPreviousRound = (
     }
     const pos = round.results.find((r) => r.personId === registrantId)?.ranking;
     return pos !== undefined ? pos : null;
+};
+
+export const getResultByRoundIdAndPersonId = async (
+    roundId: string,
+    personId: string
+) => {
+    const response = await backendRequest(
+        `result/round/${roundId}/person/${personId}`,
+        "GET",
+        true
+    );
+    return {
+        data: await response.json(),
+        status: response.status,
+    };
+};
+
+export const enterScorecard = async (data: {
+    resultId: string;
+    attempts: Attempt[];
+    newAttempts: AttemptData[];
+}) => {
+    const response = await backendRequest(
+        `attempt/scorecard`,
+        "POST",
+        true,
+        data
+    );
+    return {
+        status: response.status,
+        data: await response.json(),
+    };
 };

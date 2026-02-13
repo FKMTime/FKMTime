@@ -7,6 +7,7 @@ import { ConfirmProvider } from "@/providers/ConfirmProvider";
 import { ThemeProvider } from "@/providers/ThemeProvider";
 
 import { THEME_STORAGE_KEY } from "./lib/constants";
+import EnterScorecard from "./Pages/Main/Results/EnterScorecard/EnterScorecard";
 import { SocketContext } from "./socket";
 const CompetitionStatistics = lazy(
     () => import("./Components/CompetitionStatistics/CompetitionStatistics")
@@ -183,6 +184,10 @@ const App = () => {
                 {
                     path: "results/round/:id/double-check",
                     element: <DoubleCheck />,
+                },
+                {
+                    path: "results/round/:id/enter-scorecard",
+                    element: <EnterScorecard />,
                 },
                 {
                     path: "results/round",

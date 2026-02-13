@@ -121,28 +121,37 @@ export class ImportService {
     }
     const staffActivitiesTransactions = [];
 
-    wcifPublic.persons.forEach((person: Person) => {
-      person.assignments.forEach((assignment: Assignment) => {
-        const group = getGroupInfoByActivityId(
-          assignment.activityId,
-          wcifPublic,
+    const persons = await this.prisma.person.findMany();
+
+    wcifPublic.persons
+      .filter((p) => p.registration && p.registration.status === 'accepted')
+      .forEach((person: Person) => {
+        const personFromDb = persons.find(
+          (p) => p.registrantId === person.registrantId,
         );
-        staffActivitiesTransactions.push(
-          this.prisma.staffActivity.create({
-            data: {
-              person: {
-                connect: {
-                  registrantId: person.registrantId,
+        console.log(person);
+        console.log(personFromDb);
+        person.assignments.forEach((assignment: Assignment) => {
+          const group = getGroupInfoByActivityId(
+            assignment.activityId,
+            wcifPublic,
+          );
+          staffActivitiesTransactions.push(
+            this.prisma.staffActivity.create({
+              data: {
+                person: {
+                  connect: {
+                    id: personFromDb.id,
+                  },
                 },
+                role: wcifRoleToAttendanceRole(assignment.assignmentCode),
+                groupId: group.activityCode,
+                isAssigned: true,
               },
-              role: wcifRoleToAttendanceRole(assignment.assignmentCode),
-              groupId: group.activityCode,
-              isAssigned: true,
-            },
-          }),
-        );
+            }),
+          );
+        });
       });
-    });
     await this.prisma.$transaction(staffActivitiesTransactions);
     await this.prisma.room.createMany({
       data: rooms,
