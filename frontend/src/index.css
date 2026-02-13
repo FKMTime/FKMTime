@@ -1,5 +1,5 @@
 @import "tailwindcss";
-@import "tailwind-animate/dist/tailwind-animate.css";
+@import "tailwind-animate";
 @config "../tailwind.config.js";
 
 html,
