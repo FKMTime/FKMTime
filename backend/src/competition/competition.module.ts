@@ -6,6 +6,7 @@ import { ResultModule } from 'src/result/result.module';
 
 import { SocketModule } from '../socket/socket.module';
 import { WcaModule } from '../wca/wca.module';
+import { AutoSetupGateway } from './autosetup.gateway';
 import { CompetitionController } from './competition.controller';
 import { CompetitionService } from './competition.service';
 import { ImportService } from './import.service';
@@ -20,6 +21,7 @@ import { SyncService } from './sync.service';
     ImportService,
     SyncService,
     StatisticsService,
+    AutoSetupGateway,
   ],
   controllers: [CompetitionController],
   imports: [

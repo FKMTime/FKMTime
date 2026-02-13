@@ -10,6 +10,7 @@ import { DbService } from '../db/db.service';
 import { ResultService } from '../result/result.service';
 import { SocketController } from '../socket/socket.controller';
 import { CreateAttemptDto } from './dto/createAttempt.dto';
+import { EnterScorecardDto } from './dto/enterScorecard.dto';
 import { UpdateAttemptDto } from './dto/updateAttempt.dto';
 
 @Injectable()
@@ -25,7 +26,7 @@ export class AttemptService {
     private readonly incidentService: IncidentService,
   ) {}
 
-  async createAttempt(data: CreateAttemptDto) {
+  async createAttempt(data: CreateAttemptDto, userId: string) {
     const result = await this.resultService.getResultOrCreate(
       data.competitorId,
       data.roundId,
@@ -59,6 +60,11 @@ export class AttemptService {
             }
           : undefined,
         replacedBy: data.replacedBy ? data.replacedBy : null,
+        updatedBy: {
+          connect: {
+            id: userId,
+          },
+        },
         status: data.status,
         type: data.type,
         comment: data.comment,
@@ -99,6 +105,18 @@ export class AttemptService {
     this.appGateway.handleResultEntered(result.roundId);
     return {
       message: 'Attempt created successfully',
+    };
+  }
+
+  async enterScorecard(data: EnterScorecardDto, userId: string) {
+    for (const attempt of data.attempts) {
+      await this.updateAttempt(attempt.id, attempt, userId);
+    }
+    for (const attempt of data.newAttempts) {
+      await this.createAttempt(attempt, userId);
+    }
+    return {
+      message: 'Scorecard entered successfully',
     };
   }
 

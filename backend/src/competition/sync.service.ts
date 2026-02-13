@@ -58,7 +58,7 @@ export class SyncService {
         }
       });
       wcif.persons
-        .filter((p) => p.registration.status !== 'accepted')
+        .filter((p) => p.registration && p.registration?.status !== 'accepted')
         .forEach((p) => {
           transactions.push(
             this.prisma.person.deleteMany({
@@ -133,6 +133,25 @@ export class SyncService {
         );
       });
     });
+    const currentRooms = await this.prisma.room.findMany();
+    const rooms = [];
+
+    for (const venue of wcifPublic.schedule.venues) {
+      for (const room of venue.rooms) {
+        if (!currentRooms.some((r) => r.name === room.name)) {
+          rooms.push({
+            name: room.name,
+            color: room.color,
+          });
+        }
+      }
+    }
+
+    await this.prisma.room.createMany({
+      data: rooms,
+      skipDuplicates: true,
+    });
+
     await this.prisma.$transaction(transactions);
     await this.prisma.$transaction(activitiesTransactions);
     await this.prisma.competition.updateMany({

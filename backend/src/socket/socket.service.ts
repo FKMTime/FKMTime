@@ -51,8 +51,12 @@ export class SocketService {
     return await this.competitionService.getAutoSetupSettings();
   }
 
-  async getPersonInfo(cardId: string, espId: number) {
-    return await this.personForDevice.getPersonInfo(cardId, espId);
+  async getPersonInfo(cardId: string, espId: number, isCompetitor: boolean) {
+    return await this.personForDevice.getPersonInfo(
+      cardId,
+      espId,
+      isCompetitor,
+    );
   }
 
   async checkIfAttemptEntered(data: CheckIfAttemptEnteredDto) {

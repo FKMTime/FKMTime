@@ -32,6 +32,14 @@ export class ResultController {
     return this.resultService.getAllResultsByRound(roundId, search);
   }
 
+  @Get('round/:roundId/person/:personId')
+  async getResultByRoundIdAndPersonId(
+    @Param('roundId') roundId: string,
+    @Param('personId') personId: string,
+  ) {
+    return this.resultService.getResultOrCreate(personId, roundId);
+  }
+
   @UseGuards(DelegateGuard)
   @Get('round/:roundId/double-check')
   async getResultsToDoubleCheckByRoundId(@Param('roundId') roundId: string) {

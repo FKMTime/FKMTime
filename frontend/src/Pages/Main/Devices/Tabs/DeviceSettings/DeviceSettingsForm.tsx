@@ -152,6 +152,7 @@ const DeviceSettingsForm = ({
                             <FormDescription>
                                 Use MDNS to search for a server in local network
                             </FormDescription>
+                            .
                         </FormItem>
                     )}
                 />
@@ -236,13 +237,15 @@ const DeviceSettingsForm = ({
                         </FormItem>
                     )}
                 />
-                <Button
-                    type="submit"
-                    variant="success"
-                    disabled={form.formState.isSubmitting}
-                >
-                    Save
-                </Button>
+                <div className="flex gap-2">
+                    <Button
+                        type="submit"
+                        variant="success"
+                        disabled={form.formState.isSubmitting}
+                    >
+                        Save
+                    </Button>
+                </div>
             </form>
         </Form>
     );

@@ -41,6 +41,7 @@ const CreateDeviceModal = ({
         if (status === 201) {
             toast({
                 title: "Successfully created new device.",
+                variant: "success",
             });
             onClose();
         } else if (status === 409) {
