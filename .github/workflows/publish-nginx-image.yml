@@ -12,6 +12,10 @@ on:
   repository_dispatch:
     types:
       - ghcr-image-updated
+  registry_package:
+    types: [published, updated]
+    package_name: ghcr.io/fkmtime/fkmtime-proxied-nginx
+    package_type: container
   workflow_dispatch:
 
       
