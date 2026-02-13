@@ -76,8 +76,8 @@ const AppSidebar = ({ unresolvedIncidentsCount }: AppSidebarProps) => {
     return (
         <Sidebar collapsible="offcanvas" variant="sidebar">
             <SidebarHeader className="flex items-center justify-center">
-                <img src={logo} alt="Logo" className="w-[60%] max-w-[120px]" />
-                <p className="text-center font-bold text-sm">{competition?.name}</p>
+                <img src={logo} alt="Logo" width="80%" />
+                <p className="text-center font-bold">{competition?.name}</p>
             </SidebarHeader>
             <SidebarContent>
                 <SidebarGroup>
