@@ -24,7 +24,7 @@ const SIDEBAR_WIDTH_MOBILE = "18rem";
 const SIDEBAR_WIDTH_ICON = "3rem";
 const SIDEBAR_KEYBOARD_SHORTCUT = "b";
 
-type SidebarContext = {
+type SidebarContextType = {
     state: "expanded" | "collapsed";
     open: boolean;
     setOpen: (open: boolean) => void;
@@ -34,7 +34,7 @@ type SidebarContext = {
     toggleSidebar: () => void;
 };
 
-const SidebarContext = React.createContext<SidebarContext | null>(null);
+const SidebarContext = React.createContext<SidebarContextType | null>(null);
 
 function useSidebar() {
     const context = React.useContext(SidebarContext);
@@ -73,7 +73,6 @@ const SidebarProvider = React.forwardRef<
         const [_open, _setOpen] = React.useState(defaultOpen);
         const open = openProp ?? _open;
         const setOpen = React.useCallback(
-            //eslint-disable-next-line
             (value: boolean | ((value: boolean) => boolean)) => {
                 const openState =
                     typeof value === "function" ? value(open) : value;
@@ -671,7 +670,7 @@ const SidebarMenuSkeleton = React.forwardRef<
 >(({ className, showIcon = false, ...props }, ref) => {
     // Random width between 50 to 90%.
     const width = React.useMemo(() => {
-        return `${Math.floor(Math.random() * 40) + 50}%`;
+        return `${Math.floor(50 + 40 * 0.5)}%`;
     }, []);
 
     return (
@@ -781,6 +780,5 @@ export {
     SidebarRail,
     SidebarSeparator,
     SidebarTrigger,
-    //eslint-disable-next-line
     useSidebar,
 };

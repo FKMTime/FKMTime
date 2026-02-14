@@ -48,12 +48,30 @@ const ScramblingDeviceForm = ({
                             <FormControl>
                                 <InputOTP maxLength={6} {...field}>
                                     <InputOTPGroup>
-                                        <InputOTPSlot index={0} className="h-12 w-12 text-lg" />
-                                        <InputOTPSlot index={1} className="h-12 w-12 text-lg" />
-                                        <InputOTPSlot index={2} className="h-12 w-12 text-lg" />
-                                        <InputOTPSlot index={3} className="h-12 w-12 text-lg" />
-                                        <InputOTPSlot index={4} className="h-12 w-12 text-lg" />
-                                        <InputOTPSlot index={5} className="h-12 w-12 text-lg" />
+                                        <InputOTPSlot
+                                            index={0}
+                                            className="h-12 w-12 text-lg"
+                                        />
+                                        <InputOTPSlot
+                                            index={1}
+                                            className="h-12 w-12 text-lg"
+                                        />
+                                        <InputOTPSlot
+                                            index={2}
+                                            className="h-12 w-12 text-lg"
+                                        />
+                                        <InputOTPSlot
+                                            index={3}
+                                            className="h-12 w-12 text-lg"
+                                        />
+                                        <InputOTPSlot
+                                            index={4}
+                                            className="h-12 w-12 text-lg"
+                                        />
+                                        <InputOTPSlot
+                                            index={5}
+                                            className="h-12 w-12 text-lg"
+                                        />
                                     </InputOTPGroup>
                                 </InputOTP>
                             </FormControl>

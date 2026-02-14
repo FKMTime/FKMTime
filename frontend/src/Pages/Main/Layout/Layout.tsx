@@ -4,7 +4,11 @@ import { Outlet, useNavigate } from "react-router-dom";
 
 import LoadingPage from "@/Components/LoadingPage";
 import ModeToggle from "@/Components/ModeToggle";
-import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/Components/ui/sidebar";
+import {
+    SidebarInset,
+    SidebarProvider,
+    SidebarTrigger,
+} from "@/Components/ui/sidebar";
 import { competitionAtom, unresolvedIncidentsCountAtom } from "@/lib/atoms";
 import { getToken, getUserInfo, isUserLoggedIn } from "@/lib/auth";
 import { getCompetitionInfo } from "@/lib/competition";

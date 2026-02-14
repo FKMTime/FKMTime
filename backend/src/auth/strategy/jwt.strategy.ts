@@ -8,7 +8,7 @@ import { JwtAuthDto } from '../dto/jwt-auth.dto';
 const { SECRET = 'secret' } = process.env;
 
 const extractFromHeader = (req: any): string | null => {
-  if (req.hasOwnProperty('handshake')) {
+  if (Object.prototype.hasOwnProperty.call(req, 'handshake')) {
     return req.handshake.auth.token;
   }
   if (req && req.headers && req.headers.authorization) {

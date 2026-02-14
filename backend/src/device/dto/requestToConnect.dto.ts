@@ -1,6 +1,5 @@
 import { IsEnum, IsInt } from 'class-validator';
 
-//eslint-disable-next-line
 enum DeviceType {
   STATION = 'STATION',
   STAFF_ATTENDANCE = 'STAFF_ATTENDANCE',

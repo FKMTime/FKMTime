@@ -9,7 +9,7 @@ export class StaffGuard implements CanActivate {
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const req = context.switchToHttp().getRequest();
     let token = '';
-    if (req.hasOwnProperty('handshake')) {
+    if (Object.prototype.hasOwnProperty.call(req, 'handshake')) {
       token = req.handshake.auth.token;
     }
     if (req && req.headers && req.headers.authorization) {

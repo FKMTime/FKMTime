@@ -18,7 +18,7 @@ interface AutoSetupModalProps {
 
 export const AutoSetupModal = ({ open, onClose }: AutoSetupModalProps) => {
     useEffect(() => {
-        let interval: NodeJS.Timeout;
+        let interval: ReturnType<typeof setInterval>;
         if (open) {
             socket.emit("autosetup:start");
             interval = setInterval(() => {
