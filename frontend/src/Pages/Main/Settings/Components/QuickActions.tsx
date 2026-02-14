@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 import { SquarePen } from "lucide-react";
 import { useEffect, useState } from "react";
 

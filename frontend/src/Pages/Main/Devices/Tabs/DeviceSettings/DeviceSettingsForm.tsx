@@ -156,6 +156,7 @@ const DeviceSettingsForm = ({
                         </FormItem>
                     )}
                 />
+                {/* eslint-disable-next-line react-hooks/incompatible-library */}
                 {form.watch("mdns") === false && (
                     <FormField
                         control={form.control}

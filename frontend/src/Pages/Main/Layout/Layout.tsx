@@ -4,7 +4,11 @@ import { Outlet, useNavigate } from "react-router-dom";
 
 import LoadingPage from "@/Components/LoadingPage";
 import ModeToggle from "@/Components/ModeToggle";
-import { SidebarProvider, SidebarTrigger } from "@/Components/ui/sidebar";
+import {
+    SidebarInset,
+    SidebarProvider,
+    SidebarTrigger,
+} from "@/Components/ui/sidebar";
 import { competitionAtom, unresolvedIncidentsCountAtom } from "@/lib/atoms";
 import { getToken, getUserInfo, isUserLoggedIn } from "@/lib/auth";
 import { getCompetitionInfo } from "@/lib/competition";
@@ -181,19 +185,21 @@ const Layout = () => {
     return (
         <SidebarProvider>
             <AppSidebar unresolvedIncidentsCount={unresolvedIncidentsCount} />
-            <main className="w-full p-5 h-screen overflow-y-auto flex flex-col gap-5">
-                <div className="flex justify-between">
-                    <SidebarTrigger />
-                    <div className="flex items-center gap-5">
-                        <ModeToggle />
-                        <ProfileDropdown />
+            <SidebarInset>
+                <main className="w-full p-5 h-screen overflow-y-auto flex flex-col gap-5">
+                    <div className="flex justify-between">
+                        <SidebarTrigger />
+                        <div className="flex items-center gap-5">
+                            <ModeToggle />
+                            <ProfileDropdown />
+                        </div>
                     </div>
-                </div>
 
-                <Suspense fallback={<LoadingPage />}>
-                    <Outlet />
-                </Suspense>
-            </main>
+                    <Suspense fallback={<LoadingPage />}>
+                        <Outlet />
+                    </Suspense>
+                </main>
+            </SidebarInset>
         </SidebarProvider>
     );
 };

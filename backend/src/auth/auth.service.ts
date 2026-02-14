@@ -54,7 +54,7 @@ export class AuthService {
       data.code,
       data.redirectUri,
     );
-    if (token.hasOwnProperty('error') || !token) {
+    if (Object.prototype.hasOwnProperty.call(token, 'error') || !token) {
       throw new HttpException('Error logging in with WCA', 500);
     }
     const userInfo = await this.wcaService.getUserInfo(token);

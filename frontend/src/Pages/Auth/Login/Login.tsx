@@ -27,6 +27,7 @@ const Login = () => {
         handleLoginResponse(status);
     };
 
+    /* eslint-disable react-hooks/preserve-manual-memoization */
     const handleLoginResponse = useCallback(
         (status: number, errorMessage?: string) => {
             setIsLoading(false);
@@ -53,6 +54,7 @@ const Login = () => {
         },
         [navigate, toast]
     );
+    /* eslint-enable react-hooks/preserve-manual-memoization */
 
     const handleWcaLogin = async () => {
         const queryParams = new URLSearchParams({

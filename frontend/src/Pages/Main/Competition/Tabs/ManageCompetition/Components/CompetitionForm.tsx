@@ -62,6 +62,7 @@ const CompetitionForm = ({
                 onSubmit={form.handleSubmit(onSubmit)}
                 className="space-y-8 py-3"
             >
+                {/* eslint-disable-next-line react-hooks/incompatible-library */}
                 {form.watch("useFkmTimeDevices") && (
                     <>
                         <FormField

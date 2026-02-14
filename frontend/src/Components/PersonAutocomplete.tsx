@@ -67,9 +67,11 @@ const PersonAutocomplete = forwardRef<
             [personsList, withoutCardAssigned]
         );
 
+        /* eslint-disable react-hooks/set-state-in-effect */
         useEffect(() => {
             if (defaultValue) handleSearch("");
         }, [defaultValue, handleSearch]);
+        /* eslint-enable react-hooks/set-state-in-effect */
 
         return (
             <Popover open={open} onOpenChange={setOpen}>

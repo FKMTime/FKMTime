@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 import { useAtom } from "jotai";
 import { AlarmClock, Pencil } from "lucide-react";
 import {

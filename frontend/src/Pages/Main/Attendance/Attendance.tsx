@@ -161,6 +161,7 @@ const Attendance = () => {
         number,
         React.Dispatch<React.SetStateAction<number>>,
     ];
+    /* eslint-disable react-hooks/set-state-in-effect */
     useEffect(() => {
         if (selectedGroup) {
             setSelectedEvent(selectedGroup.split("-")[0]);
@@ -177,6 +178,7 @@ const Attendance = () => {
             };
         }
     }, [rooms, selectedGroup, isConnected]);
+    /* eslint-enable react-hooks/set-state-in-effect */
 
     if (!competition) {
         return <LoadingPage />;
