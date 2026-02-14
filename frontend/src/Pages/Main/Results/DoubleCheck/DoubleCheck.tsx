@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/set-state-in-effect, react-hooks/preserve-manual-memoization */
 import { useAtomValue } from "jotai";
 import { Heading } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";

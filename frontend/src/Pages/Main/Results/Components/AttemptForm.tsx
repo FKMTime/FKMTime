@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/set-state-in-effect, react-hooks/preserve-manual-memoization */
 import { zodResolver } from "@hookform/resolvers/zod";
 import { TimeLimit } from "@wca/helpers";
 import { useForm } from "react-hook-form";

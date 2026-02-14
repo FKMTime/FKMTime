@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/set-state-in-effect, react-hooks/preserve-manual-memoization */
 import { useEffect, useState } from "react";
 
 import LoadingPage from "@/Components/LoadingPage";

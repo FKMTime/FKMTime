@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/set-state-in-effect, react-hooks/preserve-manual-memoization */
 import { NotebookPen } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 

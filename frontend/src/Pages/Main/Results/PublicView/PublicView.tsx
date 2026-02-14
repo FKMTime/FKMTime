@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/set-state-in-effect, react-hooks/preserve-manual-memoization */
 import { useAtom } from "jotai";
 import { AlarmClock } from "lucide-react";
 import { useCallback, useContext, useEffect, useMemo, useState } from "react";

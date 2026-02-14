@@ -108,6 +108,7 @@ const Devices = () => {
         number,
         React.Dispatch<React.SetStateAction<number>>,
     ];
+    /* eslint-disable react-hooks/set-state-in-effect */
     useEffect(() => {
         fetchData();
 
@@ -139,6 +140,7 @@ const Devices = () => {
             setTabIndex(index);
         }
     }, [searchParams]);
+    /* eslint-enable react-hooks/set-state-in-effect */
 
     useEffect(() => {
         getAllRooms().then((data) => {

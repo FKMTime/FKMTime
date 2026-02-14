@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/set-state-in-effect, react-hooks/preserve-manual-memoization */
 import { useAtom } from "jotai";
 import { IdCard, Users } from "lucide-react";
 import { ChangeEvent, useCallback, useEffect, useState } from "react";

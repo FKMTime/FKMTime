@@ -66,9 +66,11 @@ const Home = () => {
         setSelectedRoom(response.data.wcif.schedule.venues[0].rooms[0].id);
     }, [navigate, setCompetition]);
 
+    /* eslint-disable react-hooks/set-state-in-effect */
     useEffect(() => {
         fetchData();
     }, [fetchData]);
+    /* eslint-enable react-hooks/set-state-in-effect */
 
     useEffect(() => {
         getAllRooms().then((data) => {

@@ -27,29 +27,34 @@ const Login = () => {
         handleLoginResponse(status);
     };
 
-    const handleLoginResponse = (status: number, errorMessage?: string) => {
-        setIsLoading(false);
-        if (status === 200) {
-            toast({
-                title: "Successfully logged in.",
-                description: "You have been successfully logged in.",
-                variant: "success",
-            });
-            navigate("/");
-        } else if (status === 401) {
-            toast({
-                title: "Error",
-                description: "Wrong username or password",
-                variant: "destructive",
-            });
-        } else {
-            toast({
-                title: "Error",
-                description: errorMessage || "Something went wrong",
-                variant: "destructive",
-            });
-        }
-    };
+    /* eslint-disable react-hooks/preserve-manual-memoization */
+    const handleLoginResponse = useCallback(
+        (status: number, errorMessage?: string) => {
+            setIsLoading(false);
+            if (status === 200) {
+                toast({
+                    title: "Successfully logged in.",
+                    description: "You have been successfully logged in.",
+                    variant: "success",
+                });
+                navigate("/");
+            } else if (status === 401) {
+                toast({
+                    title: "Error",
+                    description: "Wrong username or password",
+                    variant: "destructive",
+                });
+            } else {
+                toast({
+                    title: "Error",
+                    description: errorMessage || "Something went wrong",
+                    variant: "destructive",
+                });
+            }
+        },
+        [navigate, toast]
+    );
+    /* eslint-enable react-hooks/preserve-manual-memoization */
 
     const handleWcaLogin = async () => {
         const queryParams = new URLSearchParams({

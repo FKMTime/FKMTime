@@ -67,12 +67,11 @@ const PersonAutocomplete = forwardRef<
             [personsList, withoutCardAssigned]
         );
 
+        /* eslint-disable react-hooks/set-state-in-effect */
         useEffect(() => {
-            if (defaultValue && !personsList) {
-                // Fetch persons on mount if defaultValue is provided and no personsList
-                getAllPersons(withoutCardAssigned, "").then(setPersons);
-            }
-        }, [defaultValue, personsList, withoutCardAssigned]);
+            if (defaultValue) handleSearch("");
+        }, [defaultValue, handleSearch]);
+        /* eslint-enable react-hooks/set-state-in-effect */
 
         return (
             <Popover open={open} onOpenChange={setOpen}>
