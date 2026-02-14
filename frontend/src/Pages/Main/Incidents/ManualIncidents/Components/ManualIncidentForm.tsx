@@ -1,4 +1,3 @@
-/* eslint-disable react-hooks/set-state-in-effect, react-hooks/preserve-manual-memoization */
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Event, Round } from "@wca/helpers";
 import { useAtomValue } from "jotai";

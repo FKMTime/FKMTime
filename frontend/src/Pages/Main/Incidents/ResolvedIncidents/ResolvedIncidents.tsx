@@ -1,4 +1,4 @@
-/* eslint-disable react-hooks/set-state-in-effect, react-hooks/preserve-manual-memoization */
+/* eslint-disable react-hooks/preserve-manual-memoization */
 import { MessageSquareDot, NotebookText } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 
