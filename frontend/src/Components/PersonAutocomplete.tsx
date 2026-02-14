@@ -68,8 +68,11 @@ const PersonAutocomplete = forwardRef<
         );
 
         useEffect(() => {
-            if (defaultValue) handleSearch("");
-        }, [defaultValue, handleSearch]);
+            if (defaultValue && !personsList) {
+                // Fetch persons on mount if defaultValue is provided and no personsList
+                getAllPersons(withoutCardAssigned, "").then(setPersons);
+            }
+        }, [defaultValue, personsList, withoutCardAssigned]);
 
         return (
             <Popover open={open} onOpenChange={setOpen}>
