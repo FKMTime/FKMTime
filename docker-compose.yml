@@ -52,7 +52,7 @@ services:
       - 1.1.1.1
 
   database:
-    image: postgres:16
+    image: postgres:18-alpine
     container_name: fkmtime-dev-database
     ports:
       - "5433:5432"
@@ -66,7 +66,7 @@ services:
       - POSTGRES_PASSWORD=password
       - POSTGRES_DB=fkm_time
     volumes:
-      - dev_database:/var/lib/postgresql/data
+      - dev_database:/var/lib/postgresql
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -d postgres"]
       interval: 5s
