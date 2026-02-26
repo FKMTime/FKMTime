@@ -22,7 +22,7 @@ import {
 } from "@/Components/ui/select";
 import { DeviceData, DeviceType, Room } from "@/lib/interfaces";
 import { deviceSchema } from "@/lib/schema/deviceSchema";
-import { prettyDeviceType } from "@/lib/utils";
+import { idToHex, prettyDeviceType } from "@/lib/utils";
 
 interface DeviceFormProps {
     defaultValues: DeviceData;
@@ -44,16 +44,20 @@ const DeviceForm = ({
         resolver: zodResolver(deviceSchema),
         defaultValues: {
             name: defaultValues.name,
-            espId: defaultValues.espId.toString(),
+            espId:
+                defaultValues.espId !== undefined
+                    ? idToHex(defaultValues.espId)
+                    : "",
             roomId: defaultValues.roomId ? defaultValues.roomId : "",
             type: defaultValues.type,
         },
     });
+
     const onSubmit = (values: z.infer<typeof deviceSchema>) => {
         handleSubmit({
             ...defaultValues,
             ...values,
-            espId: parseInt(values.espId),
+            espId: values.espId ? parseInt(values.espId, 16) : 0,
             type: values.type as DeviceType,
         });
     };
@@ -84,7 +88,15 @@ const DeviceForm = ({
                         <FormItem>
                             <FormLabel>ESP ID</FormLabel>
                             <FormControl>
-                                <Input placeholder="ESP ID" {...field} />
+                                <Input
+                                    placeholder="ESP ID"
+                                    {...field}
+                                    onChange={(e) =>
+                                        field.onChange(
+                                            e.target.value.toUpperCase()
+                                        )
+                                    }
+                                />
                             </FormControl>
                             <FormMessage />
                         </FormItem>

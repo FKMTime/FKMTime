@@ -326,3 +326,8 @@ export const decryptText = (encryptedText: string, password: string) => {
         CryptoJS.enc.Utf8
     );
 };
+
+export const idToHex = (id: number) => {
+    if (!id) return "";
+    return id.toString(16).toUpperCase();
+};

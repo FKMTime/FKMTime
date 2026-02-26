@@ -2,7 +2,10 @@ import { z } from "zod";
 
 export const deviceSchema = z.object({
     name: z.string().nonempty(),
-    espId: z.string(),
+    espId: z
+        .string()
+        .regex(/^[0-9a-fA-F]*$/)
+        .optional(),
     roomId: z.string().nonempty({
         message: "Please select a room",
     }),

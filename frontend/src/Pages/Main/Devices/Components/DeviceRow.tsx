@@ -7,7 +7,7 @@ import { useConfirm } from "@/hooks/useConfirm";
 import { useToast } from "@/hooks/useToast";
 import { deleteDevice } from "@/lib/devices";
 import { Device } from "@/lib/interfaces";
-import { prettyDeviceType } from "@/lib/utils";
+import { idToHex, prettyDeviceType } from "@/lib/utils";
 
 import BatteryIcon from "../../../../Components/Icons/BatteryIcon";
 import EditDeviceModal from "./EditDeviceModal";
@@ -63,7 +63,7 @@ const DeviceRow = ({ device, fetchData }: DeviceRowProps) => {
         <>
             <TableRow key={device.id}>
                 <TableCell>{device.name}</TableCell>
-                <TableCell>{device.espId}</TableCell>
+                <TableCell>{idToHex(device.espId)}</TableCell>
                 <TableCell>
                     {device.batteryPercentage ? (
                         <div className="flex items-center gap-1">

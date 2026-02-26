@@ -78,9 +78,11 @@ const Devices = () => {
     const handleCloseCreateDeviceModal = async (espId?: string) => {
         if (
             espId &&
-            availableDevices.some((device) => device.espId === +espId)
+            availableDevices.some(
+                (device) => device.espId === parseInt(espId, 16)
+            )
         ) {
-            handleRemoveDeviceRequest(+espId);
+            handleRemoveDeviceRequest(parseInt(espId, 16));
         }
         await fetchData(selectedRoomId);
         setIsOpenCreateDeviceModal(false);

@@ -7,7 +7,7 @@ import {
     CardTitle,
 } from "@/Components/ui/card";
 import { AvailableDevice } from "@/lib/interfaces";
-import { prettyAvailableDeviceType } from "@/lib/utils";
+import { idToHex, prettyAvailableDeviceType } from "@/lib/utils";
 
 interface AvailableDeviceCardProps {
     device: AvailableDevice;
@@ -22,10 +22,10 @@ const AvailableDeviceCard = ({
     return (
         <Card>
             <CardHeader>
-                <CardTitle>ID: {device.espId}</CardTitle>
+                <CardTitle>ID: {idToHex(device.espId)}</CardTitle>
             </CardHeader>
             <CardContent>
-                <p>Device ID: {device.espId}</p>
+                <p>Device ID: {idToHex(device.espId)}</p>
                 <p>Type: {prettyAvailableDeviceType(device.type)}</p>
             </CardContent>
             <CardFooter className="flex gap-2">

@@ -2,7 +2,7 @@ import DeleteButton from "@/Components/DeleteButton";
 import PlusButton from "@/Components/PlusButton";
 import { TableCell, TableRow } from "@/Components/ui/table";
 import { AvailableDevice } from "@/lib/interfaces";
-import { prettyDeviceType } from "@/lib/utils";
+import { idToHex, prettyDeviceType } from "@/lib/utils";
 
 interface AvailableDeviceRowProps {
     device: AvailableDevice;
@@ -22,7 +22,7 @@ const AvailableDeviceRow = ({
                 className="bg-primary hover:bg-primary/80"
             >
                 <TableCell>New device</TableCell>
-                <TableCell>{device.espId}</TableCell>
+                <TableCell>{idToHex(device.espId)}</TableCell>
                 <TableCell></TableCell>
                 <TableCell>{prettyDeviceType(device.type)}</TableCell>
                 <TableCell></TableCell>

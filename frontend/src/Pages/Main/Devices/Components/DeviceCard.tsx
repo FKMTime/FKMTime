@@ -13,7 +13,7 @@ import { useConfirm } from "@/hooks/useConfirm";
 import { useToast } from "@/hooks/useToast";
 import { deleteDevice } from "@/lib/devices";
 import { Device } from "@/lib/interfaces";
-import { prettyDeviceType } from "@/lib/utils";
+import { idToHex, prettyDeviceType } from "@/lib/utils";
 
 import EditDeviceModal from "./EditDeviceModal";
 
@@ -80,7 +80,7 @@ const DeviceCard = ({ device, fetchData }: DeviceCardProps) => {
                     </CardTitle>
                 </CardHeader>
                 <CardContent>
-                    <p>ESP ID: {device.espId}</p>
+                    <p>ESP ID: {idToHex(device.espId)}</p>
                     <p>Type: {prettyDeviceType(device.type)}</p>
                     <p>Attempts: {device.count}</p>
                     <p>
