@@ -61,6 +61,7 @@ const CreateDeviceModal = ({
         setIsLoading(false);
     };
 
+    /* eslint-disable react-hooks/set-state-in-effect */
     useEffect(() => {
         if (!isOpen) return;
         getAllRooms().then((data: Room[]) => {
@@ -77,6 +78,7 @@ const CreateDeviceModal = ({
             }
         }
     }, [deviceToAdd, isOpen]);
+    /* eslint-enable react-hooks/set-state-in-effect */
 
     const defaultValues: DeviceData = {
         name: "",

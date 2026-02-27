@@ -175,7 +175,7 @@ export class DeviceService {
           batteryPercentage: data.batteryPercentage,
         },
       });
-    } catch (error) {
+    } catch {
       return {
         message: 'Error updating battery percentage',
         status: 500,

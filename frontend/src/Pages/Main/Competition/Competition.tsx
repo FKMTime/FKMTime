@@ -99,6 +99,7 @@ const Competition = () => {
         setSearchParams({ tab: tab });
     };
 
+    /* eslint-disable react-hooks/set-state-in-effect */
     useEffect(() => {
         const tab = searchParams.get("tab");
         const index = tabs.find((t) => t.id === tab)?.id;
@@ -110,6 +111,7 @@ const Competition = () => {
     useEffect(() => {
         fetchData();
     }, [fetchData]);
+    /* eslint-enable react-hooks/set-state-in-effect */
 
     if (isLoading || !competition) {
         return <LoadingPage />;

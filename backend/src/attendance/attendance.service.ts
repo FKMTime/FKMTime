@@ -371,7 +371,7 @@ export class AttendanceService {
             status: StaffActivityStatus.PRESENT,
           },
         });
-      } catch (e) {
+      } catch {
         return {
           message: getTranslation('attendanceConfirmed', person.countryIso2),
         };

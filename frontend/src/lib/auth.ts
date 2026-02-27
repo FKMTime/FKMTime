@@ -57,7 +57,7 @@ export const isUserLoggedIn = async () => {
     try {
         const response = await backendRequest("auth/me", "GET", true);
         return response.status === 200;
-    } catch (error) {
+    } catch {
         return false;
     }
 };

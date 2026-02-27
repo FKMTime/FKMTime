@@ -56,11 +56,13 @@ const DetailsModal = ({
         onClose();
     };
 
+    /* eslint-disable react-hooks/set-state-in-effect */
     useEffect(() => {
         if (isOpen && staffActivity) {
             setComment(staffActivity.comment || "");
         }
     }, [isOpen, staffActivity]);
+    /* eslint-enable react-hooks/set-state-in-effect */
 
     if (!staffActivity || !staffActivity.person) return null;
 

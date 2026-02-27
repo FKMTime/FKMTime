@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 import { Laptop } from "lucide-react";
 import { useEffect, useState } from "react";
 

@@ -5,12 +5,12 @@ import {
     TooltipTrigger,
 } from "./ui/tooltip";
 
-interface Tooltip {
+interface TooltipProps {
     children: React.ReactNode;
     content: string;
 }
 
-const Tooltip = ({ children, content }: Tooltip) => {
+const Tooltip = ({ children, content }: TooltipProps) => {
     return (
         <TooltipProvider>
             <ShadcnTooltip>

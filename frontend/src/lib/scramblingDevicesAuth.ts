@@ -53,7 +53,7 @@ export const isScrambleDeviceTokenValid = async () => {
             }
         );
         return response.status === 200;
-    } catch (error) {
+    } catch {
         return false;
     }
 };

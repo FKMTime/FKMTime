@@ -17,15 +17,11 @@ const AssignCards = lazy(() => import("./Pages/Main/AssignCards/AssignCards"));
 const Attendance = lazy(() => import("./Pages/Main/Attendance/Attendance"));
 const AttendanceStatistics = lazy(
     () =>
-        import(
-            "./Pages/Main/Attendance/AttendanceStatistics/AttendanceStatistics"
-        )
+        import("./Pages/Main/Attendance/AttendanceStatistics/AttendanceStatistics")
 );
 const MostMissedAssignments = lazy(
     () =>
-        import(
-            "./Pages/Main/Attendance/MostMissedAssignments/MostMissedAssignments"
-        )
+        import("./Pages/Main/Attendance/MostMissedAssignments/MostMissedAssignments")
 );
 const CheckIn = lazy(() => import("./Pages/Main/CheckIn/CheckIn"));
 const Competition = lazy(() => import("./Pages/Main/Competition/Competition"));
@@ -92,9 +88,7 @@ const ManualIncidents = lazy(
 );
 const CreateManualIncident = lazy(
     () =>
-        import(
-            "./Pages/Main/Incidents/ManualIncidents/CreateManualIncident/CreateManualIncident"
-        )
+        import("./Pages/Main/Incidents/ManualIncidents/CreateManualIncident/CreateManualIncident")
 );
 
 const App = () => {

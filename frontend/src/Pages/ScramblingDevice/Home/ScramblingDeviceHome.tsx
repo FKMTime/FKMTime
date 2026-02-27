@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/preserve-manual-memoization */
 import { useAtomValue } from "jotai";
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";

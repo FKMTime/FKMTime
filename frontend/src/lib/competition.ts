@@ -160,7 +160,7 @@ export const searchCompetitions = async (name: string) => {
             (competition: WCACompetition) =>
                 new Date(competition.start_date).getFullYear() >= 2023
         );
-    } catch (err) {
+    } catch {
         return [];
     }
 };
