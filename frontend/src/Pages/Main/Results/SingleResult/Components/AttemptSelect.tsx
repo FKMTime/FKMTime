@@ -27,7 +27,7 @@ const AttemptSelect = ({
             disabled={disabled}
         >
             <SelectTrigger>
-                <SelectValue placeholder="Select device" />
+                <SelectValue placeholder="Select attempt" />
             </SelectTrigger>
             <SelectContent>
                 {attempts.map((attempt) => (
