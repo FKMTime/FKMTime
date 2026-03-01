@@ -76,7 +76,11 @@ const IncidentPage = () => {
         handleSubmit(data);
     };
 
-    const handleSubmit = async (data: Incident, isNoteworthy?: boolean) => {
+    const handleSubmit = async (
+        data: Incident,
+        isNoteworthy?: boolean,
+        doNotRequireCards?: boolean
+    ) => {
         if (
             data.value === 0 &&
             data.penalty === 0 &&
@@ -90,7 +94,11 @@ const IncidentPage = () => {
             });
         }
         setIsLoading(true);
-        const status = await updateAttempt(data, isNoteworthy);
+        const status = await updateAttempt(
+            data,
+            isNoteworthy,
+            doNotRequireCards
+        );
         if (status === 200) {
             fetchUnresolvedIncidentsCount();
             toast({

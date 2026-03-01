@@ -32,7 +32,11 @@ import { createAttemptSchema } from "@/lib/schema/resultSchema";
 interface IncidentFormProps {
     editedIncident: Incident;
     isLoading: boolean;
-    handleSubmit: (incident: Incident, isNoteworthy?: boolean) => void;
+    handleSubmit: (
+        incident: Incident,
+        isNoteworthy?: boolean,
+        doNotRequireCards?: boolean
+    ) => void;
     handleDelete: () => void;
     timeLimit?: TimeLimit;
 }
@@ -47,6 +51,7 @@ const IncidentForm = ({
     const { toast } = useToast();
     const [action, setAction] = useState<IncidentAction | null>(null);
     const [isNoteworthy, setIsNoteworthy] = useState<boolean>(false);
+    const [doNotRequireCards, setDoNotRequireCards] = useState<boolean>(false);
 
     const form = useForm<z.infer<typeof createAttemptSchema>>({
         resolver: zodResolver(createAttemptSchema),
@@ -107,7 +112,7 @@ const IncidentForm = ({
                 });
             }
         }
-        handleSubmit(data, isNoteworthy);
+        handleSubmit(data, isNoteworthy, doNotRequireCards);
     };
 
     return (
@@ -209,6 +214,18 @@ const IncidentForm = ({
                         onCheckedChange={(value) => setIsNoteworthy(!!value)}
                     />
                     <Label>Mark as noteworthy incident</Label>
+                </div>
+                <div className="flex items-center gap-2">
+                    <Checkbox
+                        checked={doNotRequireCards}
+                        onCheckedChange={(value) =>
+                            setDoNotRequireCards(!!value)
+                        }
+                    />
+                    <Label>
+                        Do not require cards to be scanned (use only in case of
+                        bugs)
+                    </Label>
                 </div>
                 <div className="flex gap-4">
                     <Button

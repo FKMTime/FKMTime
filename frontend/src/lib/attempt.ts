@@ -33,11 +33,13 @@ export const swapAttempts = async (
 
 export const updateAttempt = async (
     data: UpdateAttemptData,
-    isNoteworthy?: boolean
+    isNoteworthy?: boolean,
+    doNotRequireCards?: boolean
 ) => {
     const response = await backendRequest(`attempt/${data.id}`, "PUT", true, {
         ...data,
         noteworthy: isNoteworthy,
+        doNotRequireCards: doNotRequireCards,
     });
     return response.status;
 };

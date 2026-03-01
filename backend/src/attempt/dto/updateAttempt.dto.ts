@@ -48,4 +48,8 @@ export class UpdateAttemptDto {
   @IsOptional()
   @IsBoolean()
   noteworthy: boolean;
+
+  @IsOptional()
+  @IsBoolean()
+  doNotRequireCards: boolean;
 }

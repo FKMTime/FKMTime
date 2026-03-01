@@ -93,7 +93,9 @@ export class SocketServer {
   sendToAll<T>(response: ResponseDto<T>) {
     if (this.hilRunning) return;
 
-    this.logger.log(`Sending ${response.type} to all connected sockets`);
+    this.logger.log(
+      `Sending ${response.type} to all connected sockets, data ${JSON.stringify(response.data)}`,
+    );
     this.connectedSockets.forEach((socket) => {
       socket.write(JSON.stringify(response) + '\0');
     });

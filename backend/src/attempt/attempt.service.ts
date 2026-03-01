@@ -217,7 +217,9 @@ export class AttemptService {
         data: {
           attempt: attempt,
           espId: attempt.device.espId,
-          shouldScanCards: attempt.status === AttemptStatus.RESOLVED,
+          shouldScanCards: data.doNotRequireCards
+            ? false
+            : attempt.status === AttemptStatus.RESOLVED,
         },
       });
     }
