@@ -34,6 +34,7 @@ import DeviceCard from "./Components/DeviceCard";
 import DevicesTable from "./Components/DevicesTable";
 import DevicesSettings from "./Tabs/DeviceSettings/DevicesSettings";
 import UploadFirmware from "./Tabs/UploadFirmware/UploadFirmware";
+import AvailableDeviceCard from "./Components/AvailableDeviceCard";
 
 const tabs = [
     {
@@ -248,6 +249,16 @@ const Devices = () => {
                         </Card>
                     </div>
                     <div className="flex md:hidden flex-col gap-3">
+                        {availableDevices.map((device) => (
+                            <AvailableDeviceCard
+                                key={device.espId}
+                                device={device}
+                                handleAddDeviceRequest={handleAddDeviceRequest}
+                                handleRemoveDeviceRequest={
+                                    handleRemoveDeviceRequest
+                                }
+                            />
+                        ))}
                         {devices.map((device) => (
                             <DeviceCard
                                 device={device}
