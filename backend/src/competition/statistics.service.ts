@@ -153,6 +153,26 @@ export class StatisticsService {
           roundName: `${getEventShortName(round.activityCode.split('-r')[0])} - R${round.activityCode.split('-r')[1]}`,
           delayInMinutes: (delay / 60000).toFixed(2),
         });
+        const lastResult = await this.prisma.attempt.findFirst({
+          where: {
+            result: {
+              roundId: round.activityCode,
+            },
+          },
+          orderBy: {
+            solvedAt: 'desc',
+          },
+        });
+        if (lastResult) {
+          const endTime = new Date(activityFromSchedule.endTime);
+          const delayEnd =
+            new Date(lastResult.solvedAt).getTime() - endTime.getTime();
+          roundsForDay.push({
+            roundId: round.activityCode,
+            roundName: `${getEventShortName(round.activityCode.split('-r')[0])} - R${round.activityCode.split('-r')[1]} (end)`,
+            delayInMinutes: (delayEnd / 60000).toFixed(2),
+          });
+        }
       }
       byRoundStats.push({
         id: day.getTime(),
