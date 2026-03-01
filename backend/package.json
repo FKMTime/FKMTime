@@ -59,7 +59,7 @@
     "@nestjs/schematics": "^11.0.2",
     "@nestjs/testing": "^11.1.14",
     "@types/crypto-js": "^4.2.2",
-    "@types/express": "^5.0.0",
+    "@types/express": "^5.0.6",
     "@types/jest": "^29.5.14",
     "@types/node": "^22.9.0",
     "@types/supertest": "^2.0.12",
