@@ -75,6 +75,11 @@ const ImportCompetition = () => {
         });
     }, [navigate]);
 
+    if (!userInfo) {
+        navigate("/auth/login");
+        return null;
+    }
+
     return (
         <PageTransition>
             <div className="flex flex-col gap-4">
