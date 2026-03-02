@@ -29,12 +29,12 @@ import PageTransition from "@/Pages/PageTransition";
 import { socket, SocketContext } from "@/socket";
 
 import { AutoSetupModal } from "./Components/AutoSetupModal";
+import AvailableDeviceCard from "./Components/AvailableDeviceCard";
 import CreateDeviceModal from "./Components/CreateDeviceModal";
 import DeviceCard from "./Components/DeviceCard";
 import DevicesTable from "./Components/DevicesTable";
 import DevicesSettings from "./Tabs/DeviceSettings/DevicesSettings";
 import UploadFirmware from "./Tabs/UploadFirmware/UploadFirmware";
-import AvailableDeviceCard from "./Components/AvailableDeviceCard";
 
 const tabs = [
     {
