@@ -138,6 +138,8 @@ services:
       - SOCKET_PATH=/app/sock/socket.sock
       - DEVICE_LOGS=/logs
     restart: unless-stopped
+    extra_hosts:
+      - host.docker.internal:host-gateway
     depends_on:
       backend:
         condition: service_healthy
