@@ -44,8 +44,7 @@ export class SocketServer {
       this.connectedSockets.push(socket);
       await this.sendInitData(socket);
       socket.on('data', async (data) => {
-        buffer = Buffer.concat([buffer, data]);
-        this.logger.log('buff length: ' + buffer.length);
+        buffer = Buffer.concat([buffer, Buffer.from(data)]);
 
         let nullIdx = buffer.indexOf(0x00);
         while (nullIdx !== -1) {
@@ -72,12 +71,18 @@ export class SocketServer {
     });
   }
 
-  private sendResponseWithTag<T>(socket: net.Socket, request: RequestDto<T>) {
+  private sendResponseWithTag<T>(
+    socket: net.Socket,
+    request: RequestDto<T>,
+    log: boolean = true,
+  ) {
     if (this.hilRunning) return;
 
-    this.logger.log(
-      `Sending response of type ${request.type} to socket, tag ${request.tag}, data ${JSON.stringify(request.data)}`,
-    );
+    if (log) {
+      this.logger.log(
+        `Sending response of type ${request.type} to socket, tag ${request.tag}, data ${JSON.stringify(request.data)}`,
+      );
+    }
     socket.write(JSON.stringify(this.parseResponse(request)) + '\0');
   }
 
@@ -171,9 +176,12 @@ export class SocketServer {
   }
 
   private async parsePacket(socket: net.Socket, request: RequestDto<any>) {
-    this.logger.log(
-      `Received request of type ${request.type}, tag ${request.tag}, data ${JSON.stringify(request.data)}`,
-    );
+    if (request.type !== 'CurrentTimeInfo') {
+      this.logger.log(
+        `Received request of type ${request.type}, tag ${request.tag}, data ${JSON.stringify(request.data)}`,
+      );
+    }
+
     if (request.type === 'EnterAttempt') {
       const responseData = await this.socketService.enterAttempt(request.data);
       this.sendResponseWithTag(socket, {
@@ -242,6 +250,18 @@ export class SocketServer {
         tag: request.tag,
         data: responseData,
       });
+    } else if (request.type === 'CurrentTimeInfo') {
+      this.sendResponseWithTag(
+        socket,
+        {
+          type: 'Empty',
+          tag: request.tag,
+          data: {
+            error: false,
+          },
+        },
+        false,
+      );
     } else {
       this.logger.error('Unknown request type');
     }
