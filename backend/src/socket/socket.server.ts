@@ -149,7 +149,7 @@ export class SocketServer {
     if (state) {
       const status = await this.socketService.getServerStatus();
       this.hilProcessor = wasm.init((tag, msg) => {
-        this.logger.log(`[${tag}] ${msg}`);
+        this.logger.log(`[HIL] [${tag}] ${msg}`);
       }, JSON.stringify(status));
 
       this.hilRunning = true;
@@ -157,7 +157,11 @@ export class SocketServer {
         const res = this.hilProcessor.generate_output();
         if (res.length > 0) {
           this.connectedSockets.forEach((cs) => {
-            cs.write(res);
+            try {
+              cs.write(res);
+            } catch (e) {
+              this.logger.log(`[HIL] Socket write error`);
+            }
           });
         }
       }, 50);
