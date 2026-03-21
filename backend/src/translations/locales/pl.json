@@ -163,6 +163,10 @@
         {
             "key": "serverDisconnectedFooter",
             "translation": "z serwerem"
+        },
+        {
+            "key": "inspection",
+            "translation": "Inspekcja"
         }
     ]
 }
