@@ -484,46 +484,57 @@ export class CompetitionService {
       wcif,
     );
     if (!roundInfoFromSchedule) return;
-    const potentialNextGroupId =
-      currentRoundId + '-g' + (+currentGroupId.split('-g')[1] + 1);
-    if (
-      roundInfoFromSchedule.childActivities.some(
-        (a) => a.activityCode === potentialNextGroupId,
-      )
-    ) {
+    const sortedActivities = roundInfoFromSchedule.childActivities.sort(
+      (a, b) =>
+        new Date(a.startTime).getTime() - new Date(b.startTime).getTime(),
+    );
+    const currentIndex = sortedActivities.findIndex(
+      (a) => a.activityCode === currentGroupId,
+    );
+    const nextGroup =
+      currentIndex !== -1 ? sortedActivities[currentIndex + 1] : null;
+
+    if (nextGroup) {
       await this.prisma.room.update({
         where: {
           id: roomId,
         },
         data: {
-          currentGroupIds: [potentialNextGroupId],
+          currentGroupIds: [nextGroup.activityCode],
         },
       });
-      const message = `Group in room ${room.name} was changed to ${potentialNextGroupId}`;
+      const message = `Group in room ${room.name} was changed to ${nextGroup.activityCode}`;
       this.appGateway.server.to(`competition`).emit('groupShouldBeChanged', {
         message: message,
       });
       this.logger.log(message);
     } else {
       const endTime = new Date(roundInfoFromSchedule.endTime);
-      let nextRoundId = '';
-      let nextRoundStartTime = new Date();
+      let nextRoundActivity: Activity | null = null;
       wcif.schedule.venues.forEach((venue: Venue) => {
         const r = venue.rooms.find((item: WCIFRoom) => item.name === room.name);
         r.activities.forEach((a: Activity) => {
           if (
             new Date(a.startTime).getDay() === endTime.getDay() &&
             new Date(a.startTime).getTime() >= endTime.getTime() &&
-            new Date(a.startTime).getTime() <= nextRoundStartTime.getTime() &&
-            !a.activityCode.startsWith('other')
+            !a.activityCode.startsWith('other') &&
+            (!nextRoundActivity ||
+              new Date(a.startTime).getTime() <
+                new Date(nextRoundActivity.startTime).getTime())
           ) {
-            nextRoundId = a.activityCode;
-            nextRoundStartTime = new Date(a.startTime);
+            nextRoundActivity = a;
           }
         });
       });
-      if (nextRoundId) {
-        const nextGroupId = nextRoundId + '-g1';
+      if (nextRoundActivity) {
+        const sortedGroups = nextRoundActivity.childActivities.sort(
+          (a, b) =>
+            new Date(a.startTime).getTime() - new Date(b.startTime).getTime(),
+        );
+        const nextGroupId =
+          sortedGroups.length > 0
+            ? sortedGroups[0].activityCode
+            : nextRoundActivity.activityCode + '-g1';
         await this.prisma.room.update({
           where: {
             id: roomId,
@@ -539,6 +550,120 @@ export class CompetitionService {
         this.logger.log(message);
       }
     }
+  }
+
+  async getNextGroupsFromScheduleForRoom(roomId: string) {
+    const room = await this.prisma.room.findUnique({ where: { id: roomId } });
+    if (!room) {
+      throw new HttpException('Room not found', 404);
+    }
+    const currentGroups = room.currentGroupIds;
+    const competition = await this.prisma.competition.findFirst();
+    const wcif = JSON.parse(JSON.stringify(competition.wcif));
+    const nextGroups = [];
+    if (currentGroups.length === 1) {
+      const currentRoundId = currentGroups[0].split('-g')[0];
+      const roundInfoFromSchedule: Activity =
+        getActivityInfoFromScheduleWithRoom(currentRoundId, room.name, wcif);
+      if (!roundInfoFromSchedule) return;
+      const sortedActivities = roundInfoFromSchedule.childActivities.sort(
+        (a, b) =>
+          new Date(a.startTime).getTime() - new Date(b.startTime).getTime(),
+      );
+      const currentIndex = sortedActivities.findIndex(
+        (a) => a.activityCode === currentGroups[0],
+      );
+      const nextGroup =
+        currentIndex !== -1 ? sortedActivities[currentIndex + 1] : null;
+
+      if (nextGroup) {
+        nextGroups.push(nextGroup.activityCode);
+      } else {
+        const endTime = new Date(roundInfoFromSchedule.endTime);
+        let nextRoundActivity: Activity | null = null;
+        wcif.schedule.venues.forEach((venue: Venue) => {
+          const r = venue.rooms.find(
+            (item: WCIFRoom) => item.name === room.name,
+          );
+          r.activities.forEach((a: Activity) => {
+            if (
+              new Date(a.startTime).getDay() === endTime.getDay() &&
+              new Date(a.startTime).getTime() >= endTime.getTime() &&
+              !a.activityCode.startsWith('other') &&
+              (!nextRoundActivity ||
+                new Date(a.startTime).getTime() <
+                  new Date(nextRoundActivity.startTime).getTime())
+            ) {
+              nextRoundActivity = a;
+            }
+          });
+        });
+        if (nextRoundActivity) {
+          const sortedGroups = nextRoundActivity.childActivities.sort(
+            (a, b) =>
+              new Date(a.startTime).getTime() - new Date(b.startTime).getTime(),
+          );
+          const nextGroupId =
+            sortedGroups.length > 0
+              ? sortedGroups[0].activityCode
+              : nextRoundActivity.activityCode + '-g1';
+          nextGroups.push(nextGroupId);
+        }
+      }
+    } else {
+      for (const currentGroupId of currentGroups) {
+        const roundId = currentGroupId.split('-g')[0];
+        const roundInfoFromSchedule: Activity =
+          getActivityInfoFromScheduleWithRoom(roundId, room.name, wcif);
+        if (!roundInfoFromSchedule) return;
+        const sortedActivities = roundInfoFromSchedule.childActivities.sort(
+          (a, b) =>
+            new Date(a.startTime).getTime() - new Date(b.startTime).getTime(),
+        );
+        const currentIndex = sortedActivities.findIndex(
+          (a) => a.activityCode === currentGroupId,
+        );
+        const nextGroup =
+          currentIndex !== -1 ? sortedActivities[currentIndex + 1] : null;
+
+        if (nextGroup) {
+          nextGroups.push(nextGroup.activityCode);
+        } else {
+          const endTime = new Date(roundInfoFromSchedule.endTime);
+          let nextRoundActivity: Activity | null = null;
+          wcif.schedule.venues.forEach((venue: Venue) => {
+            const r = venue.rooms.find(
+              (item: WCIFRoom) => item.name === room.name,
+            );
+            r.activities.forEach((a: Activity) => {
+              if (
+                new Date(a.startTime).getDay() === endTime.getDay() &&
+                new Date(a.startTime).getTime() >= endTime.getTime() &&
+                !a.activityCode.startsWith('other') &&
+                (!nextRoundActivity ||
+                  new Date(a.startTime).getTime() <
+                    new Date(nextRoundActivity.startTime).getTime())
+              ) {
+                nextRoundActivity = a;
+              }
+            });
+          });
+          if (nextRoundActivity) {
+            const sortedGroups = nextRoundActivity.childActivities.sort(
+              (a, b) =>
+                new Date(a.startTime).getTime() -
+                new Date(b.startTime).getTime(),
+            );
+            const nextGroupId =
+              sortedGroups.length > 0
+                ? sortedGroups[0].activityCode
+                : nextRoundActivity.activityCode + '-g1';
+            nextGroups.push(nextGroupId);
+          }
+        }
+      }
+    }
+    return nextGroups;
   }
 
   async sendResultsToWcaLive() {

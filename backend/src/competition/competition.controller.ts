@@ -138,4 +138,10 @@ export class CompetitionController {
   ) {
     return await this.competitionService.updateDevicesSettings(id, dto);
   }
+
+  @UseGuards(OrganizerGuard)
+  @Get('rooms/:id/next-groups')
+  async getNextGroupsFromScheduleForRoom(@Param('id') id: string) {
+    return await this.competitionService.getNextGroupsFromScheduleForRoom(id);
+  }
 }

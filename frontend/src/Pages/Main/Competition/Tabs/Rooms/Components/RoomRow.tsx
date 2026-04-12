@@ -2,6 +2,7 @@ import { useState } from "react";
 
 import { Button } from "@/Components/ui/button";
 import { TableCell, TableRow } from "@/Components/ui/table";
+import { getNextGroupsFromScheduleForRoom } from "@/lib/competition";
 import { Competition, Room } from "@/lib/interfaces";
 
 import AddGroupModal from "./AddGroupModal";
@@ -15,6 +16,10 @@ interface RoomRowProps {
 
 const RoomRow = ({ competition, room, updateCurrentGroups }: RoomRowProps) => {
     const [isOpenAddGroupModal, setIsOpenAddGroupModal] = useState(false);
+    const handleAddNextGroups = async () => {
+        const nextGroups = await getNextGroupsFromScheduleForRoom(room.id);
+        updateCurrentGroups(room.id, [...nextGroups]);
+    };
     return (
         <TableRow>
             <TableCell>{room.name}</TableCell>
@@ -30,6 +35,9 @@ const RoomRow = ({ competition, room, updateCurrentGroups }: RoomRowProps) => {
                     onClick={() => setIsOpenAddGroupModal(true)}
                 >
                     Add
+                </Button>
+                <Button variant="default" onClick={handleAddNextGroups}>
+                    Next from schedule
                 </Button>
                 <Button
                     variant="destructive"

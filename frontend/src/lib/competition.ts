@@ -191,3 +191,12 @@ export const getInfoForLoginPage = async () => {
     );
     return await response.json();
 };
+
+export const getNextGroupsFromScheduleForRoom = async (roomId: string) => {
+    const response = await backendRequest(
+        `competition/rooms/${roomId}/next-groups`,
+        "GET",
+        true
+    );
+    return await response.json();
+};
