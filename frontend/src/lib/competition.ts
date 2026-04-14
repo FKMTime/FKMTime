@@ -200,3 +200,12 @@ export const getNextGroupsFromScheduleForRoom = async (roomId: string) => {
     );
     return await response.json();
 };
+
+export const getPreviousGroupsFromScheduleForRoom = async (roomId: string) => {
+    const response = await backendRequest(
+        `competition/rooms/${roomId}/previous-groups`,
+        "GET",
+        true
+    );
+    return await response.json();
+};

@@ -144,4 +144,12 @@ export class CompetitionController {
   async getNextGroupsFromScheduleForRoom(@Param('id') id: string) {
     return await this.competitionService.getNextGroupsFromScheduleForRoom(id);
   }
+
+  @UseGuards(OrganizerGuard)
+  @Get('rooms/:id/previous-groups')
+  async getPreviousGroupsFromScheduleForRoom(@Param('id') id: string) {
+    return await this.competitionService.getPreviousGroupsFromScheduleForRoom(
+      id,
+    );
+  }
 }

@@ -2,7 +2,10 @@ import { useState } from "react";
 
 import { Button } from "@/Components/ui/button";
 import { TableCell, TableRow } from "@/Components/ui/table";
-import { getNextGroupsFromScheduleForRoom } from "@/lib/competition";
+import {
+    getNextGroupsFromScheduleForRoom,
+    getPreviousGroupsFromScheduleForRoom,
+} from "@/lib/competition";
 import { Competition, Room } from "@/lib/interfaces";
 
 import AddGroupModal from "./AddGroupModal";
@@ -20,6 +23,13 @@ const RoomRow = ({ competition, room, updateCurrentGroups }: RoomRowProps) => {
         const nextGroups = await getNextGroupsFromScheduleForRoom(room.id);
         updateCurrentGroups(room.id, [...nextGroups]);
     };
+    const handleAddPreviousGroups = async () => {
+        const previousGroups = await getPreviousGroupsFromScheduleForRoom(
+            room.id
+        );
+        updateCurrentGroups(room.id, [...previousGroups]);
+    };
+
     return (
         <TableRow>
             <TableCell>{room.name}</TableCell>
@@ -38,6 +48,9 @@ const RoomRow = ({ competition, room, updateCurrentGroups }: RoomRowProps) => {
                 </Button>
                 <Button variant="default" onClick={handleAddNextGroups}>
                     Next from schedule
+                </Button>
+                <Button variant="default" onClick={handleAddPreviousGroups}>
+                    Previous from schedule
                 </Button>
                 <Button
                     variant="destructive"
