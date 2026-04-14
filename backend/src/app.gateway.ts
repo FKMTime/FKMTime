@@ -10,6 +10,8 @@ import {
 import { Server, Socket } from 'socket.io';
 
 import { AdminGuard } from './auth/guards/admin.guard';
+import { DelegateGuard } from './auth/guards/delegate.guard';
+import { OrganizerGuard } from './auth/guards/organizer.guard';
 import { RequestToConnectDto } from './device/dto/requestToConnect.dto';
 
 @WebSocketGateway({
@@ -60,31 +62,31 @@ export class AppGateway {
   /* ======= Devices ====== */
   /* ====================== */
   @SubscribeMessage('joinDevices')
-  @UseGuards(AdminGuard)
+  @UseGuards(OrganizerGuard)
   async handleJoinDevices(@ConnectedSocket() socket: Socket) {
     socket.join(`device`);
     this.sendDeviceRequests(socket);
   }
 
   @SubscribeMessage('leaveDevices')
-  @UseGuards(AdminGuard)
+  @UseGuards(OrganizerGuard)
   async handleLeaveDevices(@ConnectedSocket() socket: Socket) {
     socket.leave(`device`);
   }
 
   @SubscribeMessage('deviceUpdated')
-  @UseGuards(AdminGuard)
+  @UseGuards(OrganizerGuard)
   handleDeviceUpdated() {
     this.server.to(`device`).emit('deviceUpdated');
   }
 
   @SubscribeMessage('deviceRequests')
-  @UseGuards(AdminGuard)
+  @UseGuards(OrganizerGuard)
   sendDeviceRequests(@ConnectedSocket() socket: Socket) {
     socket.emit('deviceRequests', this.deviceRequests);
   }
 
-  @UseGuards(AdminGuard)
+  @UseGuards(OrganizerGuard)
   handleDeviceRequest(device: RequestToConnectDto) {
     if (this.deviceRequests.some((req) => req.espId === device.espId)) return;
     this.deviceRequests.push(device);
@@ -92,7 +94,7 @@ export class AppGateway {
   }
 
   @SubscribeMessage('removeDeviceRequest')
-  @UseGuards(AdminGuard)
+  @UseGuards(OrganizerGuard)
   handleRemoveDeviceRequest(@MessageBody() data: { espId: number }) {
     this.deviceRequests = this.deviceRequests.filter(
       (device) => device.espId !== data.espId,
@@ -100,7 +102,7 @@ export class AppGateway {
     this.server.to(`device`).emit('deviceRequests', this.deviceRequests);
   }
 
-  @UseGuards(AdminGuard)
+  @UseGuards(OrganizerGuard)
   handleAddDeviceToDb(deviceId: number) {
     this.deviceRequests = this.deviceRequests.filter(
       (device) => device.espId !== deviceId,
@@ -127,13 +129,13 @@ export class AppGateway {
   /* ==== Statistics ===== */
   /* ====================== */
   @SubscribeMessage('joinStatistics')
-  @UseGuards(AdminGuard)
+  @UseGuards(OrganizerGuard)
   async handleJoinStatistics(@ConnectedSocket() socket: Socket) {
     socket.join(`statistics`);
   }
 
   @SubscribeMessage('leaveStatistics')
-  @UseGuards(AdminGuard)
+  @UseGuards(OrganizerGuard)
   async handleLeaveStatistics(@ConnectedSocket() socket: Socket) {
     socket.leave(`statistics`);
   }
@@ -146,7 +148,7 @@ export class AppGateway {
   /* ===== Attendance ===== */
   /* ====================== */
   @SubscribeMessage('joinAttendance')
-  @UseGuards(AdminGuard)
+  @UseGuards(OrganizerGuard)
   async handleJoinAttendance(
     @ConnectedSocket() socket: Socket,
     @MessageBody('groupId') groupId: string,
@@ -155,7 +157,7 @@ export class AppGateway {
   }
 
   @SubscribeMessage('leaveAttendance')
-  @UseGuards(AdminGuard)
+  @UseGuards(OrganizerGuard)
   async handleLeaveAttentance(
     @ConnectedSocket() socket: Socket,
     @MessageBody('groupId') groupId: string,
@@ -163,7 +165,7 @@ export class AppGateway {
     socket.leave(`attendance-${groupId}`);
   }
 
-  @UseGuards(AdminGuard)
+  @UseGuards(OrganizerGuard)
   handleNewAttendance(groupId: string, competitorId: string) {
     this.server.to(`attendance-${groupId}`).emit('newAttendance', {
       competitorId,
@@ -174,19 +176,19 @@ export class AppGateway {
   /* ====== Incidents ===== */
   /* ====================== */
   @SubscribeMessage('joinIncidents')
-  @UseGuards(AdminGuard)
+  @UseGuards(DelegateGuard)
   async handleJoinIncidents(@ConnectedSocket() socket: Socket) {
     socket.join(`incidents`);
   }
 
   @SubscribeMessage('leaveIncidents')
-  @UseGuards(AdminGuard)
+  @UseGuards(DelegateGuard)
   async handleLeaveIncidents(@ConnectedSocket() socket: Socket) {
     socket.leave(`incidents`);
   }
 
   @SubscribeMessage('newIncident')
-  @UseGuards(AdminGuard)
+  @UseGuards(DelegateGuard)
   handleNewIncident(
     deviceName: string,
     competitorName: string,
@@ -203,7 +205,7 @@ export class AppGateway {
   }
 
   @SubscribeMessage('attemptUpdated')
-  @UseGuards(AdminGuard)
+  @UseGuards(DelegateGuard)
   handleAttemptUpdated() {
     this.handleStatisticsUpdated();
     this.server.to(`incidents`).emit('attemptUpdated');
