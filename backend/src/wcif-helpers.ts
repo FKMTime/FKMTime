@@ -11,6 +11,8 @@ export const wcifRoleToAttendanceRole = (role: string) => {
       return 'RUNNER';
     case 'staff-scrambler':
       return 'SCRAMBLER';
+    case 'staff-delegate':
+      return 'DELEGATE';
     case 'competitor':
       return 'COMPETITOR';
     default:

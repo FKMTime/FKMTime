@@ -21,6 +21,8 @@ export const prettyActivityName = (activity: string) => {
             return "Runner";
         case "SCRAMBLER":
             return "Scrambler";
+        case "DELEGATE":
+            return "Delegate";
         default:
             return "Unknown activity";
     }

@@ -309,6 +309,7 @@ enum StaffRole {
   JUDGE
   RUNNER
   SCRAMBLER
+  DELEGATE
   STAFF_OTHER
 }
 
