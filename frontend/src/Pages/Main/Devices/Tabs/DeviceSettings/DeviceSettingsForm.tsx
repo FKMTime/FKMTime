@@ -51,6 +51,7 @@ const DeviceSettingsForm = ({
             defaultLocale: competition.defaultLocale,
             hilTesting: competition.hilTesting,
             secureRfid: competition.secureRfid,
+            soundEnabled: competition.soundEnabled,
         },
     });
 
@@ -130,6 +131,27 @@ const DeviceSettingsForm = ({
                             <FormMessage />
                             <FormDescription>
                                 Turn it off if competition is in progress
+                            </FormDescription>
+                        </FormItem>
+                    )}
+                />
+                <FormField
+                    control={form.control}
+                    name="soundEnabled"
+                    render={({ field }) => (
+                        <FormItem>
+                            <div className="flex items-center gap-2">
+                                <FormControl>
+                                    <Checkbox
+                                        checked={field.value}
+                                        onCheckedChange={field.onChange}
+                                    />
+                                </FormControl>
+                                <FormLabel>Enable sound</FormLabel>
+                            </div>
+                            <FormDescription>
+                                Enable sound for devices (e. g. beep after
+                                scanning the card)
                             </FormDescription>
                         </FormItem>
                     )}

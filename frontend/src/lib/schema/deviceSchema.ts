@@ -21,4 +21,5 @@ export const deviceSettingsSchema = z.object({
     defaultLocale: z.string().default("en"),
     hilTesting: z.boolean(),
     secureRfid: z.boolean(),
+    soundEnabled: z.boolean(),
 });

@@ -10,5 +10,4 @@ export const competitionSchema = z.object({
         .default(SendingResultsFrequency.AFTER_SOLVE),
     shouldChangeGroupsAutomatically: z.boolean().default(true),
     useFkmTimeDevices: z.boolean().default(false),
-    soundEnabled: z.boolean().default(true),
 });

@@ -28,4 +28,7 @@ export class UpdateDevicesSettingsDto {
 
   @IsBoolean()
   secureRfid: boolean;
+
+  @IsBoolean()
+  soundEnabled: boolean;
 }

@@ -279,7 +279,6 @@ export class CompetitionService {
         sendingResultsFrequency: dto.sendingResultsFrequency,
         shouldChangeGroupsAutomatically: dto.shouldChangeGroupsAutomatically,
         useFkmTimeDevices: dto.useFkmTimeDevices,
-        soundEnabled: dto.soundEnabled,
       },
     });
   }
@@ -322,6 +321,7 @@ export class CompetitionService {
         wsUrl: data.wsUrl,
         defaultLocale: data.defaultLocale,
         secureRfid: data.secureRfid,
+        soundEnabled: data.soundEnabled,
       },
     });
 
