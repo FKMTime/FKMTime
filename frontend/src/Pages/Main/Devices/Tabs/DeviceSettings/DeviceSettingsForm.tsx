@@ -152,7 +152,6 @@ const DeviceSettingsForm = ({
                             <FormDescription>
                                 Use MDNS to search for a server in local network
                             </FormDescription>
-                            .
                         </FormItem>
                     )}
                 />
