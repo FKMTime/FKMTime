@@ -8,7 +8,6 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
-import { AdminGuard } from 'src/auth/guards/admin.guard';
 import { OrganizerGuard } from 'src/auth/guards/organizer.guard';
 import { ScramblingDeviceGuard } from 'src/auth/guards/scramblingDevice.guard';
 
@@ -68,7 +67,7 @@ export class CompetitionController {
     return await this.competitionService.getCompetitionSettings();
   }
 
-  @UseGuards(AuthGuard('jwt'), AdminGuard)
+  @UseGuards(AuthGuard('jwt'), OrganizerGuard)
   @Get('import/:id')
   async importCompetition(
     @Param('id') id: string,
