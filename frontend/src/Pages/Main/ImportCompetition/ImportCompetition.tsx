@@ -2,6 +2,7 @@ import { useSetAtom } from "jotai";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
+import LoadingPage from "@/Components/LoadingPage";
 import { Button } from "@/Components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/Components/ui/card";
 import { useToast } from "@/hooks/useToast";
@@ -23,6 +24,7 @@ const ImportCompetition = () => {
     const { toast } = useToast();
     const userInfo = getUserInfo();
     const [competitions, setCompetitions] = useState<WCACompetition[]>([]);
+    const [isLoading, setIsLoading] = useState<boolean>(true);
     const setCompetition = useSetAtom(competitionAtom);
 
     const handleSubmit = async (wcaId: string) => {
@@ -32,9 +34,11 @@ const ImportCompetition = () => {
                 description: "Please enter a competition ID",
                 variant: "destructive",
             });
+            return;
         }
+        setIsLoading(true);
         const response = await importCompetition(wcaId);
-        if (response.status === 200) {
+        if (response.status == 200) {
             await updateUserInfo();
             setCompetition(response.data);
             navigate(`/competition/`);
@@ -44,7 +48,14 @@ const ImportCompetition = () => {
                 description: "Competition has already been imported",
                 variant: "destructive",
             });
+        } else {
+            toast({
+                title: "Error",
+                description: response.data.message,
+                variant: "destructive",
+            });
         }
+        setIsLoading(false);
     };
 
     const handleSelect = (competition: WCACompetition | null) => {
@@ -65,19 +76,25 @@ const ImportCompetition = () => {
     };
 
     useEffect(() => {
-        getCompetitionInfo().then((res) => {
-            if (res.status === 200) {
+        Promise.all([
+            getCompetitionInfo(),
+            getUpcomingManageableCompetitions(),
+        ]).then(([competitionRes, competitionsData]) => {
+            if (competitionRes.status === 200) {
                 navigate("/");
             }
-        });
-        getUpcomingManageableCompetitions().then((data) => {
-            setCompetitions(data);
+            setCompetitions(competitionsData);
+            setIsLoading(false);
         });
     }, [navigate]);
 
     if (!userInfo) {
         navigate("/auth/login");
         return null;
+    }
+
+    if (isLoading) {
+        return <LoadingPage />;
     }
 
     return (
