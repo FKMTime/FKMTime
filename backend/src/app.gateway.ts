@@ -9,7 +9,6 @@ import {
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 
-import { AdminGuard } from './auth/guards/admin.guard';
 import { DelegateGuard } from './auth/guards/delegate.guard';
 import { OrganizerGuard } from './auth/guards/organizer.guard';
 import { RequestToConnectDto } from './device/dto/requestToConnect.dto';
@@ -114,13 +113,13 @@ export class AppGateway {
   /* ==== Competition ===== */
   /* ====================== */
   @SubscribeMessage('joinCompetition')
-  @UseGuards(AdminGuard)
+  @UseGuards(OrganizerGuard)
   async handleJoinCompetition(@ConnectedSocket() socket: Socket) {
     socket.join(`competition`);
   }
 
   @SubscribeMessage('leaveCompetition')
-  @UseGuards(AdminGuard)
+  @UseGuards(OrganizerGuard)
   async handleLeaveCompetition(@ConnectedSocket() socket: Socket) {
     socket.leave(`competition`);
   }
