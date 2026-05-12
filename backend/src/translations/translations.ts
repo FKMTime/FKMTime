@@ -32,7 +32,12 @@ const getAvailableLocales = () => {
 };
 
 export const getTranslation = (key: string, locale: string) => {
-  const translations = getTranslationsJSON(locale)?.translations;
+  let localeToUse = locale;
+  const availableLocales = getAvailableLocales();
+  if (!availableLocales.some((l) => l.locale === locale)) {
+    localeToUse = 'en';
+  }
+  const translations = getTranslationsJSON(localeToUse)?.translations;
   if (!translations) return key;
   return translations.find((t) => t.key === key)?.translation ?? key;
 };
