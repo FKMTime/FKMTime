@@ -170,11 +170,11 @@
     },
     {
       "key": "cardsCannotBeTheSameHeader",
-      "translation": "Karta zawodnika i karta sędziego"
+      "translation": "Karta zawodnika i sedziego"
     },
     {
       "key": "cardsCannotBeTheSameFooter",
-      "translation": "nie mogą być takie same"
+      "translation": "nie moga byc takie same"
     }
   ]
 }
