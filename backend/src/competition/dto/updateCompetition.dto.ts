@@ -24,4 +24,7 @@ export class UpdateCompetitionDto {
 
   @IsBoolean()
   useFkmTimeDevices: boolean;
+
+  @IsBoolean()
+  soundEnabled: boolean;
 }

@@ -88,6 +88,7 @@ model Competition {
   fkmToken                        Int                     @map("fkm_token")
   secureRfid                      Boolean                 @default(false) @map("secure_rfid")
   useFkmTimeDevices               Boolean                 @default(true) @map("use_fkm_time_devices")
+  soundEnabled                    Boolean                 @default(true) @map("sound_enabled")
 
   @@map("competition")
 }

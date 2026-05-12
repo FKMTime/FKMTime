@@ -68,6 +68,7 @@ export interface Competition extends CompetitionDataForLoginPage {
     hilTesting?: boolean;
     fkmToken: number;
     secureRfid: boolean;
+    soundEnabled: boolean;
 }
 
 //eslint-disable-next-line

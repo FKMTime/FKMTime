@@ -84,6 +84,7 @@ export class CompetitionService {
         countryIso2: true,
         wcif: true,
         useFkmTimeDevices: true,
+        soundEnabled: true,
       },
     });
     if (!competition) {
@@ -253,6 +254,7 @@ export class CompetitionService {
       defaultLocale: competition.defaultLocale,
       fkmToken: competition.fkmToken,
       secureRfid: competition.secureRfid,
+      soundEnabled: competition.soundEnabled,
       autoSetup: this.autoSetup,
     };
   }
@@ -277,6 +279,7 @@ export class CompetitionService {
         sendingResultsFrequency: dto.sendingResultsFrequency,
         shouldChangeGroupsAutomatically: dto.shouldChangeGroupsAutomatically,
         useFkmTimeDevices: dto.useFkmTimeDevices,
+        soundEnabled: dto.soundEnabled,
       },
     });
   }

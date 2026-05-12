@@ -44,6 +44,7 @@ const CompetitionForm = ({
             shouldChangeGroupsAutomatically:
                 competition.shouldChangeGroupsAutomatically,
             useFkmTimeDevices: competition.useFkmTimeDevices,
+            soundEnabled: competition.soundEnabled,
         },
     });
 
@@ -53,6 +54,7 @@ const CompetitionForm = ({
             ...values,
             sendingResultsFrequency:
                 values.sendingResultsFrequency as SendingResultsFrequency,
+            cubingContestsToken: values.cubingContestsToken || undefined,
         });
     };
 
@@ -105,6 +107,7 @@ const CompetitionForm = ({
                                     <FormControl>
                                         <Input
                                             {...field}
+                                            value={field.value ?? ""}
                                             placeholder="Cubing contests API token"
                                         />
                                     </FormControl>
@@ -203,6 +206,27 @@ const CompetitionForm = ({
                             <FormDescription>
                                 If you do not use FKMTime devices, you can
                                 disable some features of the app.
+                            </FormDescription>
+                        </FormItem>
+                    )}
+                />
+                <FormField
+                    control={form.control}
+                    name="soundEnabled"
+                    render={({ field }) => (
+                        <FormItem>
+                            <div className="flex items-center gap-2">
+                                <FormControl>
+                                    <Checkbox
+                                        checked={field.value}
+                                        onCheckedChange={field.onChange}
+                                    />
+                                </FormControl>
+                                <FormLabel>Enable sound</FormLabel>
+                            </div>
+                            <FormDescription>
+                                Enable sound for devices (e. g. beep after
+                                scanning the card)
                             </FormDescription>
                         </FormItem>
                     )}
