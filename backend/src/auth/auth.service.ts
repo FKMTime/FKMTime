@@ -65,6 +65,41 @@ export class AuthService {
     });
     const isDelegate = !!userInfo.me.delegate_status;
 
+    const competition = await this.prisma.competition.findFirst();
+    const isGlobalAdmin = ADMIN_WCA_USER_IDS.includes(userInfo.me.id);
+    const newRoles = [];
+    if (!competition) {
+      if (isGlobalAdmin) {
+        newRoles.push(Role.ADMIN);
+      } else if (isDelegate) {
+        newRoles.push(Role.DELEGATE);
+      } else {
+        newRoles.push(Role.ORGANIZER);
+      }
+    } else {
+      if (isGlobalAdmin) {
+        newRoles.push(Role.ADMIN);
+      } else {
+        const manageableCompetitions =
+          await this.wcaService.getUpcomingManageableCompetitions(token);
+        if (manageableCompetitions.some((c) => c.id === competition.wcaId)) {
+          const c = manageableCompetitions.find(
+            (comp) => comp.id === competition.wcaId,
+          );
+          if (c?.delegates?.some((d) => d.id === userInfo.me.id)) {
+            newRoles.push(Role.DELEGATE);
+          } else {
+            newRoles.push(Role.ORGANIZER);
+          }
+        } else {
+          throw new HttpException(
+            'You are not allowed to manage this competition',
+            403,
+          );
+        }
+      }
+    }
+
     if (existingUser) {
       await this.removeDuplicatedRoles(existingUser.id);
       await this.prisma.user.update({
@@ -75,11 +110,12 @@ export class AuthService {
           fullName: userInfo.me.name,
           wcaAccessToken: token,
           avatarUrl: userInfo.me.avatar.thumb_url,
+          roles: newRoles,
         },
       });
       const jwt = await this.generateAuthJwt({
         userId: existingUser.id,
-        roles: existingUser.roles,
+        roles: newRoles,
       });
       return {
         token: jwt,
@@ -87,50 +123,27 @@ export class AuthService {
           id: existingUser.id,
           username: existingUser.username,
           fullName: existingUser.fullName,
-          roles: existingUser.roles,
+          roles: newRoles,
           wcaAccessToken: token,
           avatarUrl: userInfo.me.avatar.thumb_url,
         },
       };
     } else {
-      const competition = await this.prisma.competition.findFirst();
-      const manageableCompetitions =
-        await this.wcaService.getUpcomingManageableCompetitions(token);
-      const isGlobalAdmin = ADMIN_WCA_USER_IDS.includes(userInfo.me.id);
-      const roles = [];
-      if (isGlobalAdmin) {
-        roles.push(Role.ADMIN);
-      }
       if (!competition) {
         return await this.createAndReturnUser(
           userInfo.me.id,
           userInfo.me.name,
           token,
-          roles,
+          newRoles,
           userInfo.me.avatar.thumb_url,
         );
       } else {
-        if (
-          manageableCompetitions.some((c) => c.id === competition.wcaId) ||
-          isGlobalAdmin
-        ) {
-          if (isDelegate) {
-            roles.push(Role.DELEGATE);
-          } else {
-            roles.push(Role.ORGANIZER);
-          }
-          return await this.createAndReturnUser(
-            userInfo.me.id,
-            userInfo.me.name,
-            token,
-            roles,
-          );
-        } else {
-          throw new HttpException(
-            'You are not allowed to manage this competition',
-            403,
-          );
-        }
+        return await this.createAndReturnUser(
+          userInfo.me.id,
+          userInfo.me.name,
+          token,
+          newRoles,
+        );
       }
     }
   }
