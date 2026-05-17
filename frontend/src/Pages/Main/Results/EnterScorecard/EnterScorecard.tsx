@@ -1,11 +1,10 @@
 import { useAtomValue } from "jotai";
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { getNumberOfAttemptsForRound } from "wcif-helpers";
 
 import EventIcon from "@/Components/Icons/EventIcon";
 import LoadingPage from "@/Components/LoadingPage";
-import PersonAutocomplete from "@/Components/PersonAutocomplete";
 import { Card, CardContent, CardHeader, CardTitle } from "@/Components/ui/card";
 import { useToast } from "@/hooks/useToast";
 import { activityCodeToName } from "@/lib/activities";
@@ -14,12 +13,15 @@ import {
     AttemptStatus,
     AttemptToEnterWithScorecard,
     AttemptType,
+    Person,
     Result,
 } from "@/lib/interfaces";
+import { getAllPersons } from "@/lib/persons";
 import { enterScorecard, getResultByRoundIdAndPersonId } from "@/lib/results";
 import { getSubmittedAttempts } from "@/lib/utils";
 import PageTransition from "@/Pages/PageTransition";
 
+import SelectCompetitor from "../Components/SelectCompetitor";
 import AttemptsList from "./Components/AttemptsList";
 import EnterScorecardActions from "./Components/EnterScorecardActions";
 
@@ -29,6 +31,10 @@ const EnterScorecard = () => {
     const navigate = useNavigate();
     const [result, setResult] = useState<Result | null>(null);
     const [attempts, setAttempts] = useState<AttemptToEnterWithScorecard[]>([]);
+    const [persons, setPersons] = useState<Person[]>([]);
+    const [inputValue, setInputValue] = useState<string>("");
+
+    const idInputRef = useRef<HTMLInputElement>(null);
     const roundName = activityCodeToName(id || "");
     const competition = useAtomValue(competitionAtom);
     const maxAttempts = useMemo(
@@ -39,35 +45,44 @@ const EnterScorecard = () => {
         [id, competition]
     );
 
-    const handleSelectPerson = async (personId?: string) => {
-        if (!personId || !id) return;
+    useEffect(() => {
+        getAllPersons().then(setPersons);
+    }, []);
 
-        const response = await getResultByRoundIdAndPersonId(id, personId);
-        if (response.status !== 200) return;
+    const handleSelectPerson = useCallback(
+        async (person: Person | null) => {
+            if (!person || !id) return;
 
-        const submitted = getSubmittedAttempts(response.data.attempts);
+            const response = await getResultByRoundIdAndPersonId(id, person.id);
+            if (response.status !== 200) return;
 
-        const filled = Array.from({ length: maxAttempts }, (_, i) => {
-            const existing = submitted.find((a) => a.attemptNumber === i + 1);
-            return (
-                existing ?? {
-                    id: `new-${i + 1}`,
-                    attemptNumber: i + 1,
-                    type: AttemptType.STANDARD_ATTEMPT,
-                    value: 0,
-                    penalty: 0,
-                    status: AttemptStatus.STANDARD,
-                    resultId: response.data.id,
-                    replacedBy: null,
-                    solvedAt: new Date(),
-                    isNew: true,
-                }
-            );
-        });
+            const submitted = getSubmittedAttempts(response.data.attempts);
 
-        setResult(response.data);
-        setAttempts(filled);
-    };
+            const filled = Array.from({ length: maxAttempts }, (_, i) => {
+                const existing = submitted.find(
+                    (a) => a.attemptNumber === i + 1
+                );
+                return (
+                    existing ?? {
+                        id: `new-${i + 1}`,
+                        attemptNumber: i + 1,
+                        type: AttemptType.STANDARD_ATTEMPT,
+                        value: 0,
+                        penalty: 0,
+                        status: AttemptStatus.STANDARD,
+                        resultId: response.data.id,
+                        replacedBy: null,
+                        solvedAt: new Date(),
+                        isNew: true,
+                    }
+                );
+            });
+
+            setResult(response.data);
+            setAttempts(filled);
+        },
+        [id, maxAttempts]
+    );
 
     const updateAttempt = (updated: AttemptToEnterWithScorecard) => {
         setAttempts((prev) =>
@@ -132,11 +147,13 @@ const EnterScorecard = () => {
                         </CardTitle>
                     </CardHeader>
                     <CardContent className="flex flex-col gap-4">
-                        <PersonAutocomplete
-                            onSelect={(person) =>
-                                handleSelectPerson(person?.id)
-                            }
-                            defaultValue={result?.person.id}
+                        <SelectCompetitor
+                            idInputRef={idInputRef}
+                            handleSubmit={handleSubmit}
+                            persons={persons}
+                            onSelect={handleSelectPerson}
+                            inputValue={inputValue}
+                            setInputValue={setInputValue}
                         />
                     </CardContent>
                 </Card>

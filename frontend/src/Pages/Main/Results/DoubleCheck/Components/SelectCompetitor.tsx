@@ -1,8 +1,7 @@
-import { ChangeEvent } from "react";
-
-import PersonAutocomplete from "@/Components/PersonAutocomplete";
-import { Input } from "@/Components/ui/input";
+// Re-exports the shared SelectCompetitor with DoubleCheck-specific prop mapping
 import { Person, ResultToDoubleCheck } from "@/lib/interfaces";
+
+import SharedSelectCompetitor from "../../Components/SelectCompetitor";
 
 interface SelectCompetitorProps {
     idInputRef: React.RefObject<HTMLInputElement>;
@@ -23,49 +22,27 @@ const SelectCompetitor = ({
     setInputValue,
     setJustSelected,
 }: SelectCompetitorProps) => {
-    const handleSelect = (value: Person | null) => {
-        if (!value) return;
-        setJustSelected(true);
+    const handleSelect = (person: Person | null) => {
+        if (!person) {
+            setResult(null);
+            return;
+        }
         const selectedResult = resultsToDoubleCheck.find(
-            (r) => r.person.registrantId === value.registrantId
+            (r) => r.person.registrantId === person.registrantId
         );
         setResult(selectedResult || null);
-        setInputValue(value.registrantId?.toString() || "");
     };
 
-    const handleChangeIdInput = (event: ChangeEvent<HTMLInputElement>) => {
-        setInputValue(event.target.value);
-        const selectedResult = resultsToDoubleCheck.find(
-            (r) => r.person.registrantId === +event.target.value
-        );
-        setResult(selectedResult || null);
-    };
     return (
-        <div className="flex gap-3">
-            <Input
-                placeholder="ID"
-                className="w-[20%]"
-                width="20%"
-                autoFocus
-                ref={idInputRef}
-                onKeyDown={(e) => {
-                    if (e.key === "Enter") {
-                        handleSubmit();
-                    }
-                }}
-                value={inputValue}
-                onChange={handleChangeIdInput}
-                inputMode="numeric"
-            />
-            <PersonAutocomplete
-                onSelect={handleSelect}
-                autoFocus
-                disabled={false}
-                defaultValue={inputValue}
-                personsList={resultsToDoubleCheck.map((r) => r.person)}
-                key={inputValue}
-            />
-        </div>
+        <SharedSelectCompetitor
+            idInputRef={idInputRef}
+            handleSubmit={handleSubmit}
+            persons={resultsToDoubleCheck.map((r) => r.person)}
+            onSelect={handleSelect}
+            inputValue={inputValue}
+            setInputValue={setInputValue}
+            setJustSelected={setJustSelected}
+        />
     );
 };
 
