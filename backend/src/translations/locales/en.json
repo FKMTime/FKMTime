@@ -175,6 +175,10 @@
     {
       "key": "cardsCannotBeTheSameFooter",
       "translation": "cannot be the same"
+    },
+    {
+      "key": "attemptEnteredAfterIncident",
+      "translation": "Attempt entered"
     }
   ]
 }

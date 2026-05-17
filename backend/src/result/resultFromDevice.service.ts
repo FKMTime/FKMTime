@@ -138,6 +138,7 @@ export class ResultFromDeviceService {
           return this.updateResolvedIncident(
             previousAttemptWithSameSessionId.id,
             data.judgeId.toString(),
+            locale,
           );
         } else {
           return {
@@ -515,7 +516,11 @@ export class ResultFromDeviceService {
     return attempt.attemptNumber;
   }
 
-  async updateResolvedIncident(attemptId: string, judgeCardId: string) {
+  async updateResolvedIncident(
+    attemptId: string,
+    judgeCardId: string,
+    locale: string,
+  ) {
     await this.prisma.attempt.update({
       where: {
         id: attemptId,
@@ -529,7 +534,7 @@ export class ResultFromDeviceService {
       },
     });
     return {
-      message: 'Attempt updated',
+      message: getTranslation('attemptEnteredAfterIncident', locale),
       status: 200,
       error: false,
     };

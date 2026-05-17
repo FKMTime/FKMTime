@@ -175,6 +175,10 @@
     {
       "key": "cardsCannotBeTheSameFooter",
       "translation": "nie moga byc takie same"
+    },
+    {
+      "key": "attemptEnteredAfterIncident",
+      "translation": "Ulozenie zostalo wprowadzone"
     }
   ]
 }
