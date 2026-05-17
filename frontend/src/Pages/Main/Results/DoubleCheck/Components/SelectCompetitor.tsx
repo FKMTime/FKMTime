@@ -55,6 +55,7 @@ const SelectCompetitor = ({
                 }}
                 value={inputValue}
                 onChange={handleChangeIdInput}
+                inputMode="numeric"
             />
             <PersonAutocomplete
                 onSelect={handleSelect}

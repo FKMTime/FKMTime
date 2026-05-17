@@ -59,6 +59,7 @@ const AttemptResultInput = ({
             disabled={disabled}
             required={required}
             className={className}
+            inputMode="numeric"
         />
     );
 };
