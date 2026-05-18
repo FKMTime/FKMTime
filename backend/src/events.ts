@@ -12,7 +12,7 @@ export const eventsData: {
   {
     id: '333',
     name: '3x3x3 Cube',
-    shortName: '3x3x3',
+    shortName: '3x3',
     icon: 'event-333',
     useInspection: true,
     usualScramblesCount: 5,
@@ -21,7 +21,7 @@ export const eventsData: {
   {
     id: '222',
     name: '2x2x2 Cube',
-    shortName: '2x2x2',
+    shortName: '2x2',
     icon: 'event-222',
     useInspection: true,
     usualScramblesCount: 5,
@@ -30,7 +30,7 @@ export const eventsData: {
   {
     id: '444',
     name: '4x4x4 Cube',
-    shortName: '4x4x4',
+    shortName: '4x4',
     icon: 'event-444',
     useInspection: true,
     usualScramblesCount: 5,
@@ -39,7 +39,7 @@ export const eventsData: {
   {
     id: '555',
     name: '5x5x5 Cube',
-    shortName: '5x5x5',
+    shortName: '5x5',
     icon: 'event-555',
     useInspection: true,
     usualScramblesCount: 5,
@@ -48,7 +48,7 @@ export const eventsData: {
   {
     id: '666',
     name: '6x6x6 Cube',
-    shortName: '6x6x6',
+    shortName: '6x6',
     icon: 'event-666',
     useInspection: true,
     usualScramblesCount: 3,
@@ -57,7 +57,7 @@ export const eventsData: {
   {
     id: '777',
     name: '7x7x7 Cube',
-    shortName: '7x7x7',
+    shortName: '7x7',
     icon: 'event-777',
     useInspection: true,
     usualScramblesCount: 3,
@@ -66,7 +66,7 @@ export const eventsData: {
   {
     id: '333bf',
     name: '3x3x3 Blindfolded',
-    shortName: '3x3x3 BLD',
+    shortName: '3x3 BLD',
     icon: 'event-333bf',
     useInspection: false,
     usualScramblesCount: 3,
@@ -75,7 +75,7 @@ export const eventsData: {
   {
     id: '333fm',
     name: '3x3x3 Fewest Moves',
-    shortName: 'FMC',
+    shortName: '3x3 FM',
     icon: 'event-333fm',
     useInspection: false,
     usualScramblesCount: 3,
@@ -83,7 +83,7 @@ export const eventsData: {
   },
   {
     id: '333oh',
-    name: '3x3x3 One-Handed',
+    name: '3x3 One-Handed',
     shortName: '3x3x3 OH',
     icon: 'event-333oh',
     useInspection: true,
@@ -125,6 +125,7 @@ export const eventsData: {
   {
     id: 'sq1',
     name: 'Square-1',
+    shortName: 'SQ-1',
     icon: 'event-sq1',
     useInspection: true,
     usualScramblesCount: 5,
@@ -133,7 +134,7 @@ export const eventsData: {
   {
     id: '444bf',
     name: '4x4x4 Blindfolded',
-    shortName: '4x4x4 BLD',
+    shortName: '4x4 BLD',
     icon: 'event-444bf',
     useInspection: false,
     usualScramblesCount: 3,
@@ -142,7 +143,7 @@ export const eventsData: {
   {
     id: '555bf',
     name: '5x5x5 Blindfolded',
-    shortName: '5x5x5 BLD',
+    shortName: '5x5 BLD',
     icon: 'event-555bf',
     useInspection: false,
     usualScramblesCount: 3,
