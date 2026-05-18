@@ -497,3 +497,8 @@ export interface MissedAssignments {
     comments: StaffActivity[];
     commentsCount: number;
 }
+
+export interface RemainingAndUsedCumulativeLimit {
+    used: number;
+    remaining: number;
+}

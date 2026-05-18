@@ -7,7 +7,12 @@ import { Alert, AlertTitle } from "@/Components/ui/alert";
 import { Card, CardContent, CardHeader, CardTitle } from "@/Components/ui/card";
 import { activityCodeToName } from "@/lib/activities";
 import { isUnofficialEvent } from "@/lib/events";
-import { Attempt, Competition, Result } from "@/lib/interfaces";
+import {
+    Attempt,
+    Competition,
+    RemainingAndUsedCumulativeLimit,
+    Result,
+} from "@/lib/interfaces";
 import { isThereADifferenceBetweenResults } from "@/lib/utils";
 
 import RoundLimits from "../../Components/RoundLimits";
@@ -18,6 +23,7 @@ interface WarningsAndLimitsCardProps {
     submittedAttempts: Attempt[];
     limit: TimeLimit | null;
     maxAttempts: number;
+    remainingAndUsedCumulativeLimit?: RemainingAndUsedCumulativeLimit;
 }
 
 const WarningsAndLimitsCard = ({
@@ -26,6 +32,7 @@ const WarningsAndLimitsCard = ({
     submittedAttempts,
     limit,
     maxAttempts,
+    remainingAndUsedCumulativeLimit,
 }: WarningsAndLimitsCardProps) => {
     const isDifferenceBetweenResults = useMemo(() => {
         if (!result || !competition) return false;
@@ -70,6 +77,10 @@ const WarningsAndLimitsCard = ({
                     limit={limit}
                     maxAttempts={maxAttempts}
                     size={"lg"}
+                    showRemainingAndUsedCumulativeLimit
+                    remainingAndUsedCumulativeLimit={
+                        remainingAndUsedCumulativeLimit
+                    }
                 />
             </CardContent>
         </Card>

@@ -217,7 +217,11 @@ export class ResultFromDeviceService {
       },
     });
 
-    const finalData = await this.getValidatedData(roundInfo, attempts, data);
+    const finalData = await this.getValidatedData(
+      competitor.id,
+      roundInfo,
+      data,
+    );
 
     if (!finalData.cutoffPassed) {
       return {
@@ -600,43 +604,25 @@ export class ResultFromDeviceService {
   }
 
   private async getValidatedData(
+    personId: string,
     wcifRoundInfo: any,
-    attempts: any[],
     newAttemptData: any,
   ) {
-    const submittedAttempts = [];
+    const submittedAttempts = await this.resultService.getSubmittedAttempts(
+      wcifRoundInfo.id,
+      personId,
+    );
     const dataToReturn: any = newAttemptData;
     let limitPassed = true;
     let cutoffPassed = true;
-    attempts.forEach((attempt) => {
-      if (
-        attempt.replacedBy === null &&
-        attempt.type === AttemptType.STANDARD_ATTEMPT &&
-        !submittedAttempts.some((a) => a.id === attempt.id) &&
-        attempt.status === AttemptStatus.STANDARD
-      ) {
-        submittedAttempts.push(attempt);
-      } else if (
-        attempt.replacedBy !== null &&
-        attempt.status === AttemptStatus.EXTRA_GIVEN
-      ) {
-        const extraAttempt = this.wcaService.getExtra(attempt.id, attempts);
-        if (
-          extraAttempt &&
-          !submittedAttempts.some((a) => a.id === extraAttempt.id) &&
-          extraAttempt.status === AttemptStatus.STANDARD
-        ) {
-          submittedAttempts.push(extraAttempt);
-        }
-      }
-    });
 
     if (wcifRoundInfo.timeLimit.cumulativeRoundIds.length > 0) {
       if (
-        !(await this.checkCumulativeLimit(wcifRoundInfo.timeLimit, [
-          ...submittedAttempts,
-          newAttemptData,
-        ]))
+        !(await this.resultService.checkCumulativeLimit(
+          personId,
+          wcifRoundInfo.timeLimit,
+          [...submittedAttempts, newAttemptData],
+        ))
       ) {
         limitPassed = false;
         dataToReturn.penalty = -1;
@@ -673,50 +659,5 @@ export class ResultFromDeviceService {
       cutoffPassed: cutoffPassed,
       attemptNumber: submittedAttempts.length + 1,
     };
-  }
-
-  private async checkCumulativeLimit(limit: any, submittedAttempts: any[]) {
-    if (limit.cumulativeRoundIds.length === 0) return true;
-    if (limit.cumulativeRoundIds.length === 1) {
-      let sum = 0;
-      submittedAttempts.forEach((attempt) => {
-        if (attempt.penalty !== -1) {
-          sum += attempt.value + attempt.penalty * 100;
-        } else {
-          sum += attempt.value;
-        }
-      });
-      return sum < limit.centiseconds;
-    }
-    if (limit.cumulativeRoundIds.length > 1) {
-      return await this.checkCumulativeLimitForMultipleRounds(
-        limit.cumulativeRoundIds,
-        limit.centiseconds,
-      );
-    }
-  }
-
-  private async checkCumulativeLimitForMultipleRounds(
-    roundsIds: string[],
-    limit: number,
-  ) {
-    const attempts = await this.prisma.attempt.findMany({
-      where: {
-        result: {
-          roundId: {
-            in: roundsIds,
-          },
-        },
-      },
-    });
-    let sum = 0;
-    attempts.forEach((attempt) => {
-      if (attempt.penalty !== -1) {
-        sum += attempt.value + attempt.penalty * 100;
-      } else {
-        sum += attempt.value;
-      }
-    });
-    return sum < limit;
   }
 }

@@ -5,13 +5,14 @@ import {
   StaffActivityStatus,
   StaffRole,
 } from '@prisma/client';
-import { Event, Round } from '@wca/helpers';
+import { Event, Round, TimeLimit } from '@wca/helpers';
 import { AppGateway } from 'src/app.gateway';
 import { DNS_VALUE, publicPersonSelect, publicUserSelect } from 'src/constants';
 import { ContestsService } from 'src/contests/contests.service';
 import { DbService } from 'src/db/db.service';
 import { isUnofficialEvent } from 'src/events';
 import { getMaxAttempts, isCumulativeLimit } from 'src/wcif-helpers';
+import { getRoundInfoFromWcif } from 'wcif-helpers';
 
 import { AttendanceService } from '../attendance/attendance.service';
 import { WcaService } from '../wca/wca.service';
@@ -155,7 +156,7 @@ export class ResultService {
   }
 
   async getResultById(id: string) {
-    return this.prisma.result.findUnique({
+    const result = await this.prisma.result.findUnique({
       where: {
         id: id,
       },
@@ -177,6 +178,14 @@ export class ResultService {
         },
       },
     });
+
+    const remainingAndUsedCumulativeLimit =
+      await this.getRemainingAndUsedCumulativeLimit(id);
+
+    return {
+      ...result,
+      remainingAndUsedCumulativeLimit,
+    };
   }
 
   async getResultOrCreate(personId: string, roundId: string) {
@@ -466,5 +475,139 @@ export class ResultService {
       }
     }
     return attempts;
+  }
+
+  async getSubmittedAttempts(roundId: string, personId: string) {
+    const attempts = await this.prisma.attempt.findMany({
+      where: {
+        result: {
+          personId,
+          roundId,
+        },
+        status: {
+          not: AttemptStatus.SCRAMBLED,
+        },
+      },
+    });
+    const submittedAttempts = [];
+    attempts.forEach((attempt) => {
+      if (
+        attempt.replacedBy === null &&
+        attempt.type === AttemptType.STANDARD_ATTEMPT &&
+        !submittedAttempts.some((a) => a.id === attempt.id) &&
+        attempt.status === AttemptStatus.STANDARD
+      ) {
+        submittedAttempts.push(attempt);
+      } else if (
+        attempt.replacedBy !== null &&
+        attempt.status === AttemptStatus.EXTRA_GIVEN
+      ) {
+        const extraAttempt = this.wcaService.getExtra(attempt.id, attempts);
+        if (
+          extraAttempt &&
+          !submittedAttempts.some((a) => a.id === extraAttempt.id) &&
+          extraAttempt.status === AttemptStatus.STANDARD
+        ) {
+          submittedAttempts.push(extraAttempt);
+        }
+      }
+    });
+    return submittedAttempts;
+  }
+
+  async checkCumulativeLimit(
+    personId: string,
+    limit: TimeLimit,
+    submittedAttempts: any[],
+  ) {
+    if (limit.cumulativeRoundIds.length === 0) return true;
+    if (limit.cumulativeRoundIds.length === 1) {
+      let sum = 0;
+      submittedAttempts.forEach((attempt) => {
+        if (attempt.penalty !== -1) {
+          sum += attempt.value + attempt.penalty * 100;
+        } else {
+          sum += attempt.value;
+        }
+      });
+      return sum < limit.centiseconds;
+    }
+    if (limit.cumulativeRoundIds.length > 1) {
+      return await this.checkCumulativeLimitForMultipleRounds(
+        personId,
+        limit.cumulativeRoundIds,
+        limit.centiseconds,
+      );
+    }
+  }
+
+  async getCumulativeSumForMultipleRounds(
+    personId: string,
+    roundsIds: string[],
+  ) {
+    let used = 0;
+    for (const roundId of roundsIds) {
+      const submittedAttempts = await this.getSubmittedAttempts(
+        roundId,
+        personId,
+      );
+      submittedAttempts.forEach((attempt) => {
+        if (attempt.penalty !== -1) {
+          used += attempt.value + attempt.penalty * 100;
+        } else {
+          used += attempt.value;
+        }
+      });
+    }
+    return used;
+  }
+
+  async checkCumulativeLimitForMultipleRounds(
+    personId: string,
+    roundsIds: string[],
+    limit: number,
+  ) {
+    const used = await this.getCumulativeSumForMultipleRounds(
+      personId,
+      roundsIds,
+    );
+    return used < limit;
+  }
+
+  async getRemainingAndUsedCumulativeLimit(resultId: string) {
+    const result = await this.prisma.result.findUnique({
+      where: {
+        id: resultId,
+      },
+    });
+    if (!result) {
+      throw new Error('Result not found');
+    }
+    const competition = await this.prisma.competition.findFirst();
+    if (!competition) {
+      throw new Error('Competition not found');
+    }
+    const wcif = JSON.parse(JSON.stringify(competition.wcif));
+    const roundInfo = getRoundInfoFromWcif(result.roundId, wcif);
+    if (!roundInfo.timeLimit.cumulativeRoundIds.length) {
+      return {
+        remaining: null,
+        used: null,
+      };
+    }
+    const { personId, roundId } = result;
+    const roundsIds =
+      roundInfo.timeLimit.cumulativeRoundIds.length > 1
+        ? roundInfo.timeLimit.cumulativeRoundIds
+        : [roundId];
+    const used = await this.getCumulativeSumForMultipleRounds(
+      personId,
+      roundsIds,
+    );
+    const limit = roundInfo.timeLimit.centiseconds;
+    return {
+      used,
+      remaining: Math.max(0, limit - used),
+    };
   }
 }

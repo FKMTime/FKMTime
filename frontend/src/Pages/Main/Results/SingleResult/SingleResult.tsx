@@ -10,7 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/Components/ui/tabs";
 import { useToast } from "@/hooks/useToast";
 import { competitionAtom } from "@/lib/atoms";
 import { getCompetitionInfo } from "@/lib/competition";
-import { Result } from "@/lib/interfaces";
+import { RemainingAndUsedCumulativeLimit, Result } from "@/lib/interfaces";
 import { getResultById } from "@/lib/results";
 import { getSubmittedAttempts } from "@/lib/utils";
 import PageTransition from "@/Pages/PageTransition";
@@ -31,6 +31,10 @@ const SingleResult = () => {
         useState<boolean>(false);
     const [isOpenSwapAttemptsModal, setIsOpenSwapAttemptsModal] =
         useState<boolean>(false);
+    const [
+        remainingAndUsedCumulativeLimit,
+        setRemainingAndUsedCumulativeLimit,
+    ] = useState<RemainingAndUsedCumulativeLimit | null>(null);
     const standardAttempts = useMemo(() => {
         if (!result) return [];
         return (
@@ -82,6 +86,9 @@ const SingleResult = () => {
             navigate("/results");
         }
         setResult(response.data);
+        setRemainingAndUsedCumulativeLimit(
+            response.data.remainingAndUsedCumulativeLimit
+        );
     }, [competition, id, navigate, setCompetition, toast]);
 
     const handleCloseModal = () => {
@@ -112,6 +119,9 @@ const SingleResult = () => {
                     submittedAttempts={submittedAttempts}
                     limit={limit}
                     maxAttempts={maxAttempts}
+                    remainingAndUsedCumulativeLimit={
+                        remainingAndUsedCumulativeLimit!
+                    }
                 />
                 <Tabs defaultValue="submitted">
                     <Card>
