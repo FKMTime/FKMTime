@@ -791,7 +791,7 @@ export class CompetitionService {
           const roundId = currentGroupId.split('-g')[0];
           const results =
             await this.resultService.getAllResultsByRound(roundId);
-          await this.wcaService.enterRoundToWcaLive(results);
+          await this.wcaService.enterRoundToWcaLive(roundId, results);
         }
       }
     }

@@ -250,7 +250,7 @@ export class ResultService {
       }
       return await this.contestsService.enterRoundToCubingContests(results);
     } else {
-      return await this.wcaService.enterRoundToWcaLive(results);
+      return await this.wcaService.enterRoundToWcaLive(roundId, results);
     }
   }
 
