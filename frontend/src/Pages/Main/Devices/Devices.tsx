@@ -167,13 +167,13 @@ const Devices = () => {
                             <div className="flex gap-2">
                                 <Button
                                     type="button"
+                                    className="hidden md:block"
                                     onClick={() =>
                                         setIsAutoSetupModalOpen(true)
                                     }
                                 >
                                     Auto Setup Devices
                                 </Button>
-
                                 <PlusButton
                                     onClick={() =>
                                         setIsOpenCreateDeviceModal(true)
@@ -182,7 +182,14 @@ const Devices = () => {
                                 />
                             </div>
                         </CardTitle>
-                        <CardDescription>
+                        <CardDescription className="flex flex-col gap-2">
+                            <Button
+                                type="button"
+                                className="md:hidden"
+                                onClick={() => setIsAutoSetupModalOpen(true)}
+                            >
+                                Auto Setup Devices
+                            </Button>
                             If you want to connect a new device press submit
                             button on this device
                         </CardDescription>
@@ -224,7 +231,10 @@ const Devices = () => {
                                                     All rooms
                                                 </SelectItem>
                                                 {rooms.map((room) => (
-                                                    <SelectItem value={room.id}>
+                                                    <SelectItem
+                                                        value={room.id}
+                                                        key={room.id}
+                                                    >
                                                         {room.name}
                                                     </SelectItem>
                                                 ))}
