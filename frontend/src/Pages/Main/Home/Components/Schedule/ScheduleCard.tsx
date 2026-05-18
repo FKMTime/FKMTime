@@ -48,7 +48,7 @@ const ScheduleCard = ({ activity, competition }: ScheduleCardProps) => {
             </CardHeader>
             <CardContent>
                 {!activity.activityCode.startsWith("other") && (
-                    <>
+                    <div className="flex gap-2">
                         {competition.useFkmTimeDevices && (
                             <Button
                                 onClick={() =>
@@ -68,7 +68,7 @@ const ScheduleCard = ({ activity, competition }: ScheduleCardProps) => {
                         >
                             Attendance
                         </Button>
-                    </>
+                    </div>
                 )}
 
                 {formattedRealTime && <p>Real time: {formattedRealTime}</p>}
