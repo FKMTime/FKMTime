@@ -46,7 +46,7 @@ const ScheduleCard = ({ activity, competition }: ScheduleCardProps) => {
                         : `${activity.childActivities.length} ${activity.childActivities.length === 1 ? "group" : "groups"}`}
                 </CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="flex flex-col gap-2">
                 {!activity.activityCode.startsWith("other") && (
                     <div className="flex gap-2">
                         {competition.useFkmTimeDevices && (
@@ -70,7 +70,6 @@ const ScheduleCard = ({ activity, competition }: ScheduleCardProps) => {
                         </Button>
                     </div>
                 )}
-
                 {formattedRealTime && <p>Real time: {formattedRealTime}</p>}
             </CardContent>
             <CardFooter>
