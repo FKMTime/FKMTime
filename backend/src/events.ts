@@ -4,6 +4,7 @@ export const eventsData: {
   name: string;
   icon: string;
   shortName?: string;
+  shortNameForDevice?: string;
   useInspection?: boolean;
   isUnofficial?: boolean;
   usualScramblesCount?: number;
@@ -66,7 +67,7 @@ export const eventsData: {
   {
     id: '333bf',
     name: '3x3x3 Blindfolded',
-    shortName: '3x3 BLD',
+    shortName: '3BLD',
     icon: 'event-333bf',
     useInspection: false,
     usualScramblesCount: 3,

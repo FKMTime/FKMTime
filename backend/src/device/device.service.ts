@@ -62,6 +62,7 @@ export class DeviceService {
           espId: data.espId,
           signKey: data.signKey,
           type: data.type,
+          hwVersion: data.hwVersion,
           room: {
             connect: {
               id: data.roomId,
@@ -129,6 +130,7 @@ export class DeviceService {
           name: data.name,
           espId: data.espId,
           type: data.type,
+          hwVersion: data.hwVersion,
           room: {
             connect: {
               id: data.roomId,

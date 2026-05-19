@@ -1,4 +1,4 @@
-import { DeviceType } from '@prisma/client';
+import { DeviceType, HardwareVersion } from '@prisma/client';
 import {
   IsEnum,
   IsInt,
@@ -25,4 +25,7 @@ export class DeviceDto {
 
   @IsEnum(DeviceType)
   type: DeviceType;
+
+  @IsEnum(HardwareVersion)
+  hwVersion: HardwareVersion;
 }

@@ -26,7 +26,9 @@ const AvailableDeviceCard = ({
             </CardHeader>
             <CardContent>
                 <p>Device ID: {idToHex(device.espId)}</p>
-                <p>Type: {prettyAvailableDeviceType(device.type)}</p>
+                <p>
+                    Type: {prettyAvailableDeviceType(device.type)} ({device.hw})
+                </p>
             </CardContent>
             <CardFooter className="flex gap-2">
                 <Button

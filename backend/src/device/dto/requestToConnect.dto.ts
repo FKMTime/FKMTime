@@ -1,4 +1,4 @@
-import { IsEnum, IsInt } from 'class-validator';
+import { IsEnum, IsInt, IsString } from 'class-validator';
 
 //eslint-disable-next-line
 enum DeviceType {
@@ -14,4 +14,7 @@ export class RequestToConnectDto {
 
   @IsEnum(DeviceType)
   type: DeviceType;
+
+  @IsString()
+  hw: string;
 }

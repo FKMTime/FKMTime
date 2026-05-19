@@ -3,7 +3,13 @@ import { useEffect, useState } from "react";
 import { Modal } from "@/Components/Modal";
 import { useToast } from "@/hooks/useToast";
 import { updateDevice } from "@/lib/devices";
-import { Device, DeviceData, DeviceType, Room } from "@/lib/interfaces";
+import {
+    Device,
+    DeviceData,
+    DeviceType,
+    HardwareVersion,
+    Room,
+} from "@/lib/interfaces";
 import { getAllRooms } from "@/lib/rooms";
 
 import DeviceForm from "./DeviceForm";
@@ -29,6 +35,7 @@ const EditDeviceModal = ({ isOpen, onClose, device }: EditDeviceModalProps) => {
         if (status === 200) {
             toast({
                 title: "Successfully updated this device.",
+                variant: "success",
             });
             onClose();
         } else if (status === 409) {
@@ -62,6 +69,7 @@ const EditDeviceModal = ({ isOpen, onClose, device }: EditDeviceModalProps) => {
                 handleSubmit={handleSubmit}
                 rooms={rooms}
                 availableTypes={Object.values(DeviceType)}
+                availableHwVersions={Object.values(HardwareVersion)}
                 defaultValues={device}
                 submitText="Edit"
             />

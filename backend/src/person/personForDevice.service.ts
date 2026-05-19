@@ -1,7 +1,10 @@
 import { forwardRef, Inject, Injectable } from '@nestjs/common';
-import { Competition } from '@prisma/client';
+import { Competition, HardwareVersion } from '@prisma/client';
 import { Competition as WCIF, formatCentiseconds } from '@wca/helpers';
-import { publicPersonSelect } from 'src/constants';
+import {
+  publicPersonSelect,
+  SHOW_SECONDARY_TEXT_HW_VERSIONS,
+} from 'src/constants';
 import { DbService } from 'src/db/db.service';
 import { eventsData } from 'src/events';
 import { checkCutoff } from 'src/result/helpers';
@@ -110,11 +113,12 @@ export class PersonForDeviceService {
               groupId: g,
               useInspection: eventsData.find((e) => e.id === g.split('-')[0])
                 .useInspection,
-              secondaryText: await this.computeSecondaryText(
+              ...(await this.computeSecondaryText(
                 g,
                 wcif,
                 person.id,
-              ),
+                device.hwVersion,
+              )),
             })),
           ),
         };
@@ -135,7 +139,12 @@ export class PersonForDeviceService {
         return {
           groupId: g,
           useInspection: eventsData.find((e) => e.id === eventId).useInspection,
-          secondaryText: await this.computeSecondaryText(g, wcif, person.id),
+          ...(await this.computeSecondaryText(
+            g,
+            wcif,
+            person.id,
+            device.hwVersion,
+          )),
         };
       });
     return {
@@ -202,17 +211,21 @@ export class PersonForDeviceService {
     groupId: string | undefined,
     wcif: WCIF,
     personId: string,
+    hwVersion?: HardwareVersion,
   ) {
-    if (!groupId) return '';
+    if (!groupId) return { name: '', secondaryText: '' };
     const roundId = groupId.split('-g')[0];
     const eventId = roundId.split('-r')[0];
     const roundNumber = roundId.split('-r')[1];
     const eventData = eventsData.find((e) => e.id === eventId);
     const eventName = eventData.shortName ?? eventData.name;
-    let text = `${eventName} - R${roundNumber}`;
+    const eventText = `${eventName} - R${roundNumber}`;
+    const shortEventText = `${eventName} R${roundNumber}`;
 
     const roundInfo = getRoundInfoFromWcif(roundId, wcif);
+    let cumulativeText = '';
     if (
+      SHOW_SECONDARY_TEXT_HW_VERSIONS.includes(hwVersion) &&
       roundInfo?.timeLimit &&
       roundInfo.timeLimit.cumulativeRoundIds.length > 0
     ) {
@@ -232,9 +245,19 @@ export class PersonForDeviceService {
       }
       const limit = roundInfo.timeLimit.centiseconds;
       const remaining = Math.max(0, limit - used);
-      text += `\nRemaining: ${formatCentiseconds(remaining)}`;
+      cumulativeText = `Remaining: ${formatCentiseconds(remaining)}`;
     }
 
-    return text;
+    if (SHOW_SECONDARY_TEXT_HW_VERSIONS.includes(hwVersion)) {
+      return {
+        name: cumulativeText ? shortEventText : '',
+        secondaryText: cumulativeText ? cumulativeText : eventText,
+      };
+    } else {
+      return {
+        name: '',
+        secondaryText: eventText,
+      };
+    }
   }
 }

@@ -9,6 +9,7 @@ import {
     AvailableDeviceType,
     DeviceData,
     DeviceType,
+    HardwareVersion,
     Room,
 } from "@/lib/interfaces";
 import { getAllRooms } from "@/lib/rooms";
@@ -88,6 +89,9 @@ const CreateDeviceModal = ({
                 ? DeviceType.ATTENDANCE_SCRAMBLER
                 : DeviceType.STATION
             : DeviceType.STATION,
+        hwVersion: deviceToAdd
+            ? (deviceToAdd.hw.toUpperCase() as HardwareVersion)
+            : HardwareVersion.V3,
     };
 
     return (
@@ -98,6 +102,7 @@ const CreateDeviceModal = ({
                     handleSubmit={handleSubmit}
                     rooms={rooms}
                     availableTypes={availableTypes}
+                    availableHwVersions={Object.values(HardwareVersion)}
                     defaultValues={defaultValues}
                     submitText="Add"
                 />

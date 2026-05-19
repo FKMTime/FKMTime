@@ -103,6 +103,10 @@ export const prettyAvailableDeviceType = (type: string) => {
     }
 };
 
+export const prettyHardwareVersion = (hwVersion: string) => {
+    return hwVersion;
+};
+
 export const prettyUserRoleName = (role: string) => {
     switch (role) {
         case "ADMIN":

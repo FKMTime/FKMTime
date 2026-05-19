@@ -51,18 +51,18 @@ model Person {
 }
 
 model StaffActivity {
-  id         String    @id @default(uuid())
-  personId   String    @map("person_id")
-  person     Person    @relation(fields: [personId], references: [id], onDelete: Cascade)
-  deviceId   String?   @map("device_id")
-  device     Device?   @relation(fields: [deviceId], references: [id])
-  isAssigned Boolean   @default(false) @map("is_assigned")
+  id         String              @id @default(uuid())
+  personId   String              @map("person_id")
+  person     Person              @relation(fields: [personId], references: [id], onDelete: Cascade)
+  deviceId   String?             @map("device_id")
+  device     Device?             @relation(fields: [deviceId], references: [id])
+  isAssigned Boolean             @default(false) @map("is_assigned")
   status     StaffActivityStatus @default(ABSENT)
-  groupId    String    @map("group_id")
+  groupId    String              @map("group_id")
   comment    String?
   role       StaffRole
-  createdAt  DateTime  @default(now()) @map("created_at")
-  updatedAt  DateTime  @updatedAt @map("updated_at")
+  createdAt  DateTime            @default(now()) @map("created_at")
+  updatedAt  DateTime            @updatedAt @map("updated_at")
 
   @@unique([personId, groupId, role])
   @@map("staff_activity")
@@ -199,7 +199,7 @@ model ManualIncident {
   person       Person   @relation(fields: [personId], references: [id], onDelete: Cascade)
   roundId      String?
   description  String
-  attempt      String? 
+  attempt      String?
   isNoteworthy Boolean  @default(false)
   createdById  String   @map("created_by")
   createdBy    User     @relation(fields: [createdById], references: [id])
@@ -210,16 +210,17 @@ model ManualIncident {
 }
 
 model Device {
-  id                String          @id @default(uuid())
-  name              String          @unique
-  espId             Int?            @unique @map("esp_id")
-  signKey           Int?            @unique @map("sign_key")
+  id                String           @id @default(uuid())
+  name              String           @unique
+  espId             Int?             @unique @map("esp_id")
+  signKey           Int?             @unique @map("sign_key")
   type              DeviceType
-  batteryPercentage Int?            @map("battery_percentage")
-  roomId            String          @map("room_id")
-  room              Room            @relation(fields: [roomId], references: [id])
-  createdAt         DateTime        @default(now()) @map("created_at")
-  updatedAt         DateTime        @updatedAt @map("updated_at")
+  batteryPercentage Int?             @map("battery_percentage")
+  hwVersion         HardwareVersion? @map("hw_version")
+  roomId            String           @map("room_id")
+  room              Room             @relation(fields: [roomId], references: [id])
+  createdAt         DateTime         @default(now()) @map("created_at")
+  updatedAt         DateTime         @updatedAt @map("updated_at")
   Attempt           Attempt[]
   StaffActivity     StaffActivity[]
 
@@ -325,4 +326,9 @@ enum StaffActivityStatus {
   ABSENT
   LATE
   REPLACED
+}
+
+enum HardwareVersion {
+  V3
+  V4
 }
