@@ -135,7 +135,7 @@ export const eventsData: {
   {
     id: '444bf',
     name: '4x4x4 Blindfolded',
-    shortName: '4x4 BLD',
+    shortName: '4BLD',
     icon: 'event-444bf',
     useInspection: false,
     usualScramblesCount: 3,
@@ -144,7 +144,7 @@ export const eventsData: {
   {
     id: '555bf',
     name: '5x5x5 Blindfolded',
-    shortName: '5x5 BLD',
+    shortName: '5BLD',
     icon: 'event-555bf',
     useInspection: false,
     usualScramblesCount: 3,
