@@ -296,6 +296,7 @@ export interface Device extends DeviceData {
     count?: number;
     createdAt: Date;
     updatedAt: Date;
+    hwVersion: HardwareVersion;
 }
 
 //eslint-disable-next-line
@@ -305,18 +306,26 @@ export enum DeviceType {
     ATTENDANCE_RUNNER = "ATTENDANCE_RUNNER",
 }
 
+//eslint-disable-next-line
+export enum HardwareVersion {
+    V3 = "V3",
+    V4 = "V4",
+}
+
 export interface DeviceData {
     name: string;
     espId: number;
     signKey?: number;
     type: DeviceType;
     roomId: string;
+    hwVersion: HardwareVersion;
 }
 
 export interface AvailableDevice {
     espId: number;
     signKey: number;
     type: AvailableDeviceType;
+    hw: string;
 }
 
 //eslint-disable-next-line

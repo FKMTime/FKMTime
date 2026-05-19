@@ -1,10 +1,14 @@
-import { Injectable } from '@nestjs/common';
-import { Competition } from '@prisma/client';
-import { Competition as WCIF } from '@wca/helpers';
-import { publicPersonSelect } from 'src/constants';
+import { forwardRef, Inject, Injectable } from '@nestjs/common';
+import { Competition, HardwareVersion } from '@prisma/client';
+import { Competition as WCIF, formatCentiseconds } from '@wca/helpers';
+import {
+  publicPersonSelect,
+  SHOW_SECONDARY_TEXT_HW_VERSIONS,
+} from 'src/constants';
 import { DbService } from 'src/db/db.service';
 import { eventsData } from 'src/events';
 import { checkCutoff } from 'src/result/helpers';
+import { ResultService } from 'src/result/result.service';
 import { convertToLatin, getTranslation } from 'src/translations/translations';
 import { WcaService } from 'src/wca/wca.service';
 import { getMaxAttempts } from 'src/wcif-helpers';
@@ -22,6 +26,8 @@ export class PersonForDeviceService {
     private readonly prisma: DbService,
     private readonly personService: PersonService,
     private readonly wcaService: WcaService,
+    @Inject(forwardRef(() => ResultService))
+    private readonly resultService: ResultService,
   ) {}
 
   async getPersonInfo(
@@ -29,10 +35,22 @@ export class PersonForDeviceService {
     espId: number,
     isCompetitor: boolean = false,
   ) {
+    const competition = await this.prisma.competition.findFirst();
+    if (!competition) {
+      return {
+        message: getTranslation('competitionNotFound', 'en'),
+        shouldResetTime: true,
+        status: 404,
+        error: true,
+      };
+    }
     const person = await this.personService.getPersonByCardId(cardId);
     if (!person) {
       return {
-        message: getTranslation('competitorNotFound', 'en'),
+        message: getTranslation(
+          'competitorNotFound',
+          competition.defaultLocale,
+        ),
         shouldResetTime: false,
         status: 404,
         error: true,
@@ -47,15 +65,6 @@ export class PersonForDeviceService {
       },
     });
     const possibleGroups = device?.room.currentGroupIds || [];
-    const competition = await this.prisma.competition.findFirst();
-    if (!competition) {
-      return {
-        message: getTranslation('competitionNotFound', 'en'),
-        shouldResetTime: true,
-        status: 404,
-        error: true,
-      };
-    }
     const wcif = JSON.parse(JSON.stringify(competition.wcif));
     const competitorWcifInfo = getPersonFromWcif(person.registrantId, wcif);
     const competingAssignments = competitorWcifInfo.assignments.filter(
@@ -99,12 +108,19 @@ export class PersonForDeviceService {
         return {
           ...person,
           name: convertToLatin(person.name),
-          possibleGroups: possibleGroups.map((g) => ({
-            groupId: g,
-            useInspection: eventsData.find((e) => e.id === g.split('-')[0])
-              .useInspection,
-            secondaryText: this.computeSecondaryText(g),
-          })),
+          possibleGroups: await Promise.all(
+            possibleGroups.map(async (g) => ({
+              groupId: g,
+              useInspection: eventsData.find((e) => e.id === g.split('-')[0])
+                .useInspection,
+              ...(await this.computeSecondaryText(
+                g,
+                wcif,
+                person.id,
+                device.hwVersion,
+              )),
+            })),
+          ),
         };
       }
     }
@@ -118,18 +134,23 @@ export class PersonForDeviceService {
           ) || eventsData.find((e) => e.id === g.split('-')[0]).isUnofficial,
       )
       .filter((g) => !finishedRoundsIds.includes(g.split('-g')[0]))
-      .map((g) => {
+      .map(async (g) => {
         const eventId = g.split('-')[0];
         return {
           groupId: g,
           useInspection: eventsData.find((e) => e.id === eventId).useInspection,
-          secondaryText: this.computeSecondaryText(g),
+          ...(await this.computeSecondaryText(
+            g,
+            wcif,
+            person.id,
+            device.hwVersion,
+          )),
         };
       });
     return {
       ...person,
       name: convertToLatin(person.name),
-      possibleGroups: finalGroups,
+      possibleGroups: await Promise.all(finalGroups),
     };
   }
 
@@ -186,12 +207,57 @@ export class PersonForDeviceService {
     return finishedRoundsIds;
   }
 
-  computeSecondaryText(groupId?: string) {
-    if (!groupId) return '';
+  async computeSecondaryText(
+    groupId: string | undefined,
+    wcif: WCIF,
+    personId: string,
+    hwVersion?: HardwareVersion,
+  ) {
+    if (!groupId) return { name: '', secondaryText: '' };
     const roundId = groupId.split('-g')[0];
     const eventId = roundId.split('-r')[0];
     const roundNumber = roundId.split('-r')[1];
     const eventData = eventsData.find((e) => e.id === eventId);
-    return `${eventData.shortName ? eventData.shortName : eventData.name} - R${roundNumber}`;
+    const eventName = eventData.shortName ?? eventData.name;
+    const eventText = `${eventName} - R${roundNumber}`;
+    const shortEventText = `${eventName} R${roundNumber}`;
+
+    const roundInfo = getRoundInfoFromWcif(roundId, wcif);
+    let cumulativeText = '';
+    if (
+      SHOW_SECONDARY_TEXT_HW_VERSIONS.includes(hwVersion) &&
+      roundInfo?.timeLimit &&
+      roundInfo.timeLimit.cumulativeRoundIds.length > 0
+    ) {
+      const roundsIds =
+        roundInfo.timeLimit.cumulativeRoundIds.length > 1
+          ? roundInfo.timeLimit.cumulativeRoundIds
+          : [roundId];
+      let used = 0;
+      for (const rId of roundsIds) {
+        const submittedAttempts = await this.resultService.getSubmittedAttempts(
+          rId,
+          personId,
+        );
+        submittedAttempts.forEach((a) => {
+          used += a.penalty !== -1 ? a.value + a.penalty * 100 : a.value;
+        });
+      }
+      const limit = roundInfo.timeLimit.centiseconds;
+      const remaining = Math.max(0, limit - used);
+      cumulativeText = `Remaining: ${formatCentiseconds(remaining)}`;
+    }
+
+    if (SHOW_SECONDARY_TEXT_HW_VERSIONS.includes(hwVersion)) {
+      return {
+        name: cumulativeText ? shortEventText : '',
+        secondaryText: cumulativeText ? cumulativeText : eventText,
+      };
+    } else {
+      return {
+        name: '',
+        secondaryText: eventText,
+      };
+    }
   }
 }

@@ -10,6 +10,7 @@ export const deviceSchema = z.object({
         message: "Please select a room",
     }),
     type: z.enum(["STATION", "ATTENDANCE_SCRAMBLER", "ATTENDANCE_RUNNER"]),
+    hwVersion: z.enum(["V3", "V4"]),
 });
 
 export const deviceSettingsSchema = z.object({

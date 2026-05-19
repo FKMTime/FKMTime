@@ -24,7 +24,9 @@ const AvailableDeviceRow = ({
                 <TableCell>New device</TableCell>
                 <TableCell>{idToHex(device.espId)}</TableCell>
                 <TableCell></TableCell>
-                <TableCell>{prettyDeviceType(device.type)}</TableCell>
+                <TableCell>
+                    {prettyDeviceType(device.type)} ({device.hw})
+                </TableCell>
                 <TableCell></TableCell>
                 <TableCell></TableCell>
                 <TableCell>
