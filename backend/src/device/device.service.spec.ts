@@ -188,7 +188,12 @@ describe('DeviceService', () => {
 
   describe('requestToConnect', () => {
     it('should send request if device not in database', async () => {
-      const requestData = { espId: 456, signKey: 789, type: 'STATION' as any, hw: 'v4' };
+      const requestData = {
+        espId: 456,
+        signKey: 789,
+        type: 'STATION' as any,
+        hw: 'v4',
+      };
 
       jest.spyOn(dbService.device, 'findFirst').mockResolvedValue(null);
       jest.spyOn(appGateway, 'handleDeviceRequest').mockImplementation();
@@ -204,7 +209,12 @@ describe('DeviceService', () => {
     });
 
     it('should return error if device already exists', async () => {
-      const requestData = { espId: 123, signKey: 789, type: 'STATION' as any, hw: 'v4' };
+      const requestData = {
+        espId: 123,
+        signKey: 789,
+        type: 'STATION' as any,
+        hw: 'v4',
+      };
       const mockDevice = { id: 'device1', espId: 123 };
 
       jest
