@@ -85,7 +85,7 @@ export const eventsData: {
   {
     id: '333oh',
     name: '3x3 One-Handed',
-    shortName: '3x3x3 OH',
+    shortName: '3x3 OH',
     icon: 'event-333oh',
     useInspection: true,
     usualScramblesCount: 5,
