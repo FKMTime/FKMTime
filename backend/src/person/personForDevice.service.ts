@@ -226,6 +226,7 @@ export class PersonForDeviceService {
     const roundInfo = getRoundInfoFromWcif(roundId, wcif);
     let cumulativeText = '';
     let cutoffText = '';
+    let timeLimitText = '';
     if (
       SHOW_SECONDARY_TEXT_HW_VERSIONS.includes(hwVersion) &&
       roundInfo?.timeLimit &&
@@ -256,6 +257,13 @@ export class PersonForDeviceService {
     ) {
       cutoffText = `Cutoff: ${formatCentiseconds(roundInfo.cutoff.attemptResult)}`;
     }
+    if (
+      SHOW_SECONDARY_TEXT_HW_VERSIONS.includes(hwVersion) &&
+      roundInfo?.timeLimit &&
+      roundInfo?.timeLimit.cumulativeRoundIds.length === 0
+    ) {
+      timeLimitText = `Limit: ${formatCentiseconds(roundInfo.timeLimit.centiseconds)}`;
+    }
 
     if (limitToReturn === null) {
       limitToReturn = roundInfo.timeLimit.centiseconds
@@ -264,12 +272,14 @@ export class PersonForDeviceService {
     }
     if (SHOW_SECONDARY_TEXT_HW_VERSIONS.includes(hwVersion)) {
       return {
-        name: cumulativeText || cutoffText ? shortEventText : '',
+        name: shortEventText,
         secondaryText: cumulativeText
           ? cumulativeText
           : cutoffText
             ? cutoffText
-            : eventText,
+            : timeLimitText
+              ? timeLimitText
+              : eventText,
         limit: limitToReturn,
       };
     } else {
