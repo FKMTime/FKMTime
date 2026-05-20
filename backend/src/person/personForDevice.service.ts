@@ -221,9 +221,11 @@ export class PersonForDeviceService {
     const eventName = eventData.shortName ?? eventData.name;
     const eventText = `${eventName} - R${roundNumber}`;
     const shortEventText = `${eventName} R${roundNumber}`;
+    let limitToReturn: number | null = null;
 
     const roundInfo = getRoundInfoFromWcif(roundId, wcif);
     let cumulativeText = '';
+    let cutoffText = '';
     if (
       SHOW_SECONDARY_TEXT_HW_VERSIONS.includes(hwVersion) &&
       roundInfo?.timeLimit &&
@@ -246,17 +248,35 @@ export class PersonForDeviceService {
       const limit = roundInfo.timeLimit.centiseconds;
       const remaining = Math.max(0, limit - used);
       cumulativeText = `Remaining: ${formatCentiseconds(remaining)}`;
+      limitToReturn = remaining * 10;
+    }
+    if (
+      SHOW_SECONDARY_TEXT_HW_VERSIONS.includes(hwVersion) &&
+      roundInfo?.cutoff
+    ) {
+      cutoffText = `Cutoff: ${formatCentiseconds(roundInfo.cutoff.attemptResult)}`;
     }
 
+    if (limitToReturn === null) {
+      limitToReturn = roundInfo.timeLimit.centiseconds
+        ? roundInfo.timeLimit.centiseconds * 10
+        : null;
+    }
     if (SHOW_SECONDARY_TEXT_HW_VERSIONS.includes(hwVersion)) {
       return {
-        name: cumulativeText ? shortEventText : '',
-        secondaryText: cumulativeText ? cumulativeText : eventText,
+        name: cumulativeText || cutoffText ? shortEventText : '',
+        secondaryText: cumulativeText
+          ? cumulativeText
+          : cutoffText
+            ? cutoffText
+            : eventText,
+        limit: limitToReturn,
       };
     } else {
       return {
         name: '',
         secondaryText: eventText,
+        limit: limitToReturn,
       };
     }
   }

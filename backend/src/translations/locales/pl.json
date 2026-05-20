@@ -26,7 +26,7 @@
     },
     {
       "key": "delegateWasNotified",
-      "translation": "Delegat został powiadomiony"
+      "translation": "Delegat zostal powiadomiony"
     },
     {
       "key": "attemptEntered",
@@ -34,7 +34,7 @@
     },
     {
       "key": "attemptEnteredButReplacedToDnf",
-      "translation": "Ulozenie zostalo wprowadzona, ale zastąpione DNF'em"
+      "translation": "Ulozenie zostalo wprowadzone, ale zastapione DNF'em"
     },
     {
       "key": "noAttemptsLeft",
@@ -102,7 +102,7 @@
     },
     {
       "key": "waitingForWifiFooter",
-      "translation": "połączenie WiFi"
+      "translation": "polaczenie WiFi"
     },
     {
       "key": "waitingForMdnsHeader",
@@ -138,7 +138,7 @@
     },
     {
       "key": "deviceNotAddedHeader",
-      "translation": "Urzadzenie nie zostało dodane"
+      "translation": "Urzadzenie nie zostalo dodane"
     },
     {
       "key": "deviceNotAddedFooter",
