@@ -179,6 +179,10 @@
     {
       "key": "attemptEnteredAfterIncident",
       "translation": "Attempt entered"
+    },
+    {
+      "key": "attempt",
+      "translation": "Attempt"
     }
   ]
 }

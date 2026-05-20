@@ -179,6 +179,10 @@
     {
       "key": "attemptEnteredAfterIncident",
       "translation": "Ulozenie zostalo wprowadzone"
+    },
+    {
+      "key": "attempt",
+      "translation": "Ulozenie"
     }
   ]
 }

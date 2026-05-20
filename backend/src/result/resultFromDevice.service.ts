@@ -1,4 +1,4 @@
-import { forwardRef, HttpException, Inject, Logger } from '@nestjs/common';
+import { forwardRef, Inject, Logger } from '@nestjs/common';
 import {
   AttemptStatus,
   AttemptType,
@@ -327,80 +327,6 @@ export class ResultFromDeviceService {
       shouldResetTime: true,
       status: 200,
       error: false,
-    };
-  }
-
-  async getScrambleData(cardId: string, roundId: string) {
-    const competitor = await this.personService.getPersonByCardId(cardId);
-    if (!competitor) {
-      throw new HttpException('Competitor not found', 404);
-    }
-    const result = await this.resultService.getResultOrCreate(
-      competitor.id,
-      roundId,
-    );
-    const attempts = await this.prisma.attempt.findMany({
-      where: {
-        resultId: result.id,
-      },
-    });
-    const sortedAttempts = getSortedStandardAttempts(attempts);
-    const sortedExtraAttempts = getSortedExtraAttempts(attempts);
-    if (sortedAttempts.length === 0 && sortedExtraAttempts.length === 0) {
-      return {
-        scrambleData: {
-          num: 1,
-          isExtra: false,
-        },
-        person: competitor,
-      };
-    }
-    if (
-      attempts.some(
-        (attempt) =>
-          attempt.status === AttemptStatus.EXTRA_GIVEN &&
-          (attempt.replacedBy === 0 || attempt.replacedBy === null),
-      )
-    ) {
-      const extrasCount = sortedExtraAttempts.length;
-      return {
-        scrambleData: {
-          num: extrasCount + 1,
-          isExtra: true,
-        },
-        person: competitor,
-      };
-    }
-    const competition = await this.prisma.competition.findFirst();
-    if (!competition) {
-      throw new Error('Competition not found');
-    }
-    const wcif = JSON.parse(JSON.stringify(competition.wcif));
-    const currentRoundId = roundId.split('-g')[0];
-    const roundInfo = getRoundInfoFromWcif(currentRoundId, wcif);
-
-    let attemptNumber = 1;
-    const maxAttempts = getMaxAttempts(roundInfo.format);
-    const lastAttempt = sortedAttempts[sortedAttempts.length - 1];
-    if (lastAttempt && lastAttempt.attemptNumber === maxAttempts) {
-      //No attempts left
-      return {
-        scrambleData: {
-          num: -1,
-          isExtra: false,
-        },
-        person: competitor,
-      };
-    }
-    if (lastAttempt) {
-      attemptNumber = lastAttempt.attemptNumber + 1;
-    }
-    return {
-      scrambleData: {
-        num: attemptNumber,
-        isExtra: false,
-      },
-      person: competitor,
     };
   }
 

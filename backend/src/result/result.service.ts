@@ -11,6 +11,7 @@ import { DNS_VALUE, publicPersonSelect, publicUserSelect } from 'src/constants';
 import { ContestsService } from 'src/contests/contests.service';
 import { DbService } from 'src/db/db.service';
 import { isUnofficialEvent } from 'src/events';
+import { PersonService } from 'src/person/person.service';
 import { getMaxAttempts, isCumulativeLimit } from 'src/wcif-helpers';
 import { getRoundInfoFromWcif } from 'wcif-helpers';
 
@@ -18,7 +19,7 @@ import { AttendanceService } from '../attendance/attendance.service';
 import { WcaService } from '../wca/wca.service';
 import { CheckIfAttemptEnteredDto } from './dto/checkIfAttemptEntered.dto';
 import { DoubleCheckDto } from './dto/doubleCheck.dto';
-import { getSortedStandardAttempts } from './helpers';
+import { getSortedExtraAttempts, getSortedStandardAttempts } from './helpers';
 
 @Injectable()
 export class ResultService {
@@ -28,6 +29,7 @@ export class ResultService {
     private readonly attendanceService: AttendanceService,
     private readonly wcaService: WcaService,
     private readonly contestsService: ContestsService,
+    private readonly personService: PersonService,
   ) {}
 
   resultsInclude = {
@@ -608,6 +610,77 @@ export class ResultService {
     return {
       used,
       remaining: Math.max(0, limit - used),
+    };
+  }
+
+  async getNextAttemptData(cardId: string, roundId: string) {
+    const competitor = await this.personService.getPersonByCardId(cardId);
+    if (!competitor) {
+      throw new HttpException('Competitor not found', 404);
+    }
+    const result = await this.getResultOrCreate(competitor.id, roundId);
+    const attempts = await this.prisma.attempt.findMany({
+      where: {
+        resultId: result.id,
+      },
+    });
+    const sortedAttempts = getSortedStandardAttempts(attempts);
+    const sortedExtraAttempts = getSortedExtraAttempts(attempts);
+    if (sortedAttempts.length === 0 && sortedExtraAttempts.length === 0) {
+      return {
+        scrambleData: {
+          num: 1,
+          isExtra: false,
+        },
+        person: competitor,
+      };
+    }
+    if (
+      attempts.some(
+        (attempt) =>
+          attempt.status === AttemptStatus.EXTRA_GIVEN &&
+          (attempt.replacedBy === 0 || attempt.replacedBy === null),
+      )
+    ) {
+      const extrasCount = sortedExtraAttempts.length;
+      return {
+        scrambleData: {
+          num: extrasCount + 1,
+          isExtra: true,
+        },
+        person: competitor,
+      };
+    }
+    const competition = await this.prisma.competition.findFirst();
+    if (!competition) {
+      throw new Error('Competition not found');
+    }
+    const wcif = JSON.parse(JSON.stringify(competition.wcif));
+    const currentRoundId = roundId.split('-g')[0];
+    const roundInfo = getRoundInfoFromWcif(currentRoundId, wcif);
+
+    let attemptNumber = 1;
+    const maxAttempts = getMaxAttempts(roundInfo.format);
+    const lastAttempt = sortedAttempts[sortedAttempts.length - 1];
+    if (lastAttempt && lastAttempt.attemptNumber === maxAttempts) {
+      //No attempts left
+      return {
+        scrambleData: {
+          num: -1,
+          isExtra: false,
+        },
+        person: competitor,
+      };
+    }
+    if (lastAttempt) {
+      attemptNumber = lastAttempt.attemptNumber + 1;
+    }
+    return {
+      scrambleData: {
+        num: attemptNumber,
+        isExtra: false,
+      },
+      person: competitor,
     };
   }
 }

@@ -117,7 +117,9 @@ export class PersonForDeviceService {
                 g,
                 wcif,
                 person.id,
+                competition.defaultLocale,
                 device.hwVersion,
+                cardId,
               )),
             })),
           ),
@@ -143,7 +145,9 @@ export class PersonForDeviceService {
             g,
             wcif,
             person.id,
+            competition.defaultLocale,
             device.hwVersion,
+            cardId,
           )),
         };
       });
@@ -211,7 +215,9 @@ export class PersonForDeviceService {
     groupId: string | undefined,
     wcif: WCIF,
     personId: string,
+    locale: string,
     hwVersion?: HardwareVersion,
+    cardId?: string,
   ) {
     if (!groupId) return { name: '', secondaryText: '' };
     const roundId = groupId.split('-g')[0];
@@ -226,7 +232,12 @@ export class PersonForDeviceService {
     const roundInfo = getRoundInfoFromWcif(roundId, wcif);
     let cumulativeText = '';
     let cutoffText = '';
-    let timeLimitText = '';
+    const nextAttemptData = await this.resultService.getNextAttemptData(
+      cardId,
+      roundId,
+    );
+    const attemptText = `${getTranslation('attempt', locale)} ${nextAttemptData.scrambleData.isExtra ? 'E' : ''}${nextAttemptData.scrambleData.num}`;
+
     if (
       SHOW_SECONDARY_TEXT_HW_VERSIONS.includes(hwVersion) &&
       roundInfo?.timeLimit &&
@@ -257,34 +268,37 @@ export class PersonForDeviceService {
     ) {
       cutoffText = `Cutoff: ${formatCentiseconds(roundInfo.cutoff.attemptResult)}`;
     }
-    if (
-      SHOW_SECONDARY_TEXT_HW_VERSIONS.includes(hwVersion) &&
-      roundInfo?.timeLimit &&
-      roundInfo?.timeLimit.cumulativeRoundIds.length === 0
-    ) {
-      timeLimitText = `Limit: ${formatCentiseconds(roundInfo.timeLimit.centiseconds)}`;
-    }
 
     if (limitToReturn === null) {
       limitToReturn = roundInfo.timeLimit.centiseconds
         ? roundInfo.timeLimit.centiseconds * 10
         : null;
     }
+    console.log(nextAttemptData);
+    let secondaryText = '';
+    if (cumulativeText) {
+      secondaryText = cumulativeText;
+    } else if (cutoffText) {
+      if (
+        !nextAttemptData.scrambleData.isExtra &&
+        nextAttemptData.scrambleData.num === 1
+      ) {
+        secondaryText = cutoffText;
+      } else {
+        secondaryText = attemptText;
+      }
+    } else {
+      secondaryText = attemptText;
+    }
     if (SHOW_SECONDARY_TEXT_HW_VERSIONS.includes(hwVersion)) {
       return {
         name: shortEventText,
-        secondaryText: cumulativeText
-          ? cumulativeText
-          : cutoffText
-            ? cutoffText
-            : timeLimitText
-              ? timeLimitText
-              : eventText,
+        secondaryText,
         limit: limitToReturn,
       };
     } else {
       return {
-        name: '',
+        name: eventText,
         secondaryText: eventText,
         limit: limitToReturn,
       };
