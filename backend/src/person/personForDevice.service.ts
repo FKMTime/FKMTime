@@ -1,6 +1,7 @@
 import { forwardRef, Inject, Injectable } from '@nestjs/common';
 import { Competition, HardwareVersion } from '@prisma/client';
-import { Competition as WCIF, formatCentiseconds } from '@wca/helpers';
+import { formatCentiseconds } from '@wca/helpers';
+import { Competition as WCIF, Round } from 'wcif-helpers';
 import {
   publicPersonSelect,
   SHOW_SECONDARY_TEXT_HW_VERSIONS,
@@ -195,7 +196,7 @@ export class PersonForDeviceService {
       if (roundInfo.cutoff) {
         const cutoffPassed = checkCutoff(
           result.attempts,
-          roundInfo.cutoff.attemptResult,
+          roundInfo.cutoff.resultValue,
           roundInfo.cutoff.numberOfAttempts,
         );
         if (!cutoffPassed) maxAttempts = roundInfo.cutoff.numberOfAttempts;
@@ -266,7 +267,7 @@ export class PersonForDeviceService {
       SHOW_SECONDARY_TEXT_HW_VERSIONS.includes(hwVersion) &&
       roundInfo?.cutoff
     ) {
-      cutoffText = `Cutoff: ${formatCentiseconds(roundInfo.cutoff.attemptResult)}`;
+      cutoffText = `Cutoff: ${formatCentiseconds(roundInfo.cutoff.resultValue)}`;
     }
 
     if (limitToReturn === null) {

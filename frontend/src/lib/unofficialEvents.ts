@@ -1,4 +1,4 @@
-import { Round } from "@wca/helpers";
+import { Round } from "wcif-helpers";
 
 import { UnofficialEvent } from "./interfaces";
 import { backendRequest } from "./request";

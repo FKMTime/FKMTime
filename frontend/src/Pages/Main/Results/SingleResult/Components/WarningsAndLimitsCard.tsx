@@ -1,6 +1,6 @@
-import { TimeLimit } from "@wca/helpers";
 import { AlertCircle } from "lucide-react";
 import { useMemo } from "react";
+import { TimeLimit } from "wcif-helpers";
 import { getCutoffByRoundId } from "wcif-helpers";
 
 import { Alert, AlertTitle } from "@/Components/ui/alert";

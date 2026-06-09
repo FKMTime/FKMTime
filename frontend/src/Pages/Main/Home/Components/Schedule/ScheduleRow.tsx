@@ -1,5 +1,4 @@
-import { Event, Round } from "@wca/helpers";
-import { prettyRoundFormat } from "wcif-helpers";
+import { Event, prettyRoundFormat, Round } from "wcif-helpers";
 
 import EventIcon from "@/Components/Icons/EventIcon";
 import { TableCell, TableRow } from "@/Components/ui/table";
@@ -23,6 +22,22 @@ const ScheduleRow = ({ activity, events }: ScheduleRowProps) => {
     const round = event?.rounds.find(
         (r: Round) => r.id === activity.activityCode
     );
+    const roundNumber = round ? parseInt(round.id.split("-r")[1]) : null;
+    const nextRound = roundNumber
+        ? event?.rounds.find(
+              (r: Round) => r.id === `${eventId}-r${roundNumber + 1}`
+          )
+        : null;
+    const participationSource =
+        nextRound?.participationRuleset?.participationSource;
+    const advancementText =
+        participationSource && participationSource.type !== "registrations"
+            ? participationSource.resultCondition.type === "ranking"
+                ? `Top ${participationSource.resultCondition.value}`
+                : participationSource.resultCondition.type === "percent"
+                  ? `Top ${participationSource.resultCondition.value}%`
+                  : null
+            : null;
     const formattedRealTime = getFormattedRealActivityTime(
         activity.realStartTime,
         activity.realEndTime
@@ -63,12 +78,11 @@ const ScheduleRow = ({ activity, events }: ScheduleRowProps) => {
                     : ""}
             </TableCell>
             <TableCell>
+                {/* TODO: Fix this once the WCA api is updated */}
+                {/** @ts-ignore */}
                 {round?.cutoff && resultToString(round?.cutoff?.attemptResult)}
             </TableCell>
-            <TableCell>
-                {round?.advancementCondition &&
-                    `Top ${round.advancementCondition.level}${round?.advancementCondition?.type === "percent" ? "%" : ""}`}
-            </TableCell>
+            <TableCell>{advancementText}</TableCell>
             <TableCell>
                 {activity.childActivities.length === 0
                     ? ""

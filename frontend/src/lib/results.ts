@@ -1,4 +1,4 @@
-import { Competition } from "@wca/helpers";
+import { Competition } from "wcif-helpers";
 import {
     getLimitByRoundId,
     getNumberOfAttemptsForRound,

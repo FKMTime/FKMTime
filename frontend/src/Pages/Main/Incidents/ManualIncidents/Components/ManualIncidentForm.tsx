@@ -1,7 +1,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Event, Round } from "@wca/helpers";
 import { useAtomValue } from "jotai";
 import { useForm } from "react-hook-form";
+import { Event, Round } from "wcif-helpers";
 import { z } from "zod";
 
 import ModalActions from "@/Components/ModalActions";

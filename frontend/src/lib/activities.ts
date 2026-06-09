@@ -1,9 +1,5 @@
-import {
-    Activity,
-    activityCodeToName as wcifActivityCodeToName,
-    Competition,
-    Room as WCIFRoom,
-} from "@wca/helpers";
+import { activityCodeToName as wcifActivityCodeToName } from "@wca/helpers";
+import { Activity, Competition, Room as WCIFRoom } from "wcif-helpers";
 
 import { getEventName, getEventShortName, isUnofficialEvent } from "./events";
 
@@ -48,6 +44,7 @@ export const getGroupsByRoundId = (roundId: string, wcif: Competition) => {
             startTime: "",
             endTime: "",
             childActivities: [],
+            scrambleSetId: null,
             extensions: [],
         });
     }

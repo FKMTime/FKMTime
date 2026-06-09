@@ -1,5 +1,5 @@
-import { Activity, Event, Round } from "@wca/helpers";
 import { useMemo } from "react";
+import { Activity, Event, Round } from "wcif-helpers";
 
 import EventIcon from "@/Components/Icons/EventIcon";
 import { getGroupsByRoundId } from "@/lib/activities";

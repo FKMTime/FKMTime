@@ -1,7 +1,7 @@
-import { Competition } from "@wca/helpers";
 import { type ClassValue, clsx } from "clsx";
 import * as CryptoJS from "crypto-js";
 import { twMerge } from "tailwind-merge";
+import { Competition } from "wcif-helpers";
 
 import { DNF_VALUE, roundFormats } from "../lib/constants";
 import { getEventShortName, isUnofficialEvent } from "../lib/events";
@@ -223,7 +223,7 @@ export const isThereADifferenceBetweenResults = (
                 ? DNF_VALUE
                 : submittedAttempts[i].value +
                   submittedAttempts[i].penalty * 100;
-        if (submittedValue !== resultsFromWcaLive.attempts[i].result)
+        if (submittedValue !== resultsFromWcaLive.attempts[i].value)
             return true;
     }
     return false;

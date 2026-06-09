@@ -1,8 +1,8 @@
-import { Competition as WCIF } from "@wca/helpers";
 import { useAtomValue } from "jotai";
 import { FileUp } from "lucide-react";
 import { useState } from "react";
 import { Link } from "react-router-dom";
+import { Competition as WCIF } from "wcif-helpers";
 
 import { Button } from "@/Components/ui/button";
 import {

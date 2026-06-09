@@ -1,5 +1,5 @@
 import { Attempt, AttemptType } from '@prisma/client';
-import { EventId, Person } from '@wca/helpers';
+import { Person } from 'wcif-helpers';
 import { DNF_VALUE } from 'src/constants';
 
 export const isCompetitorSignedInForEvent = (
@@ -7,7 +7,7 @@ export const isCompetitorSignedInForEvent = (
   eventId: string,
 ) => {
   if (!competitorWcif || !competitorWcif.registration) return false;
-  return competitorWcif.registration.eventIds.includes(eventId as EventId);
+  return competitorWcif.registration.eventIds.includes(eventId);
 };
 
 export const checkAttemptLimit = (time: number, limit: number) => {

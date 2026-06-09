@@ -2,7 +2,7 @@ import {
     Activity as WCIFActivity,
     Competition as WCIF,
     Event as WCIFEvent,
-} from "@wca/helpers";
+} from "wcif-helpers";
 
 export interface UserInfo {
     username: string;

@@ -5,7 +5,7 @@ import {
   StaffActivityStatus,
   StaffRole,
 } from '@prisma/client';
-import { Event, Round, TimeLimit } from '@wca/helpers';
+import { Event, Round, TimeLimit } from 'wcif-helpers';
 import { AppGateway } from 'src/app.gateway';
 import { DNS_VALUE, publicPersonSelect, publicUserSelect } from 'src/constants';
 import { ContestsService } from 'src/contests/contests.service';

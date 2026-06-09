@@ -1,6 +1,6 @@
 import { forwardRef, Inject } from '@nestjs/common';
 import { AttemptStatus, DeviceType } from '@prisma/client';
-import { Activity, Room as WCIFRoom, Venue } from '@wca/helpers';
+import { Activity, Room as WCIFRoom, Venue } from 'wcif-helpers';
 import { DNS_VALUE } from 'src/constants';
 import { DbService } from 'src/db/db.service';
 import { getEventShortName } from 'src/events';

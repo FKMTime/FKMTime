@@ -1,11 +1,11 @@
 import { forwardRef, HttpException, Inject } from '@nestjs/common';
 import { Role, SendingResultsFrequency } from '@prisma/client';
-import { Assignment, Person } from '@wca/helpers';
 import { ADMIN_WCA_USER_IDS } from 'src/constants';
 import { DbService } from 'src/db/db.service';
 import { SocketController } from 'src/socket/socket.controller';
 import { WcaService } from 'src/wca/wca.service';
 import { wcifRoleToAttendanceRole } from 'src/wcif-helpers';
+import { Assignment, Person } from 'wcif-helpers';
 import { getGroupInfoByActivityId } from 'wcif-helpers';
 
 export class ImportService {
@@ -34,7 +34,7 @@ export class ImportService {
         },
       },
     });
-    const wcifPublic = await this.wcaService.getPublicWcif(wcaId);
+    const wcifPublic = await this.wcaService.getWcif(wcaId, undefined, true);
     const wcif = await this.wcaService.getWcif(wcaId, user.wcaAccessToken);
     const competitionInfo = await this.wcaService.getCompetitionInfo(wcaId);
     if (user.wcaAccessToken) {

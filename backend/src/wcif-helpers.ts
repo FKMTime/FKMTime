@@ -1,5 +1,4 @@
-import { Competition, Event, Round } from '@wca/helpers';
-import { getEventInfoFromWcif } from 'wcif-helpers';
+import { Competition, Event, getEventInfoFromWcif, Round } from 'wcif-helpers';
 
 import { roundFormatMap } from './constants';
 

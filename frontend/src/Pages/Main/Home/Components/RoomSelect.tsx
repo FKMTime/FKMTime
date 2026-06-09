@@ -1,4 +1,4 @@
-import { Room } from "@wca/helpers";
+import { Room } from "wcif-helpers";
 
 import {
     Select,
