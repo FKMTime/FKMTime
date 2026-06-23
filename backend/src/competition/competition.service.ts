@@ -149,6 +149,9 @@ export class CompetitionService {
             result: {
               roundId: activity.activityCode,
             },
+            NOT: {
+              sessionId: null,
+            },
           },
           orderBy: {
             solvedAt: 'asc',
@@ -165,6 +168,9 @@ export class CompetitionService {
           where: {
             result: {
               roundId: activity.activityCode,
+            },
+            NOT: {
+              sessionId: null,
             },
           },
           orderBy: {
