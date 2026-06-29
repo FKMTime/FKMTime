@@ -1,6 +1,6 @@
 import { Attempt, AttemptType } from '@prisma/client';
-import { Person } from 'wcif-helpers';
 import { DNF_VALUE } from 'src/constants';
+import { Person } from 'wcif-helpers';
 
 export const isCompetitorSignedInForEvent = (
   competitorWcif: Person,
