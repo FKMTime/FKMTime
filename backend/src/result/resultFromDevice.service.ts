@@ -570,7 +570,7 @@ export class ResultFromDeviceService {
       if (
         !checkCutoff(
           submittedAttempts,
-          wcifRoundInfo.cutoff.attemptResult,
+          wcifRoundInfo.cutoff.resultValue,
           wcifRoundInfo.cutoff.numberOfAttempts,
         )
       ) {

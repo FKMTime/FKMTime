@@ -1,7 +1,6 @@
 import { forwardRef, Inject, Injectable } from '@nestjs/common';
 import { Competition, HardwareVersion } from '@prisma/client';
 import { formatCentiseconds } from '@wca/helpers';
-import { Competition as WCIF, Round } from 'wcif-helpers';
 import {
   publicPersonSelect,
   SHOW_SECONDARY_TEXT_HW_VERSIONS,
@@ -13,6 +12,7 @@ import { ResultService } from 'src/result/result.service';
 import { convertToLatin, getTranslation } from 'src/translations/translations';
 import { WcaService } from 'src/wca/wca.service';
 import { getMaxAttempts } from 'src/wcif-helpers';
+import { Competition as WCIF } from 'wcif-helpers';
 import {
   getGroupInfoByActivityId,
   getPersonFromWcif,

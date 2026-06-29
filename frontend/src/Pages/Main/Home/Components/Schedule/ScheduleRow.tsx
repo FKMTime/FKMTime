@@ -78,9 +78,7 @@ const ScheduleRow = ({ activity, events }: ScheduleRowProps) => {
                     : ""}
             </TableCell>
             <TableCell>
-                {/* TODO: Fix this once the WCA api is updated */}
-                {/** @ts-ignore */}
-                {round?.cutoff && resultToString(round?.cutoff?.attemptResult)}
+                {round?.cutoff && resultToString(round?.cutoff?.resultValue)}
             </TableCell>
             <TableCell>{advancementText}</TableCell>
             <TableCell>
