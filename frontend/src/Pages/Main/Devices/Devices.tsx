@@ -216,7 +216,7 @@ const Devices = () => {
                                 <CardTitle className="flex justify-between items-center">
                                     <div className="flex gap-2 items-center">
                                         <Microchip size={20} />
-                                        Devices
+                                        Devices ({devices.length})
                                     </div>
                                     <div className="w-64">
                                         <Select
