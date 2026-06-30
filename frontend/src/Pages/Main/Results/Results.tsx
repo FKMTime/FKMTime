@@ -35,7 +35,7 @@ import { Result, Room } from "@/lib/interfaces";
 import { isDelegate } from "@/lib/permissions";
 import { getResultsByRoundId } from "@/lib/results";
 import { getAllRooms } from "@/lib/rooms";
-import { getAdvancementText, isDualRound } from "@/lib/utils";
+import { getAdvancementText } from "@/lib/utils";
 import PageTransition from "@/Pages/PageTransition";
 import { socket, SocketContext } from "@/socket";
 
@@ -83,13 +83,6 @@ const Results = () => {
             return 0;
         }
         return getNumberOfAttemptsForRound(filters.roundId, competition.wcif);
-    }, [competition, filters.roundId]);
-
-    const dualRound = useMemo(() => {
-        if (!competition) {
-            return false;
-        }
-        return isDualRound(filters.roundId, competition.wcif);
     }, [competition, filters.roundId]);
 
     const advancementText = useMemo(() => {

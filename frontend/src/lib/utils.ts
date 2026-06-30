@@ -375,7 +375,9 @@ export const getAdvancementText = (roundId: string, event?: Event) => {
             : null;
 
     if (isLinked) {
-        return advancementText ? `Dual Round (${advancementText})` : "Dual Round";
+        return advancementText
+            ? `Dual Round (${advancementText})`
+            : "Dual Round";
     }
     return advancementText;
 };
