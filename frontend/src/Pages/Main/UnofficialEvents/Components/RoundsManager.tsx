@@ -1,6 +1,6 @@
-import { Round, RoundFormat } from "@wca/helpers";
 import { Trash2 } from "lucide-react";
 import { Dispatch, SetStateAction } from "react";
+import { Round, RoundFormat } from "wcif-helpers";
 
 import AttemptResultInput from "@/Components/AttemptResultInput";
 import IconButton from "@/Components/IconButton";
@@ -62,7 +62,10 @@ const RoundsManager = ({
                 cutoff: null,
                 results: [],
                 format: "a",
-                advancementCondition: null,
+                linkedRounds: null,
+                participationRuleset: null,
+                scrambleSetCount: 0,
+                scrambleSets: [],
                 extensions: [],
             });
             return newRounds;
@@ -181,7 +184,7 @@ const RoundsManager = ({
                             {CUTOFF_ALLOWED.includes(round.format) && (
                                 <AttemptResultInput
                                     placeholder="Cutoff"
-                                    value={round.cutoff?.attemptResult ?? 0}
+                                    value={round.cutoff?.resultValue ?? 0}
                                     onChange={(value) =>
                                         updateCutoff(round.id, value)
                                     }

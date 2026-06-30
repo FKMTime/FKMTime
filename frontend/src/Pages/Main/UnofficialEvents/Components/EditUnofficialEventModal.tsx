@@ -1,5 +1,5 @@
-import { Round } from "@wca/helpers";
 import { useState } from "react";
+import { Round } from "wcif-helpers";
 
 import { Modal } from "@/Components/Modal";
 import ModalActions from "@/Components/ModalActions";
@@ -28,7 +28,7 @@ const EditUnofficialEventModal = ({
     const handleSubmit = async () => {
         setIsLoading(true);
         const roundsToSend = rounds.map((round) => {
-            if (round.cutoff?.attemptResult === 0) {
+            if (round.cutoff?.resultValue === 0) {
                 round.cutoff = null;
             }
             return round;

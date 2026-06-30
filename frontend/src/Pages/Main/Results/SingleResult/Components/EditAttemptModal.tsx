@@ -1,5 +1,5 @@
-import { TimeLimit } from "@wca/helpers";
 import { useState } from "react";
+import { TimeLimit } from "wcif-helpers";
 
 import { Modal } from "@/Components/Modal";
 import { useToast } from "@/hooks/useToast";

@@ -1,4 +1,4 @@
-import { Round, RoundFormat } from "@wca/helpers";
+import { Round, RoundFormat } from "wcif-helpers";
 
 import { CUTOFF_ALLOWED } from "@/lib/constants";
 
@@ -36,7 +36,7 @@ export const updateCutoffInRounds = (
     }
     round.cutoff = {
         numberOfAttempts: round.format === "a" ? 2 : 1,
-        attemptResult: value,
+        resultValue: value,
     };
     return newRounds;
 };

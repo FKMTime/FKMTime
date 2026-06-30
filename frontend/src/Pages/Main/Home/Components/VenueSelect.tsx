@@ -1,4 +1,4 @@
-import { Venue } from "@wca/helpers";
+import { Venue } from "wcif-helpers";
 
 import {
     Select,

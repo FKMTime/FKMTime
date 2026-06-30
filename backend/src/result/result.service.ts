@@ -5,7 +5,6 @@ import {
   StaffActivityStatus,
   StaffRole,
 } from '@prisma/client';
-import { Event, Round, TimeLimit } from '@wca/helpers';
 import { AppGateway } from 'src/app.gateway';
 import { DNS_VALUE, publicPersonSelect, publicUserSelect } from 'src/constants';
 import { ContestsService } from 'src/contests/contests.service';
@@ -13,6 +12,7 @@ import { DbService } from 'src/db/db.service';
 import { isUnofficialEvent } from 'src/events';
 import { PersonService } from 'src/person/person.service';
 import { getMaxAttempts, isCumulativeLimit } from 'src/wcif-helpers';
+import { Event, Round, TimeLimit } from 'wcif-helpers';
 import { getRoundInfoFromWcif } from 'wcif-helpers';
 
 import { AttendanceService } from '../attendance/attendance.service';

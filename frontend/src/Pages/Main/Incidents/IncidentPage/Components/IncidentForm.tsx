@@ -1,7 +1,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
-import { TimeLimit } from "@wca/helpers";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
+import { TimeLimit } from "wcif-helpers";
 import { z } from "zod";
 
 import AttemptResultInput from "@/Components/AttemptResultInput";

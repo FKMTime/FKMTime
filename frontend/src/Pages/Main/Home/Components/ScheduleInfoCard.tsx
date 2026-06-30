@@ -1,5 +1,5 @@
-import { Activity, Venue } from "@wca/helpers";
 import { Calendar1 } from "lucide-react";
+import { Activity, Venue } from "wcif-helpers";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/Components/ui/card";
 import { Competition } from "@/lib/interfaces";

@@ -1,6 +1,6 @@
-import { Event as WCIFEvent } from "@wca/helpers";
 import { TriangleAlert } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { Event as WCIFEvent } from "wcif-helpers";
 
 import EventIcon from "@/Components/Icons/EventIcon";
 import { Button } from "@/Components/ui/button";

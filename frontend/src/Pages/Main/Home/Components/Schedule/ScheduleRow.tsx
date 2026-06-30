@@ -1,5 +1,4 @@
-import { Event, Round } from "@wca/helpers";
-import { prettyRoundFormat } from "wcif-helpers";
+import { Event, prettyRoundFormat, Round } from "wcif-helpers";
 
 import EventIcon from "@/Components/Icons/EventIcon";
 import { TableCell, TableRow } from "@/Components/ui/table";
@@ -9,6 +8,7 @@ import { resultToString } from "@/lib/resultFormatters";
 import {
     cumulativeRoundsToString,
     formatTime,
+    getAdvancementText,
     getFormattedRealActivityTime,
 } from "@/lib/utils";
 
@@ -23,6 +23,7 @@ const ScheduleRow = ({ activity, events }: ScheduleRowProps) => {
     const round = event?.rounds.find(
         (r: Round) => r.id === activity.activityCode
     );
+    const advancementText = getAdvancementText(activity.activityCode, event);
     const formattedRealTime = getFormattedRealActivityTime(
         activity.realStartTime,
         activity.realEndTime
@@ -63,12 +64,9 @@ const ScheduleRow = ({ activity, events }: ScheduleRowProps) => {
                     : ""}
             </TableCell>
             <TableCell>
-                {round?.cutoff && resultToString(round?.cutoff?.attemptResult)}
+                {round?.cutoff && resultToString(round?.cutoff?.resultValue)}
             </TableCell>
-            <TableCell>
-                {round?.advancementCondition &&
-                    `Top ${round.advancementCondition.level}${round?.advancementCondition?.type === "percent" ? "%" : ""}`}
-            </TableCell>
+            <TableCell>{advancementText}</TableCell>
             <TableCell>
                 {activity.childActivities.length === 0
                     ? ""

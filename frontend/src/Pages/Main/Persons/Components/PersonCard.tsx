@@ -1,6 +1,6 @@
-import { Competition } from "@wca/helpers";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { Competition } from "wcif-helpers";
 import { getPersonFromWcif } from "wcif-helpers";
 
 import Avatar from "@/Components/Avatar/Avatar";

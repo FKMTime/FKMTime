@@ -41,7 +41,10 @@ const ImportCompetition = () => {
         if (response.status == 200) {
             await updateUserInfo();
             setCompetition(response.data);
-            navigate(`/competition/`);
+            navigate(`/competition/`, {
+                state: { importedCompetition: response.data },
+            });
+            return;
         } else if (response.status === 400) {
             toast({
                 title: "Error",
