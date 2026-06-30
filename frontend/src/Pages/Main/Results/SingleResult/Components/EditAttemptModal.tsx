@@ -32,7 +32,7 @@ const EditAttemptModal = ({
 
     const handleSubmit = async (data: AttemptData) => {
         setIsLoading(true);
-        const status = await updateAttempt({
+        const { status, message } = await updateAttempt({
             ...attempt,
             ...data,
         });
@@ -45,7 +45,7 @@ const EditAttemptModal = ({
         } else {
             toast({
                 title: "Error",
-                description: "Something went wrong",
+                description: message ?? "Something went wrong",
                 variant: "destructive",
             });
         }

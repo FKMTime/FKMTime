@@ -5,9 +5,12 @@ interface UpdateAttemptData extends Attempt {
     updateReplacedBy?: boolean;
 }
 
-export const createAttempt = async (data: AttemptData) => {
+export const createAttempt = async (
+    data: AttemptData
+): Promise<{ status: number; message?: string }> => {
     const response = await backendRequest("attempt", "POST", true, data);
-    return response.status;
+    const message = !response.ok ? (await response.json()).message : undefined;
+    return { status: response.status, message };
 };
 
 export const getIncidentById = async (
@@ -35,13 +38,14 @@ export const updateAttempt = async (
     data: UpdateAttemptData,
     isNoteworthy?: boolean,
     doNotRequireCards?: boolean
-) => {
+): Promise<{ status: number; message?: string }> => {
     const response = await backendRequest(`attempt/${data.id}`, "PUT", true, {
         ...data,
         noteworthy: isNoteworthy,
         doNotRequireCards: doNotRequireCards,
     });
-    return response.status;
+    const message = !response.ok ? (await response.json()).message : undefined;
+    return { status: response.status, message };
 };
 
 export const deleteAttempt = async (id: string) => {

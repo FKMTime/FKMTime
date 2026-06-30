@@ -32,6 +32,20 @@ export class AttemptService {
       data.roundId,
     );
 
+    const duplicate = await this.prisma.attempt.findFirst({
+      where: {
+        resultId: result.id,
+        attemptNumber: data.attemptNumber,
+        type: data.type,
+      },
+    });
+    if (duplicate) {
+      throw new HttpException(
+        'Attempt with this number and type already exists',
+        409,
+      );
+    }
+
     await this.prisma.attempt.create({
       data: {
         attemptNumber: data.attemptNumber,
@@ -152,6 +166,22 @@ export class AttemptService {
     if (!attemptToUpdate) {
       throw new HttpException('Attempt not found', 404);
     }
+
+    const duplicate = await this.prisma.attempt.findFirst({
+      where: {
+        resultId: attemptToUpdate.resultId,
+        attemptNumber: data.attemptNumber,
+        type: data.type,
+        NOT: { id: id },
+      },
+    });
+    if (duplicate) {
+      throw new HttpException(
+        'Attempt with this number and type already exists',
+        409,
+      );
+    }
+
     if (data.status !== AttemptStatus.EXTRA_GIVEN || data.replacedBy === 0) {
       data.replacedBy = null;
     }

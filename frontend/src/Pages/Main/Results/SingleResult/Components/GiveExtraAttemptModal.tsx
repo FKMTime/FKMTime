@@ -46,7 +46,7 @@ const GiveExtraAttemptModal = ({
 
     const onSubmit = async (values: z.infer<typeof giveExtraAttemptSchema>) => {
         setIsLoading(true);
-        const status = await updateAttempt({
+        const { status, message } = await updateAttempt({
             ...attempt,
             comment: values.comment || "",
             status: AttemptStatus.EXTRA_GIVEN,
@@ -60,7 +60,7 @@ const GiveExtraAttemptModal = ({
         } else {
             toast({
                 title: "Error",
-                description: "Something went wrong",
+                description: message ?? "Something went wrong",
                 variant: "destructive",
             });
         }

@@ -31,7 +31,7 @@ const CreateAttemptModal = ({
 
     const onSubmit = async (data: AttemptData) => {
         setIsLoading(true);
-        const status = await createAttempt(data);
+        const { status, message } = await createAttempt(data);
         if (status === 201) {
             toast({
                 title: `Attempt created and submitted to ${submissionPlatform}`,
@@ -41,7 +41,7 @@ const CreateAttemptModal = ({
         } else {
             toast({
                 title: "Error",
-                description: "Something went wrong",
+                description: message ?? "Something went wrong",
                 variant: "destructive",
             });
         }
