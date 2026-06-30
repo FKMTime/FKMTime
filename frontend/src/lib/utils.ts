@@ -1,7 +1,7 @@
 import { type ClassValue, clsx } from "clsx";
 import * as CryptoJS from "crypto-js";
 import { twMerge } from "tailwind-merge";
-import { Competition } from "wcif-helpers";
+import { Competition, Event, getRoundInfoFromWcif } from "wcif-helpers";
 
 import { DNF_VALUE, roundFormats } from "../lib/constants";
 import { getEventShortName, isUnofficialEvent } from "../lib/events";
@@ -334,4 +334,48 @@ export const decryptText = (encryptedText: string, password: string) => {
 export const idToHex = (id: number) => {
     if (!id) return "";
     return id.toString(16).toUpperCase();
+};
+
+export const isDualRound = (roundId: string, wcif: Competition): boolean => {
+    const roundInfo = getRoundInfoFromWcif(roundId, wcif);
+    return (roundInfo?.linkedRounds?.length || 0) === 2;
+};
+
+export const getAdvancementText = (roundId: string, event?: Event) => {
+    if (!event) return "";
+    const round = event?.rounds.find((r) => r.id === roundId);
+    const roundNumber = round ? parseInt(round.id.split("-r")[1]) : null;
+    const isLinked = (round?.linkedRounds?.length ?? 0) === 2;
+
+    let nextRound;
+    if (isLinked) {
+        const maxLinkedRoundNumber = Math.max(
+            ...round!.linkedRounds!.map((id) => parseInt(id.split("-r")[1]))
+        );
+        nextRound = event.rounds.find(
+            (r) => r.id === `${event.id}-r${maxLinkedRoundNumber + 1}`
+        );
+    } else {
+        nextRound = roundNumber
+            ? event.rounds.find(
+                  (r) => r.id === `${event.id}-r${roundNumber + 1}`
+              )
+            : null;
+    }
+
+    const participationSource =
+        nextRound?.participationRuleset?.participationSource;
+    const advancementText =
+        participationSource && participationSource.type !== "registrations"
+            ? participationSource.resultCondition.type === "ranking"
+                ? `Top ${participationSource.resultCondition.value}`
+                : participationSource.resultCondition.type === "percent"
+                  ? `Top ${participationSource.resultCondition.value}%`
+                  : null
+            : null;
+
+    if (isLinked) {
+        return advancementText ? `Dual Round (${advancementText})` : "Dual Round";
+    }
+    return advancementText;
 };

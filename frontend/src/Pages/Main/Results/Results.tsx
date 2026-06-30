@@ -35,6 +35,7 @@ import { Result, Room } from "@/lib/interfaces";
 import { isDelegate } from "@/lib/permissions";
 import { getResultsByRoundId } from "@/lib/results";
 import { getAllRooms } from "@/lib/rooms";
+import { getAdvancementText, isDualRound } from "@/lib/utils";
 import PageTransition from "@/Pages/PageTransition";
 import { socket, SocketContext } from "@/socket";
 
@@ -83,6 +84,26 @@ const Results = () => {
         }
         return getNumberOfAttemptsForRound(filters.roundId, competition.wcif);
     }, [competition, filters.roundId]);
+
+    const dualRound = useMemo(() => {
+        if (!competition) {
+            return false;
+        }
+        return isDualRound(filters.roundId, competition.wcif);
+    }, [competition, filters.roundId]);
+
+    const advancementText = useMemo(() => {
+        if (!competition) {
+            return "";
+        }
+        const event = competition.wcif.events.find(
+            (e) => e.id === filters.eventId
+        );
+        if (!event) {
+            return "";
+        }
+        return getAdvancementText(filters.roundId, event);
+    }, [competition, filters.eventId, filters.roundId]);
 
     const fetchData = useCallback(
         async (roundId: string, searchParam?: string) => {
@@ -260,6 +281,7 @@ const Results = () => {
                                 />
                                 {activityCodeToName(filters.roundId)}
                             </CardTitle>
+                            <CardDescription>{advancementText}</CardDescription>
                         </CardHeader>
                         <CardContent>
                             {results && results.length > 0 ? (

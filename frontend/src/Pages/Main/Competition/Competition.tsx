@@ -1,7 +1,7 @@
 import { useSetAtom } from "jotai";
 import { RefreshCw, Server } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 
 import LoadingPage from "@/Components/LoadingPage";
 import { Button } from "@/Components/ui/button";
@@ -41,10 +41,13 @@ const tabs = [
 const Competition = () => {
     const { toast } = useToast();
     const navigate = useNavigate();
+    const location = useLocation();
     const setCompetitionAtom = useSetAtom(competitionAtom);
-    const [isLoading, setIsLoading] = useState<boolean>(true);
+    const initialCompetition: CompetitionInterface | null =
+        location.state?.importedCompetition ?? null;
+    const [isLoading, setIsLoading] = useState<boolean>(!initialCompetition);
     const [competition, setCompetition] = useState<CompetitionInterface | null>(
-        null
+        initialCompetition
     );
     const [tabIndex, setTabIndex] = useState<string>(tabs[0].id);
     const [searchParams, setSearchParams] = useSearchParams();
