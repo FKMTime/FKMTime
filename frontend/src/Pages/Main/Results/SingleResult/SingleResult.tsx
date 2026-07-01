@@ -17,6 +17,7 @@ import PageTransition from "@/Pages/PageTransition";
 
 import CreateAttemptModal from "../Components/CreateAttemptModal";
 import AttemptsTable from "./Components/AttemptsTable";
+import LastAttemptCard from "./Components/LastAttemptCard";
 import SingleResultHeaderCard from "./Components/SingleResultHeaderCard";
 import SwapAttemptsModal from "./Components/SwapAttemptsModal";
 import WarningsAndLimitsCard from "./Components/WarningsAndLimitsCard";
@@ -105,24 +106,29 @@ const SingleResult = () => {
 
     return (
         <PageTransition>
-            <div className="flex flex-col gap-4">
-                <SingleResultHeaderCard
-                    result={result}
-                    fetchData={fetchData}
-                    setIsOpenCreateAttemptModal={setIsOpenCreateAttemptModal}
-                    standardAttempts={standardAttempts}
-                    maxAttempts={maxAttempts}
-                />
-                <WarningsAndLimitsCard
-                    competition={competition}
-                    result={result}
-                    submittedAttempts={submittedAttempts}
-                    limit={limit}
-                    maxAttempts={maxAttempts}
-                    remainingAndUsedCumulativeLimit={
-                        remainingAndUsedCumulativeLimit!
-                    }
-                />
+            <div className="flex flex-col gap-4 w-full">
+                <div className="flex flex-col gap-4 md:flex-row w-full">
+                    <SingleResultHeaderCard
+                        result={result}
+                        fetchData={fetchData}
+                        setIsOpenCreateAttemptModal={
+                            setIsOpenCreateAttemptModal
+                        }
+                        standardAttempts={standardAttempts}
+                        maxAttempts={maxAttempts}
+                    />
+                    <WarningsAndLimitsCard
+                        competition={competition}
+                        result={result}
+                        submittedAttempts={submittedAttempts}
+                        limit={limit}
+                        maxAttempts={maxAttempts}
+                        remainingAndUsedCumulativeLimit={
+                            remainingAndUsedCumulativeLimit!
+                        }
+                    />
+                    <LastAttemptCard result={result} fetchData={fetchData} />
+                </div>
                 <Tabs defaultValue="submitted">
                     <Card>
                         <CardHeader>

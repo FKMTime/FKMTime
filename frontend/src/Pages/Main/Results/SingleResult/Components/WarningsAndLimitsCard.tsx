@@ -3,6 +3,7 @@ import { useMemo } from "react";
 import { TimeLimit } from "wcif-helpers";
 import { getCutoffByRoundId } from "wcif-helpers";
 
+import EventIcon from "@/Components/Icons/EventIcon";
 import { Alert, AlertTitle } from "@/Components/ui/alert";
 import { Card, CardContent, CardHeader, CardTitle } from "@/Components/ui/card";
 import { activityCodeToName } from "@/lib/activities";
@@ -51,9 +52,12 @@ const WarningsAndLimitsCard = ({
     }, [competition, result]);
 
     return (
-        <Card>
+        <Card className="w-full">
             <CardHeader>
-                <CardTitle>{activityCodeToName(result.roundId)}</CardTitle>
+                <CardTitle className="flex items-center gap-2">
+                    <EventIcon eventId={result.eventId} size={24} selected />
+                    {activityCodeToName(result.roundId)}
+                </CardTitle>
             </CardHeader>
             <CardContent className="flex flex-col gap-4">
                 {!isDifferenceBetweenResults &&
