@@ -15,9 +15,10 @@ export class DeviceDto {
   @IsInt()
   espId: number;
 
-  @IsInt()
+  /** 64-char hex encoding of a 256-bit device secret */
+  @IsString()
   @IsOptional()
-  signKey?: number;
+  signKey?: string;
 
   @IsString()
   @IsNotEmpty()

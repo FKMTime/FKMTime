@@ -119,7 +119,7 @@ describe('DeviceService', () => {
       const deviceData = {
         name: 'New Device',
         espId: 123,
-        signKey: 456,
+        signKey: '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef',
         type: DeviceType.STATION,
         roomId: 'room1',
         hwVersion: HardwareVersion.V4,
@@ -141,7 +141,7 @@ describe('DeviceService', () => {
       const deviceData = {
         name: 'Duplicate Device',
         espId: 123,
-        signKey: 456,
+        signKey: '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef',
         type: DeviceType.STATION,
         roomId: 'room1',
         hwVersion: HardwareVersion.V4,
@@ -190,7 +190,7 @@ describe('DeviceService', () => {
     it('should send request if device not in database', async () => {
       const requestData = {
         espId: 456,
-        signKey: 789,
+        signKey: 'fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210',
         type: 'STATION' as any,
         hw: 'v4',
       };
@@ -211,7 +211,7 @@ describe('DeviceService', () => {
     it('should return error if device already exists', async () => {
       const requestData = {
         espId: 123,
-        signKey: 789,
+        signKey: 'fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210',
         type: 'STATION' as any,
         hw: 'v4',
       };

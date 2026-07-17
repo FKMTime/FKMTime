@@ -315,7 +315,8 @@ export enum HardwareVersion {
 export interface DeviceData {
     name: string;
     espId: number;
-    signKey?: number;
+    /** 64-char hex of 256-bit device secret */
+    signKey?: string;
     type: DeviceType;
     roomId: string;
     hwVersion: HardwareVersion;
@@ -323,7 +324,8 @@ export interface DeviceData {
 
 export interface AvailableDevice {
     espId: number;
-    signKey: number;
+    /** 64-char hex of 256-bit device secret */
+    signKey: string;
     type: AvailableDeviceType;
     hw: string;
 }

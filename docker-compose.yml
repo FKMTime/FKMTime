@@ -131,12 +131,14 @@ services:
       - sock:/app/sock
       - /tmp/fkm-build:/app/firmware
       - /tmp/fkm-logs:/logs
+      - micro_connector_certs:/app/certs
     environment:
       - PORT=8080
       - FIRMWARE_DIR=/app/firmware
       - RUST_LOG=none,backend=debug
       - SOCKET_PATH=/app/sock/socket.sock
       - DEVICE_LOGS=/logs
+      - TLS_CERT_DIR=/app/certs
     restart: unless-stopped
     extra_hosts:
       - host.docker.internal:host-gateway
@@ -147,3 +149,4 @@ services:
 volumes:
   dev_database:
   sock:
+  micro_connector_certs:

@@ -213,7 +213,8 @@ model Device {
   id                String           @id @default(uuid())
   name              String           @unique
   espId             Int?             @unique @map("esp_id")
-  signKey           Int?             @unique @map("sign_key")
+  // 64-char hex of 256-bit device secret (HMAC key for connect-time auth)
+  signKey           String?          @unique @map("sign_key")
   type              DeviceType
   batteryPercentage Int?             @map("battery_percentage")
   hwVersion         HardwareVersion? @map("hw_version")

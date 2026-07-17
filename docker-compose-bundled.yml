@@ -106,12 +106,14 @@ services:
       - /run/dbus:/run/dbus:ro
       - logs:/logs
       - sock:/app/sock
+      - micro_connector_certs:/app/certs
     environment:
       - PORT=8081
       - FIRMWARE_DIR=/app/firmware
       - RUST_LOG=none,backend=debug
       - DEVICE_LOGS=/logs
       - SOCKET_PATH=/app/sock/socket.sock
+      - TLS_CERT_DIR=/app/certs
       #- NO_BT=true
     extra_hosts:
       - host.docker.internal:host-gateway
@@ -123,3 +125,4 @@ volumes:
   database:
   sock:
   logs:
+  micro_connector_certs:
