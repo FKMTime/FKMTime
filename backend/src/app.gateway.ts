@@ -87,8 +87,14 @@ export class AppGateway {
 
   @UseGuards(OrganizerGuard)
   handleDeviceRequest(device: RequestToConnectDto) {
-    if (this.deviceRequests.some((req) => req.espId === device.espId)) return;
-    this.deviceRequests.push(device);
+    const existingIdx = this.deviceRequests.findIndex(
+      (req) => req.espId === device.espId,
+    );
+    if (existingIdx !== -1) {
+      this.deviceRequests[existingIdx] = device;
+    } else {
+      this.deviceRequests.push(device);
+    }
     this.server.to(`device`).emit('deviceRequests', this.deviceRequests);
   }
 
