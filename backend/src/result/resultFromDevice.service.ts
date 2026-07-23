@@ -500,11 +500,12 @@ export class ResultFromDeviceService {
     for (let i = attemptNumber + 1; i <= maxAttempts; i++) {
       await this.prisma.attempt.create({
         data: {
-          attemptNumber: attemptNumber + i + 1,
+          attemptNumber: i,
           status: AttemptStatus.STANDARD,
           type: AttemptType.STANDARD_ATTEMPT,
           penalty: DNS_VALUE,
           value: 0,
+          solvedAt: new Date(),
           result: {
             connect: {
               id: resultId,

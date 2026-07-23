@@ -158,6 +158,16 @@ export class StatisticsService {
             result: {
               roundId: round.activityCode,
             },
+            sessionId: {
+              not:{
+                equals: null,
+              },
+            },
+            penalty: {
+              not: {
+                equals: -2                
+              },
+            },
           },
           orderBy: {
             solvedAt: 'desc',
