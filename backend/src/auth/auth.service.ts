@@ -92,10 +92,12 @@ export class AuthService {
             newRoles.push(Role.ORGANIZER);
           }
         } else {
-          throw new HttpException(
-            'You are not allowed to manage this competition',
-            403,
-          );
+          if (!existingUser) {
+            throw new HttpException(
+              'You are not allowed to manage this competition',
+              403,
+            );
+          }
         }
       }
     }
