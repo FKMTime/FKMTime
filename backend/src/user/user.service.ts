@@ -80,6 +80,13 @@ export class UserService {
 
   async updateUser(id: string, data: UpdateUserDto, userId: string) {
     const filteredRoles = await this.getFilteredRoles(userId, data.roles);
+    const user = await this.prisma.user.findUnique({
+      where: { id: id },
+    });
+
+    if ((!data.username || data.username.length === 0) && user.wcaUserId === null) {
+      throw new HttpException({ message: ['Username must not be empty'] }, 400);
+    }
     if (filteredRoles.length !== data.roles.length) {
       throw new HttpException(
         'You cannot assign roles higher than your own',
