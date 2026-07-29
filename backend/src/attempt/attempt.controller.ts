@@ -51,6 +51,11 @@ export class AttemptController {
     return await this.attemptService.enterScorecard(data, user.userId);
   }
 
+  @Get('round/:roundId/recent')
+  async getRecentAttemptsByRoundId(@Param('roundId') roundId: string) {
+    return await this.attemptService.getRecentAttemptsByRoundId(roundId);
+  }
+
   @Get(':id')
   async getAttemptById(@Param('id') id: string) {
     return await this.attemptService.getAttemptById(id);

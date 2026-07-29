@@ -48,6 +48,15 @@ export const updateAttempt = async (
     return { status: response.status, message };
 };
 
+export const getRecentAttemptsByRoundId = async (roundId: string) => {
+    const response = await backendRequest(
+        `attempt/round/${roundId}/recent`,
+        "GET",
+        true
+    );
+    return await response.json();
+};
+
 export const deleteAttempt = async (id: string) => {
     const response = await backendRequest(`attempt/${id}`, "DELETE", true);
     return {

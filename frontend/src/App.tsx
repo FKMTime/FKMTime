@@ -1,9 +1,9 @@
 import { lazy, Suspense, useState } from "react";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 
-import ErrorPage from "@/Pages/Main/ErrorPage/ErrorPage";
 import LoadingPage from "@/Components/LoadingPage";
 import { Toaster } from "@/Components/ui/toaster";
+import ErrorPage from "@/Pages/Main/ErrorPage/ErrorPage";
 import { ConfirmProvider } from "@/providers/ConfirmProvider";
 import { ThemeProvider } from "@/providers/ThemeProvider";
 

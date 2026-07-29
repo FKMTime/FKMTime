@@ -84,7 +84,10 @@ export class UserService {
       where: { id: id },
     });
 
-    if ((!data.username || data.username.length === 0) && user.wcaUserId === null) {
+    if (
+      (!data.username || data.username.length === 0) &&
+      user.wcaUserId === null
+    ) {
       throw new HttpException({ message: ['Username must not be empty'] }, 400);
     }
     if (filteredRoles.length !== data.roles.length) {

@@ -159,13 +159,13 @@ export class StatisticsService {
               roundId: round.activityCode,
             },
             sessionId: {
-              not:{
+              not: {
                 equals: null,
               },
             },
             penalty: {
               not: {
-                equals: -2                
+                equals: -2,
               },
             },
           },

@@ -320,6 +320,24 @@ export class AttemptService {
     };
   }
 
+  async getRecentAttemptsByRoundId(roundId: string) {
+    return this.prisma.attempt.findMany({
+      where: {
+        result: { roundId },
+      },
+      orderBy: { solvedAt: 'desc' },
+      take: 3,
+      include: {
+        result: {
+          select: {
+            id: true,
+            person: publicPersonSelect,
+          },
+        },
+      },
+    });
+  }
+
   async getAttemptById(id: string) {
     const attempt = await this.prisma.attempt.findUnique({
       where: { id },

@@ -1,6 +1,7 @@
-import { Calendar1 } from "lucide-react";
+import { Calendar1, ChevronLeft, ChevronRight } from "lucide-react";
 import { Activity, Venue } from "wcif-helpers";
 
+import { Button } from "@/Components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/Components/ui/card";
 import { Competition } from "@/lib/interfaces";
 
@@ -40,6 +41,18 @@ const ScheduleInfoCard = ({
     if (!competition) {
         return null;
     }
+
+    const currentDateIndex = possibleDates.findIndex(
+        (d) => d.toDateString() === selectedDate.toDateString()
+    );
+    const canGoPrev = currentDateIndex > 0;
+    const canGoNext = currentDateIndex < possibleDates.length - 1;
+
+    const changeDate = (date: Date) => {
+        setSelectedDate(date);
+        fetchActivitiesData(selectedVenue, selectedRoom, date);
+    };
+
     return (
         <Card>
             <CardHeader>
@@ -47,19 +60,36 @@ const ScheduleInfoCard = ({
                     <Calendar1 size={20} />
                     Schedule
                 </CardTitle>
-                <div className="flex flex-col md:flex-row gap-5">
-                    <CompetitionDateSelect
-                        onChange={(date) => {
-                            setSelectedDate(new Date(date));
-                            fetchActivitiesData(
-                                selectedVenue,
-                                selectedRoom,
-                                new Date(date)
-                            );
-                        }}
-                        possibleDates={possibleDates}
-                        selectedDate={selectedDate}
-                    />
+                <div className="flex flex-col md:flex-row gap-5 items-start md:items-center">
+                    <div className="flex items-center gap-1">
+                        <Button
+                            variant="outline"
+                            size="icon"
+                            className="h-8 w-8"
+                            disabled={!canGoPrev}
+                            onClick={() =>
+                                changeDate(possibleDates[currentDateIndex - 1])
+                            }
+                        >
+                            <ChevronLeft size={16} />
+                        </Button>
+                        <CompetitionDateSelect
+                            onChange={(date) => changeDate(new Date(date))}
+                            possibleDates={possibleDates}
+                            selectedDate={selectedDate}
+                        />
+                        <Button
+                            variant="outline"
+                            size="icon"
+                            className="h-8 w-8"
+                            disabled={!canGoNext}
+                            onClick={() =>
+                                changeDate(possibleDates[currentDateIndex + 1])
+                            }
+                        >
+                            <ChevronRight size={16} />
+                        </Button>
+                    </div>
                     <VenueSelect
                         venues={competition.wcif.schedule.venues}
                         selectedVenueId={selectedVenue.toString()}
