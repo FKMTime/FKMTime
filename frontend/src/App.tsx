@@ -1,6 +1,7 @@
 import { lazy, Suspense, useState } from "react";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 
+import ErrorPage from "@/Pages/Main/ErrorPage/ErrorPage";
 import LoadingPage from "@/Components/LoadingPage";
 import { Toaster } from "@/Components/ui/toaster";
 import { ConfirmProvider } from "@/providers/ConfirmProvider";
@@ -104,14 +105,17 @@ const App = () => {
         {
             path: "/auth/login",
             element: <Login />,
+            errorElement: <ErrorPage />,
         },
         {
             path: "/competition/import",
             element: <ImportCompetition />,
+            errorElement: <ErrorPage />,
         },
         {
             path: "/",
             element: <Layout />,
+            errorElement: <ErrorPage />,
             children: [
                 {
                     path: "",
@@ -250,6 +254,7 @@ const App = () => {
         {
             path: "/scrambling-device",
             element: <ScramblingDeviceLayout />,
+            errorElement: <ErrorPage />,
             children: [
                 {
                     path: "/scrambling-device",
