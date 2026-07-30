@@ -57,6 +57,30 @@ export const getRecentAttemptsByRoundId = async (roundId: string) => {
     return await response.json();
 };
 
+export const reorderAttempts = async (
+    attemptIds: string[],
+    resultId: string
+): Promise<number> => {
+    const response = await backendRequest("attempt/reorder", "PUT", true, {
+        attemptIds,
+        resultId,
+    });
+    return response.status;
+};
+
+export const setAttemptReplacement = async (
+    id: string,
+    replacedByExtraNumber: number | null
+): Promise<number> => {
+    const response = await backendRequest(
+        `attempt/${id}/replacement`,
+        "PUT",
+        true,
+        { replacedByExtraNumber }
+    );
+    return response.status;
+};
+
 export const deleteAttempt = async (id: string) => {
     const response = await backendRequest(`attempt/${id}`, "DELETE", true);
     return {

@@ -16,6 +16,7 @@ import { getSubmittedAttempts } from "@/lib/utils";
 import PageTransition from "@/Pages/PageTransition";
 
 import CreateAttemptModal from "../Components/CreateAttemptModal";
+import AttemptsReorderBoard from "./Components/AttemptsReorderBoard";
 import AttemptsTable from "./Components/AttemptsTable";
 import LastAttemptCard from "./Components/LastAttemptCard";
 import SingleResultHeaderCard from "./Components/SingleResultHeaderCard";
@@ -147,6 +148,9 @@ const SingleResult = () => {
                                         Extra
                                     </TabsTrigger>
                                 )}
+                                <TabsTrigger value="reorder">
+                                    Reorder & Extras
+                                </TabsTrigger>
                             </TabsList>
                         </CardContent>
                     </Card>
@@ -213,6 +217,27 @@ const SingleResult = () => {
                                         fetchData={fetchData}
                                         result={result}
                                         showExtraColumns
+                                    />
+                                )}
+                            </CardContent>
+                        </Card>
+                    </TabsContent>
+                    <TabsContent value="reorder">
+                        <Card>
+                            <CardHeader>
+                                <CardTitle>
+                                    Reorder & Extra Assignment
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                {standardAttempts.length === 0 ? (
+                                    <p>No attempts</p>
+                                ) : (
+                                    <AttemptsReorderBoard
+                                        result={result}
+                                        standardAttempts={standardAttempts}
+                                        extraAttempts={extraAttempts}
+                                        fetchData={fetchData}
                                     />
                                 )}
                             </CardContent>

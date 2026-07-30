@@ -18,6 +18,8 @@ import { DelegateGuard } from 'src/auth/guards/delegate.guard';
 import { AttemptService } from './attempt.service';
 import { CreateAttemptDto } from './dto/createAttempt.dto';
 import { EnterScorecardDto } from './dto/enterScorecard.dto';
+import { ReorderAttemptsDto } from './dto/reorderAttempts.dto';
+import { SetReplacementDto } from './dto/setReplacement.dto';
 import { SwapAttemptsDto } from './dto/swapAttempts.dto';
 import { UpdateAttemptDto } from './dto/updateAttempt.dto';
 
@@ -39,6 +41,25 @@ export class AttemptController {
     return await this.attemptService.swapAttempts(
       data.firstAttemptId,
       data.secondAttemptId,
+    );
+  }
+
+  @Put('reorder')
+  async reorderAttempts(@Body() data: ReorderAttemptsDto) {
+    return await this.attemptService.reorderAttempts(
+      data.attemptIds,
+      data.resultId,
+    );
+  }
+
+  @Put(':id/replacement')
+  async setAttemptReplacement(
+    @Param('id') id: string,
+    @Body() data: SetReplacementDto,
+  ) {
+    return await this.attemptService.setAttemptReplacement(
+      id,
+      data.replacedByExtraNumber,
     );
   }
 

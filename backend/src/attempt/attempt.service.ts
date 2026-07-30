@@ -134,6 +134,54 @@ export class AttemptService {
     };
   }
 
+  async reorderAttempts(attemptIds: string[], resultId: string) {
+    // Two-pass update to avoid any transient number conflicts
+    for (let i = 0; i < attemptIds.length; i++) {
+      await this.prisma.attempt.update({
+        where: { id: attemptIds[i] },
+        data: { attemptNumber: 1000 + i },
+      });
+    }
+    for (let i = 0; i < attemptIds.length; i++) {
+      await this.prisma.attempt.update({
+        where: { id: attemptIds[i] },
+        data: { attemptNumber: i + 1 },
+      });
+    }
+    await this.resultService.enterWholeScorecardToWcaLiveOrCubingContests(
+      resultId,
+    );
+    this.appGateway.handleAttemptUpdated();
+    return { message: 'Attempts reordered successfully' };
+  }
+
+  async setAttemptReplacement(
+    id: string,
+    replacedByExtraNumber: number | null,
+  ) {
+    const attempt = await this.prisma.attempt.findUnique({ where: { id } });
+    if (!attempt) throw new HttpException('Attempt not found', 404);
+
+    const newStatus =
+      replacedByExtraNumber !== null
+        ? AttemptStatus.EXTRA_GIVEN
+        : AttemptStatus.STANDARD;
+
+    await this.prisma.attempt.update({
+      where: { id },
+      data: { status: newStatus, replacedBy: replacedByExtraNumber },
+    });
+
+    const result = await this.prisma.result.findUnique({
+      where: { id: attempt.resultId },
+    });
+    await this.resultService.enterWholeScorecardToWcaLiveOrCubingContests(
+      result.id,
+    );
+    this.appGateway.handleAttemptUpdated();
+    return { message: 'Replacement updated successfully' };
+  }
+
   async swapAttempts(attemptId: string, secondAttemptId: string) {
     const firstAttempt = await this.prisma.attempt.findUnique({
       where: { id: attemptId },

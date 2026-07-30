@@ -18,7 +18,10 @@ import { isUnofficialEvent } from 'src/events';
 import { PersonService } from 'src/person/person.service';
 import { getMaxAttempts, isCumulativeLimit } from 'src/wcif-helpers';
 import { Event, Round, TimeLimit } from 'wcif-helpers';
-import { getNumberOfAttemptsForRound, getRoundInfoFromWcif } from 'wcif-helpers';
+import {
+  getNumberOfAttemptsForRound,
+  getRoundInfoFromWcif,
+} from 'wcif-helpers';
 
 import { AttendanceService } from '../attendance/attendance.service';
 import { WcaService } from '../wca/wca.service';
