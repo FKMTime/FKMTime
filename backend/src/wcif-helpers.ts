@@ -19,6 +19,33 @@ export const wcifRoleToAttendanceRole = (role: string) => {
   }
 };
 
+/**
+ * Some WCIF providers (e.g. the dummy WCA used in development) still serve
+ * WCIF v1 payloads, where a round cutoff carries `attemptResult` instead of
+ * `resultValue`. Normalize such cutoffs in place so the rest of the app can
+ * rely on the v2 shape.
+ */
+export const normalizeWcifCutoffs = (wcif: {
+  events?: {
+    rounds?: {
+      cutoff?: { attemptResult?: number; resultValue?: number } | null;
+    }[];
+  }[];
+}) => {
+  wcif?.events?.forEach((event) => {
+    event.rounds?.forEach((round) => {
+      const cutoff = round.cutoff;
+      if (
+        cutoff &&
+        cutoff.resultValue === undefined &&
+        cutoff.attemptResult !== undefined
+      ) {
+        cutoff.resultValue = cutoff.attemptResult;
+      }
+    });
+  });
+};
+
 export const isCumulativeLimit = (roundId: string, wcif: Competition) => {
   const eventId = roundId.split('-')[0];
   const event: Event = getEventInfoFromWcif(eventId, wcif);

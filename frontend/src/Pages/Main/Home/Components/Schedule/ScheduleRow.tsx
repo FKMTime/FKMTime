@@ -24,6 +24,7 @@ const ScheduleRow = ({ activity, events }: ScheduleRowProps) => {
         (r: Round) => r.id === activity.activityCode
     );
     const advancementText = getAdvancementText(activity.activityCode, event);
+    const cutoffResultValue = round?.cutoff?.resultValue;
     const formattedRealTime = getFormattedRealActivityTime(
         activity.realStartTime,
         activity.realEndTime
@@ -64,7 +65,7 @@ const ScheduleRow = ({ activity, events }: ScheduleRowProps) => {
                     : ""}
             </TableCell>
             <TableCell>
-                {round?.cutoff && resultToString(round?.cutoff?.resultValue)}
+                {cutoffResultValue ? resultToString(cutoffResultValue) : ""}
             </TableCell>
             <TableCell>{advancementText}</TableCell>
             <TableCell>

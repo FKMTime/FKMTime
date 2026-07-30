@@ -7,6 +7,7 @@ import {
 } from '@prisma/client';
 import { DNF_VALUE, DNS_VALUE } from 'src/constants';
 import { getSortedStandardAttempts } from 'src/result/helpers';
+import { normalizeWcifCutoffs } from 'src/wcif-helpers';
 import { Person } from 'wcif-helpers';
 
 import { DbService } from '../db/db.service';
@@ -178,6 +179,7 @@ export class WcaService {
       `Fetching ${isPublic ? 'public ' : 'private'}WCIF ${response.status}`,
     );
     const data = await response.json();
+    normalizeWcifCutoffs(data);
     return {
       ...data,
       statusCode: response.status,

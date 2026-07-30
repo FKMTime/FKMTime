@@ -28,7 +28,7 @@ const RoundLimits = ({
         <>
             <p className={`text-${size}`}>
                 Cutoff:{" "}
-                {cutoff
+                {cutoff?.resultValue
                     ? `${resultToString(cutoff.resultValue)} (${cutoff.numberOfAttempts} attempts)`
                     : "None"}
             </p>
