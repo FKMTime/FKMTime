@@ -444,6 +444,7 @@ export class CompetitionService {
         result,
         competition,
       );
+      if (results[0].attempts.length === 0) continue;
       if (results[0].attempts.length !== maxAttempts) {
         if (roundInfo.cutoff) {
           if (

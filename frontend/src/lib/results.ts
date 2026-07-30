@@ -160,6 +160,15 @@ export const doubleCheckResult = async (
     return response.status;
 };
 
+export const getPersonsWithNoResultsByRoundId = async (roundId: string) => {
+    const response = await backendRequest(
+        `result/round/${roundId}/missing-persons`,
+        "GET",
+        true
+    );
+    return await response.json();
+};
+
 export const undoDoubleCheck = async (roundId: string) => {
     const response = await backendRequest(
         `result/round/${roundId}/double-check`,

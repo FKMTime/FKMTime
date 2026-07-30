@@ -217,6 +217,7 @@ export interface Attempt {
     deviceId?: string;
     device?: Device;
     updatedBy?: User;
+    fastAttemptRatio?: number;
 }
 
 export interface AttemptToEnterWithScorecard extends Attempt {
