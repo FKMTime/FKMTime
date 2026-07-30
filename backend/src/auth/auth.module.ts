@@ -10,7 +10,7 @@ import { LoginModule } from './login/login.module';
 import { JwtStrategy } from './strategy/jwt.strategy';
 import { WcaController } from './wca/wca.controller';
 
-const { SECRET: secret = 'secret' } = process.env;
+const { SECRET } = process.env;
 
 @Global()
 @Module({
@@ -18,7 +18,7 @@ const { SECRET: secret = 'secret' } = process.env;
     forwardRef(() => LoginModule),
     PassportModule.register({ defaultStrategy: 'jwt' }),
     JwtModule.register({
-      secret,
+      secret: SECRET,
       signOptions: { expiresIn: 3600 * 24 * 30 },
     }),
     LoginModule,

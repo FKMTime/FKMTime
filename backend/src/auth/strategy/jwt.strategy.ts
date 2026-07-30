@@ -5,7 +5,7 @@ import { Strategy } from 'passport-jwt';
 import { AuthService } from '../auth.service';
 import { JwtAuthDto } from '../dto/jwt-auth.dto';
 
-const { SECRET = 'secret' } = process.env;
+const { SECRET } = process.env;
 
 const extractFromHeader = (req: any): string | null => {
   if (req.hasOwnProperty('handshake')) {

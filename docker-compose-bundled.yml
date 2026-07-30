@@ -9,6 +9,8 @@ services:
       - 1.1.1.1
     environment:
       - DATABASE_URL=postgres://root:password@database:5432/fkm_time
+      # REQUIRED: set a random secret of at least 32 characters before deploying
+      - SECRET=REPLACE_WITH_STRONG_RANDOM_SECRET_MIN_32_CHARS
       - SOCKET_PATH=/app/sock/socket.sock
       - WCA_CLIENT_ID=example-application-id
       - WCA_CLIENT_SECRET=example-secret

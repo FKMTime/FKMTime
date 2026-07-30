@@ -1,7 +1,11 @@
 import { plainToInstance } from 'class-transformer';
-import { IsString, validateSync } from 'class-validator';
+import { IsString, MinLength, validateSync } from 'class-validator';
 
 class EnvironmentVariables {
+  @IsString()
+  @MinLength(32, { message: 'SECRET must be at least 32 characters' })
+  SECRET: string;
+
   @IsString()
   DATABASE_URL: string;
 

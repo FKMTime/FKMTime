@@ -15,6 +15,7 @@ services:
       - 1.1.1.1
     environment:
       - DATABASE_URL=postgres://root:password@database:5432/fkm_time
+      - SECRET=dev-only-secret-not-for-production-change-me
       - WCA_LIVE_API_ORIGIN=http://dummy_wca_live:4000/api
       - CUBING_CONTESTS_API_ORIGIN=http://api_tester:5001/api
       - WCA_ORIGIN=http://dummy_wca:3000

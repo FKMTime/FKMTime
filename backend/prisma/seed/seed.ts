@@ -1,9 +1,9 @@
 import { PrismaClient, Role } from '@prisma/client';
-import { sha512 } from 'js-sha512';
+import * as bcrypt from 'bcrypt';
 const prisma = new PrismaClient();
 
 export async function seedDb() {
-  const adminPassword = sha512('admin');
+  const adminPassword = await bcrypt.hash('admin', 12);
   const adminUser = await prisma.user.upsert({
     where: { username: 'admin' },
     update: {},

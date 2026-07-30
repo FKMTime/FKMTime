@@ -1,6 +1,7 @@
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { Role } from '@prisma/client';
+import * as bcrypt from 'bcrypt';
 import { sha512 } from 'js-sha512';
 import { ADMIN_WCA_USER_IDS } from 'src/constants';
 
@@ -23,13 +24,31 @@ export class AuthService {
       where: { username: dto.username },
     });
 
-    await this.removeDuplicatedRoles(user.id);
-    if (!user || (user && !(sha512(dto.password) === user.password))) {
+    if (!user) {
       throw new HttpException('Wrong credentials!', 403);
     }
 
+    await this.removeDuplicatedRoles(user.id);
+
     if (user.wcaAccessToken) {
       throw new HttpException('Already logged in with WCA', 403);
+    }
+
+    // Verify password; migrate legacy sha512 hashes to bcrypt on first successful login.
+    const isBcrypt = user.password?.startsWith('$2');
+    const passwordValid = isBcrypt
+      ? await bcrypt.compare(dto.password, user.password)
+      : sha512(dto.password) === user.password;
+
+    if (!passwordValid) {
+      throw new HttpException('Wrong credentials!', 403);
+    }
+
+    if (!isBcrypt) {
+      await this.prisma.user.update({
+        where: { id: user.id },
+        data: { password: await bcrypt.hash(dto.password, 12) },
+      });
     }
 
     const jwt = await this.generateAuthJwt({
@@ -255,16 +274,17 @@ export class AuthService {
         id: userId,
       },
     });
-    if (sha512(oldPassword) !== user.password) {
+    const isBcrypt = user.password?.startsWith('$2');
+    const oldValid = isBcrypt
+      ? await bcrypt.compare(oldPassword, user.password)
+      : sha512(oldPassword) === user.password;
+
+    if (!oldValid) {
       throw new HttpException('Wrong password', HttpStatus.FORBIDDEN);
     }
     await this.prisma.user.update({
-      where: {
-        id: userId,
-      },
-      data: {
-        password: sha512(newPassword),
-      },
+      where: { id: userId },
+      data: { password: await bcrypt.hash(newPassword, 12) },
     });
     return 'Password changed';
   }
