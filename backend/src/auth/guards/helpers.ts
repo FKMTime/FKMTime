@@ -1,4 +1,4 @@
-import { ExecutionContext } from '@nestjs/common';
+import { ExecutionContext, UnauthorizedException } from '@nestjs/common';
 import { Role } from '@prisma/client';
 
 export const canActivateHelper = async (
@@ -7,13 +7,14 @@ export const canActivateHelper = async (
   validateJwt,
 ) => {
   const req = context.switchToHttp().getRequest();
-  let token = '';
+  let token: string | null = null;
   if (req.hasOwnProperty('handshake')) {
     token = req.handshake.auth.token;
   }
   if (req && req.headers && req.headers.authorization) {
     token = req.headers.authorization.split(' ')[1];
   }
+  if (!token) throw new UnauthorizedException();
   const user = await validateJwt(token);
   return !(
     !user ||
