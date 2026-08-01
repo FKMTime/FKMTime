@@ -183,6 +183,10 @@
     {
       "key": "attempt",
       "translation": "Ulozenie"
+    },
+    {
+      "key": "judgeIsCompetitor",
+      "translation": "Sedzia nie moze byc tym samym zawodnikiem"
     }
   ]
 }

@@ -37,6 +37,13 @@ export class AttemptService {
       data.roundId,
     );
 
+    if (data.judgeId && data.judgeId === data.competitorId) {
+      throw new HttpException(
+        'Judge cannot be the same person as competitor',
+        400,
+      );
+    }
+
     const duplicate = await this.prisma.attempt.findFirst({
       where: {
         resultId: result.id,
@@ -253,9 +260,17 @@ export class AttemptService {
   async updateAttempt(id: string, data: UpdateAttemptDto, userId: string) {
     const attemptToUpdate = await this.prisma.attempt.findUnique({
       where: { id: id },
+      include: { result: { select: { personId: true } } },
     });
     if (!attemptToUpdate) {
       throw new HttpException('Attempt not found', 404);
+    }
+
+    if (data.judgeId && data.judgeId === attemptToUpdate.result?.personId) {
+      throw new HttpException(
+        'Judge cannot be the same person as competitor',
+        400,
+      );
     }
 
     const duplicate = await this.prisma.attempt.findFirst({

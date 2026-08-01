@@ -174,6 +174,15 @@ export class ResultFromDeviceService {
         error: true,
       };
     }
+    if (judge && judge.id === competitor.id) {
+      return {
+        message: getTranslation('judgeIsCompetitor', locale),
+        shouldResetTime: false,
+        status: 400,
+        error: true,
+      };
+    }
+
     if (judge) {
       await this.attendanceService.markJudgeAsPresent(
         judge.id,
