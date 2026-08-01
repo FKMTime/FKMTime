@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 import background from "@/assets/background.jpg";
 import logo from "@/assets/logo.svg";
+import { Button } from "@/Components/ui/button";
 import { useToast } from "@/hooks/useToast";
 import { isUserLoggedIn, login, loginWithWca } from "@/lib/auth";
 import { getInfoForLoginPage } from "@/lib/competition";
@@ -123,6 +124,9 @@ const Login = () => {
                         isLoading={isLoading}
                         competition={competition}
                     />
+                    <Button variant="outline" className="w-full" asChild>
+                        <Link to="/public">Public display</Link>
+                    </Button>
                 </div>
                 <div className="flex sm:w-[50%] md:w-[60%] lg:w-[80%]">
                     <img

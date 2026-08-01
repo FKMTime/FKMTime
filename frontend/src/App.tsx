@@ -100,6 +100,11 @@ const CreateManualIncident = lazy(
             "./Pages/Main/Incidents/ManualIncidents/CreateManualIncident/CreateManualIncident"
         )
 );
+const PublicLayout = lazy(() => import("./Pages/Public/PublicLayout"));
+const PublicResults = lazy(() => import("./Pages/Public/PublicResults"));
+const PublicLiveSolving = lazy(
+    () => import("./Pages/Public/PublicLiveSolving")
+);
 
 const App = () => {
     const [isConnected, setConnected] = useState(0);
@@ -255,6 +260,29 @@ const App = () => {
                 {
                     path: "events",
                     element: <UnofficialEvents />,
+                },
+            ],
+        },
+        {
+            path: "/public",
+            element: <PublicLayout />,
+            errorElement: <ErrorPage />,
+            children: [
+                {
+                    path: "",
+                    element: <PublicLiveSolving />,
+                },
+                {
+                    path: "live",
+                    element: <PublicLiveSolving />,
+                },
+                {
+                    path: "results",
+                    element: <PublicResults />,
+                },
+                {
+                    path: "results/:id",
+                    element: <PublicResults />,
                 },
             ],
         },

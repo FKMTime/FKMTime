@@ -1,22 +1,18 @@
 import { useAtomValue } from "jotai";
-import { CheckCircle2, Radio, TriangleAlert } from "lucide-react";
+import { CheckCircle2 } from "lucide-react";
 import {
     useCallback,
     useContext,
     useEffect,
-    useRef,
     useState,
 } from "react";
 import { getPersonFromWcif } from "wcif-helpers";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/Components/ui/avatar";
 import { Badge } from "@/Components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/Components/ui/card";
+import { Card, CardContent, CardHeader } from "@/Components/ui/card";
 import { activityCodeToName } from "@/lib/activities";
 import { competitionAtom } from "@/lib/atoms";
-import { getAllDevices } from "@/lib/devices";
-import { Device, DeviceType } from "@/lib/interfaces";
-import { cn } from "@/lib/utils";
 import { centisecondsToClockFormat } from "@/lib/resultFormatters";
 import PageTransition from "@/Pages/PageTransition";
 import { socket, SocketContext } from "@/socket";
@@ -34,12 +30,6 @@ interface StationInfo {
     serverReceivedAt: number;
 }
 
-interface NewIncidentData {
-    id: string;
-    deviceName: string;
-    competitorName: string;
-}
-
 const STALE_THRESHOLD_MS = 30_000;
 
 const formatCs = (cs: number) => {
@@ -50,65 +40,14 @@ const formatCs = (cs: number) => {
     }
 };
 
-const playIncidentAlert = () => {
-    const ctx = new AudioContext();
-
-    const beep = (start: number, freq: number, dur: number) => {
-        const osc = ctx.createOscillator();
-        const gain = ctx.createGain();
-        osc.connect(gain);
-        gain.connect(ctx.destination);
-        osc.type = "square";
-        osc.frequency.value = freq;
-        gain.gain.setValueAtTime(0, start);
-        gain.gain.linearRampToValueAtTime(0.18, start + 0.01);
-        gain.gain.setValueAtTime(0.18, start + dur - 0.03);
-        gain.gain.linearRampToValueAtTime(0, start + dur);
-        osc.start(start);
-        osc.stop(start + dur);
-    };
-
-    const t = ctx.currentTime;
-    beep(t,        880, 0.12);
-    beep(t + 0.16, 660, 0.12);
-    beep(t + 0.32, 880, 0.12);
-    beep(t + 0.48, 660, 0.18);
-};
-
-const idleStation = (device: Device): StationInfo => ({
-    espId: device.espId,
-    deviceName: device.name,
-    personName: null,
-    registrantId: null,
-    groupId: null,
-    time: null,
-    inspection: null,
-    cumulativeLimitCentiseconds: null,
-    cumulativeRemainingCentiseconds: null,
-    serverReceivedAt: Date.now(),
-});
-
 const StationCard = ({
     station,
     competition,
-    hasIncident,
 }: {
     station: StationInfo;
     competition: ReturnType<typeof useAtomValue<typeof competitionAtom>>;
-    hasIncident: boolean;
 }) => {
     const [now, setNow] = useState(Date.now());
-    const [flashing, setFlashing] = useState(false);
-    const prevHasIncident = useRef(false);
-
-    useEffect(() => {
-        if (hasIncident && !prevHasIncident.current) {
-            setFlashing(true);
-            const t = setTimeout(() => setFlashing(false), 1800);
-            return () => clearTimeout(t);
-        }
-        prevHasIncident.current = hasIncident;
-    }, [hasIncident]);
 
     const hasTimerData = station.time != null || station.inspection != null;
     const isFinished =
@@ -153,32 +92,16 @@ const StationCard = ({
             : "idle";
 
     return (
-        <Card
-            className={cn(
-                hasIncident && "border-destructive border-2",
-                flashing && "incident-flash"
-            )}
-        >
+        <Card>
             <CardHeader className="pb-2 flex-row items-center justify-between space-y-0">
                 <span className="text-sm font-semibold text-muted-foreground">
                     {station.deviceName}
                 </span>
-                <div className="flex items-center gap-1.5">
-                    {roundName && (
-                        <Badge variant="outline" className="text-xs">
-                            {roundName}
-                        </Badge>
-                    )}
-                    {hasIncident && (
-                        <Badge
-                            variant="destructive"
-                            className="text-xs gap-1 animate-pulse"
-                        >
-                            <TriangleAlert size={10} />
-                            Incident
-                        </Badge>
-                    )}
-                </div>
+                {roundName && (
+                    <Badge variant="outline" className="text-xs">
+                        {roundName}
+                    </Badge>
+                )}
             </CardHeader>
             <CardContent className="flex flex-col gap-3">
                 <div className="flex items-center gap-3">
@@ -253,13 +176,10 @@ const StationCard = ({
     );
 };
 
-const LiveSolving = () => {
+const PublicLiveSolving = () => {
     const competition = useAtomValue(competitionAtom);
     const [stations, setStations] = useState<Map<number, StationInfo>>(
         new Map()
-    );
-    const [incidentDevices, setIncidentDevices] = useState<Set<string>>(
-        new Set()
     );
 
     const [isConnected] = useContext(SocketContext) as [
@@ -267,52 +187,14 @@ const LiveSolving = () => {
         React.Dispatch<React.SetStateAction<number>>,
     ];
 
-    useEffect(() => {
-        getAllDevices(DeviceType.STATION).then((devices: Device[]) => {
-            setStations((prev) => {
-                const next = new Map(prev);
-                for (const device of devices) {
-                    if (!next.has(device.espId)) {
-                        next.set(device.espId, idleStation(device));
-                    }
-                }
-                return next;
-            });
-        });
-    }, [isConnected]);
-
     const handleCurrentStations = useCallback((data: StationInfo[]) => {
-        setStations((prev) => {
-            const next = new Map(prev);
-            data.forEach((s) => next.set(s.espId, s));
-            return next;
-        });
+        setStations(new Map(data.map((s) => [s.espId, s])));
     }, []);
 
     const handleCurrentTimeInfo = useCallback((data: StationInfo) => {
-        setIncidentDevices((prev) => {
-            if (!prev.has(data.deviceName)) return prev;
-            const next = new Set(prev);
-            next.delete(data.deviceName);
-            return next;
-        });
         setStations((prev) => {
             const next = new Map(prev);
             next.set(data.espId, data);
-            return next;
-        });
-    }, []);
-
-    const handleNewIncident = useCallback((data: NewIncidentData) => {
-        playIncidentAlert();
-        setIncidentDevices((prev) => new Set([...prev, data.deviceName]));
-        setStations((prev) => {
-            const entry = [...prev.values()].find(
-                (s) => s.deviceName === data.deviceName
-            );
-            if (!entry) return prev;
-            const next = new Map(prev);
-            next.set(entry.espId, { ...entry, personName: data.competitorName });
             return next;
         });
     }, []);
@@ -321,15 +203,13 @@ const LiveSolving = () => {
         socket.emit("joinLiveSolving");
         socket.on("currentStations", handleCurrentStations);
         socket.on("currentTimeInfo", handleCurrentTimeInfo);
-        socket.on("newIncident", handleNewIncident);
 
         return () => {
             socket.emit("leaveLiveSolving");
             socket.off("currentStations", handleCurrentStations);
             socket.off("currentTimeInfo", handleCurrentTimeInfo);
-            socket.off("newIncident", handleNewIncident);
         };
-    }, [handleCurrentStations, handleCurrentTimeInfo, handleNewIncident, isConnected]);
+    }, [handleCurrentStations, handleCurrentTimeInfo, isConnected]);
 
     const stationList = Array.from(stations.values()).sort(
         (a, b) => a.espId - b.espId
@@ -337,38 +217,24 @@ const LiveSolving = () => {
 
     return (
         <PageTransition>
-            <div className="flex flex-col gap-4">
-                <Card>
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-2">
-                            <Radio size={20} />
-                            Live solving
-                        </CardTitle>
-                    </CardHeader>
-                </Card>
-
-                {stationList.length === 0 ? (
-                    <p className="text-muted-foreground text-sm text-center py-8">
-                        No active stations. Times will appear here once devices
-                        start sending data.
-                    </p>
-                ) : (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                        {stationList.map((station) => (
-                            <StationCard
-                                key={station.espId}
-                                station={station}
-                                competition={competition}
-                                hasIncident={incidentDevices.has(
-                                    station.deviceName
-                                )}
-                            />
-                        ))}
-                    </div>
-                )}
-            </div>
+            {stationList.length === 0 ? (
+                <p className="text-muted-foreground text-sm text-center py-8">
+                    No active stations. Times will appear here once devices
+                    start sending data.
+                </p>
+            ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                    {stationList.map((station) => (
+                        <StationCard
+                            key={station.espId}
+                            station={station}
+                            competition={competition}
+                        />
+                    ))}
+                </div>
+            )}
         </PageTransition>
     );
 };
 
-export default LiveSolving;
+export default PublicLiveSolving;

@@ -1,5 +1,4 @@
 import { Logger, UseGuards } from '@nestjs/common';
-import { AuthGuard } from '@nestjs/passport';
 import {
   ConnectedSocket,
   MessageBody,
@@ -33,7 +32,6 @@ export interface StationInfo {
     origin: '*',
   },
 })
-@UseGuards(AuthGuard('jwt'))
 export class AppGateway {
   @WebSocketServer() server: Server;
   deviceRequests: RequestToConnectDto[] = [];

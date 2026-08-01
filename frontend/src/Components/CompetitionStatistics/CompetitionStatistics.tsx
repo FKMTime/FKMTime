@@ -63,7 +63,7 @@ const CompetitionStatistics = ({
         },
         {
             title: "Extra attempts",
-            stat: statistics.extraAttemptsUsed.toString() || "0",
+            stat: statistics.extraAttemptsUsed?.toString() || "0",
             icon: <RefreshCw size={24} />,
         },
         {
@@ -73,7 +73,7 @@ const CompetitionStatistics = ({
         },
         {
             title: "Competitors",
-            stat: statistics.personsCompeted.toString() || "0",
+            stat: statistics.personsCompeted?.toString() || "0",
             icon: <User size={24} />,
         },
     ];

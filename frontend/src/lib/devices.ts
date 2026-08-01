@@ -51,13 +51,13 @@ export const uploadFirmware = async (fileName: string, fileData: string) => {
 
 export const sortDevicesByName = (devices: Device[]) => {
     return devices.sort((a: Device, b: Device) => {
-        const aName = a.name ?? '';
-        const bName = b.name ?? '';
+        const aName = a.name ?? "";
+        const bName = b.name ?? "";
         const na = Number(aName);
         const nb = Number(bName);
 
-        const aIsNum = !Number.isNaN(na) && aName !== '';
-        const bIsNum = !Number.isNaN(nb) && bName !== '';
+        const aIsNum = !Number.isNaN(na) && aName !== "";
+        const bIsNum = !Number.isNaN(nb) && bName !== "";
 
         if (aIsNum && bIsNum) {
             return na - nb;
