@@ -1,4 +1,10 @@
-import { ChartNoAxesColumn, Keyboard, Layers, User } from "lucide-react";
+import {
+    ChartNoAxesColumn,
+    Keyboard,
+    Layers,
+    RefreshCw,
+    User,
+} from "lucide-react";
 import { useEffect, useState } from "react";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/Components/ui/card";
@@ -51,9 +57,14 @@ const CompetitionStatistics = ({
             icon: <ChartNoAxesColumn size={24} />,
         },
         {
-            title: "Solves entered manually",
+            title: "Manually entered",
             stat: statistics.attemptsEnteredManually.toString() || "0",
             icon: <Keyboard size={24} />,
+        },
+        {
+            title: "Extra attempts",
+            stat: statistics.extraAttemptsUsed.toString() || "0",
+            icon: <RefreshCw size={24} />,
         },
         {
             title: "Scorecards",

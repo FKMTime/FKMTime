@@ -107,9 +107,28 @@ export interface Person {
     checkedInAt?: Date;
 }
 
+export interface JudgeRankingEntry {
+    personName: string;
+    count: number;
+    topCompetitorCount?: number;
+    topCompetitorName?: string;
+}
+
+export interface SuspiciousAverage {
+    competitorName: string;
+    roundName: string;
+    judgeName?: string;
+    stationName?: string;
+    attemptCount: number;
+}
+
 export interface CompetitionStatistics {
     allAttempts: number;
     attemptsEnteredManually: number;
+    extraAttemptsUsed: number;
+    judgeRanking: JudgeRankingEntry[];
+    scramblerRanking: JudgeRankingEntry[];
+    suspiciousAverages: SuspiciousAverage[];
     byEventStats: EventStatistics[];
     byRoundStats: RoundStatisticsByDay[];
     attemptsByDevice: DeviceStatistics[];

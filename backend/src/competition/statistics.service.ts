@@ -43,6 +43,71 @@ export class StatisticsService {
     });
     //This is there until we're still using scorecards ;D
     const scorecardsCount = await this.prisma.result.count();
+    const scramblerGroups = await this.prisma.attempt.groupBy({
+      by: ['scramblerId'],
+      where: { scramblerId: { not: null } },
+      _count: { _all: true },
+      orderBy: { _count: { scramblerId: 'desc' } },
+    });
+    const scramblerRanking = await Promise.all(
+      scramblerGroups.map(async (g) => {
+        const person = await this.prisma.person.findUnique({
+          where: { id: g.scramblerId },
+          select: { name: true },
+        });
+        return { personName: person?.name ?? 'Unknown', count: g._count._all };
+      }),
+    );
+    const judgeGroups = await this.prisma.attempt.groupBy({
+      by: ['judgeId'],
+      where: { judgeId: { not: null } },
+      _count: { _all: true },
+      orderBy: { _count: { judgeId: 'desc' } },
+    });
+    const judgeRanking = await Promise.all(
+      judgeGroups.map(async (g) => {
+        const person = await this.prisma.person.findUnique({
+          where: { id: g.judgeId },
+          select: { name: true },
+        });
+        const judgedAttempts = await this.prisma.attempt.findMany({
+          where: { judgeId: g.judgeId },
+          select: {
+            result: { select: { personId: true, person: { select: { name: true } } } },
+          },
+        });
+        const competitorCounts = new Map<string, { name: string; count: number }>();
+        for (const a of judgedAttempts) {
+          const personId = a.result.personId;
+          const entry = competitorCounts.get(personId) ?? {
+            name: a.result.person.name,
+            count: 0,
+          };
+          entry.count++;
+          competitorCounts.set(personId, entry);
+        }
+        let topCompetitorCount = 0;
+        let topCompetitorName: string | undefined;
+        for (const v of competitorCounts.values()) {
+          if (v.count > topCompetitorCount) {
+            topCompetitorCount = v.count;
+            topCompetitorName = v.name;
+          }
+        }
+        return {
+          personName: person?.name ?? 'Unknown',
+          count: g._count._all,
+          topCompetitorCount,
+          topCompetitorName,
+        };
+      }),
+    );
+    const extraAttemptsUsed = await this.prisma.attempt.count({
+      where: {
+        type: 'EXTRA_ATTEMPT',
+        status: AttemptStatus.STANDARD,
+      },
+    });
     const personsCompeted = await this.prisma.person.count({
       where: {
         results: {
@@ -190,6 +255,41 @@ export class StatisticsService {
         roundsStatistics: roundsForDay,
       });
     }
+    const allResults = await this.prisma.result.findMany({
+      select: {
+        roundId: true,
+        person: { select: { name: true } },
+        attempts: {
+          where: {
+            status: { not: AttemptStatus.SCRAMBLED },
+            penalty: { not: DNS_VALUE },
+            deviceId: { not: null },
+            judgeId: { not: null },
+          },
+          select: {
+            deviceId: true,
+            judgeId: true,
+            device: { select: { name: true } },
+            judge: { select: { name: true } },
+          },
+        },
+      },
+    });
+    const suspiciousAverages = allResults
+      .filter((r) => {
+        if (r.attempts.length < 2) return false;
+        const devices = new Set(r.attempts.map((a) => a.deviceId));
+        const judges = new Set(r.attempts.map((a) => a.judgeId));
+        return devices.size === 1 && judges.size === 1;
+      })
+      .map((r) => ({
+        competitorName: r.person.name,
+        roundName: `${getEventShortName(r.roundId.split('-r')[0])} - R${r.roundId.split('-r')[1]}`,
+        judgeName: r.attempts[0].judge?.name,
+        stationName: r.attempts[0].device?.name,
+        attemptCount: r.attempts.length,
+      }));
+
     return {
       allAttempts,
       byEventStats,
@@ -204,6 +304,10 @@ export class StatisticsService {
               ?._all || 0,
         })),
       attemptsEnteredManually,
+      extraAttemptsUsed,
+      judgeRanking,
+      scramblerRanking,
+      suspiciousAverages,
       scorecardsCount,
       personsCompeted,
     };
