@@ -1,4 +1,9 @@
-import { Attempt, AttemptData, Incident } from "./interfaces";
+import {
+    Attempt,
+    AttemptData,
+    AttemptEditLogEntry,
+    Incident,
+} from "./interfaces";
 import { backendRequest } from "./request";
 
 interface UpdateAttemptData extends Attempt {
@@ -79,6 +84,17 @@ export const setAttemptReplacement = async (
         { replacedByExtraNumber }
     );
     return response.status;
+};
+
+export const getAttemptEditLog = async (
+    id: string
+): Promise<AttemptEditLogEntry[]> => {
+    const response = await backendRequest(
+        `attempt/${id}/edit-log`,
+        "GET",
+        true
+    );
+    return await response.json();
 };
 
 export const deleteAttempt = async (id: string) => {

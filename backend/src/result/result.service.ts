@@ -7,6 +7,10 @@ import {
 } from '@prisma/client';
 import { AppGateway } from 'src/app.gateway';
 import {
+  AttemptEditLogService,
+  AttemptSnapshot,
+} from 'src/attempt-edit-log/attempt-edit-log.service';
+import {
   DNF_VALUE,
   DNS_VALUE,
   publicPersonSelect,
@@ -38,6 +42,7 @@ export class ResultService {
     private readonly wcaService: WcaService,
     private readonly contestsService: ContestsService,
     private readonly personService: PersonService,
+    private readonly attemptEditLogService: AttemptEditLogService,
   ) {}
 
   resultsInclude = {
@@ -334,22 +339,25 @@ export class ResultService {
         error: true,
       };
     }
+    const now = new Date();
     for (let i = lastAttempt.attemptNumber + 1; i <= maxAttempts; i++) {
-      await this.prisma.attempt.create({
+      const created = await this.prisma.attempt.create({
         data: {
           attemptNumber: i,
           status: AttemptStatus.STANDARD,
           type: AttemptType.STANDARD_ATTEMPT,
           penalty: DNS_VALUE,
-          solvedAt: new Date(),
+          solvedAt: now,
           value: 0,
-          result: {
-            connect: {
-              id: result.id,
-            },
-          },
+          result: { connect: { id: result.id } },
         },
       });
+      await this.attemptEditLogService.log(
+        created as AttemptSnapshot,
+        now,
+        null,
+        'DNS auto-assigned',
+      );
     }
     this.appGateway.handleResultEntered(result.roundId);
     return {
@@ -444,16 +452,18 @@ export class ResultService {
         },
       },
     });
+    const now = new Date();
     for (const attempt of data.attempts) {
-      await this.prisma.attempt.update({
-        where: {
-          id: attempt.id,
-        },
-        data: {
-          penalty: attempt.penalty,
-          value: attempt.value,
-        },
+      const updated = await this.prisma.attempt.update({
+        where: { id: attempt.id },
+        data: { penalty: attempt.penalty, value: attempt.value },
       });
+      await this.attemptEditLogService.log(
+        updated as AttemptSnapshot,
+        now,
+        userId,
+        'Double checked',
+      );
     }
     this.appGateway.handleResultEntered(result.roundId);
     await this.enterWholeScorecardToWcaLiveOrCubingContests(result.id);

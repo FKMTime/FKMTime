@@ -73,10 +73,15 @@ export class StatisticsService {
         const judgedAttempts = await this.prisma.attempt.findMany({
           where: { judgeId: g.judgeId },
           select: {
-            result: { select: { personId: true, person: { select: { name: true } } } },
+            result: {
+              select: { personId: true, person: { select: { name: true } } },
+            },
           },
         });
-        const competitorCounts = new Map<string, { name: string; count: number }>();
+        const competitorCounts = new Map<
+          string,
+          { name: string; count: number }
+        >();
         for (const a of judgedAttempts) {
           const personId = a.result.personId;
           const entry = competitorCounts.get(personId) ?? {

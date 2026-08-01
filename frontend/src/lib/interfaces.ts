@@ -531,3 +531,24 @@ export interface RemainingAndUsedCumulativeLimit {
     used: number;
     remaining: number;
 }
+
+export interface AttemptEditLogEntry {
+    id: string;
+    attemptId: string;
+    editedAt: string;
+    editedBy?: { id: string; fullName?: string; avatarUrl?: string };
+    comment?: string;
+    value: number;
+    penalty?: number;
+    status: AttemptStatus;
+    type: AttemptType;
+    attemptNumber: number;
+    replacedBy?: number;
+    judgeId?: string;
+    judge?: { id: string; name: string };
+    scramblerId?: string;
+    scrambler?: { id: string; name: string };
+    deviceId?: string;
+    device?: { id: string; name: string };
+    attemptComment?: string;
+}

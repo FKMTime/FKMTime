@@ -1,5 +1,6 @@
 import { forwardRef, Module } from '@nestjs/common';
 import { AppModule } from 'src/app.module';
+import { AttemptEditLogModule } from 'src/attempt-edit-log/attempt-edit-log.module';
 import { AttendanceModule } from 'src/attendance/attendance.module';
 import { ContestsModule } from 'src/contests/contests.module';
 import { IncidentModule } from 'src/incident/incident.module';
@@ -20,6 +21,7 @@ import { AttemptService } from './attempt.service';
     AttendanceModule,
     ContestsModule,
     IncidentModule,
+    AttemptEditLogModule,
     forwardRef(() => ResultModule),
     forwardRef(() => SocketModule),
     forwardRef(() => AppModule),

@@ -10,6 +10,10 @@ import {
   SendingResultsFrequency,
 } from '@prisma/client';
 import { AppGateway } from 'src/app.gateway';
+import {
+  AttemptEditLogService,
+  AttemptSnapshot,
+} from 'src/attempt-edit-log/attempt-edit-log.service';
 import { AttendanceService } from 'src/attendance/attendance.service';
 import { DNS_VALUE } from 'src/constants';
 import { ContestsService } from 'src/contests/contests.service';
@@ -47,6 +51,7 @@ export class ResultFromDeviceService {
     private readonly deviceService: DeviceService,
     private readonly personService: PersonService,
     private readonly resultService: ResultService,
+    private readonly attemptEditLogService: AttemptEditLogService,
   ) {}
 
   private logger = new Logger('ResultFromDeviceService');
@@ -407,18 +412,22 @@ export class ResultFromDeviceService {
         },
       },
     };
+    let attempt;
     if (scrambledAttempt) {
-      return await this.prisma.attempt.update({
-        where: {
-          id: scrambledAttempt.id,
-        },
+      attempt = await this.prisma.attempt.update({
+        where: { id: scrambledAttempt.id },
         data: newData,
       });
     } else {
-      return await this.prisma.attempt.create({
-        data: newData,
-      });
+      attempt = await this.prisma.attempt.create({ data: newData });
     }
+    await this.attemptEditLogService.log(
+      attempt as AttemptSnapshot,
+      attempt.solvedAt ?? new Date(),
+      null,
+      'Original entry',
+    );
+    return attempt;
   }
 
   async createAnExtraAttemptAnReplaceTheOriginalOne(
@@ -436,13 +445,15 @@ export class ResultFromDeviceService {
     );
 
     const attempt = await this.prisma.attempt.update({
-      where: {
-        id: originalId,
-      },
-      data: {
-        replacedBy: extraAttempt.attemptNumber,
-      },
+      where: { id: originalId },
+      data: { replacedBy: extraAttempt.attemptNumber },
     });
+    await this.attemptEditLogService.log(
+      attempt as AttemptSnapshot,
+      new Date(),
+      null,
+      `Replaced by extra ${extraAttempt.attemptNumber}`,
+    );
     return attempt.attemptNumber;
   }
 
@@ -497,22 +508,25 @@ export class ResultFromDeviceService {
     maxAttempts: number,
     resultId: string,
   ) {
+    const now = new Date();
     for (let i = attemptNumber + 1; i <= maxAttempts; i++) {
-      await this.prisma.attempt.create({
+      const created = await this.prisma.attempt.create({
         data: {
           attemptNumber: i,
           status: AttemptStatus.STANDARD,
           type: AttemptType.STANDARD_ATTEMPT,
           penalty: DNS_VALUE,
           value: 0,
-          solvedAt: new Date(),
-          result: {
-            connect: {
-              id: resultId,
-            },
-          },
+          solvedAt: now,
+          result: { connect: { id: resultId } },
         },
       });
+      await this.attemptEditLogService.log(
+        created as AttemptSnapshot,
+        now,
+        null,
+        'DNS auto-assigned',
+      );
     }
   }
 
