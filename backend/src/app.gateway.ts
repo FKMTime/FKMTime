@@ -13,6 +13,19 @@ import { DelegateGuard } from './auth/guards/delegate.guard';
 import { OrganizerGuard } from './auth/guards/organizer.guard';
 import { RequestToConnectDto } from './device/dto/requestToConnect.dto';
 
+export interface StationInfo {
+  espId: number;
+  deviceName: string;
+  personName: string | null;
+  registrantId: number | null;
+  groupId: string | null;
+  time: number | null;
+  inspection: number | null;
+  cumulativeLimitCentiseconds: number | null;
+  cumulativeRemainingCentiseconds: number | null;
+  serverReceivedAt: number;
+}
+
 @WebSocketGateway({
   namespace: '/',
   transports: ['websocket'],
@@ -24,6 +37,7 @@ import { RequestToConnectDto } from './device/dto/requestToConnect.dto';
 export class AppGateway {
   @WebSocketServer() server: Server;
   deviceRequests: RequestToConnectDto[] = [];
+  private stations: Map<number, StationInfo> = new Map();
   private logger = new Logger(`AppGateway`);
 
   /* ====================== */
@@ -208,5 +222,24 @@ export class AppGateway {
   handleAttemptUpdated() {
     this.handleStatisticsUpdated();
     this.server.to(`incidents`).emit('attemptUpdated');
+  }
+
+  /* ====================== */
+  /* ==== Live Solving ==== */
+  /* ====================== */
+  @SubscribeMessage('joinLiveSolving')
+  async handleJoinLiveSolving(@ConnectedSocket() socket: Socket) {
+    socket.join('live-solving');
+    socket.emit('currentStations', Array.from(this.stations.values()));
+  }
+
+  @SubscribeMessage('leaveLiveSolving')
+  async handleLeaveLiveSolving(@ConnectedSocket() socket: Socket) {
+    socket.leave('live-solving');
+  }
+
+  broadcastCurrentTimeInfo(info: StationInfo) {
+    this.stations.set(info.espId, info);
+    this.server.to('live-solving').emit('currentTimeInfo', info);
   }
 }

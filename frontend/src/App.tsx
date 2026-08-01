@@ -82,6 +82,9 @@ const PublicView = lazy(
 const SingleResult = lazy(
     () => import("./Pages/Main/Results/SingleResult/SingleResult")
 );
+const LiveSolving = lazy(
+    () => import("./Pages/Main/Results/LiveSolving/LiveSolving")
+);
 const IncidentPage = lazy(
     () => import("./Pages/Main/Incidents/IncidentPage/IncidentPage")
 );
@@ -196,6 +199,10 @@ const App = () => {
                 {
                     path: "results/round",
                     element: <Results />,
+                },
+                {
+                    path: "results/live",
+                    element: <LiveSolving />,
                 },
                 {
                     path: "results/checks",
