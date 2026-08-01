@@ -19,7 +19,7 @@ const { SECRET } = process.env;
     PassportModule.register({ defaultStrategy: 'jwt' }),
     JwtModule.register({
       secret: SECRET,
-      signOptions: { expiresIn: 3600 * 24 * 30 },
+      signOptions: { expiresIn: 3600 * 8 },
     }),
     LoginModule,
     WcaModule,

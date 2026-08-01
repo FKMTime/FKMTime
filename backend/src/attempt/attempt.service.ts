@@ -1,6 +1,10 @@
 import { forwardRef, HttpException, Inject, Injectable } from '@nestjs/common';
 import { AttemptStatus, StaffRole } from '@prisma/client';
 import { AppGateway } from 'src/app.gateway';
+import {
+  AttemptEditLogService,
+  AttemptSnapshot,
+} from 'src/attempt-edit-log/attempt-edit-log.service';
 import { AttendanceService } from 'src/attendance/attendance.service';
 import { publicPersonSelect } from 'src/constants';
 import { isUnofficialEvent } from 'src/events';
@@ -19,6 +23,7 @@ export class AttemptService {
     private readonly appGateway: AppGateway,
     private readonly prisma: DbService,
     private readonly attendanceService: AttendanceService,
+    private readonly attemptEditLogService: AttemptEditLogService,
     @Inject(forwardRef(() => ResultService))
     private readonly resultService: ResultService,
     @Inject(forwardRef(() => SocketController))
@@ -31,6 +36,13 @@ export class AttemptService {
       data.competitorId,
       data.roundId,
     );
+
+    if (data.judgeId && data.judgeId === data.competitorId) {
+      throw new HttpException(
+        'Judge cannot be the same person as competitor',
+        400,
+      );
+    }
 
     const duplicate = await this.prisma.attempt.findFirst({
       where: {
@@ -46,7 +58,7 @@ export class AttemptService {
       );
     }
 
-    await this.prisma.attempt.create({
+    const createdAttempt = await this.prisma.attempt.create({
       data: {
         attemptNumber: data.attemptNumber,
         value: data.value,
@@ -89,6 +101,12 @@ export class AttemptService {
         },
       },
     });
+    await this.attemptEditLogService.log(
+      createdAttempt as AttemptSnapshot,
+      createdAttempt.solvedAt ?? new Date(),
+      userId,
+      'Manually entered',
+    );
 
     const staffActivity = await this.prisma.staffActivity.findFirst({
       where: {
@@ -134,7 +152,11 @@ export class AttemptService {
     };
   }
 
-  async reorderAttempts(attemptIds: string[], resultId: string) {
+  async reorderAttempts(
+    attemptIds: string[],
+    resultId: string,
+    userId: string,
+  ) {
     // Two-pass update to avoid any transient number conflicts
     for (let i = 0; i < attemptIds.length; i++) {
       await this.prisma.attempt.update({
@@ -143,10 +165,16 @@ export class AttemptService {
       });
     }
     for (let i = 0; i < attemptIds.length; i++) {
-      await this.prisma.attempt.update({
+      const updated = await this.prisma.attempt.update({
         where: { id: attemptIds[i] },
         data: { attemptNumber: i + 1 },
       });
+      await this.attemptEditLogService.log(
+        updated as AttemptSnapshot,
+        new Date(),
+        userId,
+        'Reordered',
+      );
     }
     await this.resultService.enterWholeScorecardToWcaLiveOrCubingContests(
       resultId,
@@ -158,6 +186,7 @@ export class AttemptService {
   async setAttemptReplacement(
     id: string,
     replacedByExtraNumber: number | null,
+    userId: string,
   ) {
     const attempt = await this.prisma.attempt.findUnique({ where: { id } });
     if (!attempt) throw new HttpException('Attempt not found', 404);
@@ -167,10 +196,18 @@ export class AttemptService {
         ? AttemptStatus.EXTRA_GIVEN
         : AttemptStatus.STANDARD;
 
-    await this.prisma.attempt.update({
+    const updated = await this.prisma.attempt.update({
       where: { id },
       data: { status: newStatus, replacedBy: replacedByExtraNumber },
     });
+    await this.attemptEditLogService.log(
+      updated as AttemptSnapshot,
+      new Date(),
+      userId,
+      replacedByExtraNumber !== null
+        ? 'Replacement set'
+        : 'Replacement cleared',
+    );
 
     const result = await this.prisma.result.findUnique({
       where: { id: attempt.resultId },
@@ -182,7 +219,11 @@ export class AttemptService {
     return { message: 'Replacement updated successfully' };
   }
 
-  async swapAttempts(attemptId: string, secondAttemptId: string) {
+  async swapAttempts(
+    attemptId: string,
+    secondAttemptId: string,
+    userId: string,
+  ) {
     const firstAttempt = await this.prisma.attempt.findUnique({
       where: { id: attemptId },
     });
@@ -190,18 +231,27 @@ export class AttemptService {
       where: { id: secondAttemptId },
     });
 
-    await this.prisma.attempt.update({
+    const updatedFirst = await this.prisma.attempt.update({
       where: { id: attemptId },
-      data: {
-        attemptNumber: secondAttempt.attemptNumber,
-      },
+      data: { attemptNumber: secondAttempt.attemptNumber },
     });
-    await this.prisma.attempt.update({
+    const updatedSecond = await this.prisma.attempt.update({
       where: { id: secondAttemptId },
-      data: {
-        attemptNumber: firstAttempt.attemptNumber,
-      },
+      data: { attemptNumber: firstAttempt.attemptNumber },
     });
+    const now = new Date();
+    await this.attemptEditLogService.log(
+      updatedFirst as AttemptSnapshot,
+      now,
+      userId,
+      `Swapped with attempt ${firstAttempt.attemptNumber}`,
+    );
+    await this.attemptEditLogService.log(
+      updatedSecond as AttemptSnapshot,
+      now,
+      userId,
+      `Swapped with attempt ${secondAttempt.attemptNumber}`,
+    );
     return {
       message: 'Attempts swapped successfully',
     };
@@ -210,9 +260,17 @@ export class AttemptService {
   async updateAttempt(id: string, data: UpdateAttemptDto, userId: string) {
     const attemptToUpdate = await this.prisma.attempt.findUnique({
       where: { id: id },
+      include: { result: { select: { personId: true } } },
     });
     if (!attemptToUpdate) {
       throw new HttpException('Attempt not found', 404);
+    }
+
+    if (data.judgeId && data.judgeId === attemptToUpdate.result?.personId) {
+      throw new HttpException(
+        'Judge cannot be the same person as competitor',
+        400,
+      );
     }
 
     const duplicate = await this.prisma.attempt.findFirst({
@@ -260,6 +318,12 @@ export class AttemptService {
         },
       },
     });
+    await this.attemptEditLogService.log(
+      attempt as AttemptSnapshot,
+      new Date(),
+      userId,
+      'Updated',
+    );
     if (data.updateReplacedBy) {
       const attemptToReplace = await this.prisma.attempt.findFirst({
         where: {
@@ -384,6 +448,10 @@ export class AttemptService {
         },
       },
     });
+  }
+
+  async getAttemptEditLog(id: string) {
+    return this.attemptEditLogService.getLogForAttempt(id);
   }
 
   async getAttemptById(id: string) {

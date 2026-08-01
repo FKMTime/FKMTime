@@ -12,9 +12,13 @@ export const getAllDevices = async (type?: string, roomId?: string) => {
     return await response.json();
 };
 
-export const createDevice = async (data: DeviceData) => {
+export const createDevice = async (
+    data: DeviceData
+): Promise<{ status: number; device?: Device }> => {
     const response = await backendRequest("device", "POST", true, data);
-    return response.status;
+    if (!response.ok) return { status: response.status };
+    const device = await response.json();
+    return { status: response.status, device };
 };
 
 export const updateDevice = async (data: Device) => {
@@ -47,11 +51,13 @@ export const uploadFirmware = async (fileName: string, fileData: string) => {
 
 export const sortDevicesByName = (devices: Device[]) => {
     return devices.sort((a: Device, b: Device) => {
-        const na = Number(a.name);
-        const nb = Number(b.name);
+        const aName = a.name ?? '';
+        const bName = b.name ?? '';
+        const na = Number(aName);
+        const nb = Number(bName);
 
-        const aIsNum = !Number.isNaN(na);
-        const bIsNum = !Number.isNaN(nb);
+        const aIsNum = !Number.isNaN(na) && aName !== '';
+        const bIsNum = !Number.isNaN(nb) && bName !== '';
 
         if (aIsNum && bIsNum) {
             return na - nb;
@@ -60,6 +66,6 @@ export const sortDevicesByName = (devices: Device[]) => {
         if (aIsNum) return -1;
         if (bIsNum) return 1;
 
-        return a.name.localeCompare(b.name);
+        return aName.localeCompare(bName);
     });
 };

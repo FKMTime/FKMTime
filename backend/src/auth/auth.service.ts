@@ -28,11 +28,11 @@ export class AuthService {
       throw new HttpException('Wrong credentials!', 403);
     }
 
-    await this.removeDuplicatedRoles(user.id);
-
     if (user.wcaAccessToken) {
       throw new HttpException('Already logged in with WCA', 403);
     }
+
+    await this.removeDuplicatedRoles(user.id);
 
     // Verify password; migrate legacy sha512 hashes to bcrypt on first successful login.
     const isBcrypt = user.password?.startsWith('$2');
