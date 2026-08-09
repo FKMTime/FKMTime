@@ -1,7 +1,7 @@
 import { forwardRef, Inject, Injectable } from '@nestjs/common';
 import { DeviceType } from '@prisma/client';
-import { PersonForDeviceService } from 'src/person/personForDevice.service';
 import { PersonService } from 'src/person/person.service';
+import { PersonForDeviceService } from 'src/person/personForDevice.service';
 import { ResultFromDeviceService } from 'src/result/resultFromDevice.service';
 import { getRoundInfoFromWcif } from 'wcif-helpers';
 

@@ -100,6 +100,9 @@ const StationCard = ({
     const [now, setNow] = useState(Date.now());
     const [flashing, setFlashing] = useState(false);
     const prevHasIncident = useRef(false);
+    // Track previous packet's time to detect when the timer freezes (solve finished)
+    const prevTimeMsRef = useRef<number | null>(null);
+    const timerFrozenRef = useRef(false);
 
     useEffect(() => {
         if (hasIncident && !prevHasIncident.current) {
@@ -109,6 +112,17 @@ const StationCard = ({
         }
         prevHasIncident.current = hasIncident;
     }, [hasIncident]);
+
+    // Runs on every new packet (serverReceivedAt changes). Detects frozen timer
+    // by comparing current time value with the previous packet's time value.
+    useEffect(() => {
+        if (station.time != null && station.time > 0) {
+            timerFrozenRef.current = station.time === prevTimeMsRef.current;
+        } else {
+            timerFrozenRef.current = false;
+        }
+        prevTimeMsRef.current = station.time ?? null;
+    }, [station.serverReceivedAt]);
 
     const hasTimerData = station.time != null || station.inspection != null;
     const isFinished =
@@ -122,16 +136,33 @@ const StationCard = ({
         return () => clearInterval(interval);
     }, [isActive, station.serverReceivedAt]);
 
-    const elapsed = Math.floor((now - station.serverReceivedAt) / 10);
+    // ESP sends time/inspection in milliseconds; divide by 10 to get centiseconds
+    const timeCs = station.time != null ? Math.round(station.time / 10) : null;
+    const inspectionCs =
+        station.inspection != null
+            ? Math.round(station.inspection / 10)
+            : null;
 
+    // Derive stable reference points for smooth interpolation between packets
+    const solveStartMs =
+        station.time != null && station.time > 0
+            ? station.serverReceivedAt - station.time
+            : null;
+    const inspectionStartMs =
+        station.inspection != null
+            ? station.serverReceivedAt - station.inspection
+            : null;
+
+    // When the timer is frozen (solve done), show the exact final time.
+    // Otherwise interpolate from the derived start time for a smooth running display.
     const displayTime =
-        station.time != null && !isFinished
-            ? station.time + elapsed
-            : station.time;
+        timerFrozenRef.current || solveStartMs == null || isFinished
+            ? timeCs
+            : Math.max(0, Math.round((now - solveStartMs) / 10));
     const displayInspection =
-        station.inspection != null && !isFinished
-            ? station.inspection + elapsed
-            : station.inspection;
+        inspectionStartMs != null && !isFinished
+            ? Math.max(0, Math.round((now - inspectionStartMs) / 10))
+            : inspectionCs;
 
     const wcifPerson =
         competition && station.registrantId
@@ -142,14 +173,21 @@ const StationCard = ({
     const initials = station.personName?.[0]?.toUpperCase() ?? "?";
 
     const roundId = station.groupId?.split("-g")[0] ?? null;
-    const roundName = roundId ? activityCodeToName(roundId, true, true) : null;
+    let roundName: string | null = null;
+    if (roundId) {
+        try {
+            roundName = activityCodeToName(roundId, true, true);
+        } catch {
+            roundName = null;
+        }
+    }
 
     const phase = isFinished
         ? "finished"
-        : displayInspection != null
-          ? "inspection"
-          : displayTime != null
-            ? "solving"
+        : timeCs != null && timeCs > 0
+          ? "solving"
+          : displayInspection != null
+            ? "inspection"
             : "idle";
 
     return (
