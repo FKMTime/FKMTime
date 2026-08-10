@@ -93,3 +93,18 @@ body,
     @apply bg-background text-secondary-foreground;
   }
 }
+
+@keyframes incident-flash {
+  0%   { background-color: transparent; }
+  10%  { background-color: hsl(0 84.2% 60.2% / 0.35); }
+  25%  { background-color: transparent; }
+  40%  { background-color: hsl(0 84.2% 60.2% / 0.35); }
+  55%  { background-color: transparent; }
+  70%  { background-color: hsl(0 84.2% 60.2% / 0.25); }
+  85%  { background-color: transparent; }
+  100% { background-color: transparent; }
+}
+
+.incident-flash {
+  animation: incident-flash 1.8s ease-out forwards;
+}

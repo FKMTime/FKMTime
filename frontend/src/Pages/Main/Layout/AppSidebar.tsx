@@ -9,6 +9,7 @@ import {
     Medal,
     Microchip,
     Puzzle,
+    Radio,
     Settings,
     SquareCheckBig,
     TriangleAlert,
@@ -279,6 +280,20 @@ const AppSidebar = ({ unresolvedIncidentsCount }: AppSidebarProps) => {
                                             )}
                                         </SidebarMenuSub>
                                     ) : null}
+                                </SidebarMenuItem>
+                                <SidebarMenuItem>
+                                    <SidebarMenuButton
+                                        asChild
+                                        isActive={
+                                            location.pathname ===
+                                            "/results/live"
+                                        }
+                                    >
+                                        <Link to={"/results/live"}>
+                                            <Radio />
+                                            <span>Live solving</span>
+                                        </Link>
+                                    </SidebarMenuButton>
                                 </SidebarMenuItem>
                                 {isDelegate() ? (
                                     <>
