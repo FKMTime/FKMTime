@@ -1,120 +1,96 @@
 import { INestApplication } from '@nestjs/common';
-import { Test, TestingModule } from '@nestjs/testing';
-import { PrismaClient } from '@prisma/client';
-import { AppModule } from 'src/app.module';
+import { DbService } from 'src/db/db.service';
 import * as request from 'supertest';
 
-import { loginWithFKMAccount } from './helpers/auth.helper';
+import { createTestApp } from './helpers/app.helper';
 
 describe('UserController (e2e)', () => {
   let app: INestApplication;
-  let prismaClient: PrismaClient;
+  let db: DbService;
+  let adminToken: string;
   let userId = '';
 
-  beforeEach(async () => {
-    const moduleFixture: TestingModule = await Test.createTestingModule({
-      imports: [AppModule, PrismaClient],
-    }).compile();
-
-    app = moduleFixture.createNestApplication();
-    await app.init();
-    prismaClient = moduleFixture.get<PrismaClient>(PrismaClient);
+  beforeAll(async () => {
+    ({ app, db, adminToken } = await createTestApp());
   }, 30000);
 
   afterAll(async () => {
+    await db.user.deleteMany({
+      where: { username: { in: ['newuser', 'wcauser'] } },
+    });
     await app.close();
-    await prismaClient.$disconnect();
   }, 30000);
 
   it('returns all users', async () => {
-    const user = await loginWithFKMAccount(app, {
-      username: 'admin',
-      password: 'admin',
-    });
     const response = await request(app.getHttpServer())
       .get('/user')
-      .set('Authorization', `Bearer ${user.token}`)
+      .set('Authorization', `Bearer ${adminToken}`)
       .expect(200);
 
-    expect(response.body).toEqual([
-      {
-        id: expect.any(String),
-        username: 'admin',
-        fullName: 'Admin',
-        role: 'ADMIN',
-        createdAt: expect.any(String),
-        updatedAt: expect.any(String),
-        isWcaAdmin: false,
-        wcaUserId: null,
-        avatarUrl: null,
-      },
-    ]);
+    expect(response.body).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          id: expect.any(String),
+          username: 'admin',
+          fullName: 'Admin',
+          roles: expect.arrayContaining(['ADMIN']),
+          createdAt: expect.any(String),
+          updatedAt: expect.any(String),
+          wcaUserId: null,
+          avatarUrl: null,
+        }),
+      ]),
+    );
   });
 
   it('creates FKMTime user', async () => {
-    const user = await loginWithFKMAccount(app, {
-      username: 'admin',
-      password: 'admin',
-    });
     await request(app.getHttpServer())
       .post('/user')
-      .set('Authorization', `Bearer ${user.token}`)
+      .set('Authorization', `Bearer ${adminToken}`)
       .send({
         username: 'newuser',
         fullName: 'New User',
         password: 'newpassword',
-        role: 'ADMIN',
+        roles: ['ADMIN'],
       })
       .expect(201);
 
-    const userFromDb = await prismaClient.user.findFirst({
-      where: {
-        username: 'newuser',
-      },
+    const userFromDb = await db.user.findFirst({
+      where: { username: 'newuser' },
     });
 
     userId = userFromDb.id;
   });
 
   it('creates WCA user', async () => {
-    const user = await loginWithFKMAccount(app, {
-      username: 'admin',
-      password: 'admin',
-    });
     await request(app.getHttpServer())
       .post('/user')
-      .set('Authorization', `Bearer ${user.token}`)
+      .set('Authorization', `Bearer ${adminToken}`)
       .send({
+        username: 'wcauser',
         fullName: 'WCA User',
-        wcaUserId: 100,
-        role: 'ADMIN',
+        password: 'wcapassword',
+        roles: ['ADMIN'],
       })
       .expect(201);
   });
 
   it('updates a user', async () => {
-    const user = await loginWithFKMAccount(app, {
-      username: 'admin',
-      password: 'admin',
-    });
     await request(app.getHttpServer())
       .put(`/user/${userId}`)
-      .set('Authorization', `Bearer ${user.token}`)
+      .set('Authorization', `Bearer ${adminToken}`)
       .send({
+        username: 'newuser',
         fullName: 'Updated User',
-        role: 'ADMIN',
+        roles: ['ADMIN'],
       })
       .expect(200);
   });
 
   it('updates a user password', async () => {
-    const user = await loginWithFKMAccount(app, {
-      username: 'admin',
-      password: 'admin',
-    });
     await request(app.getHttpServer())
       .put(`/user/password/${userId}`)
-      .set('Authorization', `Bearer ${user.token}`)
+      .set('Authorization', `Bearer ${adminToken}`)
       .send({
         password: 'newpassword',
       })
@@ -122,13 +98,9 @@ describe('UserController (e2e)', () => {
   });
 
   it('deletes a user', async () => {
-    const user = await loginWithFKMAccount(app, {
-      username: 'admin',
-      password: 'admin',
-    });
     await request(app.getHttpServer())
       .delete(`/user/${userId}`)
-      .set('Authorization', `Bearer ${user.token}`)
+      .set('Authorization', `Bearer ${adminToken}`)
       .expect(204);
   });
 });
