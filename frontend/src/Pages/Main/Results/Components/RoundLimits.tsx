@@ -1,4 +1,4 @@
-import { Cutoff, TimeLimit } from "@wca/helpers";
+import { Cutoff, TimeLimit } from "wcif-helpers";
 
 import { RemainingAndUsedCumulativeLimit } from "@/lib/interfaces";
 import {
@@ -29,7 +29,7 @@ const RoundLimits = ({
             <p className={`text-${size}`}>
                 Cutoff:{" "}
                 {cutoff
-                    ? `${resultToString(cutoff.attemptResult)} (${cutoff.numberOfAttempts} attempts)`
+                    ? `${resultToString(cutoff.resultValue)} (${cutoff.numberOfAttempts} attempts)`
                     : "None"}
             </p>
             <p

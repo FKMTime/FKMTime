@@ -1,5 +1,6 @@
 import { forwardRef, Module } from '@nestjs/common';
 import { AppModule } from 'src/app.module';
+import { AttemptEditLogModule } from 'src/attempt-edit-log/attempt-edit-log.module';
 import { ContestsModule } from 'src/contests/contests.module';
 
 import { AttemptModule } from '../attempt/attempt.module';
@@ -23,6 +24,7 @@ import { ResultFromDeviceService } from './resultFromDevice.service';
     ContestsModule,
     DeviceModule,
     PersonModule,
+    AttemptEditLogModule,
     forwardRef(() => AppModule),
   ],
   exports: [ResultService, ResultFromDeviceService],

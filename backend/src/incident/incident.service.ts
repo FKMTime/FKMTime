@@ -54,9 +54,37 @@ export class IncidentService {
     }
   }
 
-  async getUnresolvedIncidents() {
+  async getUnresolvedIncidents(roundId?: string) {
     return this.prisma.attempt.findMany({
-      where: { status: AttemptStatus.UNRESOLVED },
+      where: {
+        status: AttemptStatus.UNRESOLVED,
+        ...(roundId ? { result: { roundId } } : {}),
+      },
+      include: {
+        judge: publicPersonSelect,
+        device: true,
+        result: {
+          include: {
+            person: publicPersonSelect,
+          },
+        },
+      },
+    });
+  }
+
+  async getIncidentsByRoundId(roundId: string) {
+    return this.prisma.attempt.findMany({
+      where: {
+        status: {
+          in: [
+            AttemptStatus.UNRESOLVED,
+            AttemptStatus.RESOLVED,
+            AttemptStatus.EXTRA_GIVEN,
+          ],
+        },
+        result: { roundId },
+      },
+      orderBy: { solvedAt: 'asc' },
       include: {
         judge: publicPersonSelect,
         device: true,

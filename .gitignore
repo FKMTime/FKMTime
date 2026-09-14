@@ -3,3 +3,4 @@
 .env
 dozzle/*
 !dozzle/users.example.yml
+graphify-out

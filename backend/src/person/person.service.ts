@@ -1,8 +1,8 @@
 import { HttpException, Injectable } from '@nestjs/common';
 import { StaffRole } from '@prisma/client';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
-import { Activity, Assignment, Competition } from '@wca/helpers';
 import { WcaService } from 'src/wca/wca.service';
+import { Activity, Assignment, Competition } from 'wcif-helpers';
 import { getActivityInfoFromSchedule, getPersonFromWcif } from 'wcif-helpers';
 
 import { DbService } from '../db/db.service';

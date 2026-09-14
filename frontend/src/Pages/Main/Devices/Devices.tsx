@@ -76,16 +76,17 @@ const Devices = () => {
         setIsLoading(false);
     };
 
-    const handleCloseCreateDeviceModal = async (espId?: string) => {
-        if (
-            espId &&
-            availableDevices.some(
-                (device) => device.espId === parseInt(espId, 16)
-            )
-        ) {
-            handleRemoveDeviceRequest(parseInt(espId, 16));
+    const handleCloseCreateDeviceModal = (device?: Device) => {
+        if (device?.id && device?.name) {
+            if (deviceToAdd) {
+                handleRemoveDeviceRequest(deviceToAdd.espId);
+            }
+            setDevices((prev) => sortDevicesByName([...prev, device]));
+        } else if (device) {
+            getAllDevices(undefined, selectedRoomId).then((data) =>
+                setDevices(sortDevicesByName(data))
+            );
         }
-        await fetchData(selectedRoomId);
         setIsOpenCreateDeviceModal(false);
         setDeviceToAdd(null);
     };
@@ -216,7 +217,7 @@ const Devices = () => {
                                 <CardTitle className="flex justify-between items-center">
                                     <div className="flex gap-2 items-center">
                                         <Microchip size={20} />
-                                        Devices
+                                        Devices ({devices.length})
                                     </div>
                                     <div className="w-64">
                                         <Select

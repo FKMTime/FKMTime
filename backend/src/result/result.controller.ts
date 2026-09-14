@@ -46,6 +46,12 @@ export class ResultController {
     return this.resultService.getResultsToDoubleCheckByRoundId(roundId);
   }
 
+  @UseGuards(DelegateGuard)
+  @Get('round/:roundId/missing-persons')
+  async getPersonsWithNoResultsByRoundId(@Param('roundId') roundId: string) {
+    return this.resultService.getPersonsWithNoResultsByRoundId(roundId);
+  }
+
   @HttpCode(HttpStatus.OK)
   @UseGuards(DelegateGuard)
   @Post('double-check')

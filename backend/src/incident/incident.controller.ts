@@ -27,8 +27,13 @@ export class IncidentController {
   constructor(private readonly incidentService: IncidentService) {}
 
   @Get('unresolved')
-  async getUnresolvedAttempts() {
-    return this.incidentService.getUnresolvedIncidents();
+  async getUnresolvedAttempts(@Query('roundId') roundId?: string) {
+    return this.incidentService.getUnresolvedIncidents(roundId);
+  }
+
+  @Get('round/:roundId')
+  async getIncidentsByRoundId(@Param('roundId') roundId: string) {
+    return this.incidentService.getIncidentsByRoundId(roundId);
   }
 
   @Get('unresolved/count')
