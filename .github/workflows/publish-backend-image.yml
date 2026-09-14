@@ -8,7 +8,9 @@ on:
       - 'backend/src/**'
       - 'backend/prisma/**'
       - 'backend/Dockerfile'
+      - 'backend/.dockerignore'
       - 'backend/package.json'
+      - 'backend/package-lock.json'
       - '.github/workflows/publish-backend-image.yml'
   workflow_dispatch:
       
