@@ -1,5 +1,5 @@
-import { Activity, Event, Round } from "@wca/helpers";
 import { useMemo, useState } from "react";
+import { Activity, Event, Round } from "wcif-helpers";
 
 import { Modal } from "@/Components/Modal";
 import ModalActions from "@/Components/ModalActions";

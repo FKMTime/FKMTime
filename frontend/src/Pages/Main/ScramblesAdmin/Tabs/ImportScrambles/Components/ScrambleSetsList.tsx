@@ -1,4 +1,4 @@
-import { Competition as WCIF } from "@wca/helpers";
+import { Competition as WCIF } from "wcif-helpers";
 
 import EventCard from "./EventCard";
 

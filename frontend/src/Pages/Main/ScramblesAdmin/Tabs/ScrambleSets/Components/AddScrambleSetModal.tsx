@@ -1,6 +1,6 @@
-import { Competition as WCIF } from "@wca/helpers";
 import { useAtomValue } from "jotai";
 import { useRef, useState } from "react";
+import { Competition as WCIF } from "wcif-helpers";
 
 import { Modal } from "@/Components/Modal";
 import ModalActions from "@/Components/ModalActions";

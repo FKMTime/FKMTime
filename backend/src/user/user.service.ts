@@ -1,7 +1,7 @@
 import { HttpException, Injectable } from '@nestjs/common';
 import { Role } from '@prisma/client';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
-import { sha512 } from 'js-sha512';
+import * as bcrypt from 'bcrypt';
 import { WcaService } from 'src/wca/wca.service';
 
 import { DbService } from '../db/db.service';
@@ -62,7 +62,7 @@ export class UserService {
         data: {
           username: data.username ? data.username : null,
           fullName: data.fullName,
-          password: sha512(data.password),
+          password: await bcrypt.hash(data.password, 12),
           roles: data.roles,
         },
       });
@@ -80,6 +80,16 @@ export class UserService {
 
   async updateUser(id: string, data: UpdateUserDto, userId: string) {
     const filteredRoles = await this.getFilteredRoles(userId, data.roles);
+    const user = await this.prisma.user.findUnique({
+      where: { id: id },
+    });
+
+    if (
+      (!data.username || data.username.length === 0) &&
+      user.wcaUserId === null
+    ) {
+      throw new HttpException({ message: ['Username must not be empty'] }, 400);
+    }
     if (filteredRoles.length !== data.roles.length) {
       throw new HttpException(
         'You cannot assign roles higher than your own',
@@ -110,9 +120,7 @@ export class UserService {
   async updatePassword(id: string, password: string) {
     return this.prisma.user.update({
       where: { id: id },
-      data: {
-        password: sha512(password),
-      },
+      data: { password: await bcrypt.hash(password, 12) },
     });
   }
 

@@ -25,6 +25,7 @@ model User {
   createdWarnings            Warning[]
   Result                     Result[]
   ManualIncident             ManualIncident[]
+  attemptEditLogs            AttemptEditLog[]
 
   @@map("users")
 }
@@ -46,6 +47,8 @@ model Person {
   scrambledAttempts Attempt[]        @relation(name: "attempt_scrambler")
   receivedWarnings  Warning[]
   manualIncidents   ManualIncident[]
+  judgedEditLogs    AttemptEditLog[] @relation(name: "edit_log_judge")
+  scrambledEditLogs AttemptEditLog[] @relation(name: "edit_log_scrambler")
 
   @@map("person")
 }
@@ -161,8 +164,34 @@ model Attempt {
   updatedById        String?              @map("updated_by_id")
   updatedBy          User?                @relation(fields: [updatedById], references: [id])
   noteworthyIncident NoteworthyIncident[]
+  editLogs           AttemptEditLog[]
 
   @@map("attempt")
+}
+
+model AttemptEditLog {
+  id             String        @id @default(uuid())
+  attemptId      String        @map("attempt_id")
+  attempt        Attempt       @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+  editedAt       DateTime      @map("edited_at")
+  editedById     String?       @map("edited_by_id")
+  editedBy       User?         @relation(fields: [editedById], references: [id], onDelete: SetNull)
+  comment        String?
+  value          Int
+  penalty        Int?
+  status         AttemptStatus
+  type           AttemptType
+  attemptNumber  Int           @map("attempt_number")
+  replacedBy     Int?          @map("replaced_by")
+  judgeId        String?       @map("judge_id")
+  judge          Person?       @relation(fields: [judgeId], references: [id], onDelete: SetNull, name: "edit_log_judge")
+  scramblerId    String?       @map("scrambler_id")
+  scrambler      Person?       @relation(fields: [scramblerId], references: [id], onDelete: SetNull, name: "edit_log_scrambler")
+  deviceId       String?       @map("device_id")
+  device         Device?       @relation(fields: [deviceId], references: [id], onDelete: SetNull)
+  attemptComment String?       @map("attempt_comment")
+
+  @@map("attempt_edit_log")
 }
 
 model NoteworthyIncident {
@@ -223,6 +252,7 @@ model Device {
   updatedAt         DateTime         @updatedAt @map("updated_at")
   Attempt           Attempt[]
   StaffActivity     StaffActivity[]
+  AttemptEditLog    AttemptEditLog[]
 
   @@map("device")
 }

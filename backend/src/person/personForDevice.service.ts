@@ -1,6 +1,6 @@
 import { forwardRef, Inject, Injectable } from '@nestjs/common';
 import { Competition, HardwareVersion } from '@prisma/client';
-import { Competition as WCIF, formatCentiseconds } from '@wca/helpers';
+import { formatCentiseconds } from '@wca/helpers';
 import {
   publicPersonSelect,
   SHOW_SECONDARY_TEXT_HW_VERSIONS,
@@ -12,6 +12,7 @@ import { ResultService } from 'src/result/result.service';
 import { convertToLatin, getTranslation } from 'src/translations/translations';
 import { WcaService } from 'src/wca/wca.service';
 import { getMaxAttempts } from 'src/wcif-helpers';
+import { Competition as WCIF } from 'wcif-helpers';
 import {
   getGroupInfoByActivityId,
   getPersonFromWcif,
@@ -78,6 +79,8 @@ export class PersonForDeviceService {
       );
       competitorGroups.push(activityFromSchedule.activityCode);
     }
+    const registeredEventIds: string[] =
+      competitorWcifInfo?.registration?.eventIds ?? [];
     const finishedRoundsIds = await this.getFinishedRoundIds(
       person.id,
       competition,
@@ -85,25 +88,32 @@ export class PersonForDeviceService {
     );
 
     if (possibleGroups.length === 1) {
-      if (
-        competitorGroups.some(
-          (g) => g.split('-g')[0] === possibleGroups[0].split('-g')[0],
-        )
-      ) {
-        if (
-          isCompetitor &&
-          !this.competitorHasAnyPossibleRounds(
-            possibleGroups,
-            competitorGroups,
-            finishedRoundsIds,
-          )
-        ) {
-          return {
-            message: getTranslation('noAttemptsLeft', person.countryIso2),
-            shouldResetTime: true,
-            status: 400,
-            error: true,
-          };
+      const currentRoundId = possibleGroups[0].split('-g')[0];
+      const currentEventId = currentRoundId.split('-r')[0];
+      const hasAssignmentForCurrentRound = competitorGroups.some(
+        (g) => g.split('-g')[0] === currentRoundId,
+      );
+      const isRegisteredForCurrentEvent =
+        registeredEventIds.includes(currentEventId);
+
+      if (hasAssignmentForCurrentRound || isRegisteredForCurrentEvent) {
+        if (isCompetitor) {
+          const hasNoAttemptsLeft = hasAssignmentForCurrentRound
+            ? !this.competitorHasAnyPossibleRounds(
+                possibleGroups,
+                competitorGroups,
+                finishedRoundsIds,
+              )
+            : finishedRoundsIds.includes(currentRoundId);
+
+          if (hasNoAttemptsLeft) {
+            return {
+              message: getTranslation('noAttemptsLeft', person.countryIso2),
+              shouldResetTime: true,
+              status: 400,
+              error: true,
+            };
+          }
         }
         return {
           ...person,
@@ -128,13 +138,17 @@ export class PersonForDeviceService {
     }
 
     const finalGroups = possibleGroups
-      .filter(
-        (g) =>
+      .filter((g) => {
+        const eventId = g.split('-')[0];
+        return (
           competitorGroups.some(
             (group) =>
               group.split('-g')[0] === possibleGroups[0].split('-g')[0],
-          ) || eventsData.find((e) => e.id === g.split('-')[0]).isUnofficial,
-      )
+          ) ||
+          eventsData.find((e) => e.id === eventId).isUnofficial ||
+          registeredEventIds.includes(eventId)
+        );
+      })
       .filter((g) => !finishedRoundsIds.includes(g.split('-g')[0]))
       .map(async (g) => {
         const eventId = g.split('-')[0];
@@ -195,7 +209,7 @@ export class PersonForDeviceService {
       if (roundInfo.cutoff) {
         const cutoffPassed = checkCutoff(
           result.attempts,
-          roundInfo.cutoff.attemptResult,
+          roundInfo.cutoff.resultValue,
           roundInfo.cutoff.numberOfAttempts,
         );
         if (!cutoffPassed) maxAttempts = roundInfo.cutoff.numberOfAttempts;
@@ -266,7 +280,7 @@ export class PersonForDeviceService {
       SHOW_SECONDARY_TEXT_HW_VERSIONS.includes(hwVersion) &&
       roundInfo?.cutoff
     ) {
-      cutoffText = `Cutoff: ${formatCentiseconds(roundInfo.cutoff.attemptResult)}`;
+      cutoffText = `Cutoff: ${formatCentiseconds(roundInfo.cutoff.resultValue)}`;
     }
 
     if (limitToReturn === null) {
@@ -274,7 +288,6 @@ export class PersonForDeviceService {
         ? roundInfo.timeLimit.centiseconds * 10
         : null;
     }
-    console.log(nextAttemptData);
     let secondaryText = '';
     if (cumulativeText) {
       secondaryText = cumulativeText;

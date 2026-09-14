@@ -1,13 +1,21 @@
-import { Attempt, AttemptData, Incident } from "./interfaces";
+import {
+    Attempt,
+    AttemptData,
+    AttemptEditLogEntry,
+    Incident,
+} from "./interfaces";
 import { backendRequest } from "./request";
 
 interface UpdateAttemptData extends Attempt {
     updateReplacedBy?: boolean;
 }
 
-export const createAttempt = async (data: AttemptData) => {
+export const createAttempt = async (
+    data: AttemptData
+): Promise<{ status: number; message?: string }> => {
     const response = await backendRequest("attempt", "POST", true, data);
-    return response.status;
+    const message = !response.ok ? (await response.json()).message : undefined;
+    return { status: response.status, message };
 };
 
 export const getIncidentById = async (
@@ -35,13 +43,58 @@ export const updateAttempt = async (
     data: UpdateAttemptData,
     isNoteworthy?: boolean,
     doNotRequireCards?: boolean
-) => {
+): Promise<{ status: number; message?: string }> => {
     const response = await backendRequest(`attempt/${data.id}`, "PUT", true, {
         ...data,
         noteworthy: isNoteworthy,
         doNotRequireCards: doNotRequireCards,
     });
+    const message = !response.ok ? (await response.json()).message : undefined;
+    return { status: response.status, message };
+};
+
+export const getRecentAttemptsByRoundId = async (roundId: string) => {
+    const response = await backendRequest(
+        `attempt/round/${roundId}/recent`,
+        "GET",
+        true
+    );
+    return await response.json();
+};
+
+export const reorderAttempts = async (
+    attemptIds: string[],
+    resultId: string
+): Promise<number> => {
+    const response = await backendRequest("attempt/reorder", "PUT", true, {
+        attemptIds,
+        resultId,
+    });
     return response.status;
+};
+
+export const setAttemptReplacement = async (
+    id: string,
+    replacedByExtraNumber: number | null
+): Promise<number> => {
+    const response = await backendRequest(
+        `attempt/${id}/replacement`,
+        "PUT",
+        true,
+        { replacedByExtraNumber }
+    );
+    return response.status;
+};
+
+export const getAttemptEditLog = async (
+    id: string
+): Promise<AttemptEditLogEntry[]> => {
+    const response = await backendRequest(
+        `attempt/${id}/edit-log`,
+        "GET",
+        true
+    );
+    return await response.json();
 };
 
 export const deleteAttempt = async (id: string) => {
