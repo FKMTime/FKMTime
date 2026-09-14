@@ -107,9 +107,28 @@ export interface Person {
     checkedInAt?: Date;
 }
 
+export interface JudgeRankingEntry {
+    personName: string;
+    count: number;
+    topCompetitorCount?: number;
+    topCompetitorName?: string;
+}
+
+export interface SuspiciousAverage {
+    competitorName: string;
+    roundName: string;
+    judgeName?: string;
+    stationName?: string;
+    attemptCount: number;
+}
+
 export interface CompetitionStatistics {
     allAttempts: number;
     attemptsEnteredManually: number;
+    extraAttemptsUsed: number;
+    judgeRanking: JudgeRankingEntry[];
+    scramblerRanking: JudgeRankingEntry[];
+    suspiciousAverages: SuspiciousAverage[];
     byEventStats: EventStatistics[];
     byRoundStats: RoundStatisticsByDay[];
     attemptsByDevice: DeviceStatistics[];
@@ -511,4 +530,25 @@ export interface MissedAssignments {
 export interface RemainingAndUsedCumulativeLimit {
     used: number;
     remaining: number;
+}
+
+export interface AttemptEditLogEntry {
+    id: string;
+    attemptId: string;
+    editedAt: string;
+    editedBy?: { id: string; fullName?: string; avatarUrl?: string };
+    comment?: string;
+    value: number;
+    penalty?: number;
+    status: AttemptStatus;
+    type: AttemptType;
+    attemptNumber: number;
+    replacedBy?: number;
+    judgeId?: string;
+    judge?: { id: string; name: string };
+    scramblerId?: string;
+    scrambler?: { id: string; name: string };
+    deviceId?: string;
+    device?: { id: string; name: string };
+    attemptComment?: string;
 }

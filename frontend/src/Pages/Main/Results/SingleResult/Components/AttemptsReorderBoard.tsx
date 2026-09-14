@@ -75,7 +75,9 @@ const SortableAttemptCard = ({
             ref={(node) => {
                 setNodeRef(node);
                 if (cardRef)
-                    (cardRef as React.MutableRefObject<HTMLDivElement | null>).current = node;
+                    (
+                        cardRef as React.MutableRefObject<HTMLDivElement | null>
+                    ).current = node;
             }}
             style={style}
             className={[
@@ -443,7 +445,10 @@ const AttemptsReorderBoard = ({
                     fromId: a.id,
                     toId: replacingExtra.id,
                     extraNumber: a.replacedBy!,
-                    fromType: a.type === AttemptType.EXTRA_ATTEMPT ? "extra" : "standard",
+                    fromType:
+                        a.type === AttemptType.EXTRA_ATTEMPT
+                            ? "extra"
+                            : "standard",
                 });
             }
         }

@@ -37,18 +37,26 @@ export class AttemptController {
   }
 
   @Put('swap')
-  async swapAttempts(@Body() data: SwapAttemptsDto) {
+  async swapAttempts(
+    @Body() data: SwapAttemptsDto,
+    @GetUser() user: JwtAuthDto,
+  ) {
     return await this.attemptService.swapAttempts(
       data.firstAttemptId,
       data.secondAttemptId,
+      user.userId,
     );
   }
 
   @Put('reorder')
-  async reorderAttempts(@Body() data: ReorderAttemptsDto) {
+  async reorderAttempts(
+    @Body() data: ReorderAttemptsDto,
+    @GetUser() user: JwtAuthDto,
+  ) {
     return await this.attemptService.reorderAttempts(
       data.attemptIds,
       data.resultId,
+      user.userId,
     );
   }
 
@@ -56,10 +64,12 @@ export class AttemptController {
   async setAttemptReplacement(
     @Param('id') id: string,
     @Body() data: SetReplacementDto,
+    @GetUser() user: JwtAuthDto,
   ) {
     return await this.attemptService.setAttemptReplacement(
       id,
       data.replacedByExtraNumber,
+      user.userId,
     );
   }
 
@@ -75,6 +85,11 @@ export class AttemptController {
   @Get('round/:roundId/recent')
   async getRecentAttemptsByRoundId(@Param('roundId') roundId: string) {
     return await this.attemptService.getRecentAttemptsByRoundId(roundId);
+  }
+
+  @Get(':id/edit-log')
+  async getAttemptEditLog(@Param('id') id: string) {
+    return await this.attemptService.getAttemptEditLog(id);
   }
 
   @Get(':id')
