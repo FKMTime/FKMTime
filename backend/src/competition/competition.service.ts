@@ -7,10 +7,10 @@ import {
 } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { AttemptStatus, SendingResultsFrequency } from '@prisma/client';
-import { Activity, Event, Room as WCIFRoom, Venue } from '@wca/helpers';
 import { AppGateway } from 'src/app.gateway';
 import { ResultService } from 'src/result/result.service';
 import { getAllTranslations, getLocales } from 'src/translations/translations';
+import { Activity, Event, Room as WCIFRoom, Venue } from 'wcif-helpers';
 import {
   getActivityInfoFromSchedule,
   getActivityInfoFromScheduleWithRoom,
@@ -149,6 +149,9 @@ export class CompetitionService {
             result: {
               roundId: activity.activityCode,
             },
+            NOT: {
+              sessionId: null,
+            },
           },
           orderBy: {
             solvedAt: 'asc',
@@ -165,6 +168,9 @@ export class CompetitionService {
           where: {
             result: {
               roundId: activity.activityCode,
+            },
+            NOT: {
+              sessionId: null,
             },
           },
           orderBy: {
@@ -219,6 +225,9 @@ export class CompetitionService {
     wcif.events.forEach((event: Event) => {
       event.rounds.forEach((round) => {
         const eventName = eventsData.find((e) => e.id === event.id).name;
+        const nextRound = event.rounds.find(
+          (r) => r.id === `${event.id}-r${+round.id.split('-r')[1] + 1}`,
+        );
         rounds.push({
           id: round.id,
           number: round.id.split('-r')[1],
@@ -227,7 +236,8 @@ export class CompetitionService {
           format: round.format,
           timeLimit: round.timeLimit,
           cutoff: round.cutoff,
-          advancementCondition: round.advancementCondition,
+          linkedRounds: round.linkedRounds,
+          nextRoundParticipationRuleset: nextRound?.participationRuleset,
         });
       });
     });
@@ -434,11 +444,12 @@ export class CompetitionService {
         result,
         competition,
       );
+      if (results[0].attempts.length === 0) continue;
       if (results[0].attempts.length !== maxAttempts) {
         if (roundInfo.cutoff) {
           if (
             results[0].attempts.some(
-              (a) => a.result < roundInfo.cutoff.attemptResult && a.result > 0,
+              (a) => a.result < roundInfo.cutoff.resultValue && a.result > 0,
             )
           ) {
             finished = false;
@@ -791,7 +802,7 @@ export class CompetitionService {
           const roundId = currentGroupId.split('-g')[0];
           const results =
             await this.resultService.getAllResultsByRound(roundId);
-          await this.wcaService.enterRoundToWcaLive(results);
+          await this.wcaService.enterRoundToWcaLive(roundId, results);
         }
       }
     }

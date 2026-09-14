@@ -11,9 +11,9 @@ interface StatCardProps {
 
 const StatCard = ({ title, stat, icon }: StatCardProps) => {
     return (
-        <Card className="w-full h-fit">
+        <Card className="w-full">
             <CardHeader>
-                <CardTitle className="flex gap-1 items-center">
+                <CardTitle className="flex gap-1 items-center md:text-lg text-sm font-medium">
                     {icon} {title}
                 </CardTitle>
             </CardHeader>

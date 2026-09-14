@@ -32,8 +32,24 @@ export const getUnresolvedIncidentsCount = async () => {
     return await response.json();
 };
 
-export const getUnresolvedIncidents = async (): Promise<Incident[]> => {
-    const response = await backendRequest("incident/unresolved", "GET", true);
+export const getUnresolvedIncidents = async (
+    roundId?: string
+): Promise<Incident[]> => {
+    const url = roundId
+        ? `incident/unresolved?roundId=${roundId}`
+        : "incident/unresolved";
+    const response = await backendRequest(url, "GET", true);
+    return await response.json();
+};
+
+export const getIncidentsByRoundId = async (
+    roundId: string
+): Promise<Incident[]> => {
+    const response = await backendRequest(
+        `incident/round/${roundId}`,
+        "GET",
+        true
+    );
     return await response.json();
 };
 

@@ -1,13 +1,19 @@
-import { TimeLimit } from "@wca/helpers";
 import { AlertCircle } from "lucide-react";
 import { useMemo } from "react";
+import { TimeLimit } from "wcif-helpers";
 import { getCutoffByRoundId } from "wcif-helpers";
 
+import EventIcon from "@/Components/Icons/EventIcon";
 import { Alert, AlertTitle } from "@/Components/ui/alert";
 import { Card, CardContent, CardHeader, CardTitle } from "@/Components/ui/card";
 import { activityCodeToName } from "@/lib/activities";
 import { isUnofficialEvent } from "@/lib/events";
-import { Attempt, Competition, Result } from "@/lib/interfaces";
+import {
+    Attempt,
+    Competition,
+    RemainingAndUsedCumulativeLimit,
+    Result,
+} from "@/lib/interfaces";
 import { isThereADifferenceBetweenResults } from "@/lib/utils";
 
 import RoundLimits from "../../Components/RoundLimits";
@@ -18,6 +24,7 @@ interface WarningsAndLimitsCardProps {
     submittedAttempts: Attempt[];
     limit: TimeLimit | null;
     maxAttempts: number;
+    remainingAndUsedCumulativeLimit?: RemainingAndUsedCumulativeLimit;
 }
 
 const WarningsAndLimitsCard = ({
@@ -26,6 +33,7 @@ const WarningsAndLimitsCard = ({
     submittedAttempts,
     limit,
     maxAttempts,
+    remainingAndUsedCumulativeLimit,
 }: WarningsAndLimitsCardProps) => {
     const isDifferenceBetweenResults = useMemo(() => {
         if (!result || !competition) return false;
@@ -44,9 +52,12 @@ const WarningsAndLimitsCard = ({
     }, [competition, result]);
 
     return (
-        <Card>
+        <Card className="w-full">
             <CardHeader>
-                <CardTitle>{activityCodeToName(result.roundId)}</CardTitle>
+                <CardTitle className="flex items-center gap-2">
+                    <EventIcon eventId={result.eventId} size={24} selected />
+                    {activityCodeToName(result.roundId)}
+                </CardTitle>
             </CardHeader>
             <CardContent className="flex flex-col gap-4">
                 {!isDifferenceBetweenResults &&
@@ -70,6 +81,10 @@ const WarningsAndLimitsCard = ({
                     limit={limit}
                     maxAttempts={maxAttempts}
                     size={"lg"}
+                    showRemainingAndUsedCumulativeLimit
+                    remainingAndUsedCumulativeLimit={
+                        remainingAndUsedCumulativeLimit
+                    }
                 />
             </CardContent>
         </Card>

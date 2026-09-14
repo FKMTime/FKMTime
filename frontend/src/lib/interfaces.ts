@@ -2,7 +2,7 @@ import {
     Activity as WCIFActivity,
     Competition as WCIF,
     Event as WCIFEvent,
-} from "@wca/helpers";
+} from "wcif-helpers";
 
 export interface UserInfo {
     username: string;
@@ -107,9 +107,28 @@ export interface Person {
     checkedInAt?: Date;
 }
 
+export interface JudgeRankingEntry {
+    personName: string;
+    count: number;
+    topCompetitorCount?: number;
+    topCompetitorName?: string;
+}
+
+export interface SuspiciousAverage {
+    competitorName: string;
+    roundName: string;
+    judgeName?: string;
+    stationName?: string;
+    attemptCount: number;
+}
+
 export interface CompetitionStatistics {
     allAttempts: number;
     attemptsEnteredManually: number;
+    extraAttemptsUsed: number;
+    judgeRanking: JudgeRankingEntry[];
+    scramblerRanking: JudgeRankingEntry[];
+    suspiciousAverages: SuspiciousAverage[];
     byEventStats: EventStatistics[];
     byRoundStats: RoundStatisticsByDay[];
     attemptsByDevice: DeviceStatistics[];
@@ -217,6 +236,7 @@ export interface Attempt {
     deviceId?: string;
     device?: Device;
     updatedBy?: User;
+    fastAttemptRatio?: number;
 }
 
 export interface AttemptToEnterWithScorecard extends Attempt {
@@ -296,6 +316,7 @@ export interface Device extends DeviceData {
     count?: number;
     createdAt: Date;
     updatedAt: Date;
+    hwVersion: HardwareVersion;
 }
 
 //eslint-disable-next-line
@@ -305,18 +326,26 @@ export enum DeviceType {
     ATTENDANCE_RUNNER = "ATTENDANCE_RUNNER",
 }
 
+//eslint-disable-next-line
+export enum HardwareVersion {
+    V3 = "V3",
+    V4 = "V4",
+}
+
 export interface DeviceData {
     name: string;
     espId: number;
     signKey?: number;
     type: DeviceType;
     roomId: string;
+    hwVersion: HardwareVersion;
 }
 
 export interface AvailableDevice {
     espId: number;
     signKey: number;
     type: AvailableDeviceType;
+    hw: string;
 }
 
 //eslint-disable-next-line
@@ -496,4 +525,30 @@ export interface MissedAssignments {
     presentButReplacedAssignmentsCount: number;
     comments: StaffActivity[];
     commentsCount: number;
+}
+
+export interface RemainingAndUsedCumulativeLimit {
+    used: number;
+    remaining: number;
+}
+
+export interface AttemptEditLogEntry {
+    id: string;
+    attemptId: string;
+    editedAt: string;
+    editedBy?: { id: string; fullName?: string; avatarUrl?: string };
+    comment?: string;
+    value: number;
+    penalty?: number;
+    status: AttemptStatus;
+    type: AttemptType;
+    attemptNumber: number;
+    replacedBy?: number;
+    judgeId?: string;
+    judge?: { id: string; name: string };
+    scramblerId?: string;
+    scrambler?: { id: string; name: string };
+    deviceId?: string;
+    device?: { id: string; name: string };
+    attemptComment?: string;
 }

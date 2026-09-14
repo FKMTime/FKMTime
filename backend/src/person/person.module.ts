@@ -1,4 +1,5 @@
-import { Module } from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
+import { ResultModule } from 'src/result/result.module';
 import { WcaModule } from 'src/wca/wca.module';
 
 import { AuthModule } from '../auth/auth.module';
@@ -10,6 +11,6 @@ import { PersonForDeviceService } from './personForDevice.service';
   providers: [PersonService, PersonForDeviceService],
   controllers: [PersonController],
   exports: [PersonService, PersonForDeviceService],
-  imports: [AuthModule, WcaModule],
+  imports: [AuthModule, WcaModule, forwardRef(() => ResultModule)],
 })
 export class PersonModule {}

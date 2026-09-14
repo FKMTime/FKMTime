@@ -1,4 +1,4 @@
-import { Event } from "@wca/helpers";
+import { Event } from "wcif-helpers";
 
 import {
     Table,

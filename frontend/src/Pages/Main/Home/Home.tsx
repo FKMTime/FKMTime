@@ -11,11 +11,13 @@ import {
     getCompetitionInfo,
 } from "@/lib/competition";
 import { Activity, Room } from "@/lib/interfaces";
-import { isOrganizerOrDelegate } from "@/lib/permissions";
+import { isDelegate, isOrganizerOrDelegate } from "@/lib/permissions";
 import { getAllRooms } from "@/lib/rooms";
 import PageTransition from "@/Pages/PageTransition";
 
-import InfoCard from "./Components/InfoCard";
+import HomeIncidentsCard from "./Components/HomeIncidentsCard";
+import NextGroupCard from "./Components/NextGroupCard";
+import OngoingRoundCard from "./Components/OngoingRoundCard";
 import MobileSchedule from "./Components/Schedule/MobileSchedule";
 import ScheduleInfoCard from "./Components/ScheduleInfoCard";
 
@@ -42,6 +44,11 @@ const Home = () => {
             setActivities(data);
         });
     };
+
+    const fetchRooms = useCallback(async () => {
+        const data = await getAllRooms();
+        setRooms(data);
+    }, []);
 
     const fetchData = useCallback(async () => {
         const response = await getCompetitionInfo();
@@ -71,29 +78,88 @@ const Home = () => {
     }, [fetchData]);
 
     useEffect(() => {
-        getAllRooms().then((data) => {
-            setRooms(data);
+        fetchRooms().then(() => {
             fetchActivitiesData(selectedVenue, selectedRoom, selectedDate);
         });
-    }, [selectedDate, selectedRoom, selectedVenue]);
+    }, [selectedDate, selectedRoom, selectedVenue, fetchRooms]);
 
     if (!competition || !rooms) {
         return <LoadingPage />;
     }
 
+    const ongoingRoundIds = [
+        ...new Set(
+            rooms.flatMap((room) =>
+                room.currentGroupIds.map((gid) => gid.split("-g")[0])
+            )
+        ),
+    ].filter(Boolean);
+
+    const showNextGroup = isOrganizerOrDelegate() && rooms.length > 0;
+    const showIncidents = isDelegate();
+    const hasOngoingRounds =
+        isOrganizerOrDelegate() && ongoingRoundIds.length > 0;
+    // Merge round cards into the top row when there are 1–2 rounds and at least one top card
+    const mergeTopRow =
+        hasOngoingRounds &&
+        ongoingRoundIds.length <= 2 &&
+        (showNextGroup || showIncidents);
+
+    const topCardCount =
+        (showNextGroup ? 1 : 0) +
+        (showIncidents ? 1 : 0) +
+        (mergeTopRow ? ongoingRoundIds.length : 0);
+
+    const topGridCols =
+        topCardCount === 4
+            ? "md:grid-cols-4"
+            : topCardCount === 3
+              ? "md:grid-cols-3"
+              : topCardCount === 2
+                ? "md:grid-cols-2"
+                : "";
+
     return (
         <PageTransition>
-            <div className="flex flex-col gap-5">
-                {isOrganizerOrDelegate() && (
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 auto-rows-auto">
-                        <InfoCard competition={competition} />
-                        {competition.useFkmTimeDevices ? (
-                            <div className="md:col-span-2 grid grid-cols-2 gap-4">
-                                <CompetitionStatistics />
-                            </div>
-                        ) : null}
+            <div className="flex flex-col gap-4">
+                {(showNextGroup || showIncidents || mergeTopRow) && (
+                    <div className={`grid grid-cols-1 gap-4 ${topGridCols}`}>
+                        {showNextGroup && (
+                            <NextGroupCard
+                                rooms={rooms}
+                                onGroupSwitched={fetchRooms}
+                            />
+                        )}
+                        {showIncidents && <HomeIncidentsCard />}
+                        {mergeTopRow &&
+                            ongoingRoundIds.map((roundId) => (
+                                <OngoingRoundCard
+                                    key={roundId}
+                                    roundId={roundId}
+                                    rooms={rooms}
+                                    onGroupSwitched={fetchRooms}
+                                />
+                            ))}
                     </div>
                 )}
+
+                {!mergeTopRow && hasOngoingRounds && (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {ongoingRoundIds.map((roundId) => (
+                            <OngoingRoundCard
+                                key={roundId}
+                                roundId={roundId}
+                                rooms={rooms}
+                                onGroupSwitched={fetchRooms}
+                            />
+                        ))}
+                    </div>
+                )}
+
+                {isOrganizerOrDelegate() && competition.useFkmTimeDevices && (
+                    <CompetitionStatistics combined />
+                )}
+
                 {activities && activities.length > 0 ? (
                     <>
                         <div className="hidden md:block">
@@ -114,6 +180,34 @@ const Home = () => {
                             <MobileSchedule
                                 activities={activities}
                                 competition={competition}
+                                possibleDates={possibleDates}
+                                selectedDate={selectedDate}
+                                selectedVenue={selectedVenue}
+                                selectedRoom={selectedRoom}
+                                onDateChange={(date) => {
+                                    setSelectedDate(date);
+                                    fetchActivitiesData(
+                                        selectedVenue,
+                                        selectedRoom,
+                                        date
+                                    );
+                                }}
+                                onVenueChange={(id) => {
+                                    setSelectedVenue(id);
+                                    fetchActivitiesData(
+                                        id,
+                                        selectedRoom,
+                                        selectedDate
+                                    );
+                                }}
+                                onRoomChange={(id) => {
+                                    setSelectedRoom(id);
+                                    fetchActivitiesData(
+                                        selectedVenue,
+                                        id,
+                                        selectedDate
+                                    );
+                                }}
                             />
                         </div>
                     </>

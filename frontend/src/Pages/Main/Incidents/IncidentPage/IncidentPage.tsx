@@ -94,7 +94,7 @@ const IncidentPage = () => {
             });
         }
         setIsLoading(true);
-        const status = await updateAttempt(
+        const { status, message } = await updateAttempt(
             data,
             isNoteworthy,
             doNotRequireCards
@@ -109,7 +109,8 @@ const IncidentPage = () => {
         } else {
             toast({
                 title: "Error",
-                description: "An error occurred while updating the incident",
+                description:
+                    message ?? "An error occurred while updating the incident",
                 variant: "destructive",
             });
         }

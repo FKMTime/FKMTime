@@ -17,7 +17,10 @@ export const createUser = async (body: NewUserData) => {
 
 export const updateUser = async (user: User) => {
     const response = await backendRequest(`user/${user.id}`, "PUT", true, user);
-    return response.status;
+    return {
+        status: response.status,
+        data: await response.json(),
+    };
 };
 
 export const deleteUser = async (id: string) => {

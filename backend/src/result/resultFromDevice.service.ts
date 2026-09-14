@@ -1,4 +1,4 @@
-import { forwardRef, HttpException, Inject, Logger } from '@nestjs/common';
+import { forwardRef, Inject, Logger } from '@nestjs/common';
 import {
   AttemptStatus,
   AttemptType,
@@ -10,6 +10,10 @@ import {
   SendingResultsFrequency,
 } from '@prisma/client';
 import { AppGateway } from 'src/app.gateway';
+import {
+  AttemptEditLogService,
+  AttemptSnapshot,
+} from 'src/attempt-edit-log/attempt-edit-log.service';
 import { AttendanceService } from 'src/attendance/attendance.service';
 import { DNS_VALUE } from 'src/constants';
 import { ContestsService } from 'src/contests/contests.service';
@@ -47,6 +51,7 @@ export class ResultFromDeviceService {
     private readonly deviceService: DeviceService,
     private readonly personService: PersonService,
     private readonly resultService: ResultService,
+    private readonly attemptEditLogService: AttemptEditLogService,
   ) {}
 
   private logger = new Logger('ResultFromDeviceService');
@@ -169,6 +174,15 @@ export class ResultFromDeviceService {
         error: true,
       };
     }
+    if (judge && judge.id === competitor.id) {
+      return {
+        message: getTranslation('judgeIsCompetitor', locale),
+        shouldResetTime: false,
+        status: 400,
+        error: true,
+      };
+    }
+
     if (judge) {
       await this.attendanceService.markJudgeAsPresent(
         judge.id,
@@ -217,7 +231,11 @@ export class ResultFromDeviceService {
       },
     });
 
-    const finalData = await this.getValidatedData(roundInfo, attempts, data);
+    const finalData = await this.getValidatedData(
+      competitor.id,
+      roundInfo,
+      data,
+    );
 
     if (!finalData.cutoffPassed) {
       return {
@@ -326,80 +344,6 @@ export class ResultFromDeviceService {
     };
   }
 
-  async getScrambleData(cardId: string, roundId: string) {
-    const competitor = await this.personService.getPersonByCardId(cardId);
-    if (!competitor) {
-      throw new HttpException('Competitor not found', 404);
-    }
-    const result = await this.resultService.getResultOrCreate(
-      competitor.id,
-      roundId,
-    );
-    const attempts = await this.prisma.attempt.findMany({
-      where: {
-        resultId: result.id,
-      },
-    });
-    const sortedAttempts = getSortedStandardAttempts(attempts);
-    const sortedExtraAttempts = getSortedExtraAttempts(attempts);
-    if (sortedAttempts.length === 0 && sortedExtraAttempts.length === 0) {
-      return {
-        scrambleData: {
-          num: 1,
-          isExtra: false,
-        },
-        person: competitor,
-      };
-    }
-    if (
-      attempts.some(
-        (attempt) =>
-          attempt.status === AttemptStatus.EXTRA_GIVEN &&
-          (attempt.replacedBy === 0 || attempt.replacedBy === null),
-      )
-    ) {
-      const extrasCount = sortedExtraAttempts.length;
-      return {
-        scrambleData: {
-          num: extrasCount + 1,
-          isExtra: true,
-        },
-        person: competitor,
-      };
-    }
-    const competition = await this.prisma.competition.findFirst();
-    if (!competition) {
-      throw new Error('Competition not found');
-    }
-    const wcif = JSON.parse(JSON.stringify(competition.wcif));
-    const currentRoundId = roundId.split('-g')[0];
-    const roundInfo = getRoundInfoFromWcif(currentRoundId, wcif);
-
-    let attemptNumber = 1;
-    const maxAttempts = getMaxAttempts(roundInfo.format);
-    const lastAttempt = sortedAttempts[sortedAttempts.length - 1];
-    if (lastAttempt && lastAttempt.attemptNumber === maxAttempts) {
-      //No attempts left
-      return {
-        scrambleData: {
-          num: -1,
-          isExtra: false,
-        },
-        person: competitor,
-      };
-    }
-    if (lastAttempt) {
-      attemptNumber = lastAttempt.attemptNumber + 1;
-    }
-    return {
-      scrambleData: {
-        num: attemptNumber,
-        isExtra: false,
-      },
-      person: competitor,
-    };
-  }
-
   async createScrambledAttempt(data: CreateScrambledAttemptDto) {
     const result = await this.resultService.getResultOrCreate(
       data.personId,
@@ -477,18 +421,22 @@ export class ResultFromDeviceService {
         },
       },
     };
+    let attempt;
     if (scrambledAttempt) {
-      return await this.prisma.attempt.update({
-        where: {
-          id: scrambledAttempt.id,
-        },
+      attempt = await this.prisma.attempt.update({
+        where: { id: scrambledAttempt.id },
         data: newData,
       });
     } else {
-      return await this.prisma.attempt.create({
-        data: newData,
-      });
+      attempt = await this.prisma.attempt.create({ data: newData });
     }
+    await this.attemptEditLogService.log(
+      attempt as AttemptSnapshot,
+      attempt.solvedAt ?? new Date(),
+      null,
+      'Original entry',
+    );
+    return attempt;
   }
 
   async createAnExtraAttemptAnReplaceTheOriginalOne(
@@ -506,13 +454,15 @@ export class ResultFromDeviceService {
     );
 
     const attempt = await this.prisma.attempt.update({
-      where: {
-        id: originalId,
-      },
-      data: {
-        replacedBy: extraAttempt.attemptNumber,
-      },
+      where: { id: originalId },
+      data: { replacedBy: extraAttempt.attemptNumber },
     });
+    await this.attemptEditLogService.log(
+      attempt as AttemptSnapshot,
+      new Date(),
+      null,
+      `Replaced by extra ${extraAttempt.attemptNumber}`,
+    );
     return attempt.attemptNumber;
   }
 
@@ -567,21 +517,25 @@ export class ResultFromDeviceService {
     maxAttempts: number,
     resultId: string,
   ) {
+    const now = new Date();
     for (let i = attemptNumber + 1; i <= maxAttempts; i++) {
-      await this.prisma.attempt.create({
+      const created = await this.prisma.attempt.create({
         data: {
-          attemptNumber: attemptNumber + i + 1,
+          attemptNumber: i,
           status: AttemptStatus.STANDARD,
           type: AttemptType.STANDARD_ATTEMPT,
           penalty: DNS_VALUE,
           value: 0,
-          result: {
-            connect: {
-              id: resultId,
-            },
-          },
+          solvedAt: now,
+          result: { connect: { id: resultId } },
         },
       });
+      await this.attemptEditLogService.log(
+        created as AttemptSnapshot,
+        now,
+        null,
+        'DNS auto-assigned',
+      );
     }
   }
 
@@ -600,43 +554,25 @@ export class ResultFromDeviceService {
   }
 
   private async getValidatedData(
+    personId: string,
     wcifRoundInfo: any,
-    attempts: any[],
     newAttemptData: any,
   ) {
-    const submittedAttempts = [];
+    const submittedAttempts = await this.resultService.getSubmittedAttempts(
+      wcifRoundInfo.id,
+      personId,
+    );
     const dataToReturn: any = newAttemptData;
     let limitPassed = true;
     let cutoffPassed = true;
-    attempts.forEach((attempt) => {
-      if (
-        attempt.replacedBy === null &&
-        attempt.type === AttemptType.STANDARD_ATTEMPT &&
-        !submittedAttempts.some((a) => a.id === attempt.id) &&
-        attempt.status === AttemptStatus.STANDARD
-      ) {
-        submittedAttempts.push(attempt);
-      } else if (
-        attempt.replacedBy !== null &&
-        attempt.status === AttemptStatus.EXTRA_GIVEN
-      ) {
-        const extraAttempt = this.wcaService.getExtra(attempt.id, attempts);
-        if (
-          extraAttempt &&
-          !submittedAttempts.some((a) => a.id === extraAttempt.id) &&
-          extraAttempt.status === AttemptStatus.STANDARD
-        ) {
-          submittedAttempts.push(extraAttempt);
-        }
-      }
-    });
 
     if (wcifRoundInfo.timeLimit.cumulativeRoundIds.length > 0) {
       if (
-        !(await this.checkCumulativeLimit(wcifRoundInfo.timeLimit, [
-          ...submittedAttempts,
-          newAttemptData,
-        ]))
+        !(await this.resultService.checkCumulativeLimit(
+          personId,
+          wcifRoundInfo.timeLimit,
+          [...submittedAttempts, newAttemptData],
+        ))
       ) {
         limitPassed = false;
         dataToReturn.penalty = -1;
@@ -658,7 +594,7 @@ export class ResultFromDeviceService {
       if (
         !checkCutoff(
           submittedAttempts,
-          wcifRoundInfo.cutoff.attemptResult,
+          wcifRoundInfo.cutoff.resultValue,
           wcifRoundInfo.cutoff.numberOfAttempts,
         )
       ) {
@@ -673,50 +609,5 @@ export class ResultFromDeviceService {
       cutoffPassed: cutoffPassed,
       attemptNumber: submittedAttempts.length + 1,
     };
-  }
-
-  private async checkCumulativeLimit(limit: any, submittedAttempts: any[]) {
-    if (limit.cumulativeRoundIds.length === 0) return true;
-    if (limit.cumulativeRoundIds.length === 1) {
-      let sum = 0;
-      submittedAttempts.forEach((attempt) => {
-        if (attempt.penalty !== -1) {
-          sum += attempt.value + attempt.penalty * 100;
-        } else {
-          sum += attempt.value;
-        }
-      });
-      return sum < limit.centiseconds;
-    }
-    if (limit.cumulativeRoundIds.length > 1) {
-      return await this.checkCumulativeLimitForMultipleRounds(
-        limit.cumulativeRoundIds,
-        limit.centiseconds,
-      );
-    }
-  }
-
-  private async checkCumulativeLimitForMultipleRounds(
-    roundsIds: string[],
-    limit: number,
-  ) {
-    const attempts = await this.prisma.attempt.findMany({
-      where: {
-        result: {
-          roundId: {
-            in: roundsIds,
-          },
-        },
-      },
-    });
-    let sum = 0;
-    attempts.forEach((attempt) => {
-      if (attempt.penalty !== -1) {
-        sum += attempt.value + attempt.penalty * 100;
-      } else {
-        sum += attempt.value;
-      }
-    });
-    return sum < limit;
   }
 }

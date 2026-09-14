@@ -1,13 +1,18 @@
-import { Injectable } from '@nestjs/common';
-import { Competition } from '@prisma/client';
-import { Competition as WCIF } from '@wca/helpers';
-import { publicPersonSelect } from 'src/constants';
+import { forwardRef, Inject, Injectable } from '@nestjs/common';
+import { Competition, HardwareVersion } from '@prisma/client';
+import { formatCentiseconds } from '@wca/helpers';
+import {
+  publicPersonSelect,
+  SHOW_SECONDARY_TEXT_HW_VERSIONS,
+} from 'src/constants';
 import { DbService } from 'src/db/db.service';
 import { eventsData } from 'src/events';
 import { checkCutoff } from 'src/result/helpers';
+import { ResultService } from 'src/result/result.service';
 import { convertToLatin, getTranslation } from 'src/translations/translations';
 import { WcaService } from 'src/wca/wca.service';
 import { getMaxAttempts } from 'src/wcif-helpers';
+import { Competition as WCIF } from 'wcif-helpers';
 import {
   getGroupInfoByActivityId,
   getPersonFromWcif,
@@ -22,6 +27,8 @@ export class PersonForDeviceService {
     private readonly prisma: DbService,
     private readonly personService: PersonService,
     private readonly wcaService: WcaService,
+    @Inject(forwardRef(() => ResultService))
+    private readonly resultService: ResultService,
   ) {}
 
   async getPersonInfo(
@@ -29,10 +36,22 @@ export class PersonForDeviceService {
     espId: number,
     isCompetitor: boolean = false,
   ) {
+    const competition = await this.prisma.competition.findFirst();
+    if (!competition) {
+      return {
+        message: getTranslation('competitionNotFound', 'en'),
+        shouldResetTime: true,
+        status: 404,
+        error: true,
+      };
+    }
     const person = await this.personService.getPersonByCardId(cardId);
     if (!person) {
       return {
-        message: getTranslation('competitorNotFound', 'en'),
+        message: getTranslation(
+          'competitorNotFound',
+          competition.defaultLocale,
+        ),
         shouldResetTime: false,
         status: 404,
         error: true,
@@ -47,15 +66,6 @@ export class PersonForDeviceService {
       },
     });
     const possibleGroups = device?.room.currentGroupIds || [];
-    const competition = await this.prisma.competition.findFirst();
-    if (!competition) {
-      return {
-        message: getTranslation('competitionNotFound', 'en'),
-        shouldResetTime: true,
-        status: 404,
-        error: true,
-      };
-    }
     const wcif = JSON.parse(JSON.stringify(competition.wcif));
     const competitorWcifInfo = getPersonFromWcif(person.registrantId, wcif);
     const competingAssignments = competitorWcifInfo.assignments.filter(
@@ -69,6 +79,8 @@ export class PersonForDeviceService {
       );
       competitorGroups.push(activityFromSchedule.activityCode);
     }
+    const registeredEventIds: string[] =
+      competitorWcifInfo?.registration?.eventIds ?? [];
     const finishedRoundsIds = await this.getFinishedRoundIds(
       person.id,
       competition,
@@ -76,60 +88,87 @@ export class PersonForDeviceService {
     );
 
     if (possibleGroups.length === 1) {
-      if (
-        competitorGroups.some(
-          (g) => g.split('-g')[0] === possibleGroups[0].split('-g')[0],
-        )
-      ) {
-        if (
-          isCompetitor &&
-          !this.competitorHasAnyPossibleRounds(
-            possibleGroups,
-            competitorGroups,
-            finishedRoundsIds,
-          )
-        ) {
-          return {
-            message: getTranslation('noAttemptsLeft', person.countryIso2),
-            shouldResetTime: true,
-            status: 400,
-            error: true,
-          };
+      const currentRoundId = possibleGroups[0].split('-g')[0];
+      const currentEventId = currentRoundId.split('-r')[0];
+      const hasAssignmentForCurrentRound = competitorGroups.some(
+        (g) => g.split('-g')[0] === currentRoundId,
+      );
+      const isRegisteredForCurrentEvent =
+        registeredEventIds.includes(currentEventId);
+
+      if (hasAssignmentForCurrentRound || isRegisteredForCurrentEvent) {
+        if (isCompetitor) {
+          const hasNoAttemptsLeft = hasAssignmentForCurrentRound
+            ? !this.competitorHasAnyPossibleRounds(
+                possibleGroups,
+                competitorGroups,
+                finishedRoundsIds,
+              )
+            : finishedRoundsIds.includes(currentRoundId);
+
+          if (hasNoAttemptsLeft) {
+            return {
+              message: getTranslation('noAttemptsLeft', person.countryIso2),
+              shouldResetTime: true,
+              status: 400,
+              error: true,
+            };
+          }
         }
         return {
           ...person,
           name: convertToLatin(person.name),
-          possibleGroups: possibleGroups.map((g) => ({
-            groupId: g,
-            useInspection: eventsData.find((e) => e.id === g.split('-')[0])
-              .useInspection,
-            secondaryText: this.computeSecondaryText(g),
-          })),
+          possibleGroups: await Promise.all(
+            possibleGroups.map(async (g) => ({
+              groupId: g,
+              useInspection: eventsData.find((e) => e.id === g.split('-')[0])
+                .useInspection,
+              ...(await this.computeSecondaryText(
+                g,
+                wcif,
+                person.id,
+                competition.defaultLocale,
+                device.hwVersion,
+                cardId,
+              )),
+            })),
+          ),
         };
       }
     }
 
     const finalGroups = possibleGroups
-      .filter(
-        (g) =>
+      .filter((g) => {
+        const eventId = g.split('-')[0];
+        return (
           competitorGroups.some(
             (group) =>
               group.split('-g')[0] === possibleGroups[0].split('-g')[0],
-          ) || eventsData.find((e) => e.id === g.split('-')[0]).isUnofficial,
-      )
+          ) ||
+          eventsData.find((e) => e.id === eventId).isUnofficial ||
+          registeredEventIds.includes(eventId)
+        );
+      })
       .filter((g) => !finishedRoundsIds.includes(g.split('-g')[0]))
-      .map((g) => {
+      .map(async (g) => {
         const eventId = g.split('-')[0];
         return {
           groupId: g,
           useInspection: eventsData.find((e) => e.id === eventId).useInspection,
-          secondaryText: this.computeSecondaryText(g),
+          ...(await this.computeSecondaryText(
+            g,
+            wcif,
+            person.id,
+            competition.defaultLocale,
+            device.hwVersion,
+            cardId,
+          )),
         };
       });
     return {
       ...person,
       name: convertToLatin(person.name),
-      possibleGroups: finalGroups,
+      possibleGroups: await Promise.all(finalGroups),
     };
   }
 
@@ -170,7 +209,7 @@ export class PersonForDeviceService {
       if (roundInfo.cutoff) {
         const cutoffPassed = checkCutoff(
           result.attempts,
-          roundInfo.cutoff.attemptResult,
+          roundInfo.cutoff.resultValue,
           roundInfo.cutoff.numberOfAttempts,
         );
         if (!cutoffPassed) maxAttempts = roundInfo.cutoff.numberOfAttempts;
@@ -186,12 +225,96 @@ export class PersonForDeviceService {
     return finishedRoundsIds;
   }
 
-  computeSecondaryText(groupId?: string) {
-    if (!groupId) return '';
+  async computeSecondaryText(
+    groupId: string | undefined,
+    wcif: WCIF,
+    personId: string,
+    locale: string,
+    hwVersion?: HardwareVersion,
+    cardId?: string,
+  ) {
+    if (!groupId) return { name: '', secondaryText: '' };
     const roundId = groupId.split('-g')[0];
     const eventId = roundId.split('-r')[0];
     const roundNumber = roundId.split('-r')[1];
     const eventData = eventsData.find((e) => e.id === eventId);
-    return `${eventData.shortName ? eventData.shortName : eventData.name} - R${roundNumber}`;
+    const eventName = eventData.shortName ?? eventData.name;
+    const eventText = `${eventName} - R${roundNumber}`;
+    const shortEventText = `${eventName} R${roundNumber}`;
+    let limitToReturn: number | null = null;
+
+    const roundInfo = getRoundInfoFromWcif(roundId, wcif);
+    let cumulativeText = '';
+    let cutoffText = '';
+    const nextAttemptData = await this.resultService.getNextAttemptData(
+      cardId,
+      roundId,
+    );
+    const attemptText = `${getTranslation('attempt', locale)} ${nextAttemptData.scrambleData.isExtra ? 'E' : ''}${nextAttemptData.scrambleData.num}`;
+
+    if (
+      SHOW_SECONDARY_TEXT_HW_VERSIONS.includes(hwVersion) &&
+      roundInfo?.timeLimit &&
+      roundInfo.timeLimit.cumulativeRoundIds.length > 0
+    ) {
+      const roundsIds =
+        roundInfo.timeLimit.cumulativeRoundIds.length > 1
+          ? roundInfo.timeLimit.cumulativeRoundIds
+          : [roundId];
+      let used = 0;
+      for (const rId of roundsIds) {
+        const submittedAttempts = await this.resultService.getSubmittedAttempts(
+          rId,
+          personId,
+        );
+        submittedAttempts.forEach((a) => {
+          used += a.penalty !== -1 ? a.value + a.penalty * 100 : a.value;
+        });
+      }
+      const limit = roundInfo.timeLimit.centiseconds;
+      const remaining = Math.max(0, limit - used);
+      cumulativeText = `Remaining: ${formatCentiseconds(remaining)}`;
+      limitToReturn = remaining * 10;
+    }
+    if (
+      SHOW_SECONDARY_TEXT_HW_VERSIONS.includes(hwVersion) &&
+      roundInfo?.cutoff
+    ) {
+      cutoffText = `Cutoff: ${formatCentiseconds(roundInfo.cutoff.resultValue)}`;
+    }
+
+    if (limitToReturn === null) {
+      limitToReturn = roundInfo.timeLimit.centiseconds
+        ? roundInfo.timeLimit.centiseconds * 10
+        : null;
+    }
+    let secondaryText = '';
+    if (cumulativeText) {
+      secondaryText = cumulativeText;
+    } else if (cutoffText) {
+      if (
+        !nextAttemptData.scrambleData.isExtra &&
+        nextAttemptData.scrambleData.num === 1
+      ) {
+        secondaryText = cutoffText;
+      } else {
+        secondaryText = attemptText;
+      }
+    } else {
+      secondaryText = attemptText;
+    }
+    if (SHOW_SECONDARY_TEXT_HW_VERSIONS.includes(hwVersion)) {
+      return {
+        name: shortEventText,
+        secondaryText,
+        limit: limitToReturn,
+      };
+    } else {
+      return {
+        name: eventText,
+        secondaryText: eventText,
+        limit: limitToReturn,
+      };
+    }
   }
 }

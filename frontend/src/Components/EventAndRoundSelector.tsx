@@ -1,4 +1,4 @@
-import { Event, Round } from "@wca/helpers";
+import { Event, Round } from "wcif-helpers";
 
 import EventIcon from "@/Components/Icons/EventIcon";
 import { Competition } from "@/lib/interfaces";

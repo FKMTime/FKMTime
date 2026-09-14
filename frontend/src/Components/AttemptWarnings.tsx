@@ -24,6 +24,11 @@ const AttemptWarnings = ({ attempt }: AttemptsWarningProps) => {
                 <Badge variant="destructive">+{attempt.penalty}</Badge>
             )}
             {attempt.penalty === DNS_VALUE && <Badge>DNS</Badge>}
+            {attempt.fastAttemptRatio !== undefined && (
+                <Badge className="border-transparent bg-amber-500 text-white shadow">
+                    Fast ({Math.round(attempt.fastAttemptRatio * 100)}%)
+                </Badge>
+            )}
         </>
     );
 };

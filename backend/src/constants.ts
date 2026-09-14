@@ -1,4 +1,4 @@
-import { Attempt } from '@prisma/client';
+import { Attempt, HardwareVersion } from '@prisma/client';
 
 export const SKIPPED_VALUE = 0;
 export const DNF_VALUE = -1;
@@ -51,4 +51,7 @@ export const roundFormatMap = {
 };
 
 //FKMTime developers are always allowed to log in using their WCA accounts
-export const ADMIN_WCA_USER_IDS = [259132, 470248];
+export const ADMIN_WCA_USER_IDS = [259132, 470248, 244611];
+export const SHOW_SECONDARY_TEXT_HW_VERSIONS: HardwareVersion[] = [
+  HardwareVersion.V4,
+];

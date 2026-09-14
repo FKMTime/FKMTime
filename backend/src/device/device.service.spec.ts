@@ -1,6 +1,6 @@
 import { HttpException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
-import { DeviceType } from '@prisma/client';
+import { DeviceType, HardwareVersion } from '@prisma/client';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 
 import { AppGateway } from '../app.gateway';
@@ -122,15 +122,23 @@ describe('DeviceService', () => {
         signKey: 456,
         type: DeviceType.STATION,
         roomId: 'room1',
+        hwVersion: HardwareVersion.V4,
+      };
+      const createdDevice = {
+        id: 'device1',
+        ...deviceData,
+        room: { id: 'room1', name: 'Room 1' },
       };
 
-      jest.spyOn(dbService.device, 'create').mockResolvedValue({} as any);
+      jest
+        .spyOn(dbService.device, 'create')
+        .mockResolvedValue(createdDevice as any);
       jest.spyOn(appGateway, 'handleAddDeviceToDb').mockImplementation();
       jest.spyOn(socketController, 'sendServerStatus').mockResolvedValue();
 
       const result = await service.createDevice(deviceData);
 
-      expect(result).toEqual({ message: 'Device created' });
+      expect(result).toEqual({ ...createdDevice, count: 0 });
       expect(dbService.device.create).toHaveBeenCalled();
       expect(appGateway.handleAddDeviceToDb).toHaveBeenCalledWith(123);
       expect(socketController.sendServerStatus).toHaveBeenCalled();
@@ -143,6 +151,7 @@ describe('DeviceService', () => {
         signKey: 456,
         type: DeviceType.STATION,
         roomId: 'room1',
+        hwVersion: HardwareVersion.V4,
       };
 
       const prismaError = new PrismaClientKnownRequestError(
@@ -186,7 +195,12 @@ describe('DeviceService', () => {
 
   describe('requestToConnect', () => {
     it('should send request if device not in database', async () => {
-      const requestData = { espId: 456, signKey: 789, type: 'STATION' as any };
+      const requestData = {
+        espId: 456,
+        signKey: 789,
+        type: 'STATION' as any,
+        hw: 'v4',
+      };
 
       jest.spyOn(dbService.device, 'findFirst').mockResolvedValue(null);
       jest.spyOn(appGateway, 'handleDeviceRequest').mockImplementation();
@@ -202,7 +216,12 @@ describe('DeviceService', () => {
     });
 
     it('should return error if device already exists', async () => {
-      const requestData = { espId: 123, signKey: 789, type: 'STATION' as any };
+      const requestData = {
+        espId: 123,
+        signKey: 789,
+        type: 'STATION' as any,
+        hw: 'v4',
+      };
       const mockDevice = { id: 'device1', espId: 123 };
 
       jest
