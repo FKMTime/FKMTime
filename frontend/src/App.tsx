@@ -3,6 +3,7 @@ import { createBrowserRouter, RouterProvider } from "react-router-dom";
 
 import LoadingPage from "@/Components/LoadingPage";
 import { Toaster } from "@/Components/ui/toaster";
+import ErrorPage from "@/Pages/Main/ErrorPage/ErrorPage";
 import { ConfirmProvider } from "@/providers/ConfirmProvider";
 import { ThemeProvider } from "@/providers/ThemeProvider";
 
@@ -104,14 +105,17 @@ const App = () => {
         {
             path: "/auth/login",
             element: <Login />,
+            errorElement: <ErrorPage />,
         },
         {
             path: "/competition/import",
             element: <ImportCompetition />,
+            errorElement: <ErrorPage />,
         },
         {
             path: "/",
             element: <Layout />,
+            errorElement: <ErrorPage />,
             children: [
                 {
                     path: "",
@@ -250,6 +254,7 @@ const App = () => {
         {
             path: "/scrambling-device",
             element: <ScramblingDeviceLayout />,
+            errorElement: <ErrorPage />,
             children: [
                 {
                     path: "/scrambling-device",

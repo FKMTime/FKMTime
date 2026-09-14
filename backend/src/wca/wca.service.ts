@@ -5,9 +5,9 @@ import {
   AttemptType,
   Competition,
 } from '@prisma/client';
-import { Person } from '@wca/helpers';
 import { DNF_VALUE, DNS_VALUE } from 'src/constants';
 import { getSortedStandardAttempts } from 'src/result/helpers';
+import { Person } from 'wcif-helpers';
 
 import { DbService } from '../db/db.service';
 
@@ -161,28 +161,27 @@ export class WcaService {
     return extraAttempt;
   }
 
-  async getPublicWcif(competitionId: string) {
+  async getWcif(
+    competitionId: string,
+    token?: string,
+    isPublic: boolean = false,
+  ) {
     const response = await fetch(
-      `${WCA_ORIGIN}/api/v0/competitions/${competitionId}/wcif/public`,
-    );
-    this.wcaLogger.log(`Fetching public WCIF ${response.status}`);
-    return await response.json();
-  }
-
-  async getWcif(competitionId: string, token: string) {
-    const response = await fetch(
-      `${WCA_ORIGIN}/api/v0/competitions/${competitionId}/wcif`,
+      `${WCA_ORIGIN}/api/v0/competitions/${competitionId}/wcif/version/2`,
       {
         headers: {
-          Authorization: `Bearer ${token}`,
+          Authorization: isPublic ? undefined : `Bearer ${token}`,
         },
       },
     );
-    this.wcaLogger.log(`Fetching WCIF ${response.status}`);
+    this.wcaLogger.log(
+      `Fetching ${isPublic ? 'public ' : 'private'}WCIF ${response.status}`,
+    );
     const data = await response.json();
     return {
       ...data,
       statusCode: response.status,
+      public: isPublic,
     };
   }
 
@@ -194,7 +193,7 @@ export class WcaService {
     token: string,
   ) {
     const response = await fetch(
-      `${WCA_ORIGIN}/api/v0/competitions/${competitionId}/wcif`,
+      `${WCA_ORIGIN}/api/v0/competitions/${competitionId}/wcif/version/2`,
       {
         method: 'PATCH',
         headers: {

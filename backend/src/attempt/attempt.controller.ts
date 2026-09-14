@@ -18,6 +18,8 @@ import { DelegateGuard } from 'src/auth/guards/delegate.guard';
 import { AttemptService } from './attempt.service';
 import { CreateAttemptDto } from './dto/createAttempt.dto';
 import { EnterScorecardDto } from './dto/enterScorecard.dto';
+import { ReorderAttemptsDto } from './dto/reorderAttempts.dto';
+import { SetReplacementDto } from './dto/setReplacement.dto';
 import { SwapAttemptsDto } from './dto/swapAttempts.dto';
 import { UpdateAttemptDto } from './dto/updateAttempt.dto';
 
@@ -35,10 +37,39 @@ export class AttemptController {
   }
 
   @Put('swap')
-  async swapAttempts(@Body() data: SwapAttemptsDto) {
+  async swapAttempts(
+    @Body() data: SwapAttemptsDto,
+    @GetUser() user: JwtAuthDto,
+  ) {
     return await this.attemptService.swapAttempts(
       data.firstAttemptId,
       data.secondAttemptId,
+      user.userId,
+    );
+  }
+
+  @Put('reorder')
+  async reorderAttempts(
+    @Body() data: ReorderAttemptsDto,
+    @GetUser() user: JwtAuthDto,
+  ) {
+    return await this.attemptService.reorderAttempts(
+      data.attemptIds,
+      data.resultId,
+      user.userId,
+    );
+  }
+
+  @Put(':id/replacement')
+  async setAttemptReplacement(
+    @Param('id') id: string,
+    @Body() data: SetReplacementDto,
+    @GetUser() user: JwtAuthDto,
+  ) {
+    return await this.attemptService.setAttemptReplacement(
+      id,
+      data.replacedByExtraNumber,
+      user.userId,
     );
   }
 
@@ -49,6 +80,16 @@ export class AttemptController {
     @GetUser() user: JwtAuthDto,
   ) {
     return await this.attemptService.enterScorecard(data, user.userId);
+  }
+
+  @Get('round/:roundId/recent')
+  async getRecentAttemptsByRoundId(@Param('roundId') roundId: string) {
+    return await this.attemptService.getRecentAttemptsByRoundId(roundId);
+  }
+
+  @Get(':id/edit-log')
+  async getAttemptEditLog(@Param('id') id: string) {
+    return await this.attemptService.getAttemptEditLog(id);
   }
 
   @Get(':id')

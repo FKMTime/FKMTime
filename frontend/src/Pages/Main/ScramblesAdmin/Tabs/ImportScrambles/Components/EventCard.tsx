@@ -1,4 +1,4 @@
-import { Event as IEvent } from "@wca/helpers";
+import { Event as IEvent } from "wcif-helpers";
 
 import EventIcon from "@/Components/Icons/EventIcon";
 import { Card, CardContent, CardHeader, CardTitle } from "@/Components/ui/card";

@@ -1,4 +1,4 @@
-import { Competition } from "@wca/helpers";
+import { Competition } from "wcif-helpers";
 import {
     getLimitByRoundId,
     getNumberOfAttemptsForRound,
@@ -158,6 +158,15 @@ export const doubleCheckResult = async (
         attempts,
     });
     return response.status;
+};
+
+export const getPersonsWithNoResultsByRoundId = async (roundId: string) => {
+    const response = await backendRequest(
+        `result/round/${roundId}/missing-persons`,
+        "GET",
+        true
+    );
+    return await response.json();
 };
 
 export const undoDoubleCheck = async (roundId: string) => {
