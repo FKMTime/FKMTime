@@ -81,7 +81,10 @@ const DeviceCard = ({ device, fetchData }: DeviceCardProps) => {
                 </CardHeader>
                 <CardContent>
                     <p>ESP ID: {idToHex(device.espId)}</p>
-                    <p>Type: {prettyDeviceType(device.type)}</p>
+                    <p>
+                        Type: {prettyDeviceType(device.type)} (
+                        {device.hwVersion})
+                    </p>
                     <p>Attempts: {device.count}</p>
                     <p>
                         Updated at:{" "}

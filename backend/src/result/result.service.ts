@@ -5,19 +5,33 @@ import {
   StaffActivityStatus,
   StaffRole,
 } from '@prisma/client';
-import { Event, Round } from '@wca/helpers';
 import { AppGateway } from 'src/app.gateway';
-import { DNS_VALUE, publicPersonSelect, publicUserSelect } from 'src/constants';
+import {
+  AttemptEditLogService,
+  AttemptSnapshot,
+} from 'src/attempt-edit-log/attempt-edit-log.service';
+import {
+  DNF_VALUE,
+  DNS_VALUE,
+  publicPersonSelect,
+  publicUserSelect,
+} from 'src/constants';
 import { ContestsService } from 'src/contests/contests.service';
 import { DbService } from 'src/db/db.service';
 import { isUnofficialEvent } from 'src/events';
+import { PersonService } from 'src/person/person.service';
 import { getMaxAttempts, isCumulativeLimit } from 'src/wcif-helpers';
+import { Event, Round, TimeLimit } from 'wcif-helpers';
+import {
+  getNumberOfAttemptsForRound,
+  getRoundInfoFromWcif,
+} from 'wcif-helpers';
 
 import { AttendanceService } from '../attendance/attendance.service';
 import { WcaService } from '../wca/wca.service';
 import { CheckIfAttemptEnteredDto } from './dto/checkIfAttemptEntered.dto';
 import { DoubleCheckDto } from './dto/doubleCheck.dto';
-import { getSortedStandardAttempts } from './helpers';
+import { getSortedExtraAttempts, getSortedStandardAttempts } from './helpers';
 
 @Injectable()
 export class ResultService {
@@ -27,6 +41,8 @@ export class ResultService {
     private readonly attendanceService: AttendanceService,
     private readonly wcaService: WcaService,
     private readonly contestsService: ContestsService,
+    private readonly personService: PersonService,
+    private readonly attemptEditLogService: AttemptEditLogService,
   ) {}
 
   resultsInclude = {
@@ -155,7 +171,7 @@ export class ResultService {
   }
 
   async getResultById(id: string) {
-    return this.prisma.result.findUnique({
+    const result = await this.prisma.result.findUnique({
       where: {
         id: id,
       },
@@ -177,6 +193,14 @@ export class ResultService {
         },
       },
     });
+
+    const remainingAndUsedCumulativeLimit =
+      await this.getRemainingAndUsedCumulativeLimit(id);
+
+    return {
+      ...result,
+      remainingAndUsedCumulativeLimit,
+    };
   }
 
   async getResultOrCreate(personId: string, roundId: string) {
@@ -250,7 +274,7 @@ export class ResultService {
       }
       return await this.contestsService.enterRoundToCubingContests(results);
     } else {
-      return await this.wcaService.enterRoundToWcaLive(results);
+      return await this.wcaService.enterRoundToWcaLive(roundId, results);
     }
   }
 
@@ -315,22 +339,25 @@ export class ResultService {
         error: true,
       };
     }
+    const now = new Date();
     for (let i = lastAttempt.attemptNumber + 1; i <= maxAttempts; i++) {
-      await this.prisma.attempt.create({
+      const created = await this.prisma.attempt.create({
         data: {
           attemptNumber: i,
           status: AttemptStatus.STANDARD,
           type: AttemptType.STANDARD_ATTEMPT,
           penalty: DNS_VALUE,
-          solvedAt: new Date(),
+          solvedAt: now,
           value: 0,
-          result: {
-            connect: {
-              id: result.id,
-            },
-          },
+          result: { connect: { id: result.id } },
         },
       });
+      await this.attemptEditLogService.log(
+        created as AttemptSnapshot,
+        now,
+        null,
+        'DNS auto-assigned',
+      );
     }
     this.appGateway.handleResultEntered(result.roundId);
     return {
@@ -341,13 +368,50 @@ export class ResultService {
   }
 
   async getResultsToDoubleCheckByRoundId(roundId: string) {
-    const results = await this.prisma.result.findMany({
+    const competition = await this.prisma.competition.findFirst();
+    const wcif = JSON.parse(JSON.stringify(competition.wcif));
+    const roundInfo = getRoundInfoFromWcif(roundId, wcif);
+    const maxAttempts = getNumberOfAttemptsForRound(roundId, wcif);
+
+    const allResults = await this.prisma.result.findMany({
       where: {
         roundId: roundId,
         isDoubleChecked: false,
       },
       include: this.resultsInclude,
     });
+
+    const results = allResults.filter((result) => {
+      const submitted = getSortedStandardAttempts(result.attempts).filter(
+        (a) =>
+          a.replacedBy === null &&
+          a.status !== AttemptStatus.UNRESOLVED &&
+          a.status !== AttemptStatus.EXTRA_GIVEN &&
+          a.status !== AttemptStatus.SCRAMBLED,
+      );
+      if (submitted.length === 0) return false;
+      if (result.attempts.some((a) => a.status === AttemptStatus.UNRESOLVED))
+        return false;
+      if (
+        result.attempts.some(
+          (a) => a.status === AttemptStatus.EXTRA_GIVEN && !a.replacedBy,
+        )
+      )
+        return false;
+      const expectedAttempts =
+        roundInfo?.cutoff &&
+        !submitted.some(
+          (a) =>
+            a.penalty !== DNF_VALUE &&
+            a.penalty !== DNS_VALUE &&
+            a.value + (a.penalty > 0 ? a.penalty * 100 : 0) <
+              roundInfo.cutoff.resultValue,
+        )
+          ? roundInfo.cutoff.numberOfAttempts
+          : maxAttempts;
+      return submitted.length >= expectedAttempts;
+    });
+
     const totalCount = await this.prisma.result.count({
       where: {
         roundId: roundId,
@@ -360,10 +424,16 @@ export class ResultService {
       },
     });
 
+    const checkedResults = await this.prisma.result.findMany({
+      where: { roundId, isDoubleChecked: true },
+      select: { id: true, person: publicPersonSelect },
+    });
+
     return {
-      results: results,
-      totalCount: totalCount,
-      doubleCheckedCount: doubleCheckedCount,
+      results,
+      totalCount,
+      doubleCheckedCount,
+      checkedResults,
     };
   }
 
@@ -382,16 +452,18 @@ export class ResultService {
         },
       },
     });
+    const now = new Date();
     for (const attempt of data.attempts) {
-      await this.prisma.attempt.update({
-        where: {
-          id: attempt.id,
-        },
-        data: {
-          penalty: attempt.penalty,
-          value: attempt.value,
-        },
+      const updated = await this.prisma.attempt.update({
+        where: { id: attempt.id },
+        data: { penalty: attempt.penalty, value: attempt.value },
       });
+      await this.attemptEditLogService.log(
+        updated as AttemptSnapshot,
+        now,
+        userId,
+        'Double checked',
+      );
     }
     this.appGateway.handleResultEntered(result.roundId);
     await this.enterWholeScorecardToWcaLiveOrCubingContests(result.id);
@@ -406,6 +478,87 @@ export class ResultService {
         isDoubleChecked: false,
       },
     });
+  }
+
+  async getPersonsWithNoResultsByRoundId(roundId: string) {
+    const competition = await this.prisma.competition.findFirst();
+    if (!competition) return [];
+    const wcif = JSON.parse(JSON.stringify(competition.wcif)) as {
+      persons: Array<{
+        registrantId: number;
+        registration?: { eventIds: string[] };
+        assignments?: Array<{ activityId: number; assignmentCode: string }>;
+      }>;
+      schedule: {
+        venues: Array<{
+          rooms: Array<{
+            activities: Array<{
+              activityCode: string;
+              childActivities: Array<{ id: number }>;
+            }>;
+          }>;
+        }>;
+      };
+    };
+
+    const eventId = roundId.split('-')[0];
+    const roundNumber = parseInt(roundId.split('-r')[1]);
+
+    const existingResults = await this.prisma.result.findMany({
+      where: { roundId },
+      select: { person: { select: { registrantId: true } } },
+    });
+    const registrantIdsWithResults = new Set(
+      existingResults.map((r) => r.person.registrantId).filter(Boolean),
+    );
+
+    const allPersons = await this.prisma.person.findMany({
+      select: { id: true, registrantId: true, name: true, wcaId: true },
+    });
+
+    let eligibleRegistrantIds: Set<number>;
+
+    if (roundNumber === 1) {
+      eligibleRegistrantIds = new Set(
+        wcif.persons
+          .filter((p) => p.registration?.eventIds?.includes(eventId))
+          .map((p) => p.registrantId)
+          .filter(Boolean),
+      );
+    } else {
+      const groupActivityIds = new Set<number>();
+      wcif.schedule.venues.forEach((venue) => {
+        venue.rooms.forEach((room) => {
+          room.activities.forEach((activity) => {
+            if (activity.activityCode === roundId) {
+              activity.childActivities.forEach((child) => {
+                groupActivityIds.add(child.id);
+              });
+            }
+          });
+        });
+      });
+
+      eligibleRegistrantIds = new Set(
+        wcif.persons
+          .filter((p) =>
+            p.assignments?.some(
+              (a) =>
+                a.assignmentCode === 'competitor' &&
+                groupActivityIds.has(a.activityId),
+            ),
+          )
+          .map((p) => p.registrantId)
+          .filter(Boolean),
+      );
+    }
+
+    return allPersons.filter(
+      (p) =>
+        p.registrantId &&
+        eligibleRegistrantIds.has(p.registrantId) &&
+        !registrantIdsWithResults.has(p.registrantId),
+    );
   }
 
   async getResultsChecks(roundId?: string) {
@@ -465,6 +618,278 @@ export class ResultService {
         attempts.push(attempt);
       }
     }
+
+    // Fast attempt detection: flag attempts < 50% of mean of other valid attempts in same result
+    const FAST_THRESHOLD = 0.5;
+    const allValidAttempts = await this.prisma.attempt.findMany({
+      where: {
+        type: AttemptType.STANDARD_ATTEMPT,
+        status: AttemptStatus.STANDARD,
+        replacedBy: null,
+        penalty: { notIn: [DNF_VALUE, DNS_VALUE] },
+        value: { gt: 0 },
+        ...whereParams,
+      },
+      include: this.attemptsInclude,
+    });
+
+    const byResult = new Map<
+      string,
+      { attempt: (typeof allValidAttempts)[0]; effectiveTime: number }[]
+    >();
+    for (const attempt of allValidAttempts) {
+      const t =
+        attempt.value + (attempt.penalty > 0 ? attempt.penalty * 100 : 0);
+      if (!byResult.has(attempt.resultId)) byResult.set(attempt.resultId, []);
+      byResult.get(attempt.resultId).push({ attempt, effectiveTime: t });
+    }
+
+    for (const resultAttempts of byResult.values()) {
+      if (resultAttempts.length < 3) continue;
+      for (const { attempt, effectiveTime } of resultAttempts) {
+        const others = resultAttempts.filter(
+          (ra) => ra.attempt.id !== attempt.id,
+        );
+        const meanOthers =
+          others.reduce((sum, ra) => sum + ra.effectiveTime, 0) / others.length;
+        if (effectiveTime < FAST_THRESHOLD * meanOthers) {
+          const alreadyChecked = attempts.some((a) => a.id === attempt.id);
+          if (!alreadyChecked) {
+            (attempt as any).fastAttemptRatio = effectiveTime / meanOthers;
+            attempts.push(attempt);
+          }
+        }
+      }
+    }
+
     return attempts;
+  }
+
+  async getSubmittedAttempts(roundId: string, personId: string) {
+    const attempts = await this.prisma.attempt.findMany({
+      where: {
+        result: {
+          personId,
+          roundId,
+        },
+        status: {
+          not: AttemptStatus.SCRAMBLED,
+        },
+      },
+    });
+    const submittedAttempts = [];
+    attempts.forEach((attempt) => {
+      if (
+        attempt.replacedBy === null &&
+        attempt.type === AttemptType.STANDARD_ATTEMPT &&
+        !submittedAttempts.some((a) => a.id === attempt.id) &&
+        attempt.status === AttemptStatus.STANDARD
+      ) {
+        submittedAttempts.push(attempt);
+      } else if (
+        attempt.replacedBy !== null &&
+        attempt.status === AttemptStatus.EXTRA_GIVEN
+      ) {
+        const extraAttempt = this.wcaService.getExtra(attempt.id, attempts);
+        if (
+          extraAttempt &&
+          !submittedAttempts.some((a) => a.id === extraAttempt.id) &&
+          extraAttempt.status === AttemptStatus.STANDARD
+        ) {
+          submittedAttempts.push(extraAttempt);
+        }
+      }
+    });
+    return submittedAttempts;
+  }
+
+  async checkCumulativeLimit(
+    personId: string,
+    limit: TimeLimit,
+    submittedAttempts: any[],
+  ) {
+    if (limit.cumulativeRoundIds.length === 0) return true;
+    if (limit.cumulativeRoundIds.length === 1) {
+      let sum = 0;
+      submittedAttempts.forEach((attempt) => {
+        if (attempt.penalty !== -1) {
+          sum += attempt.value + attempt.penalty * 100;
+        } else {
+          sum += attempt.value;
+        }
+      });
+      return sum < limit.centiseconds;
+    }
+    if (limit.cumulativeRoundIds.length > 1) {
+      return await this.checkCumulativeLimitForMultipleRounds(
+        personId,
+        limit.cumulativeRoundIds,
+        limit.centiseconds,
+      );
+    }
+  }
+
+  async getCumulativeSumForMultipleRounds(
+    personId: string,
+    roundsIds: string[],
+  ) {
+    let used = 0;
+    for (const roundId of roundsIds) {
+      const submittedAttempts = await this.getSubmittedAttempts(
+        roundId,
+        personId,
+      );
+      submittedAttempts.forEach((attempt) => {
+        if (attempt.penalty !== -1) {
+          used += attempt.value + attempt.penalty * 100;
+        } else {
+          used += attempt.value;
+        }
+      });
+    }
+    return used;
+  }
+
+  async checkCumulativeLimitForMultipleRounds(
+    personId: string,
+    roundsIds: string[],
+    limit: number,
+  ) {
+    const used = await this.getCumulativeSumForMultipleRounds(
+      personId,
+      roundsIds,
+    );
+    return used < limit;
+  }
+
+  async getRemainingAndUsedCumulativeLimit(resultId: string) {
+    const result = await this.prisma.result.findUnique({
+      where: {
+        id: resultId,
+      },
+    });
+    if (!result) {
+      throw new Error('Result not found');
+    }
+    const competition = await this.prisma.competition.findFirst();
+    if (!competition) {
+      throw new Error('Competition not found');
+    }
+    const wcif = JSON.parse(JSON.stringify(competition.wcif));
+    const roundInfo = getRoundInfoFromWcif(result.roundId, wcif);
+    if (!roundInfo.timeLimit.cumulativeRoundIds.length) {
+      return {
+        remaining: null,
+        used: null,
+      };
+    }
+    const { personId, roundId } = result;
+    const roundsIds =
+      roundInfo.timeLimit.cumulativeRoundIds.length > 1
+        ? roundInfo.timeLimit.cumulativeRoundIds
+        : [roundId];
+    const used = await this.getCumulativeSumForMultipleRounds(
+      personId,
+      roundsIds,
+    );
+    const limit = roundInfo.timeLimit.centiseconds;
+    return {
+      used,
+      remaining: Math.max(0, limit - used),
+    };
+  }
+
+  async getNextAttemptData(cardId: string, roundId: string) {
+    const competitor = await this.personService.getPersonByCardId(cardId);
+    if (!competitor) {
+      throw new HttpException('Competitor not found', 404);
+    }
+    const result = await this.getResultOrCreate(competitor.id, roundId);
+    const attempts = await this.prisma.attempt.findMany({
+      where: {
+        resultId: result.id,
+      },
+    });
+    const sortedAttempts = getSortedStandardAttempts(attempts);
+    const sortedExtraAttempts = getSortedExtraAttempts(attempts);
+    if (sortedAttempts.length === 0 && sortedExtraAttempts.length === 0) {
+      return {
+        scrambleData: {
+          num: 1,
+          isExtra: false,
+        },
+        person: competitor,
+      };
+    }
+    if (
+      attempts.some(
+        (attempt) =>
+          attempt.status === AttemptStatus.EXTRA_GIVEN &&
+          (attempt.replacedBy === 0 || attempt.replacedBy === null),
+      )
+    ) {
+      const lastExtraAttempt =
+        sortedExtraAttempts[sortedExtraAttempts.length - 1];
+      if (
+        lastExtraAttempt &&
+        lastExtraAttempt.status === AttemptStatus.SCRAMBLED
+      ) {
+        return {
+          scrambleData: {
+            num: lastExtraAttempt.attemptNumber,
+            isExtra: true,
+          },
+          person: competitor,
+        };
+      }
+      const extrasCount = sortedExtraAttempts.length;
+      return {
+        scrambleData: {
+          num: extrasCount + 1,
+          isExtra: true,
+        },
+        person: competitor,
+      };
+    }
+    const competition = await this.prisma.competition.findFirst();
+    if (!competition) {
+      throw new Error('Competition not found');
+    }
+    const wcif = JSON.parse(JSON.stringify(competition.wcif));
+    const currentRoundId = roundId.split('-g')[0];
+    const roundInfo = getRoundInfoFromWcif(currentRoundId, wcif);
+
+    let attemptNumber = 1;
+    const maxAttempts = getMaxAttempts(roundInfo.format);
+    const lastAttempt = sortedAttempts[sortedAttempts.length - 1];
+    if (lastAttempt && lastAttempt.status === AttemptStatus.SCRAMBLED) {
+      return {
+        scrambleData: {
+          num: lastAttempt.attemptNumber,
+          isExtra: false,
+        },
+        person: competitor,
+      };
+    }
+    if (lastAttempt && lastAttempt.attemptNumber === maxAttempts) {
+      //No attempts left
+      return {
+        scrambleData: {
+          num: -1,
+          isExtra: false,
+        },
+        person: competitor,
+      };
+    }
+    if (lastAttempt) {
+      attemptNumber = lastAttempt.attemptNumber + 1;
+    }
+    return {
+      scrambleData: {
+        num: attemptNumber,
+        isExtra: false,
+      },
+      person: competitor,
+    };
   }
 }

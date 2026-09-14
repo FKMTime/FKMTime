@@ -1,13 +1,20 @@
-import { activityCodeToName } from "@wca/helpers";
 import { CircleCheckBig, OctagonX, Send } from "lucide-react";
 
+import wcaLogo from "@/assets/wca.svg";
 import FlagIcon from "@/Components/Icons/FlagIcon";
 import PlusButton from "@/Components/PlusButton";
 import { Button } from "@/Components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/Components/ui/card";
+import {
+    Card,
+    CardContent,
+    CardDescription,
+    CardHeader,
+    CardTitle,
+} from "@/Components/ui/card";
 import { useConfirm } from "@/hooks/useConfirm";
 import { useToast } from "@/hooks/useToast";
 import { Attempt, Result } from "@/lib/interfaces";
+import { WCA_ORIGIN } from "@/lib/request";
 import {
     assignDnsOnRemainingSolves,
     reSubmitScorecardToWcaLive,
@@ -87,7 +94,7 @@ const SingleResultHeaderCard = ({
     };
 
     return (
-        <Card>
+        <Card className="w-full">
             <CardHeader>
                 <CardTitle className="flex justify-between items-center">
                     <div className="flex items-center gap-2">
@@ -95,13 +102,25 @@ const SingleResultHeaderCard = ({
                             country={result.person.countryIso2}
                             size={30}
                         />
-                        {result.person.name} ({result.person.registrantId}) -{" "}
-                        {activityCodeToName(result.roundId)}
+                        {result.person.name} ({result.person.registrantId})
                     </div>
                     <PlusButton
                         onClick={() => setIsOpenCreateAttemptModal(true)}
                     />
                 </CardTitle>
+                {result.person.wcaId && (
+                    <CardDescription className="flex gap-2 items-center">
+                        <img src={wcaLogo} width="30" />
+                        <a
+                            className="text-blue-500"
+                            href={`${WCA_ORIGIN}/persons/${result.person.wcaId}`}
+                            target="_blank"
+                            rel="noreferrer"
+                        >
+                            {result.person.wcaId}
+                        </a>
+                    </CardDescription>
+                )}
             </CardHeader>
             <CardContent className="flex flex-col gap-3">
                 {result.isDoubleChecked && result.doubleCheckedAt && (

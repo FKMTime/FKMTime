@@ -1,11 +1,13 @@
 import { Plus } from "lucide-react";
 
+import { cn } from "@/lib/utils";
+
 import { Button } from "./ui/button";
 
 interface PlusButtonProps extends React.ComponentProps<typeof Button> {}
-const PlusButton = ({ ...props }: PlusButtonProps) => {
+const PlusButton = ({ className, ...props }: PlusButtonProps) => {
     return (
-        <Button size="icon" {...props}>
+        <Button size="icon" className={cn("p-2", className)} {...props}>
             <Plus />
         </Button>
     );

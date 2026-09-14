@@ -1,4 +1,4 @@
-import { MessageSquarePlus } from "lucide-react";
+import { History, MessageSquarePlus } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
@@ -16,6 +16,7 @@ import { getPersonNameAndRegistrantId } from "@/lib/persons";
 import { attemptWithPenaltyToString } from "@/lib/resultFormatters";
 import { getResolvedStatus } from "@/lib/utils";
 
+import AttemptEditHistoryModal from "./AttemptEditHistoryModal";
 import EditAttemptModal from "./EditAttemptModal";
 import GiveExtraAttemptModal from "./GiveExtraAttemptModal";
 
@@ -38,6 +39,8 @@ const AttemptRow = ({
     const [isOpenEditAttemptModal, setIsOpenEditAttemptModal] =
         useState<boolean>(false);
     const [isOpenGiveExtraAttemptModal, setIsOpenGiveExtraAttemptModal] =
+        useState<boolean>(false);
+    const [isOpenHistoryModal, setIsOpenHistoryModal] =
         useState<boolean>(false);
 
     const handleDelete = async () => {
@@ -126,6 +129,11 @@ const AttemptRow = ({
                         onClick={() => setIsOpenEditAttemptModal(true)}
                     />
                     <SmallIconButton
+                        icon={<History />}
+                        title="Edit history"
+                        onClick={() => setIsOpenHistoryModal(true)}
+                    />
+                    <SmallIconButton
                         icon={<MessageSquarePlus />}
                         title="Give extra attempt"
                         onClick={() => setIsOpenGiveExtraAttemptModal(true)}
@@ -142,6 +150,11 @@ const AttemptRow = ({
                     </div>
                 </TableCell>
             </TableRow>
+            <AttemptEditHistoryModal
+                isOpen={isOpenHistoryModal}
+                onClose={() => setIsOpenHistoryModal(false)}
+                attemptId={attempt.id}
+            />
             <EditAttemptModal
                 isOpen={isOpenEditAttemptModal}
                 onClose={handleCloseModal}

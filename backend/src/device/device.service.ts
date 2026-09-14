@@ -55,19 +55,22 @@ export class DeviceService {
   }
 
   async createDevice(data: DeviceDto) {
+    let device;
     try {
-      await this.prisma.device.create({
+      device = await this.prisma.device.create({
         data: {
           name: data.name,
           espId: data.espId,
           signKey: data.signKey,
           type: data.type,
+          hwVersion: data.hwVersion,
           room: {
             connect: {
               id: data.roomId,
             },
           },
         },
+        include: { room: true },
       });
     } catch (e) {
       if (e instanceof PrismaClientKnownRequestError) {
@@ -83,9 +86,7 @@ export class DeviceService {
     }
     this.appGateway.handleAddDeviceToDb(data.espId);
     await this.socketController.sendServerStatus();
-    return {
-      message: 'Device created',
-    };
+    return { ...device, count: 0 };
   }
 
   async getDeviceByEspId(espId: number, type: DeviceType) {
@@ -129,6 +130,7 @@ export class DeviceService {
           name: data.name,
           espId: data.espId,
           type: data.type,
+          hwVersion: data.hwVersion,
           room: {
             connect: {
               id: data.roomId,

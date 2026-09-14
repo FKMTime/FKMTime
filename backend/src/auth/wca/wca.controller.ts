@@ -1,4 +1,12 @@
-import { Body, Controller, HttpCode, HttpStatus, Post } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  HttpCode,
+  HttpStatus,
+  Post,
+  UseGuards,
+} from '@nestjs/common';
+import { Throttle, ThrottlerGuard } from '@nestjs/throttler';
 
 import { AuthService } from '../auth.service';
 import { WcaLoginDto } from '../dto/wcaLogin.dto';
@@ -7,6 +15,8 @@ import { WcaLoginDto } from '../dto/wcaLogin.dto';
 export class WcaController {
   constructor(private readonly authService: AuthService) {}
 
+  @UseGuards(ThrottlerGuard)
+  @Throttle({ default: { ttl: 60000, limit: 5 } })
   @HttpCode(HttpStatus.OK)
   @Post('login')
   async loginWithWca(@Body() data: WcaLoginDto) {

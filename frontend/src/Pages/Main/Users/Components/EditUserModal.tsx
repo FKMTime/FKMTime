@@ -36,8 +36,8 @@ const EditUserModal = ({ isOpen, onClose, user }: EditUserModalProps) => {
     const form = useForm<z.infer<typeof editUserSchema>>({
         resolver: zodResolver(editUserSchema),
         defaultValues: {
-            username: user.username,
-            fullName: user.fullName,
+            username: user.username ?? undefined,
+            fullName: user.fullName ?? undefined,
             roles: user.roles,
         },
     });
@@ -45,23 +45,29 @@ const EditUserModal = ({ isOpen, onClose, user }: EditUserModalProps) => {
     const onSubmit = async (values: z.infer<typeof editUserSchema>) => {
         setIsLoading(true);
 
-        const status = await updateUser({
+        const response = await updateUser({
             ...user,
             ...values,
         });
-        if (status === 200) {
+        if (response.status === 200) {
             toast({
                 title: "Successfully updated user.",
                 variant: "success",
             });
             onClose();
-        } else if (status == 403) {
+        } else if (response.status === 400) {
+            toast({
+                title: "Error",
+                description: response.data.message,
+                variant: "destructive",
+            });
+        } else if (response.status == 403) {
             toast({
                 title: "Error",
                 description: "You cannot assign roles higher than your own",
                 variant: "destructive",
             });
-        } else if (status === 409) {
+        } else if (response.status === 409) {
             toast({
                 title: "Error",
                 description: "Username already taken!",

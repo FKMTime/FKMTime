@@ -74,7 +74,9 @@ const DeviceRow = ({ device, fetchData }: DeviceRowProps) => {
                         </div>
                     ) : null}
                 </TableCell>
-                <TableCell>{prettyDeviceType(device.type)}</TableCell>
+                <TableCell>
+                    {prettyDeviceType(device.type)} ({device.hwVersion})
+                </TableCell>
                 <TableCell>{device.count}</TableCell>
                 <TableCell>
                     {new Date(device.updatedAt).toLocaleString()}

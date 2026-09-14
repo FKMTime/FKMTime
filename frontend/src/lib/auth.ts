@@ -9,7 +9,7 @@ export const login = async (
     password: string
 ): Promise<number> => {
     const response = await backendRequest("auth/login", "POST", false, {
-        username: username,
+        username: username.trim(),
         password: password,
     });
     if (response.status === 200) {

@@ -1,6 +1,10 @@
-import { Cutoff, TimeLimit } from "@wca/helpers";
+import { Cutoff, TimeLimit } from "wcif-helpers";
 
-import { resultToString } from "@/lib/resultFormatters";
+import { RemainingAndUsedCumulativeLimit } from "@/lib/interfaces";
+import {
+    centisecondsToClockFormat,
+    resultToString,
+} from "@/lib/resultFormatters";
 import { cumulativeRoundsToString } from "@/lib/utils";
 
 interface RoundLimitsProps {
@@ -8,6 +12,8 @@ interface RoundLimitsProps {
     limit: TimeLimit | null;
     maxAttempts: number;
     size: string;
+    showRemainingAndUsedCumulativeLimit?: boolean;
+    remainingAndUsedCumulativeLimit?: RemainingAndUsedCumulativeLimit;
 }
 
 const RoundLimits = ({
@@ -15,13 +21,15 @@ const RoundLimits = ({
     limit,
     maxAttempts,
     size,
+    showRemainingAndUsedCumulativeLimit,
+    remainingAndUsedCumulativeLimit,
 }: RoundLimitsProps) => {
     return (
         <>
             <p className={`text-${size}`}>
                 Cutoff:{" "}
                 {cutoff
-                    ? `${resultToString(cutoff.attemptResult)} (${cutoff.numberOfAttempts} attempts)`
+                    ? `${resultToString(cutoff.resultValue)} (${cutoff.numberOfAttempts} attempts)`
                     : "None"}
             </p>
             <p
@@ -30,9 +38,24 @@ const RoundLimits = ({
             >
                 Limit:{" "}
                 {limit
-                    ? `${resultToString(limit.centiseconds)} ${limit.cumulativeRoundIds.length > 0 ? "(cumulative)" : ""}`
+                    ? `${resultToString(limit.centiseconds)} ${limit.cumulativeRoundIds.length > 0 ? `(cumulative for ${cumulativeRoundsToString(limit?.cumulativeRoundIds || [])})` : ""}`
                     : "None"}
             </p>
+            {showRemainingAndUsedCumulativeLimit &&
+                limit &&
+                limit.cumulativeRoundIds.length > 0 && (
+                    <p className={`text-${size}`}>
+                        Used (remaining) cumulative limit:{" "}
+                        {centisecondsToClockFormat(
+                            remainingAndUsedCumulativeLimit?.used ?? 0
+                        )}
+                        {" ("}
+                        {centisecondsToClockFormat(
+                            remainingAndUsedCumulativeLimit?.remaining ?? 0
+                        )}
+                        {")"}
+                    </p>
+                )}
             <p className={`text-${size}`}>Attempts: {maxAttempts}</p>
         </>
     );

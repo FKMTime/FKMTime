@@ -20,15 +20,21 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/Components/ui/select";
-import { DeviceData, DeviceType, Room } from "@/lib/interfaces";
+import {
+    DeviceData,
+    DeviceType,
+    HardwareVersion,
+    Room,
+} from "@/lib/interfaces";
 import { deviceSchema } from "@/lib/schema/deviceSchema";
-import { idToHex, prettyDeviceType } from "@/lib/utils";
+import { idToHex, prettyDeviceType, prettyHardwareVersion } from "@/lib/utils";
 
 interface DeviceFormProps {
     defaultValues: DeviceData;
     handleSubmit: (data: DeviceData) => void;
     rooms: Room[];
     availableTypes: DeviceType[];
+    availableHwVersions: HardwareVersion[];
     submitText: string;
     isLoading: boolean;
 }
@@ -37,6 +43,7 @@ const DeviceForm = ({
     handleSubmit,
     rooms,
     availableTypes,
+    availableHwVersions,
     submitText,
     isLoading,
 }: DeviceFormProps) => {
@@ -50,6 +57,7 @@ const DeviceForm = ({
                     : "",
             roomId: defaultValues.roomId ? defaultValues.roomId : "",
             type: defaultValues.type,
+            hwVersion: defaultValues.hwVersion,
         },
     });
 
@@ -59,6 +67,7 @@ const DeviceForm = ({
             ...values,
             espId: values.espId ? parseInt(values.espId, 16) : 0,
             type: values.type as DeviceType,
+            hwVersion: values.hwVersion as HardwareVersion,
         });
     };
 
@@ -151,6 +160,36 @@ const DeviceForm = ({
                                     {availableTypes.map((type) => (
                                         <SelectItem key={type} value={type}>
                                             {prettyDeviceType(type)}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                            <FormMessage />
+                        </FormItem>
+                    )}
+                />
+                <FormField
+                    control={form.control}
+                    name="hwVersion"
+                    render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Hardware version</FormLabel>
+                            <Select
+                                onValueChange={field.onChange}
+                                defaultValue={field.value}
+                            >
+                                <FormControl>
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Select version" />
+                                    </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                    {availableHwVersions.map((version) => (
+                                        <SelectItem
+                                            key={version}
+                                            value={version}
+                                        >
+                                            {prettyHardwareVersion(version)}
                                         </SelectItem>
                                     ))}
                                 </SelectContent>

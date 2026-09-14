@@ -3,6 +3,7 @@ import * as CryptoJS from 'crypto-js';
 import { sha512 } from 'js-sha512';
 import { DbService } from 'src/db/db.service';
 import { PersonService } from 'src/person/person.service';
+import { ResultService } from 'src/result/result.service';
 import { ResultFromDeviceService } from 'src/result/resultFromDevice.service';
 
 import { CreateScrambledAttemptDto } from './dto/createScrambledAttempt.dto';
@@ -13,6 +14,7 @@ export class ScramblingService {
     private readonly prisma: DbService,
     private readonly personService: PersonService,
     private readonly resultFromDeviceService: ResultFromDeviceService,
+    private readonly resultService: ResultService,
   ) {}
 
   async unlockScrambleSet(id: string, data: UnlockScrambleSetDto) {
@@ -42,7 +44,7 @@ export class ScramblingService {
 
   async getScrambleData(token: string, cardId: string, roundId: string) {
     await this.verifyToken(token);
-    return this.resultFromDeviceService.getScrambleData(cardId, roundId);
+    return this.resultService.getNextAttemptData(cardId, roundId);
   }
 
   async getPersonDataByCardId(token: string, cardId: string) {

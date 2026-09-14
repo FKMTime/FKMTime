@@ -179,6 +179,14 @@
     {
       "key": "attemptEnteredAfterIncident",
       "translation": "Attempt entered"
+    },
+    {
+      "key": "attempt",
+      "translation": "Attempt"
+    },
+    {
+      "key": "judgeIsCompetitor",
+      "translation": "Judge cannot be the same person as competitor"
     }
   ]
 }
