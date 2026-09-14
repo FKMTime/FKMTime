@@ -10,12 +10,13 @@ import { DeviceModule } from '../device/device.module';
 import { PersonModule } from '../person/person.module';
 import { WcaModule } from '../wca/wca.module';
 import { ResultController } from './result.controller';
+import { PublicResultController } from './result.public.controller';
 import { ResultService } from './result.service';
 import { ResultFromDeviceService } from './resultFromDevice.service';
 
 @Module({
   providers: [ResultService, ResultFromDeviceService],
-  controllers: [ResultController],
+  controllers: [ResultController, PublicResultController],
   imports: [
     AuthModule,
     forwardRef(() => AttemptModule),

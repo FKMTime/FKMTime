@@ -1,5 +1,6 @@
 import { forwardRef, Module } from '@nestjs/common';
 
+import { AppModule } from '../app.module';
 import { AttendanceModule } from '../attendance/attendance.module';
 import { CompetitionModule } from '../competition/competition.module';
 import { DeviceModule } from '../device/device.module';
@@ -16,6 +17,7 @@ import { SocketService } from './socket.service';
     forwardRef(() => AttendanceModule),
     forwardRef(() => CompetitionModule),
     forwardRef(() => PersonModule),
+    forwardRef(() => AppModule),
   ],
   providers: [SocketServer, SocketService, SocketController],
   controllers: [],
