@@ -1,4 +1,5 @@
 FROM node:22-alpine AS build
+RUN npm install --global npm@11.16.0
 RUN apk add --no-cache openssl
 
 WORKDIR /app
