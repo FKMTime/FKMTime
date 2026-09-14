@@ -828,6 +828,20 @@ export class ResultService {
           (attempt.replacedBy === 0 || attempt.replacedBy === null),
       )
     ) {
+      const lastExtraAttempt =
+        sortedExtraAttempts[sortedExtraAttempts.length - 1];
+      if (
+        lastExtraAttempt &&
+        lastExtraAttempt.status === AttemptStatus.SCRAMBLED
+      ) {
+        return {
+          scrambleData: {
+            num: lastExtraAttempt.attemptNumber,
+            isExtra: true,
+          },
+          person: competitor,
+        };
+      }
       const extrasCount = sortedExtraAttempts.length;
       return {
         scrambleData: {
@@ -848,6 +862,15 @@ export class ResultService {
     let attemptNumber = 1;
     const maxAttempts = getMaxAttempts(roundInfo.format);
     const lastAttempt = sortedAttempts[sortedAttempts.length - 1];
+    if (lastAttempt && lastAttempt.status === AttemptStatus.SCRAMBLED) {
+      return {
+        scrambleData: {
+          num: lastAttempt.attemptNumber,
+          isExtra: false,
+        },
+        person: competitor,
+      };
+    }
     if (lastAttempt && lastAttempt.attemptNumber === maxAttempts) {
       //No attempts left
       return {
