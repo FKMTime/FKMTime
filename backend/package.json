@@ -37,6 +37,7 @@
     "@nestjs/platform-express": "^11.1.17",
     "@nestjs/platform-socket.io": "^11.0.11",
     "@nestjs/schedule": "^5.0.1",
+    "@nestjs/throttler": "^6.5.0",
     "@nestjs/websockets": "^11.1.14",
     "@prisma/client": "^5.16.1",
     "@wca/helpers": "^1.1.7",

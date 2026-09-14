@@ -283,9 +283,9 @@ export class StatisticsService {
     const suspiciousAverages = allResults
       .filter((r) => {
         if (r.attempts.length < 2) return false;
-        const devices = new Set(r.attempts.map((a) => a.deviceId));
+        const d = new Set(r.attempts.map((a) => a.deviceId));
         const judges = new Set(r.attempts.map((a) => a.judgeId));
-        return devices.size === 1 && judges.size === 1;
+        return d.size === 1 && judges.size === 1;
       })
       .map((r) => ({
         competitorName: r.person.name,

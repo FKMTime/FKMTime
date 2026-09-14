@@ -7,6 +7,7 @@ import { createDevice } from "@/lib/devices";
 import {
     AvailableDevice,
     AvailableDeviceType,
+    Device,
     DeviceData,
     DeviceType,
     HardwareVersion,
@@ -18,7 +19,7 @@ import DeviceForm from "./DeviceForm";
 
 interface CreateDeviceModalProps {
     isOpen: boolean;
-    onClose: () => void;
+    onClose: (device?: Device) => void;
     deviceToAdd?: AvailableDevice;
 }
 
@@ -38,13 +39,13 @@ const CreateDeviceModal = ({
 
     const handleSubmit = async (data: DeviceData) => {
         setIsLoading(true);
-        const status = await createDevice(data);
+        const { status, device } = await createDevice(data);
         if (status === 201) {
             toast({
                 title: "Successfully created new device.",
                 variant: "success",
             });
-            onClose();
+            onClose(device);
         } else if (status === 409) {
             toast({
                 title: "Error",
