@@ -512,6 +512,8 @@ export class PersonService {
       );
       newPersons.push(newPerson);
       const newWcif = {
+        id: wcif.id,
+        formatVersion: wcif.formatVersion,
         persons: newPersons,
       };
       const response = await this.wcaService.patchWcif(
@@ -538,7 +540,14 @@ export class PersonService {
           message: 'Successfully moved the competitor to another group',
         };
       } else {
-        throw new HttpException(response.message, response.statusCode || 500);
+        const error = response.error ?? response.message ?? 'Unknown WCA error';
+        throw new HttpException(
+          {
+            message: 'The WCA rejected the WCIF update',
+            error: typeof error === 'string' ? error : JSON.stringify(error),
+          },
+          response.statusCode || 500,
+        );
       }
     }
   }

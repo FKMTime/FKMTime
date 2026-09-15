@@ -159,10 +159,10 @@ export const eventsData: {
   },
   {
     id: 'fto',
-    name: 'FTO',
+    name: 'Face Turning Octahedron',
+    shortName: 'FTO',
     icon: 'unofficial-fto',
     useInspection: true,
-    isUnofficial: true,
     usualScramblesCount: 5,
     usualExtraScramblesCount: 2,
   },

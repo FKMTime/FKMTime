@@ -130,5 +130,8 @@ export const changeCompetingGroup = async (
         personId,
         newGroupId,
     });
-    return response.status;
+    return {
+        data: await response.json(),
+        status: response.status,
+    };
 };
