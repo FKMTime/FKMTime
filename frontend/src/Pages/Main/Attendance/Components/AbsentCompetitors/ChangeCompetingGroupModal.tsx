@@ -52,11 +52,11 @@ const ChangeCompetingGroupModal = ({
             description: `If the competitor has any other asssignments during ${activityCodeToName(newGroup)} they will be deleted.`,
         })
             .then(async () => {
-                const status = await changeCompetingGroup(
+                const response = await changeCompetingGroup(
                     activity.person.id,
                     newGroup
                 );
-                if (status === 200) {
+                if (response.status === 200) {
                     toast({
                         title: "Succesfully moved the competitor to another group",
                         variant: "success",
@@ -65,9 +65,12 @@ const ChangeCompetingGroupModal = ({
                     onClose();
                 } else {
                     toast({
-                        title: "Something went wrong!",
+                        title: "The WCIF update failed",
+                        description:
+                            response.data.error || response.data.message,
                         variant: "destructive",
                     });
+                    setIsLoading(false);
                 }
             })
             .catch(() => {

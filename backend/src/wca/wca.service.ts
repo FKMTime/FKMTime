@@ -7,7 +7,7 @@ import {
 } from '@prisma/client';
 import { DNF_VALUE, DNS_VALUE } from 'src/constants';
 import { getSortedStandardAttempts } from 'src/result/helpers';
-import { Person } from 'wcif-helpers';
+import { Competition as Wcif, Person } from 'wcif-helpers';
 
 import { DbService } from '../db/db.service';
 
@@ -187,13 +187,11 @@ export class WcaService {
 
   async patchWcif(
     competitionId: string,
-    wcif: {
-      persons: Person[];
-    },
+    wcif: Pick<Wcif, 'id' | 'formatVersion'> & { persons: Person[] },
     token: string,
   ) {
     const response = await fetch(
-      `${WCA_ORIGIN}/api/v0/competitions/${competitionId}/wcif/version/2`,
+      `${WCA_ORIGIN}/api/v0/competitions/${competitionId}/wcif`,
       {
         method: 'PATCH',
         headers: {
