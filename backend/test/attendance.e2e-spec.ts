@@ -1,4 +1,5 @@
 import { INestApplication } from '@nestjs/common';
+import { StaffRole } from '@prisma/client';
 import { DbService } from 'src/db/db.service';
 import * as request from 'supertest';
 
@@ -10,6 +11,7 @@ describe('AttendanceController (e2e)', () => {
   let adminToken: string;
   let staffActivityId: string;
   let personId: string;
+  let unassignedPersonId: string;
   let groupId: string;
 
   beforeAll(async () => {
@@ -22,9 +24,26 @@ describe('AttendanceController (e2e)', () => {
     staffActivityId = activity.id;
     personId = activity.personId;
     groupId = activity.groupId;
+
+    const unassignedPerson = await db.person.findFirst({
+      where: {
+        StaffActivity: {
+          none: { groupId, role: StaffRole.STAFF_OTHER },
+        },
+      },
+    });
+    unassignedPersonId = unassignedPerson.id;
   }, 30000);
 
   afterAll(async () => {
+    await db.staffActivity.deleteMany({
+      where: {
+        personId: unassignedPersonId,
+        groupId,
+        role: StaffRole.STAFF_OTHER,
+        isAssigned: false,
+      },
+    });
     await app.close();
   }, 30000);
 
@@ -161,7 +180,7 @@ describe('AttendanceController (e2e)', () => {
       const res = await request(app.getHttpServer())
         .post(`/attendance/unassigned/${encodeURIComponent(groupId)}`)
         .set('Authorization', `Bearer ${adminToken}`)
-        .send({ personId, role: 'STAFF_OTHER' })
+        .send({ personId: unassignedPersonId, role: StaffRole.STAFF_OTHER })
         .expect(201);
 
       expect(res.body).toBeDefined();

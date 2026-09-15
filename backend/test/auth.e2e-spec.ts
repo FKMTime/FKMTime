@@ -1,4 +1,5 @@
 import { INestApplication } from '@nestjs/common';
+import { DbService } from 'src/db/db.service';
 import * as request from 'supertest';
 
 import { createTestApp } from './helpers/app.helper';
@@ -6,13 +7,18 @@ import { loginWithFKMAccount } from './helpers/auth.helper';
 
 describe('AuthController (e2e)', () => {
   let app: INestApplication;
+  let db: DbService;
   let adminToken: string;
+  let wcaUserId: string;
 
   beforeAll(async () => {
-    ({ app, adminToken } = await createTestApp());
+    ({ app, db, adminToken } = await createTestApp());
   }, 30000);
 
   afterAll(async () => {
+    if (wcaUserId) {
+      await db.user.delete({ where: { id: wcaUserId } });
+    }
     await app.close();
   }, 30000);
 
@@ -96,14 +102,25 @@ describe('AuthController (e2e)', () => {
   });
 
   describe('WCA Auth', () => {
-    it.skip('should login with WCA (requires mock WCA server at localhost:3000)', async () => {
-      await request(app.getHttpServer())
+    it('should login with WCA', async () => {
+      const response = await request(app.getHttpServer())
         .post('/auth/wca/login')
         .send({
           code: 'code-2022GALA01',
           redirectUri: 'http://localhost:5173/auth/login',
         })
         .expect(200);
+
+      expect(response.body).toEqual({
+        token: expect.any(String),
+        userInfo: expect.objectContaining({
+          id: expect.any(String),
+          fullName: expect.any(String),
+          roles: expect.any(Array),
+          wcaAccessToken: expect.any(String),
+        }),
+      });
+      wcaUserId = response.body.userInfo.id;
     });
   });
 });
