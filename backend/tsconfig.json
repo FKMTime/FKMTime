@@ -17,7 +17,13 @@
     "strictBindCallApply": false,
     "forceConsistentCasingInFileNames": false,
     "noFallthroughCasesInSwitch": false,
-    "allowJs": true,
+    "allowJs": true
   },
-  "include": ["src/**/*.ts", "prisma/**/*.ts", "test/*.ts", "src/**/*", "src/translations/locales/*.json"],
+  "include": [
+    "src/**/*.ts",
+    "prisma/**/*.ts",
+    "test/**/*.ts",
+    "src/**/*",
+    "src/translations/locales/*.json"
+  ]
 }
