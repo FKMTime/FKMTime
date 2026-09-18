@@ -37,6 +37,16 @@ export class CompetitionController {
     return await this.competitionService.getInfoForLoginPage();
   }
 
+  @Get('public')
+  async getPublicCompetitionInfo() {
+    return await this.competitionService.getCompetitionInfo();
+  }
+
+  @Get('public/rooms')
+  async getPublicRooms() {
+    return await this.roomsService.getAllRooms();
+  }
+
   @UseGuards(AuthGuard('jwt'))
   @Get()
   async getCompetitionInfo() {

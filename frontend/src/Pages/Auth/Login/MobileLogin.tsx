@@ -1,4 +1,7 @@
+import { Link } from "react-router-dom";
+
 import logo from "@/assets/logo.svg";
+import { Button } from "@/Components/ui/button";
 import { CompetitionDataForLoginPage } from "@/lib/interfaces";
 
 import LoginForm from "./Components/LoginForm";
@@ -28,6 +31,9 @@ const MobileLogin = ({
                 isLoading={isLoading}
                 competition={competition}
             />
+            <Button variant="outline" className="w-full" asChild>
+                <Link to="/public">Public display</Link>
+            </Button>
         </div>
     );
 };
