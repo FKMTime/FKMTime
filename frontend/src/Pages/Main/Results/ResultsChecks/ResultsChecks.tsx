@@ -63,10 +63,12 @@ const ResultsChecks = () => {
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2">
                             <BookCheck size={20} />
-                            Suspicious times/penalties
+                            Results checks
                         </CardTitle>
                         <CardDescription>
-                            Choose event and round
+                            Review suspicious times, penalties, and staffing
+                            before competing in the same group. Staffing checks
+                            use recorded timestamps and competitor attendance.
                         </CardDescription>
                     </CardHeader>
                     <CardContent>

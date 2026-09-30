@@ -4,7 +4,7 @@ import { TimeLimit } from "wcif-helpers";
 import { getCutoffByRoundId } from "wcif-helpers";
 
 import EventIcon from "@/Components/Icons/EventIcon";
-import { Alert, AlertTitle } from "@/Components/ui/alert";
+import { Alert, AlertDescription, AlertTitle } from "@/Components/ui/alert";
 import { Card, CardContent, CardHeader, CardTitle } from "@/Components/ui/card";
 import { activityCodeToName } from "@/lib/activities";
 import { isUnofficialEvent } from "@/lib/events";
@@ -60,6 +60,20 @@ const WarningsAndLimitsCard = ({
                 </CardTitle>
             </CardHeader>
             <CardContent className="flex flex-col gap-4">
+                {result.attempts.some(
+                    (attempt) => attempt.staffingWarnings?.length
+                ) && (
+                    <Alert variant="warning">
+                        <AlertCircle />
+                        <AlertTitle>Staffed before competing</AlertTitle>
+                        <AlertDescription>
+                            This competitor is recorded as judging or scrambling
+                            before a later solve in the same group. Review the
+                            warnings on their attempts. Groups are inferred from
+                            competitor attendance.
+                        </AlertDescription>
+                    </Alert>
+                )}
                 {!isDifferenceBetweenResults &&
                     !isUnofficialEvent(result.eventId) && (
                         <Alert

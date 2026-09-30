@@ -141,7 +141,7 @@ const AttemptRow = ({
                     <DeleteButton onClick={handleDelete} />
                 </TableCell>
                 <TableCell>
-                    <div className="flex gap-2">
+                    <div className="flex flex-wrap gap-2">
                         {!attempt.sessionId &&
                             attempt.status !== AttemptStatus.SCRAMBLED && (
                                 <Badge>Entered manually</Badge>
