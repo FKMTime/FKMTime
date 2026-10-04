@@ -22,6 +22,7 @@ COPY --from=build /app/dist/src /app
 COPY --from=build /app/node_modules /app/node_modules
 COPY --from=build /app/prisma /app/prisma
 COPY --from=build /app/package.json /app/package.json
+COPY --from=build /app/prisma.config.ts /app/prisma.config.ts
 COPY --from=build /app/entrypoint.sh /app/entrypoint.sh
 
 ENV PRISMA_ENGINES_CHECKSUM_IGNORE_MISSING=1

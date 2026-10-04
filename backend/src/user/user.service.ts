@@ -1,6 +1,5 @@
 import { HttpException, Injectable } from '@nestjs/common';
-import { Role } from '@prisma/client';
-import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
+import { Prisma, Role } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 import { WcaService } from 'src/wca/wca.service';
 
@@ -67,7 +66,7 @@ export class UserService {
         },
       });
     } catch (e) {
-      if (e instanceof PrismaClientKnownRequestError) {
+      if (e instanceof Prisma.PrismaClientKnownRequestError) {
         if (e.code === 'P2002') {
           throw new HttpException('Username already taken', 409);
         }
@@ -106,7 +105,7 @@ export class UserService {
         },
       });
     } catch (e) {
-      if (e instanceof PrismaClientKnownRequestError) {
+      if (e instanceof Prisma.PrismaClientKnownRequestError) {
         if (e.code === 'P2002') {
           throw new HttpException('Username already taken', 409);
         }

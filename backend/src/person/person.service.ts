@@ -1,6 +1,5 @@
 import { HttpException, Injectable } from '@nestjs/common';
-import { StaffRole } from '@prisma/client';
-import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
+import { Prisma, StaffRole } from '@prisma/client';
 import { WcaService } from 'src/wca/wca.service';
 import { Activity, Assignment, Competition } from 'wcif-helpers';
 import { getActivityInfoFromSchedule, getPersonFromWcif } from 'wcif-helpers';
@@ -240,7 +239,7 @@ export class PersonService {
         },
       });
     } catch (e) {
-      if (e instanceof PrismaClientKnownRequestError) {
+      if (e instanceof Prisma.PrismaClientKnownRequestError) {
         if (e.code === 'P2002') {
           throw new HttpException(
             {
@@ -336,7 +335,7 @@ export class PersonService {
         },
       });
     } catch (e) {
-      if (e instanceof PrismaClientKnownRequestError) {
+      if (e instanceof Prisma.PrismaClientKnownRequestError) {
         if (e.code === 'P2002') {
           throw new HttpException(
             {

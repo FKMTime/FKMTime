@@ -1,6 +1,5 @@
 import { forwardRef, HttpException, Inject, Injectable } from '@nestjs/common';
-import { DeviceType } from '@prisma/client';
-import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
+import { DeviceType, Prisma } from '@prisma/client';
 import { AppGateway } from 'src/app.gateway';
 
 import { DbService } from '../db/db.service';
@@ -73,7 +72,7 @@ export class DeviceService {
         include: { room: true },
       });
     } catch (e) {
-      if (e instanceof PrismaClientKnownRequestError) {
+      if (e instanceof Prisma.PrismaClientKnownRequestError) {
         if (e.code === 'P2002') {
           throw new HttpException(
             {
@@ -139,7 +138,7 @@ export class DeviceService {
         },
       });
     } catch (e) {
-      if (e instanceof PrismaClientKnownRequestError) {
+      if (e instanceof Prisma.PrismaClientKnownRequestError) {
         if (e.code === 'P2002') {
           throw new HttpException(
             {

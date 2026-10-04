@@ -1,7 +1,6 @@
 import { HttpException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
-import { Role } from '@prisma/client';
-import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
+import { Prisma, Role } from '@prisma/client';
 
 import { DbService } from '../db/db.service';
 import { WcaService } from '../wca/wca.service';
@@ -181,7 +180,7 @@ describe('UserService', () => {
       };
       const currentUserId = 'admin1';
 
-      const prismaError = new PrismaClientKnownRequestError(
+      const prismaError = new Prisma.PrismaClientKnownRequestError(
         'Unique constraint failed',
         {
           code: 'P2002',
