@@ -7,6 +7,7 @@ on:
     paths:
       - 'backend/src/**'
       - 'backend/prisma/**'
+      - 'backend/prisma.config.ts'
       - 'backend/Dockerfile'
       - 'backend/.dockerignore'
       - 'backend/package.json'

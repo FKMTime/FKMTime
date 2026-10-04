@@ -1,7 +1,6 @@
 import { HttpException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
-import { AttemptStatus } from '@prisma/client';
-import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
+import { AttemptStatus, Prisma } from '@prisma/client';
 
 import { DbService } from '../db/db.service';
 import { IncidentService } from './incident.service';
@@ -100,7 +99,7 @@ describe('IncidentService', () => {
         },
       };
 
-      const prismaError = new PrismaClientKnownRequestError(
+      const prismaError = new Prisma.PrismaClientKnownRequestError(
         'Unique constraint failed',
         {
           code: 'P2002',
