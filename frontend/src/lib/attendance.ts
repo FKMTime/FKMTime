@@ -1,6 +1,17 @@
 import { StaffActivityStatus } from "./interfaces";
 import { backendRequest } from "./request";
 
+export const getRoundStaffing = async (
+    roundId: string
+): Promise<{ hasAssignedRunners: boolean }> => {
+    const response = await backendRequest(
+        `attendance/round/${roundId}/staffing`,
+        "GET",
+        true
+    );
+    return await response.json();
+};
+
 export const getAttendanceByGroupId = async (groupId: string) => {
     const response = await backendRequest(
         `attendance/group/${groupId}`,

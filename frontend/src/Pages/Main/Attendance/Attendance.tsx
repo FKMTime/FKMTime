@@ -8,6 +8,7 @@ import { useToast } from "@/hooks/useToast";
 import { competitionAtom } from "@/lib/atoms";
 import {
     getAttendanceByGroupId,
+    getRoundStaffing,
     markAsAbsent,
     markAsLate,
     markAsPresent,
@@ -35,6 +36,11 @@ const Attendance = () => {
     const [competition, setCompetition] = useAtom(competitionAtom);
     const [attendance, setAttendance] = useState<StaffActivity[]>([]);
     const [rooms, setRooms] = useState<Room[]>([]);
+    const [roundStaffing, setRoundStaffing] = useState<{
+        roundId: string;
+        hasAssignedRunners: boolean;
+    } | null>(null);
+    const attendanceRoundId = selectedGroup.split("-g")[0];
 
     const [selectedEvent, setSelectedEvent] = useState<string>("");
     const [selectedRound, setSelectedRound] = useState<string>("");
@@ -162,6 +168,21 @@ const Attendance = () => {
         React.Dispatch<React.SetStateAction<number>>,
     ];
     useEffect(() => {
+        let cancelled = false;
+        setRoundStaffing(null);
+        if (attendanceRoundId) {
+            getRoundStaffing(attendanceRoundId).then((data) => {
+                if (!cancelled) {
+                    setRoundStaffing({ ...data, roundId: attendanceRoundId });
+                }
+            });
+        }
+        return () => {
+            cancelled = true;
+        };
+    }, [attendanceRoundId, isConnected]);
+
+    useEffect(() => {
         if (selectedGroup) {
             setSelectedEvent(selectedGroup.split("-")[0]);
             setSelectedRound(selectedGroup.split("-g")[0]);
@@ -234,6 +255,10 @@ const Attendance = () => {
                         />
                         <JudgesCard
                             attendance={attendance}
+                            showStations={
+                                roundStaffing?.roundId === attendanceRoundId &&
+                                roundStaffing.hasAssignedRunners
+                            }
                             handleMarkAsPresent={handleMarkAsPresent}
                             handleMarkAsAbsent={handleMarkAsAbsent}
                             handleMarkAsLate={handleMarkAsLate}

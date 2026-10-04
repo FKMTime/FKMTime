@@ -78,6 +78,34 @@ describe('AttendanceService', () => {
     });
   });
 
+  describe('getRoundStaffing', () => {
+    it('checks assigned runners across the whole round, regardless of attendance status', async () => {
+      jest
+        .spyOn(dbService.staffActivity, 'findFirst')
+        .mockResolvedValue({ id: 'runner-in-another-group' } as any);
+
+      await expect(service.getRoundStaffing('333-r1')).resolves.toEqual({
+        hasAssignedRunners: true,
+      });
+      expect(dbService.staffActivity.findFirst).toHaveBeenCalledWith({
+        where: {
+          groupId: { startsWith: '333-r1-g' },
+          role: StaffRole.RUNNER,
+          isAssigned: true,
+        },
+        select: { id: true },
+      });
+    });
+
+    it('reports no assigned runners when none match the round', async () => {
+      jest.spyOn(dbService.staffActivity, 'findFirst').mockResolvedValue(null);
+
+      await expect(service.getRoundStaffing('333-r2')).resolves.toEqual({
+        hasAssignedRunners: false,
+      });
+    });
+  });
+
   describe('addNotAssignedPerson', () => {
     it('should add not assigned person successfully', async () => {
       const groupId = '333-r1-g1';
