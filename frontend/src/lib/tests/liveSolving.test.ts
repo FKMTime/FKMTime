@@ -63,6 +63,24 @@ describe("getStationTimer", () => {
         expect(timer.isRunning).toBe(false);
     });
 
+    it("shows a station that stopped sending as offline", () => {
+        const previous = packet({ time: 105_000, serverReceivedAt: 10_000 });
+        const current = packet({ time: 106_000, serverReceivedAt: 11_000 });
+
+        const timer = getStationTimer(current, previous, 41_000);
+
+        expect(timer.phase).toEqual("offline");
+        expect(timer.isRunning).toBe(false);
+    });
+
+    it("keeps a quiet station online until the offline threshold", () => {
+        const current = packet({ time: 7216, serverReceivedAt: 10_000 });
+
+        expect(getStationTimer(current, null, 39_999).phase).toEqual(
+            "finished"
+        );
+    });
+
     it("counts up inspection while it grows", () => {
         const previous = packet({ inspection: 3000, serverReceivedAt: 10_000 });
         const current = packet({ inspection: 4000, serverReceivedAt: 11_000 });

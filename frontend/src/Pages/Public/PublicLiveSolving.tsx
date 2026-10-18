@@ -1,5 +1,5 @@
 import { useAtomValue } from "jotai";
-import { CheckCircle2 } from "lucide-react";
+import { CheckCircle2, WifiOff } from "lucide-react";
 import { useCallback, useContext, useEffect, useState } from "react";
 import { getPersonFromWcif } from "wcif-helpers";
 
@@ -30,16 +30,20 @@ const StationCard = ({
     competition: ReturnType<typeof useAtomValue<typeof competitionAtom>>;
 }) => {
     const { phase, displayTime, displayInspection } = useStationTimer(station);
+    // An offline station's last packet describes a solve that is long over
+    const isOffline = phase === "offline";
+    const personName = isOffline ? null : station.personName;
+    const groupId = isOffline ? null : station.groupId;
 
     const wcifPerson =
-        competition && station.registrantId
+        competition && !isOffline && station.registrantId
             ? getPersonFromWcif(station.registrantId, competition.wcif)
             : null;
 
     const avatarUrl = wcifPerson?.avatar?.thumbUrl ?? undefined;
-    const initials = station.personName?.[0]?.toUpperCase() ?? "?";
+    const initials = personName?.[0]?.toUpperCase() ?? "?";
 
-    const roundId = station.groupId?.split("-g")[0] ?? null;
+    const roundId = groupId?.split("-g")[0] ?? null;
     const roundName = roundId ? activityCodeToName(roundId, true, true) : null;
 
     return (
@@ -61,7 +65,7 @@ const StationCard = ({
                         <AvatarFallback>{initials}</AvatarFallback>
                     </Avatar>
                     <span className="font-medium truncate">
-                        {station.personName ?? "No competitor"}
+                        {personName ?? "No competitor"}
                     </span>
                 </div>
 
@@ -101,6 +105,14 @@ const StationCard = ({
                             </span>
                         </>
                     )}
+                    {phase === "offline" && (
+                        <div className="flex items-center gap-1.5 text-muted-foreground">
+                            <WifiOff size={14} />
+                            <span className="text-xs font-medium uppercase tracking-wider">
+                                Offline
+                            </span>
+                        </div>
+                    )}
                     {phase === "idle" && (
                         <span className="text-muted-foreground text-sm">
                             Waiting
@@ -108,7 +120,8 @@ const StationCard = ({
                     )}
                 </div>
 
-                {station.cumulativeLimitCentiseconds != null &&
+                {!isOffline &&
+                    station.cumulativeLimitCentiseconds != null &&
                     station.cumulativeRemainingCentiseconds != null && (
                         <div className="border-t pt-2 text-xs text-muted-foreground flex justify-between">
                             <span>Cumulative limit</span>

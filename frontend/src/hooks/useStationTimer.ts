@@ -1,6 +1,10 @@
 import { useEffect, useState } from "react";
 
-import { getStationTimer, StationInfo } from "@/lib/liveSolving";
+import {
+    getStationTimer,
+    STATION_OFFLINE_AFTER_MS,
+    StationInfo,
+} from "@/lib/liveSolving";
 
 const useStationTimer = (station: StationInfo) => {
     const [now, setNow] = useState(Date.now());
@@ -15,11 +19,24 @@ const useStationTimer = (station: StationInfo) => {
 
     const timer = getStationTimer(station, packets.previous, now);
 
+    const isOffline = timer.phase === "offline";
+
     useEffect(() => {
-        if (!timer.isRunning) return;
-        const interval = setInterval(() => setNow(Date.now()), 100);
-        return () => clearInterval(interval);
-    }, [timer.isRunning, station.serverReceivedAt]);
+        if (timer.isRunning) {
+            const interval = setInterval(() => setNow(Date.now()), 100);
+            return () => clearInterval(interval);
+        }
+        if (isOffline) return;
+        // Re-render once the station would cross the offline threshold
+        const timeout = setTimeout(
+            () => setNow(Date.now()),
+            Math.max(
+                0,
+                station.serverReceivedAt + STATION_OFFLINE_AFTER_MS - Date.now()
+            )
+        );
+        return () => clearTimeout(timeout);
+    }, [timer.isRunning, isOffline, station.serverReceivedAt]);
 
     return timer;
 };
