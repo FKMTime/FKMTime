@@ -1,0 +1,18 @@
+# Development override: start docker-adapter on macOS before this service.
+# Requires Docker Compose 2.24.4+ for !override support.
+services:
+  micro_connector:
+    network_mode: !reset null
+    # Use the runtime's DNS for host.docker.internal. A host-gateway entry
+    # points at the Linux VM on Colima, rather than the native macOS adapter.
+    dns: !reset []
+    extra_hosts: !reset []
+    ports:
+      - "8080:8080"
+    volumes: !override
+      - sock:/app/sock
+      - /tmp/fkm-build:/app/firmware
+      - /tmp/fkm-logs:/logs
+    environment:
+      - PORT=8080
+      - ADAPTER_API=http://host.docker.internal:3127
