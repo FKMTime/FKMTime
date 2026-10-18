@@ -17,3 +17,21 @@ To get token use `https://panel.fkmtime.com`
 ```bash
 docker compose -f ./docker-compose-bundled.yml pull && docker compose -f ./docker-compose-bundled.yml up
 ```
+
+## Bluetooth auto setup on macOS (development)
+
+The micro connector uses Linux D-Bus for Bluetooth, which containers on macOS
+cannot reach. Run [docker-adapter](https://github.com/filipton/docker-adapter)
+natively instead; the connector finds it at `host.docker.internal:3127`.
+
+```bash
+./scripts/docker-adapter.sh
+```
+
+The script downloads the adapter on first run. Keep it running, and allow
+Bluetooth for your terminal in **System Settings → Privacy & Security →
+Bluetooth**.
+
+Start the adapter **before** `docker compose up`: the connector looks for it
+only at startup. If the stack is already running, restart the connector with
+`docker compose restart micro_connector`.
