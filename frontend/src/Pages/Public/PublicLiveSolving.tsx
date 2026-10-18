@@ -6,26 +6,13 @@ import { getPersonFromWcif } from "wcif-helpers";
 import { Avatar, AvatarFallback, AvatarImage } from "@/Components/ui/avatar";
 import { Badge } from "@/Components/ui/badge";
 import { Card, CardContent, CardHeader } from "@/Components/ui/card";
+import useStationTimer from "@/hooks/useStationTimer";
 import { activityCodeToName } from "@/lib/activities";
 import { competitionAtom } from "@/lib/atoms";
+import { StationInfo } from "@/lib/liveSolving";
 import { centisecondsToClockFormat } from "@/lib/resultFormatters";
 import PageTransition from "@/Pages/PageTransition";
 import { socket, SocketContext } from "@/socket";
-
-interface StationInfo {
-    espId: number;
-    deviceName: string;
-    personName: string | null;
-    registrantId: number | null;
-    groupId: string | null;
-    time: number | null;
-    inspection: number | null;
-    cumulativeLimitCentiseconds: number | null;
-    cumulativeRemainingCentiseconds: number | null;
-    serverReceivedAt: number;
-}
-
-const STALE_THRESHOLD_MS = 30_000;
 
 const formatCs = (cs: number) => {
     try {
@@ -42,30 +29,7 @@ const StationCard = ({
     station: StationInfo;
     competition: ReturnType<typeof useAtomValue<typeof competitionAtom>>;
 }) => {
-    const [now, setNow] = useState(Date.now());
-
-    const hasTimerData = station.time != null || station.inspection != null;
-    const isFinished =
-        now - station.serverReceivedAt > STALE_THRESHOLD_MS &&
-        station.personName != null;
-    const isActive = hasTimerData && !isFinished;
-
-    useEffect(() => {
-        if (!isActive) return;
-        const interval = setInterval(() => setNow(Date.now()), 100);
-        return () => clearInterval(interval);
-    }, [isActive, station.serverReceivedAt]);
-
-    const elapsed = Math.floor((now - station.serverReceivedAt) / 10);
-
-    const displayTime =
-        station.time != null && !isFinished
-            ? station.time + elapsed
-            : station.time;
-    const displayInspection =
-        station.inspection != null && !isFinished
-            ? station.inspection + elapsed
-            : station.inspection;
+    const { phase, displayTime, displayInspection } = useStationTimer(station);
 
     const wcifPerson =
         competition && station.registrantId
@@ -77,14 +41,6 @@ const StationCard = ({
 
     const roundId = station.groupId?.split("-g")[0] ?? null;
     const roundName = roundId ? activityCodeToName(roundId, true, true) : null;
-
-    const phase = isFinished
-        ? "finished"
-        : displayInspection != null
-          ? "inspection"
-          : displayTime != null
-            ? "solving"
-            : "idle";
 
     return (
         <Card>
@@ -118,9 +74,9 @@ const StationCard = ({
                                     Finished
                                 </span>
                             </div>
-                            {station.time != null && (
+                            {displayTime != null && (
                                 <span className="text-4xl font-mono font-bold">
-                                    {formatCs(station.time)}
+                                    {formatCs(displayTime)}
                                 </span>
                             )}
                         </>

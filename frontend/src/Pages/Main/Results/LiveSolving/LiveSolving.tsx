@@ -6,35 +6,22 @@ import { getPersonFromWcif } from "wcif-helpers";
 import { Avatar, AvatarFallback, AvatarImage } from "@/Components/ui/avatar";
 import { Badge } from "@/Components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/Components/ui/card";
+import useStationTimer from "@/hooks/useStationTimer";
 import { activityCodeToName } from "@/lib/activities";
 import { competitionAtom } from "@/lib/atoms";
 import { getAllDevices } from "@/lib/devices";
 import { Device, DeviceType } from "@/lib/interfaces";
+import { StationInfo } from "@/lib/liveSolving";
 import { centisecondsToClockFormat } from "@/lib/resultFormatters";
 import { cn } from "@/lib/utils";
 import PageTransition from "@/Pages/PageTransition";
 import { socket, SocketContext } from "@/socket";
-
-interface StationInfo {
-    espId: number;
-    deviceName: string;
-    personName: string | null;
-    registrantId: number | null;
-    groupId: string | null;
-    time: number | null;
-    inspection: number | null;
-    cumulativeLimitCentiseconds: number | null;
-    cumulativeRemainingCentiseconds: number | null;
-    serverReceivedAt: number;
-}
 
 interface NewIncidentData {
     id: string;
     deviceName: string;
     competitorName: string;
 }
-
-const STALE_THRESHOLD_MS = 30_000;
 
 const formatCs = (cs: number) => {
     try {
@@ -91,12 +78,8 @@ const StationCard = ({
     competition: ReturnType<typeof useAtomValue<typeof competitionAtom>>;
     hasIncident: boolean;
 }) => {
-    const [now, setNow] = useState(Date.now());
     const [flashing, setFlashing] = useState(false);
     const prevHasIncident = useRef(false);
-    // Track previous packet's time to detect when the timer freezes (solve finished)
-    const prevTimeMsRef = useRef<number | null>(null);
-    const timerFrozenRef = useRef(false);
 
     useEffect(() => {
         if (hasIncident && !prevHasIncident.current) {
@@ -107,54 +90,7 @@ const StationCard = ({
         prevHasIncident.current = hasIncident;
     }, [hasIncident]);
 
-    // Runs on every new packet (serverReceivedAt changes). Detects frozen timer
-    // by comparing current time value with the previous packet's time value.
-    useEffect(() => {
-        if (station.time != null && station.time > 0) {
-            timerFrozenRef.current = station.time === prevTimeMsRef.current;
-        } else {
-            timerFrozenRef.current = false;
-        }
-        prevTimeMsRef.current = station.time ?? null;
-    }, [station.serverReceivedAt]);
-
-    const hasTimerData = station.time != null || station.inspection != null;
-    const isFinished =
-        now - station.serverReceivedAt > STALE_THRESHOLD_MS &&
-        station.personName != null;
-    const isActive = hasTimerData && !isFinished;
-
-    useEffect(() => {
-        if (!isActive) return;
-        const interval = setInterval(() => setNow(Date.now()), 100);
-        return () => clearInterval(interval);
-    }, [isActive, station.serverReceivedAt]);
-
-    // ESP sends time/inspection in milliseconds; divide by 10 to get centiseconds
-    const timeCs = station.time != null ? Math.round(station.time / 10) : null;
-    const inspectionCs =
-        station.inspection != null ? Math.round(station.inspection / 10) : null;
-
-    // Derive stable reference points for smooth interpolation between packets
-    const solveStartMs =
-        station.time != null && station.time > 0
-            ? station.serverReceivedAt - station.time
-            : null;
-    const inspectionStartMs =
-        station.inspection != null
-            ? station.serverReceivedAt - station.inspection
-            : null;
-
-    // When the timer is frozen (solve done), show the exact final time.
-    // Otherwise interpolate from the derived start time for a smooth running display.
-    const displayTime =
-        timerFrozenRef.current || solveStartMs == null || isFinished
-            ? timeCs
-            : Math.max(0, Math.round((now - solveStartMs) / 10));
-    const displayInspection =
-        inspectionStartMs != null && !isFinished
-            ? Math.max(0, Math.round((now - inspectionStartMs) / 10))
-            : inspectionCs;
+    const { phase, displayTime, displayInspection } = useStationTimer(station);
 
     const wcifPerson =
         competition && station.registrantId
@@ -173,14 +109,6 @@ const StationCard = ({
             roundName = null;
         }
     }
-
-    const phase = isFinished
-        ? "finished"
-        : timeCs != null && timeCs > 0
-          ? "solving"
-          : displayInspection != null
-            ? "inspection"
-            : "idle";
 
     return (
         <Card
@@ -230,9 +158,9 @@ const StationCard = ({
                                     Finished
                                 </span>
                             </div>
-                            {station.time != null && (
+                            {displayTime != null && (
                                 <span className="text-4xl font-mono font-bold">
-                                    {formatCs(station.time)}
+                                    {formatCs(displayTime)}
                                 </span>
                             )}
                         </>
