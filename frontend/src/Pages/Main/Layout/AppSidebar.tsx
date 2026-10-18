@@ -213,6 +213,8 @@ const AppSidebar = ({ unresolvedIncidentsCount }: AppSidebarProps) => {
                                             ) &&
                                             location.pathname !==
                                                 "/results/checks" &&
+                                            location.pathname !==
+                                                "/results/live" &&
                                             !currentRounds.some((roundId) =>
                                                 location.pathname.includes(
                                                     roundId
