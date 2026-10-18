@@ -262,6 +262,7 @@ export class SocketServer {
         },
         false,
       );
+      this.socketService.handleCurrentTimeInfo(request.data).catch(() => {});
     } else {
       this.logger.error('Unknown request type');
     }

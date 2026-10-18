@@ -21,6 +21,18 @@ export const getResultsByRoundId = async (roundId: string, search?: string) => {
     return (await response.json()) || [];
 };
 
+export const getPublicResultsByRoundId = async (
+    roundId: string,
+    search?: string
+) => {
+    let route = `result/public/round/${roundId}`;
+    if (search) {
+        route += `?search=${search}`;
+    }
+    const response = await backendRequest(route, "GET", false);
+    return (await response.json()) || [];
+};
+
 export const getAllResultsByPersonId = async (id: string) => {
     const response = await backendRequest(`result/person/${id}`, "GET", true);
     return await response.json();

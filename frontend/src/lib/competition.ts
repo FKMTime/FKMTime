@@ -192,6 +192,21 @@ export const getInfoForLoginPage = async () => {
     return await response.json();
 };
 
+export const getPublicCompetitionInfo = async () => {
+    const response = await backendRequest("competition/public", "GET", false);
+    const data = await response.json();
+    return { status: response.status, data };
+};
+
+export const getPublicRooms = async () => {
+    const response = await backendRequest(
+        "competition/public/rooms",
+        "GET",
+        false
+    );
+    return await response.json();
+};
+
 export const getNextGroupsFromScheduleForRoom = async (roomId: string) => {
     const response = await backendRequest(
         `competition/rooms/${roomId}/next-groups`,

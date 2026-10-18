@@ -9,6 +9,7 @@ import {
     Medal,
     Microchip,
     Puzzle,
+    Radio,
     Settings,
     SquareCheckBig,
     TriangleAlert,
@@ -212,6 +213,8 @@ const AppSidebar = ({ unresolvedIncidentsCount }: AppSidebarProps) => {
                                             ) &&
                                             location.pathname !==
                                                 "/results/checks" &&
+                                            location.pathname !==
+                                                "/results/live" &&
                                             !currentRounds.some((roundId) =>
                                                 location.pathname.includes(
                                                     roundId
@@ -279,6 +282,20 @@ const AppSidebar = ({ unresolvedIncidentsCount }: AppSidebarProps) => {
                                             )}
                                         </SidebarMenuSub>
                                     ) : null}
+                                </SidebarMenuItem>
+                                <SidebarMenuItem>
+                                    <SidebarMenuButton
+                                        asChild
+                                        isActive={
+                                            location.pathname ===
+                                            "/results/live"
+                                        }
+                                    >
+                                        <Link to={"/results/live"}>
+                                            <Radio />
+                                            <span>Live solving</span>
+                                        </Link>
+                                    </SidebarMenuButton>
                                 </SidebarMenuItem>
                                 {isDelegate() ? (
                                     <>
