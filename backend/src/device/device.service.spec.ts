@@ -125,13 +125,16 @@ describe('DeviceService', () => {
         hwVersion: HardwareVersion.V4,
       };
 
-      jest.spyOn(dbService.device, 'create').mockResolvedValue({} as any);
+      const createdDevice = { id: 'device1', ...deviceData };
+      jest
+        .spyOn(dbService.device, 'create')
+        .mockResolvedValue(createdDevice as any);
       jest.spyOn(appGateway, 'handleAddDeviceToDb').mockImplementation();
       jest.spyOn(socketController, 'sendServerStatus').mockResolvedValue();
 
       const result = await service.createDevice(deviceData);
 
-      expect(result).toEqual({ message: 'Device created' });
+      expect(result).toEqual({ ...createdDevice, count: 0 });
       expect(dbService.device.create).toHaveBeenCalled();
       expect(appGateway.handleAddDeviceToDb).toHaveBeenCalledWith(123);
       expect(socketController.sendServerStatus).toHaveBeenCalled();
