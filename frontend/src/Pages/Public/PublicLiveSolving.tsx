@@ -1,11 +1,6 @@
 import { useAtomValue } from "jotai";
 import { CheckCircle2 } from "lucide-react";
-import {
-    useCallback,
-    useContext,
-    useEffect,
-    useState,
-} from "react";
+import { useCallback, useContext, useEffect, useState } from "react";
 import { getPersonFromWcif } from "wcif-helpers";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/Components/ui/avatar";

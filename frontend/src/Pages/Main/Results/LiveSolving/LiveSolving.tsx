@@ -1,12 +1,6 @@
 import { useAtomValue } from "jotai";
 import { CheckCircle2, Radio, TriangleAlert } from "lucide-react";
-import {
-    useCallback,
-    useContext,
-    useEffect,
-    useRef,
-    useState,
-} from "react";
+import { useCallback, useContext, useEffect, useRef, useState } from "react";
 import { getPersonFromWcif } from "wcif-helpers";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/Components/ui/avatar";
@@ -16,8 +10,8 @@ import { activityCodeToName } from "@/lib/activities";
 import { competitionAtom } from "@/lib/atoms";
 import { getAllDevices } from "@/lib/devices";
 import { Device, DeviceType } from "@/lib/interfaces";
-import { cn } from "@/lib/utils";
 import { centisecondsToClockFormat } from "@/lib/resultFormatters";
+import { cn } from "@/lib/utils";
 import PageTransition from "@/Pages/PageTransition";
 import { socket, SocketContext } from "@/socket";
 
@@ -69,7 +63,7 @@ const playIncidentAlert = () => {
     };
 
     const t = ctx.currentTime;
-    beep(t,        880, 0.12);
+    beep(t, 880, 0.12);
     beep(t + 0.16, 660, 0.12);
     beep(t + 0.32, 880, 0.12);
     beep(t + 0.48, 660, 0.18);
@@ -139,9 +133,7 @@ const StationCard = ({
     // ESP sends time/inspection in milliseconds; divide by 10 to get centiseconds
     const timeCs = station.time != null ? Math.round(station.time / 10) : null;
     const inspectionCs =
-        station.inspection != null
-            ? Math.round(station.inspection / 10)
-            : null;
+        station.inspection != null ? Math.round(station.inspection / 10) : null;
 
     // Derive stable reference points for smooth interpolation between packets
     const solveStartMs =
@@ -350,7 +342,10 @@ const LiveSolving = () => {
             );
             if (!entry) return prev;
             const next = new Map(prev);
-            next.set(entry.espId, { ...entry, personName: data.competitorName });
+            next.set(entry.espId, {
+                ...entry,
+                personName: data.competitorName,
+            });
             return next;
         });
     }, []);
@@ -367,7 +362,12 @@ const LiveSolving = () => {
             socket.off("currentTimeInfo", handleCurrentTimeInfo);
             socket.off("newIncident", handleNewIncident);
         };
-    }, [handleCurrentStations, handleCurrentTimeInfo, handleNewIncident, isConnected]);
+    }, [
+        handleCurrentStations,
+        handleCurrentTimeInfo,
+        handleNewIncident,
+        isConnected,
+    ]);
 
     const stationList = Array.from(stations.values()).sort(
         (a, b) => a.espId - b.espId
