@@ -1,7 +1,6 @@
 import { HttpException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
-import { DeviceType, HardwareVersion } from '@prisma/client';
-import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
+import { DeviceType, HardwareVersion, Prisma } from '@prisma/client';
 
 import { AppGateway } from '../app.gateway';
 import { DbService } from '../db/db.service';
@@ -124,8 +123,12 @@ describe('DeviceService', () => {
         roomId: 'room1',
         hwVersion: HardwareVersion.V4,
       };
+      const createdDevice = {
+        id: 'device1',
+        ...deviceData,
+        room: { id: 'room1', name: 'Room 1' },
+      };
 
-      const createdDevice = { id: 'device1', ...deviceData };
       jest
         .spyOn(dbService.device, 'create')
         .mockResolvedValue(createdDevice as any);
@@ -150,7 +153,7 @@ describe('DeviceService', () => {
         hwVersion: HardwareVersion.V4,
       };
 
-      const prismaError = new PrismaClientKnownRequestError(
+      const prismaError = new Prisma.PrismaClientKnownRequestError(
         'Unique constraint failed',
         {
           code: 'P2002',

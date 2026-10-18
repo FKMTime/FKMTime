@@ -26,6 +26,12 @@ export class AttendanceController {
   }
 
   @UseGuards(StageLeaderGuard)
+  @Get('round/:roundId/staffing')
+  async getRoundStaffing(@Param('roundId') roundId: string) {
+    return this.attendanceService.getRoundStaffing(roundId);
+  }
+
+  @UseGuards(StageLeaderGuard)
   @Get('statistics')
   async getAttendanceStatistics() {
     return this.attendanceService.getAttendanceStatistics();

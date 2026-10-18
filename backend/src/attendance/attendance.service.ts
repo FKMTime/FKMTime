@@ -27,6 +27,18 @@ export class AttendanceService {
     });
   }
 
+  async getRoundStaffing(roundId: string) {
+    const runner = await this.prisma.staffActivity.findFirst({
+      where: {
+        groupId: { startsWith: `${roundId}-g` },
+        role: StaffRole.RUNNER,
+        isAssigned: true,
+      },
+      select: { id: true },
+    });
+    return { hasAssignedRunners: runner !== null };
+  }
+
   async getMostMissedAssignments() {
     const persons = await this.prisma.person.findMany();
     const data = [];

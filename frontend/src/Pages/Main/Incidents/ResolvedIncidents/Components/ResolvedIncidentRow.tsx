@@ -1,4 +1,4 @@
-import { List, Save } from "lucide-react";
+import { Copy, List, Save } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 
 import EventIcon from "@/Components/Icons/EventIcon";
@@ -6,6 +6,7 @@ import SmallIconButton from "@/Components/SmallIconButton";
 import { TableCell, TableRow } from "@/Components/ui/table";
 import { useToast } from "@/hooks/useToast";
 import { activityCodeToName } from "@/lib/activities";
+import { getEventShortName } from "@/lib/events";
 import { saveAttemptAsNoteworthyIncident } from "@/lib/incidents";
 import { Incident } from "@/lib/interfaces";
 import { attemptWithPenaltyToString } from "@/lib/resultFormatters";
@@ -40,6 +41,20 @@ const ResolvedIncidentRow = ({ incident }: ResolvedIncidentRowProps) => {
         }
     };
 
+    const handleCopy = () => {
+        const [eventId, roundNumber] = incident.result.roundId.split("-r");
+        const eventName = getEventShortName(eventId);
+        const wcaIdStr = incident.result.person.wcaId
+            ? ` (${incident.result.person.wcaId})`
+            : "";
+        const text = `${incident.result.person.name}${wcaIdStr}, ${eventName} R${roundNumber}A${incident.attemptNumber}`;
+        navigator.clipboard.writeText(text);
+        toast({
+            title: "Copied to clipboard",
+            variant: "success",
+        });
+    };
+
     return (
         <TableRow>
             <TableCell>{incident.result.person.name}</TableCell>
@@ -65,6 +80,11 @@ const ResolvedIncidentRow = ({ incident }: ResolvedIncidentRowProps) => {
             <TableCell>{incident.comment}</TableCell>
             <TableCell>{incident.judge?.name}</TableCell>
             <TableCell>
+                <SmallIconButton
+                    icon={<Copy />}
+                    title="Copy incident info"
+                    onClick={handleCopy}
+                />
                 <SmallIconButton
                     icon={<Save />}
                     title="Save as noteworthy"

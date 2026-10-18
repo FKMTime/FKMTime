@@ -1,6 +1,5 @@
 import { HttpException, Injectable } from '@nestjs/common';
-import { AttemptStatus } from '@prisma/client';
-import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
+import { AttemptStatus, Prisma } from '@prisma/client';
 import { activityCodeToName } from '@wca/helpers';
 import { publicPersonSelect } from 'src/constants';
 import { DbService } from 'src/db/db.service';
@@ -41,7 +40,7 @@ export class IncidentService {
         },
       });
     } catch (e) {
-      if (e instanceof PrismaClientKnownRequestError) {
+      if (e instanceof Prisma.PrismaClientKnownRequestError) {
         if (e.code === 'P2002') {
           throw new HttpException(
             {

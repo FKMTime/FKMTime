@@ -177,9 +177,11 @@ export class SyncService {
     wcifPublic.events = wcifPublic.events.filter(
       (event) => !isUnofficialEvent(event.id),
     );
-    unofficialEvents.forEach((event) => {
-      wcifPublic.events.push(event.wcif);
-    });
+    unofficialEvents
+      .filter((event) => isUnofficialEvent(event.eventId))
+      .forEach((event) => {
+        wcifPublic.events.push(event.wcif);
+      });
     await this.prisma.competition.update({
       where: { id: competition.id },
       data: { wcif: wcifPublic },

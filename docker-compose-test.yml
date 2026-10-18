@@ -3,7 +3,7 @@ services:
     image: postgres:18-alpine
     container_name: fkmtime-test-database
     ports:
-      - "5432:5432"
+      - "${DATABASE_PORT:-5432}:5432"
     restart: unless-stopped
     environment:
       - POSTGRES_USER=root
@@ -22,15 +22,14 @@ services:
     restart: unless-stopped
     image: maxidragon/dummy-wca:main
     ports:
-    - "3000:3000"
+      - "${WCA_PORT:-3000}:3000"
 
   dummy_wca_live:
     container_name: fkmtime-test-dummy-wca-live
     restart: unless-stopped
     image: maxidragon/dummy-wca-live:main
     ports:
-      - "4000:4000"
+      - "${WCA_LIVE_PORT:-4000}:4000"
 
 volumes:
   database:
-

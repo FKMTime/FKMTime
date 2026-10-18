@@ -39,7 +39,7 @@ const ResultsCheckRow = ({ check }: ResultsCheckRowProps) => {
             <TableCell>{check.comment}</TableCell>
             <TableCell>{check.judge?.name}</TableCell>
             <TableCell>
-                <div className="flex gap-2">
+                <div className="flex flex-wrap gap-2">
                     <AttemptWarnings attempt={check} />
                 </div>
             </TableCell>

@@ -32,6 +32,7 @@ import { WcaService } from '../wca/wca.service';
 import { CheckIfAttemptEnteredDto } from './dto/checkIfAttemptEntered.dto';
 import { DoubleCheckDto } from './dto/doubleCheck.dto';
 import { getSortedExtraAttempts, getSortedStandardAttempts } from './helpers';
+import { getStaffingWarnings } from './staffingWarnings';
 
 @Injectable()
 export class ResultService {
@@ -197,8 +198,19 @@ export class ResultService {
     const remainingAndUsedCumulativeLimit =
       await this.getRemainingAndUsedCumulativeLimit(id);
 
+    const staffingChecks = result
+      ? await this.getStaffingChecks(result.roundId)
+      : [];
+    const warningsByAttempt = new Map(
+      staffingChecks.map((attempt) => [attempt.id, attempt.staffingWarnings]),
+    );
+
     return {
       ...result,
+      attempts: result?.attempts.map((attempt) => ({
+        ...attempt,
+        staffingWarnings: warningsByAttempt.get(attempt.id) ?? [],
+      })),
       remainingAndUsedCumulativeLimit,
     };
   }
@@ -662,7 +674,41 @@ export class ResultService {
       }
     }
 
+    const staffingChecks = await this.getStaffingChecks(roundId);
+    for (const check of staffingChecks) {
+      const existing = attempts.find((attempt) => attempt.id === check.id);
+      if (existing) {
+        existing.staffingWarnings = check.staffingWarnings;
+      } else {
+        attempts.push(check);
+      }
+    }
+
     return attempts;
+  }
+
+  private async getStaffingChecks(roundId?: string) {
+    const [attempts, attendance] = await Promise.all([
+      this.prisma.attempt.findMany({
+        where: roundId ? { result: { roundId } } : {},
+        include: this.attemptsInclude,
+      }),
+      this.prisma.staffActivity.findMany({
+        where: {
+          role: StaffRole.COMPETITOR,
+          status: StaffActivityStatus.PRESENT,
+          ...(roundId ? { groupId: { startsWith: `${roundId}-g` } } : {}),
+        },
+        select: { personId: true, groupId: true, role: true, status: true },
+      }),
+    ]);
+    const warnings = getStaffingWarnings(attempts, attendance);
+    return attempts
+      .filter((attempt) => warnings.has(attempt.id))
+      .map((attempt) => ({
+        ...attempt,
+        staffingWarnings: warnings.get(attempt.id),
+      }));
   }
 
   async getSubmittedAttempts(roundId: string, personId: string) {

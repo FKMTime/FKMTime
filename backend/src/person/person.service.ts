@@ -1,6 +1,5 @@
 import { HttpException, Injectable } from '@nestjs/common';
-import { StaffRole } from '@prisma/client';
-import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
+import { Prisma, StaffRole } from '@prisma/client';
 import { WcaService } from 'src/wca/wca.service';
 import { Activity, Assignment, Competition } from 'wcif-helpers';
 import { getActivityInfoFromSchedule, getPersonFromWcif } from 'wcif-helpers';
@@ -240,7 +239,7 @@ export class PersonService {
         },
       });
     } catch (e) {
-      if (e instanceof PrismaClientKnownRequestError) {
+      if (e instanceof Prisma.PrismaClientKnownRequestError) {
         if (e.code === 'P2002') {
           throw new HttpException(
             {
@@ -336,7 +335,7 @@ export class PersonService {
         },
       });
     } catch (e) {
-      if (e instanceof PrismaClientKnownRequestError) {
+      if (e instanceof Prisma.PrismaClientKnownRequestError) {
         if (e.code === 'P2002') {
           throw new HttpException(
             {
@@ -512,6 +511,8 @@ export class PersonService {
       );
       newPersons.push(newPerson);
       const newWcif = {
+        id: wcif.id,
+        formatVersion: wcif.formatVersion,
         persons: newPersons,
       };
       const response = await this.wcaService.patchWcif(
@@ -538,7 +539,14 @@ export class PersonService {
           message: 'Successfully moved the competitor to another group',
         };
       } else {
-        throw new HttpException(response.message, response.statusCode || 500);
+        const error = response.error ?? response.message ?? 'Unknown WCA error';
+        throw new HttpException(
+          {
+            message: 'The WCA rejected the WCIF update',
+            error: typeof error === 'string' ? error : JSON.stringify(error),
+          },
+          response.statusCode || 500,
+        );
       }
     }
   }

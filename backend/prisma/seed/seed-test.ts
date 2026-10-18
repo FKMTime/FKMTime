@@ -1,3 +1,6 @@
+import 'dotenv/config';
+
+import { PrismaPg } from '@prisma/adapter-pg';
 import { PrismaClient, Role, SendingResultsFrequency } from '@prisma/client';
 import { Activity, Assignment, Competition, Person } from '@wca/helpers';
 import * as fs from 'fs';
@@ -5,7 +8,9 @@ import { sha512 } from 'js-sha512';
 
 import { wcifRoleToAttendanceRole } from '../../src/wcif-helpers';
 
-const prisma = new PrismaClient();
+const prisma = new PrismaClient({
+  adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL }),
+});
 
 //This is temporary fix for the issue with importing functions from the wcif-helpers library
 const getGroupInfoByActivityId = (activityId: number, wcif: Competition) => {
@@ -57,7 +62,7 @@ export async function seedDb() {
       scoretakingToken: 'wca-live-token',
       scoretakingTokenUpdatedAt: new Date(),
       wcif: JSON.parse(wcifFile),
-      fkmToken: 69420
+      fkmToken: 69420,
     },
   });
   await prisma.person.createMany({

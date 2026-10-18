@@ -215,6 +215,16 @@ export interface ResultWithAverage extends Result {
     bestString: string;
 }
 
+export interface StaffingWarning {
+    role: "JUDGE" | "SCRAMBLER";
+    groupId: string;
+    staffedAttemptId: string;
+    staffedResultId: string;
+    staffedPersonName: string;
+    staffedAttemptNumber: number;
+    staffedAttemptType: AttemptType;
+}
+
 export interface Attempt {
     id: string;
     resultId: string;
@@ -237,6 +247,7 @@ export interface Attempt {
     device?: Device;
     updatedBy?: User;
     fastAttemptRatio?: number;
+    staffingWarnings?: StaffingWarning[];
 }
 
 export interface AttemptToEnterWithScorecard extends Attempt {

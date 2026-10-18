@@ -11,6 +11,7 @@ import PresentPeopleList from "./PresentPeopleList";
 
 interface JudgesCardProps {
     attendance: StaffActivity[];
+    showStations: boolean;
     handleMarkAsPresent: (staffActivityId: string) => void;
     handleMarkAsAbsent: (staffActivityId: string) => void;
     handleMarkAsLate: (staffActivityId: string) => void;
@@ -21,6 +22,7 @@ interface JudgesCardProps {
 
 const JudgesCard = ({
     attendance,
+    showStations,
     handleMarkAsPresent,
     handleMarkAsAbsent,
     handleMarkAsLate,
@@ -95,7 +97,7 @@ const JudgesCard = ({
                                 <PresentPeopleList
                                     staffActivities={presentJudges}
                                     handleMarkAsAbsent={handleMarkAsAbsent}
-                                    showDevice
+                                    showDevice={showStations}
                                 />
                             </div>
                         )}
