@@ -69,7 +69,7 @@ const NoteworthyIncidentRow = ({
                 {incident.attempt && (
                     <Link
                         to={`/results/${incident.attempt.resultId}`}
-                        className="text-blue-500 hover:underline"
+                        className="text-primary hover:underline"
                     >
                         See all results
                     </Link>

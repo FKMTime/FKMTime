@@ -60,7 +60,7 @@ const ResolvedIncidentRow = ({ incident }: ResolvedIncidentRowProps) => {
             <TableCell>{incident.result.person.name}</TableCell>
             <TableCell>
                 <Link
-                    className="text-blue-500 flex items-center gap-1"
+                    className="text-primary flex items-center gap-1"
                     to={`/results/round/${incident.result.roundId}`}
                 >
                     <EventIcon

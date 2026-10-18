@@ -83,7 +83,7 @@ const CompetitionForm = ({
                                     <FormDescription>
                                         You can get this token{" "}
                                         <a
-                                            className="text-blue-500"
+                                            className="text-primary"
                                             href="https://live.worldcubeassociation.org/account"
                                             target="_blank"
                                         >
@@ -113,7 +113,7 @@ const CompetitionForm = ({
                                     <FormDescription>
                                         You can get this token{" "}
                                         <a
-                                            className="text-blue-500"
+                                            className="text-primary"
                                             href={`https://cubingcontests.com/mod/competition?edit_id=${competition.wcaId}`}
                                             target="_blank"
                                         >

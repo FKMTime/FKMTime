@@ -157,7 +157,7 @@ const StationCard = ({
                 <div className="flex flex-col items-center gap-1">
                     {phase === "finished" && (
                         <>
-                            <div className="flex items-center gap-1.5 text-blue-500">
+                            <div className="flex items-center gap-1.5 text-primary">
                                 <CheckCircle2 size={14} />
                                 <span className="text-xs font-medium uppercase tracking-wider">
                                     Finished
@@ -172,20 +172,20 @@ const StationCard = ({
                     )}
                     {phase === "inspection" && displayInspection != null && (
                         <>
-                            <span className="text-xs text-amber-500 font-medium uppercase tracking-wider">
+                            <span className="text-xs text-warning font-medium uppercase tracking-wider">
                                 Inspection
                             </span>
-                            <span className="text-4xl font-mono font-bold text-amber-500">
+                            <span className="text-4xl font-mono font-bold text-warning">
                                 {formatCs(displayInspection)}
                             </span>
                         </>
                     )}
                     {phase === "solving" && displayTime != null && (
                         <>
-                            <span className="text-xs text-green-500 font-medium uppercase tracking-wider">
+                            <span className="text-xs text-success font-medium uppercase tracking-wider">
                                 Solving
                             </span>
-                            <span className="text-4xl font-mono font-bold text-green-500">
+                            <span className="text-4xl font-mono font-bold text-success">
                                 {formatCs(displayTime)}
                             </span>
                         </>

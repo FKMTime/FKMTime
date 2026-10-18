@@ -75,7 +75,7 @@ const PersonRow = ({
             <TableCell>
                 {person.wcaId ? (
                     <a
-                        className="text-blue-500"
+                        className="text-primary"
                         href={`${WCA_ORIGIN}/persons/${person.wcaId}`}
                         target="_blank"
                     >

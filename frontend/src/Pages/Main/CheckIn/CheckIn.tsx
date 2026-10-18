@@ -204,7 +204,7 @@ const CheckIn = () => {
                                 <p>
                                     {personData.wcaId ? (
                                         <a
-                                            className="text-blue-500"
+                                            className="text-primary"
                                             href={`${WCA_ORIGIN}/persons/${personData.wcaId}`}
                                             target="_blank"
                                             rel="noreferrer"

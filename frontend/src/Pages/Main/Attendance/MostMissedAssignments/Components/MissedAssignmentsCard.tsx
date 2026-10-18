@@ -56,7 +56,7 @@ const MissedAssignmentsCard = ({
                             />
                             {assignments.person.wcaId ? (
                                 <a
-                                    className="text-blue-500"
+                                    className="text-primary"
                                     href={`${WCA_ORIGIN}/persons/${assignments.person.wcaId}`}
                                     target="_blank"
                                 >

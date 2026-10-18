@@ -1,4 +1,4 @@
-import { Check, Moon, Sun } from "lucide-react";
+import { Check, Monitor, Moon, Sun } from "lucide-react";
 
 import { Button } from "@/Components/ui/button";
 import {
@@ -10,47 +10,51 @@ import {
 import { cn } from "@/lib/utils";
 import { useTheme } from "@/providers/ThemeProvider";
 
-const ModeToggle = () => {
+const THEME_OPTIONS = [
+    { value: "light", label: "Light", icon: Sun },
+    { value: "dark", label: "Dark", icon: Moon },
+    { value: "system", label: "System", icon: Monitor },
+] as const;
+
+interface ModeToggleProps {
+    className?: string;
+}
+
+const ModeToggle = ({ className }: ModeToggleProps) => {
     const { theme, setTheme } = useTheme();
 
     return (
         <DropdownMenu>
             <DropdownMenuTrigger asChild>
                 <Button
-                    variant="ghost"
+                    variant="outline"
                     size="icon"
-                    className="scale-95 rounded-full"
+                    className={cn(
+                        "relative border-border md:size-[38px]",
+                        className
+                    )}
+                    aria-label="Theme"
                 >
-                    <Sun className="h-[1.2rem] w-[1.2rem] rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
-                    <Moon className="absolute h-[1.2rem] w-[1.2rem] rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
-                    <span className="sr-only">Toggle theme</span>
+                    <Sun className="rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
+                    <Moon className="absolute rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
                 </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={() => setTheme("light")}>
-                    Light{" "}
-                    <Check
-                        size={14}
-                        className={cn("ml-auto", theme !== "light" && "hidden")}
-                    />
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setTheme("dark")}>
-                    Dark
-                    <Check
-                        size={14}
-                        className={cn("ml-auto", theme !== "dark" && "hidden")}
-                    />
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setTheme("system")}>
-                    System
-                    <Check
-                        size={14}
-                        className={cn(
-                            "ml-auto",
-                            theme !== "system" && "hidden"
-                        )}
-                    />
-                </DropdownMenuItem>
+                {THEME_OPTIONS.map(({ value, label, icon: Icon }) => (
+                    <DropdownMenuItem
+                        key={value}
+                        onClick={() => setTheme(value)}
+                    >
+                        <Icon />
+                        {label}
+                        <Check
+                            className={cn(
+                                "ml-auto !text-primary",
+                                theme !== value && "invisible"
+                            )}
+                        />
+                    </DropdownMenuItem>
+                ))}
             </DropdownMenuContent>
         </DropdownMenu>
     );

@@ -75,7 +75,7 @@ const PersonCard = ({
                         <p>
                             WCA ID:{" "}
                             <a
-                                className="text-blue-500"
+                                className="text-primary"
                                 href={`${WCA_ORIGIN}/persons/${person.wcaId}`}
                                 target="_blank"
                             >

@@ -28,7 +28,7 @@ const AttemptWarnings = ({ attempt }: AttemptsWarningProps) => {
             )}
             {attempt.penalty === DNS_VALUE && <Badge>DNS</Badge>}
             {attempt.fastAttemptRatio !== undefined && (
-                <Badge className="border-transparent bg-amber-500 text-white shadow">
+                <Badge className="border-transparent bg-warning-soft text-warning">
                     Fast ({Math.round(attempt.fastAttemptRatio * 100)}%)
                 </Badge>
             )}
@@ -38,7 +38,7 @@ const AttemptWarnings = ({ attempt }: AttemptsWarningProps) => {
                     to={`/results/${warning.staffedResultId}`}
                     title={`Recorded before this solve in ${activityCodeToName(warning.groupId)}. Group inferred from competitor attendance; review manually.`}
                 >
-                    <Badge className="border-transparent bg-amber-500 text-white shadow">
+                    <Badge className="border-transparent bg-warning-soft text-warning">
                         {warning.role === "JUDGE" ? "Judged" : "Scrambled"}{" "}
                         {warning.staffedPersonName}&apos;s attempt{" "}
                         {warning.staffedAttemptType ===

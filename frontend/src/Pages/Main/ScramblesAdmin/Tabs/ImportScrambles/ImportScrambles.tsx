@@ -109,7 +109,7 @@ const ImportScrambles = () => {
                             events please remember to add them first in the {""}
                             <Link
                                 to="/events"
-                                className="text-blue-500
+                                className="text-primary
                             "
                             >
                                 Unofficial Events

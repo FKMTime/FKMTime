@@ -11,9 +11,9 @@ const SuspiciousAveragesCard = ({ data }: SuspiciousAveragesCardProps) => {
     if (data.length === 0) return null;
 
     return (
-        <Card className="border-red-500/40">
+        <Card className="border-destructive/40">
             <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-red-500">
+                <CardTitle className="flex items-center gap-2 text-destructive">
                     <ShieldAlert size={18} />
                     Averages with single station & judge
                 </CardTitle>
@@ -23,7 +23,7 @@ const SuspiciousAveragesCard = ({ data }: SuspiciousAveragesCardProps) => {
                     {data.map((entry, i) => (
                         <div
                             key={i}
-                            className="rounded-md border border-red-500/30 bg-red-500/5 px-3 py-2"
+                            className="rounded-md border border-destructive/30 bg-destructive-soft px-3 py-2"
                         >
                             <div className="flex items-center justify-between">
                                 <span className="text-sm font-medium">

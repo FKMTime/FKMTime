@@ -112,7 +112,7 @@ const SingleResultHeaderCard = ({
                     <CardDescription className="flex gap-2 items-center">
                         <img src={wcaLogo} width="30" />
                         <a
-                            className="text-blue-500"
+                            className="text-primary"
                             href={`${WCA_ORIGIN}/persons/${result.person.wcaId}`}
                             target="_blank"
                             rel="noreferrer"
@@ -124,7 +124,7 @@ const SingleResultHeaderCard = ({
             </CardHeader>
             <CardContent className="flex flex-col gap-3">
                 {result.isDoubleChecked && result.doubleCheckedAt && (
-                    <div className="flex flex-row gap-2 text-green-500 font-semibold items-center">
+                    <div className="flex flex-row gap-2 text-success font-semibold items-center">
                         <CircleCheckBig /> Double checked at{" "}
                         {new Date(result.doubleCheckedAt).toLocaleString()} by{" "}
                         {result.doubleCheckedBy?.fullName}

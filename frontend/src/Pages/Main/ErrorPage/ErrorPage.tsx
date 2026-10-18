@@ -40,7 +40,9 @@ const ErrorPage = () => {
                 <div className="flex flex-col items-center gap-2 text-center">
                     <span className="text-6xl">💥</span>
                     <h2 className="text-2xl font-bold">{title}</h2>
-                    <p className="text-red-500 text-lg max-w-md">{message}</p>
+                    <p className="text-destructive text-lg max-w-md">
+                        {message}
+                    </p>
                 </div>
 
                 {details && (

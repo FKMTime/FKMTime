@@ -11,7 +11,7 @@ const NotFound = () => {
         <PageTransition>
             <div className="flex flex-col gap-5 mt-5 justify-center items-center h-screen">
                 <h2>Error 404</h2>
-                <h3 className="text-red-500">Page not found</h3>
+                <h3 className="text-destructive">Page not found</h3>
                 <Button onClick={() => navigate("/")}>Home</Button>
                 <ModeToggle />
             </div>
