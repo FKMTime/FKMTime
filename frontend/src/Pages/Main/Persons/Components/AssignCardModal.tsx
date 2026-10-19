@@ -70,7 +70,6 @@ const AssignCardModal = ({ isOpen, onClose, person }: AssignCardModalProps) => {
                 <ModalActions>
                     {isOrganizerOrDelegate() && (
                         <Button
-                            variant="success"
                             type="submit"
                             className=""
                             onClick={handleSubmit}

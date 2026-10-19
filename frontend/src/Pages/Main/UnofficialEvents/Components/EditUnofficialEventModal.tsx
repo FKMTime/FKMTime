@@ -62,11 +62,7 @@ const EditUnofficialEventModal = ({
                 setRounds={setRounds}
             />
             <ModalActions>
-                <Button
-                    variant="success"
-                    onClick={handleSubmit}
-                    disabled={isLoading}
-                >
+                <Button onClick={handleSubmit} disabled={isLoading}>
                     Save
                 </Button>
             </ModalActions>

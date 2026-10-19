@@ -112,11 +112,7 @@ const ScramblingDeviceForm = ({
                     )}
                 />
                 <ModalActions>
-                    <Button
-                        type="submit"
-                        variant="success"
-                        disabled={isLoading}
-                    >
+                    <Button type="submit" disabled={isLoading}>
                         Save
                     </Button>
                 </ModalActions>

@@ -121,11 +121,7 @@ const AddScrambleSetModal = ({
                     />
                 </div>
                 <ModalActions>
-                    <Button
-                        variant="success"
-                        onClick={handleAdd}
-                        disabled={preventFromImporting}
-                    >
+                    <Button onClick={handleAdd} disabled={preventFromImporting}>
                         Add
                     </Button>
                 </ModalActions>

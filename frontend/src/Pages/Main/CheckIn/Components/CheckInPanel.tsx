@@ -158,7 +158,7 @@ const CheckInPanel = ({
             <InlineError>{error}</InlineError>
 
             <div className="flex flex-col gap-2.5 sm:flex-row">
-                <Button type="submit" variant="success" disabled={!canCheckIn}>
+                <Button type="submit" disabled={!canCheckIn}>
                     <UserCheck />
                     {needsCard ? "Check in and assign card" : "Check in"}
                 </Button>

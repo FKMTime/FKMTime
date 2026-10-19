@@ -105,11 +105,7 @@ const CreateUnofficialEventModal = ({
                 />
             ) : null}
             <ModalActions>
-                <Button
-                    variant="success"
-                    onClick={handleSubmit}
-                    disabled={isLoading}
-                >
+                <Button onClick={handleSubmit} disabled={isLoading}>
                     Add unofficial event
                 </Button>
             </ModalActions>

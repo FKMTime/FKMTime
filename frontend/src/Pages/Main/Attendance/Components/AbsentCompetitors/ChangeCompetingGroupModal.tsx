@@ -115,11 +115,7 @@ const ChangeCompetingGroupModal = ({
                 </Select>
             </div>
             <ModalActions>
-                <Button
-                    variant="success"
-                    onClick={handleSubmit}
-                    disabled={isLoading}
-                >
+                <Button onClick={handleSubmit} disabled={isLoading}>
                     Submit
                 </Button>
             </ModalActions>

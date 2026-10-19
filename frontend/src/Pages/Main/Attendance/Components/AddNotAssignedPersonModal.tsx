@@ -74,11 +74,7 @@ const AddNotAssignedPersonModal = ({
                 onSelect={(p) => setPerson(p)}
                 defaultValue={person?.id}
             />
-            <Button
-                variant="success"
-                onClick={handleAddPerson}
-                disabled={!person}
-            >
+            <Button onClick={handleAddPerson} disabled={!person}>
                 <Check />
                 Add and mark as present
             </Button>

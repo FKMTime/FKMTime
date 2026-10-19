@@ -15,9 +15,7 @@ const EnterScorecardActions = ({
     const navigate = useNavigate();
     return (
         <div className="flex md:flex-row flex-col gap-3">
-            <Button variant="success" onClick={handleSubmit}>
-                Save
-            </Button>
+            <Button onClick={handleSubmit}>Save</Button>
             <Button onClick={() => navigate(`/results/${result.id}`)}>
                 Details
             </Button>

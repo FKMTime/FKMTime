@@ -123,11 +123,7 @@ const ChangePasswordModal = ({ isOpen, onClose }: ChangePasswordModalProps) => {
                         )}
                     />
                     <ModalActions>
-                        <Button
-                            variant="success"
-                            type="submit"
-                            disabled={isLoading}
-                        >
+                        <Button type="submit" disabled={isLoading}>
                             Save
                         </Button>
                     </ModalActions>

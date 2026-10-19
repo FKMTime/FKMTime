@@ -70,9 +70,7 @@ const SwapAttemptsModal = ({
                     />
                 </div>
                 <ModalActions>
-                    <Button onClick={handleSubmit} variant="success">
-                        Swap attempts
-                    </Button>
+                    <Button onClick={handleSubmit}>Swap attempts</Button>
                 </ModalActions>
             </div>
         </Modal>

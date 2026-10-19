@@ -75,7 +75,7 @@ const DetailsModal = ({
                 value={comment}
                 onChange={handleCommentChange}
             />
-            <Button variant="success" onClick={handleSave}>
+            <Button onClick={handleSave}>
                 <Save />
                 Save
             </Button>
