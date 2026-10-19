@@ -189,7 +189,6 @@ const RESULTS_SECTIONS = ["round", "public", "live", "checks"];
  * two-level breadcrumb on desktop.
  */
 export const getDetailLabel = (pathname: string): string | null => {
-    if (pathname === "/incidents/manual/create") return "New manual incident";
     const incident = matchPath("/incidents/:id", pathname);
     if (incident && !INCIDENT_TABS.includes(incident.params.id!))
         return "Incident";

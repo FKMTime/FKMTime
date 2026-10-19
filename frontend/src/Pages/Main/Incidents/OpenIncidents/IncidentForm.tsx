@@ -119,75 +119,79 @@ const IncidentForm = ({
         <Form {...form}>
             <form
                 onSubmit={form.handleSubmit(onSubmit)}
-                className="space-y-8 py-3"
+                className="flex flex-col gap-4"
             >
-                <FormField
-                    control={form.control}
-                    name="attemptNumber"
-                    render={({ field }) => (
-                        <FormItem>
-                            <FormLabel>Attempt number</FormLabel>
-                            <Input
-                                type="number"
-                                placeholder="Attempt number"
-                                value={field.value}
-                                onChange={(event) =>
-                                    field.onChange(+event.target.value)
-                                }
-                            />
-                            <FormMessage />
-                        </FormItem>
-                    )}
-                />
-                <FormField
-                    control={form.control}
-                    name="value"
-                    render={({ field }) => (
-                        <FormItem>
-                            <FormLabel>Time</FormLabel>
-                            <AttemptResultInput
-                                value={field.value}
-                                onChange={field.onChange}
-                                disabled={isLoading}
-                            />
-                            <FormMessage />
-                        </FormItem>
-                    )}
-                />
-                <FormField
-                    control={form.control}
-                    name="penalty"
-                    render={({ field }) => (
-                        <FormItem>
-                            <FormLabel>Penalty</FormLabel>
-                            <PenaltySelect
-                                value={field.value}
-                                onChange={field.onChange}
-                                disabled={isLoading}
-                            />
-                            <FormMessage />
-                        </FormItem>
-                    )}
-                />
-                <FormField
-                    control={form.control}
-                    name="judgeId"
-                    render={({ field }) => (
-                        <FormItem>
-                            <FormLabel>Judge</FormLabel>
-                            <PersonAutocomplete
-                                onSelect={(person) =>
-                                    field.onChange(person?.id)
-                                }
-                                defaultValue={field.value as string}
-                            />
+                <div className="grid gap-4 sm:grid-cols-2">
+                    <FormField
+                        control={form.control}
+                        name="attemptNumber"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Attempt number</FormLabel>
+                                <Input
+                                    type="number"
+                                    placeholder="Attempt number"
+                                    value={field.value}
+                                    onChange={(event) =>
+                                        field.onChange(+event.target.value)
+                                    }
+                                />
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+                    <FormField
+                        control={form.control}
+                        name="value"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Time</FormLabel>
+                                <AttemptResultInput
+                                    value={field.value}
+                                    onChange={field.onChange}
+                                    disabled={isLoading}
+                                />
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+                </div>
+                <div className="grid gap-4 sm:grid-cols-2">
+                    <FormField
+                        control={form.control}
+                        name="penalty"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Penalty</FormLabel>
+                                <PenaltySelect
+                                    value={field.value}
+                                    onChange={field.onChange}
+                                    disabled={isLoading}
+                                />
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+                    <FormField
+                        control={form.control}
+                        name="judgeId"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Judge</FormLabel>
+                                <PersonAutocomplete
+                                    onSelect={(person) =>
+                                        field.onChange(person?.id)
+                                    }
+                                    defaultValue={field.value as string}
+                                />
 
-                            <FormMessage />
-                        </FormItem>
-                    )}
-                />
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+                </div>
                 {editedIncident.scrambler ? (
-                    <p>
+                    <p className="text-sm text-muted-foreground">
                         Scrambler:{" "}
                         {getPersonNameAndRegistrantId(editedIncident.scrambler)}
                     </p>
@@ -208,44 +212,47 @@ const IncidentForm = ({
                         </FormItem>
                     )}
                 />
-                <div className="flex items-center gap-2">
+                <Label className="flex min-h-11 cursor-pointer items-center gap-3 font-normal md:min-h-0">
                     <Checkbox
                         checked={isNoteworthy}
                         onCheckedChange={(value) => setIsNoteworthy(!!value)}
                     />
-                    <Label>Mark as noteworthy incident</Label>
-                </div>
-                <div className="flex items-center gap-2">
+                    Mark as noteworthy incident
+                </Label>
+                <Label className="flex min-h-11 cursor-pointer items-center gap-3 font-normal md:min-h-0">
                     <Checkbox
                         checked={doNotRequireCards}
                         onCheckedChange={(value) =>
                             setDoNotRequireCards(!!value)
                         }
                     />
-                    <Label>
-                        Do not require cards to be scanned (use only in case of
-                        bugs)
-                    </Label>
-                </div>
-                <div className="flex md:flex-row flex-col gap-4">
+                    <span>
+                        Do not require cards to be scanned{" "}
+                        <span className="text-faint">(bugs only)</span>
+                    </span>
+                </Label>
+                <div className="mt-1 flex flex-col gap-2.5 sm:flex-row">
                     <Button
-                        variant="secondary"
                         type="submit"
+                        disabled={isLoading}
                         onClick={() => setAction(IncidentAction.RESOLVED)}
                     >
                         Mark as resolved
                     </Button>
                     <Button
-                        variant="success"
+                        variant="outline"
                         type="submit"
+                        disabled={isLoading}
                         onClick={() => setAction(IncidentAction.EXTRA_GIVEN)}
                     >
                         Save and give extra
                     </Button>
                     <Button
-                        variant="destructive"
+                        variant="destructive-ghost"
                         onClick={handleDelete}
                         type="button"
+                        disabled={isLoading}
+                        className="sm:ml-auto"
                     >
                         Delete attempt
                     </Button>

@@ -35,8 +35,11 @@ const Home = lazy(() => import("./Pages/Main/Home/Home"));
 const ImportCompetition = lazy(
     () => import("./Pages/Main/ImportCompetition/ImportCompetition")
 );
-const Incidents = lazy(
-    () => import("./Pages/Main/Incidents/AllIncidents/Incidents")
+const IncidentsLayout = lazy(
+    () => import("./Pages/Main/Incidents/IncidentsLayout")
+);
+const OpenIncidents = lazy(
+    () => import("./Pages/Main/Incidents/OpenIncidents/OpenIncidents")
 );
 const ResolvedIncidents = lazy(
     () => import("./Pages/Main/Incidents/ResolvedIncidents/ResolvedIncidents")
@@ -86,20 +89,11 @@ const SingleResult = lazy(
 const LiveSolving = lazy(
     () => import("./Pages/Main/Results/LiveSolving/LiveSolving")
 );
-const IncidentPage = lazy(
-    () => import("./Pages/Main/Incidents/IncidentPage/IncidentPage")
-);
 const PersonResults = lazy(
     () => import("./Pages/Main/Persons/PersonResults/PersonResults")
 );
 const ManualIncidents = lazy(
     () => import("./Pages/Main/Incidents/ManualIncidents/ManualIncidents")
-);
-const CreateManualIncident = lazy(
-    () =>
-        import(
-            "./Pages/Main/Incidents/ManualIncidents/CreateManualIncident/CreateManualIncident"
-        )
 );
 const PublicLayout = lazy(() => import("./Pages/Public/PublicLayout"));
 const PublicResults = lazy(() => import("./Pages/Public/PublicResults"));
@@ -144,31 +138,22 @@ const App = () => {
                 },
                 {
                     path: "incidents",
-                    element: <Incidents />,
-                },
-                {
-                    path: "incidents/resolved",
-                    element: <ResolvedIncidents />,
-                },
-                {
-                    path: "incidents/noteworthy",
-                    element: <NoteworthyIncidents />,
-                },
-                {
-                    path: "incidents/warnings",
-                    element: <Warnings />,
-                },
-                {
-                    path: "incidents/manual",
-                    element: <ManualIncidents />,
-                },
-                {
-                    path: "incidents/manual/create",
-                    element: <CreateManualIncident />,
-                },
-                {
-                    path: "incidents/:id",
-                    element: <IncidentPage />,
+                    element: <IncidentsLayout />,
+                    children: [
+                        { index: true, element: <OpenIncidents /> },
+                        { path: "resolved", element: <ResolvedIncidents /> },
+                        {
+                            path: "noteworthy",
+                            element: <NoteworthyIncidents />,
+                        },
+                        { path: "warnings", element: <Warnings /> },
+                        { path: "manual", element: <ManualIncidents /> },
+                        {
+                            path: "manual/create",
+                            element: <ManualIncidents createOnOpen />,
+                        },
+                        { path: ":id", element: <OpenIncidents /> },
+                    ],
                 },
                 {
                     path: "persons",

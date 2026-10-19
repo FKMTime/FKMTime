@@ -1,3 +1,4 @@
+import { getEventShortName } from "./events";
 import {
     Incident,
     ManualIncident,
@@ -158,4 +159,13 @@ export const updateManualIncident = async (
         data
     );
     return response.status;
+};
+
+/** "Anna Example (2019EXAM01), 3x3 R1A2" for pasting into reports */
+export const getIncidentInfoText = (incident: Incident) => {
+    const [eventId, roundNumber] = incident.result.roundId.split("-r");
+    const wcaId = incident.result.person.wcaId
+        ? ` (${incident.result.person.wcaId})`
+        : "";
+    return `${incident.result.person.name}${wcaId}, ${getEventShortName(eventId)} R${roundNumber}A${incident.attemptNumber}`;
 };
