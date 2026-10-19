@@ -3,22 +3,23 @@ import { useEffect, useState } from "react";
 
 import { quickEntryAtom } from "@/lib/atoms";
 import { Room } from "@/lib/interfaces";
+import { getQuickEntryRounds } from "@/lib/quickEntry";
 import { getAllRooms } from "@/lib/rooms";
-import QuickEnterAttemptModal from "@/Pages/Main/Home/Components/QuickEnterAttemptModal";
+
+import QuickEnterAttemptModal, {
+    QuickEntryRound,
+} from "./QuickEnterAttemptModal";
 
 /** Mounts the quick entry modal once for the header button and the FAB */
 const QuickEntryHost = () => {
     const [quickEntry, setQuickEntry] = useAtom(quickEntryAtom);
-    const [currentRoundIds, setCurrentRoundIds] = useState<string[]>([]);
+    const [currentRounds, setCurrentRounds] = useState<QuickEntryRound[]>([]);
 
     useEffect(() => {
         if (!quickEntry.isOpen || quickEntry.roundId) return;
-        getAllRooms().then((rooms: Room[]) => {
-            const roundIds = rooms
-                .flatMap((room) => room.currentGroupIds)
-                .map((groupId) => groupId.split("-g")[0]);
-            setCurrentRoundIds([...new Set(roundIds)]);
-        });
+        getAllRooms().then((rooms: Room[]) =>
+            setCurrentRounds(getQuickEntryRounds(rooms))
+        );
     }, [quickEntry.isOpen, quickEntry.roundId]);
 
     return (
@@ -28,7 +29,7 @@ const QuickEntryHost = () => {
             isOpen={quickEntry.isOpen}
             onClose={() => setQuickEntry({ isOpen: false })}
             roundId={quickEntry.roundId}
-            roundOptions={currentRoundIds}
+            roundOptions={currentRounds}
         />
     );
 };
