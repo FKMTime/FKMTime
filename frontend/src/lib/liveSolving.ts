@@ -87,3 +87,56 @@ export const getStationTimer = (
         isRunning: isTimeRunning || isInspectionRunning,
     };
 };
+
+export interface StationRoom {
+    id: string;
+    name: string;
+    currentGroupIds: string[];
+}
+
+export interface StationRoomGroup {
+    id: string;
+    name: string;
+    /** Round ids in progress in the room, e.g. ["333-r1"] */
+    roundIds: string[];
+    stations: StationInfo[];
+}
+
+export const OTHER_STATIONS_ID = "other";
+
+const toRoundIds = (groupIds: string[]) => [
+    ...new Set(groupIds.map((groupId) => groupId.split("-g")[0])),
+];
+
+/**
+ * Stations grouped by the room their device belongs to, in room order and by
+ * ESP ID within a room. Stations without a known room (a device deleted since
+ * its last packet) go last, under "Other stations".
+ */
+export const groupStationsByRoom = (
+    stations: StationInfo[],
+    roomIdByEspId: Map<number, string>,
+    rooms: StationRoom[]
+): StationRoomGroup[] => {
+    const sorted = [...stations].sort((a, b) => a.espId - b.espId);
+    const roomIds = new Set(rooms.map((room) => room.id));
+    const groups: StationRoomGroup[] = rooms.map((room) => ({
+        id: room.id,
+        name: room.name,
+        roundIds: toRoundIds(room.currentGroupIds),
+        stations: sorted.filter(
+            (station) => roomIdByEspId.get(station.espId) === room.id
+        ),
+    }));
+    const other = sorted.filter(
+        (station) => !roomIds.has(roomIdByEspId.get(station.espId) ?? "")
+    );
+    if (other.length)
+        groups.push({
+            id: OTHER_STATIONS_ID,
+            name: "Other stations",
+            roundIds: [],
+            stations: other,
+        });
+    return groups.filter((group) => group.stations.length);
+};

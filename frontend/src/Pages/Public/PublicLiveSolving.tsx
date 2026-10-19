@@ -1,147 +1,11 @@
-import { useAtomValue } from "jotai";
-import { CheckCircle2, WifiOff } from "lucide-react";
 import { useCallback, useContext, useEffect, useState } from "react";
-import { getPersonFromWcif } from "wcif-helpers";
 
-import { Avatar, AvatarFallback, AvatarImage } from "@/Components/ui/avatar";
-import { Badge } from "@/Components/ui/badge";
-import { Card, CardContent, CardHeader } from "@/Components/ui/card";
-import useStationTimer from "@/hooks/useStationTimer";
-import { activityCodeToName } from "@/lib/activities";
-import { competitionAtom } from "@/lib/atoms";
+import EmptyState from "@/Components/shared/EmptyState";
+import LiveStationCard from "@/Components/shared/LiveStationCard";
 import { StationInfo } from "@/lib/liveSolving";
-import { centisecondsToClockFormat } from "@/lib/resultFormatters";
-import PageTransition from "@/Pages/PageTransition";
 import { socket, SocketContext } from "@/socket";
 
-const formatCs = (cs: number) => {
-    try {
-        return centisecondsToClockFormat(Math.max(0, cs));
-    } catch {
-        return "0.00";
-    }
-};
-
-const StationCard = ({
-    station,
-    competition,
-}: {
-    station: StationInfo;
-    competition: ReturnType<typeof useAtomValue<typeof competitionAtom>>;
-}) => {
-    const { phase, displayTime, displayInspection } = useStationTimer(station);
-    // An offline station's last packet describes a solve that is long over
-    const isOffline = phase === "offline";
-    const personName = isOffline ? null : station.personName;
-    const groupId = isOffline ? null : station.groupId;
-
-    const wcifPerson =
-        competition && !isOffline && station.registrantId
-            ? getPersonFromWcif(station.registrantId, competition.wcif)
-            : null;
-
-    const avatarUrl = wcifPerson?.avatar?.thumbUrl ?? undefined;
-    const initials = personName?.[0]?.toUpperCase() ?? "?";
-
-    const roundId = groupId?.split("-g")[0] ?? null;
-    const roundName = roundId ? activityCodeToName(roundId, true, true) : null;
-
-    return (
-        <Card>
-            <CardHeader className="pb-2 flex-row items-center justify-between space-y-0">
-                <span className="text-sm font-semibold text-muted-foreground">
-                    {station.deviceName}
-                </span>
-                {roundName && (
-                    <Badge variant="outline" className="text-xs">
-                        {roundName}
-                    </Badge>
-                )}
-            </CardHeader>
-            <CardContent className="flex flex-col gap-3">
-                <div className="flex items-center gap-3">
-                    <Avatar className="h-10 w-10">
-                        <AvatarImage src={avatarUrl} />
-                        <AvatarFallback>{initials}</AvatarFallback>
-                    </Avatar>
-                    <span className="font-medium truncate">
-                        {personName ?? "No competitor"}
-                    </span>
-                </div>
-
-                <div className="flex flex-col items-center gap-1">
-                    {phase === "finished" && (
-                        <>
-                            <div className="flex items-center gap-1.5 text-primary">
-                                <CheckCircle2 size={14} />
-                                <span className="text-xs font-medium uppercase tracking-wider">
-                                    Finished
-                                </span>
-                            </div>
-                            {displayTime != null && (
-                                <span className="text-4xl font-mono font-bold">
-                                    {formatCs(displayTime)}
-                                </span>
-                            )}
-                        </>
-                    )}
-                    {phase === "inspection" && displayInspection != null && (
-                        <>
-                            <span className="text-xs text-warning font-medium uppercase tracking-wider">
-                                Inspection
-                            </span>
-                            <span className="text-4xl font-mono font-bold text-warning">
-                                {formatCs(displayInspection)}
-                            </span>
-                        </>
-                    )}
-                    {phase === "solving" && displayTime != null && (
-                        <>
-                            <span className="text-xs text-success font-medium uppercase tracking-wider">
-                                Solving
-                            </span>
-                            <span className="text-4xl font-mono font-bold text-success">
-                                {formatCs(displayTime)}
-                            </span>
-                        </>
-                    )}
-                    {phase === "offline" && (
-                        <div className="flex items-center gap-1.5 text-muted-foreground">
-                            <WifiOff size={14} />
-                            <span className="text-xs font-medium uppercase tracking-wider">
-                                Offline
-                            </span>
-                        </div>
-                    )}
-                    {phase === "idle" && (
-                        <span className="text-muted-foreground text-sm">
-                            Waiting
-                        </span>
-                    )}
-                </div>
-
-                {!isOffline &&
-                    station.cumulativeLimitCentiseconds != null &&
-                    station.cumulativeRemainingCentiseconds != null && (
-                        <div className="border-t pt-2 text-xs text-muted-foreground flex justify-between">
-                            <span>Cumulative limit</span>
-                            <span className="font-mono">
-                                {formatCs(
-                                    station.cumulativeRemainingCentiseconds
-                                )}{" "}
-                                /{" "}
-                                {formatCs(station.cumulativeLimitCentiseconds)}{" "}
-                                remaining
-                            </span>
-                        </div>
-                    )}
-            </CardContent>
-        </Card>
-    );
-};
-
 const PublicLiveSolving = () => {
-    const competition = useAtomValue(competitionAtom);
     const [stations, setStations] = useState<Map<number, StationInfo>>(
         new Map()
     );
@@ -179,25 +43,20 @@ const PublicLiveSolving = () => {
         (a, b) => a.espId - b.espId
     );
 
+    if (stationList.length === 0)
+        return (
+            <EmptyState>
+                No active stations. Times will appear here once devices start
+                sending data.
+            </EmptyState>
+        );
+
     return (
-        <PageTransition>
-            {stationList.length === 0 ? (
-                <p className="text-muted-foreground text-sm text-center py-8">
-                    No active stations. Times will appear here once devices
-                    start sending data.
-                </p>
-            ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                    {stationList.map((station) => (
-                        <StationCard
-                            key={station.espId}
-                            station={station}
-                            competition={competition}
-                        />
-                    ))}
-                </div>
-            )}
-        </PageTransition>
+        <div className="grid grid-cols-1 gap-2 md:grid-cols-[repeat(auto-fill,minmax(220px,1fr))] md:gap-3">
+            {stationList.map((station) => (
+                <LiveStationCard key={station.espId} station={station} />
+            ))}
+        </div>
     );
 };
 
