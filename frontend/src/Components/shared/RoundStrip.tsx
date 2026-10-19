@@ -25,6 +25,8 @@ interface RoundStripProps {
     /** Every round, offered in the "All rounds" picker */
     allRounds: RoundOption[];
     value?: string;
+    /** Selected round in the picker when the strip holds groups, not rounds */
+    allRoundsValue?: string;
     onValueChange: (roundId: string) => void;
     /** Subtitle for rounds that are not live, e.g. "12 results" */
     getSubtitle?: (round: RoundOption) => ReactNode;
@@ -36,6 +38,7 @@ const RoundStrip = ({
     rounds,
     allRounds,
     value,
+    allRoundsValue = value,
     onValueChange,
     getSubtitle,
     className,
@@ -83,7 +86,7 @@ const RoundStrip = ({
         </div>
         <AllRoundsPicker
             rounds={allRounds}
-            value={value}
+            value={allRoundsValue}
             onValueChange={onValueChange}
             getSubtitle={getSubtitle}
         />
