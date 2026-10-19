@@ -6,6 +6,8 @@ import { getEventShortName } from 'src/events';
 import { Activity, Room as WCIFRoom, Venue } from 'wcif-helpers';
 import { getActivityInfoFromSchedule, getCompetitionDates } from 'wcif-helpers';
 
+import { getRoundAttemptStats } from './roundAttemptStats';
+
 export class StatisticsService {
   constructor(
     @Inject(forwardRef(() => DbService))
@@ -113,6 +115,17 @@ export class StatisticsService {
         status: AttemptStatus.STANDARD,
       },
     });
+    const byRoundAttemptStats = getRoundAttemptStats(
+      await this.prisma.attempt.findMany({
+        select: {
+          status: true,
+          type: true,
+          penalty: true,
+          sessionId: true,
+          result: { select: { roundId: true } },
+        },
+      }),
+    );
     const personsCompeted = await this.prisma.person.count({
       where: {
         results: {
@@ -299,6 +312,7 @@ export class StatisticsService {
       allAttempts,
       byEventStats,
       byRoundStats,
+      byRoundAttemptStats,
       attemptsByDevice: devices
         .filter((d) => d.type === DeviceType.STATION)
         .map((device) => ({
