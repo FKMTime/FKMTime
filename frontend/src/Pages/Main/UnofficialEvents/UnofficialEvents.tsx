@@ -1,16 +1,18 @@
-import { Medal } from "lucide-react";
+import { Plus } from "lucide-react";
 import { useEffect, useState } from "react";
 
-import PlusButton from "@/Components/PlusButton";
-import { Card, CardContent, CardHeader, CardTitle } from "@/Components/ui/card";
+import EmptyState from "@/Components/shared/EmptyState";
+import { Button } from "@/Components/ui/button";
+import { useIsMobile } from "@/hooks/useMobile";
 import { UnofficialEvent } from "@/lib/interfaces";
 import { getCompetitionUnofficialEvents } from "@/lib/unofficialEvents";
-import PageTransition from "@/Pages/PageTransition";
+import SetupTabs from "@/Pages/Main/Setup/SetupTabs";
 
 import CreateUnofficialEventModal from "./Components/CreateUnofficialEventModal";
-import UnofficialEventsTable from "./Components/UnofficialEventsTable";
+import UnofficialEventRow from "./Components/UnofficialEventRow";
 
 const UnofficialEvents = () => {
+    const isMobile = useIsMobile();
     const [unofficialEvents, setUnofficialEvents] = useState<UnofficialEvent[]>(
         []
     );
@@ -34,38 +36,35 @@ const UnofficialEvents = () => {
     }, []);
 
     return (
-        <PageTransition>
-            <Card>
-                <CardHeader>
-                    <CardTitle className="flex justify-between items-center">
-                        <div className="flex gap-2 items-center">
-                            <Medal size={20} />
-                            Unofficial events
-                        </div>
-                        <PlusButton
-                            aria-label="Add"
-                            onClick={() =>
-                                setIsOpenCreateUnofficialEventModal(true)
-                            }
-                        />
-                    </CardTitle>
-                </CardHeader>
-                <CardContent>
-                    {unofficialEvents.length === 0 ? (
-                        <p>No unofficial events found</p>
-                    ) : (
-                        <UnofficialEventsTable
-                            events={unofficialEvents}
+        <>
+            <SetupTabs value="events" />
+            <Button
+                onClick={() => setIsOpenCreateUnofficialEventModal(true)}
+                variant={isMobile ? "outline" : "default"}
+                size={isMobile ? "lg" : "default"}
+                className="md:ml-auto md:w-fit"
+            >
+                <Plus />
+                Add unofficial event
+            </Button>
+            {unofficialEvents.length === 0 ? (
+                <EmptyState>No unofficial events yet</EmptyState>
+            ) : (
+                <ul className="overflow-hidden rounded-mobile-card border bg-card md:rounded-2xl">
+                    {unofficialEvents.map((event) => (
+                        <UnofficialEventRow
+                            key={event.id}
+                            event={event}
                             fetchData={fetchData}
                         />
-                    )}
-                </CardContent>
-            </Card>
+                    ))}
+                </ul>
+            )}
             <CreateUnofficialEventModal
                 isOpen={isOpenCreateUnofficialEventModal}
                 onClose={handleCloseCreateModal}
             />
-        </PageTransition>
+        </>
     );
 };
 

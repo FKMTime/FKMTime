@@ -1,20 +1,18 @@
-import { FolderCode } from "lucide-react";
+import { Upload } from "lucide-react";
 import { useState } from "react";
 
+import FileDropzone from "@/Components/shared/FileDropzone";
 import { Button } from "@/Components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/Components/ui/card";
-import { Input } from "@/Components/ui/input";
 import { useToast } from "@/hooks/useToast";
 import { uploadFirmware } from "@/lib/devices";
-import PageTransition from "@/Pages/PageTransition";
 
 const UploadFirmware = () => {
     const { toast } = useToast();
     const [fileBase64, setFileBase64] = useState<string | null>(null);
     const [fileName, setFileName] = useState<string>("");
 
-    const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-        const file = event.target.files?.[0];
+    const handleFileChange = (file: File | null) => {
+        setFileBase64(null);
         if (file) {
             setFileName(file.name);
             const reader = new FileReader();
@@ -52,30 +50,22 @@ const UploadFirmware = () => {
     };
 
     return (
-        <PageTransition>
-            <Card>
-                <CardHeader>
-                    <CardTitle className="flex gap-2 items-center">
-                        <FolderCode size={20} />
-                        Upload Firmware
-                    </CardTitle>
-                </CardHeader>
-                <CardContent>
-                    <div className="w-fit flex flex-col gap-3">
-                        <label htmlFor="file-upload">Upload Binary File</label>
-                        <Input
-                            id="file-upload"
-                            type="file"
-                            accept=".bin"
-                            onChange={handleFileUpload}
-                        />
-                        <Button onClick={handleSubmit} disabled={!fileBase64}>
-                            Submit
-                        </Button>
-                    </div>
-                </CardContent>
-            </Card>
-        </PageTransition>
+        <div className="flex flex-col gap-3">
+            <FileDropzone
+                title="Upload binary file"
+                description='Drop a .bin firmware file or click to choose. Devices update when "Update devices" is on.'
+                accept=".bin"
+                onFileChange={handleFileChange}
+            />
+            <Button
+                onClick={handleSubmit}
+                disabled={!fileBase64}
+                className="w-full md:w-fit"
+            >
+                <Upload />
+                Upload firmware
+            </Button>
+        </div>
     );
 };
 

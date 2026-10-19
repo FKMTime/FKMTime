@@ -30,6 +30,9 @@ const MostMissedAssignments = lazy(
 );
 const CheckIn = lazy(() => import("./Pages/Main/CheckIn/CheckIn"));
 const Competition = lazy(() => import("./Pages/Main/Competition/Competition"));
+const CurrentGroups = lazy(
+    () => import("./Pages/Main/Competition/CurrentGroups/CurrentGroups")
+);
 const Devices = lazy(() => import("./Pages/Main/Devices/Devices"));
 const Home = lazy(() => import("./Pages/Main/Home/Home"));
 const ImportCompetition = lazy(
@@ -135,6 +138,10 @@ const App = () => {
                 {
                     path: "competition",
                     element: <Competition />,
+                },
+                {
+                    path: "competition/groups",
+                    element: <CurrentGroups />,
                 },
                 {
                     path: "incidents",

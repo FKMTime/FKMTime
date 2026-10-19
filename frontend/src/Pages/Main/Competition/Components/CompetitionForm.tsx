@@ -1,10 +1,10 @@
 import { zodResolver } from "@hookform/resolvers/zod";
-import { KeyRound, Send } from "lucide-react";
+import { Save } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 
+import SwitchRow from "@/Components/shared/SwitchRow";
 import { Button } from "@/Components/ui/button";
-import { Checkbox } from "@/Components/ui/checkbox";
 import {
     Form,
     FormControl,
@@ -57,38 +57,43 @@ const CompetitionForm = ({
         });
     };
 
+    const useDevices = form.watch("useFkmTimeDevices");
+
     return (
         <Form {...form}>
             <form
                 onSubmit={form.handleSubmit(onSubmit)}
-                className="space-y-8 py-3"
+                className="flex max-w-[560px] flex-col gap-4 md:gap-5"
             >
-                {form.watch("useFkmTimeDevices") && (
+                {useDevices && (
                     <>
                         <FormField
                             control={form.control}
                             name="scoretakingToken"
                             render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel className="flex items-center gap-2">
-                                        <KeyRound size={16} />
+                                <FormItem className="space-y-1.5">
+                                    <FormLabel className="text-[13px] font-semibold text-muted-foreground">
                                         Scoretaking token
                                     </FormLabel>
                                     <FormControl>
                                         <Input
                                             {...field}
+                                            type="password"
+                                            autoComplete="off"
                                             placeholder="Scoretaking token"
                                         />
                                     </FormControl>
-                                    <FormDescription>
+                                    <FormDescription className="text-[13px]">
                                         You can get this token{" "}
                                         <a
-                                            className="text-primary"
+                                            className="text-primary hover:underline"
                                             href="https://live.worldcubeassociation.org/account"
                                             target="_blank"
+                                            rel="noreferrer"
                                         >
-                                            here
+                                            on WCA Live
                                         </a>
+                                        . It may expire after 7 days.
                                     </FormDescription>
                                     <FormMessage />
                                 </FormItem>
@@ -98,27 +103,30 @@ const CompetitionForm = ({
                             control={form.control}
                             name="cubingContestsToken"
                             render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel className="flex items-center gap-2">
-                                        <KeyRound size={16} />
+                                <FormItem className="space-y-1.5">
+                                    <FormLabel className="text-[13px] font-semibold text-muted-foreground">
                                         CubingContests token
                                     </FormLabel>
                                     <FormControl>
                                         <Input
                                             {...field}
                                             value={field.value ?? ""}
+                                            autoComplete="off"
                                             placeholder="Cubing contests API token"
                                         />
                                     </FormControl>
-                                    <FormDescription>
-                                        You can get this token{" "}
+                                    <FormDescription className="text-[13px]">
+                                        Only needed for unofficial events. You
+                                        can get it{" "}
                                         <a
-                                            className="text-primary"
+                                            className="text-primary hover:underline"
                                             href={`https://cubingcontests.com/mod/competition?edit_id=${competition.wcaId}`}
                                             target="_blank"
+                                            rel="noreferrer"
                                         >
-                                            here
+                                            on CubingContests
                                         </a>
+                                        .
                                     </FormDescription>
                                     <FormMessage />
                                 </FormItem>
@@ -128,9 +136,8 @@ const CompetitionForm = ({
                             control={form.control}
                             name="sendingResultsFrequency"
                             render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel className="flex items-center gap-2">
-                                        <Send size={16} />
+                                <FormItem className="space-y-1.5">
+                                    <FormLabel className="text-[13px] font-semibold text-muted-foreground">
                                         Send results to WCA Live/CubingContests
                                     </FormLabel>
                                     <Select
@@ -161,55 +168,38 @@ const CompetitionForm = ({
                                 </FormItem>
                             )}
                         />
+                    </>
+                )}
+                <div className="flex flex-col md:gap-2">
+                    {useDevices && (
                         <FormField
                             control={form.control}
                             name="shouldChangeGroupsAutomatically"
                             render={({ field }) => (
-                                <FormItem>
-                                    <div className="flex items-center gap-2">
-                                        <FormControl>
-                                            <Checkbox
-                                                checked={field.value}
-                                                onCheckedChange={field.onChange}
-                                            />
-                                        </FormControl>
-                                        <FormLabel>
-                                            Change groups automatically
-                                        </FormLabel>
-                                    </div>
-                                    <FormDescription>
-                                        Group will be automatically changed to
-                                        the next one from schedule if all
-                                        results are entered and there are no
-                                        unresolved incidents
-                                    </FormDescription>
-                                </FormItem>
+                                <SwitchRow
+                                    label="Change groups automatically"
+                                    description="Group will be automatically changed to the next one from schedule if all results are entered and there are no unresolved incidents"
+                                    checked={field.value}
+                                    onCheckedChange={field.onChange}
+                                />
                             )}
                         />
-                    </>
-                )}
-                <FormField
-                    control={form.control}
-                    name="useFkmTimeDevices"
-                    render={({ field }) => (
-                        <FormItem>
-                            <div className="flex items-center gap-2">
-                                <FormControl>
-                                    <Checkbox
-                                        checked={field.value}
-                                        onCheckedChange={field.onChange}
-                                    />
-                                </FormControl>
-                                <FormLabel>Use FKMTime devices</FormLabel>
-                            </div>
-                            <FormDescription>
-                                If you do not use FKMTime devices, you can
-                                disable some features of the app.
-                            </FormDescription>
-                        </FormItem>
                     )}
-                />
-                <Button type="submit" variant="success">
+                    <FormField
+                        control={form.control}
+                        name="useFkmTimeDevices"
+                        render={({ field }) => (
+                            <SwitchRow
+                                label="Use FKMTime devices"
+                                description="If you do not use FKMTime devices, you can disable some features of the app."
+                                checked={field.value}
+                                onCheckedChange={field.onChange}
+                            />
+                        )}
+                    />
+                </div>
+                <Button type="submit" className="w-full md:w-fit">
+                    <Save />
                     Save
                 </Button>
             </form>
