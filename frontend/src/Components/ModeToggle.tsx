@@ -17,20 +17,22 @@ const THEME_OPTIONS = [
 ] as const;
 
 interface ModeToggleProps {
+    variant?: "outline" | "ghost";
     className?: string;
 }
 
-const ModeToggle = ({ className }: ModeToggleProps) => {
+const ModeToggle = ({ variant = "outline", className }: ModeToggleProps) => {
     const { theme, setTheme } = useTheme();
 
     return (
         <DropdownMenu>
             <DropdownMenuTrigger asChild>
                 <Button
-                    variant="outline"
+                    variant={variant}
                     size="icon"
                     className={cn(
-                        "relative border-border md:size-[38px]",
+                        "relative md:size-[38px]",
+                        variant === "outline" && "border-border",
                         className
                     )}
                     aria-label="Theme"

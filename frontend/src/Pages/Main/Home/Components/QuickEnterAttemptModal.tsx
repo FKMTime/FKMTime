@@ -1,5 +1,5 @@
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 
@@ -25,10 +25,11 @@ import {
     SelectValue,
 } from "@/Components/ui/select";
 import { useToast } from "@/hooks/useToast";
+import { activityCodeToName } from "@/lib/activities";
 import { createAttempt } from "@/lib/attempt";
 import { DNF_VALUE, DNS_VALUE } from "@/lib/constants";
 import { AttemptStatus, AttemptType } from "@/lib/interfaces";
-import { getSubmissionPlatformName, prettyAttemptType } from "@/lib/utils";
+import { cn, getSubmissionPlatformName, prettyAttemptType } from "@/lib/utils";
 
 const quickAttemptSchema = z.object({
     competitorId: z.string().min(1),
@@ -41,17 +42,34 @@ const quickAttemptSchema = z.object({
 interface QuickEnterAttemptModalProps {
     isOpen: boolean;
     onClose: () => void;
-    roundId: string;
+    /** Fixed round; when omitted the user picks one of roundOptions */
+    roundId?: string;
+    roundOptions?: string[];
 }
 
 const QuickEnterAttemptModal = ({
     isOpen,
     onClose,
-    roundId,
+    roundId: fixedRoundId,
+    roundOptions = [],
 }: QuickEnterAttemptModalProps) => {
     const { toast } = useToast();
     const [isLoading, setIsLoading] = useState(false);
-    const submissionPlatform = getSubmissionPlatformName(roundId.split("-")[0]);
+    const [selectedRoundId, setSelectedRoundId] = useState(
+        fixedRoundId ?? roundOptions[0]
+    );
+    const roundId = fixedRoundId ?? selectedRoundId;
+
+    useEffect(() => {
+        if (fixedRoundId) return;
+        setSelectedRoundId((current) =>
+            current && roundOptions.includes(current)
+                ? current
+                : roundOptions[0]
+        );
+        // roundOptions is a fresh array on every render of the caller
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [fixedRoundId, roundOptions.join()]);
 
     const form = useForm<z.infer<typeof quickAttemptSchema>>({
         resolver: zodResolver(quickAttemptSchema),
@@ -71,6 +89,7 @@ const QuickEnterAttemptModal = ({
             toast({ title: "Time is required", variant: "destructive" });
             return;
         }
+        if (!roundId) return;
         setIsLoading(true);
         const { status, message } = await createAttempt({
             roundId,
@@ -84,7 +103,7 @@ const QuickEnterAttemptModal = ({
         });
         if (status === 201) {
             toast({
-                title: `Attempt submitted to ${submissionPlatform}`,
+                title: `Attempt submitted to ${getSubmissionPlatformName(roundId.split("-")[0])}`,
                 variant: "success",
             });
             form.reset();
@@ -106,6 +125,37 @@ const QuickEnterAttemptModal = ({
                     onSubmit={form.handleSubmit(onSubmit)}
                     className="space-y-4"
                 >
+                    {!fixedRoundId && (
+                        <div className="space-y-2">
+                            <p className="text-sm font-medium">Round</p>
+                            {roundOptions.length === 0 ? (
+                                <p className="rounded-xl bg-secondary px-3.5 py-3 text-sm text-muted-foreground">
+                                    No round is in progress.
+                                </p>
+                            ) : (
+                                <div className="flex flex-wrap gap-2">
+                                    {roundOptions.map((option) => (
+                                        <button
+                                            key={option}
+                                            type="button"
+                                            onClick={() =>
+                                                setSelectedRoundId(option)
+                                            }
+                                            aria-pressed={option === roundId}
+                                            className={cn(
+                                                "flex h-11 items-center rounded-chip border px-3 text-sm font-semibold md:h-10",
+                                                option === roundId
+                                                    ? "border-primary bg-primary-soft text-primary"
+                                                    : "hover:bg-accent"
+                                            )}
+                                        >
+                                            {activityCodeToName(option)}
+                                        </button>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    )}
                     <FormField
                         control={form.control}
                         name="competitorId"
@@ -203,7 +253,7 @@ const QuickEnterAttemptModal = ({
                         <Button
                             type="submit"
                             variant="success"
-                            disabled={isLoading}
+                            disabled={isLoading || !roundId}
                         >
                             Submit
                         </Button>

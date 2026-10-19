@@ -74,6 +74,7 @@ const ScrambleSet = lazy(
 const ScramblingDeviceLayout = lazy(
     () => import("./Pages/ScramblingDevice/ScramblingDeviceLayout")
 );
+const More = lazy(() => import("./Pages/Main/More/More"));
 const Persons = lazy(() => import("./Pages/Main/Persons/Persons"));
 const Results = lazy(() => import("./Pages/Main/Results/Results"));
 const PublicView = lazy(
@@ -128,6 +129,10 @@ const App = () => {
                 {
                     path: "",
                     element: <Home />,
+                },
+                {
+                    path: "more",
+                    element: <More />,
                 },
                 {
                     path: "users",

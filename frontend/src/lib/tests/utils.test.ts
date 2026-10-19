@@ -2,6 +2,7 @@ import { describe } from "vitest";
 
 import {
     calculateTotalPages,
+    getInitials,
     prettyAvailableDeviceType,
     prettyDeviceType,
     prettyGender,
@@ -50,5 +51,17 @@ describe("prettyAvailableDeviceType", () => {
 describe("prettyUserRoleName", () => {
     it("return pretty user role name", () => {
         expect(prettyUserRoleName("ADMIN")).toEqual("Admin");
+    });
+});
+
+describe("getInitials", () => {
+    it("takes the first and last name initials", () => {
+        expect(getInitials("Anna Maria Nowak")).toBe("AN");
+    });
+
+    it("handles single names and missing names", () => {
+        expect(getInitials("cher")).toBe("C");
+        expect(getInitials("  ")).toBe("?");
+        expect(getInitials(undefined)).toBe("?");
     });
 });
