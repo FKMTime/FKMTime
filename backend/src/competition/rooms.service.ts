@@ -1,8 +1,11 @@
 import { forwardRef, HttpException, Inject } from '@nestjs/common';
+import { Attempt } from '@prisma/client';
 import { DbService } from 'src/db/db.service';
 import { SocketController } from 'src/socket/socket.controller';
+import { Competition as Wcif } from 'wcif-helpers';
 
 import { UpdateRoomsDto } from './dto/updateCurrentRound.dto';
+import { calculateGroupProgress, getGroupCompetitorIds } from './groupProgress';
 
 export class RoomsService {
   constructor(
@@ -14,6 +17,49 @@ export class RoomsService {
 
   async getAllRooms() {
     return this.prisma.room.findMany();
+  }
+
+  /** Results entered vs expected for every room's current groups */
+  async getRoomsProgress() {
+    const [rooms, competition] = await Promise.all([
+      this.prisma.room.findMany(),
+      this.prisma.competition.findFirst(),
+    ]);
+    if (!competition) return [];
+    const wcif = competition.wcif as unknown as Wcif;
+
+    return Promise.all(
+      rooms.map(async (room) => ({
+        roomId: room.id,
+        groups: await Promise.all(
+          room.currentGroupIds.map(async (groupId) => {
+            const results = await this.prisma.result.findMany({
+              where: {
+                roundId: groupId.split('-g')[0],
+                person: {
+                  registrantId: { in: getGroupCompetitorIds(wcif, groupId) },
+                },
+              },
+              select: {
+                attempts: true,
+                person: { select: { registrantId: true } },
+              },
+            });
+            const attemptsByRegistrantId = new Map<number, Attempt[]>(
+              results.map((result) => [
+                result.person.registrantId,
+                result.attempts,
+              ]),
+            );
+            return calculateGroupProgress(
+              wcif,
+              groupId,
+              attemptsByRegistrantId,
+            );
+          }),
+        ),
+      })),
+    );
   }
 
   async updateRooms(data: UpdateRoomsDto) {
