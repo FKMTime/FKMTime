@@ -401,6 +401,8 @@ export interface WCACompetition {
     country_iso2: string;
     registration_open: string;
     start_date: string;
+    end_date: string;
+    city: string;
 }
 
 export interface Event {

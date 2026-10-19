@@ -139,7 +139,7 @@ export const searchCompetitions = async (name: string) => {
                 )}-${today.getDate().toString().padStart(2, "0")}`;
         }
         const response = await wcaApiRequest(
-            `competitions?q=${name}&start=${start}&per_page=50&sort=start_date`,
+            `competitions?q=${encodeURIComponent(name)}&start=${start}&per_page=50&sort=start_date`,
             token
         );
         const data = await response.json();

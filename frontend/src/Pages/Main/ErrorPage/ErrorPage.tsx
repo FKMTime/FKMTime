@@ -1,3 +1,12 @@
+import {
+    ArrowLeft,
+    ChevronDown,
+    ChevronUp,
+    CircleAlert,
+    CloudOff,
+    House,
+    SearchX,
+} from "lucide-react";
 import { useState } from "react";
 import {
     isRouteErrorResponse,
@@ -5,9 +14,14 @@ import {
     useRouteError,
 } from "react-router-dom";
 
-import ModeToggle from "@/Components/ModeToggle";
+import WordmarkHeader from "@/Components/shared/WordmarkHeader";
 import { Button } from "@/Components/ui/button";
-import PageTransition from "@/Pages/PageTransition";
+
+const iconForStatus = (status?: number) => {
+    if (status === 404) return SearchX;
+    if (status && status >= 500) return CloudOff;
+    return CircleAlert;
+};
 
 const ErrorPage = () => {
     const error = useRouteError();
@@ -16,9 +30,11 @@ const ErrorPage = () => {
 
     let title = "Something went wrong";
     let message = "An unexpected error occurred.";
+    let status: number | undefined;
     let details: string | undefined;
 
     if (isRouteErrorResponse(error)) {
+        status = error.status;
         title = `Error ${error.status}`;
         message = error.statusText || message;
         if (error.data) {
@@ -34,44 +50,55 @@ const ErrorPage = () => {
         message = error;
     }
 
+    const Icon = iconForStatus(status);
+
     return (
-        <PageTransition>
-            <div className="flex flex-col gap-6 justify-center items-center h-screen px-4">
-                <div className="flex flex-col items-center gap-2 text-center">
-                    <span className="text-6xl">💥</span>
-                    <h2 className="text-2xl font-bold">{title}</h2>
-                    <p className="text-destructive text-lg max-w-md">
-                        {message}
-                    </p>
-                </div>
-
-                {details && (
-                    <div className="flex flex-col items-center gap-2 w-full max-w-2xl">
-                        <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => setShowDetails((v) => !v)}
-                        >
-                            {showDetails ? "Hide" : "Show"} details
-                        </Button>
-                        {showDetails && (
-                            <pre className="w-full overflow-auto rounded-md bg-muted p-4 text-xs text-left max-h-64">
-                                {details}
-                            </pre>
-                        )}
+        <div className="flex min-h-screen flex-col px-4 py-5 sm:px-6">
+            <WordmarkHeader />
+            <main className="flex flex-1 items-center justify-center py-10">
+                <div className="flex w-full max-w-[560px] flex-col items-center gap-5 text-center">
+                    <span className="flex size-16 items-center justify-center rounded-full bg-destructive-soft text-destructive">
+                        <Icon className="size-8" />
+                    </span>
+                    <div className="flex flex-col gap-2">
+                        <h1 className="text-[28px] font-bold tracking-[-0.02em]">
+                            {title}
+                        </h1>
+                        <p className="text-pretty text-[15px] leading-normal text-muted-foreground">
+                            {message}
+                        </p>
                     </div>
-                )}
-
-                <div className="flex gap-3">
-                    <Button onClick={() => navigate(-1)} variant="outline">
-                        Go back
-                    </Button>
-                    <Button onClick={() => navigate("/")}>Home</Button>
+                    <div className="flex flex-wrap justify-center gap-2">
+                        <Button variant="outline" onClick={() => navigate(-1)}>
+                            <ArrowLeft />
+                            Go back
+                        </Button>
+                        <Button onClick={() => navigate("/")}>
+                            <House />
+                            Home
+                        </Button>
+                    </div>
+                    {details && (
+                        <div className="flex w-full flex-col items-center gap-2">
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                aria-expanded={showDetails}
+                                onClick={() => setShowDetails((v) => !v)}
+                            >
+                                {showDetails ? "Hide details" : "Show details"}
+                                {showDetails ? <ChevronUp /> : <ChevronDown />}
+                            </Button>
+                            {showDetails && (
+                                <pre className="max-h-[260px] w-full overflow-auto rounded-[10px] border bg-card px-4 py-3.5 text-left font-mono text-xs leading-relaxed text-muted-foreground">
+                                    {details}
+                                </pre>
+                            )}
+                        </div>
+                    )}
                 </div>
-
-                <ModeToggle />
-            </div>
-        </PageTransition>
+            </main>
+        </div>
     );
 };
 
