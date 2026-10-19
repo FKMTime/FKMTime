@@ -34,6 +34,26 @@ describe('ScrambleSetService', () => {
     expect(service).toBeDefined();
   });
 
+  describe('getScrambleSetCounts', () => {
+    it('counts scramble sets per round', async () => {
+      jest
+        .spyOn(dbService.scrambleSet, 'findMany')
+        .mockResolvedValue([
+          { roundId: '333-r1' },
+          { roundId: 'pyram-r1' },
+          { roundId: '333-r1' },
+        ] as any);
+
+      expect(await service.getScrambleSetCounts()).toEqual([
+        { roundId: '333-r1', count: 2 },
+        { roundId: 'pyram-r1', count: 1 },
+      ]);
+      expect(dbService.scrambleSet.findMany).toHaveBeenCalledWith({
+        select: { roundId: true },
+      });
+    });
+  });
+
   describe('importScrambles', () => {
     it('should import scrambles successfully', async () => {
       const importData = {

@@ -60,6 +60,18 @@ export class ScrambleSetService {
     });
   }
 
+  /** Number of scramble sets per round, for rounds that have any */
+  async getScrambleSetCounts() {
+    const sets = await this.prisma.scrambleSet.findMany({
+      select: { roundId: true },
+    });
+    const counts = new Map<string, number>();
+    for (const { roundId } of sets) {
+      counts.set(roundId, (counts.get(roundId) ?? 0) + 1);
+    }
+    return [...counts].map(([roundId, count]) => ({ roundId, count }));
+  }
+
   async deleteScrambleSet(id: string) {
     try {
       await this.prisma.scrambleSet.delete({
