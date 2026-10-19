@@ -1,117 +1,132 @@
 import { useAtomValue } from "jotai";
-import { useCallback, useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
 
-import EventAndRoundSelector from "@/Components/EventAndRoundSelector";
 import LoadingPage from "@/Components/LoadingPage";
-import { Button } from "@/Components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/Components/ui/card";
-import { useToast } from "@/hooks/useToast";
-import { activityCodeToName } from "@/lib/activities";
+import EventChips from "@/Components/shared/EventChips";
+import SegmentedControl from "@/Components/shared/SegmentedControl";
+import { StatusDot } from "@/Components/shared/StatusBadge";
 import { competitionAtom } from "@/lib/atoms";
-import { logout } from "@/lib/auth";
-import { Room, ScrambleSet } from "@/lib/interfaces";
 import {
-    getScrambleSetsForScramblingDevice,
-    getScramblingDeviceRoom,
-} from "@/lib/scrambling";
-import PageTransition from "@/Pages/PageTransition";
+    getEventIconClass,
+    getEventName,
+    getEventShortName,
+} from "@/lib/events";
+import { ScrambleSet } from "@/lib/interfaces";
+import { getScrambleSetsForScramblingDevice } from "@/lib/scrambling";
+import { cn } from "@/lib/utils";
 
-import ScrambleSetsTable from "./Components/ScrambleSetsTable";
+import DevicePage from "../Components/DevicePage";
+import {
+    currentGroupIdForRound,
+    groupIdToRoundId,
+    roundName,
+    useScramblingDeviceRoom,
+} from "../scramblingDeviceContext";
+import ScrambleSetsList from "./Components/ScrambleSetsList";
 
 const ScramblingDeviceHome = () => {
-    const navigate = useNavigate();
-    const { toast } = useToast();
     const competition = useAtomValue(competitionAtom);
-    const [roundId, setRoundId] = useState<string>("");
-    const [scrambleSets, setScrambleSets] = useState<ScrambleSet[]>([]);
-    const [room, setRoom] = useState<Room | null>(null);
-
-    const handleEventChange = async (eventId: string) => {
-        const id = eventId + "-r1";
-        setRoundId(id);
-        fetchData(id);
-    };
-
-    const handleRoundChange = (newId: string) => {
-        setRoundId(newId);
-        fetchData(newId);
-    };
-
-    const fetchData = useCallback(
-        async (id?: string) => {
-            const data = await getScrambleSetsForScramblingDevice(
-                id || roundId
-            );
-            setScrambleSets(data);
-        },
-        [roundId]
+    const room = useScramblingDeviceRoom();
+    const [selectedRoundId, setSelectedRoundId] = useState("");
+    // null while the selected round's sets load
+    const [scrambleSets, setScrambleSets] = useState<ScrambleSet[] | null>(
+        null
     );
 
-    const handleLogout = () => {
-        logout();
-        toast({
-            title: "Logged out",
-            description: "You have been logged out.",
-        });
-        navigate("/auth/login");
-    };
+    const events = competition?.wcif.events ?? [];
+    const liveRoundIds = room?.currentGroupIds.map(groupIdToRoundId) ?? [];
+    // Until something is picked, follow the round running in this room
+    const roundId =
+        selectedRoundId || liveRoundIds[0] || events[0]?.rounds[0]?.id || "";
+    const eventId = roundId.split("-")[0];
+    const event = events.find((e) => e.id === eventId);
+    const currentGroupId = currentGroupIdForRound(room, roundId);
 
     useEffect(() => {
-        getScramblingDeviceRoom().then((data: Room) => {
-            setRoom(data);
-            if (data.currentGroupIds.length > 0 && !roundId) {
-                if (data.currentGroupIds.length === 1) {
-                    setRoundId(data.currentGroupIds[0].split("-g")[0]);
-                    fetchData(data.currentGroupIds[0].split("-g")[0]);
-                }
-            }
+        if (!roundId) return;
+        let isCancelled = false;
+        setScrambleSets(null);
+        getScrambleSetsForScramblingDevice(roundId).then((data) => {
+            if (!isCancelled) setScrambleSets(data);
         });
-    }, [fetchData, roundId]);
+        return () => {
+            isCancelled = true;
+        };
+    }, [roundId]);
 
-    if (!competition) return <LoadingPage />;
+    const pickEvent = (id: string) => {
+        const rounds = events.find((e) => e.id === id)?.rounds ?? [];
+        const live = rounds.find((r) => liveRoundIds.includes(r.id));
+        setSelectedRoundId((live ?? rounds[0])?.id ?? "");
+    };
+
+    if (!competition || !room) return <LoadingPage />;
 
     return (
-        <PageTransition>
-            <div className="flex flex-col gap-4">
-                <Card>
-                    <CardHeader>
-                        <CardTitle className="flex items-center justify-between">
-                            Scrambling device
-                            <Button onClick={handleLogout}>Logout</Button>
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <EventAndRoundSelector
-                            competition={competition}
-                            filters={{
-                                eventId: roundId.split("-")[0],
-                                roundId: roundId,
-                            }}
-                            handleEventChange={handleEventChange}
-                            handleRoundChange={handleRoundChange}
+        <DevicePage title="Scramble sets" isHome>
+            <EventChips
+                value={eventId}
+                onValueChange={pickEvent}
+                events={events.map((e) => ({
+                    id: e.id,
+                    label: getEventShortName(e.id) || e.id,
+                    name: getEventName(e.id) || e.id,
+                    live: e.rounds.some((r) => liveRoundIds.includes(r.id)),
+                }))}
+            />
+            {roundId && (
+                <section className="rounded-2xl border bg-card">
+                    <div className="flex flex-wrap items-center gap-3 border-b px-4 py-3.5 md:px-5">
+                        <span
+                            aria-hidden
+                            className={cn(
+                                "cubing-icon text-[22px]",
+                                getEventIconClass(eventId)
+                            )}
                         />
-                    </CardContent>
-                </Card>
-                {roundId ? (
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>{activityCodeToName(roundId)}</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <ScrambleSetsTable
-                                scrambleSets={scrambleSets}
-                                showScrambleButton={
-                                    room?.currentGroupIds.some(
-                                        (g) => g.split("-g")[0] === roundId
-                                    ) || false
-                                }
+                        <div className="flex min-w-40 flex-1 flex-col gap-0.5">
+                            <h2 className="text-base font-bold">
+                                {roundName(roundId)}
+                            </h2>
+                            <p
+                                className={cn(
+                                    "text-[13px]",
+                                    currentGroupId
+                                        ? "text-primary"
+                                        : "text-muted-foreground"
+                                )}
+                            >
+                                {currentGroupId
+                                    ? `In progress in this room · Group ${currentGroupId.split("-g")[1]}`
+                                    : "Not in progress in this room"}
+                            </p>
+                        </div>
+                        {event && event.rounds.length > 1 && (
+                            <SegmentedControl
+                                label="Round"
+                                value={roundId}
+                                onValueChange={setSelectedRoundId}
+                                options={event.rounds.map((r) => ({
+                                    value: r.id,
+                                    label: (
+                                        <>
+                                            Round {r.id.split("-r")[1]}
+                                            {liveRoundIds.includes(r.id) && (
+                                                <StatusDot tone="primary" />
+                                            )}
+                                        </>
+                                    ),
+                                }))}
                             />
-                        </CardContent>
-                    </Card>
-                ) : null}
-            </div>
-        </PageTransition>
+                        )}
+                    </div>
+                    <ScrambleSetsList
+                        scrambleSets={scrambleSets}
+                        canScramble={!!currentGroupId}
+                    />
+                </section>
+            )}
+        </DevicePage>
     );
 };
 
