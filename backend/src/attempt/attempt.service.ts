@@ -436,9 +436,12 @@ export class AttemptService {
     return this.prisma.attempt.findMany({
       where: {
         result: { roundId },
+        // Scrambled-only attempts have no time yet
+        status: { not: AttemptStatus.SCRAMBLED },
+        solvedAt: { not: null },
       },
       orderBy: { solvedAt: 'desc' },
-      take: 3,
+      take: 5,
       include: {
         result: {
           select: {
