@@ -131,9 +131,18 @@ export interface CompetitionStatistics {
     suspiciousAverages: SuspiciousAverage[];
     byEventStats: EventStatistics[];
     byRoundStats: RoundStatisticsByDay[];
+    byRoundAttemptStats: RoundAttemptStatistics[];
     attemptsByDevice: DeviceStatistics[];
     scorecardsCount: number;
     personsCompeted: number;
+}
+
+export interface RoundAttemptStatistics {
+    roundId: string;
+    solves: number;
+    manual: number;
+    extras: number;
+    dnf: number;
 }
 
 export interface EventStatistics {

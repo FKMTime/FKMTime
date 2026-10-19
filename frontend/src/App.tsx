@@ -252,7 +252,7 @@ const App = () => {
                 },
                 {
                     path: "statistics",
-                    element: <CompetitionStatistics showCharts />,
+                    element: <CompetitionStatistics />,
                 },
                 {
                     path: "events",
