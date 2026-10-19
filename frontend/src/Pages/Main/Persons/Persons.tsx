@@ -1,280 +1,252 @@
-import { useAtom } from "jotai";
-import { IdCard, Users } from "lucide-react";
-import { ChangeEvent, useCallback, useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useAtomValue } from "jotai";
+import { UserPlus } from "lucide-react";
+import { useEffect, useState } from "react";
 
 import LoadingPage from "@/Components/LoadingPage";
 import Pagination from "@/Components/Pagination";
-import PlusButton from "@/Components/PlusButton";
+import EmptyState from "@/Components/shared/EmptyState";
+import SearchInput from "@/Components/shared/SearchInput";
+import ToggleChip from "@/Components/shared/ToggleChip";
 import { Button } from "@/Components/ui/button";
+import { Input } from "@/Components/ui/input";
 import {
-    Card,
-    CardContent,
-    CardDescription,
-    CardHeader,
-    CardTitle,
-} from "@/Components/ui/card";
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/Components/ui/select";
 import { competitionAtom } from "@/lib/atoms";
-import { getCompetitionInfo } from "@/lib/competition";
 import { Person } from "@/lib/interfaces";
 import { isOrganizerOrDelegate } from "@/lib/permissions";
 import { getPersons } from "@/lib/persons";
 import { calculateTotalPages } from "@/lib/utils";
-import PageTransition from "@/Pages/PageTransition";
 
 import AddPersonModal from "./Components/AddPersonModal";
-import PersonCard from "./Components/PersonCard";
-import PersonsFilters from "./Components/PersonsFilters";
-import PersonsTable from "./Components/PersonsTable";
+import AssignCardModal from "./Components/AssignCardModal";
+import DisplayGroupsModal from "./Components/DisplayGroupsModal";
+import DisplayWarningsModal from "./Components/DisplayWarningsModal";
+import IssueWarningModal from "./Components/IssueWarningModal";
+import PersonsList, { PersonDialog } from "./Components/PersonsList";
+import PersonsTabs from "./Components/PersonsTabs";
+
+const SEARCH_DEBOUNCE_MS = 250;
+
+interface Filters {
+    search: string;
+    registrantId: string;
+    cardId: string;
+    onlyNewcomers: boolean;
+    onlyNotCheckedIn: boolean;
+}
 
 const Persons = () => {
-    const navigate = useNavigate();
-    const [competition, setCompetition] = useAtom(competitionAtom);
-    const [persons, setPersons] = useState<Person[]>([]);
-    const [totalPersonsCount, setTotalPersonsCount] = useState<number>(0);
-    const [page, setPage] = useState<number>(1);
-    const [totalPages, setTotalPages] = useState<number>(1);
-    const [pageSize, setPageSize] = useState<number>(10);
-    const [search, setSearch] = useState<string>("");
-    const [searchedId, setSearchedId] = useState<string>("");
-    const [searchedCardId, setSearchedCardId] = useState<string>("");
-    const [personsWithCardAssigned, setPersonsWithCardAssigned] =
-        useState<number>(0);
-    const [onlyNewcomers, setOnlyNewcomers] = useState<boolean>(false);
-    const [onlyNotCheckedIn, setOnlyNotCheckedIn] = useState<boolean>(false);
-    const [isOpenAddPersonModal, setIsOpenAddPersonModal] =
-        useState<boolean>(false);
+    const competition = useAtomValue(competitionAtom);
+    const [filters, setFilters] = useState<Filters>({
+        search: "",
+        registrantId: "",
+        cardId: "",
+        onlyNewcomers: false,
+        onlyNotCheckedIn: false,
+    });
+    const [page, setPage] = useState(1);
+    const [pageSize, setPageSize] = useState(10);
+    const [persons, setPersons] = useState<Person[] | null>(null);
+    const [count, setCount] = useState(0);
+    const [refreshKey, setRefreshKey] = useState(0);
+    const [isAddOpen, setIsAddOpen] = useState(false);
+    const [dialog, setDialog] = useState<{
+        type: PersonDialog;
+        person: Person;
+    } | null>(null);
 
-    const fetchData = useCallback(
-        async (
-            pageParam = 1,
-            pageSizeParam = 10,
-            searchParam?: string,
-            registrantId?: number,
-            cardId?: string,
-            onlyNewcomersParam?: boolean,
-            onlyNotCheckedInParam?: boolean
-        ) => {
-            const response = await getPersons(
-                pageParam,
-                pageSizeParam,
-                searchParam,
-                registrantId,
-                undefined,
-                cardId,
-                onlyNewcomersParam,
-                onlyNotCheckedInParam
-            );
-            if (!competition) {
-                const competitionData = await getCompetitionInfo();
-                setCompetition(competitionData.data);
-            }
-            setPersons(response.data);
-            setPersonsWithCardAssigned(response.personsWithCardAssigned);
-            setTotalPersonsCount(response.count);
-            const totalPagesCalculation = calculateTotalPages(
-                response.count,
-                pageSizeParam
-            );
-            setTotalPages(totalPagesCalculation);
-        },
-        [competition, setCompetition]
-    );
-
-    const handlePageChange = (pageParam: number) => {
-        setPage(pageParam);
-        fetchData(pageParam, pageSize, search);
-    };
-
-    const handleCloseEditModal = async () => {
-        await fetchData(
-            page,
-            pageSize,
-            search,
-            searchedId ? parseInt(searchedId) : undefined
-        );
-    };
-
-    const changePageSize = (pageSizeParam: number) => {
-        setPageSize(pageSizeParam);
-        fetchData(1, pageSizeParam, search);
-    };
-
-    const handleSearch = (event: ChangeEvent<HTMLInputElement>) => {
-        setSearch(event.target.value);
-        setSearchedId("");
-        setSearchedCardId("");
-        fetchData(1, pageSize, event.target.value);
-    };
-
-    const handleSearchId = (event: ChangeEvent<HTMLInputElement>) => {
-        setSearchedId(event.target.value);
-        setSearchedCardId("");
-        setSearch("");
-        fetchData(
-            1,
-            pageSize,
-            undefined,
-            event.target.value ? parseInt(event.target.value) : undefined
-        );
-    };
-
-    const handleSearchCardId = (event: ChangeEvent<HTMLInputElement>) => {
-        setSearchedCardId(event.target.value);
-        setSearch("");
-        setSearchedId("");
-        fetchData(1, pageSize, undefined, undefined, event.target.value);
-    };
-
-    const handleOnlyNewcomers = () => {
-        setOnlyNewcomers(!onlyNewcomers);
-        fetchData(
-            1,
-            pageSize,
-            search,
-            undefined,
-            searchedCardId,
-            !onlyNewcomers
-        );
-    };
-
-    const handleOnlyNotCheckedIn = () => {
-        setOnlyNotCheckedIn(!onlyNotCheckedIn);
-        fetchData(
-            1,
-            pageSize,
-            search,
-            undefined,
-            searchedCardId,
-            onlyNewcomers,
-            !onlyNotCheckedIn
-        );
-    };
-
-    const handlePageSizeChange = (newValue: string) => {
-        changePageSize(parseInt(newValue));
-    };
-
-    const handleCloseAddPersonModal = () => {
-        fetchData(
-            page,
-            pageSize,
-            search,
-            searchedId ? parseInt(searchedId) : undefined,
-            searchedCardId
-        );
-        setIsOpenAddPersonModal(false);
+    const setFilter = <K extends keyof Filters>(key: K, value: Filters[K]) => {
+        setFilters((current) => ({ ...current, [key]: value }));
+        setPage(1);
     };
 
     useEffect(() => {
-        fetchData();
-    }, [fetchData]);
+        let isCancelled = false;
+        const timeout = setTimeout(async () => {
+            const registrantId = parseInt(filters.registrantId);
+            const response = await getPersons(
+                page,
+                pageSize,
+                filters.search || undefined,
+                Number.isNaN(registrantId) ? undefined : registrantId,
+                undefined,
+                filters.cardId || undefined,
+                filters.onlyNewcomers,
+                filters.onlyNotCheckedIn
+            );
+            if (isCancelled) return;
+            setPersons(response.data);
+            setCount(response.count);
+        }, SEARCH_DEBOUNCE_MS);
+        return () => {
+            isCancelled = true;
+            clearTimeout(timeout);
+        };
+    }, [filters, page, pageSize, refreshKey]);
 
-    if (!competition || !persons) {
-        return <LoadingPage />;
-    }
+    if (!competition || !persons) return <LoadingPage />;
+
+    const refresh = () => setRefreshKey((key) => key + 1);
+    const closeDialog = () => {
+        setDialog(null);
+        refresh();
+    };
+    const totalPages = calculateTotalPages(count, pageSize);
 
     return (
-        <PageTransition>
-            <div className="flex flex-col gap-5">
-                <Card>
-                    <CardHeader>
-                        <CardTitle className="flex justify-between items-center">
-                            <div className="flex gap-2 items-center">
-                                <Users size={20} />
-                                Persons
-                            </div>
-                            {isOrganizerOrDelegate() &&
-                                competition.useFkmTimeDevices && (
-                                    <>
-                                        <PlusButton
-                                            onClick={() =>
-                                                setIsOpenAddPersonModal(true)
-                                            }
-                                        />
-                                    </>
-                                )}
-                        </CardTitle>
-                        {competition.useFkmTimeDevices && (
-                            <CardDescription>
-                                Assigned cards: {personsWithCardAssigned}/
-                                {totalPersonsCount}
-                            </CardDescription>
-                        )}
-                    </CardHeader>
-                    <CardContent className="flex flex-col md:flex-row gap-5 md:justify-between">
-                        <PersonsFilters
-                            searchedId={searchedId}
-                            handleSearchId={handleSearchId}
-                            searchedCardId={searchedCardId}
-                            handleSearchCardId={handleSearchCardId}
-                            search={search}
-                            handleSearch={handleSearch}
-                            onlyNewcomers={onlyNewcomers}
-                            handleOnlyNewcomers={handleOnlyNewcomers}
-                            onlyNotCheckedIn={onlyNotCheckedIn}
-                            handleOnlyNotCheckedIn={handleOnlyNotCheckedIn}
-                            totalPages={totalPages}
-                            pageSize={pageSize}
-                            handlePageSizeChange={handlePageSizeChange}
-                            competition={competition}
+        <div className="flex flex-col gap-4">
+            <PersonsTabs value="all" refreshKey={refreshKey} />
+
+            <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
+                <div className="flex flex-1 flex-wrap items-center gap-2">
+                    <SearchInput
+                        value={filters.search}
+                        onChange={(e) => setFilter("search", e.target.value)}
+                        placeholder="Search by name or WCA ID"
+                        label="Search persons"
+                        className="md:max-w-xs"
+                    />
+                    <Input
+                        value={filters.registrantId}
+                        onChange={(e) =>
+                            setFilter("registrantId", e.target.value)
+                        }
+                        inputMode="numeric"
+                        placeholder="ID"
+                        aria-label="Registrant ID"
+                        className="w-20"
+                    />
+                    {competition.useFkmTimeDevices && (
+                        <Input
+                            value={filters.cardId}
+                            onChange={(e) =>
+                                setFilter("cardId", e.target.value)
+                            }
+                            placeholder="Card"
+                            aria-label="Card ID"
+                            className="w-28"
                         />
-                        {competition.useFkmTimeDevices && (
+                    )}
+                    <ToggleChip
+                        pressed={filters.onlyNewcomers}
+                        onPressedChange={(value) =>
+                            setFilter("onlyNewcomers", value)
+                        }
+                    >
+                        Newcomers
+                    </ToggleChip>
+                    <ToggleChip
+                        pressed={filters.onlyNotCheckedIn}
+                        onPressedChange={(value) =>
+                            setFilter("onlyNotCheckedIn", value)
+                        }
+                    >
+                        Not checked in
+                    </ToggleChip>
+                </div>
+                <div className="flex items-center gap-3">
+                    <span className="text-sm text-muted-foreground">
+                        {count} {count === 1 ? "person" : "persons"}
+                    </span>
+                    {isOrganizerOrDelegate() &&
+                        competition.useFkmTimeDevices && (
                             <Button
-                                onClick={() => {
-                                    navigate("/cards");
-                                }}
+                                onClick={() => setIsAddOpen(true)}
+                                className="ml-auto"
                             >
-                                <IdCard />
-                                Assign cards
+                                <UserPlus />
+                                Add person
                             </Button>
                         )}
-                    </CardContent>
-                </Card>
-                <Card className="hidden md:block py-3">
-                    <CardHeader>
-                        <CardTitle className="flex gap-2 items-center">
-                            <Users size={20} />
-                            Persons
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent className="w-full">
-                        <PersonsTable
-                            persons={persons}
-                            competition={competition}
-                            handleCloseEditModal={handleCloseEditModal}
-                        />
-                    </CardContent>
-                </Card>
-                <div className="flex md:hidden flex-col gap-3">
-                    {persons.map((person) => (
-                        <PersonCard
-                            key={person.id}
-                            wcif={competition.wcif}
-                            person={person}
-                            handleCloseEditModal={handleCloseEditModal}
-                        />
-                    ))}
                 </div>
-                {persons.length > 0 && totalPages > 1 && (
-                    <Card>
-                        <CardContent>
-                            <Pagination
-                                page={page}
-                                totalPages={totalPages}
-                                handlePageChange={handlePageChange}
-                            />
-                        </CardContent>
-                    </Card>
-                )}
-                {isOpenAddPersonModal && (
-                    <AddPersonModal
-                        isOpen={isOpenAddPersonModal}
-                        onClose={handleCloseAddPersonModal}
-                    />
-                )}
             </div>
-        </PageTransition>
+
+            {persons.length === 0 ? (
+                <EmptyState>No persons found.</EmptyState>
+            ) : (
+                <PersonsList
+                    persons={persons}
+                    competition={competition}
+                    onOpenDialog={(type, person) => setDialog({ type, person })}
+                />
+            )}
+
+            {count > 10 && (
+                <div className="flex flex-col items-center justify-between gap-3 sm:flex-row">
+                    <Select
+                        value={pageSize.toString()}
+                        onValueChange={(value) => {
+                            setPageSize(parseInt(value));
+                            setPage(1);
+                        }}
+                    >
+                        <SelectTrigger
+                            className="w-36"
+                            aria-label="Persons per page"
+                        >
+                            <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {[10, 25, 50].map((size) => (
+                                <SelectItem key={size} value={size.toString()}>
+                                    {size} per page
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                    {totalPages > 1 && (
+                        <Pagination
+                            page={page}
+                            totalPages={totalPages}
+                            handlePageChange={setPage}
+                        />
+                    )}
+                </div>
+            )}
+
+            {isAddOpen && (
+                <AddPersonModal
+                    isOpen
+                    onClose={() => {
+                        setIsAddOpen(false);
+                        refresh();
+                    }}
+                />
+            )}
+            {dialog?.type === "card" && (
+                <AssignCardModal
+                    isOpen
+                    onClose={closeDialog}
+                    person={dialog.person}
+                />
+            )}
+            {dialog?.type === "groups" && (
+                <DisplayGroupsModal
+                    isOpen
+                    onClose={closeDialog}
+                    person={dialog.person}
+                />
+            )}
+            {dialog?.type === "warnings" && (
+                <DisplayWarningsModal
+                    isOpen
+                    onClose={closeDialog}
+                    person={dialog.person}
+                />
+            )}
+            {dialog?.type === "issueWarning" && (
+                <IssueWarningModal
+                    isOpen
+                    onClose={closeDialog}
+                    person={dialog.person}
+                />
+            )}
+        </div>
     );
 };
 

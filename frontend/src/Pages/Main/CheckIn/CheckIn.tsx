@@ -1,17 +1,11 @@
-import { SquareCheckBig } from "lucide-react";
-import { KeyboardEvent, RefObject, useEffect, useRef, useState } from "react";
+import { Check, Nfc } from "lucide-react";
+import { FormEvent, useCallback, useEffect, useRef, useState } from "react";
 
-import FlagIcon from "@/Components/Icons/FlagIcon";
 import LoadingPage from "@/Components/LoadingPage";
-import PersonAutocomplete from "@/Components/PersonAutocomplete";
-import { Alert, AlertTitle } from "@/Components/ui/alert";
-import {
-    Card,
-    CardContent,
-    CardDescription,
-    CardHeader,
-    CardTitle,
-} from "@/Components/ui/card";
+import EmptyState from "@/Components/shared/EmptyState";
+import InlineError from "@/Components/shared/InlineError";
+import ProgressBar from "@/Components/shared/ProgressBar";
+import SearchInput from "@/Components/shared/SearchInput";
 import { Input } from "@/Components/ui/input";
 import { Label } from "@/Components/ui/label";
 import { useToast } from "@/hooks/useToast";
@@ -20,221 +14,267 @@ import {
     checkedInCount,
     checkIn,
     getPersonInfoByCardIdWithSensitiveData,
+    getPersons,
 } from "@/lib/persons";
-import { WCA_ORIGIN } from "@/lib/request";
-import PageTransition from "@/Pages/PageTransition";
+import { cn, getInitials } from "@/lib/utils";
 
-import SubmitActions from "./Components/SubmitActions";
+import CheckInPanel from "./Components/CheckInPanel";
+
+const SEARCH_RESULTS = 6;
+const RECENT_LIMIT = 5;
 
 const CheckIn = () => {
     const { toast } = useToast();
-    const [scannedCard, setScannedCard] = useState<string>("");
-    const [totalPersons, setTotalPersons] = useState<number>(0);
-    const [personsCheckedIn, setPersonsCheckedIn] = useState<number>(0);
-    const cardInputRef: RefObject<HTMLInputElement> =
-        useRef<HTMLInputElement>(null);
-    const [personData, setPersonData] = useState<Person | null>();
-    const [selectedPerson, setSelectedPerson] = useState<Person | null>();
-    const [cardShouldBeAssigned, setCardShouldBeAssigned] =
-        useState<boolean>(false);
+    const scanInputRef = useRef<HTMLInputElement>(null);
+    const [counts, setCounts] = useState<{ done: number; total: number }>();
+    const [scannedCard, setScannedCard] = useState("");
+    const [scanError, setScanError] = useState("");
+    const [query, setQuery] = useState("");
+    const [results, setResults] = useState<Person[]>([]);
+    const [selected, setSelected] = useState<Person | null>(null);
+    const [checkInError, setCheckInError] = useState("");
+    const [isLoading, setIsLoading] = useState(false);
+    const [recent, setRecent] = useState<Person[]>([]);
 
-    const handleSubmitCard = async () => {
-        if (personData) {
-            setPersonData({
-                ...personData,
-                cardId: scannedCard,
-            });
-        } else {
-            const res =
-                await getPersonInfoByCardIdWithSensitiveData(scannedCard);
-            if (res.status === 200) {
-                if (res.data.checkedInAt) {
-                    toast({
-                        title: "Something went wrong",
-                        description: "Competitor has been already checked in",
-                    });
-                    setScannedCard("");
-                    cardInputRef.current?.focus();
-                    return;
-                }
-                setPersonData(res.data);
-                setCardShouldBeAssigned(false);
-            } else if (res.status === 404) {
-                toast({
-                    title: "Card not found",
-                    description: "The card was not found in the database.",
-                    variant: "destructive",
-                });
-            } else {
-                toast({
-                    title: "Error",
-                    description: "Something went wrong!",
-                    variant: "destructive",
-                });
-            }
-        }
-    };
-
-    const handleCheckIn = async (id?: string) => {
-        const idToCheckIn = id ? id : personData?.id;
-        if (!idToCheckIn) return;
-        const res = await checkIn(idToCheckIn, scannedCard);
-        if (res.status === 200) {
-            toast({
-                title: "Success",
-                description: `Competitor has been checked in successfully${cardShouldBeAssigned ? " and card was assigned" : ""}.`,
-                variant: "success",
-            });
-            await fetchData();
-            setPersonData(null);
-            setScannedCard("");
-            setSelectedPerson(null);
-            setCardShouldBeAssigned(false);
-            cardInputRef.current?.focus();
-        } else if (res.status === 409) {
-            toast({
-                title: "Card not assigned",
-                description: "The card is already assigned to someone.",
-                variant: "destructive",
-            });
-        } else {
-            toast({
-                title: "Error",
-                description: "Something went wrong!",
-                variant: "destructive",
-            });
-        }
-    };
-
-    const handleSelectPerson = (person: Person | null) => {
-        if (!person) return;
-        if (person.checkedInAt) {
-            toast({
-                title: "Already checked in",
-                description: "This person has already been checked in",
-            });
-            setSelectedPerson(null);
-            return;
-        }
-        setSelectedPerson(person);
-        if (!person) {
-            toast({
-                title: "Already checked in",
-                description: "This person has already been checked in",
-            });
-            setTimeout(() => {
-                setSelectedPerson(null);
-            }, 500);
-        }
-        setPersonData(person);
-        setScannedCard(person?.cardId || "");
-        setCardShouldBeAssigned(person?.cardId ? false : true);
-        if (!person?.cardId) {
-            cardInputRef.current?.focus();
-        }
-    };
-
-    const fetchData = async () => {
+    const fetchCounts = useCallback(async () => {
         const data = await checkedInCount();
-        setPersonsCheckedIn(data.checkedInPersonsCount);
-        setTotalPersons(data.totalPersonsCount);
-    };
-    useEffect(() => {
-        fetchData();
+        setCounts({
+            done: data.checkedInPersonsCount,
+            total: data.totalPersonsCount,
+        });
     }, []);
 
-    if (totalPersons === 0) {
-        return <LoadingPage />;
-    }
+    useEffect(() => {
+        fetchCounts();
+    }, [fetchCounts]);
+
+    useEffect(() => {
+        const trimmed = query.trim();
+        if (trimmed.length < 2) {
+            setResults([]);
+            return;
+        }
+        let isCancelled = false;
+        const timeout = setTimeout(async () => {
+            const response = await getPersons(1, SEARCH_RESULTS, trimmed);
+            if (!isCancelled) setResults(response.data ?? []);
+        }, 250);
+        return () => {
+            isCancelled = true;
+            clearTimeout(timeout);
+        };
+    }, [query]);
+
+    const select = (person: Person | null) => {
+        setSelected(person);
+        setCheckInError("");
+        setScanError("");
+        if (!person) setTimeout(() => scanInputRef.current?.focus());
+    };
+
+    const handleScan = async (event: FormEvent) => {
+        event.preventDefault();
+        const card = scannedCard.trim();
+        if (!card) return;
+        const response = await getPersonInfoByCardIdWithSensitiveData(card);
+        setScannedCard("");
+        if (response.status === 200) {
+            if (response.data.checkedInAt) {
+                setScanError(`${response.data.name} is already checked in.`);
+                return;
+            }
+            setQuery("");
+            select(response.data);
+        } else if (response.status === 404) {
+            setScanError("This card is not assigned to anyone.");
+        } else {
+            setScanError("Something went wrong. Scan the card again.");
+        }
+    };
+
+    const handlePick = (person: Person) => {
+        if (person.checkedInAt) {
+            setScanError(`${person.name} is already checked in.`);
+            return;
+        }
+        setQuery("");
+        select(person);
+    };
+
+    const handleCheckIn = async (cardId: string) => {
+        if (!selected) return;
+        setIsLoading(true);
+        const response = await checkIn(selected.id, cardId);
+        setIsLoading(false);
+        if (response.status === 200) {
+            const assigned = !selected.cardId;
+            toast({
+                title: `${selected.name} checked in${assigned ? " and card assigned" : ""}`,
+                variant: "success",
+            });
+            setRecent((current) =>
+                [selected, ...current].slice(0, RECENT_LIMIT)
+            );
+            fetchCounts();
+            select(null);
+        } else if (response.status === 409) {
+            setCheckInError("This card is already assigned to someone else.");
+        } else {
+            setCheckInError("Something went wrong. Try again.");
+        }
+    };
+
+    if (!counts) return <LoadingPage />;
+
+    const left = counts.total - counts.done;
+
     return (
-        <PageTransition>
-            <div className="flex flex-col gap-4">
-                <Card>
-                    <CardHeader>
-                        <CardTitle className="flex gap-2 items-center">
-                            <SquareCheckBig size={20} />
-                            Checked in {`${personsCheckedIn}/${totalPersons}`}
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent className="flex flex-col gap-3">
-                        <PersonAutocomplete
-                            onSelect={handleSelectPerson}
-                            defaultValue={selectedPerson?.id}
-                            key={selectedPerson?.id}
+        <div className="grid items-start gap-5 lg:grid-cols-2">
+            <div
+                className={cn(
+                    "flex flex-col gap-4",
+                    selected && "max-lg:hidden"
+                )}
+            >
+                <section className="flex flex-col gap-3 rounded-mobile-card border bg-card p-4 md:rounded-2xl md:p-5">
+                    <div className="flex items-baseline justify-between gap-3">
+                        <p className="text-sm text-muted-foreground">
+                            Checked in{" "}
+                            <b className="text-xl font-bold text-foreground">
+                                {counts.done}
+                            </b>{" "}
+                            / {counts.total}
+                        </p>
+                        <p className="text-sm text-muted-foreground">
+                            {left > 0 ? `${left} to go` : "Everyone is here"}
+                        </p>
+                    </div>
+                    <ProgressBar
+                        value={counts.done}
+                        max={counts.total}
+                        label="Checked in"
+                    />
+                </section>
+
+                <form onSubmit={handleScan} className="flex flex-col gap-2">
+                    <Label htmlFor="check-in-scan">
+                        Scan the competitor&apos;s card
+                    </Label>
+                    <div className="relative">
+                        <Nfc
+                            aria-hidden
+                            className="pointer-events-none absolute left-3 top-1/2 size-5 -translate-y-1/2 text-faint"
                         />
-                        <div className="flex flex-col gap-2">
-                            <Label>Scan the card of the competitor</Label>
-                            <Input
-                                placeholder="Card"
-                                autoFocus
-                                value={scannedCard}
-                                onChange={(event) => {
-                                    setScannedCard(event.target.value);
-                                    if (personData?.id) {
-                                        setPersonData({
-                                            ...personData,
-                                            cardId: event.target.value,
-                                        });
-                                    }
-                                }}
-                                ref={cardInputRef}
-                                onKeyDown={(
-                                    event: KeyboardEvent<HTMLInputElement>
-                                ) =>
-                                    event.key === "Enter" && handleSubmitCard()
-                                }
-                            />
-                        </div>
-                    </CardContent>
-                </Card>
-                {personData ? (
-                    <Card>
-                        <CardHeader>
-                            <CardTitle className="flex justify-between items-center">
-                                {personData.name}{" "}
-                                {personData.registrantId
-                                    ? `(${personData.registrantId})`
-                                    : ""}
-                                <FlagIcon
-                                    country={personData.countryIso2}
-                                    size={40}
-                                />
-                            </CardTitle>
-                            <CardDescription>
-                                <p>
-                                    {personData.wcaId ? (
-                                        <a
-                                            className="text-primary"
-                                            href={`${WCA_ORIGIN}/persons/${personData.wcaId}`}
-                                            target="_blank"
-                                            rel="noreferrer"
+                        <Input
+                            id="check-in-scan"
+                            ref={scanInputRef}
+                            autoFocus
+                            value={scannedCard}
+                            onChange={(e) => {
+                                setScannedCard(e.target.value);
+                                setScanError("");
+                            }}
+                            placeholder="Card ID"
+                            className="pl-10"
+                        />
+                    </div>
+                    <InlineError>{scanError}</InlineError>
+                </form>
+
+                <div className="flex flex-col gap-2">
+                    <Label htmlFor="check-in-search">Or find by name</Label>
+                    <SearchInput
+                        id="check-in-search"
+                        value={query}
+                        onChange={(e) => {
+                            setQuery(e.target.value);
+                            setScanError("");
+                        }}
+                        placeholder="Name or WCA ID"
+                        label="Find a competitor by name"
+                        className="md:max-w-none"
+                    />
+                    {results.length > 0 && (
+                        <ul className="flex flex-col divide-y overflow-hidden rounded-mobile-card border bg-card md:rounded-xl">
+                            {results.map((person) => (
+                                <li key={person.id}>
+                                    <button
+                                        type="button"
+                                        onClick={() => handlePick(person)}
+                                        className="flex min-h-12 w-full items-center gap-3 px-4 py-2 text-left hover:bg-accent"
+                                    >
+                                        <span
+                                            aria-hidden
+                                            className="flex size-8 shrink-0 items-center justify-center rounded-full bg-secondary text-[11px] font-bold text-muted-foreground"
                                         >
-                                            {personData.wcaId}
-                                        </a>
-                                    ) : (
-                                        "Newcomer"
-                                    )}
-                                </p>
-                            </CardDescription>
-                        </CardHeader>
-                        <CardContent className="flex flex-col gap-3">
-                            {!personData.cardId ? (
-                                <Alert variant="destructive">
-                                    <AlertTitle>
-                                        Please assign a card to the competitor
-                                    </AlertTitle>
-                                </Alert>
-                            ) : null}
-                            <SubmitActions
-                                person={personData}
-                                handleCheckIn={handleCheckIn}
-                                cardShouldBeAssigned={cardShouldBeAssigned}
-                            />
-                        </CardContent>
-                    </Card>
-                ) : null}
+                                            {getInitials(person.name)}
+                                        </span>
+                                        <span className="min-w-0 flex-1 truncate font-medium">
+                                            {person.name}
+                                            <span className="font-normal text-faint">
+                                                {" "}
+                                                {person.registrantId}
+                                            </span>
+                                        </span>
+                                        <span
+                                            className={cn(
+                                                "text-xs font-semibold",
+                                                person.checkedInAt
+                                                    ? "text-success"
+                                                    : "text-muted-foreground"
+                                            )}
+                                        >
+                                            {person.checkedInAt
+                                                ? "Checked in"
+                                                : person.cardId
+                                                  ? "Not checked in"
+                                                  : "No card"}
+                                        </span>
+                                    </button>
+                                </li>
+                            ))}
+                        </ul>
+                    )}
+                </div>
+
+                {recent.length > 0 && (
+                    <div className="flex flex-col gap-2">
+                        <p className="text-xs font-semibold text-faint">
+                            Just checked in
+                        </p>
+                        <ul className="flex flex-col gap-1">
+                            {recent.map((person) => (
+                                <li
+                                    key={person.id}
+                                    className="flex items-center gap-2 text-sm"
+                                >
+                                    <Check className="size-4 text-success" />
+                                    {person.name}
+                                    <span className="text-faint">
+                                        {person.registrantId}
+                                    </span>
+                                </li>
+                            ))}
+                        </ul>
+                    </div>
+                )}
             </div>
-        </PageTransition>
+
+            {selected ? (
+                <CheckInPanel
+                    key={selected.id}
+                    person={selected}
+                    error={checkInError}
+                    isLoading={isLoading}
+                    onCheckIn={handleCheckIn}
+                    onCancel={() => select(null)}
+                />
+            ) : (
+                <EmptyState className="hidden lg:flex">
+                    Scan a card or search for a competitor.
+                </EmptyState>
+            )}
+        </div>
     );
 };
 
