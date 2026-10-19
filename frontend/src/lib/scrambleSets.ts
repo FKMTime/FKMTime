@@ -27,3 +27,13 @@ export const deleteAllScrambleSets = async () => {
     const response = await backendRequest(`scramble-set/all`, "DELETE", true);
     return response.status;
 };
+
+export interface ScrambleSetCount {
+    roundId: string;
+    count: number;
+}
+
+export const getScrambleSetCounts = async (): Promise<ScrambleSetCount[]> => {
+    const response = await backendRequest("scramble-set/counts", "GET", true);
+    return await response.json();
+};

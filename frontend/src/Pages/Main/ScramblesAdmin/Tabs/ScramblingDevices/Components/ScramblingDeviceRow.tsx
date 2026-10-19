@@ -1,10 +1,7 @@
-import { AlarmClockPlus } from "lucide-react";
+import { KeyRound, Pencil, Trash2 } from "lucide-react";
 import { useState } from "react";
 
-import DeleteButton from "@/Components/DeleteButton";
-import EditButton from "@/Components/EditButton";
-import SmallIconButton from "@/Components/SmallIconButton";
-import { TableCell, TableRow } from "@/Components/ui/table";
+import RowActions from "@/Components/shared/RowActions";
 import { useConfirm } from "@/hooks/useConfirm";
 import { useToast } from "@/hooks/useToast";
 import { ScramblingDevice } from "@/lib/interfaces";
@@ -66,22 +63,36 @@ const ScramblingDeviceRow = ({
     };
 
     return (
-        <>
-            <TableRow key={device.id}>
-                <TableCell>{device.name}</TableCell>
-                <TableCell>{device.room.name}</TableCell>
-                <TableCell>
-                    <SmallIconButton
-                        title={"Generate one time code"}
-                        icon={<AlarmClockPlus />}
-                        onClick={() => setIsOpenOneTimeCodeModal(true)}
-                    />
-                    <EditButton
-                        onClick={() => setIsOpenEditDeviceModal(true)}
-                    />
-                    <DeleteButton onClick={handleDelete} />
-                </TableCell>
-            </TableRow>
+        <li className="flex items-center gap-2.5 border-b py-2 pl-3.5 pr-1 last:border-b-0 md:py-2.5 md:pl-5 md:pr-3">
+            <div className="flex min-w-0 flex-1 flex-col md:flex-row md:items-center md:gap-6">
+                <span className="truncate text-[15px] font-semibold md:w-1/3 md:text-sm">
+                    {device.name}
+                </span>
+                <span className="truncate text-[13px] text-muted-foreground md:text-sm">
+                    {device.room.name}
+                </span>
+            </div>
+            <RowActions
+                subject={device.name}
+                primary={{
+                    label: "One-time login code",
+                    icon: KeyRound,
+                    onSelect: () => setIsOpenOneTimeCodeModal(true),
+                }}
+                items={[
+                    {
+                        label: "Edit",
+                        icon: Pencil,
+                        onSelect: () => setIsOpenEditDeviceModal(true),
+                    },
+                    {
+                        label: "Delete device",
+                        icon: Trash2,
+                        destructive: true,
+                        onSelect: handleDelete,
+                    },
+                ]}
+            />
             <EditScramblingDeviceModal
                 isOpen={isOpenEditDeviceModal}
                 onClose={handleCloseEditDeviceModal}
@@ -92,7 +103,7 @@ const ScramblingDeviceRow = ({
                 onClose={() => setIsOpenOneTimeCodeModal(false)}
                 device={device}
             />
-        </>
+        </li>
     );
 };
 

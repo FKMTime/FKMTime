@@ -1,18 +1,11 @@
 import { useAtomValue } from "jotai";
-import { FileUp } from "lucide-react";
+import { Download } from "lucide-react";
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Competition as WCIF } from "wcif-helpers";
 
+import FileDropzone from "@/Components/shared/FileDropzone";
 import { Button } from "@/Components/ui/button";
-import {
-    Card,
-    CardContent,
-    CardDescription,
-    CardHeader,
-    CardTitle,
-} from "@/Components/ui/card";
-import { Input } from "@/Components/ui/input";
 import { useToast } from "@/hooks/useToast";
 import { competitionAtom } from "@/lib/atoms";
 import {
@@ -20,7 +13,6 @@ import {
     removeUnusedScramblesFromWcif,
     validateScrambles,
 } from "@/lib/scramblesImport";
-import PageTransition from "@/Pages/PageTransition";
 
 import ScrambleSetsList from "./Components/ScrambleSetsList";
 import ScrambleSetsWarnings from "./Components/ScrambleSetsValidators";
@@ -28,16 +20,16 @@ import ScrambleSetsWarnings from "./Components/ScrambleSetsValidators";
 const ImportScrambles = () => {
     const { toast } = useToast();
     const [wcif, setWcif] = useState<WCIF>();
-    const [fileInputKey, setFileInputKey] = useState(0);
+    // Remounts the dropzone so Clear also resets the picked file
+    const [dropzoneKey, setDropzoneKey] = useState(0);
     const [preventFromImporting, setPreventFromImporting] = useState(false);
     const competition = useAtomValue(competitionAtom);
     const [warningsList, setWarningsList] = useState<string[]>([]);
     const [errorsList, setErrorsList] = useState<string[]>([]);
 
-    const handleFileUpload = () => {
+    const handleFileChange = (file: File | null) => {
         if (!competition) return;
         clearUploadedScrambles(false);
-        const file = document.querySelector("input")?.files?.[0];
         if (file) {
             const reader = new FileReader();
             reader.onload = () => {
@@ -88,73 +80,67 @@ const ImportScrambles = () => {
 
     const clearUploadedScrambles = (clearInput = true) => {
         setWcif(undefined);
-        if (clearInput) setFileInputKey((prev) => prev + 1);
+        if (clearInput) setDropzoneKey((prev) => prev + 1);
         setPreventFromImporting(false);
     };
 
     return (
-        <PageTransition>
-            <div className="flex flex-col gap-4">
-                <Card>
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-2">
-                            <FileUp size={20} />
-                            Import scrambles
-                        </CardTitle>
-                        <CardDescription>
-                            Use this page only for importing scrambles for the
-                            round that doesn't have them yet. If you want to add
-                            an extra scramble/set please do it in the Scramble
-                            Sets tab. If you generated scrambles for unofficial
-                            events please remember to add them first in the {""}
+        <>
+            <div className="rounded-mobile-card border bg-card p-4 md:rounded-2xl md:p-6">
+                <div className="flex max-w-[560px] flex-col gap-4">
+                    <div className="flex flex-col gap-1.5 text-sm text-muted-foreground">
+                        <p>
+                            Upload the encrypted scrambles JSON exported from
+                            TNoodle.
+                        </p>
+                        <p className="text-[13px]">
+                            Only import rounds that have no scrambles yet; add
+                            an extra scramble or set in Scramble sets. For
+                            unofficial events, add the event in{" "}
                             <Link
                                 to="/events"
-                                className="text-primary
-                            "
+                                className="text-primary hover:underline"
                             >
-                                Unofficial Events
+                                Unofficial events
                             </Link>{" "}
-                            tab.
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent className="flex flex-col gap-4">
-                        <div className="w-fit flex flex-col gap-3">
-                            <label>Upload encrypted scrambles JSON</label>
-                            <Input
-                                type="file"
-                                accept=".json"
-                                onChange={handleFileUpload}
-                                key={fileInputKey}
-                            />
-                        </div>
-                        {wcif && competition && (
-                            <ScrambleSetsWarnings
-                                warnings={warningsList}
-                                errors={errorsList}
-                            />
+                            first.
+                        </p>
+                    </div>
+                    <FileDropzone
+                        key={dropzoneKey}
+                        title="Upload encrypted scrambles JSON"
+                        accept=".json"
+                        onFileChange={handleFileChange}
+                        className="py-8 md:rounded-xl"
+                    />
+                    {wcif && (
+                        <ScrambleSetsWarnings
+                            warnings={warningsList}
+                            errors={errorsList}
+                        />
+                    )}
+                    <div className="flex gap-2">
+                        <Button
+                            disabled={!wcif || preventFromImporting}
+                            onClick={handleImport}
+                            className="max-md:flex-1"
+                        >
+                            <Download />
+                            Import
+                        </Button>
+                        {wcif && (
+                            <Button
+                                variant="ghost"
+                                onClick={() => clearUploadedScrambles()}
+                            >
+                                Clear
+                            </Button>
                         )}
-                        {wcif && competition && (
-                            <div className="flex gap-3">
-                                <Button
-                                    variant="destructive"
-                                    onClick={() => clearUploadedScrambles()}
-                                >
-                                    Clear
-                                </Button>
-                                <Button
-                                    disabled={preventFromImporting}
-                                    variant="success"
-                                    onClick={handleImport}
-                                >
-                                    Import
-                                </Button>
-                            </div>
-                        )}
-                    </CardContent>
-                </Card>
-                {wcif && <ScrambleSetsList wcif={wcif} />}
+                    </div>
+                </div>
             </div>
-        </PageTransition>
+            {wcif && <ScrambleSetsList wcif={wcif} />}
+        </>
     );
 };
 

@@ -8,7 +8,7 @@ interface ScrambleSetsListProps {
 
 const ScrambleSetsList = ({ wcif }: ScrambleSetsListProps) => {
     return (
-        <div className="flex flex-row flex-wrap gap-5">
+        <div className="grid gap-3 md:grid-cols-[repeat(auto-fill,minmax(260px,1fr))]">
             {wcif.events.map((event) => (
                 <EventCard key={event.id} eventData={event} />
             ))}
