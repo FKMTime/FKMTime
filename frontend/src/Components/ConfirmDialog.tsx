@@ -15,6 +15,9 @@ import {
 interface ConfirmDialogProps {
     title?: string;
     description?: string;
+    confirmLabel?: string;
+    /** Destructive confirms are red; use "default" for everyday actions */
+    variant?: "destructive" | "default";
     onConfirm: () => void;
     onCancel: () => void;
 }
@@ -22,6 +25,8 @@ interface ConfirmDialogProps {
 export const ConfirmDialog: FC<ConfirmDialogProps> = ({
     title = "Are you sure?",
     description = "This action cannot be undone.",
+    confirmLabel = "Confirm",
+    variant = "destructive",
     onConfirm,
     onCancel,
 }) => {
@@ -32,12 +37,14 @@ export const ConfirmDialog: FC<ConfirmDialogProps> = ({
                     <DialogTitle>{title}</DialogTitle>
                 </DialogHeader>
                 <DialogDescription>{description}</DialogDescription>
-                <DialogFooter className="flex flex-col md:flex-row mt-3 gap-3">
+                <DialogFooter className="mt-2 flex flex-col-reverse gap-2.5 sm:flex-row sm:justify-end sm:space-x-0">
                     <DialogClose asChild>
-                        <Button onClick={onCancel}>Cancel</Button>
+                        <Button variant="outline" onClick={onCancel}>
+                            Cancel
+                        </Button>
                     </DialogClose>
-                    <Button variant="destructive" onClick={onConfirm}>
-                        Confirm
+                    <Button variant={variant} onClick={onConfirm}>
+                        {confirmLabel}
                     </Button>
                 </DialogFooter>
             </DialogContent>

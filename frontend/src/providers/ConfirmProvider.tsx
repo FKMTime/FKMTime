@@ -9,6 +9,8 @@ export interface ConfirmContextType {
 interface ConfirmOptions {
     title: string;
     description?: string;
+    confirmLabel?: string;
+    variant?: "destructive" | "default";
     onConfirm?: () => void;
 }
 
@@ -24,28 +26,22 @@ export const ConfirmContext = createContext<ConfirmContextType | undefined>(
 export const ConfirmProvider: FC<{ children: ReactNode }> = ({ children }) => {
     const [confirmState, setConfirmState] = useState<ConfirmState | null>(null);
 
-    const confirm = useCallback(
-        ({ title, description, onConfirm }: ConfirmOptions) => {
-            return new Promise<void>(
-                (resolve: () => void, reject: () => void) => {
-                    setConfirmState({
-                        title,
-                        description,
-                        onConfirm: () => {
-                            if (onConfirm) onConfirm();
-                            resolve();
-                            setConfirmState(null);
-                        },
-                        onCancel: () => {
-                            reject();
-                            setConfirmState(null);
-                        },
-                    });
-                }
-            );
-        },
-        []
-    );
+    const confirm = useCallback(({ onConfirm, ...options }: ConfirmOptions) => {
+        return new Promise<void>((resolve: () => void, reject: () => void) => {
+            setConfirmState({
+                ...options,
+                onConfirm: () => {
+                    if (onConfirm) onConfirm();
+                    resolve();
+                    setConfirmState(null);
+                },
+                onCancel: () => {
+                    reject();
+                    setConfirmState(null);
+                },
+            });
+        });
+    }, []);
 
     return (
         <ConfirmContext.Provider value={{ confirm }}>
@@ -54,6 +50,8 @@ export const ConfirmProvider: FC<{ children: ReactNode }> = ({ children }) => {
                 <ConfirmDialog
                     title={confirmState.title}
                     description={confirmState.description}
+                    confirmLabel={confirmState.confirmLabel}
+                    variant={confirmState.variant}
                     onConfirm={confirmState.onConfirm}
                     onCancel={confirmState.onCancel}
                 />
