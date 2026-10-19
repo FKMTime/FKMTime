@@ -1,308 +1,208 @@
-import { useAtom } from "jotai";
-import { AlarmClock, Pencil } from "lucide-react";
-import {
-    ChangeEvent,
-    Dispatch,
-    SetStateAction,
-    useCallback,
-    useContext,
-    useEffect,
-    useMemo,
-    useState,
-} from "react";
+import { useAtomValue } from "jotai";
+import { useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import {
-    getCutoffByRoundId,
-    getLimitByRoundId,
-    getNumberOfAttemptsForRound,
-} from "wcif-helpers";
+import { getLimitByRoundId, getNumberOfAttemptsForRound } from "wcif-helpers";
 
-import EventIcon from "@/Components/Icons/EventIcon";
 import LoadingPage from "@/Components/LoadingPage";
-import { Button } from "@/Components/ui/button";
-import {
-    Card,
-    CardContent,
-    CardDescription,
-    CardHeader,
-    CardTitle,
-} from "@/Components/ui/card";
-import { Input } from "@/Components/ui/input";
-import { activityCodeToName } from "@/lib/activities";
+import EmptyState from "@/Components/shared/EmptyState";
+import RoundStrip from "@/Components/shared/RoundStrip";
+import SearchInput from "@/Components/shared/SearchInput";
+import SegmentedControl from "@/Components/shared/SegmentedControl";
+import { usePageHeader } from "@/hooks/usePageHeader";
 import { competitionAtom } from "@/lib/atoms";
-import { getCompetitionInfo } from "@/lib/competition";
 import { Result, Room } from "@/lib/interfaces";
 import { isDelegate } from "@/lib/permissions";
+import { rankResults } from "@/lib/ranking";
 import { getResultsByRoundId } from "@/lib/results";
 import { getAllRooms } from "@/lib/rooms";
-import { getAdvancementText } from "@/lib/utils";
-import PageTransition from "@/Pages/PageTransition";
+import { getRoundMeta } from "@/lib/roundInfo";
+import { getRoundOptions, getStripRounds } from "@/lib/roundOptions";
+import { getAdvancementText, shortRoundName } from "@/lib/utils";
 import { socket, SocketContext } from "@/socket";
 
-import EventAndRoundSelector from "../../../Components/EventAndRoundSelector";
 import CreateAttemptModal from "./Components/CreateAttemptModal";
 import RestartGroupModal from "./Components/RestartGroupModal";
-import ResultsActions from "./Components/ResultsActions";
 import ResultsTable from "./Components/ResultsTable";
-import RoundLimits from "./Components/RoundLimits";
+import ResultsTabs from "./Components/ResultsTabs";
+import RoundHeader from "./Components/RoundHeader";
+
+type Order = "ranking" | "latest";
 
 const Results = () => {
-    const { id } = useParams<{ id: string }>();
+    const { id: roundId = "" } = useParams<{ id: string }>();
     const navigate = useNavigate();
-
-    const filters = {
-        eventId: id?.split("-")[0] || "",
-        roundId: id || "",
-    };
-
-    const [competition, setCompetition] = useAtom(competitionAtom);
-    const [results, setResults] = useState<Result[]>([]);
-    const [currentRounds, setCurrentRounds] = useState<string[]>([]);
-
-    const [isOpenCreateAttemptModal, setIsOpenCreateAttemptModal] =
-        useState<boolean>(false);
-    const [isOpenRestartGroupModal, setIsOpenRestartGroupModal] =
-        useState<boolean>(false);
-
-    const [search, setSearch] = useState<string>("");
-    const cutoff = useMemo(() => {
-        if (!competition) {
-            return null;
-        }
-        return getCutoffByRoundId(filters.roundId, competition.wcif);
-    }, [competition, filters.roundId]);
-    const limit = useMemo(() => {
-        if (!competition) {
-            return null;
-        }
-        return getLimitByRoundId(filters.roundId, competition.wcif);
-    }, [competition, filters.roundId]);
-
-    const maxAttempts = useMemo(() => {
-        if (!competition) {
-            return 0;
-        }
-        return getNumberOfAttemptsForRound(filters.roundId, competition.wcif);
-    }, [competition, filters.roundId]);
-
-    const advancementText = useMemo(() => {
-        if (!competition) {
-            return "";
-        }
-        const event = competition.wcif.events.find(
-            (e) => e.id === filters.eventId
-        );
-        if (!event) {
-            return "";
-        }
-        return getAdvancementText(filters.roundId, event);
-    }, [competition, filters.eventId, filters.roundId]);
-
-    const fetchData = useCallback(
-        async (roundId: string, searchParam?: string) => {
-            const data = await getResultsByRoundId(roundId, searchParam);
-            if (roundId === filters.roundId && roundId !== "") {
-                setResults(data);
-            }
-        },
-        [filters.roundId]
-    );
-
-    const fetchCompetition = useCallback(async () => {
-        const response = await getCompetitionInfo();
-        if (response.status !== 200) {
-            navigate("/competition");
-        }
-        setCompetition(response.data);
-    }, [navigate, setCompetition]);
-
-    const handleEventChange = async (eventId: string) => {
-        const roundId = eventId + "-r1";
-        navigate(`/results/round/${roundId}`);
-        await fetchData(roundId);
-    };
-
-    const handleRoundChange = (roundId: string) => {
-        navigate(`/results/round/${roundId}`);
-    };
-
-    const handleSearch = (event: ChangeEvent<HTMLInputElement>) => {
-        fetchData(filters.roundId, event.target.value);
-        setSearch(event.target.value);
-    };
-
-    const handleCloseCreateAttemptModal = () => {
-        fetchData(filters.roundId);
-        setIsOpenCreateAttemptModal(false);
-    };
-
-    const handleCloseRestartGroupModal = () => {
-        fetchData(filters.roundId);
-        setIsOpenRestartGroupModal(false);
-    };
-
-    useEffect(() => {
-        if (!competition) {
-            fetchCompetition();
-        }
-    }, [competition, fetchCompetition]);
-
+    const competition = useAtomValue(competitionAtom);
     const [isConnected] = useContext(SocketContext) as [
         number,
-        Dispatch<SetStateAction<number>>,
+        React.Dispatch<React.SetStateAction<number>>,
     ];
-    useEffect(() => {
-        if (filters.roundId) {
-            if (!isDelegate()) {
-                navigate(`/results/public/${filters.roundId}`);
-            }
-            fetchData(filters.roundId);
-        }
-        socket.emit("joinResults", { roundId: filters.roundId });
-        socket.on("resultEntered", () => {
-            fetchData(filters.roundId);
-        });
+    const [rooms, setRooms] = useState<Room[] | null>(null);
+    const [results, setResults] = useState<Result[]>([]);
+    const [search, setSearch] = useState("");
+    const [order, setOrder] = useState<Order>("ranking");
+    const [isRestartOpen, setIsRestartOpen] = useState(false);
+    const [isCreateOpen, setIsCreateOpen] = useState(false);
 
-        return () => {
-            socket.emit("leaveResults", { roundId: filters.roundId });
-        };
-    }, [currentRounds, fetchData, filters.roundId, navigate, isConnected]);
+    usePageHeader({
+        crumbs: roundId
+            ? [
+                  { label: "Results", to: "/results" },
+                  { label: shortRoundName(roundId) },
+              ]
+            : [{ label: "Results" }],
+    });
 
     useEffect(() => {
-        getAllRooms().then((rooms: Room[]) => {
-            const ids = new Set<string>(
-                rooms
-                    .flatMap((room: Room) => room.currentGroupIds)
-                    .map((groupId: string) => groupId.split("-g")[0])
-            );
-            setCurrentRounds([...ids]);
-        });
+        if (!isDelegate())
+            navigate(`/results/public/${roundId}`, { replace: true });
+    }, [navigate, roundId]);
+
+    useEffect(() => {
+        getAllRooms().then(setRooms);
     }, []);
 
-    if (!competition || !results) {
-        return <LoadingPage />;
-    }
+    const rounds = useMemo(
+        () =>
+            competition && rooms
+                ? getRoundOptions(competition.wcif, rooms)
+                : [],
+        [competition, rooms]
+    );
+
+    // /results opens the round in progress, or the first one
+    useEffect(() => {
+        if (roundId || rounds.length === 0) return;
+        const target = rounds.find((round) => round.isLive) ?? rounds[0];
+        navigate(`/results/round/${target.id}`, { replace: true });
+    }, [roundId, rounds, navigate]);
+
+    const fetchResults = useCallback(async () => {
+        if (!roundId) return;
+        setResults(await getResultsByRoundId(roundId, search || undefined));
+    }, [roundId, search]);
+
+    useEffect(() => {
+        const timeout = setTimeout(fetchResults, 250);
+        return () => clearTimeout(timeout);
+    }, [fetchResults]);
+
+    useEffect(() => {
+        if (!roundId) return;
+        socket.emit("joinResults", { roundId });
+        socket.on("resultEntered", fetchResults);
+        return () => {
+            socket.off("resultEntered", fetchResults);
+            socket.emit("leaveResults", { roundId });
+        };
+    }, [roundId, fetchResults, isConnected]);
+
+    if (!competition || !rooms) return <LoadingPage />;
+
+    const wcif = competition.wcif;
+    const maxAttempts = roundId
+        ? getNumberOfAttemptsForRound(roundId, wcif)
+        : 0;
+    const format =
+        wcif.events
+            .flatMap((event) => event.rounds)
+            .find((round) => round.id === roundId)?.format ?? "a";
+    const event = wcif.events.find((e) => e.id === roundId.split("-")[0]);
+    const ranked = rankResults(results, maxAttempts, format);
+    const rows =
+        order === "latest"
+            ? [...ranked].sort(
+                  (a, b) =>
+                      new Date(b.result.updatedAt).getTime() -
+                      new Date(a.result.updatedAt).getTime()
+              )
+            : ranked;
 
     return (
-        <PageTransition>
-            <div className="flex flex-col gap-4">
-                <Card>
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-2">
-                            <AlarmClock size={20} />
-                            Results
-                        </CardTitle>
-                        <CardDescription>
-                            Choose event and round
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent className="flex flex-col gap-5">
-                        <div className="flex md:flex-row flex-col gap-5 justify-between items-start">
-                            <EventAndRoundSelector
-                                competition={competition}
-                                filters={filters}
-                                handleEventChange={handleEventChange}
-                                handleRoundChange={handleRoundChange}
-                            />
-                            {filters.roundId && (
-                                <div className="flex flex-col">
-                                    <RoundLimits
-                                        cutoff={cutoff}
-                                        limit={limit}
-                                        maxAttempts={maxAttempts}
-                                        size="md"
-                                    />
-                                </div>
-                            )}
-                        </div>
-                        {currentRounds.length > 1 && (
-                            <div className="flex gap-5">
-                                {currentRounds.map((roundId) => (
-                                    <Button
-                                        key={roundId}
-                                        onClick={() => {
-                                            navigate(
-                                                `/results/round/${roundId}`
-                                            );
-                                        }}
-                                        className="w-fit"
-                                    >
-                                        {activityCodeToName(roundId)}
-                                    </Button>
-                                ))}
-                            </div>
-                        )}
-                        {filters.roundId && (
-                            <Input
-                                placeholder="Search"
+        <div className="flex flex-col gap-4">
+            <ResultsTabs value="rounds" roundId={roundId} />
+            <RoundStrip
+                rounds={getStripRounds(rounds, roundId)}
+                allRounds={rounds}
+                value={roundId}
+                onValueChange={(id) => navigate(`/results/round/${id}`)}
+            />
+
+            {roundId && (
+                <>
+                    <RoundHeader
+                        roundId={roundId}
+                        meta={getRoundMeta(roundId, wcif)}
+                        advancement={getAdvancementText(roundId, event)}
+                        hasResults={results.length > 0}
+                        onEnterAttempt={() => setIsCreateOpen(true)}
+                        onRestartGroup={() => setIsRestartOpen(true)}
+                    />
+
+                    <section className="overflow-hidden rounded-mobile-card border bg-card md:rounded-2xl">
+                        <div className="flex flex-wrap items-center gap-3 border-b p-3 md:px-5">
+                            <SearchInput
                                 value={search}
-                                onChange={handleSearch}
+                                onChange={(e) => setSearch(e.target.value)}
+                                label="Search results"
+                                placeholder="Search by name, WCA ID or ID"
+                                className="md:max-w-xs"
+                            />
+                            <SegmentedControl
+                                label="Order"
+                                value={order}
+                                onValueChange={setOrder}
+                                options={[
+                                    { value: "ranking", label: "Ranking" },
+                                    { value: "latest", label: "Latest" },
+                                ]}
+                            />
+                            <span className="ml-auto text-sm text-muted-foreground">
+                                {results.length}{" "}
+                                {results.length === 1 ? "result" : "results"}
+                            </span>
+                        </div>
+                        {rows.length === 0 ? (
+                            <p className="p-8 text-center text-sm text-muted-foreground">
+                                {search
+                                    ? "No results match."
+                                    : "No results yet."}
+                            </p>
+                        ) : (
+                            <ResultsTable
+                                rows={rows}
+                                maxAttempts={maxAttempts}
+                                onDeleted={fetchResults}
                             />
                         )}
-                    </CardContent>
-                </Card>
-                {filters.roundId && (
-                    <Card>
-                        <CardHeader>
-                            <CardTitle className="flex items-center gap-2">
-                                <Pencil size={20} />
-                                Actions
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <ResultsActions
-                                filters={filters}
-                                setIsOpenCreateAttemptModal={
-                                    setIsOpenCreateAttemptModal
-                                }
-                                setIsOpenRestartGroupModal={
-                                    setIsOpenRestartGroupModal
-                                }
-                                resultsLength={results.length}
-                            />
-                        </CardContent>
-                    </Card>
-                )}
-                {filters.roundId && (
-                    <Card>
-                        <CardHeader>
-                            <CardTitle className="flex items-center gap-2">
-                                <EventIcon
-                                    eventId={filters.eventId}
-                                    size={20}
-                                    selected
-                                />
-                                {activityCodeToName(filters.roundId)}
-                            </CardTitle>
-                            <CardDescription>{advancementText}</CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                            {results && results.length > 0 ? (
-                                <ResultsTable
-                                    results={results}
-                                    maxAttempts={maxAttempts}
-                                    fetchData={fetchData}
-                                />
-                            ) : (
-                                <h2 className="text-lg">No results found</h2>
-                            )}
-                        </CardContent>
-                    </Card>
-                )}
-                <CreateAttemptModal
-                    isOpen={isOpenCreateAttemptModal}
-                    onClose={handleCloseCreateAttemptModal}
-                    roundId={filters.roundId}
-                    timeLimit={limit!}
-                />
-                <RestartGroupModal
-                    isOpen={isOpenRestartGroupModal}
-                    onClose={handleCloseRestartGroupModal}
-                    roundId={filters.roundId}
-                    wcif={competition.wcif}
-                />
-            </div>
-        </PageTransition>
+                    </section>
+
+                    <CreateAttemptModal
+                        isOpen={isCreateOpen}
+                        onClose={() => {
+                            setIsCreateOpen(false);
+                            fetchResults();
+                        }}
+                        roundId={roundId}
+                        timeLimit={
+                            getLimitByRoundId(roundId, wcif) ?? undefined
+                        }
+                    />
+                    <RestartGroupModal
+                        isOpen={isRestartOpen}
+                        onClose={() => {
+                            setIsRestartOpen(false);
+                            fetchResults();
+                        }}
+                        roundId={roundId}
+                        wcif={wcif}
+                    />
+                </>
+            )}
+
+            {!roundId && rounds.length === 0 && (
+                <EmptyState>This competition has no rounds.</EmptyState>
+            )}
+        </div>
     );
 };
 

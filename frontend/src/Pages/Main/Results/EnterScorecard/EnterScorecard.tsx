@@ -3,11 +3,9 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { getNumberOfAttemptsForRound } from "wcif-helpers";
 
-import EventIcon from "@/Components/Icons/EventIcon";
 import LoadingPage from "@/Components/LoadingPage";
-import { Card, CardContent, CardHeader, CardTitle } from "@/Components/ui/card";
+import EmptyState from "@/Components/shared/EmptyState";
 import { useToast } from "@/hooks/useToast";
-import { activityCodeToName } from "@/lib/activities";
 import { competitionAtom } from "@/lib/atoms";
 import {
     AttemptStatus,
@@ -19,8 +17,8 @@ import {
 import { getAllPersons } from "@/lib/persons";
 import { enterScorecard, getResultByRoundIdAndPersonId } from "@/lib/results";
 import { getSubmittedAttempts } from "@/lib/utils";
-import PageTransition from "@/Pages/PageTransition";
 
+import RoundSubpageHeader from "../Components/RoundSubpageHeader";
 import SelectCompetitor from "../Components/SelectCompetitor";
 import AttemptsList from "./Components/AttemptsList";
 import EnterScorecardActions from "./Components/EnterScorecardActions";
@@ -35,7 +33,6 @@ const EnterScorecard = () => {
     const [inputValue, setInputValue] = useState<string>("");
 
     const idInputRef = useRef<HTMLInputElement>(null);
-    const roundName = activityCodeToName(id || "");
     const competition = useAtomValue(competitionAtom);
     const maxAttempts = useMemo(
         () =>
@@ -133,57 +130,49 @@ const EnterScorecard = () => {
     if (!id) return <LoadingPage />;
 
     return (
-        <PageTransition>
-            <div className="flex flex-col gap-4">
-                <Card>
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-2">
-                            <EventIcon
-                                eventId={id.split("-r")[0]}
-                                size={20}
-                                selected
+        <div className="flex flex-col gap-5">
+            <RoundSubpageHeader roundId={id} title="Enter scorecard" />
+            <div className="grid items-start gap-5 lg:grid-cols-2">
+                <section className="flex flex-col gap-3 rounded-mobile-card border bg-card p-4 md:rounded-2xl md:p-5">
+                    <h3 className="text-sm font-semibold">Competitor</h3>
+                    <SelectCompetitor
+                        idInputRef={idInputRef}
+                        handleSubmit={handleSubmit}
+                        persons={persons}
+                        onSelect={handleSelectPerson}
+                        inputValue={inputValue}
+                        setInputValue={setInputValue}
+                    />
+                </section>
+                {result ? (
+                    <section className="flex flex-col gap-4 rounded-mobile-card border bg-card p-4 md:rounded-2xl md:p-5">
+                        <h3 className="text-lg font-bold">
+                            {result.person.name}
+                            <span className="font-normal text-muted-foreground">
+                                {" "}
+                                ({result.person.registrantId})
+                            </span>
+                        </h3>
+                        {competition && (
+                            <AttemptsList
+                                attempts={attempts}
+                                competition={competition}
+                                roundId={result.roundId}
+                                onChange={updateAttempt}
                             />
-                            {roundName}
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent className="flex flex-col gap-4">
-                        <SelectCompetitor
-                            idInputRef={idInputRef}
+                        )}
+                        <EnterScorecardActions
                             handleSubmit={handleSubmit}
-                            persons={persons}
-                            onSelect={handleSelectPerson}
-                            inputValue={inputValue}
-                            setInputValue={setInputValue}
+                            result={result}
                         />
-                    </CardContent>
-                </Card>
-
-                {result && (
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>
-                                {result.person.name} (
-                                {result.person.registrantId})
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent className="flex flex-col gap-4">
-                            {competition && (
-                                <AttemptsList
-                                    attempts={attempts}
-                                    competition={competition}
-                                    roundId={result.roundId}
-                                    onChange={updateAttempt}
-                                />
-                            )}
-                            <EnterScorecardActions
-                                handleSubmit={handleSubmit}
-                                result={result}
-                            />
-                        </CardContent>
-                    </Card>
+                    </section>
+                ) : (
+                    <EmptyState className="hidden lg:flex">
+                        Find a competitor to enter their paper scorecard.
+                    </EmptyState>
                 )}
             </div>
-        </PageTransition>
+        </div>
     );
 };
 

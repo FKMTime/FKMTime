@@ -9,20 +9,13 @@ import {
 } from "wcif-helpers";
 
 import AttemptWarnings from "@/Components/AttemptWarnings";
-import EventIcon from "@/Components/Icons/EventIcon";
 import LoadingPage from "@/Components/LoadingPage";
+import ProgressBar from "@/Components/shared/ProgressBar";
 import { Alert, AlertTitle } from "@/Components/ui/alert";
 import { Button } from "@/Components/ui/button";
-import {
-    Card,
-    CardContent,
-    CardDescription,
-    CardHeader,
-    CardTitle,
-} from "@/Components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/Components/ui/card";
 import { useConfirm } from "@/hooks/useConfirm";
 import { useToast } from "@/hooks/useToast";
-import { activityCodeToName } from "@/lib/activities";
 import { competitionAtom } from "@/lib/atoms";
 import { getIncidentsByRoundId } from "@/lib/incidents";
 import {
@@ -47,6 +40,7 @@ import {
 import { getSubmissionPlatformName } from "@/lib/utils";
 import PageTransition from "@/Pages/PageTransition";
 
+import RoundSubpageHeader from "../Components/RoundSubpageHeader";
 import AttemptsList from "./Components/AttemptsList";
 import DoubleCheckActions from "./Components/DoubleCheckActions";
 import DoubleCheckFinished from "./Components/DoubleCheckFinished";
@@ -82,7 +76,6 @@ const DoubleCheck = () => {
     const [incidents, setIncidents] = useState<Incident[]>([]);
     const [cumulativeLimit, setCumulativeLimit] =
         useState<RemainingAndUsedCumulativeLimit | null>(null);
-    const roundName = activityCodeToName(id || "");
     const competition = useAtomValue(competitionAtom);
     const idInputRef = useRef<HTMLInputElement>(null);
 
@@ -264,40 +257,39 @@ const DoubleCheck = () => {
 
     if (!resultsToDoubleCheck || !id) return <LoadingPage />;
 
-    const progress =
-        totalResults > 0
-            ? Math.round((doubleCheckedResults / totalResults) * 100)
-            : 0;
     const isFinished =
         doubleCheckedResults === totalResults && totalResults > 0;
 
     return (
         <PageTransition>
-            <div className="flex flex-col gap-4">
-                {/* Progress bar */}
-                <div className="w-full bg-muted rounded-full h-2 overflow-hidden">
-                    <div
-                        className="h-2 rounded-full bg-primary transition-all duration-300"
-                        style={{ width: `${progress}%` }}
-                    />
-                </div>
+            <div className="flex flex-col gap-5">
+                <RoundSubpageHeader
+                    roundId={id}
+                    title="Double check"
+                    aside={
+                        <div className="flex w-full flex-col gap-1.5 sm:w-56">
+                            <p className="text-sm text-muted-foreground">
+                                <b className="font-semibold text-foreground">
+                                    {doubleCheckedResults}
+                                </b>{" "}
+                                / {totalResults} double-checked
+                            </p>
+                            <ProgressBar
+                                value={doubleCheckedResults}
+                                max={totalResults}
+                                label="Double-checked results"
+                            />
+                        </div>
+                    }
+                />
 
-                <div className="flex flex-col md:flex-row gap-4 items-stretch">
+                <div className="flex flex-col gap-4 md:flex-row md:items-start">
                     {/* Left card: input / finished state */}
                     <Card className="w-full md:flex-1">
                         <CardHeader className="pb-3">
-                            <CardTitle className="flex items-center gap-2 text-base">
-                                <EventIcon
-                                    eventId={id.split("-r")[0]}
-                                    size={20}
-                                    selected
-                                />
-                                {roundName}
+                            <CardTitle className="text-base">
+                                Competitor ID
                             </CardTitle>
-                            <CardDescription>
-                                {doubleCheckedResults} / {totalResults}{" "}
-                                double-checked
-                            </CardDescription>
                         </CardHeader>
                         <CardContent className="flex flex-col gap-3">
                             {isFinished ? (

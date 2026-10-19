@@ -208,13 +208,6 @@ export interface ResultToDoubleCheck extends Result {
     combinedName: string;
 }
 
-export interface ResultWithAverage extends Result {
-    average: number;
-    best: number;
-    averageString: string;
-    bestString: string;
-}
-
 export interface StaffingWarning {
     role: "JUDGE" | "SCRAMBLER";
     groupId: string;
