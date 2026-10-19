@@ -9,6 +9,7 @@ const packet = (
 ): StationInfo => ({
     espId: 1,
     deviceName: "1",
+    roomId: null,
     personName: "Jane Doe",
     registrantId: 1,
     groupId: "333-r1-g1",
@@ -120,16 +121,12 @@ describe("groupStationsByRoom", () => {
         },
         { id: "empty", name: "Empty Room", currentGroupIds: [] },
     ];
-    const station = (espId: number) => packet({ espId, serverReceivedAt: 0 });
+    const station = (espId: number, roomId: string | null) =>
+        packet({ espId, roomId, serverReceivedAt: 0 });
 
     it("groups stations by their device's room, sorted by ESP ID", () => {
         const groups = groupStationsByRoom(
-            [station(3), station(1), station(2)],
-            new Map([
-                [1, "main"],
-                [2, "side"],
-                [3, "main"],
-            ]),
+            [station(3, "main"), station(1, "main"), station(2, "side")],
             rooms
         );
 
@@ -141,8 +138,7 @@ describe("groupStationsByRoom", () => {
 
     it("puts stations without a known room last", () => {
         const groups = groupStationsByRoom(
-            [station(9), station(1)],
-            new Map([[1, "main"]]),
+            [station(9, null), station(1, "main"), station(5, "deleted")],
             rooms
         );
 
@@ -150,6 +146,6 @@ describe("groupStationsByRoom", () => {
             "Main Room",
             "Other stations",
         ]);
-        expect(groups[1].stations.map((s) => s.espId)).toEqual([9]);
+        expect(groups[1].stations.map((s) => s.espId)).toEqual([5, 9]);
     });
 });

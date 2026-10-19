@@ -1,6 +1,8 @@
 export interface StationInfo {
     espId: number;
     deviceName: string;
+    /** The device's room; null for a station deleted since */
+    roomId: string | null;
     personName: string | null;
     registrantId: number | null;
     groupId: string | null;
@@ -115,7 +117,6 @@ const toRoundIds = (groupIds: string[]) => [
  */
 export const groupStationsByRoom = (
     stations: StationInfo[],
-    roomIdByEspId: Map<number, string>,
     rooms: StationRoom[]
 ): StationRoomGroup[] => {
     const sorted = [...stations].sort((a, b) => a.espId - b.espId);
@@ -124,12 +125,10 @@ export const groupStationsByRoom = (
         id: room.id,
         name: room.name,
         roundIds: toRoundIds(room.currentGroupIds),
-        stations: sorted.filter(
-            (station) => roomIdByEspId.get(station.espId) === room.id
-        ),
+        stations: sorted.filter((station) => station.roomId === room.id),
     }));
     const other = sorted.filter(
-        (station) => !roomIds.has(roomIdByEspId.get(station.espId) ?? "")
+        (station) => !roomIds.has(station.roomId ?? "")
     );
     if (other.length)
         groups.push({

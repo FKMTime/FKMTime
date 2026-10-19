@@ -1,7 +1,8 @@
-import { useCallback, useContext, useEffect, useState } from "react";
+import { useCallback, useContext, useEffect, useMemo, useState } from "react";
 
-import EmptyState from "@/Components/shared/EmptyState";
-import LiveStationCard from "@/Components/shared/LiveStationCard";
+import LiveSolvingBoard from "@/Components/shared/LiveSolvingBoard";
+import { getPublicRooms } from "@/lib/competition";
+import { Room } from "@/lib/interfaces";
 import { StationInfo } from "@/lib/liveSolving";
 import { socket, SocketContext } from "@/socket";
 
@@ -9,11 +10,16 @@ const PublicLiveSolving = () => {
     const [stations, setStations] = useState<Map<number, StationInfo>>(
         new Map()
     );
+    const [rooms, setRooms] = useState<Room[]>([]);
 
     const [isConnected] = useContext(SocketContext) as [
         number,
         React.Dispatch<React.SetStateAction<number>>,
     ];
+
+    useEffect(() => {
+        getPublicRooms().then((data: Room[]) => setRooms(data ?? []));
+    }, [isConnected]);
 
     const handleCurrentStations = useCallback((data: StationInfo[]) => {
         setStations(new Map(data.map((s) => [s.espId, s])));
@@ -39,24 +45,17 @@ const PublicLiveSolving = () => {
         };
     }, [handleCurrentStations, handleCurrentTimeInfo, isConnected]);
 
-    const stationList = Array.from(stations.values()).sort(
-        (a, b) => a.espId - b.espId
+    const stationList = useMemo(
+        () => Array.from(stations.values()),
+        [stations]
     );
 
-    if (stationList.length === 0)
-        return (
-            <EmptyState>
-                No active stations. Times will appear here once devices start
-                sending data.
-            </EmptyState>
-        );
-
     return (
-        <div className="grid grid-cols-1 gap-2 md:grid-cols-[repeat(auto-fill,minmax(220px,1fr))] md:gap-3">
-            {stationList.map((station) => (
-                <LiveStationCard key={station.espId} station={station} />
-            ))}
-        </div>
+        <LiveSolvingBoard
+            stations={stationList}
+            rooms={rooms}
+            allRoomsLabel="All rooms"
+        />
     );
 };
 

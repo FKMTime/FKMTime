@@ -15,6 +15,7 @@ import { RequestToConnectDto } from './device/dto/requestToConnect.dto';
 export interface StationInfo {
   espId: number;
   deviceName: string;
+  roomId: string | null;
   personName: string | null;
   registrantId: number | null;
   groupId: string | null;

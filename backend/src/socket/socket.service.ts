@@ -122,6 +122,7 @@ export class SocketService {
     this.appGateway.broadcastCurrentTimeInfo({
       espId: data.espId,
       deviceName,
+      roomId: device?.roomId ?? null,
       personName,
       registrantId,
       groupId: data.groupId ?? null,
