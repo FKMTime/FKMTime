@@ -41,7 +41,7 @@ const ScramblesList = ({ scrambles, eventId }: ScramblesListProps) => (
                 <scramble-display
                     scramble={scramble.scramble}
                     event={eventId}
-                    style={{ width: 160 }}
+                    style={{ width: 160, height: 120 }}
                 ></scramble-display>
             </li>
         ))}

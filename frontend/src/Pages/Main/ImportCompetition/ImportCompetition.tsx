@@ -87,18 +87,22 @@ const ImportCompetition = () => {
 
     return (
         <div className="flex min-h-screen flex-col">
-            <WordmarkHeader className="min-h-[62px] border-b bg-card px-4 py-3 sm:px-6">
+            <WordmarkHeader
+                className="min-h-[62px] border-b bg-card px-4 py-3 sm:px-6"
+                trailing={
+                    <Button
+                        variant="outline"
+                        className="h-[38px] border-border px-3 md:h-[38px]"
+                        onClick={handleLogout}
+                    >
+                        <LogOut />
+                        Log out
+                    </Button>
+                }
+            >
                 <span className="truncate text-[13px] text-muted-foreground">
                     {userInfo.fullName ?? userInfo.username}
                 </span>
-                <Button
-                    variant="outline"
-                    className="h-[38px] border-border px-3 md:h-[38px]"
-                    onClick={handleLogout}
-                >
-                    <LogOut />
-                    Log out
-                </Button>
             </WordmarkHeader>
             <main className="mx-auto flex w-full max-w-[720px] flex-col gap-5 px-4 pb-14 pt-10 sm:px-6">
                 <div className="flex flex-col gap-1.5">

@@ -5,6 +5,8 @@ import { cn } from "@/lib/utils";
 
 interface WordmarkHeaderProps {
     children?: ReactNode;
+    /** Rendered after the theme toggle (e.g. Log out) */
+    trailing?: ReactNode;
     className?: string;
 }
 
@@ -12,7 +14,11 @@ interface WordmarkHeaderProps {
  * Top bar of the standalone pages (login, import, error): the FKMTime
  * wordmark on the left, optional actions and the theme toggle on the right.
  */
-const WordmarkHeader = ({ children, className }: WordmarkHeaderProps) => (
+const WordmarkHeader = ({
+    children,
+    trailing,
+    className,
+}: WordmarkHeaderProps) => (
     <header
         className={cn("flex items-center justify-between gap-3", className)}
     >
@@ -20,6 +26,7 @@ const WordmarkHeader = ({ children, className }: WordmarkHeaderProps) => (
         <div className="flex items-center gap-2">
             {children}
             <ModeToggle />
+            {trailing}
         </div>
     </header>
 );
