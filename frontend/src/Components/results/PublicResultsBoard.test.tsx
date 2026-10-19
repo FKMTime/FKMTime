@@ -67,6 +67,29 @@ describe("PublicResultsBoard", () => {
         expect(rows[3].className).not.toContain("bg-success-soft");
     });
 
+    it("shows whether the round is in progress", () => {
+        const { rerender } = render(
+            <PublicResultsBoard
+                wcif={wcif}
+                roundId="333-r1"
+                results={[result("A", 1000)]}
+                liveRoundIds={["333-r1"]}
+                onRoundChange={vi.fn()}
+            />
+        );
+        expect(screen.getByText(/In progress/)).toBeTruthy();
+        rerender(
+            <PublicResultsBoard
+                wcif={wcif}
+                roundId="333-r1"
+                results={[result("A", 1000), result("B", 1200)]}
+                liveRoundIds={[]}
+                onRoundChange={vi.fn()}
+            />
+        );
+        expect(screen.getByText(/2 competitors/)).toBeTruthy();
+    });
+
     it("switches rounds and picks the live round of another event", async () => {
         const onRoundChange = vi.fn();
         render(

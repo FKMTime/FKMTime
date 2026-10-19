@@ -1,44 +1,26 @@
-import { useAtom } from "jotai";
+import { useAtomValue } from "jotai";
 import { useCallback, useContext, useEffect, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useOutletContext, useParams } from "react-router-dom";
 
 import LoadingPage from "@/Components/LoadingPage";
 import PublicResultsBoard from "@/Components/results/PublicResultsBoard";
 import { competitionAtom } from "@/lib/atoms";
-import { getPublicCompetitionInfo, getPublicRooms } from "@/lib/competition";
-import { Result, Room } from "@/lib/interfaces";
+import { Result } from "@/lib/interfaces";
 import { getPublicResultsByRoundId } from "@/lib/results";
 import { socket, SocketContext } from "@/socket";
+
+import { PublicOutletContext } from "./publicNavigation";
 
 const PublicResults = () => {
     const { id: roundId = "" } = useParams<{ id: string }>();
     const navigate = useNavigate();
-    const [competition, setCompetition] = useAtom(competitionAtom);
+    const competition = useAtomValue(competitionAtom);
+    const { liveRoundIds } = useOutletContext<PublicOutletContext>();
     const [isConnected] = useContext(SocketContext) as [
         number,
         React.Dispatch<React.SetStateAction<number>>,
     ];
     const [results, setResults] = useState<Result[]>([]);
-    const [liveRoundIds, setLiveRoundIds] = useState<string[] | null>(null);
-
-    useEffect(() => {
-        if (competition) return;
-        getPublicCompetitionInfo().then((response) => {
-            if (response.status === 200) setCompetition(response.data);
-        });
-    }, [competition, setCompetition]);
-
-    useEffect(() => {
-        getPublicRooms().then((rooms: Room[]) =>
-            setLiveRoundIds([
-                ...new Set(
-                    (rooms ?? []).flatMap((room) =>
-                        room.currentGroupIds.map((id) => id.split("-g")[0])
-                    )
-                ),
-            ])
-        );
-    }, [isConnected]);
 
     // Without a round, open the one in progress or the first one
     useEffect(() => {

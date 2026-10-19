@@ -48,6 +48,11 @@ const PublicResultsBoard = ({
     const rows = rankResults(results, maxAttempts, round?.format ?? "a");
     const meta = roundId ? getRoundMeta(roundId, wcif) : null;
     const advancement = event ? getAdvancementText(roundId, event) : null;
+    const status = liveRoundIds.includes(roundId)
+        ? "In progress"
+        : rows.length
+          ? `${rows.length} ${rows.length === 1 ? "competitor" : "competitors"}`
+          : "Not started";
 
     const pickEvent = (id: string) => {
         const rounds = wcif.events.find((e) => e.id === id)?.rounds ?? [];
@@ -56,7 +61,9 @@ const PublicResultsBoard = ({
     };
 
     const averageText = (average: number | null) =>
-        average === null ? "" : resultToString(average);
+        average === null ? "—" : resultToString(average);
+    const bestText = (row: (typeof rows)[number]) =>
+        formattedBest(row.submitted) || "—";
 
     return (
         <div className="flex flex-col gap-4">
@@ -87,7 +94,7 @@ const PublicResultsBoard = ({
                                 {roundId.split("-r")[1]}
                             </h2>
                             <p className="text-[13px] text-muted-foreground">
-                                {[meta?.format, advancement]
+                                {[meta?.format, status, advancement]
                                     .filter(Boolean)
                                     .join(" · ")}
                             </p>
@@ -225,9 +232,7 @@ const PublicResultsBoard = ({
                                                         )}
                                                     </td>
                                                     <td className="py-2.5 pl-3 pr-5 text-right text-muted-foreground">
-                                                        {formattedBest(
-                                                            row.submitted
-                                                        )}
+                                                        {bestText(row)}
                                                     </td>
                                                 </tr>
                                             );
@@ -268,7 +273,8 @@ const PublicResultsBoard = ({
                                                         .map(
                                                             attemptWithPenaltyToString
                                                         )
-                                                        .join("  ")}
+                                                        .join("  ") ||
+                                                        "No attempts yet"}
                                                 </p>
                                             </div>
                                             <div className="text-right text-sm">
@@ -276,9 +282,7 @@ const PublicResultsBoard = ({
                                                     {averageText(row.average)}
                                                 </p>
                                                 <p className="text-xs text-muted-foreground">
-                                                    {formattedBest(
-                                                        row.submitted
-                                                    )}
+                                                    Best {bestText(row)}
                                                 </p>
                                             </div>
                                         </li>
