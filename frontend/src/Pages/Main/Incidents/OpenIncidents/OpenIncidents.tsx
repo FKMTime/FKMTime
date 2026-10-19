@@ -47,7 +47,7 @@ const OpenIncidents = () => {
     if (!incidents) return <LoadingPage />;
 
     return (
-        <div className="grid items-start gap-5 lg:grid-cols-2">
+        <div className="grid grid-cols-1 items-start gap-5 lg:grid-cols-2">
             <div className={cn("flex flex-col gap-3", id && "max-lg:hidden")}>
                 {incidents.length === 0 ? (
                     <EmptyState>No open incidents.</EmptyState>

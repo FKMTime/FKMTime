@@ -99,7 +99,7 @@ const ManualIncidents = ({ createOnOpen = false }: ManualIncidentsProps) => {
                             key={incident.id}
                             className="flex items-center gap-3 py-3 pl-4 pr-2 md:pl-5"
                         >
-                            <div className="grid min-w-0 flex-1 gap-x-6 gap-y-0.5 text-sm md:grid-cols-[12rem_8rem_6rem_minmax(0,1fr)] md:items-baseline">
+                            <div className="grid grid-cols-1 min-w-0 flex-1 gap-x-6 gap-y-0.5 text-sm md:grid-cols-[12rem_8rem_6rem_minmax(0,1fr)] md:items-baseline">
                                 <p className="truncate font-semibold">
                                     {incident.person.name}
                                 </p>

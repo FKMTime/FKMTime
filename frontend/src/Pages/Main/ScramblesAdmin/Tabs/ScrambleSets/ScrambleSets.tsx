@@ -115,7 +115,7 @@ const ScrambleSets = () => {
     if (!competition) return <LoadingPage />;
 
     return (
-        <div className="grid items-start gap-4 md:grid-cols-[minmax(240px,320px)_1fr] md:gap-5">
+        <div className="grid grid-cols-1 items-start gap-4 md:grid-cols-[minmax(240px,320px)_minmax(0,1fr)] md:gap-5">
             <nav
                 aria-label="Rounds"
                 className="-mx-4 flex gap-1.5 overflow-x-auto px-4 [scrollbar-width:none] md:mx-0 md:flex-col md:gap-0 md:rounded-2xl md:border md:bg-card md:p-1.5"

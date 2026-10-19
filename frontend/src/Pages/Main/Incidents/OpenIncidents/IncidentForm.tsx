@@ -121,7 +121,7 @@ const IncidentForm = ({
                 onSubmit={form.handleSubmit(onSubmit)}
                 className="flex flex-col gap-4"
             >
-                <div className="grid gap-4 sm:grid-cols-2">
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                     <FormField
                         control={form.control}
                         name="attemptNumber"
@@ -156,7 +156,7 @@ const IncidentForm = ({
                         )}
                     />
                 </div>
-                <div className="grid gap-4 sm:grid-cols-2">
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                     <FormField
                         control={form.control}
                         name="penalty"

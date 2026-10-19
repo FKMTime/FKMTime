@@ -129,7 +129,7 @@ const CheckIn = () => {
     const left = counts.total - counts.done;
 
     return (
-        <div className="grid items-start gap-5 lg:grid-cols-2">
+        <div className="grid grid-cols-1 items-start gap-5 lg:grid-cols-2">
             <div
                 className={cn(
                     "flex flex-col gap-4",

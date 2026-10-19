@@ -132,7 +132,7 @@ const EnterScorecard = () => {
     return (
         <div className="flex flex-col gap-5">
             <RoundSubpageHeader roundId={id} title="Enter scorecard" />
-            <div className="grid items-start gap-5 lg:grid-cols-2">
+            <div className="grid grid-cols-1 items-start gap-5 lg:grid-cols-2">
                 <section className="flex flex-col gap-3 rounded-mobile-card border bg-card p-4 md:rounded-2xl md:p-5">
                     <h3 className="text-sm font-semibold">Competitor</h3>
                     <SelectCompetitor
