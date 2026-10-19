@@ -74,7 +74,7 @@ const WarningsAndLimitsCard = ({
                         </AlertDescription>
                     </Alert>
                 )}
-                {!isDifferenceBetweenResults &&
+                {isDifferenceBetweenResults &&
                     !isUnofficialEvent(result.eventId) && (
                         <Alert
                             variant="destructive"
