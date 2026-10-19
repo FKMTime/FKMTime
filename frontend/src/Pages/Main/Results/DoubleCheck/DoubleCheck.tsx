@@ -1,19 +1,14 @@
 import { useAtomValue } from "jotai";
-import { AlertTriangle, ChevronRight, Users } from "lucide-react";
+import { CircleCheck, Users } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
-import {
-    getCutoffByRoundId,
-    getLimitByRoundId,
-    getNumberOfAttemptsForRound,
-} from "wcif-helpers";
+import { Link, useParams } from "react-router-dom";
 
 import AttemptWarnings from "@/Components/AttemptWarnings";
 import LoadingPage from "@/Components/LoadingPage";
+import EmptyState from "@/Components/shared/EmptyState";
 import ProgressBar from "@/Components/shared/ProgressBar";
-import { Alert, AlertTitle } from "@/Components/ui/alert";
+import { StatusDot } from "@/Components/shared/StatusBadge";
 import { Button } from "@/Components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/Components/ui/card";
 import { useConfirm } from "@/hooks/useConfirm";
 import { useToast } from "@/hooks/useToast";
 import { competitionAtom } from "@/lib/atoms";
@@ -26,10 +21,7 @@ import {
     Result,
     ResultToDoubleCheck,
 } from "@/lib/interfaces";
-import {
-    attemptWithPenaltyToString,
-    resultToString,
-} from "@/lib/resultFormatters";
+import { attemptWithPenaltyToString } from "@/lib/resultFormatters";
 import {
     doubleCheckResult,
     getPersonsWithNoResultsByRoundId,
@@ -38,13 +30,10 @@ import {
     undoDoubleCheck,
 } from "@/lib/results";
 import { getSubmissionPlatformName } from "@/lib/utils";
-import PageTransition from "@/Pages/PageTransition";
 
 import RoundSubpageHeader from "../Components/RoundSubpageHeader";
-import AttemptsList from "./Components/AttemptsList";
-import DoubleCheckActions from "./Components/DoubleCheckActions";
-import DoubleCheckFinished from "./Components/DoubleCheckFinished";
 import MissingPersonsModal from "./Components/MissingPersonsModal";
+import ResultCheckCard from "./Components/ResultCheckCard";
 import SelectCompetitor from "./Components/SelectCompetitor";
 
 interface CheckedResult {
@@ -54,7 +43,6 @@ interface CheckedResult {
 
 const DoubleCheck = () => {
     const { id } = useParams<{ id: string }>();
-    const navigate = useNavigate();
     const confirm = useConfirm();
     const { toast } = useToast();
     const [resultsToDoubleCheck, setResultsToDoubleCheck] = useState<
@@ -78,15 +66,6 @@ const DoubleCheck = () => {
         useState<RemainingAndUsedCumulativeLimit | null>(null);
     const competition = useAtomValue(competitionAtom);
     const idInputRef = useRef<HTMLInputElement>(null);
-
-    const limit =
-        id && competition ? getLimitByRoundId(id, competition.wcif) : null;
-    const cutoff =
-        id && competition ? getCutoffByRoundId(id, competition.wcif) : null;
-    const maxAttempts =
-        id && competition
-            ? getNumberOfAttemptsForRound(id, competition.wcif)
-            : 0;
 
     const fetchData = useCallback(async () => {
         if (!id) return;
@@ -261,247 +240,159 @@ const DoubleCheck = () => {
         doubleCheckedResults === totalResults && totalResults > 0;
 
     return (
-        <PageTransition>
-            <div className="flex flex-col gap-5">
-                <RoundSubpageHeader
-                    roundId={id}
-                    title="Double check"
-                    aside={
-                        <div className="flex w-full flex-col gap-1.5 sm:w-56">
-                            <p className="text-sm text-muted-foreground">
-                                <b className="font-semibold text-foreground">
-                                    {doubleCheckedResults}
-                                </b>{" "}
-                                / {totalResults} double-checked
-                            </p>
-                            <ProgressBar
-                                value={doubleCheckedResults}
-                                max={totalResults}
-                                label="Double-checked results"
+        <div className="flex flex-col gap-5">
+            <RoundSubpageHeader
+                roundId={id}
+                title="Double check"
+                aside={
+                    <div className="flex w-full flex-col gap-1.5 sm:w-56">
+                        <p className="text-sm text-muted-foreground">
+                            <b className="text-lg font-semibold text-foreground">
+                                {doubleCheckedResults}
+                            </b>{" "}
+                            / {totalResults} double-checked
+                        </p>
+                        <ProgressBar
+                            value={doubleCheckedResults}
+                            max={totalResults}
+                            label="Double-checked results"
+                        />
+                    </div>
+                }
+            />
+
+            {isFinished ? (
+                <section className="flex flex-col items-center gap-3 rounded-mobile-card border bg-card px-6 py-12 text-center md:rounded-2xl">
+                    <CircleCheck className="size-10 text-success" />
+                    <h3 className="text-lg font-bold">
+                        All {totalResults} results double-checked
+                    </h3>
+                    <Button
+                        variant="destructive-ghost"
+                        onClick={handleUndoDoubleCheck}
+                    >
+                        Mark results as not double checked
+                    </Button>
+                </section>
+            ) : (
+                <div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,340px),1fr))] items-start gap-5">
+                    <div className="flex min-w-0 flex-col gap-3.5">
+                        <div className="flex flex-col gap-1.5">
+                            <span className="text-[13px] font-semibold text-muted-foreground">
+                                Competitor ID
+                            </span>
+                            <SelectCompetitor
+                                idInputRef={idInputRef}
+                                handleSubmit={handleSubmit}
+                                resultsToDoubleCheck={resultsToDoubleCheck}
+                                checkedResults={checkedResults}
+                                setResult={setResult}
+                                setAlreadyCheckedResult={
+                                    setAlreadyCheckedResult
+                                }
+                                inputValue={inputValue}
+                                setJustSelected={setJustSelected}
+                                setInputValue={setInputValue}
                             />
                         </div>
-                    }
-                />
-
-                <div className="flex flex-col gap-4 md:flex-row md:items-start">
-                    {/* Left card: input / finished state */}
-                    <Card className="w-full md:flex-1">
-                        <CardHeader className="pb-3">
-                            <CardTitle className="text-base">
-                                Competitor ID
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent className="flex flex-col gap-3">
-                            {isFinished ? (
-                                <>
-                                    <DoubleCheckFinished
-                                        totalResults={totalResults}
-                                        roundId={id}
-                                    />
-                                    <Button
-                                        variant="destructive"
-                                        className="w-fit"
-                                        onClick={handleUndoDoubleCheck}
+                        <p className="text-[13px] text-muted-foreground">
+                            Press Enter again to confirm the result. Use Details
+                            for full editing.
+                        </p>
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            className="w-fit"
+                            onClick={handleShowMissingPersons}
+                        >
+                            <Users />
+                            Missing competitors
+                        </Button>
+                        {incidents.length > 0 && (
+                            <div className="flex flex-col gap-1.5 border-t pt-3">
+                                <span className="text-xs font-semibold text-faint">
+                                    Open incidents in this round
+                                </span>
+                                {incidents.map((incident) => (
+                                    <div
+                                        key={incident.id}
+                                        className="flex flex-wrap items-center gap-x-2 gap-y-1"
                                     >
-                                        Mark results as NOT double checked
-                                    </Button>
-                                </>
-                            ) : (
-                                <>
-                                    <Alert>
-                                        <AlertTitle className="text-sm">
-                                            Enter an ID and press Enter to mark
-                                            as double-checked. Go to Details for
-                                            full editing.
-                                        </AlertTitle>
-                                    </Alert>
-
-                                    {(limit || cutoff) && (
-                                        <div className="text-xs text-muted-foreground flex flex-wrap gap-x-4 gap-y-1 border rounded-md px-3 py-2">
-                                            {cutoff && (
-                                                <span>
-                                                    Cutoff:{" "}
-                                                    <span className="font-medium text-foreground">
-                                                        {resultToString(
-                                                            cutoff.resultValue
-                                                        )}{" "}
-                                                        (
-                                                        {
-                                                            cutoff.numberOfAttempts
-                                                        }{" "}
-                                                        att.)
-                                                    </span>
-                                                </span>
-                                            )}
-                                            {limit && (
-                                                <span>
-                                                    Limit:{" "}
-                                                    <span className="font-medium text-foreground">
-                                                        {resultToString(
-                                                            limit.centiseconds
-                                                        )}
-                                                        {limit
-                                                            .cumulativeRoundIds
-                                                            .length > 0
-                                                            ? " (cumulative)"
-                                                            : ""}
-                                                    </span>
-                                                </span>
-                                            )}
-                                            <span>
-                                                Attempts:{" "}
-                                                <span className="font-medium text-foreground">
-                                                    {maxAttempts}
-                                                </span>
+                                        <Link
+                                            to={`/incidents/${incident.id}`}
+                                            className="-mx-2 flex items-center gap-2 rounded-lg px-2 py-1 text-sm transition-colors hover:bg-accent"
+                                        >
+                                            <StatusDot tone="destructive" />
+                                            <span className="font-semibold">
+                                                {incident.result.person.name}
                                             </span>
-                                        </div>
-                                    )}
+                                            <span className="text-muted-foreground">
+                                                {[
+                                                    `Attempt ${incident.attemptNumber}`,
+                                                    attemptWithPenaltyToString(
+                                                        incident
+                                                    ),
+                                                    incident.device?.name,
+                                                ]
+                                                    .filter(Boolean)
+                                                    .join(" · ")}
+                                            </span>
+                                        </Link>
+                                        <AttemptWarnings attempt={incident} />
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
 
-                                    <SelectCompetitor
-                                        idInputRef={idInputRef}
-                                        handleSubmit={handleSubmit}
-                                        resultsToDoubleCheck={
-                                            resultsToDoubleCheck
-                                        }
-                                        checkedResults={checkedResults}
-                                        setResult={setResult}
-                                        setAlreadyCheckedResult={
-                                            setAlreadyCheckedResult
-                                        }
-                                        inputValue={inputValue}
-                                        setJustSelected={setJustSelected}
-                                        setInputValue={setInputValue}
-                                    />
-
-                                    <Button
-                                        variant="outline"
-                                        size="sm"
-                                        className="w-fit"
-                                        onClick={handleShowMissingPersons}
+                    {result && competition ? (
+                        <ResultCheckCard
+                            result={result}
+                            competition={competition}
+                            cumulativeLimit={cumulativeLimit}
+                            isSubmitting={isSubmitting}
+                            updateAttempt={handleUpdateAttempt}
+                            onConfirm={handleSubmit}
+                            onSkip={handleSkip}
+                        />
+                    ) : alreadyCheckedResult ? (
+                        <section className="flex flex-col gap-3.5 rounded-mobile-card border bg-card p-4 md:rounded-2xl md:p-[22px]">
+                            <h3 className="text-lg font-bold">
+                                {alreadyCheckedResult.person.name}{" "}
+                                <span className="font-medium text-faint">
+                                    ({alreadyCheckedResult.person.registrantId})
+                                </span>
+                            </h3>
+                            <p className="rounded-[10px] bg-success-soft px-3 py-2.5 text-sm font-semibold text-success">
+                                This scorecard has already been double-checked.
+                            </p>
+                            <div className="flex gap-2">
+                                <Button variant="outline" asChild>
+                                    <Link
+                                        to={`/results/${alreadyCheckedResult.id}`}
                                     >
-                                        <Users size={14} />
-                                        Missing competitors
-                                    </Button>
-
-                                    {incidents.length > 0 && (
-                                        <div className="hidden md:flex flex-col gap-1 pt-2 border-t">
-                                            <p className="text-sm font-semibold flex items-center gap-1.5 mb-1">
-                                                <AlertTriangle size={14} />
-                                                Incidents ({incidents.length})
-                                            </p>
-                                            {incidents.map((incident) => (
-                                                <div
-                                                    key={incident.id}
-                                                    className="group flex items-center justify-between text-sm cursor-pointer hover:bg-muted/60 rounded px-1 -mx-1 py-1 transition-colors"
-                                                    onClick={() =>
-                                                        navigate(
-                                                            `/incidents/${incident.id}`
-                                                        )
-                                                    }
-                                                >
-                                                    <div className="flex flex-col gap-0.5 min-w-0">
-                                                        <span className="font-medium truncate">
-                                                            {
-                                                                incident.result
-                                                                    .person.name
-                                                            }
-                                                        </span>
-                                                        <div className="flex items-center gap-2 text-xs text-muted-foreground flex-wrap">
-                                                            <span>
-                                                                A
-                                                                {
-                                                                    incident.attemptNumber
-                                                                }
-                                                                :{" "}
-                                                                {attemptWithPenaltyToString(
-                                                                    incident
-                                                                )}
-                                                            </span>
-                                                            <div className="flex gap-1">
-                                                                <AttemptWarnings
-                                                                    attempt={
-                                                                        incident
-                                                                    }
-                                                                />
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                    <ChevronRight
-                                                        size={14}
-                                                        className="shrink-0 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity"
-                                                    />
-                                                </div>
-                                            ))}
-                                        </div>
-                                    )}
-                                </>
-                            )}
-                        </CardContent>
-                    </Card>
-
-                    {/* Right: result card or already-checked message */}
-                    {alreadyCheckedResult && !result && (
-                        <Card className="w-full md:flex-1">
-                            <CardHeader>
-                                <CardTitle className="text-base">
-                                    {alreadyCheckedResult.person.name} (
-                                    {alreadyCheckedResult.person.registrantId})
-                                </CardTitle>
-                            </CardHeader>
-                            <CardContent className="flex flex-col gap-3">
-                                <Alert variant="success">
-                                    <AlertTitle>
-                                        This scorecard has already been
-                                        double-checked.
-                                    </AlertTitle>
-                                </Alert>
-                                <Button
-                                    className="w-fit"
-                                    onClick={() =>
-                                        navigate(
-                                            `/results/${alreadyCheckedResult.id}`
-                                        )
-                                    }
-                                >
-                                    Go back to this scorecard
+                                        Open scorecard
+                                    </Link>
                                 </Button>
-                            </CardContent>
-                        </Card>
-                    )}
-
-                    {result && competition && (
-                        <Card className="w-full md:flex-1">
-                            <CardHeader className="pb-3">
-                                <CardTitle className="text-base">
-                                    {result.person.name} (
-                                    {result.person.registrantId})
-                                </CardTitle>
-                            </CardHeader>
-                            <CardContent className="flex flex-col gap-4">
-                                <AttemptsList
-                                    result={result}
-                                    competition={competition}
-                                    updateAttempt={handleUpdateAttempt}
-                                    cumulativeLimit={cumulativeLimit}
-                                />
-                                <DoubleCheckActions
-                                    handleSubmit={handleSubmit}
-                                    handleSkip={handleSkip}
-                                    result={result}
-                                    isSubmitting={isSubmitting}
-                                />
-                            </CardContent>
-                        </Card>
+                                <Button variant="ghost" onClick={handleSkip}>
+                                    Next
+                                </Button>
+                            </div>
+                        </section>
+                    ) : (
+                        <EmptyState>
+                            Enter the ID from the next scorecard.
+                        </EmptyState>
                     )}
                 </div>
-            </div>
+            )}
 
             <MissingPersonsModal
                 isOpen={showMissingPersons}
                 onClose={() => setShowMissingPersons(false)}
                 persons={missingPersons}
             />
-        </PageTransition>
+        </div>
     );
 };
 

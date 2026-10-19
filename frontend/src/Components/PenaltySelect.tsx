@@ -13,6 +13,8 @@ interface PenaltySelectProps {
     onChange: (value: number) => void;
     disabled?: boolean;
     shortVersion?: boolean;
+    className?: string;
+    "aria-label"?: string;
 }
 
 const PenaltySelect = ({
@@ -20,14 +22,16 @@ const PenaltySelect = ({
     onChange,
     disabled = false,
     shortVersion,
+    className,
+    "aria-label": ariaLabel,
 }: PenaltySelectProps) => {
     return (
         <Select
             onValueChange={(newValue) => onChange(+newValue)}
-            defaultValue={value.toString()}
+            value={value.toString()}
             disabled={disabled}
         >
-            <SelectTrigger>
+            <SelectTrigger className={className} aria-label={ariaLabel}>
                 <SelectValue placeholder="Select penalty" />
             </SelectTrigger>
             <SelectContent>
