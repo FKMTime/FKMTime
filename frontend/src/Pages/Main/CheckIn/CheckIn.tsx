@@ -9,12 +9,14 @@ import SearchInput from "@/Components/shared/SearchInput";
 import { Input } from "@/Components/ui/input";
 import { Label } from "@/Components/ui/label";
 import { useToast } from "@/hooks/useToast";
+import { useUndoToast } from "@/hooks/useUndoToast";
 import { Person } from "@/lib/interfaces";
 import {
     checkedInCount,
     checkIn,
     getPersonInfoByCardIdWithSensitiveData,
     getPersons,
+    undoCheckIn,
 } from "@/lib/persons";
 import { cn, getInitials } from "@/lib/utils";
 
@@ -25,6 +27,7 @@ const RECENT_LIMIT = 5;
 
 const CheckIn = () => {
     const { toast } = useToast();
+    const showUndo = useUndoToast();
     const scanInputRef = useRef<HTMLInputElement>(null);
     const [counts, setCounts] = useState<{ done: number; total: number }>();
     const [scannedCard, setScannedCard] = useState("");
@@ -107,14 +110,26 @@ const CheckIn = () => {
         const response = await checkIn(selected.id, cardId);
         setIsLoading(false);
         if (response.status === 200) {
-            const assigned = !selected.cardId;
-            toast({
-                title: `${selected.name} checked in${assigned ? " and card assigned" : ""}`,
-                variant: "success",
+            const person = selected;
+            const assigned = !person.cardId;
+            showUndo({
+                title: `${person.name} checked in${assigned ? " and card assigned" : ""}`,
+                onUndo: async () => {
+                    const status = await undoCheckIn(person.id, assigned);
+                    if (status !== 204) {
+                        toast({
+                            title: "Could not undo the check-in",
+                            variant: "destructive",
+                        });
+                        return;
+                    }
+                    setRecent((current) =>
+                        current.filter((p) => p.id !== person.id)
+                    );
+                    fetchCounts();
+                },
             });
-            setRecent((current) =>
-                [selected, ...current].slice(0, RECENT_LIMIT)
-            );
+            setRecent((current) => [person, ...current].slice(0, RECENT_LIMIT));
             fetchCounts();
             select(null);
         } else if (response.status === 409) {

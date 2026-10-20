@@ -74,6 +74,16 @@ export const checkIn = async (id: string, cardId: string) => {
     };
 };
 
+/** Reverts a check-in; removeCard also clears a card assigned with it */
+export const undoCheckIn = async (id: string, removeCard: boolean) => {
+    const response = await backendRequest(
+        `person/check-in/${id}?removeCard=${removeCard}`,
+        "DELETE",
+        true
+    );
+    return response.status;
+};
+
 export const checkedInCount = async () => {
     const response = await backendRequest("person/check-in", "GET", true);
     return await response.json();

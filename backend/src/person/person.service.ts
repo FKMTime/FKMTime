@@ -265,6 +265,17 @@ export class PersonService {
     };
   }
 
+  /** Reverts a check-in; also clears the card when it was assigned then */
+  async undoCheckIn(personId: string, removeCard: boolean) {
+    await this.prisma.person.update({
+      where: { id: personId },
+      data: {
+        checkedInAt: null,
+        ...(removeCard ? { cardId: null } : {}),
+      },
+    });
+  }
+
   async checkedInCount() {
     const checkedInPersonsCount = await this.prisma.person.count({
       where: {

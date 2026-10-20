@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { act, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -7,6 +7,7 @@ import {
     checkedInCount,
     checkIn,
     getPersonInfoByCardIdWithSensitiveData,
+    undoCheckIn,
 } from "@/lib/persons";
 
 import CheckIn from "./CheckIn";
@@ -17,8 +18,11 @@ vi.mock("@/lib/persons", () => ({
     checkIn: vi.fn(),
     getPersonInfoByCardIdWithSensitiveData: vi.fn(),
     getPersons: vi.fn().mockResolvedValue({ data: [] }),
+    undoCheckIn: vi.fn(),
 }));
 vi.mock("@/hooks/useToast", () => ({ useToast: () => ({ toast: vi.fn() }) }));
+const showUndo = vi.fn();
+vi.mock("@/hooks/useUndoToast", () => ({ useUndoToast: () => showUndo }));
 
 const newcomer = {
     id: "p1",
@@ -119,5 +123,31 @@ describe("CheckIn", () => {
         );
         expect(checkIn).toHaveBeenCalledWith("p1", "0009");
         expect(await screen.findByText("Just checked in")).toBeTruthy();
+    });
+
+    it("undoes a check-in from the toast, keeping a card they already had", async () => {
+        vi.mocked(getPersonInfoByCardIdWithSensitiveData).mockResolvedValue({
+            status: 200,
+            data: { ...newcomer, wcaId: "2019EXAM01", cardId: "0009" },
+        });
+        vi.mocked(checkIn).mockResolvedValue({ status: 200, data: {} });
+        vi.mocked(undoCheckIn).mockResolvedValue(204);
+        showUndo.mockClear();
+        render(<CheckIn />);
+        await userEvent.type(
+            await screen.findByLabelText("Scan the competitor's card"),
+            "0009{Enter}"
+        );
+        await userEvent.click(
+            await screen.findByRole("button", { name: "Check in" })
+        );
+        await screen.findByText("Just checked in");
+        expect(showUndo).toHaveBeenCalledWith(
+            expect.objectContaining({ title: "Anna Example checked in" })
+        );
+
+        await act(() => showUndo.mock.calls[0][0].onUndo());
+        expect(undoCheckIn).toHaveBeenCalledWith("p1", false);
+        expect(screen.queryByText("Just checked in")).toBeNull();
     });
 });

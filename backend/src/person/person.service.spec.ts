@@ -102,6 +102,24 @@ describe('PersonService', () => {
     });
   });
 
+  describe('undoCheckIn', () => {
+    it('clears the check-in and keeps the card by default', async () => {
+      await service.undoCheckIn('person-1', false);
+      expect(dbService.person.update).toHaveBeenCalledWith({
+        where: { id: 'person-1' },
+        data: { checkedInAt: null },
+      });
+    });
+
+    it('also clears a card assigned during that check-in', async () => {
+      await service.undoCheckIn('person-1', true);
+      expect(dbService.person.update).toHaveBeenCalledWith({
+        where: { id: 'person-1' },
+        data: { checkedInAt: null, cardId: null },
+      });
+    });
+  });
+
   describe('checkedInCount', () => {
     it('should return checked in count and persons who did not check in', async () => {
       const mockPersonsWhoDidNotCheckIn = [
