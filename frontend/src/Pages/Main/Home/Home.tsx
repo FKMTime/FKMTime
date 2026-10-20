@@ -207,7 +207,7 @@ const Home = () => {
                 />
             )}
             <div className="md:hidden">{renderRoom(selectedRoom)}</div>
-            <div className="hidden items-start gap-6 md:grid lg:grid-cols-2 2xl:grid-cols-3">
+            <div className="hidden grid-cols-1 items-start gap-6 md:grid lg:grid-cols-2 2xl:grid-cols-3">
                 {rooms.map(renderRoom)}
             </div>
         </>

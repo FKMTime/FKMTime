@@ -1,12 +1,8 @@
-import { MessageSquarePlus } from "lucide-react";
+import { MessageSquarePlus, Pencil, Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
-import DeleteButton from "@/Components/DeleteButton";
-import EditButton from "@/Components/EditButton";
-import SmallIconButton from "@/Components/SmallIconButton";
 import { Button } from "@/Components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/Components/ui/card";
 import { useConfirm } from "@/hooks/useConfirm";
 import { useToast } from "@/hooks/useToast";
 import { deleteAttempt, updateAttempt } from "@/lib/attempt";
@@ -17,6 +13,7 @@ import {
     centisecondsToClockFormat,
     milisecondsToClockFormat,
 } from "@/lib/resultFormatters";
+import { cn } from "@/lib/utils";
 
 import EditAttemptModal from "./EditAttemptModal";
 import GiveExtraAttemptModal from "./GiveExtraAttemptModal";
@@ -133,99 +130,87 @@ const LastAttemptCard = ({ result, fetchData }: LastAttemptCardProps) => {
     const isPlusTwoPenalty = lastAttempt.penalty === 2;
     const isDnfPenalty = lastAttempt.penalty === DNF_VALUE;
 
+    const meta = [
+        `Attempt ${getAttemptLabel(lastAttempt)}`,
+        lastAttempt.originalTime &&
+            `Stackmat ${milisecondsToClockFormat(lastAttempt.originalTime)}`,
+        lastAttempt.inspectionTime &&
+            lastAttempt.inspectionTime >= 15000 &&
+            `Inspection ${milisecondsToClockFormat(lastAttempt.inspectionTime)}`,
+    ]
+        .filter(Boolean)
+        .join(" · ");
+
     return (
         <>
-            <Card className="w-full">
-                <CardHeader>
-                    <CardTitle className="flex justify-between items-center">
-                        <span>Last attempt</span>
-                        <div className="flex gap-1">
-                            <EditButton
-                                onClick={() => setIsOpenEditAttemptModal(true)}
-                            />
-                            <SmallIconButton
-                                icon={<MessageSquarePlus />}
-                                title="Give extra attempt"
-                                onClick={() =>
-                                    setIsOpenGiveExtraAttemptModal(true)
-                                }
-                            />
-                            <DeleteButton onClick={handleDelete} />
-                        </div>
-                    </CardTitle>
-                </CardHeader>
-                <CardContent className="flex flex-col gap-3">
-                    <div className="flex items-center gap-2">
-                        <span className="text-muted-foreground text-sm">
-                            Attempt
-                        </span>
-                        <span className="font-semibold text-lg">
-                            {getAttemptLabel(lastAttempt)}
-                        </span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                        <span className="text-muted-foreground text-sm">
-                            Time
-                        </span>
-                        <span className="font-mono text-lg font-semibold">
-                            {getDetailedTimeString(lastAttempt)}
-                        </span>
-                    </div>
-                    {lastAttempt.originalTime && (
-                        <div className="flex items-center gap-2">
-                            <span className="text-muted-foreground text-sm">
-                                Stackmat
-                            </span>
-                            <span className="font-mono">
-                                {milisecondsToClockFormat(
-                                    lastAttempt.originalTime
-                                )}
-                            </span>
-                        </div>
-                    )}
-                    {lastAttempt.inspectionTime &&
-                        lastAttempt.inspectionTime >= 15000 && (
-                            <div className="flex items-center gap-2">
-                                <span className="text-muted-foreground text-sm">
-                                    Inspection
-                                </span>
-                                <span className="font-mono">
-                                    {milisecondsToClockFormat(
-                                        lastAttempt.inspectionTime
-                                    )}
-                                </span>
-                            </div>
-                        )}
-                    {lastAttempt.judge && (
-                        <div className="flex items-center gap-2">
-                            <span className="text-muted-foreground text-sm">
-                                Judge
-                            </span>
-                            <span>
-                                {getPersonNameAndRegistrantId(
-                                    lastAttempt.judge
-                                )}
-                            </span>
-                        </div>
-                    )}
-                    <div className="flex gap-2 mt-1">
+            <section className="flex flex-col gap-1 rounded-mobile-card border bg-card px-5 py-[18px] md:rounded-2xl">
+                <div className="-my-1 flex items-center justify-between gap-2">
+                    <h3 className="text-xs font-semibold text-faint">
+                        Last attempt
+                    </h3>
+                    <div className="-mr-2 flex">
                         <Button
-                            size="sm"
-                            variant={isPlusTwoPenalty ? "default" : "outline"}
-                            onClick={() => handleQuickPenalty(2)}
+                            variant="ghost"
+                            size="icon-sm"
+                            aria-label="Edit last attempt"
+                            title="Edit"
+                            onClick={() => setIsOpenEditAttemptModal(true)}
                         >
-                            +2
+                            <Pencil />
                         </Button>
                         <Button
-                            size="sm"
-                            variant={isDnfPenalty ? "destructive" : "outline"}
-                            onClick={() => handleQuickPenalty(DNF_VALUE)}
+                            variant="ghost"
+                            size="icon-sm"
+                            aria-label="Give extra attempt"
+                            title="Give extra attempt"
+                            onClick={() => setIsOpenGiveExtraAttemptModal(true)}
                         >
-                            DNF
+                            <MessageSquarePlus />
+                        </Button>
+                        <Button
+                            variant="destructive-ghost"
+                            size="icon-sm"
+                            aria-label="Delete last attempt"
+                            title="Delete"
+                            onClick={handleDelete}
+                        >
+                            <Trash2 />
                         </Button>
                     </div>
-                </CardContent>
-            </Card>
+                </div>
+                <p
+                    className={cn(
+                        "text-2xl font-bold",
+                        isDnfPenalty && "text-destructive"
+                    )}
+                >
+                    {getDetailedTimeString(lastAttempt) || "—"}
+                </p>
+                <p className="text-[13px] text-muted-foreground">{meta}</p>
+                {lastAttempt.judge && (
+                    <p className="text-[13px] text-muted-foreground">
+                        Judge {getPersonNameAndRegistrantId(lastAttempt.judge)}
+                    </p>
+                )}
+                <div className="mt-2 flex gap-2">
+                    <Button
+                        size="sm"
+                        variant={isPlusTwoPenalty ? "default" : "outline"}
+                        aria-pressed={isPlusTwoPenalty}
+                        onClick={() => handleQuickPenalty(2)}
+                    >
+                        +2
+                    </Button>
+                    <Button
+                        size="sm"
+                        variant={isDnfPenalty ? "destructive" : "outline"}
+                        aria-pressed={isDnfPenalty}
+                        onClick={() => handleQuickPenalty(DNF_VALUE)}
+                    >
+                        DNF
+                    </Button>
+                </div>
+            </section>
             <EditAttemptModal
                 isOpen={isOpenEditAttemptModal}
                 onClose={handleCloseModal}

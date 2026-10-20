@@ -141,26 +141,28 @@ const SingleResult = () => {
                 maxAttempts={maxAttempts}
             />
 
-            <div className="grid items-start gap-4 lg:grid-cols-3">
+            <div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,240px),1fr))] items-start gap-3.5">
                 <section
                     aria-label="Summary"
-                    className="grid grid-cols-2 gap-4 rounded-mobile-card border bg-card p-4 md:rounded-2xl md:p-5"
+                    className="grid grid-cols-2 gap-3.5 rounded-mobile-card border bg-card px-5 py-[18px] md:rounded-2xl"
                 >
                     <div>
-                        <p className="text-xs text-muted-foreground">Average</p>
-                        <p className="text-2xl font-bold">
+                        <p className="text-xs font-semibold text-faint">
+                            Average
+                        </p>
+                        <p className="mt-0.5 text-2xl font-bold">
                             {resultAverage
                                 ? resultToString(resultAverage)
                                 : "—"}
                         </p>
                     </div>
                     <div>
-                        <p className="text-xs text-muted-foreground">Best</p>
-                        <p className="text-2xl font-bold">
+                        <p className="text-xs font-semibold text-faint">Best</p>
+                        <p className="mt-0.5 text-2xl font-bold">
                             {formattedBest(submittedAttempts) || "—"}
                         </p>
                     </div>
-                    <p className="col-span-2 text-sm text-muted-foreground">
+                    <p className="col-span-2 text-[13px] text-muted-foreground">
                         {submittedAttempts.length} of {maxAttempts} attempts
                         entered
                     </p>
