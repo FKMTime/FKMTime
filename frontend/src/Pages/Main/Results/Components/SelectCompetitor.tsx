@@ -38,6 +38,11 @@ const SelectCompetitor = ({
         onSelect(selected || null);
     };
 
+    // The autocomplete matches on person.id, not on the typed registrant ID
+    const selectedPerson = inputValue
+        ? persons.find((p) => p.registrantId === +inputValue)
+        : undefined;
+
     return (
         <div className="flex gap-3">
             <Input
@@ -59,9 +64,9 @@ const SelectCompetitor = ({
                 onSelect={handleSelect}
                 autoFocus
                 disabled={false}
-                defaultValue={inputValue}
+                defaultValue={selectedPerson?.id}
                 personsList={persons}
-                key={inputValue}
+                key={selectedPerson?.id ?? "none"}
             />
         </div>
     );
