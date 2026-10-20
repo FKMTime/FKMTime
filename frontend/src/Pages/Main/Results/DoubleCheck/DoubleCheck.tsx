@@ -115,10 +115,6 @@ const DoubleCheck = () => {
         try {
             const status = await doubleCheckResult(result.id, result.attempts);
             if (status === 200) {
-                toast({
-                    title: "Successfully double checked result.",
-                    variant: "success",
-                });
                 setResult(null);
                 setAlreadyCheckedResult(null);
                 setInputValue("");
@@ -182,10 +178,6 @@ const DoubleCheck = () => {
             .then(async () => {
                 const status = await undoDoubleCheck(id);
                 if (status === 204) {
-                    toast({
-                        title: "Successfully marked results as not double checked.",
-                        variant: "success",
-                    });
                     fetchData();
                 } else {
                     toast({

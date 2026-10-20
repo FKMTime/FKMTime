@@ -88,7 +88,7 @@ const IncidentPanel = ({ id, onClose, onDone }: IncidentPanelProps) => {
         );
         setIsLoading(false);
         if (status === 200) {
-            toast({ title: "Incident updated", variant: "success" });
+            toast({ title: "Incident saved", variant: "success" });
             onDone();
         } else {
             toast({
@@ -123,10 +123,6 @@ const IncidentPanel = ({ id, onClose, onDone }: IncidentPanelProps) => {
                 const response = await deleteAttempt(incident.id);
                 setIsLoading(false);
                 if (response.status === 200) {
-                    toast({
-                        title: "Successfully deleted attempt.",
-                        variant: "success",
-                    });
                     onDone();
                 } else {
                     toast({

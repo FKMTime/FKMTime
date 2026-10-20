@@ -36,13 +36,7 @@ const AddNotAssignedPersonModal = ({
         }
 
         const status = await addUnassignedPerson(groupId, person.id, role);
-        if (status === 201) {
-            toast({
-                title: "Success",
-                description: "Person added and marked as present",
-                variant: "success",
-            });
-        } else if (status === 404) {
+        if (status === 404) {
             toast({
                 title: "Error",
                 description: "Group or person not found",
@@ -55,7 +49,7 @@ const AddNotAssignedPersonModal = ({
                     "Person is already marked as present in another role during this group",
                 variant: "destructive",
             });
-        } else {
+        } else if (status !== 201) {
             toast({
                 title: "Error",
                 description: "Something went wrong",

@@ -23,10 +23,6 @@ const ScrambleSetRow = ({ scrambleSet, fetchData }: ScrambleSetRowProps) => {
             .then(async () => {
                 const status = await deleteScrambleSet(scrambleSet.id);
                 if (status === 204) {
-                    toast({
-                        title: "Scramble set deleted",
-                        variant: "success",
-                    });
                     fetchData();
                 } else {
                     toast({

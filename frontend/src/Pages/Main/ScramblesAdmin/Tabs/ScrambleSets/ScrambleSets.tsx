@@ -91,7 +91,6 @@ const ScrambleSets = () => {
         }
         const status = await remove();
         if (status === 204) {
-            toast({ title: "Scramble sets deleted", variant: "success" });
             fetchData();
         } else {
             toast({ title: "Something went wrong", variant: "destructive" });

@@ -46,10 +46,6 @@ const CreateUnofficialEventModal = ({
             roundsToSend
         );
         if (status === 201) {
-            toast({
-                title: "Successfully added unofficial event",
-                variant: "success",
-            });
             setRounds([]);
             setSelectedEventId("");
             onClose();

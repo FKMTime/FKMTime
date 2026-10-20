@@ -23,11 +23,6 @@ const CreateQuickActionModal = ({
         setIsLoading(true);
         const status = await createQuickAction(data);
         if (status === 201) {
-            toast({
-                title: "Success",
-                description: "Quick action has been created successfully.",
-                variant: "success",
-            });
             onClose();
         } else {
             toast({

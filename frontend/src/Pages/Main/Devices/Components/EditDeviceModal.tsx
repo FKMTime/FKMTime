@@ -33,10 +33,6 @@ const EditDeviceModal = ({ isOpen, onClose, device }: EditDeviceModalProps) => {
             ...data,
         });
         if (status === 200) {
-            toast({
-                title: "Successfully updated this device.",
-                variant: "success",
-            });
             onClose();
         } else if (status === 409) {
             toast({

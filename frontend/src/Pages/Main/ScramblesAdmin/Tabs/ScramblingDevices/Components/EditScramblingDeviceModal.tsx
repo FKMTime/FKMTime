@@ -26,10 +26,6 @@ const EditScramblingDeviceModal = ({
 
         const status = await updateScramblingDevice(editedDevice);
         if (status === 200) {
-            toast({
-                title: "Successfully updated this device.",
-                variant: "success",
-            });
             onClose();
         } else {
             toast({

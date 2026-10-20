@@ -40,10 +40,6 @@ const ScramblingDeviceRow = ({
             .then(async () => {
                 const status = await deleteScramblingDevice(device.id);
                 if (status === 204) {
-                    toast({
-                        title: "Successfully deleted scrambling device.",
-                        variant: "success",
-                    });
                     fetchData();
                 } else {
                     toast({

@@ -28,11 +28,6 @@ const EditQuickActionModal = ({
             ...data,
         });
         if (status === 200) {
-            toast({
-                title: "Success",
-                description: "Quick action has been updated successfully.",
-                variant: "success",
-            });
             onClose();
         } else {
             toast({

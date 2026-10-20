@@ -33,10 +33,7 @@ const DevicesSettings = () => {
             ...data,
         });
         if (status === 200) {
-            toast({
-                title: "Successfully updated devices settings",
-                variant: "success",
-            });
+            toast({ title: "Device settings saved", variant: "success" });
         } else {
             toast({
                 title: "Error",

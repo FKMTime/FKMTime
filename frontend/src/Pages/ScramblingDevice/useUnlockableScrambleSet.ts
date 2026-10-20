@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
-import { useToast } from "@/hooks/useToast";
 import { DecryptedScramble, ScrambleSet } from "@/lib/interfaces";
 import {
     decryptScrambles,
@@ -15,7 +14,6 @@ const unlockErrorMessage = (status: number) =>
 /** Loads a scramble set and decrypts its scrambles once unlocked */
 export const useUnlockableScrambleSet = (id?: string) => {
     const navigate = useNavigate();
-    const { toast } = useToast();
     const [scrambleSet, setScrambleSet] = useState<ScrambleSet | null>(null);
     const [scrambles, setScrambles] = useState<DecryptedScramble[] | null>(
         null
@@ -42,7 +40,6 @@ export const useUnlockableScrambleSet = (id?: string) => {
         setIsUnlocking(false);
         if (response.status === 200) {
             setScrambles(decryptScrambles(response.data.scrambles, password));
-            toast({ title: "Unlocked", variant: "success" });
         } else {
             setUnlockError(unlockErrorMessage(response.status));
         }

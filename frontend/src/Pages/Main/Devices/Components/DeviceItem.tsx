@@ -48,10 +48,6 @@ const DeviceItem = ({
             .then(async () => {
                 const status = await deleteDevice(device.id);
                 if (status === 204) {
-                    toast({
-                        title: "Successfully deleted device.",
-                        variant: "success",
-                    });
                     fetchData();
                 } else {
                     toast({

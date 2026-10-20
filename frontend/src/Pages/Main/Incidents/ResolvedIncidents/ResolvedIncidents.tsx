@@ -48,10 +48,7 @@ const ResolvedIncidents = () => {
     const handleSaveAsNoteworthy = async (incident: Incident) => {
         const status = await saveAttemptAsNoteworthyIncident(incident.id);
         if (status === 201) {
-            toast({
-                title: "Incident saved as noteworthy",
-                variant: "success",
-            });
+            toast({ title: "Saved as noteworthy", variant: "success" });
             refreshCounts();
         } else if (status === 409) {
             toast({

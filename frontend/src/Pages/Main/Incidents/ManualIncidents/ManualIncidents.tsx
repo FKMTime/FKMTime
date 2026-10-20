@@ -60,10 +60,6 @@ const ManualIncidents = ({ createOnOpen = false }: ManualIncidentsProps) => {
             onConfirm: async () => {
                 const status = await deleteManualIncident(incident.id);
                 if (status === 204) {
-                    toast({
-                        title: "Successfully deleted incident.",
-                        variant: "success",
-                    });
                     refresh();
                 } else {
                     toast({

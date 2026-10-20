@@ -43,10 +43,6 @@ const ResultsTable = ({ rows, maxAttempts, onDeleted }: ResultsTableProps) => {
             onConfirm: async () => {
                 const status = await deleteResultById(result.id);
                 if (status === 204) {
-                    toast({
-                        title: "Successfully deleted result.",
-                        variant: "success",
-                    });
                     onDeleted();
                 } else {
                     toast({

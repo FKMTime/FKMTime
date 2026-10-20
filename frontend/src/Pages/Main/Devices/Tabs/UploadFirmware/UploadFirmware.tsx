@@ -35,11 +35,7 @@ const UploadFirmware = () => {
         const status = await uploadFirmware(fileName, fileBase64);
 
         if (status === 200) {
-            toast({
-                title: "Success",
-                description: "Firmware uploaded successfully",
-                variant: "success",
-            });
+            toast({ title: "Firmware uploaded", variant: "success" });
         } else {
             toast({
                 title: "Error",

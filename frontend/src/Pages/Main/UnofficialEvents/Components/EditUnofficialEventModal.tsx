@@ -39,10 +39,6 @@ const EditUnofficialEventModal = ({
         };
         const status = await updateUnofficialEvent(eventToSend);
         if (status === 200) {
-            toast({
-                title: "Successfully updated unofficial event",
-                variant: "success",
-            });
             onClose();
         } else {
             toast({

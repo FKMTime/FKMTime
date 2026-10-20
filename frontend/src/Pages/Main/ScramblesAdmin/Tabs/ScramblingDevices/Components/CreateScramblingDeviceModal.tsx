@@ -27,10 +27,6 @@ const CreateScramblingDeviceModal = ({
 
         const status = await createScramblingDevice(newDevice);
         if (status === 201) {
-            toast({
-                title: "Successfully created new device.",
-                variant: "success",
-            });
             onClose();
         } else {
             toast({

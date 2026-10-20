@@ -42,10 +42,7 @@ const IssueWarningModal = ({
         setIsLoading(true);
         const status = await issueWarning(person.id, values);
         if (status === 201) {
-            toast({
-                title: "Successfully issued warning.",
-                variant: "success",
-            });
+            toast({ title: "Warning issued", variant: "success" });
             setIsLoading(false);
             form.reset();
             onClose();

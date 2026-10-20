@@ -22,11 +22,6 @@ const CreateUserModal = ({ isOpen, onClose }: CreateUserModalProps) => {
         setIsLoading(true);
         const response = await createUser(userData);
         if (response.status === 201) {
-            toast({
-                title: "Success",
-                description: "User has been created successfully.",
-                variant: "success",
-            });
             onClose();
         } else if (response.status == 403) {
             toast({

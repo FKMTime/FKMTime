@@ -50,10 +50,6 @@ const EditUserModal = ({ isOpen, onClose, user }: EditUserModalProps) => {
             ...values,
         });
         if (response.status === 200) {
-            toast({
-                title: "Successfully updated user.",
-                variant: "success",
-            });
             onClose();
         } else if (response.status === 400) {
             toast({

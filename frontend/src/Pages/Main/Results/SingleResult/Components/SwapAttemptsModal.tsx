@@ -35,11 +35,6 @@ const SwapAttemptsModal = ({
         }
         const status = await swapAttempts(firstAttemptId, secondAttemptId);
         if (status === 200) {
-            toast({
-                title: "Success",
-                description: "Attempts swapped successfully",
-                variant: "success",
-            });
             onClose();
         } else {
             toast({

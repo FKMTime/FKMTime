@@ -31,10 +31,7 @@ const Settings = () => {
         setIsLoading(true);
         const status = await updateSettings(data);
         if (status === 200) {
-            toast({
-                title: "Successfully updated settings.",
-                variant: "success",
-            });
+            toast({ title: "Account saved", variant: "success" });
         } else {
             toast({
                 title: "Error",

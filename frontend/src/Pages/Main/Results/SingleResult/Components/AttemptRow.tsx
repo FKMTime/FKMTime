@@ -50,10 +50,6 @@ const AttemptRow = ({
             .then(async () => {
                 const response = await deleteAttempt(attempt.id);
                 if (response.status === 200) {
-                    toast({
-                        title: "Successfully deleted attempt.",
-                        variant: "success",
-                    });
                     if (response.data.resultDeleted) {
                         navigate(`/results/round/${result.roundId}`);
                     } else {

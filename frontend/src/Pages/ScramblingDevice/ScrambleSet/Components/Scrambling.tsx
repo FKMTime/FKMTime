@@ -81,7 +81,7 @@ const Scrambling = ({ groupId, scrambles }: ScramblingProps) => {
         setIsSigning(false);
         if (response.status === 201) {
             toast({
-                title: "Successfully signed the attempt",
+                title: "Attempt signed",
                 variant: "success",
             });
             setCompetitor(null);

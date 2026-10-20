@@ -26,10 +26,6 @@ const AssignCardModal = ({ isOpen, onClose, person }: AssignCardModalProps) => {
 
         const status = await updatePerson(editedPerson);
         if (status === 200) {
-            toast({
-                title: "Successfully updated person.",
-                variant: "success",
-            });
             onClose();
         } else if (status === 409) {
             toast({

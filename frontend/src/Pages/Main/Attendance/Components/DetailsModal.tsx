@@ -36,11 +36,7 @@ const DetailsModal = ({
     const handleSave = async () => {
         const status = await updateComment(staffActivity?.id || "", comment);
         if (status === 200) {
-            toast({
-                title: "Comment updated successfully",
-                description: "Your comment has been saved.",
-                variant: "success",
-            });
+            toast({ title: "Comment saved", variant: "success" });
             handleClose();
         } else {
             toast({

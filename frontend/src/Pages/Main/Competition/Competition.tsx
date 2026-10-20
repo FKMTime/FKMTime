@@ -55,11 +55,7 @@ const Competition = () => {
         const status = await syncCompetition(competition.wcaId);
         setIsSyncing(false);
         if (status === 200) {
-            toast({
-                title: "Success",
-                description: "Competition synced",
-                variant: "success",
-            });
+            toast({ title: "Synced with the WCA website", variant: "success" });
             const response = await getCompetitionInfo();
             setCompetitionAtom(response.data);
         } else if (status === 403) {
@@ -84,11 +80,7 @@ const Competition = () => {
         const status = await updateCompetitionSettings(competition.id, data);
         if (status === 200) {
             setCompetitionAtom(data);
-            toast({
-                title: "Success",
-                description: "Competition updated",
-                variant: "success",
-            });
+            toast({ title: "Settings saved", variant: "success" });
         } else {
             toast({
                 title: "Error",

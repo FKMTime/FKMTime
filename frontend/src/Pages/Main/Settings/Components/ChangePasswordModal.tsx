@@ -49,10 +49,7 @@ const ChangePasswordModal = ({ isOpen, onClose }: ChangePasswordModalProps) => {
             values.newPassword
         );
         if (status === 200) {
-            toast({
-                title: "Successfully changed password.",
-                variant: "success",
-            });
+            toast({ title: "Password changed", variant: "success" });
             onClose();
         } else {
             toast({

@@ -51,7 +51,7 @@ const RoundHeader = ({
                 const status = await reSubmitRoundToWcaLive(roundId);
                 if (status === 200) {
                     toast({
-                        title: `Successfully resubmitted round results to ${platform}`,
+                        title: `Results resubmitted to ${platform}`,
                         variant: "success",
                     });
                 } else {

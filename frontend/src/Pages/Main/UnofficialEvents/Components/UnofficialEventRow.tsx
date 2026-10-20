@@ -30,11 +30,6 @@ const UnofficialEventRow = ({ event, fetchData }: UnofficialEventRowProps) => {
             .then(async () => {
                 const status = await deleteUnofficialEvent(event.id);
                 if (status === 204) {
-                    toast({
-                        title: "Success",
-                        description: "Successfully deleted event.",
-                        variant: "success",
-                    });
                     fetchData();
                 } else if (status === 409) {
                     toast({

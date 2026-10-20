@@ -42,10 +42,7 @@ const EditUserPasswordModal = ({
         setIsLoading(true);
         const status = await updateUserPassword(user.id, values.password);
         if (status === 200) {
-            toast({
-                title: "Successfully changed password.",
-                variant: "success",
-            });
+            toast({ title: "Password changed", variant: "success" });
             onClose();
         } else {
             toast({

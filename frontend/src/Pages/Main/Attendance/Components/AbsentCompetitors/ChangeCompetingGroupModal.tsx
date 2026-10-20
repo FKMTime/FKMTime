@@ -58,7 +58,7 @@ const ChangeCompetingGroupModal = ({
                 );
                 if (response.status === 200) {
                     toast({
-                        title: "Succesfully moved the competitor to another group",
+                        title: "Competitor moved to another group",
                         variant: "success",
                     });
                     setIsLoading(false);

@@ -99,7 +99,7 @@ const CurrentGroups = () => {
         setIsSaving(false);
         if (response.status === 200) {
             setSavedRooms(rooms);
-            toast({ title: "Rooms updated", variant: "success" });
+            toast({ title: "Groups saved", variant: "success" });
         } else if (response.status === 400) {
             toast({ title: response.data.message, variant: "destructive" });
         } else {

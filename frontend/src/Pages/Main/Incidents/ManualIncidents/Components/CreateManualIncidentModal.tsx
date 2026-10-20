@@ -24,7 +24,6 @@ const CreateManualIncidentModal = ({
         const status = await createManualIncident(data);
         setIsLoading(false);
         if (status === 201) {
-            toast({ title: "Incident added", variant: "success" });
             onClose(true);
         } else {
             toast({

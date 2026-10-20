@@ -72,7 +72,6 @@ const LastAttemptCard = ({ result, fetchData }: LastAttemptCardProps) => {
             penalty: newPenalty,
         });
         if (status === 200) {
-            toast({ title: "Penalty updated", variant: "success" });
             fetchData();
         } else {
             toast({
@@ -93,10 +92,6 @@ const LastAttemptCard = ({ result, fetchData }: LastAttemptCardProps) => {
             .then(async () => {
                 const response = await deleteAttempt(lastAttempt.id);
                 if (response.status === 200) {
-                    toast({
-                        title: "Successfully deleted attempt.",
-                        variant: "success",
-                    });
                     if (response.data.resultDeleted) {
                         navigate(`/results/round/${result.roundId}`);
                     } else {

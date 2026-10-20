@@ -7,7 +7,6 @@ import InlineError from "@/Components/shared/InlineError";
 import { Button } from "@/Components/ui/button";
 import { Label } from "@/Components/ui/label";
 import { Textarea } from "@/Components/ui/textarea";
-import { useToast } from "@/hooks/useToast";
 import { Person } from "@/lib/interfaces";
 import { issueWarning } from "@/lib/warnings";
 
@@ -18,7 +17,6 @@ interface AddWarningModalProps {
 
 /** Issue a warning to any competitor from the Warnings tab */
 const AddWarningModal = ({ isOpen, onClose }: AddWarningModalProps) => {
-    const { toast } = useToast();
     const [person, setPerson] = useState<Person | null>(null);
     const [description, setDescription] = useState("");
     const [error, setError] = useState("");
@@ -41,10 +39,6 @@ const AddWarningModal = ({ isOpen, onClose }: AddWarningModalProps) => {
         });
         setIsLoading(false);
         if (status === 201) {
-            toast({
-                title: "Successfully issued warning.",
-                variant: "success",
-            });
             close(true);
         } else {
             setError("Something went wrong. Try again.");

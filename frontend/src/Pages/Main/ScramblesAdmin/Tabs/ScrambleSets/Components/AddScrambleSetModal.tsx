@@ -67,10 +67,6 @@ const AddScrambleSetModal = ({
         if (!wcif || !competition) return;
         const response = await addScrambles(roundId, wcif, lastSet + 1);
         if (response.status === 201) {
-            toast({
-                title: "Scrambles imported",
-                variant: "success",
-            });
             clearUploadedScrambles();
             onClose();
         } else {

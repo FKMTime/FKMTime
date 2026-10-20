@@ -52,10 +52,7 @@ const GiveExtraAttemptModal = ({
             status: AttemptStatus.EXTRA_GIVEN,
         });
         if (status === 200) {
-            toast({
-                title: "Successfully given extra.",
-                variant: "success",
-            });
+            toast({ title: "Extra granted", variant: "success" });
             onClose();
         } else {
             toast({
