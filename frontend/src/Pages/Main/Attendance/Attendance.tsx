@@ -6,17 +6,9 @@ import { useNavigate, useParams } from "react-router-dom";
 import LoadingPage from "@/Components/LoadingPage";
 import EmptyState from "@/Components/shared/EmptyState";
 import { useConfirm } from "@/hooks/useConfirm";
-import { useToast } from "@/hooks/useToast";
 import { activityCodeToName } from "@/lib/activities";
 import { competitionAtom } from "@/lib/atoms";
-import {
-    getAttendanceByGroupId,
-    getRoundStaffing,
-    markAsAbsent,
-    markAsLate,
-    markAsPresent,
-    markAsPresentButReplaced,
-} from "@/lib/attendance";
+import { getAttendanceByGroupId, getRoundStaffing } from "@/lib/attendance";
 import { Room, StaffActivity, StaffActivityStatus } from "@/lib/interfaces";
 import { getRankingFromPreviousRound } from "@/lib/results";
 import { getAllRooms } from "@/lib/rooms";
@@ -33,11 +25,12 @@ const ROLES = [
     { role: "JUDGE", title: "Judges", icon: Gavel },
 ] as const;
 
+import { useMarkAttendance } from "./useMarkAttendance";
+
 const Attendance = () => {
     const { id: selectedGroup = "" } = useParams<{ id: string }>();
     const navigate = useNavigate();
     const confirm = useConfirm();
-    const { toast } = useToast();
     const competition = useAtomValue(competitionAtom);
     const [isConnected] = useContext(SocketContext) as [
         number,
@@ -92,23 +85,7 @@ const Attendance = () => {
         };
     }, [selectedGroup, fetchAttendance, isConnected]);
 
-    const run = async (
-        action: (id: string) => Promise<number>,
-        id: string,
-        success: string
-    ) => {
-        const status = await action(id);
-        if (status === 201) {
-            toast({ title: success, variant: "success" });
-            fetchAttendance();
-        } else {
-            toast({
-                title: "Error",
-                description: "Something went wrong",
-                variant: "destructive",
-            });
-        }
-    };
+    const run = useMarkAttendance(attendance, fetchAttendance);
 
     const handleMarkAbsent = async (id: string) => {
         const activity = attendance.find((a) => a.id === id);
@@ -123,7 +100,10 @@ const Attendance = () => {
                 .catch(() => false);
             if (!confirmed) return;
         }
-        run(markAsAbsent, id, "Marked as absent");
+        // Removing an unassigned person can't be put back
+        run(StaffActivityStatus.ABSENT, id, "absent", {
+            canUndo: !!activity?.isAssigned,
+        });
     };
 
     if (!competition) return <LoadingPage />;
@@ -180,17 +160,21 @@ const Attendance = () => {
                                 }
                                 onChanged={fetchAttendance}
                                 onMarkPresent={(id) =>
-                                    run(markAsPresent, id, "Marked as present")
+                                    run(
+                                        StaffActivityStatus.PRESENT,
+                                        id,
+                                        "present"
+                                    )
                                 }
                                 onMarkAbsent={handleMarkAbsent}
                                 onMarkLate={(id) =>
-                                    run(markAsLate, id, "Marked as late")
+                                    run(StaffActivityStatus.LATE, id, "late")
                                 }
                                 onMarkPresentButReplaced={(id) =>
                                     run(
-                                        markAsPresentButReplaced,
+                                        StaffActivityStatus.REPLACED,
                                         id,
-                                        "Marked as present but replaced"
+                                        "present but replaced"
                                     )
                                 }
                             />
