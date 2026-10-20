@@ -26,39 +26,43 @@ const CreateAttemptModal = ({
 }: CreateAttemptModalProps) => {
     const { toast } = useToast();
     const [isLoading, setIsLoading] = useState<boolean>(false);
+    const [submitError, setSubmitError] = useState("");
 
     const submissionPlatform = getSubmissionPlatformName(roundId.split("-")[0]);
 
     const onSubmit = async (data: AttemptData) => {
         setIsLoading(true);
+        setSubmitError("");
         const { status, message } = await createAttempt(data);
+        setIsLoading(false);
         if (status === 201) {
             toast({
-                title: `Attempt created and submitted to ${submissionPlatform}`,
+                title: "Attempt saved",
+                description: `Submitted to ${submissionPlatform}`,
                 variant: "success",
             });
             onClose();
         } else {
-            toast({
-                title: "Error",
-                description: message ?? "Something went wrong",
-                variant: "destructive",
-            });
+            setSubmitError(message ?? "The attempt could not be saved.");
         }
-        setIsLoading(false);
     };
 
     return (
-        <Modal isOpen={isOpen} onClose={onClose} title="Enter attempt">
-            <div className="max-h-96 overflow-y-auto">
-                <AttemptForm
-                    handleSubmit={onSubmit}
-                    isLoading={isLoading}
-                    competitorId={competitorId}
-                    roundId={roundId}
-                    timeLimit={timeLimit}
-                />
-            </div>
+        <Modal
+            isOpen={isOpen}
+            onClose={onClose}
+            title="Enter attempt"
+            className="max-h-[90dvh] overflow-y-auto sm:max-w-[560px]"
+        >
+            <AttemptForm
+                handleSubmit={onSubmit}
+                onCancel={onClose}
+                isLoading={isLoading}
+                submitError={submitError}
+                competitorId={competitorId}
+                roundId={roundId}
+                timeLimit={timeLimit}
+            />
         </Modal>
     );
 };

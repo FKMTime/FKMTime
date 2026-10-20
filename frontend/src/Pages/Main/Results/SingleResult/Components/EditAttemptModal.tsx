@@ -27,55 +27,59 @@ const EditAttemptModal = ({
 }: EditAttemptModalProps) => {
     const { toast } = useToast();
     const [isLoading, setIsLoading] = useState(false);
+    const [submitError, setSubmitError] = useState("");
 
     const submissionPlatform = getSubmissionPlatformName(result.eventId);
 
     const handleSubmit = async (data: AttemptData) => {
         setIsLoading(true);
+        setSubmitError("");
         const { status, message } = await updateAttempt({
             ...attempt,
             ...data,
         });
+        setIsLoading(false);
         if (status === 200) {
             toast({
-                title: `Successfully updated attempt and resubmitted result to ${submissionPlatform}.`,
+                title: "Attempt updated",
+                description: `Resubmitted to ${submissionPlatform}`,
                 variant: "success",
             });
             onClose();
         } else {
-            toast({
-                title: "Error",
-                description: message ?? "Something went wrong",
-                variant: "destructive",
-            });
+            setSubmitError(message ?? "The attempt could not be saved.");
         }
-        setIsLoading(false);
     };
 
     return (
-        <Modal isOpen={isOpen} onClose={onClose} title="Edit attempt">
-            <div className="max-h-96 overflow-y-auto">
-                {attempt.inspectionTime ? (
-                    <p>
-                        Inspection time:{" "}
-                        {milisecondsToClockFormat(attempt.inspectionTime)}
-                    </p>
-                ) : null}
-                {attempt.originalTime ? (
-                    <p>
-                        Original time:{" "}
-                        {milisecondsToClockFormat(attempt.originalTime)}
-                    </p>
-                ) : null}
-                <AttemptForm
-                    handleSubmit={handleSubmit}
-                    isLoading={isLoading}
-                    attempt={attempt}
-                    competitorId={result.person.id}
-                    timeLimit={timeLimit}
-                    roundId={result.roundId}
-                />
-            </div>
+        <Modal
+            isOpen={isOpen}
+            onClose={onClose}
+            title="Edit attempt"
+            className="max-h-[90dvh] overflow-y-auto sm:max-w-[560px]"
+        >
+            {(attempt.inspectionTime || attempt.originalTime) && (
+                <p className="text-[13px] text-muted-foreground">
+                    {[
+                        attempt.originalTime &&
+                            `Stackmat ${milisecondsToClockFormat(attempt.originalTime)}`,
+                        attempt.inspectionTime &&
+                            `Inspection ${milisecondsToClockFormat(attempt.inspectionTime)}`,
+                    ]
+                        .filter(Boolean)
+                        .join(" · ")}
+                </p>
+            )}
+            <AttemptForm
+                handleSubmit={handleSubmit}
+                onCancel={onClose}
+                isLoading={isLoading}
+                submitError={submitError}
+                attempt={attempt}
+                competitorId={result.person.id}
+                timeLimit={timeLimit}
+                roundId={result.roundId}
+            />
         </Modal>
     );
 };
