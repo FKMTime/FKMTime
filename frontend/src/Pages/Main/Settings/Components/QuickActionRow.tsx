@@ -51,11 +51,7 @@ const QuickActionRow = ({
                 }
             })
             .catch(() => {
-                toast({
-                    title: "Cancelled",
-                    description:
-                        "You have cancelled the deletion of the quick action.",
-                });
+                // Declined: closing the dialog is feedback enough
             });
     };
 

@@ -51,11 +51,7 @@ const UnofficialEventRow = ({ event, fetchData }: UnofficialEventRowProps) => {
                 }
             })
             .catch(() => {
-                toast({
-                    title: "Cancelled",
-                    description:
-                        "You have cancelled the deletion of the event.",
-                });
+                // Declined: closing the dialog is feedback enough
             });
     };
 

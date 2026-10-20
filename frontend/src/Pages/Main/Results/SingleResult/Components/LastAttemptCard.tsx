@@ -111,11 +111,7 @@ const LastAttemptCard = ({ result, fetchData }: LastAttemptCardProps) => {
                 }
             })
             .catch(() => {
-                toast({
-                    title: "Cancelled",
-                    description:
-                        "You have cancelled the deletion of the attempt.",
-                });
+                // Declined: closing the dialog is feedback enough
             });
     };
 

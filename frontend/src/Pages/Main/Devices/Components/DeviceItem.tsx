@@ -62,11 +62,7 @@ const DeviceItem = ({
                 }
             })
             .catch(() => {
-                toast({
-                    title: "Cancelled",
-                    description:
-                        "You have cancelled the deletion of the device.",
-                });
+                // Declined: closing the dialog is feedback enough
             });
     };
 

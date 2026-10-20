@@ -55,11 +55,7 @@ const UserRow = ({ user, fetchData, variant = "table" }: UserRowProps) => {
                 }
             })
             .catch(() => {
-                toast({
-                    title: "Cancelled",
-                    description:
-                        "You have cancelled the deletion of this user.",
-                });
+                // Declined: closing the dialog is feedback enough
             });
     };
 

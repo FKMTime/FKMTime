@@ -158,22 +158,12 @@ const DoubleCheck = () => {
             })
                 .then(submitDoubleCheckedResult)
                 .catch(() => {
-                    toast({
-                        title: "Cancelled",
-                        description:
-                            "You have cancelled the resubmission of the result.",
-                    });
+                    // Declined: closing the dialog is feedback enough
                 });
         } else {
             await submitDoubleCheckedResult();
         }
-    }, [
-        confirm,
-        result,
-        resultsToDoubleCheck,
-        submitDoubleCheckedResult,
-        toast,
-    ]);
+    }, [confirm, result, resultsToDoubleCheck, submitDoubleCheckedResult]);
 
     const handleSkip = () => {
         setResult(null);
@@ -206,10 +196,7 @@ const DoubleCheck = () => {
                 }
             })
             .catch(() => {
-                toast({
-                    title: "Cancelled",
-                    description: "You have cancelled the undoing.",
-                });
+                // Declined: closing the dialog is feedback enough
             });
     };
 
