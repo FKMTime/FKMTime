@@ -26,16 +26,18 @@ import { competitionAtom } from "@/lib/atoms";
 import { createAttempt } from "@/lib/attempt";
 import { DNF_VALUE, DNS_VALUE } from "@/lib/constants";
 import { getEventIconClass } from "@/lib/events";
-import { AttemptStatus, Person } from "@/lib/interfaces";
+import { Attempt, AttemptStatus, Person, Result } from "@/lib/interfaces";
 import { getAllPersons } from "@/lib/persons";
 import {
     getAttemptOptions,
+    getNextAttemptValue,
     getNumberOfAttempts,
     isRegisteredFor,
     matchCompetitors,
     parseQuickTime,
 } from "@/lib/quickEntry";
 import { reformatInput, resultToString } from "@/lib/resultFormatters";
+import { getResultsByRoundId } from "@/lib/results";
 import { cn, getSubmissionPlatformName } from "@/lib/utils";
 
 export interface QuickEntryRound {
@@ -98,6 +100,24 @@ const QuickEnterAttemptModal = ({
         if (isOpen) getAllPersons().then(setPersons);
     }, [isOpen]);
 
+    // Existing attempts per competitor, to preselect their next attempt
+    const [roundAttempts, setRoundAttempts] = useState<Map<string, Attempt[]>>(
+        new Map()
+    );
+    useEffect(() => {
+        if (!isOpen || !roundId) return;
+        let isCancelled = false;
+        getResultsByRoundId(roundId).then((results: Result[]) => {
+            if (isCancelled) return;
+            setRoundAttempts(
+                new Map(results.map((r) => [r.person.id, r.attempts]))
+            );
+        });
+        return () => {
+            isCancelled = true;
+        };
+    }, [isOpen, roundId]);
+
     const attemptOptions = useMemo(
         () =>
             roundId
@@ -127,6 +147,12 @@ const QuickEnterAttemptModal = ({
 
     const pick = (person: Person) => {
         setCompetitor(person);
+        setAttempt(
+            getNextAttemptValue(
+                attemptOptions,
+                roundAttempts.get(person.id) ?? []
+            )
+        );
         setQuery("");
         setError("");
         // Next field in the keyboard flow

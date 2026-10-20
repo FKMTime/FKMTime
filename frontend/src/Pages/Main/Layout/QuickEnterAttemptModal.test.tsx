@@ -6,6 +6,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { competitionAtom } from "@/lib/atoms";
 import { createAttempt } from "@/lib/attempt";
 import { AttemptType, Competition, Person } from "@/lib/interfaces";
+import { getResultsByRoundId } from "@/lib/results";
 
 import QuickEnterAttemptModal from "./QuickEnterAttemptModal";
 
@@ -20,6 +21,7 @@ vi.mock("@/lib/persons", () => ({
     ]),
 }));
 vi.mock("@/lib/attempt", () => ({ createAttempt: vi.fn() }));
+vi.mock("@/lib/results", () => ({ getResultsByRoundId: vi.fn() }));
 vi.mock("@/hooks/useToast", () => ({ useToast: () => ({ toast: vi.fn() }) }));
 
 const competition = {
@@ -49,6 +51,7 @@ const renderModal = (onClose = vi.fn()) => {
 describe("QuickEnterAttemptModal", () => {
     beforeEach(() => {
         vi.mocked(createAttempt).mockReset();
+        vi.mocked(getResultsByRoundId).mockResolvedValue([]);
         localStorage.setItem(
             "fkmtime-events",
             JSON.stringify([
@@ -81,6 +84,30 @@ describe("QuickEnterAttemptModal", () => {
                 penalty: 0,
             })
         );
+    });
+
+    it("preselects the competitor's next free attempt", async () => {
+        vi.mocked(getResultsByRoundId).mockResolvedValue([
+            {
+                person: { id: "p1" },
+                attempts: [1, 2].map((attemptNumber) => ({
+                    attemptNumber,
+                    type: AttemptType.STANDARD_ATTEMPT,
+                })),
+            },
+        ]);
+        renderModal();
+        await waitFor(() => expect(getResultsByRoundId).toHaveBeenCalled());
+
+        await userEvent.type(
+            screen.getByPlaceholderText("Type a name or registrant ID"),
+            "anna{Enter}"
+        );
+        expect(
+            screen
+                .getByRole("radio", { name: "Attempt 3" })
+                .getAttribute("aria-checked")
+        ).toBe("true");
     });
 
     it("explains what is missing instead of saving", async () => {

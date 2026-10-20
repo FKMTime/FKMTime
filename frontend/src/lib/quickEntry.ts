@@ -1,7 +1,7 @@
 import { Competition as WCIF, getRoundInfoFromWcif } from "wcif-helpers";
 
 import { roundFormats } from "./constants";
-import { AttemptType, Person } from "./interfaces";
+import { Attempt, AttemptType, Person } from "./interfaces";
 import {
     autocompleteTimeAttemptResult,
     inputToAttemptResult,
@@ -46,6 +46,23 @@ export const getAttemptOptions = (
         title: `Extra attempt ${i + 1}`,
     })),
 ];
+
+/**
+ * The first standard attempt the competitor doesn't have yet, otherwise the
+ * first unused extra, otherwise attempt 1.
+ */
+export const getNextAttemptValue = (
+    options: AttemptOption[],
+    existing: Pick<Attempt, "attemptNumber" | "type">[]
+) => {
+    const taken = new Set(
+        existing.map((attempt) => `${attempt.type}:${attempt.attemptNumber}`)
+    );
+    const next = options.find(
+        (option) => !taken.has(`${option.type}:${option.attemptNumber}`)
+    );
+    return (next ?? options[0])?.value ?? "1";
+};
 
 /**
  * Competitors registered for the event who can compete, matching the query

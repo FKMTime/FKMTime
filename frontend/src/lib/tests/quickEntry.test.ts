@@ -4,6 +4,7 @@ import { Competition } from "wcif-helpers";
 import { AttemptType, Person } from "@/lib/interfaces";
 import {
     getAttemptOptions,
+    getNextAttemptValue,
     getNumberOfAttempts,
     getQuickEntryRounds,
     matchCompetitors,
@@ -84,5 +85,41 @@ describe("quick entry", () => {
             },
             { roundId: "pyram-r1", meta: "Side room · Group 1" },
         ]);
+    });
+});
+
+describe("getNextAttemptValue", () => {
+    const options = getAttemptOptions(5);
+    const standard = (attemptNumber: number) => ({
+        attemptNumber,
+        type: AttemptType.STANDARD_ATTEMPT,
+    });
+    const extra = (attemptNumber: number) => ({
+        attemptNumber,
+        type: AttemptType.EXTRA_ATTEMPT,
+    });
+
+    it("starts at attempt 1 without attempts", () => {
+        expect(getNextAttemptValue(options, [])).toBe("1");
+    });
+
+    it("picks the first missing standard attempt", () => {
+        expect(getNextAttemptValue(options, [standard(1), standard(2)])).toBe(
+            "3"
+        );
+        expect(getNextAttemptValue(options, [standard(1), standard(3)])).toBe(
+            "2"
+        );
+    });
+
+    it("moves on to unused extras once every standard attempt exists", () => {
+        const all = [1, 2, 3, 4, 5].map(standard);
+        expect(getNextAttemptValue(options, all)).toBe("E1");
+        expect(getNextAttemptValue(options, [...all, extra(1)])).toBe("E2");
+    });
+
+    it("falls back to attempt 1 when everything is taken", () => {
+        const all = [...[1, 2, 3, 4, 5].map(standard), extra(1), extra(2)];
+        expect(getNextAttemptValue(options, all)).toBe("1");
     });
 });
