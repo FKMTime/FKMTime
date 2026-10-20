@@ -7,7 +7,7 @@ import ModalActions from "@/Components/ModalActions";
 import { Button } from "@/Components/ui/button";
 import { Input } from "@/Components/ui/input";
 import { Label } from "@/Components/ui/label";
-import { useToast } from "@/hooks/useToast";
+import { useDialogError } from "@/hooks/useDialogError";
 import { activityCodeToName } from "@/lib/activities";
 import { competitionAtom } from "@/lib/atoms";
 import { getEventName } from "@/lib/events";
@@ -29,7 +29,7 @@ const AddScrambleSetModal = ({
     lastSet,
     roundId,
 }: AddScrambleSetModalProps) => {
-    const { toast } = useToast();
+    const [error, setError] = useDialogError(isOpen);
     const [wcif, setWcif] = useState<WCIF>();
     const [fileInputKey, setFileInputKey] = useState(0);
     const [preventFromImporting, setPreventFromImporting] = useState(false);
@@ -70,16 +70,8 @@ const AddScrambleSetModal = ({
             clearUploadedScrambles();
             onClose();
         } else {
-            toast({
-                title: "Error",
-                description: "Something went wrong",
-                variant: "destructive",
-            });
-            toast({
-                title: "Error",
-                description: response.data.message,
-                variant: "destructive",
-            });
+            setError("Something went wrong");
+            setError(response.data.message);
         }
     };
 
@@ -91,6 +83,7 @@ const AddScrambleSetModal = ({
 
     return (
         <Modal
+            error={error}
             isOpen={isOpen}
             onClose={onClose}
             title={`Add scramble set for ${activityCodeToName(roundId)}`}

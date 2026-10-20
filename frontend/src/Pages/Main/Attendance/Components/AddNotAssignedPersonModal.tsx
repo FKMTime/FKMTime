@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Modal } from "@/Components/Modal";
 import PersonAutocomplete from "@/Components/PersonAutocomplete";
 import { Button } from "@/Components/ui/button";
-import { useToast } from "@/hooks/useToast";
+import { useDialogError } from "@/hooks/useDialogError";
 import { addUnassignedPerson } from "@/lib/attendance";
 import { Person } from "@/lib/interfaces";
 
@@ -21,45 +21,31 @@ const AddNotAssignedPersonModal = ({
     groupId,
     role,
 }: AddNotAssignedPersonModalProps) => {
-    const { toast } = useToast();
+    const [error, setError] = useDialogError(isOpen);
     const [person, setPerson] = useState<Person | null>(null);
 
     const handleAddPerson = async () => {
         if (!person || !groupId || !role) {
-            toast({
-                title: "Error",
-                description:
-                    "Please select a person and ensure group and role are set",
-                variant: "destructive",
-            });
+            setError("Choose a person to add.");
             return;
         }
 
         const status = await addUnassignedPerson(groupId, person.id, role);
         if (status === 404) {
-            toast({
-                title: "Error",
-                description: "Group or person not found",
-                variant: "destructive",
-            });
+            setError("Group or person not found");
         } else if (status === 409) {
-            toast({
-                title: "Error",
-                description:
-                    "Person is already marked as present in another role during this group",
-                variant: "destructive",
-            });
+            setError(
+                "Person is already marked as present in another role during this group"
+            );
         } else if (status !== 201) {
-            toast({
-                title: "Error",
-                description: "Something went wrong",
-                variant: "destructive",
-            });
+            setError("Something went wrong");
+        } else {
+            onClose();
         }
-        onClose();
     };
     return (
         <Modal
+            error={error}
             isOpen={isOpen}
             onClose={onClose}
             title={"Add unassigned person"}

@@ -15,6 +15,7 @@ import {
     FormMessage,
 } from "@/Components/ui/form";
 import { Input } from "@/Components/ui/input";
+import { useDialogError } from "@/hooks/useDialogError";
 import { useToast } from "@/hooks/useToast";
 import { User } from "@/lib/interfaces";
 import { editUserPasswordSchema } from "@/lib/schema/userSchema";
@@ -31,6 +32,7 @@ const EditUserPasswordModal = ({
     onClose,
     user,
 }: EditUserPasswordModalProps) => {
+    const [error, setError] = useDialogError(isOpen);
     const { toast } = useToast();
     const [isLoading, setIsLoading] = useState(false);
 
@@ -45,17 +47,18 @@ const EditUserPasswordModal = ({
             toast({ title: "Password changed", variant: "success" });
             onClose();
         } else {
-            toast({
-                title: "Error",
-                description: "Something went wrong",
-                variant: "destructive",
-            });
+            setError("Something went wrong");
         }
         setIsLoading(false);
     };
 
     return (
-        <Modal isOpen={isOpen} onClose={onClose} title="Change password">
+        <Modal
+            error={error}
+            isOpen={isOpen}
+            onClose={onClose}
+            title="Change password"
+        >
             <Form {...form}>
                 <form
                     onSubmit={form.handleSubmit(onSubmit)}

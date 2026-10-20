@@ -1,7 +1,7 @@
 import { useState } from "react";
 
 import { Modal } from "@/Components/Modal";
-import { useToast } from "@/hooks/useToast";
+import { useDialogError } from "@/hooks/useDialogError";
 import { createManualIncident } from "@/lib/incidents";
 import { ManualIncidentData } from "@/lib/interfaces";
 
@@ -16,7 +16,7 @@ const CreateManualIncidentModal = ({
     isOpen,
     onClose,
 }: CreateManualIncidentModalProps) => {
-    const { toast } = useToast();
+    const [error, setError] = useDialogError(isOpen);
     const [isLoading, setIsLoading] = useState(false);
 
     const handleSubmit = async (data: ManualIncidentData) => {
@@ -26,16 +26,13 @@ const CreateManualIncidentModal = ({
         if (status === 201) {
             onClose(true);
         } else {
-            toast({
-                title: "Error",
-                description: "Failed to add the incident.",
-                variant: "destructive",
-            });
+            setError("Failed to add the incident.");
         }
     };
 
     return (
         <Modal
+            error={error}
             isOpen={isOpen}
             onClose={() => onClose(false)}
             title="Add manual incident"

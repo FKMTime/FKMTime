@@ -4,6 +4,7 @@ import { ChangeEvent, useEffect, useState } from "react";
 import { Modal } from "@/Components/Modal";
 import { Button } from "@/Components/ui/button";
 import { Textarea } from "@/Components/ui/textarea";
+import { useDialogError } from "@/hooks/useDialogError";
 import { useToast } from "@/hooks/useToast";
 import { updateComment } from "@/lib/attendance";
 import { StaffActivity } from "@/lib/interfaces";
@@ -22,6 +23,7 @@ const DetailsModal = ({
     onClose,
     staffActivity,
 }: DetailsModalProps) => {
+    const [error, setError] = useDialogError(isOpen);
     const { toast } = useToast();
     const [comment, setComment] = useState<string>(
         staffActivity?.comment || ""
@@ -39,11 +41,9 @@ const DetailsModal = ({
             toast({ title: "Comment saved", variant: "success" });
             handleClose();
         } else {
-            toast({
-                title: "Something went wrong",
-                description: "There was an error saving your comment.",
-                variant: "destructive",
-            });
+            setError(
+                `${"Something went wrong"}. ${"There was an error saving your comment."}`
+            );
         }
     };
 
@@ -62,6 +62,7 @@ const DetailsModal = ({
 
     return (
         <Modal
+            error={error}
             isOpen={isOpen}
             onClose={handleClose}
             title={staffActivity?.person.name || "Details"}

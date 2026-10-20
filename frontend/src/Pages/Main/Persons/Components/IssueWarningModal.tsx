@@ -15,6 +15,7 @@ import {
     FormMessage,
 } from "@/Components/ui/form";
 import { Textarea } from "@/Components/ui/textarea";
+import { useDialogError } from "@/hooks/useDialogError";
 import { useToast } from "@/hooks/useToast";
 import { Person } from "@/lib/interfaces";
 import { warningSchema } from "@/lib/schema/warningSchema";
@@ -31,6 +32,7 @@ const IssueWarningModal = ({
     onClose,
     person,
 }: IssueWarningModalProps) => {
+    const [error, setError] = useDialogError(isOpen);
     const { toast } = useToast();
     const [isLoading, setIsLoading] = useState(false);
 
@@ -47,16 +49,13 @@ const IssueWarningModal = ({
             form.reset();
             onClose();
         } else {
-            toast({
-                title: "Error",
-                description: "Something went wrong",
-                variant: "destructive",
-            });
+            setError("Something went wrong");
         }
     };
 
     return (
         <Modal
+            error={error}
             isOpen={isOpen}
             onClose={onClose}
             title={`Issue warning to ${person.name}`}

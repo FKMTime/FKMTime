@@ -1,6 +1,7 @@
 import { useState } from "react";
 
 import { Modal } from "@/Components/Modal";
+import { useDialogError } from "@/hooks/useDialogError";
 import { useToast } from "@/hooks/useToast";
 import { updateManualIncident } from "@/lib/incidents";
 import { ManualIncident, ManualIncidentData } from "@/lib/interfaces";
@@ -18,6 +19,7 @@ const EditManualIncidentModal = ({
     onClose,
     incident,
 }: EditManualIncidentModalProps) => {
+    const [error, setError] = useDialogError(isOpen);
     const { toast } = useToast();
     const [isLoading, setIsLoading] = useState(false);
 
@@ -30,17 +32,18 @@ const EditManualIncidentModal = ({
             });
             onClose();
         } else {
-            toast({
-                title: "Error",
-                description: "Something went wrong",
-                variant: "destructive",
-            });
+            setError("Something went wrong");
         }
         setIsLoading(false);
     };
 
     return (
-        <Modal isOpen={isOpen} onClose={onClose} title="Edit incident">
+        <Modal
+            error={error}
+            isOpen={isOpen}
+            onClose={onClose}
+            title="Edit incident"
+        >
             <ManualIncidentForm
                 isLoading={isLoading}
                 handleSubmit={handleSubmit}

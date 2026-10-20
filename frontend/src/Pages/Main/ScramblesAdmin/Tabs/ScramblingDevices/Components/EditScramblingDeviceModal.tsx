@@ -1,7 +1,7 @@
 import { useState } from "react";
 
 import { Modal } from "@/Components/Modal";
-import { useToast } from "@/hooks/useToast";
+import { useDialogError } from "@/hooks/useDialogError";
 import { ScramblingDevice } from "@/lib/interfaces";
 import { updateScramblingDevice } from "@/lib/scramblingDevices";
 
@@ -18,7 +18,7 @@ const EditScramblingDeviceModal = ({
     onClose,
     device,
 }: EditScramblingDeviceModalProps) => {
-    const { toast } = useToast();
+    const [error, setError] = useDialogError(isOpen);
     const [isLoading, setIsLoading] = useState(false);
 
     const handleSubmit = async (editedDevice: ScramblingDevice) => {
@@ -28,17 +28,18 @@ const EditScramblingDeviceModal = ({
         if (status === 200) {
             onClose();
         } else {
-            toast({
-                title: "Error",
-                description: "Something went wrong",
-                variant: "destructive",
-            });
+            setError("Something went wrong");
         }
         setIsLoading(false);
     };
 
     return (
-        <Modal isOpen={isOpen} onClose={onClose} title="Edit scrambling device">
+        <Modal
+            error={error}
+            isOpen={isOpen}
+            onClose={onClose}
+            title="Edit scrambling device"
+        >
             <ScramblingDeviceForm
                 handleSubmit={handleSubmit}
                 device={device}

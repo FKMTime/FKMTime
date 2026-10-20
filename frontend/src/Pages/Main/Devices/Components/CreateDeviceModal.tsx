@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 
 import { Modal } from "@/Components/Modal";
 import ModalLoading from "@/Components/ModalLoading";
-import { useToast } from "@/hooks/useToast";
+import { useDialogError } from "@/hooks/useDialogError";
 import { createDevice } from "@/lib/devices";
 import {
     AvailableDevice,
@@ -28,7 +28,7 @@ const CreateDeviceModal = ({
     onClose,
     deviceToAdd,
 }: CreateDeviceModalProps) => {
-    const { toast } = useToast();
+    const [error, setError] = useDialogError(isOpen);
     const [isLoading, setIsLoading] = useState(false);
     const [rooms, setRooms] = useState<Room[]>([]);
     const [availableTypes, setAvailableTypes] = useState<DeviceType[]>([
@@ -43,18 +43,11 @@ const CreateDeviceModal = ({
         if (status === 201) {
             onClose(device);
         } else if (status === 409) {
-            toast({
-                title: "Error",
-                description:
-                    "Device with this name or ESP ID already exists in database",
-                variant: "destructive",
-            });
+            setError(
+                "Device with this name or ESP ID already exists in database"
+            );
         } else {
-            toast({
-                title: "Error",
-                description: "Something went wrong",
-                variant: "destructive",
-            });
+            setError("Something went wrong");
         }
         setIsLoading(false);
     };
@@ -92,7 +85,12 @@ const CreateDeviceModal = ({
     };
 
     return (
-        <Modal isOpen={isOpen} onClose={onClose} title="Create device">
+        <Modal
+            error={error}
+            isOpen={isOpen}
+            onClose={onClose}
+            title="Create device"
+        >
             {rooms.length ? (
                 <DeviceForm
                     isLoading={isLoading}

@@ -14,6 +14,7 @@ import {
     FormMessage,
 } from "@/Components/ui/form";
 import { Input } from "@/Components/ui/input";
+import { useDialogError } from "@/hooks/useDialogError";
 import { useToast } from "@/hooks/useToast";
 import { updateAttempt } from "@/lib/attempt";
 import {
@@ -34,6 +35,7 @@ const GiveExtraAttemptModal = ({
     onClose,
     attempt,
 }: GiveExtraAttemptModalProps) => {
+    const [error, setError] = useDialogError(isOpen);
     const { toast } = useToast();
     const [isLoading, setIsLoading] = useState<boolean>(false);
 
@@ -55,11 +57,7 @@ const GiveExtraAttemptModal = ({
             toast({ title: "Extra granted", variant: "success" });
             onClose();
         } else {
-            toast({
-                title: "Error",
-                description: message ?? "Something went wrong",
-                variant: "destructive",
-            });
+            setError(message ?? "Something went wrong");
         }
         setIsLoading(false);
     };
@@ -76,7 +74,12 @@ const GiveExtraAttemptModal = ({
     };
 
     return (
-        <Modal isOpen={isOpen} onClose={onClose} title="Give extra attempt">
+        <Modal
+            error={error}
+            isOpen={isOpen}
+            onClose={onClose}
+            title="Give extra attempt"
+        >
             <div className="grid grid-cols-2 gap-4">
                 <QuickActions handleQuickAction={handleQuickAction} />
             </div>

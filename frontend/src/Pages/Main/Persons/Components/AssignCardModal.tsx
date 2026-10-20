@@ -5,7 +5,7 @@ import { Modal } from "@/Components/Modal";
 import ModalActions from "@/Components/ModalActions";
 import { Button } from "@/Components/ui/button";
 import { Input } from "@/Components/ui/input";
-import { useToast } from "@/hooks/useToast";
+import { useDialogError } from "@/hooks/useDialogError";
 import { Person } from "@/lib/interfaces";
 import { isOrganizerOrDelegate } from "@/lib/permissions";
 import { updatePerson } from "@/lib/persons";
@@ -17,7 +17,7 @@ interface AssignCardModalProps {
 }
 
 const AssignCardModal = ({ isOpen, onClose, person }: AssignCardModalProps) => {
-    const { toast } = useToast();
+    const [error, setError] = useDialogError(isOpen);
     const [isLoading, setIsLoading] = useState(false);
     const [editedPerson, setEditedPerson] = useState<Person>(person);
 
@@ -28,23 +28,20 @@ const AssignCardModal = ({ isOpen, onClose, person }: AssignCardModalProps) => {
         if (status === 200) {
             onClose();
         } else if (status === 409) {
-            toast({
-                title: "Error",
-                description: "This card is already assigned to another person",
-                variant: "destructive",
-            });
+            setError("This card is already assigned to another person");
         } else {
-            toast({
-                title: "Error",
-                description: "Something went wrong",
-                variant: "destructive",
-            });
+            setError("Something went wrong");
         }
         setIsLoading(false);
     };
 
     return (
-        <Modal isOpen={isOpen} onClose={onClose} title="Assign card">
+        <Modal
+            error={error}
+            isOpen={isOpen}
+            onClose={onClose}
+            title="Assign card"
+        >
             <div className="flex flex-col gap-5">
                 <div className="flex flex-col gap-2 mb-3">
                     <Label>Card</Label>

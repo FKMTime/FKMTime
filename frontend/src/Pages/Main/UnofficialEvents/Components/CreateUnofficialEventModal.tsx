@@ -11,7 +11,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/Components/ui/select";
-import { useToast } from "@/hooks/useToast";
+import { useDialogError } from "@/hooks/useDialogError";
 import { getUnofficialEvents } from "@/lib/events";
 import { Event } from "@/lib/interfaces";
 import { createUnofficialEvent } from "@/lib/unofficialEvents";
@@ -27,7 +27,7 @@ const CreateUnofficialEventModal = ({
     isOpen,
     onClose,
 }: CreateUnofficialEventModalProps) => {
-    const { toast } = useToast();
+    const [error, setError] = useDialogError(isOpen);
     const [isLoading, setIsLoading] = useState(false);
     const [events, setEvents] = useState<Event[]>([]);
     const [selectedEventId, setSelectedEventId] = useState<string>("");
@@ -50,17 +50,9 @@ const CreateUnofficialEventModal = ({
             setSelectedEventId("");
             onClose();
         } else if (status === 409) {
-            toast({
-                title: "Error",
-                description: "Event already exists",
-                variant: "destructive",
-            });
+            setError("Event already exists");
         } else {
-            toast({
-                title: "Error",
-                description: "Something went wrong",
-                variant: "destructive",
-            });
+            setError("Something went wrong");
         }
         setIsLoading(false);
     };
@@ -77,7 +69,12 @@ const CreateUnofficialEventModal = ({
     }, []);
 
     return (
-        <Modal isOpen={isOpen} onClose={onClose} title="Add unofficial event">
+        <Modal
+            error={error}
+            isOpen={isOpen}
+            onClose={onClose}
+            title="Add unofficial event"
+        >
             <Select
                 value={selectedEventId}
                 onValueChange={updateSelectedEventId}

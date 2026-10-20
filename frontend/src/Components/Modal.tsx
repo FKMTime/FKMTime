@@ -1,5 +1,6 @@
 import { ReactNode } from "react";
 
+import InlineError from "@/Components/shared/InlineError";
 import { cn } from "@/lib/utils";
 
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "./ui/dialog";
@@ -10,6 +11,8 @@ interface ModalProps {
     title: string;
     children: ReactNode;
     className?: string;
+    /** Shown above the content; the dialog stays open so input is kept */
+    error?: string;
 }
 
 export const Modal = ({
@@ -18,6 +21,7 @@ export const Modal = ({
     title,
     children,
     className,
+    error,
 }: ModalProps) => {
     return (
         <>
@@ -26,6 +30,7 @@ export const Modal = ({
                     <DialogHeader>
                         <DialogTitle>{title}</DialogTitle>
                     </DialogHeader>
+                    <InlineError className="text-[13px]">{error}</InlineError>
                     {children}
                 </DialogContent>
             </Dialog>

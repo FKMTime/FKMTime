@@ -14,6 +14,7 @@ import {
     SelectValue,
 } from "@/Components/ui/select";
 import { useConfirm } from "@/hooks/useConfirm";
+import { useDialogError } from "@/hooks/useDialogError";
 import { useToast } from "@/hooks/useToast";
 import { activityCodeToName, getGroupsByRoundId } from "@/lib/activities";
 import { competitionAtom } from "@/lib/atoms";
@@ -31,6 +32,7 @@ const ChangeCompetingGroupModal = ({
     onClose,
     activity,
 }: ChangeCompetingGroupModalProps) => {
+    const [error, setError] = useDialogError(isOpen);
     const { toast } = useToast();
     const confirm = useConfirm();
     const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -64,12 +66,9 @@ const ChangeCompetingGroupModal = ({
                     setIsLoading(false);
                     onClose();
                 } else {
-                    toast({
-                        title: "The WCIF update failed",
-                        description:
-                            response.data.error || response.data.message,
-                        variant: "destructive",
-                    });
+                    setError(
+                        `${"The WCIF update failed"}. ${response.data.error || response.data.message}`
+                    );
                     setIsLoading(false);
                 }
             })
@@ -82,6 +81,7 @@ const ChangeCompetingGroupModal = ({
 
     return (
         <Modal
+            error={error}
             isOpen={isOpen}
             onClose={onClose}
             title="Move the competitor to another group"

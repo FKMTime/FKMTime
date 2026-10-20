@@ -1,7 +1,7 @@
 import { useState } from "react";
 
 import { Modal } from "@/Components/Modal";
-import { useToast } from "@/hooks/useToast";
+import { useDialogError } from "@/hooks/useDialogError";
 import { QuickAction, QuickActionData } from "@/lib/interfaces";
 import { updateQuickAction } from "@/lib/quickActions";
 
@@ -18,7 +18,7 @@ const EditQuickActionModal = ({
     onClose,
     quickAction,
 }: EditQuickActionModalProps) => {
-    const { toast } = useToast();
+    const [error, setError] = useDialogError(isOpen);
     const [isLoading, setIsLoading] = useState(false);
 
     const handleSubmit = async (data: QuickActionData) => {
@@ -30,17 +30,18 @@ const EditQuickActionModal = ({
         if (status === 200) {
             onClose();
         } else {
-            toast({
-                title: "Error",
-                description: "Something went wrong",
-                variant: "destructive",
-            });
+            setError("Something went wrong");
         }
         setIsLoading(false);
     };
 
     return (
-        <Modal isOpen={isOpen} onClose={onClose} title="Update quick action">
+        <Modal
+            error={error}
+            isOpen={isOpen}
+            onClose={onClose}
+            title="Update quick action"
+        >
             <QuickActionForm
                 quickAction={quickAction}
                 handleSubmit={handleSubmit}

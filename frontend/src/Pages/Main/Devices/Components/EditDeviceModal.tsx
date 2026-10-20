@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 
 import { Modal } from "@/Components/Modal";
-import { useToast } from "@/hooks/useToast";
+import { useDialogError } from "@/hooks/useDialogError";
 import { updateDevice } from "@/lib/devices";
 import {
     Device,
@@ -21,7 +21,7 @@ interface EditDeviceModalProps {
 }
 
 const EditDeviceModal = ({ isOpen, onClose, device }: EditDeviceModalProps) => {
-    const { toast } = useToast();
+    const [error, setError] = useDialogError(isOpen);
     const [isLoading, setIsLoading] = useState(false);
     const [rooms, setRooms] = useState<Room[]>([]);
 
@@ -35,18 +35,11 @@ const EditDeviceModal = ({ isOpen, onClose, device }: EditDeviceModalProps) => {
         if (status === 200) {
             onClose();
         } else if (status === 409) {
-            toast({
-                title: "Error",
-                description:
-                    "Device with this name or ESP ID already exists in database",
-                variant: "destructive",
-            });
+            setError(
+                "Device with this name or ESP ID already exists in database"
+            );
         } else {
-            toast({
-                title: "Error",
-                description: "Something went wrong",
-                variant: "destructive",
-            });
+            setError("Something went wrong");
         }
         setIsLoading(false);
     };
@@ -59,7 +52,12 @@ const EditDeviceModal = ({ isOpen, onClose, device }: EditDeviceModalProps) => {
     }, [isOpen]);
 
     return (
-        <Modal isOpen={isOpen} onClose={onClose} title="Edit device">
+        <Modal
+            error={error}
+            isOpen={isOpen}
+            onClose={onClose}
+            title="Edit device"
+        >
             <DeviceForm
                 isLoading={isLoading}
                 handleSubmit={handleSubmit}

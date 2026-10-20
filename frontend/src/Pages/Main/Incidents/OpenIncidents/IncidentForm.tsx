@@ -7,6 +7,7 @@ import { z } from "zod";
 import AttemptResultInput from "@/Components/AttemptResultInput";
 import PenaltySelect from "@/Components/PenaltySelect";
 import PersonAutocomplete from "@/Components/PersonAutocomplete";
+import InlineError from "@/Components/shared/InlineError";
 import { Button } from "@/Components/ui/button";
 import { Checkbox } from "@/Components/ui/checkbox";
 import {
@@ -52,6 +53,7 @@ const IncidentForm = ({
     const [action, setAction] = useState<IncidentAction | null>(null);
     const [isNoteworthy, setIsNoteworthy] = useState<boolean>(false);
     const [doNotRequireCards, setDoNotRequireCards] = useState<boolean>(false);
+    const [error, setError] = useState("");
 
     const form = useForm<z.infer<typeof createAttemptSchema>>({
         resolver: zodResolver(createAttemptSchema),
@@ -75,11 +77,9 @@ const IncidentForm = ({
     });
 
     const onSubmit = (values: z.infer<typeof createAttemptSchema>) => {
+        setError("");
         if (values.judgeId && values.competitorId === values.judgeId) {
-            return toast({
-                title: "Judge cannot be the same as competitor",
-                variant: "destructive",
-            });
+            return setError("The judge can't be the competitor.");
         }
 
         const data: Incident = {
@@ -231,6 +231,7 @@ const IncidentForm = ({
                         <span className="text-faint">(bugs only)</span>
                     </span>
                 </Label>
+                <InlineError className="text-[13px]">{error}</InlineError>
                 <div className="mt-1 flex flex-col gap-2.5 sm:flex-row">
                     <Button
                         type="submit"
