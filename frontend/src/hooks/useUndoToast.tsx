@@ -2,7 +2,7 @@ import { ToastAction } from "@/Components/ui/toast";
 
 import { useToast } from "./useToast";
 
-const UNDO_WINDOW_MS = 8000;
+export const UNDO_WINDOW_MS = 8000;
 
 interface UndoToast {
     title: string;

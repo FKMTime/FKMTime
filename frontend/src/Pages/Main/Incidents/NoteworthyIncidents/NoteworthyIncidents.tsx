@@ -6,8 +6,7 @@ import EmptyState from "@/Components/shared/EmptyState";
 import RowActions from "@/Components/shared/RowActions";
 import SearchInput from "@/Components/shared/SearchInput";
 import { Button } from "@/Components/ui/button";
-import { useConfirm } from "@/hooks/useConfirm";
-import { useToast } from "@/hooks/useToast";
+import { useDeferredDelete } from "@/hooks/useDeferredDelete";
 import {
     deleteNoteworthyIncident,
     getNoteworthyIncidents,
@@ -20,8 +19,6 @@ import EditNoteworthyIncidentModal from "./Components/EditNoteworthyIncidentModa
 
 const NoteworthyIncidents = () => {
     const navigate = useNavigate();
-    const confirm = useConfirm();
-    const { toast } = useToast();
     const { refreshCounts } = useIncidentsContext();
     const [search, setSearch] = useState("");
     const [incidents, setIncidents] = useState<NoteworthyIncident[]>([]);
@@ -42,30 +39,15 @@ const NoteworthyIncidents = () => {
         refreshCounts();
     };
 
-    const handleDelete = (incident: NoteworthyIncident) => {
-        confirm({
-            title: "Delete this noteworthy incident?",
-            description:
-                "This won't delete the attempt (if any) associated with this incident.",
-            confirmLabel: "Delete",
-            onConfirm: async () => {
-                const status = await deleteNoteworthyIncident(incident.id);
-                if (status === 204) {
-                    toast({
-                        title: "Successfully deleted incident.",
-                        variant: "success",
-                    });
-                    refresh();
-                } else {
-                    toast({
-                        title: "Error",
-                        description: "Something went wrong",
-                        variant: "destructive",
-                    });
-                }
-            },
-        }).catch(() => undefined);
-    };
+    const { deleteLater, isPending } = useDeferredDelete({
+        remove: deleteNoteworthyIncident,
+        onDeleted: refresh,
+    });
+
+    const handleDelete = (incident: NoteworthyIncident) =>
+        deleteLater(incident.id, `"${incident.title}" deleted`);
+
+    const visibleIncidents = incidents.filter((item) => !isPending(item.id));
 
     return (
         <div className="flex flex-col gap-4">
@@ -81,11 +63,11 @@ const NoteworthyIncidents = () => {
                 </Button>
             </div>
 
-            {incidents.length === 0 ? (
+            {visibleIncidents.length === 0 ? (
                 <EmptyState>No noteworthy incidents.</EmptyState>
             ) : (
                 <ul className="flex flex-col gap-3">
-                    {incidents.map((incident) => (
+                    {visibleIncidents.map((incident) => (
                         <li
                             key={incident.id}
                             className="flex items-start gap-3 rounded-mobile-card border bg-card py-3.5 pl-4 pr-2 md:rounded-2xl md:py-4 md:pl-5"

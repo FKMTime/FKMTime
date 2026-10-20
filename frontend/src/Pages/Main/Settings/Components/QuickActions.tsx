@@ -9,9 +9,10 @@ import {
     TableHeader,
     TableRow,
 } from "@/Components/ui/table";
+import { useDeferredDelete } from "@/hooks/useDeferredDelete";
 import { useIsMobile } from "@/hooks/useMobile";
 import { QuickAction } from "@/lib/interfaces";
-import { getQuickActions } from "@/lib/quickActions";
+import { deleteQuickAction, getQuickActions } from "@/lib/quickActions";
 
 import CreateQuickActionModal from "./CreateQuickActionModal";
 import QuickActionRow from "./QuickActionRow";
@@ -35,6 +36,18 @@ const QuickActions = () => {
     useEffect(() => {
         fetchData();
     }, []);
+
+    const { deleteLater, isPending } = useDeferredDelete({
+        remove: deleteQuickAction,
+        onDeleted: fetchData,
+    });
+    const visibleQuickActions = quickActions.filter((q) => !isPending(q.id));
+    const rowProps = (quickAction: QuickAction) => ({
+        quickAction,
+        fetchData,
+        onDelete: () =>
+            deleteLater(quickAction.id, `"${quickAction.name}" deleted`),
+    });
 
     return (
         <section
@@ -60,17 +73,16 @@ const QuickActions = () => {
                     <span className="max-md:sr-only">Add quick action</span>
                 </Button>
             </div>
-            {quickActions.length === 0 ? (
+            {visibleQuickActions.length === 0 ? (
                 <p className="px-4 py-9 text-center text-sm text-muted-foreground">
                     No quick actions yet
                 </p>
             ) : isMobile ? (
                 <ul>
-                    {quickActions.map((quickAction) => (
+                    {visibleQuickActions.map((quickAction) => (
                         <QuickActionRow
                             key={quickAction.id}
-                            quickAction={quickAction}
-                            fetchData={fetchData}
+                            {...rowProps(quickAction)}
                             variant="list"
                         />
                     ))}
@@ -90,11 +102,10 @@ const QuickActions = () => {
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        {quickActions.map((quickAction) => (
+                        {visibleQuickActions.map((quickAction) => (
                             <QuickActionRow
                                 key={quickAction.id}
-                                quickAction={quickAction}
-                                fetchData={fetchData}
+                                {...rowProps(quickAction)}
                             />
                         ))}
                     </TableBody>

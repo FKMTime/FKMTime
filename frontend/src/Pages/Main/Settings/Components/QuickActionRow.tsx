@@ -3,10 +3,9 @@ import { useState } from "react";
 
 import RowActions from "@/Components/shared/RowActions";
 import { TableCell, TableRow } from "@/Components/ui/table";
-import { useConfirm } from "@/hooks/useConfirm";
 import { useToast } from "@/hooks/useToast";
 import { QuickAction } from "@/lib/interfaces";
-import { deleteQuickAction, updateQuickAction } from "@/lib/quickActions";
+import { updateQuickAction } from "@/lib/quickActions";
 import { cn } from "@/lib/utils";
 
 import EditQuickActionModal from "./EditQuickActionModal";
@@ -14,6 +13,7 @@ import EditQuickActionModal from "./EditQuickActionModal";
 interface QuickActionRowProps {
     quickAction: QuickAction;
     fetchData: () => void;
+    onDelete: () => void;
     /** Desktop table row, or a mobile list item */
     variant?: "table" | "list";
 }
@@ -21,39 +21,12 @@ interface QuickActionRowProps {
 const QuickActionRow = ({
     quickAction,
     fetchData,
+    onDelete,
     variant = "table",
 }: QuickActionRowProps) => {
-    const confirm = useConfirm();
     const { toast } = useToast();
     const [isOpenEditQuickActionModal, setIsOpenEditQuickActionModal] =
         useState(false);
-
-    const handleDelete = async () => {
-        confirm({
-            title: "Delete quick action",
-            description:
-                "Are you sure you want to delete this quick action? This action cannot be undone",
-        })
-            .then(async () => {
-                const status = await deleteQuickAction(quickAction.id);
-                if (status === 204) {
-                    toast({
-                        title: "Successfully deleted quick action.",
-                        variant: "success",
-                    });
-                    fetchData();
-                } else {
-                    toast({
-                        title: "Error",
-                        description: "Something went wrong",
-                        variant: "destructive",
-                    });
-                }
-            })
-            .catch(() => {
-                // Declined: closing the dialog is feedback enough
-            });
-    };
 
     const handleCloseEditModal = () => {
         setIsOpenEditQuickActionModal(false);
@@ -126,7 +99,7 @@ const QuickActionRow = ({
                     label: "Delete quick action",
                     icon: Trash2,
                     destructive: true,
-                    onSelect: handleDelete,
+                    onSelect: onDelete,
                 },
             ]}
         />

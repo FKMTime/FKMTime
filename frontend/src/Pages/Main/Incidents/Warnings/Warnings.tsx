@@ -5,8 +5,7 @@ import EmptyState from "@/Components/shared/EmptyState";
 import RowActions from "@/Components/shared/RowActions";
 import SearchInput from "@/Components/shared/SearchInput";
 import { Button } from "@/Components/ui/button";
-import { useConfirm } from "@/hooks/useConfirm";
-import { useToast } from "@/hooks/useToast";
+import { useDeferredDelete } from "@/hooks/useDeferredDelete";
 import { Warning } from "@/lib/interfaces";
 import { deleteWarning, getAllWarnings } from "@/lib/warnings";
 
@@ -14,8 +13,6 @@ import { useIncidentsContext } from "../incidentsContext";
 import AddWarningModal from "./Components/AddWarningModal";
 
 const Warnings = () => {
-    const confirm = useConfirm();
-    const { toast } = useToast();
     const { refreshCounts } = useIncidentsContext();
     const [search, setSearch] = useState("");
     const [warnings, setWarnings] = useState<Warning[]>([]);
@@ -34,25 +31,15 @@ const Warnings = () => {
         refreshCounts();
     };
 
-    const handleDelete = (warning: Warning) => {
-        confirm({
-            title: `Delete the warning for ${warning.person.name}?`,
-            confirmLabel: "Delete",
-            onConfirm: async () => {
-                const status = await deleteWarning(warning.id);
-                if (status === 204) {
-                    toast({ title: "Warning deleted", variant: "success" });
-                    refresh();
-                } else {
-                    toast({
-                        title: "Error",
-                        description: "Something went wrong",
-                        variant: "destructive",
-                    });
-                }
-            },
-        }).catch(() => undefined);
-    };
+    const { deleteLater, isPending } = useDeferredDelete({
+        remove: deleteWarning,
+        onDeleted: refresh,
+    });
+
+    const handleDelete = (warning: Warning) =>
+        deleteLater(warning.id, `Warning for ${warning.person.name} deleted`);
+
+    const visibleWarnings = warnings.filter((item) => !isPending(item.id));
 
     return (
         <div className="flex flex-col gap-4">
@@ -68,11 +55,11 @@ const Warnings = () => {
                 </Button>
             </div>
 
-            {warnings.length === 0 ? (
+            {visibleWarnings.length === 0 ? (
                 <EmptyState>No warnings issued.</EmptyState>
             ) : (
                 <ul className="flex flex-col divide-y overflow-hidden rounded-mobile-card border bg-card md:rounded-2xl">
-                    {warnings.map((warning) => (
+                    {visibleWarnings.map((warning) => (
                         <li
                             key={warning.id}
                             className="flex items-center gap-3 py-3 pl-4 pr-2 md:pl-5"
