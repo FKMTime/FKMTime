@@ -3,6 +3,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import ModeToggle from "@/Components/ModeToggle";
+import ConnectionStatus from "@/Components/shared/ConnectionStatus";
 import UserAvatar from "@/Components/UserAvatar";
 import { getUserInfo } from "@/lib/auth";
 import { UserInfo } from "@/lib/interfaces";
@@ -46,6 +47,7 @@ const MobileHeader = ({
                         </div>
                     )}
                 </div>
+                <ConnectionStatus />
                 <ModeToggle variant="ghost" className="size-11 rounded-chip" />
                 <button
                     onClick={() => setIsUserSheetOpen(true)}

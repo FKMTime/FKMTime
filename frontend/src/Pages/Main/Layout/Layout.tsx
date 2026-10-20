@@ -162,23 +162,22 @@ const Layout = () => {
     }, [navigate, userInfo, isConnected, fetchUnresolvedIncidentsCount]);
 
     useEffect(() => {
+        // Each (re)connect bumps the counter, so pages refetch what they missed
+        const handleConnect = () => setConnected((count) => count + 1);
+        socket.on("connect", handleConnect);
         isUserLoggedIn().then((isLoggedIn) => {
             if (isLoggedIn) {
                 socket.auth = { token: getToken() };
                 socket.connect();
-
-                socket.on("connect", () => {
-                    setConnected(isConnected + 1);
-                });
-                socket.on("disconnect", () => {
-                    //setConnected(false);
-                });
             } else {
                 navigate("/auth/login");
                 window.location.reload();
             }
         });
-    }, [navigate, isConnected, setConnected]);
+        return () => {
+            socket.off("connect", handleConnect);
+        };
+    }, [navigate, setConnected]);
 
     useEffect(() => {
         fetchCompetition();

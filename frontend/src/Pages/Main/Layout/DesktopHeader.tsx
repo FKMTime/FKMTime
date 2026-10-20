@@ -1,6 +1,7 @@
 import { Plus } from "lucide-react";
 
 import ModeToggle from "@/Components/ModeToggle";
+import ConnectionStatus from "@/Components/shared/ConnectionStatus";
 import { Button } from "@/Components/ui/button";
 import { Crumb } from "@/lib/navigation";
 
@@ -26,6 +27,7 @@ const DesktopHeader = ({
             <Breadcrumbs crumbs={crumbs} />
         </div>
         <div className="flex min-w-0 items-center gap-2">
+            <ConnectionStatus />
             <CompetitorSearch />
             {canEnterAttempts && (
                 <Button
