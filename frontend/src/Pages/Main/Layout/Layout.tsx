@@ -23,7 +23,7 @@ import {
     MORE_PATH,
 } from "@/lib/navigation";
 import { isDelegate } from "@/lib/permissions";
-import { isMobile, isNotificationsSupported } from "@/lib/utils";
+import { cn, isMobile, isNotificationsSupported } from "@/lib/utils";
 import { socket, SocketContext } from "@/socket";
 
 import DesktopHeader from "./DesktopHeader";
@@ -264,7 +264,14 @@ const AppShell = ({ competition, unresolvedIncidentsCount }: AppShellProps) => {
                     backTo={backTo}
                     canAccessSettings={canAccessSettings}
                 />
-                <main className="flex flex-1 flex-col gap-5 px-4 pb-[calc(max(env(safe-area-inset-bottom),0.375rem)+5.5rem)] pt-4 md:px-8 md:pb-10 md:pt-6">
+                <main
+                    className={cn(
+                        "flex flex-1 flex-col gap-5 px-4 pb-[calc(max(env(safe-area-inset-bottom),0.375rem)+5.5rem)] pt-4 md:px-8 md:pb-10 md:pt-6",
+                        // Room for the Enter attempt button above the tab bar
+                        showFab &&
+                            "pb-[calc(max(env(safe-area-inset-bottom),0.375rem)+9rem)]"
+                    )}
+                >
                     <Suspense fallback={<LoadingPage />}>
                         <Outlet />
                     </Suspense>
