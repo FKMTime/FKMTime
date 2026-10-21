@@ -44,6 +44,8 @@ interface LiveSolvingBoardProps {
     /** Staff only: count offline stations beside solving and inspection */
     showOfflineCount?: boolean;
     allRoomsLabel?: string;
+    /** Off for displays nobody interacts with, such as the TV view */
+    showRoomFilter?: boolean;
 }
 
 /**
@@ -57,6 +59,7 @@ const LiveSolvingBoard = ({
     incidentDevices,
     showOfflineCount = false,
     allRoomsLabel = "All",
+    showRoomFilter = true,
 }: LiveSolvingBoardProps) => {
     const [phases, setPhases] = useState<Map<number, StationPhase>>(new Map());
     const [roomFilter, setRoomFilter] = useState(ALL_ROOMS);
@@ -101,7 +104,7 @@ const LiveSolvingBoard = ({
     return (
         <div className="flex flex-col gap-[18px] md:gap-6">
             <div className="flex flex-col gap-3.5 md:flex-row md:flex-wrap md:items-center md:gap-4">
-                {groups.length > 1 && (
+                {showRoomFilter && groups.length > 1 && (
                     <SegmentedControl
                         label="Room"
                         value={roomFilter}

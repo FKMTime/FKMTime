@@ -1,4 +1,4 @@
-import { LogIn } from "lucide-react";
+import { LogIn, Tv } from "lucide-react";
 import { Link, matchPath, useLocation } from "react-router-dom";
 
 import { getEventIconClass } from "@/lib/events";
@@ -109,7 +109,14 @@ const PublicSidebar = ({
                     );
                 })}
             </nav>
-            <div className="border-t p-3">
+            <div className="flex flex-col gap-0.5 border-t p-3">
+                <Link
+                    to="/public/tv"
+                    className="flex h-[38px] items-center gap-2.5 rounded-lg px-2.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+                >
+                    <Tv className="size-5 shrink-0" />
+                    TV view
+                </Link>
                 <Link
                     to="/auth/login"
                     className="flex h-[38px] items-center gap-2.5 rounded-lg px-2.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"

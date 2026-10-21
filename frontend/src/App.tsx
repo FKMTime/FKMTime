@@ -99,6 +99,7 @@ const ManualIncidents = lazy(
     () => import("./Pages/Main/Incidents/ManualIncidents/ManualIncidents")
 );
 const PublicLayout = lazy(() => import("./Pages/Public/PublicLayout"));
+const PublicTv = lazy(() => import("./Pages/Public/Tv/PublicTv"));
 const PublicResults = lazy(() => import("./Pages/Public/PublicResults"));
 const PublicLiveSolving = lazy(
     () => import("./Pages/Public/PublicLiveSolving")
@@ -259,6 +260,11 @@ const App = () => {
                     element: <UnofficialEvents />,
                 },
             ],
+        },
+        {
+            path: "/public/tv",
+            element: <PublicTv />,
+            errorElement: <ErrorPage />,
         },
         {
             path: "/public",
