@@ -3,6 +3,7 @@ import { Competition } from "wcif-helpers";
 
 import {
     canAddGroup,
+    describeGroupChanges,
     getGroupOptions,
     getRoomGroupsError,
     getRoundsToOpen,
@@ -90,5 +91,28 @@ describe("current groups", () => {
                 (eventId) => eventId === "fto"
             )
         ).toEqual(["333-r1"]);
+    });
+
+    it("describes what saving would change, room by room", () => {
+        const room = (id: string, name: string, currentGroupIds: string[]) => ({
+            id,
+            name,
+            currentGroupIds,
+        });
+        const saved = [
+            room("r1", "Main Hall", ["333-r1-g2"]),
+            room("r2", "Side Room", ["pyram-r1-g1"]),
+            room("r3", "Annex", []),
+        ];
+        const draft = [
+            room("r1", "Main Hall", ["333-r1-g3"]),
+            room("r2", "Side Room", ["pyram-r1-g1"]),
+            room("r3", "Annex", ["333-r1-g1"]),
+        ];
+        expect(describeGroupChanges(saved, draft)).toEqual([
+            "Main Hall: 3x3 R1 G2 → 3x3 R1 G3",
+            "Annex: no group → 3x3 R1 G1",
+        ]);
+        expect(describeGroupChanges(saved, saved)).toEqual([]);
     });
 });

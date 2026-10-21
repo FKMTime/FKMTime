@@ -24,6 +24,7 @@ import {
 } from "@/lib/competition";
 import {
     canAddGroup,
+    describeGroupChanges,
     getGroupLabel,
     getGroupOptions,
     getRoomGroupsError,
@@ -67,6 +68,7 @@ const CurrentGroups = () => {
     );
 
     const isDirty = JSON.stringify(rooms) !== JSON.stringify(savedRooms);
+    const changes = describeGroupChanges(savedRooms, rooms);
     const roundsToOpen = getRoundsToOpen(rooms, isUnofficialEvent);
 
     const setRoomGroups = (roomId: string, groupIds: string[]) => {
@@ -275,6 +277,21 @@ const CurrentGroups = () => {
                     </section>
                 );
             })}
+            {changes.length > 0 && (
+                <section
+                    aria-label="Changes to save"
+                    className="flex flex-col gap-1.5 rounded-xl border border-warning/40 bg-warning-soft px-4 py-3"
+                >
+                    <p className="text-[13px] font-semibold text-warning">
+                        Saving will change:
+                    </p>
+                    <ul className="flex flex-col gap-0.5 text-sm">
+                        {changes.map((change) => (
+                            <li key={change}>{change}</li>
+                        ))}
+                    </ul>
+                </section>
+            )}
             <div className="flex flex-col gap-2.5 md:flex-row md:items-center">
                 <Button
                     onClick={handleSave}

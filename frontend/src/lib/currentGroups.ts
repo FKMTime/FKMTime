@@ -51,3 +51,29 @@ export const getRoundsToOpen = (
             .filter((roundId) => !isUnofficial(getEventId(roundId)))
     ),
 ];
+
+/** "3x3 R1 G2" */
+const shortGroupLabel = (groupId: string) =>
+    activityCodeToName(groupId, true, true, true).replace(/, /g, " ");
+
+/**
+ * One line per room whose groups would change on save, e.g.
+ * "Main Hall: 3x3 R1 G2 → 3x3 R1 G3".
+ */
+export const describeGroupChanges = (
+    saved: { id: string; name: string; currentGroupIds: string[] }[],
+    draft: { id: string; name: string; currentGroupIds: string[] }[]
+): string[] =>
+    draft.flatMap((room) => {
+        const before =
+            saved.find((r) => r.id === room.id)?.currentGroupIds ?? [];
+        const after = room.currentGroupIds;
+        if (
+            before.length === after.length &&
+            before.every((id) => after.includes(id))
+        )
+            return [];
+        const label = (ids: string[]) =>
+            ids.length ? ids.map(shortGroupLabel).join(", ") : "no group";
+        return [`${room.name}: ${label(before)} → ${label(after)}`];
+    });
