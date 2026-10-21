@@ -18,6 +18,7 @@ import {
     getPersons,
     undoCheckIn,
 } from "@/lib/persons";
+import { playScanSound } from "@/lib/scanSound";
 import { cn, getInitials } from "@/lib/utils";
 
 import CheckInPanel from "./Components/CheckInPanel";
@@ -83,14 +84,18 @@ const CheckIn = () => {
         setScannedCard("");
         if (response.status === 200) {
             if (response.data.checkedInAt) {
+                playScanSound("error");
                 setScanError(`${response.data.name} is already checked in.`);
                 return;
             }
             setQuery("");
+            playScanSound("success");
             select(response.data);
         } else if (response.status === 404) {
+            playScanSound("error");
             setScanError("This card is not assigned to anyone.");
         } else {
+            playScanSound("error");
             setScanError("Something went wrong. Scan the card again.");
         }
     };
@@ -110,6 +115,7 @@ const CheckIn = () => {
         const response = await checkIn(selected.id, cardId);
         setIsLoading(false);
         if (response.status === 200) {
+            playScanSound("success");
             const person = selected;
             const assigned = !person.cardId;
             showUndo({
@@ -133,6 +139,7 @@ const CheckIn = () => {
             fetchCounts();
             select(null);
         } else if (response.status === 409) {
+            playScanSound("error");
             setCheckInError("This card is already assigned to someone else.");
         } else {
             setCheckInError("Something went wrong. Try again.");

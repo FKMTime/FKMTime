@@ -2,10 +2,12 @@ import { KeyRound } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import LoadingPage from "@/Components/LoadingPage";
+import SwitchRow from "@/Components/shared/SwitchRow";
 import { Button } from "@/Components/ui/button";
 import { useToast } from "@/hooks/useToast";
 import { Settings as SettingsInterface } from "@/lib/interfaces";
 import { isDelegate } from "@/lib/permissions";
+import { useScanSoundSetting } from "@/lib/scanSound";
 import { getSettings, updateSettings } from "@/lib/settings";
 
 import ChangePasswordModal from "./Components/ChangePasswordModal";
@@ -13,6 +15,7 @@ import QuickActions from "./Components/QuickActions";
 import SettingsForm from "./Components/SettingsForm";
 
 const Settings = () => {
+    const [isScanSoundOn, setIsScanSoundOn] = useScanSoundSetting();
     const { toast } = useToast();
     const [settings, setSettings] = useState<SettingsInterface | null>(null);
     const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -50,6 +53,20 @@ const Settings = () => {
 
     return (
         <>
+            <section
+                aria-labelledby="this-device"
+                className="flex max-w-[560px] flex-col gap-2 rounded-mobile-card border bg-card p-4 md:rounded-2xl md:p-[22px]"
+            >
+                <h2 id="this-device" className="text-base font-bold">
+                    This device
+                </h2>
+                <SwitchRow
+                    label="Scan sounds"
+                    description="A short beep for each card scan at check-in and card assignment: high for success, low for a problem. Saved on this device only."
+                    checked={isScanSoundOn}
+                    onCheckedChange={setIsScanSoundOn}
+                />
+            </section>
             {!settings.wcaUserId && (
                 <section
                     aria-labelledby="account"

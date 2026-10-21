@@ -1,9 +1,10 @@
-import { ArrowLeft, LogOut } from "lucide-react";
+import { ArrowLeft, LogOut, Volume2, VolumeX } from "lucide-react";
 import { ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
 
 import ModeToggle from "@/Components/ModeToggle";
 import { Button } from "@/Components/ui/button";
+import { useScanSoundSetting } from "@/lib/scanSound";
 import { logoutScramblingDevice } from "@/lib/scramblingDevicesAuth";
 
 import { useScramblingDeviceRoom } from "../scramblingDeviceContext";
@@ -19,6 +20,7 @@ interface DevicePageProps {
 const DevicePage = ({ title, isHome, children }: DevicePageProps) => {
     const navigate = useNavigate();
     const room = useScramblingDeviceRoom();
+    const [isScanSoundOn, setIsScanSoundOn] = useScanSoundSetting();
 
     const handleLogout = () => {
         logoutScramblingDevice();
@@ -47,6 +49,17 @@ const DevicePage = ({ title, isHome, children }: DevicePageProps) => {
                         {room?.name ? ` · ${room.name}` : ""}
                     </span>
                 </div>
+                <Button
+                    variant="outline"
+                    size="icon"
+                    className="shrink-0 border-border md:size-10"
+                    aria-pressed={isScanSoundOn}
+                    aria-label="Scan sounds"
+                    title={isScanSoundOn ? "Scan sounds on" : "Scan sounds off"}
+                    onClick={() => setIsScanSoundOn(!isScanSoundOn)}
+                >
+                    {isScanSoundOn ? <Volume2 /> : <VolumeX />}
+                </Button>
                 <ModeToggle className="shrink-0 md:size-10" />
                 {isHome && (
                     <Button

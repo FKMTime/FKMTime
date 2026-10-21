@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Button } from "@/Components/ui/button";
 import { useToast } from "@/hooks/useToast";
 import { DecryptedScramble, Person, ScrambleData } from "@/lib/interfaces";
+import { playScanSound } from "@/lib/scanSound";
 import {
     createScrambledAttempt,
     getPersonByCardId,
@@ -38,27 +39,33 @@ const Scrambling = ({ groupId, scrambles }: ScramblingProps) => {
     const scanScrambler = async (cardId: string) => {
         const data = await getPersonByCardId(cardId);
         if (!data.id) {
+            playScanSound("error");
             setScanError("Scrambler not found");
             return;
         }
+        playScanSound("success");
         setScrambler(data);
     };
 
     const scanCompetitor = async (cardId: string) => {
         if (!scrambler) return;
         if (cardId === scrambler.cardId) {
+            playScanSound("error");
             setScanError("Scrambler and competitor cannot be the same");
             return;
         }
         const { data, status } = await getScrambleData(cardId, roundId);
         if (!data || status === 404) {
+            playScanSound("error");
             setScanError("Competitor not found");
             return;
         }
         if (data.scrambleData.num === -1) {
+            playScanSound("error");
             setScanError("No attempts left");
             return;
         }
+        playScanSound("success");
         setCompetitor({ person: data.person, scrambleData: data.scrambleData });
     };
 

@@ -9,6 +9,7 @@ import { Input } from "@/Components/ui/input";
 import { useToast } from "@/hooks/useToast";
 import { Person } from "@/lib/interfaces";
 import { assignCard, getAllPersons } from "@/lib/persons";
+import { playScanSound } from "@/lib/scanSound";
 import { cn, getInitials, regionNameByIso2 } from "@/lib/utils";
 import PersonsTabs from "@/Pages/Main/Persons/Components/PersonsTabs";
 
@@ -45,6 +46,7 @@ const AssignCards = () => {
         if (!selected || !cardId.trim()) return;
         const status = await assignCard(selected.id, cardId.trim());
         if (status === 200) {
+            playScanSound("success");
             toast({
                 title: `Card assigned to ${selected.name}`,
                 variant: "success",
@@ -56,9 +58,11 @@ const AssignCards = () => {
             );
             select(remaining[Math.min(index, remaining.length - 1)] ?? null);
         } else if (status === 409) {
+            playScanSound("error");
             setError("This card is already assigned to someone else.");
             cardInputRef.current?.select();
         } else {
+            playScanSound("error");
             setError("Something went wrong. Try again.");
         }
     };
