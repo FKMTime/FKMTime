@@ -48,6 +48,10 @@ const DeviceCodeForm = ({
                     setCode(value);
                     onChange();
                 }}
+                // Sends the code as soon as the 6th digit is typed
+                onComplete={(value: string) => {
+                    if (!isLoading) onSubmit(value);
+                }}
                 disabled={isLoading}
                 containerClassName="w-full"
             >

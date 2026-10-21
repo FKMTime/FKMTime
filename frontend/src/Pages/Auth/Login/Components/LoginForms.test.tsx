@@ -1,4 +1,5 @@
 import { fireEvent, render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 
 import DeviceCodeForm from "./DeviceCodeForm";
@@ -58,18 +59,17 @@ describe("DeviceCodeForm", () => {
         onBack: vi.fn(),
     };
 
-    it("enables Continue only once all six digits are entered", () => {
+    it("sends the code as soon as the 6th digit is typed", async () => {
         const onSubmit = vi.fn();
         render(<DeviceCodeForm {...deviceProps} onSubmit={onSubmit} />);
         const input = screen.getByLabelText("Device code");
         const button = screen.getByRole("button", { name: "Continue" });
 
-        fireEvent.change(input, { target: { value: "12345" } });
+        await userEvent.type(input, "12345");
         expect(button.hasAttribute("disabled")).toBe(true);
+        expect(onSubmit).not.toHaveBeenCalled();
 
-        fireEvent.change(input, { target: { value: "123456" } });
-        expect(button.hasAttribute("disabled")).toBe(false);
-        fireEvent.click(button);
+        await userEvent.type(input, "6");
         expect(onSubmit).toHaveBeenCalledWith("123456");
     });
 });

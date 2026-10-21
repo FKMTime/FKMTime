@@ -14,6 +14,8 @@ globalThis.ResizeObserver ??= ResizeObserverStub;
 Element.prototype.hasPointerCapture ??= () => false;
 Element.prototype.releasePointerCapture ??= () => {};
 Element.prototype.scrollIntoView ??= () => {};
+// input-otp looks up the element under its caret
+document.elementFromPoint ??= () => null;
 
 // Evaluates (max-width: Npx) against innerWidth so tests can emulate mobile
 window.matchMedia ??= (query: string) => {
