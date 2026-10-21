@@ -85,7 +85,10 @@ const Attendance = () => {
         };
     }, [selectedGroup, fetchAttendance, isConnected]);
 
-    const run = useMarkAttendance(attendance, fetchAttendance);
+    const { markOne: run, markMany } = useMarkAttendance(
+        attendance,
+        fetchAttendance
+    );
 
     const handleMarkAbsent = async (id: string) => {
         const activity = attendance.find((a) => a.id === id);
@@ -167,6 +170,13 @@ const Attendance = () => {
                                     )
                                 }
                                 onMarkAbsent={handleMarkAbsent}
+                                onMarkAllPresent={(ids) =>
+                                    markMany(
+                                        StaffActivityStatus.PRESENT,
+                                        ids,
+                                        "present"
+                                    )
+                                }
                                 onMarkLate={(id) =>
                                     run(StaffActivityStatus.LATE, id, "late")
                                 }

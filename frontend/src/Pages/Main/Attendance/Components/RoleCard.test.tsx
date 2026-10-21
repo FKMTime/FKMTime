@@ -37,6 +37,7 @@ const handlers = () => ({
     onChanged: vi.fn(),
     onMarkPresent: vi.fn(),
     onMarkAbsent: vi.fn(),
+    onMarkAllPresent: vi.fn(),
     onMarkLate: vi.fn(),
     onMarkPresentButReplaced: vi.fn(),
 });
@@ -64,6 +65,43 @@ describe("RoleCard", () => {
         expect(card.textContent).toContain("2/3");
         expect(within(card).getByText("Late")).toBeTruthy();
         expect(within(card).queryByText("Person d")).toBeNull();
+    });
+
+    it("marks everyone still absent present in one go", async () => {
+        const props = handlers();
+        render(
+            <RoleCard
+                role="JUDGE"
+                title="Judges"
+                icon={Gavel}
+                attendance={[
+                    ...judges,
+                    activity("e", "JUDGE", StaffActivityStatus.ABSENT),
+                ]}
+                groupId="333-r1-g1"
+                {...props}
+            />
+        );
+        await userEvent.click(
+            screen.getByRole("button", { name: "Mark all present" })
+        );
+        expect(props.onMarkAllPresent).toHaveBeenCalledWith(["a", "e"]);
+    });
+
+    it("offers Mark all present only when two or more are absent", () => {
+        render(
+            <RoleCard
+                role="JUDGE"
+                title="Judges"
+                icon={Gavel}
+                attendance={judges}
+                groupId="333-r1-g1"
+                {...handlers()}
+            />
+        );
+        expect(
+            screen.queryByRole("button", { name: "Mark all present" })
+        ).toBeNull();
     });
 
     it("shows stations only once runners are assigned", () => {

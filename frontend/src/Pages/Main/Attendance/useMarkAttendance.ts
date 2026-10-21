@@ -33,7 +33,7 @@ export const useMarkAttendance = (
             variant: "destructive",
         });
 
-    return async (
+    const markOne = async (
         next: StaffActivityStatus,
         id: string,
         label: string,
@@ -52,4 +52,30 @@ export const useMarkAttendance = (
             },
         });
     };
+
+    /** Mark several at once; one Undo puts each previous status back */
+    const markMany = async (
+        next: StaffActivityStatus,
+        ids: string[],
+        label: string
+    ) => {
+        const activities = attendance.filter((a) => ids.includes(a.id));
+        const statuses = await Promise.all(
+            activities.map((a) => MARK_AS[next](a.id))
+        );
+        refresh();
+        if (statuses.some((status) => status !== 201)) return showError();
+        showUndo({
+            title: `${activities.length} marked ${label}`,
+            onUndo: async () => {
+                const undone = await Promise.all(
+                    activities.map((a) => MARK_AS[a.status](a.id))
+                );
+                refresh();
+                if (undone.some((status) => status !== 201)) showError();
+            },
+        });
+    };
+
+    return { markOne, markMany };
 };

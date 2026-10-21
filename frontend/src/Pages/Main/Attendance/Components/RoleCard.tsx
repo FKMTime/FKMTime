@@ -1,6 +1,7 @@
 import {
     ArrowLeftRight,
     Check,
+    CheckCheck,
     ClockAlert,
     LucideIcon,
     MessageSquareText,
@@ -16,6 +17,7 @@ import { StatusBadge } from "@/Components/shared/StatusBadge";
 import { Button } from "@/Components/ui/button";
 import { StaffActivity, StaffActivityStatus } from "@/lib/interfaces";
 import { isDelegate } from "@/lib/permissions";
+import { cn } from "@/lib/utils";
 import IssueWarningModal from "@/Pages/Main/Persons/Components/IssueWarningModal";
 
 import ChangeCompetingGroupModal from "./AbsentCompetitors/ChangeCompetingGroupModal";
@@ -25,6 +27,7 @@ import DetailsModal from "./DetailsModal";
 export interface AttendanceHandlers {
     onMarkPresent: (id: string) => void;
     onMarkAbsent: (id: string) => void;
+    onMarkAllPresent: (ids: string[]) => void;
     onMarkLate: (id: string) => void;
     onMarkPresentButReplaced: (id: string) => void;
 }
@@ -64,6 +67,7 @@ const RoleCard = ({
     onChanged,
     onMarkPresent,
     onMarkAbsent,
+    onMarkAllPresent,
     onMarkLate,
     onMarkPresentButReplaced,
 }: RoleCardProps) => {
@@ -171,7 +175,28 @@ const RoleCard = ({
             ) : (
                 <div className="flex flex-col py-1">
                     {absent.length > 0 && (
-                        <PeopleSection title="Absent" tone="destructive">
+                        <PeopleSection
+                            title="Absent"
+                            tone="destructive"
+                            action={
+                                !isCompetitor &&
+                                absent.length > 1 && (
+                                    <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        className="h-7 px-2 text-xs md:h-7"
+                                        onClick={() =>
+                                            onMarkAllPresent(
+                                                absent.map((a) => a.id)
+                                            )
+                                        }
+                                    >
+                                        <CheckCheck />
+                                        Mark all present
+                                    </Button>
+                                )
+                            }
+                        >
                             {absent.map((activity) => (
                                 <li
                                     key={activity.id}
@@ -264,20 +289,28 @@ const RoleCard = ({
 interface PeopleSectionProps {
     title: string;
     tone: "destructive" | "success";
+    action?: ReactNode;
     children: ReactNode;
 }
 
-const PeopleSection = ({ title, tone, children }: PeopleSectionProps) => (
+const PeopleSection = ({
+    title,
+    tone,
+    action,
+    children,
+}: PeopleSectionProps) => (
     <div className="flex flex-col">
-        <p
-            className={
-                tone === "destructive"
-                    ? "px-4 pb-0.5 pt-2.5 text-2xs font-bold uppercase text-destructive"
-                    : "px-4 pb-0.5 pt-2.5 text-2xs font-bold uppercase text-success"
-            }
-        >
-            {title}
-        </p>
+        <div className="flex items-center justify-between gap-2 pr-2">
+            <p
+                className={cn(
+                    "px-4 pb-0.5 pt-2.5 text-2xs font-bold uppercase",
+                    tone === "destructive" ? "text-destructive" : "text-success"
+                )}
+            >
+                {title}
+            </p>
+            {action}
+        </div>
         <ul>{children}</ul>
     </div>
 );
