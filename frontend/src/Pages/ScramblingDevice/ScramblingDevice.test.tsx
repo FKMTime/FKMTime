@@ -3,6 +3,7 @@ import { MemoryRouter } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { Room, ScrambleSet } from "@/lib/interfaces";
+import { scrambleCountLabel } from "@/lib/scrambleSets";
 import {
     createScrambledAttempt,
     getPersonByCardId,
@@ -12,10 +13,7 @@ import {
 import ScramblesList from "./AllScrambles/Components/ScramblesList";
 import ScrambleSetsList from "./Home/Components/ScrambleSetsList";
 import Scrambling from "./ScrambleSet/Components/Scrambling";
-import {
-    currentGroupIdForRound,
-    scrambleCountLabel,
-} from "./scramblingDeviceContext";
+import { currentGroupIdForRound } from "./scramblingDeviceContext";
 
 vi.mock("@/lib/scrambling", () => ({
     getPersonByCardId: vi.fn(),

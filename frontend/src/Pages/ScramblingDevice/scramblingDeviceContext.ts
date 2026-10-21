@@ -1,7 +1,7 @@
 import { useOutletContext } from "react-router-dom";
 
 import { activityCodeToName } from "@/lib/activities";
-import { Room, ScrambleSet } from "@/lib/interfaces";
+import { Room } from "@/lib/interfaces";
 
 export interface ScramblingDeviceOutletContext {
     /** The device's room, refetched on every navigation; null while loading */
@@ -27,15 +27,3 @@ export const roundName = (roundId: string) =>
 /** "3x3x3 Cube · Round 1 · Set A" */
 export const scrambleSetName = (set: { roundId: string; set: string }) =>
     `${roundName(set.roundId)} · Set ${set.set}`;
-
-const plural = (count: number, word: string) =>
-    `${count} ${word}${count === 1 ? "" : "s"}`;
-
-/** "5 scrambles · 2 extras" */
-export const scrambleCountLabel = (set: ScrambleSet) =>
-    [
-        plural(set.scramblesCount, "scramble"),
-        set.extraScramblesCount > 0 && plural(set.extraScramblesCount, "extra"),
-    ]
-        .filter(Boolean)
-        .join(" · ");

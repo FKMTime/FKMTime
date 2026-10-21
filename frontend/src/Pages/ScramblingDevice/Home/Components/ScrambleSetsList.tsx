@@ -9,8 +9,7 @@ import {
     DropdownMenuTrigger,
 } from "@/Components/ui/dropdown-menu";
 import { ScrambleSet } from "@/lib/interfaces";
-
-import { scrambleCountLabel } from "../../scramblingDeviceContext";
+import { scrambleCountLabel } from "@/lib/scrambleSets";
 
 interface ScrambleSetsListProps {
     /** null while loading */

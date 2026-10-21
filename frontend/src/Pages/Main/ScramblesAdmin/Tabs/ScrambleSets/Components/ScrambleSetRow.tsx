@@ -4,6 +4,7 @@ import RowActions from "@/Components/shared/RowActions";
 import { useConfirm } from "@/hooks/useConfirm";
 import { useToast } from "@/hooks/useToast";
 import { ScrambleSet } from "@/lib/interfaces";
+import { scrambleCountLabel } from "@/lib/scrambleSets";
 import { deleteScrambleSet } from "@/lib/scrambleSets";
 
 interface ScrambleSetRowProps {
@@ -47,8 +48,7 @@ const ScrambleSetRow = ({ scrambleSet, fetchData }: ScrambleSetRowProps) => {
                     {name}
                 </span>
                 <span className="text-[13px] text-muted-foreground md:text-sm">
-                    {scrambleSet.scramblesCount} scrambles ·{" "}
-                    {scrambleSet.extraScramblesCount} extra
+                    {scrambleCountLabel(scrambleSet)}
                 </span>
             </div>
             <RowActions
