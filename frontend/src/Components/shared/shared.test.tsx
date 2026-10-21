@@ -9,6 +9,7 @@ import EventChips from "./EventChips";
 import InlineError from "./InlineError";
 import PageTabs from "./PageTabs";
 import ProgressBar from "./ProgressBar";
+import RefreshingRegion from "./RefreshingRegion";
 import RowActions from "./RowActions";
 import SegmentedControl from "./SegmentedControl";
 import StationCard from "./StationCard";
@@ -238,5 +239,23 @@ describe("small components", () => {
             screen.getByText("Select an incident to review it.")
         ).toBeTruthy();
         expect(screen.getByRole("button", { name: "Add" })).toBeTruthy();
+    });
+});
+
+describe("RefreshingRegion", () => {
+    it("keeps the content and marks it busy while the next data loads", () => {
+        const { rerender } = render(
+            <RefreshingRegion isRefreshing>
+                <p>Round 1 results</p>
+            </RefreshingRegion>
+        );
+        const region = screen.getByText("Round 1 results").parentElement!;
+        expect(region.getAttribute("aria-busy")).toBe("true");
+        rerender(
+            <RefreshingRegion isRefreshing={false}>
+                <p>Round 1 results</p>
+            </RefreshingRegion>
+        );
+        expect(region.getAttribute("aria-busy")).toBe("false");
     });
 });

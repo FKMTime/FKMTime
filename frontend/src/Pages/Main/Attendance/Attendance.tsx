@@ -5,6 +5,7 @@ import { useNavigate, useParams } from "react-router-dom";
 
 import LoadingPage from "@/Components/LoadingPage";
 import EmptyState from "@/Components/shared/EmptyState";
+import RefreshingRegion from "@/Components/shared/RefreshingRegion";
 import { useConfirm } from "@/hooks/useConfirm";
 import { activityCodeToName } from "@/lib/activities";
 import { competitionAtom } from "@/lib/atoms";
@@ -46,9 +47,12 @@ const Attendance = () => {
         [navigate]
     );
 
+    // The group the shown attendance belongs to; differs while the next loads
+    const [attendanceGroupId, setAttendanceGroupId] = useState<string>();
     const fetchAttendance = useCallback(async () => {
         if (!selectedGroup) return;
         setAttendance(await getAttendanceByGroupId(selectedGroup));
+        setAttendanceGroupId(selectedGroup);
     }, [selectedGroup]);
 
     useEffect(() => {
@@ -143,7 +147,10 @@ const Attendance = () => {
                                 " · no staff assigned"}
                         </p>
                     </div>
-                    <div className="grid items-start gap-4 md:grid-cols-2 2xl:grid-cols-4">
+                    <RefreshingRegion
+                        isRefreshing={attendanceGroupId !== selectedGroup}
+                        className="grid grid-cols-1 items-start gap-4 md:grid-cols-2 2xl:grid-cols-4"
+                    >
                         {ROLES.map(({ role, title, icon }) => (
                             <RoleCard
                                 key={role}
@@ -189,7 +196,7 @@ const Attendance = () => {
                                 }
                             />
                         ))}
-                    </div>
+                    </RefreshingRegion>
                 </>
             ) : (
                 <EmptyState>Pick a group to take attendance.</EmptyState>

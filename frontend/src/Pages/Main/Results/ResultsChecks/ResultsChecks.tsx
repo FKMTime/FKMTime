@@ -6,6 +6,7 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import AttemptWarnings from "@/Components/AttemptWarnings";
 import LoadingPage from "@/Components/LoadingPage";
 import EmptyState from "@/Components/shared/EmptyState";
+import RefreshingRegion from "@/Components/shared/RefreshingRegion";
 import RoundStrip from "@/Components/shared/RoundStrip";
 import RowActions from "@/Components/shared/RowActions";
 import SegmentedControl from "@/Components/shared/SegmentedControl";
@@ -59,9 +60,13 @@ const ResultsChecks = () => {
         getAllRooms().then(setRooms);
     }, []);
 
+    // The round the shown checks belong to; differs while the next loads
+    const [checksRoundId, setChecksRoundId] = useState<string>();
     useEffect(() => {
-        setChecks(null);
-        getResultsChecks(roundId || undefined).then(setChecks);
+        getResultsChecks(roundId || undefined).then((data) => {
+            setChecks(data);
+            setChecksRoundId(roundId || "");
+        });
     }, [roundId]);
 
     const rounds = useMemo(
@@ -169,91 +174,101 @@ const ResultsChecks = () => {
                 />
             )}
 
-            {visible.length === 0 ? (
-                <EmptyState>No suspicious results found.</EmptyState>
-            ) : (
-                <>
-                    <div className="hidden overflow-x-auto rounded-2xl border bg-card md:block">
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead className="pl-5">
-                                        Competitor
-                                    </TableHead>
-                                    <TableHead>Round</TableHead>
-                                    <TableHead>Attempt</TableHead>
-                                    <TableHead>Time</TableHead>
-                                    <TableHead>Comment</TableHead>
-                                    <TableHead>Judge</TableHead>
-                                    <TableHead>Warnings</TableHead>
-                                    <TableHead>
-                                        <span className="sr-only">Actions</span>
-                                    </TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {visible.map((check) => (
-                                    <TableRow key={check.id}>
-                                        <TableCell className="pl-5 font-semibold">
-                                            {check.result.person.name}
-                                        </TableCell>
-                                        <TableCell>
-                                            {roundLink(check)}
-                                        </TableCell>
-                                        <TableCell>
-                                            {attemptLabel(check)}
-                                        </TableCell>
-                                        <TableCell className="font-semibold">
-                                            {attemptWithPenaltyToString(check)}
-                                        </TableCell>
-                                        <TableCell className="max-w-48 truncate text-muted-foreground">
-                                            {check.comment || "—"}
-                                        </TableCell>
-                                        <TableCell>
-                                            {check.judge?.name}
-                                        </TableCell>
-                                        <TableCell>
-                                            <div className="flex flex-wrap gap-1.5">
-                                                <AttemptWarnings
-                                                    attempt={check}
-                                                />
-                                            </div>
-                                        </TableCell>
-                                        <TableCell className="pr-3">
-                                            {actions(check)}
-                                        </TableCell>
+            <RefreshingRegion isRefreshing={checksRoundId !== (roundId || "")}>
+                {visible.length === 0 ? (
+                    <EmptyState>No suspicious results found.</EmptyState>
+                ) : (
+                    <>
+                        <div className="hidden overflow-x-auto rounded-2xl border bg-card md:block">
+                            <Table>
+                                <TableHeader>
+                                    <TableRow>
+                                        <TableHead className="pl-5">
+                                            Competitor
+                                        </TableHead>
+                                        <TableHead>Round</TableHead>
+                                        <TableHead>Attempt</TableHead>
+                                        <TableHead>Time</TableHead>
+                                        <TableHead>Comment</TableHead>
+                                        <TableHead>Judge</TableHead>
+                                        <TableHead>Warnings</TableHead>
+                                        <TableHead>
+                                            <span className="sr-only">
+                                                Actions
+                                            </span>
+                                        </TableHead>
                                     </TableRow>
-                                ))}
-                            </TableBody>
-                        </Table>
-                    </div>
-                    <ul className="flex flex-col divide-y overflow-hidden rounded-mobile-card border bg-card md:hidden">
-                        {visible.map((check) => (
-                            <li
-                                key={check.id}
-                                className="flex items-start gap-2 py-3 pl-4 pr-1.5"
-                            >
-                                <div className="flex min-w-0 flex-1 flex-col gap-1 text-sm">
-                                    <p className="flex flex-wrap items-baseline gap-x-2">
-                                        <span className="font-semibold">
-                                            {check.result.person.name}
-                                        </span>
-                                        {roundLink(check)}
-                                        <span>· A{attemptLabel(check)}</span>
-                                        <b className="ml-auto">
-                                            {attemptWithPenaltyToString(check)}
-                                        </b>
-                                    </p>
-                                    <div className="flex flex-wrap gap-1.5">
-                                        <AttemptWarnings attempt={check} />
+                                </TableHeader>
+                                <TableBody>
+                                    {visible.map((check) => (
+                                        <TableRow key={check.id}>
+                                            <TableCell className="pl-5 font-semibold">
+                                                {check.result.person.name}
+                                            </TableCell>
+                                            <TableCell>
+                                                {roundLink(check)}
+                                            </TableCell>
+                                            <TableCell>
+                                                {attemptLabel(check)}
+                                            </TableCell>
+                                            <TableCell className="font-semibold">
+                                                {attemptWithPenaltyToString(
+                                                    check
+                                                )}
+                                            </TableCell>
+                                            <TableCell className="max-w-48 truncate text-muted-foreground">
+                                                {check.comment || "—"}
+                                            </TableCell>
+                                            <TableCell>
+                                                {check.judge?.name}
+                                            </TableCell>
+                                            <TableCell>
+                                                <div className="flex flex-wrap gap-1.5">
+                                                    <AttemptWarnings
+                                                        attempt={check}
+                                                    />
+                                                </div>
+                                            </TableCell>
+                                            <TableCell className="pr-3">
+                                                {actions(check)}
+                                            </TableCell>
+                                        </TableRow>
+                                    ))}
+                                </TableBody>
+                            </Table>
+                        </div>
+                        <ul className="flex flex-col divide-y overflow-hidden rounded-mobile-card border bg-card md:hidden">
+                            {visible.map((check) => (
+                                <li
+                                    key={check.id}
+                                    className="flex items-start gap-2 py-3 pl-4 pr-1.5"
+                                >
+                                    <div className="flex min-w-0 flex-1 flex-col gap-1 text-sm">
+                                        <p className="flex flex-wrap items-baseline gap-x-2">
+                                            <span className="font-semibold">
+                                                {check.result.person.name}
+                                            </span>
+                                            {roundLink(check)}
+                                            <span>
+                                                · A{attemptLabel(check)}
+                                            </span>
+                                            <b className="ml-auto">
+                                                {attemptWithPenaltyToString(
+                                                    check
+                                                )}
+                                            </b>
+                                        </p>
+                                        <div className="flex flex-wrap gap-1.5">
+                                            <AttemptWarnings attempt={check} />
+                                        </div>
                                     </div>
-                                </div>
-                                {actions(check)}
-                            </li>
-                        ))}
-                    </ul>
-                </>
-            )}
+                                    {actions(check)}
+                                </li>
+                            ))}
+                        </ul>
+                    </>
+                )}
+            </RefreshingRegion>
         </div>
     );
 };

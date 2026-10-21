@@ -5,6 +5,7 @@ import { getLimitByRoundId, getNumberOfAttemptsForRound } from "wcif-helpers";
 
 import LoadingPage from "@/Components/LoadingPage";
 import EmptyState from "@/Components/shared/EmptyState";
+import RefreshingRegion from "@/Components/shared/RefreshingRegion";
 import RoundStrip from "@/Components/shared/RoundStrip";
 import SearchInput from "@/Components/shared/SearchInput";
 import SegmentedControl from "@/Components/shared/SegmentedControl";
@@ -38,6 +39,8 @@ const Results = () => {
     ];
     const [rooms, setRooms] = useState<Room[] | null>(null);
     const [results, setResults] = useState<Result[]>([]);
+    // The round the shown results belong to; differs while the next loads
+    const [resultsRoundId, setResultsRoundId] = useState<string>();
     const [search, setSearch] = useState("");
     const [order, setOrder] = useState<Order>("ranking");
     const [isRestartOpen, setIsRestartOpen] = useState(false);
@@ -79,6 +82,7 @@ const Results = () => {
     const fetchResults = useCallback(async () => {
         if (!roundId) return;
         setResults(await getResultsByRoundId(roundId, search || undefined));
+        setResultsRoundId(roundId);
     }, [roundId, search]);
 
     useEffect(() => {
@@ -161,19 +165,23 @@ const Results = () => {
                                 {results.length === 1 ? "result" : "results"}
                             </span>
                         </div>
-                        {rows.length === 0 ? (
-                            <p className="p-8 text-center text-sm text-muted-foreground">
-                                {search
-                                    ? "No results match."
-                                    : "No results yet."}
-                            </p>
-                        ) : (
-                            <ResultsTable
-                                rows={rows}
-                                maxAttempts={maxAttempts}
-                                onDeleted={fetchResults}
-                            />
-                        )}
+                        <RefreshingRegion
+                            isRefreshing={resultsRoundId !== roundId}
+                        >
+                            {rows.length === 0 ? (
+                                <p className="p-8 text-center text-sm text-muted-foreground">
+                                    {search
+                                        ? "No results match."
+                                        : "No results yet."}
+                                </p>
+                            ) : (
+                                <ResultsTable
+                                    rows={rows}
+                                    maxAttempts={maxAttempts}
+                                    onDeleted={fetchResults}
+                                />
+                            )}
+                        </RefreshingRegion>
                     </section>
 
                     <CreateAttemptModal

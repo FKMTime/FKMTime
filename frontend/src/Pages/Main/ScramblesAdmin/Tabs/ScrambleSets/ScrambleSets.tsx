@@ -5,6 +5,7 @@ import { useSearchParams } from "react-router-dom";
 
 import LoadingPage from "@/Components/LoadingPage";
 import EmptyState from "@/Components/shared/EmptyState";
+import RefreshingRegion from "@/Components/shared/RefreshingRegion";
 import { Button } from "@/Components/ui/button";
 import {
     DropdownMenu,
@@ -60,12 +61,15 @@ const ScrambleSets = () => {
         )
     );
 
+    // The round the shown sets belong to; differs while the next loads
+    const [setsRoundId, setSetsRoundId] = useState<string>();
     const fetchData = useCallback(async () => {
         const [sets, setCountsData] = await Promise.all([
             roundId ? getScrambleSets(roundId) : [],
             getScrambleSetCounts(),
         ]);
         setScrambleSets(sets);
+        setSetsRoundId(roundId);
         setCounts(
             new Map(setCountsData.map((entry) => [entry.roundId, entry.count]))
         );
@@ -199,21 +203,23 @@ const ScrambleSets = () => {
                             </DropdownMenuContent>
                         </DropdownMenu>
                     </div>
-                    {scrambleSets.length === 0 ? (
-                        <EmptyState className="min-h-[160px] text-destructive">
-                            No scrambles for this round yet
-                        </EmptyState>
-                    ) : (
-                        <ul className="overflow-hidden rounded-mobile-card border bg-card md:rounded-2xl">
-                            {scrambleSets.map((scrambleSet) => (
-                                <ScrambleSetRow
-                                    key={scrambleSet.id}
-                                    scrambleSet={scrambleSet}
-                                    fetchData={fetchData}
-                                />
-                            ))}
-                        </ul>
-                    )}
+                    <RefreshingRegion isRefreshing={setsRoundId !== roundId}>
+                        {scrambleSets.length === 0 ? (
+                            <EmptyState className="min-h-[160px] text-destructive">
+                                No scrambles for this round yet
+                            </EmptyState>
+                        ) : (
+                            <ul className="overflow-hidden rounded-mobile-card border bg-card md:rounded-2xl">
+                                {scrambleSets.map((scrambleSet) => (
+                                    <ScrambleSetRow
+                                        key={scrambleSet.id}
+                                        scrambleSet={scrambleSet}
+                                        fetchData={fetchData}
+                                    />
+                                ))}
+                            </ul>
+                        )}
+                    </RefreshingRegion>
                 </div>
             )}
             <AddScrambleSetModal

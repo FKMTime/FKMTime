@@ -13,16 +13,13 @@ import ScramblingDeviceRow from "./Components/ScramblingDeviceRow";
 
 const ScramblingDevices = () => {
     const isMobile = useIsMobile();
-    const [devices, setDevices] = useState<ScramblingDevice[]>([]);
-    const [isLoading, setIsLoading] = useState<boolean>(true);
+    // null until the first load; refreshes keep the list on screen
+    const [devices, setDevices] = useState<ScramblingDevice[] | null>(null);
     const [isOpenCreateDeviceModal, setIsOpenCreateDeviceModal] =
         useState<boolean>(false);
 
     const fetchData = async () => {
-        setIsLoading(true);
-        const data = await getScramblingDevices();
-        setDevices(data);
-        setIsLoading(false);
+        setDevices(await getScramblingDevices());
     };
 
     const handleCloseCreateDeviceModal = () => {
@@ -34,7 +31,7 @@ const ScramblingDevices = () => {
         fetchData();
     }, []);
 
-    if (isLoading) return <LoadingPage />;
+    if (!devices) return <LoadingPage />;
 
     return (
         <>
