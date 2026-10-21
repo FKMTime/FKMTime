@@ -1,5 +1,6 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Save } from "lucide-react";
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 
@@ -28,7 +29,8 @@ import { prettySendingResultsFrequency } from "@/lib/utils";
 
 interface CompetitionFormProps {
     competition: Competition;
-    handleSubmit: (competition: Competition) => void;
+    /** Resolves to whether the save worked */
+    handleSubmit: (competition: Competition) => Promise<boolean>;
 }
 
 const CompetitionForm = ({
@@ -47,14 +49,21 @@ const CompetitionForm = ({
         },
     });
 
-    const onSubmit = (values: z.infer<typeof competitionSchema>) => {
-        handleSubmit({
+    const [isSaving, setIsSaving] = useState(false);
+    const { isDirty } = form.formState;
+
+    const onSubmit = async (values: z.infer<typeof competitionSchema>) => {
+        setIsSaving(true);
+        const isSaved = await handleSubmit({
             ...competition,
             ...values,
             sendingResultsFrequency:
                 values.sendingResultsFrequency as SendingResultsFrequency,
             cubingContestsToken: values.cubingContestsToken || undefined,
         });
+        setIsSaving(false);
+        // The saved values become the new baseline, which hides the bar
+        if (isSaved) form.reset(values);
     };
 
     const useDevices = form.watch("useFkmTimeDevices");
@@ -198,10 +207,29 @@ const CompetitionForm = ({
                         )}
                     />
                 </div>
-                <Button type="submit" className="w-full md:w-fit">
-                    <Save />
-                    Save
-                </Button>
+                {isDirty && (
+                    <div
+                        role="region"
+                        aria-label="Unsaved changes"
+                        className="sticky bottom-[calc(max(env(safe-area-inset-bottom),0.375rem)+5rem)] z-10 flex items-center gap-2 rounded-xl border bg-card px-4 py-2.5 shadow-[0_8px_24px_rgba(0,0,0,.12)] md:bottom-4"
+                    >
+                        <span className="flex-1 text-[13px] font-semibold text-warning">
+                            Unsaved changes
+                        </span>
+                        <Button
+                            type="button"
+                            variant="ghost"
+                            onClick={() => form.reset()}
+                            disabled={isSaving}
+                        >
+                            Discard
+                        </Button>
+                        <Button type="submit" disabled={isSaving}>
+                            <Save />
+                            Save
+                        </Button>
+                    </div>
+                )}
             </form>
         </Form>
     );

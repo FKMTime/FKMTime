@@ -75,19 +75,20 @@ const Competition = () => {
     };
 
     const handleSubmit = async (data: CompetitionInterface) => {
-        if (!competition) return;
+        if (!competition) return false;
         setCompetition(data);
         const status = await updateCompetitionSettings(competition.id, data);
         if (status === 200) {
             setCompetitionAtom(data);
             toast({ title: "Settings saved", variant: "success" });
-        } else {
-            toast({
-                title: "Error",
-                description: "Something went wrong",
-                variant: "destructive",
-            });
+            return true;
         }
+        toast({
+            title: "Error",
+            description: "Settings could not be saved. Try again.",
+            variant: "destructive",
+        });
+        return false;
     };
 
     if (isLoading || !competition) return <LoadingPage />;
