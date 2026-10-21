@@ -1,5 +1,5 @@
 import { useAtomValue } from "jotai";
-import { UserPlus } from "lucide-react";
+import { SlidersHorizontal, UserPlus } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import LoadingPage from "@/Components/LoadingPage";
@@ -16,6 +16,13 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/Components/ui/select";
+import {
+    Sheet,
+    SheetContent,
+    SheetHeader,
+    SheetTitle,
+} from "@/Components/ui/sheet";
+import { useIsMobile } from "@/hooks/useMobile";
 import { competitionAtom } from "@/lib/atoms";
 import { Person } from "@/lib/interfaces";
 import { isOrganizerOrDelegate } from "@/lib/permissions";
@@ -42,6 +49,8 @@ interface Filters {
 
 const Persons = () => {
     const competition = useAtomValue(competitionAtom);
+    const isMobile = useIsMobile();
+    const [isFiltersOpen, setIsFiltersOpen] = useState(false);
     const [filters, setFilters] = useState<Filters>({
         search: "",
         registrantId: "",
@@ -98,6 +107,49 @@ const Persons = () => {
     };
     const totalPages = calculateTotalPages(count, pageSize);
 
+    const activeFilterCount = [
+        filters.registrantId,
+        filters.cardId,
+        filters.onlyNewcomers,
+        filters.onlyNotCheckedIn,
+    ].filter(Boolean).length;
+
+    const filterControls = (
+        <>
+            <Input
+                value={filters.registrantId}
+                onChange={(e) => setFilter("registrantId", e.target.value)}
+                inputMode="numeric"
+                placeholder="ID"
+                aria-label="Registrant ID"
+                className="md:w-20"
+            />
+            {competition.useFkmTimeDevices && (
+                <Input
+                    value={filters.cardId}
+                    onChange={(e) => setFilter("cardId", e.target.value)}
+                    placeholder="Card"
+                    aria-label="Card ID"
+                    className="md:w-28"
+                />
+            )}
+            <ToggleChip
+                pressed={filters.onlyNewcomers}
+                onPressedChange={(value) => setFilter("onlyNewcomers", value)}
+            >
+                Newcomers
+            </ToggleChip>
+            <ToggleChip
+                pressed={filters.onlyNotCheckedIn}
+                onPressedChange={(value) =>
+                    setFilter("onlyNotCheckedIn", value)
+                }
+            >
+                Not checked in
+            </ToggleChip>
+        </>
+    );
+
     return (
         <div className="flex flex-col gap-4">
             <PersonsTabs value="all" refreshKey={refreshKey} />
@@ -109,45 +161,25 @@ const Persons = () => {
                         onChange={(e) => setFilter("search", e.target.value)}
                         placeholder="Search by name or WCA ID"
                         label="Search persons"
-                        className="md:max-w-xs"
+                        className="max-md:flex-1 md:max-w-xs"
                     />
-                    <Input
-                        value={filters.registrantId}
-                        onChange={(e) =>
-                            setFilter("registrantId", e.target.value)
-                        }
-                        inputMode="numeric"
-                        placeholder="ID"
-                        aria-label="Registrant ID"
-                        className="w-20"
-                    />
-                    {competition.useFkmTimeDevices && (
-                        <Input
-                            value={filters.cardId}
-                            onChange={(e) =>
-                                setFilter("cardId", e.target.value)
-                            }
-                            placeholder="Card"
-                            aria-label="Card ID"
-                            className="w-28"
-                        />
+                    {isMobile ? (
+                        <Button
+                            variant="outline"
+                            onClick={() => setIsFiltersOpen(true)}
+                            className="shrink-0"
+                        >
+                            <SlidersHorizontal />
+                            Filters
+                            {activeFilterCount > 0 && (
+                                <span className="rounded-full bg-primary-soft px-1.5 text-xs text-primary">
+                                    {activeFilterCount}
+                                </span>
+                            )}
+                        </Button>
+                    ) : (
+                        filterControls
                     )}
-                    <ToggleChip
-                        pressed={filters.onlyNewcomers}
-                        onPressedChange={(value) =>
-                            setFilter("onlyNewcomers", value)
-                        }
-                    >
-                        Newcomers
-                    </ToggleChip>
-                    <ToggleChip
-                        pressed={filters.onlyNotCheckedIn}
-                        onPressedChange={(value) =>
-                            setFilter("onlyNotCheckedIn", value)
-                        }
-                    >
-                        Not checked in
-                    </ToggleChip>
                 </div>
                 <div className="flex items-center gap-3">
                     <span className="text-sm text-muted-foreground">
@@ -246,6 +278,41 @@ const Persons = () => {
                     person={dialog.person}
                 />
             )}
+            <Sheet open={isFiltersOpen} onOpenChange={setIsFiltersOpen}>
+                <SheetContent side="bottom" className="gap-4">
+                    <SheetHeader>
+                        <SheetTitle>Filters</SheetTitle>
+                    </SheetHeader>
+                    <div className="flex flex-wrap gap-2 [&>input]:min-w-0 [&>input]:flex-1">
+                        {filterControls}
+                    </div>
+                    <div className="flex gap-2">
+                        <Button
+                            variant="ghost"
+                            className="flex-1"
+                            disabled={activeFilterCount === 0}
+                            onClick={() => {
+                                setFilters((current) => ({
+                                    ...current,
+                                    registrantId: "",
+                                    cardId: "",
+                                    onlyNewcomers: false,
+                                    onlyNotCheckedIn: false,
+                                }));
+                                setPage(1);
+                            }}
+                        >
+                            Clear
+                        </Button>
+                        <Button
+                            className="flex-1"
+                            onClick={() => setIsFiltersOpen(false)}
+                        >
+                            Done
+                        </Button>
+                    </div>
+                </SheetContent>
+            </Sheet>
         </div>
     );
 };
