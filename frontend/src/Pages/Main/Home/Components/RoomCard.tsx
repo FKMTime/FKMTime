@@ -12,10 +12,9 @@ import { attemptWithPenaltyToString } from "@/lib/resultFormatters";
 import { GroupProgress } from "@/lib/rooms";
 import {
     findGroupSchedule,
-    formatScheduleOffset,
     formatTimeRange,
     getNextActivityInRoom,
-    getScheduleOffsetMinutes,
+    getScheduleStatus,
     getStartLabel,
 } from "@/lib/schedule";
 import { cn } from "@/lib/utils";
@@ -75,8 +74,13 @@ const RoomCard = ({
         room.name,
         schedule?.roundEndTime ?? now.toISOString()
     );
-    const offset = schedule
-        ? getScheduleOffsetMinutes(schedule.startTime, schedule.endTime, now)
+    const scheduleStatus = schedule
+        ? getScheduleStatus(
+              schedule.startTime,
+              schedule.endTime,
+              schedule.timezone,
+              now
+          )
         : null;
 
     return (
@@ -94,9 +98,9 @@ const RoomCard = ({
                     <h2 className="text-sm font-medium text-muted-foreground">
                         {room.name}
                     </h2>
-                    {offset !== null && (
-                        <StatusBadge tone={offset > 0 ? "warning" : "success"}>
-                            {formatScheduleOffset(offset)}
+                    {scheduleStatus && (
+                        <StatusBadge tone={scheduleStatus.tone}>
+                            {scheduleStatus.label}
                         </StatusBadge>
                     )}
                 </header>
@@ -131,12 +135,12 @@ const RoomCard = ({
                                 </p>
                             )}
                         </div>
-                        {isRoomNamedElsewhere && offset !== null && (
+                        {isRoomNamedElsewhere && scheduleStatus && (
                             <StatusBadge
-                                tone={offset > 0 ? "warning" : "success"}
+                                tone={scheduleStatus.tone}
                                 className="mt-1 md:hidden"
                             >
-                                {formatScheduleOffset(offset)}
+                                {scheduleStatus.label}
                             </StatusBadge>
                         )}
                     </div>

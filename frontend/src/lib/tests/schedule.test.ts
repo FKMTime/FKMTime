@@ -3,10 +3,10 @@ import { Competition } from "wcif-helpers";
 
 import {
     findGroupSchedule,
-    formatScheduleOffset,
     formatTimeRange,
     getNextActivityInRoom,
     getScheduleOffsetMinutes,
+    getScheduleStatus,
     getStartLabel,
 } from "@/lib/schedule";
 
@@ -143,10 +143,35 @@ describe("getScheduleOffsetMinutes", () => {
         ).toBe(-5);
     });
 
-    it("formats the offset", () => {
-        expect(formatScheduleOffset(4)).toBe("+4 min");
-        expect(formatScheduleOffset(-5)).toBe("−5 min");
-        expect(formatScheduleOffset(0)).toBe("On time");
+    it("describes the group's status in words", () => {
+        const at = (time: string) => new Date(`2026-04-18T${time}Z`);
+        expect(getScheduleStatus(start, end, "UTC", at("09:30:00"))).toEqual({
+            label: "On time",
+            tone: "success",
+        });
+        expect(getScheduleStatus(start, end, "UTC", at("10:12:00"))).toEqual({
+            label: "12 min behind",
+            tone: "warning",
+        });
+        expect(getScheduleStatus(start, end, "UTC", at("11:05:00"))).toEqual({
+            label: "1 h 5 min behind",
+            tone: "warning",
+        });
+        expect(getScheduleStatus(start, end, "UTC", at("08:50:00"))).toEqual({
+            label: "10 min ahead",
+            tone: "neutral",
+        });
+    });
+
+    it("shows the start time while the group is more than 15 min away", () => {
+        expect(
+            getScheduleStatus(
+                start,
+                end,
+                "Europe/Warsaw",
+                new Date("2026-04-18T00:12:00Z")
+            )
+        ).toEqual({ label: "Starts 11:00", tone: "neutral" });
     });
 });
 

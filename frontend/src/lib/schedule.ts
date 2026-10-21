@@ -117,11 +117,51 @@ export const formatTimeRange = (
     return `${format.format(new Date(startTime))}–${format.format(new Date(endTime))}`;
 };
 
-/** "+4 min", "−3 min" or "On time" */
-export const formatScheduleOffset = (minutes: number) => {
-    if (minutes > 0) return `+${minutes} min`;
-    if (minutes < 0) return `−${Math.abs(minutes)} min`;
-    return "On time";
+/** "45 min", "1 h", "1 h 5 min" */
+const formatMinutes = (minutes: number) => {
+    if (minutes < 60) return `${minutes} min`;
+    const hours = Math.floor(minutes / 60);
+    const rest = minutes % 60;
+    return rest ? `${hours} h ${rest} min` : `${hours} h`;
+};
+
+/** Before this, a group that hasn't started shows its start time instead */
+const UPCOMING_THRESHOLD_MINUTES = 15;
+
+export interface ScheduleStatus {
+    label: string;
+    tone: "warning" | "neutral" | "success";
+}
+
+/**
+ * "12 min behind", "5 min ahead", "On time", or "Starts 09:00" while the
+ * group's scheduled start is still more than 15 minutes away.
+ */
+export const getScheduleStatus = (
+    startTime: string,
+    endTime: string,
+    timezone?: string,
+    now = new Date()
+): ScheduleStatus => {
+    const minutesToStart =
+        (new Date(startTime).getTime() - now.getTime()) / 60_000;
+    if (minutesToStart > UPCOMING_THRESHOLD_MINUTES) {
+        const start = new Intl.DateTimeFormat("en-GB", {
+            hour: "2-digit",
+            minute: "2-digit",
+            timeZone: timezone,
+        }).format(new Date(startTime));
+        return { label: `Starts ${start}`, tone: "neutral" };
+    }
+    const offset = getScheduleOffsetMinutes(startTime, endTime, now);
+    if (offset > 0)
+        return { label: `${formatMinutes(offset)} behind`, tone: "warning" };
+    if (offset < 0)
+        return {
+            label: `${formatMinutes(-offset)} ahead`,
+            tone: "neutral",
+        };
+    return { label: "On time", tone: "success" };
 };
 
 /** "Start group 3", or the next round's name when the round changes */

@@ -119,7 +119,7 @@ describe("RoomCard", () => {
         renderCard();
         expect(screen.getByText("3x3x3 Cube · Round 1")).toBeTruthy();
         expect(screen.getByText("Group 2 of 2 · 09:00–10:00")).toBeTruthy();
-        expect(screen.getByText("+4 min")).toBeTruthy();
+        expect(screen.getByText("4 min behind")).toBeTruthy();
         expect(
             screen
                 .getByRole("progressbar", {
