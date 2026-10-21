@@ -1,4 +1,4 @@
-import { IdCard, Nfc } from "lucide-react";
+import { CircleCheck, IdCard, Nfc } from "lucide-react";
 import { useState } from "react";
 
 import { Button } from "@/Components/ui/button";
@@ -11,12 +11,14 @@ import {
     getScrambleData,
 } from "@/lib/scrambling";
 
-import { groupIdToRoundId, roundName } from "../../scramblingDeviceContext";
+import { roundName } from "../../scramblingDeviceContext";
 import ScanPrompt from "./ScanPrompt";
 import ScrambleCard from "./ScrambleCard";
 
 interface ScramblingProps {
-    groupId: string;
+    roundId: string;
+    /** The round's group running in this room, if any */
+    groupId?: string;
     scrambles: DecryptedScramble[];
 }
 
@@ -26,15 +28,16 @@ interface Competitor {
 }
 
 /** Scan the scrambler, then each competitor, show their scramble and sign it */
-const Scrambling = ({ groupId, scrambles }: ScramblingProps) => {
+const Scrambling = ({ roundId, groupId, scrambles }: ScramblingProps) => {
     const { toast } = useToast();
     const [scrambler, setScrambler] = useState<Person | null>(null);
     const [competitor, setCompetitor] = useState<Competitor | null>(null);
     const [scanError, setScanError] = useState("");
     const [isSigning, setIsSigning] = useState(false);
 
-    const roundId = groupIdToRoundId(groupId);
-    const groupNumber = groupId.split("-g")[1];
+    const groupNumber = groupId?.split("-g")[1];
+    // Stays visible after signing, so the scrambler can check what was signed
+    const [lastSigned, setLastSigned] = useState("");
 
     const scanScrambler = async (cardId: string) => {
         const data = await getPersonByCardId(cardId);
@@ -70,6 +73,7 @@ const Scrambling = ({ groupId, scrambles }: ScramblingProps) => {
     };
 
     const changeScrambler = () => {
+        setLastSigned("");
         setScrambler(null);
         setCompetitor(null);
         setScanError("");
@@ -87,10 +91,10 @@ const Scrambling = ({ groupId, scrambles }: ScramblingProps) => {
         );
         setIsSigning(false);
         if (response.status === 201) {
-            toast({
-                title: "Attempt signed",
-                variant: "success",
-            });
+            const { num, isExtra } = competitor.scrambleData;
+            setLastSigned(
+                `${competitor.person.name} · ${isExtra ? "Extra" : "Scramble"} ${num}`
+            );
             setCompetitor(null);
         } else {
             toast({
@@ -147,18 +151,29 @@ const Scrambling = ({ groupId, scrambles }: ScramblingProps) => {
                     onSign={sign}
                 />
             ) : (
-                <ScanPrompt
-                    icon={Nfc}
-                    title="Scan the competitor's card"
-                    description={
-                        groupNumber
-                            ? `${roundName(roundId)} · Group ${groupNumber}`
-                            : roundName(roundId)
-                    }
-                    error={scanError}
-                    onScan={scanCompetitor}
-                    onChange={() => setScanError("")}
-                />
+                <>
+                    {lastSigned && (
+                        <p
+                            role="status"
+                            className="flex items-center gap-2 rounded-xl bg-success-soft px-4 py-2.5 text-sm font-semibold text-success"
+                        >
+                            <CircleCheck className="size-[18px] shrink-0" />
+                            Last signed: {lastSigned}
+                        </p>
+                    )}
+                    <ScanPrompt
+                        icon={Nfc}
+                        title="Scan the competitor's card"
+                        description={
+                            groupNumber
+                                ? `${roundName(roundId)} · Group ${groupNumber}`
+                                : roundName(roundId)
+                        }
+                        error={scanError}
+                        onScan={scanCompetitor}
+                        onChange={() => setScanError("")}
+                    />
+                </>
             )}
         </>
     );

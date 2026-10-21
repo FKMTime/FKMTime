@@ -123,10 +123,11 @@ describe("Scrambling", () => {
         vi.mocked(createScrambledAttempt).mockReset();
     });
 
-    const renderScrambling = () =>
+    const renderScrambling = (groupId: string | undefined = "333-r1-g2") =>
         render(
             <Scrambling
-                groupId="333-r1-g2"
+                roundId="333-r1"
+                groupId={groupId}
                 scrambles={[
                     {
                         id: "s1",
@@ -158,6 +159,56 @@ describe("Scrambling", () => {
         expect(screen.getByText("Scramble 1")).toBeTruthy();
         expect(screen.getByText("R U R' U'")).toBeTruthy();
         expect(getScrambleData).toHaveBeenCalledWith("200", "333-r1");
+    });
+
+    it("keeps the last signed attempt visible after Sign", async () => {
+        vi.mocked(getPersonByCardId).mockResolvedValue(scrambler);
+        vi.mocked(getScrambleData).mockResolvedValue({
+            status: 200,
+            data: {
+                person: competitor,
+                scrambleData: { num: 1, isExtra: false },
+            },
+        });
+        vi.mocked(createScrambledAttempt).mockResolvedValue({
+            status: 201,
+            data: {},
+        });
+        renderScrambling();
+        scan("Scan the scrambler's card", "100");
+        await screen.findByText("Sam Scrambler");
+        scan("Scan the competitor's card", "200");
+        fireEvent.click(await screen.findByRole("button", { name: "Sign" }));
+
+        expect((await screen.findByRole("status")).textContent).toBe(
+            "Last signed: Casey Competitor · Scramble 1"
+        );
+        expect(
+            screen.getByLabelText("Scan the competitor's card")
+        ).toBeTruthy();
+    });
+
+    it("scans for the set's round even when no group runs in this room", async () => {
+        vi.mocked(getPersonByCardId).mockResolvedValue(scrambler);
+        vi.mocked(getScrambleData).mockResolvedValue({
+            status: 404,
+            data: null,
+        });
+        renderScrambling(undefined);
+        scan("Scan the scrambler's card", "100");
+        await screen.findByText("Sam Scrambler");
+        scan("Scan the competitor's card", "200");
+        await waitFor(() =>
+            expect(getScrambleData).toHaveBeenCalledWith("200", "333-r1")
+        );
+    });
+
+    it("puts the focus back in the card field after a tap elsewhere", () => {
+        renderScrambling();
+        const input = screen.getByLabelText("Scan the scrambler's card");
+        input.blur();
+        fireEvent.pointerUp(document.body);
+        expect(document.activeElement).toBe(input);
     });
 
     it("rejects the scrambler's own card as the competitor", async () => {

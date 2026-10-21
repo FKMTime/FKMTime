@@ -1,5 +1,5 @@
 import { LucideIcon } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import InlineError from "@/Components/shared/InlineError";
 import { Input } from "@/Components/ui/input";
@@ -24,6 +24,24 @@ const ScanPrompt = ({
     onChange,
 }: ScanPromptProps) => {
     const [value, setValue] = useState("");
+    const inputRef = useRef<HTMLInputElement>(null);
+
+    // Scanners type into whatever has focus, so a tap anywhere that isn't
+    // another control puts the focus back in the card field
+    useEffect(() => {
+        const refocus = (event: PointerEvent) => {
+            const target = event.target as Element | null;
+            if (
+                target?.closest(
+                    "input, textarea, select, button, a, [role=dialog], [role=menu], [role=listbox]"
+                )
+            )
+                return;
+            inputRef.current?.focus({ preventScroll: true });
+        };
+        document.addEventListener("pointerup", refocus);
+        return () => document.removeEventListener("pointerup", refocus);
+    }, []);
 
     return (
         <div className="flex flex-col items-center gap-4 rounded-2xl border bg-card px-6 py-10 text-center">
@@ -35,6 +53,7 @@ const ScanPrompt = ({
                 <p className="text-muted-foreground">{description}</p>
             </div>
             <Input
+                ref={inputRef}
                 value={value}
                 onChange={(event) => {
                     setValue(event.target.value);
