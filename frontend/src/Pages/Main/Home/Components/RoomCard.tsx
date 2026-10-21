@@ -65,6 +65,12 @@ const RoomCard = ({
         : undefined;
     const roundId = groupId?.split("-g")[0];
     const groupProgress = progress.find((p) => p.groupId === groupId);
+    // Starting the next group is the main action only once this one is done
+    const isGroupDone =
+        !groupId ||
+        (!!groupProgress &&
+            groupProgress.expected > 0 &&
+            groupProgress.entered >= groupProgress.expected);
     const recent = roundId ? recentAttempts[roundId] ?? [] : [];
     const startLabel = nextGroupIds
         ? getStartLabel(room.currentGroupIds, nextGroupIds)
@@ -175,9 +181,8 @@ const RoomCard = ({
 
                 {(startLabel || canEnterAttempts || canOpenAttendance) && (
                     <div className="order-none flex flex-col gap-2.5 md:order-last md:gap-3">
-                        {startLabel && nextGroupIds && (
+                        {startLabel && nextGroupIds && isGroupDone && (
                             <Button
-                                variant="outline"
                                 size="lg"
                                 onClick={() => onStartNext(room, nextGroupIds)}
                             >
@@ -218,6 +223,14 @@ const RoomCard = ({
                                     )}
                                 </div>
                             )}
+                        {startLabel && nextGroupIds && !isGroupDone && (
+                            <Button
+                                variant="outline"
+                                onClick={() => onStartNext(room, nextGroupIds)}
+                            >
+                                {startLabel}
+                            </Button>
+                        )}
                     </div>
                 )}
             </div>

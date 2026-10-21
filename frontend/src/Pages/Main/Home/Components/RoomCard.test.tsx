@@ -158,6 +158,34 @@ describe("RoomCard", () => {
         ).toBe("/attendance/333-r1-g2");
     });
 
+    it("puts Start next group last while results are still coming in", () => {
+        renderCard();
+        const actions = screen
+            .getAllByRole("button")
+            .map((b) => b.textContent)
+            .filter((t) => /Start group|Enter attempt/.test(t ?? ""));
+        expect(actions).toEqual(["Enter attempt", "Start group 3"]);
+    });
+
+    it("makes Start next group the first action once the group is done", () => {
+        renderCard({
+            progress: [
+                {
+                    groupId: "333-r1-g2",
+                    roundId: "333-r1",
+                    competitors: 16,
+                    entered: 80,
+                    expected: 80,
+                },
+            ],
+        });
+        const actions = screen
+            .getAllByRole("button")
+            .map((b) => b.textContent)
+            .filter((t) => /Start group|Enter attempt/.test(t ?? ""));
+        expect(actions).toEqual(["Start group 3", "Enter attempt"]);
+    });
+
     it("hides actions and incidents the user cannot use", () => {
         renderCard({
             canEnterAttempts: false,
