@@ -5,6 +5,7 @@ import { Outlet, useLocation } from "react-router-dom";
 import LoadingPage from "@/Components/LoadingPage";
 import ModeToggle from "@/Components/ModeToggle";
 import { StatusDot } from "@/Components/shared/StatusBadge";
+import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import { competitionAtom } from "@/lib/atoms";
 import { getPublicCompetitionInfo, getPublicRooms } from "@/lib/competition";
 import { getEvents } from "@/lib/events";
@@ -75,6 +76,8 @@ const PublicLayout = () => {
             socket.disconnect();
         };
     }, [setConnected]);
+
+    useDocumentTitle(isResults ? "Results" : "Live solving", competition?.name);
 
     const outletContext: PublicOutletContext = { liveRoundIds };
 

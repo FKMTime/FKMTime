@@ -3,6 +3,7 @@ import { Suspense, useCallback, useContext, useEffect } from "react";
 import { matchPath, Outlet, useNavigate } from "react-router-dom";
 
 import LoadingPage from "@/Components/LoadingPage";
+import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import { useNavItems } from "@/hooks/useNavItems";
 import {
     competitionAtom,
@@ -235,6 +236,10 @@ const AppShell = ({ competition, unresolvedIncidentsCount }: AppShellProps) => {
                   competition.wcif.schedule.numberOfDays
               )
             : undefined);
+    useDocumentTitle(
+        isHome ? null : crumbs[crumbs.length - 1]?.label,
+        competition.name
+    );
     const backTo =
         pageHeader?.backTo !== undefined
             ? pageHeader.backTo
