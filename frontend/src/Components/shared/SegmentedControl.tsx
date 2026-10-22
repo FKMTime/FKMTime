@@ -1,5 +1,6 @@
 import { ReactNode } from "react";
 
+import { useScrollFade } from "@/hooks/useScrollFade";
 import { cn } from "@/lib/utils";
 
 export interface SegmentedOption<T extends string = string> {
@@ -29,44 +30,48 @@ const SegmentedControl = <T extends string>({
     label,
     fullWidth,
     className,
-}: SegmentedControlProps<T>) => (
-    <div
-        role="radiogroup"
-        aria-label={label}
-        className={cn(
-            "flex gap-0.5 overflow-x-auto rounded-chip bg-secondary p-[3px] [scrollbar-width:none]",
-            fullWidth ? "w-full" : "w-fit max-w-full",
-            className
-        )}
-    >
-        {options.map((option) => {
-            const isSelected = option.value === value;
-            return (
-                <button
-                    key={option.value}
-                    type="button"
-                    role="radio"
-                    aria-checked={isSelected}
-                    aria-label={option.ariaLabel}
-                    onClick={() => onValueChange(option.value)}
-                    className={cn(
-                        "flex h-11 shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-lg px-3 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40 md:h-8 md:text-[13px]",
-                        fullWidth && "flex-1",
-                        isSelected
-                            ? "bg-card text-foreground shadow-segment"
-                            : "text-muted-foreground hover:text-foreground"
-                    )}
-                >
-                    {option.label}
-                    {!!option.badge && (
-                        <span className="flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-destructive-soft px-1 text-[11px] font-bold text-destructive">
-                            {option.badge}
-                        </span>
-                    )}
-                </button>
-            );
-        })}
-    </div>
-);
+}: SegmentedControlProps<T>) => {
+    const scrollRef = useScrollFade<HTMLDivElement>();
+    return (
+        <div
+            ref={scrollRef}
+            role="radiogroup"
+            aria-label={label}
+            className={cn(
+                "flex gap-0.5 scroll-fade-x overflow-x-auto rounded-chip bg-secondary p-[3px] [scrollbar-width:none]",
+                fullWidth ? "w-full" : "w-fit max-w-full",
+                className
+            )}
+        >
+            {options.map((option) => {
+                const isSelected = option.value === value;
+                return (
+                    <button
+                        key={option.value}
+                        type="button"
+                        role="radio"
+                        aria-checked={isSelected}
+                        aria-label={option.ariaLabel}
+                        onClick={() => onValueChange(option.value)}
+                        className={cn(
+                            "flex h-11 shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-lg px-3 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40 md:h-8 md:text-[13px]",
+                            fullWidth && "flex-1",
+                            isSelected
+                                ? "bg-card text-foreground shadow-segment"
+                                : "text-muted-foreground hover:text-foreground"
+                        )}
+                    >
+                        {option.label}
+                        {!!option.badge && (
+                            <span className="flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-destructive-soft px-1 text-[11px] font-bold text-destructive">
+                                {option.badge}
+                            </span>
+                        )}
+                    </button>
+                );
+            })}
+        </div>
+    );
+};
 
 export default SegmentedControl;

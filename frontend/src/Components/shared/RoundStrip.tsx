@@ -13,6 +13,7 @@ import {
     SheetTitle,
 } from "@/Components/ui/sheet";
 import { useIsMobile } from "@/hooks/useMobile";
+import { useScrollFade } from "@/hooks/useScrollFade";
 import { getEventIconClass } from "@/lib/events";
 import { RoundOption } from "@/lib/roundOptions";
 import { cn } from "@/lib/utils";
@@ -42,56 +43,60 @@ const RoundStrip = ({
     onValueChange,
     getSubtitle,
     className,
-}: RoundStripProps) => (
-    <div className={cn("flex items-stretch gap-2", className)}>
-        <div
-            role="radiogroup"
-            aria-label="Current rounds"
-            className="flex min-w-0 flex-1 gap-1 overflow-x-auto rounded-xl bg-secondary p-1 [scrollbar-width:none]"
-        >
-            {rounds.map((round) => {
-                const isSelected = round.id === value;
-                return (
-                    <button
-                        key={round.id}
-                        type="button"
-                        role="radio"
-                        aria-checked={isSelected}
-                        title={round.name}
-                        onClick={() => onValueChange(round.id)}
-                        className={cn(
-                            "flex h-14 min-w-[150px] shrink-0 flex-col items-start justify-center gap-[3px] whitespace-nowrap rounded-[9px] px-3.5 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40",
-                            isSelected
-                                ? "bg-card text-foreground shadow-[0_1px_3px_rgba(0,0,0,0.1)]"
-                                : "text-muted-foreground hover:bg-accent"
-                        )}
-                    >
-                        <span className="flex items-center gap-[7px] text-sm font-bold">
-                            <span
-                                aria-hidden
-                                className={cn(
-                                    "cubing-icon text-base",
-                                    getEventIconClass(round.eventId)
-                                )}
+}: RoundStripProps) => {
+    const scrollRef = useScrollFade<HTMLDivElement>();
+    return (
+        <div className={cn("flex items-stretch gap-2", className)}>
+            <div
+                ref={scrollRef}
+                role="radiogroup"
+                aria-label="Current rounds"
+                className="scroll-fade-x flex min-w-0 flex-1 gap-1 overflow-x-auto rounded-xl bg-secondary p-1 [scrollbar-width:none]"
+            >
+                {rounds.map((round) => {
+                    const isSelected = round.id === value;
+                    return (
+                        <button
+                            key={round.id}
+                            type="button"
+                            role="radio"
+                            aria-checked={isSelected}
+                            title={round.name}
+                            onClick={() => onValueChange(round.id)}
+                            className={cn(
+                                "flex h-14 min-w-[150px] shrink-0 flex-col items-start justify-center gap-[3px] whitespace-nowrap rounded-[9px] px-3.5 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40",
+                                isSelected
+                                    ? "bg-card text-foreground shadow-[0_1px_3px_rgba(0,0,0,0.1)]"
+                                    : "text-muted-foreground hover:bg-accent"
+                            )}
+                        >
+                            <span className="flex items-center gap-[7px] text-sm font-bold">
+                                <span
+                                    aria-hidden
+                                    className={cn(
+                                        "cubing-icon text-base",
+                                        getEventIconClass(round.eventId)
+                                    )}
+                                />
+                                {round.label}
+                            </span>
+                            <RoundSubtitle
+                                round={round}
+                                getSubtitle={getSubtitle}
                             />
-                            {round.label}
-                        </span>
-                        <RoundSubtitle
-                            round={round}
-                            getSubtitle={getSubtitle}
-                        />
-                    </button>
-                );
-            })}
+                        </button>
+                    );
+                })}
+            </div>
+            <AllRoundsPicker
+                rounds={allRounds}
+                value={allRoundsValue}
+                onValueChange={onValueChange}
+                getSubtitle={getSubtitle}
+            />
         </div>
-        <AllRoundsPicker
-            rounds={allRounds}
-            value={allRoundsValue}
-            onValueChange={onValueChange}
-            getSubtitle={getSubtitle}
-        />
-    </div>
-);
+    );
+};
 
 interface RoundSubtitleProps {
     round: RoundOption;

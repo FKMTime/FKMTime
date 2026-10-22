@@ -176,3 +176,27 @@ body,
     --tw-exit-rotate: 0 !important;
   }
 }
+
+/*
+ * Horizontal strips with a hidden scrollbar fade out on the side that has
+ * more to scroll; useScrollFade sets the data attributes.
+ */
+.scroll-fade-x {
+  --fade-start: 0px;
+  --fade-end: 0px;
+  mask-image: linear-gradient(
+    to right,
+    transparent,
+    #000 var(--fade-start),
+    #000 calc(100% - var(--fade-end)),
+    transparent
+  );
+}
+
+.scroll-fade-x[data-more-start] {
+  --fade-start: 1.5rem;
+}
+
+.scroll-fade-x[data-more-end] {
+  --fade-end: 1.5rem;
+}

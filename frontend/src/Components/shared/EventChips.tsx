@@ -1,3 +1,4 @@
+import { useScrollFade } from "@/hooks/useScrollFade";
 import { getEventIconClass } from "@/lib/events";
 import { cn } from "@/lib/utils";
 
@@ -26,46 +27,52 @@ const EventChips = ({
     value,
     onValueChange,
     className,
-}: EventChipsProps) => (
-    <div
-        role="radiogroup"
-        aria-label="Event"
-        className={cn(
-            "-mx-4 flex gap-1.5 overflow-x-auto px-4 [scrollbar-width:none] md:mx-0 md:flex-wrap md:px-0",
-            className
-        )}
-    >
-        {events.map((event) => {
-            const isSelected = event.id === value;
-            return (
-                <button
-                    key={event.id}
-                    type="button"
-                    role="radio"
-                    aria-checked={isSelected}
-                    aria-label={event.live ? `${event.name}, live` : event.name}
-                    title={event.name}
-                    onClick={() => onValueChange(event.id)}
-                    className={cn(
-                        "flex h-11 shrink-0 items-center gap-[7px] whitespace-nowrap rounded-chip border px-3 text-[13px] font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40 md:h-10",
-                        isSelected
-                            ? "border-primary bg-primary-soft text-primary"
-                            : "bg-card text-foreground hover:bg-accent"
-                    )}
-                >
-                    <span
-                        aria-hidden
+}: EventChipsProps) => {
+    const scrollRef = useScrollFade<HTMLDivElement>();
+    return (
+        <div
+            ref={scrollRef}
+            role="radiogroup"
+            aria-label="Event"
+            className={cn(
+                "-mx-4 flex gap-1.5 scroll-fade-x overflow-x-auto px-4 [scrollbar-width:none] md:mx-0 md:flex-wrap md:px-0",
+                className
+            )}
+        >
+            {events.map((event) => {
+                const isSelected = event.id === value;
+                return (
+                    <button
+                        key={event.id}
+                        type="button"
+                        role="radio"
+                        aria-checked={isSelected}
+                        aria-label={
+                            event.live ? `${event.name}, live` : event.name
+                        }
+                        title={event.name}
+                        onClick={() => onValueChange(event.id)}
                         className={cn(
-                            "cubing-icon text-lg",
-                            getEventIconClass(event.id)
+                            "flex h-11 shrink-0 items-center gap-[7px] whitespace-nowrap rounded-chip border px-3 text-[13px] font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40 md:h-10",
+                            isSelected
+                                ? "border-primary bg-primary-soft text-primary"
+                                : "bg-card text-foreground hover:bg-accent"
                         )}
-                    />
-                    {event.label}
-                    {event.live && <StatusDot tone="primary" />}
-                </button>
-            );
-        })}
-    </div>
-);
+                    >
+                        <span
+                            aria-hidden
+                            className={cn(
+                                "cubing-icon text-lg",
+                                getEventIconClass(event.id)
+                            )}
+                        />
+                        {event.label}
+                        {event.live && <StatusDot tone="primary" />}
+                    </button>
+                );
+            })}
+        </div>
+    );
+};
 
 export default EventChips;
