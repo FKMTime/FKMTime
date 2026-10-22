@@ -87,6 +87,9 @@ const CompetitionSearch = ({ onSelect }: CompetitionSearchProps) => {
                         onKeyDown={handleKeyDown}
                         placeholder="Search all WCA competitions"
                         aria-label="Search all WCA competitions"
+                        autoCorrect="off"
+                        autoCapitalize="off"
+                        spellCheck={false}
                         role="combobox"
                         aria-expanded={isOpen}
                         aria-controls="competition-search-results"

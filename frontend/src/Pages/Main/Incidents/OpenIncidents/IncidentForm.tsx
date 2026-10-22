@@ -129,11 +129,16 @@ const IncidentForm = ({
                             <FormItem>
                                 <FormLabel>Attempt number</FormLabel>
                                 <Input
-                                    type="number"
+                                    inputMode="numeric"
                                     placeholder="Attempt number"
                                     value={field.value}
                                     onChange={(event) =>
-                                        field.onChange(+event.target.value)
+                                        field.onChange(
+                                            +event.target.value.replace(
+                                                /\D/g,
+                                                ""
+                                            )
+                                        )
                                     }
                                 />
                                 <FormMessage />

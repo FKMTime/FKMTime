@@ -8,7 +8,10 @@ type SearchInputProps = Omit<ComponentProps<typeof Input>, "type"> & {
     label?: string;
 };
 
-/** Text input with a leading search icon */
+/**
+ * Text input with a leading search icon. Autocorrect is off: searches are
+ * for names and IDs, which iOS would otherwise "fix" while typing.
+ */
 const SearchInput = ({
     className,
     label = "Search",
@@ -25,6 +28,9 @@ const SearchInput = ({
             aria-label={label}
             placeholder={placeholder}
             className="pl-10"
+            autoCorrect="off"
+            autoCapitalize="off"
+            spellCheck={false}
             {...props}
         />
     </div>

@@ -41,6 +41,10 @@ const CommandInput = React.forwardRef<
         <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
         <CommandPrimitive.Input
             ref={ref}
+            // Searches are for names and IDs; keep autocorrect off them
+            autoCorrect="off"
+            autoCapitalize="off"
+            spellCheck={false}
             className={cn(
                 "flex h-10 w-full rounded-md bg-transparent py-3 text-sm outline-none placeholder:text-faint disabled:cursor-not-allowed disabled:opacity-50",
                 className
