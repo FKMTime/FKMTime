@@ -139,6 +139,40 @@ body,
   100% { background-color: transparent; }
 }
 
+@keyframes incident-highlight {
+  0%   { background-color: transparent; }
+  15%  { background-color: hsl(var(--destructive) / 0.3); }
+  100% { background-color: transparent; }
+}
+
 .incident-flash {
   animation: incident-flash 1.8s ease-out forwards;
+}
+
+/* Reduced motion: one steady highlight instead of repeated flashing */
+@media (prefers-reduced-motion: reduce) {
+  .incident-flash {
+    animation: incident-highlight 2.4s ease-out forwards;
+  }
+}
+
+/*
+ * Reduced motion: dialogs, sheets, menus, tooltips and toasts still fade,
+ * but no longer slide, zoom or spin in. tailwindcss-animate builds every
+ * enter/exit transform from these variables, so zeroing them leaves only
+ * the opacity change. !important because the slide/zoom utilities that set
+ * them are more specific (class + data-state attribute).
+ */
+@media (prefers-reduced-motion: reduce) {
+  [class*="animate-in"],
+  [class*="animate-out"] {
+    --tw-enter-translate-x: 0 !important;
+    --tw-enter-translate-y: 0 !important;
+    --tw-enter-scale: 1 !important;
+    --tw-enter-rotate: 0 !important;
+    --tw-exit-translate-x: 0 !important;
+    --tw-exit-translate-y: 0 !important;
+    --tw-exit-scale: 1 !important;
+    --tw-exit-rotate: 0 !important;
+  }
 }
