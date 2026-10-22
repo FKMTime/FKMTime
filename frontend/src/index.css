@@ -16,6 +16,8 @@ body,
  */
 @layer base {
   :root {
+    /* Native UI (scrollbars, pickers, autofill) follows the active theme */
+    color-scheme: light;
     --background: 220 17.6% 96.7%;
     --foreground: 216 27.3% 10.8%;
     --card: 0 0% 100%;
@@ -64,6 +66,7 @@ body,
   }
 
   .dark {
+    color-scheme: dark;
     --background: 217.5 21.1% 7.5%;
     --foreground: 217.5 21.1% 92.5%;
     --card: 218.2 19.3% 11.2%;
