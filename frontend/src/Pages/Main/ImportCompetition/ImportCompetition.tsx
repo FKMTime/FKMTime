@@ -86,7 +86,7 @@ const ImportCompetition = () => {
     }
 
     return (
-        <div className="flex min-h-screen flex-col">
+        <div className="flex min-h-dvh flex-col">
             <WordmarkHeader
                 className="min-h-[62px] border-b bg-card px-4 py-3 sm:px-6"
                 trailing={

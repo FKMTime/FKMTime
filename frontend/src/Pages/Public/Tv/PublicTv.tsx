@@ -196,7 +196,7 @@ const PublicTv = () => {
     return (
         <div
             className={cn(
-                "min-h-screen overflow-hidden bg-background",
+                "min-h-dvh overflow-hidden bg-background",
                 !showControls && "cursor-none"
             )}
         >

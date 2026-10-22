@@ -51,7 +51,7 @@ const ScramblingDeviceLayout = () => {
     const context: ScramblingDeviceOutletContext = { room };
 
     return (
-        <div className="flex min-h-screen flex-col">
+        <div className="flex min-h-dvh flex-col">
             <Suspense fallback={<LoadingPage />}>
                 <Outlet context={context} />
             </Suspense>

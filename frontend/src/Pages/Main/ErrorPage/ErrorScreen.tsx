@@ -30,7 +30,7 @@ const ErrorScreen = ({
     const [showDetails, setShowDetails] = useState(false);
 
     return (
-        <div className="flex min-h-screen flex-col px-4 py-5 sm:px-6">
+        <div className="flex min-h-dvh flex-col px-4 py-5 sm:px-6">
             <WordmarkHeader />
             <main className="flex flex-1 items-center justify-center py-10">
                 <div className="flex w-full max-w-[560px] flex-col items-center gap-5 text-center">

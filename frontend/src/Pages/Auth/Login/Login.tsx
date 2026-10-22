@@ -121,7 +121,7 @@ const Login = () => {
     const isDeviceMode = mode === "device";
 
     return (
-        <div className="flex min-h-screen flex-col px-4 py-5 sm:px-6">
+        <div className="flex min-h-dvh flex-col px-4 py-5 sm:px-6">
             <WordmarkHeader />
             <main className="flex flex-1 flex-col justify-center py-10">
                 <div className="mx-auto flex w-full max-w-[400px] flex-col gap-6 rounded-2xl border bg-card p-7">
