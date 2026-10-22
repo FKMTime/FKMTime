@@ -7,6 +7,7 @@ import LiveSolvingBoard from "@/Components/shared/LiveSolvingBoard";
 import { StatusDot } from "@/Components/shared/StatusBadge";
 import { Button } from "@/Components/ui/button";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
+import { useWakeLock } from "@/hooks/useWakeLock";
 import { competitionAtom } from "@/lib/atoms";
 import { getPublicCompetitionInfo, getPublicRooms } from "@/lib/competition";
 import { getEventIconClass, getEventName, getEvents } from "@/lib/events";
@@ -183,6 +184,8 @@ const PublicTv = () => {
 
     // Fixed rather than per slide, so the tab doesn't flicker every rotation
     useDocumentTitle("TV", competition?.name);
+    // Nobody touches the machine driving the screen, so keep it awake
+    useWakeLock();
 
     if (!competition) return <LoadingPage />;
 
