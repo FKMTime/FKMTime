@@ -1,6 +1,6 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import DeviceCodeForm from "./DeviceCodeForm";
 import SignInForm from "./SignInForm";
@@ -58,6 +58,12 @@ describe("DeviceCodeForm", () => {
         onChange: vi.fn(),
         onBack: vi.fn(),
     };
+
+    // input-otp re-reads the caret on timers (up to 50ms) after every
+    // change and never clears them on unmount. Let them run out while the
+    // DOM still exists; otherwise they can fire after jsdom is torn down
+    // and fail the run with "window is not defined".
+    afterEach(() => new Promise((resolve) => setTimeout(resolve, 100)));
 
     it("sends the code as soon as the 6th digit is typed", async () => {
         const onSubmit = vi.fn();
