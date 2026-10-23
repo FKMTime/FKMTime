@@ -123,6 +123,12 @@ export const deleteTestPersons = async (
     where: { attempt: { result: { personId: { in: ids } } } },
   });
   await db.warning.deleteMany({ where: { personId: { in: ids } } });
+  // Delete results first: removing persons in one statement would hit both
+  // the cascade and the SET NULL path on the same edit log rows
+  await db.attemptEditLog.deleteMany({
+    where: { attempt: { result: { personId: { in: ids } } } },
+  });
+  await db.result.deleteMany({ where: { personId: { in: ids } } });
   await db.attempt.updateMany({
     where: { judgeId: { in: ids } },
     data: { judgeId: null },

@@ -35,12 +35,15 @@ describe('Person check-in and card assignment (e2e)', () => {
   }, 30000);
 
   afterAll(async () => {
-    await deleteTestPersons(db, { registrantIds: REGISTRANT_IDS });
-    await db.person.deleteMany({
-      where: { name: { startsWith: 'E2E Added Person' } },
-    });
-    await users.cleanup();
-    await app.close();
+    try {
+      await deleteTestPersons(db, { registrantIds: REGISTRANT_IDS });
+      await db.person.deleteMany({
+        where: { name: { startsWith: 'E2E Added Person' } },
+      });
+      await users.cleanup();
+    } finally {
+      await app.close();
+    }
   }, 30000);
 
   const server = () => app.getHttpServer();

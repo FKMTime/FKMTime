@@ -88,10 +88,13 @@ describe('Incident review (e2e)', () => {
   }, 30000);
 
   afterAll(async () => {
-    await deleteTestPersons(db, { registrantIds: REGISTRANT_IDS });
-    await db.device.deleteMany({ where: { id: device.id } });
-    await users.cleanup();
-    await app.close();
+    try {
+      await deleteTestPersons(db, { registrantIds: REGISTRANT_IDS });
+      await db.device.deleteMany({ where: { id: device.id } });
+      await users.cleanup();
+    } finally {
+      await app.close();
+    }
   }, 30000);
 
   describe('incident lists', () => {

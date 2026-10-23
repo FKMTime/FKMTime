@@ -125,11 +125,14 @@ describe('Attempt lifecycle and edit log (e2e)', () => {
   }, 30000);
 
   afterAll(async () => {
-    stub.restore();
-    await deleteTestPersons(db, { registrantIds: REGISTRANT_IDS });
-    await db.device.deleteMany({ where: { id: device.id } });
-    await users.cleanup();
-    await app.close();
+    try {
+      stub.restore();
+      await deleteTestPersons(db, { registrantIds: REGISTRANT_IDS });
+      await db.device.deleteMany({ where: { id: device.id } });
+      await users.cleanup();
+    } finally {
+      await app.close();
+    }
   }, 30000);
 
   describe('POST /attempt', () => {

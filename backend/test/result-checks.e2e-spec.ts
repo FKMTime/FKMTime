@@ -104,10 +104,13 @@ describe('Result checks, double check and submission (e2e)', () => {
   }, 30000);
 
   afterAll(async () => {
-    stub.restore();
-    await deleteTestPersons(db, { registrantIds: REGISTRANT_IDS });
-    await users.cleanup();
-    await app.close();
+    try {
+      stub.restore();
+      await deleteTestPersons(db, { registrantIds: REGISTRANT_IDS });
+      await users.cleanup();
+    } finally {
+      await app.close();
+    }
   }, 30000);
 
   describe('double check (Mo3 with a one-attempt cutoff of 3:00)', () => {

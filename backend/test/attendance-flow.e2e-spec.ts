@@ -71,9 +71,12 @@ describe('Attendance flow for a group (e2e)', () => {
   }, 30000);
 
   afterAll(async () => {
-    await deleteTestPersons(db, { registrantIds: REGISTRANT_IDS });
-    await users.cleanup();
-    await app.close();
+    try {
+      await deleteTestPersons(db, { registrantIds: REGISTRANT_IDS });
+      await users.cleanup();
+    } finally {
+      await app.close();
+    }
   }, 30000);
 
   const server = () => app.getHttpServer();
