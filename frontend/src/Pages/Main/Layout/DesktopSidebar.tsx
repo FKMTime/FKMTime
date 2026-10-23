@@ -31,10 +31,13 @@ const DesktopSidebar = ({
     unresolvedIncidentsCount,
 }: DesktopSidebarProps) => (
     <aside className="sticky top-0 hidden h-dvh w-16 shrink-0 flex-col border-r bg-card md:flex lg:w-60">
-        <div className="flex min-h-[73px] shrink-0 items-center justify-center border-b px-3 lg:flex-col lg:items-start lg:gap-1.5 lg:px-5 lg:py-4">
+        <div className="flex min-h-[73px] shrink-0 items-center justify-center border-b px-3 lg:flex-col lg:gap-2 lg:px-4 lg:py-4">
             <FkmLogo variant="mark" className="h-10 lg:hidden" />
-            <FkmLogo className="hidden h-12 lg:block" />
-            <span className="hidden w-full truncate text-[13px] text-muted-foreground lg:block">
+            <FkmLogo className="hidden h-auto w-full lg:block" />
+            <span
+                title={competitionName}
+                className="hidden w-full text-center text-[13px] text-muted-foreground lg:line-clamp-2"
+            >
                 {competitionName}
             </span>
         </div>
