@@ -6,6 +6,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import LoadingPage from "@/Components/LoadingPage";
 import EmptyState from "@/Components/shared/EmptyState";
 import RefreshingRegion from "@/Components/shared/RefreshingRegion";
+import ToggleChip from "@/Components/shared/ToggleChip";
 import { useConfirm } from "@/hooks/useConfirm";
 import { activityCodeToName } from "@/lib/activities";
 import { competitionAtom } from "@/lib/atoms";
@@ -25,8 +26,10 @@ const ROLES = [
     { role: "RUNNER", title: "Runners", icon: Footprints },
     { role: "JUDGE", title: "Judges", icon: Gavel },
 ] as const;
+const ROLE_KEYS = ROLES.map(({ role }) => role);
 
 import { useMarkAttendance } from "./useMarkAttendance";
+import { useShownRoles } from "./useShownRoles";
 
 const Attendance = () => {
     const { id: selectedGroup = "" } = useParams<{ id: string }>();
@@ -41,6 +44,7 @@ const Attendance = () => {
     const [attendance, setAttendance] = useState<StaffActivity[]>([]);
     const [hasAssignedRunners, setHasAssignedRunners] = useState(false);
     const roundId = selectedGroup.split("-g")[0];
+    const { shown: shownRoles, toggle: toggleRole } = useShownRoles(ROLE_KEYS);
 
     const selectGroup = useCallback(
         (groupId: string) => navigate(`/attendance/${groupId}`),
@@ -147,11 +151,29 @@ const Attendance = () => {
                                 " · no staff assigned"}
                         </p>
                     </div>
+                    <div
+                        role="group"
+                        aria-label="Roles shown"
+                        className="flex flex-wrap gap-2"
+                    >
+                        {ROLES.map(({ role, title, icon: Icon }) => (
+                            <ToggleChip
+                                key={role}
+                                pressed={shownRoles.includes(role)}
+                                onPressedChange={() => toggleRole(role)}
+                            >
+                                <Icon aria-hidden className="size-4" />
+                                {title}
+                            </ToggleChip>
+                        ))}
+                    </div>
                     <RefreshingRegion
                         isRefreshing={attendanceGroupId !== selectedGroup}
                         className="grid grid-cols-1 items-start gap-4 md:grid-cols-2 2xl:grid-cols-4"
                     >
-                        {ROLES.map(({ role, title, icon }) => (
+                        {ROLES.filter(({ role }) =>
+                            shownRoles.includes(role)
+                        ).map(({ role, title, icon }) => (
                             <RoleCard
                                 key={role}
                                 role={role}
