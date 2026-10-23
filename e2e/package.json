@@ -1,0 +1,22 @@
+{
+  "name": "fkmtime-e2e",
+  "private": true,
+  "version": "0.0.0",
+  "description": "Playwright end-to-end tests running the real backend and frontend",
+  "scripts": {
+    "test": "playwright test",
+    "test:ui": "playwright test --ui",
+    "report": "playwright show-report",
+    "typecheck": "tsc --noEmit",
+    "format": "prettier --write \"**/*.ts\"",
+    "format:check": "prettier --check \"**/*.ts\""
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.64.1",
+    "@types/node": "^22.20.5",
+    "@types/pg": "^8.23.1",
+    "pg": "^8.23.1",
+    "prettier": "^3.9.10",
+    "typescript": "^5.9.3"
+  }
+}
