@@ -129,7 +129,9 @@ const EnterScorecard = () => {
         setResult(null);
         setAttempts([]);
         setInputValue("");
-        idInputRef.current?.focus();
+        // After the re-render, which unmounts the attempts and remounts the
+        // name picker; focusing before it could lose the cursor
+        setTimeout(() => idInputRef.current?.focus());
     };
 
     if (!id) return <LoadingPage />;

@@ -1,4 +1,5 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { createStore, Provider } from "jotai";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -19,6 +20,7 @@ vi.mock("@/lib/persons", () => ({
 vi.mock("@/lib/results", () => ({
     getResultByRoundIdAndPersonId: vi.fn(),
     enterScorecard: vi.fn(),
+    checkTimeLimit: vi.fn(() => true),
 }));
 
 const competition = {
@@ -129,5 +131,23 @@ describe("EnterScorecard", () => {
         expect(
             screen.getByRole("heading", { name: /Casey Tester/ })
         ).toBeTruthy();
+    });
+
+    it("sets DNF with D and DNS with S in a time field", async () => {
+        renderPage();
+        await typeId("3");
+        await screen.findByRole("heading", { name: /Casey Tester/ });
+        const [first, second] = [
+            screen.getByLabelText("Attempt 1 time"),
+            screen.getByLabelText("Attempt 2 time"),
+        ];
+
+        await userEvent.type(first, "d");
+        await userEvent.type(second, "S");
+
+        const rows = screen.getAllByRole("row");
+        expect(rows[1].textContent).toContain("DNF");
+        expect(rows[2].textContent).toContain("DNS");
+        expect((first as HTMLInputElement).value).not.toContain("d");
     });
 });

@@ -1,6 +1,6 @@
 import { ChangeEvent, KeyboardEvent, useState } from "react";
 
-import { SKIPPED_VALUE } from "@/lib/constants";
+import { DNF_VALUE, DNS_VALUE, SKIPPED_VALUE } from "@/lib/constants";
 import {
     attemptResultToInput,
     autocompleteTimeAttemptResult,
@@ -19,9 +19,17 @@ interface AttemptResultInputProps {
     required?: boolean;
     className?: string;
     id?: string;
+    "aria-label"?: string;
     /** Called after Enter commits the typed time, e.g. to submit the form */
     onEnter?: () => void;
+    /** Opts in to D for DNF and S for DNS; the typed time is kept */
+    onPenaltyShortcut?: (penalty: number) => void;
 }
+
+const PENALTY_SHORTCUTS: Record<string, number> = {
+    d: DNF_VALUE,
+    s: DNS_VALUE,
+};
 
 const AttemptResultInput = ({
     value,
@@ -31,7 +39,9 @@ const AttemptResultInput = ({
     required,
     className,
     id,
+    "aria-label": ariaLabel,
     onEnter,
+    onPenaltyShortcut,
 }: AttemptResultInputProps) => {
     const [prevValue, setPrevValue] = useState<number>(value);
     const [draftInput, setDraftInput] = useState<string>(
@@ -48,6 +58,13 @@ const AttemptResultInput = ({
     };
 
     const handleKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
+        const shortcut = PENALTY_SHORTCUTS[event.key.toLowerCase()];
+        const hasModifier = event.ctrlKey || event.metaKey || event.altKey;
+        if (shortcut !== undefined && onPenaltyShortcut && !hasModifier) {
+            event.preventDefault();
+            onPenaltyShortcut(shortcut);
+            return;
+        }
         if (event.key !== "Enter" || !onEnter) return;
         // The time is only committed on blur; commit it before submitting
         event.preventDefault();
@@ -70,6 +87,7 @@ const AttemptResultInput = ({
             onBlur={handleBlur}
             onKeyDown={handleKeyDown}
             id={id}
+            aria-label={ariaLabel}
             placeholder={placeholder || "Time"}
             disabled={disabled}
             required={required}

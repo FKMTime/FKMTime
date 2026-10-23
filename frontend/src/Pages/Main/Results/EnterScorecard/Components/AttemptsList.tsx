@@ -64,6 +64,10 @@ const AttemptsList: React.FC<AttemptsListProps> = ({
                             <TableCell>
                                 <AttemptResultInput
                                     value={attempt.value}
+                                    aria-label={`Attempt ${attempt.attemptNumber} time`}
+                                    onPenaltyShortcut={(penalty) =>
+                                        onChange({ ...attempt, penalty })
+                                    }
                                     onChange={(value) => {
                                         const passed = checkTimeLimit(
                                             value,
