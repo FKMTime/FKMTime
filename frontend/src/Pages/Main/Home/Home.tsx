@@ -25,6 +25,7 @@ import {
 import { getStartLabel } from "@/lib/schedule";
 import { socket } from "@/socket";
 
+import NextGroupInAllRooms from "./Components/NextGroupInAllRooms";
 import RoomCard, { RecentAttempt } from "./Components/RoomCard";
 
 /** Re-render this often so the schedule offset stays current */
@@ -161,6 +162,15 @@ const Home = () => {
         }
     };
 
+    const handleSwitchAll = async (updated: Room[]) => {
+        const response = await updateCurrentRound(updated);
+        if (response.status !== 200)
+            return response.data?.message ?? "Failed to start the next groups";
+        toast({ title: "Next group started in all rooms", variant: "success" });
+        fetchRooms();
+        return null;
+    };
+
     const selectedRoom =
         rooms.find((room) => room.id === selectedRoomId) ?? rooms[0];
 
@@ -190,6 +200,13 @@ const Home = () => {
 
     return (
         <>
+            {canStartGroups && (
+                <NextGroupInAllRooms
+                    rooms={rooms}
+                    nextGroups={nextGroups}
+                    onSwitch={handleSwitchAll}
+                />
+            )}
             {rooms.length > 1 && (
                 <SegmentedControl
                     label="Room"
