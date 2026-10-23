@@ -4,7 +4,7 @@ import { TimeLimit } from "wcif-helpers";
 import { Modal } from "@/Components/Modal";
 import { useToast } from "@/hooks/useToast";
 import { createAttempt } from "@/lib/attempt";
-import { AttemptData } from "@/lib/interfaces";
+import { Attempt, AttemptData } from "@/lib/interfaces";
 import { getSubmissionPlatformName } from "@/lib/utils";
 
 import AttemptForm from "./AttemptForm";
@@ -14,6 +14,8 @@ interface CreateAttemptModalProps {
     onClose: () => void;
     roundId: string;
     competitorId?: string;
+    /** The competitor's attempts so far, to start at their next one */
+    existingAttempts?: Attempt[];
     timeLimit?: TimeLimit;
 }
 
@@ -22,6 +24,7 @@ const CreateAttemptModal = ({
     onClose,
     roundId,
     competitorId,
+    existingAttempts,
     timeLimit,
 }: CreateAttemptModalProps) => {
     const { toast } = useToast();
@@ -60,6 +63,7 @@ const CreateAttemptModal = ({
                 isLoading={isLoading}
                 submitError={submitError}
                 competitorId={competitorId}
+                existingAttempts={existingAttempts}
                 roundId={roundId}
                 timeLimit={timeLimit}
             />

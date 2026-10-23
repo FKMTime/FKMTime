@@ -26,12 +26,18 @@ import {
 } from "@/lib/attemptOutcome";
 import { AVAILABLE_PENALTIES, DNF_VALUE, DNS_VALUE } from "@/lib/constants";
 import { Attempt, AttemptData, AttemptType } from "@/lib/interfaces";
-import { getAttemptOptions, getNumberOfAttempts } from "@/lib/quickEntry";
+import {
+    getAttemptOptions,
+    getNextAttemptValue,
+    getNumberOfAttempts,
+} from "@/lib/quickEntry";
 import { cn } from "@/lib/utils";
 
 interface AttemptFormProps {
     attempt?: Attempt;
     competitorId?: string;
+    /** The competitor's attempts so far; a new attempt starts at the next one */
+    existingAttempts?: Pick<Attempt, "attemptNumber" | "type">[];
     handleSubmit: (data: AttemptData) => void;
     onCancel?: () => void;
     isLoading: boolean;
@@ -67,6 +73,7 @@ const OUTCOME_LABELS: Record<AttemptOutcome, string> = {
 const AttemptForm = ({
     attempt,
     competitorId: fixedCompetitorId,
+    existingAttempts,
     handleSubmit,
     onCancel,
     isLoading,
@@ -91,8 +98,10 @@ const AttemptForm = ({
         )?.value ?? "1";
 
     const [competitorId, setCompetitorId] = useState(fixedCompetitorId ?? "");
-    const [attemptValue, setAttemptValue] = useState(
-        attempt ? optionValueFor(attempt.type, attempt.attemptNumber) : "1"
+    const [attemptValue, setAttemptValue] = useState(() =>
+        attempt
+            ? optionValueFor(attempt.type, attempt.attemptNumber)
+            : getNextAttemptValue(attemptOptions, existingAttempts ?? [])
     );
     const [value, setValue] = useState(attempt?.value ?? 0);
     const [penalty, setPenalty] = useState(attempt?.penalty ?? 0);

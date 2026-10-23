@@ -19,7 +19,10 @@ const competition = {
     wcif: { events: [{ id: "333", rounds: [{ id: "333-r1", format: "a" }] }] },
 } as unknown as Competition;
 
-const renderForm = (attempt?: Attempt) => {
+const renderForm = (
+    attempt?: Attempt,
+    existingAttempts?: Pick<Attempt, "attemptNumber" | "type">[]
+) => {
     const handleSubmit = vi.fn();
     const store = createStore();
     store.set(competitionAtom, competition);
@@ -28,6 +31,7 @@ const renderForm = (attempt?: Attempt) => {
             <AttemptForm
                 attempt={attempt}
                 competitorId="p1"
+                existingAttempts={existingAttempts}
                 roundId="333-r1"
                 isLoading={false}
                 handleSubmit={handleSubmit}
@@ -44,6 +48,18 @@ const typeTime = (time: string) => {
 };
 
 describe("AttemptForm", () => {
+    it("starts a new attempt at the competitor's next one", () => {
+        renderForm(undefined, [
+            { attemptNumber: 1, type: AttemptType.STANDARD_ATTEMPT },
+            { attemptNumber: 2, type: AttemptType.STANDARD_ATTEMPT },
+        ]);
+        expect(
+            screen
+                .getByRole("radio", { name: "Attempt 3" })
+                .getAttribute("aria-checked")
+        ).toBe("true");
+    });
+
     it("saves a counted attempt with type and number from the attempt chips", async () => {
         const handleSubmit = renderForm();
         await userEvent.click(screen.getByRole("radio", { name: "Attempt 3" }));

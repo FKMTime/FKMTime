@@ -283,6 +283,7 @@ const SingleResult = () => {
                 onClose={handleCloseModal}
                 roundId={result.roundId}
                 competitorId={result.person.id}
+                existingAttempts={result.attempts}
                 timeLimit={limit!}
             />
             <SwapAttemptsModal
