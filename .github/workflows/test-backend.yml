@@ -34,7 +34,7 @@ jobs:
           ports:
             - 5432:5432
         dummy-wca:
-          image: maxidragon/dummy-wca:latest
+          image: maxidragon/dummy-wca:main
           ports:
             - 3000:3000
 
