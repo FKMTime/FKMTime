@@ -28,8 +28,8 @@ const PublicSidebar = ({
     return (
         <aside className="sticky top-0 hidden h-dvh w-60 shrink-0 flex-col border-r bg-card min-[760px]:flex">
             <div className="border-b px-5 pb-4 pt-5">
-                <FkmLogo className="h-7" />
-                <div className="mt-1 truncate text-[13px] text-muted-foreground">
+                <FkmLogo className="h-12" />
+                <div className="mt-1.5 truncate text-[13px] text-muted-foreground">
                     {competitionName}
                 </div>
             </div>
