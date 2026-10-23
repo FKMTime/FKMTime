@@ -6,7 +6,7 @@ import { Button } from "@/Components/ui/button";
 import { Crumb } from "@/lib/navigation";
 
 import Breadcrumbs from "./Breadcrumbs";
-import CompetitorSearch from "./CompetitorSearch";
+import GlobalSearch from "./GlobalSearch";
 import UserMenu from "./UserMenu";
 
 interface DesktopHeaderProps {
@@ -28,7 +28,7 @@ const DesktopHeader = ({
         </div>
         <div className="flex min-w-0 items-center gap-2">
             <ConnectionStatus />
-            <CompetitorSearch />
+            <GlobalSearch />
             {canEnterAttempts && (
                 <Button
                     onClick={onEnterAttempt}
