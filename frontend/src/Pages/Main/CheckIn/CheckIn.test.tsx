@@ -7,6 +7,7 @@ import {
     checkedInCount,
     checkIn,
     getPersonInfoByCardIdWithSensitiveData,
+    getPersons,
     undoCheckIn,
 } from "@/lib/persons";
 
@@ -149,5 +150,98 @@ describe("CheckIn", () => {
         await act(() => showUndo.mock.calls[0][0].onUndo());
         expect(undoCheckIn).toHaveBeenCalledWith("p1", false);
         expect(screen.queryByText("Just checked in")).toBeNull();
+    });
+
+    describe("from the keyboard", () => {
+        const returning = { ...newcomer, wcaId: "2019EXAM01", cardId: "0009" };
+
+        beforeEach(() => {
+            vi.mocked(checkIn).mockReset().mockResolvedValue({
+                status: 200,
+                data: {},
+            });
+        });
+
+        it("keeps the scanned card and checks in on a second Enter", async () => {
+            vi.mocked(getPersonInfoByCardIdWithSensitiveData).mockResolvedValue(
+                {
+                    status: 200,
+                    data: returning,
+                }
+            );
+            render(<CheckIn />);
+            const scan = await screen.findByLabelText(
+                "Scan the competitor's card"
+            );
+            await userEvent.type(scan, "0009{Enter}");
+            await screen.findByRole("form", { name: "Check in Anna Example" });
+            expect((scan as HTMLInputElement).value).toBe("0009");
+
+            await userEvent.keyboard("{Enter}");
+            expect(checkIn).toHaveBeenCalledWith("p1", "0009");
+            await screen.findByText("Just checked in");
+            expect((scan as HTMLInputElement).value).toBe("");
+            expect(document.activeElement).toBe(scan);
+        });
+
+        it("replaces the kept card when the next one is scanned", async () => {
+            vi.mocked(getPersonInfoByCardIdWithSensitiveData).mockResolvedValue(
+                {
+                    status: 200,
+                    data: returning,
+                }
+            );
+            render(<CheckIn />);
+            const scan = await screen.findByLabelText(
+                "Scan the competitor's card"
+            );
+            await userEvent.type(scan, "0009{Enter}");
+            await screen.findByRole("form", { name: "Check in Anna Example" });
+
+            await userEvent.keyboard("0010");
+            expect((scan as HTMLInputElement).value).toBe("0010");
+        });
+
+        it("keeps the name and checks in on a second Enter", async () => {
+            vi.mocked(getPersons).mockResolvedValue({ data: [returning] });
+            render(<CheckIn />);
+            const search = await screen.findByLabelText(
+                "Find a competitor by name"
+            );
+            await userEvent.type(search, "Anna");
+            await screen.findByRole("button", { name: /Anna Example/ });
+
+            await userEvent.keyboard("{Enter}");
+            await screen.findByRole("form", { name: "Check in Anna Example" });
+            expect((search as HTMLInputElement).value).toBe("Anna");
+
+            await userEvent.keyboard("{Enter}");
+            expect(checkIn).toHaveBeenCalledWith("p1", "0009");
+            await screen.findByText("Just checked in");
+            expect(document.activeElement).toBe(search);
+        });
+
+        it("leaves newcomers to their checks", async () => {
+            vi.mocked(getPersonInfoByCardIdWithSensitiveData).mockResolvedValue(
+                {
+                    status: 200,
+                    data: { ...newcomer, cardId: "0004" },
+                }
+            );
+            render(<CheckIn />);
+            const scan = await screen.findByLabelText(
+                "Scan the competitor's card"
+            );
+            await userEvent.type(scan, "0004{Enter}");
+            await screen.findByRole("form", { name: "Check in Anna Example" });
+
+            await userEvent.type(scan, "{Enter}");
+            expect(checkIn).not.toHaveBeenCalled();
+            expect(
+                await screen.findByText(
+                    "Tick the newcomer checks to check them in."
+                )
+            ).toBeTruthy();
+        });
     });
 });

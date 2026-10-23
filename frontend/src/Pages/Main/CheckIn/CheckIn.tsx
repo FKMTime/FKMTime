@@ -19,21 +19,28 @@ import {
     undoCheckIn,
 } from "@/lib/persons";
 import { playScanSound } from "@/lib/scanSound";
-import { cn, getInitials } from "@/lib/utils";
+import { cn, getInitials, isNewcomer } from "@/lib/utils";
 
 import CheckInPanel from "./Components/CheckInPanel";
 
 const SEARCH_RESULTS = 6;
 const RECENT_LIMIT = 5;
 
+type LookupSource = "scan" | "search";
+
 const CheckIn = () => {
     const { toast } = useToast();
     const showUndo = useUndoToast();
     const scanInputRef = useRef<HTMLInputElement>(null);
+    const searchInputRef = useRef<HTMLInputElement>(null);
+    // Where the selected person came from, so the cursor goes back there
+    const sourceRef = useRef<LookupSource>("scan");
     const [counts, setCounts] = useState<{ done: number; total: number }>();
     const [scannedCard, setScannedCard] = useState("");
     const [scanError, setScanError] = useState("");
     const [query, setQuery] = useState("");
+    // The search text the selected person was picked with
+    const [pickedQuery, setPickedQuery] = useState<string | null>(null);
     const [results, setResults] = useState<Person[]>([]);
     const [selected, setSelected] = useState<Person | null>(null);
     const [checkInError, setCheckInError] = useState("");
@@ -73,25 +80,64 @@ const CheckIn = () => {
         setSelected(person);
         setCheckInError("");
         setScanError("");
-        if (!person) setTimeout(() => scanInputRef.current?.focus());
+        if (!person) {
+            setScannedCard("");
+            setQuery("");
+            setPickedQuery(null);
+            const input =
+                sourceRef.current === "search"
+                    ? searchInputRef.current
+                    : scanInputRef.current;
+            setTimeout(() => input?.focus());
+        }
+    };
+
+    /**
+     * Enter on the same card or name again checks the person in. Not for
+     * newcomers, whose ID checks need ticking, or people still without a
+     * card, who get one in the panel.
+     */
+    const confirmSelected = () => {
+        if (!selected || isLoading) return;
+        if (!selected.cardId) return;
+        if (isNewcomer(selected)) {
+            setCheckInError("Tick the newcomer checks to check them in.");
+            return;
+        }
+        handleCheckIn(selected.cardId);
     };
 
     const handleScan = async (event: FormEvent) => {
         event.preventDefault();
         const card = scannedCard.trim();
         if (!card) return;
+        if (
+            selected &&
+            sourceRef.current === "scan" &&
+            selected.cardId === card
+        ) {
+            confirmSelected();
+            return;
+        }
         const response = await getPersonInfoByCardIdWithSensitiveData(card);
-        setScannedCard("");
         if (response.status === 200) {
             if (response.data.checkedInAt) {
                 playScanSound("error");
+                setScannedCard("");
                 setScanError(`${response.data.name} is already checked in.`);
                 return;
             }
+            sourceRef.current = "scan";
             setQuery("");
+            setPickedQuery(null);
             playScanSound("success");
             select(response.data);
-        } else if (response.status === 404) {
+            // Kept for Enter to check in; selected so the next scan replaces it
+            scanInputRef.current?.select();
+            return;
+        }
+        setScannedCard("");
+        if (response.status === 404) {
             playScanSound("error");
             setScanError("This card is not assigned to anyone.");
         } else {
@@ -105,8 +151,16 @@ const CheckIn = () => {
             setScanError(`${person.name} is already checked in.`);
             return;
         }
-        setQuery("");
+        sourceRef.current = "search";
+        setScannedCard("");
+        setPickedQuery(query);
         select(person);
+    };
+
+    const handleSearchSubmit = (event: FormEvent) => {
+        event.preventDefault();
+        if (selected && pickedQuery === query) confirmSelected();
+        else if (results.length > 0) handlePick(results[0]);
     };
 
     const handleCheckIn = async (cardId: string) => {
@@ -203,10 +257,15 @@ const CheckIn = () => {
                     <InlineError>{scanError}</InlineError>
                 </form>
 
-                <div className="flex flex-col gap-2">
+                <form
+                    onSubmit={handleSearchSubmit}
+                    className="flex flex-col gap-2"
+                >
                     <Label htmlFor="check-in-search">Or find by name</Label>
                     <SearchInput
+                        ref={searchInputRef}
                         id="check-in-search"
+                        enterKeyHint="go"
                         value={query}
                         onChange={(e) => {
                             setQuery(e.target.value);
@@ -257,7 +316,7 @@ const CheckIn = () => {
                             ))}
                         </ul>
                     )}
-                </div>
+                </form>
 
                 {recent.length > 0 && (
                     <div className="flex flex-col gap-2">
