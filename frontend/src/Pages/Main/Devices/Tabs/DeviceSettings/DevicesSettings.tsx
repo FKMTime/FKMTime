@@ -1,14 +1,12 @@
-import { Settings } from "lucide-react";
 import { useEffect, useState } from "react";
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/Components/ui/card";
+import LoadingPage from "@/Components/LoadingPage";
 import { useToast } from "@/hooks/useToast";
 import {
     getCompetitionSettings,
     updateDevicesSettings,
 } from "@/lib/competition";
 import { Competition } from "@/lib/interfaces";
-import PageTransition from "@/Pages/PageTransition";
 
 import DeviceSettingsForm from "./DeviceSettingsForm";
 
@@ -35,10 +33,7 @@ const DevicesSettings = () => {
             ...data,
         });
         if (status === 200) {
-            toast({
-                title: "Successfully updated devices settings",
-                variant: "success",
-            });
+            toast({ title: "Device settings saved", variant: "success" });
         } else {
             toast({
                 title: "Error",
@@ -48,27 +43,15 @@ const DevicesSettings = () => {
         }
     };
 
-    if (!competition) {
-        return <div>Loading...</div>;
-    }
+    if (!competition) return <LoadingPage />;
 
     return (
-        <PageTransition>
-            <Card>
-                <CardHeader>
-                    <CardTitle className="flex gap-2 items-center">
-                        <Settings size={20} />
-                        Settings
-                    </CardTitle>
-                </CardHeader>
-                <CardContent>
-                    <DeviceSettingsForm
-                        competition={competition}
-                        handleSubmit={handleSubmit}
-                    />
-                </CardContent>
-            </Card>
-        </PageTransition>
+        <div className="rounded-mobile-card border bg-card p-4 md:rounded-2xl md:p-6">
+            <DeviceSettingsForm
+                competition={competition}
+                handleSubmit={handleSubmit}
+            />
+        </div>
     );
 };
 

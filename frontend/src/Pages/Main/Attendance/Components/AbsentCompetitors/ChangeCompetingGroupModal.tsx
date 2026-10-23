@@ -14,6 +14,7 @@ import {
     SelectValue,
 } from "@/Components/ui/select";
 import { useConfirm } from "@/hooks/useConfirm";
+import { useDialogError } from "@/hooks/useDialogError";
 import { useToast } from "@/hooks/useToast";
 import { activityCodeToName, getGroupsByRoundId } from "@/lib/activities";
 import { competitionAtom } from "@/lib/atoms";
@@ -31,6 +32,7 @@ const ChangeCompetingGroupModal = ({
     onClose,
     activity,
 }: ChangeCompetingGroupModalProps) => {
+    const [error, setError] = useDialogError(isOpen);
     const { toast } = useToast();
     const confirm = useConfirm();
     const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -58,18 +60,15 @@ const ChangeCompetingGroupModal = ({
                 );
                 if (response.status === 200) {
                     toast({
-                        title: "Succesfully moved the competitor to another group",
+                        title: "Competitor moved to another group",
                         variant: "success",
                     });
                     setIsLoading(false);
                     onClose();
                 } else {
-                    toast({
-                        title: "The WCIF update failed",
-                        description:
-                            response.data.error || response.data.message,
-                        variant: "destructive",
-                    });
+                    setError(
+                        `${"The WCIF update failed"}. ${response.data.error || response.data.message}`
+                    );
                     setIsLoading(false);
                 }
             })
@@ -82,6 +81,7 @@ const ChangeCompetingGroupModal = ({
 
     return (
         <Modal
+            error={error}
             isOpen={isOpen}
             onClose={onClose}
             title="Move the competitor to another group"
@@ -115,11 +115,7 @@ const ChangeCompetingGroupModal = ({
                 </Select>
             </div>
             <ModalActions>
-                <Button
-                    variant="success"
-                    onClick={handleSubmit}
-                    disabled={isLoading}
-                >
+                <Button onClick={handleSubmit} disabled={isLoading}>
                     Submit
                 </Button>
             </ModalActions>

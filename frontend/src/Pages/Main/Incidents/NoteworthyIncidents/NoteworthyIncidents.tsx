@@ -1,105 +1,140 @@
-import { NotebookPen } from "lucide-react";
+import { List, Pencil, Plus, Trash2 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 
-import PlusButton from "@/Components/PlusButton";
+import EmptyState from "@/Components/shared/EmptyState";
+import RowActions from "@/Components/shared/RowActions";
+import SearchInput from "@/Components/shared/SearchInput";
+import { Button } from "@/Components/ui/button";
+import { useDeferredDelete } from "@/hooks/useDeferredDelete";
 import {
-    Card,
-    CardContent,
-    CardDescription,
-    CardHeader,
-    CardTitle,
-} from "@/Components/ui/card";
-import { Input } from "@/Components/ui/input";
-import { getNoteworthyIncidents } from "@/lib/incidents";
+    deleteNoteworthyIncident,
+    getNoteworthyIncidents,
+} from "@/lib/incidents";
 import { NoteworthyIncident } from "@/lib/interfaces";
-import PageTransition from "@/Pages/PageTransition";
 
+import { useIncidentsContext } from "../incidentsContext";
 import CreateNoteworthyIncidentModal from "./Components/CreateNoteworthyIncidentModal";
-import NoteworthyIncidentsTable from "./Components/NoteworthyIncidentsTable";
+import EditNoteworthyIncidentModal from "./Components/EditNoteworthyIncidentModal";
 
 const NoteworthyIncidents = () => {
-    const [search, setSearch] = useState<string>("");
+    const navigate = useNavigate();
+    const { refreshCounts } = useIncidentsContext();
+    const [search, setSearch] = useState("");
     const [incidents, setIncidents] = useState<NoteworthyIncident[]>([]);
-    const [
-        isOpenCreateNoteworthyIncidentModal,
-        setIsOpenCreateNoteworthyIncidentModal,
-    ] = useState<boolean>(false);
-
-    const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
-        setSearch(e.target.value);
-        fetchData(e.target.value);
-    };
+    const [isCreateOpen, setIsCreateOpen] = useState(false);
+    const [editedIncident, setEditedIncident] =
+        useState<NoteworthyIncident | null>(null);
 
     const fetchData = useCallback(async (searchParam?: string) => {
-        const data = await getNoteworthyIncidents(searchParam);
-        setIncidents(data);
+        setIncidents(await getNoteworthyIncidents(searchParam));
     }, []);
-
-    const handleClose = () => {
-        fetchData();
-        setIsOpenCreateNoteworthyIncidentModal(false);
-    };
 
     useEffect(() => {
         fetchData(search);
     }, [fetchData, search]);
 
+    const refresh = () => {
+        fetchData(search);
+        refreshCounts();
+    };
+
+    const { deleteLater, isPending } = useDeferredDelete({
+        remove: deleteNoteworthyIncident,
+        onDeleted: refresh,
+    });
+
+    const handleDelete = (incident: NoteworthyIncident) =>
+        deleteLater(incident.id, `"${incident.title}" deleted`);
+
+    const visibleIncidents = incidents.filter((item) => !isPending(item.id));
+
     return (
-        <PageTransition>
-            <div className="flex flex-col gap-4">
-                <Card>
-                    <CardHeader>
-                        <CardTitle className="flex justify-between items-center">
-                            <div className="flex gap-2 items-center">
-                                <NotebookPen size={20} />
-                                Noteworthy incidents
-                            </div>
-                            <PlusButton
-                                onClick={() =>
-                                    setIsOpenCreateNoteworthyIncidentModal(true)
-                                }
-                            />
-                        </CardTitle>
-                        <CardDescription>
-                            You can add attempt as noteworthy in the resolved
-                            incidents page or note a custom incident, not
-                            related to any attempt.
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        <Input
-                            placeholder="Search"
-                            value={search}
-                            onChange={handleSearch}
-                        />
-                    </CardContent>
-                </Card>
-                <Card>
-                    <CardHeader>
-                        <CardTitle className="flex gap-2 items-center">
-                            <NotebookPen size={20} />
-                            Noteworthy incidents
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        {incidents.length > 0 ? (
-                            <NoteworthyIncidentsTable
-                                data={incidents}
-                                fetchData={fetchData}
-                            />
-                        ) : (
-                            <h2 className="text-lg">
-                                No noteworthy incidents found
-                            </h2>
-                        )}
-                    </CardContent>
-                </Card>
+        <div className="flex flex-col gap-4">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <SearchInput
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    label="Search noteworthy incidents"
+                />
+                <Button onClick={() => setIsCreateOpen(true)}>
+                    <Plus />
+                    Add noteworthy incident
+                </Button>
             </div>
+
+            {visibleIncidents.length === 0 ? (
+                <EmptyState>No noteworthy incidents.</EmptyState>
+            ) : (
+                <ul className="flex flex-col gap-3">
+                    {visibleIncidents.map((incident) => (
+                        <li
+                            key={incident.id}
+                            className="flex items-start gap-3 rounded-mobile-card border bg-card py-3.5 pl-4 pr-2 md:rounded-2xl md:py-4 md:pl-5"
+                        >
+                            <div className="min-w-0 flex-1">
+                                <p className="font-semibold">
+                                    {incident.title}
+                                </p>
+                                {incident.description && (
+                                    <p className="mt-0.5 text-sm text-muted-foreground">
+                                        {incident.description}
+                                    </p>
+                                )}
+                                {incident.createdBy?.fullName && (
+                                    <p className="mt-1 text-xs text-faint">
+                                        by {incident.createdBy.fullName}
+                                    </p>
+                                )}
+                            </div>
+                            <RowActions
+                                subject={incident.title}
+                                primary={{
+                                    label: "Edit",
+                                    icon: Pencil,
+                                    onSelect: () => setEditedIncident(incident),
+                                }}
+                                items={[
+                                    {
+                                        label: "View attempts",
+                                        icon: List,
+                                        hidden: !incident.attempt,
+                                        onSelect: () =>
+                                            navigate(
+                                                `/results/${incident.attempt?.resultId}`
+                                            ),
+                                    },
+                                    {
+                                        label: "Delete",
+                                        icon: Trash2,
+                                        destructive: true,
+                                        onSelect: () => handleDelete(incident),
+                                    },
+                                ]}
+                            />
+                        </li>
+                    ))}
+                </ul>
+            )}
+
             <CreateNoteworthyIncidentModal
-                isOpen={isOpenCreateNoteworthyIncidentModal}
-                onClose={handleClose}
+                isOpen={isCreateOpen}
+                onClose={() => {
+                    setIsCreateOpen(false);
+                    refresh();
+                }}
             />
-        </PageTransition>
+            {editedIncident && (
+                <EditNoteworthyIncidentModal
+                    incident={editedIncident}
+                    isOpen
+                    onClose={() => {
+                        setEditedIncident(null);
+                        refresh();
+                    }}
+                />
+            )}
+        </div>
     );
 };
 

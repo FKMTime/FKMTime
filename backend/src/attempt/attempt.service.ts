@@ -6,7 +6,7 @@ import {
   AttemptSnapshot,
 } from 'src/attempt-edit-log/attempt-edit-log.service';
 import { AttendanceService } from 'src/attendance/attendance.service';
-import { publicPersonSelect } from 'src/constants';
+import { DNS_VALUE, publicPersonSelect } from 'src/constants';
 import { isUnofficialEvent } from 'src/events';
 import { IncidentService } from 'src/incident/incident.service';
 
@@ -436,9 +436,15 @@ export class AttemptService {
     return this.prisma.attempt.findMany({
       where: {
         result: { roundId },
+        // Only what counts for the result: not scrambled-only (no time yet),
+        // waiting on an incident, or replaced by an extra
+        status: { in: [AttemptStatus.STANDARD, AttemptStatus.RESOLVED] },
+        // A DNS was never solved, so it isn't a recent result
+        penalty: { not: DNS_VALUE },
+        solvedAt: { not: null },
       },
       orderBy: { solvedAt: 'desc' },
-      take: 3,
+      take: 5,
       include: {
         result: {
           select: {

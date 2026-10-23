@@ -4,7 +4,7 @@ import { Round } from "wcif-helpers";
 import { Modal } from "@/Components/Modal";
 import ModalActions from "@/Components/ModalActions";
 import { Button } from "@/Components/ui/button";
-import { useToast } from "@/hooks/useToast";
+import { useDialogError } from "@/hooks/useDialogError";
 import { UnofficialEvent } from "@/lib/interfaces";
 import { updateUnofficialEvent } from "@/lib/unofficialEvents";
 
@@ -21,7 +21,7 @@ const EditUnofficialEventModal = ({
     onClose,
     unofficialEvent,
 }: EditUnofficialEventModalProps) => {
-    const { toast } = useToast();
+    const [error, setError] = useDialogError(isOpen);
     const [isLoading, setIsLoading] = useState(false);
     const [rounds, setRounds] = useState<Round[]>(unofficialEvent.wcif.rounds);
 
@@ -39,34 +39,27 @@ const EditUnofficialEventModal = ({
         };
         const status = await updateUnofficialEvent(eventToSend);
         if (status === 200) {
-            toast({
-                title: "Successfully updated unofficial event",
-                variant: "success",
-            });
             onClose();
         } else {
-            toast({
-                title: "Error",
-                description: "Something went wrong",
-                variant: "destructive",
-            });
+            setError("Something went wrong");
         }
         setIsLoading(false);
     };
 
     return (
-        <Modal isOpen={isOpen} onClose={onClose} title="Edit rounds details">
+        <Modal
+            error={error}
+            isOpen={isOpen}
+            onClose={onClose}
+            title="Edit rounds details"
+        >
             <RoundsManager
                 selectedEventId={unofficialEvent.eventId}
                 rounds={rounds}
                 setRounds={setRounds}
             />
             <ModalActions>
-                <Button
-                    variant="success"
-                    onClick={handleSubmit}
-                    disabled={isLoading}
-                >
+                <Button onClick={handleSubmit} disabled={isLoading}>
                     Save
                 </Button>
             </ModalActions>

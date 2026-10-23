@@ -1,138 +1,179 @@
-import { RefObject, useRef, useState } from "react";
+import { CircleCheck, IdCard, Nfc } from "lucide-react";
+import { useState } from "react";
 
 import { Button } from "@/Components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/Components/ui/card";
-import { Input } from "@/Components/ui/input";
 import { useToast } from "@/hooks/useToast";
 import { DecryptedScramble, Person, ScrambleData } from "@/lib/interfaces";
-import { getPersonByCardId, getScrambleData } from "@/lib/scrambling";
+import { playScanSound } from "@/lib/scanSound";
+import {
+    createScrambledAttempt,
+    getPersonByCardId,
+    getScrambleData,
+} from "@/lib/scrambling";
 
-import Scramble from "./Scramble";
+import { roundName } from "../../scramblingDeviceContext";
+import ScanPrompt from "./ScanPrompt";
+import ScrambleCard from "./ScrambleCard";
 
 interface ScramblingProps {
-    groupId: string;
+    roundId: string;
+    /** The round's group running in this room, if any */
+    groupId?: string;
     scrambles: DecryptedScramble[];
 }
 
-const Scrambling = ({ groupId, scrambles }: ScramblingProps) => {
+interface Competitor {
+    person: Person;
+    scrambleData: ScrambleData;
+}
+
+/** Scan the scrambler, then each competitor, show their scramble and sign it */
+const Scrambling = ({ roundId, groupId, scrambles }: ScramblingProps) => {
     const { toast } = useToast();
-    const [competitorCard, setCompetitorCard] = useState<string>("");
-    const [scramblerCard, setScramblerCard] = useState<string>("");
-    const [person, setPerson] = useState<Person | null>(null);
     const [scrambler, setScrambler] = useState<Person | null>(null);
-    const [scrambleData, setScrambleData] = useState<ScrambleData | null>(null);
-    const competitorCardInputRef: RefObject<HTMLInputElement> =
-        useRef<HTMLInputElement>(null);
+    const [competitor, setCompetitor] = useState<Competitor | null>(null);
+    const [scanError, setScanError] = useState("");
+    const [isSigning, setIsSigning] = useState(false);
 
-    const roundId = groupId.split("-g")[0];
+    const groupNumber = groupId?.split("-g")[1];
+    // Stays visible after signing, so the scrambler can check what was signed
+    const [lastSigned, setLastSigned] = useState("");
 
-    const fetchScrambleData = async () => {
-        if (!scrambler) return;
-        if (competitorCard === scrambler.cardId) {
-            return toast({
-                title: "Scrambler and competitor cannot be the same",
-                variant: "destructive",
-            });
+    const scanScrambler = async (cardId: string) => {
+        const data = await getPersonByCardId(cardId);
+        if (!data.id) {
+            playScanSound("error");
+            setScanError("Scrambler not found");
+            return;
         }
-        const { data, status } = await getScrambleData(
-            competitorCard,
-            groupId.split("-g")[0]
-        );
+        playScanSound("success");
+        setScrambler(data);
+    };
+
+    const scanCompetitor = async (cardId: string) => {
+        if (!scrambler) return;
+        if (cardId === scrambler.cardId) {
+            playScanSound("error");
+            setScanError("Scrambler and competitor cannot be the same");
+            return;
+        }
+        const { data, status } = await getScrambleData(cardId, roundId);
         if (!data || status === 404) {
-            return toast({
-                title: "Competitor not found",
-                variant: "destructive",
-            });
+            playScanSound("error");
+            setScanError("Competitor not found");
+            return;
         }
         if (data.scrambleData.num === -1) {
-            setCompetitorCard("");
-            return toast({
-                title: "No attempts left",
-                variant: "destructive",
-            });
+            playScanSound("error");
+            setScanError("No attempts left");
+            return;
         }
-        setScrambleData(data.scrambleData);
-        setPerson(data.person);
+        playScanSound("success");
+        setCompetitor({ person: data.person, scrambleData: data.scrambleData });
     };
 
-    const fetchScramblerData = async () => {
-        const data = await getPersonByCardId(scramblerCard);
-        if (!data.id) {
+    const changeScrambler = () => {
+        setLastSigned("");
+        setScrambler(null);
+        setCompetitor(null);
+        setScanError("");
+    };
+
+    const sign = async () => {
+        if (!scrambler || !competitor) return;
+        setIsSigning(true);
+        const response = await createScrambledAttempt(
+            competitor.person.id,
+            scrambler.id,
+            roundId,
+            competitor.scrambleData.num,
+            competitor.scrambleData.isExtra
+        );
+        setIsSigning(false);
+        if (response.status === 201) {
+            const { num, isExtra } = competitor.scrambleData;
+            setLastSigned(
+                `${competitor.person.name} · ${isExtra ? "Extra" : "Scramble"} ${num}`
+            );
+            setCompetitor(null);
+        } else {
             toast({
-                title: "Scrambler not found",
+                title: "Something went wrong",
                 variant: "destructive",
             });
-            return setScramblerCard("");
         }
-        setScrambler(data);
-        setScramblerCard("");
-        competitorCardInputRef.current?.focus();
     };
 
-    const clearScrambleData = () => {
-        setPerson(null);
-        setScrambleData(null);
-        setCompetitorCard("");
-    };
+    if (!scrambler) {
+        return (
+            <ScanPrompt
+                icon={IdCard}
+                title="Scan the scrambler's card"
+                description="The scrambler signs every attempt scrambled on this device."
+                error={scanError}
+                onScan={scanScrambler}
+                onChange={() => setScanError("")}
+            />
+        );
+    }
 
     return (
         <>
-            <Card>
-                <CardHeader>
-                    <CardTitle className="flex items-center justify-between">
-                        {scrambler ? (
-                            <>
-                                Current scrambler: {scrambler.name} (
-                                {scrambler.wcaId ? scrambler.wcaId : "Newcomer"}
-                                )
-                                <Button onClick={() => setScrambler(null)}>
-                                    Change scrambler
-                                </Button>
-                            </>
-                        ) : (
-                            "Scan the scrambler's card to start"
-                        )}
-                    </CardTitle>
-                </CardHeader>
-                <CardContent className="flex flex-col items-center gap-4">
-                    {!scrambler && (
-                        <Input
-                            placeholder="Scan the scrambler's card"
-                            width="fit-content"
-                            autoFocus
-                            disabled={scrambler !== null}
-                            value={scramblerCard}
-                            onChange={(e) => setScramblerCard(e.target.value)}
-                            onKeyDown={(e) => {
-                                if (e.key === "Enter") {
-                                    fetchScramblerData();
-                                }
-                            }}
-                        />
+            <div className="flex flex-wrap items-center gap-3 rounded-xl border bg-card py-2.5 pl-4 pr-3">
+                <IdCard className="size-5 text-muted-foreground" />
+                <span className="min-w-[180px] flex-1 text-muted-foreground">
+                    Scrambler{" "}
+                    <b className="font-semibold text-foreground">
+                        {scrambler.name}
+                    </b>{" "}
+                    · {scrambler.wcaId || "Newcomer"}
+                </span>
+                <Button
+                    variant="outline"
+                    className="border-border px-3"
+                    onClick={changeScrambler}
+                >
+                    Change scrambler
+                </Button>
+            </div>
+            {competitor ? (
+                <ScrambleCard
+                    person={competitor.person}
+                    scrambleData={competitor.scrambleData}
+                    scramble={scrambles.find(
+                        (scramble) =>
+                            scramble.num === competitor.scrambleData.num &&
+                            scramble.isExtra === competitor.scrambleData.isExtra
                     )}
-                    <Input
-                        placeholder="Scan the competitor's card"
-                        width="fit-content"
-                        ref={competitorCardInputRef}
-                        value={competitorCard}
-                        onChange={(e) => setCompetitorCard(e.target.value)}
-                        onKeyDown={(e) => {
-                            if (e.key === "Enter") {
-                                fetchScrambleData();
-                            }
-                        }}
-                    />
-                </CardContent>
-            </Card>
-            {person && scrambleData && scrambler && (
-                <Scramble
-                    person={person}
-                    scrambles={scrambles}
-                    scrambler={scrambler}
-                    scrambleData={scrambleData}
-                    roundId={roundId}
-                    onSign={clearScrambleData}
+                    eventId={roundId.split("-")[0]}
+                    isSigning={isSigning}
+                    onCancel={() => setCompetitor(null)}
+                    onSign={sign}
                 />
+            ) : (
+                <>
+                    {lastSigned && (
+                        <p
+                            role="status"
+                            className="flex items-center gap-2 rounded-xl bg-success-soft px-4 py-2.5 text-sm font-semibold text-success"
+                        >
+                            <CircleCheck className="size-[18px] shrink-0" />
+                            Last signed: {lastSigned}
+                        </p>
+                    )}
+                    <ScanPrompt
+                        icon={Nfc}
+                        title="Scan the competitor's card"
+                        description={
+                            groupNumber
+                                ? `${roundName(roundId)} · Group ${groupNumber}`
+                                : roundName(roundId)
+                        }
+                        error={scanError}
+                        onScan={scanCompetitor}
+                        onChange={() => setScanError("")}
+                    />
+                </>
             )}
         </>
     );

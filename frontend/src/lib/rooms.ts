@@ -15,3 +15,26 @@ export const updateCurrentRound = async (rooms: Room[]) => {
         data: await response.json(),
     };
 };
+
+export interface GroupProgress {
+    groupId: string;
+    roundId: string;
+    competitors: number;
+    entered: number;
+    expected: number;
+}
+
+export interface RoomProgress {
+    roomId: string;
+    groups: GroupProgress[];
+}
+
+/** Results entered vs expected for each room's current groups */
+export const getRoomsProgress = async (): Promise<RoomProgress[]> => {
+    const response = await backendRequest(
+        "competition/rooms/progress",
+        "GET",
+        true
+    );
+    return await response.json();
+};

@@ -1,4 +1,5 @@
 import { zodResolver } from "@hookform/resolvers/zod";
+import { Save } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 
@@ -44,14 +45,16 @@ const SettingsForm = ({
         <Form {...form}>
             <form
                 onSubmit={form.handleSubmit(onSubmit)}
-                className="space-y-8 py-3"
+                className="flex flex-col gap-4 md:gap-[18px]"
             >
                 <FormField
                     control={form.control}
                     name="username"
                     render={({ field }) => (
-                        <FormItem>
-                            <FormLabel>Username</FormLabel>
+                        <FormItem className="space-y-1.5">
+                            <FormLabel className="text-[13px] font-semibold text-muted-foreground">
+                                Username
+                            </FormLabel>
                             <FormControl>
                                 <Input placeholder="Username" {...field} />
                             </FormControl>
@@ -59,7 +62,12 @@ const SettingsForm = ({
                         </FormItem>
                     )}
                 />
-                <Button disabled={isLoading} type="submit" variant="success">
+                <Button
+                    disabled={isLoading}
+                    type="submit"
+                    className="w-full md:w-fit"
+                >
+                    <Save />
                     Save
                 </Button>
             </form>

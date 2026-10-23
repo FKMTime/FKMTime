@@ -1,22 +1,9 @@
-import { useNavigate } from "react-router-dom";
+import { SearchX } from "lucide-react";
 
-import ModeToggle from "@/Components/ModeToggle";
-import { Button } from "@/Components/ui/button";
-import PageTransition from "@/Pages/PageTransition";
+import ErrorScreen from "@/Pages/Main/ErrorPage/ErrorScreen";
 
-const NotFound = () => {
-    const navigate = useNavigate();
-
-    return (
-        <PageTransition>
-            <div className="flex flex-col gap-5 mt-5 justify-center items-center h-screen">
-                <h2>Error 404</h2>
-                <h3 className="text-red-500">Page not found</h3>
-                <Button onClick={() => navigate("/")}>Home</Button>
-                <ModeToggle />
-            </div>
-        </PageTransition>
-    );
-};
+const NotFound = () => (
+    <ErrorScreen icon={SearchX} title="Error 404" message="Page not found" />
+);
 
 export default NotFound;

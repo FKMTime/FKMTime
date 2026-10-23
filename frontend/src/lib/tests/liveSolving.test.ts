@@ -1,10 +1,15 @@
-import { getStationTimer, StationInfo } from "@/lib/liveSolving";
+import {
+    getStationTimer,
+    groupStationsByRoom,
+    StationInfo,
+} from "@/lib/liveSolving";
 
 const packet = (
     overrides: Partial<StationInfo> & { serverReceivedAt: number }
 ): StationInfo => ({
     espId: 1,
     deviceName: "1",
+    roomId: null,
     personName: "Jane Doe",
     registrantId: 1,
     groupId: "333-r1-g1",
@@ -103,5 +108,44 @@ describe("getStationTimer", () => {
 
         expect(timer.phase).toEqual("solving");
         expect(timer.displayTime).toEqual(90);
+    });
+});
+
+describe("groupStationsByRoom", () => {
+    const rooms = [
+        { id: "main", name: "Main Room", currentGroupIds: ["333-r1-g2"] },
+        {
+            id: "side",
+            name: "Side Room",
+            currentGroupIds: ["222-r1-g1", "222-r1-g2", "pyram-r1-g1"],
+        },
+        { id: "empty", name: "Empty Room", currentGroupIds: [] },
+    ];
+    const station = (espId: number, roomId: string | null) =>
+        packet({ espId, roomId, serverReceivedAt: 0 });
+
+    it("groups stations by their device's room, sorted by ESP ID", () => {
+        const groups = groupStationsByRoom(
+            [station(3, "main"), station(1, "main"), station(2, "side")],
+            rooms
+        );
+
+        expect(groups.map((group) => group.id)).toEqual(["main", "side"]);
+        expect(groups[0].stations.map((s) => s.espId)).toEqual([1, 3]);
+        expect(groups[0].roundIds).toEqual(["333-r1"]);
+        expect(groups[1].roundIds).toEqual(["222-r1", "pyram-r1"]);
+    });
+
+    it("puts stations without a known room last", () => {
+        const groups = groupStationsByRoom(
+            [station(9, null), station(1, "main"), station(5, "deleted")],
+            rooms
+        );
+
+        expect(groups.map((group) => group.name)).toEqual([
+            "Main Room",
+            "Other stations",
+        ]);
+        expect(groups[1].stations.map((s) => s.espId)).toEqual([5, 9]);
     });
 });

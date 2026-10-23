@@ -24,7 +24,7 @@ const ScrambleSetsValidators = ({
                 </Alert>
             )}
             {warningsList.length > 0 && (
-                <Alert>
+                <Alert variant="warning">
                     <AlertTitle>Warnings detected during import</AlertTitle>
                     <AlertDescription>
                         <ul className="list-disc pl-5">

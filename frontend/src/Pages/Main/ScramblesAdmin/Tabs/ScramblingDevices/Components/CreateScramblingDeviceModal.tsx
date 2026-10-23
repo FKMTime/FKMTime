@@ -1,7 +1,7 @@
 import { useState } from "react";
 
 import { Modal } from "@/Components/Modal";
-import { useToast } from "@/hooks/useToast";
+import { useDialogError } from "@/hooks/useDialogError";
 import { ScramblingDeviceData } from "@/lib/interfaces";
 import {
     createScramblingDevice,
@@ -19,7 +19,7 @@ const CreateScramblingDeviceModal = ({
     isOpen,
     onClose,
 }: CreateScramblingDeviceModalProps) => {
-    const { toast } = useToast();
+    const [error, setError] = useDialogError(isOpen);
     const [isLoading, setIsLoading] = useState(false);
 
     const handleSubmit = async (newDevice: ScramblingDeviceData) => {
@@ -27,17 +27,9 @@ const CreateScramblingDeviceModal = ({
 
         const status = await createScramblingDevice(newDevice);
         if (status === 201) {
-            toast({
-                title: "Successfully created new device.",
-                variant: "success",
-            });
             onClose();
         } else {
-            toast({
-                title: "Error",
-                description: "Something went wrong",
-                variant: "destructive",
-            });
+            setError("Something went wrong");
         }
         setIsLoading(false);
     };
@@ -46,6 +38,7 @@ const CreateScramblingDeviceModal = ({
 
     return (
         <Modal
+            error={error}
             isOpen={isOpen}
             onClose={onClose}
             title="Create scrambling device"

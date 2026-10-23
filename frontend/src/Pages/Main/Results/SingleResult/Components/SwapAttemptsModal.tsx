@@ -4,7 +4,7 @@ import { Modal } from "@/Components/Modal";
 import ModalActions from "@/Components/ModalActions";
 import { Button } from "@/Components/ui/button";
 import { Label } from "@/Components/ui/label";
-import { useToast } from "@/hooks/useToast";
+import { useDialogError } from "@/hooks/useDialogError";
 import { swapAttempts } from "@/lib/attempt";
 import { Attempt } from "@/lib/interfaces";
 
@@ -21,37 +21,29 @@ const SwapAttemptsModal = ({
     onClose,
     attempts,
 }: SwapAttemptsModalProps) => {
-    const { toast } = useToast();
+    const [error, setError] = useDialogError(isOpen);
     const [firstAttemptId, setFirstAttemptId] = useState<string>("");
     const [secondAttemptId, setSecondAttemptId] = useState<string>("");
 
     const handleSubmit = async () => {
         if (firstAttemptId === secondAttemptId) {
-            return toast({
-                title: "Error",
-                description: "You can't swap an attempt with itself",
-                variant: "destructive",
-            });
+            return setError("You can't swap an attempt with itself");
         }
         const status = await swapAttempts(firstAttemptId, secondAttemptId);
         if (status === 200) {
-            toast({
-                title: "Success",
-                description: "Attempts swapped successfully",
-                variant: "success",
-            });
             onClose();
         } else {
-            toast({
-                title: "Error",
-                description: "Something went wrong",
-                variant: "destructive",
-            });
+            setError("Something went wrong");
         }
     };
 
     return (
-        <Modal isOpen={isOpen} onClose={onClose} title="Swap two attempts">
+        <Modal
+            error={error}
+            isOpen={isOpen}
+            onClose={onClose}
+            title="Swap two attempts"
+        >
             <div className="flex flex-col gap-5">
                 <div className="flex flex-col gap-2">
                     <Label>First attempt</Label>
@@ -70,9 +62,7 @@ const SwapAttemptsModal = ({
                     />
                 </div>
                 <ModalActions>
-                    <Button onClick={handleSubmit} variant="success">
-                        Swap attempts
-                    </Button>
+                    <Button onClick={handleSubmit}>Swap attempts</Button>
                 </ModalActions>
             </div>
         </Modal>

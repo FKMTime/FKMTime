@@ -1,11 +1,11 @@
 import { useSetAtom } from "jotai";
+import { LogOut } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import LoadingPage from "@/Components/LoadingPage";
+import WordmarkHeader from "@/Components/shared/WordmarkHeader";
 import { Button } from "@/Components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/Components/ui/card";
-import { useToast } from "@/hooks/useToast";
 import { competitionAtom } from "@/lib/atoms";
 import { getUserInfo, logout, updateUserInfo } from "@/lib/auth";
 import {
@@ -14,29 +14,25 @@ import {
     importCompetition,
 } from "@/lib/competition";
 import { WCACompetition } from "@/lib/interfaces";
-import PageTransition from "@/Pages/PageTransition";
 
-import CompetitionsAutocomplete from "./Components/CompetitionsAutocomplete";
+import CompetitionSearch from "./Components/CompetitionSearch";
 import CompetitionsList from "./Components/CompetitionsList";
 
 const ImportCompetition = () => {
     const navigate = useNavigate();
-    const { toast } = useToast();
     const userInfo = getUserInfo();
     const [competitions, setCompetitions] = useState<WCACompetition[]>([]);
     const [isLoading, setIsLoading] = useState<boolean>(true);
+    const [importingId, setImportingId] = useState<string | null>(null);
+    const [importError, setImportError] = useState<{
+        competitionId: string;
+        message: string;
+    } | null>(null);
     const setCompetition = useSetAtom(competitionAtom);
 
-    const handleSubmit = async (wcaId: string) => {
-        if (wcaId === "") {
-            toast({
-                title: "Error",
-                description: "Please enter a competition ID",
-                variant: "destructive",
-            });
-            return;
-        }
-        setIsLoading(true);
+    const handleImport = async (wcaId: string) => {
+        setImportingId(wcaId);
+        setImportError(null);
         const response = await importCompetition(wcaId);
         if (response.status == 200) {
             await updateUserInfo();
@@ -45,24 +41,18 @@ const ImportCompetition = () => {
                 state: { importedCompetition: response.data },
             });
             return;
-        } else if (response.status === 400) {
-            toast({
-                title: "Error",
-                description: "Competition has already been imported",
-                variant: "destructive",
-            });
-        } else {
-            toast({
-                title: "Error",
-                description: response.data.message,
-                variant: "destructive",
-            });
         }
-        setIsLoading(false);
+        setImportError({
+            competitionId: wcaId,
+            message:
+                response.status === 400
+                    ? "Competition has already been imported"
+                    : response.data.message || "Something went wrong",
+        });
+        setImportingId(null);
     };
 
-    const handleSelect = (competition: WCACompetition | null) => {
-        if (!competition) return;
+    const handleSelect = (competition: WCACompetition) => {
         if (!competitions.some((c) => c.id === competition.id)) {
             setCompetitions((prev) => [...prev, competition]);
         }
@@ -70,11 +60,6 @@ const ImportCompetition = () => {
 
     const handleLogout = () => {
         logout();
-        toast({
-            title: "Logged out",
-            description: "You have been logged out.",
-            variant: "success",
-        });
         navigate("/auth/login");
     };
 
@@ -101,38 +86,51 @@ const ImportCompetition = () => {
     }
 
     return (
-        <PageTransition>
-            <div className="flex flex-col gap-4">
-                <Card>
-                    <CardHeader>
-                        <CardTitle className="flex justify-between items-center">
-                            Import competition from the WCA Website
-                            <Button onClick={handleLogout}>Logout</Button>
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        {userInfo.isWcaAdmin && (
-                            <CompetitionsAutocomplete onSelect={handleSelect} />
-                        )}
-                    </CardContent>
-                </Card>
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Upcoming Competitions</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        {competitions.length > 0 ? (
-                            <CompetitionsList
-                                competitions={competitions}
-                                handleImportCompetition={handleSubmit}
-                            />
-                        ) : (
-                            <p>You have no upcoming competitions to manage</p>
-                        )}
-                    </CardContent>
-                </Card>
-            </div>
-        </PageTransition>
+        <div className="flex min-h-dvh flex-col">
+            <WordmarkHeader
+                className="min-h-[62px] border-b bg-card px-4 py-3 sm:px-6"
+                trailing={
+                    <Button
+                        variant="outline"
+                        className="h-[38px] border-border px-3 md:h-[38px]"
+                        onClick={handleLogout}
+                    >
+                        <LogOut />
+                        Log out
+                    </Button>
+                }
+            >
+                <span className="truncate text-[13px] text-muted-foreground">
+                    {userInfo.fullName ?? userInfo.username}
+                </span>
+            </WordmarkHeader>
+            <main className="mx-auto flex w-full max-w-[720px] flex-col gap-5 px-4 pb-14 pt-10 sm:px-6">
+                <div className="flex flex-col gap-1.5">
+                    <h1 className="text-[26px] font-bold tracking-[-0.02em]">
+                        Import competition
+                    </h1>
+                    <p className="text-pretty text-muted-foreground">
+                        Pick a competition from the WCA website to set up
+                        FKMTime for it. Events, schedule and competitors are
+                        imported automatically.
+                    </p>
+                </div>
+                {userInfo.isWcaAdmin && (
+                    <CompetitionSearch onSelect={handleSelect} />
+                )}
+                <section className="flex flex-col gap-2">
+                    <h2 className="pl-0.5 text-[13px] font-semibold text-muted-foreground">
+                        Your upcoming competitions
+                    </h2>
+                    <CompetitionsList
+                        competitions={competitions}
+                        importingId={importingId}
+                        error={importError}
+                        onImport={handleImport}
+                    />
+                </section>
+            </main>
+        </div>
     );
 };
 

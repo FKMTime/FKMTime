@@ -381,3 +381,19 @@ export const getAdvancementText = (roundId: string, event?: Event) => {
     }
     return advancementText;
 };
+
+export const getInitials = (fullName?: string) => {
+    const parts = (fullName ?? "").trim().split(/\s+/).filter(Boolean);
+    if (parts.length === 0) return "?";
+    const first = parts[0][0];
+    const last = parts.length > 1 ? parts[parts.length - 1][0] : "";
+    return (first + last).toUpperCase();
+};
+
+/** "Results · Example Open 2026"; falls back to "FKMTime" with no parts */
+export const formatDocumentTitle = (
+    ...parts: (string | null | undefined)[]
+) => {
+    const filled = parts.filter((part): part is string => !!part?.trim());
+    return filled.length ? filled.join(" · ") : "FKMTime";
+};

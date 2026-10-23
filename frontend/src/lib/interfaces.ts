@@ -131,9 +131,18 @@ export interface CompetitionStatistics {
     suspiciousAverages: SuspiciousAverage[];
     byEventStats: EventStatistics[];
     byRoundStats: RoundStatisticsByDay[];
+    byRoundAttemptStats: RoundAttemptStatistics[];
     attemptsByDevice: DeviceStatistics[];
     scorecardsCount: number;
     personsCompeted: number;
+}
+
+export interface RoundAttemptStatistics {
+    roundId: string;
+    solves: number;
+    manual: number;
+    extras: number;
+    dnf: number;
 }
 
 export interface EventStatistics {
@@ -206,13 +215,6 @@ export interface Result {
 
 export interface ResultToDoubleCheck extends Result {
     combinedName: string;
-}
-
-export interface ResultWithAverage extends Result {
-    average: number;
-    best: number;
-    averageString: string;
-    bestString: string;
 }
 
 export interface StaffingWarning {
@@ -399,6 +401,8 @@ export interface WCACompetition {
     country_iso2: string;
     registration_open: string;
     start_date: string;
+    end_date: string;
+    city: string;
 }
 
 export interface Event {

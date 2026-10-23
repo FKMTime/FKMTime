@@ -4,24 +4,28 @@ import { useNavigate, useParams } from "react-router-dom";
 import { getLimitByRoundId, getNumberOfAttemptsForRound } from "wcif-helpers";
 
 import LoadingPage from "@/Components/LoadingPage";
+import EmptyState from "@/Components/shared/EmptyState";
+import PageTabs from "@/Components/shared/PageTabs";
 import { Button } from "@/Components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/Components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/Components/ui/tabs";
+import { usePageHeader } from "@/hooks/usePageHeader";
 import { useToast } from "@/hooks/useToast";
 import { competitionAtom } from "@/lib/atoms";
+import { average, formattedBest } from "@/lib/average";
 import { getCompetitionInfo } from "@/lib/competition";
 import { RemainingAndUsedCumulativeLimit, Result } from "@/lib/interfaces";
+import { resultToString } from "@/lib/resultFormatters";
 import { getResultById } from "@/lib/results";
-import { getSubmittedAttempts } from "@/lib/utils";
-import PageTransition from "@/Pages/PageTransition";
+import { getSubmittedAttempts, shortRoundName } from "@/lib/utils";
 
 import CreateAttemptModal from "../Components/CreateAttemptModal";
 import AttemptsReorderBoard from "./Components/AttemptsReorderBoard";
 import AttemptsTable from "./Components/AttemptsTable";
 import LastAttemptCard from "./Components/LastAttemptCard";
-import SingleResultHeaderCard from "./Components/SingleResultHeaderCard";
+import SingleResultHeader from "./Components/SingleResultHeader";
 import SwapAttemptsModal from "./Components/SwapAttemptsModal";
 import WarningsAndLimitsCard from "./Components/WarningsAndLimitsCard";
+
+type Tab = "submitted" | "standard" | "extra" | "reorder";
 
 const SingleResult = () => {
     const { id } = useParams<{ id: string }>();
@@ -33,6 +37,7 @@ const SingleResult = () => {
         useState<boolean>(false);
     const [isOpenSwapAttemptsModal, setIsOpenSwapAttemptsModal] =
         useState<boolean>(false);
+    const [tab, setTab] = useState<Tab>("submitted");
     const [
         remainingAndUsedCumulativeLimit,
         setRemainingAndUsedCumulativeLimit,
@@ -103,161 +108,190 @@ const SingleResult = () => {
         fetchData();
     }, [fetchData]);
 
+    usePageHeader({
+        crumbs: result
+            ? [
+                  { label: "Results", to: "/results" },
+                  {
+                      label: shortRoundName(result.roundId),
+                      to: `/results/round/${result.roundId}`,
+                  },
+                  { label: result.person.name },
+              ]
+            : [{ label: "Results", to: "/results" }, { label: "Result" }],
+        title: result?.person.name ?? "Result",
+        subtitle: result ? shortRoundName(result.roundId) : undefined,
+        backTo: result ? `/results/round/${result.roundId}` : "/results",
+    });
+
     if (!result || !competition) return <LoadingPage />;
 
+    const resultAverage =
+        submittedAttempts.length === maxAttempts
+            ? average(submittedAttempts)
+            : undefined;
+
     return (
-        <PageTransition>
-            <div className="flex flex-col gap-4 w-full">
-                <div className="flex flex-col gap-4 md:flex-row w-full">
-                    <SingleResultHeaderCard
-                        result={result}
-                        fetchData={fetchData}
-                        setIsOpenCreateAttemptModal={
-                            setIsOpenCreateAttemptModal
-                        }
-                        standardAttempts={standardAttempts}
-                        maxAttempts={maxAttempts}
-                    />
-                    <WarningsAndLimitsCard
-                        competition={competition}
-                        result={result}
-                        submittedAttempts={submittedAttempts}
-                        limit={limit}
-                        maxAttempts={maxAttempts}
-                        remainingAndUsedCumulativeLimit={
-                            remainingAndUsedCumulativeLimit!
-                        }
-                    />
-                    <LastAttemptCard result={result} fetchData={fetchData} />
-                </div>
-                <Tabs defaultValue="submitted">
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Results</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <TabsList>
-                                <TabsTrigger value="submitted">
-                                    Submitted to WCA Live
-                                </TabsTrigger>
-                                <TabsTrigger value="standard">
-                                    Standard
-                                </TabsTrigger>
-                                {extraAttempts.length > 0 && (
-                                    <TabsTrigger value="extra">
-                                        Extra
-                                    </TabsTrigger>
-                                )}
-                                <TabsTrigger value="reorder">
-                                    Reorder & Extras
-                                </TabsTrigger>
-                            </TabsList>
-                        </CardContent>
-                    </Card>
-                    <TabsContent value="submitted">
-                        <Card>
-                            <CardHeader>
-                                <CardTitle>
-                                    Attempts submitted to WCA Live
-                                </CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                                {submittedAttempts.length === 0 ? (
-                                    <p>No attempts submitted to WCA Live</p>
-                                ) : (
-                                    <AttemptsTable
-                                        attempts={submittedAttempts as never}
-                                        fetchData={fetchData}
-                                        result={result}
-                                    />
-                                )}
-                            </CardContent>
-                        </Card>
-                    </TabsContent>
-                    <TabsContent value="standard">
-                        <Card>
-                            <CardHeader>
-                                <CardTitle>Standard attempts</CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                                {standardAttempts.length === 0 ? (
-                                    <p>No attempts</p>
-                                ) : (
-                                    <div className="flex flex-col gap-2">
-                                        <Button
-                                            className="w-fit"
-                                            onClick={() =>
-                                                setIsOpenSwapAttemptsModal(true)
-                                            }
-                                        >
-                                            Swap attempts
-                                        </Button>
-                                        <AttemptsTable
-                                            attempts={standardAttempts}
-                                            showExtraColumns
-                                            fetchData={fetchData}
-                                            result={result}
-                                        />
-                                    </div>
-                                )}
-                            </CardContent>
-                        </Card>
-                    </TabsContent>
-                    <TabsContent value="extra">
-                        <Card>
-                            <CardHeader>
-                                <CardTitle>Extra attempts</CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                                {extraAttempts.length === 0 ? (
-                                    <p>No extra attempts</p>
-                                ) : (
-                                    <AttemptsTable
-                                        attempts={extraAttempts}
-                                        fetchData={fetchData}
-                                        result={result}
-                                        showExtraColumns
-                                    />
-                                )}
-                            </CardContent>
-                        </Card>
-                    </TabsContent>
-                    <TabsContent value="reorder">
-                        <Card>
-                            <CardHeader>
-                                <CardTitle>
-                                    Reorder & Extra Assignment
-                                </CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                                {standardAttempts.length === 0 ? (
-                                    <p>No attempts</p>
-                                ) : (
-                                    <AttemptsReorderBoard
-                                        result={result}
-                                        standardAttempts={standardAttempts}
-                                        extraAttempts={extraAttempts}
-                                        fetchData={fetchData}
-                                    />
-                                )}
-                            </CardContent>
-                        </Card>
-                    </TabsContent>
-                </Tabs>
-                <CreateAttemptModal
-                    isOpen={isOpenCreateAttemptModal}
-                    onClose={handleCloseModal}
-                    roundId={result.roundId}
-                    competitorId={result.person.id}
-                    timeLimit={limit!}
+        <div className="flex w-full flex-col gap-5">
+            <SingleResultHeader
+                result={result}
+                fetchData={fetchData}
+                onEnterAttempt={() => setIsOpenCreateAttemptModal(true)}
+                standardAttempts={standardAttempts}
+                maxAttempts={maxAttempts}
+            />
+
+            <div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,240px),1fr))] items-start gap-3.5">
+                <section
+                    aria-label="Summary"
+                    className="grid grid-cols-2 gap-3.5 rounded-mobile-card border bg-card px-5 py-[18px] md:rounded-2xl"
+                >
+                    <div>
+                        <p className="text-xs font-semibold text-faint">
+                            Average
+                        </p>
+                        <p className="mt-0.5 text-2xl font-bold">
+                            {resultAverage
+                                ? resultToString(resultAverage)
+                                : "—"}
+                        </p>
+                    </div>
+                    <div>
+                        <p className="text-xs font-semibold text-faint">Best</p>
+                        <p className="mt-0.5 text-2xl font-bold">
+                            {formattedBest(submittedAttempts) || "—"}
+                        </p>
+                    </div>
+                    <p className="col-span-2 text-[13px] text-muted-foreground">
+                        {submittedAttempts.length} of {maxAttempts} attempts
+                        entered
+                    </p>
+                </section>
+                <WarningsAndLimitsCard
+                    competition={competition}
+                    result={result}
+                    submittedAttempts={submittedAttempts}
+                    limit={limit}
+                    maxAttempts={maxAttempts}
+                    remainingAndUsedCumulativeLimit={
+                        remainingAndUsedCumulativeLimit!
+                    }
                 />
-                <SwapAttemptsModal
-                    isOpen={isOpenSwapAttemptsModal}
-                    onClose={handleCloseModal}
-                    attempts={standardAttempts}
-                />
+                <LastAttemptCard result={result} fetchData={fetchData} />
             </div>
-        </PageTransition>
+
+            <PageTabs
+                label="Attempts"
+                value={tab}
+                onValueChange={setTab}
+                tabs={[
+                    {
+                        value: "submitted",
+                        label: "Submitted",
+                        count: submittedAttempts.length,
+                    },
+                    {
+                        value: "standard",
+                        label: "Standard",
+                        count: standardAttempts.length,
+                    },
+                    ...(extraAttempts.length > 0
+                        ? [
+                              {
+                                  value: "extra" as Tab,
+                                  label: "Extra attempts",
+                                  count: extraAttempts.length,
+                              },
+                          ]
+                        : []),
+                    { value: "reorder", label: "Reorder & extras" },
+                ]}
+            />
+
+            <section className="overflow-hidden rounded-mobile-card border bg-card md:rounded-2xl">
+                {tab === "submitted" &&
+                    (submittedAttempts.length === 0 ? (
+                        <EmptyState className="border-0">
+                            Nothing submitted to WCA Live yet.
+                        </EmptyState>
+                    ) : (
+                        <div className="overflow-x-auto">
+                            <AttemptsTable
+                                attempts={submittedAttempts as never}
+                                fetchData={fetchData}
+                                result={result}
+                            />
+                        </div>
+                    ))}
+                {tab === "standard" &&
+                    (standardAttempts.length === 0 ? (
+                        <EmptyState className="border-0">
+                            No attempts.
+                        </EmptyState>
+                    ) : (
+                        <>
+                            <div className="flex justify-end border-b p-3">
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() =>
+                                        setIsOpenSwapAttemptsModal(true)
+                                    }
+                                >
+                                    Swap attempts
+                                </Button>
+                            </div>
+                            <div className="overflow-x-auto">
+                                <AttemptsTable
+                                    attempts={standardAttempts}
+                                    showExtraColumns
+                                    fetchData={fetchData}
+                                    result={result}
+                                />
+                            </div>
+                        </>
+                    ))}
+                {tab === "extra" && (
+                    <div className="overflow-x-auto">
+                        <AttemptsTable
+                            attempts={extraAttempts}
+                            fetchData={fetchData}
+                            result={result}
+                            showExtraColumns
+                        />
+                    </div>
+                )}
+                {tab === "reorder" &&
+                    (standardAttempts.length === 0 ? (
+                        <EmptyState className="border-0">
+                            No attempts.
+                        </EmptyState>
+                    ) : (
+                        <div className="p-4 md:p-5">
+                            <AttemptsReorderBoard
+                                result={result}
+                                standardAttempts={standardAttempts}
+                                extraAttempts={extraAttempts}
+                                fetchData={fetchData}
+                            />
+                        </div>
+                    ))}
+            </section>
+
+            <CreateAttemptModal
+                isOpen={isOpenCreateAttemptModal}
+                onClose={handleCloseModal}
+                roundId={result.roundId}
+                competitorId={result.person.id}
+                existingAttempts={result.attempts}
+                timeLimit={limit!}
+            />
+            <SwapAttemptsModal
+                isOpen={isOpenSwapAttemptsModal}
+                onClose={handleCloseModal}
+                attempts={standardAttempts}
+            />
+        </div>
     );
 };
 

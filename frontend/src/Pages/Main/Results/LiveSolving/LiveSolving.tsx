@@ -1,20 +1,10 @@
-import { useAtomValue } from "jotai";
-import { CheckCircle2, Radio, TriangleAlert, WifiOff } from "lucide-react";
-import { useCallback, useContext, useEffect, useRef, useState } from "react";
-import { getPersonFromWcif } from "wcif-helpers";
+import { useCallback, useContext, useEffect, useMemo, useState } from "react";
 
-import { Avatar, AvatarFallback, AvatarImage } from "@/Components/ui/avatar";
-import { Badge } from "@/Components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/Components/ui/card";
-import useStationTimer from "@/hooks/useStationTimer";
-import { activityCodeToName } from "@/lib/activities";
-import { competitionAtom } from "@/lib/atoms";
+import LiveSolvingBoard from "@/Components/shared/LiveSolvingBoard";
 import { getAllDevices } from "@/lib/devices";
-import { Device, DeviceType } from "@/lib/interfaces";
+import { Device, DeviceType, Room } from "@/lib/interfaces";
 import { StationInfo } from "@/lib/liveSolving";
-import { centisecondsToClockFormat } from "@/lib/resultFormatters";
-import { cn } from "@/lib/utils";
-import PageTransition from "@/Pages/PageTransition";
+import { getAllRooms } from "@/lib/rooms";
 import { socket, SocketContext } from "@/socket";
 
 interface NewIncidentData {
@@ -22,14 +12,6 @@ interface NewIncidentData {
     deviceName: string;
     competitorName: string;
 }
-
-const formatCs = (cs: number) => {
-    try {
-        return centisecondsToClockFormat(Math.max(0, cs));
-    } catch {
-        return "0.00";
-    }
-};
 
 const playIncidentAlert = () => {
     const ctx = new AudioContext();
@@ -59,6 +41,7 @@ const playIncidentAlert = () => {
 const idleStation = (device: Device): StationInfo => ({
     espId: device.espId,
     deviceName: device.name,
+    roomId: device.roomId,
     personName: null,
     registrantId: null,
     groupId: null,
@@ -70,163 +53,7 @@ const idleStation = (device: Device): StationInfo => ({
     serverReceivedAt: 0,
 });
 
-const StationCard = ({
-    station,
-    competition,
-    hasIncident,
-}: {
-    station: StationInfo;
-    competition: ReturnType<typeof useAtomValue<typeof competitionAtom>>;
-    hasIncident: boolean;
-}) => {
-    const [flashing, setFlashing] = useState(false);
-    const prevHasIncident = useRef(false);
-
-    useEffect(() => {
-        if (hasIncident && !prevHasIncident.current) {
-            setFlashing(true);
-            const t = setTimeout(() => setFlashing(false), 1800);
-            return () => clearTimeout(t);
-        }
-        prevHasIncident.current = hasIncident;
-    }, [hasIncident]);
-
-    const { phase, displayTime, displayInspection } = useStationTimer(station);
-    // An offline station's last packet describes a solve that is long over
-    const isOffline = phase === "offline";
-    const personName = isOffline ? null : station.personName;
-    const groupId = isOffline ? null : station.groupId;
-
-    const wcifPerson =
-        competition && !isOffline && station.registrantId
-            ? getPersonFromWcif(station.registrantId, competition.wcif)
-            : null;
-
-    const avatarUrl = wcifPerson?.avatar?.thumbUrl ?? undefined;
-    const initials = personName?.[0]?.toUpperCase() ?? "?";
-
-    const roundId = groupId?.split("-g")[0] ?? null;
-    let roundName: string | null = null;
-    if (roundId) {
-        try {
-            roundName = activityCodeToName(roundId, true, true);
-        } catch {
-            roundName = null;
-        }
-    }
-
-    return (
-        <Card
-            className={cn(
-                hasIncident && "border-destructive border-2",
-                flashing && "incident-flash"
-            )}
-        >
-            <CardHeader className="pb-2 flex-row items-center justify-between space-y-0">
-                <span className="text-sm font-semibold text-muted-foreground">
-                    {station.deviceName}
-                </span>
-                <div className="flex items-center gap-1.5">
-                    {roundName && (
-                        <Badge variant="outline" className="text-xs">
-                            {roundName}
-                        </Badge>
-                    )}
-                    {hasIncident && (
-                        <Badge
-                            variant="destructive"
-                            className="text-xs gap-1 animate-pulse"
-                        >
-                            <TriangleAlert size={10} />
-                            Incident
-                        </Badge>
-                    )}
-                </div>
-            </CardHeader>
-            <CardContent className="flex flex-col gap-3">
-                <div className="flex items-center gap-3">
-                    <Avatar className="h-10 w-10">
-                        <AvatarImage src={avatarUrl} />
-                        <AvatarFallback>{initials}</AvatarFallback>
-                    </Avatar>
-                    <span className="font-medium truncate">
-                        {personName ?? "No competitor"}
-                    </span>
-                </div>
-
-                <div className="flex flex-col items-center gap-1">
-                    {phase === "finished" && (
-                        <>
-                            <div className="flex items-center gap-1.5 text-blue-500">
-                                <CheckCircle2 size={14} />
-                                <span className="text-xs font-medium uppercase tracking-wider">
-                                    Finished
-                                </span>
-                            </div>
-                            {displayTime != null && (
-                                <span className="text-4xl font-mono font-bold">
-                                    {formatCs(displayTime)}
-                                </span>
-                            )}
-                        </>
-                    )}
-                    {phase === "inspection" && displayInspection != null && (
-                        <>
-                            <span className="text-xs text-amber-500 font-medium uppercase tracking-wider">
-                                Inspection
-                            </span>
-                            <span className="text-4xl font-mono font-bold text-amber-500">
-                                {formatCs(displayInspection)}
-                            </span>
-                        </>
-                    )}
-                    {phase === "solving" && displayTime != null && (
-                        <>
-                            <span className="text-xs text-green-500 font-medium uppercase tracking-wider">
-                                Solving
-                            </span>
-                            <span className="text-4xl font-mono font-bold text-green-500">
-                                {formatCs(displayTime)}
-                            </span>
-                        </>
-                    )}
-                    {phase === "offline" && (
-                        <div className="flex items-center gap-1.5 text-muted-foreground">
-                            <WifiOff size={14} />
-                            <span className="text-xs font-medium uppercase tracking-wider">
-                                Offline
-                            </span>
-                        </div>
-                    )}
-                    {phase === "idle" && (
-                        <span className="text-muted-foreground text-sm">
-                            Waiting
-                        </span>
-                    )}
-                </div>
-
-                {!isOffline &&
-                    station.cumulativeLimitCentiseconds != null &&
-                    station.cumulativeRemainingCentiseconds != null && (
-                        <div className="border-t pt-2 text-xs text-muted-foreground flex justify-between">
-                            <span>Cumulative limit</span>
-                            <span className="font-mono">
-                                {formatCs(
-                                    station.cumulativeRemainingCentiseconds
-                                )}{" "}
-                                /{" "}
-                                {formatCs(station.cumulativeLimitCentiseconds)}{" "}
-                                remaining
-                            </span>
-                        </div>
-                    )}
-            </CardContent>
-        </Card>
-    );
-};
-
 const LiveSolving = () => {
-    const competition = useAtomValue(competitionAtom);
     const [stations, setStations] = useState<Map<number, StationInfo>>(
         new Map()
     );
@@ -234,12 +61,15 @@ const LiveSolving = () => {
         new Set()
     );
 
+    const [rooms, setRooms] = useState<Room[]>([]);
+
     const [isConnected] = useContext(SocketContext) as [
         number,
         React.Dispatch<React.SetStateAction<number>>,
     ];
 
     useEffect(() => {
+        getAllRooms().then(setRooms);
         getAllDevices(DeviceType.STATION).then((devices: Device[]) => {
             setStations((prev) => {
                 const next = new Map(prev);
@@ -311,43 +141,18 @@ const LiveSolving = () => {
         isConnected,
     ]);
 
-    const stationList = Array.from(stations.values()).sort(
-        (a, b) => a.espId - b.espId
+    const stationList = useMemo(
+        () => Array.from(stations.values()),
+        [stations]
     );
 
     return (
-        <PageTransition>
-            <div className="flex flex-col gap-4">
-                <Card>
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-2">
-                            <Radio size={20} />
-                            Live solving
-                        </CardTitle>
-                    </CardHeader>
-                </Card>
-
-                {stationList.length === 0 ? (
-                    <p className="text-muted-foreground text-sm text-center py-8">
-                        No active stations. Times will appear here once devices
-                        start sending data.
-                    </p>
-                ) : (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                        {stationList.map((station) => (
-                            <StationCard
-                                key={station.espId}
-                                station={station}
-                                competition={competition}
-                                hasIncident={incidentDevices.has(
-                                    station.deviceName
-                                )}
-                            />
-                        ))}
-                    </div>
-                )}
-            </div>
-        </PageTransition>
+        <LiveSolvingBoard
+            stations={stationList}
+            rooms={rooms}
+            incidentDevices={incidentDevices}
+            showOfflineCount
+        />
     );
 };
 

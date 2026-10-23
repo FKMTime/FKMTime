@@ -30,13 +30,19 @@ const MostMissedAssignments = lazy(
 );
 const CheckIn = lazy(() => import("./Pages/Main/CheckIn/CheckIn"));
 const Competition = lazy(() => import("./Pages/Main/Competition/Competition"));
+const CurrentGroups = lazy(
+    () => import("./Pages/Main/Competition/CurrentGroups/CurrentGroups")
+);
 const Devices = lazy(() => import("./Pages/Main/Devices/Devices"));
 const Home = lazy(() => import("./Pages/Main/Home/Home"));
 const ImportCompetition = lazy(
     () => import("./Pages/Main/ImportCompetition/ImportCompetition")
 );
-const Incidents = lazy(
-    () => import("./Pages/Main/Incidents/AllIncidents/Incidents")
+const IncidentsLayout = lazy(
+    () => import("./Pages/Main/Incidents/IncidentsLayout")
+);
+const OpenIncidents = lazy(
+    () => import("./Pages/Main/Incidents/OpenIncidents/OpenIncidents")
 );
 const ResolvedIncidents = lazy(
     () => import("./Pages/Main/Incidents/ResolvedIncidents/ResolvedIncidents")
@@ -74,6 +80,7 @@ const ScrambleSet = lazy(
 const ScramblingDeviceLayout = lazy(
     () => import("./Pages/ScramblingDevice/ScramblingDeviceLayout")
 );
+const More = lazy(() => import("./Pages/Main/More/More"));
 const Persons = lazy(() => import("./Pages/Main/Persons/Persons"));
 const Results = lazy(() => import("./Pages/Main/Results/Results"));
 const PublicView = lazy(
@@ -85,22 +92,14 @@ const SingleResult = lazy(
 const LiveSolving = lazy(
     () => import("./Pages/Main/Results/LiveSolving/LiveSolving")
 );
-const IncidentPage = lazy(
-    () => import("./Pages/Main/Incidents/IncidentPage/IncidentPage")
-);
 const PersonResults = lazy(
     () => import("./Pages/Main/Persons/PersonResults/PersonResults")
 );
 const ManualIncidents = lazy(
     () => import("./Pages/Main/Incidents/ManualIncidents/ManualIncidents")
 );
-const CreateManualIncident = lazy(
-    () =>
-        import(
-            "./Pages/Main/Incidents/ManualIncidents/CreateManualIncident/CreateManualIncident"
-        )
-);
 const PublicLayout = lazy(() => import("./Pages/Public/PublicLayout"));
+const PublicTv = lazy(() => import("./Pages/Public/Tv/PublicTv"));
 const PublicResults = lazy(() => import("./Pages/Public/PublicResults"));
 const PublicLiveSolving = lazy(
     () => import("./Pages/Public/PublicLiveSolving")
@@ -130,6 +129,10 @@ const App = () => {
                     element: <Home />,
                 },
                 {
+                    path: "more",
+                    element: <More />,
+                },
+                {
                     path: "users",
                     element: <Users />,
                 },
@@ -138,32 +141,27 @@ const App = () => {
                     element: <Competition />,
                 },
                 {
+                    path: "competition/groups",
+                    element: <CurrentGroups />,
+                },
+                {
                     path: "incidents",
-                    element: <Incidents />,
-                },
-                {
-                    path: "incidents/resolved",
-                    element: <ResolvedIncidents />,
-                },
-                {
-                    path: "incidents/noteworthy",
-                    element: <NoteworthyIncidents />,
-                },
-                {
-                    path: "incidents/warnings",
-                    element: <Warnings />,
-                },
-                {
-                    path: "incidents/manual",
-                    element: <ManualIncidents />,
-                },
-                {
-                    path: "incidents/manual/create",
-                    element: <CreateManualIncident />,
-                },
-                {
-                    path: "incidents/:id",
-                    element: <IncidentPage />,
+                    element: <IncidentsLayout />,
+                    children: [
+                        { index: true, element: <OpenIncidents /> },
+                        { path: "resolved", element: <ResolvedIncidents /> },
+                        {
+                            path: "noteworthy",
+                            element: <NoteworthyIncidents />,
+                        },
+                        { path: "warnings", element: <Warnings /> },
+                        { path: "manual", element: <ManualIncidents /> },
+                        {
+                            path: "manual/create",
+                            element: <ManualIncidents createOnOpen />,
+                        },
+                        { path: ":id", element: <OpenIncidents /> },
+                    ],
                 },
                 {
                     path: "persons",
@@ -255,13 +253,18 @@ const App = () => {
                 },
                 {
                     path: "statistics",
-                    element: <CompetitionStatistics showCharts />,
+                    element: <CompetitionStatistics />,
                 },
                 {
                     path: "events",
                     element: <UnofficialEvents />,
                 },
             ],
+        },
+        {
+            path: "/public/tv",
+            element: <PublicTv />,
+            errorElement: <ErrorPage />,
         },
         {
             path: "/public",

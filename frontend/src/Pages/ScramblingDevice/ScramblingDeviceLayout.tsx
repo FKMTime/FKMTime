@@ -1,16 +1,22 @@
 import { useSetAtom } from "jotai";
-import { Suspense, useCallback, useEffect } from "react";
-import { Outlet, useNavigate } from "react-router-dom";
+import { Suspense, useCallback, useEffect, useState } from "react";
+import { Outlet, useLocation, useNavigate } from "react-router-dom";
 
 import LoadingPage from "@/Components/LoadingPage";
 import { competitionAtom } from "@/lib/atoms";
 import { getCompetitionInfo } from "@/lib/competition";
 import { getEvents } from "@/lib/events";
+import { Room } from "@/lib/interfaces";
+import { getScramblingDeviceRoom } from "@/lib/scrambling";
 import { isScrambleDeviceTokenValid } from "@/lib/scramblingDevicesAuth";
+
+import { ScramblingDeviceOutletContext } from "./scramblingDeviceContext";
 
 const ScramblingDeviceLayout = () => {
     const navigate = useNavigate();
+    const { pathname } = useLocation();
     const setCompetition = useSetAtom(competitionAtom);
+    const [room, setRoom] = useState<Room | null>(null);
 
     useEffect(() => {
         isScrambleDeviceTokenValid().then((isLoggedIn) => {
@@ -29,22 +35,25 @@ const ScramblingDeviceLayout = () => {
         setCompetition(response.data);
     }, [navigate, setCompetition]);
 
-    const fetchEvents = async () => {
-        await getEvents();
-    };
-
     useEffect(() => {
         fetchCompetition();
     }, [fetchCompetition]);
 
     useEffect(() => {
-        fetchEvents();
+        getEvents();
     }, []);
 
+    // The room's current groups change during the day, so refetch per page
+    useEffect(() => {
+        getScramblingDeviceRoom().then(setRoom);
+    }, [pathname]);
+
+    const context: ScramblingDeviceOutletContext = { room };
+
     return (
-        <div className="flex flex-col h-screen p-5">
+        <div className="flex min-h-dvh flex-col">
             <Suspense fallback={<LoadingPage />}>
-                <Outlet />
+                <Outlet context={context} />
             </Suspense>
         </div>
     );

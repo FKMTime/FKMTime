@@ -1,69 +1,134 @@
 import { useAtom } from "jotai";
+import { ChevronRight } from "lucide-react";
 import { Suspense, useCallback, useContext, useEffect, useState } from "react";
-import { Outlet } from "react-router-dom";
+import { Outlet, useLocation } from "react-router-dom";
 
 import LoadingPage from "@/Components/LoadingPage";
 import ModeToggle from "@/Components/ModeToggle";
-import { SidebarProvider, SidebarTrigger } from "@/Components/ui/sidebar";
+import { StatusDot } from "@/Components/shared/StatusBadge";
+import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import { competitionAtom } from "@/lib/atoms";
 import { getPublicCompetitionInfo, getPublicRooms } from "@/lib/competition";
+import { getEvents } from "@/lib/events";
 import { Room } from "@/lib/interfaces";
+import { cn } from "@/lib/utils";
 import { socket, SocketContext } from "@/socket";
 
+import { isPublicResultsPath, PublicOutletContext } from "./publicNavigation";
 import PublicSidebar from "./PublicSidebar";
+import PublicTabs from "./PublicTabs";
 
+/**
+ * Public display shell: a 240px sidebar from 760px up, below that the
+ * wordmark in the header and two tabs under it.
+ */
 const PublicLayout = () => {
-    const [, setCompetition] = useAtom(competitionAtom);
-    const [currentRounds, setCurrentRounds] = useState<string[]>([]);
-    const [, setConnected] = useContext(SocketContext) as [
+    const location = useLocation();
+    const [competition, setCompetition] = useAtom(competitionAtom);
+    const [liveRoundIds, setLiveRoundIds] = useState<string[] | null>(null);
+    const [isLive, setIsLive] = useState(socket.connected);
+    const [isConnected, setConnected] = useContext(SocketContext) as [
         number,
         React.Dispatch<React.SetStateAction<number>>,
     ];
+    const isResults = isPublicResultsPath(location.pathname);
 
+    // Event names and icons are read from what getEvents stores, so they
+    // must be in place before the competition renders anything
     const fetchCompetition = useCallback(async () => {
-        const response = await getPublicCompetitionInfo();
+        const [response] = await Promise.all([
+            getPublicCompetitionInfo(),
+            getEvents(),
+        ]);
         if (response.status === 200) {
             setCompetition(response.data);
         }
     }, [setCompetition]);
 
-    const fetchRooms = useCallback(async () => {
-        const rooms: Room[] = await getPublicRooms();
-        const ids = new Set<string>(
-            rooms
-                .flatMap((room) => room.currentGroupIds)
-                .map((id) => id.split("-g")[0])
-        );
-        setCurrentRounds([...ids]);
-    }, []);
-
     useEffect(() => {
         fetchCompetition();
-        fetchRooms();
-    }, [fetchCompetition, fetchRooms]);
+    }, [fetchCompetition]);
+
+    // Refetched on reconnect: a dropped socket may have missed group changes
+    useEffect(() => {
+        getPublicRooms().then((rooms: Room[]) =>
+            setLiveRoundIds([
+                ...new Set(
+                    (rooms ?? []).flatMap((room) =>
+                        room.currentGroupIds.map((id) => id.split("-g")[0])
+                    )
+                ),
+            ])
+        );
+    }, [isConnected]);
 
     useEffect(() => {
+        const handleConnect = () => {
+            setIsLive(true);
+            setConnected((c) => c + 1);
+        };
+        const handleDisconnect = () => setIsLive(false);
+        socket.on("connect", handleConnect);
+        socket.on("disconnect", handleDisconnect);
         socket.connect();
-        socket.on("connect", () => setConnected((c) => c + 1));
         return () => {
-            socket.off("connect");
+            socket.off("connect", handleConnect);
+            socket.off("disconnect", handleDisconnect);
             socket.disconnect();
         };
     }, [setConnected]);
 
+    useDocumentTitle(isResults ? "Results" : "Live solving", competition?.name);
+
+    const outletContext: PublicOutletContext = { liveRoundIds };
+
     return (
-        <SidebarProvider>
-            <PublicSidebar currentRounds={currentRounds} />
-            <main className="w-full p-5 h-screen overflow-y-auto flex flex-col gap-5">
-                <div className="flex justify-between">
-                    <SidebarTrigger />
-                    <ModeToggle />
-                </div>
-                <Suspense fallback={<LoadingPage />}>
-                    <Outlet />
-                </Suspense>
-            </main>
-        </SidebarProvider>
+        <div className="flex min-h-dvh">
+            <PublicSidebar liveRoundIds={liveRoundIds ?? []} />
+            <div className="flex min-w-0 flex-1 flex-col">
+                <header className="sticky top-0 z-10 flex flex-col border-b bg-background">
+                    <div className="flex min-h-[62px] items-center gap-3 px-4 py-3 min-[760px]:px-7">
+                        <div className="flex min-w-0 flex-1 flex-col min-[760px]:hidden">
+                            <span className="text-base font-bold">FKMTime</span>
+                            <span className="truncate text-xs text-muted-foreground">
+                                {competition?.name}
+                            </span>
+                        </div>
+                        <div className="hidden min-w-0 flex-1 items-center gap-1 text-[15px] min-[760px]:flex">
+                            <span
+                                title={competition?.name}
+                                className="min-w-0 truncate font-medium text-muted-foreground"
+                            >
+                                {competition?.name}
+                            </span>
+                            <ChevronRight className="size-4 shrink-0 text-faint" />
+                            <h1 className="shrink-0 font-semibold">
+                                {isResults ? "Results" : "Live solving"}
+                            </h1>
+                        </div>
+                        <span className="flex items-center gap-1.5 whitespace-nowrap text-[13px] text-muted-foreground">
+                            <StatusDot
+                                tone={isLive ? "success" : "neutral"}
+                                className="size-2"
+                            />
+                            {isLive ? "Live" : "Reconnecting"}
+                        </span>
+                        <ModeToggle className="size-[38px] shrink-0" />
+                    </div>
+                    <PublicTabs />
+                </header>
+                <main
+                    className={cn(
+                        "flex w-full flex-col px-4 pb-10 pt-4 min-[760px]:px-7 min-[760px]:pb-14 min-[760px]:pt-5",
+                        isResults ? "max-w-[1100px]" : "max-w-[1440px]"
+                    )}
+                >
+                    <Suspense fallback={<LoadingPage />}>
+                        <Outlet context={outletContext} />
+                    </Suspense>
+                </main>
+            </div>
+        </div>
     );
 };
 

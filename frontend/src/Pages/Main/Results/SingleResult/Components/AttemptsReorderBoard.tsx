@@ -382,7 +382,6 @@ const AttemptsReorderBoard = ({
                     variant: "destructive",
                 });
             } else {
-                toast({ title: "Attempts reordered", variant: "success" });
                 fetchData();
             }
             return;
@@ -413,7 +412,6 @@ const AttemptsReorderBoard = ({
                     variant: "destructive",
                 });
             } else {
-                toast({ title: "Extra assigned", variant: "success" });
                 fetchData();
             }
         }

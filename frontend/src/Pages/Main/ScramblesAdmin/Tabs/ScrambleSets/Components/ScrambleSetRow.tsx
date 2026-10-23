@@ -1,9 +1,10 @@
-import DeleteButton from "@/Components/DeleteButton";
-import { TableCell, TableRow } from "@/Components/ui/table";
+import { Trash2 } from "lucide-react";
+
+import RowActions from "@/Components/shared/RowActions";
 import { useConfirm } from "@/hooks/useConfirm";
 import { useToast } from "@/hooks/useToast";
-import { activityCodeToName } from "@/lib/activities";
 import { ScrambleSet } from "@/lib/interfaces";
+import { scrambleCountLabel } from "@/lib/scrambleSets";
 import { deleteScrambleSet } from "@/lib/scrambleSets";
 
 interface ScrambleSetRowProps {
@@ -23,10 +24,6 @@ const ScrambleSetRow = ({ scrambleSet, fetchData }: ScrambleSetRowProps) => {
             .then(async () => {
                 const status = await deleteScrambleSet(scrambleSet.id);
                 if (status === 204) {
-                    toast({
-                        title: "Scramble set deleted",
-                        variant: "success",
-                    });
                     fetchData();
                 } else {
                     toast({
@@ -42,20 +39,30 @@ const ScrambleSetRow = ({ scrambleSet, fetchData }: ScrambleSetRowProps) => {
             });
     };
 
+    const name = `Set ${scrambleSet.set}`;
+
     return (
-        <TableRow>
-            <TableCell>
-                {activityCodeToName(scrambleSet.roundId)} Set {scrambleSet.set}
-            </TableCell>
-            <TableCell>{scrambleSet.scramblesCount}</TableCell>
-            <TableCell>{scrambleSet.extraScramblesCount}</TableCell>
-            <TableCell>
-                <DeleteButton
-                    onClick={handleDelete}
-                    title="Delete scramble set"
-                />
-            </TableCell>
-        </TableRow>
+        <li className="flex items-center gap-3 border-b py-2 pl-3.5 pr-1 last:border-b-0 md:py-2.5 md:pl-5 md:pr-3">
+            <div className="flex min-w-0 flex-1 flex-col md:flex-row md:items-center md:gap-6">
+                <span className="text-[15px] font-semibold md:w-24 md:text-sm">
+                    {name}
+                </span>
+                <span className="text-[13px] text-muted-foreground md:text-sm">
+                    {scrambleCountLabel(scrambleSet)}
+                </span>
+            </div>
+            <RowActions
+                subject={name}
+                items={[
+                    {
+                        label: "Delete scramble set",
+                        icon: Trash2,
+                        destructive: true,
+                        onSelect: handleDelete,
+                    },
+                ]}
+            />
+        </li>
     );
 };
 

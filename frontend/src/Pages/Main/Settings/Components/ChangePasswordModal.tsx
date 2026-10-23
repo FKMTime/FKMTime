@@ -15,6 +15,7 @@ import {
     FormMessage,
 } from "@/Components/ui/form";
 import { Input } from "@/Components/ui/input";
+import { useDialogError } from "@/hooks/useDialogError";
 import { useToast } from "@/hooks/useToast";
 import { changePasswordSchema } from "@/lib/schema/settingsSchema";
 import { changePassword } from "@/lib/settings";
@@ -25,6 +26,7 @@ interface ChangePasswordModalProps {
 }
 
 const ChangePasswordModal = ({ isOpen, onClose }: ChangePasswordModalProps) => {
+    const [error, setError] = useDialogError(isOpen);
     const { toast } = useToast();
     const [isLoading, setIsLoading] = useState(false);
 
@@ -35,11 +37,7 @@ const ChangePasswordModal = ({ isOpen, onClose }: ChangePasswordModalProps) => {
     const onSubmit = async (values: z.infer<typeof changePasswordSchema>) => {
         setIsLoading(true);
         if (values.newPassword !== values.confirmPassword) {
-            toast({
-                title: "Error",
-                description: "Passwords do not match",
-                variant: "destructive",
-            });
+            setError("Passwords do not match");
             setIsLoading(false);
             return;
         }
@@ -49,23 +47,21 @@ const ChangePasswordModal = ({ isOpen, onClose }: ChangePasswordModalProps) => {
             values.newPassword
         );
         if (status === 200) {
-            toast({
-                title: "Successfully changed password.",
-                variant: "success",
-            });
+            toast({ title: "Password changed", variant: "success" });
             onClose();
         } else {
-            toast({
-                title: "Error",
-                description: "Something went wrong",
-                variant: "destructive",
-            });
+            setError("Something went wrong");
         }
         setIsLoading(false);
     };
 
     return (
-        <Modal isOpen={isOpen} onClose={onClose} title="Change password">
+        <Modal
+            error={error}
+            isOpen={isOpen}
+            onClose={onClose}
+            title="Change password"
+        >
             <Form {...form}>
                 <form
                     onSubmit={form.handleSubmit(onSubmit)}
@@ -123,11 +119,7 @@ const ChangePasswordModal = ({ isOpen, onClose }: ChangePasswordModalProps) => {
                         )}
                     />
                     <ModalActions>
-                        <Button
-                            variant="success"
-                            type="submit"
-                            disabled={isLoading}
-                        >
+                        <Button type="submit" disabled={isLoading}>
                             Save
                         </Button>
                     </ModalActions>

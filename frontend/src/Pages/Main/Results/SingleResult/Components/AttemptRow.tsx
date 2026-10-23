@@ -1,11 +1,9 @@
-import { History, MessageSquarePlus } from "lucide-react";
+import { History, MessageSquarePlus, Pencil, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import AttemptWarnings from "@/Components/AttemptWarnings";
-import DeleteButton from "@/Components/DeleteButton";
-import EditButton from "@/Components/EditButton";
-import SmallIconButton from "@/Components/SmallIconButton";
+import RowActions from "@/Components/shared/RowActions";
 import { Badge } from "@/Components/ui/badge";
 import { TableCell, TableRow } from "@/Components/ui/table";
 import { useConfirm } from "@/hooks/useConfirm";
@@ -45,17 +43,13 @@ const AttemptRow = ({
 
     const handleDelete = async () => {
         confirm({
-            title: "Delete attempt",
-            description:
-                "Are you sure you want to delete this attempt? This action cannot be undone",
+            title: "Delete this attempt?",
+            description: "This action cannot be undone.",
+            confirmLabel: "Delete attempt",
         })
             .then(async () => {
                 const response = await deleteAttempt(attempt.id);
                 if (response.status === 200) {
-                    toast({
-                        title: "Successfully deleted attempt.",
-                        variant: "success",
-                    });
                     if (response.data.resultDeleted) {
                         navigate(`/results/round/${result.roundId}`);
                     } else {
@@ -69,13 +63,7 @@ const AttemptRow = ({
                     });
                 }
             })
-            .catch(() => {
-                toast({
-                    title: "Cancelled",
-                    description:
-                        "You have cancelled the deletion of the attempt.",
-                });
-            });
+            .catch(() => undefined);
     };
 
     const handleCloseModal = async () => {
@@ -87,7 +75,7 @@ const AttemptRow = ({
     return (
         <>
             <TableRow key={attempt.id}>
-                <TableCell>
+                <TableCell className="pl-5">
                     {attempt.type === AttemptType.EXTRA_ATTEMPT
                         ? `Extra ${attempt.attemptNumber}`
                         : attempt.attemptNumber}
@@ -125,29 +113,44 @@ const AttemptRow = ({
                 </TableCell>
                 <TableCell>{attempt.updatedBy?.fullName}</TableCell>
                 <TableCell>
-                    <EditButton
-                        onClick={() => setIsOpenEditAttemptModal(true)}
-                    />
-                    <SmallIconButton
-                        icon={<History />}
-                        title="Edit history"
-                        onClick={() => setIsOpenHistoryModal(true)}
-                    />
-                    <SmallIconButton
-                        icon={<MessageSquarePlus />}
-                        title="Give extra attempt"
-                        onClick={() => setIsOpenGiveExtraAttemptModal(true)}
-                    />
-                    <DeleteButton onClick={handleDelete} />
-                </TableCell>
-                <TableCell>
                     <div className="flex flex-wrap gap-2">
                         {!attempt.sessionId &&
                             attempt.status !== AttemptStatus.SCRAMBLED && (
-                                <Badge>Entered manually</Badge>
+                                <Badge variant="secondary">
+                                    Entered manually
+                                </Badge>
                             )}
                         <AttemptWarnings attempt={attempt} />
                     </div>
+                </TableCell>
+                <TableCell className="pr-3">
+                    <RowActions
+                        subject={`Attempt ${attempt.attemptNumber}`}
+                        primary={{
+                            label: "Edit attempt",
+                            icon: Pencil,
+                            onSelect: () => setIsOpenEditAttemptModal(true),
+                        }}
+                        items={[
+                            {
+                                label: "Edit history",
+                                icon: History,
+                                onSelect: () => setIsOpenHistoryModal(true),
+                            },
+                            {
+                                label: "Give extra attempt",
+                                icon: MessageSquarePlus,
+                                onSelect: () =>
+                                    setIsOpenGiveExtraAttemptModal(true),
+                            },
+                            {
+                                label: "Delete attempt",
+                                icon: Trash2,
+                                destructive: true,
+                                onSelect: handleDelete,
+                            },
+                        ]}
+                    />
                 </TableCell>
             </TableRow>
             <AttemptEditHistoryModal

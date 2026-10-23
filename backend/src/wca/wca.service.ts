@@ -1,12 +1,7 @@
 import { HttpException, Injectable, Logger } from '@nestjs/common';
-import {
-  Attempt,
-  AttemptStatus,
-  AttemptType,
-  Competition,
-} from '@prisma/client';
+import { Attempt, Competition } from '@prisma/client';
 import { DNF_VALUE, DNS_VALUE } from 'src/constants';
-import { getSortedStandardAttempts } from 'src/result/helpers';
+import { getCountingAttempts, getFinalExtraAttempt } from 'src/result/helpers';
 import { Competition as Wcif, Person } from 'wcif-helpers';
 
 import { DbService } from '../db/db.service';
@@ -92,34 +87,9 @@ export class WcaService {
   }
 
   getAttemptsToEnterToWcaLive(result: any, competition: Competition) {
-    const attempts = result.attempts;
-    const attemptsToReturn = [];
-    const standardAttempts = getSortedStandardAttempts(attempts);
-    standardAttempts.forEach((attempt) => {
-      if (
-        attempt.replacedBy === null &&
-        !attemptsToReturn.some((a) => a.id === attempt.id) &&
-        attempt.status !== AttemptStatus.UNRESOLVED &&
-        attempt.status !== AttemptStatus.EXTRA_GIVEN &&
-        attempt.status !== AttemptStatus.SCRAMBLED
-      ) {
-        attemptsToReturn.push({
-          ...attempt,
-          number: attemptsToReturn.length + 1,
-        });
-      } else if (
-        attempt.replacedBy !== null &&
-        attempt.status === AttemptStatus.EXTRA_GIVEN
-      ) {
-        const extraAttempt = this.getExtra(attempt.id, attempts);
-        if (extraAttempt && !attemptsToReturn.includes(extraAttempt)) {
-          attemptsToReturn.push({
-            ...extraAttempt,
-            number: attemptsToReturn.length + 1,
-          });
-        }
-      }
-    });
+    const attemptsToReturn = getCountingAttempts(result.attempts).map(
+      (attempt, index) => ({ ...attempt, number: index + 1 }),
+    );
     const sorted = attemptsToReturn.sort((a, b) => a.number - b.number);
     const timesToSubmit = sorted.map((attempt) => {
       return {
@@ -148,17 +118,7 @@ export class WcaService {
   }
 
   getExtra(originalAttemptId: string, attempts: Attempt[]) {
-    const originalAttempt = attempts.find((a) => a.id === originalAttemptId);
-    const extraAttempt = attempts.find(
-      (a) =>
-        a.attemptNumber === originalAttempt?.replacedBy &&
-        a.type === AttemptType.EXTRA_ATTEMPT,
-    );
-    if (extraAttempt && extraAttempt.replacedBy) {
-      const furtherExtraAttempt = this.getExtra(extraAttempt.id, attempts);
-      return furtherExtraAttempt || extraAttempt;
-    }
-    return extraAttempt;
+    return getFinalExtraAttempt(originalAttemptId, attempts);
   }
 
   async getWcif(

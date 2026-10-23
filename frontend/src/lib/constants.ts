@@ -48,5 +48,6 @@ export const roundFormats = [
 ];
 export const CUTOFF_ALLOWED = ["a", "m"];
 export const GITHUB_URL = "https://github.com/FKMTime/FKMTime";
+// Also read by the pre-paint theme script in index.html
 export const THEME_STORAGE_KEY = "fkmtime-theme";
 export const POSSIBLE_GENDERS = ["m", "f", "o"];

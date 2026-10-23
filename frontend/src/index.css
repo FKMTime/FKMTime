@@ -6,82 +6,111 @@ html,
 body,
 :root {
   height: 100%;
-} 
+}
 
+/*
+ * Design tokens. Values are HSL channels so Tailwind opacity modifiers
+ * (bg-primary/50) keep working. The shadcn names map onto the design
+ * tokens: background = bg, card/popover = surface, secondary/muted = surface2,
+ * accent = hover, destructive = bad, input = borderStrong.
+ */
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    /* Native UI (scrollbars, pickers, autofill) follows the active theme */
+    color-scheme: light;
+    --background: 220 17.6% 96.7%;
+    --foreground: 216 27.3% 10.8%;
     --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card-foreground: 216 27.3% 10.8%;
     --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
-    --primary: 221.2 83.2% 53.3%;
-    --primary-foreground: 210 40% 98%;
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
-    --warning: 37.7 92.1% 50.2%;
-    --warning-foreground: 210 40% 98%;
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 221.2 83.2% 53.3%;
+    --popover-foreground: 216 27.3% 10.8%;
+    --primary: 224 69.8% 49.4%;
+    --primary-foreground: 0 0% 100%;
+    --primary-soft: 222 83.3% 95.3%;
+    --primary-muted: 224.1 67.5% 77.1%;
+    --secondary: 216 20% 95.1%;
+    --secondary-foreground: 216 27.3% 10.8%;
+    --muted: 216 20% 95.1%;
+    --muted-foreground: 216 12.1% 40.6%;
+    --faint: 215 11.2% 58%;
+    --accent: 220 21.4% 94.5%;
+    --accent-foreground: 216 27.3% 10.8%;
+    --destructive: 0 62.6% 46.1%;
+    --destructive-foreground: 0 0% 100%;
+    --destructive-soft: 0 71.4% 94.5%;
+    --success: 152.9 73.9% 27.1%;
+    --success-foreground: 0 0% 100%;
+    --success-soft: 148.2 41.5% 92%;
+    --warning: 34.3 100% 30.2%;
+    --warning-foreground: 0 0% 100%;
+    --warning-soft: 38.2 84.6% 92.4%;
+    --border: 217.5 16% 90.2%;
+    --border-strong: 216.9 13.7% 81.4%;
+    --input: 216.9 13.7% 81.4%;
+    --track: 217.5 16% 90.2%;
+    --ring: 224 69.8% 49.4%;
     --radius: 0.5rem;
-    --chart-1: 12 76% 61%;
-    --chart-2: 173 58% 39%;
-    --chart-3: 197 37% 24%;
-    --chart-4: 43 74% 66%;
-    --chart-5: 27 87% 67%;
-    --sidebar-background: 0 0% 98%;
-    --sidebar-foreground: 240 5.3% 26.1%;
-    --sidebar-primary: 240 5.9% 10%;
-    --sidebar-primary-foreground: 0 0% 98%;
-    --sidebar-accent: 240 4.8% 95.9%;
-    --sidebar-accent-foreground: 240 5.9% 10%;
-    --sidebar-border: 220 13% 91%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --chart-1: 224 69.8% 49.4%;
+    --chart-2: 152.9 73.9% 27.1%;
+    --chart-3: 34.3 100% 30.2%;
+    --chart-4: 0 62.6% 46.1%;
+    --chart-5: 224.1 67.5% 77.1%;
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 216 27.3% 10.8%;
+    --sidebar-primary: 224 69.8% 49.4%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 222 83.3% 95.3%;
+    --sidebar-accent-foreground: 224 69.8% 49.4%;
+    --sidebar-border: 217.5 16% 90.2%;
+    --sidebar-ring: 224 69.8% 49.4%;
   }
 
   .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
-    --primary: 217.2 91.2% 59.8%;
-    --primary-foreground: 20 14.3% 4.1%;
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
-    --warning: 37.7 92.1% 50.2%;
-    --warning-foreground: 210 40% 98%;
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 224.3 76.3% 48%;
-    --chart-1: 220 70% 50%;
-    --chart-2: 160 60% 45%;
-    --chart-3: 30 80% 55%;
-    --chart-4: 280 65% 60%;
-    --chart-5: 340 75% 55%;
-    --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 48%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    color-scheme: dark;
+    --background: 217.5 21.1% 7.5%;
+    --foreground: 217.5 21.1% 92.5%;
+    --card: 218.2 19.3% 11.2%;
+    --card-foreground: 217.5 21.1% 92.5%;
+    --popover: 218.2 19.3% 11.2%;
+    --popover-foreground: 217.5 21.1% 92.5%;
+    --primary: 225.6 100% 76.3%;
+    --primary-foreground: 223.6 47.8% 9%;
+    --primary-soft: 223.8 37.4% 19.4%;
+    --primary-muted: 224.6 34.9% 41.6%;
+    --secondary: 218.6 19.4% 14.1%;
+    --secondary-foreground: 217.5 21.1% 92.5%;
+    --muted: 218.6 19.4% 14.1%;
+    --muted-foreground: 215.5 13.1% 67.1%;
+    --faint: 215 9.4% 49.8%;
+    --accent: 218.8 20.5% 16.3%;
+    --accent-foreground: 217.5 21.1% 92.5%;
+    --destructive: 0 100% 77.1%;
+    --destructive-foreground: 223.6 47.8% 9%;
+    --destructive-soft: 0 33.3% 15.3%;
+    --success: 148.7 54.5% 58.6%;
+    --success-foreground: 223.6 47.8% 9%;
+    --success-soft: 150 32.3% 12.2%;
+    --warning: 36.2 84.9% 66.3%;
+    --warning-foreground: 223.6 47.8% 9%;
+    --warning-soft: 38.6 43.8% 12.5%;
+    --border: 218.8 17.5% 19%;
+    --border-strong: 218.2 15.9% 27.1%;
+    --input: 218.2 15.9% 27.1%;
+    --track: 218.8 16.8% 19.8%;
+    --ring: 225.6 100% 76.3%;
+    --chart-1: 225.6 100% 76.3%;
+    --chart-2: 148.7 54.5% 58.6%;
+    --chart-3: 36.2 84.9% 66.3%;
+    --chart-4: 0 100% 77.1%;
+    --chart-5: 224.6 34.9% 41.6%;
+    --sidebar-background: 218.2 19.3% 11.2%;
+    --sidebar-foreground: 217.5 21.1% 92.5%;
+    --sidebar-primary: 225.6 100% 76.3%;
+    --sidebar-primary-foreground: 223.6 47.8% 9%;
+    --sidebar-accent: 223.8 37.4% 19.4%;
+    --sidebar-accent-foreground: 225.6 100% 76.3%;
+    --sidebar-border: 218.8 17.5% 19%;
+    --sidebar-ring: 225.6 100% 76.3%;
   }
 }
 
@@ -90,21 +119,84 @@ body,
     @apply border-border;
   }
   body {
-    @apply bg-background text-secondary-foreground;
+    @apply bg-background font-sans text-sm text-foreground antialiased;
+    font-variant-numeric: tabular-nums;
+  }
+  input::placeholder,
+  textarea::placeholder {
+    @apply text-faint;
   }
 }
 
 @keyframes incident-flash {
   0%   { background-color: transparent; }
-  10%  { background-color: hsl(0 84.2% 60.2% / 0.35); }
+  10%  { background-color: hsl(var(--destructive) / 0.35); }
   25%  { background-color: transparent; }
-  40%  { background-color: hsl(0 84.2% 60.2% / 0.35); }
+  40%  { background-color: hsl(var(--destructive) / 0.35); }
   55%  { background-color: transparent; }
-  70%  { background-color: hsl(0 84.2% 60.2% / 0.25); }
+  70%  { background-color: hsl(var(--destructive) / 0.25); }
   85%  { background-color: transparent; }
+  100% { background-color: transparent; }
+}
+
+@keyframes incident-highlight {
+  0%   { background-color: transparent; }
+  15%  { background-color: hsl(var(--destructive) / 0.3); }
   100% { background-color: transparent; }
 }
 
 .incident-flash {
   animation: incident-flash 1.8s ease-out forwards;
+}
+
+/* Reduced motion: one steady highlight instead of repeated flashing */
+@media (prefers-reduced-motion: reduce) {
+  .incident-flash {
+    animation: incident-highlight 2.4s ease-out forwards;
+  }
+}
+
+/*
+ * Reduced motion: dialogs, sheets, menus, tooltips and toasts still fade,
+ * but no longer slide, zoom or spin in. tailwindcss-animate builds every
+ * enter/exit transform from these variables, so zeroing them leaves only
+ * the opacity change. !important because the slide/zoom utilities that set
+ * them are more specific (class + data-state attribute).
+ */
+@media (prefers-reduced-motion: reduce) {
+  [class*="animate-in"],
+  [class*="animate-out"] {
+    --tw-enter-translate-x: 0 !important;
+    --tw-enter-translate-y: 0 !important;
+    --tw-enter-scale: 1 !important;
+    --tw-enter-rotate: 0 !important;
+    --tw-exit-translate-x: 0 !important;
+    --tw-exit-translate-y: 0 !important;
+    --tw-exit-scale: 1 !important;
+    --tw-exit-rotate: 0 !important;
+  }
+}
+
+/*
+ * Horizontal strips with a hidden scrollbar fade out on the side that has
+ * more to scroll; useScrollFade sets the data attributes.
+ */
+.scroll-fade-x {
+  --fade-start: 0px;
+  --fade-end: 0px;
+  mask-image: linear-gradient(
+    to right,
+    transparent,
+    #000 var(--fade-start),
+    #000 calc(100% - var(--fade-end)),
+    transparent
+  );
+}
+
+.scroll-fade-x[data-more-start] {
+  --fade-start: 1.5rem;
+}
+
+.scroll-fade-x[data-more-end] {
+  --fade-end: 1.5rem;
 }

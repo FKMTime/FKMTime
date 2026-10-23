@@ -83,19 +83,6 @@ export const getDevicesSettings = async () => {
     return await response.json();
 };
 
-export const getActivitiesWithRealEndTime = async (
-    venueId: number,
-    roomId: number,
-    date: Date
-) => {
-    const response = await backendRequest(
-        `competition/activities?venueId=${venueId}&roomId=${roomId}&date=${date.toISOString()}`,
-        "GET",
-        true
-    );
-    return await response.json();
-};
-
 type CompetitionWithoutWCIF = Omit<Competition, "wcif">;
 
 export const updateDevicesSettings = async (
@@ -152,7 +139,7 @@ export const searchCompetitions = async (name: string) => {
                 )}-${today.getDate().toString().padStart(2, "0")}`;
         }
         const response = await wcaApiRequest(
-            `competitions?q=${name}&start=${start}&per_page=50&sort=start_date`,
+            `competitions?q=${encodeURIComponent(name)}&start=${start}&per_page=50&sort=start_date`,
             token
         );
         const data = await response.json();

@@ -112,6 +112,12 @@ export class CompetitionController {
     return this.roomsService.getAllRooms();
   }
 
+  @UseGuards(AuthGuard('jwt'))
+  @Get('rooms/progress')
+  async getRoomsProgress() {
+    return this.roomsService.getRoomsProgress();
+  }
+
   @UseGuards(OrganizerGuard)
   @Get('available-locales')
   async getAvailableLocales() {

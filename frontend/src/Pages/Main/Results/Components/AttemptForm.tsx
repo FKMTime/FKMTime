@@ -1,21 +1,14 @@
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
+import { useAtomValue } from "jotai";
+import { ChevronDown } from "lucide-react";
+import { FormEvent, useMemo, useRef, useState } from "react";
 import { TimeLimit } from "wcif-helpers";
-import { z } from "zod";
 
 import AttemptResultInput from "@/Components/AttemptResultInput";
 import DeviceSelect from "@/Components/DeviceSelect";
-import PenaltySelect from "@/Components/PenaltySelect";
 import PersonAutocomplete from "@/Components/PersonAutocomplete";
+import InlineError from "@/Components/shared/InlineError";
+import SegmentedControl from "@/Components/shared/SegmentedControl";
 import { Button } from "@/Components/ui/button";
-import {
-    Form,
-    FormField,
-    FormItem,
-    FormLabel,
-    FormMessage,
-} from "@/Components/ui/form";
-import { Input } from "@/Components/ui/input";
 import {
     Select,
     SelectContent,
@@ -23,323 +16,374 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/Components/ui/select";
+import { Textarea } from "@/Components/ui/textarea";
 import { useToast } from "@/hooks/useToast";
-import { DNF_VALUE, DNS_VALUE } from "@/lib/constants";
+import { competitionAtom } from "@/lib/atoms";
 import {
-    Attempt,
-    AttemptData,
-    AttemptStatus,
-    AttemptType,
-} from "@/lib/interfaces";
-import { createAttemptSchema } from "@/lib/schema/resultSchema";
-import { prettyAttemptStatus, prettyAttemptType } from "@/lib/utils";
+    AttemptOutcome,
+    outcomeFromStatus,
+    statusFromOutcome,
+} from "@/lib/attemptOutcome";
+import { AVAILABLE_PENALTIES, DNF_VALUE, DNS_VALUE } from "@/lib/constants";
+import { Attempt, AttemptData, AttemptType } from "@/lib/interfaces";
+import {
+    getAttemptOptions,
+    getNextAttemptValue,
+    getNumberOfAttempts,
+} from "@/lib/quickEntry";
+import { cn } from "@/lib/utils";
 
 interface AttemptFormProps {
     attempt?: Attempt;
     competitorId?: string;
+    /** The competitor's attempts so far; a new attempt starts at the next one */
+    existingAttempts?: Pick<Attempt, "attemptNumber" | "type">[];
     handleSubmit: (data: AttemptData) => void;
+    onCancel?: () => void;
     isLoading: boolean;
+    /** Error from saving, shown above the buttons */
+    submitError?: string;
     roundId: string;
     timeLimit?: TimeLimit;
 }
 
+const LABEL = "text-[13px] font-semibold text-muted-foreground";
+const COMMON_PENALTIES = [0, 2, 4, DNF_VALUE, DNS_VALUE];
+const OTHER_PENALTIES = AVAILABLE_PENALTIES.filter(
+    (penalty) => !COMMON_PENALTIES.includes(penalty.value)
+);
+const penaltyLabel = (value: number) =>
+    value === 0
+        ? "None"
+        : AVAILABLE_PENALTIES.find((p) => p.value === value)?.label ??
+          `+${value}`;
+
+const OUTCOME_LABELS: Record<AttemptOutcome, string> = {
+    counts: "Counts",
+    extra: "Extra granted",
+    open: "Open incident",
+    scrambled: "Only scrambled",
+};
+
+/**
+ * Enter or edit one attempt in plain terms: which attempt, the time, the
+ * penalty and whether an extra was granted. Status, type and replaced-by are
+ * derived from those choices.
+ */
 const AttemptForm = ({
     attempt,
-    competitorId,
+    competitorId: fixedCompetitorId,
+    existingAttempts,
     handleSubmit,
+    onCancel,
     isLoading,
+    submitError,
     roundId,
     timeLimit,
 }: AttemptFormProps) => {
+    const formRef = useRef<HTMLFormElement>(null);
     const { toast } = useToast();
-    const form = useForm<z.infer<typeof createAttemptSchema>>({
-        resolver: zodResolver(createAttemptSchema),
-        defaultValues: {
-            type: attempt ? attempt.type : AttemptType.STANDARD_ATTEMPT,
-            status: attempt ? attempt.status : AttemptStatus.STANDARD,
-            competitorId: competitorId ? competitorId : "",
-            judgeId: attempt?.judge ? attempt.judgeId : "",
-            scramblerId: attempt?.scrambler ? attempt.scramblerId : "",
-            deviceId: attempt ? attempt.deviceId : "",
-            attemptNumber: attempt ? attempt.attemptNumber : 1,
-            value: attempt ? attempt.value : 0,
-            penalty: attempt ? attempt.penalty : 0,
-            comment: attempt ? attempt.comment : "",
-            replacedBy: attempt?.replacedBy
-                ? attempt.replacedBy.toString()
-                : "",
-        },
-    });
+    const competition = useAtomValue(competitionAtom);
+    const attemptOptions = useMemo(
+        () =>
+            getAttemptOptions(getNumberOfAttempts(roundId, competition?.wcif)),
+        [roundId, competition?.wcif]
+    );
+    const extraOptions = attemptOptions.filter(
+        (option) => option.type === AttemptType.EXTRA_ATTEMPT
+    );
+    const optionValueFor = (type: AttemptType, attemptNumber: number) =>
+        attemptOptions.find(
+            (o) => o.type === type && o.attemptNumber === attemptNumber
+        )?.value ?? "1";
 
-    const onSubmit = (values: z.infer<typeof createAttemptSchema>) => {
-        if (values.judgeId && values.competitorId === values.judgeId) {
-            return toast({
-                title: "Judge cannot be the same as competitor",
-                variant: "destructive",
-            });
-        }
-        if (values.scramblerId && values.competitorId === values.scramblerId) {
-            return toast({
-                title: "Scrambler cannot be the same as competitor",
-                variant: "destructive",
-            });
-        }
+    const [competitorId, setCompetitorId] = useState(fixedCompetitorId ?? "");
+    const [attemptValue, setAttemptValue] = useState(() =>
+        attempt
+            ? optionValueFor(attempt.type, attempt.attemptNumber)
+            : getNextAttemptValue(attemptOptions, existingAttempts ?? [])
+    );
+    const [value, setValue] = useState(attempt?.value ?? 0);
+    const [penalty, setPenalty] = useState(attempt?.penalty ?? 0);
+    const [outcome, setOutcome] = useState<AttemptOutcome>(
+        attempt ? outcomeFromStatus(attempt.status) : "counts"
+    );
+    const [replacedBy, setReplacedBy] = useState(
+        attempt?.replacedBy ? String(attempt.replacedBy) : "0"
+    );
+    const [judgeId, setJudgeId] = useState(attempt?.judgeId ?? "");
+    const [scramblerId, setScramblerId] = useState(attempt?.scramblerId ?? "");
+    const [deviceId, setDeviceId] = useState(attempt?.deviceId ?? "");
+    const [comment, setComment] = useState(attempt?.comment ?? "");
+    const [error, setError] = useState("");
+    const hasDetails = !!(judgeId || scramblerId || deviceId || comment);
+    const [showDetails, setShowDetails] = useState(false);
+
+    // Incident states are kept, never offered for a new attempt
+    const outcomeOptions: AttemptOutcome[] = [
+        "counts",
+        "extra",
+        ...(attempt && outcomeFromStatus(attempt.status) === "open"
+            ? (["open"] as const)
+            : []),
+        ...(attempt && outcomeFromStatus(attempt.status) === "scrambled"
+            ? (["scrambled"] as const)
+            : []),
+    ];
+    const isTimeless = penalty === DNF_VALUE || penalty === DNS_VALUE;
+    const isTimeOptional = outcome === "extra" || isTimeless;
+    const isOtherPenalty = OTHER_PENALTIES.some((p) => p.value === penalty);
+
+    const onSubmit = (event: FormEvent) => {
+        event.preventDefault();
+        setError("");
+        if (!competitorId) return setError("Choose a competitor.");
+        if (judgeId && judgeId === competitorId)
+            return setError("The judge can't be the competitor.");
+        if (scramblerId && scramblerId === competitorId)
+            return setError("The scrambler can't be the competitor.");
+        if (!isTimeOptional && !value)
+            return setError("Enter the time, or choose DNF or DNS.");
+
+        const option =
+            attemptOptions.find((o) => o.value === attemptValue) ??
+            attemptOptions[0];
         const data: AttemptData = {
             roundId,
-            ...values,
-            penalty: values.penalty ? +values.penalty : 0,
-            judgeId: values.judgeId ? values.judgeId : undefined,
-            scramblerId: values.scramblerId ? values.scramblerId : undefined,
-            type: values.type as AttemptType,
-            status: values.status as AttemptStatus,
-            comment: values.comment ? values.comment : "",
-            replacedBy: values.replacedBy ? +values.replacedBy : 0,
-            deviceId: values.deviceId ? values.deviceId : undefined,
+            competitorId,
+            type: option.type,
+            attemptNumber: option.attemptNumber,
+            status: statusFromOutcome(outcome, attempt?.status),
+            value: isTimeless ? 0 : value,
+            penalty,
+            replacedBy: outcome === "extra" ? +replacedBy : 0,
+            judgeId: judgeId || undefined,
+            scramblerId: scramblerId || undefined,
+            deviceId: deviceId || undefined,
+            comment,
         };
-
-        const isTimeRequired =
-            data.status !== AttemptStatus.EXTRA_GIVEN &&
-            data.penalty !== DNF_VALUE &&
-            data.penalty !== DNS_VALUE;
-
-        if (isTimeRequired && (!data.value || data.value === 0)) {
-            toast({
-                title: "Time is required",
-                variant: "destructive",
-            });
-            return;
-        }
-        if (timeLimit) {
-            if (data.value + data.penalty * 100 > timeLimit.centiseconds) {
-                data.penalty = DNF_VALUE;
-                toast({
-                    title: "Time limit not passed, time was replaced to DNF",
-                });
-            }
+        if (
+            timeLimit &&
+            !isTimeless &&
+            data.value + data.penalty * 100 > timeLimit.centiseconds
+        ) {
+            data.penalty = DNF_VALUE;
+            toast({ title: "Over the time limit, saved as DNF" });
         }
         handleSubmit(data);
     };
 
     return (
-        <Form {...form}>
-            <form
-                onSubmit={form.handleSubmit(onSubmit)}
-                className="space-y-8 py-3"
-            >
-                <FormField
-                    control={form.control}
-                    name="competitorId"
-                    render={({ field }) => (
-                        <FormItem>
-                            <FormLabel>Competitor</FormLabel>
-                            <PersonAutocomplete
-                                onSelect={(person) =>
-                                    field.onChange(person?.id)
-                                }
-                                defaultValue={field.value}
-                                disabled={!!competitorId}
-                            />
-                            <FormMessage />
-                        </FormItem>
-                    )}
-                />
-                <FormField
-                    control={form.control}
-                    name="type"
-                    render={({ field }) => (
-                        <FormItem>
-                            <FormLabel>Type</FormLabel>
-                            <Select
-                                onValueChange={field.onChange}
-                                defaultValue={field.value}
-                            >
-                                <SelectTrigger>
-                                    <SelectValue placeholder="Select type" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {(
-                                        Object.keys(AttemptType) as Array<
-                                            keyof typeof AttemptType
-                                        >
-                                    ).map((key) => (
-                                        <SelectItem key={key} value={key}>
-                                            {prettyAttemptType(
-                                                key as AttemptType
-                                            )}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                            <FormMessage />
-                        </FormItem>
-                    )}
-                />
-                <FormField
-                    control={form.control}
-                    name="status"
-                    render={({ field }) => (
-                        <FormItem>
-                            <FormLabel>Status</FormLabel>
-                            <Select
-                                onValueChange={field.onChange}
-                                defaultValue={field.value}
-                            >
-                                <SelectTrigger>
-                                    <SelectValue placeholder="Select status" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {(
-                                        Object.keys(AttemptStatus) as Array<
-                                            keyof typeof AttemptStatus
-                                        >
-                                    ).map((status) => (
-                                        <SelectItem key={status} value={status}>
-                                            {prettyAttemptStatus(
-                                                status as AttemptStatus
-                                            )}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                            <FormMessage />
-                        </FormItem>
-                    )}
-                />
-                <FormField
-                    control={form.control}
-                    name="attemptNumber"
-                    render={({ field }) => (
-                        <FormItem>
-                            <FormLabel>Attempt number</FormLabel>
-                            <Input
-                                type="number"
-                                placeholder="Attempt number"
-                                value={field.value}
-                                onChange={(event) =>
-                                    field.onChange(+event.target.value)
-                                }
-                            />
-                            <FormMessage />
-                        </FormItem>
-                    )}
-                />
-                <FormField
-                    control={form.control}
-                    name="value"
-                    render={({ field }) => (
-                        <FormItem>
-                            <FormLabel>Time</FormLabel>
-                            <AttemptResultInput
-                                value={field.value}
-                                onChange={field.onChange}
-                                disabled={isLoading}
-                            />
-                            <FormMessage />
-                        </FormItem>
-                    )}
-                />
-                <FormField
-                    control={form.control}
-                    name="penalty"
-                    render={({ field }) => (
-                        <FormItem>
-                            <FormLabel>Penalty</FormLabel>
-                            <PenaltySelect
-                                value={field.value}
-                                onChange={field.onChange}
-                                disabled={isLoading}
-                            />
-                            <FormMessage />
-                        </FormItem>
-                    )}
-                />
-                <FormField
-                    control={form.control}
-                    name="judgeId"
-                    render={({ field }) => (
-                        <FormItem>
-                            <FormLabel>Judge</FormLabel>
-                            <PersonAutocomplete
-                                onSelect={(person) =>
-                                    field.onChange(person?.id)
-                                }
-                                defaultValue={field.value as string}
-                            />
+        <form
+            ref={formRef}
+            onSubmit={onSubmit}
+            className="flex flex-col gap-[18px]"
+            noValidate
+        >
+            {!fixedCompetitorId && (
+                <div className="flex flex-col gap-2">
+                    <span className={LABEL}>Competitor</span>
+                    <PersonAutocomplete
+                        onSelect={(person) => setCompetitorId(person?.id ?? "")}
+                        defaultValue={competitorId}
+                    />
+                </div>
+            )}
 
-                            <FormMessage />
-                        </FormItem>
-                    )}
-                />
-                <FormField
-                    control={form.control}
-                    name="scramblerId"
-                    render={({ field }) => (
-                        <FormItem>
-                            <FormLabel>Scrambler</FormLabel>
-                            <PersonAutocomplete
-                                onSelect={(person) =>
-                                    field.onChange(person?.id)
-                                }
-                                defaultValue={field.value as string}
-                            />
+            <div className="grid grid-cols-1 items-end gap-4 sm:grid-cols-[auto_minmax(0,1fr)]">
+                <div className="flex flex-col gap-2">
+                    <span className={LABEL}>Attempt</span>
+                    <SegmentedControl
+                        label="Attempt"
+                        value={attemptValue}
+                        onValueChange={setAttemptValue}
+                        className="[&>button]:min-w-8 [&>button]:px-1.5 [&>button]:font-bold"
+                        options={attemptOptions.map((option) => ({
+                            value: option.value,
+                            label: option.value,
+                            ariaLabel: option.title,
+                        }))}
+                    />
+                </div>
+                <div className="flex flex-col gap-2">
+                    <label htmlFor="attempt-form-time" className={LABEL}>
+                        Time
+                        {isTimeOptional && (
+                            <span className="font-normal text-faint">
+                                {" "}
+                                · optional
+                            </span>
+                        )}
+                    </label>
+                    <AttemptResultInput
+                        id="attempt-form-time"
+                        value={isTimeless ? 0 : value}
+                        onChange={setValue}
+                        disabled={isTimeless}
+                        onEnter={() => formRef.current?.requestSubmit()}
+                        placeholder="0.00"
+                        className="text-lg font-semibold md:h-[38px] md:text-lg"
+                    />
+                </div>
+            </div>
 
-                            <FormMessage />
-                        </FormItem>
-                    )}
+            <div className="flex flex-col gap-2">
+                <span className={LABEL}>Penalty</span>
+                <div
+                    role="radiogroup"
+                    aria-label="Penalty"
+                    className="grid grid-cols-[repeat(auto-fill,minmax(64px,1fr))] gap-1.5"
+                >
+                    {COMMON_PENALTIES.map((option) => (
+                        <button
+                            key={option}
+                            type="button"
+                            role="radio"
+                            aria-checked={penalty === option}
+                            onClick={() => setPenalty(option)}
+                            className={cn(
+                                "h-11 whitespace-nowrap rounded-lg border text-[13px] font-bold transition-colors md:h-[34px]",
+                                penalty === option
+                                    ? "border-primary bg-primary-soft text-primary"
+                                    : "hover:bg-accent"
+                            )}
+                        >
+                            {penaltyLabel(option)}
+                        </button>
+                    ))}
+                    <Select
+                        value={isOtherPenalty ? String(penalty) : ""}
+                        onValueChange={(v) => setPenalty(+v)}
+                    >
+                        <SelectTrigger
+                            aria-label="Other penalty"
+                            className={cn(
+                                "h-11 text-[13px] font-bold md:h-[34px]",
+                                isOtherPenalty &&
+                                    "border-primary bg-primary-soft text-primary"
+                            )}
+                        >
+                            <SelectValue placeholder="Other" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {OTHER_PENALTIES.map((p) => (
+                                <SelectItem
+                                    key={p.value}
+                                    value={String(p.value)}
+                                >
+                                    {p.label}
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                </div>
+            </div>
+
+            <div className="flex flex-col gap-2">
+                <span className={LABEL}>Outcome</span>
+                <SegmentedControl
+                    label="Outcome"
+                    value={outcome}
+                    onValueChange={setOutcome}
+                    options={outcomeOptions.map((o) => ({
+                        value: o,
+                        label: OUTCOME_LABELS[o],
+                    }))}
                 />
-                <FormField
-                    control={form.control}
-                    name="deviceId"
-                    render={({ field }) => (
-                        <FormItem>
-                            <FormLabel>Device</FormLabel>
-                            <DeviceSelect
-                                value={field.value || ""}
-                                onChange={field.onChange}
-                                disabled={isLoading}
-                            />
-                            <FormMessage />
-                        </FormItem>
-                    )}
-                />
-                <FormField
-                    control={form.control}
-                    name="comment"
-                    render={({ field }) => (
-                        <FormItem>
-                            <FormLabel>Comment</FormLabel>
-                            <Input
-                                type="text"
-                                placeholder="Comment"
-                                {...field}
-                                value={field.value || ""}
-                            />
-                            <FormMessage />
-                        </FormItem>
-                    )}
-                />
-                {form.watch("status") === AttemptStatus.EXTRA_GIVEN ? (
-                    <FormField
-                        control={form.control}
-                        name="replacedBy"
-                        render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>Replaced by</FormLabel>
-                                <Input
-                                    type="number"
-                                    placeholder="Replaced by"
-                                    {...field}
-                                />
-                                <FormMessage />
-                            </FormItem>
+                {outcome === "extra" && (
+                    <div className="flex flex-wrap items-center gap-2.5">
+                        <span className="text-[13px] text-muted-foreground">
+                            Replaced by
+                        </span>
+                        <SegmentedControl
+                            label="Replaced by"
+                            value={replacedBy}
+                            onValueChange={setReplacedBy}
+                            options={[
+                                { value: "0", label: "Not yet" },
+                                ...extraOptions.map((o) => ({
+                                    value: String(o.attemptNumber),
+                                    label: o.value,
+                                    ariaLabel: `Replaced by ${o.value}`,
+                                })),
+                            ]}
+                        />
+                    </div>
+                )}
+            </div>
+
+            <div className="flex flex-col gap-3 rounded-xl border px-3.5 py-2.5">
+                <button
+                    type="button"
+                    aria-expanded={showDetails}
+                    onClick={() => setShowDetails((v) => !v)}
+                    className="flex items-center justify-between gap-2 text-left text-[13px] font-semibold text-muted-foreground"
+                >
+                    <span>
+                        More details
+                        <span className="font-normal text-faint">
+                            {" "}
+                            · judge, scrambler, station, comment
+                            {hasDetails && !showDetails ? " (filled in)" : ""}
+                        </span>
+                    </span>
+                    <ChevronDown
+                        className={cn(
+                            "size-4 shrink-0 transition-transform",
+                            showDetails && "rotate-180"
                         )}
                     />
-                ) : null}
-                <Button type="submit" variant="success" disabled={isLoading}>
-                    Submit
+                </button>
+                {showDetails && (
+                    <div className="grid grid-cols-1 gap-3 pb-1 sm:grid-cols-2">
+                        <div className="flex flex-col gap-1.5">
+                            <span className={LABEL}>Judge</span>
+                            <PersonAutocomplete
+                                onSelect={(p) => setJudgeId(p?.id ?? "")}
+                                defaultValue={judgeId}
+                            />
+                        </div>
+                        <div className="flex flex-col gap-1.5">
+                            <span className={LABEL}>Scrambler</span>
+                            <PersonAutocomplete
+                                onSelect={(p) => setScramblerId(p?.id ?? "")}
+                                defaultValue={scramblerId}
+                            />
+                        </div>
+                        <div className="flex flex-col gap-1.5">
+                            <span className={LABEL}>Station</span>
+                            <DeviceSelect
+                                value={deviceId}
+                                onChange={setDeviceId}
+                            />
+                        </div>
+                        <label className="flex flex-col gap-1.5 sm:col-span-2">
+                            <span className={LABEL}>Comment</span>
+                            <Textarea
+                                value={comment}
+                                onChange={(e) => setComment(e.target.value)}
+                                rows={2}
+                            />
+                        </label>
+                    </div>
+                )}
+            </div>
+
+            <InlineError className="py-2 text-[13px]">
+                {error || submitError}
+            </InlineError>
+
+            <div className="flex justify-end gap-2 border-t pt-3.5 max-md:[&>button]:flex-1">
+                {onCancel && (
+                    <Button type="button" variant="ghost" onClick={onCancel}>
+                        Cancel
+                    </Button>
+                )}
+                <Button type="submit" disabled={isLoading}>
+                    Save attempt
                 </Button>
-            </form>
-        </Form>
+            </div>
+        </form>
     );
 };
 

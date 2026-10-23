@@ -3,6 +3,7 @@ import { useState } from "react";
 import { Modal } from "@/Components/Modal";
 import { Alert } from "@/Components/ui/alert";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/Components/ui/tabs";
+import { useDialogError } from "@/hooks/useDialogError";
 import { useToast } from "@/hooks/useToast";
 import { AddPerson } from "@/lib/interfaces";
 import { addPerson } from "@/lib/persons";
@@ -15,6 +16,7 @@ interface AddPersonModalProps {
 }
 
 const AddPersonModal = ({ isOpen, onClose }: AddPersonModalProps) => {
+    const [error, setError] = useDialogError(isOpen);
     const { toast } = useToast();
     const [isLoading, setIsLoading] = useState(false);
 
@@ -26,17 +28,18 @@ const AddPersonModal = ({ isOpen, onClose }: AddPersonModalProps) => {
             });
             onClose();
         } else {
-            toast({
-                title: "Error",
-                description: "Something went wrong",
-                variant: "destructive",
-            });
+            setError("Something went wrong");
         }
         setIsLoading(false);
     };
 
     return (
-        <Modal isOpen={isOpen} onClose={onClose} title="Add person">
+        <Modal
+            error={error}
+            isOpen={isOpen}
+            onClose={onClose}
+            title="Add person"
+        >
             <Tabs defaultValue="staff">
                 <TabsList>
                     <TabsTrigger value="staff">Staff member</TabsTrigger>
