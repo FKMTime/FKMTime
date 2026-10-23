@@ -1,5 +1,12 @@
 import { CircleCheck, Nfc } from "lucide-react";
-import { FormEvent, useCallback, useEffect, useRef, useState } from "react";
+import {
+    FormEvent,
+    KeyboardEvent,
+    useCallback,
+    useEffect,
+    useRef,
+    useState,
+} from "react";
 
 import EmptyState from "@/Components/shared/EmptyState";
 import InlineError from "@/Components/shared/InlineError";
@@ -24,6 +31,9 @@ const AssignCards = () => {
     const [cardId, setCardId] = useState("");
     const [error, setError] = useState("");
     const [assignedCount, setAssignedCount] = useState(0);
+    // Row the arrow keys are on; Enter in the search picks it
+    const [highlighted, setHighlighted] = useState(0);
+    const listRef = useRef<HTMLUListElement>(null);
 
     const fetchPersons = useCallback(async () => {
         const data: Person[] = await getAllPersons(true, search || undefined);
@@ -35,11 +45,32 @@ const AssignCards = () => {
         fetchPersons();
     }, [fetchPersons]);
 
+    useEffect(() => setHighlighted(0), [persons]);
+
+    useEffect(() => {
+        listRef.current
+            ?.querySelector('[aria-selected="true"]')
+            ?.scrollIntoView({ block: "nearest" });
+    }, [highlighted]);
+
     const select = (person: Person | null) => {
         setSelected(person);
         setCardId("");
         setError("");
         if (person) setTimeout(() => cardInputRef.current?.focus());
+    };
+
+    const handleSearchKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
+        const count = persons?.length ?? 0;
+        if (!count) return;
+        if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+            event.preventDefault();
+            const step = event.key === "ArrowDown" ? 1 : count - 1;
+            setHighlighted((h) => (h + step) % count);
+        } else if (event.key === "Enter") {
+            event.preventDefault();
+            select(persons![Math.min(highlighted, count - 1)]);
+        }
     };
 
     const handleAssign = async (event: FormEvent) => {
@@ -91,22 +122,46 @@ const AssignCards = () => {
                             ref={searchInputRef}
                             value={search}
                             onChange={(e) => setSearch(e.target.value)}
+                            onKeyDown={handleSearchKeyDown}
                             label="Search persons without a card"
+                            role="combobox"
+                            aria-expanded={!!persons?.length}
+                            aria-controls="assign-cards-persons"
+                            aria-activedescendant={
+                                persons?.[highlighted]
+                                    ? `assign-cards-${persons[highlighted].id}`
+                                    : undefined
+                            }
                         />
-                        <ul className="flex flex-col divide-y overflow-hidden rounded-mobile-card border bg-card md:rounded-2xl">
-                            {(persons ?? []).map((person) => (
-                                <li key={person.id}>
+                        <ul
+                            ref={listRef}
+                            id="assign-cards-persons"
+                            role="listbox"
+                            aria-label="Persons without a card"
+                            className="flex flex-col divide-y overflow-hidden rounded-mobile-card border bg-card md:rounded-2xl"
+                        >
+                            {(persons ?? []).map((person, index) => (
+                                <li key={person.id} role="presentation">
                                     <button
                                         type="button"
+                                        id={`assign-cards-${person.id}`}
+                                        role="option"
+                                        tabIndex={-1}
+                                        aria-selected={index === highlighted}
                                         onClick={() => select(person)}
+                                        onMouseEnter={() =>
+                                            setHighlighted(index)
+                                        }
                                         aria-current={
                                             person.id === selected?.id ||
                                             undefined
                                         }
                                         className={cn(
-                                            "flex min-h-12 w-full items-center gap-3 px-4 py-2 text-left hover:bg-accent",
+                                            "flex min-h-12 w-full items-center gap-3 px-4 py-2 text-left",
+                                            index === highlighted &&
+                                                "bg-accent",
                                             person.id === selected?.id &&
-                                                "bg-primary-soft hover:bg-primary-soft"
+                                                "bg-primary-soft"
                                         )}
                                     >
                                         <span
@@ -125,7 +180,10 @@ const AssignCards = () => {
                                 </li>
                             ))}
                             {persons?.length === 0 && (
-                                <li className="p-6 text-center text-sm text-muted-foreground">
+                                <li
+                                    role="presentation"
+                                    className="p-6 text-center text-sm text-muted-foreground"
+                                >
                                     Nobody matches “{search}”.
                                 </li>
                             )}
