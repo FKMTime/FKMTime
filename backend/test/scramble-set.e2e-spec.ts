@@ -4,6 +4,7 @@ import { DbService } from 'src/db/db.service';
 import * as request from 'supertest';
 
 import { createTestApp } from './helpers/app.helper';
+import { listenOnLoopback } from './helpers/loopback.helper';
 import {
   createUserWithRoles,
   deleteSetupUsers,
@@ -46,6 +47,7 @@ describe('ScrambleSetController (e2e)', () => {
 
   beforeAll(async () => {
     ({ app, db, adminToken } = await createTestApp());
+    await listenOnLoopback(app);
     await deleteSetupUsers(db, SUFFIX);
     delegate = await createUserWithRoles(app, db, `delegate-${SUFFIX}`, [
       Role.DELEGATE,

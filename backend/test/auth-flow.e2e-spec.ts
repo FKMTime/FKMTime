@@ -6,6 +6,7 @@ import { DbService } from 'src/db/db.service';
 import * as request from 'supertest';
 
 import { createTestApp } from './helpers/app.helper';
+import { listenOnLoopback } from './helpers/loopback.helper';
 import {
   createUserWithRoles,
   deleteSetupUsers,
@@ -21,8 +22,8 @@ const ORGANIZER_WCA_USER_ID = 6008;
 const OUTSIDER_CODE = 'code-2021KULA02';
 const OUTSIDER_WCA_USER_ID = 235575;
 
-// Login endpoints allow 5 requests per minute per app instance; createTestApp
-// uses one, so each block below starts its own app and stays within budget.
+// Login endpoints allow 5 requests per minute per client address and app
+// instance, so each block below starts its own app and stays within budget.
 describe('Auth flows (e2e)', () => {
   describe('password login', () => {
     let app: INestApplication;
@@ -32,6 +33,7 @@ describe('Auth flows (e2e)', () => {
 
     beforeAll(async () => {
       ({ app, db } = await createTestApp());
+      await listenOnLoopback(app);
       await deleteSetupUsers(db, SUFFIX);
     }, 30000);
 
@@ -109,6 +111,7 @@ describe('Auth flows (e2e)', () => {
 
     beforeAll(async () => {
       ({ app } = await createTestApp());
+      await listenOnLoopback(app);
     }, 30000);
 
     afterAll(async () => {
@@ -116,8 +119,9 @@ describe('Auth flows (e2e)', () => {
     }, 30000);
 
     it('answers 429 after five login attempts within a minute', async () => {
-      // createTestApp already used one attempt
-      for (let i = 0; i < 4; i++) {
+      // The login done by createTestApp happened before the server was bound
+      // to 127.0.0.1, so it was tracked under a different client address.
+      for (let i = 0; i < 5; i++) {
         await request(app.getHttpServer())
           .post('/auth/login')
           .send({ username: 'admin', password: 'wrong' })
@@ -158,6 +162,7 @@ describe('Auth flows (e2e)', () => {
 
     beforeAll(async () => {
       ({ app, db } = await createTestApp());
+      await listenOnLoopback(app);
       await cleanUp();
     }, 30000);
 
@@ -248,6 +253,7 @@ describe('Auth flows (e2e)', () => {
 
     beforeAll(async () => {
       ({ app, db } = await createTestApp());
+      await listenOnLoopback(app);
       await deleteSetupUsers(db, `tokens-${SUFFIX}`);
     }, 30000);
 

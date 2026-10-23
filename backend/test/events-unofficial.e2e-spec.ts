@@ -4,6 +4,7 @@ import { DbService } from 'src/db/db.service';
 import * as request from 'supertest';
 
 import { createTestApp } from './helpers/app.helper';
+import { listenOnLoopback } from './helpers/loopback.helper';
 import {
   createUserWithRoles,
   deleteSetupUsers,
@@ -47,6 +48,7 @@ describe('Unofficial events (e2e)', () => {
 
   beforeAll(async () => {
     ({ app, db } = await createTestApp());
+    await listenOnLoopback(app);
     await deleteSetupUsers(db, SUFFIX);
     await db.unofficialEvent.deleteMany({
       where: { eventId: { in: ['mirror', 'fto'] } },

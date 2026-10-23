@@ -4,6 +4,7 @@ import { DbService } from 'src/db/db.service';
 import * as request from 'supertest';
 
 import { createTestApp } from './helpers/app.helper';
+import { listenOnLoopback } from './helpers/loopback.helper';
 import {
   createRoleUsers,
   createUserWithRoles,
@@ -103,6 +104,7 @@ describe('Access control for competition setup & scrambling (e2e)', () => {
 
   beforeAll(async () => {
     ({ app, db } = await createTestApp());
+    await listenOnLoopback(app);
     await deleteSetupUsers(db, SUFFIX);
     users = await createRoleUsers(app, db, SUFFIX);
   }, 30000);

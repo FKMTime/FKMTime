@@ -4,6 +4,7 @@ import { DbService } from 'src/db/db.service';
 import * as request from 'supertest';
 
 import { createTestApp } from './helpers/app.helper';
+import { listenOnLoopback } from './helpers/loopback.helper';
 import {
   createUserWithRoles,
   deleteSetupUsers,
@@ -61,6 +62,7 @@ describe('Competition setup (e2e)', () => {
 
   beforeAll(async () => {
     ({ app, db } = await createTestApp());
+    await listenOnLoopback(app);
     await deleteSetupUsers(db, SUFFIX);
     organizer = await createUserWithRoles(app, db, `organizer-${SUFFIX}`, [
       Role.ORGANIZER,

@@ -14,6 +14,7 @@ import { DbService } from 'src/db/db.service';
 import * as request from 'supertest';
 
 import { createTestApp } from './helpers/app.helper';
+import { listenOnLoopback } from './helpers/loopback.helper';
 
 /** A competition the dummy WCA serves a v2 WCIF for */
 const IMPORTED_WCA_ID = 'CubeFactoryLeagueZgierz2026';
@@ -123,6 +124,7 @@ describe('Competition import & sync from WCA (e2e)', () => {
 
   beforeAll(async () => {
     ({ app, db, adminToken } = await createTestApp());
+    await listenOnLoopback(app);
     snapshot = {
       competitions: await db.competition.findMany(),
       users: await db.user.findMany(),

@@ -4,6 +4,7 @@ import { DbService } from 'src/db/db.service';
 import * as request from 'supertest';
 
 import { createTestApp } from './helpers/app.helper';
+import { listenOnLoopback } from './helpers/loopback.helper';
 import {
   createUserWithRoles,
   deleteSetupUsers,
@@ -39,6 +40,7 @@ describe('Device management (e2e)', () => {
 
   beforeAll(async () => {
     ({ app, db, adminToken } = await createTestApp());
+    await listenOnLoopback(app);
     await deleteSetupUsers(db, SUFFIX);
     await db.device.deleteMany({ where: { name: { startsWith: PREFIX } } });
     organizer = await createUserWithRoles(app, db, `organizer-${SUFFIX}`, [
