@@ -1,9 +1,9 @@
 import { ChevronDown, FileText, Flag, ShieldAlert } from "lucide-react";
 import { useEffect, useState } from "react";
 
-import LoadingPage from "@/Components/LoadingPage";
 import EmptyState from "@/Components/shared/EmptyState";
 import RowActions from "@/Components/shared/RowActions";
+import SectionLoading from "@/Components/shared/SectionLoading";
 import SegmentedControl from "@/Components/shared/SegmentedControl";
 import { StatusTone } from "@/Components/shared/status";
 import { StatusBadge } from "@/Components/shared/StatusBadge";
@@ -63,7 +63,14 @@ const MostMissedAssignments = () => {
         getMostMissedAssignments().then(setAssignments);
     }, []);
 
-    if (!assignments) return <LoadingPage />;
+    // The tabs stay put while the list loads
+    if (!assignments)
+        return (
+            <div className="flex flex-col gap-4">
+                <AttendanceTabs value="missed" />
+                <SectionLoading label="Loading missed assignments" />
+            </div>
+        );
 
     const matches = (item: MissedAssignments, key: Filter) =>
         key === "all" ||

@@ -1,9 +1,9 @@
 import { ArrowDown, ArrowUp } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
-import LoadingPage from "@/Components/LoadingPage";
 import EmptyState from "@/Components/shared/EmptyState";
 import SearchInput from "@/Components/shared/SearchInput";
+import SectionLoading from "@/Components/shared/SectionLoading";
 import {
     Table,
     TableBody,
@@ -70,7 +70,14 @@ const AttendanceStatistics = () => {
         return sort.descending ? sorted.reverse() : sorted;
     }, [statistics, search, sort]);
 
-    if (!statistics) return <LoadingPage />;
+    // The tabs stay put while the statistics load
+    if (!statistics)
+        return (
+            <div className="flex flex-col gap-4">
+                <AttendanceTabs value="statistics" />
+                <SectionLoading label="Loading attendance statistics" />
+            </div>
+        );
 
     const present = statistics.reduce(
         (sum, row) => sum + row.totalPresentAtStaffingComparedToRounds,

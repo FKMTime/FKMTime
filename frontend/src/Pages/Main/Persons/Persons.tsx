@@ -1,12 +1,12 @@
 import { useAtomValue } from "jotai";
 import { SlidersHorizontal, UserPlus } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import GridLoader from "react-spinners/GridLoader";
 
 import LoadingPage from "@/Components/LoadingPage";
 import Pagination from "@/Components/Pagination";
 import EmptyState from "@/Components/shared/EmptyState";
 import SearchInput from "@/Components/shared/SearchInput";
+import SectionLoading from "@/Components/shared/SectionLoading";
 import ToggleChip from "@/Components/shared/ToggleChip";
 import { Button } from "@/Components/ui/button";
 import { Input } from "@/Components/ui/input";
@@ -207,13 +207,7 @@ const Persons = () => {
 
             {/* Tabs and filters stay put; only the list waits for data */}
             {!persons ? (
-                <div
-                    aria-busy
-                    aria-label="Loading persons"
-                    className="flex justify-center py-16"
-                >
-                    <GridLoader color="lightBlue" />
-                </div>
+                <SectionLoading label="Loading persons" />
             ) : persons.length === 0 ? (
                 <EmptyState>No persons found.</EmptyState>
             ) : (
