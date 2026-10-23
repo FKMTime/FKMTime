@@ -22,10 +22,7 @@ describe("PublicSidebar", () => {
     it("lists live rounds under Results and marks the open one", () => {
         renderAt(
             "/public/results/pyram-r1",
-            <PublicSidebar
-                competitionName="Example Open"
-                liveRoundIds={["333-r1", "pyram-r1"]}
-            />
+            <PublicSidebar liveRoundIds={["333-r1", "pyram-r1"]} />
         );
         const roundLinks = screen
             .getAllByRole("link")

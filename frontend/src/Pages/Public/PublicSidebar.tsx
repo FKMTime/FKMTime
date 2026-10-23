@@ -12,29 +12,19 @@ import {
 } from "./publicNavigation";
 
 interface PublicSidebarProps {
-    competitionName: string;
     /** Shown as sub-items under Results */
     liveRoundIds: string[];
 }
 
-const PublicSidebar = ({
-    competitionName,
-    liveRoundIds,
-}: PublicSidebarProps) => {
+const PublicSidebar = ({ liveRoundIds }: PublicSidebarProps) => {
     const { pathname } = useLocation();
     const activeId = getActivePublicNavId(pathname);
     const roundId = matchPath("/public/results/:id", pathname)?.params.id;
 
     return (
         <aside className="sticky top-0 hidden h-dvh w-60 shrink-0 flex-col border-r bg-card min-[760px]:flex">
-            <div className="flex flex-col gap-2 border-b p-4">
+            <div className="border-b p-4">
                 <FkmLogo className="h-auto w-full" />
-                <div
-                    title={competitionName}
-                    className="line-clamp-2 text-center text-[13px] text-muted-foreground"
-                >
-                    {competitionName}
-                </div>
             </div>
             <nav
                 aria-label="Public display"

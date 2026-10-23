@@ -11,7 +11,6 @@ import { NavGroup, NavItem } from "@/lib/navigation";
 import { cn } from "@/lib/utils";
 
 interface DesktopSidebarProps {
-    competitionName: string;
     items: NavItem[];
     activeItem?: NavItem;
     unresolvedIncidentsCount: number;
@@ -25,21 +24,14 @@ const SIDEBAR_GROUPS: NavGroup[] = ["Competition day", "Admin"];
  * tooltips. Hidden below md, where the mobile shell takes over.
  */
 const DesktopSidebar = ({
-    competitionName,
     items,
     activeItem,
     unresolvedIncidentsCount,
 }: DesktopSidebarProps) => (
     <aside className="sticky top-0 hidden h-dvh w-16 shrink-0 flex-col border-r bg-card md:flex lg:w-60">
-        <div className="flex min-h-[73px] shrink-0 items-center justify-center border-b px-3 lg:flex-col lg:gap-2 lg:px-4 lg:py-4">
+        <div className="flex min-h-16 shrink-0 items-center justify-center border-b px-3 lg:px-4 lg:py-4">
             <FkmLogo variant="mark" className="h-10 lg:hidden" />
             <FkmLogo className="hidden h-auto w-full lg:block" />
-            <span
-                title={competitionName}
-                className="hidden w-full text-center text-[13px] text-muted-foreground lg:line-clamp-2"
-            >
-                {competitionName}
-            </span>
         </div>
         <TooltipProvider delayDuration={200}>
             <nav className="flex flex-1 flex-col gap-5 overflow-y-auto px-2.5 py-4 lg:px-3">

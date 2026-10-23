@@ -1,4 +1,5 @@
 import { useAtom } from "jotai";
+import { ChevronRight } from "lucide-react";
 import { Suspense, useCallback, useContext, useEffect, useState } from "react";
 import { Outlet, useLocation } from "react-router-dom";
 
@@ -83,10 +84,7 @@ const PublicLayout = () => {
 
     return (
         <div className="flex min-h-dvh">
-            <PublicSidebar
-                competitionName={competition?.name ?? ""}
-                liveRoundIds={liveRoundIds ?? []}
-            />
+            <PublicSidebar liveRoundIds={liveRoundIds ?? []} />
             <div className="flex min-w-0 flex-1 flex-col">
                 <header className="sticky top-0 z-10 flex flex-col border-b bg-background">
                     <div className="flex min-h-[62px] items-center gap-3 px-4 py-3 min-[760px]:px-7">
@@ -96,9 +94,18 @@ const PublicLayout = () => {
                                 {competition?.name}
                             </span>
                         </div>
-                        <h1 className="hidden flex-1 text-[15px] font-semibold min-[760px]:block">
-                            {isResults ? "Results" : "Live solving"}
-                        </h1>
+                        <div className="hidden min-w-0 flex-1 items-center gap-1 text-[15px] min-[760px]:flex">
+                            <span
+                                title={competition?.name}
+                                className="min-w-0 truncate font-medium text-muted-foreground"
+                            >
+                                {competition?.name}
+                            </span>
+                            <ChevronRight className="size-4 shrink-0 text-faint" />
+                            <h1 className="shrink-0 font-semibold">
+                                {isResults ? "Results" : "Live solving"}
+                            </h1>
+                        </div>
                         <span className="flex items-center gap-1.5 whitespace-nowrap text-[13px] text-muted-foreground">
                             <StatusDot
                                 tone={isLive ? "success" : "neutral"}

@@ -1,11 +1,16 @@
 import { render, screen } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import { findActiveNavItem, getNavItems } from "@/lib/navigation";
 
+import DesktopHeader from "./DesktopHeader";
 import DesktopSidebar from "./DesktopSidebar";
 import MobileTabBar from "./MobileTabBar";
+
+// The search and user menu aren't under test here
+vi.mock("./GlobalSearch", () => ({ default: () => null }));
+vi.mock("./UserMenu", () => ({ default: () => null }));
 
 const items = getNavItems({
     useFkmTimeDevices: true,
@@ -75,7 +80,6 @@ describe("DesktopSidebar", () => {
         render(
             <MemoryRouter>
                 <DesktopSidebar
-                    competitionName="Test Open 2026"
                     items={items}
                     activeItem={findActiveNavItem(pathname, items)}
                     unresolvedIncidentsCount={2}
@@ -100,6 +104,44 @@ describe("DesktopSidebar", () => {
             screen
                 .getByRole("link", { name: /^Results/ })
                 .getAttribute("aria-current")
+        ).toBeNull();
+    });
+});
+
+describe("DesktopHeader", () => {
+    const renderHeader = (crumbs: { label: string; to?: string }[]) =>
+        render(
+            <MemoryRouter>
+                <DesktopHeader
+                    competitionName="Test Open 2026"
+                    crumbs={crumbs}
+                    canEnterAttempts={false}
+                    canAccessSettings={false}
+                    onEnterAttempt={() => {}}
+                />
+            </MemoryRouter>
+        );
+
+    it("leads the breadcrumbs with the competition, linking home", () => {
+        renderHeader([
+            { label: "Results", to: "/results" },
+            { label: "Round 1" },
+        ]);
+        expect(
+            screen
+                .getByRole("link", { name: "Test Open 2026" })
+                .getAttribute("href")
+        ).toBe("/");
+        expect(screen.getByRole("heading", { name: "Round 1" })).toBeTruthy();
+    });
+
+    it("makes the competition the heading on Home", () => {
+        renderHeader([]);
+        expect(
+            screen.getByRole("heading", { name: "Test Open 2026" })
+        ).toBeTruthy();
+        expect(
+            screen.queryByRole("link", { name: "Test Open 2026" })
         ).toBeNull();
     });
 });

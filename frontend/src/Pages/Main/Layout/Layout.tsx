@@ -251,14 +251,15 @@ const AppShell = ({ competition, unresolvedIncidentsCount }: AppShellProps) => {
     return (
         <div className="min-h-dvh md:flex">
             <DesktopSidebar
-                competitionName={competition.name}
                 items={items}
                 activeItem={activeItem}
                 unresolvedIncidentsCount={unresolvedIncidentsCount}
             />
             <div className="flex min-w-0 flex-1 flex-col">
                 <DesktopHeader
-                    crumbs={crumbs}
+                    competitionName={competition.name}
+                    // Home's heading is the competition itself
+                    crumbs={isHome ? [] : crumbs}
                     canEnterAttempts={canEnterAttempts}
                     canAccessSettings={canAccessSettings}
                     onEnterAttempt={openQuickEntry}
