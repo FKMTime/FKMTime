@@ -23,8 +23,8 @@ const PublicSidebar = ({ liveRoundIds }: PublicSidebarProps) => {
 
     return (
         <aside className="sticky top-0 hidden h-dvh w-60 shrink-0 flex-col border-r bg-card min-[760px]:flex">
-            <div className="border-b p-4">
-                <FkmLogo className="h-auto w-full" />
+            <div className="flex justify-center border-b p-4">
+                <FkmLogo className="h-auto w-44" />
             </div>
             <nav
                 aria-label="Public display"

@@ -31,7 +31,7 @@ const DesktopSidebar = ({
     <aside className="sticky top-0 hidden h-dvh w-16 shrink-0 flex-col border-r bg-card md:flex lg:w-60">
         <div className="flex min-h-16 shrink-0 items-center justify-center border-b px-3 lg:px-4 lg:py-4">
             <FkmLogo variant="mark" className="h-10 lg:hidden" />
-            <FkmLogo className="hidden h-auto w-full lg:block" />
+            <FkmLogo className="hidden h-auto w-44 lg:block" />
         </div>
         <TooltipProvider delayDuration={200}>
             <nav className="flex flex-1 flex-col gap-5 overflow-y-auto px-2.5 py-4 lg:px-3">
