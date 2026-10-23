@@ -1,5 +1,5 @@
-import { useAtomValue } from "jotai";
-import { useEffect, useState } from "react";
+import { atom, useAtom, useAtomValue } from "jotai";
+import { useEffect } from "react";
 
 import PageTabs from "@/Components/shared/PageTabs";
 import { competitionAtom } from "@/lib/atoms";
@@ -11,20 +11,27 @@ interface PersonsTabsProps {
     refreshKey?: number;
 }
 
+// Outlives the tab switch, so the counts stay on screen while they reload
+const countsAtom = atom<{ total?: number; withoutCard?: number }>({});
+
 /** All persons / Assign cards; card assignment needs FKMTime devices */
 const PersonsTabs = ({ value, refreshKey }: PersonsTabsProps) => {
     const competition = useAtomValue(competitionAtom);
-    const [total, setTotal] = useState<number>();
-    const [withoutCard, setWithoutCard] = useState<number>();
+    const [{ total, withoutCard }, setCounts] = useAtom(countsAtom);
     const useDevices = !!competition?.useFkmTimeDevices;
 
     useEffect(() => {
-        checkedInCount().then((data) => setTotal(data.totalPersonsCount));
+        checkedInCount().then((data) =>
+            setCounts((counts) => ({
+                ...counts,
+                total: data.totalPersonsCount,
+            }))
+        );
         if (useDevices)
             getPersonsWithoutCardAssigned().then((data) =>
-                setWithoutCard(data.count)
+                setCounts((counts) => ({ ...counts, withoutCard: data.count }))
             );
-    }, [useDevices, refreshKey]);
+    }, [useDevices, refreshKey, setCounts]);
 
     if (!useDevices) return null;
 

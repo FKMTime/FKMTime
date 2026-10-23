@@ -1,6 +1,7 @@
 import { useAtomValue } from "jotai";
 import { SlidersHorizontal, UserPlus } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import GridLoader from "react-spinners/GridLoader";
 
 import LoadingPage from "@/Components/LoadingPage";
 import Pagination from "@/Components/Pagination";
@@ -62,6 +63,8 @@ const Persons = () => {
     const [pageSize, setPageSize] = useState(10);
     const [persons, setPersons] = useState<Person[] | null>(null);
     const [count, setCount] = useState(0);
+    // The first load has nothing to debounce; only typing does
+    const isFirstLoad = useRef(true);
     const [refreshKey, setRefreshKey] = useState(0);
     const [isAddOpen, setIsAddOpen] = useState(false);
     const [dialog, setDialog] = useState<{
@@ -76,6 +79,7 @@ const Persons = () => {
 
     useEffect(() => {
         let isCancelled = false;
+        const delay = isFirstLoad.current ? 0 : SEARCH_DEBOUNCE_MS;
         const timeout = setTimeout(async () => {
             const registrantId = parseInt(filters.registrantId);
             const response = await getPersons(
@@ -89,16 +93,17 @@ const Persons = () => {
                 filters.onlyNotCheckedIn
             );
             if (isCancelled) return;
+            isFirstLoad.current = false;
             setPersons(response.data);
             setCount(response.count);
-        }, SEARCH_DEBOUNCE_MS);
+        }, delay);
         return () => {
             isCancelled = true;
             clearTimeout(timeout);
         };
     }, [filters, page, pageSize, refreshKey]);
 
-    if (!competition || !persons) return <LoadingPage />;
+    if (!competition) return <LoadingPage />;
 
     const refresh = () => setRefreshKey((key) => key + 1);
     const closeDialog = () => {
@@ -182,9 +187,11 @@ const Persons = () => {
                     )}
                 </div>
                 <div className="flex items-center gap-3">
-                    <span className="text-sm text-muted-foreground">
-                        {count} {count === 1 ? "person" : "persons"}
-                    </span>
+                    {persons && (
+                        <span className="text-sm text-muted-foreground">
+                            {count} {count === 1 ? "person" : "persons"}
+                        </span>
+                    )}
                     {isOrganizerOrDelegate() &&
                         competition.useFkmTimeDevices && (
                             <Button
@@ -198,7 +205,16 @@ const Persons = () => {
                 </div>
             </div>
 
-            {persons.length === 0 ? (
+            {/* Tabs and filters stay put; only the list waits for data */}
+            {!persons ? (
+                <div
+                    aria-busy
+                    aria-label="Loading persons"
+                    className="flex justify-center py-16"
+                >
+                    <GridLoader color="lightBlue" />
+                </div>
+            ) : persons.length === 0 ? (
                 <EmptyState>No persons found.</EmptyState>
             ) : (
                 <PersonsList

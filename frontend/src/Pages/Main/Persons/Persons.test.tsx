@@ -6,6 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { competitionAtom } from "@/lib/atoms";
 import { Competition } from "@/lib/interfaces";
+import { getPersons } from "@/lib/persons";
 
 import Persons from "./Persons";
 
@@ -61,5 +62,17 @@ describe("Persons filters", () => {
         expect(
             screen.getByRole("button", { name: /^Filters/ }).textContent
         ).toBe("Filters1");
+    });
+});
+
+describe("Persons loading", () => {
+    it("keeps the tabs and filters on screen while the list loads", async () => {
+        vi.mocked(getPersons).mockReturnValueOnce(new Promise(() => {}));
+        renderAt(1280);
+
+        expect(screen.getByRole("tab", { name: /All persons/ })).toBeTruthy();
+        expect(screen.getByRole("tab", { name: /Assign cards/ })).toBeTruthy();
+        expect(screen.getByLabelText("Search persons")).toBeTruthy();
+        expect(await screen.findByLabelText("Loading persons")).toBeTruthy();
     });
 });
