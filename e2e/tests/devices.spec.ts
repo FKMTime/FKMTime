@@ -3,7 +3,7 @@ import { Page } from "@playwright/test";
 import { expect, freshDatabase, signedInAs, test } from "../fixtures";
 import { createDevice, getDevices, getRoom, getRooms } from "../helpers/api";
 import { Station } from "../helpers/station";
-import { confirm, expectToast } from "../helpers/ui";
+import { confirm, expectToast, socketEventSent } from "../helpers/ui";
 import { storageStatePath } from "../helpers/users";
 
 freshDatabase();
@@ -143,8 +143,10 @@ test.describe("devices", () => {
 
     test("adds a device that asks to connect", async ({ page, api }) => {
         const room = await getRoom(api);
+        const joined = socketEventSent(page, "joinDevices");
         await page.goto("/devices");
         await expect(page.getByText(/\d+ devices?/)).toBeVisible();
+        await joined;
 
         const station = await Station.connect();
         try {
@@ -174,8 +176,10 @@ test.describe("devices", () => {
     });
 
     test("dismisses a connection request", async ({ page }) => {
+        const joined = socketEventSent(page, "joinDevices");
         await page.goto("/devices");
         await expect(page.getByText(/\d+ devices?/)).toBeVisible();
+        await joined;
         const station = await Station.connect();
         try {
             await station.requestToConnect(0x6f6f, "STAFF_ATTENDANCE");

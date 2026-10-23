@@ -8,6 +8,7 @@ import {
     setCurrentGroups,
 } from "../helpers/api";
 import { Station } from "../helpers/station";
+import { socketEventSent } from "../helpers/ui";
 import { storageStatePath } from "../helpers/users";
 
 freshDatabase();
@@ -33,7 +34,9 @@ test.describe("public display (signed out)", () => {
         const second = await getPersonByRegistrantId(api, 2);
         await createAttempts(api, "minx-r1", first.id, [6500, 6600]);
 
+        const joined = socketEventSent(page, "joinResults");
         await page.goto("/public/results/minx-r1");
+        await joined;
         await expect(page.getByRole("main")).toContainText(first.name);
         await expect(page.getByRole("main")).toContainText("1:05.00");
 
@@ -70,8 +73,11 @@ test.describe("live solving", () => {
             storageState: storageStatePath("staff"),
         });
         const staffPage = await staff.newPage();
+        const staffJoined = socketEventSent(staffPage, "joinLiveSolving");
+        const publicJoined = socketEventSent(page, "joinLiveSolving");
         await staffPage.goto("/results/live");
         await page.goto("/public/live");
+        await Promise.all([staffJoined, publicJoined]);
 
         const station = await Station.connect();
         try {

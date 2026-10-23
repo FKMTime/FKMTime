@@ -8,7 +8,7 @@ import {
     setCurrentGroups,
 } from "../helpers/api";
 import { Station } from "../helpers/station";
-import { confirm, toast } from "../helpers/ui";
+import { confirm, socketEventSent, toast } from "../helpers/ui";
 
 freshDatabase();
 signedInAs("delegate");
@@ -272,7 +272,9 @@ test.describe("attendance for a group", () => {
         api,
     }) => {
         const { scrambler, scan } = await scanScrambler(api, 0xa102);
+        const joined = socketEventSent(page, "joinAttendance");
         await page.goto("/attendance/minx-r1-g1");
+        await joined;
         const markPresent = personRow(
             page,
             "Scramblers",

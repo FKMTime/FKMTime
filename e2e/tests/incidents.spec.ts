@@ -11,7 +11,7 @@ import {
     setCurrentGroups,
 } from "../helpers/api";
 import { Station } from "../helpers/station";
-import { confirm, expectToast, toast } from "../helpers/ui";
+import { confirm, expectToast, socketEventSent, toast } from "../helpers/ui";
 
 freshDatabase();
 signedInAs("delegate");
@@ -76,8 +76,10 @@ test.describe("open incidents", () => {
         );
         await assignCard(api, competitor.personId, "8101");
 
+        const joined = socketEventSent(page, "joinIncidents");
         await page.goto("/incidents");
         await expect(page.getByText("No open incidents.")).toBeVisible();
+        await joined;
 
         const station = await Station.connect();
         try {
