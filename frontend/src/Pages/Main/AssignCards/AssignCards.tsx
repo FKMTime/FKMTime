@@ -17,6 +17,7 @@ import PersonsTabs from "@/Pages/Main/Persons/Components/PersonsTabs";
 const AssignCards = () => {
     const { toast } = useToast();
     const cardInputRef = useRef<HTMLInputElement>(null);
+    const searchInputRef = useRef<HTMLInputElement>(null);
     const [search, setSearch] = useState("");
     const [persons, setPersons] = useState<Person[] | null>(null);
     const [selected, setSelected] = useState<Person | null>(null);
@@ -52,11 +53,12 @@ const AssignCards = () => {
                 variant: "success",
             });
             setAssignedCount((count) => count + 1);
-            const remaining = await fetchPersons();
-            const index = (persons ?? []).findIndex(
-                (person) => person.id === selected.id
-            );
-            select(remaining[Math.min(index, remaining.length - 1)] ?? null);
+            // Back to the search, ready for the next person
+            select(null);
+            if (search) setSearch("");
+            else fetchPersons();
+            // After the re-render: on phones the list is hidden until then
+            setTimeout(() => searchInputRef.current?.focus());
         } else if (status === 409) {
             playScanSound("error");
             setError("This card is already assigned to someone else.");
@@ -86,6 +88,7 @@ const AssignCards = () => {
                         )}
                     >
                         <SearchInput
+                            ref={searchInputRef}
                             value={search}
                             onChange={(e) => setSearch(e.target.value)}
                             label="Search persons without a card"
@@ -175,8 +178,8 @@ const AssignCards = () => {
                             </div>
                             <InlineError>{error}</InlineError>
                             <p className="text-[13px] text-muted-foreground">
-                                Tap the card on the reader. The next person is
-                                selected automatically.
+                                Tap the card on the reader. Then search for the
+                                next person.
                             </p>
                             <Button
                                 type="button"
