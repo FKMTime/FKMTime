@@ -67,7 +67,12 @@ const AttemptsList = ({
                     attempt.penalty === DNF_VALUE ||
                     attempt.penalty === DNS_VALUE;
                 return (
-                    <div key={attempt.id} className="border-t py-2">
+                    // Warnings sit to the right of the row, wrapping below it
+                    // only when there's no room
+                    <div
+                        key={attempt.id}
+                        className="flex flex-wrap items-center gap-x-3 gap-y-1.5 border-t py-2"
+                    >
                         <div className={GRID}>
                             <span className="text-sm font-bold text-faint">
                                 {number}
@@ -99,7 +104,7 @@ const AttemptsList = ({
                                 {attemptWithPenaltyToString(attempt)}
                             </span>
                         </div>
-                        <div className="flex flex-wrap gap-1 pl-[30px] empty:hidden sm:pl-[34px] [&:not(:empty)]:pt-1.5">
+                        <div className="ml-auto flex flex-wrap justify-end gap-1 empty:hidden">
                             <AttemptWarnings attempt={attempt} />
                         </div>
                     </div>
