@@ -110,6 +110,50 @@ export const createAttempt = async (
         })
     );
 
+export interface ApiAttempt {
+    id: string;
+    attemptNumber: number;
+    value: number;
+    penalty: number;
+    status: AttemptStatus;
+    type: "STANDARD_ATTEMPT" | "EXTRA_ATTEMPT";
+    replacedBy: number | null;
+    comment: string | null;
+}
+
+export interface ApiResult {
+    id: string;
+    roundId: string;
+    isDoubleChecked: boolean;
+    attempts: ApiAttempt[];
+    person: ApiPerson;
+}
+
+/** The person's result in a round; the backend creates an empty one if needed */
+export const getResult = async (
+    api: APIRequestContext,
+    roundId: string,
+    personId: string
+) => ok<ApiResult>(await api.get(`result/round/${roundId}/person/${personId}`));
+
+/** Enter attempts 1..n with the given times (centiseconds) */
+export const createAttempts = async (
+    api: APIRequestContext,
+    roundId: string,
+    competitorId: string,
+    values: number[]
+) => {
+    for (const [index, value] of values.entries()) {
+        await createAttempt(api, {
+            roundId,
+            competitorId,
+            attemptNumber: index + 1,
+            value,
+        });
+    }
+    return getResult(api, roundId, competitorId);
+};
+
 export interface ApiRoom {
     id: string;
     name: string;
