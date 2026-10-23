@@ -1,6 +1,6 @@
-import { Timer } from "lucide-react";
 import { Link } from "react-router-dom";
 
+import FkmLogo from "@/Components/shared/FkmLogo";
 import {
     Tooltip,
     TooltipContent,
@@ -31,11 +31,9 @@ const DesktopSidebar = ({
     unresolvedIncidentsCount,
 }: DesktopSidebarProps) => (
     <aside className="sticky top-0 hidden h-dvh w-16 shrink-0 flex-col border-r bg-card md:flex lg:w-60">
-        <div className="flex h-[73px] shrink-0 items-center justify-center border-b px-5 lg:flex-col lg:items-start lg:justify-center lg:gap-0.5">
-            <Timer className="size-6 text-primary lg:hidden" />
-            <span className="hidden text-lg font-bold leading-tight lg:block">
-                FKMTime
-            </span>
+        <div className="flex h-[73px] shrink-0 items-center justify-center border-b px-5 lg:flex-col lg:items-start lg:justify-center lg:gap-1">
+            <FkmLogo variant="mark" className="h-8 lg:hidden" />
+            <FkmLogo className="hidden h-7 lg:block" />
             <span className="hidden w-full truncate text-[13px] text-muted-foreground lg:block">
                 {competitionName}
             </span>
