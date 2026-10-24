@@ -185,6 +185,49 @@ test.describe("double check", () => {
             (await getResult(api, "clock-r1", first.id)).isDoubleChecked
         ).toBe(false);
     });
+
+    test("offers a scorecard where an extra replaced an attempt", async ({
+        page,
+        api,
+    }) => {
+        const person = await getPersonByRegistrantId(api, 9);
+        // Attempt 1 got an extra, which replaced it; attempt 2 is normal
+        await createAttempt(api, {
+            roundId: "clock-r1",
+            competitorId: person.id,
+            attemptNumber: 1,
+            value: 1900,
+            status: "EXTRA_GIVEN",
+            replacedBy: 1,
+        });
+        await createAttempt(api, {
+            roundId: "clock-r1",
+            competitorId: person.id,
+            attemptNumber: 1,
+            value: 1950,
+            type: "EXTRA_ATTEMPT",
+        });
+        await createAttempt(api, {
+            roundId: "clock-r1",
+            competitorId: person.id,
+            attemptNumber: 2,
+            value: 2000,
+        });
+
+        await page.goto("/results/round/clock-r1/double-check");
+        await scorecardId(page).fill(String(person.registrantId));
+        await expect(
+            page.getByRole("heading", { name: new RegExp(person.name) })
+        ).toBeVisible();
+        await page.getByRole("button", { name: "Confirm" }).click();
+        await expect
+            .poll(
+                async () =>
+                    (await getResult(api, "clock-r1", person.id))
+                        .isDoubleChecked
+            )
+            .toBe(true);
+    });
 });
 
 test.describe("results checks", () => {
