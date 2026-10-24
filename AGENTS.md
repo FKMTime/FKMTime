@@ -30,6 +30,7 @@ don't need one — the PR description is enough.
 |-------------|--------------------------------------------------------------------|
 | `backend/`  | NestJS API + socket.io gateway, Prisma/PostgreSQL (`prisma/schema.prisma`) |
 | `frontend/` | React + Vite + TypeScript panel, Tailwind + shadcn/ui               |
+| `e2e/`      | Playwright tests driving the real frontend against the real backend |
 | `nginx/`    | Reverse proxy config for the bundled image                         |
 | `scripts/`  | Dev helpers (e.g. `docker-adapter.sh` for Bluetooth on macOS)      |
 | `docs/specs/` | Specs                                                            |
@@ -60,6 +61,15 @@ Backend e2e tests need PostgreSQL and the dummy WCA services:
 ```bash
 docker compose -f docker-compose-test.yml up -d
 cd backend && npx prisma db push && npm run prisma:seed-test && npm run test:e2e
+```
+
+Browser e2e tests (Playwright) start the backend and frontend themselves and
+use the same test stack; `npm ci` in `backend` and `frontend` first:
+
+```bash
+cd e2e && npm ci && npx playwright install chromium
+npm run typecheck && npm run format:check
+npx playwright test               # or a single file: npx playwright test tests/auth.spec.ts
 ```
 
 Prefer running the single test file you changed over the whole suite while
