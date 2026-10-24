@@ -155,8 +155,7 @@ describe('Access control for competition setup & scrambling (e2e)', () => {
     },
   );
 
-  // BUG: role guards let JwtService.verifyAsync errors escape, so a malformed JWT gives 500 instead of 401
-  it.skip('returns 401 for a malformed JWT on role-guarded endpoints', async () => {
+  it('returns 401 for a malformed JWT on role-guarded endpoints', async () => {
     for (const [method, url] of protectedEndpoints.filter(
       ([, , level]) => level !== 'jwt',
     )) {
@@ -166,8 +165,7 @@ describe('Access control for competition setup & scrambling (e2e)', () => {
     }
   });
 
-  // BUG: ScramblingDeviceGuard hashes `undefined` when the header is not "Token <x>", giving 500 instead of 403
-  it.skip('returns 403 for a user JWT on scrambling-device endpoints', async () => {
+  it('returns 403 for a user JWT on scrambling-device endpoints', async () => {
     for (const [method, url] of scramblingDeviceEndpoints) {
       await call(method, url)
         .set('Authorization', `Bearer ${users.DELEGATE.token}`)
@@ -199,8 +197,7 @@ describe('Access control for competition setup & scrambling (e2e)', () => {
   });
 
   describe('token of a deleted user', () => {
-    // BUG: role guards call validateJwt, which dereferences a missing user and fails with 500
-    it.skip('returns 401 on a role-guarded endpoint', async () => {
+    it('returns 401 on a role-guarded endpoint', async () => {
       const user = await createUserWithRoles(app, db, `gone-${SUFFIX}`, [
         Role.ORGANIZER,
       ]);

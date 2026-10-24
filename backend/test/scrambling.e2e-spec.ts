@@ -232,8 +232,7 @@ describe('Scrambling device flow (e2e)', () => {
         .expect(400);
     });
 
-    // BUG: generating a code for a missing device leaks Prisma P2025 as 500 instead of 404
-    it.skip('returns 404 when generating a code for an unknown device', async () => {
+    it('returns 404 when generating a code for an unknown device', async () => {
       await asDelegate(
         request(server()).get(`/scrambling-device/${FAKE_ID}/code`),
       ).expect(404);
@@ -339,8 +338,7 @@ describe('Scrambling device flow (e2e)', () => {
       }
     });
 
-    // BUG: a wrong password can decrypt to invalid UTF-8, and the thrown "Malformed UTF-8 data" gives 500 instead of 403
-    it.skip('answers 403 for every wrong password', async () => {
+    it('answers 403 for every wrong password', async () => {
       for (let i = 0; i < 20; i++) {
         await asDevice(
           request(server()).post(`/scrambling/sets/${scrambleSetId}/unlock`),
@@ -378,8 +376,7 @@ describe('Scrambling device flow (e2e)', () => {
       expect(decrypted).toEqual(scrambles);
     });
 
-    // BUG: unlocking a missing set dereferences null and returns 500 instead of 404
-    it.skip('returns 404 when unlocking an unknown set', async () => {
+    it('returns 404 when unlocking an unknown set', async () => {
       await asDevice(
         request(server()).post(`/scrambling/sets/${FAKE_ID}/unlock`),
       )
@@ -402,8 +399,7 @@ describe('Scrambling device flow (e2e)', () => {
       });
     });
 
-    // BUG: getPersonDataByCardId checks an un-awaited promise, so an unknown card returns 200 with an empty body
-    it.skip('returns 404 for an unknown card', async () => {
+    it('returns 404 for an unknown card', async () => {
       await asDevice(
         request(server()).get('/scrambling/person/e2e-no-such-card'),
       ).expect(404);
