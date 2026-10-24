@@ -328,8 +328,7 @@ describe('socket.io gateways (e2e)', () => {
       });
     });
 
-    // BUG: on any attempt but the first, newIncident carries the id of the competitor's previous attempt instead of the new unresolved one (resultFromDevice.service passes lastAttempt.id)
-    it.skip('points the delegate notification at the new unresolved attempt', async () => {
+    it('points the delegate notification at the new unresolved attempt', async () => {
       const incident = waitForEvent(observer, 'newIncident');
       const data = { competitorId: CARD.competitor, isDelegate: true };
 
@@ -341,7 +340,15 @@ describe('socket.io gateways (e2e)', () => {
           status: AttemptStatus.UNRESOLVED,
         },
       });
-      expect((await incident).id).toBe(unresolved.id);
+      try {
+        expect((await incident).id).toBe(unresolved.id);
+      } finally {
+        // Later tests enter the competitor's next attempt by number
+        await db.attemptEditLog.deleteMany({
+          where: { attemptId: unresolved.id },
+        });
+        await db.attempt.delete({ where: { id: unresolved.id } });
+      }
     });
 
     it('shows a connection request from a new device to the devices room once', async () => {
@@ -605,44 +612,34 @@ describe('socket.io gateways (e2e)', () => {
     });
   });
 
-  describe('handlers meant for server-side use', () => {
-    // groupShouldBeChanged and newIncident are also exposed as
-    // @SubscribeMessage handlers, but their signatures expect server-side
-    // arguments; sent by a client they fail and nothing is relayed.
+  describe('server-to-client events', () => {
+    // resultEntered, groupShouldBeChanged and newIncident are only emitted
+    // by the server; a client sending them must not reach anyone
     it.each([
-      ['groupShouldBeChanged', adminTokenRef, 'competition', 'joinCompetition'],
-      ['newIncident', adminTokenRef, 'incidents', 'joinIncidents'],
+      ['resultEntered', 'statisticsUpdated'],
+      ['resultEntered', 'resultEntered'],
+      ['groupShouldBeChanged', 'groupShouldBeChanged'],
+      ['newIncident', 'newIncident'],
     ])(
-      'answers a client-sent %s with an exception and relays nothing',
-      async (message, tokenRef, room, join) => {
-        const socket = await connect(tokenRef());
-        await joinRoom(gateway, socket, join, room);
-        const relayed = recordEvents(socket, message);
-        const exception = waitForEvent(socket, 'exception');
+      'ignores %s sent by a client (no %s relayed)',
+      async (message, relayedEvent) => {
+        const organizer = await connect(adminTokenRef());
+        await joinRoom(gateway, organizer, 'joinCompetition', 'competition');
+        await joinRoom(gateway, organizer, 'joinIncidents', 'incidents');
+        await joinRoom(gateway, organizer, 'joinResults', 'results-333-r1', {
+          roundId: '333-r1',
+        });
+        const relayed = recordEvents(organizer, relayedEvent);
+        const anonymous = await connect();
 
-        socket.emit(message, 'e2e-rt-gateway-message');
+        anonymous.emit(message, '333-r1');
+        await flush(anonymous);
+        await flush(organizer);
 
-        expect(await exception).toMatchObject({ status: 'error' });
-        await flush(socket);
         expect(relayed.received).toHaveLength(0);
         relayed.stop();
       },
     );
-
-    // BUG: resultEntered is an unguarded @SubscribeMessage, so any anonymous client can make every organizer dashboard refetch statistics
-    it.skip('does not let an anonymous client broadcast statisticsUpdated', async () => {
-      const organizer = await connect(organizerToken);
-      await joinRoom(gateway, organizer, 'joinCompetition', 'competition');
-      const statistics = recordEvents(organizer, 'statisticsUpdated');
-      const anonymous = await connect();
-
-      anonymous.emit('resultEntered', '333-r1');
-      await flush(anonymous);
-      await flush(organizer);
-
-      expect(statistics.received).toHaveLength(0);
-      statistics.stop();
-    });
   });
 
   describe('auto setup', () => {

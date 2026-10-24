@@ -273,8 +273,7 @@ describe('Live solving (e2e)', () => {
     packets.stop();
   });
 
-  // BUG: the public results endpoint includes each attempt's full device row, exposing the station signKey to anyone
-  it.skip('does not expose station sign keys on the public results endpoint', async () => {
+  it('does not expose station sign keys on the public results endpoint', async () => {
     const entered = await station.request('EnterAttempt', {
       value: 1500,
       valueMs: 15000,
