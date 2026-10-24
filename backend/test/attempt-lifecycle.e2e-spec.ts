@@ -236,8 +236,7 @@ describe('Attempt lifecycle and edit log (e2e)', () => {
       ).toBe(0);
     });
 
-    // BUG: a rejected POST /attempt (judge = competitor) still creates an empty result for the competitor
-    it.skip('does not leave an empty result behind when rejected', async () => {
+    it('does not leave an empty result behind when rejected', async () => {
       await request(server())
         .post('/attempt')
         .set(auth(delegate))

@@ -32,17 +32,18 @@ export class AttemptService {
   ) {}
 
   async createAttempt(data: CreateAttemptDto, userId: string) {
-    const result = await this.resultService.getResultOrCreate(
-      data.competitorId,
-      data.roundId,
-    );
-
+    // Validate before getResultOrCreate, so a rejected attempt leaves no empty result behind
     if (data.judgeId && data.judgeId === data.competitorId) {
       throw new HttpException(
         'Judge cannot be the same person as competitor',
         400,
       );
     }
+
+    const result = await this.resultService.getResultOrCreate(
+      data.competitorId,
+      data.roundId,
+    );
 
     const duplicate = await this.prisma.attempt.findFirst({
       where: {
