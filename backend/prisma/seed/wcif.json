@@ -7893,7 +7893,7 @@
         {
           "id": "333bf-r1",
           "linkedRounds": null,
-          "format": "3",
+          "format": "5",
           "timeLimit": {
             "centiseconds": 60000,
             "cumulativeRoundIds": [

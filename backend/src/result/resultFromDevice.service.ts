@@ -34,6 +34,8 @@ import { EnterAttemptDto } from './dto/enterAttempt.dto';
 import {
   checkAttemptLimit,
   checkCutoff,
+  getCountingAttempts,
+  getRoundResultText,
   getSortedExtraAttempts,
   getSortedStandardAttempts,
   isCompetitorSignedInForEvent,
@@ -333,10 +335,19 @@ export class ResultFromDeviceService {
       );
     }
     this.appGateway.handleResultEntered(result.roundId);
+    const enteredMessage = finalData.limitPassed
+      ? getTranslation('attemptEntered', locale)
+      : getTranslation('attemptEnteredButReplacedToDnf', locale);
+    const roundResultText = await this.getFinishedRoundResultText(
+      result.id,
+      roundInfo,
+    );
     return {
-      message: finalData.limitPassed
-        ? getTranslation('attemptEntered', locale)
-        : getTranslation('attemptEnteredButReplacedToDnf', locale),
+      // The station shows the first two words on the top line and the rest
+      // below, so the two-word result goes first to get a line of its own
+      message: roundResultText
+        ? `${roundResultText} ${enteredMessage}`
+        : enteredMessage,
       shouldResetTime: true,
       status: 200,
       error: false,
@@ -536,6 +547,29 @@ export class ResultFromDeviceService {
         'DNS auto-assigned',
       );
     }
+  }
+
+  /** The round's result once the competitor has no attempts left, else null */
+  private async getFinishedRoundResultText(resultId: string, roundInfo: any) {
+    const attempts = await this.prisma.attempt.findMany({
+      where: { resultId },
+    });
+    const countingAttempts = getCountingAttempts(attempts);
+    const cutoffAttempts = roundInfo.cutoff?.numberOfAttempts;
+    const stoppedAtCutoff =
+      cutoffAttempts &&
+      countingAttempts.length === cutoffAttempts &&
+      !checkCutoff(
+        countingAttempts,
+        roundInfo.cutoff.resultValue,
+        cutoffAttempts,
+      );
+    const isFinished =
+      stoppedAtCutoff ||
+      countingAttempts.length === getMaxAttempts(roundInfo.format);
+    return isFinished
+      ? getRoundResultText(countingAttempts, roundInfo.format)
+      : null;
   }
 
   private notifyDelegate(

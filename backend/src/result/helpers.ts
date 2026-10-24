@@ -1,4 +1,5 @@
 import { Attempt, AttemptStatus, AttemptType } from '@prisma/client';
+import { formatCentiseconds } from '@wca/helpers';
 import { DNF_VALUE, DNS_VALUE } from 'src/constants';
 import { Person } from 'wcif-helpers';
 
@@ -95,4 +96,59 @@ export const getCountingAttempts = (attempts: Attempt[]): Attempt[] => {
     }
   });
   return counting;
+};
+
+/** An attempt as WCA encodes it: centiseconds with +2s added, or DNF/DNS */
+const toAttemptResult = (attempt: Pick<Attempt, 'value' | 'penalty'>) =>
+  attempt.penalty === DNF_VALUE || attempt.penalty === DNS_VALUE
+    ? attempt.penalty
+    : attemptTimeWithPenalty(attempt);
+
+const isSolved = (result: number) => result > 0;
+
+/** Averages over 10 minutes are rounded to the second, the rest stay exact */
+const roundAverage = (centiseconds: number) =>
+  centiseconds > 60000
+    ? Math.round(centiseconds / 100) * 100
+    : Math.round(centiseconds);
+
+const formatAttemptResult = (result: number) =>
+  isSolved(result) ? formatCentiseconds(result) : 'DNF';
+
+const getBest = (results: number[]) => {
+  const solved = results.filter(isSolved);
+  return solved.length > 0 ? Math.min(...solved) : DNF_VALUE;
+};
+
+/** Ao5 drops the best and the worst; a second unsolved attempt makes it DNF */
+const getAverageOf5 = (results: number[]) => {
+  const solved = results.filter(isSolved).sort((a, b) => a - b);
+  if (solved.length < results.length - 1) return DNF_VALUE;
+  const counting = solved.slice(1, 4);
+  return roundAverage(counting.reduce((sum, r) => sum + r, 0) / 3);
+};
+
+const getMeanOf3 = (results: number[]) => {
+  if (!results.every(isSolved)) return DNF_VALUE;
+  return roundAverage(results.reduce((sum, r) => sum + r, 0) / 3);
+};
+
+/**
+ * What a competitor's round came to once they have no attempts left, e.g.
+ * "Ao5: 12.20" or "Best: 21.37". Rounds cut off before the average is
+ * complete show the best, as the official result does. Always two words:
+ * the station puts the first two words of a message on the top line.
+ */
+export const getRoundResultText = (
+  countingAttempts: Pick<Attempt, 'value' | 'penalty'>[],
+  format: string,
+) => {
+  const results = countingAttempts.map(toAttemptResult);
+  if (format === 'a' && results.length === 5) {
+    return `Ao5: ${formatAttemptResult(getAverageOf5(results))}`;
+  }
+  if (format === 'm' && results.length === 3) {
+    return `Mo3: ${formatAttemptResult(getMeanOf3(results))}`;
+  }
+  return `Best: ${formatAttemptResult(getBest(results))}`;
 };

@@ -725,14 +725,17 @@ describe('Station socket protocol (e2e)', () => {
       const second = await station.request('EnterAttempt', bld(30000));
 
       expect(first.data.message).toBe(getTranslation('attemptEntered', 'pl'));
+      // The rest became DNS, so the round is over and its result comes along
       expect(second.data.message).toBe(
-        getTranslation('attemptEnteredButReplacedToDnf', 'pl'),
+        `Best: 5:50.00 ${getTranslation('attemptEnteredButReplacedToDnf', 'pl')}`,
       );
       const attempts = await attemptsOf(c1.id, '333bf-r1');
       expect(attempts.map((a) => [a.attemptNumber, a.penalty])).toEqual([
         [1, 0],
         [2, -1],
         [3, -2],
+        [4, -2],
+        [5, -2],
       ]);
     });
 
@@ -747,9 +750,12 @@ describe('Station socket protocol (e2e)', () => {
 
       // clock-r1: cutoff 12.00 after 2 attempts
       await station.request('EnterAttempt', clock(1500));
-      await station.request('EnterAttempt', clock(1600));
+      const second = await station.request('EnterAttempt', clock(1600));
       const third = await station.request('EnterAttempt', clock(1000));
 
+      expect(second.data.message).toBe(
+        `Best: 15.00 ${getTranslation('attemptEntered', 'pl')}`,
+      );
       expect(third).toEqual(
         errorResponse(getTranslation('cutoffNotPassed', 'pl'), 400),
       );
