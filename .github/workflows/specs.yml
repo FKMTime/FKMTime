@@ -1,0 +1,22 @@
+name: Specs
+
+# No paths filter on purpose: a docs-only PR is exactly how a duplicate id
+# arrives. The push run on main catches collisions between PRs that were each
+# green against an older base.
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+jobs:
+  unique_ids:
+    name: Unique spec ids
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+      - uses: fullstackhouse/unique-doc-ids-action@v1
+        with:
+          dir: docs/specs
+          check-open-prs: warning
