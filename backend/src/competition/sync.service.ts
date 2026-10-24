@@ -2,7 +2,7 @@ import { forwardRef, HttpException, Inject } from '@nestjs/common';
 import { StaffRole } from '@prisma/client';
 import { DbService } from 'src/db/db.service';
 import { isUnofficialEvent } from 'src/events';
-import { WcaService } from 'src/wca/wca.service';
+import { assertWcaCompetitionFound, WcaService } from 'src/wca/wca.service';
 import { wcifRoleToAttendanceRole } from 'src/wcif-helpers';
 import { Assignment, Person } from 'wcif-helpers';
 import { getGroupInfoByActivityId } from 'wcif-helpers';
@@ -21,6 +21,7 @@ export class SyncService {
       },
     });
     const wcifPublic = await this.wcaService.getWcif(wcaId, undefined, true);
+    assertWcaCompetitionFound(wcifPublic.statusCode);
     const transactions = [];
     if (user.wcaUserId) {
       const wcif = await this.wcaService.getWcif(wcaId, user.wcaAccessToken);
