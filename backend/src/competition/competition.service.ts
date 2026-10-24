@@ -253,7 +253,9 @@ export class CompetitionService {
         error: true,
       };
     }
-    const devices = await this.prisma.device.findMany();
+    const devices = await this.prisma.device.findMany({
+      omit: { signKey: false },
+    });
     return {
       shouldUpdate: competition.shouldUpdateDevices,
       devices: devices.map((d) => ({

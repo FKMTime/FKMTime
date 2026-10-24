@@ -11,6 +11,10 @@ export class DbService extends PrismaClient implements OnModuleDestroy {
         connectionString: config.get('DATABASE_URL'),
       }),
       log: [{ emit: 'stdout', level: 'error' }],
+      // signKey is the key a station signs its packets with. Only the
+      // stations themselves need it, so no query returns it unless it opts
+      // back in with omit: { signKey: false }
+      omit: { device: { signKey: true } },
       errorFormat: 'colorless',
     });
   }
