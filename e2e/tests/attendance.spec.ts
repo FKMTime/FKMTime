@@ -139,6 +139,9 @@ test.describe("attendance for a group", () => {
             })
             .click();
         await page.getByRole("menuitem", { name: "Mark absent" }).click();
+        // The row moves to the absent section when the update lands, which
+        // closes a menu opened before that
+        await undoToast(page, `${second.person.name} marked absent`);
         await personRow(page, "Judges", second.person.name)
             .getByRole("button", {
                 name: `More actions for ${second.person.name}`,
