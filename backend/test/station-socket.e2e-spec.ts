@@ -224,8 +224,7 @@ describe('Station socket protocol (e2e)', () => {
       expect(r3.type).toBe('ServerStatusResp');
     });
 
-    // BUG: JSON.parse in the socket 'data' handler is unguarded; a malformed packet throws before it is dropped from the buffer, so it re-throws on every later packet and the connection never answers again
-    it.skip('survives a malformed packet and keeps answering', async () => {
+    it('survives a malformed packet and keeps answering', async () => {
       station.sendRaw('{not json');
       const res = await station.request('ServerStatus', {});
       expect(res.type).toBe('ServerStatusResp');
@@ -636,18 +635,27 @@ describe('Station socket protocol (e2e)', () => {
         ).toBeNull();
       });
 
-      // BUG: EnterAttempt without judgeId (optional in EnterAttemptDto) throws a TypeError on data.judgeId.toString(); the station never gets an answer
-      it.skip('accepts a delegate call without a judge card', async () => {
+      it('accepts a delegate call without a judge card', async () => {
         const data: Record<string, unknown> = attempt({
           competitorId: CARD.c4,
           isDelegate: true,
         });
         delete data.judgeId;
-        const res = await station.request('EnterAttempt', data);
+        try {
+          const res = await station.request('EnterAttempt', data);
 
-        expect(res.data.status).toBe(200);
-        const attempts = await attemptsOf(c4.id, '333-r1');
-        expect(attempts[0].status).toBe(AttemptStatus.UNRESOLVED);
+          expect(res.data.status).toBe(200);
+          const attempts = await attemptsOf(c4.id, '333-r1');
+          expect(attempts[0].status).toBe(AttemptStatus.UNRESOLVED);
+        } finally {
+          // Later tests expect c4 to have no result in 333-r1
+          const where = { result: { personId: c4.id, roundId: '333-r1' } };
+          await db.attemptEditLog.deleteMany({ where: { attempt: where } });
+          await db.attempt.deleteMany({ where });
+          await db.result.deleteMany({
+            where: { personId: c4.id, roundId: '333-r1' },
+          });
+        }
       });
     });
 

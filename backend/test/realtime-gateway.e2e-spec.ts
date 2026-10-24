@@ -328,8 +328,7 @@ describe('socket.io gateways (e2e)', () => {
       });
     });
 
-    // BUG: on any attempt but the first, newIncident carries the id of the competitor's previous attempt instead of the new unresolved one (resultFromDevice.service passes lastAttempt.id)
-    it.skip('points the delegate notification at the new unresolved attempt', async () => {
+    it('points the delegate notification at the new unresolved attempt', async () => {
       const incident = waitForEvent(observer, 'newIncident');
       const data = { competitorId: CARD.competitor, isDelegate: true };
 
@@ -341,7 +340,15 @@ describe('socket.io gateways (e2e)', () => {
           status: AttemptStatus.UNRESOLVED,
         },
       });
-      expect((await incident).id).toBe(unresolved.id);
+      try {
+        expect((await incident).id).toBe(unresolved.id);
+      } finally {
+        // Later tests enter the competitor's next attempt by number
+        await db.attemptEditLog.deleteMany({
+          where: { attemptId: unresolved.id },
+        });
+        await db.attempt.delete({ where: { id: unresolved.id } });
+      }
     });
 
     it('shows a connection request from a new device to the devices room once', async () => {

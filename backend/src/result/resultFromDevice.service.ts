@@ -162,9 +162,10 @@ export class ResultFromDeviceService {
       };
     }
 
-    const judge = await this.personService.getPersonByCardId(
-      data.judgeId.toString(),
-    );
+    // judgeId is optional: a delegate call can come without a judge card
+    const judge = data.judgeId
+      ? await this.personService.getPersonByCardId(data.judgeId.toString())
+      : null;
 
     if (!judge && !data.isDelegate) {
       return {
@@ -263,31 +264,32 @@ export class ResultFromDeviceService {
           attempt.status === AttemptStatus.EXTRA_GIVEN &&
           (attempt.replacedBy === 0 || attempt.replacedBy === null),
       );
-      await this.createAnExtraAttemptAnReplaceTheOriginalOne(
-        {
-          ...finalData,
-          device,
-          judge,
-          competitor,
-          result,
-          attemptNumber: lastExtra + 1,
-        },
-        lastAttemptToReplace.id,
-      );
+      const extraAttempt =
+        await this.createAnExtraAttemptAnReplaceTheOriginalOne(
+          {
+            ...finalData,
+            device,
+            judge,
+            competitor,
+            result,
+            attemptNumber: lastExtra + 1,
+          },
+          lastAttemptToReplace.id,
+        );
       extraEntered = true;
       if (data.isDelegate) {
         return this.notifyDelegate(
           device.name,
           competitor.name,
           locale,
-          lastAttemptToReplace.id,
+          extraAttempt.id,
         );
       }
     }
     if (!extraEntered) {
       let attemptNumber = 1;
       const maxAttempts = getMaxAttempts(roundInfo.format);
-      let lastAttempt = sortedAttempts[sortedAttempts.length - 1];
+      const lastAttempt = sortedAttempts[sortedAttempts.length - 1];
       if (lastAttempt && lastAttempt.attemptNumber === maxAttempts) {
         return {
           message: getTranslation('noAttemptsLeft', locale),
@@ -308,15 +310,12 @@ export class ResultFromDeviceService {
         result,
         judge as Person,
       );
-      if (!lastAttempt) {
-        lastAttempt = attempt;
-      }
       if (data.isDelegate) {
         return this.notifyDelegate(
           device.name,
           competitor.name,
           locale,
-          lastAttempt.id,
+          attempt.id,
         );
       }
       if (finalData.dnsOther) {
@@ -463,7 +462,7 @@ export class ResultFromDeviceService {
       null,
       `Replaced by extra ${extraAttempt.attemptNumber}`,
     );
-    return attempt.attemptNumber;
+    return extraAttempt;
   }
 
   async updateResolvedIncident(

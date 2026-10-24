@@ -49,16 +49,40 @@ export class SocketServer {
         let nullIdx = buffer.indexOf(0x00);
         while (nullIdx !== -1) {
           const packet = buffer.subarray(0, nullIdx);
+          // Drop the packet before handling it, so one that fails cannot
+          // block every packet after it on this connection
+          buffer = buffer.subarray(nullIdx + 1);
+          nullIdx = buffer.indexOf(0x00);
 
           if (this.hilRunning) {
             this.hilProcessor.feed_packet(packet.toString());
-          } else {
-            const request: RequestDto<any> = JSON.parse(packet.toString());
-            this.parsePacket(socket, request);
+            continue;
           }
-
-          buffer = buffer.subarray(nullIdx + 1);
-          nullIdx = buffer.indexOf(0x00);
+          let request: RequestDto<any>;
+          try {
+            request = JSON.parse(packet.toString());
+          } catch {
+            this.logger.warn(`Dropped malformed packet: ${packet.toString()}`);
+            continue;
+          }
+          this.parsePacket(socket, request).catch((e) => {
+            // An unhandled rejection would take the whole backend down, and
+            // the station would wait for an answer that never comes
+            this.logger.error(
+              `Failed to handle request of type ${request.type}, tag ${request.tag}`,
+              e instanceof Error ? e.stack : e,
+            );
+            this.sendResponseWithTag(socket, {
+              type: request.type,
+              tag: request.tag,
+              data: {
+                message: 'Internal server error',
+                status: 500,
+                error: true,
+                shouldResetTime: false,
+              },
+            });
+          });
         }
       });
     });
