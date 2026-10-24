@@ -94,8 +94,7 @@ describe('ScrambleSetController (e2e)', () => {
       );
     });
 
-    // BUG: import is not transactional, so sets before a duplicate stay imported although the request fails
-    it.skip('imports nothing when one of the sets is a duplicate', async () => {
+    it('imports nothing when one of the sets is a duplicate', async () => {
       await importSets([
         scrambleSet('333-r1', 'D'),
         scrambleSet('333-r1', 'A'),
@@ -213,8 +212,7 @@ describe('ScrambleSetController (e2e)', () => {
       );
     });
 
-    // BUG: deleteScrambleSet catches P2016 but Prisma throws P2025, so a missing set is swallowed and answers 204
-    it.skip('returns 404 for an unknown set', async () => {
+    it('returns 404 for an unknown set', async () => {
       await asDelegate(
         request(server()).delete(`/scramble-set/${FAKE_ID}`),
       ).expect(404);
