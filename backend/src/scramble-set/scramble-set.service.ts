@@ -9,30 +9,38 @@ export class ScrambleSetService {
   constructor(private readonly prisma: DbService) {}
 
   async importScrambles(data: ImportScramblesDto) {
-    for (const set of data.scrambleSets) {
-      try {
-        await this.prisma.scrambleSet.create({
-          data: {
-            roundId: set.roundId,
-            set: set.set,
-            scrambles: {
-              create: set.scrambles.map((scramble) => ({
-                num: scramble.num,
-                encryptedScramble: scramble.encryptedScramble,
-                isExtra: scramble.isExtra,
-              })),
-            },
-          },
-        });
-      } catch (e) {
-        if (e.code === 'P2002') {
-          throw new HttpException(
-            `${activityCodeToName(set.roundId)} set ${set.set} has already been imported`,
-            HttpStatus.BAD_REQUEST,
-          );
+    // All or nothing: a duplicate set rolls back the sets imported before it
+    await this.prisma.$transaction(
+      async (tx) => {
+        for (const set of data.scrambleSets) {
+          try {
+            await tx.scrambleSet.create({
+              data: {
+                roundId: set.roundId,
+                set: set.set,
+                scrambles: {
+                  create: set.scrambles.map((scramble) => ({
+                    num: scramble.num,
+                    encryptedScramble: scramble.encryptedScramble,
+                    isExtra: scramble.isExtra,
+                  })),
+                },
+              },
+            });
+          } catch (e) {
+            if (e.code === 'P2002') {
+              throw new HttpException(
+                `${activityCodeToName(set.roundId)} set ${set.set} has already been imported`,
+                HttpStatus.BAD_REQUEST,
+              );
+            }
+            throw e;
+          }
         }
-      }
-    }
+        // A whole competition's sets can take longer than the 5 s default
+      },
+      { timeout: 60_000 },
+    );
     return {
       message: 'Scrambles imported successfully',
     };
@@ -73,17 +81,12 @@ export class ScrambleSetService {
   }
 
   async deleteScrambleSet(id: string) {
-    try {
-      await this.prisma.scrambleSet.delete({
-        where: {
-          id,
-        },
-      });
-    } catch (e) {
-      if (e.code === 'P2016') {
-        throw new HttpException('Scramble set not found', HttpStatus.NOT_FOUND);
-      }
-    }
+    // An unknown id throws P2025, which the global filter turns into a 404
+    await this.prisma.scrambleSet.delete({
+      where: {
+        id,
+      },
+    });
     return {
       message: 'Scramble set deleted successfully',
     };

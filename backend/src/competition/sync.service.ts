@@ -2,10 +2,36 @@ import { forwardRef, HttpException, Inject } from '@nestjs/common';
 import { StaffRole } from '@prisma/client';
 import { DbService } from 'src/db/db.service';
 import { isUnofficialEvent } from 'src/events';
-import { WcaService } from 'src/wca/wca.service';
+import { assertWcaCompetitionFound, WcaService } from 'src/wca/wca.service';
 import { wcifRoleToAttendanceRole } from 'src/wcif-helpers';
 import { Assignment, Person } from 'wcif-helpers';
 import { getGroupInfoByActivityId } from 'wcif-helpers';
+
+type PersonSyncData = {
+  registrantId: number;
+  name: string;
+  wcaId: string | null;
+  gender: string;
+  countryIso2: string;
+  birthdate?: Date | null;
+};
+
+/** Whether syncing would change anything; undefined fields are left alone */
+const hasPersonChanged = (
+  existing: Record<string, unknown>,
+  incoming: PersonSyncData,
+) =>
+  Object.entries(incoming).some(([key, value]) => {
+    if (value === undefined) return false;
+    const current = existing[key];
+    if (value instanceof Date || current instanceof Date) {
+      return (
+        (value as Date | null)?.getTime() !==
+        (current as Date | null)?.getTime()
+      );
+    }
+    return (current ?? null) !== (value ?? null);
+  });
 
 export class SyncService {
   constructor(
@@ -21,7 +47,11 @@ export class SyncService {
       },
     });
     const wcifPublic = await this.wcaService.getWcif(wcaId, undefined, true);
-    const transactions = [];
+    assertWcaCompetitionFound(wcifPublic.statusCode);
+    // The private WCIF has birthdates and registration status, the public one
+    // only the basics
+    let personsData: PersonSyncData[];
+    let removedRegistrantIds: number[] = [];
     if (user.wcaUserId) {
       const wcif = await this.wcaService.getWcif(wcaId, user.wcaAccessToken);
       if (wcif.statusCode === 403) {
@@ -29,112 +59,39 @@ export class SyncService {
       } else if (wcif.statusCode === 401) {
         throw new HttpException('WCA token expired. Please log in again.', 401);
       }
-      wcif.persons.forEach((person: Person) => {
-        if (person.registrantId && person.registration.status === 'accepted') {
-          transactions.push(
-            this.prisma.person.upsert({
-              where: {
-                registrantId: person.registrantId,
-              },
-              update: {
-                name: person.name,
-                wcaId: person.wcaId,
-                gender: person.gender,
-                countryIso2: person.countryIso2,
-                birthdate: person.wcaId
-                  ? null
-                  : person.birthdate && new Date(person.birthdate),
-              },
-              create: {
-                name: person.name,
-                wcaId: person.wcaId,
-                registrantId: person.registrantId,
-                gender: person.gender,
-                countryIso2: person.countryIso2,
-                birthdate: person.wcaId
-                  ? null
-                  : person.birthdate && new Date(person.birthdate),
-              },
-            }),
-          );
-        }
-      });
-      wcif.persons
-        .filter((p) => p.registration && p.registration?.status !== 'accepted')
-        .forEach((p) => {
-          transactions.push(
-            this.prisma.person.deleteMany({
-              where: {
-                registrantId: p.registrantId,
-              },
-            }),
-          );
-        });
+      personsData = wcif.persons
+        .filter(
+          (person: Person) =>
+            person.registrantId && person.registration.status === 'accepted',
+        )
+        .map((person: Person) => ({
+          registrantId: person.registrantId,
+          name: person.name,
+          wcaId: person.wcaId,
+          gender: person.gender,
+          countryIso2: person.countryIso2,
+          birthdate: person.wcaId
+            ? null
+            : person.birthdate && new Date(person.birthdate),
+        }));
+      removedRegistrantIds = wcif.persons
+        .filter(
+          (person: Person) =>
+            person.registration && person.registration.status !== 'accepted',
+        )
+        .map((person: Person) => person.registrantId);
     } else {
-      wcifPublic.persons.forEach((person: Person) => {
-        if (person.registrantId) {
-          transactions.push(
-            this.prisma.person.upsert({
-              where: {
-                registrantId: person.registrantId,
-              },
-              update: {
-                name: person.name,
-                wcaId: person.wcaId,
-                gender: person.gender,
-                countryIso2: person.countryIso2,
-              },
-              create: {
-                name: person.name,
-                wcaId: person.wcaId,
-                registrantId: person.registrantId,
-                gender: person.gender,
-                countryIso2: person.countryIso2,
-              },
-            }),
-          );
-        }
-      });
+      personsData = wcifPublic.persons
+        .filter((person: Person) => person.registrantId)
+        .map((person: Person) => ({
+          registrantId: person.registrantId,
+          name: person.name,
+          wcaId: person.wcaId,
+          gender: person.gender,
+          countryIso2: person.countryIso2,
+        }));
     }
-    const activitiesTransactions = [];
-    const persons = await this.prisma.person.findMany();
-    wcifPublic.persons.forEach((person: Person) => {
-      person.assignments.forEach((assignment: Assignment) => {
-        const group = getGroupInfoByActivityId(
-          assignment.activityId,
-          wcifPublic,
-        );
-        const personData = persons.find(
-          (p) => p.registrantId === person.registrantId,
-        );
-        activitiesTransactions.push(
-          this.prisma.staffActivity.upsert({
-            where: {
-              personId_groupId_role: {
-                groupId: group.activityCode,
-                personId: personData.id,
-                role: wcifRoleToAttendanceRole(assignment.assignmentCode),
-              },
-            },
-            update: {
-              isAssigned: true,
-            },
-            create: {
-              person: {
-                connect: {
-                  registrantId: person.registrantId,
-                },
-              },
-              role: wcifRoleToAttendanceRole(
-                assignment.assignmentCode,
-              ) as StaffRole,
-              groupId: group.activityCode,
-              isAssigned: true,
-            },
-          }),
-        );
-      });
-    });
+
     const currentRooms = await this.prisma.room.findMany();
     const rooms = [];
 
@@ -154,8 +111,108 @@ export class SyncService {
       skipDuplicates: true,
     });
 
-    await this.prisma.$transaction(transactions);
-    await this.prisma.$transaction(activitiesTransactions);
+    // Persons first: assignments below need every new person's id. Only new
+    // and changed persons are written, so a sync of a large competition stays
+    // a handful of queries instead of one per competitor.
+    const existingPersons = new Map(
+      (await this.prisma.person.findMany()).map((person) => [
+        person.registrantId,
+        person,
+      ]),
+    );
+    const personsToCreate = personsData.filter(
+      (person) => !existingPersons.has(person.registrantId),
+    );
+    const personsToUpdate = personsData.filter((person) => {
+      const existing = existingPersons.get(person.registrantId);
+      return existing && hasPersonChanged(existing, person);
+    });
+    await this.prisma.$transaction(
+      async (tx) => {
+        await tx.person.createMany({
+          data: personsToCreate,
+          skipDuplicates: true,
+        });
+        for (const { registrantId, ...data } of personsToUpdate) {
+          await tx.person.update({ where: { registrantId }, data });
+        }
+        if (removedRegistrantIds.length > 0) {
+          await tx.person.deleteMany({
+            where: { registrantId: { in: removedRegistrantIds } },
+          });
+        }
+      },
+      { timeout: 60_000 },
+    );
+
+    const personIdByRegistrantId = new Map(
+      (
+        await this.prisma.person.findMany({
+          select: { id: true, registrantId: true },
+        })
+      ).map((person) => [person.registrantId, person.id]),
+    );
+    const assignments: {
+      personId: string;
+      groupId: string;
+      role: StaffRole;
+    }[] = [];
+    wcifPublic.persons.forEach((person: Person) => {
+      const personId = personIdByRegistrantId.get(person.registrantId);
+      // Not accepted, so not imported
+      if (!personId) return;
+      person.assignments.forEach((assignment: Assignment) => {
+        const group = getGroupInfoByActivityId(
+          assignment.activityId,
+          wcifPublic,
+        );
+        assignments.push({
+          personId,
+          groupId: group.activityCode,
+          role: wcifRoleToAttendanceRole(
+            assignment.assignmentCode,
+          ) as StaffRole,
+        });
+      });
+    });
+    const activityKey = (a: {
+      personId: string;
+      groupId: string;
+      role: string;
+    }) => `${a.personId}|${a.groupId}|${a.role}`;
+    const existingActivities = new Map(
+      (
+        await this.prisma.staffActivity.findMany({
+          where: {
+            personId: { in: [...new Set(assignments.map((a) => a.personId))] },
+          },
+          select: {
+            id: true,
+            personId: true,
+            groupId: true,
+            role: true,
+            isAssigned: true,
+          },
+        })
+      ).map((activity) => [activityKey(activity), activity]),
+    );
+    const activitiesToCreate = assignments
+      .filter((assignment) => !existingActivities.has(activityKey(assignment)))
+      .map((assignment) => ({ ...assignment, isAssigned: true }));
+    const activityIdsToAssign = assignments
+      .map((assignment) => existingActivities.get(activityKey(assignment)))
+      .filter((activity) => activity && !activity.isAssigned)
+      .map((activity) => activity.id);
+    await this.prisma.$transaction([
+      this.prisma.staffActivity.createMany({
+        data: activitiesToCreate,
+        skipDuplicates: true,
+      }),
+      this.prisma.staffActivity.updateMany({
+        where: { id: { in: activityIdsToAssign } },
+        data: { isAssigned: true },
+      }),
+    ]);
     await this.prisma.competition.updateMany({
       where: { wcaId },
       data: {

@@ -226,12 +226,19 @@ describe('Unofficial events (e2e)', () => {
     );
   });
 
-  // BUG: FTO is missing `isUnofficial: true` in eventsData, so a created FTO event never reaches the competition WCIF
-  it.skip('adds an FTO event to the competition WCIF', async () => {
-    await asOrganizer(request(server()).post('/events'))
-      .send({ eventId: 'fto', rounds: [round('fto-r1')] })
-      .expect(201);
+  // FTO has been an official WCA event since the WCIF v2 update (#462)
+  it.each([
+    ['FTO', 'fto'],
+    ['3x3x3', '333'],
+    ['an unknown event', 'not-an-event'],
+  ])('refuses to add %s as an unofficial event', async (_, eventId) => {
+    const res = await asOrganizer(request(server()).post('/events'))
+      .send({ eventId, rounds: [round(`${eventId}-r1`)] })
+      .expect(400);
 
-    expect((await competitionEvents()).map((e) => e.id)).toContain('fto');
+    expect(res.body.message).toBe(
+      'Only unofficial events can be added here. Official events come from the WCA website.',
+    );
+    expect(await db.unofficialEvent.count({ where: { eventId } })).toBe(0);
   });
 });

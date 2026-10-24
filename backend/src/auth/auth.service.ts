@@ -1,4 +1,9 @@
-import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import {
+  HttpException,
+  HttpStatus,
+  Injectable,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { Role } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
@@ -228,12 +233,21 @@ export class AuthService {
   }
 
   async validateJwt(token: string): Promise<JwtAuthDto> {
-    const verifiedUser = await this.jwtService.verifyAsync(token);
+    let verifiedUser: { userId: string };
+    try {
+      verifiedUser = await this.jwtService.verifyAsync(token);
+    } catch {
+      throw new UnauthorizedException();
+    }
     const userFromDb = await this.prisma.user.findFirst({
       where: {
         id: verifiedUser.userId,
       },
     });
+    // The token outlived its user
+    if (!userFromDb) {
+      throw new UnauthorizedException();
+    }
     return {
       userId: userFromDb.id,
       roles: userFromDb.roles,

@@ -29,3 +29,12 @@ export const isCumulativeLimit = (roundId: string, wcif: Competition) => {
 export const getMaxAttempts = (roundFormat: string) => {
   return roundFormatMap[roundFormat] || 5;
 };
+
+/**
+ * Whether two moments fall on the same calendar day (server time). Comparing
+ * getDay() alone matched any date on the same weekday, a week apart too.
+ */
+export const isSameDay = (a: Date, b: Date) =>
+  a.getFullYear() === b.getFullYear() &&
+  a.getMonth() === b.getMonth() &&
+  a.getDate() === b.getDate();

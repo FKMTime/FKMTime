@@ -254,8 +254,33 @@ describe('Competition import & sync from WCA (e2e)', () => {
       expect(events).toEqual([...wcif.events.map((e) => e.id), 'mirror']);
     });
 
-    // BUG: sync does not check the WCA response, so an unknown competition id crashes with 500
-    it.skip('returns 404 when syncing a competition the WCA does not know', async () => {
+    it('recreates a competitor that is missing locally, with their assignments', async () => {
+      const sample = wcif.persons.find(
+        (p) =>
+          p.registrantId &&
+          p.registration?.status === 'accepted' &&
+          p.assignments.length > 0,
+      );
+      // Deleting the person cascades to their staff activities
+      await db.person.delete({
+        where: { registrantId: sample.registrantId },
+      });
+
+      await request(server())
+        .get(`/competition/sync/${IMPORTED_WCA_ID}`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .expect(200);
+
+      const recreated = await db.person.findUnique({
+        where: { registrantId: sample.registrantId },
+        include: { StaffActivity: true },
+      });
+      expect(recreated).toMatchObject({ name: sample.name });
+      expect(recreated.StaffActivity).toHaveLength(sample.assignments.length);
+      expect(recreated.StaffActivity.every((a) => a.isAssigned)).toBe(true);
+    });
+
+    it('returns 404 when syncing a competition the WCA does not know', async () => {
       await request(server())
         .get('/competition/sync/NoSuchCompetition2099')
         .set('Authorization', `Bearer ${adminToken}`)
@@ -308,8 +333,7 @@ describe('Competition import & sync from WCA (e2e)', () => {
       outsiderToken = token;
     });
 
-    // BUG: import does not check the WCA response, so an unknown competition id crashes with 500
-    it.skip('returns 404 for a competition the WCA does not know', async () => {
+    it('returns 404 for a competition the WCA does not know', async () => {
       await request(server())
         .get('/competition/import/NoSuchCompetition2099')
         .set('Authorization', `Bearer ${outsiderToken}`)
@@ -330,8 +354,7 @@ describe('Competition import & sync from WCA (e2e)', () => {
       expect(await db.person.count()).toBe(0);
     });
 
-    // BUG: import deletes all other users before checking the importer's permission, so a refused import still wipes them
-    it.skip('keeps other users when the import is refused', async () => {
+    it('keeps other users when the import is refused', async () => {
       expect(
         await db.user.findFirst({ where: { username: 'admin' } }),
       ).not.toBeNull();

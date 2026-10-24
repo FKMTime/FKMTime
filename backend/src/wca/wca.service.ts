@@ -1,4 +1,4 @@
-import { HttpException, Injectable, Logger } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common';
 import { Attempt, Competition } from '@prisma/client';
 import { DNF_VALUE, DNS_VALUE } from 'src/constants';
 import { getCountingAttempts, getFinalExtraAttempt } from 'src/result/helpers';
@@ -8,6 +8,22 @@ import { DbService } from '../db/db.service';
 
 const WCA_LIVE_API_ORIGIN = process.env.WCA_LIVE_API_ORIGIN;
 const WCA_ORIGIN = process.env.WCA_ORIGIN;
+
+/** Turns a failed WCIF fetch into an HTTP error instead of a crash further on */
+export const assertWcaCompetitionFound = (statusCode: number) => {
+  if (statusCode === 404) {
+    throw new HttpException(
+      'Competition not found on the WCA website',
+      HttpStatus.NOT_FOUND,
+    );
+  }
+  if (statusCode !== 200) {
+    throw new HttpException(
+      `The WCA website answered ${statusCode}`,
+      HttpStatus.BAD_GATEWAY,
+    );
+  }
+};
 
 @Injectable()
 export class WcaService {

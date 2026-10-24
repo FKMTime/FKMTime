@@ -13,6 +13,8 @@ export class ScramblingDeviceGuard implements CanActivate {
     if (req && req.headers && req.headers.authorization) {
       token = req.headers.authorization.split('Token ')[1];
     }
+    // Any other scheme (e.g. "Bearer ...") leaves no device token to check
+    if (!token) return false;
     const isTokenValid = await this.scramblingDeviceService.isTokenValid({
       token,
     });

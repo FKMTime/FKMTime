@@ -568,8 +568,7 @@ describe('Competition setup (e2e)', () => {
       expect(new Date(twos.realEndTime)).toEqual(lastSolve);
     });
 
-    // BUG: activities are matched by weekday only, so the same weekday a week later still returns the schedule
-    it.skip('returns nothing for a date outside the competition', async () => {
+    it('returns nothing for a date outside the competition', async () => {
       const res = await activities('venueId=1&roomId=1&date=2024-05-31').expect(
         200,
       );

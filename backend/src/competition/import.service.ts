@@ -3,7 +3,7 @@ import { Role, SendingResultsFrequency } from '@prisma/client';
 import { ADMIN_WCA_USER_IDS } from 'src/constants';
 import { DbService } from 'src/db/db.service';
 import { SocketController } from 'src/socket/socket.controller';
-import { WcaService } from 'src/wca/wca.service';
+import { assertWcaCompetitionFound, WcaService } from 'src/wca/wca.service';
 import { wcifRoleToAttendanceRole } from 'src/wcif-helpers';
 import { Assignment, Person } from 'wcif-helpers';
 import { getGroupInfoByActivityId } from 'wcif-helpers';
@@ -27,38 +27,31 @@ export class ImportService {
         id: userId,
       },
     });
-    await this.prisma.user.deleteMany({
-      where: {
-        id: {
-          not: userId,
-        },
-      },
-    });
     const wcifPublic = await this.wcaService.getWcif(wcaId, undefined, true);
+    assertWcaCompetitionFound(wcifPublic.statusCode);
     const wcif = await this.wcaService.getWcif(wcaId, user.wcaAccessToken);
     const competitionInfo = await this.wcaService.getCompetitionInfo(wcaId);
+
+    // Work out the importer's roles before touching any data, so a refused
+    // or failed import leaves the existing users in place
+    let roles: Role[] | null = null;
     if (user.wcaAccessToken) {
       if (ADMIN_WCA_USER_IDS.includes(user.wcaUserId)) {
-        await this.prisma.user.update({
-          where: {
-            id: user.id,
-          },
-          data: {
-            roles: [...user.roles, 'ADMIN'],
-          },
-        });
+        roles = [...user.roles, Role.ADMIN];
       } else {
-        const isDelegate = competitionInfo.delegates.some(
-          (delegate) => delegate.id === user.wcaUserId,
-        );
-        const isOrganizer = competitionInfo.organizers.some(
-          (organizer) => organizer.id === user.wcaUserId,
-        );
-        const roles = [];
-        if (isDelegate) {
+        roles = [];
+        if (
+          competitionInfo.delegates.some(
+            (delegate) => delegate.id === user.wcaUserId,
+          )
+        ) {
           roles.push(Role.DELEGATE);
         }
-        if (isOrganizer) {
+        if (
+          competitionInfo.organizers.some(
+            (organizer) => organizer.id === user.wcaUserId,
+          )
+        ) {
           roles.push(Role.ORGANIZER);
         }
         if (roles.length === 0) {
@@ -67,15 +60,25 @@ export class ImportService {
             403,
           );
         }
-        await this.prisma.user.update({
-          where: {
-            id: user.id,
-          },
-          data: {
-            roles,
-          },
-        });
       }
+    }
+
+    await this.prisma.user.deleteMany({
+      where: {
+        id: {
+          not: userId,
+        },
+      },
+    });
+    if (roles) {
+      await this.prisma.user.update({
+        where: {
+          id: user.id,
+        },
+        data: {
+          roles,
+        },
+      });
     }
 
     const fkmToken = new Int32Array(1);
@@ -119,40 +122,33 @@ export class ImportService {
         });
       }
     }
-    const staffActivitiesTransactions = [];
-
     const persons = await this.prisma.person.findMany();
-
+    const staffActivities = [];
     wcifPublic.persons
       .filter((p) => p.registration && p.registration.status === 'accepted')
       .forEach((person: Person) => {
         const personFromDb = persons.find(
           (p) => p.registrantId === person.registrantId,
         );
-        console.log(person);
-        console.log(personFromDb);
         person.assignments.forEach((assignment: Assignment) => {
           const group = getGroupInfoByActivityId(
             assignment.activityId,
             wcifPublic,
           );
-          staffActivitiesTransactions.push(
-            this.prisma.staffActivity.create({
-              data: {
-                person: {
-                  connect: {
-                    id: personFromDb.id,
-                  },
-                },
-                role: wcifRoleToAttendanceRole(assignment.assignmentCode),
-                groupId: group.activityCode,
-                isAssigned: true,
-              },
-            }),
-          );
+          staffActivities.push({
+            personId: personFromDb.id,
+            role: wcifRoleToAttendanceRole(assignment.assignmentCode),
+            groupId: group.activityCode,
+            isAssigned: true,
+          });
         });
       });
-    await this.prisma.$transaction(staffActivitiesTransactions);
+    // One statement for every assignment: one query per assignment inside a
+    // transaction ran into Prisma's 5 s timeout on large competitions
+    await this.prisma.staffActivity.createMany({
+      data: staffActivities,
+      skipDuplicates: true,
+    });
     await this.prisma.room.createMany({
       data: rooms,
     });

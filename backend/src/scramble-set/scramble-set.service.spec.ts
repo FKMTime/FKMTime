@@ -21,6 +21,10 @@ describe('ScrambleSetService', () => {
               delete: jest.fn(),
               deleteMany: jest.fn(),
             },
+            // Runs the callback against this same mock, as a transaction client
+            $transaction: jest.fn(function (callback) {
+              return callback(this);
+            }),
           },
         },
       ],
@@ -173,14 +177,14 @@ describe('ScrambleSetService', () => {
       });
     });
 
-    it('should throw error if scramble set not found', async () => {
-      const prismaError = { code: 'P2016' };
+    it('lets the not-found error through for the HTTP filter to map to 404', async () => {
+      const prismaError = { code: 'P2025' };
       jest
         .spyOn(dbService.scrambleSet, 'delete')
         .mockRejectedValue(prismaError);
 
-      await expect(service.deleteScrambleSet('nonexistent')).rejects.toThrow(
-        HttpException,
+      await expect(service.deleteScrambleSet('nonexistent')).rejects.toBe(
+        prismaError,
       );
     });
   });

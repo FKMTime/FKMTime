@@ -3,6 +3,7 @@ import { AttemptStatus, DeviceType } from '@prisma/client';
 import { DNS_VALUE } from 'src/constants';
 import { DbService } from 'src/db/db.service';
 import { getEventShortName } from 'src/events';
+import { isSameDay } from 'src/wcif-helpers';
 import { Activity, Room as WCIFRoom, Venue } from 'wcif-helpers';
 import { getActivityInfoFromSchedule, getCompetitionDates } from 'wcif-helpers';
 
@@ -198,7 +199,7 @@ export class StatisticsService {
       wcif.schedule.venues.forEach((venue: Venue) => {
         venue.rooms.forEach((room: WCIFRoom) => {
           room.activities.forEach((activity: Activity) => {
-            if (new Date(activity.startTime).getDay() === day.getDay()) {
+            if (isSameDay(new Date(activity.startTime), day)) {
               activities.push(activity);
             }
           });

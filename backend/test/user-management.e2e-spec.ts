@@ -166,8 +166,7 @@ describe('User management (e2e)', () => {
       });
     });
 
-    // BUG: an unknown WCA ID dereferences a missing `user` in the WCA response and returns 500 instead of 404
-    it.skip('returns 404 for an unknown WCA ID', async () => {
+    it('returns 404 for an unknown WCA ID', async () => {
       await as(organizer, request(server()).post('/user'))
         .send({ wcaId: '2099NONE01', fullName: 'Nobody', roles: [] })
         .expect(404);
@@ -250,8 +249,7 @@ describe('User management (e2e)', () => {
         .expect(409);
     });
 
-    // BUG: updateUser swallows Prisma P2025, so updating a missing user answers 200 "User updated successfully"
-    it.skip('returns 404 for an unknown user', async () => {
+    it('returns 404 for an unknown user', async () => {
       await as(organizer, request(server()).put(`/user/${FAKE_ID}`))
         .send({ username: 'ghost', fullName: 'Ghost', roles: [] })
         .expect(404);
@@ -305,8 +303,7 @@ describe('User management (e2e)', () => {
       ).toBeNull();
     });
 
-    // BUG: deleting a missing user leaks Prisma P2025 as 500 instead of 404
-    it.skip('returns 404 for an unknown user', async () => {
+    it('returns 404 for an unknown user', async () => {
       await as(organizer, request(server()).delete(`/user/${FAKE_ID}`)).expect(
         404,
       );
