@@ -83,7 +83,13 @@ test.describe("quick attempt entry", () => {
 test.describe("enter scorecard", () => {
     test("saves a whole paper scorecard", async ({ page, api }) => {
         const person = await getPersonByRegistrantId(api, 2);
+        // The ID only matches once the persons have loaded
+        const personsLoaded = page.waitForResponse(
+            (response) =>
+                response.url().includes("/person/all") && response.ok()
+        );
         await page.goto("/results/round/333-r1/enter-scorecard");
+        await personsLoaded;
         await expect(
             page.getByText("Enter the ID from the next scorecard.")
         ).toBeVisible();
@@ -215,6 +221,10 @@ test.describe("double check", () => {
         });
 
         await page.goto("/results/round/clock-r1/double-check");
+        // The ID only matches once the round's scorecards have loaded
+        await expect(
+            page.getByText(/\/ [1-9]\d* double-checked/)
+        ).toBeVisible();
         await scorecardId(page).fill(String(person.registrantId));
         await expect(
             page.getByRole("heading", { name: new RegExp(person.name) })
