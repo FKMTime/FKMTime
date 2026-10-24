@@ -254,6 +254,32 @@ describe('Competition import & sync from WCA (e2e)', () => {
       expect(events).toEqual([...wcif.events.map((e) => e.id), 'mirror']);
     });
 
+    it('recreates a competitor that is missing locally, with their assignments', async () => {
+      const sample = wcif.persons.find(
+        (p) =>
+          p.registrantId &&
+          p.registration?.status === 'accepted' &&
+          p.assignments.length > 0,
+      );
+      // Deleting the person cascades to their staff activities
+      await db.person.delete({
+        where: { registrantId: sample.registrantId },
+      });
+
+      await request(server())
+        .get(`/competition/sync/${IMPORTED_WCA_ID}`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .expect(200);
+
+      const recreated = await db.person.findUnique({
+        where: { registrantId: sample.registrantId },
+        include: { StaffActivity: true },
+      });
+      expect(recreated).toMatchObject({ name: sample.name });
+      expect(recreated.StaffActivity).toHaveLength(sample.assignments.length);
+      expect(recreated.StaffActivity.every((a) => a.isAssigned)).toBe(true);
+    });
+
     it('returns 404 when syncing a competition the WCA does not know', async () => {
       await request(server())
         .get('/competition/sync/NoSuchCompetition2099')
