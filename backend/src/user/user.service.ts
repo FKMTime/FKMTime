@@ -42,6 +42,9 @@ export class UserService {
     }
     if (data.wcaId) {
       const userInfo = await this.wcaService.getUserInfoByWcaId(data.wcaId);
+      if (!userInfo?.user) {
+        throw new HttpException('WCA user not found', 404);
+      }
       await this.prisma.user.create({
         data: {
           fullName: data.fullName,
@@ -71,6 +74,7 @@ export class UserService {
           throw new HttpException('Username already taken', 409);
         }
       }
+      throw e;
     }
     return {
       message: 'User created successfully',
@@ -82,6 +86,9 @@ export class UserService {
     const user = await this.prisma.user.findUnique({
       where: { id: id },
     });
+    if (!user) {
+      throw new HttpException('User not found', 404);
+    }
 
     if (
       (!data.username || data.username.length === 0) &&
@@ -110,6 +117,7 @@ export class UserService {
           throw new HttpException('Username already taken', 409);
         }
       }
+      throw e;
     }
     return {
       message: 'User updated successfully',

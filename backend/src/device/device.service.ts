@@ -82,6 +82,7 @@ export class DeviceService {
           );
         }
       }
+      throw e;
     }
     this.appGateway.handleAddDeviceToDb(data.espId);
     await this.socketController.sendServerStatus();
@@ -148,6 +149,7 @@ export class DeviceService {
           );
         }
       }
+      throw e;
     }
     await this.socketController.sendServerStatus();
     this.appGateway.handleDeviceUpdated();

@@ -170,8 +170,7 @@ describe('Account settings & quick actions (e2e)', () => {
       ).toBe('edited by bob');
     });
 
-    // BUG: the OR-filtered update throws Prisma P2025 for someone else's private action, answering 500 instead of 404
-    it.skip("returns 404 for someone else's private action", async () => {
+    it("returns 404 for someone else's private action", async () => {
       await as(
         bob,
         request(server()).put(`/settings/quick-actions/${privateActionId}`),

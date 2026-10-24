@@ -118,8 +118,7 @@ describe('Device management (e2e)', () => {
         .expect(400);
     });
 
-    // BUG: createDevice swallows non-P2002 Prisma errors, so an unknown room answers 201 with no device
-    it.skip('rejects an unknown room', async () => {
+    it('rejects an unknown room', async () => {
       await asOrganizer(request(server()).post('/device'))
         .send(
           device({ name: `${PREFIX}nowhere`, espId: 98004, roomId: FAKE_ID }),
@@ -220,8 +219,7 @@ describe('Device management (e2e)', () => {
       ).toBe(98001);
     });
 
-    // BUG: updateDevice swallows Prisma P2025, so updating a missing device answers 200 "Device updated"
-    it.skip('returns 404 for an unknown device', async () => {
+    it('returns 404 for an unknown device', async () => {
       await asOrganizer(request(server()).put(`/device/${FAKE_ID}`))
         .send(device({ name: `${PREFIX}ghost`, espId: 98005 }))
         .expect(404);
@@ -248,8 +246,7 @@ describe('Device management (e2e)', () => {
       ).toBeNull();
     });
 
-    // BUG: deleting a missing device leaks Prisma P2025 as 500 instead of 404
-    it.skip('returns 404 for an unknown device', async () => {
+    it('returns 404 for an unknown device', async () => {
       await asOrganizer(request(server()).delete(`/device/${FAKE_ID}`)).expect(
         404,
       );
