@@ -58,7 +58,7 @@ describe('EventsService', () => {
   describe('getUnofficialEvents', () => {
     it('should return all unofficial events', async () => {
       const mockEvents = [
-        { id: 'event1', eventId: '333custom', wcif: {} },
+        { id: 'event1', eventId: 'mirror', wcif: {} },
         { id: 'event2', eventId: '444custom', wcif: {} },
       ];
       jest
@@ -75,7 +75,7 @@ describe('EventsService', () => {
   describe('createUnofficialEvent', () => {
     it('should create a new unofficial event', async () => {
       const eventData = {
-        eventId: '333custom',
+        eventId: 'mirror',
         rounds: [{ id: 'round1', format: 'a' }],
       };
 
@@ -94,9 +94,9 @@ describe('EventsService', () => {
       });
       expect(dbService.unofficialEvent.create).toHaveBeenCalledWith({
         data: {
-          eventId: '333custom',
+          eventId: 'mirror',
           wcif: {
-            id: '333custom',
+            id: 'mirror',
             rounds: eventData.rounds,
             extensions: [],
             qualification: null,
@@ -108,10 +108,10 @@ describe('EventsService', () => {
 
     it('should throw error if unofficial event already exists', async () => {
       const eventData = {
-        eventId: '333custom',
+        eventId: 'mirror',
         rounds: [{ id: 'round1', format: 'a' }],
       };
-      const existingEvent = { id: 'event1', eventId: '333custom' };
+      const existingEvent = { id: 'event1', eventId: 'mirror' };
 
       jest
         .spyOn(dbService.unofficialEvent, 'findFirst')
@@ -128,13 +128,13 @@ describe('EventsService', () => {
       const eventId = 'event1';
       const updateData = {
         wcif: {
-          id: '333custom',
+          id: 'mirror',
           rounds: [{ id: 'round1', format: 'a' }],
           extensions: [],
           qualification: null,
         },
       };
-      const existingEvent = { id: eventId, eventId: '333custom' };
+      const existingEvent = { id: eventId, eventId: 'mirror' };
 
       jest
         .spyOn(dbService.unofficialEvent, 'findFirst')
@@ -173,7 +173,7 @@ describe('EventsService', () => {
   describe('deleteUnofficialEvent', () => {
     it('should delete an unofficial event', async () => {
       const eventId = 'event1';
-      const existingEvent = { id: eventId, eventId: '333custom' };
+      const existingEvent = { id: eventId, eventId: 'mirror' };
 
       jest
         .spyOn(dbService.unofficialEvent, 'findFirst')
@@ -209,8 +209,8 @@ describe('EventsService', () => {
 
     it('should throw error if unofficial event has results', async () => {
       const eventId = 'event1';
-      const existingEvent = { id: eventId, eventId: '333custom' };
-      const mockResult = { id: 'result1', eventId: '333custom' };
+      const existingEvent = { id: eventId, eventId: 'mirror' };
+      const mockResult = { id: 'result1', eventId: 'mirror' };
 
       jest
         .spyOn(dbService.unofficialEvent, 'findFirst')
