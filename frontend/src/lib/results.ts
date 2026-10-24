@@ -88,7 +88,10 @@ export const assignDnsOnRemainingSolves = async (id: string) => {
         "POST",
         true
     );
-    return response.status;
+    return {
+        data: await response.json(),
+        status: response.status,
+    };
 };
 
 export const getResultsToDoubleCheckByRoundId = async (roundId: string) => {

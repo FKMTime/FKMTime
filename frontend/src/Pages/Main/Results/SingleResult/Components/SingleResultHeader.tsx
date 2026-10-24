@@ -58,9 +58,18 @@ const SingleResultHeader = ({
             title: "Assign DNS on the remaining attempts?",
             confirmLabel: "Assign DNS",
             onConfirm: async () => {
-                const status = await assignDnsOnRemainingSolves(result.id);
-                report(status === 200, "DNS assigned");
-                if (status === 200) fetchData();
+                const response = await assignDnsOnRemainingSolves(result.id);
+                if (response.status === 200) {
+                    toast({ title: "DNS assigned", variant: "success" });
+                    fetchData();
+                } else {
+                    toast({
+                        title: "Error",
+                        description:
+                            response.data?.message || "Something went wrong",
+                        variant: "destructive",
+                    });
+                }
             },
         }).catch(() => undefined);
 

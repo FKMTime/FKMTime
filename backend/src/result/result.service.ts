@@ -1,4 +1,4 @@
-import { HttpException, Injectable } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import {
   AttemptStatus,
   AttemptType,
@@ -31,7 +31,12 @@ import { AttendanceService } from '../attendance/attendance.service';
 import { WcaService } from '../wca/wca.service';
 import { CheckIfAttemptEnteredDto } from './dto/checkIfAttemptEntered.dto';
 import { DoubleCheckDto } from './dto/doubleCheck.dto';
-import { getSortedExtraAttempts, getSortedStandardAttempts } from './helpers';
+import {
+  attemptTimeWithPenalty,
+  getCountingAttempts,
+  getSortedExtraAttempts,
+  getSortedStandardAttempts,
+} from './helpers';
 import { getStaffingWarnings } from './staffingWarnings';
 
 @Injectable()
@@ -194,20 +199,21 @@ export class ResultService {
         },
       },
     });
+    if (!result) {
+      throw new HttpException('Result not found', HttpStatus.NOT_FOUND);
+    }
 
     const remainingAndUsedCumulativeLimit =
       await this.getRemainingAndUsedCumulativeLimit(id);
 
-    const staffingChecks = result
-      ? await this.getStaffingChecks(result.roundId)
-      : [];
+    const staffingChecks = await this.getStaffingChecks(result.roundId);
     const warningsByAttempt = new Map(
       staffingChecks.map((attempt) => [attempt.id, attempt.staffingWarnings]),
     );
 
     return {
       ...result,
-      attempts: result?.attempts.map((attempt) => ({
+      attempts: result.attempts.map((attempt) => ({
         ...attempt,
         staffingWarnings: warningsByAttempt.get(attempt.id) ?? [],
       })),
@@ -343,13 +349,16 @@ export class ResultService {
     );
     const maxAttempts = getMaxAttempts(roundInfo.format);
     const sortedAttempts = getSortedStandardAttempts(attempts);
+    // A result made only of DNS is not a valid result: delete it instead
+    if (!sortedAttempts.some((attempt) => attempt.penalty !== DNS_VALUE)) {
+      throw new HttpException(
+        'Cannot assign DNS to every attempt, delete the result instead',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
     const lastAttempt = sortedAttempts[sortedAttempts.length - 1];
-    if (lastAttempt.attemptNumber === maxAttempts) {
-      return {
-        message: 'No attempts left',
-        status: 400,
-        error: true,
-      };
+    if (lastAttempt.attemptNumber >= maxAttempts) {
+      throw new HttpException('No attempts left', HttpStatus.BAD_REQUEST);
     }
     const now = new Date();
     for (let i = lastAttempt.attemptNumber + 1; i <= maxAttempts; i++) {
@@ -394,13 +403,7 @@ export class ResultService {
     });
 
     const results = allResults.filter((result) => {
-      const submitted = getSortedStandardAttempts(result.attempts).filter(
-        (a) =>
-          a.replacedBy === null &&
-          a.status !== AttemptStatus.UNRESOLVED &&
-          a.status !== AttemptStatus.EXTRA_GIVEN &&
-          a.status !== AttemptStatus.SCRAMBLED,
-      );
+      const submitted = getCountingAttempts(result.attempts);
       if (submitted.length === 0) return false;
       if (result.attempts.some((a) => a.status === AttemptStatus.UNRESOLVED))
         return false;
@@ -416,8 +419,7 @@ export class ResultService {
           (a) =>
             a.penalty !== DNF_VALUE &&
             a.penalty !== DNS_VALUE &&
-            a.value + (a.penalty > 0 ? a.penalty * 100 : 0) <
-              roundInfo.cutoff.resultValue,
+            attemptTimeWithPenalty(a) < roundInfo.cutoff.resultValue,
         )
           ? roundInfo.cutoff.numberOfAttempts
           : maxAttempts;
@@ -650,8 +652,7 @@ export class ResultService {
       { attempt: (typeof allValidAttempts)[0]; effectiveTime: number }[]
     >();
     for (const attempt of allValidAttempts) {
-      const t =
-        attempt.value + (attempt.penalty > 0 ? attempt.penalty * 100 : 0);
+      const t = attemptTimeWithPenalty(attempt);
       if (!byResult.has(attempt.resultId)) byResult.set(attempt.resultId, []);
       byResult.get(attempt.resultId).push({ attempt, effectiveTime: t });
     }
@@ -756,14 +757,10 @@ export class ResultService {
   ) {
     if (limit.cumulativeRoundIds.length === 0) return true;
     if (limit.cumulativeRoundIds.length === 1) {
-      let sum = 0;
-      submittedAttempts.forEach((attempt) => {
-        if (attempt.penalty !== -1) {
-          sum += attempt.value + attempt.penalty * 100;
-        } else {
-          sum += attempt.value;
-        }
-      });
+      const sum = submittedAttempts.reduce(
+        (total, attempt) => total + attemptTimeWithPenalty(attempt),
+        0,
+      );
       return sum < limit.centiseconds;
     }
     if (limit.cumulativeRoundIds.length > 1) {
@@ -786,11 +783,7 @@ export class ResultService {
         personId,
       );
       submittedAttempts.forEach((attempt) => {
-        if (attempt.penalty !== -1) {
-          used += attempt.value + attempt.penalty * 100;
-        } else {
-          used += attempt.value;
-        }
+        used += attemptTimeWithPenalty(attempt);
       });
     }
     return used;

@@ -427,8 +427,7 @@ describe('Result checks, double check and submission (e2e)', () => {
       );
     });
 
-    // BUG: a DNS (penalty -2) subtracts 2 seconds from the used cumulative time limit
-    it.skip('does not count a DNS towards the cumulative time limit', async () => {
+    it('does not count a DNS towards the cumulative time limit', async () => {
       const bld = await createResult(persons[1], '333bf-r1', [
         { value: 20000 },
         { value: 0, penalty: DNS },
@@ -461,8 +460,7 @@ describe('Result checks, double check and submission (e2e)', () => {
       });
     });
 
-    // BUG: GET /result/:id for an unknown id throws a plain Error and returns 500
-    it.skip('returns 404 for an unknown result', async () => {
+    it('returns 404 for an unknown result', async () => {
       await request(server())
         .get(`/result/${NON_EXISTENT_ID}`)
         .set(auth(delegate))
@@ -511,31 +509,42 @@ describe('Result checks, double check and submission (e2e)', () => {
       const again = await request(server())
         .post(`/result/${bld.result.id}/assign-dns`)
         .set(auth(delegate))
-        .expect(200);
-      expect(again.body).toEqual({
-        message: 'No attempts left',
-        status: 400,
-        error: true,
-      });
+        .expect(400);
+      expect(again.body.message).toBe('No attempts left');
       expect(
         await db.attempt.count({ where: { resultId: bld.result.id } }),
       ).toBe(3);
     });
 
-    // BUG: assign-dns on a result without any attempts crashes (500) instead of assigning DNS to all attempts
-    it.skip('assigns DNS to every attempt of an empty result', async () => {
+    it('refuses to make a result with no attempts all DNS', async () => {
       const empty = await createResult(persons[1], '333bf-r1', []);
 
-      await request(server())
+      const res = await request(server())
         .post(`/result/${empty.result.id}/assign-dns`)
         .set(auth(delegate))
-        .expect(200);
+        .expect(400);
+
+      expect(res.body.message).toBe(
+        'Cannot assign DNS to every attempt, delete the result instead',
+      );
+      expect(
+        await db.attempt.count({ where: { resultId: empty.result.id } }),
+      ).toBe(0);
+    });
+
+    it('refuses to make a result with only DNS attempts all DNS', async () => {
+      const onlyDns = await createResult(persons[2], '333bf-r1', [
+        { value: 0, penalty: DNS },
+      ]);
+
+      await request(server())
+        .post(`/result/${onlyDns.result.id}/assign-dns`)
+        .set(auth(delegate))
+        .expect(400);
 
       expect(
-        await db.attempt.count({
-          where: { resultId: empty.result.id, penalty: DNS },
-        }),
-      ).toBe(3);
+        await db.attempt.count({ where: { resultId: onlyDns.result.id } }),
+      ).toBe(1);
     });
 
     it('is not available to stage leaders', async () => {
