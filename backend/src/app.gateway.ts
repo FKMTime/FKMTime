@@ -58,16 +58,10 @@ export class AppGateway {
     socket.leave(`results-${roundId}`);
   }
 
-  @SubscribeMessage('resultEntered')
+  // Server-side only: called after a result is saved, never by clients
   handleResultEntered(roundId: string) {
     this.handleStatisticsUpdated();
     this.server.to(`results-${roundId}`).emit('resultEntered');
-  }
-
-  @SubscribeMessage('groupShouldBeChanged')
-  handleGroupShouldBeChanged(message: string) {
-    this.logger.log(`Group should be changed: ${message}`);
-    this.server.to(`competition`).emit('groupShouldBeChanged', { message });
   }
 
   /* ====================== */
@@ -199,8 +193,7 @@ export class AppGateway {
     socket.leave(`incidents`);
   }
 
-  @SubscribeMessage('newIncident')
-  @UseGuards(DelegateGuard)
+  // Server-side only: called when a station calls a delegate
   handleNewIncident(
     deviceName: string,
     competitorName: string,
