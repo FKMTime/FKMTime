@@ -69,15 +69,18 @@ describe('Device management (e2e)', () => {
         id: expect.any(String),
         name: `${PREFIX}station-a`,
         espId: 98001,
-        signKey: 98101,
         type: DeviceType.STATION,
         hwVersion: HardwareVersion.V4,
         room: { id: stage1.id, name: 'Stage 1' },
         count: 0,
       });
       stationId = res.body.id;
+      // The API does not return the sign key; it is stored for the stations
       expect(
-        await db.device.findUnique({ where: { id: stationId } }),
+        await db.device.findUnique({
+          where: { id: stationId },
+          omit: { signKey: false },
+        }),
       ).toMatchObject({ roomId: stage1.id, signKey: 98101 });
     });
 
