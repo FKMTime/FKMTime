@@ -497,6 +497,8 @@ describe('Result checks, double check and submission (e2e)', () => {
         [1, 0, 30000],
         [2, DNS, 0],
         [3, DNS, 0],
+        [4, DNS, 0],
+        [5, DNS, 0],
       ]);
       expect(attempts[1].editLogs).toEqual([
         expect.objectContaining({
@@ -513,7 +515,7 @@ describe('Result checks, double check and submission (e2e)', () => {
       expect(again.body.message).toBe('No attempts left');
       expect(
         await db.attempt.count({ where: { resultId: bld.result.id } }),
-      ).toBe(3);
+      ).toBe(5);
     });
 
     it('refuses to make a result with no attempts all DNS', async () => {
