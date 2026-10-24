@@ -473,26 +473,28 @@ describe('Incident review (e2e)', () => {
     });
   });
 
-  // BUG: updating/deleting an unknown noteworthy incident, warning or manual incident (or warning an unknown person) returns 500 instead of 404
-  it.skip('returns 404 for unknown incident ids', async () => {
+  it('returns 404 for unknown incident ids', async () => {
     const calls = [
-      request(server())
-        .put(`/incident/noteworthy/${NON_EXISTENT_ID}`)
-        .send({ title: 'E2E missing' }),
-      request(server()).delete(`/incident/noteworthy/${NON_EXISTENT_ID}`),
-      request(server()).delete(`/incident/warnings/${NON_EXISTENT_ID}`),
-      request(server())
-        .post(`/incident/warnings/person/${NON_EXISTENT_ID}`)
-        .send({ description: 'E2E missing' }),
-      request(server()).put(`/incident/manual/${NON_EXISTENT_ID}`).send({
-        personId: alice.id,
-        roundId: '333-r1',
-        description: 'E2E missing',
-      }),
-      request(server()).delete(`/incident/manual/${NON_EXISTENT_ID}`),
+      () =>
+        request(server())
+          .put(`/incident/noteworthy/${NON_EXISTENT_ID}`)
+          .send({ title: 'E2E missing' }),
+      () => request(server()).delete(`/incident/noteworthy/${NON_EXISTENT_ID}`),
+      () => request(server()).delete(`/incident/warnings/${NON_EXISTENT_ID}`),
+      () =>
+        request(server())
+          .post(`/incident/warnings/person/${NON_EXISTENT_ID}`)
+          .send({ description: 'E2E missing' }),
+      () =>
+        request(server()).put(`/incident/manual/${NON_EXISTENT_ID}`).send({
+          personId: alice.id,
+          roundId: '333-r1',
+          description: 'E2E missing',
+        }),
+      () => request(server()).delete(`/incident/manual/${NON_EXISTENT_ID}`),
     ];
     for (const call of calls) {
-      await call.set(auth(delegate)).expect(404);
+      await call().set(auth(delegate)).expect(404);
     }
   });
 

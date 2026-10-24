@@ -369,8 +369,7 @@ describe('Person check-in and card assignment (e2e)', () => {
       expect(other.cardId).toBeNull();
     });
 
-    // BUG: PUT /person/:id without cardId crashes on data.cardId.toString() and returns 500
-    it.skip('returns 400 when cardId is missing', async () => {
+    it('returns 400 when cardId is missing', async () => {
       await request(server())
         .put(`/person/${persons[0].id}`)
         .set(auth(adminToken))
@@ -378,8 +377,7 @@ describe('Person check-in and card assignment (e2e)', () => {
         .expect(400);
     });
 
-    // BUG: PUT /person/:id swallows "record not found" and reports success for an unknown person
-    it.skip('returns 404 for an unknown person', async () => {
+    it('returns 404 for an unknown person', async () => {
       await request(server())
         .put(`/person/${NON_EXISTENT_ID}`)
         .set(auth(adminToken))
@@ -543,8 +541,7 @@ describe('Person check-in and card assignment (e2e)', () => {
       expect(updated.cardId).toBeNull();
     });
 
-    // BUG: POST /person/check-in/:id swallows "record not found" and reports a successful check-in for an unknown person
-    it.skip('returns 404 when checking in an unknown person', async () => {
+    it('returns 404 when checking in an unknown person', async () => {
       await request(server())
         .post(`/person/check-in/${NON_EXISTENT_ID}`)
         .set(auth(adminToken))

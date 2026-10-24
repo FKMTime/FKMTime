@@ -1,4 +1,4 @@
-import { HttpException, Injectable } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { Prisma, StaffRole } from '@prisma/client';
 import { WcaService } from 'src/wca/wca.service';
 import { Activity, Assignment, Competition } from 'wcif-helpers';
@@ -249,6 +249,7 @@ export class PersonService {
           );
         }
       }
+      throw e;
     }
     const checkedInPersonsCount = await this.prisma.person.count({
       where: {
@@ -337,7 +338,10 @@ export class PersonService {
   }
 
   async updatePerson(id: string, data: UpdatePersonDto) {
-    const cardId = data.cardId.toString() || null;
+    if (data.cardId === undefined) {
+      throw new HttpException('cardId is required', HttpStatus.BAD_REQUEST);
+    }
+    const cardId = data.cardId ? data.cardId.toString() : null;
     try {
       await this.prisma.person.update({
         where: { id },
@@ -356,6 +360,7 @@ export class PersonService {
           );
         }
       }
+      throw e;
     }
     return {
       message: 'Person updated',
