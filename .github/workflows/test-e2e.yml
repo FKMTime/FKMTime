@@ -54,7 +54,9 @@ jobs:
           node-version: 22.x
       - name: Install backend dependencies
         working-directory: 'backend'
-        run: npm ci
+        # Same as test-backend.yml: the backend lock file doesn't pass npm 10's
+        # stricter `npm ci` (Node 22)
+        run: npm install
       - name: Generate prisma
         working-directory: 'backend'
         run: npx prisma generate
