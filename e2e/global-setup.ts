@@ -1,7 +1,7 @@
 import { mkdirSync, writeFileSync } from "node:fs";
 
 import { AUTH_DIR, FRONTEND_URL } from "./env";
-import { pushSchema, resetDatabase } from "./helpers/db";
+import { pushSchema, seedDatabase } from "./helpers/db";
 import {
     ROLE_USERS,
     RoleKey,
@@ -18,7 +18,7 @@ const globalSetup = async () => {
     // Idempotent; covers a brand-new database whichever of this and the
     // backend web server gets there first
     pushSchema();
-    await resetDatabase();
+    await seedDatabase();
     mkdirSync(AUTH_DIR, { recursive: true });
     for (const role of Object.keys(ROLE_USERS) as RoleKey[]) {
         const user = ROLE_USERS[role];

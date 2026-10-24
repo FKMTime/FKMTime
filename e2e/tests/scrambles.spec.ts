@@ -272,13 +272,9 @@ test.describe("scrambling devices", () => {
 
         await tablet.getByRole("button", { name: "Scramble" }).first().click();
         await expect(tablet).toHaveURL(/\/scrambling-device\/set\/[\w-]+$/);
-        // A wrong password does not unlock the set (see the fixme below for
-        // the message it should give)
         await tablet.getByLabel("Password").fill("not-the-password");
         await tablet.getByLabel("Password").press("Enter");
-        await expect(
-            tablet.getByText(/Invalid password|Something went wrong/)
-        ).toBeVisible();
+        await expect(tablet.getByText("Invalid password")).toBeVisible();
         await expect(
             tablet.getByLabel("Scan the scrambler's card")
         ).toHaveCount(0);
@@ -324,8 +320,7 @@ test.describe("scrambling devices", () => {
         await device.close();
     });
 
-    // BUG: unlocking a scramble set with a wrong password sometimes answers 500 ("Malformed UTF-8 data" from CryptoJS in ScramblingService.unlockScrambleSet) instead of 403, so the tablet shows "Something went wrong" instead of "Invalid password"
-    test.fixme("says the password is invalid for any wrong password", async ({
+    test("says the password is invalid for any wrong password", async ({
         page,
         browser,
         api,
@@ -341,10 +336,10 @@ test.describe("scrambling devices", () => {
         const token = await tablet.evaluate(() =>
             localStorage.getItem("fkmtime-scrambling-device-token")
         );
-        // Each wrong password has a small chance to hit the bug, so try many,
-        // the same way the tablet does
+        // A wrong key can decrypt to bytes that are not text; that used to
+        // crash with a 500 now and then, so try many, the way the tablet does
         const statuses = new Set<number>();
-        for (let attempt = 1; attempt <= 1500; attempt++) {
+        for (let attempt = 1; attempt <= 500; attempt++) {
             const response = await tablet.request.post(
                 `${BACKEND_URL}/scrambling/sets/${setId}/unlock`,
                 {
@@ -355,6 +350,9 @@ test.describe("scrambling devices", () => {
             statuses.add(response.status());
         }
         expect([...statuses]).toEqual([403]);
+        await tablet.getByLabel("Password").fill("wrong-password");
+        await tablet.getByLabel("Password").press("Enter");
+        await expect(tablet.getByText("Invalid password")).toBeVisible();
         await device.close();
     });
 

@@ -49,7 +49,7 @@ export default defineConfig({
         {
             name: "backend",
             command:
-                "npx prisma db push && npm run build && node dist/src/main.js",
+                "npx prisma generate && npx prisma db push && npm run build && node dist/src/main.js",
             cwd: BACKEND_DIR,
             env: backendEnv,
             url: `${BACKEND_URL}/health`,

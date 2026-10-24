@@ -200,8 +200,7 @@ test.describe("open incidents", () => {
 });
 
 test.describe("incidents of a removed station", () => {
-    // BUG: resolving (or deleting) an open incident whose station was deleted answers 500 — AttemptService reads attempt.device.espId without a null check
-    test.fixme("still resolves after its station was deleted", async ({
+    test("still resolves after its station was deleted", async ({
         page,
         api,
     }) => {
