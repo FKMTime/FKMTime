@@ -114,6 +114,7 @@ export class ResultFromDeviceService {
     const competitor = await this.personService.getPersonByCardId(
       data.competitorId.toString(),
     );
+    // The competition language until a judge card tells us who is reading
     let locale = competition.defaultLocale;
     if (!competitor) {
       return {
@@ -128,7 +129,6 @@ export class ResultFromDeviceService {
       groupId,
       device.id,
     );
-    locale = competitor.countryIso2;
 
     const previousAttemptWithSameSessionId =
       await this.prisma.attempt.findFirst({

@@ -457,21 +457,38 @@ describe('Station socket protocol (e2e)', () => {
         );
 
         expect(res).toEqual(
-          errorResponse(getTranslation('attemptAlreadyEntered', 'PL'), 400),
+          errorResponse(
+            getTranslation('attemptAlreadyEntered', defaultLocale),
+            400,
+          ),
         );
         expect(await attemptsOf(c1.id, '333-r1')).toHaveLength(1);
       });
 
-      // BUG: before a judge card is checked the locale is the competitor's raw countryIso2 ("PL"), which never matches a locale file ("pl"), so these messages always fall back to English
-      it.skip('answers in the competitor language before the judge card is checked', async () => {
-        const res = await station.request(
-          'EnterAttempt',
-          attempt({ competitorId: CARD.c1, sessionId }),
-        );
+      it('answers in the competition language before the judge card is checked', async () => {
+        const competition = await db.competition.findFirst();
+        await db.competition.update({
+          where: { id: competition.id },
+          data: { defaultLocale: 'pl' },
+        });
+        try {
+          const res = await station.request(
+            'EnterAttempt',
+            attempt({ competitorId: CARD.c1, sessionId }),
+          );
 
-        expect(res.data.message).toBe(
-          getTranslation('attemptAlreadyEntered', 'pl'),
-        );
+          expect(res.data.message).toBe(
+            getTranslation('attemptAlreadyEntered', 'pl'),
+          );
+          expect(res.data.message).not.toBe(
+            getTranslation('attemptAlreadyEntered', 'en'),
+          );
+        } finally {
+          await db.competition.update({
+            where: { id: competition.id },
+            data: { defaultLocale: competition.defaultLocale },
+          });
+        }
       });
 
       it('numbers further attempts and stores +2 and DNF penalties', async () => {
@@ -564,7 +581,7 @@ describe('Station socket protocol (e2e)', () => {
         );
 
         expect(res).toEqual(
-          errorResponse(getTranslation('judgeNotFound', 'PL'), 404),
+          errorResponse(getTranslation('judgeNotFound', defaultLocale), 404),
         );
         await expectNoAttemptFor(c4.id);
       });
@@ -576,7 +593,10 @@ describe('Station socket protocol (e2e)', () => {
         );
 
         expect(res).toEqual(
-          errorResponse(getTranslation('judgeIsCompetitor', 'PL'), 400),
+          errorResponse(
+            getTranslation('judgeIsCompetitor', defaultLocale),
+            400,
+          ),
         );
         await expectNoAttemptFor(c4.id);
       });
@@ -896,7 +916,10 @@ describe('Station socket protocol (e2e)', () => {
       const res = await station.request('EnterAttempt', data);
 
       expect(res).toEqual(
-        errorResponse(getTranslation('judgeCardNotScanned', 'PL'), 400),
+        errorResponse(
+          getTranslation('judgeCardNotScanned', defaultLocale),
+          400,
+        ),
       );
     });
 
@@ -913,7 +936,7 @@ describe('Station socket protocol (e2e)', () => {
       expect(res).toMatchObject({
         type: 'EnterAttemptResp',
         data: {
-          message: getTranslation('attemptEnteredAfterIncident', 'PL'),
+          message: getTranslation('attemptEnteredAfterIncident', defaultLocale),
           status: 200,
           error: false,
         },
