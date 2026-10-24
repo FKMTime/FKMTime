@@ -394,8 +394,7 @@ describe('Round flow: from check-in to submitted results (e2e)', () => {
     ]);
   });
 
-  // BUG: a scorecard whose attempt was replaced by an extra never shows up for double check (the extra is not counted)
-  it.skip('double check lists a scorecard completed by an extra', async () => {
+  it('double check lists a scorecard completed by an extra', async () => {
     const list = await request(server())
       .get(`/result/round/${ROUND_ID}/double-check`)
       .set(auth('DELEGATE'))

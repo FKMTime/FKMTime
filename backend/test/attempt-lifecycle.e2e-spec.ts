@@ -236,8 +236,7 @@ describe('Attempt lifecycle and edit log (e2e)', () => {
       ).toBe(0);
     });
 
-    // BUG: a rejected POST /attempt (judge = competitor) still creates an empty result for the competitor
-    it.skip('does not leave an empty result behind when rejected', async () => {
+    it('does not leave an empty result behind when rejected', async () => {
       await request(server())
         .post('/attempt')
         .set(auth(delegate))
@@ -550,8 +549,7 @@ describe('Attempt lifecycle and edit log (e2e)', () => {
         .expect(404);
     });
 
-    // BUG: updateReplacedBy links the first EXTRA_GIVEN attempt in the whole database, not one from the same result
-    it.skip('links an extra only to an attempt of the same competitor', async () => {
+    it('links an extra only to an attempt of the same competitor', async () => {
       const otherResult = await db.result.create({
         data: { personId: other.id, eventId: '333', roundId: ROUND_ID },
       });
@@ -591,8 +589,7 @@ describe('Attempt lifecycle and edit log (e2e)', () => {
       expect(untouched.replacedBy).toBeNull();
     });
 
-    // BUG: resolving an UNRESOLVED attempt that has no device crashes on attempt.device.espId (500)
-    it.skip('resolves an incident entered without a station', async () => {
+    it('resolves an incident entered without a station', async () => {
       const incident = await createAttempt({
         attemptNumber: 5,
         status: AttemptStatus.UNRESOLVED,

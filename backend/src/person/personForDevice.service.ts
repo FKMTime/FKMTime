@@ -7,7 +7,7 @@ import {
 } from 'src/constants';
 import { DbService } from 'src/db/db.service';
 import { eventsData } from 'src/events';
-import { checkCutoff } from 'src/result/helpers';
+import { attemptTimeWithPenalty, checkCutoff } from 'src/result/helpers';
 import { ResultService } from 'src/result/result.service';
 import { convertToLatin, getTranslation } from 'src/translations/translations';
 import { WcaService } from 'src/wca/wca.service';
@@ -268,7 +268,7 @@ export class PersonForDeviceService {
           personId,
         );
         submittedAttempts.forEach((a) => {
-          used += a.penalty !== -1 ? a.value + a.penalty * 100 : a.value;
+          used += attemptTimeWithPenalty(a);
         });
       }
       const limit = roundInfo.timeLimit.centiseconds;

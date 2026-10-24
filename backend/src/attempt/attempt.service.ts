@@ -32,17 +32,18 @@ export class AttemptService {
   ) {}
 
   async createAttempt(data: CreateAttemptDto, userId: string) {
-    const result = await this.resultService.getResultOrCreate(
-      data.competitorId,
-      data.roundId,
-    );
-
+    // Validate before getResultOrCreate, so a rejected attempt leaves no empty result behind
     if (data.judgeId && data.judgeId === data.competitorId) {
       throw new HttpException(
         'Judge cannot be the same person as competitor',
         400,
       );
     }
+
+    const result = await this.resultService.getResultOrCreate(
+      data.competitorId,
+      data.roundId,
+    );
 
     const duplicate = await this.prisma.attempt.findFirst({
       where: {
@@ -327,9 +328,11 @@ export class AttemptService {
     if (data.updateReplacedBy) {
       const attemptToReplace = await this.prisma.attempt.findFirst({
         where: {
+          resultId: attempt.resultId,
           status: AttemptStatus.EXTRA_GIVEN,
           replacedBy: null,
         },
+        orderBy: { attemptNumber: 'asc' },
         select: {
           id: true,
         },
@@ -354,16 +357,19 @@ export class AttemptService {
           userId,
         );
       }
-      this.socketController.sendResponseToAllSockets({
-        type: 'IncidentResolved',
-        data: {
-          attempt: attempt,
-          espId: attempt.device.espId,
-          shouldScanCards: data.doNotRequireCards
-            ? false
-            : attempt.status === AttemptStatus.RESOLVED,
-        },
-      });
+      // Only an attempt entered on a station has one waiting for the answer
+      if (attempt.device) {
+        this.socketController.sendResponseToAllSockets({
+          type: 'IncidentResolved',
+          data: {
+            attempt: attempt,
+            espId: attempt.device.espId,
+            shouldScanCards: data.doNotRequireCards
+              ? false
+              : attempt.status === AttemptStatus.RESOLVED,
+          },
+        });
+      }
     }
     if (!attempt) {
       throw new HttpException('Attempt not found', 404);
@@ -395,7 +401,7 @@ export class AttemptService {
       throw new HttpException('Attempt not found', 404);
     }
 
-    if (attempt.status === AttemptStatus.UNRESOLVED) {
+    if (attempt.status === AttemptStatus.UNRESOLVED && attempt.device) {
       this.socketController.sendResponseToAllSockets({
         type: 'IncidentResolved',
         data: {

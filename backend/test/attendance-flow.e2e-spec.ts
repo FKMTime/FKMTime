@@ -197,8 +197,7 @@ describe('Attendance flow for a group (e2e)', () => {
         .expect(404);
     });
 
-    // BUG: present/late/present-replaced/comment on an unknown staff activity return 500 instead of 404
-    it.skip('returns 404 when marking an unknown activity present', async () => {
+    it('returns 404 when marking an unknown activity present', async () => {
       await request(server())
         .post(`/attendance/present/${NON_EXISTENT_ID}`)
         .set(auth(adminToken))
