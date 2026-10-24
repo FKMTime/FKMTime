@@ -6,6 +6,7 @@ import {
   checkCutoff,
   getCountingAttempts,
   getFinalExtraAttempt,
+  getRoundResultText,
 } from './helpers';
 
 const attempt = (overrides: Partial<Attempt>): Attempt =>
@@ -96,5 +97,63 @@ describe('checkCutoff', () => {
       attempt({ attemptNumber: 2, value: 5000, penalty: 2 }),
     ];
     expect(checkCutoff(attempts, cutoff, 2)).toBe(true);
+  });
+});
+
+describe('getRoundResultText', () => {
+  const times = (...values: [number, number?][]) =>
+    values.map(([value, penalty = 0]) => ({ value, penalty }));
+
+  it('averages the middle three of five', () => {
+    expect(
+      getRoundResultText(
+        times([1100], [1250], [1300], [900], [1500, DNF_VALUE]),
+        'a',
+      ),
+    ).toBe('Ao5: 12.17');
+  });
+
+  it('counts +2 into the average', () => {
+    expect(
+      getRoundResultText(times([1000, 2], [1000], [1000], [800], [1500]), 'a'),
+    ).toBe('Ao5: 10.67');
+  });
+
+  it('is a DNF average with two unsolved attempts', () => {
+    expect(
+      getRoundResultText(
+        times([1000], [0, DNS_VALUE], [1000], [1000], [1500, DNF_VALUE]),
+        'a',
+      ),
+    ).toBe('Ao5: DNF');
+  });
+
+  it('rounds averages over ten minutes to the second', () => {
+    expect(
+      getRoundResultText(
+        times([60040], [60080], [60090], [50000], [70000]),
+        'a',
+      ),
+    ).toBe('Ao5: 10:01.00');
+  });
+
+  it('is a DNF mean with any unsolved attempt', () => {
+    expect(
+      getRoundResultText(times([1000], [1100], [1200, DNF_VALUE]), 'm'),
+    ).toBe('Mo3: DNF');
+    expect(getRoundResultText(times([1000], [1100], [1220]), 'm')).toBe(
+      'Mo3: 11.07',
+    );
+  });
+
+  it('shows the best single for best-of formats', () => {
+    expect(
+      getRoundResultText(times([2500, DNF_VALUE], [2137], [2200]), '3'),
+    ).toBe('Best: 21.37');
+    expect(getRoundResultText(times([0, DNS_VALUE]), '1')).toBe('Best: DNF');
+  });
+
+  it('shows the best single when the cutoff stopped the average', () => {
+    expect(getRoundResultText(times([1500], [1600]), 'a')).toBe('Best: 15.00');
   });
 });
