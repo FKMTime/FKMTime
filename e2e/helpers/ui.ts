@@ -25,6 +25,34 @@ export const socketEventSent = (page: Page, event: string) =>
         });
     });
 
+/**
+ * Like socketEventSent, but for rooms the app shell leaves and re-joins on
+ * re-renders (the incidents room): resolves once the latest frame for the
+ * room is a join and nothing has changed for a moment. Call before
+ * navigating; await the returned function after.
+ */
+export const socketRoomSettled = (page: Page, room: string) => {
+    const join = `"join${room}"`;
+    const leave = `"leave${room}"`;
+    let lastIsJoin = false;
+    let lastChange = 0;
+    page.on("websocket", (socket) => {
+        socket.on("framesent", (frame) => {
+            const payload = String(frame.payload);
+            if (payload.includes(join) || payload.includes(leave)) {
+                lastIsJoin = payload.includes(join);
+                lastChange = Date.now();
+            }
+        });
+    });
+    return () =>
+        expect
+            .poll(() => lastIsJoin && Date.now() - lastChange > 500, {
+                intervals: [100],
+            })
+            .toBe(true);
+};
+
 /** Answer the app-wide confirm dialog */
 export const confirm = async (page: Page, label = "Confirm") => {
     const dialog = page.getByRole("dialog").filter({
