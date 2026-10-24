@@ -119,9 +119,10 @@ describe('Auth flows (e2e)', () => {
     }, 30000);
 
     it('answers 429 after five login attempts within a minute', async () => {
-      // The login done by createTestApp happened before the server was bound
-      // to 127.0.0.1, so it was tracked under a different client address.
-      for (let i = 0; i < 5; i++) {
+      // The login done by createTestApp counts as the first of the five: the
+      // throttler normalizes ::ffff:127.0.0.1 to 127.0.0.1, so it shares a
+      // bucket with the requests made after binding to loopback.
+      for (let i = 0; i < 4; i++) {
         await request(app.getHttpServer())
           .post('/auth/login')
           .send({ username: 'admin', password: 'wrong' })
