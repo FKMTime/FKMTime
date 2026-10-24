@@ -10,6 +10,7 @@ import { AttemptStatus, SendingResultsFrequency } from '@prisma/client';
 import { AppGateway } from 'src/app.gateway';
 import { ResultService } from 'src/result/result.service';
 import { getAllTranslations, getLocales } from 'src/translations/translations';
+import { isSameDay } from 'src/wcif-helpers';
 import { Activity, Event, Room as WCIFRoom, Venue } from 'wcif-helpers';
 import {
   getActivityInfoFromSchedule,
@@ -123,7 +124,7 @@ export class CompetitionService {
       .find((venue: Venue) => venue.id === venueId)
       ?.rooms.find((room: WCIFRoom) => room.id === roomId)
       ?.activities.filter((a: Activity) => {
-        if (new Date(a.startTime).getDay() === date.getDay()) {
+        if (isSameDay(new Date(a.startTime), date)) {
           return true;
         }
       })
@@ -531,7 +532,7 @@ export class CompetitionService {
         const r = venue.rooms.find((item: WCIFRoom) => item.name === room.name);
         r.activities.forEach((a: Activity) => {
           if (
-            new Date(a.startTime).getDay() === endTime.getDay() &&
+            isSameDay(new Date(a.startTime), endTime) &&
             new Date(a.startTime).getTime() >= endTime.getTime() &&
             !a.activityCode.startsWith('other') &&
             (!nextRoundActivity ||
@@ -603,7 +604,7 @@ export class CompetitionService {
           );
           r.activities.forEach((a: Activity) => {
             if (
-              new Date(a.startTime).getDay() === endTime.getDay() &&
+              isSameDay(new Date(a.startTime), endTime) &&
               new Date(a.startTime).getTime() >= endTime.getTime() &&
               !a.activityCode.startsWith('other') &&
               (!nextRoundActivity ||
@@ -653,7 +654,7 @@ export class CompetitionService {
             );
             r.activities.forEach((a: Activity) => {
               if (
-                new Date(a.startTime).getDay() === endTime.getDay() &&
+                isSameDay(new Date(a.startTime), endTime) &&
                 new Date(a.startTime).getTime() >= endTime.getTime() &&
                 !a.activityCode.startsWith('other') &&
                 (!nextRoundActivity ||
@@ -717,7 +718,7 @@ export class CompetitionService {
           );
           r.activities.forEach((a: Activity) => {
             if (
-              new Date(a.endTime).getDay() === startTime.getDay() &&
+              isSameDay(new Date(a.endTime), startTime) &&
               new Date(a.endTime).getTime() <= startTime.getTime() &&
               !a.activityCode.startsWith('other') &&
               (!previousRoundActivity ||
@@ -767,7 +768,7 @@ export class CompetitionService {
             );
             r.activities.forEach((a: Activity) => {
               if (
-                new Date(a.endTime).getDay() === startTime.getDay() &&
+                isSameDay(new Date(a.endTime), startTime) &&
                 new Date(a.endTime).getTime() <= startTime.getTime() &&
                 !a.activityCode.startsWith('other') &&
                 (!previousRoundActivity ||
