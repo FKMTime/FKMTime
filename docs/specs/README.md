@@ -7,10 +7,11 @@ back-and-forth.
 
 ## When to write one
 
-Write a spec for anything that touches more than one part of the system
-(backend, frontend, station firmware, connectors), changes the database or the
-socket.io protocol, or changes how a competition runs on the day. Small bug
-fixes and dependency bumps don't need one.
+Only big features need a spec: new functionality that spans several parts of
+the system (backend, frontend, station firmware, connectors), changes the
+database or the socket.io protocol, or changes how a competition runs on the
+day. Bug fixes, small improvements, refactors and dependency bumps don't — the
+PR description is enough.
 
 ## Naming
 
