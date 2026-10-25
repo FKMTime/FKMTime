@@ -5,7 +5,12 @@ import { Link, useNavigate } from "react-router-dom";
 import WordmarkHeader from "@/Components/shared/WordmarkHeader";
 import { Button } from "@/Components/ui/button";
 import { useToast } from "@/hooks/useToast";
-import { isUserLoggedIn, login, loginWithWca } from "@/lib/auth";
+import {
+    isUserLoggedIn,
+    login,
+    loginErrorMessage,
+    loginWithWca,
+} from "@/lib/auth";
 import { getInfoForLoginPage } from "@/lib/competition";
 import { CompetitionDataForLoginPage } from "@/lib/interfaces";
 import { WCA_CLIENT_ID, WCA_ORIGIN } from "@/lib/request";
@@ -15,11 +20,6 @@ import DeviceCodeForm from "./Components/DeviceCodeForm";
 import SignInForm from "./Components/SignInForm";
 
 type LoginMode = "signin" | "device";
-
-const loginErrorMessage = (status: number, errorMessage?: string) =>
-    status === 401
-        ? "Wrong username or password"
-        : errorMessage || "Something went wrong";
 
 const deviceCodeErrorMessage = (status: number) =>
     status === 404 ? "Wrong code" : "Something went wrong";
@@ -50,8 +50,8 @@ const Login = () => {
 
     const handleSubmit = async (username: string, password: string) => {
         setIsLoading(true);
-        const status = await login(username, password);
-        handleLoginResponse(status);
+        const { status, message } = await login(username, password);
+        handleLoginResponse(status, message);
     };
 
     const handleDeviceCode = async (deviceCode: string) => {

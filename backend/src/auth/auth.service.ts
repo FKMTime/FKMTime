@@ -30,7 +30,7 @@ export class AuthService {
     });
 
     if (!user) {
-      throw new HttpException('Wrong credentials!', 403);
+      throw new HttpException('Wrong credentials!', HttpStatus.UNAUTHORIZED);
     }
 
     if (user.wcaAccessToken) {
@@ -46,7 +46,7 @@ export class AuthService {
       : sha512(dto.password) === user.password;
 
     if (!passwordValid) {
-      throw new HttpException('Wrong credentials!', 403);
+      throw new HttpException('Wrong credentials!', HttpStatus.UNAUTHORIZED);
     }
 
     if (!isBcrypt) {

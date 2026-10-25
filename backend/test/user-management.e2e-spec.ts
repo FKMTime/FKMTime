@@ -278,7 +278,7 @@ describe('User management (e2e)', () => {
           username: username('staff-renamed'),
           password: 'staff-password',
         })
-        .expect(403);
+        .expect(401);
     });
 
     it('rejects an empty password', async () => {

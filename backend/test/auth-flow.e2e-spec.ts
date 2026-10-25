@@ -42,11 +42,11 @@ describe('Auth flows (e2e)', () => {
       await app.close();
     }, 30000);
 
-    it('rejects an unknown username with 403', async () => {
+    it('rejects an unknown username with 401', async () => {
       const res = await request(app.getHttpServer())
         .post('/auth/login')
         .send({ username: 'e2e-nobody', password: 'whatever' })
-        .expect(403);
+        .expect(401);
 
       expect(res.body.message).toBe('Wrong credentials!');
     });
@@ -126,7 +126,7 @@ describe('Auth flows (e2e)', () => {
         await request(app.getHttpServer())
           .post('/auth/login')
           .send({ username: 'admin', password: 'wrong' })
-          .expect(403);
+          .expect(401);
       }
 
       await request(app.getHttpServer())
