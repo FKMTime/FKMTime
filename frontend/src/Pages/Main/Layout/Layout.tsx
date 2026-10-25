@@ -3,6 +3,10 @@ import { Suspense, useCallback, useContext, useEffect } from "react";
 import { matchPath, Outlet, useNavigate } from "react-router-dom";
 
 import LoadingPage from "@/Components/LoadingPage";
+import {
+    NewIncidentSocketData,
+    useCompetitionSocketEvents,
+} from "@/hooks/useCompetitionSocketEvents";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import { useNavItems } from "@/hooks/useNavItems";
 import {
@@ -33,12 +37,6 @@ import EnterAttemptFab from "./EnterAttemptFab";
 import MobileHeader from "./MobileHeader";
 import MobileTabBar from "./MobileTabBar";
 import QuickEntryHost from "./QuickEntryHost";
-
-interface NewIncidentSocketData {
-    id: string;
-    competitorName: string;
-    deviceName: string;
-}
 
 const Layout = () => {
     const userInfo = getUserInfo();
@@ -71,96 +69,91 @@ const Layout = () => {
         await getEvents();
     };
 
+    const userKey: string | undefined = userInfo
+        ? userInfo.id ?? userInfo.username ?? "signed-in"
+        : undefined;
+
     useEffect(() => {
-        if (!userInfo) return;
-        if (isNotificationsSupported()) {
-            if (import.meta.env.PROD && isMobile()) {
-                navigator.serviceWorker.register("sw.js");
-            }
-            Notification.requestPermission();
-
-            socket.emit("joinIncidents");
-            socket.emit("joinCompetition");
-            socket.on("newIncident", (data: NewIncidentSocketData) => {
-                fetchUnresolvedIncidentsCount();
-                const message = `Competitor ${data.competitorName} on station ${data.deviceName}`;
-                Notification.requestPermission().then((permission) => {
-                    if (permission === "granted") {
-                        if (isMobile()) {
-                            navigator.serviceWorker.ready.then(
-                                async (registration) => {
-                                    if (
-                                        await registration
-                                            .getNotifications({
-                                                tag: `newIncident-${data.id}`,
-                                            })
-                                            .then((n) => n.length === 0)
-                                    ) {
-                                        await registration.showNotification(
-                                            "New incident",
-                                            {
-                                                body: message,
-                                                tag: `newIncident-${data.id}`,
-                                            }
-                                        );
-                                    }
-                                }
-                            );
-                        } else {
-                            const notification = new Notification(
-                                "New incident",
-                                {
-                                    body: message,
-                                    tag: `newIncident-${data.id}`,
-                                }
-                            );
-                            notification.onclick = () => {
-                                window.focus();
-                                navigate("/incidents");
-                            };
-                        }
-                    }
-                });
-            });
-
-            socket.on("groupShouldBeChanged", (data: { message: string }) => {
-                Notification.requestPermission().then((permission) => {
-                    if (permission === "granted") {
-                        if (isMobile()) {
-                            navigator.serviceWorker.ready.then(
-                                async (registration) => {
-                                    if (
-                                        await registration
-                                            .getNotifications({
-                                                tag: `groupShouldBeChanged`,
-                                            })
-                                            .then((n) => n.length === 0)
-                                    ) {
-                                        await registration.showNotification(
-                                            "Group should be changed",
-                                            {
-                                                body: data.message,
-                                                tag: "groupShouldBeChanged",
-                                            }
-                                        );
-                                    }
-                                }
-                            );
-                        } else {
-                            new Notification("Group should be changed", {
-                                body: data.message,
-                            });
-                        }
-                    }
-                });
-            });
-
-            return () => {
-                socket.emit("leaveIncidents");
-                socket.emit("leaveCompetition");
-            };
+        if (!userKey || !isNotificationsSupported()) return;
+        if (import.meta.env.PROD && isMobile()) {
+            navigator.serviceWorker.register("sw.js");
         }
-    }, [navigate, userInfo, isConnected, fetchUnresolvedIncidentsCount]);
+        Notification.requestPermission();
+    }, [userKey]);
+
+    useCompetitionSocketEvents(socket, userKey, isConnected, {
+        onNewIncident: (data: NewIncidentSocketData) => {
+            fetchUnresolvedIncidentsCount();
+            if (!isNotificationsSupported()) return;
+            const message = `Competitor ${data.competitorName} on station ${data.deviceName}`;
+            Notification.requestPermission().then((permission) => {
+                if (permission === "granted") {
+                    if (isMobile()) {
+                        navigator.serviceWorker.ready.then(
+                            async (registration) => {
+                                if (
+                                    await registration
+                                        .getNotifications({
+                                            tag: `newIncident-${data.id}`,
+                                        })
+                                        .then((n) => n.length === 0)
+                                ) {
+                                    await registration.showNotification(
+                                        "New incident",
+                                        {
+                                            body: message,
+                                            tag: `newIncident-${data.id}`,
+                                        }
+                                    );
+                                }
+                            }
+                        );
+                    } else {
+                        const notification = new Notification("New incident", {
+                            body: message,
+                            tag: `newIncident-${data.id}`,
+                        });
+                        notification.onclick = () => {
+                            window.focus();
+                            navigate("/incidents");
+                        };
+                    }
+                }
+            });
+        },
+        onGroupShouldBeChanged: (data: { message: string }) => {
+            if (!isNotificationsSupported()) return;
+            Notification.requestPermission().then((permission) => {
+                if (permission === "granted") {
+                    if (isMobile()) {
+                        navigator.serviceWorker.ready.then(
+                            async (registration) => {
+                                if (
+                                    await registration
+                                        .getNotifications({
+                                            tag: `groupShouldBeChanged`,
+                                        })
+                                        .then((n) => n.length === 0)
+                                ) {
+                                    await registration.showNotification(
+                                        "Group should be changed",
+                                        {
+                                            body: data.message,
+                                            tag: "groupShouldBeChanged",
+                                        }
+                                    );
+                                }
+                            }
+                        );
+                    } else {
+                        new Notification("Group should be changed", {
+                            body: data.message,
+                        });
+                    }
+                }
+            });
+        },
+    });
 
     useEffect(() => {
         // Each (re)connect bumps the counter, so pages refetch what they missed
