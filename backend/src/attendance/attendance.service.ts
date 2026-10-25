@@ -348,7 +348,6 @@ export class AttendanceService {
           ? 'RUNNER'
           : 'JUDGE';
     for (const groupId of device.room.currentGroupIds) {
-      this.appGateway.handleNewAttendance(groupId, person.id);
       try {
         await this.prisma.staffActivity.upsert({
           where: {
@@ -383,6 +382,9 @@ export class AttendanceService {
             status: StaffActivityStatus.PRESENT,
           },
         });
+        // Only after the scan is saved: an open attendance page refetches
+        // as soon as it hears this, and would otherwise miss the scan
+        this.appGateway.handleNewAttendance(groupId, person.id);
       } catch (e) {
         return {
           message: getTranslation('attendanceConfirmed', person.countryIso2),

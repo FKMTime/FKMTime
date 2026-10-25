@@ -28,6 +28,10 @@ describe('AttendanceService', () => {
             person: {
               findMany: jest.fn(),
               findUnique: jest.fn(),
+              findFirst: jest.fn(),
+            },
+            device: {
+              findFirst: jest.fn(),
             },
           },
         },
@@ -253,6 +257,55 @@ describe('AttendanceService', () => {
         '333-r1-g1',
         'competitor1',
       );
+    });
+  });
+
+  describe('createAttendance', () => {
+    it('announces a device scan only after saving it', async () => {
+      jest.spyOn(dbService.device, 'findFirst').mockResolvedValue({
+        id: 'device1',
+        type: 'ATTENDANCE_SCRAMBLER',
+        room: { currentGroupIds: ['333-r1-g1'] },
+      } as any);
+      jest.spyOn(dbService.person, 'findFirst').mockResolvedValue({
+        id: 'person1',
+        countryIso2: 'PL',
+      } as any);
+      const upsert = jest
+        .spyOn(dbService.staffActivity, 'upsert')
+        .mockResolvedValue({} as any);
+      const announce = jest
+        .spyOn(appGateway, 'handleNewAttendance')
+        .mockImplementation();
+
+      await service.createAttendance({ espId: 1, cardId: 123 } as any);
+
+      expect(announce).toHaveBeenCalledWith('333-r1-g1', 'person1');
+      expect(upsert.mock.invocationCallOrder[0]).toBeLessThan(
+        announce.mock.invocationCallOrder[0],
+      );
+    });
+
+    it('does not announce a scan that failed to save', async () => {
+      jest.spyOn(dbService.device, 'findFirst').mockResolvedValue({
+        id: 'device1',
+        type: 'ATTENDANCE_JUDGE',
+        room: { currentGroupIds: ['333-r1-g1'] },
+      } as any);
+      jest.spyOn(dbService.person, 'findFirst').mockResolvedValue({
+        id: 'person1',
+        countryIso2: 'PL',
+      } as any);
+      jest
+        .spyOn(dbService.staffActivity, 'upsert')
+        .mockRejectedValue(new Error('database down'));
+      const announce = jest
+        .spyOn(appGateway, 'handleNewAttendance')
+        .mockImplementation();
+
+      await service.createAttendance({ espId: 1, cardId: 123 } as any);
+
+      expect(announce).not.toHaveBeenCalled();
     });
   });
 
