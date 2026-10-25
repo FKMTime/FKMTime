@@ -128,11 +128,7 @@ test.describe("open incidents", () => {
         expect(result.attempts[0].status).toBe("RESOLVED");
     });
 
-    // BUG: a new incident does not always show up live: the shell (Layout) leaves and re-joins the incidents room on every re-render, and the gateway's async-guarded join/leave handlers can finish out of order, leaving the delegate outside the room
-    test.fixme("shows a new incident without reloading", async ({
-        page,
-        api,
-    }) => {
+    test("shows a new incident without reloading", async ({ page, api }) => {
         const settled = socketRoomSettled(page, "Incidents");
         await page.goto("/incidents");
         await expect(page.getByText("No open incidents.")).toBeVisible();

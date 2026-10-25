@@ -269,8 +269,7 @@ test.describe("attendance for a group", () => {
         ).toHaveCount(0);
     });
 
-    // BUG: AttendanceService.createAttendance emits "newAttendance" before saving the scan, so an open attendance page refetches stale data and keeps the person absent until reloaded
-    test.fixme("shows a scan on an attendance device without reloading", async ({
+    test("shows a scan on an attendance device without reloading", async ({
         page,
         api,
     }) => {
