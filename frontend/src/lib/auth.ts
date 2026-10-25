@@ -7,18 +7,26 @@ const USER_INFO_NAME = "fkmtime-userInfo";
 export const login = async (
     username: string,
     password: string
-): Promise<number> => {
+): Promise<{ status: number; message?: string }> => {
     const response = await backendRequest("auth/login", "POST", false, {
         username: username.trim(),
         password: password,
     });
+    const data = await response.json().catch(() => ({}));
     if (response.status === 200) {
-        const data = await response.json();
         logoutScramblingDevice();
         localStorage.setItem(TOKEN_NAME, data.token);
         localStorage.setItem(USER_INFO_NAME, JSON.stringify(data.userInfo));
     }
-    return response.status;
+    return { status: response.status, message: data.message };
+};
+
+/** What to tell someone whose sign-in failed, from the backend's answer */
+export const loginErrorMessage = (status: number, errorMessage?: string) => {
+    if (status === 401) return "Wrong username or password";
+    if (status === 429)
+        return "Too many sign-in attempts. Wait a minute and try again.";
+    return errorMessage || "Something went wrong";
 };
 
 export const loginWithWca = async (code: string, redirectUri: string) => {

@@ -40,11 +40,11 @@ describe('AuthController (e2e)', () => {
       });
     });
 
-    it('should return 403 when wrong credentials', async () => {
+    it('should return 401 when wrong credentials', async () => {
       await request(app.getHttpServer())
         .post('/auth/login')
         .send({ username: 'admin', password: 'wrong' })
-        .expect(403);
+        .expect(401);
     });
 
     it('should get user info', async () => {
