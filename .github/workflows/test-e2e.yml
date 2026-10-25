@@ -1,0 +1,88 @@
+name: Test
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+    paths:
+      - 'backend/**'
+      - 'frontend/**'
+      - 'e2e/**'
+      - '.github/workflows/test-e2e.yml'
+
+env:
+  CI: true
+  E2E_DATABASE_URL: postgres://postgres:postgres@localhost:5432/fkm_time_e2e
+  E2E_WCA_ORIGIN: http://localhost:3000
+  E2E_WCA_LIVE_API_ORIGIN: http://localhost:4000/api
+  E2E_SOCKET_PATH: /tmp/fkm-e2e.sock
+
+jobs:
+  test_e2e:
+    name: E2E (Playwright)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    services:
+      postgres:
+        image: postgres
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_USER: postgres
+          POSTGRES_DB: fkm_time_e2e
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+      dummy-wca:
+        image: maxidragon/dummy-wca:main
+        ports:
+          - 3000:3000
+      dummy-wca-live:
+        image: maxidragon/dummy-wca-live:main
+        ports:
+          - 4000:4000
+
+    steps:
+      - uses: actions/checkout@v7
+      - name: Use Node.js 24.x
+        uses: actions/setup-node@v7
+        with:
+          # Same as test-backend.yml and the backend image since NestJS 12
+          node-version: 24.x
+      - name: Install backend dependencies
+        working-directory: 'backend'
+        run: npm ci
+      - name: Generate prisma
+        working-directory: 'backend'
+        run: npx prisma generate
+      - name: Install frontend dependencies
+        working-directory: 'frontend'
+        run: npm ci
+      - name: Install e2e dependencies
+        working-directory: 'e2e'
+        run: npm ci
+      - name: Typecheck e2e
+        working-directory: 'e2e'
+        run: npm run typecheck
+      - name: Check e2e formatting
+        working-directory: 'e2e'
+        run: npm run format:check
+      - name: Install Playwright Chromium
+        working-directory: 'e2e'
+        run: npx playwright install --with-deps chromium
+      - name: Run Playwright tests
+        working-directory: 'e2e'
+        run: npx playwright test
+      - name: Upload Playwright report
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: playwright-report
+          path: |
+            e2e/playwright-report
+            e2e/test-results
+          retention-days: 14
