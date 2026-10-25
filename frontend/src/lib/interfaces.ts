@@ -5,6 +5,7 @@ import {
 } from "wcif-helpers";
 
 export interface UserInfo {
+    id?: string;
     username: string;
     fullName?: string;
     roles: UserRole[];
