@@ -48,15 +48,14 @@ jobs:
 
     steps:
       - uses: actions/checkout@v7
-      - name: Use Node.js 22.x
+      - name: Use Node.js 24.x
         uses: actions/setup-node@v7
         with:
-          node-version: 22.x
+          # Same as test-backend.yml and the backend image since NestJS 12
+          node-version: 24.x
       - name: Install backend dependencies
         working-directory: 'backend'
-        # Same as test-backend.yml: the backend lock file doesn't pass npm 10's
-        # stricter `npm ci` (Node 22)
-        run: npm install
+        run: npm ci
       - name: Generate prisma
         working-directory: 'backend'
         run: npx prisma generate
