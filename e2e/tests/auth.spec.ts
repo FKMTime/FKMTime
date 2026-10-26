@@ -39,8 +39,7 @@ test.describe("FKMTime account sign in", () => {
         ).toBeVisible();
     });
 
-    // BUG: the backend answers wrong credentials with 403, the sign-in page only maps 401 to "Wrong username or password" and shows "Something went wrong"
-    test.fixme("explains a wrong password and keeps the user on the form", async ({
+    test("explains a wrong password and keeps the user on the form", async ({
         page,
     }) => {
         await page.goto("/auth/login");
