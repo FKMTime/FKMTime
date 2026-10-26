@@ -74,10 +74,14 @@ export class SyncService {
             ? null
             : person.birthdate && new Date(person.birthdate),
         }));
+      // Registrations that were never accepted have no registrant id and so
+      // were never imported
       removedRegistrantIds = wcif.persons
         .filter(
           (person: Person) =>
-            person.registration && person.registration.status !== 'accepted',
+            person.registrantId &&
+            person.registration &&
+            person.registration.status !== 'accepted',
         )
         .map((person: Person) => person.registrantId);
     } else {

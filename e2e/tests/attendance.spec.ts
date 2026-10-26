@@ -37,7 +37,8 @@ const undoToast = async (page: Page, title: string) => {
 };
 
 test.describe("attendance for a group", () => {
-    test("shows the group's assignments by role", async ({ page }) => {
+    test("shows the group's assignments by role", async ({ page, api }) => {
+        const assigned = (await groupAttendance(api, "333-r1-g1")).length;
         await page.goto("/attendance");
         await expect(
             page.getByText("Pick a group to take attendance.")
@@ -49,7 +50,9 @@ test.describe("attendance for a group", () => {
                 name: "3x3x3 Cube · Round 1 · Group 1",
             })
         ).toBeVisible();
-        await expect(page.getByText("0 present · 15 absent")).toBeVisible();
+        await expect(
+            page.getByText(`0 present · ${assigned} absent`)
+        ).toBeVisible();
         for (const title of ["Competitors", "Scramblers", "Judges"]) {
             await expect(roleCard(page, title)).toBeVisible();
         }

@@ -2,7 +2,7 @@ import { expect, freshDatabase, test } from "../fixtures";
 import { createUserInDb } from "../helpers/db";
 import { signInAs } from "../helpers/session";
 import { expectToast } from "../helpers/ui";
-import { signInWithWca } from "../helpers/wca";
+import { getGeneratedCompetitionId, signInWithWca } from "../helpers/wca";
 
 freshDatabase();
 
@@ -205,7 +205,7 @@ test.describe("Signed-in account", () => {
 test.describe("WCA sign in", () => {
     test("signs in through the WCA OAuth flow", async ({ page }) => {
         // A dummy WCA account that delegates the seeded competition
-        await signInWithWca(page, "SLSFinal2024");
+        await signInWithWca(page, await getGeneratedCompetitionId());
 
         await expect(page).toHaveURL(/localhost:\d+\/$/);
         await expect(

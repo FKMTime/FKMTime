@@ -1,7 +1,5 @@
 import { INestApplication } from '@nestjs/common';
 import { Person, StaffRole } from '@prisma/client';
-import * as fs from 'fs';
-import * as path from 'path';
 import { DbService } from 'src/db/db.service';
 import * as request from 'supertest';
 
@@ -561,17 +559,36 @@ describe('Person check-in and card assignment (e2e)', () => {
     const ROUND_ID = '333-r1';
     const FROM_GROUP = '333-r1-g1';
     const TO_GROUP = '333-r1-g2';
-    const TO_ACTIVITY_ID = 23;
-    const FROM_ACTIVITY_ID = 22;
-    const wcif = JSON.parse(
-      fs.readFileSync(path.join(__dirname, '../prisma/seed/wcif.json'), 'utf8'),
-    );
+    // The WCA holds the WCIF of the competition FKMTime runs: the seeded one
+    let wcif: {
+      id: string;
+      schedule: {
+        venues: {
+          rooms: {
+            activities: {
+              childActivities: { id: number; activityCode: string }[];
+            }[];
+          }[];
+        }[];
+      };
+    };
+    let fromActivityId: number;
+    let toActivityId: number;
     let movedPerson: Person;
     let activityId: string;
     let patchStatus = 200;
     let stub: ReturnType<typeof stubExternalApis>;
 
     beforeAll(async () => {
+      wcif = (await db.competition.findFirst()).wcif as unknown as typeof wcif;
+      const groupActivityId = (groupId: string) =>
+        wcif.schedule.venues
+          .flatMap((v) => v.rooms)
+          .flatMap((r) => r.activities)
+          .flatMap((a) => a.childActivities)
+          .find((g) => g.activityCode === groupId).id;
+      fromActivityId = groupActivityId(FROM_GROUP);
+      toActivityId = groupActivityId(TO_GROUP);
       const candidates = await db.staffActivity.findMany({
         where: { groupId: FROM_GROUP, role: StaffRole.COMPETITOR },
         include: { person: { include: { StaffActivity: true } } },
@@ -579,7 +596,7 @@ describe('Person check-in and card assignment (e2e)', () => {
       });
       const chosen = candidates.find(
         (c) =>
-          c.person.registrantId <= 25 &&
+          !REGISTRANT_IDS.includes(c.person.registrantId) &&
           !c.person.StaffActivity.some((a) => a.groupId === TO_GROUP),
       );
       movedPerson = chosen.person;
@@ -636,11 +653,11 @@ describe('Person check-in and card assignment (e2e)', () => {
       const activityIds = patchedPerson.assignments.map(
         (a: any) => a.activityId,
       );
-      expect(activityIds).toContain(TO_ACTIVITY_ID);
-      expect(activityIds).not.toContain(FROM_ACTIVITY_ID);
+      expect(activityIds).toContain(toActivityId);
+      expect(activityIds).not.toContain(fromActivityId);
       expect(
         patchedPerson.assignments.find(
-          (a: any) => a.activityId === TO_ACTIVITY_ID,
+          (a: any) => a.activityId === toActivityId,
         ).assignmentCode,
       ).toBe('competitor');
       expect(

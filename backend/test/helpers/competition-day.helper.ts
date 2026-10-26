@@ -73,8 +73,9 @@ export const createRoleUsers = async (
 };
 
 /**
- * Creates competitors with invented names and registrant ids that do not
- * collide with the seed WCIF (which uses 1-25).
+ * Creates competitors with invented names. Use registrant ids from 9000 up:
+ * the dummy WCA numbers the seeded competitors from 1, and any existing
+ * person with one of the ids is deleted first.
  */
 export const createTestPersons = async (
   db: DbService,

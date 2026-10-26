@@ -29,7 +29,11 @@ export class ImportService {
     });
     const wcifPublic = await this.wcaService.getWcif(wcaId, undefined, true);
     assertWcaCompetitionFound(wcifPublic.statusCode);
-    const wcif = await this.wcaService.getWcif(wcaId, user.wcaAccessToken);
+    // The private WCIF needs a WCA token; an FKMTime account without one
+    // imports from the public WCIF, as sync does
+    const wcif = user.wcaAccessToken
+      ? await this.wcaService.getWcif(wcaId, user.wcaAccessToken)
+      : wcifPublic;
     const competitionInfo = await this.wcaService.getCompetitionInfo(wcaId);
 
     // Work out the importer's roles before touching any data, so a refused

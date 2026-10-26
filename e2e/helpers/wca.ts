@@ -8,6 +8,18 @@ interface WcaCompetition {
     delegates: { wca_id: string | null }[];
 }
 
+/** The competition the dummy WCA generates, which the test seed loads */
+export const getGeneratedCompetitionId = async () => {
+    const wca = await request.newContext();
+    try {
+        const response = await wca.get(`${WCA_ORIGIN}/dummy/generated`);
+        expect(response.ok()).toBeTruthy();
+        return ((await response.json()) as { id: string }).id;
+    } finally {
+        await wca.dispose();
+    }
+};
+
 export const getWcaCompetition = async (competitionId: string) => {
     const wca = await request.newContext();
     try {

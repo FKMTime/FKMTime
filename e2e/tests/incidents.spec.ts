@@ -51,7 +51,7 @@ const openIncident = async (
     return { person, device };
 };
 
-/** A Stage 1 station records a clock-r1-g1 solve and calls the delegate */
+/** A Main Hall station records a clock-r1-g1 solve and calls the delegate */
 const callDelegate = async (
     api: APIRequestContext,
     espId: number,

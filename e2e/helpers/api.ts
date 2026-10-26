@@ -164,10 +164,13 @@ export interface ApiRoom {
 export const getRooms = async (api: APIRequestContext) =>
     ok<ApiRoom[]>(await api.get("competition/rooms"));
 
-/** The seed schedule runs groups 1 and 3 of each first round here */
-export const STAGE_ONE = "Stage 1";
+/**
+ * The first room of the dummy WCA's generated competition; it runs groups
+ * 1, 3, 5, ... of each round
+ */
+export const MAIN_HALL = "Main Hall";
 
-export const getRoom = async (api: APIRequestContext, name = STAGE_ONE) => {
+export const getRoom = async (api: APIRequestContext, name = MAIN_HALL) => {
     const room = (await getRooms(api)).find((r) => r.name === name);
     expect(room, `room ${name}`).toBeTruthy();
     return room!;

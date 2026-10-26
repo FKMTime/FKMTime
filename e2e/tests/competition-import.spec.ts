@@ -1,15 +1,19 @@
 import { expect, test } from "../fixtures";
 import { resetDatabase, withDb } from "../helpers/db";
 import { expectToast } from "../helpers/ui";
-import { getWcaCompetition, signInWithWca } from "../helpers/wca";
+import {
+    getGeneratedCompetitionId,
+    getWcaCompetition,
+    signInWithWca,
+} from "../helpers/wca";
 
-// The dummy WCA serves a version 2 WCIF only for some competitions; this one
-// is delegated by one of the dummy accounts
-const COMPETITION_ID = "WLSMarzec2026";
+// The competition the dummy WCA generates; one of its accounts delegates it
+let COMPETITION_ID: string;
 
 test.describe.configure({ mode: "serial" });
 
 test.beforeAll(async () => {
+    COMPETITION_ID = await getGeneratedCompetitionId();
     // A fresh install: no competition imported yet
     await resetDatabase();
     await withDb(async (db) => {
