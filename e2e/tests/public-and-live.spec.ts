@@ -128,9 +128,10 @@ test.describe("staff pages", () => {
 
         await page.goto("/results/public");
         await expect(page).toHaveURL(/\/results\/public\/[\w-]+-r\d+$/);
+        // With no round of the event running, its last round opens
         await page.getByRole("radio", { name: "2x2x2 Cube" }).click();
         await expect(
-            page.getByRole("heading", { name: "2x2x2 Cube · Round 1" })
+            page.getByRole("heading", { name: "2x2x2 Cube · Round 2" })
         ).toBeVisible();
     });
 
