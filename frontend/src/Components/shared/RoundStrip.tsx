@@ -51,7 +51,7 @@ const RoundStrip = ({
                 ref={scrollRef}
                 role="radiogroup"
                 aria-label="Current rounds"
-                className="scroll-fade-x flex min-w-0 flex-1 gap-1 overflow-x-auto rounded-xl bg-secondary p-1 [scrollbar-width:none]"
+                className="scroll-fade-x flex min-w-0 flex-1 gap-1 overflow-x-auto rounded-xl bg-secondary p-1 scrollbar-none"
             >
                 {rounds.map((round) => {
                     const isSelected = round.id === value;
@@ -64,7 +64,7 @@ const RoundStrip = ({
                             title={round.name}
                             onClick={() => onValueChange(round.id)}
                             className={cn(
-                                "flex h-14 min-w-[150px] shrink-0 flex-col items-start justify-center gap-[3px] whitespace-nowrap rounded-[9px] px-3.5 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40",
+                                "flex h-14 min-w-[150px] shrink-0 flex-col items-start justify-center gap-[3px] whitespace-nowrap rounded-[9px] px-3.5 text-left transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring/40",
                                 isSelected
                                     ? "bg-card text-foreground shadow-[0_1px_3px_rgba(0,0,0,0.1)]"
                                     : "text-muted-foreground hover:bg-accent"
@@ -144,7 +144,7 @@ export const AllRoundsPicker = ({
             aria-label={`All rounds (${rounds.length})`}
             onClick={isMobile ? () => setIsOpen(true) : undefined}
             className={cn(
-                "flex h-16 shrink-0 items-center gap-2 whitespace-nowrap rounded-xl border bg-card px-3.5 text-sm font-semibold transition-colors hover:border-border-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40 md:px-4",
+                "flex h-16 shrink-0 items-center gap-2 whitespace-nowrap rounded-xl border bg-card px-3.5 text-sm font-semibold transition-colors hover:border-border-strong focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring/40 md:px-4",
                 isOpen && "border-border-strong"
             )}
         >
@@ -191,7 +191,7 @@ export const AllRoundsPicker = ({
             <PopoverTrigger asChild>{trigger}</PopoverTrigger>
             <PopoverContent
                 align="end"
-                className="flex max-h-[480px] w-[460px] flex-col overflow-hidden rounded-[14px] p-0"
+                className="flex max-h-[480px] w-[460px] flex-col overflow-hidden rounded-mobile-card p-0"
             >
                 {list}
             </PopoverContent>
@@ -242,7 +242,7 @@ const RoundList = ({
                     onChange={(e) => setQuery(e.target.value)}
                     placeholder="Search rounds"
                     aria-label="Search rounds"
-                    className="h-9 min-w-0 flex-1 bg-transparent text-base outline-none placeholder:text-faint md:text-sm"
+                    className="h-9 min-w-0 flex-1 bg-transparent text-base outline-hidden placeholder:text-faint md:text-sm"
                 />
             </label>
             <div className="flex flex-col gap-0.5 overflow-y-auto p-1.5">

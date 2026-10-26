@@ -136,7 +136,7 @@ const RowActions = ({ primary, items = [], subject }: RowActionsProps) => {
                                             onSelect={item.onSelect}
                                             className={cn(
                                                 item.destructive &&
-                                                    "text-destructive focus:text-destructive [&>svg]:!text-destructive"
+                                                    "text-destructive focus:text-destructive [&>svg]:text-destructive!"
                                             )}
                                         >
                                             <item.icon />

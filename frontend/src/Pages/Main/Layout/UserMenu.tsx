@@ -28,7 +28,7 @@ const UserMenu = ({ canAccessSettings }: UserMenuProps) => {
     return (
         <DropdownMenu modal={false}>
             <DropdownMenuTrigger
-                className="rounded-full transition-shadow hover:ring-2 hover:ring-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                className="rounded-full transition-shadow hover:ring-2 hover:ring-primary focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
                 aria-label="Account"
             >
                 <UserAvatar
@@ -62,7 +62,7 @@ const UserMenu = ({ canAccessSettings }: UserMenuProps) => {
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
                     onClick={handleLogout}
-                    className="text-destructive focus:text-destructive [&>svg]:!text-destructive"
+                    className="text-destructive focus:text-destructive [&>svg]:text-destructive!"
                 >
                     <LogOut />
                     Log out

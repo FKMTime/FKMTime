@@ -25,7 +25,7 @@ const DesktopHeader = ({
     canAccessSettings,
     onEnterAttempt,
 }: DesktopHeaderProps) => (
-    <header className="sticky top-0 z-30 hidden h-16 shrink-0 items-center justify-between gap-4 border-b bg-background/95 px-8 backdrop-blur md:flex">
+    <header className="sticky top-0 z-30 hidden h-16 shrink-0 items-center justify-between gap-4 border-b bg-background/95 px-8 backdrop-blur-sm md:flex">
         {/* The competition leads the breadcrumbs and links home; with no
             crumbs (Home) it is the heading itself */}
         <div className="flex min-w-0 items-center gap-1">

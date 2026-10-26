@@ -75,7 +75,7 @@ const CompetitionSearch = ({ onSelect }: CompetitionSearchProps) => {
     return (
         <Popover open={isOpen}>
             <PopoverAnchor asChild>
-                <label className="flex h-11 cursor-text items-center gap-2 rounded-[10px] border bg-card px-3 focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20">
+                <label className="flex h-11 cursor-text items-center gap-2 rounded-chip border bg-card px-3 focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20">
                     <Search className="size-5 shrink-0 text-faint" />
                     <input
                         value={query}
@@ -93,13 +93,13 @@ const CompetitionSearch = ({ onSelect }: CompetitionSearchProps) => {
                         role="combobox"
                         aria-expanded={isOpen}
                         aria-controls="competition-search-results"
-                        className="min-w-0 flex-1 bg-transparent text-[15px] outline-none placeholder:text-faint"
+                        className="min-w-0 flex-1 bg-transparent text-[15px] outline-hidden placeholder:text-faint"
                     />
                 </label>
             </PopoverAnchor>
             <PopoverContent
                 align="start"
-                className="w-[var(--radix-popper-anchor-width)] p-1.5"
+                className="w-(--radix-popper-anchor-width) p-1.5"
                 onOpenAutoFocus={(e) => e.preventDefault()}
                 // Keep the input focused while picking with the mouse
                 onMouseDown={(e) => e.preventDefault()}

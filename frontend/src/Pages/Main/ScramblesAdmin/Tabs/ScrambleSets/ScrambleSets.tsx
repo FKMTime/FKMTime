@@ -121,7 +121,7 @@ const ScrambleSets = () => {
         <div className="grid grid-cols-1 items-start gap-4 md:grid-cols-[minmax(240px,320px)_minmax(0,1fr)] md:gap-5">
             <nav
                 aria-label="Rounds"
-                className="-mx-4 flex gap-1.5 overflow-x-auto px-4 [scrollbar-width:none] md:mx-0 md:flex-col md:gap-0 md:rounded-2xl md:border md:bg-card md:p-1.5"
+                className="-mx-4 flex gap-1.5 overflow-x-auto px-4 scrollbar-none md:mx-0 md:flex-col md:gap-0 md:rounded-2xl md:border md:bg-card md:p-1.5"
             >
                 {roundIds.map((id) => {
                     const isSelected = id === roundId;
@@ -188,14 +188,14 @@ const ScrambleSets = () => {
                                 <DropdownMenuItem
                                     onSelect={handleDeleteRound}
                                     disabled={scrambleSets.length === 0}
-                                    className="text-destructive focus:text-destructive [&>svg]:!text-destructive"
+                                    className="text-destructive focus:text-destructive [&>svg]:text-destructive!"
                                 >
                                     <Trash2 />
                                     Delete sets for this round
                                 </DropdownMenuItem>
                                 <DropdownMenuItem
                                     onSelect={handleDeleteAll}
-                                    className="text-destructive focus:text-destructive [&>svg]:!text-destructive"
+                                    className="text-destructive focus:text-destructive [&>svg]:text-destructive!"
                                 >
                                     <Trash2 />
                                     Delete all scramble sets

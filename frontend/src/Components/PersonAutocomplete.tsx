@@ -89,7 +89,7 @@ const PersonAutocomplete = forwardRef<
                         <ChevronsUpDown className="opacity-50" />
                     </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-full p-0 min-w-[var(--radix-popper-anchor-width)]">
+                <PopoverContent className="w-full p-0 min-w-(--radix-popper-anchor-width)">
                     <Command className="w-full" shouldFilter={false}>
                         <CommandInput
                             ref={ref}

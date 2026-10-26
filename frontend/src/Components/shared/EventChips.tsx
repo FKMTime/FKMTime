@@ -35,7 +35,7 @@ const EventChips = ({
             role="radiogroup"
             aria-label="Event"
             className={cn(
-                "-mx-4 flex gap-1.5 scroll-fade-x overflow-x-auto px-4 [scrollbar-width:none] md:mx-0 md:flex-wrap md:px-0",
+                "-mx-4 flex gap-1.5 scroll-fade-x overflow-x-auto px-4 scrollbar-none md:mx-0 md:flex-wrap md:px-0",
                 className
             )}
         >
@@ -53,7 +53,7 @@ const EventChips = ({
                         title={event.name}
                         onClick={() => onValueChange(event.id)}
                         className={cn(
-                            "flex h-11 shrink-0 items-center gap-[7px] whitespace-nowrap rounded-chip border px-3 text-[13px] font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40 md:h-10",
+                            "flex h-11 shrink-0 items-center gap-[7px] whitespace-nowrap rounded-chip border px-3 text-[13px] font-semibold transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring/40 md:h-10",
                             isSelected
                                 ? "border-primary bg-primary-soft text-primary"
                                 : "bg-card text-foreground hover:bg-accent"

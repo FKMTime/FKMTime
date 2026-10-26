@@ -180,7 +180,7 @@ const RoomCard = ({
                 )}
 
                 {(startLabel || canEnterAttempts || canOpenAttendance) && (
-                    <div className="order-none flex flex-col gap-2.5 md:order-last md:gap-3">
+                    <div className="order-0 flex flex-col gap-2.5 md:order-last md:gap-3">
                         {startLabel && nextGroupIds && isGroupDone && (
                             <Button
                                 size="lg"
@@ -288,7 +288,7 @@ const RoomCard = ({
                                         : "Attempt"}{" "}
                                     {attempt.attemptNumber}
                                 </span>
-                                <b className="min-w-[3.5rem] text-right font-semibold">
+                                <b className="min-w-14 text-right font-semibold">
                                     {attemptWithPenaltyToString(attempt)}
                                 </b>
                             </Link>
