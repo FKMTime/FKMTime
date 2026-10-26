@@ -6,7 +6,10 @@ import { DbService } from 'src/db/db.service';
 import * as request from 'supertest';
 
 import { createTestApp } from './helpers/app.helper';
-import { useDummyWcaCompetitionId } from './helpers/dummy-wca.helper';
+import {
+  DummyWcaAccount,
+  getGeneratedCompetition,
+} from './helpers/dummy-wca.helper';
 import { listenOnLoopback } from './helpers/loopback.helper';
 import {
   createUserWithRoles,
@@ -16,16 +19,18 @@ import {
 
 const SUFFIX = 'auth-flow';
 const REDIRECT_URI = 'http://localhost:5173/auth/login';
-/** Dummy WCA user who organizes (but does not delegate) the seeded competition */
-const ORGANIZER_CODE = 'code-2013KOSK01';
-const ORGANIZER_WCA_USER_ID = 6008;
-/** Dummy WCA user with no rights to the seeded competition */
-const OUTSIDER_CODE = 'code-2021KULA02';
-const OUTSIDER_WCA_USER_ID = 235575;
-
 // Login endpoints allow 5 requests per minute per client address and app
 // instance, so each block below starts its own app and stays within budget.
 describe('Auth flows (e2e)', () => {
+  /** Dummy WCA user who organizes (but does not delegate) the seeded competition */
+  let organizer: DummyWcaAccount;
+  /** Dummy WCA user with no rights to the seeded competition */
+  let outsider: DummyWcaAccount;
+
+  beforeAll(async () => {
+    ({ organizer, outsider } = (await getGeneratedCompetition()).accounts);
+  });
+
   describe('password login', () => {
     let app: INestApplication;
     let db: DbService;
@@ -140,13 +145,13 @@ describe('Auth flows (e2e)', () => {
       for (let i = 0; i < 5; i++) {
         await request(app.getHttpServer())
           .post('/auth/wca/login')
-          .send({ code: OUTSIDER_CODE, redirectUri: REDIRECT_URI })
+          .send({ code: outsider.code, redirectUri: REDIRECT_URI })
           .expect(403);
       }
 
       await request(app.getHttpServer())
         .post('/auth/wca/login')
-        .send({ code: OUTSIDER_CODE, redirectUri: REDIRECT_URI })
+        .send({ code: outsider.code, redirectUri: REDIRECT_URI })
         .expect(429);
     });
   });
@@ -154,12 +159,11 @@ describe('Auth flows (e2e)', () => {
   describe('WCA login', () => {
     let app: INestApplication;
     let db: DbService;
-    let restoreCompetitionId: () => Promise<void>;
 
     const cleanUp = () =>
       db.user.deleteMany({
         where: {
-          wcaUserId: { in: [ORGANIZER_WCA_USER_ID, OUTSIDER_WCA_USER_ID] },
+          wcaUserId: { in: [organizer.wcaUserId, outsider.wcaUserId] },
         },
       });
 
@@ -167,11 +171,9 @@ describe('Auth flows (e2e)', () => {
       ({ app, db } = await createTestApp());
       await listenOnLoopback(app);
       await cleanUp();
-      restoreCompetitionId = await useDummyWcaCompetitionId(db);
     }, 30000);
 
     afterAll(async () => {
-      await restoreCompetitionId();
       await cleanUp();
       await app.close();
     }, 30000);
@@ -179,21 +181,21 @@ describe('Auth flows (e2e)', () => {
     it('refuses someone who cannot manage the competition', async () => {
       const res = await request(app.getHttpServer())
         .post('/auth/wca/login')
-        .send({ code: OUTSIDER_CODE, redirectUri: REDIRECT_URI })
+        .send({ code: outsider.code, redirectUri: REDIRECT_URI })
         .expect(403);
 
       expect(res.body.message).toBe(
         'You are not allowed to manage this competition',
       );
       expect(
-        await db.user.count({ where: { wcaUserId: OUTSIDER_WCA_USER_ID } }),
+        await db.user.count({ where: { wcaUserId: outsider.wcaUserId } }),
       ).toBe(0);
     });
 
     it('creates an ORGANIZER account for an organizer of the competition', async () => {
       const res = await request(app.getHttpServer())
         .post('/auth/wca/login')
-        .send({ code: ORGANIZER_CODE, redirectUri: REDIRECT_URI })
+        .send({ code: organizer.code, redirectUri: REDIRECT_URI })
         .expect(200);
 
       expect(res.body.userInfo).toMatchObject({
@@ -205,7 +207,7 @@ describe('Auth flows (e2e)', () => {
         where: { id: res.body.userInfo.id },
       });
       expect(fromDb).toMatchObject({
-        wcaUserId: ORGANIZER_WCA_USER_ID,
+        wcaUserId: organizer.wcaUserId,
         roles: [Role.ORGANIZER],
         username: null,
         password: null,
@@ -223,17 +225,17 @@ describe('Auth flows (e2e)', () => {
 
     it('reuses the account and refreshes its roles on the next login', async () => {
       await db.user.updateMany({
-        where: { wcaUserId: ORGANIZER_WCA_USER_ID },
+        where: { wcaUserId: organizer.wcaUserId },
         data: { roles: [Role.STAFF], wcaAccessToken: null },
       });
 
       const res = await request(app.getHttpServer())
         .post('/auth/wca/login')
-        .send({ code: ORGANIZER_CODE, redirectUri: REDIRECT_URI })
+        .send({ code: organizer.code, redirectUri: REDIRECT_URI })
         .expect(200);
 
       const accounts = await db.user.findMany({
-        where: { wcaUserId: ORGANIZER_WCA_USER_ID },
+        where: { wcaUserId: organizer.wcaUserId },
       });
       expect(accounts).toHaveLength(1);
       expect(accounts[0]).toMatchObject({

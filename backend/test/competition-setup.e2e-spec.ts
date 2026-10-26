@@ -75,8 +75,8 @@ describe('Competition setup (e2e)', () => {
   let db: DbService;
   let organizer: TestUser;
   let competition: Competition;
-  let stage1: Room;
-  let stage2: Room;
+  let mainHall: Room;
+  let sideHall: Room;
 
   const server = () => app.getHttpServer();
   const asOrganizer = (req: request.Test) =>
@@ -92,8 +92,8 @@ describe('Competition setup (e2e)', () => {
       Role.ORGANIZER,
     ]);
     competition = await db.competition.findFirst();
-    stage1 = await db.room.findFirst({ where: { name: 'Stage 1' } });
-    stage2 = await db.room.findFirst({ where: { name: 'Stage  2' } });
+    mainHall = await db.room.findFirst({ where: { name: 'Main Hall' } });
+    sideHall = await db.room.findFirst({ where: { name: 'Side Hall' } });
   }, 30000);
 
   afterAll(async () => {
@@ -117,8 +117,8 @@ describe('Competition setup (e2e)', () => {
         soundEnabled: competition.soundEnabled,
       },
     });
-    await setGroups(stage1, stage1.currentGroupIds);
-    await setGroups(stage2, stage2.currentGroupIds);
+    await setGroups(mainHall, mainHall.currentGroupIds);
+    await setGroups(sideHall, sideHall.currentGroupIds);
     await deleteSetupUsers(db, SUFFIX);
     await app.close();
   }, 30000);
@@ -160,8 +160,8 @@ describe('Competition setup (e2e)', () => {
         .expect(200);
 
       expect(res.body.map((r: Room) => r.name).sort()).toEqual([
-        'Stage  2',
-        'Stage 1',
+        'Main Hall',
+        'Side Hall',
       ]);
     });
 
@@ -184,21 +184,12 @@ describe('Competition setup (e2e)', () => {
         request(server()).get('/competition/rounds'),
       ).expect(200);
 
-      expect(res.body.map((r: { id: string }) => r.id)).toEqual([
-        '333-r1',
-        '333-r2',
-        '333-r3',
-        '222-r1',
-        '666-r1',
-        '333bf-r1',
-        'clock-r1',
-        'minx-r1',
-        'minx-r2',
-        'minx-r3',
-      ]);
       const wcif = competition.wcif as unknown as {
         events: { id: string; rounds: { id: string }[] }[];
       };
+      expect(res.body.map((r: { id: string }) => r.id)).toEqual(
+        wcif.events.flatMap((e) => e.rounds.map((r) => r.id)),
+      );
       const r2 = wcif.events
         .find((e) => e.id === '333')
         .rounds.find((r) => r.id === '333-r2') as {
@@ -406,21 +397,21 @@ describe('Competition setup (e2e)', () => {
       const res = await asOrganizer(request(server()).put('/competition/rooms'))
         .send({
           rooms: [
-            { id: stage1.id, currentGroupIds: ['333-r1-g1', '222-r1-g1'] },
-            { id: stage2.id, currentGroupIds: ['333-r1-g2'] },
+            { id: mainHall.id, currentGroupIds: ['333-r1-g1', '222-r1-g1'] },
+            { id: sideHall.id, currentGroupIds: ['333-r1-g2'] },
           ],
         })
         .expect(200);
 
       expect(res.body).toEqual({ message: 'Rooms updated' });
       const rooms = await db.room.findMany({
-        where: { id: { in: [stage1.id, stage2.id] } },
+        where: { id: { in: [mainHall.id, sideHall.id] } },
       });
       expect(
         Object.fromEntries(rooms.map((r) => [r.name, r.currentGroupIds])),
       ).toEqual({
-        'Stage 1': ['333-r1-g1', '222-r1-g1'],
-        'Stage  2': ['333-r1-g2'],
+        'Main Hall': ['333-r1-g1', '222-r1-g1'],
+        'Side Hall': ['333-r1-g2'],
       });
     });
 
@@ -428,8 +419,8 @@ describe('Competition setup (e2e)', () => {
       const res = await asOrganizer(request(server()).put('/competition/rooms'))
         .send({
           rooms: [
-            { id: stage2.id, currentGroupIds: ['minx-r1-g2'] },
-            { id: stage1.id, currentGroupIds: ['333-r1-g1', '333-r1-g3'] },
+            { id: sideHall.id, currentGroupIds: ['minx-r1-g2'] },
+            { id: mainHall.id, currentGroupIds: ['333-r1-g1', '333-r1-g3'] },
           ],
         })
         .expect(400);
@@ -437,7 +428,7 @@ describe('Competition setup (e2e)', () => {
       expect(res.body.message).toBe(
         'There are 2 or more groups in the room from the same event',
       );
-      const room2 = await db.room.findUnique({ where: { id: stage2.id } });
+      const room2 = await db.room.findUnique({ where: { id: sideHall.id } });
       expect(room2.currentGroupIds).toEqual(['333-r1-g2']);
     });
 
@@ -458,29 +449,31 @@ describe('Competition setup (e2e)', () => {
         request(server()).get(`/competition/rooms/${room.id}/previous-groups`),
       ).expect(200);
 
+    // The Main Hall runs the odd groups: 333-r1 g1, g3, g5, g7, then 222-r1
+    // g1, g3, g5, ... and minx-r1 g1, g3 last on day 1; pyram-r1 opens day 2
     it.each([
       [['333-r1-g1'], ['333-r1-g3'], []],
-      [['333-r1-g3'], ['222-r1-g1'], ['333-r1-g1']],
-      [['222-r1-g1'], ['222-r1-g3'], ['333-r1-g3']],
+      [['333-r1-g7'], ['222-r1-g1'], ['333-r1-g5']],
+      [['222-r1-g1'], ['222-r1-g3'], ['333-r1-g7']],
       [['minx-r1-g3'], [], ['minx-r1-g1']],
-      [['333-r2-g1'], ['minx-r2-g1'], []],
-      [['333-r1-g1', '222-r1-g1'], ['333-r1-g3', '222-r1-g3'], ['333-r1-g3']],
+      [['pyram-r1-g1'], ['pyram-r1-g3'], []],
+      [['333-r1-g1', '222-r1-g1'], ['333-r1-g3', '222-r1-g3'], ['333-r1-g7']],
       [[], [], []],
     ])(
-      'Stage 1 at %j: next %j, previous %j',
+      'Main Hall at %j: next %j, previous %j',
       async (current, expectedNext, expectedPrevious) => {
-        await setGroups(stage1, current);
+        await setGroups(mainHall, current);
 
-        expect((await next(stage1)).body).toEqual(expectedNext);
-        expect((await previous(stage1)).body).toEqual(expectedPrevious);
+        expect((await next(mainHall)).body).toEqual(expectedNext);
+        expect((await previous(mainHall)).body).toEqual(expectedPrevious);
       },
     );
 
     it('follows the schedule of the room it is asked about', async () => {
-      await setGroups(stage2, ['333-r1-g4']);
+      await setGroups(sideHall, ['333-r1-g6']);
 
-      expect((await next(stage2)).body).toEqual(['222-r1-g2']);
-      expect((await previous(stage2)).body).toEqual(['333-r1-g2']);
+      expect((await next(sideHall)).body).toEqual(['222-r1-g2']);
+      expect((await previous(sideHall)).body).toEqual(['333-r1-g4']);
     });
 
     it.each(['next-groups', 'previous-groups'])(
@@ -518,8 +511,11 @@ describe('Competition setup (e2e)', () => {
         'other-checkin',
         '333-r1',
         '222-r1',
+        '444-r1',
         '666-r1',
         '333bf-r1',
+        'other-lunch',
+        '333oh-r1',
         'clock-r1',
         'minx-r1',
       ]);
@@ -535,7 +531,20 @@ describe('Competition setup (e2e)', () => {
 
       expect(
         res.body.map((a: { activityCode: string }) => a.activityCode),
-      ).toEqual(['333-r2', 'minx-r2', 'minx-r3', '333-r3']);
+      ).toEqual([
+        'pyram-r1',
+        'skewb-r1',
+        'sq1-r1',
+        '444bf-r1',
+        '333-r2',
+        '222-r2',
+        '444-r2',
+        'other-lunch',
+        '333oh-r2',
+        'pyram-r2',
+        '333-r3',
+        'other-awards',
+      ]);
     });
 
     it('returns an empty list for an unknown room', async () => {
@@ -614,8 +623,8 @@ describe('Competition setup (e2e)', () => {
     });
 
     it('reports entered vs expected attempts for the current groups', async () => {
-      await setGroups(stage1, ['333-r1-g1']);
-      await setGroups(stage2, []);
+      await setGroups(mainHall, ['333-r1-g1']);
+      await setGroups(sideHall, []);
       const competitorIds = competitorsOfGroup(
         competition.wcif as unknown as WcifLike,
         '333-r1-g1',
@@ -629,7 +638,7 @@ describe('Competition setup (e2e)', () => {
       expect(before.body).toEqual(
         expect.arrayContaining([
           {
-            roomId: stage1.id,
+            roomId: mainHall.id,
             groups: [
               {
                 groupId: '333-r1-g1',
@@ -640,7 +649,7 @@ describe('Competition setup (e2e)', () => {
               },
             ],
           },
-          { roomId: stage2.id, groups: [] },
+          { roomId: sideHall.id, groups: [] },
         ]),
       );
 
@@ -672,10 +681,10 @@ describe('Competition setup (e2e)', () => {
         request(server()).get('/competition/rooms/progress'),
       ).expect(200);
 
-      const stage1Progress = after.body.find(
-        (r: { roomId: string }) => r.roomId === stage1.id,
+      const mainHallProgress = after.body.find(
+        (r: { roomId: string }) => r.roomId === mainHall.id,
       );
-      expect(stage1Progress.groups[0].entered).toBe(2);
+      expect(mainHallProgress.groups[0].entered).toBe(2);
     });
   });
 

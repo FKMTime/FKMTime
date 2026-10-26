@@ -80,7 +80,7 @@ test.describe("users", () => {
         const dialog = page.getByRole("dialog", { name: "Create user" });
         await dialog.getByRole("tab", { name: "WCA Login" }).click();
         await dialog.getByRole("combobox").first().click();
-        // The dummy WCA search matches lower-case WCA IDs; every one has "20"
+        // Every WCA ID has "20" in it
         await page.getByPlaceholder("Search for a person...").fill("20");
         await page.getByRole("option").first().click();
         await pickRoles(page, ["Delegate"]);

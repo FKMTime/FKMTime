@@ -63,12 +63,13 @@ docker compose -f docker-compose-test.yml up -d
 cd backend && npx prisma db push && npm run prisma:seed-test && npm run test:e2e
 ```
 
-The test seed moves the competition so it starts on the day you seed, which
-keeps its schedule "live"; the year in its id and name moves with it. Tests
-that need dates or the id read them from the seeded competition. The dummy
-WCA still knows it by the id in `wcif.json`, so WCA sign-in tests switch to
-that id while they run. To keep the WCIF's own dates and id, set
-`SEED_COMPETITION_START_DATE=2024-05-24` (any `YYYY-MM-DD` works).
+The test seed imports the competition the dummy WCA generates (invented
+people, a two-day schedule starting the day the dummy WCA started), so the
+schedule is "live" and WCA sign-in and sync see the same competition. Its id,
+dates and accounts come from `GET $WCA_ORIGIN/dummy/generated`; tests read
+them from there or from the seeded WCIF instead of hard-coding them. To pin
+the dates, start the dummy WCA with `GENERATED_START_DATE=YYYY-MM-DD`;
+restarting it moves the competition to the new day, so reseed afterwards.
 
 Browser e2e tests (Playwright) start the backend and frontend themselves and
 use the same test stack; `npm ci` in `backend` and `frontend` first:

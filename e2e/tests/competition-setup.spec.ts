@@ -1,6 +1,7 @@
 import { APIRequestContext, Page } from "@playwright/test";
 
 import { expect, freshDatabase, signedInAs, test } from "../fixtures";
+import { MAIN_HALL } from "../helpers/api";
 import { confirm, expectToast } from "../helpers/ui";
 import { storageStatePath } from "../helpers/users";
 
@@ -32,9 +33,9 @@ const setGroups = async (
     expect(response.ok(), await response.text()).toBeTruthy();
 };
 
-/** The seed schedule runs groups 1 and 3 of each first round in "Stage 1" */
+/** The seed schedule runs groups 1, 3, 5, ... of each round in the Main Hall */
 const stageOne = async (api: APIRequestContext) =>
-    (await getRooms(api)).find((room) => room.name === "Stage 1")!;
+    (await getRooms(api)).find((room) => room.name === MAIN_HALL)!;
 
 const roomSection = (page: Page, name: string) =>
     page.getByRole("main").getByRole("region", { name });
@@ -281,7 +282,7 @@ test.describe("home", () => {
             Object.fromEntries(
                 rooms.map((room) => [
                     room.id,
-                    [room.name === "Stage 1" ? "333-r1-g1" : "333-r1-g2"],
+                    [room.name === MAIN_HALL ? "333-r1-g1" : "333-r1-g2"],
                 ])
             )
         );

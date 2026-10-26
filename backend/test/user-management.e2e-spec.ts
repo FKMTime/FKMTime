@@ -4,6 +4,10 @@ import { DbService } from 'src/db/db.service';
 import * as request from 'supertest';
 
 import { createTestApp } from './helpers/app.helper';
+import {
+  DummyWcaAccount,
+  getGeneratedCompetition,
+} from './helpers/dummy-wca.helper';
 import { listenOnLoopback } from './helpers/loopback.helper';
 import {
   createUserWithRoles,
@@ -14,9 +18,6 @@ import {
 
 const SUFFIX = 'user-management';
 const FAKE_ID = '00000000-0000-4000-8000-000000000000';
-/** Dummy WCA account looked up by WCA ID when creating a WCA-linked user */
-const DUMMY_WCA_ID = '2021KULA02';
-const DUMMY_WCA_USER_ID = 235575;
 
 const username = (name: string) => `${SETUP_USER_PREFIX}${name}-${SUFFIX}`;
 
@@ -26,17 +27,20 @@ describe('User management (e2e)', () => {
   let organizer: TestUser;
   let delegate: TestUser;
   let staffUserId: string;
+  /** Dummy WCA account looked up by WCA ID when creating a WCA-linked user */
+  let wcaAccount: DummyWcaAccount;
 
   const server = () => app.getHttpServer();
   const as = (user: TestUser, req: request.Test) =>
     req.set('Authorization', `Bearer ${user.token}`);
   const cleanUp = async () => {
     await deleteSetupUsers(db, SUFFIX);
-    await db.user.deleteMany({ where: { wcaUserId: DUMMY_WCA_USER_ID } });
+    await db.user.deleteMany({ where: { wcaUserId: wcaAccount.wcaUserId } });
   };
 
   beforeAll(async () => {
     ({ app, db } = await createTestApp());
+    wcaAccount = (await getGeneratedCompetition()).accounts.outsider;
     await listenOnLoopback(app);
     await cleanUp();
     organizer = await createUserWithRoles(app, db, `organizer-${SUFFIX}`, [
@@ -150,14 +154,14 @@ describe('User management (e2e)', () => {
     it('creates a WCA-linked account from a WCA ID', async () => {
       await as(organizer, request(server()).post('/user'))
         .send({
-          wcaId: DUMMY_WCA_ID,
+          wcaId: wcaAccount.wcaId,
           fullName: 'WCA Linked Staff',
           roles: [Role.STAFF],
         })
         .expect(201);
 
       expect(
-        await db.user.findFirst({ where: { wcaUserId: DUMMY_WCA_USER_ID } }),
+        await db.user.findFirst({ where: { wcaUserId: wcaAccount.wcaUserId } }),
       ).toMatchObject({
         fullName: 'WCA Linked Staff',
         username: null,

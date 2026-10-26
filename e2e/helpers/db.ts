@@ -87,20 +87,14 @@ const truncatePublic = async (db: Client) => {
     }
 };
 
-const runSeedScript = (startDate?: string) => {
+const runSeedScript = () => {
     // The seed creates the staff assignments in one transaction with
     // Prisma's 5 s limit, which a slow database can overrun; try again
     for (let attempt = 1; ; attempt++) {
         try {
             execFileSync("npx", ["ts-node", "prisma/seed/seed-test.ts"], {
                 cwd: BACKEND_DIR,
-                env: {
-                    ...process.env,
-                    ...backendEnv,
-                    ...(startDate && {
-                        SEED_COMPETITION_START_DATE: startDate,
-                    }),
-                },
+                env: { ...process.env, ...backendEnv },
                 stdio: "pipe",
             });
             return;
@@ -137,14 +131,11 @@ const addRoleUsers = async (db: Client) => {
  * Wipe every table, load the backend test seed (admin/admin + the seed WCIF),
  * add one account per role with fixed ids (so tokens signed in global setup
  * stay valid) and keep a copy of the result for resetDatabase.
- *
- * The seeded competition starts today; pass a "YYYY-MM-DD" startDate to pin
- * it to a fixed date instead. resetDatabase then restores that seed too.
  */
-export const seedDatabase = async (startDate?: string) => {
+export const seedDatabase = async () => {
     assertTestDatabase();
     await withDb(truncatePublic);
-    runSeedScript(startDate);
+    runSeedScript();
     await withDb(async (db) => {
         await addRoleUsers(db);
         await db.query(`DROP SCHEMA IF EXISTS ${SNAPSHOT_SCHEMA} CASCADE`);

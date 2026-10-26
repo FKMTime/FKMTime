@@ -7,7 +7,7 @@ import {
     getPersonByRegistrantId,
     getResult,
     setCurrentGroups,
-    STAGE_ONE,
+    MAIN_HALL,
 } from "../helpers/api";
 import { confirm, expectToast } from "../helpers/ui";
 
@@ -23,7 +23,7 @@ test.describe("quick attempt entry", () => {
         page,
         api,
     }) => {
-        await setCurrentGroups(api, { [STAGE_ONE]: ["222-r1-g1"] });
+        await setCurrentGroups(api, { [MAIN_HALL]: ["222-r1-g1"] });
         const person = await getPersonByRegistrantId(api, 1);
         await page.goto("/");
         await page
@@ -139,8 +139,8 @@ test.describe("double check", () => {
         // Clock R1 has a cutoff: two attempts over it complete the result
         const first = await getPersonByRegistrantId(api, 3);
         const second = await getPersonByRegistrantId(api, 4);
-        await createAttempts(api, "clock-r1", first.id, [1500, 1600]);
-        await createAttempts(api, "clock-r1", second.id, [1700, 1800]);
+        await createAttempts(api, "clock-r1", first.id, [2500, 2600]);
+        await createAttempts(api, "clock-r1", second.id, [2700, 2800]);
 
         await page.goto("/results/round/clock-r1");
         await page.getByRole("link", { name: "Double check" }).click();
@@ -197,12 +197,13 @@ test.describe("double check", () => {
         api,
     }) => {
         const person = await getPersonByRegistrantId(api, 9);
-        // Attempt 1 got an extra, which replaced it; attempt 2 is normal
+        // Attempt 1 got an extra, which replaced it; attempt 2 is normal. All
+        // are over the 20.00 cutoff, so two attempts complete the scorecard
         await createAttempt(api, {
             roundId: "clock-r1",
             competitorId: person.id,
             attemptNumber: 1,
-            value: 1900,
+            value: 2900,
             status: "EXTRA_GIVEN",
             replacedBy: 1,
         });
@@ -210,14 +211,14 @@ test.describe("double check", () => {
             roundId: "clock-r1",
             competitorId: person.id,
             attemptNumber: 1,
-            value: 1950,
+            value: 2950,
             type: "EXTRA_ATTEMPT",
         });
         await createAttempt(api, {
             roundId: "clock-r1",
             competitorId: person.id,
             attemptNumber: 2,
-            value: 2000,
+            value: 3000,
         });
 
         await page.goto("/results/round/clock-r1/double-check");
@@ -284,7 +285,7 @@ test.describe("results checks", () => {
     });
 
     test("says so when nothing is suspicious", async ({ page }) => {
-        await page.goto("/results/checks/minx-r3");
+        await page.goto("/results/checks/333-r3");
         await expect(
             page.getByText("No suspicious results found.")
         ).toBeVisible();

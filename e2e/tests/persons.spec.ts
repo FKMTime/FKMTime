@@ -5,6 +5,7 @@ import {
     addPerson,
     assignCard,
     createAttempt,
+    getAllPersons,
     getPersonByRegistrantId,
 } from "../helpers/api";
 import { storageStatePath } from "../helpers/users";
@@ -27,11 +28,12 @@ const openRowMenu = async (page: Page, name: string) => {
 test.describe("persons list as a delegate", () => {
     signedInAs("delegate");
 
-    test("lists, paginates and resizes pages", async ({ page }) => {
+    test("lists, paginates and resizes pages", async ({ page, api }) => {
+        const total = (await getAllPersons(api)).length;
         await page.goto("/persons");
-        await expect(page.getByText("25 persons")).toBeVisible();
+        await expect(page.getByText(`${total} persons`)).toBeVisible();
         await expect(
-            page.getByRole("tab", { name: "All persons 25" })
+            page.getByRole("tab", { name: `All persons ${total}` })
         ).toBeVisible();
         // header row + 10 people
         await expect(personsTable(page).getByRole("row")).toHaveCount(11);
@@ -39,11 +41,15 @@ test.describe("persons list as a delegate", () => {
         await page.getByRole("button", { name: "Next page" }).click();
         await expect(personsTable(page).getByRole("row")).toHaveCount(11);
         await page.getByRole("button", { name: "Last page" }).click();
-        await expect(personsTable(page).getByRole("row")).toHaveCount(6);
+        await expect(personsTable(page).getByRole("row")).toHaveCount(
+            (total % 10 || 10) + 1
+        );
 
         await page.getByRole("combobox", { name: "Persons per page" }).click();
         await page.getByRole("option", { name: "50 per page" }).click();
-        await expect(personsTable(page).getByRole("row")).toHaveCount(26);
+        await expect(personsTable(page).getByRole("row")).toHaveCount(
+            Math.min(total, 50) + 1
+        );
     });
 
     test("searches by name and WCA ID and filters by registrant ID", async ({
@@ -104,7 +110,8 @@ test.describe("persons list as a delegate", () => {
         await page.getByRole("button", { name: "Newcomers" }).click();
 
         await page.getByRole("button", { name: "Not checked in" }).click();
-        await expect(page.getByText("25 persons")).toBeVisible();
+        const total = (await getAllPersons(api)).length;
+        await expect(page.getByText(`${total} persons`)).toBeVisible();
     });
 
     test("adds a staff member", async ({ page }) => {

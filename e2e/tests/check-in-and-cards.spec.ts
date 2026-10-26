@@ -3,6 +3,7 @@ import {
     addPerson,
     assignCard,
     checkIn,
+    getAllPersons,
     getPersonByRegistrantId,
 } from "../helpers/api";
 import { toast } from "../helpers/ui";
@@ -17,8 +18,9 @@ test.describe("check-in desk", () => {
     }) => {
         const person = await getPersonByRegistrantId(api, 1);
         await assignCard(api, person.id, "e2e-checkin-scan");
+        const total = (await getAllPersons(api)).length;
         await page.goto("/check-in");
-        await expect(page.getByText("25 to go")).toBeVisible();
+        await expect(page.getByText(`${total} to go`)).toBeVisible();
 
         await page
             .getByRole("textbox", { name: "Scan the competitor's card" })
@@ -33,7 +35,7 @@ test.describe("check-in desk", () => {
             .click();
 
         await expect(toast(page, `${person.name} checked in`)).toBeVisible();
-        await expect(page.getByText("24 to go")).toBeVisible();
+        await expect(page.getByText(`${total - 1} to go`)).toBeVisible();
         await expect(page.getByText("Just checked in")).toBeVisible();
 
         // Scanning the same card again explains they are already here

@@ -20,8 +20,8 @@ describe('Device management (e2e)', () => {
   let db: DbService;
   let adminToken: string;
   let organizer: TestUser;
-  let stage1: Room;
-  let stage2: Room;
+  let mainHall: Room;
+  let sideHall: Room;
   let stationId: string;
   let resultId: string;
 
@@ -32,7 +32,7 @@ describe('Device management (e2e)', () => {
     name: `${PREFIX}station-a`,
     espId: 98001,
     signKey: 98101,
-    roomId: stage1.id,
+    roomId: mainHall.id,
     type: DeviceType.STATION,
     hwVersion: HardwareVersion.V4,
     ...overrides,
@@ -46,8 +46,8 @@ describe('Device management (e2e)', () => {
     organizer = await createUserWithRoles(app, db, `organizer-${SUFFIX}`, [
       Role.ORGANIZER,
     ]);
-    stage1 = await db.room.findFirst({ where: { name: 'Stage 1' } });
-    stage2 = await db.room.findFirst({ where: { name: 'Stage  2' } });
+    mainHall = await db.room.findFirst({ where: { name: 'Main Hall' } });
+    sideHall = await db.room.findFirst({ where: { name: 'Side Hall' } });
   }, 30000);
 
   afterAll(async () => {
@@ -71,7 +71,7 @@ describe('Device management (e2e)', () => {
         espId: 98001,
         type: DeviceType.STATION,
         hwVersion: HardwareVersion.V4,
-        room: { id: stage1.id, name: 'Stage 1' },
+        room: { id: mainHall.id, name: 'Main Hall' },
         count: 0,
       });
       stationId = res.body.id;
@@ -81,7 +81,7 @@ describe('Device management (e2e)', () => {
           where: { id: stationId },
           omit: { signKey: false },
         }),
-      ).toMatchObject({ roomId: stage1.id, signKey: 98101 });
+      ).toMatchObject({ roomId: mainHall.id, signKey: 98101 });
     });
 
     it('registers an attendance device in another room', async () => {
@@ -91,7 +91,7 @@ describe('Device management (e2e)', () => {
             name: `${PREFIX}attendance-b`,
             espId: 98002,
             signKey: 98102,
-            roomId: stage2.id,
+            roomId: sideHall.id,
             type: DeviceType.ATTENDANCE_SCRAMBLER,
           }),
         )
@@ -130,14 +130,14 @@ describe('Device management (e2e)', () => {
   describe('GET /device', () => {
     it('filters by room', async () => {
       const res = await asOrganizer(
-        request(server()).get(`/device?roomId=${stage2.id}`),
+        request(server()).get(`/device?roomId=${sideHall.id}`),
       ).expect(200);
 
       const names = res.body.map((d: { name: string }) => d.name);
       expect(names).toContain(`${PREFIX}attendance-b`);
       expect(names).not.toContain(`${PREFIX}station-a`);
       res.body.forEach((d: { roomId: string }) =>
-        expect(d.roomId).toBe(stage2.id),
+        expect(d.roomId).toBe(sideHall.id),
       );
     });
 
@@ -193,7 +193,7 @@ describe('Device management (e2e)', () => {
       )
         .send(
           device({
-            roomId: stage2.id,
+            roomId: sideHall.id,
             type: DeviceType.ATTENDANCE_RUNNER,
             hwVersion: HardwareVersion.V3,
           }),
@@ -204,7 +204,7 @@ describe('Device management (e2e)', () => {
       expect(
         await db.device.findUnique({ where: { id: stationId } }),
       ).toMatchObject({
-        roomId: stage2.id,
+        roomId: sideHall.id,
         type: DeviceType.ATTENDANCE_RUNNER,
         hwVersion: HardwareVersion.V3,
       });
@@ -233,7 +233,7 @@ describe('Device management (e2e)', () => {
           name: `${PREFIX}to-delete`,
           espId: 98006,
           type: DeviceType.STATION,
-          roomId: stage1.id,
+          roomId: mainHall.id,
         },
       });
 

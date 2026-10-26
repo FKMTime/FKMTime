@@ -8,11 +8,9 @@ import {
   SendingResultsFrequency,
 } from '@prisma/client';
 import { Activity, Assignment, Competition, Person } from '@wca/helpers';
-import * as fs from 'fs';
 import { sha512 } from 'js-sha512';
 
 import { wcifRoleToAttendanceRole } from '../../src/wcif-helpers';
-import { localDate, shiftWcifDates } from './shift-wcif-dates';
 
 const prisma = new PrismaClient({
   adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL }),
@@ -38,15 +36,49 @@ const getGroupInfoByActivityId = (activityId: number, wcif: Competition) => {
   return groupInfo as Activity | null;
 };
 
+/** What the dummy WCA says about the competition it generates */
+interface GeneratedCompetition {
+  id: string;
+  countryIso2: string;
+  startDate: string;
+  accounts: { delegate: { token: string } };
+}
+
+const fetchFromWca = async <T>(path: string, token?: string): Promise<T> => {
+  const url = `${process.env.WCA_ORIGIN}${path}`;
+  let response: Response;
+  try {
+    response = await fetch(url, {
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    });
+  } catch (error) {
+    throw new Error(
+      `Could not reach the dummy WCA at ${url}; is it running and WCA_ORIGIN set? (${error})`,
+    );
+  }
+  if (!response.ok) {
+    throw new Error(`The dummy WCA answered ${response.status} for ${url}`);
+  }
+  return (await response.json()) as T;
+};
+
 /**
- * Seed the test competition so it starts on `startDate` ("YYYY-MM-DD"),
- * today by default, so a fresh test stack shows a competition in progress.
- * Pass the WCIF's own date (2024-05-24), or set SEED_COMPETITION_START_DATE,
- * to keep the original schedule.
+ * Seed the competition the dummy WCA generates, the way an import from the
+ * WCA would. It starts on the day the dummy WCA started (pin it with
+ * GENERATED_START_DATE there), so a fresh test stack shows a competition in
+ * progress, and WCA sign-in and sync see the same competition.
  */
-export async function seedDb({
-  startDate = process.env.SEED_COMPETITION_START_DATE || localDate(),
-}: { startDate?: string } = {}) {
+export async function seedDb() {
+  const generated =
+    await fetchFromWca<GeneratedCompetition>('/dummy/generated');
+  const wcifPath = `/api/v0/competitions/${generated.id}/wcif/version/2`;
+  const wcifPublic = await fetchFromWca<Competition>(wcifPath);
+  // The private WCIF has registration status and birthdates
+  const wcif = await fetchFromWca<Competition>(
+    wcifPath,
+    generated.accounts.delegate.token,
+  );
+
   const adminPassword = sha512('admin');
   await prisma.user.deleteMany();
   await prisma.competition.deleteMany();
@@ -62,36 +94,42 @@ export async function seedDb({
       password: adminPassword,
     },
   });
-  const wcifFile = fs.readFileSync('./prisma/seed/wcif.json', 'utf8');
-  const wcifJson: Competition = shiftWcifDates(JSON.parse(wcifFile), startDate);
   await prisma.competition.create({
     data: {
-      name: wcifJson.name,
+      name: wcifPublic.name,
       sendingResultsFrequency: SendingResultsFrequency.AFTER_SOLVE,
-      wcaId: wcifJson.id,
-      countryIso2: 'PL',
+      wcaId: wcifPublic.id,
+      countryIso2: generated.countryIso2,
       shouldUpdateDevices: true,
       wifiSsid: 'FKM',
       wifiPassword: 'FKM',
       scoretakingToken: 'wca-live-token',
       scoretakingTokenUpdatedAt: new Date(),
-      wcif: wcifJson as unknown as Prisma.InputJsonValue,
+      wcif: wcifPublic as unknown as Prisma.InputJsonValue,
       fkmToken: 69420,
     },
   });
   await prisma.person.createMany({
-    data: wcifJson.persons.map((person: Person) => ({
-      wcaId: person.wcaId,
-      name: person.name,
-      registrantId: person.registrantId,
-      gender: person.gender,
-      countryIso2: person.countryIso2,
-      canCompete: person.registration && person.registration.isCompeting,
-    })),
+    data: wcif.persons
+      .filter(
+        (person: Person) =>
+          person.registrantId && person.registration?.status === 'accepted',
+      )
+      .map((person: Person) => ({
+        wcaId: person.wcaId,
+        name: person.name,
+        registrantId: person.registrantId,
+        gender: person.gender,
+        countryIso2: person.countryIso2,
+        canCompete: person.registration.isCompeting,
+        birthdate: person.wcaId
+          ? null
+          : person.birthdate && new Date(person.birthdate),
+      })),
   });
   const rooms = [];
 
-  for (const venue of wcifJson.schedule.venues) {
+  for (const venue of wcifPublic.schedule.venues) {
     for (const room of venue.rooms) {
       rooms.push({
         name: room.name,
@@ -99,32 +137,33 @@ export async function seedDb({
       });
     }
   }
-  const staffActivitiesTransactions = [];
-
-  wcifJson.persons.forEach((person: Person) => {
-    person.assignments.forEach((assignment: Assignment) => {
-      const group = getGroupInfoByActivityId(assignment.activityId, wcifJson);
-      staffActivitiesTransactions.push(
-        prisma.staffActivity.create({
-          data: {
-            person: {
-              connect: {
-                registrantId: person.registrantId,
-              },
-            },
-            role: wcifRoleToAttendanceRole(assignment.assignmentCode),
-            groupId: group.activityCode,
-            isAssigned: true,
-          },
-        }),
-      );
+  const personIds = new Map(
+    (await prisma.person.findMany()).map((p) => [p.registrantId, p.id]),
+  );
+  const staffActivities = [];
+  wcifPublic.persons
+    .filter((person: Person) => personIds.has(person.registrantId))
+    .forEach((person: Person) => {
+      person.assignments.forEach((assignment: Assignment) => {
+        const group = getGroupInfoByActivityId(
+          assignment.activityId,
+          wcifPublic,
+        );
+        staffActivities.push({
+          personId: personIds.get(person.registrantId),
+          role: wcifRoleToAttendanceRole(assignment.assignmentCode),
+          groupId: group.activityCode,
+          isAssigned: true,
+        });
+      });
     });
-  });
-  await prisma.$transaction(staffActivitiesTransactions);
+  await prisma.staffActivity.createMany({ data: staffActivities });
   await prisma.room.createMany({
     data: rooms,
   });
-  console.log(`Test database seeded, competition starts on ${startDate}`);
+  console.log(
+    `Test database seeded with ${wcifPublic.id}, starting on ${generated.startDate}`,
+  );
 }
 // Seed when run as a script; importing seedDb runs nothing
 if (require.main === module) {

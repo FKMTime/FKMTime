@@ -1,49 +1,24 @@
-import { readFileSync } from "node:fs";
-import * as path from "node:path";
-
 import { expect, Page, request } from "@playwright/test";
 
-import { BACKEND_DIR, WCA_ORIGIN } from "../env";
-import { withDb } from "./db";
-
-/**
- * The id the dummy WCA knows the seeded competition by: the one in
- * wcif.json. The seed moves the year in the id to the year it runs in.
- */
-export const DUMMY_WCA_COMPETITION_ID: string = JSON.parse(
-    readFileSync(path.join(BACKEND_DIR, "prisma/seed/wcif.json"), "utf8")
-).id;
-
-/**
- * Give the seeded competition the id the dummy WCA knows, so WCA sign-in
- * finds it among the user's competitions; returns a function that restores
- * the seeded id
- */
-export const useDummyWcaCompetitionId = async () => {
-    const seededId = await withDb(
-        async (db) =>
-            (
-                await db.query<{ wca_id: string }>(
-                    "SELECT wca_id FROM competition"
-                )
-            ).rows[0].wca_id
-    );
-    await withDb((db) =>
-        db.query("UPDATE competition SET wca_id = $1", [
-            DUMMY_WCA_COMPETITION_ID,
-        ])
-    );
-    return () =>
-        withDb((db) =>
-            db.query("UPDATE competition SET wca_id = $1", [seededId])
-        );
-};
+import { WCA_ORIGIN } from "../env";
 
 interface WcaCompetition {
     id: string;
     name: string;
     delegates: { wca_id: string | null }[];
 }
+
+/** The competition the dummy WCA generates, which the test seed loads */
+export const getGeneratedCompetitionId = async () => {
+    const wca = await request.newContext();
+    try {
+        const response = await wca.get(`${WCA_ORIGIN}/dummy/generated`);
+        expect(response.ok()).toBeTruthy();
+        return ((await response.json()) as { id: string }).id;
+    } finally {
+        await wca.dispose();
+    }
+};
 
 export const getWcaCompetition = async (competitionId: string) => {
     const wca = await request.newContext();

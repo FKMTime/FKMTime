@@ -14,6 +14,11 @@ import { getTranslation } from 'src/translations/translations';
 import * as request from 'supertest';
 
 import { createTestApp } from './helpers/app.helper';
+import {
+  seededPersonPicker,
+  WcifLike,
+  WcifPerson,
+} from './helpers/seed.helper';
 import { StationFixtures } from './helpers/station-fixtures.helper';
 import {
   startStationSocketServer,
@@ -101,7 +106,7 @@ describe('Station socket protocol (e2e)', () => {
 
     const roomA = await fixtures.createRoom('room-a', ['333-r1-g1']);
     const roomB = await fixtures.createRoom('room-b', [
-      '222-r1-g1',
+      'skewb-r1-g1',
       'clock-r1-g1',
       '333bf-r1-g1',
     ]);
@@ -132,13 +137,38 @@ describe('Station socket protocol (e2e)', () => {
     );
     await fixtures.createDevice('station-att', ESP.stationAttendance, roomB.id);
 
-    c1 = await fixtures.giveCard(20, CARD.c1);
-    c2 = await fixtures.giveCard(21, CARD.c2);
-    c3 = await fixtures.giveCard(24, CARD.c3);
-    c4 = await fixtures.giveCard(19, CARD.c4);
-    judge = await fixtures.giveCard(25, CARD.judge);
-    foreignJudge = await fixtures.giveCard(22, CARD.foreignJudge);
-    await fixtures.giveCard(16, CARD.notRegistered);
+    // Pick seeded people by what each test needs from them
+    const competition = await db.competition.findFirst();
+    const pick = seededPersonPicker(competition.wcif as unknown as WcifLike);
+    const registeredFor =
+      (...eventIds: string[]) =>
+      (p: WcifPerson) =>
+        eventIds.every((id) => p.registration.eventIds.includes(id));
+    c1 = await fixtures.giveCard(
+      pick('in room B events', registeredFor('333', 'skewb', 'clock', '333bf')),
+      CARD.c1,
+    );
+    c2 = await fixtures.giveCard(
+      pick('in 333 and clock', registeredFor('333', 'clock')),
+      CARD.c2,
+    );
+    c3 = await fixtures.giveCard(pick('in 333', registeredFor('333')), CARD.c3);
+    c4 = await fixtures.giveCard(pick('in 333', registeredFor('333')), CARD.c4);
+    judge = await fixtures.giveCard(
+      pick(
+        'from the host country',
+        (p) => p.countryIso2 === competition.countryIso2,
+      ),
+      CARD.judge,
+    );
+    foreignJudge = await fixtures.giveCard(
+      pick('from abroad', (p) => p.countryIso2 !== competition.countryIso2),
+      CARD.foreignJudge,
+    );
+    await fixtures.giveCard(
+      pick('not in skewb', (p) => !registeredFor('skewb')(p)),
+      CARD.notRegistered,
+    );
 
     station = await StationClient.connect(stationServer.path);
   }, 30000);
@@ -316,7 +346,7 @@ describe('Station socket protocol (e2e)', () => {
       expect(res.type).toBe('PersonInfoResp');
       expect(res.data).toMatchObject({
         id: c1.id,
-        registrantId: 20,
+        registrantId: c1.registrantId,
         cardId: CARD.c1.toString(),
       });
       expect(res.data.possibleGroups).toEqual([
@@ -341,7 +371,7 @@ describe('Station socket protocol (e2e)', () => {
       expect(res.type).toBe('PersonInfoResp');
       const groups = res.data.possibleGroups.map((g: any) => g.groupId);
       expect(groups.sort()).toEqual(
-        ['222-r1-g1', '333bf-r1-g1', 'clock-r1-g1'].sort(),
+        ['skewb-r1-g1', '333bf-r1-g1', 'clock-r1-g1'].sort(),
       );
       // V3 hardware gets the long event name in both lines
       const bld = res.data.possibleGroups.find(
@@ -631,14 +661,14 @@ describe('Station socket protocol (e2e)', () => {
 
       it('rejects a competitor not registered for the event', async () => {
         const notRegistered = await db.person.findFirst({
-          where: { registrantId: 16 },
+          where: { cardId: CARD.notRegistered.toString() },
         });
         const res = await station.request(
           'EnterAttempt',
           attempt({
             espId: ESP.stationB,
             competitorId: CARD.notRegistered,
-            groupId: '222-r1-g1',
+            groupId: 'skewb-r1-g1',
           }),
         );
 
@@ -650,7 +680,7 @@ describe('Station socket protocol (e2e)', () => {
         );
         expect(
           await db.result.findFirst({
-            where: { personId: notRegistered.id, roundId: '222-r1' },
+            where: { personId: notRegistered.id, roundId: 'skewb-r1' },
           }),
         ).toBeNull();
       });
@@ -685,13 +715,13 @@ describe('Station socket protocol (e2e)', () => {
         attempt({
           espId: ESP.stationB,
           competitorId: CARD.c1,
-          groupId: '222-r1-g1',
+          groupId: 'skewb-r1-g1',
           value: 456,
         }),
       );
 
       expect(res.data.status).toBe(200);
-      const attempts = await attemptsOf(c1.id, '222-r1');
+      const attempts = await attemptsOf(c1.id, 'skewb-r1');
       expect(attempts).toHaveLength(1);
       expect(attempts[0].value).toBe(456);
     });
@@ -748,13 +778,13 @@ describe('Station socket protocol (e2e)', () => {
           value,
         });
 
-      // clock-r1: cutoff 12.00 after 2 attempts
-      await station.request('EnterAttempt', clock(1500));
-      const second = await station.request('EnterAttempt', clock(1600));
+      // clock-r1: cutoff 20.00 after 2 attempts
+      await station.request('EnterAttempt', clock(2500));
+      const second = await station.request('EnterAttempt', clock(2600));
       const third = await station.request('EnterAttempt', clock(1000));
 
       expect(second.data.message).toBe(
-        `Best: 15.00 ${getTranslation('attemptEntered', 'pl')}`,
+        `Best: 25.00 ${getTranslation('attemptEntered', 'pl')}`,
       );
       expect(third).toEqual(
         errorResponse(getTranslation('cutoffNotPassed', 'pl'), 400),
@@ -1022,7 +1052,7 @@ describe('Station socket protocol (e2e)', () => {
         expect(res.data.message).toBe(
           getTranslation('attendanceConfirmed', judge.countryIso2),
         );
-        for (const groupId of ['222-r1-g1', 'clock-r1-g1', '333bf-r1-g1']) {
+        for (const groupId of ['skewb-r1-g1', 'clock-r1-g1', '333bf-r1-g1']) {
           const row = await activity(judge.id, groupId, role);
           expect(row.status).toBe(StaffActivityStatus.PRESENT);
           expect(row.deviceId).toEqual(expect.any(String));
@@ -1110,14 +1140,14 @@ describe('Station socket protocol (e2e)', () => {
       await request(app.getHttpServer())
         .put('/competition/rooms')
         .set('Authorization', `Bearer ${adminToken}`)
-        .send({ rooms: [{ id: roomBId, currentGroupIds: ['222-r1-g1'] }] })
+        .send({ rooms: [{ id: roomBId, currentGroupIds: ['skewb-r1-g1'] }] })
         .expect(200);
 
       const status = await station.waitForType('ServerStatus');
       expect(status.data.devices).toEqual(expect.any(Array));
       expect(
         (await db.room.findUnique({ where: { id: roomBId } })).currentGroupIds,
-      ).toEqual(['222-r1-g1']);
+      ).toEqual(['skewb-r1-g1']);
     });
 
     it('sends uploaded firmware to every connected station', async () => {

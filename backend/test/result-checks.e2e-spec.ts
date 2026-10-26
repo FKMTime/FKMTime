@@ -6,8 +6,6 @@ import {
   StaffActivityStatus,
   StaffRole,
 } from '@prisma/client';
-import * as fs from 'fs';
-import * as path from 'path';
 import { DbService } from 'src/db/db.service';
 import * as request from 'supertest';
 
@@ -113,7 +111,7 @@ describe('Result checks, double check and submission (e2e)', () => {
     }
   }, 30000);
 
-  describe('double check (Mo3 with a one-attempt cutoff of 3:00)', () => {
+  describe('double check (Mo3 with a one-attempt cutoff of 5:00)', () => {
     const ROUND_ID = '666-r1';
     let overCutoff: any;
     let underCutoff: any;
@@ -123,7 +121,7 @@ describe('Result checks, double check and submission (e2e)', () => {
     let extraPending: any;
 
     beforeAll(async () => {
-      overCutoff = await createResult(persons[0], ROUND_ID, [{ value: 20000 }]);
+      overCutoff = await createResult(persons[0], ROUND_ID, [{ value: 32000 }]);
       underCutoff = await createResult(persons[1], ROUND_ID, [
         { value: 15000 },
       ]);
@@ -270,10 +268,12 @@ describe('Result checks, double check and submission (e2e)', () => {
   });
 
   describe('GET /result/round/:roundId/missing-persons', () => {
-    const wcif = JSON.parse(
-      fs.readFileSync(path.join(__dirname, '../prisma/seed/wcif.json'), 'utf8'),
-    );
+    let wcif: any;
     let seedPerson: Person;
+
+    beforeAll(async () => {
+      wcif = (await db.competition.findFirst()).wcif;
+    });
 
     afterEach(async () => {
       if (seedPerson) {
@@ -317,7 +317,7 @@ describe('Result checks, double check and submission (e2e)', () => {
       for (const venue of wcif.schedule.venues)
         for (const room of venue.rooms)
           for (const activity of room.activities)
-            if (activity.activityCode === 'minx-r2')
+            if (activity.activityCode === '333-r2')
               activity.childActivities.forEach((c: any) => groupIds.add(c.id));
       const assigned = wcif.persons
         .filter((p: any) =>
@@ -328,15 +328,16 @@ describe('Result checks, double check and submission (e2e)', () => {
         )
         .map((p: any) => p.registrantId)
         .sort((a: number, b: number) => a - b);
+      expect(assigned.length).toBeGreaterThan(0);
       const withResults = (
         await db.result.findMany({
-          where: { roundId: 'minx-r2' },
+          where: { roundId: '333-r2' },
           include: { person: true },
         })
       ).map((r) => r.person.registrantId);
 
       const res = await request(server())
-        .get('/result/round/minx-r2/missing-persons')
+        .get('/result/round/333-r2/missing-persons')
         .set(auth(delegate))
         .expect(200);
 

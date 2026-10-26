@@ -2,11 +2,7 @@ import { expect, freshDatabase, test } from "../fixtures";
 import { createUserInDb } from "../helpers/db";
 import { signInAs } from "../helpers/session";
 import { expectToast } from "../helpers/ui";
-import {
-    DUMMY_WCA_COMPETITION_ID,
-    signInWithWca,
-    useDummyWcaCompetitionId,
-} from "../helpers/wca";
+import { getGeneratedCompetitionId, signInWithWca } from "../helpers/wca";
 
 freshDatabase();
 
@@ -207,19 +203,9 @@ test.describe("Signed-in account", () => {
 });
 
 test.describe("WCA sign in", () => {
-    let restoreCompetitionId: () => Promise<unknown>;
-
-    test.beforeAll(async () => {
-        restoreCompetitionId = await useDummyWcaCompetitionId();
-    });
-
-    test.afterAll(async () => {
-        await restoreCompetitionId();
-    });
-
     test("signs in through the WCA OAuth flow", async ({ page }) => {
         // A dummy WCA account that delegates the seeded competition
-        await signInWithWca(page, DUMMY_WCA_COMPETITION_ID);
+        await signInWithWca(page, await getGeneratedCompetitionId());
 
         await expect(page).toHaveURL(/localhost:\d+\/$/);
         await expect(

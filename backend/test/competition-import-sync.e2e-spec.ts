@@ -14,14 +14,9 @@ import { DbService } from 'src/db/db.service';
 import * as request from 'supertest';
 
 import { createTestApp } from './helpers/app.helper';
+import { getGeneratedCompetition } from './helpers/dummy-wca.helper';
 import { listenOnLoopback } from './helpers/loopback.helper';
 
-/** A competition the dummy WCA serves a v2 WCIF for */
-const IMPORTED_WCA_ID = 'CubeFactoryLeagueZgierz2026';
-/** Dummy WCA user who is a delegate of IMPORTED_WCA_ID */
-const DELEGATE_CODE = 'code-2013ROGA02';
-/** Dummy WCA user who neither organizes nor delegates IMPORTED_WCA_ID */
-const OUTSIDER_CODE = 'code-2013KOSK01';
 const REDIRECT_URI = 'http://localhost:5173/auth/login';
 
 interface WcifPerson {
@@ -59,6 +54,12 @@ describe('Competition import & sync from WCA (e2e)', () => {
   let adminToken: string;
   let snapshot: Snapshot;
   let wcif: Wcif;
+  /** The competition the dummy WCA generates (the seeded one) */
+  let IMPORTED_WCA_ID: string;
+  /** Dummy WCA user who is a delegate of IMPORTED_WCA_ID */
+  let DELEGATE_CODE: string;
+  /** Dummy WCA user who neither organizes nor delegates IMPORTED_WCA_ID */
+  let OUTSIDER_CODE: string;
 
   const server = () => app.getHttpServer();
   const acceptedPersons = () =>
@@ -134,6 +135,10 @@ describe('Competition import & sync from WCA (e2e)', () => {
       rooms: await db.room.findMany(),
       unofficialEvents: await db.unofficialEvent.findMany(),
     };
+    const generated = await getGeneratedCompetition();
+    IMPORTED_WCA_ID = generated.id;
+    DELEGATE_CODE = generated.accounts.delegate.code;
+    OUTSIDER_CODE = generated.accounts.outsider.code;
     const response = await fetch(
       `${process.env.WCA_ORIGIN}/api/v0/competitions/${IMPORTED_WCA_ID}/wcif/version/2`,
     );
