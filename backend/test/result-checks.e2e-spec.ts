@@ -654,7 +654,7 @@ describe('Result checks, double check and submission (e2e)', () => {
       expect(res.body).toEqual({ message: 'Scorecard submitted' });
       expect(stub.submissions).toHaveLength(1);
       expect(stub.submissions[0]).toEqual({
-        competitionWcaId: 'SLSFinal2024',
+        competitionWcaId: (await db.competition.findFirst()).wcaId,
         eventId: '222',
         roundNumber: 1,
         results: [

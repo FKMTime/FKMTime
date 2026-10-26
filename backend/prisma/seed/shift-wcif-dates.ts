@@ -61,11 +61,16 @@ const shiftByDays = (iso: string, days: number, timezone: string) => {
   return new Date(shifted).toISOString().replace('.000Z', 'Z');
 };
 
+/** Replace the year where it stands alone ("Open 2024", "Open2024", not "20245") */
+const replaceYear = (text: string, from: string, to: string) =>
+  text?.replace(new RegExp(`(?<!\\d)${from}(?!\\d)`, 'g'), to);
+
 /**
  * A copy of the WCIF moved so the competition starts on `startDate`
  * ("YYYY-MM-DD"): the schedule start, every activity and child activity, and
  * the registration window all move by the same number of days. Times of day
- * stay the same in each venue's timezone.
+ * stay the same in each venue's timezone. When the year changes, the year in
+ * the competition id, name and short name follows it.
  */
 export const shiftWcifDates = (
   wcif: Competition,
@@ -84,6 +89,14 @@ export const shiftWcifDates = (
       shiftActivity(child, timezone),
     );
   };
+
+  const fromYear = wcif.schedule.startDate.slice(0, 4);
+  const toYear = startDate.slice(0, 4);
+  if (fromYear !== toYear) {
+    shifted.id = replaceYear(shifted.id, fromYear, toYear);
+    shifted.name = replaceYear(shifted.name, fromYear, toYear);
+    shifted.shortName = replaceYear(shifted.shortName, fromYear, toYear);
+  }
 
   shifted.schedule.startDate = startDate;
   shifted.schedule.venues.forEach((venue) =>

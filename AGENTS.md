@@ -64,8 +64,10 @@ cd backend && npx prisma db push && npm run prisma:seed-test && npm run test:e2e
 ```
 
 The test seed moves the competition so it starts on the day you seed, which
-keeps its schedule "live". Tests that need dates read them from the seeded
-WCIF. To keep the WCIF's own dates, set
+keeps its schedule "live"; the year in its id and name moves with it. Tests
+that need dates or the id read them from the seeded competition. The dummy
+WCA still knows it by the id in `wcif.json`, so WCA sign-in tests switch to
+that id while they run. To keep the WCIF's own dates and id, set
 `SEED_COMPETITION_START_DATE=2024-05-24` (any `YYYY-MM-DD` works).
 
 Browser e2e tests (Playwright) start the backend and frontend themselves and

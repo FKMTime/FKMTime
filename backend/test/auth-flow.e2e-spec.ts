@@ -6,6 +6,7 @@ import { DbService } from 'src/db/db.service';
 import * as request from 'supertest';
 
 import { createTestApp } from './helpers/app.helper';
+import { useDummyWcaCompetitionId } from './helpers/dummy-wca.helper';
 import { listenOnLoopback } from './helpers/loopback.helper';
 import {
   createUserWithRoles,
@@ -153,6 +154,7 @@ describe('Auth flows (e2e)', () => {
   describe('WCA login', () => {
     let app: INestApplication;
     let db: DbService;
+    let restoreCompetitionId: () => Promise<void>;
 
     const cleanUp = () =>
       db.user.deleteMany({
@@ -165,9 +167,11 @@ describe('Auth flows (e2e)', () => {
       ({ app, db } = await createTestApp());
       await listenOnLoopback(app);
       await cleanUp();
+      restoreCompetitionId = await useDummyWcaCompetitionId(db);
     }, 30000);
 
     afterAll(async () => {
+      await restoreCompetitionId();
       await cleanUp();
       await app.close();
     }, 30000);

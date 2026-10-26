@@ -1,7 +1,5 @@
 import { INestApplication } from '@nestjs/common';
 import { Person, StaffRole } from '@prisma/client';
-import * as fs from 'fs';
-import * as path from 'path';
 import { DbService } from 'src/db/db.service';
 import * as request from 'supertest';
 
@@ -563,15 +561,17 @@ describe('Person check-in and card assignment (e2e)', () => {
     const TO_GROUP = '333-r1-g2';
     const TO_ACTIVITY_ID = 23;
     const FROM_ACTIVITY_ID = 22;
-    const wcif = JSON.parse(
-      fs.readFileSync(path.join(__dirname, '../prisma/seed/wcif.json'), 'utf8'),
-    );
+    // The WCA holds the WCIF of the competition FKMTime runs: the seeded one
+    let wcif: { id: string };
     let movedPerson: Person;
     let activityId: string;
     let patchStatus = 200;
     let stub: ReturnType<typeof stubExternalApis>;
 
     beforeAll(async () => {
+      wcif = (await db.competition.findFirst()).wcif as unknown as {
+        id: string;
+      };
       const candidates = await db.staffActivity.findMany({
         where: { groupId: FROM_GROUP, role: StaffRole.COMPETITOR },
         include: { person: { include: { StaffActivity: true } } },

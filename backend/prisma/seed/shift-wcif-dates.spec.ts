@@ -7,6 +7,7 @@ const buildWcif = () =>
   ({
     id: 'ExampleOpen2024',
     name: 'Example Open 2024',
+    shortName: 'Example 2024',
     registrationInfo: {
       openTime: '2024-04-01T10:00:00Z',
       closeTime: '2024-05-01T00:00:00Z',
@@ -104,11 +105,32 @@ describe('shiftWcifDates', () => {
     expect(shifted.registrationInfo.closeTime).toBe('2026-05-20T00:00:00Z');
   });
 
-  it('keeps the names and ids as they are', () => {
+  it('moves the year in the id, name and short name to the new year', () => {
     const shifted = shiftWcifDates(buildWcif(), '2026-06-12');
+
+    expect(shifted.id).toBe('ExampleOpen2026');
+    expect(shifted.name).toBe('Example Open 2026');
+    expect(shifted.shortName).toBe('Example 2026');
+  });
+
+  it('keeps the id and name within the same year', () => {
+    const shifted = shiftWcifDates(buildWcif(), '2024-11-08');
 
     expect(shifted.id).toBe('ExampleOpen2024');
     expect(shifted.name).toBe('Example Open 2024');
+  });
+
+  it('leaves numbers that only contain the year alone', () => {
+    const wcif = {
+      ...buildWcif(),
+      id: 'Open20245',
+      name: 'Open 12024',
+    } as Competition;
+
+    const shifted = shiftWcifDates(wcif, '2026-06-12');
+
+    expect(shifted.id).toBe('Open20245');
+    expect(shifted.name).toBe('Open 12024');
   });
 
   it('returns an unchanged copy for the original start date', () => {
