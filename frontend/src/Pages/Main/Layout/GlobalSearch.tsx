@@ -165,7 +165,7 @@ const GlobalSearch = () => {
                         autoCorrect="off"
                         autoCapitalize="off"
                         spellCheck={false}
-                        className="min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-faint"
+                        className="min-w-0 flex-1 bg-transparent text-sm outline-hidden placeholder:text-faint"
                     />
                 </label>
             </PopoverAnchor>

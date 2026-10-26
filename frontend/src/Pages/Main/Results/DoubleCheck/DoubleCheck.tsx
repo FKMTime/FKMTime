@@ -342,7 +342,7 @@ const DoubleCheck = () => {
                                     ({alreadyCheckedResult.person.registrantId})
                                 </span>
                             </h3>
-                            <p className="rounded-[10px] bg-success-soft px-3 py-2.5 text-sm font-semibold text-success">
+                            <p className="rounded-chip bg-success-soft px-3 py-2.5 text-sm font-semibold text-success">
                                 This scorecard has already been double-checked.
                             </p>
                             <div className="flex gap-2">

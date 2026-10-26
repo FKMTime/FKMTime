@@ -144,7 +144,7 @@ const EnterScorecard = () => {
                     {lastSaved && (
                         <p
                             role="status"
-                            className="flex flex-wrap items-center gap-2 rounded-[10px] bg-success-soft px-3 py-2.5 text-sm font-semibold text-success"
+                            className="flex flex-wrap items-center gap-2 rounded-chip bg-success-soft px-3 py-2.5 text-sm font-semibold text-success"
                         >
                             <CircleCheck className="size-[18px] shrink-0" />
                             Saved {lastSaved.name}&apos;s scorecard

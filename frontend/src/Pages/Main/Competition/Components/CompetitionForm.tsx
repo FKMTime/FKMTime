@@ -211,7 +211,7 @@ const CompetitionForm = ({
                     <div
                         role="region"
                         aria-label="Unsaved changes"
-                        className="sticky bottom-[calc(max(env(safe-area-inset-bottom),0.375rem)+5rem)] z-10 flex items-center gap-2 rounded-xl border bg-card px-4 py-2.5 shadow-[0_8px_24px_rgba(0,0,0,.12)] md:bottom-4"
+                        className="sticky bottom-[calc(max(env(safe-area-inset-bottom),0.375rem)+5rem)] z-10 flex items-center gap-2 rounded-xl border bg-card px-4 py-2.5 shadow-popover md:bottom-4"
                     >
                         <span className="flex-1 text-[13px] font-semibold text-warning">
                             Unsaved changes

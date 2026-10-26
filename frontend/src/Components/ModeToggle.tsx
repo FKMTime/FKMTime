@@ -51,7 +51,7 @@ const ModeToggle = ({ variant = "outline", className }: ModeToggleProps) => {
                         {label}
                         <Check
                             className={cn(
-                                "ml-auto !text-primary",
+                                "ml-auto text-primary!",
                                 theme !== value && "invisible"
                             )}
                         />

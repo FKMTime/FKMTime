@@ -38,7 +38,7 @@ const SegmentedControl = <T extends string>({
             role="radiogroup"
             aria-label={label}
             className={cn(
-                "flex gap-0.5 scroll-fade-x overflow-x-auto rounded-chip bg-secondary p-[3px] [scrollbar-width:none]",
+                "flex gap-0.5 scroll-fade-x overflow-x-auto rounded-chip bg-secondary p-[3px] scrollbar-none",
                 fullWidth ? "w-full" : "w-fit max-w-full",
                 className
             )}
@@ -54,7 +54,7 @@ const SegmentedControl = <T extends string>({
                         aria-label={option.ariaLabel}
                         onClick={() => onValueChange(option.value)}
                         className={cn(
-                            "flex h-11 shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-lg px-3 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40 md:h-8 md:text-[13px]",
+                            "flex h-11 shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-lg px-3 text-sm font-semibold transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring/40 md:h-8 md:text-[13px]",
                             fullWidth && "flex-1",
                             isSelected
                                 ? "bg-card text-foreground shadow-segment"

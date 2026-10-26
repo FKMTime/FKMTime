@@ -76,7 +76,7 @@ const MobileUserSheet = ({
                         close();
                         handleLogout();
                     }}
-                    className={`${itemClassName} text-destructive [&>svg]:!text-destructive`}
+                    className={`${itemClassName} text-destructive [&>svg]:text-destructive!`}
                 >
                     <LogOut />
                     Log out

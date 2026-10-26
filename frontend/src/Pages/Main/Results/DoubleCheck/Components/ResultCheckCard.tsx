@@ -108,7 +108,7 @@ const ResultCheckCard = ({
             <div className="flex gap-2">
                 <Button
                     variant="success"
-                    className="h-11 flex-1 rounded-[10px] text-[15px] md:h-11 [&_svg]:size-5"
+                    className="h-11 flex-1 rounded-chip text-[15px] md:h-11 [&_svg]:size-5"
                     onClick={onConfirm}
                     disabled={isSubmitting}
                 >
@@ -121,7 +121,7 @@ const ResultCheckCard = ({
                 </Button>
                 <Button
                     variant="ghost"
-                    className="h-11 rounded-[10px] md:h-11"
+                    className="h-11 rounded-chip md:h-11"
                     onClick={onSkip}
                 >
                     Skip

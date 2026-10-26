@@ -34,14 +34,14 @@ const PageTabs = <T extends string>({
             role="tablist"
             aria-label={label}
             className={cn(
-                "-mx-4 flex gap-0.5 scroll-fade-x overflow-x-auto border-b px-2 [scrollbar-width:none] md:mx-0 md:gap-1 md:px-0",
+                "-mx-4 flex gap-0.5 scroll-fade-x overflow-x-auto border-b px-2 scrollbar-none md:mx-0 md:gap-1 md:px-0",
                 className
             )}
         >
             {tabs.map((tab) => {
                 const isActive = tab.value === value;
                 const tabClassName = cn(
-                    "-mb-px flex h-11 shrink-0 items-center gap-1.5 whitespace-nowrap border-b-2 px-3 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40 md:h-10",
+                    "-mb-px flex h-11 shrink-0 items-center gap-1.5 whitespace-nowrap border-b-2 px-3 text-sm font-semibold transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring/40 md:h-10",
                     isActive
                         ? "border-primary text-foreground"
                         : "border-transparent text-muted-foreground hover:text-foreground"

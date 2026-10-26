@@ -67,7 +67,7 @@ const ErrorScreen = ({
                                 {showDetails ? <ChevronUp /> : <ChevronDown />}
                             </Button>
                             {showDetails && (
-                                <pre className="max-h-[260px] w-full overflow-auto rounded-[10px] border bg-card px-4 py-3.5 text-left font-mono text-xs leading-relaxed text-muted-foreground">
+                                <pre className="max-h-[260px] w-full overflow-auto rounded-chip border bg-card px-4 py-3.5 text-left font-mono text-xs leading-relaxed text-muted-foreground">
                                     {details}
                                 </pre>
                             )}
