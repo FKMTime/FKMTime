@@ -1,12 +1,18 @@
 import 'dotenv/config';
 
 import { PrismaPg } from '@prisma/adapter-pg';
-import { PrismaClient, Role, SendingResultsFrequency } from '@prisma/client';
+import {
+  Prisma,
+  PrismaClient,
+  Role,
+  SendingResultsFrequency,
+} from '@prisma/client';
 import { Activity, Assignment, Competition, Person } from '@wca/helpers';
 import * as fs from 'fs';
 import { sha512 } from 'js-sha512';
 
 import { wcifRoleToAttendanceRole } from '../../src/wcif-helpers';
+import { localDate, shiftWcifDates } from './shift-wcif-dates';
 
 const prisma = new PrismaClient({
   adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL }),
@@ -32,7 +38,15 @@ const getGroupInfoByActivityId = (activityId: number, wcif: Competition) => {
   return groupInfo as Activity | null;
 };
 
-export async function seedDb() {
+/**
+ * Seed the test competition so it starts on `startDate` ("YYYY-MM-DD"),
+ * today by default, so a fresh test stack shows a competition in progress.
+ * Pass the WCIF's own date (2024-05-24), or set SEED_COMPETITION_START_DATE,
+ * to keep the original schedule.
+ */
+export async function seedDb({
+  startDate = process.env.SEED_COMPETITION_START_DATE || localDate(),
+}: { startDate?: string } = {}) {
   const adminPassword = sha512('admin');
   await prisma.user.deleteMany();
   await prisma.competition.deleteMany();
@@ -49,7 +63,7 @@ export async function seedDb() {
     },
   });
   const wcifFile = fs.readFileSync('./prisma/seed/wcif.json', 'utf8');
-  const wcifJson: Competition = JSON.parse(wcifFile);
+  const wcifJson: Competition = shiftWcifDates(JSON.parse(wcifFile), startDate);
   await prisma.competition.create({
     data: {
       name: wcifJson.name,
@@ -61,7 +75,7 @@ export async function seedDb() {
       wifiPassword: 'FKM',
       scoretakingToken: 'wca-live-token',
       scoretakingTokenUpdatedAt: new Date(),
-      wcif: JSON.parse(wcifFile),
+      wcif: wcifJson as unknown as Prisma.InputJsonValue,
       fkmToken: 69420,
     },
   });
@@ -110,14 +124,17 @@ export async function seedDb() {
   await prisma.room.createMany({
     data: rooms,
   });
-  console.log('Test database seeded');
+  console.log(`Test database seeded, competition starts on ${startDate}`);
 }
-seedDb()
-  .then(async () => {
-    await prisma.$disconnect();
-  })
-  .catch(async (e) => {
-    console.error(e);
-    await prisma.$disconnect();
-    process.exit(1);
-  });
+// Seed when run as a script; importing seedDb runs nothing
+if (require.main === module) {
+  seedDb()
+    .then(async () => {
+      await prisma.$disconnect();
+    })
+    .catch(async (e) => {
+      console.error(e);
+      await prisma.$disconnect();
+      process.exit(1);
+    });
+}

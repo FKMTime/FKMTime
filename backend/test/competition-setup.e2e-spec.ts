@@ -17,6 +17,8 @@ const FAKE_ID = '00000000-0000-4000-8000-000000000000';
 interface WcifActivity {
   id: number;
   activityCode: string;
+  startTime: string;
+  endTime: string;
   childActivities?: WcifActivity[];
 }
 interface WcifLike {
@@ -24,7 +26,10 @@ interface WcifLike {
     registrantId: number;
     assignments: { activityId: number; assignmentCode: string }[];
   }[];
-  schedule: { venues: { rooms: { activities: WcifActivity[] }[] }[] };
+  schedule: {
+    startDate: string;
+    venues: { rooms: { activities: WcifActivity[] }[] }[];
+  };
 }
 
 /** Registrant ids assigned to compete in a group, read straight from the WCIF */
@@ -45,6 +50,25 @@ const competitorsOfGroup = (wcif: WcifLike, groupId: string) => {
     )
     .map((p) => p.registrantId);
 };
+
+/**
+ * "YYYY-MM-DD" of a day of the competition, counting from 1; the seed moves
+ * the competition to the day it runs, so dates come from the seeded WCIF
+ */
+const competitionDay = (wcif: WcifLike, day: number) => {
+  const date = new Date(`${wcif.schedule.startDate}T00:00:00Z`);
+  date.setUTCDate(date.getUTCDate() + day - 1);
+  return date.toISOString().slice(0, 10);
+};
+
+const findActivity = (wcif: WcifLike, activityCode: string) =>
+  wcif.schedule.venues
+    .flatMap((v) => v.rooms)
+    .flatMap((r) => r.activities)
+    .find((a) => a.activityCode === activityCode);
+
+const minutesAfter = (time: string, minutes: number) =>
+  new Date(new Date(time).getTime() + minutes * 60_000);
 
 describe('Competition setup (e2e)', () => {
   let app: INestApplication;
@@ -472,6 +496,8 @@ describe('Competition setup (e2e)', () => {
   describe('GET /competition/activities', () => {
     const activities = (query: string) =>
       asOrganizer(request(server()).get(`/competition/activities?${query}`));
+    const wcif = () => competition.wcif as unknown as WcifLike;
+    const day = (n: number) => competitionDay(wcif(), n);
 
     let resultId: string;
 
@@ -482,7 +508,7 @@ describe('Competition setup (e2e)', () => {
     });
 
     it('returns the activities of a room for a day, sorted by start time', async () => {
-      const res = await activities('venueId=1&roomId=1&date=2024-05-24').expect(
+      const res = await activities(`venueId=1&roomId=1&date=${day(1)}`).expect(
         200,
       );
 
@@ -503,7 +529,7 @@ describe('Competition setup (e2e)', () => {
     });
 
     it('returns the second day separately', async () => {
-      const res = await activities('venueId=1&roomId=1&date=2024-05-25').expect(
+      const res = await activities(`venueId=1&roomId=1&date=${day(2)}`).expect(
         200,
       );
 
@@ -514,7 +540,7 @@ describe('Competition setup (e2e)', () => {
 
     it('returns an empty list for an unknown room', async () => {
       const res = await activities(
-        'venueId=1&roomId=999&date=2024-05-24',
+        `venueId=1&roomId=999&date=${day(1)}`,
       ).expect(200);
 
       expect(res.body).toEqual([]);
@@ -529,8 +555,9 @@ describe('Competition setup (e2e)', () => {
         data: { personId: person.id, eventId: '222', roundId: '222-r1' },
       });
       resultId = result.id;
-      const firstSolve = new Date('2024-05-24T09:12:00Z');
-      const lastSolve = new Date('2024-05-24T09:40:00Z');
+      const { startTime, endTime } = findActivity(wcif(), '222-r1');
+      const firstSolve = minutesAfter(startTime, 2);
+      const lastSolve = minutesAfter(endTime, -5);
       await db.attempt.createMany({
         data: [
           {
@@ -552,12 +579,12 @@ describe('Competition setup (e2e)', () => {
             resultId,
             attemptNumber: 3,
             value: 700,
-            solvedAt: new Date('2024-05-24T09:44:00Z'),
+            solvedAt: minutesAfter(endTime, -1),
           },
         ],
       });
 
-      const res = await activities('venueId=1&roomId=1&date=2024-05-24').expect(
+      const res = await activities(`venueId=1&roomId=1&date=${day(1)}`).expect(
         200,
       );
 
@@ -569,7 +596,7 @@ describe('Competition setup (e2e)', () => {
     });
 
     it('returns nothing for a date outside the competition', async () => {
-      const res = await activities('venueId=1&roomId=1&date=2024-05-31').expect(
+      const res = await activities(`venueId=1&roomId=1&date=${day(8)}`).expect(
         200,
       );
 

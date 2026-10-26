@@ -63,6 +63,11 @@ docker compose -f docker-compose-test.yml up -d
 cd backend && npx prisma db push && npm run prisma:seed-test && npm run test:e2e
 ```
 
+The test seed moves the competition so it starts on the day you seed, which
+keeps its schedule "live". Tests that need dates read them from the seeded
+WCIF. To keep the WCIF's own dates, set
+`SEED_COMPETITION_START_DATE=2024-05-24` (any `YYYY-MM-DD` works).
+
 Browser e2e tests (Playwright) start the backend and frontend themselves and
 use the same test stack; `npm ci` in `backend` and `frontend` first:
 
