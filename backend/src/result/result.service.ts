@@ -1,5 +1,6 @@
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import {
+  Attempt,
   AttemptStatus,
   AttemptType,
   StaffActivityStatus,
@@ -724,13 +725,17 @@ export class ResultService {
         },
       },
     });
+    // An attempt that went through an incident counts once it's resolved
+    const isDone = (attempt: Attempt) =>
+      attempt.status === AttemptStatus.STANDARD ||
+      attempt.status === AttemptStatus.RESOLVED;
     const submittedAttempts = [];
     attempts.forEach((attempt) => {
       if (
         attempt.replacedBy === null &&
         attempt.type === AttemptType.STANDARD_ATTEMPT &&
         !submittedAttempts.some((a) => a.id === attempt.id) &&
-        attempt.status === AttemptStatus.STANDARD
+        isDone(attempt)
       ) {
         submittedAttempts.push(attempt);
       } else if (
@@ -741,7 +746,7 @@ export class ResultService {
         if (
           extraAttempt &&
           !submittedAttempts.some((a) => a.id === extraAttempt.id) &&
-          extraAttempt.status === AttemptStatus.STANDARD
+          isDone(extraAttempt)
         ) {
           submittedAttempts.push(extraAttempt);
         }
