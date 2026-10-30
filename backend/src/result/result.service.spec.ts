@@ -5,7 +5,9 @@ import {
   StaffRole,
 } from '@prisma/client';
 import { DbService } from 'src/db/db.service';
+import { WcaService } from 'src/wca/wca.service';
 
+import { getFinalExtraAttempt } from './helpers';
 import { ResultService } from './result.service';
 
 describe('ResultService staffing checks', () => {
@@ -115,5 +117,107 @@ describe('ResultService staffing checks', () => {
     expect(result.attempts[0].staffingWarnings).toEqual([
       expect.objectContaining({ role: 'JUDGE', staffedAttemptId: 'staffed' }),
     ]);
+  });
+});
+
+describe('ResultService submitted attempts', () => {
+  const standard = (id: string, attemptNumber: number, value: number) => ({
+    id,
+    attemptNumber,
+    value,
+    penalty: 0,
+    replacedBy: null,
+    type: AttemptType.STANDARD_ATTEMPT,
+    status: AttemptStatus.STANDARD,
+  });
+  const extra = (id: string, attemptNumber: number, value: number) => ({
+    ...standard(id, attemptNumber, value),
+    type: AttemptType.EXTRA_ATTEMPT,
+  });
+  const extraGiven = (attempt: object, replacedBy: number) => ({
+    ...attempt,
+    replacedBy,
+    status: AttemptStatus.EXTRA_GIVEN,
+  });
+
+  let findMany: jest.Mock;
+  let service: ResultService;
+
+  const submittedIds = async (attempts: object[]) => {
+    findMany.mockResolvedValue(attempts);
+    const submitted = await service.getSubmittedAttempts('333bf-r1', 'person');
+    return submitted.map((attempt) => attempt.id);
+  };
+
+  beforeEach(() => {
+    findMany = jest.fn();
+    service = new ResultService(
+      { attempt: { findMany } } as unknown as DbService,
+      null,
+      null,
+      { getExtra: getFinalExtraAttempt } as unknown as WcaService,
+      null,
+      null,
+      null,
+    );
+  });
+
+  it('counts a resolved standard attempt', async () => {
+    const ids = await submittedIds([
+      standard('s1', 1, 1000),
+      { ...standard('s2', 2, 2000), status: AttemptStatus.RESOLVED },
+    ]);
+    expect(ids).toEqual(['s1', 's2']);
+  });
+
+  it('counts a resolved extra that replaced an attempt', async () => {
+    const ids = await submittedIds([
+      extraGiven(standard('s1', 1, 1000), 1),
+      { ...extra('e1', 1, 2000), status: AttemptStatus.RESOLVED },
+    ]);
+    expect(ids).toEqual(['e1']);
+  });
+
+  it('counts the resolved extra at the end of a chain', async () => {
+    const ids = await submittedIds([
+      extraGiven(standard('s1', 1, 1000), 1),
+      extraGiven(extra('e1', 1, 2000), 2),
+      { ...extra('e2', 2, 3000), status: AttemptStatus.RESOLVED },
+    ]);
+    expect(ids).toEqual(['e2']);
+  });
+
+  it('does not count unresolved attempts', async () => {
+    const ids = await submittedIds([
+      extraGiven(standard('s1', 1, 1000), 1),
+      { ...extra('e1', 1, 2000), status: AttemptStatus.UNRESOLVED },
+      { ...standard('s2', 2, 3000), status: AttemptStatus.UNRESOLVED },
+    ]);
+    expect(ids).toEqual([]);
+  });
+
+  it('does not count an extra still waiting to be done', async () => {
+    const ids = await submittedIds([
+      extraGiven(standard('s1', 1, 1000), 1),
+      { ...extra('e1', 1, 2000), status: AttemptStatus.EXTRA_GIVEN },
+    ]);
+    expect(ids).toEqual([]);
+  });
+
+  it('adds resolved attempts to the time used across rounds', async () => {
+    findMany
+      .mockResolvedValueOnce([
+        { ...standard('s1', 1, 1000), status: AttemptStatus.RESOLVED },
+      ])
+      .mockResolvedValueOnce([
+        standard('s2', 1, 2000),
+        { ...standard('s3', 2, 3000), status: AttemptStatus.UNRESOLVED },
+      ]);
+    await expect(
+      service.getCumulativeSumForMultipleRounds('person', [
+        '333bf-r1',
+        '444bf-r1',
+      ]),
+    ).resolves.toBe(3000);
   });
 });
