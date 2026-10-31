@@ -56,13 +56,11 @@ describe('CompetitionService group change with a redo outstanding', () => {
   ) => {
     const prisma = {
       room: {
-        findFirst: jest
-          .fn()
-          .mockResolvedValue({
-            id: 'room',
-            name: 'Main',
-            currentGroupIds: [currentGroupId],
-          }),
+        findFirst: jest.fn().mockResolvedValue({
+          id: 'room',
+          name: 'Main',
+          currentGroupIds: [currentGroupId],
+        }),
       },
       competition: {
         findFirst: jest.fn().mockResolvedValue({ wcif }),

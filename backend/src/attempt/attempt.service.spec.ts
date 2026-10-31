@@ -81,7 +81,8 @@ describe('AttemptService extras for all attempts', () => {
       attempt: {
         update: jest.fn().mockImplementation(async ({ where, data }) => {
           const attempt = attempts.find((a) => a.id === where.id);
-          const { extraGrant, updatedBy, ...scalars } = data;
+          const { extraGrant, ...scalars } = data;
+          delete scalars.updatedBy;
           Object.assign(attempt, scalars);
           attempt.extraGrantId = extraGrant?.connect?.id ?? null;
           return attempt;
