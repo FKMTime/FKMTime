@@ -45,11 +45,22 @@ const openResult = async (
 const extrasDialog = (page: Page) =>
     page.getByRole("dialog", { name: GIVE_EXTRAS });
 
-const openExtrasDialog = async (page: Page) => {
+/** Picks an action from the ⋮ menu in the result's header */
+const chooseResultAction = async (page: Page, action: string) => {
     await page
         .getByRole("main")
-        .getByRole("button", { name: GIVE_EXTRAS })
+        .locator("header")
+        .getByRole("button", { name: /^More actions for/ })
         .click();
+    // A menu on desktop, a bottom sheet on a phone
+    await page
+        .getByRole("menuitem", { name: action })
+        .or(page.getByRole("dialog").getByRole("button", { name: action }))
+        .click();
+};
+
+const openExtrasDialog = async (page: Page) => {
+    await chooseResultAction(page, GIVE_EXTRAS);
     await expect(extrasDialog(page)).toBeVisible();
     return extrasDialog(page);
 };
@@ -66,10 +77,7 @@ const submittedTab = (page: Page) =>
     page.getByRole("tab", { name: /Submitted/ });
 
 const useOriginals = async (page: Page) => {
-    await page
-        .getByRole("main")
-        .getByRole("button", { name: "Use original attempts" })
-        .click();
+    await chooseResultAction(page, "Use original attempts");
     await confirm(page, "Use original attempts");
     await expectToast(page, "Original attempts restored");
 };

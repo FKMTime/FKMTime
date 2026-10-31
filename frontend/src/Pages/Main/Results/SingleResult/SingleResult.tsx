@@ -189,6 +189,17 @@ const SingleResult = () => {
     );
     const [openIncident] = openIncidents;
 
+    const handleGiveExtras = () => {
+        if (openIncidents.length > 1) {
+            toast({
+                title: "Resolve the open incidents first",
+                variant: "destructive",
+            });
+        } else {
+            setIsOpenGiveExtrasModal(true);
+        }
+    };
+
     const saveIncidentBeforeExtras = async (comment: string) => {
         const { status, message } = await updateAttempt({
             ...openIncident,
@@ -213,6 +224,12 @@ const SingleResult = () => {
                 onEnterAttempt={() => setIsOpenCreateAttemptModal(true)}
                 standardAttempts={standardAttempts}
                 maxAttempts={maxAttempts}
+                onGiveExtras={canGiveExtras ? handleGiveExtras : undefined}
+                onUseOriginals={
+                    extrasContext?.restorableGrantId
+                        ? handleRestoreOriginals
+                        : undefined
+                }
             />
 
             <div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,240px),1fr))] items-start gap-3.5">
@@ -253,35 +270,6 @@ const SingleResult = () => {
                 />
                 <LastAttemptCard result={result} fetchData={fetchData} />
             </div>
-
-            {(canGiveExtras || extrasContext?.restorableGrantId) && (
-                <div className="flex flex-wrap gap-2">
-                    {canGiveExtras && (
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            disabled={openIncidents.length > 1}
-                            title={
-                                openIncidents.length > 1
-                                    ? "Resolve the open incidents first"
-                                    : undefined
-                            }
-                            onClick={() => setIsOpenGiveExtrasModal(true)}
-                        >
-                            Give extras for several attempts
-                        </Button>
-                    )}
-                    {extrasContext?.restorableGrantId && (
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={handleRestoreOriginals}
-                        >
-                            Use original attempts
-                        </Button>
-                    )}
-                </div>
-            )}
 
             <PageTabs
                 label="Attempts"
