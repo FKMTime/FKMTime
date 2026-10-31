@@ -187,14 +187,18 @@ const GiveExtrasModal = ({
                         onValueChange={(value) =>
                             setChosenFreshSet(value === "fresh")
                         }
+                        fullWidth
                         options={[
                             { value: "extra", label: "Extra scrambles" },
-                            {
-                                value: "fresh",
-                                label: "Normal scrambles from a fresh set",
-                            },
+                            { value: "fresh", label: "Fresh set" },
                         ]}
                     />
+                    {useFreshSet && (
+                        <p className="text-[13px] text-muted-foreground">
+                            Uses the normal scrambles of a set this competitor
+                            hasn't seen, like the next group's.
+                        </p>
+                    )}
                     {!useFreshSet && (
                         <p className="text-[13px] text-muted-foreground">
                             This needs {positions.length} extra{" "}
