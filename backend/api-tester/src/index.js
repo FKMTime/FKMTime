@@ -14,46 +14,41 @@ app.use(cors());
 const router = express.Router();
 let client = net.createConnection({ path: socketPath });
 router.get('/', (req, res) => {
-  res.sendFile(__dirname + '/index.html');
+  // With a root, a dot folder higher up the path isn't refused
+  res.sendFile('index.html', { root: __dirname });
 });
-router.post('/attempt/enter', (req, res) => {
-  const randomTag = Math.floor(Math.random() * 1000);
-  client = net.createConnection({ path: socketPath });
-  client.write(
-    JSON.stringify({ type: 'EnterAttempt', tag: randomTag, data: req.body }) + '\0'
-  );
 
-  client.on('data', (data) => {
-    client.end();
-    res.send(data.subarray(0, data.length - 1)); // -1 because of null byte
+/** Sends a packet and answers with the reply carrying its tag */
+const sendToSocket = (type, body, res) => {
+  const tag = Math.floor(Math.random() * 1000);
+  const connection = net.createConnection({ path: socketPath });
+  let buffer = '';
+  connection.write(JSON.stringify({ type, tag, data: body }) + '\0');
+
+  connection.on('data', (chunk) => {
+    buffer += chunk;
+    const packets = buffer.split('\0');
+    buffer = packets.pop();
+    // The server also sends broadcasts, like its status, down this connection
+    const reply = packets.find((packet) => JSON.parse(packet).tag === tag);
+    if (reply) {
+      connection.end();
+      res.send(reply);
+    }
   });
+  connection.on('error', (err) => {
+    res.status(502).send({ error: err.message });
+  });
+};
+
+router.post('/attempt/enter', (req, res) => {
+  sendToSocket('EnterAttempt', req.body, res);
 });
 router.post('/person/info', (req, res) => {
-  const randomTag = Math.floor(Math.random() * 1000);
-  client = net.createConnection({ path: socketPath });
-  client.write(
-    JSON.stringify({ type: 'PersonInfo', tag: randomTag, data: req.body }) + '\0'
-  );
-
-  client.on('data', (data) => {
-    client.end();
-    res.send(data.subarray(0, data.length - 1)); // -1 because of null byte
-  });
+  sendToSocket('PersonInfo', req.body, res);
 });
 router.post('/device/connect', (req, res) => {
-  const randomTag = Math.floor(Math.random() * 1000);
-  client = net.createConnection({ path: socketPath });
-  client.write(
-    JSON.stringify({
-      type: 'RequestToConnectDevice',
-      tag: randomTag,
-      data: req.body,
-    }) + '\0'
-  );
-  client.on('data', (data) => {
-    client.end();
-    res.send(data.subarray(0, data.length - 1)); // -1 because of null byte
-  });
+  sendToSocket('RequestToConnectDevice', req.body, res);
 });
 
 client.on('connect', () => {
