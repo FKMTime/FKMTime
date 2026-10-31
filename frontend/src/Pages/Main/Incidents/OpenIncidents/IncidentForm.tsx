@@ -39,6 +39,12 @@ interface IncidentFormProps {
         doNotRequireCards?: boolean
     ) => void;
     handleDelete: () => void;
+    /** Offers extras for several attempts, when there are others to replace */
+    handleGiveExtras?: (
+        incident: Incident,
+        isNoteworthy?: boolean,
+        doNotRequireCards?: boolean
+    ) => void;
     timeLimit?: TimeLimit;
 }
 
@@ -47,6 +53,7 @@ const IncidentForm = ({
     isLoading,
     handleSubmit,
     handleDelete,
+    handleGiveExtras,
     timeLimit,
 }: IncidentFormProps) => {
     const { toast } = useToast();
@@ -100,6 +107,7 @@ const IncidentForm = ({
                 data.status = AttemptStatus.RESOLVED;
                 break;
             case IncidentAction.EXTRA_GIVEN:
+            case IncidentAction.EXTRA_GIVEN_FOR_SEVERAL:
                 data.status = AttemptStatus.EXTRA_GIVEN;
                 break;
         }
@@ -111,6 +119,9 @@ const IncidentForm = ({
                     title: "Time limit not passed, time was replaced to DNF",
                 });
             }
+        }
+        if (action === IncidentAction.EXTRA_GIVEN_FOR_SEVERAL) {
+            return handleGiveExtras?.(data, isNoteworthy, doNotRequireCards);
         }
         handleSubmit(data, isNoteworthy, doNotRequireCards);
     };
@@ -253,6 +264,20 @@ const IncidentForm = ({
                     >
                         Save and give extra
                     </Button>
+                    {handleGiveExtras && (
+                        <Button
+                            variant="outline"
+                            type="submit"
+                            disabled={isLoading}
+                            onClick={() =>
+                                setAction(
+                                    IncidentAction.EXTRA_GIVEN_FOR_SEVERAL
+                                )
+                            }
+                        >
+                            Give extras for several attempts
+                        </Button>
+                    )}
                     <Button
                         variant="destructive-ghost"
                         onClick={handleDelete}

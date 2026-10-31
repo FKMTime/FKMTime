@@ -282,6 +282,7 @@ export interface Incident extends Attempt {
 export enum IncidentAction {
     "RESOLVED" = "RESOLVED",
     "EXTRA_GIVEN" = "EXTRA_GIVEN",
+    "EXTRA_GIVEN_FOR_SEVERAL" = "EXTRA_GIVEN_FOR_SEVERAL",
 }
 
 export interface NoteworthyIncidentData {
@@ -491,6 +492,8 @@ export interface DecryptedScramble {
 export interface ScrambleData {
     num: number;
     isExtra: boolean;
+    /** What to show and scramble, when it differs from the attempt to sign */
+    scramble?: { num: number; isExtra: boolean };
 }
 
 export interface ImportedScrambleSet {
