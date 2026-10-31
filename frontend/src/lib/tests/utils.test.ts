@@ -1,9 +1,11 @@
 import { describe } from "vitest";
 
+import { Attempt, AttemptStatus, AttemptType } from "@/lib/interfaces";
 import {
     calculateTotalPages,
     formatDocumentTitle,
     getInitials,
+    getSubmittedAttempts,
     prettyAvailableDeviceType,
     prettyDeviceType,
     prettyGender,
@@ -83,5 +85,35 @@ describe("formatDocumentTitle", () => {
     it("falls back to the app name", () => {
         expect(formatDocumentTitle()).toBe("FKMTime");
         expect(formatDocumentTitle(null, "")).toBe("FKMTime");
+    });
+});
+
+describe("getSubmittedAttempts", () => {
+    const attempt = (overrides: Partial<Attempt>) =>
+        ({
+            replacedBy: null,
+            type: AttemptType.STANDARD_ATTEMPT,
+            status: AttemptStatus.STANDARD,
+            ...overrides,
+        }) as Attempt;
+
+    it("leaves out an extra that is itself waiting for an extra", () => {
+        const submitted = getSubmittedAttempts([
+            attempt({
+                id: "s1",
+                attemptNumber: 1,
+                replacedBy: 1,
+                status: AttemptStatus.EXTRA_GIVEN,
+            }),
+            attempt({
+                id: "e1",
+                attemptNumber: 1,
+                type: AttemptType.EXTRA_ATTEMPT,
+                status: AttemptStatus.EXTRA_GIVEN,
+            }),
+            attempt({ id: "s2", attemptNumber: 2 }),
+        ]);
+
+        expect(submitted.map((a) => a.id)).toEqual(["s2"]);
     });
 });

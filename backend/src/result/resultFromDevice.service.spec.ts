@@ -1,5 +1,6 @@
 import { Attempt, AttemptStatus, AttemptType } from '@prisma/client';
-import { DNF_VALUE } from 'src/constants';
+import { AttemptEditLogService } from 'src/attempt-edit-log/attempt-edit-log.service';
+import { DNF_VALUE, DNS_VALUE } from 'src/constants';
 import { DbService } from 'src/db/db.service';
 
 import { ResultService } from './result.service';
@@ -139,5 +140,106 @@ describe('ResultFromDeviceService with a resolved attempt', () => {
     );
 
     expect(data.cutoffPassed).toBe(true);
+  });
+});
+
+describe('ResultFromDeviceService when the time limit runs out on an extra', () => {
+  const stored = (overrides: Partial<Attempt>) =>
+    ({
+      replacedBy: null,
+      type: AttemptType.STANDARD_ATTEMPT,
+      status: AttemptStatus.STANDARD,
+      penalty: 0,
+      value: 1000,
+      ...overrides,
+    }) as Attempt;
+
+  let attempts: Attempt[];
+  let prisma: {
+    attempt: {
+      findMany: jest.Mock;
+      create: jest.Mock;
+      update: jest.Mock;
+    };
+  };
+  let service: ResultFromDeviceService;
+
+  beforeEach(() => {
+    attempts = [
+      stored({
+        id: 's1',
+        attemptNumber: 1,
+        replacedBy: 1,
+        status: AttemptStatus.EXTRA_GIVEN,
+      }),
+      stored({
+        id: 's2',
+        attemptNumber: 2,
+        status: AttemptStatus.EXTRA_GIVEN,
+      }),
+      stored({
+        id: 's3',
+        attemptNumber: 3,
+        status: AttemptStatus.EXTRA_GIVEN,
+      }),
+      stored({
+        id: 'e1',
+        attemptNumber: 1,
+        type: AttemptType.EXTRA_ATTEMPT,
+        penalty: DNF_VALUE,
+      }),
+    ];
+    prisma = {
+      attempt: {
+        findMany: jest.fn().mockImplementation(async () => attempts),
+        create: jest.fn().mockImplementation(async ({ data }) => {
+          const created = stored({
+            id: `new-${attempts.length}`,
+            attemptNumber: data.attemptNumber,
+            type: data.type,
+            penalty: data.penalty,
+            value: data.value,
+          });
+          attempts.push(created);
+          return created;
+        }),
+        update: jest.fn().mockImplementation(async ({ where, data }) => {
+          const updated = attempts.find((a) => a.id === where.id);
+          Object.assign(updated, data);
+          return updated;
+        }),
+      },
+    };
+    service = new ResultFromDeviceService(
+      prisma as unknown as DbService,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      { log: jest.fn() } as unknown as AttemptEditLogService,
+    );
+  });
+
+  it('gives each waiting attempt a DNS extra, in position order', async () => {
+    await service['dnsRemainingAttempts']('result-1', 5);
+
+    const extras = attempts.filter(
+      (a) => a.type === AttemptType.EXTRA_ATTEMPT && a.penalty === DNS_VALUE,
+    );
+    expect(extras.map((a) => a.attemptNumber)).toEqual([2, 3]);
+    expect(attempts.find((a) => a.id === 's2').replacedBy).toBe(2);
+    expect(attempts.find((a) => a.id === 's3').replacedBy).toBe(3);
+  });
+
+  it('then fills the remaining standard attempts with DNS', async () => {
+    await service['dnsRemainingAttempts']('result-1', 5);
+
+    const standard = attempts.filter(
+      (a) => a.type === AttemptType.STANDARD_ATTEMPT && a.penalty === DNS_VALUE,
+    );
+    expect(standard.map((a) => a.attemptNumber)).toEqual([4, 5]);
   });
 });
