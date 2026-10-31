@@ -330,9 +330,10 @@ attempts" action opens a confirmation listing what will count again and what sto
 counting.
 
 **Voided attempts.** For delegates and competitors these effectively didn't happen.
-They are left out of the counting attempts, results and incident lists, and appear
-only on the result page's attempts tab, greyed out, with "Give extra attempt" still
-available. `prettyAttemptStatus` shows "Extra not needed". `attemptOutcome` gets a
+They are left out of the counting attempts, results, incident lists, statistics and
+staffing warnings. On the result page they appear greyed out on the attempts tab,
+with "Give extra attempt" still available, and on the reorder board, which needs
+every attempt to renumber correctly. `prettyAttemptStatus` shows "Extra not needed". `attemptOutcome` gets a
 `voided` outcome that only appears when editing such an attempt, like `open` and
 `scrambled`.
 
@@ -353,7 +354,7 @@ no change.
 - [ ] Cutoff in 2, 3 replaced, E1 and E2 miss: attempt 3 becomes `VOIDED`, the
       result is finished with 2 attempts, reaches double-check, and the station no
       longer offers the round.
-- [ ] A `VOIDED` attempt appears only, greyed out, on the result page's attempts
+- [ ] A `VOIDED` attempt appears only on the result page, greyed out on the attempts
       tab, keeps its edit history, and "Give extra attempt" puts it back to waiting.
 - [ ] Cutoff in 2, 2 replaced, E1 and E2 meet it where the originals didn't: the
       competitor continues to attempt 3.
