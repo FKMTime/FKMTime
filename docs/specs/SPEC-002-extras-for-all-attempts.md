@@ -294,6 +294,18 @@ result unwind in order. Restoring returns `409` with an open incident on the res
   change, including when the result has no counting attempts. Stations can't enter
   attempts for an earlier round, so moving on would strand the redo.
 
+### Entering a redo by hand
+
+A redo may have to be typed in, for example once stations have moved to the next
+round. An extra entered in the panel replaces the next waiting attempt, as at a
+station. `createAttempt` links them, and the settling and sending that follow are
+the same. "Enter attempt" and quick entry start on the next extra while attempts are
+waiting, and offer as many extras as the redo needs. Editing keeps any extra, however
+high its number.
+
+The scorecard page works by standard attempt number, so for a competitor with
+attempts waiting it sends the delegate to their result instead.
+
 ### Frontend
 
 Plain task language; the delegate never sees statuses.
@@ -393,6 +405,10 @@ no change.
 - [ ] All replacements in one call succeed or fail together.
 - [ ] From the result page, an open incident comes along locked in, and with several
       open the action is disabled.
+- [ ] A five-attempt redo can be entered by hand: the form starts on E1 and moves to
+      E5, each replaces its attempt, and they all count.
+- [ ] Editing E3 or later keeps it that extra.
+- [ ] The scorecard page sends a competitor with attempts waiting to their result.
 - [ ] From the incident panel, the button opens the shared modal with the incident's
       attempt locked in, and the station waiting on that incident is released.
 - [ ] Every replaced attempt keeps its edit history and can be restored one by one.
