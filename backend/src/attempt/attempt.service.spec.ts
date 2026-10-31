@@ -33,7 +33,10 @@ describe('AttemptService extras for all attempts', () => {
   let resultService: {
     enterWholeScorecardToWcaLiveOrCubingContests: jest.Mock;
   };
-  let appGateway: { handleAttemptUpdated: jest.Mock };
+  let appGateway: {
+    handleAttemptUpdated: jest.Mock;
+    handleResultEntered: jest.Mock;
+  };
   let service: AttemptService;
 
   const give = (attemptIds: string[], extra = {}) =>
@@ -124,11 +127,14 @@ describe('AttemptService extras for all attempts', () => {
     resultService = {
       enterWholeScorecardToWcaLiveOrCubingContests: jest.fn(),
     };
-    appGateway = { handleAttemptUpdated: jest.fn() };
+    appGateway = {
+      handleAttemptUpdated: jest.fn(),
+      handleResultEntered: jest.fn(),
+    };
     service = new AttemptService(
       appGateway as unknown as AppGateway,
       prisma as unknown as DbService,
-      null as AttendanceService,
+      { markCompetitorAsPresent: jest.fn() } as unknown as AttendanceService,
       { log: jest.fn() } as unknown as AttemptEditLogService,
       resultService as unknown as ResultService,
       null as SocketController,
@@ -231,6 +237,68 @@ describe('AttemptService extras for all attempts', () => {
     attempts[1].status = AttemptStatus.UNRESOLVED;
 
     await expect(give(['s1'])).rejects.toMatchObject({ status: 409 });
+  });
+
+  describe('entering an extra by hand', () => {
+    const enter = (attemptNumber: number, type: AttemptType) =>
+      service.createAttempt(
+        {
+          attemptNumber,
+          type,
+          value: 1500,
+          penalty: 0,
+          status: AttemptStatus.STANDARD,
+          comment: '',
+          competitorId: 'person-1',
+          roundId: '333-r1',
+          replacedBy: 0,
+        } as never,
+        'user-1',
+      );
+
+    beforeEach(() => {
+      prisma.attempt.findFirst = jest.fn().mockResolvedValue(null);
+      prisma.attempt.findMany = jest
+        .fn()
+        .mockImplementation(async () => attempts);
+      prisma.attempt.create = jest.fn().mockImplementation(async ({ data }) => {
+        const created = stored({
+          id: `new-${attempts.length}`,
+          attemptNumber: data.attemptNumber,
+          type: data.type,
+          status: data.status,
+        });
+        attempts.push(created);
+        return created;
+      });
+      prisma.staffActivity = { findFirst: jest.fn().mockResolvedValue(null) };
+      Object.assign(resultService, {
+        getResultOrCreate: jest.fn().mockResolvedValue({
+          id: 'result-1',
+          roundId: '333-r1',
+          person: { id: 'person-1' },
+        }),
+        settleWaitingExtras: jest.fn(),
+      });
+    });
+
+    it('replaces the next attempt waiting for a redo', async () => {
+      attempts[0].status = AttemptStatus.EXTRA_GIVEN;
+      attempts[1].status = AttemptStatus.EXTRA_GIVEN;
+
+      await enter(1, AttemptType.EXTRA_ATTEMPT);
+
+      expect(attempts[0].replacedBy).toBe(1);
+      expect(attempts[1].replacedBy).toBeNull();
+    });
+
+    it('leaves attempts alone for a standard attempt', async () => {
+      attempts[0].status = AttemptStatus.EXTRA_GIVEN;
+
+      await enter(3, AttemptType.STANDARD_ATTEMPT);
+
+      expect(attempts[0].replacedBy).toBeNull();
+    });
   });
 
   describe('restoring the original attempts', () => {

@@ -136,6 +136,10 @@ const EnterScorecard = () => {
 
     if (!id) return <LoadingPage />;
 
+    const isWaitingForRedo = result?.attempts.some(
+        (a) => a.status === AttemptStatus.EXTRA_GIVEN && !a.replacedBy
+    );
+
     return (
         <div className="flex flex-col gap-5">
             <RoundSubpageHeader roundId={id} title="Enter scorecard" />
@@ -175,20 +179,36 @@ const EnterScorecard = () => {
                                 ({result.person.registrantId})
                             </span>
                         </h3>
-                        {competition && (
-                            <AttemptsList
-                                attempts={attempts}
-                                competition={competition}
-                                roundId={result.roundId}
-                                onChange={updateAttempt}
-                            />
+                        {isWaitingForRedo ? (
+                            <p className="text-sm text-muted-foreground">
+                                This competitor has attempts waiting for a redo.
+                                Enter them on{" "}
+                                <Link
+                                    to={`/results/${result.id}`}
+                                    className="font-semibold underline-offset-4 hover:underline"
+                                >
+                                    their result
+                                </Link>
+                                .
+                            </p>
+                        ) : (
+                            <>
+                                {competition && (
+                                    <AttemptsList
+                                        attempts={attempts}
+                                        competition={competition}
+                                        roundId={result.roundId}
+                                        onChange={updateAttempt}
+                                    />
+                                )}
+                                <InlineError>{saveError}</InlineError>
+                                <EnterScorecardActions
+                                    handleSubmit={handleSubmit}
+                                    result={result}
+                                    isSaving={isSaving}
+                                />
+                            </>
                         )}
-                        <InlineError>{saveError}</InlineError>
-                        <EnterScorecardActions
-                            handleSubmit={handleSubmit}
-                            result={result}
-                            isSaving={isSaving}
-                        />
                     </section>
                 ) : (
                     <EmptyState className="hidden lg:flex">

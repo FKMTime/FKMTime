@@ -1,6 +1,8 @@
 import { forwardRef, HttpException, Inject, Injectable } from '@nestjs/common';
 import {
+  Attempt,
   AttemptStatus,
+  AttemptType,
   SendingResultsFrequency,
   StaffRole,
 } from '@prisma/client';
@@ -13,7 +15,10 @@ import { AttendanceService } from 'src/attendance/attendance.service';
 import { DNS_VALUE, publicPersonSelect } from 'src/constants';
 import { isUnofficialEvent } from 'src/events';
 import { IncidentService } from 'src/incident/incident.service';
-import { getCountingAttempts } from 'src/result/helpers';
+import {
+  getAttemptsWaitingForExtra,
+  getCountingAttempts,
+} from 'src/result/helpers';
 import { getNextGroupInRoom } from 'src/wcif-helpers';
 import { getRoundInfoFromWcif } from 'wcif-helpers';
 
@@ -138,6 +143,12 @@ export class AttemptService {
       data.deviceId ? data.deviceId : '',
     );
 
+    if (
+      data.type === AttemptType.EXTRA_ATTEMPT &&
+      data.status !== AttemptStatus.EXTRA_GIVEN
+    ) {
+      await this.replaceWaitingAttempt(createdAttempt, userId);
+    }
     await this.resultService.settleWaitingExtras(result.id);
     if (data.status !== AttemptStatus.EXTRA_GIVEN) {
       await this.resultService.enterWholeScorecardToWcaLiveOrCubingContests(
@@ -148,6 +159,25 @@ export class AttemptService {
     return {
       message: 'Attempt created successfully',
     };
+  }
+
+  /** An extra entered by hand replaces what a station's extra would */
+  private async replaceWaitingAttempt(extra: Attempt, userId: string) {
+    const attempts = await this.prisma.attempt.findMany({
+      where: { resultId: extra.resultId },
+    });
+    const [waiting] = getAttemptsWaitingForExtra(attempts);
+    if (!waiting) return;
+    const replaced = await this.prisma.attempt.update({
+      where: { id: waiting.id },
+      data: { replacedBy: extra.attemptNumber },
+    });
+    await this.attemptEditLogService.log(
+      replaced as AttemptSnapshot,
+      new Date(),
+      userId,
+      `Replaced by extra ${extra.attemptNumber}`,
+    );
   }
 
   async enterScorecard(data: EnterScorecardDto, userId: string) {

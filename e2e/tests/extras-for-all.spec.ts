@@ -385,6 +385,69 @@ test.describe("extras for several attempts", () => {
         expect(overflow).toBeLessThanOrEqual(0);
     });
 
+    test("a redo can be entered by hand", async ({ page, api }) => {
+        const { person } = await openResult(
+            page,
+            api,
+            44,
+            [1000, 1100, 1200, 1300, 1400]
+        );
+        await openExtrasDialog(page);
+        await submitExtras(page);
+
+        const enterByHand = async (attempt: string, time: string) => {
+            await page.reload();
+            await page
+                .getByRole("main")
+                .getByRole("button", { name: "Enter attempt" })
+                .click();
+            const dialog = page.getByRole("dialog", { name: "Enter attempt" });
+            await expect(
+                dialog.getByRole("radio", { name: `Extra attempt ${attempt}` })
+            ).toBeChecked();
+            await dialog.getByLabel("Time").fill(time);
+            await dialog.getByRole("button", { name: "Save attempt" }).click();
+            await expect(dialog).toBeHidden();
+        };
+        for (const [attempt, time] of [
+            ["1", "2000"],
+            ["2", "2100"],
+            ["3", "2200"],
+            ["4", "2300"],
+            ["5", "2400"],
+        ]) {
+            await enterByHand(attempt, time);
+        }
+
+        await page.reload();
+        await expect(submittedTab(page)).toContainText("5");
+        const { attempts } = await getResult(api, ROUND, person.id);
+        expect(
+            byType(attempts, "STANDARD_ATTEMPT").map((a) => a.replacedBy)
+        ).toEqual([1, 2, 3, 4, 5]);
+    });
+
+    test("editing a later extra keeps it that extra", async ({ page, api }) => {
+        const { person } = await openResult(page, api, 45, [1000, 1100, 1200]);
+        const card = await setUpStation(api, 40060, person.id, 46);
+        await openExtrasDialog(page);
+        await submitExtras(page);
+        await solveAtStation(card, [2000, 2100, 2200]);
+
+        await page.reload();
+        await page.getByRole("tab", { name: /Extra attempts/ }).click();
+        const row = page
+            .getByRole("main")
+            .getByRole("table")
+            .getByRole("row")
+            .filter({ hasText: "Extra 3" });
+        await row.getByRole("button", { name: "Edit attempt" }).click();
+        const dialog = page.getByRole("dialog");
+        await expect(
+            dialog.getByRole("radio", { name: "Extra attempt 3" })
+        ).toBeChecked();
+    });
+
     test("warns once the next round has started", async ({ page, api }) => {
         const other = await getPersonByRegistrantId(api, 36);
         await createAttempt(api, {
