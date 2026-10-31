@@ -19,6 +19,7 @@ import {
     ExtrasContext,
     getExtrasContext,
     restoreExtraGrant,
+    updateAttempt,
 } from "@/lib/attempt";
 import { average, formattedBest } from "@/lib/average";
 import { getCompetitionInfo } from "@/lib/competition";
@@ -182,9 +183,22 @@ const SingleResult = () => {
 
     const canGiveExtras =
         submittedAttempts.length > 0 &&
-        getRoundInfoFromWcif(result.roundId, competition.wcif)?.format !==
-            "h" &&
-        !result.attempts.some((a) => a.status === AttemptStatus.UNRESOLVED);
+        getRoundInfoFromWcif(result.roundId, competition.wcif)?.format !== "h";
+    const openIncidents = result.attempts.filter(
+        (attempt) => attempt.status === AttemptStatus.UNRESOLVED
+    );
+    const [openIncident] = openIncidents;
+
+    const saveIncidentBeforeExtras = async (comment: string) => {
+        const { status, message } = await updateAttempt({
+            ...openIncident,
+            comment,
+            status: AttemptStatus.EXTRA_GIVEN,
+        });
+        return status === 200
+            ? undefined
+            : message ?? "An error occurred while updating the incident";
+    };
 
     const resultAverage =
         submittedAttempts.length === maxAttempts
@@ -246,6 +260,12 @@ const SingleResult = () => {
                         <Button
                             variant="outline"
                             size="sm"
+                            disabled={openIncidents.length > 1}
+                            title={
+                                openIncidents.length > 1
+                                    ? "Resolve the open incidents first"
+                                    : undefined
+                            }
                             onClick={() => setIsOpenGiveExtrasModal(true)}
                         >
                             Give extras for several attempts
@@ -383,6 +403,10 @@ const SingleResult = () => {
                     roundId={result.roundId}
                     personName={result.person.name}
                     attempts={result.attempts}
+                    lockedAttempt={openIncident}
+                    beforeGrant={
+                        openIncident ? saveIncidentBeforeExtras : undefined
+                    }
                 />
             )}
         </div>

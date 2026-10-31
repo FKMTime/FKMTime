@@ -230,10 +230,17 @@ test.describe("extras for several attempts", () => {
         );
 
         await page.goto(`/incidents/${incident?.id}`);
-        await page
-            .getByRole("region", { name: `Incident: ${person.name}` })
-            .getByRole("button", { name: GIVE_EXTRAS })
-            .click();
+        const panel = page.getByRole("region", {
+            name: `Incident: ${person.name}`,
+        });
+        const giveExtras = panel.getByRole("button", { name: GIVE_EXTRAS });
+        await expect(giveExtras).toBeVisible();
+        // The buttons all stay inside the panel
+        const overflow = await panel.evaluate(
+            (element) => element.scrollWidth - element.clientWidth
+        );
+        expect(overflow).toBeLessThanOrEqual(0);
+        await giveExtras.click();
         const dialog = extrasDialog(page);
         await expect(dialog).toContainText(
             "Attempts 1, 2 and 3 will no longer count."
@@ -393,7 +400,7 @@ test.describe("extras for several attempts", () => {
         await expect(dialog).toContainText("The next round has started.");
     });
 
-    test("isn't offered with an open incident on the result", async ({
+    test("takes an open incident along from the result page", async ({
         page,
         api,
     }) => {
@@ -412,12 +419,22 @@ test.describe("extras for several attempts", () => {
             status: "UNRESOLVED",
         });
         const result = await getResult(api, ROUND, person.id);
-
         await page.goto(`/results/${result.id}`);
-        await expect(submittedTab(page)).toContainText("1");
 
+        const dialog = await openExtrasDialog(page);
+
+        await expect(dialog).toContainText(
+            "Attempts 1 and 2 will no longer count."
+        );
         await expect(
-            page.getByRole("main").getByRole("button", { name: GIVE_EXTRAS })
-        ).toHaveCount(0);
+            dialog.getByRole("checkbox", { name: /this incident/ })
+        ).toBeDisabled();
+        await submitExtras(page);
+
+        const { attempts } = await getResult(api, ROUND, person.id);
+        expect(attempts.map((a) => a.status)).toEqual([
+            "EXTRA_GIVEN",
+            "EXTRA_GIVEN",
+        ]);
     });
 });

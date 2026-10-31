@@ -248,7 +248,7 @@ const IncidentForm = ({
                     </span>
                 </Label>
                 <InlineError className="text-[13px]">{error}</InlineError>
-                <div className="mt-1 flex flex-col gap-2.5 sm:flex-row">
+                <div className="mt-1 flex flex-col gap-2.5 sm:flex-row sm:flex-wrap">
                     <Button
                         type="submit"
                         disabled={isLoading}
