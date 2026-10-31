@@ -303,6 +303,11 @@ the same. "Enter attempt" and quick entry start on the next extra while attempts
 waiting, and offer as many extras as the redo needs. Editing keeps any extra, however
 high its number.
 
+Extras can be typed in any order. Within a grant they always go to their attempts in
+order, so E1 replaces the first attempt even if E2 was entered before it. Extras a
+delegate assigned by hand outside a grant are left as they are. Numbering follows the
+highest extra, so a gap doesn't reuse a number.
+
 The scorecard page works by standard attempt number, so for a competitor with
 attempts waiting it sends the delegate to their result instead.
 
@@ -407,6 +412,7 @@ no change.
       open the action is disabled.
 - [ ] A five-attempt redo can be entered by hand: the form starts on E1 and moves to
       E5, each replaces its attempt, and they all count.
+- [ ] Entering E2 before E1 by hand still puts E1 on the first replaced attempt.
 - [ ] Editing E3 or later keeps it that extra.
 - [ ] The scorecard page sends a competitor with attempts waiting to their result.
 - [ ] From the incident panel, the button opens the shared modal with the incident's
