@@ -130,6 +130,7 @@ export class AttemptService {
       data.deviceId ? data.deviceId : '',
     );
 
+    await this.resultService.settleWaitingExtras(result.id);
     if (data.status !== AttemptStatus.EXTRA_GIVEN) {
       await this.resultService.enterWholeScorecardToWcaLiveOrCubingContests(
         result.id,
@@ -209,6 +210,7 @@ export class AttemptService {
         ? 'Replacement set'
         : 'Replacement cleared',
     );
+    await this.resultService.settleWaitingExtras(attempt.resultId);
 
     const result = await this.prisma.result.findUnique({
       where: { id: attempt.resultId },
@@ -346,6 +348,7 @@ export class AttemptService {
         });
       }
     }
+    await this.resultService.settleWaitingExtras(attempt.resultId);
     this.appGateway.handleAttemptUpdated();
     if (
       attemptToUpdate.status === AttemptStatus.UNRESOLVED &&

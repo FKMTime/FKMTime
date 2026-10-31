@@ -4,6 +4,7 @@ import {
   StaffActivityStatus,
   StaffRole,
 } from '@prisma/client';
+import { AttemptEditLogService } from 'src/attempt-edit-log/attempt-edit-log.service';
 import { DbService } from 'src/db/db.service';
 import { WcaService } from 'src/wca/wca.service';
 
@@ -219,5 +220,97 @@ describe('ResultService submitted attempts', () => {
         '444bf-r1',
       ]),
     ).resolves.toBe(3000);
+  });
+});
+
+describe('ResultService settling waiting extras', () => {
+  const attempt = (overrides: object) => ({
+    replacedBy: null,
+    type: AttemptType.STANDARD_ATTEMPT,
+    status: AttemptStatus.STANDARD,
+    penalty: 0,
+    value: 1500,
+    ...overrides,
+  });
+  const extra = (id: string, attemptNumber: number) =>
+    attempt({ id, attemptNumber, type: AttemptType.EXTRA_ATTEMPT });
+  const replaced = (id: string, attemptNumber: number) =>
+    attempt({
+      id,
+      attemptNumber,
+      value: 1000,
+      replacedBy: attemptNumber,
+      status: AttemptStatus.EXTRA_GIVEN,
+    });
+
+  const settle = async (cutoff: object | null) => {
+    const update = jest.fn().mockImplementation(async ({ data }) => data);
+    const log = jest.fn();
+    const prisma = {
+      competition: {
+        findFirst: jest.fn().mockResolvedValue({
+          wcif: {
+            events: [{ id: '333', rounds: [{ id: '333-r1', cutoff }] }],
+          },
+        }),
+      },
+      result: {
+        findUnique: jest.fn().mockResolvedValue({
+          roundId: '333-r1',
+          attempts: [
+            replaced('s1', 1),
+            replaced('s2', 2),
+            attempt({
+              id: 's3',
+              attemptNumber: 3,
+              status: AttemptStatus.EXTRA_GIVEN,
+            }),
+            extra('e1', 1),
+            extra('e2', 2),
+          ],
+        }),
+      },
+      attempt: { update },
+    };
+    const service = new ResultService(
+      prisma as unknown as DbService,
+      null,
+      null,
+      null,
+      null,
+      null,
+      { log } as unknown as AttemptEditLogService,
+    );
+    return {
+      voided: await service.settleWaitingExtras('result-1'),
+      update,
+      log,
+    };
+  };
+
+  it('voids and logs what a missed cutoff made unnecessary', async () => {
+    const { voided, update, log } = await settle({
+      numberOfAttempts: 2,
+      resultValue: 1200,
+    });
+
+    expect(voided).toBe(1);
+    expect(update).toHaveBeenCalledWith({
+      where: { id: 's3' },
+      data: { status: AttemptStatus.VOIDED },
+    });
+    expect(log).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.any(Date),
+      null,
+      'No longer needed: cutoff not met',
+    );
+  });
+
+  it('leaves attempts alone in a round without a cutoff', async () => {
+    const { voided, update } = await settle(null);
+
+    expect(voided).toBe(0);
+    expect(update).not.toHaveBeenCalled();
   });
 });

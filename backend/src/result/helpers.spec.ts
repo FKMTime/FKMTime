@@ -4,6 +4,7 @@ import { DNF_VALUE, DNS_VALUE } from 'src/constants';
 import {
   attemptTimeWithPenalty,
   checkCutoff,
+  getAttemptsToVoid,
   getAttemptsWaitingForExtra,
   getCountingAttempts,
   getFinalExtraAttempt,
@@ -81,6 +82,118 @@ describe('getCountingAttempts', () => {
       attempt({ id: 's2', attemptNumber: 2 }),
     ];
     expect(getCountingAttempts(attempts).map((a) => a.id)).toEqual(['s2']);
+  });
+});
+
+describe('getCountingAttempts with a voided attempt', () => {
+  it('leaves out a voided standard attempt', () => {
+    const attempts = [
+      attempt({ id: 's1', attemptNumber: 1 }),
+      attempt({ id: 's2', attemptNumber: 2, status: AttemptStatus.VOIDED }),
+    ];
+    expect(getCountingAttempts(attempts).map((a) => a.id)).toEqual(['s1']);
+  });
+
+  it('leaves out a voided extra at the end of a chain', () => {
+    const attempts = [
+      attempt({
+        id: 's1',
+        attemptNumber: 1,
+        replacedBy: 1,
+        status: AttemptStatus.EXTRA_GIVEN,
+      }),
+      attempt({
+        id: 'e1',
+        attemptNumber: 1,
+        type: AttemptType.EXTRA_ATTEMPT,
+        status: AttemptStatus.VOIDED,
+      }),
+    ];
+    expect(getCountingAttempts(attempts)).toEqual([]);
+  });
+});
+
+describe('getAttemptsToVoid', () => {
+  const cutoff = { numberOfAttempts: 2, resultValue: 1200 };
+  const replaced = (id: string, attemptNumber: number) =>
+    attempt({
+      id,
+      attemptNumber,
+      value: 1000,
+      replacedBy: attemptNumber,
+      status: AttemptStatus.EXTRA_GIVEN,
+    });
+  const extra = (id: string, attemptNumber: number, value: number) =>
+    attempt({
+      id,
+      attemptNumber,
+      value,
+      type: AttemptType.EXTRA_ATTEMPT,
+    });
+  const waiting = attempt({
+    id: 's3',
+    attemptNumber: 3,
+    value: 1000,
+    status: AttemptStatus.EXTRA_GIVEN,
+  });
+
+  it('voids what is waiting once the new attempts miss the cutoff', () => {
+    const attempts = [
+      replaced('s1', 1),
+      replaced('s2', 2),
+      waiting,
+      extra('e1', 1, 1500),
+      extra('e2', 2, 1500),
+    ];
+    expect(getAttemptsToVoid(attempts, cutoff).map((a) => a.id)).toEqual([
+      's3',
+    ]);
+  });
+
+  it('keeps what is waiting when a new attempt meets the cutoff', () => {
+    const attempts = [
+      replaced('s1', 1),
+      replaced('s2', 2),
+      waiting,
+      extra('e1', 1, 1500),
+      extra('e2', 2, 1100),
+    ];
+    expect(getAttemptsToVoid(attempts, cutoff)).toEqual([]);
+  });
+
+  it('waits until the cutoff attempts are done', () => {
+    const attempts = [
+      replaced('s1', 1),
+      attempt({
+        id: 's2',
+        attemptNumber: 2,
+        status: AttemptStatus.EXTRA_GIVEN,
+      }),
+      waiting,
+      extra('e1', 1, 1500),
+    ];
+    expect(getAttemptsToVoid(attempts, cutoff)).toEqual([]);
+  });
+
+  it('waits while an attempt is an open incident', () => {
+    const attempts = [
+      replaced('s1', 1),
+      replaced('s2', 2),
+      waiting,
+      extra('e1', 1, 1500),
+      attempt({
+        id: 'e2',
+        attemptNumber: 2,
+        value: 1500,
+        type: AttemptType.EXTRA_ATTEMPT,
+        status: AttemptStatus.UNRESOLVED,
+      }),
+    ];
+    expect(getAttemptsToVoid(attempts, cutoff)).toEqual([]);
+  });
+
+  it('does nothing in a round without a cutoff', () => {
+    expect(getAttemptsToVoid([waiting], null)).toEqual([]);
   });
 });
 

@@ -55,6 +55,7 @@ export function getStaffingWarnings(
     if (
       !attempt.solvedAt ||
       attempt.status === AttemptStatus.SCRAMBLED ||
+      attempt.status === AttemptStatus.VOIDED ||
       attempt.penalty === DNS_VALUE
     ) {
       continue;

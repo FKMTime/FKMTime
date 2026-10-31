@@ -8,6 +8,7 @@ export const createAttemptSchema = z.object({
         "RESOLVED",
         "EXTRA_GIVEN",
         "SCRAMBLED",
+        "VOIDED",
     ]),
     competitorId: z.string(),
     judgeId: z.string().optional(),
