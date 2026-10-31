@@ -41,6 +41,45 @@ and the device bridge in
 messages between them and the backend are a contract: treat changes to them as
 breaking unless proven otherwise.
 
+## Running the app
+
+To run the app for a person to try, use the dev stack in `docker-compose.yml`.
+On macOS always include the Bluetooth adapter and the micro connector, so a
+real device can be connected at any point.
+
+```bash
+./scripts/docker-adapter.sh      # macOS only: start first and keep it running
+docker compose pull dummy_wca dummy_wca_live micro_connector
+docker compose up -d --build
+docker compose exec backend npx ts-node prisma/seed/seed-test.ts
+```
+
+| What | Where |
+|------|-------|
+| Panel | http://localhost:5173, sign in with `admin` / `admin` |
+| Backend | http://localhost:5000 (`/health`) |
+| API tester, for station messages | http://localhost:5002 |
+| Dummy WCA / WCA Live | http://localhost:3005 / http://localhost:4000 |
+
+The seed needs the current dummy WCA image, hence the pull. Backend and frontend
+source are mounted, so changes reload; rebuild after changing dependencies.
+
+- **Keep the backend in Docker.** The connector talks to it over a unix socket
+  in the `sock` volume, and a unix socket can't cross into the Docker VM on
+  macOS. A backend started on the Mac itself looks fine, but no device can
+  reach it.
+- **Start the adapter before the stack.** The connector looks for it only at
+  startup, so otherwise run `docker compose restart micro_connector`. macOS
+  grants Bluetooth per app, so run the adapter from the person's own terminal
+  and have them allow it under System Settings → Privacy & Security → Bluetooth.
+- **One stack per machine.** The containers have fixed names, so stop a stack
+  running from another worktree with `docker compose down` there first.
+- **Run the frontend with Vite's dev server, never `vite preview`.** A production
+  build ignores `VITE_BACKEND_ORIGIN` and `VITE_WCA_ORIGIN`.
+- **Sample data:** a real device needs the competition's Wi-Fi details set in
+  Setup, and real cards assigned to people. Check that "Update devices" is what
+  you want before a device connects.
+
 ## Checks
 
 Run the checks for the part you touched — the same ones CI runs.
