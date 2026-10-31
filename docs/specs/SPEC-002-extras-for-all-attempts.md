@@ -315,10 +315,10 @@ attempts waiting it sends the delegate to their result instead.
 
 Plain task language; the delegate never sees statuses.
 
-**Result page (`SingleResult`).** A "Give extras for several attempts" action, shown
-when there is at least one counting attempt. An open incident on the result comes
-along locked in, as from the incident panel; with several open, the action is
-disabled until they are resolved. It opens a modal
+**Result page (`SingleResult`).** A "Give extras for several attempts" action in the
+result's ⋮ menu, shown when there is at least one counting attempt. An open incident
+on the result comes along locked in, as from the incident panel; with several open,
+choosing it says to resolve them first. It opens a modal
 with the quick actions and a comment, like `GiveExtraAttemptModal`, plus what will
 happen:
 
@@ -352,7 +352,7 @@ Live takes it from who is in the next round once that round is open, so a redo
 doesn't move anyone by itself.
 
 **Result page, restoring.** While the result has a restorable grant, a "Use original
-attempts" action opens a confirmation listing what will count again and what stops
+attempts" action in the same menu opens a confirmation listing what will count again and what stops
 counting.
 
 **Voided attempts.** For delegates and competitors these effectively didn't happen.
@@ -409,7 +409,7 @@ no change.
       replace, `400` on format `h`, and requires a delegate.
 - [ ] All replacements in one call succeed or fail together.
 - [ ] From the result page, an open incident comes along locked in, and with several
-      open the action is disabled.
+      open the action says to resolve them first.
 - [ ] A five-attempt redo can be entered by hand: the form starts on E1 and moves to
       E5, each replaces its attempt, and they all count.
 - [ ] Entering E2 before E1 by hand still puts E1 on the first replaced attempt.
