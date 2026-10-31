@@ -179,7 +179,8 @@ export const getSubmittedAttempts = (attempts: Attempt[]) => {
             !attemptsToReturn.some((a) => a.id === attempt.id) &&
             attempt.status !== AttemptStatus.UNRESOLVED &&
             attempt.status !== AttemptStatus.EXTRA_GIVEN &&
-            attempt.status !== AttemptStatus.SCRAMBLED
+            attempt.status !== AttemptStatus.SCRAMBLED &&
+            attempt.status !== AttemptStatus.VOIDED
         ) {
             attemptsToReturn.push({
                 ...attempt,
@@ -197,6 +198,7 @@ export const getSubmittedAttempts = (attempts: Attempt[]) => {
             if (
                 extraAttempt &&
                 !isWaiting &&
+                extraAttempt.status !== AttemptStatus.VOIDED &&
                 !attemptsToReturn.includes(extraAttempt)
             ) {
                 attemptsToReturn.push({
@@ -268,6 +270,8 @@ export const prettyAttemptStatus = (
             return "Extra given";
         case AttemptStatus.SCRAMBLED:
             return "Scrambled";
+        case AttemptStatus.VOIDED:
+            return "Extra not needed";
         default:
             return "Unknown";
     }

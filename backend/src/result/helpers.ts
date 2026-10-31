@@ -98,7 +98,8 @@ export const getCountingAttempts = (attempts: Attempt[]): Attempt[] => {
       attempt.replacedBy === null &&
       attempt.status !== AttemptStatus.UNRESOLVED &&
       attempt.status !== AttemptStatus.EXTRA_GIVEN &&
-      attempt.status !== AttemptStatus.SCRAMBLED
+      attempt.status !== AttemptStatus.SCRAMBLED &&
+      attempt.status !== AttemptStatus.VOIDED
     ) {
       counting.push(attempt);
     } else if (
@@ -109,6 +110,7 @@ export const getCountingAttempts = (attempts: Attempt[]): Attempt[] => {
       if (
         extraAttempt &&
         !isWaitingForExtra(extraAttempt) &&
+        extraAttempt.status !== AttemptStatus.VOIDED &&
         !counting.includes(extraAttempt)
       ) {
         counting.push(extraAttempt);
@@ -116,6 +118,29 @@ export const getCountingAttempts = (attempts: Attempt[]): Attempt[] => {
     }
   });
   return counting;
+};
+
+/**
+ * Attempts still waiting for an extra that can never come: the counting
+ * attempts missed the cutoff, so the round is over. Open incidents can still
+ * change the counting attempts, so nothing is decided while there are any.
+ */
+export const getAttemptsToVoid = (
+  attempts: Attempt[],
+  cutoff?: { numberOfAttempts: number; resultValue: number } | null,
+): Attempt[] => {
+  if (
+    !cutoff ||
+    attempts.some((attempt) => attempt.status === AttemptStatus.UNRESOLVED)
+  ) {
+    return [];
+  }
+  const cutoffPassed = checkCutoff(
+    getCountingAttempts(attempts),
+    cutoff.resultValue,
+    cutoff.numberOfAttempts,
+  );
+  return cutoffPassed ? [] : getAttemptsWaitingForExtra(attempts);
 };
 
 /** An attempt as WCA encodes it: centiseconds with +2s added, or DNF/DNS */
