@@ -46,3 +46,4 @@ Update `Status` as the spec moves:
 
 | Id | Title | Status |
 |----|-------|--------|
+| [SPEC-002](SPEC-002-extras-for-all-attempts.md) | Extras for all attempts so far | Accepted |
