@@ -427,6 +427,34 @@ test.describe("extras for several attempts", () => {
         ).toEqual([1, 2, 3, 4, 5]);
     });
 
+    test("extras entered by hand keep their order", async ({ page, api }) => {
+        const { person } = await openResult(page, api, 47, [1000, 1100]);
+        await openExtrasDialog(page);
+        await submitExtras(page);
+
+        const enterExtra = async (attempt: string, time: string) => {
+            await page.reload();
+            await page
+                .getByRole("main")
+                .getByRole("button", { name: "Enter attempt" })
+                .click();
+            const dialog = page.getByRole("dialog", { name: "Enter attempt" });
+            await dialog
+                .getByRole("radio", { name: `Extra attempt ${attempt}` })
+                .click();
+            await dialog.getByLabel("Time").fill(time);
+            await dialog.getByRole("button", { name: "Save attempt" }).click();
+            await expect(dialog).toBeHidden();
+        };
+        await enterExtra("2", "2100");
+        await enterExtra("1", "2000");
+
+        const { attempts } = await getResult(api, ROUND, person.id);
+        expect(
+            byType(attempts, "STANDARD_ATTEMPT").map((a) => a.replacedBy)
+        ).toEqual([1, 2]);
+    });
+
     test("editing a later extra keeps it that extra", async ({ page, api }) => {
         const { person } = await openResult(page, api, 45, [1000, 1100, 1200]);
         const card = await setUpStation(api, 40060, person.id, 46);

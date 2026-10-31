@@ -38,6 +38,7 @@ import {
   getAttemptsToVoid,
   getAttemptsWaitingForExtra,
   getCountingAttempts,
+  getNextExtraNumber,
   getSortedExtraAttempts,
   getSortedStandardAttempts,
 } from './helpers';
@@ -924,10 +925,9 @@ export class ResultService {
           person: competitor,
         };
       }
-      const extrasCount = sortedExtraAttempts.length;
       return {
         scrambleData: {
-          num: extrasCount + 1,
+          num: getNextExtraNumber(attempts),
           isExtra: true,
           scramble,
         },

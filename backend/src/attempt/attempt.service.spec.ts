@@ -87,7 +87,9 @@ describe('AttemptService extras for all attempts', () => {
           const { extraGrant, ...scalars } = data;
           delete scalars.updatedBy;
           Object.assign(attempt, scalars);
-          attempt.extraGrantId = extraGrant?.connect?.id ?? null;
+          if (extraGrant) {
+            attempt.extraGrantId = extraGrant.connect?.id ?? null;
+          }
           return attempt;
         }),
       },
@@ -290,6 +292,30 @@ describe('AttemptService extras for all attempts', () => {
 
       expect(attempts[0].replacedBy).toBe(1);
       expect(attempts[1].replacedBy).toBeNull();
+    });
+
+    it('keeps extras in order whichever is entered first', async () => {
+      attempts[0].status = AttemptStatus.EXTRA_GIVEN;
+      attempts[1].status = AttemptStatus.EXTRA_GIVEN;
+      attempts[0].extraGrantId = 'grant-1';
+      attempts[1].extraGrantId = 'grant-1';
+
+      await enter(2, AttemptType.EXTRA_ATTEMPT);
+      await enter(1, AttemptType.EXTRA_ATTEMPT);
+
+      expect(attempts[0].replacedBy).toBe(1);
+      expect(attempts[1].replacedBy).toBe(2);
+    });
+
+    it('leaves extras a delegate assigned outside a grant', async () => {
+      attempts[0].status = AttemptStatus.EXTRA_GIVEN;
+      attempts[0].replacedBy = 2;
+      attempts[1].status = AttemptStatus.EXTRA_GIVEN;
+
+      await enter(1, AttemptType.EXTRA_ATTEMPT);
+
+      expect(attempts[0].replacedBy).toBe(2);
+      expect(attempts[1].replacedBy).toBe(1);
     });
 
     it('leaves attempts alone for a standard attempt', async () => {

@@ -18,6 +18,7 @@ import { IncidentService } from 'src/incident/incident.service';
 import {
   getAttemptsWaitingForExtra,
   getCountingAttempts,
+  sortByPosition,
 } from 'src/result/helpers';
 import { getNextGroupInRoom } from 'src/wcif-helpers';
 import { getRoundInfoFromWcif } from 'wcif-helpers';
@@ -168,15 +169,49 @@ export class AttemptService {
     });
     const [waiting] = getAttemptsWaitingForExtra(attempts);
     if (!waiting) return;
+    await this.setReplacedBy(waiting.id, extra.attemptNumber, userId);
+    if (waiting.extraGrantId) {
+      await this.keepExtrasInOrder(waiting.extraGrantId, attempts, userId);
+    }
+  }
+
+  /** Extras typed in out of order still go to their attempts in order */
+  private async keepExtrasInOrder(
+    grantId: string,
+    attempts: Attempt[],
+    userId: string,
+  ) {
+    const updated = await this.prisma.attempt.findMany({
+      where: { resultId: attempts[0].resultId },
+    });
+    const replaced = sortByPosition(
+      updated.filter((a) => a.extraGrantId === grantId && a.replacedBy),
+      updated,
+    );
+    const extraNumbers = replaced
+      .map((attempt) => attempt.replacedBy)
+      .sort((a, b) => a - b);
+    for (const [index, attempt] of replaced.entries()) {
+      if (attempt.replacedBy !== extraNumbers[index]) {
+        await this.setReplacedBy(attempt.id, extraNumbers[index], userId);
+      }
+    }
+  }
+
+  private async setReplacedBy(
+    attemptId: string,
+    extraNumber: number,
+    userId: string,
+  ) {
     const replaced = await this.prisma.attempt.update({
-      where: { id: waiting.id },
-      data: { replacedBy: extra.attemptNumber },
+      where: { id: attemptId },
+      data: { replacedBy: extraNumber },
     });
     await this.attemptEditLogService.log(
       replaced as AttemptSnapshot,
       new Date(),
       userId,
-      `Replaced by extra ${extra.attemptNumber}`,
+      `Replaced by extra ${extraNumber}`,
     );
   }
 
