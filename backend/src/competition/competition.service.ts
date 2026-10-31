@@ -6,11 +6,19 @@ import {
   Logger,
 } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
-import { AttemptStatus, SendingResultsFrequency } from '@prisma/client';
+import {
+  Attempt,
+  AttemptStatus,
+  SendingResultsFrequency,
+} from '@prisma/client';
 import { AppGateway } from 'src/app.gateway';
+import {
+  getAttemptsWaitingForExtra,
+  isRedoNotStarted,
+} from 'src/result/helpers';
 import { ResultService } from 'src/result/result.service';
 import { getAllTranslations, getLocales } from 'src/translations/translations';
-import { isSameDay } from 'src/wcif-helpers';
+import { getNextGroupInRoom, isSameDay } from 'src/wcif-helpers';
 import { Activity, Event, Room as WCIFRoom, Venue } from 'wcif-helpers';
 import {
   getActivityInfoFromSchedule,
@@ -441,8 +449,24 @@ export class CompetitionService {
       currentGroupId.split('-g')[0],
       wcif,
     );
+    // Stations can't take attempts for an earlier round, so the last group
+    // has to wait for any redo, while earlier ones can leave it to the next
+    const hasNextGroup = !!getNextGroupInRoom(currentGroupId, room.name, wcif);
+    const freshSetGrants = await this.prisma.extraGrant.findMany({
+      where: { useFreshSet: true, restoredAt: null, result: { roundId } },
+      select: { id: true },
+    });
+    const freshSetGrantIds = freshSetGrants.map((grant) => grant.id);
     let finished = true;
     for (const result of resultsFromDb) {
+      const attempts = result.attempts as Attempt[];
+      if (!hasNextGroup && getAttemptsWaitingForExtra(attempts).length > 0) {
+        finished = false;
+        break;
+      }
+      if (hasNextGroup && isRedoNotStarted(attempts, freshSetGrantIds)) {
+        continue;
+      }
       const { results } = this.wcaService.getAttemptsToEnterToWcaLive(
         result,
         competition,
@@ -501,15 +525,7 @@ export class CompetitionService {
       wcif,
     );
     if (!roundInfoFromSchedule) return;
-    const sortedActivities = roundInfoFromSchedule.childActivities.sort(
-      (a, b) =>
-        new Date(a.startTime).getTime() - new Date(b.startTime).getTime(),
-    );
-    const currentIndex = sortedActivities.findIndex(
-      (a) => a.activityCode === currentGroupId,
-    );
-    const nextGroup =
-      currentIndex !== -1 ? sortedActivities[currentIndex + 1] : null;
+    const nextGroup = getNextGroupInRoom(currentGroupId, room.name, wcif);
 
     if (nextGroup) {
       await this.prisma.room.update({

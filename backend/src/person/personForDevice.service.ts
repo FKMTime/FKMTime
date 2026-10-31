@@ -254,7 +254,9 @@ export class PersonForDeviceService {
       cardId,
       roundId,
     );
-    const attemptText = `${getTranslation('attempt', locale)} ${nextAttemptData.scrambleData.isExtra ? 'E' : ''}${nextAttemptData.scrambleData.num}`;
+    const shownAttempt =
+      nextAttemptData.scrambleData.scramble ?? nextAttemptData.scrambleData;
+    const attemptText = `${getTranslation('attempt', locale)} ${shownAttempt.isExtra ? 'E' : ''}${shownAttempt.num}`;
 
     if (
       SHOW_SECONDARY_TEXT_HW_VERSIONS.includes(hwVersion) &&

@@ -6,6 +6,7 @@ import {
 } from '@prisma/client';
 import { AttemptEditLogService } from 'src/attempt-edit-log/attempt-edit-log.service';
 import { DbService } from 'src/db/db.service';
+import { PersonService } from 'src/person/person.service';
 import { WcaService } from 'src/wca/wca.service';
 
 import { getFinalExtraAttempt } from './helpers';
@@ -312,5 +313,69 @@ describe('ResultService settling waiting extras', () => {
 
     expect(voided).toBe(0);
     expect(update).not.toHaveBeenCalled();
+  });
+});
+
+describe('ResultService next attempt during a redo', () => {
+  const attempt = (
+    id: string,
+    attemptNumber: number,
+    useFreshSet: boolean,
+  ) => ({
+    id,
+    attemptNumber,
+    replacedBy: null,
+    type: AttemptType.STANDARD_ATTEMPT,
+    status: AttemptStatus.EXTRA_GIVEN,
+    extraGrant: { useFreshSet },
+  });
+
+  const nextAttempt = (attempts: object[]) => {
+    const service = new ResultService(
+      {
+        attempt: { findMany: jest.fn().mockResolvedValue(attempts) },
+      } as unknown as DbService,
+      null,
+      null,
+      null,
+      null,
+      {
+        getPersonByCardId: jest.fn().mockResolvedValue({ id: 'person-1' }),
+      } as unknown as PersonService,
+      null,
+    );
+    jest
+      .spyOn(service, 'getResultOrCreate')
+      .mockResolvedValue({ id: 'result-1' } as never);
+    return service.getNextAttemptData('card', '333-r1');
+  };
+
+  it('signs an extra and shows the normal scramble on a fresh set', async () => {
+    const { scrambleData } = await nextAttempt([
+      attempt('s2', 2, true),
+      {
+        ...attempt('s1', 1, true),
+        replacedBy: 1,
+      },
+      {
+        id: 'e1',
+        attemptNumber: 1,
+        replacedBy: null,
+        type: AttemptType.EXTRA_ATTEMPT,
+        status: AttemptStatus.STANDARD,
+      },
+    ]);
+
+    expect(scrambleData).toEqual({
+      num: 2,
+      isExtra: true,
+      scramble: { num: 2, isExtra: false },
+    });
+  });
+
+  it('uses the extra scramble otherwise', async () => {
+    const { scrambleData } = await nextAttempt([attempt('s1', 1, false)]);
+
+    expect(scrambleData).toEqual({ num: 1, isExtra: true });
   });
 });

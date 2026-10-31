@@ -72,17 +72,46 @@ export const getFinalExtraAttempt = (
 const isWaitingForExtra = (attempt: Attempt) =>
   attempt.status === AttemptStatus.EXTRA_GIVEN && !attempt.replacedBy;
 
+const getAttemptAtPosition = (standard: Attempt, attempts: Attempt[]) =>
+  standard.replacedBy ? getFinalExtraAttempt(standard.id, attempts) : standard;
+
 /**
  * Attempts given an extra that hasn't been done yet, in the order of the
  * positions they count for, following chains of extras.
  */
-export const getAttemptsWaitingForExtra = (attempts: Attempt[]): Attempt[] => {
+export const getAttemptsWaitingForExtra = <T extends Attempt>(
+  attempts: T[],
+): T[] => {
   const byPosition = getSortedStandardAttempts(attempts)
-    .map((attempt) =>
-      attempt.replacedBy ? getFinalExtraAttempt(attempt.id, attempts) : attempt,
-    )
+    .map((attempt) => getAttemptAtPosition(attempt, attempts))
     .filter((attempt) => attempt && isWaitingForExtra(attempt));
-  return [...new Set([...byPosition, ...attempts.filter(isWaitingForExtra)])];
+  return [
+    ...new Set([...byPosition, ...attempts.filter(isWaitingForExtra)]),
+  ] as T[];
+};
+
+/** The attempt number a replacing or replaced attempt stands in for */
+export const getAttemptPosition = (attempt: Attempt, attempts: Attempt[]) =>
+  getSortedStandardAttempts(attempts).find(
+    (standard) => getAttemptAtPosition(standard, attempts)?.id === attempt.id,
+  )?.attemptNumber;
+
+/**
+ * Whether a redo on a fresh set hasn't begun: the competitor is expected in a
+ * later group, so this result has no reason to hold the current one back.
+ */
+export const isRedoNotStarted = (
+  attempts: Attempt[],
+  freshSetGrantIds: string[],
+) => {
+  const grantId = getAttemptsWaitingForExtra(attempts)[0]?.extraGrantId;
+  return (
+    !!grantId &&
+    freshSetGrantIds.includes(grantId) &&
+    attempts
+      .filter((attempt) => attempt.extraGrantId === grantId)
+      .every(isWaitingForExtra)
+  );
 };
 
 /**

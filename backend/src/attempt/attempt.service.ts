@@ -1,5 +1,9 @@
 import { forwardRef, HttpException, Inject, Injectable } from '@nestjs/common';
-import { AttemptStatus, StaffRole } from '@prisma/client';
+import {
+  AttemptStatus,
+  SendingResultsFrequency,
+  StaffRole,
+} from '@prisma/client';
 import { AppGateway } from 'src/app.gateway';
 import {
   AttemptEditLogService,
@@ -9,12 +13,16 @@ import { AttendanceService } from 'src/attendance/attendance.service';
 import { DNS_VALUE, publicPersonSelect } from 'src/constants';
 import { isUnofficialEvent } from 'src/events';
 import { IncidentService } from 'src/incident/incident.service';
+import { getCountingAttempts } from 'src/result/helpers';
+import { getNextGroupInRoom } from 'src/wcif-helpers';
+import { getRoundInfoFromWcif } from 'wcif-helpers';
 
 import { DbService } from '../db/db.service';
 import { ResultService } from '../result/result.service';
 import { SocketController } from '../socket/socket.controller';
 import { CreateAttemptDto } from './dto/createAttempt.dto';
 import { EnterScorecardDto } from './dto/enterScorecard.dto';
+import { GiveExtrasDto } from './dto/giveExtras.dto';
 import { UpdateAttemptDto } from './dto/updateAttempt.dto';
 
 @Injectable()
@@ -220,6 +228,188 @@ export class AttemptService {
     );
     this.appGateway.handleAttemptUpdated();
     return { message: 'Replacement updated successfully' };
+  }
+
+  async giveExtras(data: GiveExtrasDto, userId: string) {
+    const result = await this.getResultForExtras(data.resultId);
+    const competition = await this.prisma.competition.findFirst();
+    const wcif = JSON.parse(JSON.stringify(competition.wcif));
+    if (getRoundInfoFromWcif(result.roundId, wcif)?.format === 'h') {
+      throw new HttpException(
+        'Extras for all attempts are not available in head-to-head rounds',
+        400,
+      );
+    }
+    const countingIds = getCountingAttempts(result.attempts).map((a) => a.id);
+    if (data.attemptIds.some((id) => !countingIds.includes(id))) {
+      throw new HttpException('These attempts cannot be replaced', 400);
+    }
+    const attempts = result.attempts.filter((attempt) =>
+      data.attemptIds.includes(attempt.id),
+    );
+
+    const replaced = await this.prisma.$transaction(async (tx) => {
+      const grant = await tx.extraGrant.create({
+        data: {
+          useFreshSet: data.useFreshSet,
+          result: { connect: { id: result.id } },
+          createdBy: { connect: { id: userId } },
+        },
+      });
+      await tx.result.update({
+        where: { id: result.id },
+        data: this.doubleCheckCleared,
+      });
+      return Promise.all(
+        attempts.map((attempt) =>
+          tx.attempt.update({
+            where: { id: attempt.id },
+            data: {
+              status: AttemptStatus.EXTRA_GIVEN,
+              replacedBy: null,
+              comment: data.comment,
+              statusBeforeGrant: attempt.status,
+              extraGrant: { connect: { id: grant.id } },
+              updatedBy: { connect: { id: userId } },
+            },
+          }),
+        ),
+      );
+    });
+    await this.logAll(replaced, userId, 'Extras given for all attempts');
+
+    if (data.removeFromLive) {
+      await this.sendScorecardUnlessNever(result.id, competition);
+    }
+    this.appGateway.handleAttemptUpdated();
+    return { replaced: replaced.length };
+  }
+
+  async restoreExtraGrant(grantId: string, userId: string) {
+    const grant = await this.prisma.extraGrant.findUnique({
+      where: { id: grantId },
+      include: { attempts: true },
+    });
+    if (!grant) throw new HttpException('Extra grant not found', 404);
+    await this.getResultForExtras(grant.resultId);
+    const latestGrant = await this.getRestorableGrant(grant.resultId);
+    if (latestGrant?.id !== grant.id) {
+      throw new HttpException('Only the latest grant can be restored', 409);
+    }
+
+    const restored = await this.prisma.$transaction(async (tx) => {
+      await tx.extraGrant.update({
+        where: { id: grant.id },
+        data: { restoredAt: new Date() },
+      });
+      await tx.result.update({
+        where: { id: grant.resultId },
+        data: this.doubleCheckCleared,
+      });
+      return Promise.all(
+        grant.attempts.map((attempt) =>
+          tx.attempt.update({
+            where: { id: attempt.id },
+            data: {
+              status: attempt.statusBeforeGrant,
+              replacedBy: null,
+              statusBeforeGrant: null,
+              extraGrant: { disconnect: true },
+              updatedBy: { connect: { id: userId } },
+            },
+          }),
+        ),
+      );
+    });
+    await this.logAll(restored, userId, 'Original attempt restored');
+
+    const competition = await this.prisma.competition.findFirst();
+    await this.sendScorecardUnlessNever(grant.resultId, competition);
+    this.appGateway.handleAttemptUpdated();
+    return { restored: restored.length };
+  }
+
+  /** What the delegate needs to know before giving extras for a result */
+  async getExtrasContext(resultId: string) {
+    const result = await this.prisma.result.findUnique({
+      where: { id: resultId },
+    });
+    if (!result) throw new HttpException('Result not found', 404);
+    const competition = await this.prisma.competition.findFirst();
+    const wcif = JSON.parse(JSON.stringify(competition.wcif));
+    const rooms = await this.prisma.room.findMany();
+    const hasNextGroup = rooms.some((room) =>
+      room.currentGroupIds.some(
+        (groupId) =>
+          groupId.split('-g')[0] === result.roundId &&
+          getNextGroupInRoom(groupId, room.name, wcif),
+      ),
+    );
+    const [eventId, roundNumber] = result.roundId.split('-r');
+    const nextRoundAttempts = await this.prisma.attempt.count({
+      where: { result: { roundId: `${eventId}-r${+roundNumber + 1}` } },
+    });
+    const grant = await this.getRestorableGrant(resultId);
+    return {
+      hasNextGroup,
+      nextRoundStarted: nextRoundAttempts > 0,
+      restorableGrantId: grant?.id ?? null,
+      restorableAttemptIds: grant?.attempts.map((a) => a.id) ?? [],
+    };
+  }
+
+  private doubleCheckCleared = {
+    isDoubleChecked: false,
+    doubleCheckedAt: null,
+    doubleCheckedBy: { disconnect: true },
+  };
+
+  private async getResultForExtras(resultId: string) {
+    const result = await this.prisma.result.findUnique({
+      where: { id: resultId },
+      include: { attempts: true },
+    });
+    if (!result) throw new HttpException('Result not found', 404);
+    if (result.attempts.some((a) => a.status === AttemptStatus.UNRESOLVED)) {
+      throw new HttpException('Resolve the open incident first', 409);
+    }
+    return result;
+  }
+
+  private getRestorableGrant(resultId: string) {
+    return this.prisma.extraGrant.findFirst({
+      where: { resultId, restoredAt: null },
+      orderBy: { createdAt: 'desc' },
+      include: { attempts: { select: { id: true } } },
+    });
+  }
+
+  private async logAll(attempts: unknown[], userId: string, comment: string) {
+    const now = new Date();
+    for (const attempt of attempts) {
+      await this.attemptEditLogService.log(
+        attempt as AttemptSnapshot,
+        now,
+        userId,
+        comment,
+      );
+    }
+  }
+
+  private async sendScorecardUnlessNever(
+    resultId: string,
+    competition: { sendingResultsFrequency: SendingResultsFrequency },
+  ) {
+    if (competition.sendingResultsFrequency === SendingResultsFrequency.NEVER) {
+      return;
+    }
+    try {
+      await this.resultService.enterWholeScorecardToWcaLiveOrCubingContests(
+        resultId,
+      );
+    } catch (e) {
+      console.error(e);
+    }
   }
 
   async swapAttempts(

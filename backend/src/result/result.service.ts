@@ -34,6 +34,7 @@ import { CheckIfAttemptEnteredDto } from './dto/checkIfAttemptEntered.dto';
 import { DoubleCheckDto } from './dto/doubleCheck.dto';
 import {
   attemptTimeWithPenalty,
+  getAttemptPosition,
   getAttemptsToVoid,
   getAttemptsWaitingForExtra,
   getCountingAttempts,
@@ -885,6 +886,7 @@ export class ResultService {
       where: {
         resultId: result.id,
       },
+      include: { extraGrant: { select: { useFreshSet: true } } },
     });
     const sortedAttempts = getSortedStandardAttempts(attempts);
     const sortedExtraAttempts = getSortedExtraAttempts(attempts);
@@ -897,7 +899,16 @@ export class ResultService {
         person: competitor,
       };
     }
-    if (getAttemptsWaitingForExtra(attempts).length > 0) {
+    const [waitingAttempt] = getAttemptsWaitingForExtra(attempts);
+    if (waitingAttempt) {
+      // A redo on a fresh set is stored as extras, but the competitor sees the
+      // attempt it replaces and gets that set's normal scramble for it
+      const scramble = waitingAttempt.extraGrant?.useFreshSet
+        ? {
+            num: getAttemptPosition(waitingAttempt, attempts),
+            isExtra: false,
+          }
+        : undefined;
       const lastExtraAttempt =
         sortedExtraAttempts[sortedExtraAttempts.length - 1];
       if (
@@ -908,6 +919,7 @@ export class ResultService {
           scrambleData: {
             num: lastExtraAttempt.attemptNumber,
             isExtra: true,
+            scramble,
           },
           person: competitor,
         };
@@ -917,6 +929,7 @@ export class ResultService {
         scrambleData: {
           num: extrasCount + 1,
           isExtra: true,
+          scramble,
         },
         person: competitor,
       };
