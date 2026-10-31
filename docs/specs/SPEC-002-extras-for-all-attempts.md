@@ -103,6 +103,10 @@ Errors: `404` for no such result, `400` when nothing is replaced or an id isn't 
 counting attempt of this result, `400` for a head-to-head round, `409` when the
 result has an open incident ("resolve it first").
 
+`GET /attempt/give-extras-for-all/:resultId` gives the modal what it needs: whether
+another group of the round follows, whether the next round has started, and what
+can be restored.
+
 In one `prisma.$transaction`:
 
 1. Create the `ExtraGrant` (see *Restoring the original attempts*).
