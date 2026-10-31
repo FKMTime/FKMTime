@@ -103,6 +103,9 @@ Errors: `404` for no such result, `400` when nothing is replaced or an id isn't 
 counting attempt of this result, `400` for a head-to-head round, `409` when the
 result has an open incident ("resolve it first").
 
+The endpoint itself never touches an open incident. The frontend saves it as extra
+given first, so all the existing handling still applies.
+
 `GET /attempt/give-extras-for-all/:resultId` gives the modal what it needs: whether
 another group of the round follows, whether the next round has started, and what
 can be restored.
@@ -386,6 +389,8 @@ no change.
 - [ ] The endpoint returns `409` with an open incident, `400` with nothing to
       replace, `400` on format `h`, and requires a delegate.
 - [ ] All replacements in one call succeed or fail together.
+- [ ] From the result page, an open incident comes along locked in, and with several
+      open the action is disabled.
 - [ ] From the incident panel, the button opens the shared modal with the incident's
       attempt locked in, and the station waiting on that incident is released.
 - [ ] Every replaced attempt keeps its edit history and can be restored one by one.
