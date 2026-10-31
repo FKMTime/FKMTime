@@ -14,11 +14,15 @@ import { competitionAtom } from "@/lib/atoms";
 import { deleteAttempt, getIncidentById, updateAttempt } from "@/lib/attempt";
 import {
     ApplicationQuickAction,
+    Attempt,
     AttemptStatus,
     Incident,
 } from "@/lib/interfaces";
 import { milisecondsToClockFormat } from "@/lib/resultFormatters";
+import { getResultById } from "@/lib/results";
+import { getSubmittedAttempts } from "@/lib/utils";
 
+import GiveExtrasModal from "../../Results/SingleResult/Components/GiveExtrasModal";
 import IncidentForm from "./IncidentForm";
 import PreviousExtras from "./PreviousExtras";
 
@@ -36,11 +40,19 @@ const IncidentPanel = ({ id, onClose, onDone }: IncidentPanelProps) => {
     const [incident, setIncident] = useState<Incident | null>(null);
     const [previousIncidents, setPreviousIncidents] = useState<Incident[]>([]);
     const [isLoading, setIsLoading] = useState(false);
+    const [attempts, setAttempts] = useState<Attempt[]>([]);
+    const [extrasIncident, setExtrasIncident] = useState<{
+        data: Incident;
+        isNoteworthy?: boolean;
+        doNotRequireCards?: boolean;
+    } | null>(null);
 
     useEffect(() => {
-        getIncidentById(id).then((data) => {
+        getIncidentById(id).then(async (data) => {
             setIncident(data.attempt);
             setPreviousIncidents(data.previousIncidents);
+            const result = await getResultById(data.attempt.result.id);
+            setAttempts(result.data.attempts ?? []);
         });
     }, [id]);
 
@@ -98,6 +110,19 @@ const IncidentPanel = ({ id, onClose, onDone }: IncidentPanelProps) => {
                 variant: "destructive",
             });
         }
+    };
+
+    const saveIncidentBeforeExtras = async (comment: string) => {
+        if (!extrasIncident) return undefined;
+        const { data, isNoteworthy, doNotRequireCards } = extrasIncident;
+        const { status, message } = await updateAttempt(
+            { ...data, comment },
+            isNoteworthy,
+            doNotRequireCards
+        );
+        return status === 200
+            ? undefined
+            : message ?? "An error occurred while updating the incident";
     };
 
     const handleQuickAction = (action: ApplicationQuickAction) => {
@@ -189,7 +214,30 @@ const IncidentPanel = ({ id, onClose, onDone }: IncidentPanelProps) => {
                 isLoading={isLoading}
                 timeLimit={timeLimit}
                 handleDelete={handleDelete}
+                handleGiveExtras={
+                    getSubmittedAttempts(attempts).length > 0
+                        ? (data, isNoteworthy, doNotRequireCards) =>
+                              setExtrasIncident({
+                                  data,
+                                  isNoteworthy,
+                                  doNotRequireCards,
+                              })
+                        : undefined
+                }
             />
+            {extrasIncident && (
+                <GiveExtrasModal
+                    isOpen
+                    onClose={() => setExtrasIncident(null)}
+                    onDone={onDone}
+                    resultId={incident.result.id}
+                    roundId={incident.result.roundId}
+                    personName={incident.result.person.name}
+                    attempts={attempts}
+                    lockedAttempt={extrasIncident.data}
+                    beforeGrant={saveIncidentBeforeExtras}
+                />
+            )}
         </section>
     );
 };

@@ -1,18 +1,33 @@
 import { useAtom } from "jotai";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { getLimitByRoundId, getNumberOfAttemptsForRound } from "wcif-helpers";
+import {
+    getLimitByRoundId,
+    getNumberOfAttemptsForRound,
+    getRoundInfoFromWcif,
+} from "wcif-helpers";
 
 import LoadingPage from "@/Components/LoadingPage";
 import EmptyState from "@/Components/shared/EmptyState";
 import PageTabs from "@/Components/shared/PageTabs";
 import { Button } from "@/Components/ui/button";
+import { useConfirm } from "@/hooks/useConfirm";
 import { usePageHeader } from "@/hooks/usePageHeader";
 import { useToast } from "@/hooks/useToast";
 import { competitionAtom } from "@/lib/atoms";
+import {
+    ExtrasContext,
+    getExtrasContext,
+    restoreExtraGrant,
+    updateAttempt,
+} from "@/lib/attempt";
 import { average, formattedBest } from "@/lib/average";
 import { getCompetitionInfo } from "@/lib/competition";
-import { RemainingAndUsedCumulativeLimit, Result } from "@/lib/interfaces";
+import {
+    AttemptStatus,
+    RemainingAndUsedCumulativeLimit,
+    Result,
+} from "@/lib/interfaces";
 import { resultToString } from "@/lib/resultFormatters";
 import { getResultById } from "@/lib/results";
 import { getSubmittedAttempts, shortRoundName } from "@/lib/utils";
@@ -20,6 +35,7 @@ import { getSubmittedAttempts, shortRoundName } from "@/lib/utils";
 import CreateAttemptModal from "../Components/CreateAttemptModal";
 import AttemptsReorderBoard from "./Components/AttemptsReorderBoard";
 import AttemptsTable from "./Components/AttemptsTable";
+import GiveExtrasModal from "./Components/GiveExtrasModal";
 import LastAttemptCard from "./Components/LastAttemptCard";
 import SingleResultHeader from "./Components/SingleResultHeader";
 import SwapAttemptsModal from "./Components/SwapAttemptsModal";
@@ -38,6 +54,11 @@ const SingleResult = () => {
     const [isOpenSwapAttemptsModal, setIsOpenSwapAttemptsModal] =
         useState<boolean>(false);
     const [tab, setTab] = useState<Tab>("submitted");
+    const confirm = useConfirm();
+    const [isOpenGiveExtrasModal, setIsOpenGiveExtrasModal] = useState(false);
+    const [extrasContext, setExtrasContext] = useState<ExtrasContext | null>(
+        null
+    );
     const [
         remainingAndUsedCumulativeLimit,
         setRemainingAndUsedCumulativeLimit,
@@ -84,6 +105,7 @@ const SingleResult = () => {
             setCompetition(competitionData.data);
         }
         const response = await getResultById(id);
+        getExtrasContext(id).then(setExtrasContext);
         if (response.status === 404) {
             toast({
                 title: "Error",
@@ -102,6 +124,39 @@ const SingleResult = () => {
         fetchData();
         setIsOpenCreateAttemptModal(false);
         setIsOpenSwapAttemptsModal(false);
+        setIsOpenGiveExtrasModal(false);
+    };
+
+    const handleRestoreOriginals = () => {
+        const grantId = extrasContext?.restorableGrantId;
+        if (!grantId || !result) return;
+        const numbers = result.attempts
+            .filter((attempt) =>
+                extrasContext.restorableAttemptIds.includes(attempt.id)
+            )
+            .map((attempt) => attempt.attemptNumber)
+            .sort((a, b) => a - b);
+        confirm({
+            title: "Use the original attempts?",
+            description: `Attempts ${numbers.join(", ")} will count again, and any redo of them will stop counting. Redo attempts stay on the result.`,
+            confirmLabel: "Use original attempts",
+            onConfirm: async () => {
+                const { status, message } = await restoreExtraGrant(grantId);
+                if (status === 200) {
+                    toast({
+                        title: "Original attempts restored",
+                        variant: "success",
+                    });
+                    fetchData();
+                } else {
+                    toast({
+                        title: "Error",
+                        description: message ?? "Something went wrong",
+                        variant: "destructive",
+                    });
+                }
+            },
+        }).catch(() => undefined);
     };
 
     useEffect(() => {
@@ -126,6 +181,36 @@ const SingleResult = () => {
 
     if (!result || !competition) return <LoadingPage />;
 
+    const canGiveExtras =
+        submittedAttempts.length > 0 &&
+        getRoundInfoFromWcif(result.roundId, competition.wcif)?.format !== "h";
+    const openIncidents = result.attempts.filter(
+        (attempt) => attempt.status === AttemptStatus.UNRESOLVED
+    );
+    const [openIncident] = openIncidents;
+
+    const handleGiveExtras = () => {
+        if (openIncidents.length > 1) {
+            toast({
+                title: "Resolve the open incidents first",
+                variant: "destructive",
+            });
+        } else {
+            setIsOpenGiveExtrasModal(true);
+        }
+    };
+
+    const saveIncidentBeforeExtras = async (comment: string) => {
+        const { status, message } = await updateAttempt({
+            ...openIncident,
+            comment,
+            status: AttemptStatus.EXTRA_GIVEN,
+        });
+        return status === 200
+            ? undefined
+            : message ?? "An error occurred while updating the incident";
+    };
+
     const resultAverage =
         submittedAttempts.length === maxAttempts
             ? average(submittedAttempts)
@@ -139,6 +224,12 @@ const SingleResult = () => {
                 onEnterAttempt={() => setIsOpenCreateAttemptModal(true)}
                 standardAttempts={standardAttempts}
                 maxAttempts={maxAttempts}
+                onGiveExtras={canGiveExtras ? handleGiveExtras : undefined}
+                onUseOriginals={
+                    extrasContext?.restorableGrantId
+                        ? handleRestoreOriginals
+                        : undefined
+                }
             />
 
             <div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,240px),1fr))] items-start gap-3.5">
@@ -291,6 +382,21 @@ const SingleResult = () => {
                 onClose={handleCloseModal}
                 attempts={standardAttempts}
             />
+            {isOpenGiveExtrasModal && (
+                <GiveExtrasModal
+                    isOpen
+                    onClose={handleCloseModal}
+                    onDone={handleCloseModal}
+                    resultId={result.id}
+                    roundId={result.roundId}
+                    personName={result.person.name}
+                    attempts={result.attempts}
+                    lockedAttempt={openIncident}
+                    beforeGrant={
+                        openIncident ? saveIncidentBeforeExtras : undefined
+                    }
+                />
+            )}
         </div>
     );
 };

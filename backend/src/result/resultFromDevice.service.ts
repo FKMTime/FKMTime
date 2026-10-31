@@ -36,8 +36,8 @@ import {
   checkCutoff,
   getAttemptsWaitingForExtra,
   getCountingAttempts,
+  getNextExtraNumber,
   getRoundResultText,
-  getSortedExtraAttempts,
   getSortedStandardAttempts,
   isCompetitorSignedInForEvent,
 } from './helpers';
@@ -250,10 +250,7 @@ export class ResultFromDeviceService {
       };
     }
     const sortedAttempts = getSortedStandardAttempts(attempts);
-    const sortedExtraAttempts = getSortedExtraAttempts(attempts);
 
-    const lastExtra =
-      sortedExtraAttempts.length > 0 ? sortedExtraAttempts.length : 0;
     let extraEntered = false;
     const [attemptToReplace] = getAttemptsWaitingForExtra(attempts);
     if (attemptToReplace) {
@@ -265,7 +262,7 @@ export class ResultFromDeviceService {
             judge,
             competitor,
             result,
-            attemptNumber: lastExtra + 1,
+            attemptNumber: getNextExtraNumber(attempts),
           },
           attemptToReplace.id,
         );
@@ -553,7 +550,7 @@ export class ResultFromDeviceService {
       where: { resultId, status: { not: AttemptStatus.SCRAMBLED } },
     });
     const now = new Date();
-    let extraNumber = getSortedExtraAttempts(attempts).length;
+    let extraNumber = getNextExtraNumber(attempts) - 1;
     for (const original of getAttemptsWaitingForExtra(attempts)) {
       extraNumber++;
       const created = await this.prisma.attempt.create({

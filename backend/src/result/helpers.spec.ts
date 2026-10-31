@@ -9,8 +9,10 @@ import {
   getAttemptsWaitingForExtra,
   getCountingAttempts,
   getFinalExtraAttempt,
+  getNextExtraNumber,
   getRoundResultText,
   isRedoNotStarted,
+  sortByPosition,
 } from './helpers';
 
 const attempt = (overrides: Partial<Attempt>): Attempt =>
@@ -281,6 +283,42 @@ describe('getAttemptsWaitingForExtra', () => {
     expect(getAttemptsWaitingForExtra(attempts).map((a) => a.id)).toEqual([
       'e1',
     ]);
+  });
+});
+
+describe('getNextExtraNumber', () => {
+  const extra = (attemptNumber: number) =>
+    attempt({ attemptNumber, type: AttemptType.EXTRA_ATTEMPT });
+
+  it('starts at 1', () => {
+    expect(getNextExtraNumber([attempt({ attemptNumber: 1 })])).toBe(1);
+  });
+
+  it('follows the highest extra, even with a gap', () => {
+    expect(getNextExtraNumber([extra(2)])).toBe(3);
+    expect(getNextExtraNumber([extra(1), extra(3)])).toBe(4);
+  });
+});
+
+describe('sortByPosition', () => {
+  it('sorts attempts and extras by the position they count for', () => {
+    const e1 = attempt({
+      id: 'e1',
+      attemptNumber: 1,
+      type: AttemptType.EXTRA_ATTEMPT,
+    });
+    const s1 = attempt({ id: 's1', attemptNumber: 1, replacedBy: 2 });
+    const s2 = attempt({ id: 's2', attemptNumber: 2, replacedBy: 1 });
+    const s3 = attempt({ id: 's3', attemptNumber: 3 });
+    const e2 = attempt({
+      id: 'e2',
+      attemptNumber: 2,
+      type: AttemptType.EXTRA_ATTEMPT,
+    });
+
+    expect(
+      sortByPosition([s3, e1, s1], [s1, s2, s3, e1, e2]).map((a) => a.id),
+    ).toEqual(['s1', 'e1', 's3']);
   });
 });
 

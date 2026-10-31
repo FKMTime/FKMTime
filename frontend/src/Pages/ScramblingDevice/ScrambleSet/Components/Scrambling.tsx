@@ -91,7 +91,8 @@ const Scrambling = ({ roundId, groupId, scrambles }: ScramblingProps) => {
         );
         setIsSigning(false);
         if (response.status === 201) {
-            const { num, isExtra } = competitor.scrambleData;
+            const { num, isExtra } =
+                competitor.scrambleData.scramble ?? competitor.scrambleData;
             setLastSigned(
                 `${competitor.person.name} · ${isExtra ? "Extra" : "Scramble"} ${num}`
             );
@@ -103,6 +104,9 @@ const Scrambling = ({ roundId, groupId, scrambles }: ScramblingProps) => {
             });
         }
     };
+
+    const shownScramble =
+        competitor?.scrambleData.scramble ?? competitor?.scrambleData;
 
     if (!scrambler) {
         return (
@@ -139,11 +143,11 @@ const Scrambling = ({ roundId, groupId, scrambles }: ScramblingProps) => {
             {competitor ? (
                 <ScrambleCard
                     person={competitor.person}
-                    scrambleData={competitor.scrambleData}
+                    scrambleData={shownScramble ?? competitor.scrambleData}
                     scramble={scrambles.find(
                         (scramble) =>
-                            scramble.num === competitor.scrambleData.num &&
-                            scramble.isExtra === competitor.scrambleData.isExtra
+                            scramble.num === shownScramble?.num &&
+                            scramble.isExtra === shownScramble?.isExtra
                     )}
                     eventId={roundId.split("-")[0]}
                     isSigning={isSigning}

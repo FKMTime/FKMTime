@@ -86,6 +86,54 @@ export const setAttemptReplacement = async (
     return response.status;
 };
 
+export interface ExtrasContext {
+    hasNextGroup: boolean;
+    nextRoundStarted: boolean;
+    restorableGrantId: string | null;
+    restorableAttemptIds: string[];
+}
+
+export const getExtrasContext = async (
+    resultId: string
+): Promise<ExtrasContext> => {
+    const response = await backendRequest(
+        `attempt/give-extras-for-all/${resultId}`,
+        "GET",
+        true
+    );
+    return await response.json();
+};
+
+export const giveExtras = async (data: {
+    resultId: string;
+    attemptIds: string[];
+    comment: string;
+    useFreshSet: boolean;
+    removeFromLive: boolean;
+}): Promise<{ status: number; message?: string }> => {
+    const response = await backendRequest(
+        "attempt/give-extras-for-all",
+        "POST",
+        true,
+        data
+    );
+    const message = !response.ok ? (await response.json()).message : undefined;
+    return { status: response.status, message };
+};
+
+export const restoreExtraGrant = async (
+    grantId: string
+): Promise<{ status: number; message?: string }> => {
+    const response = await backendRequest(
+        "attempt/restore-extra-grant",
+        "POST",
+        true,
+        { grantId }
+    );
+    const message = !response.ok ? (await response.json()).message : undefined;
+    return { status: response.status, message };
+};
+
 export const getAttemptEditLog = async (
     id: string
 ): Promise<AttemptEditLogEntry[]> => {

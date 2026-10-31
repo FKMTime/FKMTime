@@ -1,6 +1,8 @@
 import { forwardRef, HttpException, Inject, Injectable } from '@nestjs/common';
 import {
+  Attempt,
   AttemptStatus,
+  AttemptType,
   SendingResultsFrequency,
   StaffRole,
 } from '@prisma/client';
@@ -13,7 +15,11 @@ import { AttendanceService } from 'src/attendance/attendance.service';
 import { DNS_VALUE, publicPersonSelect } from 'src/constants';
 import { isUnofficialEvent } from 'src/events';
 import { IncidentService } from 'src/incident/incident.service';
-import { getCountingAttempts } from 'src/result/helpers';
+import {
+  getAttemptsWaitingForExtra,
+  getCountingAttempts,
+  sortByPosition,
+} from 'src/result/helpers';
 import { getNextGroupInRoom } from 'src/wcif-helpers';
 import { getRoundInfoFromWcif } from 'wcif-helpers';
 
@@ -138,6 +144,12 @@ export class AttemptService {
       data.deviceId ? data.deviceId : '',
     );
 
+    if (
+      data.type === AttemptType.EXTRA_ATTEMPT &&
+      data.status !== AttemptStatus.EXTRA_GIVEN
+    ) {
+      await this.replaceWaitingAttempt(createdAttempt, userId);
+    }
     await this.resultService.settleWaitingExtras(result.id);
     if (data.status !== AttemptStatus.EXTRA_GIVEN) {
       await this.resultService.enterWholeScorecardToWcaLiveOrCubingContests(
@@ -148,6 +160,59 @@ export class AttemptService {
     return {
       message: 'Attempt created successfully',
     };
+  }
+
+  /** An extra entered by hand replaces what a station's extra would */
+  private async replaceWaitingAttempt(extra: Attempt, userId: string) {
+    const attempts = await this.prisma.attempt.findMany({
+      where: { resultId: extra.resultId },
+    });
+    const [waiting] = getAttemptsWaitingForExtra(attempts);
+    if (!waiting) return;
+    await this.setReplacedBy(waiting.id, extra.attemptNumber, userId);
+    if (waiting.extraGrantId) {
+      await this.keepExtrasInOrder(waiting.extraGrantId, attempts, userId);
+    }
+  }
+
+  /** Extras typed in out of order still go to their attempts in order */
+  private async keepExtrasInOrder(
+    grantId: string,
+    attempts: Attempt[],
+    userId: string,
+  ) {
+    const updated = await this.prisma.attempt.findMany({
+      where: { resultId: attempts[0].resultId },
+    });
+    const replaced = sortByPosition(
+      updated.filter((a) => a.extraGrantId === grantId && a.replacedBy),
+      updated,
+    );
+    const extraNumbers = replaced
+      .map((attempt) => attempt.replacedBy)
+      .sort((a, b) => a - b);
+    for (const [index, attempt] of replaced.entries()) {
+      if (attempt.replacedBy !== extraNumbers[index]) {
+        await this.setReplacedBy(attempt.id, extraNumbers[index], userId);
+      }
+    }
+  }
+
+  private async setReplacedBy(
+    attemptId: string,
+    extraNumber: number,
+    userId: string,
+  ) {
+    const replaced = await this.prisma.attempt.update({
+      where: { id: attemptId },
+      data: { replacedBy: extraNumber },
+    });
+    await this.attemptEditLogService.log(
+      replaced as AttemptSnapshot,
+      new Date(),
+      userId,
+      `Replaced by extra ${extraNumber}`,
+    );
   }
 
   async enterScorecard(data: EnterScorecardDto, userId: string) {
