@@ -298,8 +298,10 @@ result unwind in order. Restoring returns `409` with an open incident on the res
 
 Plain task language; the delegate never sees statuses.
 
-**Result page (`SingleResult`).** A "Give extras for all attempts" action, shown
-when there is at least one counting attempt and no open incident. It opens a modal
+**Result page (`SingleResult`).** A "Give extras for several attempts" action, shown
+when there is at least one counting attempt. An open incident on the result comes
+along locked in, as from the incident panel; with several open, the action is
+disabled until they are resolved. It opens a modal
 with the quick actions and a comment, like `GiveExtraAttemptModal`, plus what will
 happen:
 
