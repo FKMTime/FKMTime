@@ -69,6 +69,22 @@ export const getFinalExtraAttempt = (
   return extraAttempt;
 };
 
+const isWaitingForExtra = (attempt: Attempt) =>
+  attempt.status === AttemptStatus.EXTRA_GIVEN && !attempt.replacedBy;
+
+/**
+ * Attempts given an extra that hasn't been done yet, in the order of the
+ * positions they count for, following chains of extras.
+ */
+export const getAttemptsWaitingForExtra = (attempts: Attempt[]): Attempt[] => {
+  const byPosition = getSortedStandardAttempts(attempts)
+    .map((attempt) =>
+      attempt.replacedBy ? getFinalExtraAttempt(attempt.id, attempts) : attempt,
+    )
+    .filter((attempt) => attempt && isWaitingForExtra(attempt));
+  return [...new Set([...byPosition, ...attempts.filter(isWaitingForExtra)])];
+};
+
 /**
  * The attempts that count for a result, in order: standard attempts that
  * are not replaced, unresolved or only scrambled, and for each attempt that
@@ -90,7 +106,11 @@ export const getCountingAttempts = (attempts: Attempt[]): Attempt[] => {
       attempt.status === AttemptStatus.EXTRA_GIVEN
     ) {
       const extraAttempt = getFinalExtraAttempt(attempt.id, attempts);
-      if (extraAttempt && !counting.includes(extraAttempt)) {
+      if (
+        extraAttempt &&
+        !isWaitingForExtra(extraAttempt) &&
+        !counting.includes(extraAttempt)
+      ) {
         counting.push(extraAttempt);
       }
     }

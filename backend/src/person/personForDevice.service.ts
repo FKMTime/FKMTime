@@ -7,7 +7,11 @@ import {
 } from 'src/constants';
 import { DbService } from 'src/db/db.service';
 import { eventsData } from 'src/events';
-import { attemptTimeWithPenalty, checkCutoff } from 'src/result/helpers';
+import {
+  attemptTimeWithPenalty,
+  checkCutoff,
+  getCountingAttempts,
+} from 'src/result/helpers';
 import { ResultService } from 'src/result/result.service';
 import { convertToLatin, getTranslation } from 'src/translations/translations';
 import { WcaService } from 'src/wca/wca.service';
@@ -208,7 +212,7 @@ export class PersonForDeviceService {
       let maxAttempts = getMaxAttempts(roundInfo.format);
       if (roundInfo.cutoff) {
         const cutoffPassed = checkCutoff(
-          result.attempts,
+          getCountingAttempts(result.attempts),
           roundInfo.cutoff.resultValue,
           roundInfo.cutoff.numberOfAttempts,
         );
