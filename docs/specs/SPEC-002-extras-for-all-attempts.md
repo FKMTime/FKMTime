@@ -32,7 +32,7 @@ extra at a time rarely hits. See *Gaps to close*.
 - The result ends up correct in all the awkward cases: chained extras, cutoffs,
   cumulative limits, double-checked results, WCA Live.
 - Nothing is lost: replaced attempts stay visible with their edit history, and the
-  delegate can go back to all the original attempts in one action, at any time.
+  delegate can switch between the originals and the extras at any time.
 - No change to station firmware or the micro-connector.
 
 ## Non-goals
@@ -243,43 +243,48 @@ then use their own numbers.
   separately, so the scrambling device no longer treats them as one number.
 - No firmware change: the station text comes from the backend.
 
-### Restoring the original attempts
+### Switching between originals and extras
 
 A delegate may need the original attempts back: the grant was a mistake, or a later
-ruling says the cube was fine. This works at any time, including after the redo.
+ruling says the cube was fine. That ruling can also change again, so this works both
+ways, at any time, including after the redo, with nothing to re-enter.
 
-Each grant is stored, so that it can be undone exactly:
+Each grant is stored:
 
 ```prisma
 model ExtraGrant {
   id          String    @id @default(uuid())
   resultId    String
   useFreshSet Boolean
-  createdById String
+  createdById String?
   createdAt   DateTime  @default(now())
   restoredAt  DateTime?
 }
 ```
 
-`Attempt` gains `extraGrantId` and `statusBeforeGrant`, set on each replaced attempt.
+`restoredAt` is set while the originals are in use. `Attempt` gains `extraGrantId` and
+`statusBeforeGrant`, set on each replaced attempt, plus `statusInGrant` and
+`replacedByInGrant`, which hold the grant's state while the originals are in use.
 
-`POST /attempt/restore-extra-grant` with `{ "grantId": "…" }` (`DelegateGuard`)
-does this in one transaction:
+`POST /attempt/restore-extra-grant` and `POST /attempt/reapply-extra-grant`, both with
+`{ "grantId": "…" }` (`DelegateGuard`), switch one way or the other in a transaction:
 
-1. Puts each attempt of the grant back to `statusBeforeGrant`, with `replacedBy`
-   as it was: `null` for an attempt that counted. That includes attempts now
-   `VOIDED`.
-2. Clears `isDoubleChecked`, because the counting attempts changed again.
-3. Logs each with `'Original attempt restored'` and sets `restoredAt`.
+1. Restoring puts each attempt back to `statusBeforeGrant` with `replacedBy: null`,
+   and keeps what it had in `statusInGrant` and `replacedByInGrant`. That includes
+   attempts now `VOIDED`. Reapplying puts those back.
+2. Both clear `isDoubleChecked`, because the counting attempts changed.
+3. Both log each attempt and set or clear `restoredAt`.
 
-Then it sends the scorecard, unless the competition is on `NEVER`.
+Then they send the scorecard, unless the competition is on `NEVER`. Reapplying also
+settles waiting extras, as a corrected time may have changed the cutoff.
 
-Redo attempts stay, keep their history and appear on the attempts tab, but nothing
+Redo attempts stay and keep their history while the originals are in use, but nothing
 links to them, so they don't count. Standard attempts done after the grant still
 count, and so do auto-DNSed ones, which the delegate corrects by hand if needed.
 
-Only the latest unrestored grant of a result can be restored, so two grants on one
-result unwind in order. Restoring returns `409` with an open incident on the result.
+Only one grant of a result can be switched: the one in use, otherwise the one set
+aside last, so two grants unwind in order. Both endpoints return `409` with an open
+incident on the result.
 
 ### Group changes
 
@@ -344,9 +349,10 @@ advanced must be made in WCA Live." FKMTime doesn't work out advancement, and WC
 Live takes it from who is in the next round once that round is open, so a redo
 doesn't move anyone by itself.
 
-**Result page, restoring.** While the result has a restorable grant, a "Use original
-attempts" action in the same menu opens a confirmation listing what will count again and what stops
-counting.
+**Result page, switching.** While the result has a grant, a card lists the replaced
+attempts next to their redo ("Not done yet" or "Not needed" until there is one), with
+a "Counting: Originals / Extras" switch. It needs no confirmation, as it's easy to
+switch back.
 
 **Voided attempts.** For delegates and competitors these effectively didn't happen.
 They are left out of the counting attempts, results, incident lists, statistics and
@@ -411,18 +417,21 @@ no change.
 - [ ] The incident panel links to the result page, and giving extras there takes the
       incident along and releases the station waiting on it.
 - [ ] Every replaced attempt keeps its edit history and can be restored one by one.
-- [ ] "Use original attempts" before the redo puts all five back, with their previous
-      statuses, and nothing is waiting.
-- [ ] "Use original attempts" after a finished redo makes the five originals count
+- [ ] Switching to the originals before the redo puts all five back, with their
+      previous statuses, and nothing is waiting.
+- [ ] Switching to the originals after a finished redo makes the five originals count
       again, leaves E1 to E5 in place but not counting, clears the double-check and
       sends the scorecard.
-- [ ] Restoring brings back a `VOIDED` attempt and an extra that counted in a chain.
-- [ ] With two grants on one result, only the latest can be restored.
+- [ ] Switching back to the extras needs nothing re-entered, and restores `VOIDED` and
+      waiting attempts as they were.
+- [ ] The card shows the replaced attempts next to their redo as soon as extras are
+      granted.
+- [ ] With two grants on one result, only the one in use can be switched.
 - [ ] Single extras behave as before, apart from the gap fixes.
 
 ## Rollout
 
-- `AttemptStatus` gains `VOIDED`, `ExtraGrant` is a new table and `Attempt` gains two
+- `AttemptStatus` gains `VOIDED`, `ExtraGrant` is a new table and `Attempt` gains four
   nullable columns, applied by `prisma db push` on start (the repo has no
   migrations). All of this only adds to the schema.
 - Backend and frontend ship together. Stations and the micro-connector don't
@@ -466,10 +475,11 @@ no change.
    opening the modal from the panel (tried, and removed after using it), a quick
    action setting (a new column, and it only helps competitions that set it up) and
    an inline checkbox (the choices built twice, and a long screen on phones).
-8. **Restore the original attempts in one action, at any time.** Grants are stored
-   to make it exact. Rejected: no bulk undo, an undo that ends at the first redo
-   attempt (a later ruling can still bring the originals back), and an undo that
-   only appears in a toast.
+8. **A visible two-way switch between originals and extras, at any time.** Grants
+   are stored to make it exact, and links survive switching. Rejected: no bulk undo,
+   an undo that ends at the first redo attempt (a later ruling can still bring the
+   originals back), two actions in the menu (hidden, with no side-by-side view) and
+   a one-way button.
 9. **Allow it with a warning once the next round has started.** It's the delegate's
    call. Rejected: blocking it (stops a late ruling) and no warning (a redo no
    station accepts, with no hint why). Stations running a custom round is tracked
