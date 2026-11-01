@@ -112,7 +112,7 @@ can be restored.
 
 In one `prisma.$transaction`:
 
-1. Create the `ExtraGrant` (see *Restoring the original attempts*).
+1. Create the `ExtraGrant` (see *Switching between originals and extras*).
 2. Set each target to `status: EXTRA_GIVEN`, `replacedBy: null`, with the comment
    and `updatedBy`, and store `extraGrantId` and `statusBeforeGrant`. The comment
    overwrites, as a single extra does; the edit log keeps the old one.
@@ -235,7 +235,7 @@ shown and scrambled by its position. E2 replacing attempt 2 appears as "Attempt 
 on the station and uses scramble 2 of the open set. The remaining standard attempts
 then use their own numbers.
 
-- `useFreshSet` is stored on the grant (see *Restoring the original attempts*), so
+- `useFreshSet` is stored on the grant (see *Switching between originals and extras*), so
   `getNextAttemptData` and the station text can apply it. It only applies while an
   attempt from that grant is waiting, so a single extra given later uses extra
   scrambles as usual.
