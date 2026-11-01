@@ -77,8 +77,7 @@ describe("GiveExtrasModal", () => {
         vi.mocked(getExtrasContext).mockResolvedValue({
             hasNextGroup: true,
             nextRoundStarted: false,
-            restorableGrantId: null,
-            restorableAttemptIds: [],
+            grant: null,
         });
     });
 
@@ -150,8 +149,7 @@ describe("GiveExtrasModal", () => {
         vi.mocked(getExtrasContext).mockResolvedValue({
             hasNextGroup: false,
             nextRoundStarted: false,
-            restorableGrantId: null,
-            restorableAttemptIds: [],
+            grant: null,
         });
         renderModal();
 
@@ -164,8 +162,7 @@ describe("GiveExtrasModal", () => {
         vi.mocked(getExtrasContext).mockResolvedValue({
             hasNextGroup: true,
             nextRoundStarted: true,
-            restorableGrantId: null,
-            restorableAttemptIds: [],
+            grant: null,
         });
         renderModal();
 

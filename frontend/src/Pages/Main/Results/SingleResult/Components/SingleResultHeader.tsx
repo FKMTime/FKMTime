@@ -1,6 +1,5 @@
 import {
     CircleCheck,
-    ListRestart,
     MessageSquarePlus,
     OctagonX,
     Plus,
@@ -33,8 +32,6 @@ interface SingleResultHeaderProps {
     maxAttempts: number;
     /** Left out when extras can't be given for this result */
     onGiveExtras?: () => void;
-    /** Left out when there is no grant to go back from */
-    onUseOriginals?: () => void;
 }
 
 const SingleResultHeader = ({
@@ -44,7 +41,6 @@ const SingleResultHeader = ({
     standardAttempts,
     maxAttempts,
     onGiveExtras,
-    onUseOriginals,
 }: SingleResultHeaderProps) => {
     const navigate = useNavigate();
     const confirm = useConfirm();
@@ -162,12 +158,6 @@ const SingleResultHeader = ({
                             icon: MessageSquarePlus,
                             hidden: !onGiveExtras,
                             onSelect: () => onGiveExtras?.(),
-                        },
-                        {
-                            label: "Use original attempts",
-                            icon: ListRestart,
-                            hidden: !onUseOriginals,
-                            onSelect: () => onUseOriginals?.(),
                         },
                         {
                             label: `Resubmit scorecard to ${platform}`,

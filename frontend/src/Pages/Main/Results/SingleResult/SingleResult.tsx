@@ -11,16 +11,10 @@ import LoadingPage from "@/Components/LoadingPage";
 import EmptyState from "@/Components/shared/EmptyState";
 import PageTabs from "@/Components/shared/PageTabs";
 import { Button } from "@/Components/ui/button";
-import { useConfirm } from "@/hooks/useConfirm";
 import { usePageHeader } from "@/hooks/usePageHeader";
 import { useToast } from "@/hooks/useToast";
 import { competitionAtom } from "@/lib/atoms";
-import {
-    ExtrasContext,
-    getExtrasContext,
-    restoreExtraGrant,
-    updateAttempt,
-} from "@/lib/attempt";
+import { ExtrasContext, getExtrasContext, updateAttempt } from "@/lib/attempt";
 import { average, formattedBest } from "@/lib/average";
 import { getCompetitionInfo } from "@/lib/competition";
 import {
@@ -37,6 +31,7 @@ import AttemptsReorderBoard from "./Components/AttemptsReorderBoard";
 import AttemptsTable from "./Components/AttemptsTable";
 import GiveExtrasModal from "./Components/GiveExtrasModal";
 import LastAttemptCard from "./Components/LastAttemptCard";
+import ReplacedAttemptsCard from "./Components/ReplacedAttemptsCard";
 import SingleResultHeader from "./Components/SingleResultHeader";
 import SwapAttemptsModal from "./Components/SwapAttemptsModal";
 import WarningsAndLimitsCard from "./Components/WarningsAndLimitsCard";
@@ -54,7 +49,6 @@ const SingleResult = () => {
     const [isOpenSwapAttemptsModal, setIsOpenSwapAttemptsModal] =
         useState<boolean>(false);
     const [tab, setTab] = useState<Tab>("submitted");
-    const confirm = useConfirm();
     const [isOpenGiveExtrasModal, setIsOpenGiveExtrasModal] = useState(false);
     const [extrasContext, setExtrasContext] = useState<ExtrasContext | null>(
         null
@@ -127,38 +121,6 @@ const SingleResult = () => {
         setIsOpenGiveExtrasModal(false);
     };
 
-    const handleRestoreOriginals = () => {
-        const grantId = extrasContext?.restorableGrantId;
-        if (!grantId || !result) return;
-        const numbers = result.attempts
-            .filter((attempt) =>
-                extrasContext.restorableAttemptIds.includes(attempt.id)
-            )
-            .map((attempt) => attempt.attemptNumber)
-            .sort((a, b) => a - b);
-        confirm({
-            title: "Use the original attempts?",
-            description: `Attempts ${numbers.join(", ")} will count again, and any redo of them will stop counting. Redo attempts stay on the result.`,
-            confirmLabel: "Use original attempts",
-            onConfirm: async () => {
-                const { status, message } = await restoreExtraGrant(grantId);
-                if (status === 200) {
-                    toast({
-                        title: "Original attempts restored",
-                        variant: "success",
-                    });
-                    fetchData();
-                } else {
-                    toast({
-                        title: "Error",
-                        description: message ?? "Something went wrong",
-                        variant: "destructive",
-                    });
-                }
-            },
-        }).catch(() => undefined);
-    };
-
     useEffect(() => {
         fetchData();
     }, [fetchData]);
@@ -225,11 +187,6 @@ const SingleResult = () => {
                 standardAttempts={standardAttempts}
                 maxAttempts={maxAttempts}
                 onGiveExtras={canGiveExtras ? handleGiveExtras : undefined}
-                onUseOriginals={
-                    extrasContext?.restorableGrantId
-                        ? handleRestoreOriginals
-                        : undefined
-                }
             />
 
             <div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,240px),1fr))] items-start gap-3.5">
@@ -270,6 +227,14 @@ const SingleResult = () => {
                 />
                 <LastAttemptCard result={result} fetchData={fetchData} />
             </div>
+
+            {extrasContext?.grant && (
+                <ReplacedAttemptsCard
+                    attempts={result.attempts}
+                    grant={extrasContext.grant}
+                    onSwitched={fetchData}
+                />
+            )}
 
             <PageTabs
                 label="Attempts"

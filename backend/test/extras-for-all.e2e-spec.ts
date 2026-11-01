@@ -84,7 +84,7 @@ describe('Extras for all attempts (e2e)', () => {
     }
   }, 30000);
 
-  it('replaces the attempts, then puts the originals back', async () => {
+  it('replaces the attempts, then switches to the originals and back', async () => {
     const result = await enterAttempts(3);
     await db.result.update({
       where: { id: result.id },
@@ -118,19 +118,30 @@ describe('Extras for all attempts (e2e)', () => {
       .get(`/attempt/give-extras-for-all/${result.id}`)
       .set(auth(delegate))
       .expect(200);
-    expect(context.body.restorableAttemptIds).toHaveLength(3);
+    expect(context.body.grant.attemptIds).toHaveLength(3);
+    expect(context.body.grant.usingOriginals).toBe(false);
 
     await request(server())
       .post('/attempt/restore-extra-grant')
       .set(auth(delegate))
-      .send({ grantId: context.body.restorableGrantId })
+      .send({ grantId: context.body.grant.id })
       .expect(200);
 
     const restored = await attemptsOf(result.id);
     expect(restored.every((a) => a.status === AttemptStatus.STANDARD)).toBe(
       true,
     );
-    expect(restored.every((a) => a.extraGrantId === null)).toBe(true);
+
+    await request(server())
+      .post('/attempt/reapply-extra-grant')
+      .set(auth(delegate))
+      .send({ grantId: context.body.grant.id })
+      .expect(200);
+
+    const reapplied = await attemptsOf(result.id);
+    expect(reapplied.every((a) => a.status === AttemptStatus.EXTRA_GIVEN)).toBe(
+      true,
+    );
   });
 
   it('leaves unticked attempts alone', async () => {

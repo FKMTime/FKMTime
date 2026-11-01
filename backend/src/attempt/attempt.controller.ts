@@ -102,6 +102,18 @@ export class AttemptController {
     );
   }
 
+  @HttpCode(HttpStatus.OK)
+  @Post('reapply-extra-grant')
+  async reapplyExtraGrant(
+    @Body() data: RestoreExtraGrantDto,
+    @GetUser() user: JwtAuthDto,
+  ) {
+    return await this.attemptService.reapplyExtraGrant(
+      data.grantId,
+      user.userId,
+    );
+  }
+
   @Get('give-extras-for-all/:resultId')
   async getExtrasContext(@Param('resultId') resultId: string) {
     return await this.attemptService.getExtrasContext(resultId);

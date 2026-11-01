@@ -32,6 +32,7 @@ describe('AttemptService extras for all attempts', () => {
   let prisma: Record<string, any>;
   let resultService: {
     enterWholeScorecardToWcaLiveOrCubingContests: jest.Mock;
+    settleWaitingExtras: jest.Mock;
   };
   let appGateway: {
     handleAttemptUpdated: jest.Mock;
@@ -113,8 +114,12 @@ describe('AttemptService extras for all attempts', () => {
             }
           );
         }),
-        findFirst: jest.fn().mockImplementation(async () => {
-          const grant = grants.filter((g) => !g.restoredAt).at(-1);
+        findFirst: jest.fn().mockImplementation(async ({ where }) => {
+          const grant = (
+            where.restoredAt === null
+              ? grants.filter((g) => !g.restoredAt)
+              : grants.filter((g) => g.restoredAt)
+          ).at(-1);
           return grant ? { ...grant, attempts: [] } : null;
         }),
         update: jest.fn().mockImplementation(async ({ where, data }) => {
@@ -128,6 +133,7 @@ describe('AttemptService extras for all attempts', () => {
     prisma.$transaction = jest.fn().mockImplementation((work) => work(prisma));
     resultService = {
       enterWholeScorecardToWcaLiveOrCubingContests: jest.fn(),
+      settleWaitingExtras: jest.fn(),
     };
     appGateway = {
       handleAttemptUpdated: jest.fn(),
@@ -280,7 +286,6 @@ describe('AttemptService extras for all attempts', () => {
           roundId: '333-r1',
           person: { id: 'person-1' },
         }),
-        settleWaitingExtras: jest.fn(),
       });
     });
 
@@ -371,6 +376,45 @@ describe('AttemptService extras for all attempts', () => {
 
       await expect(
         service.restoreExtraGrant('grant-1', 'user-1'),
+      ).rejects.toMatchObject({ status: 409 });
+    });
+
+    it('switches back to the extras without entering them again', async () => {
+      await give(['s1', 's2']);
+      attempts[0].replacedBy = 1;
+      attempts[1].status = AttemptStatus.VOIDED;
+
+      await service.restoreExtraGrant('grant-1', 'user-1');
+      await expect(
+        service.reapplyExtraGrant('grant-1', 'user-1'),
+      ).resolves.toEqual({ reapplied: 2 });
+
+      expect(attempts.map((a) => a.status)).toEqual([
+        AttemptStatus.EXTRA_GIVEN,
+        AttemptStatus.VOIDED,
+      ]);
+      expect(attempts[0].replacedBy).toBe(1);
+      expect(grants[0].restoredAt).toBeNull();
+      expect(
+        resultService.enterWholeScorecardToWcaLiveOrCubingContests,
+      ).toHaveBeenCalledTimes(3);
+    });
+
+    it('can switch back and forth', async () => {
+      await give(['s1']);
+
+      await service.restoreExtraGrant('grant-1', 'user-1');
+      await service.reapplyExtraGrant('grant-1', 'user-1');
+      await service.restoreExtraGrant('grant-1', 'user-1');
+
+      expect(attempts[0].status).toBe(AttemptStatus.STANDARD);
+    });
+
+    it('refuses to reapply extras already in use', async () => {
+      await give(['s1']);
+
+      await expect(
+        service.reapplyExtraGrant('grant-1', 'user-1'),
       ).rejects.toMatchObject({ status: 409 });
     });
 

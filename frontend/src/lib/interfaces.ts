@@ -234,6 +234,9 @@ export interface Attempt {
     attemptNumber: number;
     comment?: string;
     replacedBy?: number | null;
+    /** What a set-aside grant had, so it can be used again */
+    replacedByInGrant?: number | null;
+    statusInGrant?: AttemptStatus | null;
     penalty: number;
     status: AttemptStatus;
     type: AttemptType;

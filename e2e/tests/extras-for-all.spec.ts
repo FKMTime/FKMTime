@@ -18,7 +18,7 @@ import {
     signInTablet,
 } from "../helpers/scrambles";
 import { Station } from "../helpers/station";
-import { confirm, expectToast } from "../helpers/ui";
+import { expectToast } from "../helpers/ui";
 
 freshDatabase();
 signedInAs("delegate");
@@ -76,10 +76,17 @@ const submitExtras = async (page: Page) => {
 const submittedTab = (page: Page) =>
     page.getByRole("tab", { name: /Submitted/ });
 
-const useOriginals = async (page: Page) => {
-    await chooseResultAction(page, "Use original attempts");
-    await confirm(page, "Use original attempts");
-    await expectToast(page, "Original attempts restored");
+const switchCounting = async (page: Page, to: "Originals" | "Extras") => {
+    await page
+        .getByRole("radiogroup", { name: "Counting" })
+        .getByRole("radio", { name: to })
+        .click();
+    await expectToast(
+        page,
+        to === "Originals"
+            ? "Now counting the original attempts"
+            : "Now counting the extras"
+    );
 };
 
 /** A station in the room, and competitor and judge cards to use it with */
@@ -148,7 +155,7 @@ test.describe("extras for several attempts", () => {
         ]);
         expect(replaced.attempts[0].comment).toBe("Illegal");
 
-        await useOriginals(page);
+        await switchCounting(page, "Originals");
 
         await expect(submittedTab(page)).toContainText("3");
         const restored = await getResult(api, ROUND, person.id);
@@ -214,8 +221,16 @@ test.describe("extras for several attempts", () => {
         const summary = page.getByRole("region", { name: "Summary" });
         await expect(summary).toContainText("20.00");
 
-        await useOriginals(page);
+        await expect(
+            page.getByRole("region", { name: "Replaced attempts" })
+        ).toContainText("E1: 20.00");
+
+        await switchCounting(page, "Originals");
         await expect(summary).toContainText("10.00");
+
+        await switchCounting(page, "Extras");
+        await expect(summary).toContainText("20.00");
+        await expect(submittedTab(page)).toContainText("4");
     });
 
     test("an open incident sends several extras to the result page", async ({
@@ -325,7 +340,7 @@ test.describe("extras for several attempts", () => {
             station.close();
         }
 
-        await useOriginals(page);
+        await switchCounting(page, "Originals");
         await expect(submittedTab(page)).toContainText("3");
     });
 

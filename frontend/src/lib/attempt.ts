@@ -86,11 +86,16 @@ export const setAttemptReplacement = async (
     return response.status;
 };
 
+export interface ExtraGrantState {
+    id: string;
+    usingOriginals: boolean;
+    attemptIds: string[];
+}
+
 export interface ExtrasContext {
     hasNextGroup: boolean;
     nextRoundStarted: boolean;
-    restorableGrantId: string | null;
-    restorableAttemptIds: string[];
+    grant: ExtraGrantState | null;
 }
 
 export const getExtrasContext = async (
@@ -126,6 +131,19 @@ export const restoreExtraGrant = async (
 ): Promise<{ status: number; message?: string }> => {
     const response = await backendRequest(
         "attempt/restore-extra-grant",
+        "POST",
+        true,
+        { grantId }
+    );
+    const message = !response.ok ? (await response.json()).message : undefined;
+    return { status: response.status, message };
+};
+
+export const reapplyExtraGrant = async (
+    grantId: string
+): Promise<{ status: number; message?: string }> => {
+    const response = await backendRequest(
+        "attempt/reapply-extra-grant",
         "POST",
         true,
         { grantId }

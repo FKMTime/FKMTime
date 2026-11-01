@@ -357,8 +357,8 @@ export class AttemptService {
     });
     if (!grant) throw new HttpException('Extra grant not found', 404);
     await this.getResultForExtras(grant.resultId);
-    const latestGrant = await this.getRestorableGrant(grant.resultId);
-    if (latestGrant?.id !== grant.id) {
+    const switchable = await this.getSwitchableGrant(grant.resultId);
+    if (switchable?.id !== grant.id || grant.restoredAt) {
       throw new HttpException('Only the latest grant can be restored', 409);
     }
 
@@ -378,8 +378,9 @@ export class AttemptService {
             data: {
               status: attempt.statusBeforeGrant,
               replacedBy: null,
-              statusBeforeGrant: null,
-              extraGrant: { disconnect: true },
+              // Kept so the extras can be used again without entering them
+              statusInGrant: attempt.status,
+              replacedByInGrant: attempt.replacedBy,
               updatedBy: { connect: { id: userId } },
             },
           }),
@@ -392,6 +393,51 @@ export class AttemptService {
     await this.sendScorecardUnlessNever(grant.resultId, competition);
     this.appGateway.handleAttemptUpdated();
     return { restored: restored.length };
+  }
+
+  async reapplyExtraGrant(grantId: string, userId: string) {
+    const grant = await this.prisma.extraGrant.findUnique({
+      where: { id: grantId },
+      include: { attempts: true },
+    });
+    if (!grant) throw new HttpException('Extra grant not found', 404);
+    await this.getResultForExtras(grant.resultId);
+    const switchable = await this.getSwitchableGrant(grant.resultId);
+    if (switchable?.id !== grant.id || !grant.restoredAt) {
+      throw new HttpException('These extras are already in use', 409);
+    }
+
+    const reapplied = await this.prisma.$transaction(async (tx) => {
+      await tx.extraGrant.update({
+        where: { id: grant.id },
+        data: { restoredAt: null },
+      });
+      await tx.result.update({
+        where: { id: grant.resultId },
+        data: this.doubleCheckCleared,
+      });
+      return Promise.all(
+        grant.attempts.map((attempt) =>
+          tx.attempt.update({
+            where: { id: attempt.id },
+            data: {
+              status: attempt.statusInGrant,
+              replacedBy: attempt.replacedByInGrant,
+              statusInGrant: null,
+              replacedByInGrant: null,
+              updatedBy: { connect: { id: userId } },
+            },
+          }),
+        ),
+      );
+    });
+    await this.logAll(reapplied, userId, 'Extras in use again');
+    await this.resultService.settleWaitingExtras(grant.resultId);
+
+    const competition = await this.prisma.competition.findFirst();
+    await this.sendScorecardUnlessNever(grant.resultId, competition);
+    this.appGateway.handleAttemptUpdated();
+    return { reapplied: reapplied.length };
   }
 
   /** What the delegate needs to know before giving extras for a result */
@@ -414,12 +460,15 @@ export class AttemptService {
     const nextRoundAttempts = await this.prisma.attempt.count({
       where: { result: { roundId: `${eventId}-r${+roundNumber + 1}` } },
     });
-    const grant = await this.getRestorableGrant(resultId);
+    const grant = await this.getSwitchableGrant(resultId);
     return {
       hasNextGroup,
       nextRoundStarted: nextRoundAttempts > 0,
-      restorableGrantId: grant?.id ?? null,
-      restorableAttemptIds: grant?.attempts.map((a) => a.id) ?? [],
+      grant: grant && {
+        id: grant.id,
+        usingOriginals: !!grant.restoredAt,
+        attemptIds: grant.attempts.map((a) => a.id),
+      },
     };
   }
 
@@ -441,12 +490,21 @@ export class AttemptService {
     return result;
   }
 
-  private getRestorableGrant(resultId: string) {
-    return this.prisma.extraGrant.findFirst({
-      where: { resultId, restoredAt: null },
-      orderBy: { createdAt: 'desc' },
-      include: { attempts: { select: { id: true } } },
-    });
+  /** The grant in use, otherwise the one set aside last */
+  private async getSwitchableGrant(resultId: string) {
+    const include = { attempts: { select: { id: true } } };
+    return (
+      (await this.prisma.extraGrant.findFirst({
+        where: { resultId, restoredAt: null },
+        orderBy: { createdAt: 'desc' },
+        include,
+      })) ??
+      this.prisma.extraGrant.findFirst({
+        where: { resultId, restoredAt: { not: null } },
+        orderBy: { restoredAt: 'desc' },
+        include,
+      })
+    );
   }
 
   private async logAll(attempts: unknown[], userId: string, comment: string) {
