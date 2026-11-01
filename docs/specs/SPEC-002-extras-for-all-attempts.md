@@ -334,15 +334,8 @@ set, fewer preselect extras, and the delegate can change it. With extras selecte
 the text adds how many are needed. In the last group of a round, the fresh set
 option adds a hint to generate a set and add it under Scrambles first.
 
-**Incident panel (`IncidentPanel`).** A separate "Give extras for several attempts"
-button next to "Save and give extra", shown when the competitor has counting
-attempts besides this one. It opens the same modal, with the incident's attempt
-included and locked, and the modal's quick actions fill the comment. On submit the
-panel calls `updateAttempt` for the incident as now, then the new endpoint. The
-incident goes first so all the existing handling (noteworthy, station response)
-still applies and the endpoint's open-incident check passes. If the second call
-fails the competitor has a single extra; show the error, and the delegate can finish
-from the result page.
+**Incident panel (`IncidentPanel`).** Extras for several attempts aren't given here.
+The panel links to the result page, where an open incident comes along locked in.
 
 **When the next round has started.** Detected by anyone having attempts in the next
 round of the event. The action stays available, with a warning in the modal: "The
@@ -415,8 +408,8 @@ no change.
 - [ ] Entering E2 before E1 by hand still puts E1 on the first replaced attempt.
 - [ ] Editing E3 or later keeps it that extra.
 - [ ] The scorecard page sends a competitor with attempts waiting to their result.
-- [ ] From the incident panel, the button opens the shared modal with the incident's
-      attempt locked in, and the station waiting on that incident is released.
+- [ ] The incident panel links to the result page, and giving extras there takes the
+      incident along and releases the station waiting on it.
 - [ ] Every replaced attempt keeps its edit history and can be restored one by one.
 - [ ] "Use original attempts" before the redo puts all five back, with their previous
       statuses, and nothing is waiting.
@@ -468,10 +461,11 @@ no change.
    attempts then follow the normal send setting, and the option is hidden on
    `NEVER`. Rejected: always sending, and not
    sending at grant (invalid times could stay public for a whole group).
-7. **Separate button in the incident panel, opening the shared modal.** Rejected: a
-   quick action setting (a new column, and it only helps competitions that set it
-   up; can be added later) and an inline checkbox (the choices built twice, and a
-   long screen on phones).
+7. **The incident panel links to the result page.** One place gives extras for
+   several attempts, and it already handles an open incident. Rejected: a button
+   opening the modal from the panel (tried, and removed after using it), a quick
+   action setting (a new column, and it only helps competitions that set it up) and
+   an inline checkbox (the choices built twice, and a long screen on phones).
 8. **Restore the original attempts in one action, at any time.** Grants are stored
    to make it exact. Rejected: no bulk undo, an undo that ends at the first redo
    attempt (a later ruling can still bring the originals back), and an undo that
