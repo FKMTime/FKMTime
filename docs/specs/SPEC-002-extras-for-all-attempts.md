@@ -317,7 +317,7 @@ Plain task language; the delegate never sees statuses.
 
 **Result page (`SingleResult`).** A "Give extras for several attempts" action in the
 result's ⋮ menu, shown when there is at least one counting attempt. An open incident
-on the result comes along locked in, as from the incident panel; with several open,
+on the result comes along locked in, and its station is released as usual; with several open,
 choosing it says to resolve them first. It opens a modal
 with the quick actions and a comment, like `GiveExtraAttemptModal`, plus what will
 happen:
