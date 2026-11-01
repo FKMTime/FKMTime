@@ -58,7 +58,7 @@ docker compose exec backend npx ts-node prisma/seed/seed-test.ts
 |------|-------|
 | Panel | http://localhost:5173, sign in with `admin` / `admin` |
 | Backend | http://localhost:5000 (`/health`) |
-| API tester, for station messages | http://localhost:5002 |
+| Station tester, for station messages | http://localhost:5173/station-tester |
 | Dummy WCA / WCA Live | http://localhost:3005 / http://localhost:4000 |
 
 The seed needs the current dummy WCA image, hence the pull. Backend and frontend
