@@ -282,7 +282,6 @@ export interface Incident extends Attempt {
 export enum IncidentAction {
     "RESOLVED" = "RESOLVED",
     "EXTRA_GIVEN" = "EXTRA_GIVEN",
-    "EXTRA_GIVEN_FOR_SEVERAL" = "EXTRA_GIVEN_FOR_SEVERAL",
 }
 
 export interface NoteworthyIncidentData {

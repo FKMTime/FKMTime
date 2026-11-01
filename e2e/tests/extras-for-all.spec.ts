@@ -218,7 +218,10 @@ test.describe("extras for several attempts", () => {
         await expect(summary).toContainText("10.00");
     });
 
-    test("gives extras from an open incident", async ({ page, api }) => {
+    test("an open incident sends several extras to the result page", async ({
+        page,
+        api,
+    }) => {
         const person = await getPersonByRegistrantId(api, 34);
         await createAttempts(api, ROUND, person.id, [1000, 1100]);
         const card = await setUpStation(api, 40034, person.id, 35);
@@ -241,14 +244,20 @@ test.describe("extras for several attempts", () => {
         const panel = page.getByRole("region", {
             name: `Incident: ${person.name}`,
         });
-        const giveExtras = panel.getByRole("button", { name: GIVE_EXTRAS });
-        await expect(giveExtras).toBeVisible();
+        const link = panel.getByRole("link", {
+            name: /Give extras on the result page/,
+        });
+        await expect(link).toBeVisible();
+        await expect(
+            panel.getByRole("button", { name: GIVE_EXTRAS })
+        ).toHaveCount(0);
         // The buttons all stay inside the panel
         const overflow = await panel.evaluate(
             (element) => element.scrollWidth - element.clientWidth
         );
         expect(overflow).toBeLessThanOrEqual(0);
-        await giveExtras.click();
+        await link.click();
+        await openExtrasDialog(page);
         const dialog = extrasDialog(page);
         await expect(dialog).toContainText(
             "Attempts 1, 2 and 3 will no longer count."
