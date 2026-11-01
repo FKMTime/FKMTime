@@ -104,6 +104,10 @@ const PublicResults = lazy(() => import("./Pages/Public/PublicResults"));
 const PublicLiveSolving = lazy(
     () => import("./Pages/Public/PublicLiveSolving")
 );
+// DEV is false at build time, so a production bundle doesn't contain the page
+const StationTester = import.meta.env.DEV
+    ? lazy(() => import("./Pages/Main/StationTester/StationTester"))
+    : null;
 
 const App = () => {
     const [isConnected, setConnected] = useState(0);
@@ -259,6 +263,14 @@ const App = () => {
                     path: "events",
                     element: <UnofficialEvents />,
                 },
+                ...(StationTester
+                    ? [
+                          {
+                              path: "station-tester",
+                              element: <StationTester />,
+                          },
+                      ]
+                    : []),
             ],
         },
         {

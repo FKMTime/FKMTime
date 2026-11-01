@@ -25,6 +25,7 @@ import { ScramblingModule } from './scrambling/scrambling.module';
 import { ScramblingDeviceModule } from './scrambling-device/scrambling-device.module';
 import { SettingsModule } from './settings/settings.module';
 import { SocketModule } from './socket/socket.module';
+import { StationTesterModule } from './station-tester/station-tester.module';
 import { UserModule } from './user/user.module';
 import { WcaModule } from './wca/wca.module';
 
@@ -56,6 +57,7 @@ import { WcaModule } from './wca/wca.module';
     AttendanceModule,
     WcaModule,
     SocketModule,
+    StationTesterModule,
     EventsModule,
     ContestsModule,
     ScramblingDeviceModule,
