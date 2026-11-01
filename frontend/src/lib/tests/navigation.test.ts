@@ -31,9 +31,11 @@ const ids = (ctx: NavContext) => getNavItems(ctx).map((item) => item.id);
 describe("getNavItems", () => {
     it("only lists the station tester in the dev build", () => {
         expect(ids(delegate)).not.toContain("stationTester");
-        expect(ids({ ...delegate, showStationTester: true })).toContain(
-            "stationTester"
-        );
+        const item = getNavItems({
+            ...delegate,
+            showStationTester: true,
+        }).find((navItem) => navItem.id === "stationTester");
+        expect(item?.group).toBe("Development");
     });
 
     it("shows every section to a delegate", () => {

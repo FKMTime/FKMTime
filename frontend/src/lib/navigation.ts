@@ -29,7 +29,7 @@ export type NavId =
     | "stationTester"
     | "settings";
 
-export type NavGroup = "Competition day" | "Admin" | "Account";
+export type NavGroup = "Competition day" | "Admin" | "Development" | "Account";
 
 export interface NavItem {
     id: NavId;
@@ -155,7 +155,7 @@ export const getNavItems = (ctx: NavContext): NavItem[] => {
             label: "Station tester",
             icon: FlaskConical,
             to: "/station-tester",
-            group: "Admin",
+            group: "Development",
             paths: ["/station-tester"],
         },
         ctx.canAccessSettings && {

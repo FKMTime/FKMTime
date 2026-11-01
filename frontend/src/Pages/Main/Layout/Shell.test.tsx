@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { cleanup, render, screen } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { describe, expect, it, vi } from "vitest";
 
@@ -91,6 +91,32 @@ describe("DesktopSidebar", () => {
         renderSidebar("/");
         expect(screen.queryByRole("link", { name: /Settings/ })).toBeNull();
         expect(screen.getByText("Admin")).toBeTruthy();
+    });
+
+    it("only shows the Development section with something in it", () => {
+        renderSidebar("/");
+        expect(screen.queryByText("Development")).toBeNull();
+        cleanup();
+
+        render(
+            <MemoryRouter>
+                <DesktopSidebar
+                    items={getNavItems({
+                        useFkmTimeDevices: true,
+                        isDelegate: true,
+                        isOrganizerOrDelegate: true,
+                        isStageLeaderOrAbove: true,
+                        canAccessSettings: true,
+                        showStationTester: true,
+                    })}
+                    unresolvedIncidentsCount={0}
+                />
+            </MemoryRouter>
+        );
+        expect(screen.getByText("Development")).toBeTruthy();
+        expect(
+            screen.getByRole("link", { name: /Station tester/ })
+        ).toBeTruthy();
     });
 
     it("marks the current section", () => {
