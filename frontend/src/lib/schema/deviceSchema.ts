@@ -1,16 +1,23 @@
 import { z } from "zod";
 
+import { requiredText } from "./fields";
+
 export const deviceSchema = z.object({
-    name: z.string().nonempty(),
+    name: requiredText("Name is required"),
     espId: z
         .string()
-        .regex(/^[0-9a-fA-F]*$/)
+        .regex(
+            /^[0-9a-fA-F]*$/,
+            "ESP ID can only use digits 0-9 and letters A-F"
+        )
         .optional(),
-    roomId: z.string().nonempty({
-        message: "Please select a room",
+    roomId: requiredText("Please select a room"),
+    type: z.enum(["STATION", "ATTENDANCE_SCRAMBLER", "ATTENDANCE_RUNNER"], {
+        error: "Please select a device type",
     }),
-    type: z.enum(["STATION", "ATTENDANCE_SCRAMBLER", "ATTENDANCE_RUNNER"]),
-    hwVersion: z.enum(["V3", "V4"]),
+    hwVersion: z.enum(["V3", "V4"], {
+        error: "Please select a hardware version",
+    }),
 });
 
 export const deviceSettingsSchema = z.object({

@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+import { requiredText } from "./fields";
+
 export const warningSchema = z.object({
-    description: z.string().nonempty("Description is required"),
+    description: requiredText("Description is required"),
 });

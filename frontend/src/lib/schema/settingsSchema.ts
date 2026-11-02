@@ -1,11 +1,13 @@
 import { z } from "zod";
 
+import { limitedText } from "./fields";
+
 export const settingsSchema = z.object({
-    username: z.string().min(2).max(50).default(""),
+    username: limitedText("Username", 2, 50).default(""),
 });
 
 export const changePasswordSchema = z.object({
-    currentPassword: z.string().min(6).max(50),
-    newPassword: z.string().min(6).max(50),
-    confirmPassword: z.string().min(6).max(50),
+    currentPassword: limitedText("Current password", 6, 50),
+    newPassword: limitedText("New password", 6, 50),
+    confirmPassword: limitedText("Password confirmation", 6, 50),
 });
