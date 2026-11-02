@@ -4,11 +4,13 @@ import { DNF_VALUE, DNS_VALUE } from 'src/constants';
 import {
   attemptTimeWithPenalty,
   checkCutoff,
+  getAttemptPosition,
   getAttemptsToVoid,
   getAttemptsWaitingForExtra,
   getCountingAttempts,
   getFinalExtraAttempt,
   getRoundResultText,
+  isRedoNotStarted,
 } from './helpers';
 
 const attempt = (overrides: Partial<Attempt>): Attempt =>
@@ -279,6 +281,54 @@ describe('getAttemptsWaitingForExtra', () => {
     expect(getAttemptsWaitingForExtra(attempts).map((a) => a.id)).toEqual([
       'e1',
     ]);
+  });
+});
+
+describe('getAttemptPosition', () => {
+  it('finds the position an extra in a chain counts for', () => {
+    const e1 = attempt({
+      id: 'e1',
+      attemptNumber: 1,
+      type: AttemptType.EXTRA_ATTEMPT,
+      status: AttemptStatus.EXTRA_GIVEN,
+    });
+    const attempts = [
+      attempt({ id: 's1', attemptNumber: 1 }),
+      attempt({
+        id: 's2',
+        attemptNumber: 2,
+        replacedBy: 1,
+        status: AttemptStatus.EXTRA_GIVEN,
+      }),
+      e1,
+    ];
+    expect(getAttemptPosition(e1, attempts)).toBe(2);
+  });
+});
+
+describe('isRedoNotStarted', () => {
+  const granted = (id: string, attemptNumber: number, replacedBy = null) =>
+    attempt({
+      id,
+      attemptNumber,
+      replacedBy,
+      status: AttemptStatus.EXTRA_GIVEN,
+      extraGrantId: 'fresh',
+    });
+
+  it('is true while every attempt of the grant is waiting', () => {
+    const attempts = [granted('s1', 1), granted('s2', 2)];
+    expect(isRedoNotStarted(attempts, ['fresh'])).toBe(true);
+  });
+
+  it('is false once the first redo attempt is in', () => {
+    const attempts = [granted('s1', 1, 1), granted('s2', 2)];
+    expect(isRedoNotStarted(attempts, ['fresh'])).toBe(false);
+  });
+
+  it('is false for a redo on extras', () => {
+    const attempts = [granted('s1', 1), granted('s2', 2)];
+    expect(isRedoNotStarted(attempts, [])).toBe(false);
   });
 });
 

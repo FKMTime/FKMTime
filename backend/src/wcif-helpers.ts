@@ -1,4 +1,11 @@
-import { Competition, Event, getEventInfoFromWcif, Round } from 'wcif-helpers';
+import {
+  Activity,
+  Competition,
+  Event,
+  getActivityInfoFromScheduleWithRoom,
+  getEventInfoFromWcif,
+  Round,
+} from 'wcif-helpers';
 
 import { roundFormatMap } from './constants';
 
@@ -24,6 +31,25 @@ export const isCumulativeLimit = (roundId: string, wcif: Competition) => {
   const event: Event = getEventInfoFromWcif(eventId, wcif);
   const round: Round = event.rounds.find((r) => r.id === roundId);
   return round.timeLimit.cumulativeRoundIds.length > 0;
+};
+
+/** The group after this one in the round, in this room, if there is one */
+export const getNextGroupInRoom = (
+  groupId: string,
+  roomName: string,
+  wcif: Competition,
+): Activity | null => {
+  const round: Activity = getActivityInfoFromScheduleWithRoom(
+    groupId.split('-g')[0],
+    roomName,
+    wcif,
+  );
+  if (!round) return null;
+  const groups = [...round.childActivities].sort(
+    (a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime(),
+  );
+  const currentIndex = groups.findIndex((a) => a.activityCode === groupId);
+  return currentIndex === -1 ? null : (groups[currentIndex + 1] ?? null);
 };
 
 export const getMaxAttempts = (roundFormat: string) => {
