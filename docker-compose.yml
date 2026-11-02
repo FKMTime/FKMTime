@@ -17,7 +17,6 @@ services:
       - DATABASE_URL=postgres://root:password@database:5432/fkm_time
       - SECRET=dev-only-secret-not-for-production-change-me
       - WCA_LIVE_API_ORIGIN=http://dummy_wca_live:4000/api
-      - CUBING_CONTESTS_API_ORIGIN=http://api_tester:5001/api
       - WCA_ORIGIN=http://dummy_wca:3000
       - WCA_CLIENT_ID=example-application-id
       - WCA_CLIENT_SECRET=example-secret
@@ -74,28 +73,6 @@ services:
       timeout: 20s
       retries: 50
     
-  api_tester:
-    build:
-      context: ./backend/api-tester
-      dockerfile: Dockerfile.dev
-    container_name: fkmtime-dev-api-tester
-    # Feel free to change this if you are not using CubingContests
-    ports:
-      - "5002:5001" 
-    environment:
-      - SOCKET_PATH=/app/sock/socket.sock
-    volumes:
-      - ./backend/api-tester/src:/app/src
-      - sock:/app/sock
-    restart: unless-stopped
-    dns:
-      - 8.8.8.8
-      - 8.8.4.4
-      - 1.1.1.1
-    depends_on:
-      backend:
-        condition: service_healthy
-
   dummy_wca:
     container_name: fkmtime-dev-dummy-wca
     restart: unless-stopped
