@@ -1,6 +1,6 @@
 # SPEC-002: Extras for all attempts so far
 
-- **Status:** Accepted
+- **Status:** Implemented
 - **Created:** 2026-10-30
 - **Related:** existing extras flow (`EXTRA_GIVEN` / `replacedBy`),
   [SPEC-001](SPEC-001-head-to-head.md) (extras in head-to-head rounds), #513
