@@ -66,6 +66,7 @@ const CreateWCAUserForm = ({
                                     setSelectedPerson(person);
                                 }}
                             />
+                            <FormMessage />
                         </FormItem>
                     )}
                 />

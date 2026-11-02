@@ -14,9 +14,9 @@ export const createAttemptSchema = z.object({
     judgeId: z.string().optional(),
     scramblerId: z.string().optional(),
     deviceId: z.string().nullable(),
-    attemptNumber: z.number(),
-    value: z.number(),
-    penalty: z.number(),
+    attemptNumber: z.number({ error: "Please enter the attempt number" }),
+    value: z.number({ error: "Please enter the time" }),
+    penalty: z.number({ error: "Please select a penalty" }),
     comment: z.string().nullable(),
     replacedBy: z.string().optional(),
 });
