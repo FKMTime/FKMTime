@@ -325,6 +325,7 @@ enum AttemptStatus {
   UNRESOLVED
   RESOLVED
   EXTRA_GIVEN
+  VOIDED
 }
 
 enum Role {

@@ -278,7 +278,8 @@ export class ResultFromDeviceService {
           extraAttempt.id,
         );
       }
-      if (finalData.dnsOther) {
+      const voided = await this.resultService.settleWaitingExtras(result.id);
+      if (finalData.dnsOther && voided === 0) {
         await this.dnsRemainingAttempts(
           result.id,
           getMaxAttempts(roundInfo.format),

@@ -264,6 +264,7 @@ export enum AttemptStatus {
     RESOLVED = "RESOLVED",
     EXTRA_GIVEN = "EXTRA_GIVEN",
     SCRAMBLED = "SCRAMBLED",
+    VOIDED = "VOIDED",
 }
 
 //eslint-disable-next-line

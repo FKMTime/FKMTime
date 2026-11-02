@@ -34,6 +34,7 @@ import { CheckIfAttemptEnteredDto } from './dto/checkIfAttemptEntered.dto';
 import { DoubleCheckDto } from './dto/doubleCheck.dto';
 import {
   attemptTimeWithPenalty,
+  getAttemptsToVoid,
   getAttemptsWaitingForExtra,
   getCountingAttempts,
   getSortedExtraAttempts,
@@ -842,6 +843,36 @@ export class ResultService {
       used,
       remaining: Math.max(0, limit - used),
     };
+  }
+
+  /** Closes attempts a missed cutoff made unnecessary. Returns how many */
+  async settleWaitingExtras(resultId: string) {
+    const competition = await this.prisma.competition.findFirst();
+    const result = await this.prisma.result.findUnique({
+      where: { id: resultId },
+      include: { attempts: true },
+    });
+    if (!competition || !result) return 0;
+    const wcif = JSON.parse(JSON.stringify(competition.wcif));
+    const roundInfo = getRoundInfoFromWcif(result.roundId, wcif);
+    const attemptsToVoid = getAttemptsToVoid(
+      result.attempts,
+      roundInfo?.cutoff,
+    );
+    const now = new Date();
+    for (const attempt of attemptsToVoid) {
+      const voided = await this.prisma.attempt.update({
+        where: { id: attempt.id },
+        data: { status: AttemptStatus.VOIDED },
+      });
+      await this.attemptEditLogService.log(
+        voided as AttemptSnapshot,
+        now,
+        null,
+        'No longer needed: cutoff not met',
+      );
+    }
+    return attemptsToVoid.length;
   }
 
   async getNextAttemptData(cardId: string, roundId: string) {

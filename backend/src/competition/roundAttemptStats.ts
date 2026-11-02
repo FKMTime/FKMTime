@@ -28,7 +28,13 @@ export const getRoundAttemptStats = (
   const byRound = new Map<string, RoundAttemptStats>();
   for (const attempt of attempts) {
     const roundId = attempt.result?.roundId;
-    if (!roundId || attempt.status === AttemptStatus.SCRAMBLED) continue;
+    if (
+      !roundId ||
+      attempt.status === AttemptStatus.SCRAMBLED ||
+      attempt.status === AttemptStatus.VOIDED
+    ) {
+      continue;
+    }
     const stats = byRound.get(roundId) ?? {
       roundId,
       solves: 0,

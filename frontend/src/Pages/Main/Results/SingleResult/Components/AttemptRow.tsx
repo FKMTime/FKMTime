@@ -74,7 +74,14 @@ const AttemptRow = ({
 
     return (
         <>
-            <TableRow key={attempt.id}>
+            <TableRow
+                key={attempt.id}
+                className={
+                    attempt.status === AttemptStatus.VOIDED
+                        ? "text-faint"
+                        : undefined
+                }
+            >
                 <TableCell className="pl-5">
                     {attempt.type === AttemptType.EXTRA_ATTEMPT
                         ? `Extra ${attempt.attemptNumber}`

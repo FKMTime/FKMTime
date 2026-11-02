@@ -1,10 +1,16 @@
 import { AttemptStatus } from "./interfaces";
 
 /**
- * What happened to an attempt, in the words the attempt form uses. "open"
- * and "scrambled" only appear when editing an attempt already in that state.
+ * What happened to an attempt, in the words the attempt form uses. "open",
+ * "scrambled" and "voided" only appear when editing an attempt already in
+ * that state.
  */
-export type AttemptOutcome = "counts" | "extra" | "open" | "scrambled";
+export type AttemptOutcome =
+    | "counts"
+    | "extra"
+    | "open"
+    | "scrambled"
+    | "voided";
 
 export const outcomeFromStatus = (status: AttemptStatus): AttemptOutcome => {
     switch (status) {
@@ -14,6 +20,8 @@ export const outcomeFromStatus = (status: AttemptStatus): AttemptOutcome => {
             return "open";
         case AttemptStatus.SCRAMBLED:
             return "scrambled";
+        case AttemptStatus.VOIDED:
+            return "voided";
         default:
             return "counts";
     }
@@ -34,6 +42,8 @@ export const statusFromOutcome = (
             return AttemptStatus.UNRESOLVED;
         case "scrambled":
             return AttemptStatus.SCRAMBLED;
+        case "voided":
+            return AttemptStatus.VOIDED;
         default:
             return originalStatus === AttemptStatus.UNRESOLVED ||
                 originalStatus === AttemptStatus.RESOLVED

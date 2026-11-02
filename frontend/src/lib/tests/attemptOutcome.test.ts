@@ -10,6 +10,7 @@ describe("attempt outcome", () => {
         expect(outcomeFromStatus(AttemptStatus.EXTRA_GIVEN)).toBe("extra");
         expect(outcomeFromStatus(AttemptStatus.UNRESOLVED)).toBe("open");
         expect(outcomeFromStatus(AttemptStatus.SCRAMBLED)).toBe("scrambled");
+        expect(outcomeFromStatus(AttemptStatus.VOIDED)).toBe("voided");
     });
 
     it("stores a new counted attempt as standard", () => {
@@ -32,5 +33,9 @@ describe("attempt outcome", () => {
         expect(statusFromOutcome("extra")).toBe(AttemptStatus.EXTRA_GIVEN);
         expect(statusFromOutcome("open")).toBe(AttemptStatus.UNRESOLVED);
         expect(statusFromOutcome("scrambled")).toBe(AttemptStatus.SCRAMBLED);
+    });
+
+    it("keeps a voided attempt voided", () => {
+        expect(statusFromOutcome("voided")).toBe(AttemptStatus.VOIDED);
     });
 });

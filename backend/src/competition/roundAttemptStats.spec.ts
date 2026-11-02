@@ -37,4 +37,13 @@ describe('getRoundAttemptStats', () => {
       getRoundAttemptStats([attempt({ status: AttemptStatus.SCRAMBLED })]),
     ).toEqual([]);
   });
+
+  it('leaves out voided attempts', () => {
+    expect(
+      getRoundAttemptStats([
+        attempt({}),
+        attempt({ status: AttemptStatus.VOIDED }),
+      ]),
+    ).toEqual([{ roundId: '333-r1', solves: 1, manual: 0, extras: 0, dnf: 0 }]);
+  });
 });

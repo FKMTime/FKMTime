@@ -63,6 +63,7 @@ const OUTCOME_LABELS: Record<AttemptOutcome, string> = {
     extra: "Extra granted",
     open: "Open incident",
     scrambled: "Only scrambled",
+    voided: "Extra not needed",
 };
 
 /**
@@ -128,6 +129,9 @@ const AttemptForm = ({
             : []),
         ...(attempt && outcomeFromStatus(attempt.status) === "scrambled"
             ? (["scrambled"] as const)
+            : []),
+        ...(attempt && outcomeFromStatus(attempt.status) === "voided"
+            ? (["voided"] as const)
             : []),
     ];
     const isTimeless = penalty === DNF_VALUE || penalty === DNS_VALUE;

@@ -32,6 +32,7 @@ const formatStatus = (status: AttemptStatus) =>
         RESOLVED: "Resolved",
         EXTRA_GIVEN: "Extra given",
         SCRAMBLED: "Scrambled",
+        VOIDED: "Extra not needed",
     })[status] ?? status;
 
 const formatType = (type: AttemptType) =>

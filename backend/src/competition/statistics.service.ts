@@ -9,6 +9,8 @@ import { getActivityInfoFromSchedule, getCompetitionDates } from 'wcif-helpers';
 
 import { getRoundAttemptStats } from './roundAttemptStats';
 
+const NOT_SOLVES = [AttemptStatus.SCRAMBLED, AttemptStatus.VOIDED];
+
 export class StatisticsService {
   constructor(
     @Inject(forwardRef(() => DbService))
@@ -20,18 +22,14 @@ export class StatisticsService {
     const wcif = JSON.parse(JSON.stringify(competition.wcif));
     const allAttempts = await this.prisma.attempt.count({
       where: {
-        status: {
-          not: AttemptStatus.SCRAMBLED,
-        },
+        status: { notIn: NOT_SOLVES },
       },
     });
     const attemptsEnteredManually = await this.prisma.attempt.count({
       where: {
         AND: [
           {
-            status: {
-              not: AttemptStatus.SCRAMBLED,
-            },
+            status: { notIn: NOT_SOLVES },
           },
           {
             sessionId: null,
@@ -280,7 +278,7 @@ export class StatisticsService {
         person: { select: { name: true } },
         attempts: {
           where: {
-            status: { not: AttemptStatus.SCRAMBLED },
+            status: { notIn: NOT_SOLVES },
             penalty: { not: DNS_VALUE },
             deviceId: { not: null },
             judgeId: { not: null },

@@ -116,4 +116,17 @@ describe("getSubmittedAttempts", () => {
 
         expect(submitted.map((a) => a.id)).toEqual(["s2"]);
     });
+
+    it("leaves out a voided attempt", () => {
+        const submitted = getSubmittedAttempts([
+            attempt({ id: "s1", attemptNumber: 1 }),
+            attempt({
+                id: "s2",
+                attemptNumber: 2,
+                status: AttemptStatus.VOIDED,
+            }),
+        ]);
+
+        expect(submitted.map((a) => a.id)).toEqual(["s1"]);
+    });
 });
