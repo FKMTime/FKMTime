@@ -57,7 +57,18 @@ export class CompetitionService {
   private autoSetup = false;
   private lastHeartbeat: Date | null = null;
 
+  private async hasWifiDetails() {
+    const competition = await this.prisma.competition.findFirst({
+      select: autoSetupSettingsSelect,
+    });
+    return Boolean(competition?.wifiSsid && competition?.wifiPassword);
+  }
+
   async handleAutoSetupHeartbeat() {
+    if (!this.autoSetup && !(await this.hasWifiDetails())) {
+      return;
+    }
+
     this.lastHeartbeat = new Date();
 
     if (!this.autoSetup) {
