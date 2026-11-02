@@ -54,8 +54,13 @@ export class CompetitionService {
   ) {}
 
   private logger = new Logger(CompetitionService.name);
-  private autoSetup = false;
-  private lastHeartbeat: Date | null = null;
+  // Last heartbeat of every panel running auto setup, by socket id. It stays
+  // on until the last one stops, so nobody's screen says on while it is off.
+  private autoSetupHeartbeats = new Map<string, number>();
+
+  private get autoSetup() {
+    return this.autoSetupHeartbeats.size > 0;
+  }
 
   private async hasWifiDetails() {
     const competition = await this.prisma.competition.findFirst({
@@ -64,33 +69,36 @@ export class CompetitionService {
     return Boolean(competition?.wifiSsid && competition?.wifiPassword);
   }
 
-  async handleAutoSetupHeartbeat() {
+  async handleAutoSetupHeartbeat(clientId: string) {
     if (!this.autoSetup && !(await this.hasWifiDetails())) {
       return;
     }
 
-    this.lastHeartbeat = new Date();
+    const wasRunning = this.autoSetup;
+    this.autoSetupHeartbeats.set(clientId, Date.now());
 
-    if (!this.autoSetup) {
-      this.autoSetup = true;
+    if (!wasRunning) {
       await this.socketController.sendServerStatus();
     }
   }
 
-  async stopAutoSetup() {
-    this.autoSetup = false;
-    this.lastHeartbeat = null;
-    await this.socketController.sendServerStatus();
+  async stopAutoSetup(clientId: string) {
+    if (this.autoSetupHeartbeats.delete(clientId) && !this.autoSetup) {
+      await this.socketController.sendServerStatus();
+    }
   }
 
   @Cron(CronExpression.EVERY_10_SECONDS)
   async checkHeartbeat() {
-    if (
-      this.autoSetup &&
-      this.lastHeartbeat &&
-      new Date().getTime() - this.lastHeartbeat.getTime() > 10000
-    ) {
-      this.autoSetup = false;
+    const wasRunning = this.autoSetup;
+    const now = Date.now();
+    for (const [clientId, lastHeartbeat] of this.autoSetupHeartbeats) {
+      if (now - lastHeartbeat > 10000) {
+        this.autoSetupHeartbeats.delete(clientId);
+      }
+    }
+
+    if (wasRunning && !this.autoSetup) {
       await this.socketController.sendServerStatus();
     }
   }
