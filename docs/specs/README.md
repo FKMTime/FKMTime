@@ -47,3 +47,4 @@ Update `Status` as the spec moves:
 | Id | Title | Status |
 |----|-------|--------|
 | [SPEC-002](SPEC-002-extras-for-all-attempts.md) | Extras for all attempts so far | Implemented |
+| [SPEC-003](SPEC-003-frontend-data-fetching.md) | Shared data fetching in the frontend | Draft |
