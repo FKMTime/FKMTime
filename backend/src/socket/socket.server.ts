@@ -188,7 +188,7 @@ export class SocketServer {
           this.connectedSockets.forEach((cs) => {
             try {
               cs.write(res);
-            } catch (e) {
+            } catch {
               this.logger.log(`[HIL] Socket write error`);
             }
           });

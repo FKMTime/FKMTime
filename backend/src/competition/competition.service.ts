@@ -18,7 +18,11 @@ import {
 } from 'src/result/helpers';
 import { ResultService } from 'src/result/result.service';
 import { getAllTranslations, getLocales } from 'src/translations/translations';
-import { getNextGroupInRoom, isSameDay } from 'src/wcif-helpers';
+import {
+  getFirstGroupInRoom,
+  getNextGroupInRoom,
+  isSameDay,
+} from 'src/wcif-helpers';
 import { Activity, Event, Room as WCIFRoom, Venue } from 'wcif-helpers';
 import {
   getActivityInfoFromSchedule,
@@ -54,8 +58,13 @@ export class CompetitionService {
   ) {}
 
   private logger = new Logger(CompetitionService.name);
-  private autoSetup = false;
-  private lastHeartbeat: Date | null = null;
+  // Last heartbeat of every panel running auto setup, by socket id. It stays
+  // on until the last one stops, so nobody's screen says on while it is off.
+  private autoSetupHeartbeats = new Map<string, number>();
+
+  private get autoSetup() {
+    return this.autoSetupHeartbeats.size > 0;
+  }
 
   private async hasWifiDetails() {
     const competition = await this.prisma.competition.findFirst({
@@ -64,33 +73,36 @@ export class CompetitionService {
     return Boolean(competition?.wifiSsid && competition?.wifiPassword);
   }
 
-  async handleAutoSetupHeartbeat() {
+  async handleAutoSetupHeartbeat(clientId: string) {
     if (!this.autoSetup && !(await this.hasWifiDetails())) {
       return;
     }
 
-    this.lastHeartbeat = new Date();
+    const wasRunning = this.autoSetup;
+    this.autoSetupHeartbeats.set(clientId, Date.now());
 
-    if (!this.autoSetup) {
-      this.autoSetup = true;
+    if (!wasRunning) {
       await this.socketController.sendServerStatus();
     }
   }
 
-  async stopAutoSetup() {
-    this.autoSetup = false;
-    this.lastHeartbeat = null;
-    await this.socketController.sendServerStatus();
+  async stopAutoSetup(clientId: string) {
+    if (this.autoSetupHeartbeats.delete(clientId) && !this.autoSetup) {
+      await this.socketController.sendServerStatus();
+    }
   }
 
   @Cron(CronExpression.EVERY_10_SECONDS)
   async checkHeartbeat() {
-    if (
-      this.autoSetup &&
-      this.lastHeartbeat &&
-      new Date().getTime() - this.lastHeartbeat.getTime() > 10000
-    ) {
-      this.autoSetup = false;
+    const wasRunning = this.autoSetup;
+    const now = Date.now();
+    for (const [clientId, lastHeartbeat] of this.autoSetupHeartbeats) {
+      if (now - lastHeartbeat > 10000) {
+        this.autoSetupHeartbeats.delete(clientId);
+      }
+    }
+
+    if (wasRunning && !this.autoSetup) {
       await this.socketController.sendServerStatus();
     }
   }
@@ -596,20 +608,25 @@ export class CompetitionService {
     }
   }
 
-  async getNextGroupsFromScheduleForRoom(roomId: string) {
+  /** Steps from the given groups, or the room's saved ones without them */
+  async getNextGroupsFromScheduleForRoom(roomId: string, groupIds?: string[]) {
     const room = await this.prisma.room.findUnique({ where: { id: roomId } });
     if (!room) {
       throw new HttpException('Room not found', 404);
     }
-    const currentGroups = room.currentGroupIds;
+    const currentGroups = groupIds ?? room.currentGroupIds;
     const competition = await this.prisma.competition.findFirst();
     const wcif = JSON.parse(JSON.stringify(competition.wcif));
+    if (currentGroups.length === 0) {
+      const firstGroup = getFirstGroupInRoom(room.name, wcif);
+      return firstGroup ? [firstGroup] : [];
+    }
     const nextGroups = [];
     if (currentGroups.length === 1) {
       const currentRoundId = currentGroups[0].split('-g')[0];
       const roundInfoFromSchedule: Activity =
         getActivityInfoFromScheduleWithRoom(currentRoundId, room.name, wcif);
-      if (!roundInfoFromSchedule) return;
+      if (!roundInfoFromSchedule) return [];
       const sortedActivities = roundInfoFromSchedule.childActivities.sort(
         (a, b) =>
           new Date(a.startTime).getTime() - new Date(b.startTime).getTime(),
@@ -659,7 +676,7 @@ export class CompetitionService {
         const roundId = currentGroupId.split('-g')[0];
         const roundInfoFromSchedule: Activity =
           getActivityInfoFromScheduleWithRoom(roundId, room.name, wcif);
-        if (!roundInfoFromSchedule) return;
+        if (!roundInfoFromSchedule) return [];
         const sortedActivities = roundInfoFromSchedule.childActivities.sort(
           (a, b) =>
             new Date(a.startTime).getTime() - new Date(b.startTime).getTime(),
@@ -710,12 +727,16 @@ export class CompetitionService {
     return nextGroups;
   }
 
-  async getPreviousGroupsFromScheduleForRoom(roomId: string) {
+  /** Steps from the given groups, or the room's saved ones without them */
+  async getPreviousGroupsFromScheduleForRoom(
+    roomId: string,
+    groupIds?: string[],
+  ) {
     const room = await this.prisma.room.findUnique({ where: { id: roomId } });
     if (!room) {
       throw new HttpException('Room not found', 404);
     }
-    const currentGroups = room.currentGroupIds;
+    const currentGroups = groupIds ?? room.currentGroupIds;
     const competition = await this.prisma.competition.findFirst();
     const wcif = JSON.parse(JSON.stringify(competition.wcif));
     const previousGroups = [];
@@ -723,7 +744,7 @@ export class CompetitionService {
       const currentRoundId = currentGroups[0].split('-g')[0];
       const roundInfoFromSchedule: Activity =
         getActivityInfoFromScheduleWithRoom(currentRoundId, room.name, wcif);
-      if (!roundInfoFromSchedule) return;
+      if (!roundInfoFromSchedule) return [];
       const sortedActivities = roundInfoFromSchedule.childActivities.sort(
         (a, b) =>
           new Date(a.startTime).getTime() - new Date(b.startTime).getTime(),
@@ -773,7 +794,7 @@ export class CompetitionService {
         const roundId = currentGroupId.split('-g')[0];
         const roundInfoFromSchedule: Activity =
           getActivityInfoFromScheduleWithRoom(roundId, room.name, wcif);
-        if (!roundInfoFromSchedule) return;
+        if (!roundInfoFromSchedule) return [];
         const sortedActivities = roundInfoFromSchedule.childActivities.sort(
           (a, b) =>
             new Date(a.startTime).getTime() - new Date(b.startTime).getTime(),

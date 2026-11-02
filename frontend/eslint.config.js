@@ -30,10 +30,7 @@ export default [
             "no-console": "error",
             "simple-import-sort/imports": "error",
             // Added by eslint-plugin-react-hooks 7, turned off until existing code is fixed
-            "react-hooks/immutability": "off",
             "react-hooks/incompatible-library": "off",
-            "react-hooks/purity": "off",
-            "react-hooks/refs": "off",
             "react-hooks/set-state-in-effect": "off",
         },
     },

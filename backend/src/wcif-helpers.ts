@@ -52,6 +52,34 @@ export const getNextGroupInRoom = (
   return currentIndex === -1 ? null : (groups[currentIndex + 1] ?? null);
 };
 
+/**
+ * The group a room with nothing running should start: the first one today or
+ * on the next competition day, or the room's very first once the schedule is
+ * over.
+ */
+export const getFirstGroupInRoom = (
+  roomName: string,
+  wcif: Competition,
+  now = new Date(),
+): string | null => {
+  const byStartTime = (a: Activity, b: Activity) =>
+    new Date(a.startTime).getTime() - new Date(b.startTime).getTime();
+  const rounds = wcif.schedule.venues
+    .flatMap((venue) => venue.rooms)
+    .filter((room) => room.name === roomName)
+    .flatMap((room) => room.activities)
+    .filter((activity) => !activity.activityCode.startsWith('other'))
+    .sort(byStartTime);
+  const round =
+    rounds.find((activity) => {
+      const start = new Date(activity.startTime);
+      return isSameDay(start, now) || start.getTime() > now.getTime();
+    }) ?? rounds[0];
+  if (!round) return null;
+  const [firstGroup] = [...round.childActivities].sort(byStartTime);
+  return firstGroup?.activityCode ?? `${round.activityCode}-g1`;
+};
+
 export const getMaxAttempts = (roundFormat: string) => {
   return roundFormatMap[roundFormat] || 5;
 };

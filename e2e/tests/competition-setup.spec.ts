@@ -209,10 +209,23 @@ test.describe("current groups", () => {
         api,
     }) => {
         const room = await stageOne(api);
-        // Schedule stepping starts from the saved group
         await setGroups(api, { [room.id]: ["333-r1-g1"] });
         await page.goto("/competition/groups");
         const section = roomSection(page, room.name);
+        await expect(
+            section.getByText("3x3x3 Cube · Round 1 · Group 1")
+        ).toBeVisible();
+
+        // Stepping follows the groups on screen, saved or not
+        await section
+            .getByRole("button", { name: "Next from schedule" })
+            .click();
+        await expect(
+            section.getByText("3x3x3 Cube · Round 1 · Group 3")
+        ).toBeVisible();
+        await section
+            .getByRole("button", { name: "Previous from schedule" })
+            .click();
         await expect(
             section.getByText("3x3x3 Cube · Round 1 · Group 1")
         ).toBeVisible();
@@ -240,6 +253,29 @@ test.describe("current groups", () => {
             section.getByText("3x3x3 Cube · Round 1 · Group 3")
         ).toBeVisible();
         await expect(page.getByRole("button", { name: "Save" })).toBeDisabled();
+    });
+
+    test("suggests a group for a room with none running", async ({
+        page,
+        api,
+    }) => {
+        const room = await stageOne(api);
+        await page.goto("/competition/groups");
+        const section = roomSection(page, room.name);
+        await expect(section.getByText("No groups in progress")).toBeVisible();
+
+        await section.getByRole("button", { name: /^Add / }).click();
+        await expect(
+            section.getByText("1 group", { exact: true })
+        ).toBeVisible();
+        await section.getByRole("button", { name: "Clear" }).click();
+
+        await section
+            .getByRole("button", { name: "Next from schedule" })
+            .click();
+        await expect(
+            section.getByText("1 group", { exact: true })
+        ).toBeVisible();
     });
 });
 
