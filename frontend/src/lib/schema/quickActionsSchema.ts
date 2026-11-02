@@ -1,8 +1,10 @@
 import { z } from "zod";
 
+import { limitedText } from "./fields";
+
 export const quickActionSchema = z.object({
-    name: z.string().min(2).max(50),
-    comment: z.string().min(2).max(50),
+    name: limitedText("Name", 2, 50),
+    comment: limitedText("Comment", 2, 50),
     giveExtra: z.boolean(),
     isShared: z.boolean(),
 });

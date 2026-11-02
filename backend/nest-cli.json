@@ -8,12 +8,12 @@
     "assets": [
         {
             "include": "translations/locales",
-            "outDir": "dist/src",
+            "outDir": "dist",
             "watchAssets": true
         },
         {
             "include": "wasm",
-            "outDir": "dist/src",
+            "outDir": "dist",
             "watchAssets": true
         }
     ]
