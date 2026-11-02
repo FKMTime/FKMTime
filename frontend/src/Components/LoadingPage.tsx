@@ -1,4 +1,4 @@
-import GridLoader from "react-spinners/GridLoader";
+import { GridLoader } from "react-spinners";
 
 const LoadingPage = () => {
     return (
