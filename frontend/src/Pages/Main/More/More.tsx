@@ -5,7 +5,12 @@ import { useLogout } from "@/hooks/useLogout";
 import { useNavItems } from "@/hooks/useNavItems";
 import { isMobileTab, NavGroup } from "@/lib/navigation";
 
-const MORE_GROUPS: NavGroup[] = ["Competition day", "Admin", "Account"];
+const MORE_GROUPS: NavGroup[] = [
+    "Competition day",
+    "Admin",
+    "Development",
+    "Account",
+];
 
 /**
  * Overflow menu for everything that is not a bottom tab. Only linked from the
