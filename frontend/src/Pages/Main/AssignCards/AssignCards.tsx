@@ -33,6 +33,11 @@ const AssignCards = () => {
     const [assignedCount, setAssignedCount] = useState(0);
     // Row the arrow keys are on; Enter in the search picks it
     const [highlighted, setHighlighted] = useState(0);
+    const [highlightedPersons, setHighlightedPersons] = useState(persons);
+    if (persons !== highlightedPersons) {
+        setHighlightedPersons(persons);
+        setHighlighted(0);
+    }
     const listRef = useRef<HTMLUListElement>(null);
 
     const fetchPersons = useCallback(async () => {
@@ -44,8 +49,6 @@ const AssignCards = () => {
     useEffect(() => {
         fetchPersons();
     }, [fetchPersons]);
-
-    useEffect(() => setHighlighted(0), [persons]);
 
     useEffect(() => {
         listRef.current

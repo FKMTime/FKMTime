@@ -48,6 +48,11 @@ const GlobalSearch = () => {
     const [isLoading, setIsLoading] = useState(false);
     const [highlighted, setHighlighted] = useState(0);
     const trimmed = query.trim();
+    const [highlightedQuery, setHighlightedQuery] = useState(trimmed);
+    if (trimmed !== highlightedQuery) {
+        setHighlightedQuery(trimmed);
+        setHighlighted(0);
+    }
     const isOpen = !isDismissed && trimmed.length >= MIN_QUERY_LENGTH;
 
     const useDevices = !!competition?.useFkmTimeDevices;
@@ -112,8 +117,6 @@ const GlobalSearch = () => {
         [staticItems, devices, incidents, persons, trimmed]
     );
     const flat = sections.flatMap((group) => group.items);
-
-    useEffect(() => setHighlighted(0), [trimmed]);
 
     const open = (item: SearchItem) => {
         setQuery("");

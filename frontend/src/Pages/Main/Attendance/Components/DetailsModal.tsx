@@ -1,5 +1,5 @@
 import { Save, ShieldAlert } from "lucide-react";
-import { ChangeEvent, useEffect, useState } from "react";
+import { ChangeEvent, useState } from "react";
 
 import { Modal } from "@/Components/Modal";
 import { Button } from "@/Components/ui/button";
@@ -52,11 +52,13 @@ const DetailsModal = ({
         onClose();
     };
 
-    useEffect(() => {
-        if (isOpen && staffActivity) {
-            setComment(staffActivity.comment || "");
-        }
-    }, [isOpen, staffActivity]);
+    const openActivity = isOpen ? staffActivity : null;
+    const [loadedActivity, setLoadedActivity] =
+        useState<typeof openActivity>(null);
+    if (openActivity !== loadedActivity) {
+        setLoadedActivity(openActivity);
+        if (openActivity) setComment(openActivity.comment || "");
+    }
 
     if (!staffActivity || !staffActivity.person) return null;
 
