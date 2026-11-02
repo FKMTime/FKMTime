@@ -34,7 +34,6 @@ export interface INotification {
     type: "incident" | "info";
 }
 
-//eslint-disable-next-line
 export enum UserRole {
     ADMIN = "ADMIN",
     DELEGATE = "DELEGATE",
@@ -72,7 +71,6 @@ export interface Competition extends CompetitionDataForLoginPage {
     soundEnabled: boolean;
 }
 
-//eslint-disable-next-line
 export enum SendingResultsFrequency {
     AFTER_SOLVE = "AFTER_SOLVE",
     EVERY_5_MINUTES = "EVERY_5_MINUTES",
@@ -192,7 +190,6 @@ export interface StaffActivity {
     updatedAt: Date;
 }
 
-//eslint-disable-next-line
 export enum StaffActivityStatus {
     PRESENT = "PRESENT",
     ABSENT = "ABSENT",
@@ -260,7 +257,6 @@ export interface AttemptToEnterWithScorecard extends Attempt {
     isNew?: boolean;
 }
 
-//eslint-disable-next-line
 export enum AttemptStatus {
     STANDARD = "STANDARD",
     UNRESOLVED = "UNRESOLVED",
@@ -270,7 +266,6 @@ export enum AttemptStatus {
     VOIDED = "VOIDED",
 }
 
-//eslint-disable-next-line
 export enum AttemptType {
     STANDARD_ATTEMPT = "STANDARD_ATTEMPT",
     EXTRA_ATTEMPT = "EXTRA_ATTEMPT",
@@ -281,7 +276,6 @@ export interface Incident extends Attempt {
     updateReplacedBy?: boolean;
 }
 
-//eslint-disable-next-line
 export enum IncidentAction {
     "RESOLVED" = "RESOLVED",
     "EXTRA_GIVEN" = "EXTRA_GIVEN",
@@ -337,14 +331,12 @@ export interface Device extends DeviceData {
     hwVersion: HardwareVersion;
 }
 
-//eslint-disable-next-line
 export enum DeviceType {
     STATION = "STATION",
     ATTENDANCE_SCRAMBLER = "ATTENDANCE_SCRAMBLER",
     ATTENDANCE_RUNNER = "ATTENDANCE_RUNNER",
 }
 
-//eslint-disable-next-line
 export enum HardwareVersion {
     V3 = "V3",
     V4 = "V4",
@@ -366,7 +358,6 @@ export interface AvailableDevice {
     hw: string;
 }
 
-//eslint-disable-next-line
 export enum AvailableDeviceType {
     STATION = "STATION",
     STAFF_ATTENDANCE = "STAFF_ATTENDANCE",

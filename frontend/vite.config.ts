@@ -48,7 +48,8 @@ export default defineConfig({
                 overlay: { initialIsOpen: false },
                 typescript: true,
                 eslint: {
-                    lintCommand: "eslint --ext .js,.jsx,.ts,.tsx src",
+                    lintCommand: "eslint src",
+                    useFlatConfig: true,
                 },
             }),
         viteTsconfigPaths(),

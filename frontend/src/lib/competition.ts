@@ -10,7 +10,7 @@ import {
 
 export const getCompetitionInfo = async () => {
     const isScramblignDeviceToken = getScramblingDeviceToken() !== null;
-    let response: Response | null = null;
+    let response: Response;
     if (isScramblignDeviceToken) {
         response = await scramblingDeviceBackendRequest(
             "competition/for/scrambling-device",
@@ -147,7 +147,7 @@ export const searchCompetitions = async (name: string) => {
             (competition: WCACompetition) =>
                 new Date(competition.start_date).getFullYear() >= 2023
         );
-    } catch (err) {
+    } catch {
         return [];
     }
 };
