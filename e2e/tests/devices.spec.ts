@@ -203,6 +203,28 @@ test.describe("devices", () => {
         await expect(dialog).toBeHidden();
     });
 
+    test("does not run auto setup without the WiFi details", async ({
+        page,
+    }) => {
+        await page.goto("/devices");
+        await page.getByRole("radio", { name: "Settings" }).click();
+        const ssid = page.getByLabel("WiFi SSID");
+        const originalSsid = await ssid.inputValue();
+        await ssid.fill("");
+        await page.getByRole("button", { name: "Save" }).click();
+        await expectToast(page, "Device settings saved");
+
+        await page.getByRole("radio", { name: "All devices" }).click();
+        await page.getByRole("button", { name: "Auto setup devices" }).click();
+        await expectToast(page, "WiFi details are missing");
+        await expect(page.getByRole("dialog")).toHaveCount(0);
+
+        await page.getByRole("radio", { name: "Settings" }).click();
+        await page.getByLabel("WiFi SSID").fill(originalSsid);
+        await page.getByRole("button", { name: "Save" }).click();
+        await expectToast(page, "Device settings saved");
+    });
+
     test("saves the device settings", async ({ page, api }) => {
         await page.goto("/devices");
         await page.getByRole("radio", { name: "Settings" }).click();
