@@ -25,6 +25,7 @@ export const useNavItems = () => {
                 isOrganizerOrDelegate: isOrganizerOrDelegate(),
                 isStageLeaderOrAbove: isStageLeaderOrOrganizerOrDelegate(),
                 canAccessSettings: isDelegate() || !loggedInWithWca(),
+                showStationTester: import.meta.env.DEV,
             }),
         [useFkmTimeDevices]
     );
