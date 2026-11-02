@@ -385,7 +385,7 @@ export class AttendanceService {
         // Only after the scan is saved: an open attendance page refetches
         // as soon as it hears this, and would otherwise miss the scan
         this.appGateway.handleNewAttendance(groupId, person.id);
-      } catch (e) {
+      } catch {
         return {
           message: getTranslation('attendanceConfirmed', person.countryIso2),
         };
