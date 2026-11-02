@@ -194,18 +194,29 @@ export const getPublicRooms = async () => {
     return await response.json();
 };
 
-export const getNextGroupsFromScheduleForRoom = async (roomId: string) => {
+const groupIdsQuery = (groupIds?: string[]) =>
+    groupIds ? `?groupIds=${groupIds.join(",")}` : "";
+
+/** Steps from the given groups, or the room's saved ones without them */
+export const getNextGroupsFromScheduleForRoom = async (
+    roomId: string,
+    groupIds?: string[]
+) => {
     const response = await backendRequest(
-        `competition/rooms/${roomId}/next-groups`,
+        `competition/rooms/${roomId}/next-groups${groupIdsQuery(groupIds)}`,
         "GET",
         true
     );
     return await response.json();
 };
 
-export const getPreviousGroupsFromScheduleForRoom = async (roomId: string) => {
+/** Steps from the given groups, or the room's saved ones without them */
+export const getPreviousGroupsFromScheduleForRoom = async (
+    roomId: string,
+    groupIds?: string[]
+) => {
     const response = await backendRequest(
-        `competition/rooms/${roomId}/previous-groups`,
+        `competition/rooms/${roomId}/previous-groups${groupIdsQuery(groupIds)}`,
         "GET",
         true
     );
