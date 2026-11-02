@@ -8,6 +8,13 @@ updates:
     directory: "/backend"
     schedule:
       interval: monthly
+    groups:
+      nestjs:
+        patterns:
+          - "@nestjs/*"
+        update-types:
+          - minor
+          - patch
   - package-ecosystem: github-actions
     directory: "/"
     schedule:
