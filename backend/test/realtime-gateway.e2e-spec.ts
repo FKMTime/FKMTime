@@ -2,6 +2,7 @@ import { INestApplication } from '@nestjs/common';
 import { AttemptStatus, AttemptType, Person, Role } from '@prisma/client';
 import { Socket } from 'socket.io-client';
 import { AppGateway } from 'src/app.gateway';
+import { CompetitionService } from 'src/competition/competition.service';
 import { DbService } from 'src/db/db.service';
 import * as request from 'supertest';
 
@@ -656,6 +657,32 @@ describe('socket.io gateways (e2e)', () => {
       const status = await station.request('ServerStatus', {});
       expect(status.data.autoSetup).toBe(false);
     });
+
+    it.each(['wifiSsid', 'wifiPassword'] as const)(
+      'refuses to start without %s',
+      async (field) => {
+        const competition = await db.competition.findFirst();
+        await db.competition.update({
+          where: { id: competition.id },
+          data: { [field]: '' },
+        });
+
+        try {
+          // The gateway answers nothing, so await the handler's work directly
+          await app
+            .get(CompetitionService, { strict: false })
+            .handleAutoSetupHeartbeat();
+
+          const status = await station.request('ServerStatus', {});
+          expect(status.data.autoSetup).toBe(false);
+        } finally {
+          await db.competition.update({
+            where: { id: competition.id },
+            data: { [field]: competition[field] },
+          });
+        }
+      },
+    );
 
     it('switches auto setup on and off for the stations', async () => {
       const organizer = await connect(organizerToken);

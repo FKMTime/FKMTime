@@ -37,7 +37,11 @@ const CompetitionForm = ({
     competition,
     handleSubmit,
 }: CompetitionFormProps) => {
-    const form = useForm<z.infer<typeof competitionSchema>>({
+    const form = useForm<
+        z.input<typeof competitionSchema>,
+        unknown,
+        z.output<typeof competitionSchema>
+    >({
         resolver: zodResolver(competitionSchema),
         defaultValues: {
             scoretakingToken: competition.scoretakingToken,
@@ -188,7 +192,7 @@ const CompetitionForm = ({
                                 <SwitchRow
                                     label="Change groups automatically"
                                     description="Group will be automatically changed to the next one from schedule if all results are entered and there are no unresolved incidents"
-                                    checked={field.value}
+                                    checked={!!field.value}
                                     onCheckedChange={field.onChange}
                                 />
                             )}
@@ -201,7 +205,7 @@ const CompetitionForm = ({
                             <SwitchRow
                                 label="Use FKMTime devices"
                                 description="If you do not use FKMTime devices, you can disable some features of the app."
-                                checked={field.value}
+                                checked={!!field.value}
                                 onCheckedChange={field.onChange}
                             />
                         )}

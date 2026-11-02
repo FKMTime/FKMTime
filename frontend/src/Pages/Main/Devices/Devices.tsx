@@ -21,6 +21,8 @@ import {
     TableRow,
 } from "@/Components/ui/table";
 import { useIsMobile } from "@/hooks/useMobile";
+import { useToast } from "@/hooks/useToast";
+import { getCompetitionSettings } from "@/lib/competition";
 import { getAllDevices, sortDevicesByName } from "@/lib/devices";
 import { AvailableDevice, Device, Room } from "@/lib/interfaces";
 import { isAdmin } from "@/lib/permissions";
@@ -50,6 +52,7 @@ const getInitialTab = (param: string | null): DevicesTab => {
 
 const Devices = () => {
     const isMobile = useIsMobile();
+    const { toast } = useToast();
     const [searchParams, setSearchParams] = useSearchParams();
     const [isLoading, setIsLoading] = useState<boolean>(true);
     const [devices, setDevices] = useState<Device[]>([]);
@@ -101,6 +104,28 @@ const Devices = () => {
     const handleAddDeviceRequest = (device: AvailableDevice) => {
         setDeviceToAdd(device);
         setIsOpenCreateDeviceModal(true);
+    };
+
+    const handleStartAutoSetup = async () => {
+        const { status, data } = await getCompetitionSettings();
+        if (status !== 200) {
+            toast({
+                title: "Error",
+                description: "Something went wrong",
+                variant: "destructive",
+            });
+            return;
+        }
+        if (!data.wifiSsid || !data.wifiPassword) {
+            toast({
+                title: "WiFi details are missing",
+                description:
+                    "Set the WiFi SSID and password in the Settings tab before running auto setup",
+                variant: "destructive",
+            });
+            return;
+        }
+        setIsAutoSetupModalOpen(true);
     };
 
     const handleSelectRoom = (roomId: string) => {
@@ -165,7 +190,7 @@ const Devices = () => {
                 variant="outline"
                 size={isMobile ? "lg" : "default"}
                 className="max-md:flex-1"
-                onClick={() => setIsAutoSetupModalOpen(true)}
+                onClick={handleStartAutoSetup}
             >
                 <WandSparkles />
                 {isMobile ? "Auto setup" : "Auto setup devices"}
