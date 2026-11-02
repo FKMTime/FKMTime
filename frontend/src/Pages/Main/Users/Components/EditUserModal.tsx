@@ -33,7 +33,11 @@ const EditUserModal = ({ isOpen, onClose, user }: EditUserModalProps) => {
     const [isLoading, setIsLoading] = useState(false);
     const isWcaAccount = user.wcaUserId !== null;
 
-    const form = useForm<z.infer<typeof editUserSchema>>({
+    const form = useForm<
+        z.input<typeof editUserSchema>,
+        unknown,
+        z.output<typeof editUserSchema>
+    >({
         resolver: zodResolver(editUserSchema),
         defaultValues: {
             username: user.username ?? undefined,

@@ -27,7 +27,11 @@ const SettingsForm = ({
     handleSubmit,
     isLoading,
 }: SettingsFormProps) => {
-    const form = useForm<z.infer<typeof settingsSchema>>({
+    const form = useForm<
+        z.input<typeof settingsSchema>,
+        unknown,
+        z.output<typeof settingsSchema>
+    >({
         resolver: zodResolver(settingsSchema),
         defaultValues: {
             username: settings?.username || "",

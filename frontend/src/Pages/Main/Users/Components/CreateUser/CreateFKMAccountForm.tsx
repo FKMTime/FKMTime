@@ -27,7 +27,11 @@ const CreateFKMAccountForm = ({
     handleSubmit,
     isLoading,
 }: CreateFKMAccountFormProps) => {
-    const form = useForm<z.infer<typeof createFKMUserSchema>>({
+    const form = useForm<
+        z.input<typeof createFKMUserSchema>,
+        unknown,
+        z.output<typeof createFKMUserSchema>
+    >({
         resolver: zodResolver(createFKMUserSchema),
     });
 

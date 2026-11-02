@@ -31,7 +31,11 @@ const CreateWCAUserForm = ({
     const [selectedPerson, setSelectedPerson] = useState<WCAPerson | null>(
         null
     );
-    const form = useForm<z.infer<typeof createWCAUserSchema>>({
+    const form = useForm<
+        z.input<typeof createWCAUserSchema>,
+        unknown,
+        z.output<typeof createWCAUserSchema>
+    >({
         resolver: zodResolver(createWCAUserSchema),
     });
 

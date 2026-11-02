@@ -39,7 +39,11 @@ const DeviceSettingsForm = ({
         []
     );
 
-    const form = useForm<z.infer<typeof deviceSettingsSchema>>({
+    const form = useForm<
+        z.input<typeof deviceSettingsSchema>,
+        unknown,
+        z.output<typeof deviceSettingsSchema>
+    >({
         resolver: zodResolver(deviceSettingsSchema),
         defaultValues: {
             shouldUpdateDevices: competition.shouldUpdateDevices,
