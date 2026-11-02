@@ -31,6 +31,7 @@ const Competition = () => {
         location.state?.importedCompetition ?? null;
     const [isLoading, setIsLoading] = useState<boolean>(!initialCompetition);
     const [isSyncing, setIsSyncing] = useState(false);
+    const [openedAt] = useState(() => Date.now());
     const [competition, setCompetition] = useState<CompetitionInterface | null>(
         initialCompetition
     );
@@ -97,7 +98,7 @@ const Competition = () => {
     const mayTokenHaveExpired =
         !!competition.scoretakingTokenUpdatedAt &&
         new Date(competition.scoretakingTokenUpdatedAt).getTime() <
-            Date.now() - TOKEN_MAY_EXPIRE_AFTER_MS;
+            openedAt - TOKEN_MAY_EXPIRE_AFTER_MS;
 
     return (
         <>
