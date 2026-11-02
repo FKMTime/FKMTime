@@ -1,6 +1,7 @@
 import {
     ChartColumn,
     ClipboardList,
+    FlaskConical,
     House,
     LucideIcon,
     Radio,
@@ -25,9 +26,10 @@ export type NavId =
     | "setup"
     | "scrambles"
     | "statistics"
+    | "stationTester"
     | "settings";
 
-export type NavGroup = "Competition day" | "Admin" | "Account";
+export type NavGroup = "Competition day" | "Admin" | "Development" | "Account";
 
 export interface NavItem {
     id: NavId;
@@ -45,6 +47,8 @@ export interface NavContext {
     isOrganizerOrDelegate: boolean;
     isStageLeaderOrAbove: boolean;
     canAccessSettings: boolean;
+    /** Only the dev build has the station tester */
+    showStationTester?: boolean;
 }
 
 export interface Crumb {
@@ -146,6 +150,14 @@ export const getNavItems = (ctx: NavContext): NavItem[] => {
                 group: "Admin",
                 paths: ["/statistics"],
             },
+        !!ctx.showStationTester && {
+            id: "stationTester",
+            label: "Station tester",
+            icon: FlaskConical,
+            to: "/station-tester",
+            group: "Development",
+            paths: ["/station-tester"],
+        },
         ctx.canAccessSettings && {
             id: "settings",
             label: "Settings",

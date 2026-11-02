@@ -17,7 +17,7 @@ interface DesktopSidebarProps {
 }
 
 // Settings lives in the user menu on desktop
-const SIDEBAR_GROUPS: NavGroup[] = ["Competition day", "Admin"];
+const SIDEBAR_GROUPS: NavGroup[] = ["Competition day", "Admin", "Development"];
 
 /**
  * 240px sidebar from lg up; between md and lg it collapses to icons with
