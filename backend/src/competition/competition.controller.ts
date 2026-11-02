@@ -22,6 +22,9 @@ import { RoomsService } from './rooms.service';
 import { StatisticsService } from './statistics.service';
 import { SyncService } from './sync.service';
 
+const parseGroupIds = (groupIds?: string) =>
+  groupIds?.split(',').filter(Boolean);
+
 @Controller('competition')
 export class CompetitionController {
   constructor(
@@ -156,15 +159,25 @@ export class CompetitionController {
 
   @UseGuards(OrganizerGuard)
   @Get('rooms/:id/next-groups')
-  async getNextGroupsFromScheduleForRoom(@Param('id') id: string) {
-    return await this.competitionService.getNextGroupsFromScheduleForRoom(id);
+  async getNextGroupsFromScheduleForRoom(
+    @Param('id') id: string,
+    @Query('groupIds') groupIds?: string,
+  ) {
+    return await this.competitionService.getNextGroupsFromScheduleForRoom(
+      id,
+      parseGroupIds(groupIds),
+    );
   }
 
   @UseGuards(OrganizerGuard)
   @Get('rooms/:id/previous-groups')
-  async getPreviousGroupsFromScheduleForRoom(@Param('id') id: string) {
+  async getPreviousGroupsFromScheduleForRoom(
+    @Param('id') id: string,
+    @Query('groupIds') groupIds?: string,
+  ) {
     return await this.competitionService.getPreviousGroupsFromScheduleForRoom(
       id,
+      parseGroupIds(groupIds),
     );
   }
 }

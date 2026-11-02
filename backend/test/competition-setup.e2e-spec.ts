@@ -458,7 +458,6 @@ describe('Competition setup (e2e)', () => {
       [['minx-r1-g3'], [], ['minx-r1-g1']],
       [['pyram-r1-g1'], ['pyram-r1-g3'], []],
       [['333-r1-g1', '222-r1-g1'], ['333-r1-g3', '222-r1-g3'], ['333-r1-g7']],
-      [[], [], []],
     ])(
       'Main Hall at %j: next %j, previous %j',
       async (current, expectedNext, expectedPrevious) => {
@@ -469,11 +468,40 @@ describe('Competition setup (e2e)', () => {
       },
     );
 
+    it('starts an empty room at the first group of a competition day', async () => {
+      await setGroups(mainHall, []);
+
+      // Which day it is depends on when the test stack came up
+      expect([['333-r1-g1'], ['pyram-r1-g1']]).toContainEqual(
+        (await next(mainHall)).body,
+      );
+      expect((await previous(mainHall)).body).toEqual([]);
+    });
+
     it('follows the schedule of the room it is asked about', async () => {
       await setGroups(sideHall, ['333-r1-g6']);
 
       expect((await next(sideHall)).body).toEqual(['222-r1-g2']);
       expect((await previous(sideHall)).body).toEqual(['333-r1-g4']);
+    });
+
+    it('steps from the groups it is given instead of the saved ones', async () => {
+      await setGroups(mainHall, ['333-r1-g1']);
+      const from = (path: string, groupIds: string) =>
+        asOrganizer(
+          request(server()).get(
+            `/competition/rooms/${mainHall.id}/${path}?groupIds=${groupIds}`,
+          ),
+        ).expect(200);
+
+      expect((await from('previous-groups', '333-r1-g3')).body).toEqual([
+        '333-r1-g1',
+      ]);
+      expect((await from('next-groups', '333-r1-g3')).body).toEqual([
+        '333-r1-g5',
+      ]);
+      expect((await from('previous-groups', '')).body).toEqual([]);
+      expect((await from('next-groups', 'unknown-r1-g1')).body).toEqual([]);
     });
 
     it.each(['next-groups', 'previous-groups'])(

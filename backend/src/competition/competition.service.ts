@@ -18,7 +18,11 @@ import {
 } from 'src/result/helpers';
 import { ResultService } from 'src/result/result.service';
 import { getAllTranslations, getLocales } from 'src/translations/translations';
-import { getNextGroupInRoom, isSameDay } from 'src/wcif-helpers';
+import {
+  getFirstGroupInRoom,
+  getNextGroupInRoom,
+  isSameDay,
+} from 'src/wcif-helpers';
 import { Activity, Event, Room as WCIFRoom, Venue } from 'wcif-helpers';
 import {
   getActivityInfoFromSchedule,
@@ -596,20 +600,25 @@ export class CompetitionService {
     }
   }
 
-  async getNextGroupsFromScheduleForRoom(roomId: string) {
+  /** Steps from the given groups, or the room's saved ones without them */
+  async getNextGroupsFromScheduleForRoom(roomId: string, groupIds?: string[]) {
     const room = await this.prisma.room.findUnique({ where: { id: roomId } });
     if (!room) {
       throw new HttpException('Room not found', 404);
     }
-    const currentGroups = room.currentGroupIds;
+    const currentGroups = groupIds ?? room.currentGroupIds;
     const competition = await this.prisma.competition.findFirst();
     const wcif = JSON.parse(JSON.stringify(competition.wcif));
+    if (currentGroups.length === 0) {
+      const firstGroup = getFirstGroupInRoom(room.name, wcif);
+      return firstGroup ? [firstGroup] : [];
+    }
     const nextGroups = [];
     if (currentGroups.length === 1) {
       const currentRoundId = currentGroups[0].split('-g')[0];
       const roundInfoFromSchedule: Activity =
         getActivityInfoFromScheduleWithRoom(currentRoundId, room.name, wcif);
-      if (!roundInfoFromSchedule) return;
+      if (!roundInfoFromSchedule) return [];
       const sortedActivities = roundInfoFromSchedule.childActivities.sort(
         (a, b) =>
           new Date(a.startTime).getTime() - new Date(b.startTime).getTime(),
@@ -659,7 +668,7 @@ export class CompetitionService {
         const roundId = currentGroupId.split('-g')[0];
         const roundInfoFromSchedule: Activity =
           getActivityInfoFromScheduleWithRoom(roundId, room.name, wcif);
-        if (!roundInfoFromSchedule) return;
+        if (!roundInfoFromSchedule) return [];
         const sortedActivities = roundInfoFromSchedule.childActivities.sort(
           (a, b) =>
             new Date(a.startTime).getTime() - new Date(b.startTime).getTime(),
@@ -710,12 +719,16 @@ export class CompetitionService {
     return nextGroups;
   }
 
-  async getPreviousGroupsFromScheduleForRoom(roomId: string) {
+  /** Steps from the given groups, or the room's saved ones without them */
+  async getPreviousGroupsFromScheduleForRoom(
+    roomId: string,
+    groupIds?: string[],
+  ) {
     const room = await this.prisma.room.findUnique({ where: { id: roomId } });
     if (!room) {
       throw new HttpException('Room not found', 404);
     }
-    const currentGroups = room.currentGroupIds;
+    const currentGroups = groupIds ?? room.currentGroupIds;
     const competition = await this.prisma.competition.findFirst();
     const wcif = JSON.parse(JSON.stringify(competition.wcif));
     const previousGroups = [];
@@ -723,7 +736,7 @@ export class CompetitionService {
       const currentRoundId = currentGroups[0].split('-g')[0];
       const roundInfoFromSchedule: Activity =
         getActivityInfoFromScheduleWithRoom(currentRoundId, room.name, wcif);
-      if (!roundInfoFromSchedule) return;
+      if (!roundInfoFromSchedule) return [];
       const sortedActivities = roundInfoFromSchedule.childActivities.sort(
         (a, b) =>
           new Date(a.startTime).getTime() - new Date(b.startTime).getTime(),
@@ -773,7 +786,7 @@ export class CompetitionService {
         const roundId = currentGroupId.split('-g')[0];
         const roundInfoFromSchedule: Activity =
           getActivityInfoFromScheduleWithRoom(roundId, room.name, wcif);
-        if (!roundInfoFromSchedule) return;
+        if (!roundInfoFromSchedule) return [];
         const sortedActivities = roundInfoFromSchedule.childActivities.sort(
           (a, b) =>
             new Date(a.startTime).getTime() - new Date(b.startTime).getTime(),

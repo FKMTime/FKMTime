@@ -1,5 +1,13 @@
 import { useAtom } from "jotai";
-import { Info, ListX, Save, SkipBack, SkipForward, X } from "lucide-react";
+import {
+    Info,
+    ListX,
+    Plus,
+    Save,
+    SkipBack,
+    SkipForward,
+    X,
+} from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import LoadingPage from "@/Components/LoadingPage";
@@ -44,6 +52,9 @@ const CurrentGroups = () => {
     const [competition, setCompetition] = useAtom(competitionAtom);
     const [savedRooms, setSavedRooms] = useState<Room[]>([]);
     const [rooms, setRooms] = useState<Room[]>([]);
+    const [suggestedGroups, setSuggestedGroups] = useState<
+        Record<string, string[]>
+    >({});
     const [isSaving, setIsSaving] = useState(false);
 
     const fetchCompetition = useCallback(async () => {
@@ -56,9 +67,19 @@ const CurrentGroups = () => {
     }, [competition, fetchCompetition]);
 
     useEffect(() => {
-        getAllRooms().then((data: Room[]) => {
+        getAllRooms().then(async (data: Room[]) => {
             setSavedRooms(data);
             setRooms(data);
+            const suggested = await Promise.all(
+                data.map((room) =>
+                    getNextGroupsFromScheduleForRoom(room.id, [])
+                )
+            );
+            setSuggestedGroups(
+                Object.fromEntries(
+                    data.map((room, i) => [room.id, suggested[i]])
+                )
+            );
         });
     }, []);
 
@@ -86,13 +107,33 @@ const CurrentGroups = () => {
         );
     };
 
+    /** Stepping past the end of the schedule keeps the room as it is */
+    const stepRoom = (room: Room, groupIds: string[], nothingLeft: string) => {
+        if (groupIds.length === 0) {
+            toast({ title: nothingLeft });
+            return;
+        }
+        setRoomGroups(room.id, groupIds);
+    };
+
     const handleNext = async (room: Room) =>
-        setRoomGroups(room.id, await getNextGroupsFromScheduleForRoom(room.id));
+        stepRoom(
+            room,
+            await getNextGroupsFromScheduleForRoom(
+                room.id,
+                room.currentGroupIds
+            ),
+            `Nothing next in ${room.name}`
+        );
 
     const handlePrevious = async (room: Room) =>
-        setRoomGroups(
-            room.id,
-            await getPreviousGroupsFromScheduleForRoom(room.id)
+        stepRoom(
+            room,
+            await getPreviousGroupsFromScheduleForRoom(
+                room.id,
+                room.currentGroupIds
+            ),
+            `Nothing earlier in ${room.name}`
         );
 
     const handleSave = async () => {
@@ -136,6 +177,7 @@ const CurrentGroups = () => {
             {rooms.map((room) => {
                 const saved = savedRooms.find((r) => r.id === room.id);
                 const hasGroups = room.currentGroupIds.length > 0;
+                const suggested = suggestedGroups[room.id] ?? [];
                 return (
                     <section
                         key={room.id}
@@ -229,7 +271,30 @@ const CurrentGroups = () => {
                                 ))}
                             </ul>
                         ) : (
-                            <EmptyState className="min-h-0 rounded-chip p-3.5 md:rounded-chip">
+                            <EmptyState
+                                className="min-h-0 rounded-chip p-3.5 md:rounded-chip"
+                                action={
+                                    suggested.length > 0 && (
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            className="h-auto min-h-11 whitespace-normal py-1.5 md:min-h-[34px]"
+                                            onClick={() =>
+                                                setRoomGroups(
+                                                    room.id,
+                                                    suggested
+                                                )
+                                            }
+                                        >
+                                            <Plus />
+                                            Add{" "}
+                                            {suggested
+                                                .map(getGroupLabel)
+                                                .join(", ")}
+                                        </Button>
+                                    )
+                                }
+                            >
                                 No groups in progress
                             </EmptyState>
                         )}
