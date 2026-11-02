@@ -90,6 +90,39 @@ export const getAttemptsWaitingForExtra = <T extends Attempt>(
   ] as T[];
 };
 
+/** After the highest extra, as extras entered by hand can leave gaps */
+export const getNextExtraNumber = (attempts: Attempt[]) =>
+  (getSortedExtraAttempts(attempts).at(-1)?.attemptNumber ?? 0) + 1;
+
+/** The standard attempt and each extra that replaced it in turn */
+const getChain = (standard: Attempt, attempts: Attempt[]) => {
+  const chain = [standard];
+  let extra = standard;
+  while (extra?.replacedBy) {
+    const { replacedBy } = extra;
+    extra = attempts.find(
+      (a) =>
+        a.attemptNumber === replacedBy && a.type === AttemptType.EXTRA_ATTEMPT,
+    );
+    if (extra && !chain.includes(extra)) chain.push(extra);
+    else break;
+  }
+  return chain;
+};
+
+/** Orders attempts by the position each one counts for or replaces */
+export const sortByPosition = <T extends Attempt>(
+  toSort: T[],
+  attempts: Attempt[],
+): T[] => {
+  const standard = getSortedStandardAttempts(attempts);
+  const position = (attempt: Attempt) =>
+    standard.findIndex((s) =>
+      getChain(s, attempts).some((a) => a.id === attempt.id),
+    );
+  return [...toSort].sort((a, b) => position(a) - position(b));
+};
+
 /** The attempt number a replacing or replaced attempt stands in for */
 export const getAttemptPosition = (attempt: Attempt, attempts: Attempt[]) =>
   getSortedStandardAttempts(attempts).find(

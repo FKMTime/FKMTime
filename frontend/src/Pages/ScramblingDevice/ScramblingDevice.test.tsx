@@ -161,6 +161,44 @@ describe("Scrambling", () => {
         expect(getScrambleData).toHaveBeenCalledWith("200", "333-r1");
     });
 
+    it("shows the normal scramble and signs the extra on a fresh set", async () => {
+        vi.mocked(getPersonByCardId).mockResolvedValue(scrambler);
+        vi.mocked(getScrambleData).mockResolvedValue({
+            status: 200,
+            data: {
+                person: competitor,
+                scrambleData: {
+                    num: 2,
+                    isExtra: true,
+                    scramble: { num: 1, isExtra: false },
+                },
+            },
+        });
+        vi.mocked(createScrambledAttempt).mockResolvedValue({
+            status: 201,
+            data: {},
+        });
+        renderScrambling();
+
+        scan("Scan the scrambler's card", "100");
+        await screen.findByText("Sam Scrambler");
+        scan("Scan the competitor's card", "200");
+
+        expect(await screen.findByText("Scramble 1")).toBeTruthy();
+        expect(screen.getByText("R U R' U'")).toBeTruthy();
+        fireEvent.click(await screen.findByRole("button", { name: "Sign" }));
+
+        await waitFor(() =>
+            expect(createScrambledAttempt).toHaveBeenCalledWith(
+                competitor.id,
+                scrambler.id,
+                "333-r1",
+                2,
+                true
+            )
+        );
+    });
+
     it("keeps the last signed attempt visible after Sign", async () => {
         vi.mocked(getPersonByCardId).mockResolvedValue(scrambler);
         vi.mocked(getScrambleData).mockResolvedValue({

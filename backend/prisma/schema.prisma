@@ -169,6 +169,8 @@ model Attempt {
   extraGrantId       String?              @map("extra_grant_id")
   extraGrant         ExtraGrant?          @relation(fields: [extraGrantId], references: [id], onDelete: SetNull)
   statusBeforeGrant  AttemptStatus?       @map("status_before_grant")
+  statusInGrant      AttemptStatus?       @map("status_in_grant")
+  replacedByInGrant  Int?                 @map("replaced_by_in_grant")
 
   @@map("attempt")
 }

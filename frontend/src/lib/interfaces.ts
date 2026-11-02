@@ -234,6 +234,9 @@ export interface Attempt {
     attemptNumber: number;
     comment?: string;
     replacedBy?: number | null;
+    /** What a set-aside grant had, so it can be used again */
+    replacedByInGrant?: number | null;
+    statusInGrant?: AttemptStatus | null;
     penalty: number;
     status: AttemptStatus;
     type: AttemptType;
@@ -491,6 +494,8 @@ export interface DecryptedScramble {
 export interface ScrambleData {
     num: number;
     isExtra: boolean;
+    /** What to show and scramble, when it differs from the attempt to sign */
+    scramble?: { num: number; isExtra: boolean };
 }
 
 export interface ImportedScrambleSet {

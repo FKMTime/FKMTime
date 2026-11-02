@@ -77,6 +77,7 @@ const EditAttemptModal = ({
                 submitError={submitError}
                 attempt={attempt}
                 competitorId={result.person.id}
+                existingAttempts={result.attempts}
                 timeLimit={timeLimit}
                 roundId={result.roundId}
             />

@@ -87,8 +87,11 @@ const AttemptForm = ({
     const competition = useAtomValue(competitionAtom);
     const attemptOptions = useMemo(
         () =>
-            getAttemptOptions(getNumberOfAttempts(roundId, competition?.wcif)),
-        [roundId, competition?.wcif]
+            getAttemptOptions(getNumberOfAttempts(roundId, competition?.wcif), [
+                ...(existingAttempts ?? []),
+                ...(attempt ? [attempt] : []),
+            ]),
+        [roundId, competition?.wcif, existingAttempts, attempt]
     );
     const extraOptions = attemptOptions.filter(
         (option) => option.type === AttemptType.EXTRA_ATTEMPT

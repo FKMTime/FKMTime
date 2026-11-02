@@ -1,6 +1,7 @@
 import { useAtomValue } from "jotai";
 import { X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import { getLimitByRoundId } from "wcif-helpers";
 
 import LoadingPage from "@/Components/LoadingPage";
@@ -190,6 +191,12 @@ const IncidentPanel = ({ id, onClose, onDone }: IncidentPanelProps) => {
                 timeLimit={timeLimit}
                 handleDelete={handleDelete}
             />
+            <Link
+                to={`/results/${incident.result.id}`}
+                className="text-sm font-semibold text-primary hover:underline"
+            >
+                Several attempts affected? Give extras on the result page
+            </Link>
         </section>
     );
 };

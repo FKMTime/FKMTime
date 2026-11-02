@@ -3,6 +3,7 @@ import { X } from "lucide-react";
 import {
     FormEvent,
     KeyboardEvent,
+    useCallback,
     useEffect,
     useMemo,
     useRef,
@@ -118,12 +119,19 @@ const QuickEnterAttemptModal = ({
         };
     }, [isOpen, roundId]);
 
-    const attemptOptions = useMemo(
-        () =>
+    const optionsFor = useCallback(
+        (personId?: string) =>
             roundId
-                ? getAttemptOptions(getNumberOfAttempts(roundId, wcif))
+                ? getAttemptOptions(
+                      getNumberOfAttempts(roundId, wcif),
+                      (personId && roundAttempts.get(personId)) || []
+                  )
                 : [],
-        [roundId, wcif]
+        [roundAttempts, roundId, wcif]
+    );
+    const attemptOptions = useMemo(
+        () => optionsFor(competitor?.id),
+        [competitor?.id, optionsFor]
     );
     const matches =
         wcif && !competitor
@@ -149,7 +157,7 @@ const QuickEnterAttemptModal = ({
         setCompetitor(person);
         setAttempt(
             getNextAttemptValue(
-                attemptOptions,
+                optionsFor(person.id),
                 roundAttempts.get(person.id) ?? []
             )
         );

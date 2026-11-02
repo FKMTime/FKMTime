@@ -32,8 +32,12 @@ describe('AttemptService extras for all attempts', () => {
   let prisma: Record<string, any>;
   let resultService: {
     enterWholeScorecardToWcaLiveOrCubingContests: jest.Mock;
+    settleWaitingExtras: jest.Mock;
   };
-  let appGateway: { handleAttemptUpdated: jest.Mock };
+  let appGateway: {
+    handleAttemptUpdated: jest.Mock;
+    handleResultEntered: jest.Mock;
+  };
   let service: AttemptService;
 
   const give = (attemptIds: string[], extra = {}) =>
@@ -84,7 +88,9 @@ describe('AttemptService extras for all attempts', () => {
           const { extraGrant, ...scalars } = data;
           delete scalars.updatedBy;
           Object.assign(attempt, scalars);
-          attempt.extraGrantId = extraGrant?.connect?.id ?? null;
+          if (extraGrant) {
+            attempt.extraGrantId = extraGrant.connect?.id ?? null;
+          }
           return attempt;
         }),
       },
@@ -108,8 +114,12 @@ describe('AttemptService extras for all attempts', () => {
             }
           );
         }),
-        findFirst: jest.fn().mockImplementation(async () => {
-          const grant = grants.filter((g) => !g.restoredAt).at(-1);
+        findFirst: jest.fn().mockImplementation(async ({ where }) => {
+          const grant = (
+            where.restoredAt === null
+              ? grants.filter((g) => !g.restoredAt)
+              : grants.filter((g) => g.restoredAt)
+          ).at(-1);
           return grant ? { ...grant, attempts: [] } : null;
         }),
         update: jest.fn().mockImplementation(async ({ where, data }) => {
@@ -123,12 +133,16 @@ describe('AttemptService extras for all attempts', () => {
     prisma.$transaction = jest.fn().mockImplementation((work) => work(prisma));
     resultService = {
       enterWholeScorecardToWcaLiveOrCubingContests: jest.fn(),
+      settleWaitingExtras: jest.fn(),
     };
-    appGateway = { handleAttemptUpdated: jest.fn() };
+    appGateway = {
+      handleAttemptUpdated: jest.fn(),
+      handleResultEntered: jest.fn(),
+    };
     service = new AttemptService(
       appGateway as unknown as AppGateway,
       prisma as unknown as DbService,
-      null as AttendanceService,
+      { markCompetitorAsPresent: jest.fn() } as unknown as AttendanceService,
       { log: jest.fn() } as unknown as AttemptEditLogService,
       resultService as unknown as ResultService,
       null as SocketController,
@@ -233,6 +247,91 @@ describe('AttemptService extras for all attempts', () => {
     await expect(give(['s1'])).rejects.toMatchObject({ status: 409 });
   });
 
+  describe('entering an extra by hand', () => {
+    const enter = (attemptNumber: number, type: AttemptType) =>
+      service.createAttempt(
+        {
+          attemptNumber,
+          type,
+          value: 1500,
+          penalty: 0,
+          status: AttemptStatus.STANDARD,
+          comment: '',
+          competitorId: 'person-1',
+          roundId: '333-r1',
+          replacedBy: 0,
+        } as never,
+        'user-1',
+      );
+
+    beforeEach(() => {
+      prisma.attempt.findFirst = jest.fn().mockResolvedValue(null);
+      prisma.attempt.findMany = jest
+        .fn()
+        .mockImplementation(async () => attempts);
+      prisma.attempt.create = jest.fn().mockImplementation(async ({ data }) => {
+        const created = stored({
+          id: `new-${attempts.length}`,
+          attemptNumber: data.attemptNumber,
+          type: data.type,
+          status: data.status,
+        });
+        attempts.push(created);
+        return created;
+      });
+      prisma.staffActivity = { findFirst: jest.fn().mockResolvedValue(null) };
+      Object.assign(resultService, {
+        getResultOrCreate: jest.fn().mockResolvedValue({
+          id: 'result-1',
+          roundId: '333-r1',
+          person: { id: 'person-1' },
+        }),
+      });
+    });
+
+    it('replaces the next attempt waiting for a redo', async () => {
+      attempts[0].status = AttemptStatus.EXTRA_GIVEN;
+      attempts[1].status = AttemptStatus.EXTRA_GIVEN;
+
+      await enter(1, AttemptType.EXTRA_ATTEMPT);
+
+      expect(attempts[0].replacedBy).toBe(1);
+      expect(attempts[1].replacedBy).toBeNull();
+    });
+
+    it('keeps extras in order whichever is entered first', async () => {
+      attempts[0].status = AttemptStatus.EXTRA_GIVEN;
+      attempts[1].status = AttemptStatus.EXTRA_GIVEN;
+      attempts[0].extraGrantId = 'grant-1';
+      attempts[1].extraGrantId = 'grant-1';
+
+      await enter(2, AttemptType.EXTRA_ATTEMPT);
+      await enter(1, AttemptType.EXTRA_ATTEMPT);
+
+      expect(attempts[0].replacedBy).toBe(1);
+      expect(attempts[1].replacedBy).toBe(2);
+    });
+
+    it('leaves extras a delegate assigned outside a grant', async () => {
+      attempts[0].status = AttemptStatus.EXTRA_GIVEN;
+      attempts[0].replacedBy = 2;
+      attempts[1].status = AttemptStatus.EXTRA_GIVEN;
+
+      await enter(1, AttemptType.EXTRA_ATTEMPT);
+
+      expect(attempts[0].replacedBy).toBe(2);
+      expect(attempts[1].replacedBy).toBe(1);
+    });
+
+    it('leaves attempts alone for a standard attempt', async () => {
+      attempts[0].status = AttemptStatus.EXTRA_GIVEN;
+
+      await enter(3, AttemptType.STANDARD_ATTEMPT);
+
+      expect(attempts[0].replacedBy).toBeNull();
+    });
+  });
+
   describe('restoring the original attempts', () => {
     it('puts every attempt back as it was', async () => {
       await give(['s1', 's2']);
@@ -277,6 +376,45 @@ describe('AttemptService extras for all attempts', () => {
 
       await expect(
         service.restoreExtraGrant('grant-1', 'user-1'),
+      ).rejects.toMatchObject({ status: 409 });
+    });
+
+    it('switches back to the extras without entering them again', async () => {
+      await give(['s1', 's2']);
+      attempts[0].replacedBy = 1;
+      attempts[1].status = AttemptStatus.VOIDED;
+
+      await service.restoreExtraGrant('grant-1', 'user-1');
+      await expect(
+        service.reapplyExtraGrant('grant-1', 'user-1'),
+      ).resolves.toEqual({ reapplied: 2 });
+
+      expect(attempts.map((a) => a.status)).toEqual([
+        AttemptStatus.EXTRA_GIVEN,
+        AttemptStatus.VOIDED,
+      ]);
+      expect(attempts[0].replacedBy).toBe(1);
+      expect(grants[0].restoredAt).toBeNull();
+      expect(
+        resultService.enterWholeScorecardToWcaLiveOrCubingContests,
+      ).toHaveBeenCalledTimes(3);
+    });
+
+    it('can switch back and forth', async () => {
+      await give(['s1']);
+
+      await service.restoreExtraGrant('grant-1', 'user-1');
+      await service.reapplyExtraGrant('grant-1', 'user-1');
+      await service.restoreExtraGrant('grant-1', 'user-1');
+
+      expect(attempts[0].status).toBe(AttemptStatus.STANDARD);
+    });
+
+    it('refuses to reapply extras already in use', async () => {
+      await give(['s1']);
+
+      await expect(
+        service.reapplyExtraGrant('grant-1', 'user-1'),
       ).rejects.toMatchObject({ status: 409 });
     });
 

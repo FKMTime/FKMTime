@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { Competition } from "wcif-helpers";
 
 import { AttemptType, Person } from "@/lib/interfaces";
+import { AttemptStatus } from "@/lib/interfaces";
 import {
     getAttemptOptions,
     getNextAttemptValue,
@@ -88,6 +89,33 @@ describe("quick entry", () => {
     });
 });
 
+describe("getAttemptOptions for a redo", () => {
+    const waiting = (attemptNumber: number) => ({
+        attemptNumber,
+        type: AttemptType.STANDARD_ATTEMPT,
+        status: AttemptStatus.EXTRA_GIVEN,
+        replacedBy: null,
+    });
+    const extras = (options: { value: string }[]) =>
+        options.map((o) => o.value).filter((v) => v.startsWith("E"));
+
+    it("offers an extra for every attempt waiting for a redo", () => {
+        expect(
+            extras(getAttemptOptions(5, [1, 2, 3, 4, 5].map(waiting)))
+        ).toEqual(["E1", "E2", "E3", "E4", "E5"]);
+    });
+
+    it("keeps extras that already exist", () => {
+        const extra = { attemptNumber: 4, type: AttemptType.EXTRA_ATTEMPT };
+        expect(extras(getAttemptOptions(5, [extra]))).toEqual([
+            "E1",
+            "E2",
+            "E3",
+            "E4",
+        ]);
+    });
+});
+
 describe("getNextAttemptValue", () => {
     const options = getAttemptOptions(5);
     const standard = (attemptNumber: number) => ({
@@ -116,6 +144,18 @@ describe("getNextAttemptValue", () => {
         const all = [1, 2, 3, 4, 5].map(standard);
         expect(getNextAttemptValue(options, all)).toBe("E1");
         expect(getNextAttemptValue(options, [...all, extra(1)])).toBe("E2");
+    });
+
+    it("goes to the next extra while attempts wait for a redo", () => {
+        const waiting = {
+            ...standard(1),
+            status: AttemptStatus.EXTRA_GIVEN,
+            replacedBy: null,
+        };
+        expect(getNextAttemptValue(options, [waiting, standard(2)])).toBe("E1");
+        expect(
+            getNextAttemptValue(options, [waiting, standard(2), extra(1)])
+        ).toBe("E2");
     });
 
     it("falls back to attempt 1 when everything is taken", () => {

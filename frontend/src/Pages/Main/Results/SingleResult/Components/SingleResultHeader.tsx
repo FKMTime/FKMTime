@@ -1,4 +1,11 @@
-import { CircleCheck, OctagonX, Plus, Send, Trash2 } from "lucide-react";
+import {
+    CircleCheck,
+    MessageSquarePlus,
+    OctagonX,
+    Plus,
+    Send,
+    Trash2,
+} from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 import FlagIcon from "@/Components/Icons/FlagIcon";
@@ -23,6 +30,8 @@ interface SingleResultHeaderProps {
     onEnterAttempt: () => void;
     standardAttempts: Attempt[];
     maxAttempts: number;
+    /** Left out when extras can't be given for this result */
+    onGiveExtras?: () => void;
 }
 
 const SingleResultHeader = ({
@@ -31,6 +40,7 @@ const SingleResultHeader = ({
     onEnterAttempt,
     standardAttempts,
     maxAttempts,
+    onGiveExtras,
 }: SingleResultHeaderProps) => {
     const navigate = useNavigate();
     const confirm = useConfirm();
@@ -143,6 +153,12 @@ const SingleResultHeader = ({
                 <RowActions
                     subject={result.person.name}
                     items={[
+                        {
+                            label: "Give extras for several attempts",
+                            icon: MessageSquarePlus,
+                            hidden: !onGiveExtras,
+                            onSelect: () => onGiveExtras?.(),
+                        },
                         {
                             label: `Resubmit scorecard to ${platform}`,
                             icon: Send,
