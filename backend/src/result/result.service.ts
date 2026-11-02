@@ -34,6 +34,7 @@ import { CheckIfAttemptEnteredDto } from './dto/checkIfAttemptEntered.dto';
 import { DoubleCheckDto } from './dto/doubleCheck.dto';
 import {
   attemptTimeWithPenalty,
+  getAttemptsWaitingForExtra,
   getCountingAttempts,
   getSortedExtraAttempts,
   getSortedStandardAttempts,
@@ -865,13 +866,7 @@ export class ResultService {
         person: competitor,
       };
     }
-    if (
-      attempts.some(
-        (attempt) =>
-          attempt.status === AttemptStatus.EXTRA_GIVEN &&
-          (attempt.replacedBy === 0 || attempt.replacedBy === null),
-      )
-    ) {
+    if (getAttemptsWaitingForExtra(attempts).length > 0) {
       const lastExtraAttempt =
         sortedExtraAttempts[sortedExtraAttempts.length - 1];
       if (

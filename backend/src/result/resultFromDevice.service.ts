@@ -34,6 +34,7 @@ import { EnterAttemptDto } from './dto/enterAttempt.dto';
 import {
   checkAttemptLimit,
   checkCutoff,
+  getAttemptsWaitingForExtra,
   getCountingAttempts,
   getRoundResultText,
   getSortedExtraAttempts,
@@ -254,18 +255,8 @@ export class ResultFromDeviceService {
     const lastExtra =
       sortedExtraAttempts.length > 0 ? sortedExtraAttempts.length : 0;
     let extraEntered = false;
-    if (
-      attempts.some(
-        (attempt) =>
-          attempt.status === AttemptStatus.EXTRA_GIVEN &&
-          (attempt.replacedBy === 0 || attempt.replacedBy === null),
-      )
-    ) {
-      const lastAttemptToReplace = attempts.find(
-        (attempt) =>
-          attempt.status === AttemptStatus.EXTRA_GIVEN &&
-          (attempt.replacedBy === 0 || attempt.replacedBy === null),
-      );
+    const [attemptToReplace] = getAttemptsWaitingForExtra(attempts);
+    if (attemptToReplace) {
       const extraAttempt =
         await this.createAnExtraAttemptAnReplaceTheOriginalOne(
           {
@@ -276,7 +267,7 @@ export class ResultFromDeviceService {
             result,
             attemptNumber: lastExtra + 1,
           },
-          lastAttemptToReplace.id,
+          attemptToReplace.id,
         );
       extraEntered = true;
       if (data.isDelegate) {
@@ -285,6 +276,12 @@ export class ResultFromDeviceService {
           competitor.name,
           locale,
           extraAttempt.id,
+        );
+      }
+      if (finalData.dnsOther) {
+        await this.dnsRemainingAttempts(
+          result.id,
+          getMaxAttempts(roundInfo.format),
         );
       }
     }
@@ -547,6 +544,51 @@ export class ResultFromDeviceService {
         'DNS auto-assigned',
       );
     }
+  }
+
+  /** With no time left, nothing more can be solved: DNS whatever remains */
+  private async dnsRemainingAttempts(resultId: string, maxAttempts: number) {
+    const attempts = await this.prisma.attempt.findMany({
+      where: { resultId, status: { not: AttemptStatus.SCRAMBLED } },
+    });
+    const now = new Date();
+    let extraNumber = getSortedExtraAttempts(attempts).length;
+    for (const original of getAttemptsWaitingForExtra(attempts)) {
+      extraNumber++;
+      const created = await this.prisma.attempt.create({
+        data: {
+          attemptNumber: extraNumber,
+          status: AttemptStatus.STANDARD,
+          type: AttemptType.EXTRA_ATTEMPT,
+          penalty: DNS_VALUE,
+          value: 0,
+          solvedAt: now,
+          result: { connect: { id: resultId } },
+        },
+      });
+      await this.attemptEditLogService.log(
+        created as AttemptSnapshot,
+        now,
+        null,
+        'DNS auto-assigned',
+      );
+      const replaced = await this.prisma.attempt.update({
+        where: { id: original.id },
+        data: { replacedBy: extraNumber },
+      });
+      await this.attemptEditLogService.log(
+        replaced as AttemptSnapshot,
+        now,
+        null,
+        `Replaced by extra ${extraNumber}`,
+      );
+    }
+    const lastAttempt = getSortedStandardAttempts(attempts).at(-1);
+    await this.dnsOtherAttempts(
+      lastAttempt?.attemptNumber ?? 0,
+      maxAttempts,
+      resultId,
+    );
   }
 
   /** The round's result once the competitor has no attempts left, else null */

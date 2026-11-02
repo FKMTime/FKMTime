@@ -190,7 +190,15 @@ export const getSubmittedAttempts = (attempts: Attempt[]) => {
             attempt.status === AttemptStatus.EXTRA_GIVEN
         ) {
             const extraAttempt = getExtra(attempt.id, attempts);
-            if (extraAttempt && !attemptsToReturn.includes(extraAttempt)) {
+            // An extra that was given an extra itself has no valid time yet
+            const isWaiting =
+                extraAttempt?.status === AttemptStatus.EXTRA_GIVEN &&
+                !extraAttempt.replacedBy;
+            if (
+                extraAttempt &&
+                !isWaiting &&
+                !attemptsToReturn.includes(extraAttempt)
+            ) {
                 attemptsToReturn.push({
                     ...extraAttempt,
                     number: attemptsToReturn.length + 1,

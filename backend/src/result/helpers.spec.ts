@@ -4,6 +4,7 @@ import { DNF_VALUE, DNS_VALUE } from 'src/constants';
 import {
   attemptTimeWithPenalty,
   checkCutoff,
+  getAttemptsWaitingForExtra,
   getCountingAttempts,
   getFinalExtraAttempt,
   getRoundResultText,
@@ -60,6 +61,110 @@ describe('getCountingAttempts', () => {
       's1',
       'e1',
       's3',
+    ]);
+  });
+
+  it('leaves out an extra that is itself waiting for an extra', () => {
+    const attempts = [
+      attempt({
+        id: 's1',
+        attemptNumber: 1,
+        replacedBy: 1,
+        status: AttemptStatus.EXTRA_GIVEN,
+      }),
+      attempt({
+        id: 'e1',
+        attemptNumber: 1,
+        type: AttemptType.EXTRA_ATTEMPT,
+        status: AttemptStatus.EXTRA_GIVEN,
+      }),
+      attempt({ id: 's2', attemptNumber: 2 }),
+    ];
+    expect(getCountingAttempts(attempts).map((a) => a.id)).toEqual(['s2']);
+  });
+});
+
+describe('getAttemptsWaitingForExtra', () => {
+  const waiting = (id: string, attemptNumber: number) =>
+    attempt({ id, attemptNumber, status: AttemptStatus.EXTRA_GIVEN });
+
+  it('returns nothing when no attempt is waiting', () => {
+    expect(
+      getAttemptsWaitingForExtra([
+        attempt({ id: 's1', attemptNumber: 1 }),
+        attempt({
+          id: 's2',
+          attemptNumber: 2,
+          replacedBy: 1,
+          status: AttemptStatus.EXTRA_GIVEN,
+        }),
+        attempt({
+          id: 'e1',
+          attemptNumber: 1,
+          type: AttemptType.EXTRA_ATTEMPT,
+        }),
+      ]),
+    ).toEqual([]);
+  });
+
+  it('orders attempts by position, whatever order they come in', () => {
+    const attempts = [waiting('s3', 3), waiting('s1', 1), waiting('s2', 2)];
+    expect(getAttemptsWaitingForExtra(attempts).map((a) => a.id)).toEqual([
+      's1',
+      's2',
+      's3',
+    ]);
+  });
+
+  it('puts a waiting extra at the position it counts for', () => {
+    const attempts = [
+      waiting('s3', 3),
+      attempt({
+        id: 'e1',
+        attemptNumber: 1,
+        type: AttemptType.EXTRA_ATTEMPT,
+        status: AttemptStatus.EXTRA_GIVEN,
+      }),
+      attempt({
+        id: 's2',
+        attemptNumber: 2,
+        replacedBy: 1,
+        status: AttemptStatus.EXTRA_GIVEN,
+      }),
+      waiting('s1', 1),
+    ];
+    expect(getAttemptsWaitingForExtra(attempts).map((a) => a.id)).toEqual([
+      's1',
+      'e1',
+      's3',
+    ]);
+  });
+
+  it('treats replacedBy 0 as waiting', () => {
+    const attempts = [
+      attempt({
+        id: 's1',
+        attemptNumber: 1,
+        replacedBy: 0,
+        status: AttemptStatus.EXTRA_GIVEN,
+      }),
+    ];
+    expect(getAttemptsWaitingForExtra(attempts).map((a) => a.id)).toEqual([
+      's1',
+    ]);
+  });
+
+  it('keeps a waiting extra no attempt links to', () => {
+    const attempts = [
+      attempt({
+        id: 'e1',
+        attemptNumber: 1,
+        type: AttemptType.EXTRA_ATTEMPT,
+        status: AttemptStatus.EXTRA_GIVEN,
+      }),
+    ];
+    expect(getAttemptsWaitingForExtra(attempts).map((a) => a.id)).toEqual([
+      'e1',
     ]);
   });
 });
