@@ -671,7 +671,7 @@ describe('socket.io gateways (e2e)', () => {
           // The gateway answers nothing, so await the handler's work directly
           await app
             .get(CompetitionService, { strict: false })
-            .handleAutoSetupHeartbeat();
+            .handleAutoSetupHeartbeat('e2e-panel');
 
           const status = await station.request('ServerStatus', {});
           expect(status.data.autoSetup).toBe(false);
@@ -696,6 +696,99 @@ describe('socket.io gateways (e2e)', () => {
 
       const status = await station.request('ServerStatus', {});
       expect(status.data.autoSetup).toBe(false);
+    });
+
+    describe('with several people', () => {
+      let service: CompetitionService;
+      let startSpy: jest.SpyInstance;
+      let stopSpy: jest.SpyInstance;
+
+      // The gateway answers nothing, so wait for the handler's own promise
+      const emitAndWait = async (
+        socket: Socket,
+        event: string,
+        spy: jest.SpyInstance,
+      ) => {
+        const handled = spy.mock.results.length;
+        socket.emit(event);
+        while (spy.mock.results.length === handled) {
+          await new Promise((r) => setTimeout(r, 10));
+        }
+        await spy.mock.results[handled].value;
+      };
+      const start = (socket: Socket) =>
+        emitAndWait(socket, 'autosetup:start', startSpy);
+      const stop = (socket: Socket) =>
+        emitAndWait(socket, 'autosetup:stop', stopSpy);
+
+      beforeEach(() => {
+        service = app.get(CompetitionService, { strict: false });
+        startSpy = jest.spyOn(service, 'handleAutoSetupHeartbeat');
+        stopSpy = jest.spyOn(service, 'stopAutoSetup');
+      });
+
+      afterEach(() => {
+        jest.restoreAllMocks();
+      });
+
+      it('stays on until the last person stops it', async () => {
+        const first = await connect(organizerToken);
+        const second = await connect(organizerToken);
+        station.clear();
+
+        await start(first);
+        await station.waitFor(autoSetupStatus(true));
+
+        await start(second);
+        await stop(second);
+
+        expect(station.pending().filter(autoSetupStatus(false))).toEqual([]);
+        const status = await station.request('ServerStatus', {});
+        expect(status.data.autoSetup).toBe(true);
+
+        await stop(first);
+        await station.waitFor(autoSetupStatus(false));
+      });
+
+      it('is not stopped by someone who never started it', async () => {
+        const running = await connect(organizerToken);
+        const bystander = await connect(organizerToken);
+        station.clear();
+
+        await start(running);
+        await station.waitFor(autoSetupStatus(true));
+
+        await stop(bystander);
+
+        const status = await station.request('ServerStatus', {});
+        expect(status.data.autoSetup).toBe(true);
+
+        await stop(running);
+        await station.waitFor(autoSetupStatus(false));
+      });
+
+      it('stays on while anyone still sends heartbeats', async () => {
+        const gone = await connect(organizerToken);
+        const present = await connect(organizerToken);
+        const now = Date.now();
+        station.clear();
+
+        await start(gone);
+        await station.waitFor(autoSetupStatus(true));
+
+        jest.spyOn(Date, 'now').mockReturnValue(now + 11_000);
+        await start(present);
+        await service.checkHeartbeat();
+
+        let status = await station.request('ServerStatus', {});
+        expect(status.data.autoSetup).toBe(true);
+
+        jest.spyOn(Date, 'now').mockReturnValue(now + 22_000);
+        await service.checkHeartbeat();
+
+        status = await station.request('ServerStatus', {});
+        expect(status.data.autoSetup).toBe(false);
+      });
     });
   });
 });
