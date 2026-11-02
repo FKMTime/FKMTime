@@ -1,4 +1,4 @@
-import GridLoader from "react-spinners/GridLoader";
+import { GridLoader } from "react-spinners";
 
 interface SectionLoadingProps {
     /** What is loading, for screen readers, e.g. "Loading persons" */
