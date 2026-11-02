@@ -25,7 +25,9 @@ export const useDeferredDelete = ({
     const timers = useRef(new Map<string, ReturnType<typeof setTimeout>>());
     // Latest callbacks for timers and the unmount flush
     const latest = useRef({ remove, onDeleted });
-    latest.current = { remove, onDeleted };
+    useEffect(() => {
+        latest.current = { remove, onDeleted };
+    });
 
     const unhide = (id: string) =>
         setPendingIds((ids) => {

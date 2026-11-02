@@ -7,7 +7,7 @@ import {
 } from "@/lib/liveSolving";
 
 const useStationTimer = (station: StationInfo) => {
-    const [now, setNow] = useState(Date.now());
+    const [now, setNow] = useState(() => Date.now());
     const [packets, setPackets] = useState<{
         current: StationInfo;
         previous: StationInfo | null;

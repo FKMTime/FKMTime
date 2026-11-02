@@ -33,7 +33,9 @@ export const useCompetitionSocketEvents = (
     // The latest handlers, so listeners are registered once per user rather
     // than on every render
     const handlersRef = useRef(handlers);
-    handlersRef.current = handlers;
+    useEffect(() => {
+        handlersRef.current = handlers;
+    });
 
     useEffect(() => {
         if (!userId) return;
