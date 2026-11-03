@@ -128,6 +128,8 @@ describe('SocketService', () => {
         groupId: '333bf-r1-g1',
         time: 1234,
         inspection: 5000,
+        timerRunning: null,
+        inspectionRunning: null,
         cumulativeLimitCentiseconds: 60000,
         cumulativeRemainingCentiseconds: 45000,
         serverReceivedAt: now,
@@ -139,6 +141,34 @@ describe('SocketService', () => {
       expect(
         resultService.getCumulativeSumForMultipleRounds,
       ).toHaveBeenCalledWith('person-1', ['333bf-r1']);
+    });
+
+    it('forwards the running flags the station reports', async () => {
+      await service.handleCurrentTimeInfo({
+        ...update,
+        timerRunning: true,
+        inspectionRunning: false,
+      });
+
+      expect(appGateway.broadcastCurrentTimeInfo).toHaveBeenCalledWith(
+        expect.objectContaining({
+          espId: 7,
+          time: 1234,
+          timerRunning: true,
+          inspectionRunning: false,
+        }),
+      );
+    });
+
+    it('sends null flags for firmware that does not report them', async () => {
+      await service.handleCurrentTimeInfo({ espId: 7, time: 4200 });
+
+      expect(appGateway.broadcastCurrentTimeInfo).toHaveBeenCalledWith(
+        expect.objectContaining({
+          timerRunning: null,
+          inspectionRunning: null,
+        }),
+      );
     });
 
     it('reads each cached lookup once for repeated updates within the TTL', async () => {

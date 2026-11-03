@@ -128,6 +128,8 @@ export class SocketService {
       groupId: data.groupId ?? null,
       time: data.time ?? null,
       inspection: data.inspection ?? null,
+      timerRunning: data.timerRunning ?? null,
+      inspectionRunning: data.inspectionRunning ?? null,
       cumulativeLimitCentiseconds,
       cumulativeRemainingCentiseconds,
       serverReceivedAt: Date.now(),

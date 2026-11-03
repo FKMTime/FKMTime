@@ -47,6 +47,8 @@ const idleStation = (device: Device): StationInfo => ({
     groupId: null,
     time: null,
     inspection: null,
+    timerRunning: null,
+    inspectionRunning: null,
     cumulativeLimitCentiseconds: null,
     cumulativeRemainingCentiseconds: null,
     // Never heard from, so it shows as offline until its first packet

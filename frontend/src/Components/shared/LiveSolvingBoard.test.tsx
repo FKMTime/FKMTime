@@ -20,6 +20,8 @@ const station = (espId: number, roomId: string | null): StationInfo => ({
     groupId: null,
     time: null,
     inspection: null,
+    timerRunning: null,
+    inspectionRunning: null,
     cumulativeLimitCentiseconds: null,
     cumulativeRemainingCentiseconds: null,
     // Never heard from, so offline
