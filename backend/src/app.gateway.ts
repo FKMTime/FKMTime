@@ -21,6 +21,10 @@ export interface StationInfo {
   groupId: string | null;
   time: number | null;
   inspection: number | null;
+  /** Whether the solve timer is running; null when the firmware doesn't say */
+  timerRunning: boolean | null;
+  /** Whether inspection is running; null when the firmware doesn't say */
+  inspectionRunning: boolean | null;
   cumulativeLimitCentiseconds: number | null;
   cumulativeRemainingCentiseconds: number | null;
   serverReceivedAt: number;

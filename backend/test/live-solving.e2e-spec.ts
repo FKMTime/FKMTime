@@ -129,6 +129,8 @@ describe('Live solving (e2e)', () => {
       groupId: '333-r1-g3',
       time: 1234,
       inspection: 3000,
+      timerRunning: null,
+      inspectionRunning: null,
       cumulativeLimitCentiseconds: null,
       cumulativeRemainingCentiseconds: null,
       serverReceivedAt: expect.any(Number),
@@ -147,9 +149,27 @@ describe('Live solving (e2e)', () => {
       groupId: null,
       time: null,
       inspection: null,
+      timerRunning: null,
+      inspectionRunning: null,
       cumulativeLimitCentiseconds: null,
       cumulativeRemainingCentiseconds: null,
       serverReceivedAt: expect.any(Number),
+    });
+  });
+
+  it('relays whether the timer and inspection are running', async () => {
+    const info = await sendLivePacket({
+      espId: ESP.stationA,
+      time: 2500,
+      inspection: 4000,
+      timerRunning: true,
+      inspectionRunning: false,
+    });
+
+    expect(info).toMatchObject({
+      time: 2500,
+      timerRunning: true,
+      inspectionRunning: false,
     });
   });
 
