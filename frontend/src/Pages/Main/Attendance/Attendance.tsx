@@ -44,7 +44,6 @@ const Attendance = () => {
     const [attendance, setAttendance] = useState<StaffActivity[]>([]);
     const [hasAssignedRunners, setHasAssignedRunners] = useState(false);
     const roundId = selectedGroup.split("-g")[0];
-    const { shown: shownRoles, toggle: toggleRole } = useShownRoles(ROLE_KEYS);
 
     const selectGroup = useCallback(
         (groupId: string) => navigate(`/attendance/${groupId}`),
@@ -92,6 +91,12 @@ const Attendance = () => {
             socket.emit("leaveAttendance", { groupId: selectedGroup });
         };
     }, [selectedGroup, fetchAttendance, isConnected]);
+
+    const { shown: shownRoles, toggle: toggleRole } = useShownRoles(
+        ROLE_KEYS,
+        selectedGroup,
+        ROLE_KEYS.filter((role) => !attendance.some((a) => a.role === role))
+    );
 
     const { markOne: run, markMany } = useMarkAttendance(
         attendance,
