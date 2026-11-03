@@ -355,6 +355,7 @@ const Devices = () => {
                                             <TableHead>ESP ID</TableHead>
                                             <TableHead>Battery</TableHead>
                                             <TableHead>Type</TableHead>
+                                            <TableHead>Firmware</TableHead>
                                             <TableHead>Solves</TableHead>
                                             <TableHead>Last update</TableHead>
                                             <TableHead>

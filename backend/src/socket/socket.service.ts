@@ -10,6 +10,7 @@ import { AttendanceService } from '../attendance/attendance.service';
 import { CreateAttendaceDto } from '../attendance/dto/createAttendance.dto';
 import { CompetitionService } from '../competition/competition.service';
 import { DeviceService } from '../device/device.service';
+import { DeviceConnectedDto } from '../device/dto/deviceConnected.dto';
 import { RequestToConnectDto } from '../device/dto/requestToConnect.dto';
 import { UpdateBatteryPercentageDto } from '../device/dto/updateBatteryPercentage.dto';
 import { CheckIfAttemptEnteredDto } from '../result/dto/checkIfAttemptEntered.dto';
@@ -45,6 +46,10 @@ export class SocketService {
 
   async updateBatteryPercentage(data: UpdateBatteryPercentageDto) {
     return await this.deviceService.updateBatteryPercentage(data);
+  }
+
+  async deviceConnected(data: DeviceConnectedDto) {
+    return await this.deviceService.updateFirmwareVersion(data);
   }
 
   async createAttendance(data: CreateAttendaceDto) {

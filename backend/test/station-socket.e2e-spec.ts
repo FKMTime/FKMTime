@@ -323,6 +323,31 @@ describe('Station socket protocol (e2e)', () => {
     });
   });
 
+  describe('DeviceConnected', () => {
+    it('stores the firmware version a station reports on connect', async () => {
+      const res = await station.request('DeviceConnected', {
+        espId: ESP.stationA,
+        firmwareVersion: 'v9.8.7',
+      });
+
+      expect(res).toMatchObject({
+        type: 'DeviceConnectedResp',
+        data: { status: 200, error: false },
+      });
+      const device = await db.device.findUnique({ where: { id: stationAId } });
+      expect(device.firmwareVersion).toBe('v9.8.7');
+    });
+
+    it('returns an error for an unknown device', async () => {
+      const res = await station.request('DeviceConnected', {
+        espId: ESP.unknown,
+        firmwareVersion: 'v9.8.7',
+      });
+
+      expect(res).toEqual(errorResponse('Device not found', 404));
+    });
+  });
+
   describe('PersonInfo (card scan)', () => {
     it('returns an error for an unknown card', async () => {
       const res = await station.request('PersonInfo', {

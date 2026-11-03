@@ -95,6 +95,7 @@ const DeviceItem = ({
     const tone = batteryTone(battery);
     const updatedAt = new Date(device.updatedAt).toLocaleString();
     const type = prettyDeviceType(device.type);
+    const firmware = device.firmwareVersion || "—";
 
     if (variant === "row")
         return (
@@ -121,6 +122,9 @@ const DeviceItem = ({
                 <TableCell className="whitespace-nowrap">
                     {type}{" "}
                     <span className="text-faint">({device.hwVersion})</span>
+                </TableCell>
+                <TableCell className="whitespace-nowrap font-mono text-[13px] text-muted-foreground">
+                    {firmware}
                 </TableCell>
                 <TableCell>{device.count}</TableCell>
                 <TableCell className="text-muted-foreground">
@@ -179,7 +183,7 @@ const DeviceItem = ({
                 <span>{updatedAt}</span>
             </div>
             <span className="font-mono text-[11px] text-faint">
-                ESP {idToHex(device.espId)}
+                ESP {idToHex(device.espId)} · Firmware {firmware}
             </span>
             {modal}
         </article>
