@@ -1,8 +1,8 @@
 import { forwardRef, HttpException, Inject } from '@nestjs/common';
 import { StaffRole } from '@prisma/client';
 import { DbService } from 'src/db/db.service';
-import { PersonService } from 'src/person/person.service';
 import { isUnofficialEvent } from 'src/events';
+import { PersonService } from 'src/person/person.service';
 import { assertWcaCompetitionFound, WcaService } from 'src/wca/wca.service';
 import { wcifRoleToAttendanceRole } from 'src/wcif-helpers';
 import { Assignment, Person } from 'wcif-helpers';
