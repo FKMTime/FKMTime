@@ -13,40 +13,118 @@ on:
       - 'backend/package.json'
       - 'backend/package-lock.json'
       - '.github/workflows/publish-backend-image.yml'
+  # builds both platforms without pushing, so image changes are checked before merge
+  pull_request:
+    paths:
+      - 'backend/Dockerfile'
+      - 'backend/.dockerignore'
+      - 'backend/package.json'
+      - 'backend/package-lock.json'
+      - '.github/workflows/publish-backend-image.yml'
   workflow_dispatch:
-      
+
+# a newer push supersedes the image being built; queued runs also stop racing for the cache
+concurrency:
+  group: publish-backend-image-${{ github.ref }}
+  cancel-in-progress: true
+
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: fkmtime/fkmtime-backend
+  PUSH: ${{ github.event_name != 'pull_request' }}
 
 jobs:
-   push:
-      name: Push to ghcr.io
-      runs-on: ubuntu-latest
-      steps:
-        - uses: actions/checkout@v7
-        - name: Setup Docker buildx
-          uses: docker/setup-buildx-action@v4
-        - name: Log into registry ${{ env.REGISTRY }}
-          uses: docker/login-action@v4
-          with:
-            registry: ${{ env.REGISTRY }}
-            username: ${{ github.actor }}
-            password: ${{ secrets.GITHUB_TOKEN }}
-        - name: Extract Docker metadata
-          id: meta
-          uses: docker/metadata-action@v6
-          with:
-            images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-        - name: Build and push Docker image
-          id: build-and-push
-          uses: docker/build-push-action@v7
-          with:
-            context: ./backend
-            file: ./backend/Dockerfile
-            push: true
-            platforms: linux/amd64, linux/arm64
-            tags: ${{ steps.meta.outputs.tags }}
-            labels: ${{ steps.meta.outputs.labels }}
-            cache-from: type=gha
-            cache-to: type=gha,mode=max            
+  build:
+    name: Build ${{ matrix.platform }}
+    # each platform builds on a native runner: arm64 under QEMU took ~9x longer
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: true
+      matrix:
+        include:
+          - platform: linux/amd64
+            runner: ubuntu-latest
+          - platform: linux/arm64
+            runner: ubuntu-24.04-arm
+    steps:
+      - uses: actions/checkout@v7
+      - name: Prepare
+        run: echo "PLATFORM_PAIR=${PLATFORM//\//-}" >> "$GITHUB_ENV"
+        env:
+          PLATFORM: ${{ matrix.platform }}
+      - name: Setup Docker buildx
+        uses: docker/setup-buildx-action@v4
+      - name: Log into registry ${{ env.REGISTRY }}
+        if: env.PUSH == 'true'
+        uses: docker/login-action@v4
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Extract Docker metadata
+        id: meta
+        uses: docker/metadata-action@v6
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+      - name: Build and push by digest
+        id: build
+        uses: docker/build-push-action@v7
+        with:
+          context: ./backend
+          file: ./backend/Dockerfile
+          platforms: ${{ matrix.platform }}
+          labels: ${{ steps.meta.outputs.labels }}
+          outputs: type=image,name=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }},push-by-digest=true,name-canonical=true,push=${{ env.PUSH }}
+          # one cache per platform, so the two jobs don't overwrite each other's layers
+          cache-from: type=gha,scope=backend-${{ env.PLATFORM_PAIR }}
+          cache-to: type=gha,scope=backend-${{ env.PLATFORM_PAIR }},mode=max
+      - name: Export digest
+        if: env.PUSH == 'true'
+        run: |
+          mkdir -p "${{ runner.temp }}/digests"
+          touch "${{ runner.temp }}/digests/${DIGEST#sha256:}"
+        env:
+          DIGEST: ${{ steps.build.outputs.digest }}
+      - name: Upload digest
+        if: env.PUSH == 'true'
+        uses: actions/upload-artifact@v7
+        with:
+          name: digests-${{ env.PLATFORM_PAIR }}
+          path: ${{ runner.temp }}/digests/*
+          if-no-files-found: error
+          retention-days: 1
+
+  merge:
+    name: Push to ghcr.io
+    if: github.event_name != 'pull_request'
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download digests
+        uses: actions/download-artifact@v8
+        with:
+          path: ${{ runner.temp }}/digests
+          pattern: digests-*
+          merge-multiple: true
+      - name: Setup Docker buildx
+        uses: docker/setup-buildx-action@v4
+      - name: Log into registry ${{ env.REGISTRY }}
+        uses: docker/login-action@v4
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Extract Docker metadata
+        id: meta
+        uses: docker/metadata-action@v6
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+      - name: Create multi-platform image
+        working-directory: ${{ runner.temp }}/digests
+        run: |
+          # shellcheck disable=SC2046
+          docker buildx imagetools create \
+            $(jq -cr '.tags | map("-t " + .) | join(" ")' <<< "$DOCKER_METADATA_OUTPUT_JSON") \
+            $(printf '${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@sha256:%s ' *)
+      - name: Inspect image
+        run: docker buildx imagetools inspect "${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.meta.outputs.version }}"
