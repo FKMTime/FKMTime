@@ -141,7 +141,7 @@ describe('SocketService', () => {
       ).toHaveBeenCalledWith('person-1', ['333bf-r1']);
     });
 
-    it('reads each lookup once for repeated updates within the TTL', async () => {
+    it('reads each cached lookup once for repeated updates within the TTL', async () => {
       for (let i = 0; i < 5; i++) {
         await service.handleCurrentTimeInfo({ ...update, time: 1000 + i });
         jest.advanceTimersByTime(LIVE_LOOKUP_TTL_MS / 10);
@@ -151,7 +151,7 @@ describe('SocketService', () => {
         device: 1,
         person: 1,
         competition: 1,
-        cumulative: 1,
+        cumulative: 5,
       });
       expect(appGateway.broadcastCurrentTimeInfo).toHaveBeenCalledTimes(5);
       expect(
@@ -229,10 +229,9 @@ describe('SocketService', () => {
       expect(lookups().competition).toBe(2);
     });
 
-    it('recounts the cumulative time after an attempt from a station', async () => {
+    it('shows the remaining cumulative time as of each update', async () => {
       await service.handleCurrentTimeInfo(update);
       resultService.getCumulativeSumForMultipleRounds.mockResolvedValue(20000);
-      await service.enterAttempt({} as never);
       await service.handleCurrentTimeInfo(update);
 
       expect(lookups().cumulative).toBe(2);

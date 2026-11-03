@@ -3,7 +3,6 @@ import { AttemptStatus, AttemptType, Person } from '@prisma/client';
 import { Socket } from 'socket.io-client';
 import { AppGateway, StationInfo } from 'src/app.gateway';
 import { DbService } from 'src/db/db.service';
-import { LIVE_LOOKUP_TTL_MS } from 'src/ttl-cache';
 import * as request from 'supertest';
 
 import { createTestApp } from './helpers/app.helper';
@@ -182,12 +181,8 @@ describe('Live solving (e2e)', () => {
         groupId: '333bf-r1-g2',
       });
 
-    /**
-     * Writes an attempt the way a panel edit does, which doesn't clear the
-     * cached cumulative time, then waits until the cache has expired
-     */
-    const addAttempt = async (attemptNumber: number, value: number) => {
-      await db.attempt.create({
+    const addAttempt = (attemptNumber: number, value: number) =>
+      db.attempt.create({
         data: {
           resultId,
           attemptNumber,
@@ -197,8 +192,6 @@ describe('Live solving (e2e)', () => {
           type: AttemptType.STANDARD_ATTEMPT,
         },
       });
-      await new Promise((resolve) => setTimeout(resolve, LIVE_LOOKUP_TTL_MS));
-    };
 
     beforeAll(async () => {
       const result = await db.result.create({

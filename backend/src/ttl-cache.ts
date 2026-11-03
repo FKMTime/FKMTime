@@ -1,7 +1,7 @@
 /**
- * How long live solving keeps a looked-up device, person, WCIF or cumulative
- * sum. Writes clear the cache where they can; this bounds staleness where
- * they don't.
+ * How long live solving keeps a looked-up device, person or WCIF. Every write
+ * to those clears its cache; the TTL is a backstop for a write path that
+ * doesn't.
  */
 export const LIVE_LOOKUP_TTL_MS = 5000;
 

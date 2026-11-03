@@ -28,6 +28,7 @@ describe('SyncService', () => {
         prisma as never,
         {} as never,
         competitionService as never,
+        {} as never,
       );
 
       await service.addUnofficialEventsToWcif();

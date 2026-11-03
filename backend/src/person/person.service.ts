@@ -418,6 +418,11 @@ export class PersonService {
     );
   }
 
+  /** Clears getPersonByCardIdCached after people are changed elsewhere */
+  invalidateCardCache() {
+    this.personsByCardId.clear();
+  }
+
   async addPerson(data: AddPersonDto) {
     if (data.canCompete && !data.countryIso2) {
       throw new HttpException(

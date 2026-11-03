@@ -15,7 +15,6 @@ import { UpdateBatteryPercentageDto } from '../device/dto/updateBatteryPercentag
 import { CheckIfAttemptEnteredDto } from '../result/dto/checkIfAttemptEntered.dto';
 import { EnterAttemptDto } from '../result/dto/enterAttempt.dto';
 import { ResultService } from '../result/result.service';
-import { LIVE_LOOKUP_TTL_MS, TtlCache } from '../ttl-cache';
 import { CurrentTimeInfoDto } from './dto/currentTimeInfo.dto';
 
 @Injectable()
@@ -36,18 +35,8 @@ export class SocketService {
     private readonly appGateway: AppGateway,
   ) {}
 
-  // Time used towards a cumulative limit, by person and rounds. Attempts
-  // entered from the panel aren't seen here, so the TTL bounds those.
-  private readonly cumulativeSums = new TtlCache<string, number>(
-    LIVE_LOOKUP_TTL_MS,
-  );
-
   async enterAttempt(data: EnterAttemptDto) {
-    try {
-      return await this.resultFromDeviceService.enterAttempt(data);
-    } finally {
-      this.cumulativeSums.clear();
-    }
+    return await this.resultFromDeviceService.enterAttempt(data);
   }
 
   async requestToConnectDevice(data: RequestToConnectDto) {
@@ -118,13 +107,9 @@ export class SocketService {
           roundInfo.timeLimit.cumulativeRoundIds.length > 1
             ? roundInfo.timeLimit.cumulativeRoundIds
             : [roundId];
-        const used = await this.cumulativeSums.getOrLoad(
-          `${personId}:${roundsIds.join(',')}`,
-          () =>
-            this.resultService.getCumulativeSumForMultipleRounds(
-              personId,
-              roundsIds,
-            ),
+        const used = await this.resultService.getCumulativeSumForMultipleRounds(
+          personId,
+          roundsIds,
         );
         cumulativeLimitCentiseconds = roundInfo.timeLimit.centiseconds;
         cumulativeRemainingCentiseconds = Math.max(
