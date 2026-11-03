@@ -41,6 +41,7 @@ describe("getNavItems", () => {
     it("shows every section to a delegate", () => {
         expect(ids(delegate)).toEqual([
             "home",
+            "schedule",
             "incidents",
             "persons",
             "checkIn",
@@ -57,6 +58,7 @@ describe("getNavItems", () => {
     it("limits staff to the competition day basics", () => {
         expect(ids(staff)).toEqual([
             "home",
+            "schedule",
             "persons",
             "checkIn",
             "results",
