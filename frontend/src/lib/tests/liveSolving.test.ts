@@ -15,6 +15,8 @@ const packet = (
     groupId: "333-r1-g1",
     time: null,
     inspection: null,
+    timerRunning: null,
+    inspectionRunning: null,
     cumulativeLimitCentiseconds: null,
     cumulativeRemainingCentiseconds: null,
     ...overrides,
@@ -108,6 +110,131 @@ describe("getStationTimer", () => {
 
         expect(timer.phase).toEqual("solving");
         expect(timer.displayTime).toEqual(90);
+    });
+});
+
+describe("getStationTimer with running flags", () => {
+    it("shows a solve as running from its first packet", () => {
+        const current = packet({
+            time: 300,
+            timerRunning: true,
+            inspectionRunning: false,
+            serverReceivedAt: 10_000,
+        });
+
+        const timer = getStationTimer(current, null, 10_400);
+
+        expect(timer.phase).toEqual("solving");
+        expect(timer.displayTime).toEqual(70);
+        expect(timer.isRunning).toBe(true);
+    });
+
+    it("counts up even when the time did not grow since the last packet", () => {
+        const previous = packet({
+            time: 0,
+            timerRunning: false,
+            inspectionRunning: true,
+            serverReceivedAt: 10_000,
+        });
+        const current = packet({
+            time: 0,
+            timerRunning: true,
+            inspectionRunning: false,
+            serverReceivedAt: 11_000,
+        });
+
+        const timer = getStationTimer(current, previous, 11_250);
+
+        expect(timer.phase).toEqual("solving");
+        expect(timer.displayTime).toEqual(25);
+    });
+
+    it("stops at the reported time as soon as the station stops", () => {
+        const previous = packet({
+            time: 8000,
+            timerRunning: true,
+            serverReceivedAt: 10_000,
+        });
+        const current = packet({
+            time: 8437,
+            timerRunning: false,
+            inspectionRunning: false,
+            serverReceivedAt: 10_437,
+        });
+
+        const timer = getStationTimer(current, previous, 11_200);
+
+        expect(timer.phase).toEqual("finished");
+        expect(timer.displayTime).toEqual(843);
+        expect(timer.isRunning).toBe(false);
+    });
+
+    it("stops counting up when a running station stops sending packets", () => {
+        const current = packet({
+            time: 2000,
+            timerRunning: true,
+            serverReceivedAt: 10_000,
+        });
+
+        const timer = getStationTimer(current, null, 20_000);
+
+        expect(timer.displayTime).toEqual(200);
+        expect(timer.isRunning).toBe(false);
+    });
+
+    it("shows inspection as running from its first packet", () => {
+        const current = packet({
+            inspection: 1000,
+            timerRunning: false,
+            inspectionRunning: true,
+            serverReceivedAt: 10_000,
+        });
+
+        const timer = getStationTimer(current, null, 10_600);
+
+        expect(timer.phase).toEqual("inspection");
+        expect(timer.displayInspection).toEqual(160);
+        expect(timer.isRunning).toBe(true);
+    });
+
+    it("holds inspection still once the station reports it stopped", () => {
+        const previous = packet({
+            inspection: 3000,
+            inspectionRunning: true,
+            serverReceivedAt: 10_000,
+        });
+        const current = packet({
+            inspection: 4000,
+            timerRunning: false,
+            inspectionRunning: false,
+            serverReceivedAt: 11_000,
+        });
+
+        const timer = getStationTimer(current, previous, 11_500);
+
+        expect(timer.phase).toEqual("inspection");
+        expect(timer.displayInspection).toEqual(400);
+        expect(timer.isRunning).toBe(false);
+    });
+
+    it("falls back to growth between packets when the flags are null", () => {
+        const previous = packet({ time: 1000, serverReceivedAt: 10_000 });
+        const growing = packet({ time: 2000, serverReceivedAt: 11_000 });
+        const still = packet({ time: 1000, serverReceivedAt: 11_000 });
+
+        expect(getStationTimer(growing, previous, 11_500)).toEqual({
+            phase: "solving",
+            displayTime: 250,
+            displayInspection: null,
+            isRunning: true,
+        });
+        expect(getStationTimer(still, previous, 11_500)).toEqual({
+            phase: "finished",
+            displayTime: 100,
+            displayInspection: null,
+            isRunning: false,
+        });
+        expect(getStationTimer(growing, null, 11_500).isRunning).toBe(false);
     });
 });
 
