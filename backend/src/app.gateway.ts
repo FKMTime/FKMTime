@@ -94,8 +94,22 @@ export class AppGateway {
 
   @UseGuards(OrganizerGuard)
   handleDeviceRequest(device: RequestToConnectDto) {
-    if (this.deviceRequests.some((req) => req.espId === device.espId)) return;
-    this.deviceRequests.push(device);
+    const pending = this.deviceRequests.find(
+      (req) => req.espId === device.espId,
+    );
+    if (
+      pending &&
+      pending.signKey === device.signKey &&
+      pending.type === device.type &&
+      pending.hw === device.hw
+    )
+      return;
+    // a reset device asks again with a new sign key; approving the old request would
+    // store a key the device no longer has, so only its latest request is kept
+    this.deviceRequests = [
+      ...this.deviceRequests.filter((req) => req.espId !== device.espId),
+      device,
+    ];
     this.server.to(`device`).emit('deviceRequests', this.deviceRequests);
   }
 
