@@ -1,5 +1,4 @@
 import { forwardRef, Inject, Injectable } from '@nestjs/common';
-import { DeviceType } from '@prisma/client';
 import { PersonService } from 'src/person/person.service';
 import { PersonForDeviceService } from 'src/person/personForDevice.service';
 import { ResultFromDeviceService } from 'src/result/resultFromDevice.service';
@@ -16,6 +15,7 @@ import { UpdateBatteryPercentageDto } from '../device/dto/updateBatteryPercentag
 import { CheckIfAttemptEnteredDto } from '../result/dto/checkIfAttemptEntered.dto';
 import { EnterAttemptDto } from '../result/dto/enterAttempt.dto';
 import { ResultService } from '../result/result.service';
+import { LIVE_LOOKUP_TTL_MS, TtlCache } from '../ttl-cache';
 import { CurrentTimeInfoDto } from './dto/currentTimeInfo.dto';
 
 @Injectable()
@@ -36,8 +36,18 @@ export class SocketService {
     private readonly appGateway: AppGateway,
   ) {}
 
+  // Time used towards a cumulative limit, by person and rounds. Attempts
+  // entered from the panel aren't seen here, so the TTL bounds those.
+  private readonly cumulativeSums = new TtlCache<string, number>(
+    LIVE_LOOKUP_TTL_MS,
+  );
+
   async enterAttempt(data: EnterAttemptDto) {
-    return await this.resultFromDeviceService.enterAttempt(data);
+    try {
+      return await this.resultFromDeviceService.enterAttempt(data);
+    } finally {
+      this.cumulativeSums.clear();
+    }
   }
 
   async requestToConnectDevice(data: RequestToConnectDto) {
@@ -77,10 +87,7 @@ export class SocketService {
   }
 
   async handleCurrentTimeInfo(data: CurrentTimeInfoDto) {
-    const device = await this.deviceService.getDeviceByEspId(
-      data.espId,
-      DeviceType.STATION,
-    );
+    const device = await this.deviceService.getStationByEspIdCached(data.espId);
     const deviceName = device?.name ?? `Station ${data.espId}`;
 
     let personName: string | null = null;
@@ -88,7 +95,7 @@ export class SocketService {
     let personId: string | null = null;
 
     if (data.competitor != null) {
-      const person = await this.personService.getPersonByCardId(
+      const person = await this.personService.getPersonByCardIdCached(
         data.competitor.toString(),
       );
       if (person) {
@@ -103,8 +110,7 @@ export class SocketService {
 
     if (data.groupId && personId) {
       const roundId = data.groupId.split('-g')[0];
-      const competition = await this.competitionService.getCompetitionInfo();
-      const wcif = JSON.parse(JSON.stringify(competition.wcif));
+      const wcif = await this.competitionService.getWcifCached();
       const roundInfo = getRoundInfoFromWcif(roundId, wcif);
 
       if (roundInfo?.timeLimit?.cumulativeRoundIds?.length > 0) {
@@ -112,9 +118,13 @@ export class SocketService {
           roundInfo.timeLimit.cumulativeRoundIds.length > 1
             ? roundInfo.timeLimit.cumulativeRoundIds
             : [roundId];
-        const used = await this.resultService.getCumulativeSumForMultipleRounds(
-          personId,
-          roundsIds,
+        const used = await this.cumulativeSums.getOrLoad(
+          `${personId}:${roundsIds.join(',')}`,
+          () =>
+            this.resultService.getCumulativeSumForMultipleRounds(
+              personId,
+              roundsIds,
+            ),
         );
         cumulativeLimitCentiseconds = roundInfo.timeLimit.centiseconds;
         cumulativeRemainingCentiseconds = Math.max(

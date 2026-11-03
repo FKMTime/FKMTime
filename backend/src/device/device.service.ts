@@ -4,6 +4,7 @@ import { AppGateway } from 'src/app.gateway';
 
 import { DbService } from '../db/db.service';
 import { SocketController } from '../socket/socket.controller';
+import { LIVE_LOOKUP_TTL_MS, TtlCache } from '../ttl-cache';
 import { DeviceDto } from './dto/device.dto';
 import { DeviceConnectedDto } from './dto/deviceConnected.dto';
 import { RequestToConnectDto } from './dto/requestToConnect.dto';
@@ -18,6 +19,11 @@ export class DeviceService {
     @Inject(forwardRef(() => SocketController))
     private readonly socketController: SocketController,
   ) {}
+
+  private readonly stationsByEspId = new TtlCache<
+    number,
+    Awaited<ReturnType<DeviceService['getDeviceByEspId']>>
+  >(LIVE_LOOKUP_TTL_MS);
 
   async getAllDevices(type?: DeviceType, roomId?: string) {
     if (type && !Object.values(DeviceType).includes(type)) {
@@ -85,6 +91,7 @@ export class DeviceService {
       }
       throw e;
     }
+    this.stationsByEspId.clear();
     this.appGateway.handleAddDeviceToDb(data.espId);
     await this.socketController.sendServerStatus();
     return { ...device, count: 0 };
@@ -100,6 +107,13 @@ export class DeviceService {
         room: true,
       },
     });
+  }
+
+  /** getDeviceByEspId for a station, cached for live solving updates */
+  async getStationByEspIdCached(espId: number) {
+    return this.stationsByEspId.getOrLoad(espId, () =>
+      this.getDeviceByEspId(espId, DeviceType.STATION),
+    );
   }
 
   async requestToConnect(data: RequestToConnectDto) {
@@ -152,6 +166,7 @@ export class DeviceService {
       }
       throw e;
     }
+    this.stationsByEspId.clear();
     await this.socketController.sendServerStatus();
     this.appGateway.handleDeviceUpdated();
     return {
@@ -227,6 +242,7 @@ export class DeviceService {
     await this.prisma.device.delete({
       where: { id },
     });
+    this.stationsByEspId.clear();
     this.appGateway.handleDeviceUpdated();
     await this.socketController.sendServerStatus();
     return {

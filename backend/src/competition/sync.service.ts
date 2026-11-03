@@ -7,6 +7,8 @@ import { wcifRoleToAttendanceRole } from 'src/wcif-helpers';
 import { Assignment, Person } from 'wcif-helpers';
 import { getGroupInfoByActivityId } from 'wcif-helpers';
 
+import { CompetitionService } from './competition.service';
+
 type PersonSyncData = {
   registrantId: number;
   name: string;
@@ -38,6 +40,7 @@ export class SyncService {
     @Inject(forwardRef(() => DbService))
     private readonly prisma: DbService,
     private readonly wcaService: WcaService,
+    private readonly competitionService: CompetitionService,
   ) {}
 
   async updateWcif(wcaId: string, userId: string) {
@@ -247,5 +250,6 @@ export class SyncService {
       where: { id: competition.id },
       data: { wcif: wcifPublic },
     });
+    this.competitionService.invalidateWcifCache();
   }
 }

@@ -18,12 +18,19 @@ import {
 } from 'src/result/helpers';
 import { ResultService } from 'src/result/result.service';
 import { getAllTranslations, getLocales } from 'src/translations/translations';
+import { LIVE_LOOKUP_TTL_MS, TtlCache } from 'src/ttl-cache';
 import {
   getFirstGroupInRoom,
   getNextGroupInRoom,
   isSameDay,
 } from 'src/wcif-helpers';
-import { Activity, Event, Room as WCIFRoom, Venue } from 'wcif-helpers';
+import {
+  Activity,
+  Competition,
+  Event,
+  Room as WCIFRoom,
+  Venue,
+} from 'wcif-helpers';
 import {
   getActivityInfoFromSchedule,
   getActivityInfoFromScheduleWithRoom,
@@ -61,6 +68,9 @@ export class CompetitionService {
   // Last heartbeat of every panel running auto setup, by socket id. It stays
   // on until the last one stops, so nobody's screen says on while it is off.
   private autoSetupHeartbeats = new Map<string, number>();
+  // The stored WCIF for live solving updates. Callers only read it, so it is
+  // shared rather than copied.
+  private wcifCache = new TtlCache<'wcif', Competition>(LIVE_LOOKUP_TTL_MS);
 
   private get autoSetup() {
     return this.autoSetupHeartbeats.size > 0;
@@ -123,6 +133,19 @@ export class CompetitionService {
       throw new HttpException('Competition not found', 404);
     }
     return competition;
+  }
+
+  /** The stored WCIF, cached; callers must not mutate it */
+  async getWcifCached() {
+    return this.wcifCache.getOrLoad(
+      'wcif',
+      async () =>
+        (await this.getCompetitionInfo()).wcif as unknown as Competition,
+    );
+  }
+
+  invalidateWcifCache() {
+    this.wcifCache.clear();
   }
 
   async getInfoForLoginPage() {
