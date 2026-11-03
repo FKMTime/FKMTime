@@ -21,10 +21,10 @@ const AssignCardModal = ({ isOpen, onClose, person }: AssignCardModalProps) => {
     const [isLoading, setIsLoading] = useState(false);
     const [editedPerson, setEditedPerson] = useState<Person>(person);
 
-    const handleSubmit = async () => {
+    const saveCard = async (cardId?: string) => {
         setIsLoading(true);
 
-        const status = await updatePerson(editedPerson);
+        const status = await updatePerson({ ...editedPerson, cardId });
         if (status === 200) {
             onClose();
         } else if (status === 409) {
@@ -34,6 +34,8 @@ const AssignCardModal = ({ isOpen, onClose, person }: AssignCardModalProps) => {
         }
         setIsLoading(false);
     };
+
+    const handleSubmit = () => saveCard(editedPerson.cardId);
 
     return (
         <Modal
@@ -61,6 +63,15 @@ const AssignCardModal = ({ isOpen, onClose, person }: AssignCardModalProps) => {
                     />
                 </div>
                 <ModalActions>
+                    {isOrganizerOrDelegate() && person.cardId && (
+                        <Button
+                            variant="destructive-ghost"
+                            onClick={() => saveCard("")}
+                            disabled={isLoading}
+                        >
+                            Clear card
+                        </Button>
+                    )}
                     {isOrganizerOrDelegate() && (
                         <Button
                             type="submit"
