@@ -1,5 +1,7 @@
 ## BUILD FRONTEND ##
-FROM node:lts AS frontend-app-builder
+# the build output is static files, the same for every platform, so it runs once on the
+# builder's own platform instead of under emulation for each target
+FROM --platform=$BUILDPLATFORM node:lts AS frontend-app-builder
 
 WORKDIR /app
 COPY frontend/package*.json ./
