@@ -2,6 +2,7 @@ import { forwardRef, Module } from '@nestjs/common';
 import { AppModule } from 'src/app.module';
 import { AuthModule } from 'src/auth/auth.module';
 import { DbModule } from 'src/db/db.module';
+import { PersonModule } from 'src/person/person.module';
 import { ResultModule } from 'src/result/result.module';
 
 import { SocketModule } from '../socket/socket.module';
@@ -30,6 +31,7 @@ import { SyncService } from './sync.service';
     DbModule,
     forwardRef(() => SocketModule),
     forwardRef(() => ResultModule),
+    forwardRef(() => PersonModule),
     forwardRef(() => AppModule),
   ],
   exports: [CompetitionService, SyncService],

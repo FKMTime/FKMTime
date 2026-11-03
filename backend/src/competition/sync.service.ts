@@ -2,10 +2,13 @@ import { forwardRef, HttpException, Inject } from '@nestjs/common';
 import { StaffRole } from '@prisma/client';
 import { DbService } from 'src/db/db.service';
 import { isUnofficialEvent } from 'src/events';
+import { PersonService } from 'src/person/person.service';
 import { assertWcaCompetitionFound, WcaService } from 'src/wca/wca.service';
 import { wcifRoleToAttendanceRole } from 'src/wcif-helpers';
 import { Assignment, Person } from 'wcif-helpers';
 import { getGroupInfoByActivityId } from 'wcif-helpers';
+
+import { CompetitionService } from './competition.service';
 
 type PersonSyncData = {
   registrantId: number;
@@ -38,6 +41,9 @@ export class SyncService {
     @Inject(forwardRef(() => DbService))
     private readonly prisma: DbService,
     private readonly wcaService: WcaService,
+    private readonly competitionService: CompetitionService,
+    @Inject(forwardRef(() => PersonService))
+    private readonly personService: PersonService,
   ) {}
 
   async updateWcif(wcaId: string, userId: string) {
@@ -148,6 +154,7 @@ export class SyncService {
       },
       { timeout: 60_000 },
     );
+    this.personService.invalidateCardCache();
 
     const personIdByRegistrantId = new Map(
       (
@@ -247,5 +254,6 @@ export class SyncService {
       where: { id: competition.id },
       data: { wcif: wcifPublic },
     });
+    this.competitionService.invalidateWcifCache();
   }
 }

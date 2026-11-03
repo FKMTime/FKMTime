@@ -23,7 +23,13 @@ describe('SyncService', () => {
           update: jest.fn().mockResolvedValue({}),
         },
       };
-      const service = new SyncService(prisma as never, {} as never);
+      const competitionService = { invalidateWcifCache: jest.fn() };
+      const service = new SyncService(
+        prisma as never,
+        {} as never,
+        competitionService as never,
+        {} as never,
+      );
 
       await service.addUnofficialEventsToWcif();
 
@@ -38,6 +44,7 @@ describe('SyncService', () => {
           },
         },
       });
+      expect(competitionService.invalidateWcifCache).toHaveBeenCalled();
     });
   });
 });

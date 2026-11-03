@@ -1,5 +1,4 @@
 import { forwardRef, Inject, Injectable } from '@nestjs/common';
-import { DeviceType } from '@prisma/client';
 import { PersonService } from 'src/person/person.service';
 import { PersonForDeviceService } from 'src/person/personForDevice.service';
 import { ResultFromDeviceService } from 'src/result/resultFromDevice.service';
@@ -77,10 +76,7 @@ export class SocketService {
   }
 
   async handleCurrentTimeInfo(data: CurrentTimeInfoDto) {
-    const device = await this.deviceService.getDeviceByEspId(
-      data.espId,
-      DeviceType.STATION,
-    );
+    const device = await this.deviceService.getStationByEspIdCached(data.espId);
     const deviceName = device?.name ?? `Station ${data.espId}`;
 
     let personName: string | null = null;
@@ -88,7 +84,7 @@ export class SocketService {
     let personId: string | null = null;
 
     if (data.competitor != null) {
-      const person = await this.personService.getPersonByCardId(
+      const person = await this.personService.getPersonByCardIdCached(
         data.competitor.toString(),
       );
       if (person) {
@@ -103,8 +99,7 @@ export class SocketService {
 
     if (data.groupId && personId) {
       const roundId = data.groupId.split('-g')[0];
-      const competition = await this.competitionService.getCompetitionInfo();
-      const wcif = JSON.parse(JSON.stringify(competition.wcif));
+      const wcif = await this.competitionService.getWcifCached();
       const roundInfo = getRoundInfoFromWcif(roundId, wcif);
 
       if (roundInfo?.timeLimit?.cumulativeRoundIds?.length > 0) {

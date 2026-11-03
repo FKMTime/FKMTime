@@ -5,6 +5,7 @@ import { Activity, Assignment, Competition } from 'wcif-helpers';
 import { getActivityInfoFromSchedule, getPersonFromWcif } from 'wcif-helpers';
 
 import { DbService } from '../db/db.service';
+import { LIVE_LOOKUP_TTL_MS, TtlCache } from '../ttl-cache';
 import { AddPersonDto } from './dto/addPerson.dto';
 import { ChangeCompetingGroupDto } from './dto/changeCompetingGroup.dto';
 import { UpdatePersonDto } from './dto/updatePerson.dto';
@@ -15,6 +16,11 @@ export class PersonService {
     private readonly prisma: DbService,
     private readonly wcaService: WcaService,
   ) {}
+
+  private readonly personsByCardId = new TtlCache<
+    string,
+    Awaited<ReturnType<PersonService['getPersonByCardId']>>
+  >(LIVE_LOOKUP_TTL_MS);
 
   async getPersons(
     page: number,
@@ -238,6 +244,7 @@ export class PersonService {
           cardId: data.cardId,
         },
       });
+      this.personsByCardId.clear();
     } catch (e) {
       if (e instanceof Prisma.PrismaClientKnownRequestError) {
         if (e.code === 'P2002') {
@@ -275,6 +282,7 @@ export class PersonService {
         ...(removeCard ? { cardId: null } : {}),
       },
     });
+    this.personsByCardId.clear();
   }
 
   async checkedInCount() {
@@ -349,6 +357,7 @@ export class PersonService {
           cardId,
         },
       });
+      this.personsByCardId.clear();
     } catch (e) {
       if (e instanceof Prisma.PrismaClientKnownRequestError) {
         if (e.code === 'P2002') {
@@ -402,6 +411,18 @@ export class PersonService {
     });
   }
 
+  /** getPersonByCardId, cached for live solving updates */
+  async getPersonByCardIdCached(cardId: string) {
+    return this.personsByCardId.getOrLoad(cardId, () =>
+      this.getPersonByCardId(cardId),
+    );
+  }
+
+  /** Clears getPersonByCardIdCached after people are changed elsewhere */
+  invalidateCardCache() {
+    this.personsByCardId.clear();
+  }
+
   async addPerson(data: AddPersonDto) {
     if (data.canCompete && !data.countryIso2) {
       throw new HttpException(
@@ -411,7 +432,7 @@ export class PersonService {
         400,
       );
     }
-    return this.prisma.person.create({
+    const person = await this.prisma.person.create({
       data: {
         name: data.name,
         wcaId: data.wcaId,
@@ -421,6 +442,8 @@ export class PersonService {
         gender: data.gender,
       },
     });
+    this.personsByCardId.clear();
+    return person;
   }
 
   async getPersonInfoWithSensitiveData(cardId: string) {
