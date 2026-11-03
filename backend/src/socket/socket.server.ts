@@ -231,6 +231,15 @@ export class SocketServer {
         tag: request.tag,
         data: responseData,
       });
+    } else if (request.type === 'DeviceConnected') {
+      const responseData = await this.socketService.deviceConnected(
+        request.data,
+      );
+      this.sendResponseWithTag(socket, {
+        type: 'DeviceConnected',
+        tag: request.tag,
+        data: responseData,
+      });
     } else if (request.type === 'CreateAttendance') {
       const responseData = await this.socketService.createAttendance(
         request.data,

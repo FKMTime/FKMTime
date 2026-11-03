@@ -325,6 +325,7 @@ export interface Warning extends WarningData {
 export interface Device extends DeviceData {
     id: string;
     batteryPercentage?: number;
+    firmwareVersion?: string | null;
     count?: number;
     createdAt: Date;
     updatedAt: Date;

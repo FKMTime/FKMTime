@@ -5,6 +5,7 @@ import { AppGateway } from 'src/app.gateway';
 import { DbService } from '../db/db.service';
 import { SocketController } from '../socket/socket.controller';
 import { DeviceDto } from './dto/device.dto';
+import { DeviceConnectedDto } from './dto/deviceConnected.dto';
 import { RequestToConnectDto } from './dto/requestToConnect.dto';
 import { UpdateBatteryPercentageDto } from './dto/updateBatteryPercentage.dto';
 import { UploadFirmwareDto } from './dto/uploadFirmware.dto';
@@ -188,6 +189,35 @@ export class DeviceService {
     this.appGateway.handleDeviceUpdated();
     return {
       message: 'Battery percentage updated',
+      status: 200,
+      error: false,
+    };
+  }
+
+  async updateFirmwareVersion(data: DeviceConnectedDto) {
+    const device = await this.prisma.device.findFirst({
+      where: {
+        espId: data.espId,
+      },
+    });
+    if (!device) {
+      return {
+        message: 'Device not found',
+        status: 404,
+        error: true,
+      };
+    }
+    if (device.firmwareVersion !== data.firmwareVersion) {
+      await this.prisma.device.update({
+        where: { espId: data.espId },
+        data: {
+          firmwareVersion: data.firmwareVersion,
+        },
+      });
+      this.appGateway.handleDeviceUpdated();
+    }
+    return {
+      message: 'Firmware version updated',
       status: 200,
       error: false,
     };
