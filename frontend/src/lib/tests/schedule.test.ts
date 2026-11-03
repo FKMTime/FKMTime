@@ -2,10 +2,17 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { Competition } from "wcif-helpers";
 
 import {
+    competitionDayToQueryDate,
     findGroupSchedule,
+    formatCompetitionDay,
+    formatRealTime,
     formatTimeRange,
+    getCompetitionDays,
+    getDefaultCompetitionDay,
     getNextActivityInRoom,
     getScheduleOffsetMinutes,
+    getScheduleRooms,
+    getScheduleRoundDetails,
     getScheduleStatus,
     getStartLabel,
 } from "@/lib/schedule";
@@ -227,5 +234,147 @@ describe("getStartLabel", () => {
 
     it("returns null when the schedule has nothing next", () => {
         expect(getStartLabel(["333-r1-g2"], [])).toBeNull();
+    });
+});
+
+describe("getScheduleRooms", () => {
+    const venue = (id: number, name: string, rooms: string[]) => ({
+        id,
+        name,
+        timezone: "Europe/Warsaw",
+        rooms: rooms.map((room, index) => ({
+            id: id * 10 + index,
+            name: room,
+            activities: [],
+        })),
+    });
+
+    it("uses the room name when there is one venue", () => {
+        const rooms = getScheduleRooms({
+            schedule: { venues: [venue(1, "Sports hall", ["Main", "Side"])] },
+        } as unknown as Competition);
+        expect(rooms.map((room) => [room.key, room.label])).toEqual([
+            ["1:10", "Main"],
+            ["1:11", "Side"],
+        ]);
+    });
+
+    it("prefixes the venue when there are several", () => {
+        const rooms = getScheduleRooms({
+            schedule: {
+                venues: [
+                    venue(1, "Sports hall", ["Main"]),
+                    venue(2, "School", ["Gym"]),
+                ],
+            },
+        } as unknown as Competition);
+        expect(rooms.map((room) => room.label)).toEqual([
+            "Sports hall · Main",
+            "School · Gym",
+        ]);
+    });
+});
+
+describe("competition days", () => {
+    it("lists every day from the start date, across a month end", () => {
+        expect(getCompetitionDays("2026-04-30", 3)).toEqual([
+            "2026-04-30",
+            "2026-05-01",
+            "2026-05-02",
+        ]);
+    });
+
+    it("opens on today while the competition runs, else on its first day", () => {
+        const days = ["2026-04-18", "2026-04-19"];
+        expect(
+            getDefaultCompetitionDay(days, new Date(2026, 3, 19, 23, 30))
+        ).toBe("2026-04-19");
+        expect(getDefaultCompetitionDay(days, new Date(2026, 3, 25))).toBe(
+            "2026-04-18"
+        );
+    });
+
+    it("labels a day and asks the backend about its noon", () => {
+        expect(formatCompetitionDay("2026-04-18")).toBe("Sat 18 Apr");
+        expect(competitionDayToQueryDate("2026-04-18").toISOString()).toBe(
+            "2026-04-18T12:00:00.000Z"
+        );
+    });
+});
+
+describe("formatRealTime", () => {
+    it("is null before the first device attempt", () => {
+        expect(formatRealTime(null, null)).toBeNull();
+    });
+
+    it("shows the start alone while only one attempt is in", () => {
+        expect(
+            formatRealTime("2026-04-18T08:04:00Z", null, "Europe/Warsaw")
+        ).toBe("Started 10:04");
+    });
+
+    it("shows the range in the venue's timezone", () => {
+        expect(
+            formatRealTime(
+                "2026-04-18T08:04:00Z",
+                "2026-04-18T09:52:00Z",
+                "Europe/Warsaw"
+            )
+        ).toBe("10:04–11:52");
+    });
+});
+
+describe("getScheduleRoundDetails", () => {
+    const competition = {
+        events: [
+            {
+                id: "333",
+                rounds: [
+                    {
+                        id: "333-r1",
+                        format: "a",
+                        timeLimit: {
+                            centiseconds: 60000,
+                            cumulativeRoundIds: [],
+                        },
+                        cutoff: { numberOfAttempts: 2, attemptResult: 3000 },
+                        advancementCondition: null,
+                    },
+                    {
+                        id: "333-r2",
+                        format: "a",
+                        timeLimit: {
+                            centiseconds: 60000,
+                            cumulativeRoundIds: [],
+                        },
+                        cutoff: null,
+                        participationRuleset: {
+                            participationSource: {
+                                type: "round",
+                                resultCondition: { type: "ranking", value: 16 },
+                            },
+                        },
+                    },
+                ],
+            },
+        ],
+    } as unknown as Competition;
+
+    it("describes a round with its limits and how many proceed", () => {
+        expect(getScheduleRoundDetails("333-r1", competition)).toMatchObject({
+            timeLimit: "10:00.00",
+            cutoff: "30.00 (2 attempts)",
+            proceeds: "Top 16",
+        });
+    });
+
+    it("leaves proceed out for the final", () => {
+        expect(
+            getScheduleRoundDetails("333-r2", competition)?.proceeds
+        ).toBeUndefined();
+    });
+
+    it("is null for breaks", () => {
+        expect(getScheduleRoundDetails("other-lunch", competition)).toBeNull();
     });
 });

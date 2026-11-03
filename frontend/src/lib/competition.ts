@@ -1,7 +1,7 @@
 import { getUserInfo } from "@/lib/auth";
 import { getScramblingDeviceToken } from "@/lib/scramblingDevicesAuth";
 
-import { Competition, WCACompetition } from "./interfaces";
+import { Activity, Competition, WCACompetition } from "./interfaces";
 import {
     backendRequest,
     scramblingDeviceBackendRequest,
@@ -191,6 +191,21 @@ export const getPublicRooms = async () => {
         "GET",
         false
     );
+    return await response.json();
+};
+
+/** A room's activities on a day, with real times from device attempts */
+export const getRoomActivities = async (
+    venueId: number,
+    roomId: number,
+    date: Date
+): Promise<Activity[]> => {
+    const response = await backendRequest(
+        `competition/activities?venueId=${venueId}&roomId=${roomId}&date=${date.toISOString()}`,
+        "GET",
+        true
+    );
+    if (!response.ok) throw new Error("Could not load the schedule");
     return await response.json();
 };
 

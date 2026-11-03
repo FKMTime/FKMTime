@@ -63,6 +63,7 @@ const ResultsChecks = lazy(
 const ScramblesAdmin = lazy(
     () => import("./Pages/Main/ScramblesAdmin/ScramblesAdmin")
 );
+const Schedule = lazy(() => import("./Pages/Main/Schedule/Schedule"));
 const Settings = lazy(() => import("./Pages/Main/Settings/Settings"));
 const UnofficialEvents = lazy(
     () => import("./Pages/Main/UnofficialEvents/UnofficialEvents")
@@ -131,6 +132,10 @@ const App = () => {
                 {
                     path: "",
                     element: <Home />,
+                },
+                {
+                    path: "schedule",
+                    element: <Schedule />,
                 },
                 {
                     path: "more",

@@ -1,4 +1,5 @@
 import {
+    CalendarDays,
     ChartColumn,
     ClipboardList,
     FlaskConical,
@@ -17,6 +18,7 @@ import { matchPath } from "react-router-dom";
 
 export type NavId =
     | "home"
+    | "schedule"
     | "incidents"
     | "persons"
     | "checkIn"
@@ -75,6 +77,14 @@ export const getNavItems = (ctx: NavContext): NavItem[] => {
             to: "/",
             group: "Competition day",
             paths: ["/"],
+        },
+        {
+            id: "schedule",
+            label: "Schedule",
+            icon: CalendarDays,
+            to: "/schedule",
+            group: "Competition day",
+            paths: ["/schedule"],
         },
         ctx.isDelegate && {
             id: "incidents",

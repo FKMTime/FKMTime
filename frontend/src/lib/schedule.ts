@@ -1,7 +1,8 @@
 import { Activity, Competition as WCIF } from "wcif-helpers";
 
-import { activityCodeToName } from "./activities";
-import { shortRoundName } from "./utils";
+import { activityCodeToName, getEventIdFromRoundId } from "./activities";
+import { getRoundMeta, RoundMeta } from "./roundInfo";
+import { getAdvancementText, shortRoundName } from "./utils";
 
 export interface GroupSchedule {
     groupId: string;
@@ -175,4 +176,109 @@ export const getStartLabel = (currentGroupIds: string[], next: string[]) => {
     );
     if (isSameRound) return `Start group ${groupNumber}`;
     return `Start ${shortRoundName(nextRoundId)} · Group ${groupNumber}`;
+};
+
+export interface ScheduleRoom {
+    /** "venueId:roomId", the value of the room switch */
+    key: string;
+    venueId: number;
+    roomId: number;
+    /** Room name, prefixed with the venue when there are several */
+    label: string;
+    timezone: string;
+}
+
+/** Every room in the schedule, in WCIF order */
+export const getScheduleRooms = (wcif: WCIF): ScheduleRoom[] => {
+    const { venues } = wcif.schedule;
+    return venues.flatMap((venue) =>
+        venue.rooms.map((room) => ({
+            key: `${venue.id}:${room.id}`,
+            venueId: venue.id,
+            roomId: room.id,
+            label:
+                venues.length > 1 ? `${venue.name} · ${room.name}` : room.name,
+            timezone: venue.timezone,
+        }))
+    );
+};
+
+/** Competition days as "YYYY-MM-DD", from the WCIF start date */
+export const getCompetitionDays = (startDate: string, numberOfDays: number) => {
+    const [year, month, day] = startDate.split("-").map(Number);
+    return Array.from({ length: numberOfDays }, (_, index) =>
+        new Date(Date.UTC(year, month - 1, day + index))
+            .toISOString()
+            .slice(0, 10)
+    );
+};
+
+/** Today when the competition runs, otherwise its first day */
+export const getDefaultCompetitionDay = (
+    days: string[],
+    today = new Date()
+) => {
+    const pad = (value: number) => String(value).padStart(2, "0");
+    const todayKey = `${today.getFullYear()}-${pad(today.getMonth() + 1)}-${pad(today.getDate())}`;
+    return days.includes(todayKey) ? todayKey : days[0];
+};
+
+/** "Sat 18 Apr" */
+export const formatCompetitionDay = (day: string) =>
+    new Intl.DateTimeFormat("en-GB", {
+        weekday: "short",
+        day: "numeric",
+        month: "short",
+        timeZone: "UTC",
+    }).format(new Date(`${day}T12:00:00Z`));
+
+/**
+ * The moment to ask the backend about a day. It compares calendar days in its
+ * own timezone, so noon UTC lands on the right day wherever it runs.
+ */
+export const competitionDayToQueryDate = (day: string) =>
+    new Date(`${day}T12:00:00Z`);
+
+/** "10:32–11:48", "Started 10:32", or null before the first device attempt */
+export const formatRealTime = (
+    realStartTime?: Date | string | null,
+    realEndTime?: Date | string | null,
+    timezone?: string
+) => {
+    if (!realStartTime) return null;
+    const start = new Date(realStartTime).toISOString();
+    if (realEndTime)
+        return formatTimeRange(
+            start,
+            new Date(realEndTime).toISOString(),
+            timezone
+        );
+    const time = new Intl.DateTimeFormat("en-GB", {
+        hour: "2-digit",
+        minute: "2-digit",
+        timeZone: timezone,
+    }).format(new Date(start));
+    return `Started ${time}`;
+};
+
+export interface ScheduleRoundDetails extends RoundMeta {
+    /** "Top 16", "Top 75%", "Dual Round", or undefined for a final */
+    proceeds?: string;
+}
+
+/** Format, limits and advancement of a round; null for breaks and other activities */
+export const getScheduleRoundDetails = (
+    activityCode: string,
+    wcif: WCIF
+): ScheduleRoundDetails | null => {
+    if (activityCode.startsWith("other")) return null;
+    const meta = getRoundMeta(activityCode, wcif);
+    if (!meta) return null;
+    const event = wcif.events.find(
+        (e) => e.id === getEventIdFromRoundId(activityCode)
+    );
+    return {
+        ...meta,
+        proceeds: getAdvancementText(activityCode, event) ?? undefined,
+    };
 };
