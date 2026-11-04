@@ -1,12 +1,5 @@
-import {
-    Check,
-    FileText,
-    Flag,
-    IdCard,
-    ShieldAlert,
-    UserRound,
-} from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { Check, FileText, Flag, IdCard, ShieldAlert } from "lucide-react";
+import { Link } from "react-router-dom";
 import { getPersonFromWcif } from "wcif-helpers";
 
 import Avatar from "@/Components/Avatar/Avatar";
@@ -51,7 +44,6 @@ const PersonsList = ({
     competition,
     onOpenDialog,
 }: PersonsListProps) => {
-    const navigate = useNavigate();
     const useDevices = competition.useFkmTimeDevices;
 
     const actions = (person: Person) => {
@@ -71,12 +63,6 @@ const PersonsList = ({
         };
         const items: RowAction[] = [
             ...(useDevices ? [groups] : []),
-            {
-                label: "Open profile",
-                icon: UserRound,
-                hidden: !isStageLeaderOrOrganizerOrDelegate(),
-                onSelect: () => navigate(`/persons/${person.id}`),
-            },
             {
                 label: "Warnings",
                 icon: Flag,
@@ -98,6 +84,15 @@ const PersonsList = ({
             />
         );
     };
+
+    const name = (person: Person) =>
+        isStageLeaderOrOrganizerOrDelegate() ? (
+            <Link to={`/persons/${person.id}`} className="hover:underline">
+                {person.name}
+            </Link>
+        ) : (
+            person.name
+        );
 
     const wcifPerson = (person: Person) =>
         person.registrantId
@@ -159,7 +154,7 @@ const PersonsList = ({
                                     <div className="flex items-center gap-2.5">
                                         {avatar(person)}
                                         <span className="font-semibold">
-                                            {person.name}
+                                            {name(person)}
                                         </span>
                                     </div>
                                 </TableCell>
@@ -240,7 +235,7 @@ const PersonsList = ({
                         {avatar(person)}
                         <div className="min-w-0 flex-1">
                             <p className="truncate font-semibold">
-                                {person.name}
+                                {name(person)}
                             </p>
                             <p className="truncate text-[13px] text-muted-foreground">
                                 {[

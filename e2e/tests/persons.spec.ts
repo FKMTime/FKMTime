@@ -249,8 +249,9 @@ test.describe("persons list as a delegate", () => {
         await page.goto("/persons");
         await page.getByRole("textbox", { name: "Registrant ID" }).fill("9");
         await expect(page.getByText("1 person", { exact: true })).toBeVisible();
-        await openRowMenu(page, person.name);
-        await page.getByRole("menuitem", { name: "Open profile" }).click();
+        await rowFor(page, person.name)
+            .getByRole("link", { name: person.name })
+            .click();
 
         await expect(page).toHaveURL(new RegExp(`/persons/${person.id}$`));
         await expect(
@@ -359,12 +360,12 @@ test.describe("persons list for other roles", () => {
         await page.goto("/persons");
         await page.getByRole("textbox", { name: "Registrant ID" }).fill("11");
         await expect(page.getByText("1 person", { exact: true })).toBeVisible();
+        await expect(
+            rowFor(page, person.name).getByRole("link", { name: person.name })
+        ).toHaveAttribute("href", `/persons/${person.id}`);
         await openRowMenu(page, person.name);
         await expect(
             page.getByRole("menuitem", { name: "Groups" })
-        ).toBeVisible();
-        await expect(
-            page.getByRole("menuitem", { name: "Open profile" })
         ).toBeVisible();
         await expect(
             page.getByRole("menuitem", { name: "Warnings" })
