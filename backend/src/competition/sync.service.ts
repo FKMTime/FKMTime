@@ -1,5 +1,5 @@
 import { forwardRef, HttpException, Inject } from '@nestjs/common';
-import { StaffRole } from '@prisma/client';
+import { StaffActivityStatus, StaffRole } from '@prisma/client';
 import { DbService } from 'src/db/db.service';
 import { isUnofficialEvent } from 'src/events';
 import { PersonService } from 'src/person/person.service';
@@ -191,18 +191,18 @@ export class SyncService {
       groupId: string;
       role: string;
     }) => `${a.personId}|${a.groupId}|${a.role}`;
+    // Every person, not only those with assignments: someone whose last
+    // assignment was taken away in the WCIF still has rows to clean up
     const existingActivities = new Map(
       (
         await this.prisma.staffActivity.findMany({
-          where: {
-            personId: { in: [...new Set(assignments.map((a) => a.personId))] },
-          },
           select: {
             id: true,
             personId: true,
             groupId: true,
             role: true,
             isAssigned: true,
+            status: true,
           },
         })
       ).map((activity) => [activityKey(activity), activity]),
@@ -214,6 +214,19 @@ export class SyncService {
       .map((assignment) => existingActivities.get(activityKey(assignment)))
       .filter((activity) => activity && !activity.isAssigned)
       .map((activity) => activity.id);
+    // Assignments removed from the WCIF. One nobody showed up for is dropped;
+    // one with recorded attendance stays as an unassigned row, like a walk-in
+    const wcifActivityKeys = new Set(assignments.map(activityKey));
+    const removedActivities = [...existingActivities.values()].filter(
+      (activity) =>
+        activity.isAssigned && !wcifActivityKeys.has(activityKey(activity)),
+    );
+    const activityIdsToDelete = removedActivities
+      .filter((activity) => activity.status === StaffActivityStatus.ABSENT)
+      .map((activity) => activity.id);
+    const activityIdsToUnassign = removedActivities
+      .filter((activity) => activity.status !== StaffActivityStatus.ABSENT)
+      .map((activity) => activity.id);
     await this.prisma.$transaction([
       this.prisma.staffActivity.createMany({
         data: activitiesToCreate,
@@ -222,6 +235,13 @@ export class SyncService {
       this.prisma.staffActivity.updateMany({
         where: { id: { in: activityIdsToAssign } },
         data: { isAssigned: true },
+      }),
+      this.prisma.staffActivity.deleteMany({
+        where: { id: { in: activityIdsToDelete } },
+      }),
+      this.prisma.staffActivity.updateMany({
+        where: { id: { in: activityIdsToUnassign } },
+        data: { isAssigned: false },
       }),
     ]);
     await this.prisma.competition.updateMany({
