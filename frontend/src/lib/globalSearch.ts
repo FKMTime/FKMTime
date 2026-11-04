@@ -210,7 +210,7 @@ export const personToItem = (person: Person): SearchItem => ({
     ]
         .filter(Boolean)
         .join(" · "),
-    to: `/persons/${person.id}/results`,
+    to: `/persons/${person.id}`,
 });
 
 export const deviceToItem = (device: Device): SearchItem => ({

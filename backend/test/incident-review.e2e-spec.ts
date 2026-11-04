@@ -254,6 +254,71 @@ describe('Incident review (e2e)', () => {
         [resolved.id, extraGiven.id].sort(),
       );
     });
+
+    it('GET /incident/person/:id gathers incidents as competitor and as judge', async () => {
+      const manual = await db.manualIncident.create({
+        data: {
+          personId: alice.id,
+          roundId: '333-r1',
+          description: 'E2E person manual',
+          createdById: users.userIds.DELEGATE,
+        },
+      });
+      const noteworthy = await db.noteworthyIncident.create({
+        data: {
+          title: 'E2E person noteworthy',
+          attemptId: resolved.id,
+          createdById: users.userIds.DELEGATE,
+        },
+      });
+      try {
+        const forAlice = await request(server())
+          .get(`/incident/person/${alice.id}`)
+          .set(auth(delegate))
+          .expect(200);
+        expect(forAlice.body.attempts.map((a: any) => a.id)).toEqual([
+          unresolved333.id,
+          extraGiven.id,
+          resolved.id,
+        ]);
+        expect(forAlice.body.manual.map((i: any) => i.id)).toEqual([manual.id]);
+        expect(forAlice.body.noteworthy.map((i: any) => i.id)).toEqual([
+          noteworthy.id,
+        ]);
+
+        const forJudge = await request(server())
+          .get(`/incident/person/${judge.id}`)
+          .set(auth(delegate))
+          .expect(200);
+        const judged = forJudge.body.attempts.map((a: any) => a.id);
+        expect(judged).toEqual(
+          expect.arrayContaining([
+            resolved.id,
+            extraGiven.id,
+            unresolved333.id,
+            unresolved222.id,
+          ]),
+        );
+        expect(judged).not.toContain(standard.id);
+        expect(forJudge.body.manual).toEqual([]);
+        expect(forJudge.body.noteworthy.map((i: any) => i.id)).toEqual([
+          noteworthy.id,
+        ]);
+
+        const forBob = await request(server())
+          .get(`/incident/person/${bob.id}`)
+          .set(auth(delegate))
+          .expect(200);
+        expect(forBob.body).toEqual({
+          attempts: [expect.objectContaining({ id: unresolved222.id })],
+          manual: [],
+          noteworthy: [],
+        });
+      } finally {
+        await db.noteworthyIncident.delete({ where: { id: noteworthy.id } });
+        await db.manualIncident.delete({ where: { id: manual.id } });
+      }
+    });
   });
 
   describe('noteworthy incidents', () => {
@@ -503,6 +568,7 @@ describe('Incident review (e2e)', () => {
       ['get', '/incident/unresolved', {}],
       ['get', '/incident/unresolved/count', {}],
       ['get', '/incident/round/333-r1', {}],
+      ['get', `/incident/person/${NON_EXISTENT_ID}`, {}],
       ['get', '/incident/resolved', {}],
       ['get', '/incident/noteworthy', {}],
       ['post', '/incident/noteworthy', { title: 'E2E forbidden' }],

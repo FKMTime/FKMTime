@@ -93,9 +93,7 @@ const SingleResult = lazy(
 const LiveSolving = lazy(
     () => import("./Pages/Main/Results/LiveSolving/LiveSolving")
 );
-const PersonResults = lazy(
-    () => import("./Pages/Main/Persons/PersonResults/PersonResults")
-);
+const Person = lazy(() => import("./Pages/Main/Persons/Person/Person"));
 const ManualIncidents = lazy(
     () => import("./Pages/Main/Incidents/ManualIncidents/ManualIncidents")
 );
@@ -177,8 +175,8 @@ const App = () => {
                     element: <Persons />,
                 },
                 {
-                    path: "persons/:id/results",
-                    element: <PersonResults />,
+                    path: "persons/:id/:tab?",
+                    element: <Person />,
                 },
                 {
                     path: "cards",

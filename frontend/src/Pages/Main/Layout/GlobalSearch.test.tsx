@@ -43,10 +43,7 @@ const renderSearch = () => {
             <MemoryRouter initialEntries={["/"]}>
                 <Routes>
                     <Route path="/" element={<GlobalSearch />} />
-                    <Route
-                        path="/persons/:id/results"
-                        element={<p>Person results page</p>}
-                    />
+                    <Route path="/persons/:id" element={<p>Person page</p>} />
                     <Route
                         path="/attendance/missed"
                         element={<p>Most missed page</p>}
@@ -105,7 +102,7 @@ describe("GlobalSearch", () => {
         await userEvent.type(screen.getByRole("combobox"), "andr");
         await screen.findByText("Andrew Sample");
         await userEvent.keyboard("{ArrowDown}{Enter}");
-        expect(await screen.findByText("Person results page")).toBeTruthy();
+        expect(await screen.findByText("Person page")).toBeTruthy();
     });
 
     it("leaves out what the user can't open", async () => {

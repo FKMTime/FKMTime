@@ -4,6 +4,7 @@ import {
     ManualIncident,
     NoteworthyIncident,
     NoteworthyIncidentData,
+    PersonIncidents,
 } from "./interfaces";
 import { backendRequest } from "./request";
 
@@ -48,6 +49,17 @@ export const getIncidentsByRoundId = async (
 ): Promise<Incident[]> => {
     const response = await backendRequest(
         `incident/round/${roundId}`,
+        "GET",
+        true
+    );
+    return await response.json();
+};
+
+export const getIncidentsForPerson = async (
+    personId: string
+): Promise<PersonIncidents> => {
+    const response = await backendRequest(
+        `incident/person/${personId}`,
         "GET",
         true
     );

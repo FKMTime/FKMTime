@@ -121,7 +121,7 @@ test.describe("global search", () => {
             .first()
             .click();
         await expect(page).toHaveURL(
-            new RegExp(`/persons/${person.id}/results$`)
+            new RegExp(`/persons/${person.id}$`)
         );
     });
 });

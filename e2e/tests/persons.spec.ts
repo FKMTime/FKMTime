@@ -238,7 +238,10 @@ test.describe("persons list as a delegate", () => {
         ).toBeVisible();
     });
 
-    test("opens a person's results", async ({ page, api }) => {
+    test("opens a person's profile on the schedule", async ({
+        page,
+        api,
+    }) => {
         const person = await getPersonByRegistrantId(api, 9);
         await createAttempt(api, {
             roundId: "222-r1",
@@ -250,15 +253,54 @@ test.describe("persons list as a delegate", () => {
         await page.getByRole("textbox", { name: "Registrant ID" }).fill("9");
         await expect(page.getByText("1 person", { exact: true })).toBeVisible();
         await openRowMenu(page, person.name);
-        await page.getByRole("menuitem", { name: "All results" }).click();
+        await page.getByRole("menuitem", { name: "Open profile" }).click();
 
-        await expect(page).toHaveURL(
-            new RegExp(`/persons/${person.id}/results$`)
-        );
+        await expect(page).toHaveURL(new RegExp(`/persons/${person.id}$`));
         await expect(
             page.getByRole("main").getByRole("heading", { name: person.name })
         ).toBeVisible();
+        await expect(
+            page.getByRole("tab", { name: /Schedule/, selected: true })
+        ).toBeVisible();
+        await expect(
+            page.getByRole("main").getByText("Competitor").first()
+        ).toBeVisible();
+
+        await page.getByRole("tab", { name: /Results/ }).click();
+        await expect(page).toHaveURL(
+            new RegExp(`/persons/${person.id}/results$`)
+        );
         await expect(page.getByRole("main")).toContainText("5.12");
+    });
+
+    test("shows a person's incidents and warnings", async ({ page, api }) => {
+        const person = await getPersonByRegistrantId(api, 12);
+        await createAttempt(api, {
+            roundId: "333-r1",
+            competitorId: person.id,
+            attemptNumber: 1,
+            value: 1234,
+            status: "UNRESOLVED",
+            comment: "Timer stopped by itself",
+        });
+        await page.goto(`/persons/${person.id}/incidents`);
+        const main = page.getByRole("main");
+        await expect(main.getByText("Timer stopped by itself")).toBeVisible();
+        await expect(main.getByText("Open", { exact: true })).toBeVisible();
+
+        await page.getByRole("tab", { name: /Warnings/ }).click();
+        await expect(page.getByText("No warnings issued.")).toBeVisible();
+        await main.getByRole("button", { name: "Issue warning" }).click();
+        const issue = page.getByRole("dialog", {
+            name: `Issue warning to ${person.name}`,
+        });
+        await issue.getByLabel("Description").fill("Ignored the judge");
+        await issue.getByRole("button", { name: "Issue warning" }).click();
+        await expectToast(page, "Warning issued");
+        await expect(main.getByText("Ignored the judge")).toBeVisible();
+        await expect(
+            page.getByRole("tab", { name: "Warnings 1" })
+        ).toBeVisible();
     });
 
     test("shows an empty results page for a person without results", async ({
@@ -325,7 +367,7 @@ test.describe("persons list for other roles", () => {
             page.getByRole("menuitem", { name: "Groups" })
         ).toBeVisible();
         await expect(
-            page.getByRole("menuitem", { name: "All results" })
+            page.getByRole("menuitem", { name: "Open profile" })
         ).toBeVisible();
         await expect(
             page.getByRole("menuitem", { name: "Warnings" })
