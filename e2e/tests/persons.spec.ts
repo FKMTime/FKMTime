@@ -238,10 +238,7 @@ test.describe("persons list as a delegate", () => {
         ).toBeVisible();
     });
 
-    test("opens a person's profile on the schedule", async ({
-        page,
-        api,
-    }) => {
+    test("opens a person's profile on the schedule", async ({ page, api }) => {
         const person = await getPersonByRegistrantId(api, 9);
         await createAttempt(api, {
             roundId: "222-r1",

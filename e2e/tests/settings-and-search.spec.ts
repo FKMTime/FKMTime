@@ -120,9 +120,7 @@ test.describe("global search", () => {
             .getByRole("option", { name: new RegExp(person.name) })
             .first()
             .click();
-        await expect(page).toHaveURL(
-            new RegExp(`/persons/${person.id}$`)
-        );
+        await expect(page).toHaveURL(new RegExp(`/persons/${person.id}$`));
     });
 });
 
