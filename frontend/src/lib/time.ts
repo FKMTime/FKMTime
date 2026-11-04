@@ -17,6 +17,14 @@ export const formatClockTime = (date: Date | string) =>
         minute: "2-digit",
     });
 
+/** "Sat 11:02" in the viewer's local time, for events across competition days */
+export const formatDayTime = (date: Date | string) =>
+    new Date(date).toLocaleString("en-GB", {
+        weekday: "short",
+        hour: "2-digit",
+        minute: "2-digit",
+    });
+
 const formatDayMonthYear = (date: Date) =>
     date.toLocaleDateString("en-GB", {
         day: "numeric",

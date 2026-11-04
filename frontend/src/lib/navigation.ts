@@ -214,7 +214,11 @@ export const getDetailLabel = (pathname: string): string | null => {
     const incident = matchPath("/incidents/:id", pathname);
     if (incident && !INCIDENT_TABS.includes(incident.params.id!))
         return "Incident";
-    if (matchPath("/persons/:id/results", pathname)) return "Results";
+    if (
+        matchPath("/persons/:id", pathname) ||
+        matchPath("/persons/:id/:tab", pathname)
+    )
+        return "Person";
     if (matchPath("/results/round/:id/double-check", pathname))
         return "Double check";
     if (matchPath("/results/round/:id/enter-scorecard", pathname))

@@ -310,6 +310,13 @@ export interface ManualIncident extends ManualIncidentData {
     createdBy: User;
 }
 
+/** Everything incident-related for one person, as competitor or judge */
+export interface PersonIncidents {
+    attempts: Incident[];
+    manual: ManualIncident[];
+    noteworthy: NoteworthyIncident[];
+}
+
 export interface WarningData {
     description: string;
 }

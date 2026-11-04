@@ -135,7 +135,11 @@ describe("getDefaultCrumbs", () => {
     it("links back to the section from detail pages", () => {
         expect(crumbs("/persons/1/results")).toEqual([
             { label: "Persons", to: "/persons" },
-            { label: "Results" },
+            { label: "Person" },
+        ]);
+        expect(crumbs("/persons/1")).toEqual([
+            { label: "Persons", to: "/persons" },
+            { label: "Person" },
         ]);
     });
 

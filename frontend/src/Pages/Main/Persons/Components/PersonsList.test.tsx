@@ -55,10 +55,10 @@ describe("PersonsList", () => {
         );
         expect(
             (await screen.findAllByRole("menuitem")).map((i) => i.textContent)
-        ).toEqual(["Groups", "All results", "Warnings", "Issue warning"]);
+        ).toEqual(["Groups", "Open profile", "Warnings", "Issue warning"]);
     });
 
-    it("shows staff without devices only the groups", () => {
+    it("shows staff without devices the groups and the profile", async () => {
         loginAs(["STAGE_LEADER"]);
         render(
             <MemoryRouter>
@@ -73,9 +73,14 @@ describe("PersonsList", () => {
         expect(
             within(row).getByRole("button", { name: "Groups" })
         ).toBeTruthy();
+        await userEvent.click(
+            within(row).getByRole("button", {
+                name: "More actions for Anna Example",
+            })
+        );
         expect(
-            within(row).queryByRole("button", { name: /More actions/ })
-        ).toBeNull();
+            (await screen.findAllByRole("menuitem")).map((i) => i.textContent)
+        ).toEqual(["Open profile"]);
         expect(screen.queryByText("Card")).toBeNull();
     });
 });

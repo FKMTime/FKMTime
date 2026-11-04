@@ -1,10 +1,10 @@
 import {
-    ChartColumn,
     Check,
     FileText,
     Flag,
     IdCard,
     ShieldAlert,
+    UserRound,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { getPersonFromWcif } from "wcif-helpers";
@@ -72,10 +72,10 @@ const PersonsList = ({
         const items: RowAction[] = [
             ...(useDevices ? [groups] : []),
             {
-                label: "All results",
-                icon: ChartColumn,
-                hidden: !canSeeGroups || !useDevices,
-                onSelect: () => navigate(`/persons/${person.id}/results`),
+                label: "Open profile",
+                icon: UserRound,
+                hidden: !isStageLeaderOrOrganizerOrDelegate(),
+                onSelect: () => navigate(`/persons/${person.id}`),
             },
             {
                 label: "Warnings",
