@@ -6,7 +6,7 @@ import {
     NoteworthyIncidentData,
     PersonIncidents,
 } from "./interfaces";
-import { backendRequest } from "./request";
+import { backendQuery, backendRequest, backendSearchQuery } from "./request";
 
 export const groupIncidents = (incidents: Incident[]) => {
     const grouped: { [key: string]: Incident[] } = {};
@@ -44,6 +44,10 @@ export const getUnresolvedIncidents = async (
     return await response.json();
 };
 
+export const unresolvedIncidentsQuery = backendQuery<Incident[]>(
+    "incident/unresolved"
+);
+
 export const getIncidentsByRoundId = async (
     roundId: string
 ): Promise<Incident[]> => {
@@ -66,15 +70,8 @@ export const getIncidentsForPerson = async (
     return await response.json();
 };
 
-export const getResolvedIncidents = async (
-    search?: string
-): Promise<Incident[]> => {
-    const url = search
-        ? `incident/resolved?search=${search}`
-        : "incident/resolved";
-    const response = await backendRequest(url, "GET", true);
-    return await response.json();
-};
+export const resolvedIncidentsQuery =
+    backendSearchQuery<Incident[]>("incident/resolved");
 
 export const saveAttemptAsNoteworthyIncident = async (id: string) => {
     const response = await backendRequest(
@@ -85,15 +82,9 @@ export const saveAttemptAsNoteworthyIncident = async (id: string) => {
     return response.status;
 };
 
-export const getNoteworthyIncidents = async (
-    search?: string
-): Promise<NoteworthyIncident[]> => {
-    const url = search
-        ? `incident/noteworthy?search=${search}`
-        : "incident/noteworthy";
-    const response = await backendRequest(url, "GET", true);
-    return await response.json();
-};
+export const noteworthyIncidentsQuery = backendSearchQuery<
+    NoteworthyIncident[]
+>("incident/noteworthy");
 
 export const createNoteworthyIncident = async (
     data: NoteworthyIncidentData
@@ -129,13 +120,8 @@ export const deleteNoteworthyIncident = async (id: string) => {
     return response.status;
 };
 
-export const getManualIncidents = async (
-    search?: string
-): Promise<ManualIncident[]> => {
-    const url = search ? `incident/manual?search=${search}` : "incident/manual";
-    const response = await backendRequest(url, "GET", true);
-    return await response.json();
-};
+export const manualIncidentsQuery =
+    backendSearchQuery<ManualIncident[]>("incident/manual");
 
 export const createManualIncident = async (data: {
     personId: string;

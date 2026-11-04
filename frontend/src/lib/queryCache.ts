@@ -23,8 +23,10 @@ export class QueryError extends Error {
 const entries = new Map<string, QueryEntry<unknown>>();
 const latestRequests = new Map<string, Promise<unknown>>();
 const listeners = new Map<string, Set<() => void>>();
+const storedAt = new Map<string, number>();
 
 const storeData = <T>(key: string, data: T) => {
+    storedAt.set(key, Date.now());
     const current = entries.get(key);
     // An unchanged refetch shouldn't re-render or reset a form being edited
     if (current && JSON.stringify(current.data) === JSON.stringify(data)) {
@@ -36,6 +38,14 @@ const storeData = <T>(key: string, data: T) => {
 
 export const getQueryEntry = <T>(key: string) =>
     entries.get(key) as QueryEntry<T> | undefined;
+
+/** Whether the key was fetched or saved within the last `maxAge` ms */
+export const isQueryFresh = (key: string, maxAge: number) =>
+    Date.now() - (storedAt.get(key) ?? -Infinity) < maxAge;
+
+/** The cached data, if it was fetched within the last `maxAge` ms */
+export const getFreshQueryData = <T>(key: string, maxAge: number) =>
+    isQueryFresh(key, maxAge) ? getQueryEntry<T>(key)?.data : undefined;
 
 /** Writes data the page already knows, e.g. after a save */
 export const setQueryData = <T>(
@@ -80,9 +90,36 @@ export const fetchQuery = <T>(
     return request;
 };
 
-/** Loads a query in the background unless it's cached or already loading */
-export const prefetchQuery = <T>(query: Query<T>) => {
-    if (entries.has(query.key) || latestRequests.has(query.key)) return;
+/** One stable query per parameter, e.g. per round or search term */
+export const queryFamily = <T>(create: (param: string) => Query<T>) => {
+    const queries = new Map<string, Query<T>>();
+    return (param = "") => {
+        const query = queries.get(param) ?? create(param);
+        queries.set(param, query);
+        return query;
+    };
+};
+
+/**
+ * How old cached data on competition-day pages (results, incidents,
+ * attendance, persons) may be and still be shown while it refreshes
+ */
+export const LIVE_MAX_AGE = 30_000;
+
+/**
+ * Loads a query in the background unless it's already loading, or cached
+ * (within `maxAge` ms when given)
+ */
+export const prefetchQuery = <T>(
+    query: Query<T>,
+    { maxAge }: { maxAge?: number } = {}
+) => {
+    if (latestRequests.has(query.key)) return;
+    const isCached =
+        maxAge === undefined
+            ? entries.has(query.key)
+            : isQueryFresh(query.key, maxAge);
+    if (isCached) return;
     fetchQuery(query).catch(() => undefined);
 };
 
@@ -99,4 +136,5 @@ export const subscribeToQuery = (key: string, listener: () => void) => {
 export const clearQueryCache = () => {
     entries.clear();
     latestRequests.clear();
+    storedAt.clear();
 };

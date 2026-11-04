@@ -1,7 +1,9 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router-dom";
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
+import { clearQueryCache } from "@/lib/queryCache";
 
 import AssignCards from "./AssignCards";
 
@@ -10,6 +12,14 @@ const other = { id: "p2", name: "Alexis Sample", registrantId: 8 };
 
 vi.mock("@/lib/persons", () => ({
     getAllPersons: vi.fn(() => Promise.resolve([person, other])),
+    personsWithoutCardQuery: {
+        key: "person/all?withoutCardAssigned=true",
+        fetch: vi.fn(() => Promise.resolve([person, other])),
+    },
+    firstPersonsPageQuery: {
+        key: "person?page=1&pageSize=10",
+        fetch: () => new Promise(() => {}),
+    },
     assignCard: vi.fn(() => Promise.resolve(200)),
     checkedInCount: vi.fn(() => Promise.resolve({ totalPersonsCount: 1 })),
     getPersonsWithoutCardAssigned: vi.fn(() => Promise.resolve({ count: 1 })),
@@ -18,6 +28,8 @@ vi.mock("@/lib/scanSound", () => ({ playScanSound: vi.fn() }));
 vi.mock("@/hooks/useToast", () => ({ useToast: () => ({ toast: vi.fn() }) }));
 
 describe("AssignCards", () => {
+    beforeEach(() => clearQueryCache());
+
     it("goes back to an empty search after assigning a card", async () => {
         render(
             <MemoryRouter>

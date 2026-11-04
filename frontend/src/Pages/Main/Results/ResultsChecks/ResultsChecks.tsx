@@ -19,18 +19,20 @@ import {
     TableHeader,
     TableRow,
 } from "@/Components/ui/table";
+import { useCachedQuery } from "@/hooks/useCachedQuery";
 import { usePageHeader } from "@/hooks/usePageHeader";
 import { competitionAtom } from "@/lib/atoms";
 import { getEventIconClass } from "@/lib/events";
-import { AttemptType, Incident, Room } from "@/lib/interfaces";
+import { AttemptType, Incident } from "@/lib/interfaces";
+import { fetchQuery, getFreshQueryData, LIVE_MAX_AGE } from "@/lib/queryCache";
 import {
     CHECK_TYPE_LABELS,
     CheckType,
     getCheckTypes,
 } from "@/lib/resultChecks";
 import { attemptWithPenaltyToString } from "@/lib/resultFormatters";
-import { getResultsChecks } from "@/lib/results";
-import { getAllRooms } from "@/lib/rooms";
+import { resultsChecksQuery } from "@/lib/results";
+import { roomsQuery } from "@/lib/rooms";
 import { getRoundOptions, getStripRounds } from "@/lib/roundOptions";
 import { cn, shortRoundName } from "@/lib/utils";
 
@@ -48,25 +50,35 @@ const ResultsChecks = () => {
     const { id: roundId = "" } = useParams<{ id: string }>();
     const navigate = useNavigate();
     const competition = useAtomValue(competitionAtom);
-    const [rooms, setRooms] = useState<Room[]>([]);
-    const [checks, setChecks] = useState<Incident[] | null>(null);
+    const { data: rooms = [] } = useCachedQuery(roomsQuery, {
+        maxAge: LIVE_MAX_AGE,
+    });
+    // Checks the Rounds tab loaded moments ago show straight away
+    const [checks, setChecks] = useState<Incident[] | null>(
+        () =>
+            getFreshQueryData<Incident[]>(
+                resultsChecksQuery(roundId).key,
+                LIVE_MAX_AGE
+            ) ?? null
+    );
     const [filter, setFilter] = useState<Filter>("all");
 
     usePageHeader({
         crumbs: [{ label: "Results", to: "/results" }, { label: "Checks" }],
     });
 
-    useEffect(() => {
-        getAllRooms().then(setRooms);
-    }, []);
-
     // The round the shown checks belong to; differs while the next loads
-    const [checksRoundId, setChecksRoundId] = useState<string>();
+    const [checksRoundId, setChecksRoundId] = useState(() =>
+        checks ? roundId : undefined
+    );
     useEffect(() => {
-        getResultsChecks(roundId || undefined).then((data) => {
-            setChecks(data);
-            setChecksRoundId(roundId || "");
-        });
+        fetchQuery(resultsChecksQuery(roundId)).then(
+            (data) => {
+                setChecks(data);
+                setChecksRoundId(roundId || "");
+            },
+            () => undefined
+        );
     }, [roundId]);
 
     const rounds = useMemo(

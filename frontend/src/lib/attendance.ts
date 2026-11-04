@@ -1,5 +1,9 @@
-import { StaffActivityStatus } from "./interfaces";
-import { backendRequest } from "./request";
+import {
+    AttendanceStatistics,
+    MissedAssignments,
+    StaffActivityStatus,
+} from "./interfaces";
+import { backendQuery, backendRequest } from "./request";
 
 export const getRoundStaffing = async (
     roundId: string
@@ -66,15 +70,12 @@ export const markAsPresentButReplaced = async (id: string) => {
     return response.status;
 };
 
-export const getAttendanceStatistics = async () => {
-    const response = await backendRequest(`attendance/statistics`, "GET", true);
-    return await response.json();
-};
+export const attendanceStatisticsQuery = backendQuery<AttendanceStatistics[]>(
+    "attendance/statistics"
+);
 
-export const getMostMissedAssignments = async () => {
-    const response = await backendRequest(`attendance/missed`, "GET", true);
-    return await response.json();
-};
+export const mostMissedAssignmentsQuery =
+    backendQuery<MissedAssignments[]>("attendance/missed");
 
 export const prettyStaffActivityStatus = (status: StaffActivityStatus) => {
     switch (status) {

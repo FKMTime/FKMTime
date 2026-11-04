@@ -1,5 +1,5 @@
 import { ChevronDown, FileText, Flag, ShieldAlert } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 import EmptyState from "@/Components/shared/EmptyState";
 import RowActions from "@/Components/shared/RowActions";
@@ -7,10 +7,12 @@ import SectionLoading from "@/Components/shared/SectionLoading";
 import SegmentedControl from "@/Components/shared/SegmentedControl";
 import { StatusTone } from "@/Components/shared/status";
 import { StatusBadge } from "@/Components/shared/StatusBadge";
+import { useCachedQuery } from "@/hooks/useCachedQuery";
 import { activityCodeToName, prettyActivityName } from "@/lib/activities";
-import { getMostMissedAssignments } from "@/lib/attendance";
+import { mostMissedAssignmentsQuery } from "@/lib/attendance";
 import { MissedAssignments, Person, StaffActivity } from "@/lib/interfaces";
 import { isDelegate } from "@/lib/permissions";
+import { LIVE_MAX_AGE } from "@/lib/queryCache";
 import { cn, getInitials } from "@/lib/utils";
 import DisplayGroupsModal from "@/Pages/Main/Persons/Components/DisplayGroupsModal";
 import DisplayWarningsModal from "@/Pages/Main/Persons/Components/DisplayWarningsModal";
@@ -52,16 +54,12 @@ const describe = (activity: StaffActivity) =>
     `${activityCodeToName(activity.groupId, true, true, true)} · ${prettyActivityName(activity.role)}`;
 
 const MostMissedAssignments = () => {
-    const [assignments, setAssignments] = useState<MissedAssignments[] | null>(
-        null
-    );
+    const { data: assignments } = useCachedQuery(mostMissedAssignmentsQuery, {
+        maxAge: LIVE_MAX_AGE,
+    });
     const [filter, setFilter] = useState<Filter>("all");
     const [expanded, setExpanded] = useState<string[]>([]);
     const [dialog, setDialog] = useState<Dialog | null>(null);
-
-    useEffect(() => {
-        getMostMissedAssignments().then(setAssignments);
-    }, []);
 
     // The tabs stay put while the list loads
     if (!assignments)

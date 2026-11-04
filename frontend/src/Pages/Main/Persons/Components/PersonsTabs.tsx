@@ -3,7 +3,13 @@ import { useEffect } from "react";
 
 import PageTabs from "@/Components/shared/PageTabs";
 import { competitionAtom } from "@/lib/atoms";
-import { checkedInCount, getPersonsWithoutCardAssigned } from "@/lib/persons";
+import {
+    checkedInCount,
+    firstPersonsPageQuery,
+    getPersonsWithoutCardAssigned,
+    personsWithoutCardQuery,
+} from "@/lib/persons";
+import { LIVE_MAX_AGE, prefetchQuery } from "@/lib/queryCache";
 
 interface PersonsTabsProps {
     value: "all" | "cards";
@@ -32,6 +38,14 @@ const PersonsTabs = ({ value, refreshKey }: PersonsTabsProps) => {
                 setCounts((counts) => ({ ...counts, withoutCard: data.count }))
             );
     }, [useDevices, refreshKey, setCounts]);
+
+    // Load the other tab's list, so switching doesn't wait
+    useEffect(() => {
+        if (!useDevices) return;
+        const options = { maxAge: LIVE_MAX_AGE };
+        if (value === "all") prefetchQuery(personsWithoutCardQuery, options);
+        else prefetchQuery(firstPersonsPageQuery, options);
+    }, [value, useDevices]);
 
     if (!useDevices) return null;
 

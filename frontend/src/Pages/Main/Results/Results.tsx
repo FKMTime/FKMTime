@@ -9,13 +9,15 @@ import RefreshingRegion from "@/Components/shared/RefreshingRegion";
 import RoundStrip from "@/Components/shared/RoundStrip";
 import SearchInput from "@/Components/shared/SearchInput";
 import SegmentedControl from "@/Components/shared/SegmentedControl";
+import { useCachedQuery } from "@/hooks/useCachedQuery";
 import { usePageHeader } from "@/hooks/usePageHeader";
 import { competitionAtom } from "@/lib/atoms";
-import { Result, Room } from "@/lib/interfaces";
+import { Result } from "@/lib/interfaces";
 import { isDelegate } from "@/lib/permissions";
+import { fetchQuery, getFreshQueryData, LIVE_MAX_AGE } from "@/lib/queryCache";
 import { rankResults } from "@/lib/ranking";
-import { getResultsByRoundId } from "@/lib/results";
-import { getAllRooms } from "@/lib/rooms";
+import { getResultsByRoundId, roundResultsQuery } from "@/lib/results";
+import { roomsQuery } from "@/lib/rooms";
 import { getRoundMeta } from "@/lib/roundInfo";
 import { getRoundOptions, getStripRounds } from "@/lib/roundOptions";
 import { getAdvancementText, shortRoundName } from "@/lib/utils";
@@ -29,6 +31,14 @@ import RoundHeader from "./Components/RoundHeader";
 
 type Order = "ranking" | "latest";
 
+const getCachedResults = (roundId: string) =>
+    roundId
+        ? getFreshQueryData<Result[]>(
+              roundResultsQuery(roundId).key,
+              LIVE_MAX_AGE
+          )
+        : undefined;
+
 const Results = () => {
     const { id: roundId = "" } = useParams<{ id: string }>();
     const navigate = useNavigate();
@@ -37,10 +47,17 @@ const Results = () => {
         number,
         React.Dispatch<React.SetStateAction<number>>,
     ];
-    const [rooms, setRooms] = useState<Room[] | null>(null);
-    const [results, setResults] = useState<Result[]>([]);
+    const { data: rooms } = useCachedQuery(roomsQuery, {
+        maxAge: LIVE_MAX_AGE,
+    });
+    // Results the Checks tab loaded moments ago show straight away
+    const [results, setResults] = useState<Result[]>(
+        () => getCachedResults(roundId) ?? []
+    );
     // The round the shown results belong to; differs while the next loads
-    const [resultsRoundId, setResultsRoundId] = useState<string>();
+    const [resultsRoundId, setResultsRoundId] = useState(() =>
+        getCachedResults(roundId) ? roundId : undefined
+    );
     const [search, setSearch] = useState("");
     const [order, setOrder] = useState<Order>("ranking");
     const [isRestartOpen, setIsRestartOpen] = useState(false);
@@ -60,10 +77,6 @@ const Results = () => {
             navigate(`/results/public/${roundId}`, { replace: true });
     }, [navigate, roundId]);
 
-    useEffect(() => {
-        getAllRooms().then(setRooms);
-    }, []);
-
     const rounds = useMemo(
         () =>
             competition && rooms
@@ -81,7 +94,11 @@ const Results = () => {
 
     const fetchResults = useCallback(async () => {
         if (!roundId) return;
-        setResults(await getResultsByRoundId(roundId, search || undefined));
+        const data = search
+            ? await getResultsByRoundId(roundId, search)
+            : await fetchQuery(roundResultsQuery(roundId)).catch(() => null);
+        if (!data) return;
+        setResults(data);
         setResultsRoundId(roundId);
     }, [roundId, search]);
 

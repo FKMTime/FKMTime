@@ -5,7 +5,14 @@ import { describe, expect, it, vi } from "vitest";
 import MostMissedAssignments from "./MostMissedAssignments";
 
 vi.mock("@/lib/attendance", () => ({
-    getMostMissedAssignments: vi.fn(() => new Promise(() => {})),
+    attendanceStatisticsQuery: {
+        key: "attendance/statistics",
+        fetch: () => new Promise(() => {}),
+    },
+    mostMissedAssignmentsQuery: {
+        key: "attendance/missed",
+        fetch: () => new Promise(() => {}),
+    },
 }));
 
 describe("MostMissedAssignments", () => {

@@ -1,11 +1,12 @@
 import { act, renderHook, waitFor } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { useCachedQuery } from "@/hooks/useCachedQuery";
 import {
     clearQueryCache,
     fetchQuery,
     getQueryEntry,
+    LIVE_MAX_AGE,
     prefetchQuery,
     Query,
     setQueryData,
@@ -22,8 +23,14 @@ const query = (fetch: () => Promise<string[]>): Query<string[]> => ({
     fetch,
 });
 
+const advanceClock = (ms: number) => {
+    const now = Date.now();
+    vi.spyOn(Date, "now").mockReturnValue(now + ms);
+};
+
 describe("queryCache", () => {
     beforeEach(() => clearQueryCache());
+    afterEach(() => vi.restoreAllMocks());
 
     it("doesn't prefetch what is already cached", async () => {
         const fetch = vi.fn().mockResolvedValue(["a"]);
@@ -32,6 +39,16 @@ describe("queryCache", () => {
         prefetchQuery(query(fetch));
 
         expect(fetch).toHaveBeenCalledTimes(1);
+    });
+
+    it("prefetches again once the cached data is older than maxAge", async () => {
+        const fetch = vi.fn().mockResolvedValue(["a"]);
+        await fetchQuery(query(fetch));
+        advanceClock(LIVE_MAX_AGE + 1);
+
+        prefetchQuery(query(fetch), { maxAge: LIVE_MAX_AGE });
+
+        expect(fetch).toHaveBeenCalledTimes(2);
     });
 
     it("keeps the newer response when an older one arrives last", async () => {
@@ -74,6 +91,63 @@ describe("queryCache", () => {
 
 describe("useCachedQuery", () => {
     beforeEach(() => clearQueryCache());
+    afterEach(() => vi.restoreAllMocks());
+
+    it("hides data older than maxAge until the refresh arrives", async () => {
+        setQueryData("items", ["old"]);
+        advanceClock(LIVE_MAX_AGE + 1);
+        const fresh = deferred<string[]>();
+        const itemsQuery = query(() => fresh.promise);
+
+        const { result } = renderHook(() =>
+            useCachedQuery(itemsQuery, { maxAge: LIVE_MAX_AGE })
+        );
+
+        expect(result.current.data).toBeUndefined();
+        await act(async () => fresh.resolve(["new"]));
+        await waitFor(() => expect(result.current.data).toEqual(["new"]));
+    });
+
+    it("keeps old data hidden when the refresh fails", async () => {
+        setQueryData("items", ["old"]);
+        advanceClock(LIVE_MAX_AGE + 1);
+        const itemsQuery = query(() => Promise.reject(new Error("offline")));
+
+        const { result } = renderHook(() =>
+            useCachedQuery(itemsQuery, { maxAge: LIVE_MAX_AGE })
+        );
+
+        await waitFor(() => expect(result.current.error).toBeTruthy());
+        expect(result.current.data).toBeUndefined();
+    });
+
+    it("shows data within maxAge straight away", () => {
+        setQueryData("items", ["recent"]);
+        const itemsQuery = query(() => new Promise(() => {}));
+
+        const { result } = renderHook(() =>
+            useCachedQuery(itemsQuery, { maxAge: LIVE_MAX_AGE })
+        );
+
+        expect(result.current.data).toEqual(["recent"]);
+    });
+
+    it("keeps the previous key's data while a new key loads", async () => {
+        const queries: Record<string, Query<string[]>> = {
+            a: { key: "a", fetch: () => Promise.resolve(["from a"]) },
+            b: { key: "b", fetch: () => new Promise(() => {}) },
+        };
+        const { result, rerender } = renderHook(
+            ({ key }) =>
+                useCachedQuery(queries[key], { keepPreviousData: true }),
+            { initialProps: { key: "a" } }
+        );
+        await waitFor(() => expect(result.current.data).toEqual(["from a"]));
+
+        rerender({ key: "b" });
+
+        expect(result.current.data).toEqual(["from a"]);
+    });
 
     it("shows cached data on the first render and refreshes it", async () => {
         setQueryData("items", ["cached"]);

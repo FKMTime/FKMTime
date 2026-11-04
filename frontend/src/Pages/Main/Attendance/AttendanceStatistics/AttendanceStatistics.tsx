@@ -1,5 +1,5 @@
 import { ArrowDown, ArrowUp } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 
 import EmptyState from "@/Components/shared/EmptyState";
 import SearchInput from "@/Components/shared/SearchInput";
@@ -12,8 +12,9 @@ import {
     TableHeader,
     TableRow,
 } from "@/Components/ui/table";
-import { getAttendanceStatistics } from "@/lib/attendance";
-import { AttendanceStatistics as Statistic } from "@/lib/interfaces";
+import { useCachedQuery } from "@/hooks/useCachedQuery";
+import { attendanceStatisticsQuery } from "@/lib/attendance";
+import { LIVE_MAX_AGE } from "@/lib/queryCache";
 import { cn } from "@/lib/utils";
 
 import AttendanceTabs from "../Components/AttendanceTabs";
@@ -44,16 +45,14 @@ const attendanceTone = (percentage: number) =>
           : "bg-destructive";
 
 const AttendanceStatistics = () => {
-    const [statistics, setStatistics] = useState<Statistic[] | null>(null);
+    const { data: statistics } = useCachedQuery(attendanceStatisticsQuery, {
+        maxAge: LIVE_MAX_AGE,
+    });
     const [search, setSearch] = useState("");
     const [sort, setSort] = useState<{ key: SortKey; descending: boolean }>({
         key: "presentPercentage",
         descending: false,
     });
-
-    useEffect(() => {
-        getAttendanceStatistics().then(setStatistics);
-    }, []);
 
     const rows = useMemo(() => {
         const query = search.trim().toLowerCase();

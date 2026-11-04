@@ -1,16 +1,19 @@
 import { Pencil, Plus, Trash2 } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import EmptyState from "@/Components/shared/EmptyState";
 import RowActions from "@/Components/shared/RowActions";
 import SearchInput from "@/Components/shared/SearchInput";
+import SectionLoading from "@/Components/shared/SectionLoading";
 import { Button } from "@/Components/ui/button";
+import { useCachedQuery } from "@/hooks/useCachedQuery";
 import { useConfirm } from "@/hooks/useConfirm";
 import { useToast } from "@/hooks/useToast";
 import { getEventIconClass } from "@/lib/events";
-import { deleteManualIncident, getManualIncidents } from "@/lib/incidents";
+import { deleteManualIncident, manualIncidentsQuery } from "@/lib/incidents";
 import { ManualIncident } from "@/lib/interfaces";
+import { LIVE_MAX_AGE } from "@/lib/queryCache";
 import { cn, shortRoundName } from "@/lib/utils";
 
 import { useIncidentsContext } from "../incidentsContext";
@@ -28,22 +31,17 @@ const ManualIncidents = ({ createOnOpen = false }: ManualIncidentsProps) => {
     const { toast } = useToast();
     const { refreshCounts } = useIncidentsContext();
     const [search, setSearch] = useState("");
-    const [incidents, setIncidents] = useState<ManualIncident[]>([]);
+    const { data: incidents, refetch } = useCachedQuery(
+        manualIncidentsQuery(search),
+        { maxAge: LIVE_MAX_AGE, keepPreviousData: true }
+    );
     const [isCreateOpen, setIsCreateOpen] = useState(createOnOpen);
     const [editedIncident, setEditedIncident] = useState<ManualIncident | null>(
         null
     );
 
-    const fetchData = useCallback(async (searchParam?: string) => {
-        setIncidents(await getManualIncidents(searchParam));
-    }, []);
-
-    useEffect(() => {
-        fetchData(search);
-    }, [fetchData, search]);
-
     const refresh = () => {
-        fetchData(search);
+        refetch().catch(() => undefined);
         refreshCounts();
     };
 
@@ -86,7 +84,9 @@ const ManualIncidents = ({ createOnOpen = false }: ManualIncidentsProps) => {
                 </Button>
             </div>
 
-            {incidents.length === 0 ? (
+            {!incidents ? (
+                <SectionLoading label="Loading manual incidents" />
+            ) : incidents.length === 0 ? (
                 <EmptyState>No manual incidents.</EmptyState>
             ) : (
                 <ul className="flex flex-col divide-y overflow-hidden rounded-mobile-card border bg-card md:rounded-2xl">

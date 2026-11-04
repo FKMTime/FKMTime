@@ -1,22 +1,25 @@
-import { atom, useAtom } from "jotai";
 import { useEffect } from "react";
 
 import PageTabs from "@/Components/shared/PageTabs";
-import { getMostMissedAssignments } from "@/lib/attendance";
-
-// Outlives the tab switch, so the count stays on screen while it reloads
-const missedCountAtom = atom<number | undefined>(undefined);
+import { useCachedQuery } from "@/hooks/useCachedQuery";
+import {
+    attendanceStatisticsQuery,
+    mostMissedAssignmentsQuery,
+} from "@/lib/attendance";
+import { LIVE_MAX_AGE, prefetchQuery } from "@/lib/queryCache";
 
 interface AttendanceTabsProps {
     value: "groups" | "missed" | "statistics";
 }
 
 const AttendanceTabs = ({ value }: AttendanceTabsProps) => {
-    const [missedCount, setMissedCount] = useAtom(missedCountAtom);
+    // Loading the list for its count also fills the Most missed tab
+    const { data: missed } = useCachedQuery(mostMissedAssignmentsQuery);
+    const missedCount = missed?.length;
 
     useEffect(() => {
-        getMostMissedAssignments().then((data) => setMissedCount(data.length));
-    }, [setMissedCount]);
+        prefetchQuery(attendanceStatisticsQuery, { maxAge: LIVE_MAX_AGE });
+    }, []);
 
     return (
         <PageTabs

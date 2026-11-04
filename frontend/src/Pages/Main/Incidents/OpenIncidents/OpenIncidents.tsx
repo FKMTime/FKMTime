@@ -3,9 +3,10 @@ import { useNavigate, useParams } from "react-router-dom";
 
 import LoadingPage from "@/Components/LoadingPage";
 import EmptyState from "@/Components/shared/EmptyState";
-import { getUnresolvedIncidents } from "@/lib/incidents";
-import { Incident, Room } from "@/lib/interfaces";
-import { getAllRooms } from "@/lib/rooms";
+import { useCachedQuery } from "@/hooks/useCachedQuery";
+import { unresolvedIncidentsQuery } from "@/lib/incidents";
+import { LIVE_MAX_AGE } from "@/lib/queryCache";
+import { roomsQuery } from "@/lib/rooms";
 import { cn } from "@/lib/utils";
 import { socket } from "@/socket";
 
@@ -18,18 +19,19 @@ const OpenIncidents = () => {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
     const { refreshCounts } = useIncidentsContext();
-    const [incidents, setIncidents] = useState<Incident[] | null>(null);
-    const [rooms, setRooms] = useState<Room[]>([]);
+    const { data: incidents, refetch } = useCachedQuery(
+        unresolvedIncidentsQuery,
+        { maxAge: LIVE_MAX_AGE }
+    );
+    const { data: rooms = [] } = useCachedQuery(roomsQuery);
     const [now, setNow] = useState(() => new Date());
 
     const fetchIncidents = useCallback(async () => {
-        setIncidents(await getUnresolvedIncidents());
+        await refetch().catch(() => undefined);
         setNow(new Date());
-    }, []);
+    }, [refetch]);
 
     useEffect(() => {
-        fetchIncidents();
-        getAllRooms().then(setRooms);
         socket.on("newIncident", fetchIncidents);
         socket.on("attemptUpdated", fetchIncidents);
         return () => {

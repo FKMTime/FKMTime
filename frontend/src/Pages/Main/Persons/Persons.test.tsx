@@ -6,7 +6,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { competitionAtom } from "@/lib/atoms";
 import { Competition } from "@/lib/interfaces";
-import { getPersons } from "@/lib/persons";
+import { firstPersonsPageQuery } from "@/lib/persons";
+import { clearQueryCache } from "@/lib/queryCache";
 
 import Persons from "./Persons";
 
@@ -14,11 +15,21 @@ vi.mock("@/lib/persons", () => ({
     getPersons: vi.fn(() =>
         Promise.resolve({ data: [], count: 0, personsWithCardAssigned: 0 })
     ),
+    firstPersonsPageQuery: {
+        key: "person?page=1&pageSize=10",
+        fetch: vi.fn(() => Promise.resolve({ data: [], count: 0 })),
+    },
+    personsWithoutCardQuery: {
+        key: "person/all?withoutCardAssigned=true",
+        fetch: () => new Promise(() => {}),
+    },
     getPersonsWithoutCardAssigned: vi.fn(() => Promise.resolve([])),
     checkedInCount: vi.fn(() =>
         Promise.resolve({ checkedInPersonsCount: 0, totalPersonsCount: 0 })
     ),
 }));
+
+beforeEach(() => clearQueryCache());
 
 const renderAt = (width: number) => {
     window.innerWidth = width;
@@ -67,7 +78,9 @@ describe("Persons filters", () => {
 
 describe("Persons loading", () => {
     it("keeps the tabs and filters on screen while the list loads", async () => {
-        vi.mocked(getPersons).mockReturnValueOnce(new Promise(() => {}));
+        vi.mocked(firstPersonsPageQuery.fetch).mockReturnValueOnce(
+            new Promise(() => {})
+        );
         renderAt(1280);
 
         expect(screen.getByRole("tab", { name: /All persons/ })).toBeTruthy();
