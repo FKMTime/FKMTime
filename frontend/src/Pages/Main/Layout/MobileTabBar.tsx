@@ -3,8 +3,8 @@ import { useEffect } from "react";
 import { Link } from "react-router-dom";
 
 import {
+    getMobileTabs,
     isMobileTab,
-    MOBILE_TAB_IDS,
     MORE_PATH,
     NavItem,
 } from "@/lib/navigation";
@@ -34,11 +34,10 @@ const MobileTabBar = ({
         };
     }, []);
 
-    const tabs = MOBILE_TAB_IDS.map((id) =>
-        items.find((item) => item.id === id)
-    ).filter((item): item is NavItem => !!item);
+    const tabs = getMobileTabs(items);
     const isMoreActive =
-        pathname === MORE_PATH || (!!activeItem && !isMobileTab(activeItem));
+        pathname === MORE_PATH ||
+        (!!activeItem && !isMobileTab(items, activeItem));
 
     return (
         <nav className="fixed inset-x-0 bottom-0 z-30 flex border-t bg-card px-1.5 pb-[max(env(safe-area-inset-bottom),0.375rem)] pt-1.5 md:hidden">

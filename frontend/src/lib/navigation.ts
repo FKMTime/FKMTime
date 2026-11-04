@@ -58,13 +58,19 @@ export interface Crumb {
     to?: string;
 }
 
-/** Items shown as bottom tabs on mobile; everything else lives under More */
-export const MOBILE_TAB_IDS: NavId[] = [
+/**
+ * Bottom tab candidates on mobile, most wanted first. Each user gets the first
+ * MOBILE_TAB_COUNT they can see; everything else lives under More.
+ */
+const MOBILE_TAB_PRIORITY: NavId[] = [
     "home",
     "incidents",
     "results",
+    "attendance",
     "persons",
 ];
+
+const MOBILE_TAB_COUNT = 4;
 
 export const MORE_PATH = "/more";
 
@@ -234,8 +240,13 @@ export const getDetailLabel = (pathname: string): string | null => {
     return null;
 };
 
-export const isMobileTab = (item?: NavItem) =>
-    !!item && MOBILE_TAB_IDS.includes(item.id);
+export const getMobileTabs = (items: NavItem[]) =>
+    MOBILE_TAB_PRIORITY.map((id) => items.find((item) => item.id === id))
+        .filter((item): item is NavItem => !!item)
+        .slice(0, MOBILE_TAB_COUNT);
+
+export const isMobileTab = (items: NavItem[], item?: NavItem) =>
+    !!item && getMobileTabs(items).some((tab) => tab.id === item.id);
 
 export const getDefaultCrumbs = (pathname: string, item?: NavItem): Crumb[] => {
     if (!item) return [];
@@ -248,11 +259,12 @@ export const getDefaultCrumbs = (pathname: string, item?: NavItem): Crumb[] => {
 /** Where the mobile header's back button goes, or null for no back button */
 export const getMobileBackTarget = (
     pathname: string,
+    items: NavItem[],
     item?: NavItem
 ): string | null => {
     if (pathname === MORE_PATH || !item) return null;
     if (getDetailLabel(pathname) && pathname !== item.to) return item.to;
-    return isMobileTab(item) ? null : MORE_PATH;
+    return isMobileTab(items, item) ? null : MORE_PATH;
 };
 
 /** "Day 1 · Saturday 18 April" while the competition runs, otherwise undefined */

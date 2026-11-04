@@ -42,7 +42,7 @@ describe("MobileTabBar", () => {
             "Home",
             "Incidents",
             "Results",
-            "Persons",
+            "Attendance",
             "More",
         ]);
     });

@@ -24,7 +24,7 @@ const More = () => {
         <div className="flex flex-col gap-5">
             {MORE_GROUPS.map((group) => {
                 const groupItems = items.filter(
-                    (item) => item.group === group && !isMobileTab(item)
+                    (item) => item.group === group && !isMobileTab(items, item)
                 );
                 if (!groupItems.length) return null;
                 return (
