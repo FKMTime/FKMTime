@@ -9,15 +9,26 @@ import { Competition, Incident } from "@/lib/interfaces";
 import IncidentsLayout from "./IncidentsLayout";
 import IncidentListItem from "./OpenIncidents/IncidentListItem";
 
+const { listQuery } = vi.hoisted(() => ({
+    listQuery: (key: string, items: object[]) => () => ({
+        key,
+        fetch: () => Promise.resolve(items),
+    }),
+}));
+
 vi.mock("@/socket", () => ({ socket: { on: vi.fn(), off: vi.fn() } }));
 vi.mock("@/lib/incidents", () => ({
     getUnresolvedIncidentsCount: vi.fn().mockResolvedValue({ count: 3 }),
-    getResolvedIncidents: vi.fn().mockResolvedValue([{}, {}, {}, {}, {}]),
-    getNoteworthyIncidents: vi.fn().mockResolvedValue([{}, {}]),
-    getManualIncidents: vi.fn().mockResolvedValue([{}]),
+    unresolvedIncidentsQuery: {
+        key: "incident/unresolved",
+        fetch: () => Promise.resolve([]),
+    },
+    resolvedIncidentsQuery: listQuery("resolved", [{}, {}, {}, {}, {}]),
+    noteworthyIncidentsQuery: listQuery("noteworthy", [{}, {}]),
+    manualIncidentsQuery: listQuery("manual", [{}]),
 }));
 vi.mock("@/lib/warnings", () => ({
-    getAllWarnings: vi.fn().mockResolvedValue([{}, {}]),
+    warningsQuery: listQuery("warnings", [{}, {}]),
 }));
 
 const renderLayout = (path: string, useFkmTimeDevices: boolean) => {

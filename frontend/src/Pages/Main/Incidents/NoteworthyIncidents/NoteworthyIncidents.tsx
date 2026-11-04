@@ -1,17 +1,20 @@
 import { List, Pencil, Plus, Trash2 } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import EmptyState from "@/Components/shared/EmptyState";
 import RowActions from "@/Components/shared/RowActions";
 import SearchInput from "@/Components/shared/SearchInput";
+import SectionLoading from "@/Components/shared/SectionLoading";
 import { Button } from "@/Components/ui/button";
+import { useCachedQuery } from "@/hooks/useCachedQuery";
 import { useDeferredDelete } from "@/hooks/useDeferredDelete";
 import {
     deleteNoteworthyIncident,
-    getNoteworthyIncidents,
+    noteworthyIncidentsQuery,
 } from "@/lib/incidents";
 import { NoteworthyIncident } from "@/lib/interfaces";
+import { LIVE_MAX_AGE } from "@/lib/queryCache";
 
 import { useIncidentsContext } from "../incidentsContext";
 import CreateNoteworthyIncidentModal from "./Components/CreateNoteworthyIncidentModal";
@@ -21,21 +24,16 @@ const NoteworthyIncidents = () => {
     const navigate = useNavigate();
     const { refreshCounts } = useIncidentsContext();
     const [search, setSearch] = useState("");
-    const [incidents, setIncidents] = useState<NoteworthyIncident[]>([]);
+    const { data: incidents, refetch } = useCachedQuery(
+        noteworthyIncidentsQuery(search),
+        { maxAge: LIVE_MAX_AGE, keepPreviousData: true }
+    );
     const [isCreateOpen, setIsCreateOpen] = useState(false);
     const [editedIncident, setEditedIncident] =
         useState<NoteworthyIncident | null>(null);
 
-    const fetchData = useCallback(async (searchParam?: string) => {
-        setIncidents(await getNoteworthyIncidents(searchParam));
-    }, []);
-
-    useEffect(() => {
-        fetchData(search);
-    }, [fetchData, search]);
-
     const refresh = () => {
-        fetchData(search);
+        refetch().catch(() => undefined);
         refreshCounts();
     };
 
@@ -47,7 +45,9 @@ const NoteworthyIncidents = () => {
     const handleDelete = (incident: NoteworthyIncident) =>
         deleteLater(incident.id, `"${incident.title}" deleted`);
 
-    const visibleIncidents = incidents.filter((item) => !isPending(item.id));
+    const visibleIncidents = (incidents ?? []).filter(
+        (item) => !isPending(item.id)
+    );
 
     return (
         <div className="flex flex-col gap-4">
@@ -63,7 +63,9 @@ const NoteworthyIncidents = () => {
                 </Button>
             </div>
 
-            {visibleIncidents.length === 0 ? (
+            {!incidents ? (
+                <SectionLoading label="Loading noteworthy incidents" />
+            ) : visibleIncidents.length === 0 ? (
                 <EmptyState>No noteworthy incidents.</EmptyState>
             ) : (
                 <ul className="flex flex-col gap-3">

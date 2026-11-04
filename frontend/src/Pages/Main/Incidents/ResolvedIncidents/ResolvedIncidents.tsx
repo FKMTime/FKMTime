@@ -1,10 +1,11 @@
 import { Copy, List, NotebookText, Save } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
+import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
 import EmptyState from "@/Components/shared/EmptyState";
 import RowActions, { RowAction } from "@/Components/shared/RowActions";
 import SearchInput from "@/Components/shared/SearchInput";
+import SectionLoading from "@/Components/shared/SectionLoading";
 import { Button } from "@/Components/ui/button";
 import {
     Table,
@@ -14,14 +15,16 @@ import {
     TableHeader,
     TableRow,
 } from "@/Components/ui/table";
+import { useCachedQuery } from "@/hooks/useCachedQuery";
 import { useToast } from "@/hooks/useToast";
 import { getEventIconClass } from "@/lib/events";
 import {
     getIncidentInfoText,
-    getResolvedIncidents,
+    resolvedIncidentsQuery,
     saveAttemptAsNoteworthyIncident,
 } from "@/lib/incidents";
 import { Incident } from "@/lib/interfaces";
+import { LIVE_MAX_AGE } from "@/lib/queryCache";
 import { attemptWithPenaltyToString } from "@/lib/resultFormatters";
 import { formatClockTime } from "@/lib/time";
 import { cn, prettyAttemptStatus, shortRoundName } from "@/lib/utils";
@@ -34,16 +37,12 @@ const ResolvedIncidents = () => {
     const { toast } = useToast();
     const { refreshCounts } = useIncidentsContext();
     const [search, setSearch] = useState("");
-    const [incidents, setIncidents] = useState<Incident[]>([]);
+    const { data } = useCachedQuery(resolvedIncidentsQuery(search), {
+        maxAge: LIVE_MAX_AGE,
+        keepPreviousData: true,
+    });
+    const incidents: Incident[] = data ?? [];
     const [isSummaryOpen, setIsSummaryOpen] = useState(false);
-
-    const fetchData = useCallback(async (searchParam?: string) => {
-        setIncidents(await getResolvedIncidents(searchParam));
-    }, []);
-
-    useEffect(() => {
-        fetchData(search);
-    }, [fetchData, search]);
 
     const handleSaveAsNoteworthy = async (incident: Incident) => {
         const status = await saveAttemptAsNoteworthyIncident(incident.id);
@@ -128,7 +127,9 @@ const ResolvedIncidents = () => {
                 </Button>
             </div>
 
-            {incidents.length === 0 ? (
+            {!data ? (
+                <SectionLoading label="Loading resolved incidents" />
+            ) : incidents.length === 0 ? (
                 <EmptyState>No resolved incidents found.</EmptyState>
             ) : (
                 <>

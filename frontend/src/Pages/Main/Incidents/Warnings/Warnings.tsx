@@ -1,13 +1,16 @@
 import { Plus, Trash2 } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
+import { useState } from "react";
 
 import EmptyState from "@/Components/shared/EmptyState";
 import RowActions from "@/Components/shared/RowActions";
 import SearchInput from "@/Components/shared/SearchInput";
+import SectionLoading from "@/Components/shared/SectionLoading";
 import { Button } from "@/Components/ui/button";
+import { useCachedQuery } from "@/hooks/useCachedQuery";
 import { useDeferredDelete } from "@/hooks/useDeferredDelete";
 import { Warning } from "@/lib/interfaces";
-import { deleteWarning, getAllWarnings } from "@/lib/warnings";
+import { LIVE_MAX_AGE } from "@/lib/queryCache";
+import { deleteWarning, warningsQuery } from "@/lib/warnings";
 
 import { useIncidentsContext } from "../incidentsContext";
 import AddWarningModal from "./Components/AddWarningModal";
@@ -15,19 +18,14 @@ import AddWarningModal from "./Components/AddWarningModal";
 const Warnings = () => {
     const { refreshCounts } = useIncidentsContext();
     const [search, setSearch] = useState("");
-    const [warnings, setWarnings] = useState<Warning[]>([]);
+    const { data: warnings, refetch } = useCachedQuery(warningsQuery(search), {
+        maxAge: LIVE_MAX_AGE,
+        keepPreviousData: true,
+    });
     const [isAddOpen, setIsAddOpen] = useState(false);
 
-    const fetchData = useCallback(async (searchParam?: string) => {
-        setWarnings(await getAllWarnings(searchParam));
-    }, []);
-
-    useEffect(() => {
-        fetchData(search);
-    }, [fetchData, search]);
-
     const refresh = () => {
-        fetchData(search);
+        refetch().catch(() => undefined);
         refreshCounts();
     };
 
@@ -39,7 +37,9 @@ const Warnings = () => {
     const handleDelete = (warning: Warning) =>
         deleteLater(warning.id, `Warning for ${warning.person.name} deleted`);
 
-    const visibleWarnings = warnings.filter((item) => !isPending(item.id));
+    const visibleWarnings = (warnings ?? []).filter(
+        (item) => !isPending(item.id)
+    );
 
     return (
         <div className="flex flex-col gap-4">
@@ -55,7 +55,9 @@ const Warnings = () => {
                 </Button>
             </div>
 
-            {visibleWarnings.length === 0 ? (
+            {!warnings ? (
+                <SectionLoading label="Loading warnings" />
+            ) : visibleWarnings.length === 0 ? (
                 <EmptyState>No warnings issued.</EmptyState>
             ) : (
                 <ul className="flex flex-col divide-y overflow-hidden rounded-mobile-card border bg-card md:rounded-2xl">

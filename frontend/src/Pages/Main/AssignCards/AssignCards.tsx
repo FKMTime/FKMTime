@@ -15,7 +15,12 @@ import { Button } from "@/Components/ui/button";
 import { Input } from "@/Components/ui/input";
 import { useToast } from "@/hooks/useToast";
 import { Person } from "@/lib/interfaces";
-import { assignCard, getAllPersons } from "@/lib/persons";
+import {
+    assignCard,
+    getAllPersons,
+    personsWithoutCardQuery,
+} from "@/lib/persons";
+import { fetchQuery, getFreshQueryData, LIVE_MAX_AGE } from "@/lib/queryCache";
 import { playScanSound } from "@/lib/scanSound";
 import { cn, getInitials, regionNameByIso2 } from "@/lib/utils";
 import PersonsTabs from "@/Pages/Main/Persons/Components/PersonsTabs";
@@ -26,7 +31,14 @@ const AssignCards = () => {
     const cardInputRef = useRef<HTMLInputElement>(null);
     const searchInputRef = useRef<HTMLInputElement>(null);
     const [search, setSearch] = useState("");
-    const [persons, setPersons] = useState<Person[] | null>(null);
+    // The list the All persons tab loaded moments ago shows at once
+    const [persons, setPersons] = useState<Person[] | null>(
+        () =>
+            getFreshQueryData<Person[]>(
+                personsWithoutCardQuery.key,
+                LIVE_MAX_AGE
+            ) ?? null
+    );
     const [selected, setSelected] = useState<Person | null>(null);
     const [cardId, setCardId] = useState("");
     const [error, setError] = useState("");
@@ -36,8 +48,10 @@ const AssignCards = () => {
     const listRef = useRef<HTMLUListElement>(null);
 
     const fetchPersons = useCallback(async () => {
-        const data: Person[] = await getAllPersons(true, search || undefined);
-        setPersons(data);
+        const data: Person[] | null = search
+            ? await getAllPersons(true, search)
+            : await fetchQuery(personsWithoutCardQuery).catch(() => null);
+        if (data) setPersons(data);
         return data;
     }, [search]);
 

@@ -1,5 +1,5 @@
 import { AddPerson, Person } from "./interfaces";
-import { backendRequest, wcaApiRequest } from "./request";
+import { backendQuery, backendRequest, wcaApiRequest } from "./request";
 
 export const getPersons = async (
     page = 1,
@@ -26,6 +26,12 @@ export const getPersons = async (
     return await response.json();
 };
 
+/** The Persons tab as it first opens: page 1 of 10, no filters */
+export const firstPersonsPageQuery = backendQuery<{
+    data: Person[];
+    count: number;
+}>("person?page=1&pageSize=10");
+
 export const getAllPersons = async (
     withoutCardAssigned = false,
     searchValue?: string
@@ -37,6 +43,11 @@ export const getAllPersons = async (
     const response = await backendRequest(path, "GET", true);
     return await response.json();
 };
+
+/** Everyone without a card, as Assign cards lists them before a search */
+export const personsWithoutCardQuery = backendQuery<Person[]>(
+    "person/all?withoutCardAssigned=true"
+);
 
 export const getPersonById = async (id: string) => {
     const response = await backendRequest(`person/${id}`, "GET", true);

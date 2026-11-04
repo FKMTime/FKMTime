@@ -16,46 +16,52 @@ const { activities } = vi.hoisted(() => ({
 }));
 
 vi.mock("@/lib/attendance", () => ({
-    getAttendanceStatistics: vi.fn().mockResolvedValue([
-        {
-            personName: "Ben Test",
-            presentPercentage: 50,
-            totalAssignedStaffing: 4,
-            totalPresentAtStaffingComparedToRounds: 1,
-            totalStaffingComparedToRounds: 2,
-        },
-        {
-            personName: "Ada Demo",
-            presentPercentage: 100,
-            totalAssignedStaffing: 3,
-            totalPresentAtStaffingComparedToRounds: 3,
-            totalStaffingComparedToRounds: 3,
-        },
-    ]),
-    getMostMissedAssignments: vi.fn().mockResolvedValue([
-        {
-            person: { id: "p1", name: "Ada Demo", registrantId: 1 },
-            missedAssignments: activities(2),
-            missedAssignmentsCount: 2,
-            lateAssignments: [],
-            lateAssignmentsCount: 0,
-            presentButReplacedAssignments: [],
-            presentButReplacedAssignmentsCount: 0,
-            comments: [],
-            commentsCount: 0,
-        },
-        {
-            person: { id: "p2", name: "Ben Test", registrantId: 2 },
-            missedAssignments: [],
-            missedAssignmentsCount: 0,
-            lateAssignments: activities(1),
-            lateAssignmentsCount: 1,
-            presentButReplacedAssignments: [],
-            presentButReplacedAssignmentsCount: 0,
-            comments: [],
-            commentsCount: 0,
-        },
-    ]),
+    attendanceStatisticsQuery: {
+        key: "attendance/statistics",
+        fetch: vi.fn().mockResolvedValue([
+            {
+                personName: "Ben Test",
+                presentPercentage: 50,
+                totalAssignedStaffing: 4,
+                totalPresentAtStaffingComparedToRounds: 1,
+                totalStaffingComparedToRounds: 2,
+            },
+            {
+                personName: "Ada Demo",
+                presentPercentage: 100,
+                totalAssignedStaffing: 3,
+                totalPresentAtStaffingComparedToRounds: 3,
+                totalStaffingComparedToRounds: 3,
+            },
+        ]),
+    },
+    mostMissedAssignmentsQuery: {
+        key: "attendance/missed",
+        fetch: vi.fn().mockResolvedValue([
+            {
+                person: { id: "p1", name: "Ada Demo", registrantId: 1 },
+                missedAssignments: activities(2),
+                missedAssignmentsCount: 2,
+                lateAssignments: [],
+                lateAssignmentsCount: 0,
+                presentButReplacedAssignments: [],
+                presentButReplacedAssignmentsCount: 0,
+                comments: [],
+                commentsCount: 0,
+            },
+            {
+                person: { id: "p2", name: "Ben Test", registrantId: 2 },
+                missedAssignments: [],
+                missedAssignmentsCount: 0,
+                lateAssignments: activities(1),
+                lateAssignmentsCount: 1,
+                presentButReplacedAssignments: [],
+                presentButReplacedAssignmentsCount: 0,
+                comments: [],
+                commentsCount: 0,
+            },
+        ]),
+    },
 }));
 
 describe("AttendanceStatistics", () => {

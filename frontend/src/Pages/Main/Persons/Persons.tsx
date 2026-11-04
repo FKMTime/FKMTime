@@ -27,7 +27,8 @@ import { useIsMobile } from "@/hooks/useMobile";
 import { competitionAtom } from "@/lib/atoms";
 import { Person } from "@/lib/interfaces";
 import { isOrganizerOrDelegate } from "@/lib/permissions";
-import { getPersons } from "@/lib/persons";
+import { firstPersonsPageQuery, getPersons } from "@/lib/persons";
+import { fetchQuery, getFreshQueryData, LIVE_MAX_AGE } from "@/lib/queryCache";
 import { calculateTotalPages } from "@/lib/utils";
 
 import AddPersonModal from "./Components/AddPersonModal";
@@ -61,8 +62,17 @@ const Persons = () => {
     });
     const [page, setPage] = useState(1);
     const [pageSize, setPageSize] = useState(10);
-    const [persons, setPersons] = useState<Person[] | null>(null);
-    const [count, setCount] = useState(0);
+    // The first page the Assign cards tab loaded moments ago shows at once
+    const [cachedFirstPage] = useState(() =>
+        getFreshQueryData<{ data: Person[]; count: number }>(
+            firstPersonsPageQuery.key,
+            LIVE_MAX_AGE
+        )
+    );
+    const [persons, setPersons] = useState<Person[] | null>(
+        cachedFirstPage?.data ?? null
+    );
+    const [count, setCount] = useState(cachedFirstPage?.count ?? 0);
     // The first load has nothing to debounce; only typing does
     const isFirstLoad = useRef(true);
     const [refreshKey, setRefreshKey] = useState(0);
@@ -82,17 +92,27 @@ const Persons = () => {
         const delay = isFirstLoad.current ? 0 : SEARCH_DEBOUNCE_MS;
         const timeout = setTimeout(async () => {
             const registrantId = parseInt(filters.registrantId);
-            const response = await getPersons(
-                page,
-                pageSize,
-                filters.search || undefined,
-                Number.isNaN(registrantId) ? undefined : registrantId,
-                undefined,
-                filters.cardId || undefined,
-                filters.onlyNewcomers,
-                filters.onlyNotCheckedIn
-            );
-            if (isCancelled) return;
+            const isFirstPage =
+                page === 1 &&
+                pageSize === 10 &&
+                !filters.search &&
+                !filters.registrantId &&
+                !filters.cardId &&
+                !filters.onlyNewcomers &&
+                !filters.onlyNotCheckedIn;
+            const response = isFirstPage
+                ? await fetchQuery(firstPersonsPageQuery).catch(() => null)
+                : await getPersons(
+                      page,
+                      pageSize,
+                      filters.search || undefined,
+                      Number.isNaN(registrantId) ? undefined : registrantId,
+                      undefined,
+                      filters.cardId || undefined,
+                      filters.onlyNewcomers,
+                      filters.onlyNotCheckedIn
+                  );
+            if (isCancelled || !response) return;
             isFirstLoad.current = false;
             setPersons(response.data);
             setCount(response.count);

@@ -1,14 +1,7 @@
-import { WarningData } from "./interfaces";
-import { backendRequest } from "./request";
+import { Warning, WarningData } from "./interfaces";
+import { backendRequest, backendSearchQuery } from "./request";
 
-export const getAllWarnings = async (search?: string) => {
-    const url = search
-        ? `incident/warnings?search=${search}`
-        : "incident/warnings";
-
-    const response = await backendRequest(url, "GET", true);
-    return await response.json();
-};
+export const warningsQuery = backendSearchQuery<Warning[]>("incident/warnings");
 
 export const getWarningsForPerson = async (personId: string) => {
     const response = await backendRequest(

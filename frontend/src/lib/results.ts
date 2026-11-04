@@ -1,8 +1,9 @@
 import { Competition } from "wcif-helpers";
 import { getLimitByRoundId, getRoundInfoFromWcif } from "wcif-helpers";
 
-import { Attempt, AttemptData } from "./interfaces";
-import { backendRequest } from "./request";
+import { Attempt, AttemptData, Incident, Result } from "./interfaces";
+import { queryFamily } from "./queryCache";
+import { backendQuery, backendRequest } from "./request";
 
 export const getResultsByRoundId = async (roundId: string, search?: string) => {
     let route = `result/round/${roundId}`;
@@ -12,6 +13,11 @@ export const getResultsByRoundId = async (roundId: string, search?: string) => {
     const response = await backendRequest(route, "GET", true);
     return (await response.json()) || [];
 };
+
+/** A round's results without a search, as the Rounds tab first shows them */
+export const roundResultsQuery = queryFamily((roundId) =>
+    backendQuery<Result[]>(`result/round/${roundId}`)
+);
 
 export const getPublicResultsByRoundId = async (
     roundId: string,
@@ -132,14 +138,12 @@ export const undoDoubleCheck = async (roundId: string) => {
     return response.status;
 };
 
-export const getResultsChecks = async (roundId?: string) => {
-    const response = await backendRequest(
-        `result/checks${roundId ? `?roundId=${roundId}` : ""}`,
-        "GET",
-        true
-    );
-    return await response.json();
-};
+/** Checks for one round, or for all of them with an empty round id */
+export const resultsChecksQuery = queryFamily((roundId) =>
+    backendQuery<Incident[]>(
+        `result/checks${roundId ? `?roundId=${roundId}` : ""}`
+    )
+);
 
 export const getRankingFromPreviousRound = (
     roundId: string,

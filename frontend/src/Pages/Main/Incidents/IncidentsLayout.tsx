@@ -6,13 +6,15 @@ import PageTabs, { PageTab } from "@/Components/shared/PageTabs";
 import { usePageHeader } from "@/hooks/usePageHeader";
 import { competitionAtom, unresolvedIncidentsCountAtom } from "@/lib/atoms";
 import {
-    getManualIncidents,
-    getNoteworthyIncidents,
-    getResolvedIncidents,
     getUnresolvedIncidentsCount,
+    manualIncidentsQuery,
+    noteworthyIncidentsQuery,
+    resolvedIncidentsQuery,
+    unresolvedIncidentsQuery,
 } from "@/lib/incidents";
+import { fetchQuery, LIVE_MAX_AGE, prefetchQuery } from "@/lib/queryCache";
 import { cn } from "@/lib/utils";
-import { getAllWarnings } from "@/lib/warnings";
+import { warningsQuery } from "@/lib/warnings";
 import { socket } from "@/socket";
 
 import { IncidentsOutletContext } from "./incidentsContext";
@@ -57,26 +59,43 @@ const IncidentsLayout = () => {
     const isIncidentOpen =
         activeTab === "open" && pathname.replace(/\/$/, "") !== "/incidents";
 
-    const refreshCounts = useCallback(async () => {
-        const [open, resolved, noteworthy, warnings, manual] =
-            await Promise.all([
-                useDevices ? getUnresolvedIncidentsCount() : undefined,
-                useDevices ? getResolvedIncidents() : undefined,
-                useDevices ? getNoteworthyIncidents() : undefined,
-                getAllWarnings(),
-                getManualIncidents(),
-            ]);
-        if (open) setOpenCount(open.count);
-        setCounts({
-            resolved: resolved?.length,
-            noteworthy: noteworthy?.length,
-            warnings: warnings.length,
-            manual: manual.length,
-        });
-    }, [useDevices, setOpenCount]);
+    // The counts come from the full lists, which also fills each tab's cache
+    const loadCounts = useCallback(
+        async (reuseRunning: boolean) => {
+            const options = { reuseRunning };
+            const [open, resolved, noteworthy, warnings, manual] =
+                await Promise.all([
+                    useDevices ? getUnresolvedIncidentsCount() : undefined,
+                    useDevices
+                        ? fetchQuery(resolvedIncidentsQuery(), options)
+                        : undefined,
+                    useDevices
+                        ? fetchQuery(noteworthyIncidentsQuery(), options)
+                        : undefined,
+                    fetchQuery(warningsQuery(), options),
+                    fetchQuery(manualIncidentsQuery(), options),
+                ]);
+            if (open) setOpenCount(open.count);
+            setCounts({
+                resolved: resolved?.length,
+                noteworthy: noteworthy?.length,
+                warnings: warnings.length,
+                manual: manual.length,
+            });
+        },
+        [useDevices, setOpenCount]
+    );
+
+    const refreshCounts = useCallback(() => {
+        loadCounts(false).catch(() => undefined);
+    }, [loadCounts]);
 
     useEffect(() => {
-        refreshCounts();
+        // The open tab's own load may already be on its way
+        loadCounts(true).catch(() => undefined);
+        if (useDevices) {
+            prefetchQuery(unresolvedIncidentsQuery, { maxAge: LIVE_MAX_AGE });
+        }
         // The layout keeps the incidents socket room joined; only listen here
         socket.on("newIncident", refreshCounts);
         socket.on("attemptUpdated", refreshCounts);
@@ -84,7 +103,7 @@ const IncidentsLayout = () => {
             socket.off("newIncident", refreshCounts);
             socket.off("attemptUpdated", refreshCounts);
         };
-    }, [refreshCounts]);
+    }, [loadCounts, refreshCounts, useDevices]);
 
     const activeLabel = TAB_LABELS[activeTab];
     usePageHeader(
