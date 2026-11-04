@@ -6,6 +6,7 @@ import {
     getDefaultCrumbs,
     getDetailLabel,
     getMobileBackTarget,
+    getMobileTabs,
     getNavItems,
     NavContext,
 } from "@/lib/navigation";
@@ -154,10 +155,28 @@ describe("getDefaultCrumbs", () => {
     });
 });
 
+describe("getMobileTabs", () => {
+    const tabIds = (ctx: NavContext) =>
+        getMobileTabs(getNavItems(ctx)).map((item) => item.id);
+
+    it("gives a delegate attendance as the fourth tab", () => {
+        expect(tabIds(delegate)).toEqual([
+            "home",
+            "incidents",
+            "results",
+            "attendance",
+        ]);
+    });
+
+    it("fills staff tabs with persons when attendance is hidden", () => {
+        expect(tabIds(staff)).toEqual(["home", "results", "persons"]);
+    });
+});
+
 describe("getMobileBackTarget", () => {
     const items = getNavItems(delegate);
     const back = (path: string) =>
-        getMobileBackTarget(path, findActiveNavItem(path, items));
+        getMobileBackTarget(path, items, findActiveNavItem(path, items));
 
     it("has no back button on bottom tabs and More", () => {
         expect(back("/")).toBeNull();

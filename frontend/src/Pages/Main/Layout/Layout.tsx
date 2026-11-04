@@ -236,7 +236,7 @@ const AppShell = ({ competition, unresolvedIncidentsCount }: AppShellProps) => {
     const backTo =
         pageHeader?.backTo !== undefined
             ? pageHeader.backTo
-            : getMobileBackTarget(pathname, activeItem);
+            : getMobileBackTarget(pathname, items, activeItem);
 
     const openQuickEntry = () =>
         setQuickEntry({ isOpen: true, roundId: roundMatch?.params.id });
