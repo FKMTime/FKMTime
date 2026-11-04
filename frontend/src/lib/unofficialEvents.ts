@@ -1,7 +1,7 @@
 import { Round } from "wcif-helpers";
 
 import { UnofficialEvent } from "./interfaces";
-import { backendRequest } from "./request";
+import { backendQuery, backendRequest } from "./request";
 
 export const createUnofficialEvent = async (
     eventId: string,
@@ -14,10 +14,8 @@ export const createUnofficialEvent = async (
     return response.status;
 };
 
-export const getCompetitionUnofficialEvents = async () => {
-    const response = await backendRequest(`events/unofficial`, "GET", true);
-    return await response.json();
-};
+export const unofficialEventsQuery =
+    backendQuery<UnofficialEvent[]>("events/unofficial");
 
 export const updateUnofficialEvent = async (
     unofficialEvent: UnofficialEvent

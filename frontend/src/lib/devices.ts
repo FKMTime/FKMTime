@@ -1,5 +1,5 @@
 import { Device, DeviceData } from "./interfaces";
-import { backendRequest } from "./request";
+import { backendQuery, backendRequest } from "./request";
 
 export const getAllDevices = async (type?: string, roomId?: string) => {
     let url = "device";
@@ -11,6 +11,8 @@ export const getAllDevices = async (type?: string, roomId?: string) => {
     if (!response.ok) return [];
     return await response.json();
 };
+
+export const devicesQuery = backendQuery<Device[]>("device");
 
 export const createDevice = async (
     data: DeviceData

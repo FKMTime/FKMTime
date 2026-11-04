@@ -1,20 +1,22 @@
 import { useSetAtom } from "jotai";
 import { RefreshCw, Server, TriangleAlert } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 
 import LoadingPage from "@/Components/LoadingPage";
 import { Alert, AlertTitle } from "@/Components/ui/alert";
 import { Button } from "@/Components/ui/button";
+import { useCachedQuery } from "@/hooks/useCachedQuery";
 import { useToast } from "@/hooks/useToast";
 import { competitionAtom } from "@/lib/atoms";
 import {
+    competitionSettingsQuery,
     getCompetitionInfo,
-    getCompetitionSettings,
     syncCompetition,
     updateCompetitionSettings,
 } from "@/lib/competition";
 import { Competition as CompetitionInterface } from "@/lib/interfaces";
+import { QueryError } from "@/lib/queryCache";
 import { getGitCommitValue } from "@/lib/utils";
 import SetupTabs from "@/Pages/Main/Setup/SetupTabs";
 
@@ -27,28 +29,23 @@ const Competition = () => {
     const navigate = useNavigate();
     const location = useLocation();
     const setCompetitionAtom = useSetAtom(competitionAtom);
-    const initialCompetition: CompetitionInterface | null =
-        location.state?.importedCompetition ?? null;
-    const [isLoading, setIsLoading] = useState<boolean>(!initialCompetition);
+    const importedCompetition: CompetitionInterface | undefined =
+        location.state?.importedCompetition;
     const [isSyncing, setIsSyncing] = useState(false);
     const [openedAt] = useState(() => Date.now());
-    const [competition, setCompetition] = useState<CompetitionInterface | null>(
-        initialCompetition
-    );
-
-    const fetchData = useCallback(async () => {
-        const response = await getCompetitionSettings();
-        if (response.status === 200) {
-            setCompetition(response.data);
-        } else if (response.status === 404) {
-            navigate("/competition/import");
-        }
-        setIsLoading(false);
-    }, [navigate]);
+    const {
+        data: fetchedCompetition,
+        version,
+        error,
+        setData: setCompetition,
+    } = useCachedQuery(competitionSettingsQuery);
+    const competition = fetchedCompetition ?? importedCompetition;
 
     useEffect(() => {
-        fetchData();
-    }, [fetchData]);
+        if (error instanceof QueryError && error.status === 404) {
+            navigate("/competition/import");
+        }
+    }, [error, navigate]);
 
     const handleSync = async () => {
         if (!competition?.wcaId) return;
@@ -77,9 +74,9 @@ const Competition = () => {
 
     const handleSubmit = async (data: CompetitionInterface) => {
         if (!competition) return false;
-        setCompetition(data);
         const status = await updateCompetitionSettings(competition.id, data);
         if (status === 200) {
+            setCompetition(data);
             setCompetitionAtom(data);
             toast({ title: "Settings saved", variant: "success" });
             return true;
@@ -92,7 +89,7 @@ const Competition = () => {
         return false;
     };
 
-    if (isLoading || !competition) return <LoadingPage />;
+    if (!competition) return <LoadingPage />;
 
     const isTokenEmpty = !competition.scoretakingToken;
     const mayTokenHaveExpired =
@@ -145,6 +142,8 @@ const Competition = () => {
                 )}
             <div className="rounded-mobile-card border bg-card p-4 md:rounded-2xl md:p-6">
                 <CompetitionForm
+                    // Fresh settings from the server re-seed the form
+                    key={version}
                     competition={competition}
                     handleSubmit={handleSubmit}
                 />

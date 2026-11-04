@@ -40,7 +40,8 @@ import {
 } from "@/lib/currentGroups";
 import { getEventIconClass, isUnofficialEvent } from "@/lib/events";
 import { Room } from "@/lib/interfaces";
-import { getAllRooms, updateCurrentRound } from "@/lib/rooms";
+import { fetchQuery, getQueryEntry, setQueryData } from "@/lib/queryCache";
+import { roomsQuery, updateCurrentRound } from "@/lib/rooms";
 import { cn } from "@/lib/utils";
 import SetupTabs from "@/Pages/Main/Setup/SetupTabs";
 
@@ -50,8 +51,11 @@ const groupCountLabel = (count: number) =>
 const CurrentGroups = () => {
     const { toast } = useToast();
     const [competition, setCompetition] = useAtom(competitionAtom);
-    const [savedRooms, setSavedRooms] = useState<Room[]>([]);
-    const [rooms, setRooms] = useState<Room[]>([]);
+    // Start from the last known rooms so the page doesn't open empty
+    const [savedRooms, setSavedRooms] = useState<Room[]>(
+        () => getQueryEntry<Room[]>(roomsQuery.key)?.data ?? []
+    );
+    const [rooms, setRooms] = useState<Room[]>(savedRooms);
     const [suggestedGroups, setSuggestedGroups] = useState<
         Record<string, string[]>
     >({});
@@ -67,20 +71,29 @@ const CurrentGroups = () => {
     }, [competition, fetchCompetition]);
 
     useEffect(() => {
-        getAllRooms().then(async (data: Room[]) => {
-            setSavedRooms(data);
-            setRooms(data);
-            const suggested = await Promise.all(
-                data.map((room) =>
-                    getNextGroupsFromScheduleForRoom(room.id, [])
-                )
-            );
-            setSuggestedGroups(
-                Object.fromEntries(
-                    data.map((room, i) => [room.id, suggested[i]])
-                )
-            );
-        });
+        const shownRooms = JSON.stringify(
+            getQueryEntry<Room[]>(roomsQuery.key)?.data ?? []
+        );
+        fetchQuery(roomsQuery, { reuseRunning: true }).then(
+            async (data) => {
+                setSavedRooms(data);
+                // Keep groups picked while the fresh rooms were loading
+                setRooms((current) =>
+                    JSON.stringify(current) === shownRooms ? data : current
+                );
+                const suggested = await Promise.all(
+                    data.map((room) =>
+                        getNextGroupsFromScheduleForRoom(room.id, [])
+                    )
+                );
+                setSuggestedGroups(
+                    Object.fromEntries(
+                        data.map((room, i) => [room.id, suggested[i]])
+                    )
+                );
+            },
+            () => undefined
+        );
     }, []);
 
     const groupOptions = useMemo(
@@ -142,6 +155,7 @@ const CurrentGroups = () => {
         setIsSaving(false);
         if (response.status === 200) {
             setSavedRooms(rooms);
+            setQueryData(roomsQuery.key, rooms);
             toast({ title: "Groups saved", variant: "success" });
         } else if (response.status === 400) {
             toast({ title: response.data.message, variant: "destructive" });

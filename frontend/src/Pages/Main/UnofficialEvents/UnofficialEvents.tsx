@@ -1,11 +1,11 @@
 import { Plus } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 import EmptyState from "@/Components/shared/EmptyState";
 import { Button } from "@/Components/ui/button";
+import { useCachedQuery } from "@/hooks/useCachedQuery";
 import { useIsMobile } from "@/hooks/useMobile";
-import { UnofficialEvent } from "@/lib/interfaces";
-import { getCompetitionUnofficialEvents } from "@/lib/unofficialEvents";
+import { unofficialEventsQuery } from "@/lib/unofficialEvents";
 import SetupTabs from "@/Pages/Main/Setup/SetupTabs";
 
 import CreateUnofficialEventModal from "./Components/CreateUnofficialEventModal";
@@ -13,27 +13,20 @@ import UnofficialEventRow from "./Components/UnofficialEventRow";
 
 const UnofficialEvents = () => {
     const isMobile = useIsMobile();
-    const [unofficialEvents, setUnofficialEvents] = useState<UnofficialEvent[]>(
-        []
+    const { data: unofficialEvents, refetch } = useCachedQuery(
+        unofficialEventsQuery
     );
     const [
         isOpenCreateUnofficialEventModal,
         setIsOpenCreateUnofficialEventModal,
     ] = useState(false);
 
-    const fetchData = async () => {
-        const data = await getCompetitionUnofficialEvents();
-        setUnofficialEvents(data);
-    };
+    const fetchData = () => refetch().catch(() => undefined);
 
     const handleCloseCreateModal = () => {
         setIsOpenCreateUnofficialEventModal(false);
         fetchData();
     };
-
-    useEffect(() => {
-        fetchData();
-    }, []);
 
     return (
         <>
@@ -47,7 +40,7 @@ const UnofficialEvents = () => {
                 <Plus />
                 Add unofficial event
             </Button>
-            {unofficialEvents.length === 0 ? (
+            {!unofficialEvents ? null : unofficialEvents.length === 0 ? (
                 <EmptyState>No unofficial events yet</EmptyState>
             ) : (
                 <ul className="overflow-hidden rounded-mobile-card border bg-card md:rounded-2xl">
