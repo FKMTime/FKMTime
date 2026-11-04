@@ -146,7 +146,7 @@ test.describe("mobile shell", () => {
             "Home",
             "Incidents",
             "Results",
-            "Persons",
+            "Attendance",
             "More",
         ]) {
             await expect(
@@ -158,8 +158,8 @@ test.describe("mobile shell", () => {
         await expect(page).toHaveURL(/\/more$/);
         const main = page.getByRole("main");
         for (const label of [
+            "Persons",
             "Check in",
-            "Attendance",
             "Live solving",
             "Setup",
             "Scrambles",
