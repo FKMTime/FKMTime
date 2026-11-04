@@ -20,13 +20,15 @@ import {
     TableHeader,
     TableRow,
 } from "@/Components/ui/table";
+import { useCachedQuery } from "@/hooks/useCachedQuery";
 import { useIsMobile } from "@/hooks/useMobile";
 import { useToast } from "@/hooks/useToast";
-import { getCompetitionSettings } from "@/lib/competition";
-import { getAllDevices, sortDevicesByName } from "@/lib/devices";
-import { AvailableDevice, Device, Room } from "@/lib/interfaces";
+import { competitionSettingsQuery } from "@/lib/competition";
+import { devicesQuery, sortDevicesByName } from "@/lib/devices";
+import { AvailableDevice, Device } from "@/lib/interfaces";
 import { isAdmin } from "@/lib/permissions";
-import { getAllRooms } from "@/lib/rooms";
+import { fetchQuery } from "@/lib/queryCache";
+import { roomsQuery } from "@/lib/rooms";
 import { idToHex } from "@/lib/utils";
 import SetupTabs from "@/Pages/Main/Setup/SetupTabs";
 import { socket, SocketContext } from "@/socket";
@@ -54,8 +56,6 @@ const Devices = () => {
     const isMobile = useIsMobile();
     const { toast } = useToast();
     const [searchParams, setSearchParams] = useSearchParams();
-    const [isLoading, setIsLoading] = useState<boolean>(true);
-    const [devices, setDevices] = useState<Device[]>([]);
     const [availableDevices, setAvailableDevices] = useState<AvailableDevice[]>(
         []
     );
@@ -63,8 +63,20 @@ const Devices = () => {
         getInitialTab(searchParams.get("tab"))
     );
     const [view, setView] = useState<"table" | "cards">("table");
-    const [rooms, setRooms] = useState<Room[]>([]);
+    const { data: rooms = [] } = useCachedQuery(roomsQuery);
     const [selectedRoomId, setSelectedRoomId] = useState<string>("ALL");
+    const {
+        data: fetchedDevices,
+        refetch,
+        setData: setDevices,
+    } = useCachedQuery(devicesQuery);
+    // Filtering here keeps switching rooms instant
+    const devices = sortDevicesByName(
+        (fetchedDevices ?? []).filter(
+            (device) =>
+                selectedRoomId === "ALL" || device.roomId === selectedRoomId
+        )
+    );
     const [deviceToAdd, setDeviceToAdd] = useState<AvailableDevice | null>(
         null
     );
@@ -72,23 +84,16 @@ const Devices = () => {
         useState<boolean>(false);
     const [isAutoSetupModalOpen, setIsAutoSetupModalOpen] = useState(false);
 
-    const fetchData = async (roomIdParam?: string) => {
-        setIsLoading(true);
-        const data = await getAllDevices(undefined, roomIdParam);
-        setDevices(sortDevicesByName(data));
-        setIsLoading(false);
-    };
+    const fetchData = () => refetch().catch(() => undefined);
 
     const handleCloseCreateDeviceModal = (device?: Device) => {
         if (device?.id && device?.name) {
             if (deviceToAdd) {
                 handleRemoveDeviceRequest(deviceToAdd.espId);
             }
-            setDevices((prev) => sortDevicesByName([...prev, device]));
+            setDevices((prev) => [...(prev ?? []), device]);
         } else if (device) {
-            getAllDevices(undefined, selectedRoomId).then((data) =>
-                setDevices(sortDevicesByName(data))
-            );
+            fetchData();
         }
         setIsOpenCreateDeviceModal(false);
         setDeviceToAdd(null);
@@ -107,8 +112,10 @@ const Devices = () => {
     };
 
     const handleStartAutoSetup = async () => {
-        const { status, data } = await getCompetitionSettings();
-        if (status !== 200) {
+        const data = await fetchQuery(competitionSettingsQuery).catch(
+            () => null
+        );
+        if (!data) {
             toast({
                 title: "Error",
                 description: "Something went wrong",
@@ -128,23 +135,12 @@ const Devices = () => {
         setIsAutoSetupModalOpen(true);
     };
 
-    const handleSelectRoom = (roomId: string) => {
-        setSelectedRoomId(roomId);
-        fetchData(roomId);
-    };
-
     const [isConnected] = useContext(SocketContext) as [
         number,
         React.Dispatch<React.SetStateAction<number>>,
     ];
     useEffect(() => {
-        fetchData();
-
         socket.emit("joinDevices");
-        socket.on("deviceUpdated", () => {
-            fetchData();
-        });
-
         socket.on("deviceRequests", (data: AvailableDevice[]) => {
             setAvailableDevices(data);
         });
@@ -155,15 +151,19 @@ const Devices = () => {
     }, [isConnected]);
 
     useEffect(() => {
-        getAllRooms().then((data) => {
-            setRooms(data);
-            if (data.length === 1) {
-                setSelectedRoomId(data[0].id);
-            }
-        });
-    }, []);
+        const handleDevicesChanged = () => {
+            refetch().catch(() => undefined);
+        };
+        socket.on("deviceUpdated", handleDevicesChanged);
+        // Picks up whatever changed while the socket was disconnected
+        socket.on("connect", handleDevicesChanged);
+        return () => {
+            socket.off("deviceUpdated", handleDevicesChanged);
+            socket.off("connect", handleDevicesChanged);
+        };
+    }, [refetch]);
 
-    if (isLoading && devices.length === 0) return <LoadingPage />;
+    if (!fetchedDevices) return <LoadingPage />;
 
     const handleChangeTab = (value: DevicesTab) => {
         setTab(value);
@@ -206,7 +206,7 @@ const Devices = () => {
         </>
     );
     const roomSelect = rooms.length > 1 && (
-        <Select value={selectedRoomId} onValueChange={handleSelectRoom}>
+        <Select value={selectedRoomId} onValueChange={setSelectedRoomId}>
             <SelectTrigger
                 aria-label="Room"
                 className="w-auto md:h-9 md:w-[180px]"

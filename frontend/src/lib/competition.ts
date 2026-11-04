@@ -3,6 +3,7 @@ import { getScramblingDeviceToken } from "@/lib/scramblingDevicesAuth";
 
 import { Activity, Competition, WCACompetition } from "./interfaces";
 import {
+    backendQuery,
     backendRequest,
     scramblingDeviceBackendRequest,
     wcaApiRequest,
@@ -26,14 +27,9 @@ export const getCompetitionInfo = async () => {
     };
 };
 
-export const getCompetitionSettings = async () => {
-    const response = await backendRequest("competition/settings", "GET", true);
-    const data = await response.json();
-    return {
-        status: response.status,
-        data,
-    };
-};
+export const competitionSettingsQuery = backendQuery<Competition>(
+    "competition/settings"
+);
 
 export const importCompetition = async (id: string) => {
     const response = await backendRequest(
@@ -83,17 +79,13 @@ export const getDevicesSettings = async () => {
     return await response.json();
 };
 
-type CompetitionWithoutWCIF = Omit<Competition, "wcif">;
-
-export const updateDevicesSettings = async (
-    id: string,
-    data: CompetitionWithoutWCIF
-) => {
+export const updateDevicesSettings = async (id: string, data: Competition) => {
+    // The WCIF is large and these settings don't touch it
     const response = await backendRequest(
         `competition/settings/${id}/devices/`,
         "PUT",
         true,
-        data
+        { ...data, wcif: undefined }
     );
     return response.status;
 };

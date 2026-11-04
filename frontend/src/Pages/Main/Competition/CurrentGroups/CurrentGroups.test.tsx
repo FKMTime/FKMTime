@@ -10,17 +10,22 @@ import {
     getPreviousGroupsFromScheduleForRoom,
 } from "@/lib/competition";
 import { Competition, Room } from "@/lib/interfaces";
-import { getAllRooms } from "@/lib/rooms";
+import { clearQueryCache } from "@/lib/queryCache";
+import { roomsQuery } from "@/lib/rooms";
 
 import CurrentGroups from "./CurrentGroups";
 
 vi.mock("@/lib/competition", () => ({
+    competitionSettingsQuery: {
+        key: "competition/settings",
+        fetch: () => new Promise(() => {}),
+    },
     getCompetitionInfo: vi.fn(),
     getNextGroupsFromScheduleForRoom: vi.fn(),
     getPreviousGroupsFromScheduleForRoom: vi.fn(),
 }));
 vi.mock("@/lib/rooms", () => ({
-    getAllRooms: vi.fn(),
+    roomsQuery: { key: "competition/rooms", fetch: vi.fn() },
     updateCurrentRound: vi.fn(),
 }));
 
@@ -44,6 +49,7 @@ const renderPage = async () => {
 
 describe("CurrentGroups", () => {
     beforeEach(() => {
+        clearQueryCache();
         localStorage.setItem(
             "fkmtime-events",
             JSON.stringify([
@@ -56,7 +62,7 @@ describe("CurrentGroups", () => {
     });
 
     it("offers the suggested group in an empty room", async () => {
-        vi.mocked(getAllRooms).mockResolvedValue([room([])]);
+        vi.mocked(roomsQuery.fetch).mockResolvedValue([room([])]);
         await renderPage();
 
         await userEvent.click(
@@ -71,7 +77,7 @@ describe("CurrentGroups", () => {
 
     it("keeps the plain empty state when the schedule has nothing", async () => {
         vi.mocked(getNextGroupsFromScheduleForRoom).mockResolvedValue([]);
-        vi.mocked(getAllRooms).mockResolvedValue([room([])]);
+        vi.mocked(roomsQuery.fetch).mockResolvedValue([room([])]);
         await renderPage();
 
         expect(await screen.findByText("No groups in progress")).toBeTruthy();
@@ -79,7 +85,7 @@ describe("CurrentGroups", () => {
     });
 
     it("steps from the groups on screen, not the saved ones", async () => {
-        vi.mocked(getAllRooms).mockResolvedValue([room(["333-r1-g1"])]);
+        vi.mocked(roomsQuery.fetch).mockResolvedValue([room(["333-r1-g1"])]);
         vi.mocked(getNextGroupsFromScheduleForRoom).mockResolvedValue([
             "333-r1-g3",
         ]);
@@ -104,7 +110,7 @@ describe("CurrentGroups", () => {
     });
 
     it("keeps the room as it is at the edge of the schedule", async () => {
-        vi.mocked(getAllRooms).mockResolvedValue([room(["333-r1-g1"])]);
+        vi.mocked(roomsQuery.fetch).mockResolvedValue([room(["333-r1-g1"])]);
         vi.mocked(getPreviousGroupsFromScheduleForRoom).mockResolvedValue([]);
         await renderPage();
 

@@ -1,5 +1,5 @@
 import { UserPlus } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 import { Button } from "@/Components/ui/button";
 import {
@@ -9,9 +9,9 @@ import {
     TableHeader,
     TableRow,
 } from "@/Components/ui/table";
+import { useCachedQuery } from "@/hooks/useCachedQuery";
 import { useIsMobile } from "@/hooks/useMobile";
-import { User } from "@/lib/interfaces";
-import { getAllUsers } from "@/lib/user";
+import { usersQuery } from "@/lib/user";
 import SetupTabs from "@/Pages/Main/Setup/SetupTabs";
 
 import CreateUserModal from "./Components/CreateUser/CreateUserModal";
@@ -19,23 +19,16 @@ import UserRow from "./Components/UserRow";
 
 const Users = () => {
     const isMobile = useIsMobile();
-    const [users, setUsers] = useState<User[]>([]);
+    const { data: users = [], refetch } = useCachedQuery(usersQuery);
     const [isOpenCreateUserModal, setIsOpenCreateUserModal] =
         useState<boolean>(false);
 
-    const fetchData = async () => {
-        const data = await getAllUsers();
-        setUsers(data);
-    };
+    const fetchData = () => refetch().catch(() => undefined);
 
     const handleCloseCreateUserModal = async () => {
         await fetchData();
         setIsOpenCreateUserModal(false);
     };
-
-    useEffect(() => {
-        fetchData();
-    }, []);
 
     return (
         <>

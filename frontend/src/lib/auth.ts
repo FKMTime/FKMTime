@@ -1,3 +1,4 @@
+import { clearQueryCache } from "./queryCache";
 import { backendRequest } from "./request";
 import { logoutScramblingDevice } from "./scramblingDevicesAuth";
 
@@ -57,6 +58,7 @@ export const getToken = () => {
 };
 
 export const logout = () => {
+    clearQueryCache();
     localStorage.removeItem(TOKEN_NAME);
     localStorage.removeItem(USER_INFO_NAME);
 };
