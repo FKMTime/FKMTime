@@ -24,7 +24,12 @@ import { useCachedQuery } from "@/hooks/useCachedQuery";
 import { useIsMobile } from "@/hooks/useMobile";
 import { useToast } from "@/hooks/useToast";
 import { competitionSettingsQuery } from "@/lib/competition";
-import { devicesQuery, sortDevicesByName } from "@/lib/devices";
+import {
+    devicesQuery,
+    reconnectDevice,
+    retiredDevicesQuery,
+    sortDevicesByName,
+} from "@/lib/devices";
 import { AvailableDevice, Device } from "@/lib/interfaces";
 import { isAdmin } from "@/lib/permissions";
 import { fetchQuery } from "@/lib/queryCache";
@@ -77,6 +82,8 @@ const Devices = () => {
                 selectedRoomId === "ALL" || device.roomId === selectedRoomId
         )
     );
+    const { data: retiredDevices = [], refetch: refetchRetired } =
+        useCachedQuery(retiredDevicesQuery);
     const [deviceToAdd, setDeviceToAdd] = useState<AvailableDevice | null>(
         null
     );
@@ -84,7 +91,10 @@ const Devices = () => {
         useState<boolean>(false);
     const [isAutoSetupModalOpen, setIsAutoSetupModalOpen] = useState(false);
 
-    const fetchData = () => refetch().catch(() => undefined);
+    const fetchData = () => {
+        refetch().catch(() => undefined);
+        refetchRetired().catch(() => undefined);
+    };
 
     const handleCloseCreateDeviceModal = (device?: Device) => {
         if (device?.id && device?.name) {
@@ -104,6 +114,23 @@ const Devices = () => {
             availableDevices.filter((device) => device.espId !== deviceEspId)
         );
         socket.emit("removeDeviceRequest", { espId: deviceEspId });
+    };
+
+    const handleReconnectDevice = async (device: AvailableDevice) => {
+        if (!device.existingDevice) return;
+        const status = await reconnectDevice(device.existingDevice.id);
+        if (status === 200) {
+            setAvailableDevices((prev) =>
+                prev.filter((d) => d.espId !== device.espId)
+            );
+            fetchData();
+        } else {
+            toast({
+                title: "Error",
+                description: "Something went wrong",
+                variant: "destructive",
+            });
+        }
     };
 
     const handleAddDeviceRequest = (device: AvailableDevice) => {
@@ -153,6 +180,7 @@ const Devices = () => {
     useEffect(() => {
         const handleDevicesChanged = () => {
             refetch().catch(() => undefined);
+            refetchRetired().catch(() => undefined);
         };
         socket.on("deviceUpdated", handleDevicesChanged);
         // Picks up whatever changed while the socket was disconnected
@@ -161,7 +189,7 @@ const Devices = () => {
             socket.off("deviceUpdated", handleDevicesChanged);
             socket.off("connect", handleDevicesChanged);
         };
-    }, [refetch]);
+    }, [refetch, refetchRetired]);
 
     if (!fetchedDevices) return <LoadingPage />;
 
@@ -245,7 +273,9 @@ const Devices = () => {
                             <span className="flex flex-1 items-center gap-2.5 text-sm">
                                 <Radio className="size-5 shrink-0 text-primary" />
                                 <span>
-                                    New device wants to connect ·{" "}
+                                    {device.existingDevice
+                                        ? `${device.existingDevice.name} wants to reconnect · `
+                                        : "New device wants to connect · "}
                                     <b className="font-semibold">
                                         ESP ID {idToHex(device.espId)}
                                     </b>
@@ -262,15 +292,27 @@ const Devices = () => {
                                 >
                                     Dismiss
                                 </Button>
-                                <Button
-                                    size="sm"
-                                    className="max-md:flex-1"
-                                    onClick={() =>
-                                        handleAddDeviceRequest(device)
-                                    }
-                                >
-                                    Add
-                                </Button>
+                                {device.existingDevice ? (
+                                    <Button
+                                        size="sm"
+                                        className="max-md:flex-1"
+                                        onClick={() =>
+                                            handleReconnectDevice(device)
+                                        }
+                                    >
+                                        Reconnect
+                                    </Button>
+                                ) : (
+                                    <Button
+                                        size="sm"
+                                        className="max-md:flex-1"
+                                        onClick={() =>
+                                            handleAddDeviceRequest(device)
+                                        }
+                                    >
+                                        Add
+                                    </Button>
+                                )}
                             </div>
                         </div>
                     ))}
@@ -378,6 +420,29 @@ const Devices = () => {
                                 </Table>
                             )}
                         </div>
+                    )}
+                    {retiredDevices.length > 0 && (
+                        <details className="rounded-2xl border bg-card">
+                            <summary className="cursor-pointer select-none px-4 py-3 text-sm font-semibold">
+                                Retired devices ({retiredDevices.length})
+                                <span className="ml-2 font-normal text-muted-foreground">
+                                    Kept so their solves keep their station
+                                </span>
+                            </summary>
+                            <div className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,220px),1fr))] gap-3 border-t p-4">
+                                {sortDevicesByName([...retiredDevices]).map(
+                                    (device) => (
+                                        <DeviceItem
+                                            key={device.id}
+                                            device={device}
+                                            fetchData={fetchData}
+                                            variant="card"
+                                            roomName={roomName(device.roomId)}
+                                        />
+                                    )
+                                )}
+                            </div>
+                        </details>
                     )}
                 </>
             )}

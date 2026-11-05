@@ -309,6 +309,7 @@ export class CompetitionService {
       };
     }
     const devices = await this.prisma.device.findMany({
+      where: { retiredAt: null },
       omit: { signKey: false },
     });
     return {

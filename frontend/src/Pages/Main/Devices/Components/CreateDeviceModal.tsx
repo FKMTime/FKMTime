@@ -44,7 +44,7 @@ const CreateDeviceModal = ({
             onClose(device);
         } else if (status === 409) {
             setError(
-                "Device with this name or ESP ID already exists in database"
+                "A device with this name or ESP ID already exists, maybe among retired devices"
             );
         } else {
             setError("Something went wrong");

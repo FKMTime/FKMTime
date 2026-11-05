@@ -334,6 +334,8 @@ export interface Device extends DeviceData {
     batteryPercentage?: number;
     firmwareVersion?: string | null;
     count?: number;
+    /** Set when the device was deleted while its solves still point to it */
+    retiredAt?: string | null;
     createdAt: Date;
     updatedAt: Date;
     hwVersion: HardwareVersion;
@@ -364,6 +366,8 @@ export interface AvailableDevice {
     signKey: number;
     type: AvailableDeviceType;
     hw: string;
+    /** Set when a device already in the database asks to connect again */
+    existingDevice?: { id: string; name: string };
 }
 
 export enum AvailableDeviceType {

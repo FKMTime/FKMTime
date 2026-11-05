@@ -1,6 +1,8 @@
 import { INestApplication } from '@nestjs/common';
 import { DeviceType, HardwareVersion, Role, Room } from '@prisma/client';
+import { AppGateway } from 'src/app.gateway';
 import { DbService } from 'src/db/db.service';
+import { DeviceService } from 'src/device/device.service';
 import * as request from 'supertest';
 
 import { createTestApp } from './helpers/app.helper';
@@ -223,6 +225,84 @@ describe('Device management (e2e)', () => {
       await asOrganizer(request(server()).put(`/device/${FAKE_ID}`))
         .send(device({ name: `${PREFIX}ghost`, espId: 98005 }))
         .expect(404);
+    });
+  });
+
+  describe('retiring a device', () => {
+    it('retires a device with recorded attempts instead of deleting it', async () => {
+      await asOrganizer(
+        request(server()).delete(`/device/${stationId}`),
+      ).expect(204);
+
+      expect(
+        await db.device.findUnique({ where: { id: stationId } }),
+      ).toMatchObject({ retiredAt: expect.any(Date) });
+      expect(
+        await db.attempt.count({
+          where: { resultId, deviceId: stationId },
+        }),
+      ).toBe(3);
+    });
+
+    it('lists it only among retired devices', async () => {
+      const active = await asOrganizer(request(server()).get('/device')).expect(
+        200,
+      );
+      const retired = await asOrganizer(
+        request(server()).get('/device/retired'),
+      ).expect(200);
+
+      expect(active.body.map((d: { id: string }) => d.id)).not.toContain(
+        stationId,
+      );
+      expect(retired.body).toContainEqual(
+        expect.objectContaining({ id: stationId, count: 3 }),
+      );
+    });
+
+    it('restores it', async () => {
+      await asOrganizer(
+        request(server()).post(`/device/${stationId}/restore`),
+      ).expect(200);
+
+      expect(
+        await db.device.findUnique({ where: { id: stationId } }),
+      ).toMatchObject({ retiredAt: null });
+    });
+  });
+
+  describe('POST /device/:id/reconnect', () => {
+    it('stores the new sign key of a reset device on its existing row', async () => {
+      await app.get(DeviceService).requestToConnect({
+        espId: 98001,
+        signKey: 98777,
+        type: 'STATION' as never,
+        hw: 'V4',
+      });
+      expect(app.get(AppGateway).getDeviceRequest(98001)).toMatchObject({
+        existingDevice: { id: stationId },
+      });
+
+      await asOrganizer(
+        request(server()).post(`/device/${stationId}/reconnect`),
+      ).expect(200);
+
+      expect(
+        await db.device.findUnique({
+          where: { id: stationId },
+          omit: { signKey: false },
+        }),
+      ).toMatchObject({ signKey: 98777, retiredAt: null });
+      expect(app.get(AppGateway).getDeviceRequest(98001)).toBeUndefined();
+      expect(await db.attempt.count({ where: { deviceId: stationId } })).toBe(
+        3,
+      );
+    });
+
+    it('returns 404 when the device has not asked to connect', async () => {
+      await asOrganizer(
+        request(server()).post(`/device/${stationId}/reconnect`),
+      ).expect(404);
     });
   });
 

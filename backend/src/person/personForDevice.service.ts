@@ -64,6 +64,7 @@ export class PersonForDeviceService {
     const device = await this.prisma.device.findFirst({
       where: {
         espId: espId,
+        retiredAt: null,
       },
       include: {
         room: true,

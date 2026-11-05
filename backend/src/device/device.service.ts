@@ -29,7 +29,7 @@ export class DeviceService {
     if (type && !Object.values(DeviceType).includes(type)) {
       throw new HttpException('Invalid device type', 400);
     }
-    const whereParams = {};
+    const whereParams: Prisma.DeviceWhereInput = { retiredAt: null };
     if (type) {
       whereParams['type'] = type;
     }
@@ -45,6 +45,23 @@ export class DeviceService {
         name: 'asc',
       },
     });
+    return this.withAttemptCounts(devices);
+  }
+
+  async getRetiredDevices() {
+    const devices = await this.prisma.device.findMany({
+      include: {
+        room: true,
+      },
+      where: { retiredAt: { not: null } },
+      orderBy: {
+        name: 'asc',
+      },
+    });
+    return this.withAttemptCounts(devices);
+  }
+
+  private async withAttemptCounts<T extends { id: string }>(devices: T[]) {
     const attemptsByDevice = await this.prisma.attempt.groupBy({
       by: ['deviceId'],
       _count: {
@@ -102,6 +119,7 @@ export class DeviceService {
       where: {
         espId: espId,
         type: type,
+        retiredAt: null,
       },
       include: {
         room: true,
@@ -117,19 +135,31 @@ export class DeviceService {
   }
 
   async requestToConnect(data: RequestToConnectDto) {
-    const inInDb = await this.prisma.device.findFirst({
+    const existing = await this.prisma.device.findFirst({
       where: {
         espId: data.espId,
       },
+      omit: { signKey: false },
     });
-    if (inInDb) {
+    const isPaired =
+      existing &&
+      !existing.retiredAt &&
+      (existing.signKey === null || existing.signKey === data.signKey);
+    if (isPaired) {
       return {
         message: 'Device already exists in database',
         status: 409,
         error: true,
       };
     }
-    this.appGateway.handleDeviceRequest(data);
+    // A reset device comes back with a new sign key, and a retired one asks again
+    // when it is turned on. Both are reconnected to their existing row, so the
+    // attempts they recorded keep their station
+    this.appGateway.handleDeviceRequest(
+      existing
+        ? { ...data, existingDevice: { id: existing.id, name: existing.name } }
+        : data,
+    );
     return {
       message: 'Request sent',
       status: 200,
@@ -238,16 +268,81 @@ export class DeviceService {
     };
   }
 
-  async deleteDevice(id: string) {
-    await this.prisma.device.delete({
+  /** Approves a pending connect request from a device already in the database */
+  async reconnectDevice(id: string) {
+    const device = await this.prisma.device.findUnique({ where: { id } });
+    if (!device) {
+      throw new HttpException({ message: 'Device not found' }, 404);
+    }
+    const request =
+      device.espId !== null
+        ? this.appGateway.getDeviceRequest(device.espId)
+        : undefined;
+    if (!request) {
+      throw new HttpException(
+        { message: 'This device has no pending connect request' },
+        404,
+      );
+    }
+    try {
+      await this.prisma.device.update({
+        where: { id },
+        data: { signKey: request.signKey, retiredAt: null },
+      });
+    } catch (e) {
+      if (
+        e instanceof Prisma.PrismaClientKnownRequestError &&
+        e.code === 'P2002'
+      ) {
+        throw new HttpException(
+          { message: 'Another device already uses this sign key' },
+          409,
+        );
+      }
+      throw e;
+    }
+    this.appGateway.handleAddDeviceToDb(device.espId);
+    await this.notifyDevicesChanged();
+    return { message: 'Device reconnected' };
+  }
+
+  async restoreDevice(id: string) {
+    await this.prisma.device.update({
       where: { id },
+      data: { retiredAt: null },
     });
+    await this.notifyDevicesChanged();
+    return { message: 'Device restored' };
+  }
+
+  /** Deletes a device, or retires it when attempts or staff records point to it */
+  async deleteDevice(id: string) {
+    const [attempts, staffActivities, editLogs] = await Promise.all([
+      this.prisma.attempt.count({ where: { deviceId: id } }),
+      this.prisma.staffActivity.count({ where: { deviceId: id } }),
+      this.prisma.attemptEditLog.count({ where: { deviceId: id } }),
+    ]);
+    const hasHistory = attempts + staffActivities + editLogs > 0;
+    if (hasHistory) {
+      await this.prisma.device.update({
+        where: { id },
+        data: { retiredAt: new Date() },
+      });
+    } else {
+      await this.prisma.device.delete({
+        where: { id },
+      });
+    }
+    await this.notifyDevicesChanged();
+    return {
+      message: hasHistory ? 'Device retired' : 'Device deleted',
+    };
+  }
+
+  private async notifyDevicesChanged() {
     this.stationsByEspId.clear();
     this.appGateway.handleDeviceUpdated();
     await this.socketController.sendServerStatus();
-    return {
-      message: 'Device deleted',
-    };
   }
 
   async uploadFirmware(data: UploadFirmwareDto) {

@@ -77,7 +77,7 @@ test.describe("devices", () => {
         await dialog.getByRole("button", { name: "Add" }).click();
         await expect(
             dialog.getByText(
-                "Device with this name or ESP ID already exists in database"
+                "A device with this name or ESP ID already exists, maybe among retired devices"
             )
         ).toBeVisible();
     });

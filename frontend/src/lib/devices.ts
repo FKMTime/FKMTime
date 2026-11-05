@@ -14,6 +14,8 @@ export const getAllDevices = async (type?: string, roomId?: string) => {
 
 export const devicesQuery = backendQuery<Device[]>("device");
 
+export const retiredDevicesQuery = backendQuery<Device[]>("device/retired");
+
 export const createDevice = async (
     data: DeviceData
 ): Promise<{ status: number; device?: Device }> => {
@@ -35,6 +37,20 @@ export const updateDevice = async (data: Device) => {
 
 export const deleteDevice = async (id: string) => {
     const response = await backendRequest(`device/${id}`, "DELETE", true);
+    return response.status;
+};
+
+export const reconnectDevice = async (id: string) => {
+    const response = await backendRequest(
+        `device/${id}/reconnect`,
+        "POST",
+        true
+    );
+    return response.status;
+};
+
+export const restoreDevice = async (id: string) => {
+    const response = await backendRequest(`device/${id}/restore`, "POST", true);
     return response.status;
 };
 
