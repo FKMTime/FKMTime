@@ -1,6 +1,13 @@
+import { queryOptions } from "@tanstack/react-query";
+
+import { queryClient } from "./queryClient";
+
 /**
  * Keeps the last response of each query so a page can render it right away
  * and refresh in the background, instead of showing a loader on every visit.
+ *
+ * The data lives in the TanStack Query cache, under the key `[query.key]`,
+ * so pages using `useQuery` with `toQueryOptions` share it (SPEC-003).
  */
 
 export interface Query<T> {
@@ -20,28 +27,48 @@ export class QueryError extends Error {
     }
 }
 
-const entries = new Map<string, QueryEntry<unknown>>();
-const latestRequests = new Map<string, Promise<unknown>>();
-const listeners = new Map<string, Set<() => void>>();
-const storedAt = new Map<string, number>();
+/** Options for `useQuery` and friends that share this cache */
+export const toQueryOptions = <T>(query: Query<T>) =>
+    queryOptions({
+        queryKey: [query.key],
+        queryFn: query.fetch,
+        // Kept until sign-out, as before
+        gcTime: Infinity,
+    });
 
-const storeData = <T>(key: string, data: T) => {
-    storedAt.set(key, Date.now());
-    const current = entries.get(key);
-    // An unchanged refetch shouldn't re-render or reset a form being edited
-    if (current && JSON.stringify(current.data) === JSON.stringify(data)) {
+const cache = queryClient.getQueryCache();
+const entries = new Map<string, QueryEntry<unknown>>();
+const listeners = new Map<string, Set<() => void>>();
+
+const notify = (key: string) =>
+    listeners.get(key)?.forEach((listener) => listener());
+
+// Versions count changes to the data. Structural sharing keeps the same
+// object when a refetch brings equal data, so that doesn't bump the version
+// and a form being edited is left alone.
+cache.subscribe((event) => {
+    const [key, ...rest] = event.query.queryKey;
+    if (typeof key !== "string" || rest.length > 0) return;
+    if (event.type === "removed") {
+        if (entries.delete(key)) notify(key);
         return;
     }
+    const data = event.query.state.data;
+    const current = entries.get(key);
+    if (data === undefined || current?.data === data) return;
     entries.set(key, { data, version: (current?.version ?? 0) + 1 });
-    listeners.get(key)?.forEach((listener) => listener());
-};
+    notify(key);
+});
 
 export const getQueryEntry = <T>(key: string) =>
     entries.get(key) as QueryEntry<T> | undefined;
 
 /** Whether the key was fetched or saved within the last `maxAge` ms */
-export const isQueryFresh = (key: string, maxAge: number) =>
-    Date.now() - (storedAt.get(key) ?? -Infinity) < maxAge;
+export const isQueryFresh = (key: string, maxAge: number) => {
+    const state = queryClient.getQueryState([key]);
+    if (state?.data === undefined) return false;
+    return Date.now() - state.dataUpdatedAt < maxAge;
+};
 
 /** The cached data, if it was fetched within the last `maxAge` ms */
 export const getFreshQueryData = <T>(key: string, maxAge: number) =>
@@ -52,42 +79,34 @@ export const setQueryData = <T>(
     key: string,
     data: T | ((previous: T | undefined) => T)
 ) => {
-    // A request started before this write would bring back older data
-    latestRequests.delete(key);
-    const next =
+    // A request started before this write would bring back older data. The
+    // cancel is synchronous, so the write below always comes after it.
+    void queryClient.cancelQueries({ queryKey: [key], exact: true });
+    queryClient.setQueryData<T>([key], (previous) =>
         typeof data === "function"
-            ? (data as (previous: T | undefined) => T)(
-                  getQueryEntry<T>(key)?.data
-              )
-            : data;
-    storeData(key, next);
+            ? (data as (previous: T | undefined) => T)(previous)
+            : data
+    );
 };
 
 /**
- * Fetches and caches a query. Only the newest request for a key is stored,
+ * Fetches and caches a query. A fetch while another is loading replaces it
+ * once the key has data, and the replaced call resolves with the newer data,
  * so a slow older response can't overwrite a newer one.
  */
 export const fetchQuery = <T>(
     query: Query<T>,
     { reuseRunning = false } = {}
 ): Promise<T> => {
-    const running = latestRequests.get(query.key);
-    if (reuseRunning && running) return running as Promise<T>;
-
-    const request: Promise<T> = query.fetch().then((data) => {
-        if (latestRequests.get(query.key) === request) {
-            storeData(query.key, data);
-        }
-        return data;
+    // Passed to fetch too: a key first written by setQueryData has no queryFn
+    const options = queryClient.defaultQueryOptions<T, Error, T, string[]>({
+        queryKey: [query.key],
+        queryFn: query.fetch,
+        gcTime: Infinity,
     });
-    const forget = () => {
-        if (latestRequests.get(query.key) === request) {
-            latestRequests.delete(query.key);
-        }
-    };
-    request.then(forget, forget);
-    latestRequests.set(query.key, request);
-    return request;
+    return cache
+        .build(queryClient, options)
+        .fetch(options, { cancelRefetch: !reuseRunning }) as Promise<T>;
 };
 
 /** One stable query per parameter, e.g. per round or search term */
@@ -114,10 +133,11 @@ export const prefetchQuery = <T>(
     query: Query<T>,
     { maxAge }: { maxAge?: number } = {}
 ) => {
-    if (latestRequests.has(query.key)) return;
+    const state = queryClient.getQueryState([query.key]);
+    if (state?.fetchStatus === "fetching") return;
     const isCached =
         maxAge === undefined
-            ? entries.has(query.key)
+            ? state?.data !== undefined
             : isQueryFresh(query.key, maxAge);
     if (isCached) return;
     fetchQuery(query).catch(() => undefined);
@@ -134,7 +154,6 @@ export const subscribeToQuery = (key: string, listener: () => void) => {
 
 /** Drops everything cached, e.g. when the user signs out */
 export const clearQueryCache = () => {
+    queryClient.clear();
     entries.clear();
-    latestRequests.clear();
-    storedAt.clear();
 };

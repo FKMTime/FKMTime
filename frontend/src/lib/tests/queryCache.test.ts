@@ -52,6 +52,7 @@ describe("queryCache", () => {
     });
 
     it("keeps the newer response when an older one arrives last", async () => {
+        setQueryData("items", ["cached"]);
         const older = deferred<string[]>();
         const newer = deferred<string[]>();
         const fetch = vi
@@ -62,11 +63,23 @@ describe("queryCache", () => {
         const first = fetchQuery(query(fetch));
         const second = fetchQuery(query(fetch));
         newer.resolve(["new"]);
-        await second;
         older.resolve(["old"]);
-        await first;
 
+        await expect(second).resolves.toEqual(["new"]);
+        // The replaced call resolves with the newer data too
+        await expect(first).resolves.toEqual(["new"]);
         expect(getQueryEntry("items")?.data).toEqual(["new"]);
+    });
+
+    it("shares the first load instead of starting a second", async () => {
+        const fetch = vi.fn().mockResolvedValue(["a"]);
+
+        const first = fetchQuery(query(fetch));
+        const second = fetchQuery(query(fetch));
+
+        await expect(second).resolves.toEqual(["a"]);
+        await expect(first).resolves.toEqual(["a"]);
+        expect(fetch).toHaveBeenCalledTimes(1);
     });
 
     it("ignores a response that started before a save", async () => {

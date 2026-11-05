@@ -1,10 +1,7 @@
 import { Settings } from "./interfaces";
-import { backendRequest } from "./request";
+import { backendQuery, backendRequest } from "./request";
 
-export const getSettings = async () => {
-    const response = await backendRequest(`settings`, "GET", true);
-    return await response.json();
-};
+export const settingsQuery = backendQuery<Settings>("settings");
 
 export const updateSettings = async (data: Settings) => {
     const response = await backendRequest(`settings`, "PUT", true, data);

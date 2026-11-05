@@ -1,3 +1,4 @@
+import { isCancelledError } from "@tanstack/react-query";
 import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
 
 import {
@@ -64,7 +65,10 @@ export const useCachedQuery = <T>(
     useEffect(() => {
         // A prefetch already on its way counts as the refresh. On failure
         // data that is too old stays hidden: it would look current.
-        load({ reuseRunning: true }).catch(setError);
+        load({ reuseRunning: true }).catch((loadError) => {
+            // Cancelled by a save or sign-out, not a failure
+            if (!isCancelledError(loadError)) setError(loadError);
+        });
     }, [load]);
 
     const shownData = waitingKey === key ? undefined : entry?.data;
