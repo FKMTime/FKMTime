@@ -1,12 +1,12 @@
 # SPEC-003: Shared data fetching in the frontend
 
-- **Status:** Draft
+- **Status:** Accepted
 - **Created:** 2026-11-03
 - **Related:** #543 (`eslint-plugin-react-hooks` 7), #553 (first
   `set-state-in-effect` batch)
 
-**Decision needed:** adopt TanStack Query for reading server data, and migrate
-page by page. The open questions at the end need answers before work starts.
+**Decided:** adopt TanStack Query for reading server data, and migrate page by
+page. See *Decisions* at the end.
 
 ## Problem
 
@@ -219,19 +219,18 @@ timing or attempt recording.
 - `set-state-in-effect` is on and `npm run lint` passes.
 - No `useEffect` calls a read function from `src/lib`.
 
-## Open questions
+## Decisions
 
-1. **Is a new dependency acceptable?** The recommendation depends on it. If not,
-   the fallback is a smaller in-repo hook that also covers reconnects and socket
-   rooms, without shared caching.
-2. **Should `competitionAtom` become a query?** It would pick up refetching and
-   errors, but touches 35 files. Suggested: decide after step 3.
-3. **Should a `staleTime` be set for rooms and competition data?** With `0`, a
-   page change still refetches, so shared data would be deduplicated only between
-   components mounted together. Suggested: a short `staleTime` for these two,
-   because socket-driven invalidation keeps them fresh.
-4. **Should the panel refetch on window focus?** It would help tablets waking up
-   at a venue, at the cost of more requests. Suggested: leave it off and revisit
-   once reconnect invalidation is in.
-5. **Should a 401 from a query send the user to sign in?** It's out of scope here,
-   but `RequestError` makes it a small follow-up.
+Answers to the open questions, agreed when the spec was accepted.
+
+1. **New dependency:** accepted. TanStack Query is added.
+2. **`competitionAtom`:** stays an atom for now, with a success check added in
+   step 1. Whether it becomes a query is decided after step 3.
+3. **`staleTime` for rooms and competition data:** 30 seconds, so components
+   and pages that need them within that window share one request. No socket
+   event announces changes to rooms or competition data, so a change made on
+   another device appears on the next fetch after that window, or after a
+   reconnect. Changes made in this panel invalidate the data straight away.
+   Revisit if that delay causes problems.
+4. **Refetch on window focus:** off. Revisit once reconnect invalidation is in.
+5. **401 from a query:** a follow-up after this spec, not part of it.
