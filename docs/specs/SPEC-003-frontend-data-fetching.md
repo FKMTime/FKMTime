@@ -103,51 +103,62 @@ One `QueryClient`, provided in `App.tsx`, with these defaults:
 
 ### Reading data
 
-Reads go through a new `requestJson` helper, which throws a `RequestError` with
-the HTTP status when a response isn't OK. Existing functions that return a
-status keep working for mutations and unmigrated pages.
-
-Each area of `src/lib` exports its query options, so keys live in one place:
+Reads are declared with `backendQuery` from `src/lib/request.ts`, which throws a
+`QueryError` with the HTTP status when a response isn't OK. Existing functions
+that return a status keep working for mutations and unmigrated pages. Each area
+of `src/lib` exports its queries, so keys live in one place, and pages turn them
+into `useQuery` options with `toQueryOptions`:
 
 ```ts
-export const roomQueries = {
-    all: () =>
-        queryOptions({
-            queryKey: ["rooms"],
-            queryFn: () => requestJson<Room[]>("competition/rooms"),
-        }),
-};
+// src/lib/rooms.ts
+export const roomsQuery = backendQuery<Room[]>("competition/rooms");
 
-const { data: rooms, error } = useQuery(roomQueries.all());
+// a page
+const { data: rooms, isError } = useQuery(toQueryOptions(roomsQuery));
 ```
 
-Keys are nested by area (`["results", roundId, search]`), so invalidating
-`["results"]` covers every results query.
+The query key is `[query.key]`, the request path, so data is shared with every
+other use of the same query.
 
 Debounced searches use a small `useDebouncedValue` hook. The debounced value
 goes in the key, with `keepPreviousData` so the list doesn't blank while typing.
 
+### The in-repo cache
+
+#564 and #565 added an in-repo cache (`lib/queryCache.ts` and `useCachedQuery`)
+while this spec was a draft. Rather than run two caches, `queryCache` keeps its
+API but stores its data in the same `QueryClient`, so its callers keep working
+unchanged and share data with `useQuery` pages. Pages move from
+`useCachedQuery` to `useQuery` as they migrate, and step 5 removes the bridge.
+
+One behaviour differs from the in-repo cache. A fetch while the first load of a
+key is running shares that load instead of starting a second request. Once a key
+has data, a newer fetch still replaces an older one, and the replaced call
+resolves with the newer data.
+
 ### Socket rooms
 
 A shared `useSocketRoom` hook replaces each page's join, leave, on and off
-effect:
+effect. The room name forms the `join…` and `leave…` events, and `null` joins
+nothing:
 
 ```ts
-useSocketRoom({
-    join: () => socket.emit("joinResults", { roundId }),
-    leave: () => socket.emit("leaveResults", { roundId }),
-    invalidateOn: { resultEntered: ["results", roundId] },
-    enabled: !!roundId,
+useSocketRoom(roundId ? "Results" : null, {
+    params: { roundId },
+    invalidateOn: { resultEntered: ["result/round/" + roundId] },
 });
 ```
 
-It rejoins on every connect and always removes its listeners. Its dependencies
+It joins again on every connect, waits for the connection instead of buffering a
+second join, and always removes its listeners. Options are compared by value and
 don't include the search text, so typing doesn't leave the room.
 
-`Layout` and `PublicLayout` call `queryClient.invalidateQueries()` on every
-reconnect. That refetches everything on screen, closing the reconnect gap in
-one place instead of on each page. Pages can drop the connection counter from
-`SocketContext` as they migrate, and it's removed once nothing reads it.
+`Layout` and `PublicLayout` mount `useRefetchOnReconnect`, which calls
+`queryClient.invalidateQueries()` after every socket reconnect. That refetches
+every `useQuery` on screen, closing the reconnect gap in one place instead of on
+each page. Pages still on `useCachedQuery` keep their own reconnect handling
+until they migrate. Pages can drop the connection counter from `SocketContext`
+as they migrate, and it's removed once nothing reads it.
 
 ### Errors and loading
 
@@ -178,15 +189,16 @@ Playwright tests cover the migrated pages end to end.
 
 Each step is a separate PR, and pages can be migrated in any order after step 1.
 
-1. **Foundation:** the client, `requestJson`, `useSocketRoom`, the error
-   component, the test helper, and the `competitionAtom` check. Reconnect
-   invalidation goes in here.
+1. **Foundation:** the client, the in-repo cache moved onto it,
+   `useSocketRoom`, reconnect invalidation, the error component, the test helper,
+   and the `competitionAtom` check.
 2. **Proof:** `Settings`, `Users` and `UnofficialEvents`, which are simple
    fetch-on-mount pages. Stop here and review before going further.
 3. **Lists and search:** the incident lists, `AssignCards`, `Persons`, `CheckIn`.
 4. **Live pages:** `Results`, `Attendance`, `Devices`, `Home`, the public pages.
    These matter most on competition day, so they go last, one per PR.
-5. **Clean-up:** remaining findings, remove the connection counter, turn on
+5. **Clean-up:** remaining findings, remove `useCachedQuery` and the
+   `queryCache` bridge, remove the connection counter, turn on
    `set-state-in-effect`.
 
 ### Competition day
@@ -234,3 +246,6 @@ Answers to the open questions, agreed when the spec was accepted.
    Revisit if that delay causes problems.
 4. **Refetch on window focus:** off. Revisit once reconnect invalidation is in.
 5. **401 from a query:** a follow-up after this spec, not part of it.
+6. **The in-repo cache from #564 and #565:** replaced by TanStack Query rather
+   than kept alongside it. During the migration it stores its data in the
+   `QueryClient`, as *The in-repo cache* describes.
