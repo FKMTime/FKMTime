@@ -8,6 +8,7 @@ import {
     TableHeader,
     TableRow,
 } from "@/Components/ui/table";
+import { getEventIdFromRoundId } from "@/lib/activities";
 import { DNF_VALUE } from "@/lib/constants";
 import {
     AttemptToEnterWithScorecard,
@@ -89,6 +90,7 @@ const AttemptsList: React.FC<AttemptsListProps> = ({
                             <TableCell>
                                 <PenaltySelect
                                     value={attempt.penalty}
+                                    eventId={getEventIdFromRoundId(roundId)}
                                     onChange={(penalty) =>
                                         onChange({ ...attempt, penalty })
                                     }

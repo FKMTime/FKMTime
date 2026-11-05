@@ -4,6 +4,7 @@ import AttemptResultInput from "@/Components/AttemptResultInput";
 import AttemptWarnings from "@/Components/AttemptWarnings";
 import PenaltySelect from "@/Components/PenaltySelect";
 import { useToast } from "@/hooks/useToast";
+import { getEventIdFromRoundId } from "@/lib/activities";
 import { DNF_VALUE, DNS_VALUE } from "@/lib/constants";
 import {
     Attempt,
@@ -84,6 +85,7 @@ const AttemptsList = ({
                             />
                             <PenaltySelect
                                 value={attempt.penalty}
+                                eventId={getEventIdFromRoundId(result.roundId)}
                                 onChange={(penalty) =>
                                     updateAttempt({ ...attempt, penalty })
                                 }

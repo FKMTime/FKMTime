@@ -20,6 +20,7 @@ import {
 import { Input } from "@/Components/ui/input";
 import { Label } from "@/Components/ui/label";
 import { useToast } from "@/hooks/useToast";
+import { getEventIdFromRoundId } from "@/lib/activities";
 import { DNF_VALUE } from "@/lib/constants";
 import {
     AttemptStatus,
@@ -170,6 +171,9 @@ const IncidentForm = ({
                                 <FormLabel>Penalty</FormLabel>
                                 <PenaltySelect
                                     value={field.value}
+                                    eventId={getEventIdFromRoundId(
+                                        editedIncident.result.roundId
+                                    )}
                                     onChange={field.onChange}
                                     disabled={isLoading}
                                 />

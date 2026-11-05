@@ -13,7 +13,7 @@ import {
 } from 'src/attempt-edit-log/attempt-edit-log.service';
 import { AttendanceService } from 'src/attendance/attendance.service';
 import { DNS_VALUE, publicPersonSelect } from 'src/constants';
-import { isUnofficialEvent } from 'src/events';
+import { getMaxPenalty, isUnofficialEvent } from 'src/events';
 import { IncidentService } from 'src/incident/incident.service';
 import {
   getAttemptsWaitingForExtra,
@@ -30,6 +30,16 @@ import { CreateAttemptDto } from './dto/createAttempt.dto';
 import { EnterScorecardDto } from './dto/enterScorecard.dto';
 import { GiveExtrasDto } from './dto/giveExtras.dto';
 import { UpdateAttemptDto } from './dto/updateAttempt.dto';
+
+const assertPenaltyAllowed = (penalty: number, roundId: string) => {
+  const maxPenalty = getMaxPenalty(roundId.split('-r')[0]);
+  if (penalty > maxPenalty) {
+    throw new HttpException(
+      `The penalty can be at most +${maxPenalty} in this event`,
+      400,
+    );
+  }
+};
 
 @Injectable()
 export class AttemptService {
@@ -53,6 +63,7 @@ export class AttemptService {
         400,
       );
     }
+    assertPenaltyAllowed(data.penalty, data.roundId);
 
     const result = await this.resultService.getResultOrCreate(
       data.competitorId,
@@ -576,10 +587,14 @@ export class AttemptService {
   async updateAttempt(id: string, data: UpdateAttemptDto, userId: string) {
     const attemptToUpdate = await this.prisma.attempt.findUnique({
       where: { id: id },
-      include: { result: { select: { personId: true } } },
+      include: { result: { select: { personId: true, roundId: true } } },
     });
     if (!attemptToUpdate) {
       throw new HttpException('Attempt not found', 404);
+    }
+    // An attempt saved over the cap before it existed can still be edited otherwise
+    if (data.penalty !== attemptToUpdate.penalty) {
+      assertPenaltyAllowed(data.penalty, attemptToUpdate.result.roundId);
     }
 
     if (data.judgeId && data.judgeId === attemptToUpdate.result?.personId) {

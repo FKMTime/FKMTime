@@ -378,6 +378,7 @@ describe('Station socket protocol (e2e)', () => {
         expect.objectContaining({
           groupId: '333-r1-g1',
           useInspection: true,
+          maxPenalty: 16,
           // 333-r1 has a 10:00.00 time limit, sent in milliseconds
           limit: 600000,
           name: expect.stringContaining('R1'),
@@ -403,6 +404,10 @@ describe('Station socket protocol (e2e)', () => {
         (g: any) => g.groupId === '333bf-r1-g1',
       );
       expect(bld.useInspection).toBe(false);
+      const clock = res.data.possibleGroups.find(
+        (g: any) => g.groupId === 'clock-r1-g1',
+      );
+      expect(clock.maxPenalty).toBe(14);
       expect(bld.name).toBe(bld.secondaryText);
       expect(bld.name).toMatch(/ - R1$/);
     });
