@@ -120,6 +120,12 @@ const { data: rooms, isError } = useQuery(toQueryOptions(roomsQuery));
 The query key is `[query.key]`, the request path, so data is shared with every
 other use of the same query.
 
+Pages that used `useCachedQuery`'s options move to `useLiveQuery`, which wraps
+`useQuery` and keeps them:
+- `maxAge` hides cached data older than that until a newer response arrives, and
+  keeps it hidden if that refresh fails, so old data never looks current.
+- `keepPreviousData` keeps the last key's data on screen while a new search loads.
+
 Debounced searches use a small `useDebouncedValue` hook. The debounced value
 goes in the key, with `keepPreviousData` so the list doesn't blank while typing.
 
@@ -152,6 +158,11 @@ useSocketRoom(roundId ? "Results" : null, {
 It joins again on every connect, waits for the connection instead of buffering a
 second join, and always removes its listeners. Options are compared by value and
 don't include the search text, so typing doesn't leave the room.
+
+Where a layout already keeps the room joined, pages listen with
+`useSocketEvents({ event: handler })` instead. For example, `IncidentsLayout`
+refreshes every incident list on `newIncident` and `attemptUpdated`, and its tab
+counts come from the same lists the tabs show.
 
 `Layout` and `PublicLayout` mount `useRefetchOnReconnect`, which calls
 `queryClient.invalidateQueries()` after every socket reconnect. That refetches

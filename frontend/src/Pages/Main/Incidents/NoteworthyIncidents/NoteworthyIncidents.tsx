@@ -3,12 +3,13 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import EmptyState from "@/Components/shared/EmptyState";
+import RequestError from "@/Components/shared/RequestError";
 import RowActions from "@/Components/shared/RowActions";
 import SearchInput from "@/Components/shared/SearchInput";
 import SectionLoading from "@/Components/shared/SectionLoading";
 import { Button } from "@/Components/ui/button";
-import { useCachedQuery } from "@/hooks/useCachedQuery";
 import { useDeferredDelete } from "@/hooks/useDeferredDelete";
+import { useLiveQuery } from "@/hooks/useLiveQuery";
 import {
     deleteNoteworthyIncident,
     noteworthyIncidentsQuery,
@@ -24,18 +25,19 @@ const NoteworthyIncidents = () => {
     const navigate = useNavigate();
     const { refreshCounts } = useIncidentsContext();
     const [search, setSearch] = useState("");
-    const { data: incidents, refetch } = useCachedQuery(
-        noteworthyIncidentsQuery(search),
-        { maxAge: LIVE_MAX_AGE, keepPreviousData: true }
-    );
+    const {
+        data: incidents,
+        isError,
+        refetch,
+    } = useLiveQuery(noteworthyIncidentsQuery(search), {
+        maxAge: LIVE_MAX_AGE,
+        keepPreviousData: true,
+    });
     const [isCreateOpen, setIsCreateOpen] = useState(false);
     const [editedIncident, setEditedIncident] =
         useState<NoteworthyIncident | null>(null);
 
-    const refresh = () => {
-        refetch().catch(() => undefined);
-        refreshCounts();
-    };
+    const refresh = refreshCounts;
 
     const { deleteLater, isPending } = useDeferredDelete({
         remove: deleteNoteworthyIncident,
@@ -51,6 +53,12 @@ const NoteworthyIncidents = () => {
 
     return (
         <div className="flex flex-col gap-4">
+            {isError && (
+                <RequestError
+                    hasData={!!incidents}
+                    onRetry={() => void refetch()}
+                />
+            )}
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <SearchInput
                     value={search}

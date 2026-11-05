@@ -2,12 +2,13 @@ import { Plus, Trash2 } from "lucide-react";
 import { useState } from "react";
 
 import EmptyState from "@/Components/shared/EmptyState";
+import RequestError from "@/Components/shared/RequestError";
 import RowActions from "@/Components/shared/RowActions";
 import SearchInput from "@/Components/shared/SearchInput";
 import SectionLoading from "@/Components/shared/SectionLoading";
 import { Button } from "@/Components/ui/button";
-import { useCachedQuery } from "@/hooks/useCachedQuery";
 import { useDeferredDelete } from "@/hooks/useDeferredDelete";
+import { useLiveQuery } from "@/hooks/useLiveQuery";
 import { Warning } from "@/lib/interfaces";
 import { LIVE_MAX_AGE } from "@/lib/queryCache";
 import { deleteWarning, warningsQuery } from "@/lib/warnings";
@@ -18,16 +19,17 @@ import AddWarningModal from "./Components/AddWarningModal";
 const Warnings = () => {
     const { refreshCounts } = useIncidentsContext();
     const [search, setSearch] = useState("");
-    const { data: warnings, refetch } = useCachedQuery(warningsQuery(search), {
+    const {
+        data: warnings,
+        isError,
+        refetch,
+    } = useLiveQuery(warningsQuery(search), {
         maxAge: LIVE_MAX_AGE,
         keepPreviousData: true,
     });
     const [isAddOpen, setIsAddOpen] = useState(false);
 
-    const refresh = () => {
-        refetch().catch(() => undefined);
-        refreshCounts();
-    };
+    const refresh = refreshCounts;
 
     const { deleteLater, isPending } = useDeferredDelete({
         remove: deleteWarning,
@@ -43,6 +45,12 @@ const Warnings = () => {
 
     return (
         <div className="flex flex-col gap-4">
+            {isError && (
+                <RequestError
+                    hasData={!!warnings}
+                    onRetry={() => void refetch()}
+                />
+            )}
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <SearchInput
                     value={search}
