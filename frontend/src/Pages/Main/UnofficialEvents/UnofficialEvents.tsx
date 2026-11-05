@@ -1,10 +1,12 @@
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Plus } from "lucide-react";
 import { useState } from "react";
 
 import EmptyState from "@/Components/shared/EmptyState";
+import RequestError from "@/Components/shared/RequestError";
 import { Button } from "@/Components/ui/button";
-import { useCachedQuery } from "@/hooks/useCachedQuery";
 import { useIsMobile } from "@/hooks/useMobile";
+import { toQueryOptions } from "@/lib/queryCache";
 import { unofficialEventsQuery } from "@/lib/unofficialEvents";
 import SetupTabs from "@/Pages/Main/Setup/SetupTabs";
 
@@ -13,15 +15,22 @@ import UnofficialEventRow from "./Components/UnofficialEventRow";
 
 const UnofficialEvents = () => {
     const isMobile = useIsMobile();
-    const { data: unofficialEvents, refetch } = useCachedQuery(
-        unofficialEventsQuery
-    );
+    const queryClient = useQueryClient();
+    const {
+        data: unofficialEvents,
+        isError,
+        refetch,
+    } = useQuery(toQueryOptions(unofficialEventsQuery));
     const [
         isOpenCreateUnofficialEventModal,
         setIsOpenCreateUnofficialEventModal,
     ] = useState(false);
 
-    const fetchData = () => refetch().catch(() => undefined);
+    const fetchData = () =>
+        void queryClient.invalidateQueries({
+            queryKey: toQueryOptions(unofficialEventsQuery).queryKey,
+        });
+    const retry = () => void refetch();
 
     const handleCloseCreateModal = () => {
         setIsOpenCreateUnofficialEventModal(false);
@@ -40,6 +49,9 @@ const UnofficialEvents = () => {
                 <Plus />
                 Add unofficial event
             </Button>
+            {isError && (
+                <RequestError hasData={!!unofficialEvents} onRetry={retry} />
+            )}
             {!unofficialEvents ? null : unofficialEvents.length === 0 ? (
                 <EmptyState>No unofficial events yet</EmptyState>
             ) : (

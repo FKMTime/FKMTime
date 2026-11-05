@@ -1,14 +1,17 @@
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { KeyRound } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 import LoadingPage from "@/Components/LoadingPage";
+import RequestError from "@/Components/shared/RequestError";
 import SwitchRow from "@/Components/shared/SwitchRow";
 import { Button } from "@/Components/ui/button";
 import { useToast } from "@/hooks/useToast";
 import { Settings as SettingsInterface } from "@/lib/interfaces";
 import { isDelegate } from "@/lib/permissions";
+import { toQueryOptions } from "@/lib/queryCache";
 import { useScanSoundSetting } from "@/lib/scanSound";
-import { getSettings, updateSettings } from "@/lib/settings";
+import { settingsQuery, updateSettings } from "@/lib/settings";
 
 import ChangePasswordModal from "./Components/ChangePasswordModal";
 import QuickActions from "./Components/QuickActions";
@@ -17,23 +20,24 @@ import SettingsForm from "./Components/SettingsForm";
 const Settings = () => {
     const [isScanSoundOn, setIsScanSoundOn] = useScanSoundSetting();
     const { toast } = useToast();
-    const [settings, setSettings] = useState<SettingsInterface | null>(null);
-    const [isLoading, setIsLoading] = useState<boolean>(false);
+    const queryClient = useQueryClient();
+    const {
+        data: settings,
+        isError,
+        refetch,
+    } = useQuery(toQueryOptions(settingsQuery));
+    const [isSaving, setIsSaving] = useState(false);
     const [isOpenChangePasswordModal, setIsOpenChangePasswordModal] =
         useState<boolean>(false);
 
-    const fetchData = async () => {
-        setIsLoading(true);
-        const data = await getSettings();
-        setSettings(data);
-        setIsLoading(false);
-    };
-
     const handleSubmit = async (data: SettingsInterface) => {
         if (!settings) return;
-        setIsLoading(true);
+        setIsSaving(true);
         const status = await updateSettings(data);
         if (status === 200) {
+            queryClient.invalidateQueries({
+                queryKey: toQueryOptions(settingsQuery).queryKey,
+            });
             toast({ title: "Account saved", variant: "success" });
         } else {
             toast({
@@ -42,17 +46,18 @@ const Settings = () => {
                 variant: "destructive",
             });
         }
-        setIsLoading(false);
+        setIsSaving(false);
     };
 
-    useEffect(() => {
-        fetchData();
-    }, []);
+    const retry = () => void refetch();
 
-    if (!settings) return <LoadingPage />;
+    if (!settings) {
+        return isError ? <RequestError onRetry={retry} /> : <LoadingPage />;
+    }
 
     return (
         <>
+            {isError && <RequestError hasData onRetry={retry} />}
             <section
                 aria-labelledby="this-device"
                 className="flex max-w-[560px] flex-col gap-2 rounded-mobile-card border bg-card p-4 md:rounded-2xl md:p-[22px]"
@@ -89,7 +94,7 @@ const Settings = () => {
                     <SettingsForm
                         settings={settings}
                         handleSubmit={handleSubmit}
-                        isLoading={isLoading}
+                        isLoading={isSaving}
                     />
                     <Button
                         variant="outline"

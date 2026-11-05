@@ -4,6 +4,8 @@
 // learn more: https://github.com/testing-library/jest-dom
 import "@testing-library/jest-dom";
 
+import { queryClient } from "@/lib/queryClient";
+
 // jsdom lacks APIs Radix popovers and menus rely on
 class ResizeObserverStub {
     observe() {}
@@ -31,3 +33,10 @@ window.matchMedia ??= (query: string) => {
         dispatchEvent: () => false,
     } as MediaQueryList;
 };
+
+// Failed requests fail straight away in tests instead of retrying
+const queryDefaults = queryClient.getDefaultOptions();
+queryClient.setDefaultOptions({
+    ...queryDefaults,
+    queries: { ...queryDefaults.queries, retry: false },
+});

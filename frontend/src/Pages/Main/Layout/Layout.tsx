@@ -1,14 +1,16 @@
 import { useAtom, useAtomValue, useSetAtom } from "jotai";
-import { Suspense, useCallback, useContext, useEffect } from "react";
+import { Suspense, useCallback, useContext, useEffect, useState } from "react";
 import { matchPath, Outlet, useNavigate } from "react-router-dom";
 
 import LoadingPage from "@/Components/LoadingPage";
+import RequestError from "@/Components/shared/RequestError";
 import {
     NewIncidentSocketData,
     useCompetitionSocketEvents,
 } from "@/hooks/useCompetitionSocketEvents";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import { useNavItems } from "@/hooks/useNavItems";
+import { useRefetchOnReconnect } from "@/hooks/useRefetchOnReconnect";
 import {
     competitionAtom,
     pageHeaderAtom,
@@ -45,6 +47,8 @@ const Layout = () => {
     const [unresolvedIncidentsCount, setUnresolvedIncidentsCount] = useAtom(
         unresolvedIncidentsCountAtom
     );
+    const [isCompetitionError, setIsCompetitionError] = useState(false);
+    useRefetchOnReconnect();
 
     const [isConnected, setConnected] = useContext(SocketContext) as [
         number,
@@ -58,10 +62,17 @@ const Layout = () => {
     }, [setUnresolvedIncidentsCount]);
 
     const fetchCompetition = useCallback(async () => {
-        const response = await getCompetitionInfo();
-        if (response.status === 404) {
+        const response = await getCompetitionInfo().catch(() => null);
+        if (response?.status === 404) {
             navigate("/competition/import");
+            return;
         }
+        // 35 files read this atom: only a real competition goes in
+        if (response?.status !== 200) {
+            setIsCompetitionError(true);
+            return;
+        }
+        setIsCompetitionError(false);
         setCompetition(response.data);
     }, [navigate, setCompetition]);
 
@@ -185,8 +196,15 @@ const Layout = () => {
         fetchUnresolvedIncidentsCount();
     }, [fetchUnresolvedIncidentsCount]);
 
-    if (!userInfo || !competition) {
-        return <></>;
+    if (!userInfo) return <></>;
+    if (!competition) {
+        return isCompetitionError ? (
+            <div className="p-4 md:p-8">
+                <RequestError onRetry={fetchCompetition} />
+            </div>
+        ) : (
+            <></>
+        );
     }
     return (
         <AppShell

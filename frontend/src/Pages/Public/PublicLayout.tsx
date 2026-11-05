@@ -7,6 +7,7 @@ import LoadingPage from "@/Components/LoadingPage";
 import ModeToggle from "@/Components/ModeToggle";
 import { StatusDot } from "@/Components/shared/StatusBadge";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
+import { useRefetchOnReconnect } from "@/hooks/useRefetchOnReconnect";
 import { competitionAtom } from "@/lib/atoms";
 import { getPublicCompetitionInfo, getPublicRooms } from "@/lib/competition";
 import { getEvents } from "@/lib/events";
@@ -26,6 +27,7 @@ const PublicLayout = () => {
     const location = useLocation();
     const [competition, setCompetition] = useAtom(competitionAtom);
     const [liveRoundIds, setLiveRoundIds] = useState<string[] | null>(null);
+    useRefetchOnReconnect();
     const [isLive, setIsLive] = useState(socket.connected);
     const [isConnected, setConnected] = useContext(SocketContext) as [
         number,

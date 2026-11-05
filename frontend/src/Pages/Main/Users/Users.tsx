@@ -1,6 +1,8 @@
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { UserPlus } from "lucide-react";
 import { useState } from "react";
 
+import RequestError from "@/Components/shared/RequestError";
 import { Button } from "@/Components/ui/button";
 import {
     Table,
@@ -9,8 +11,8 @@ import {
     TableHeader,
     TableRow,
 } from "@/Components/ui/table";
-import { useCachedQuery } from "@/hooks/useCachedQuery";
 import { useIsMobile } from "@/hooks/useMobile";
+import { toQueryOptions } from "@/lib/queryCache";
 import { usersQuery } from "@/lib/user";
 import SetupTabs from "@/Pages/Main/Setup/SetupTabs";
 
@@ -19,11 +21,17 @@ import UserRow from "./Components/UserRow";
 
 const Users = () => {
     const isMobile = useIsMobile();
-    const { data: users = [], refetch } = useCachedQuery(usersQuery);
+    const queryClient = useQueryClient();
+    const { data, isError, refetch } = useQuery(toQueryOptions(usersQuery));
+    const users = data ?? [];
     const [isOpenCreateUserModal, setIsOpenCreateUserModal] =
         useState<boolean>(false);
 
-    const fetchData = () => refetch().catch(() => undefined);
+    const fetchData = () =>
+        queryClient.invalidateQueries({
+            queryKey: toQueryOptions(usersQuery).queryKey,
+        });
+    const retry = () => void refetch();
 
     const handleCloseCreateUserModal = async () => {
         await fetchData();
@@ -42,7 +50,8 @@ const Users = () => {
                 <UserPlus />
                 Create user
             </Button>
-            {isMobile ? (
+            {isError && <RequestError hasData={!!data} onRetry={retry} />}
+            {isError && !data ? null : isMobile ? (
                 <ul className="overflow-hidden rounded-mobile-card border bg-card">
                     {users.map((user) => (
                         <UserRow
