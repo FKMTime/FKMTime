@@ -128,3 +128,10 @@ jobs:
             $(printf '${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@sha256:%s ' *)
       - name: Inspect image
         run: docker buildx imagetools inspect "${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.meta.outputs.version }}"
+
+  alert:
+    name: Alert on failure
+    needs: [build, merge]
+    if: failure() && github.event_name != 'pull_request'
+    uses: FKMTime/.github/.github/workflows/discord-alert.yml@main
+    secrets: inherit
