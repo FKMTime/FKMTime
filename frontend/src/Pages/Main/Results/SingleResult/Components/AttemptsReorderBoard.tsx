@@ -311,6 +311,11 @@ const AttemptsReorderBoard = ({
 }: AttemptsReorderBoardProps) => {
     const { toast } = useToast();
     const [standard, setStandard] = useState<Attempt[]>(initialStandard);
+    const [loadedStandard, setLoadedStandard] = useState(initialStandard);
+    if (initialStandard !== loadedStandard) {
+        setLoadedStandard(initialStandard);
+        setStandard(initialStandard);
+    }
     const [activeId, setActiveId] = useState<string | null>(null);
     const [overId, setOverId] = useState<string | null>(null);
     const containerRef = useRef<HTMLDivElement>(null);
@@ -324,10 +329,6 @@ const AttemptsReorderBoard = ({
         },
         []
     );
-
-    useEffect(() => {
-        setStandard(initialStandard);
-    }, [initialStandard]);
 
     const sensors = useSensors(
         useSensor(PointerSensor, { activationConstraint: { distance: 5 } })
