@@ -187,6 +187,34 @@
     {
       "key": "judgeIsCompetitor",
       "translation": "Judge cannot be the same person as competitor"
+    },
+    {
+      "key": "sleep",
+      "translation": "Sleep"
+    },
+    {
+      "key": "deepSleep",
+      "translation": "Deep Sleep"
+    },
+    {
+      "key": "pressAnyKey",
+      "translation": "Press any key"
+    },
+    {
+      "key": "configMenu",
+      "translation": "Config Menu"
+    },
+    {
+      "key": "scanTheCard",
+      "translation": "Scan the card"
+    },
+    {
+      "key": "unpair",
+      "translation": "Unpair"
+    },
+    {
+      "key": "exit",
+      "translation": "Exit"
     }
   ]
 }
