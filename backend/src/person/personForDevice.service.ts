@@ -6,7 +6,7 @@ import {
   SHOW_SECONDARY_TEXT_HW_VERSIONS,
 } from 'src/constants';
 import { DbService } from 'src/db/db.service';
-import { eventsData } from 'src/events';
+import { eventsData, getMaxPenalty } from 'src/events';
 import {
   attemptTimeWithPenalty,
   checkCutoff,
@@ -127,6 +127,7 @@ export class PersonForDeviceService {
               groupId: g,
               useInspection: eventsData.find((e) => e.id === g.split('-')[0])
                 .useInspection,
+              maxPenalty: getMaxPenalty(g.split('-')[0]),
               ...(await this.computeSecondaryText(
                 g,
                 wcif,
@@ -159,6 +160,7 @@ export class PersonForDeviceService {
         return {
           groupId: g,
           useInspection: eventsData.find((e) => e.id === eventId).useInspection,
+          maxPenalty: getMaxPenalty(eventId),
           ...(await this.computeSecondaryText(
             g,
             wcif,

@@ -1,3 +1,7 @@
+// Highest time penalty a station lets the judge give, in seconds. Events that
+// the WCA Regulations cap lower (clock: +14) set their own maxPenalty.
+export const DEFAULT_MAX_PENALTY = 16;
+
 //Unofficial events supported by FKMTime are included here as well.
 export const eventsData: {
   id: string;
@@ -6,6 +10,7 @@ export const eventsData: {
   shortName?: string;
   shortNameForDevice?: string;
   useInspection?: boolean;
+  maxPenalty?: number;
   isUnofficial?: boolean;
   usualScramblesCount?: number;
   usualExtraScramblesCount?: number;
@@ -112,6 +117,7 @@ export const eventsData: {
     name: 'Clock',
     icon: 'event-clock',
     useInspection: true,
+    maxPenalty: 14,
     usualScramblesCount: 5,
     usualExtraScramblesCount: 2,
   },
@@ -180,6 +186,13 @@ export const eventsData: {
 
 export const isUnofficialEvent = (eventId: string) => {
   return eventsData.find((event) => event.id === eventId)?.isUnofficial;
+};
+
+export const getMaxPenalty = (eventId: string) => {
+  return (
+    eventsData.find((event) => event.id === eventId)?.maxPenalty ??
+    DEFAULT_MAX_PENALTY
+  );
 };
 
 export const getEventShortName = (eventId: string) => {

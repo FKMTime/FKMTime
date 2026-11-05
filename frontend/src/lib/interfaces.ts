@@ -415,6 +415,7 @@ export interface Event {
     shortName?: string;
     icon: string;
     useInspection?: boolean;
+    maxPenalty?: number;
     isUnofficial?: boolean;
     usualScramblesCount?: number;
     usualExtraScramblesCount?: number;
