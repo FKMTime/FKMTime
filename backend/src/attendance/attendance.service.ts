@@ -316,6 +316,7 @@ export class AttendanceService {
     const device = await this.prisma.device.findFirst({
       where: {
         espId: data.espId,
+        retiredAt: null,
       },
       include: {
         room: true,

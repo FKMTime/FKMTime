@@ -43,6 +43,9 @@ describe('SocketService', () => {
 
     let prisma: {
       device: Record<string, jest.Mock>;
+      attempt: Record<string, jest.Mock>;
+      staffActivity: Record<string, jest.Mock>;
+      attemptEditLog: Record<string, jest.Mock>;
       person: Record<string, jest.Mock>;
       competition: Record<string, jest.Mock>;
     };
@@ -62,6 +65,9 @@ describe('SocketService', () => {
           update: jest.fn().mockResolvedValue({}),
           delete: jest.fn().mockResolvedValue({}),
         },
+        attempt: { count: jest.fn().mockResolvedValue(0) },
+        staffActivity: { count: jest.fn().mockResolvedValue(0) },
+        attemptEditLog: { count: jest.fn().mockResolvedValue(0) },
         person: {
           findFirst: jest.fn().mockResolvedValue(person),
           update: jest.fn().mockResolvedValue({}),
@@ -135,7 +141,7 @@ describe('SocketService', () => {
         serverReceivedAt: now,
       });
       expect(prisma.device.findFirst).toHaveBeenCalledWith({
-        where: { espId: 7, type: DeviceType.STATION },
+        where: { espId: 7, type: DeviceType.STATION, retiredAt: null },
         include: { room: true },
       });
       expect(

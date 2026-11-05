@@ -296,6 +296,25 @@ describe('Station socket protocol (e2e)', () => {
       );
       expect(res.tag).toEqual(expect.any(Number));
     });
+
+    it('asks to reconnect a registered device that comes back with a new sign key', async () => {
+      const res = await station.request('RequestToConnectDevice', {
+        espId: ESP.stationA,
+        signKey: ESP.stationA + 1,
+        type: 'STATION',
+        hw: 'V4',
+      });
+
+      expect(res).toMatchObject({
+        data: { message: 'Request sent', status: 200, error: false },
+      });
+      const gateway = app.get(AppGateway, { strict: false });
+      expect(gateway.getDeviceRequest(ESP.stationA)).toMatchObject({
+        signKey: ESP.stationA + 1,
+        existingDevice: { name: expect.any(String) },
+      });
+      gateway.handleAddDeviceToDb(ESP.stationA);
+    });
   });
 
   describe('UpdateBatteryPercentage', () => {

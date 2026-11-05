@@ -10,7 +10,7 @@ import { Server, Socket } from 'socket.io';
 
 import { DelegateGuard } from './auth/guards/delegate.guard';
 import { OrganizerGuard } from './auth/guards/organizer.guard';
-import { RequestToConnectDto } from './device/dto/requestToConnect.dto';
+import { DeviceRequest } from './device/dto/requestToConnect.dto';
 
 export interface StationInfo {
   espId: number;
@@ -39,7 +39,7 @@ export interface StationInfo {
 })
 export class AppGateway {
   @WebSocketServer() server: Server;
-  deviceRequests: RequestToConnectDto[] = [];
+  deviceRequests: DeviceRequest[] = [];
   private stations: Map<number, StationInfo> = new Map();
   private logger = new Logger(`AppGateway`);
 
@@ -97,7 +97,7 @@ export class AppGateway {
   }
 
   @UseGuards(OrganizerGuard)
-  handleDeviceRequest(device: RequestToConnectDto) {
+  handleDeviceRequest(device: DeviceRequest) {
     const pending = this.deviceRequests.find(
       (req) => req.espId === device.espId,
     );
@@ -105,7 +105,8 @@ export class AppGateway {
       pending &&
       pending.signKey === device.signKey &&
       pending.type === device.type &&
-      pending.hw === device.hw
+      pending.hw === device.hw &&
+      pending.existingDevice?.id === device.existingDevice?.id
     )
       return;
     // a reset device asks again with a new sign key; approving the old request would
@@ -115,6 +116,10 @@ export class AppGateway {
       device,
     ];
     this.server.to(`device`).emit('deviceRequests', this.deviceRequests);
+  }
+
+  getDeviceRequest(espId: number) {
+    return this.deviceRequests.find((req) => req.espId === espId);
   }
 
   @SubscribeMessage('removeDeviceRequest')

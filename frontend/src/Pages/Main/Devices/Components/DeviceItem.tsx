@@ -1,4 +1,4 @@
-import { Nfc, Pencil, Timer, Trash2 } from "lucide-react";
+import { ArchiveRestore, Nfc, Pencil, Timer, Trash2 } from "lucide-react";
 import { useState } from "react";
 
 import BatteryIcon from "@/Components/Icons/BatteryIcon";
@@ -6,7 +6,7 @@ import RowActions from "@/Components/shared/RowActions";
 import { TableCell, TableRow } from "@/Components/ui/table";
 import { useConfirm } from "@/hooks/useConfirm";
 import { useToast } from "@/hooks/useToast";
-import { deleteDevice } from "@/lib/devices";
+import { deleteDevice, restoreDevice } from "@/lib/devices";
 import { Device, DeviceType } from "@/lib/interfaces";
 import { cn, idToHex, prettyDeviceType } from "@/lib/utils";
 
@@ -42,7 +42,7 @@ const DeviceItem = ({
     const handleDelete = () => {
         confirm({
             title: "Delete device",
-            description: `Are you sure you want to delete ${device.name}? This action cannot be undone`,
+            description: `Are you sure you want to delete ${device.name}? If it has recorded solves, it moves to retired devices instead, so those solves keep their station`,
             confirmLabel: "Delete device",
         })
             .then(async () => {
@@ -62,6 +62,19 @@ const DeviceItem = ({
             });
     };
 
+    const handleRestore = async () => {
+        const status = await restoreDevice(device.id);
+        if (status === 200) {
+            fetchData();
+        } else {
+            toast({
+                title: "Error",
+                description: "Something went wrong",
+                variant: "destructive",
+            });
+        }
+    };
+
     const actions = (
         <RowActions
             subject={device.name}
@@ -72,10 +85,17 @@ const DeviceItem = ({
             }}
             items={[
                 {
+                    label: "Restore device",
+                    icon: ArchiveRestore,
+                    onSelect: handleRestore,
+                    hidden: !device.retiredAt,
+                },
+                {
                     label: "Delete device",
                     icon: Trash2,
                     destructive: true,
                     onSelect: handleDelete,
+                    hidden: !!device.retiredAt,
                 },
             ]}
         />

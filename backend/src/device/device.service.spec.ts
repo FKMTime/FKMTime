@@ -23,12 +23,20 @@ describe('DeviceService', () => {
             device: {
               findMany: jest.fn(),
               findFirst: jest.fn(),
+              findUnique: jest.fn(),
               create: jest.fn(),
               update: jest.fn(),
               delete: jest.fn(),
             },
             attempt: {
               groupBy: jest.fn(),
+              count: jest.fn().mockResolvedValue(0),
+            },
+            staffActivity: {
+              count: jest.fn().mockResolvedValue(0),
+            },
+            attemptEditLog: {
+              count: jest.fn().mockResolvedValue(0),
             },
           },
         },
@@ -38,6 +46,7 @@ describe('DeviceService', () => {
             handleAddDeviceToDb: jest.fn(),
             handleDeviceRequest: jest.fn(),
             handleDeviceUpdated: jest.fn(),
+            getDeviceRequest: jest.fn(),
           },
         },
         {
@@ -101,7 +110,7 @@ describe('DeviceService', () => {
 
       expect(dbService.device.findMany).toHaveBeenCalledWith({
         include: { room: true },
-        where: { type: DeviceType.STATION },
+        where: { retiredAt: null, type: DeviceType.STATION },
         orderBy: { name: 'asc' },
       });
     });
@@ -186,7 +195,7 @@ describe('DeviceService', () => {
 
       expect(result).toEqual(mockDevice);
       expect(dbService.device.findFirst).toHaveBeenCalledWith({
-        where: { espId: 123, type: DeviceType.STATION },
+        where: { espId: 123, type: DeviceType.STATION, retiredAt: null },
         include: { room: true },
       });
     });
@@ -214,14 +223,19 @@ describe('DeviceService', () => {
       expect(appGateway.handleDeviceRequest).toHaveBeenCalledWith(requestData);
     });
 
-    it('should return error if device already exists', async () => {
+    it('should return error if the device is already paired with this key', async () => {
       const requestData = {
         espId: 123,
         signKey: 789,
         type: 'STATION' as any,
         hw: 'v4',
       };
-      const mockDevice = { id: 'device1', espId: 123 };
+      const mockDevice = {
+        id: 'device1',
+        espId: 123,
+        signKey: 789,
+        retiredAt: null,
+      };
 
       jest
         .spyOn(dbService.device, 'findFirst')
@@ -234,6 +248,91 @@ describe('DeviceService', () => {
         status: 409,
         error: true,
       });
+      expect(appGateway.handleDeviceRequest).not.toHaveBeenCalled();
+    });
+
+    it('should queue a reconnect request when a known device has a new sign key', async () => {
+      const requestData = {
+        espId: 123,
+        signKey: 999,
+        type: 'STATION' as any,
+        hw: 'v4',
+      };
+      jest.spyOn(dbService.device, 'findFirst').mockResolvedValue({
+        id: 'device1',
+        name: 'Station 1',
+        espId: 123,
+        signKey: 789,
+        retiredAt: null,
+      } as any);
+
+      const result = await service.requestToConnect(requestData);
+
+      expect(result.status).toBe(200);
+      expect(appGateway.handleDeviceRequest).toHaveBeenCalledWith({
+        ...requestData,
+        existingDevice: { id: 'device1', name: 'Station 1' },
+      });
+    });
+
+    it('should queue a reconnect request when a retired device asks again', async () => {
+      const requestData = {
+        espId: 123,
+        signKey: 789,
+        type: 'STATION' as any,
+        hw: 'v4',
+      };
+      jest.spyOn(dbService.device, 'findFirst').mockResolvedValue({
+        id: 'device1',
+        name: 'Station 1',
+        espId: 123,
+        signKey: 789,
+        retiredAt: new Date(),
+      } as any);
+
+      await service.requestToConnect(requestData);
+
+      expect(appGateway.handleDeviceRequest).toHaveBeenCalledWith({
+        ...requestData,
+        existingDevice: { id: 'device1', name: 'Station 1' },
+      });
+    });
+  });
+
+  describe('reconnectDevice', () => {
+    it('should store the new sign key on the existing device and restore it', async () => {
+      jest.spyOn(dbService.device, 'findUnique').mockResolvedValue({
+        id: 'device1',
+        espId: 123,
+      } as any);
+      jest.spyOn(appGateway, 'getDeviceRequest').mockReturnValue({
+        espId: 123,
+        signKey: 999,
+        type: 'STATION' as any,
+        hw: 'v4',
+      });
+
+      await service.reconnectDevice('device1');
+
+      expect(dbService.device.update).toHaveBeenCalledWith({
+        where: { id: 'device1' },
+        data: { signKey: 999, retiredAt: null },
+      });
+      expect(appGateway.handleAddDeviceToDb).toHaveBeenCalledWith(123);
+      expect(socketController.sendServerStatus).toHaveBeenCalled();
+    });
+
+    it('should refuse when the device has no pending request', async () => {
+      jest.spyOn(dbService.device, 'findUnique').mockResolvedValue({
+        id: 'device1',
+        espId: 123,
+      } as any);
+      jest.spyOn(appGateway, 'getDeviceRequest').mockReturnValue(undefined);
+
+      await expect(service.reconnectDevice('device1')).rejects.toThrow(
+        HttpException,
+      );
+      expect(dbService.device.update).not.toHaveBeenCalled();
     });
   });
 
@@ -273,7 +372,20 @@ describe('DeviceService', () => {
   });
 
   describe('deleteDevice', () => {
-    it('should delete device', async () => {
+    it('should retire a device that recorded attempts instead of deleting it', async () => {
+      (dbService.attempt.count as jest.Mock).mockResolvedValue(3);
+
+      const result = await service.deleteDevice('device1');
+
+      expect(result).toEqual({ message: 'Device retired' });
+      expect(dbService.device.delete).not.toHaveBeenCalled();
+      expect(dbService.device.update).toHaveBeenCalledWith({
+        where: { id: 'device1' },
+        data: { retiredAt: expect.any(Date) },
+      });
+    });
+
+    it('should delete a device without history', async () => {
       jest.spyOn(dbService.device, 'delete').mockResolvedValue({} as any);
       jest.spyOn(appGateway, 'handleDeviceUpdated').mockImplementation();
       jest.spyOn(socketController, 'sendServerStatus').mockResolvedValue();
