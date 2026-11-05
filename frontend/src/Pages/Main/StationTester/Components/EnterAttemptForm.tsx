@@ -5,6 +5,7 @@ import SwitchRow from "@/Components/shared/SwitchRow";
 import { Button } from "@/Components/ui/button";
 import { Input } from "@/Components/ui/input";
 import { Label } from "@/Components/ui/label";
+import { getEventIdFromRoundId } from "@/lib/activities";
 import { getGroupLabel } from "@/lib/currentGroups";
 import { Device, Person, Room } from "@/lib/interfaces";
 import {
@@ -116,6 +117,7 @@ const EnterAttemptForm = ({
                     <PenaltySelect
                         aria-label="Penalty"
                         value={values.penalty}
+                        eventId={getEventIdFromRoundId(values.groupId)}
                         onChange={(penalty) => update({ penalty })}
                     />
                 </div>

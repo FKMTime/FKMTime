@@ -434,3 +434,82 @@ describe('AttemptService extras for all attempts', () => {
     });
   });
 });
+
+describe('AttemptService penalty cap', () => {
+  let prisma: Record<string, any>;
+  let resultService: { getResultOrCreate: jest.Mock };
+  let service: AttemptService;
+
+  const attempt = (penalty: number, roundId: string) =>
+    ({
+      attemptNumber: 1,
+      type: AttemptType.STANDARD_ATTEMPT,
+      status: AttemptStatus.STANDARD,
+      value: 1500,
+      penalty,
+      comment: '',
+      competitorId: 'person-1',
+      roundId,
+    }) as never;
+
+  beforeEach(() => {
+    prisma = {
+      attempt: {
+        findUnique: jest.fn(),
+        findFirst: jest.fn().mockResolvedValue(null),
+        update: jest.fn().mockRejectedValue(new Error('saved')),
+      },
+    };
+    resultService = {
+      getResultOrCreate: jest.fn().mockRejectedValue(new Error('saved')),
+    };
+    service = new AttemptService(
+      null as AppGateway,
+      prisma as unknown as DbService,
+      null as AttendanceService,
+      null as AttemptEditLogService,
+      resultService as unknown as ResultService,
+      null as SocketController,
+      null as IncidentService,
+    );
+  });
+
+  const storedClockAttempt = (penalty: number) =>
+    prisma.attempt.findUnique.mockResolvedValue({
+      id: 'a1',
+      resultId: 'result-1',
+      penalty,
+      result: { personId: 'person-1', roundId: 'clock-r1' },
+    });
+
+  it('rejects +16 on clock before creating anything', async () => {
+    await expect(
+      service.createAttempt(attempt(16, 'clock-r1'), 'user-1'),
+    ).rejects.toMatchObject({ status: 400 });
+    expect(resultService.getResultOrCreate).not.toHaveBeenCalled();
+  });
+
+  it('accepts +14 on clock and +16 on other events', async () => {
+    await expect(
+      service.createAttempt(attempt(14, 'clock-r1'), 'user-1'),
+    ).rejects.toThrow('saved');
+    await expect(
+      service.createAttempt(attempt(16, '333-r1'), 'user-1'),
+    ).rejects.toThrow('saved');
+  });
+
+  it('rejects changing a clock attempt to +16', async () => {
+    storedClockAttempt(0);
+    await expect(
+      service.updateAttempt('a1', attempt(16, 'clock-r1'), 'user-1'),
+    ).rejects.toMatchObject({ status: 400 });
+    expect(prisma.attempt.update).not.toHaveBeenCalled();
+  });
+
+  it('still saves other edits to a clock attempt already at +16', async () => {
+    storedClockAttempt(16);
+    await expect(
+      service.updateAttempt('a1', attempt(16, 'clock-r1'), 'user-1'),
+    ).rejects.toThrow('saved');
+  });
+});

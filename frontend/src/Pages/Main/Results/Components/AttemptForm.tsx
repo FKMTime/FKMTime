@@ -18,6 +18,7 @@ import {
 } from "@/Components/ui/select";
 import { Textarea } from "@/Components/ui/textarea";
 import { useToast } from "@/hooks/useToast";
+import { getEventIdFromRoundId } from "@/lib/activities";
 import { competitionAtom } from "@/lib/atoms";
 import {
     AttemptOutcome,
@@ -25,6 +26,7 @@ import {
     statusFromOutcome,
 } from "@/lib/attemptOutcome";
 import { AVAILABLE_PENALTIES, DNF_VALUE, DNS_VALUE } from "@/lib/constants";
+import { getAvailablePenalties } from "@/lib/events";
 import { Attempt, AttemptData, AttemptType } from "@/lib/interfaces";
 import {
     getAttemptOptions,
@@ -49,9 +51,6 @@ interface AttemptFormProps {
 
 const LABEL = "text-[13px] font-semibold text-muted-foreground";
 const COMMON_PENALTIES = [0, 2, 4, DNF_VALUE, DNS_VALUE];
-const OTHER_PENALTIES = AVAILABLE_PENALTIES.filter(
-    (penalty) => !COMMON_PENALTIES.includes(penalty.value)
-);
 const penaltyLabel = (value: number) =>
     value === 0
         ? "None"
@@ -139,7 +138,11 @@ const AttemptForm = ({
     ];
     const isTimeless = penalty === DNF_VALUE || penalty === DNS_VALUE;
     const isTimeOptional = outcome === "extra" || isTimeless;
-    const isOtherPenalty = OTHER_PENALTIES.some((p) => p.value === penalty);
+    const otherPenalties = getAvailablePenalties(
+        getEventIdFromRoundId(roundId),
+        attempt?.penalty
+    ).filter((p) => !COMMON_PENALTIES.includes(p.value));
+    const isOtherPenalty = otherPenalties.some((p) => p.value === penalty);
 
     const onSubmit = (event: FormEvent) => {
         event.preventDefault();
@@ -273,7 +276,7 @@ const AttemptForm = ({
                             <SelectValue placeholder="Other" />
                         </SelectTrigger>
                         <SelectContent>
-                            {OTHER_PENALTIES.map((p) => (
+                            {otherPenalties.map((p) => (
                                 <SelectItem
                                     key={p.value}
                                     value={String(p.value)}
