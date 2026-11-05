@@ -758,11 +758,13 @@ export class AttemptService {
       await this.prisma.result.delete({
         where: { id: attempt.resultId },
       });
+    }
+    this.appGateway.handleAttemptUpdated();
+    if (allAttempts === 0) {
       return {
         resultDeleted: true,
       };
     }
-    this.appGateway.handleAttemptUpdated();
     return {
       resultDeleted: false,
       message: 'Attempt deleted successfully',
@@ -811,6 +813,7 @@ export class AttemptService {
         },
       },
     });
+    if (!attempt) throw new HttpException('Attempt not found', 404);
     const previousIncidents = await this.prisma.attempt.findMany({
       where: {
         result: {

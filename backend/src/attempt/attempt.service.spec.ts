@@ -513,3 +513,55 @@ describe('AttemptService penalty cap', () => {
     ).rejects.toThrow('saved');
   });
 });
+
+describe('AttemptService deleted attempts', () => {
+  let prisma: Record<string, any>;
+  let appGateway: { handleAttemptUpdated: jest.Mock };
+  let service: AttemptService;
+
+  beforeEach(() => {
+    prisma = {
+      attempt: {
+        findUnique: jest.fn(),
+        findMany: jest.fn().mockResolvedValue([]),
+        delete: jest.fn(),
+        count: jest.fn(),
+      },
+      result: { delete: jest.fn() },
+    };
+    appGateway = { handleAttemptUpdated: jest.fn() };
+    service = new AttemptService(
+      appGateway as unknown as AppGateway,
+      prisma as unknown as DbService,
+      null as AttendanceService,
+      null as AttemptEditLogService,
+      {
+        enterWholeScorecardToWcaLiveOrCubingContests: jest.fn(),
+      } as unknown as ResultService,
+      null as SocketController,
+      null as IncidentService,
+    );
+  });
+
+  it('answers 404 for an attempt that no longer exists', async () => {
+    prisma.attempt.findUnique.mockResolvedValue(null);
+    await expect(service.getAttemptById('gone')).rejects.toMatchObject({
+      status: 404,
+    });
+    expect(prisma.attempt.findMany).not.toHaveBeenCalled();
+  });
+
+  it('tells open panels when the last attempt of a result is deleted', async () => {
+    prisma.attempt.findUnique.mockResolvedValue({
+      id: 'a1',
+      resultId: 'result-1',
+      status: AttemptStatus.STANDARD,
+      device: null,
+    });
+    prisma.attempt.count.mockResolvedValue(0);
+    await expect(service.deleteAttempt('a1')).resolves.toEqual({
+      resultDeleted: true,
+    });
+    expect(appGateway.handleAttemptUpdated).toHaveBeenCalled();
+  });
+});
