@@ -180,7 +180,7 @@ describe('AttemptController (e2e)', () => {
         .send({
           attemptNumber: 1,
           value: 1100,
-          penalty: 200,
+          penalty: 2,
           status: AttemptStatus.STANDARD,
           type: AttemptType.STANDARD_ATTEMPT,
         })
@@ -188,7 +188,7 @@ describe('AttemptController (e2e)', () => {
 
       const updated = await db.attempt.findUnique({ where: { id: attemptId } });
       expect(updated.value).toBe(1100);
-      expect(updated.penalty).toBe(200);
+      expect(updated.penalty).toBe(2);
     });
 
     it('returns 400 when judge equals competitor', async () => {
