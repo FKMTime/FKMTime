@@ -18,13 +18,15 @@ export const createAttempt = async (
     return { status: response.status, message };
 };
 
+/** Resolves to null when the attempt no longer exists (e.g. it was deleted) */
 export const getIncidentById = async (
     id: string
 ): Promise<{
     attempt: Incident;
     previousIncidents: Incident[];
-}> => {
+} | null> => {
     const response = await backendRequest(`attempt/${id}`, "GET", true);
+    if (response.status === 404) return null;
     return await response.json();
 };
 

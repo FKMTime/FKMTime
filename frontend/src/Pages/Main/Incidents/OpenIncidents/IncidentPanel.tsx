@@ -1,6 +1,6 @@
 import { useAtomValue } from "jotai";
 import { X } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { getLimitByRoundId } from "wcif-helpers";
 
@@ -19,6 +19,7 @@ import {
     Incident,
 } from "@/lib/interfaces";
 import { milisecondsToClockFormat } from "@/lib/resultFormatters";
+import { socket } from "@/socket";
 
 import IncidentForm from "./IncidentForm";
 import PreviousExtras from "./PreviousExtras";
@@ -38,11 +39,40 @@ const IncidentPanel = ({ id, onClose, onDone }: IncidentPanelProps) => {
     const [previousIncidents, setPreviousIncidents] = useState<Incident[]>([]);
     const [isLoading, setIsLoading] = useState(false);
 
+    // Set while this panel deletes the attempt, so its own delete isn't
+    // reported as someone else's
+    const isDeletingRef = useRef(false);
+    // The latest handler, so the attempt is fetched once per id rather than
+    // on every render
+    const handleDeletedRef = useRef(() => {});
     useEffect(() => {
+        handleDeletedRef.current = () => {
+            if (isDeletingRef.current) return;
+            toast({ title: "This attempt was deleted" });
+            onDone();
+        };
+    });
+
+    useEffect(() => {
+        let isCancelled = false;
         getIncidentById(id).then((data) => {
+            if (isCancelled) return;
+            if (!data) return handleDeletedRef.current();
             setIncident(data.attempt);
             setPreviousIncidents(data.previousIncidents);
         });
+        // Someone else may delete the attempt while it's open here; only
+        // check it still exists, so edits in progress aren't overwritten
+        const checkStillExists = () => {
+            getIncidentById(id).then((data) => {
+                if (!isCancelled && !data) handleDeletedRef.current();
+            });
+        };
+        socket.on("attemptUpdated", checkStillExists);
+        return () => {
+            isCancelled = true;
+            socket.off("attemptUpdated", checkStillExists);
+        };
     }, [id]);
 
     const roundName = incident
@@ -121,11 +151,13 @@ const IncidentPanel = ({ id, onClose, onDone }: IncidentPanelProps) => {
             confirmLabel: "Delete attempt",
             onConfirm: async () => {
                 setIsLoading(true);
+                isDeletingRef.current = true;
                 const response = await deleteAttempt(incident.id);
                 setIsLoading(false);
                 if (response.status === 200) {
                     onDone();
                 } else {
+                    isDeletingRef.current = false;
                     toast({
                         title: "Error",
                         description: "Something went wrong",
