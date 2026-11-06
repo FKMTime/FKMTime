@@ -1260,6 +1260,83 @@ describe('Station socket protocol (e2e)', () => {
           m.data.soundEnabled === original.soundEnabled,
       );
     });
+
+    describe('buzzer volume', () => {
+      let competitionId: string;
+      let settings: Record<string, unknown>;
+
+      const saveVolume = (buzzerVolume: number | null) =>
+        request(app.getHttpServer())
+          .put(`/competition/settings/${competitionId}/devices`)
+          .set('Authorization', `Bearer ${adminToken}`)
+          .send({ ...settings, buzzerVolume });
+
+      beforeAll(async () => {
+        const competition = await db.competition.findFirst();
+        competitionId = competition.id;
+        settings = {
+          shouldUpdateDevices: competition.shouldUpdateDevices,
+          wifiSsid: competition.wifiSsid,
+          wifiPassword: competition.wifiPassword,
+          mdns: competition.mdns,
+          wsUrl: competition.wsUrl,
+          defaultLocale: competition.defaultLocale,
+          secureRfid: competition.secureRfid,
+          soundEnabled: competition.soundEnabled,
+          hilTesting: false,
+        };
+      });
+
+      afterEach(async () => {
+        await saveVolume(null).expect(200);
+      });
+
+      it('sends a saved volume to the V4 stations only', async () => {
+        station.clear();
+        await saveVolume(12).expect(200);
+
+        const packet = await station.waitForType('SetDeviceSettings');
+        expect(packet.data.volume).toBe(12);
+        expect(packet.data.devices).toContain(ESP.stationA);
+        expect(packet.data.devices).not.toContain(ESP.stationB);
+        expect(
+          (await db.competition.findUnique({ where: { id: competitionId } }))
+            .buzzerVolume,
+        ).toBe(12);
+      });
+
+      it('sends the saved volume to a V4 station when it connects', async () => {
+        await saveVolume(7).expect(200);
+        station.clear();
+
+        await station.request('DeviceConnected', {
+          espId: ESP.stationA,
+          firmwareVersion: 'v9.8.7',
+        });
+
+        expect(await station.waitForType('SetDeviceSettings')).toEqual({
+          type: 'SetDeviceSettings',
+          data: { devices: [ESP.stationA], volume: 7 },
+        });
+      });
+
+      it('leaves the stations alone when no volume is saved', async () => {
+        station.clear();
+        await saveVolume(null).expect(200);
+        await station.request('DeviceConnected', {
+          espId: ESP.stationA,
+          firmwareVersion: 'v9.8.7',
+        });
+
+        await expect(
+          station.waitForType('SetDeviceSettings', 300),
+        ).rejects.toThrow();
+      });
+
+      it('rejects a volume outside the range the firmware accepts', async () => {
+        await saveVolume(26).expect(400);
+      });
+    });
   });
 
   describe('hardware-in-the-loop testing mode', () => {

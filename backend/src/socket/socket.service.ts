@@ -48,7 +48,11 @@ export class SocketService {
   }
 
   async deviceConnected(data: DeviceConnectedDto) {
-    return await this.deviceService.updateFirmwareVersion(data);
+    const response = await this.deviceService.updateFirmwareVersion(data);
+    if (!response.error) {
+      await this.competitionService.sendBuzzerVolume(data.espId);
+    }
+    return response;
   }
 
   async createAttendance(data: CreateAttendaceDto) {

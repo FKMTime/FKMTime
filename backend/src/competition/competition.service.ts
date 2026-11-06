@@ -9,6 +9,7 @@ import { Cron, CronExpression } from '@nestjs/schedule';
 import {
   Attempt,
   AttemptStatus,
+  HardwareVersion,
   SendingResultsFrequency,
 } from '@prisma/client';
 import { AppGateway } from 'src/app.gateway';
@@ -390,13 +391,39 @@ export class CompetitionService {
         defaultLocale: data.defaultLocale,
         secureRfid: data.secureRfid,
         soundEnabled: data.soundEnabled,
+        buzzerVolume: data.buzzerVolume ?? null,
       },
     });
 
     await this.socketController.sendServerStatus();
+    await this.sendBuzzerVolume();
     return {
       message: 'Devices settings updated',
     };
+  }
+
+  // The volume reaches a station only while it is connected, so it is sent
+  // again whenever one connects. Without espId it goes to every V4 station.
+  async sendBuzzerVolume(espId?: number) {
+    const competition = await this.prisma.competition.findFirst({
+      select: { buzzerVolume: true },
+    });
+    if (competition?.buzzerVolume == null) return;
+
+    const devices = await this.prisma.device.findMany({
+      where: {
+        espId: espId ?? { not: null },
+        hwVersion: HardwareVersion.V4,
+        retiredAt: null,
+      },
+      select: { espId: true },
+    });
+    if (devices.length === 0) return;
+
+    this.socketController.sendDeviceSettings(
+      devices.map((d) => d.espId),
+      competition.buzzerVolume,
+    );
   }
 
   @Cron(CronExpression.EVERY_5_MINUTES)
