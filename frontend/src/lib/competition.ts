@@ -2,6 +2,7 @@ import { getUserInfo } from "@/lib/auth";
 import { getScramblingDeviceToken } from "@/lib/scramblingDevicesAuth";
 
 import { Activity, Competition, WCACompetition } from "./interfaces";
+import { queryFamily } from "./queryCache";
 import {
     backendQuery,
     backendRequest,
@@ -203,6 +204,11 @@ export const getRoomActivities = async (
 
 const groupIdsQuery = (groupIds?: string[]) =>
     groupIds ? `?groupIds=${groupIds.join(",")}` : "";
+
+/** The next groups in a room's schedule, from its saved current groups */
+export const nextGroupsQuery = queryFamily((roomId) =>
+    backendQuery<string[]>(`competition/rooms/${roomId}/next-groups`)
+);
 
 /** Steps from the given groups, or the room's saved ones without them */
 export const getNextGroupsFromScheduleForRoom = async (

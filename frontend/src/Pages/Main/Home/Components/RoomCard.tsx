@@ -7,7 +7,7 @@ import { Button } from "@/Components/ui/button";
 import { getEventIdFromRoundId } from "@/lib/activities";
 import { activityCodeToName } from "@/lib/activities";
 import { getEventIconClass } from "@/lib/events";
-import { Attempt, AttemptType, Incident, Room } from "@/lib/interfaces";
+import { AttemptType, Incident, RecentAttempt, Room } from "@/lib/interfaces";
 import { attemptWithPenaltyToString } from "@/lib/resultFormatters";
 import { GroupProgress } from "@/lib/rooms";
 import {
@@ -19,12 +19,7 @@ import {
 } from "@/lib/schedule";
 import { cn } from "@/lib/utils";
 
-export interface RecentAttempt extends Attempt {
-    result: {
-        id: string;
-        person: { id: string; name: string };
-    };
-}
+export type { RecentAttempt };
 
 interface RoomCardProps {
     room: Room;

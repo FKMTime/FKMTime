@@ -8,6 +8,11 @@ export const getAllRooms = async () => {
 
 export const roomsQuery = backendQuery<Room[]>("competition/rooms");
 
+/** Each room's group progress, for the home page */
+export const roomsProgressQuery = backendQuery<RoomProgress[]>(
+    "competition/rooms/progress"
+);
+
 export const updateCurrentRound = async (rooms: Room[]) => {
     const response = await backendRequest("competition/rooms", "PUT", true, {
         rooms,
