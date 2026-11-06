@@ -18,6 +18,8 @@ interface Activity {
     personId: string;
     role: string;
     status: string;
+    leftEarly: boolean;
+    replacedById: string | null;
     comment: string | null;
     person: { id: string; name: string };
 }
@@ -100,7 +102,7 @@ test.describe("attendance for a group", () => {
             .toBe("ABSENT");
     });
 
-    test("marks all judges present, then one late, replaced and absent", async ({
+    test("marks all judges present, then one late and left early, one replaced", async ({
         page,
         api,
     }) => {
@@ -134,6 +136,15 @@ test.describe("attendance for a group", () => {
         await expect(
             personRow(page, "Judges", first.person.name).getByText("Late")
         ).toBeVisible();
+        await personRow(page, "Judges", first.person.name)
+            .getByRole("button", {
+                name: `More actions for ${first.person.name}`,
+            })
+            .click();
+        await page.getByRole("menuitem", { name: "Left early" }).click();
+        await expect(
+            personRow(page, "Judges", first.person.name).getByText("Left early")
+        ).toBeVisible();
 
         const second = judges[1];
         await personRow(page, "Judges", second.person.name)
@@ -150,21 +161,23 @@ test.describe("attendance for a group", () => {
                 name: `More actions for ${second.person.name}`,
             })
             .click();
-        await page
-            .getByRole("menuitem", { name: "Present but replaced" })
-            .click();
+        await page.getByRole("menuitem", { name: "Replaced…" }).click();
+        await page.getByRole("button", { name: "They were here" }).click();
         await expect(
             personRow(page, "Judges", second.person.name).getByText("Replaced")
         ).toBeVisible();
 
-        const statuses = Object.fromEntries(
-            (await groupAttendance(api, "333-r1-g3")).map((a) => [
-                a.id,
-                a.status,
-            ])
+        const rows = Object.fromEntries(
+            (await groupAttendance(api, "333-r1-g3")).map((a) => [a.id, a])
         );
-        expect(statuses[first.id]).toBe("LATE");
-        expect(statuses[second.id]).toBe("REPLACED");
+        expect(rows[first.id]).toMatchObject({
+            status: "LATE",
+            leftEarly: true,
+        });
+        expect(rows[second.id]).toMatchObject({
+            status: "REPLACED",
+            replacedById: null,
+        });
     });
 
     test("adds an unassigned scrambler and removes them again", async ({

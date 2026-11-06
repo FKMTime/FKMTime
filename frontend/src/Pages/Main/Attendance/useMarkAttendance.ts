@@ -1,23 +1,30 @@
 import { useToast } from "@/hooks/useToast";
 import { useUndoToast } from "@/hooks/useUndoToast";
 import {
+    attendanceState,
     markAsAbsent,
     markAsLate,
     markAsPresent,
-    markAsPresentButReplaced,
+    restoreAttendance,
 } from "@/lib/attendance";
 import { StaffActivity, StaffActivityStatus } from "@/lib/interfaces";
 
-const MARK_AS: Record<StaffActivityStatus, (id: string) => Promise<number>> = {
+type MarkableStatus = Exclude<
+    StaffActivityStatus,
+    StaffActivityStatus.REPLACED
+>;
+
+const MARK_AS: Record<MarkableStatus, (id: string) => Promise<number>> = {
     [StaffActivityStatus.PRESENT]: markAsPresent,
     [StaffActivityStatus.ABSENT]: markAsAbsent,
     [StaffActivityStatus.LATE]: markAsLate,
-    [StaffActivityStatus.REPLACED]: markAsPresentButReplaced,
 };
 
+const isSuccess = (status: number) => status === 200 || status === 201;
+
 /**
- * Change a staff member's status at once, and offer Undo, which puts the
- * previous status back.
+ * Change a staff member's attendance at once, and offer Undo, which puts the
+ * previous status and tags back.
  */
 export const useMarkAttendance = (
     attendance: StaffActivity[],
@@ -33,29 +40,38 @@ export const useMarkAttendance = (
             variant: "destructive",
         });
 
-    const markOne = async (
-        next: StaffActivityStatus,
+    /** Run any change to one row; the toast reads "<name> <done>" */
+    const change = async (
         id: string,
-        label: string,
+        action: () => Promise<number>,
+        done: string,
         { canUndo = true } = {}
     ) => {
         const activity = attendance.find((a) => a.id === id);
-        if ((await MARK_AS[next](id)) !== 201) return showError();
+        if (!isSuccess(await action())) return showError();
         refresh();
         if (!activity || !canUndo) return;
-        const previous = activity.status;
+        const previous = attendanceState(activity);
         showUndo({
-            title: `${activity.person.name} marked ${label}`,
+            title: `${activity.person.name} ${done}`,
             onUndo: async () => {
-                if ((await MARK_AS[previous](id)) !== 201) return showError();
+                if (!isSuccess(await restoreAttendance(id, previous)))
+                    return showError();
                 refresh();
             },
         });
     };
 
-    /** Mark several at once; one Undo puts each previous status back */
+    const markOne = (
+        next: MarkableStatus,
+        id: string,
+        label: string,
+        options: { canUndo?: boolean } = {}
+    ) => change(id, () => MARK_AS[next](id), `marked ${label}`, options);
+
+    /** Mark several at once; one Undo puts each previous state back */
     const markMany = async (
-        next: StaffActivityStatus,
+        next: MarkableStatus,
         ids: string[],
         label: string
     ) => {
@@ -64,18 +80,20 @@ export const useMarkAttendance = (
             activities.map((a) => MARK_AS[next](a.id))
         );
         refresh();
-        if (statuses.some((status) => status !== 201)) return showError();
+        if (!statuses.every(isSuccess)) return showError();
         showUndo({
             title: `${activities.length} marked ${label}`,
             onUndo: async () => {
                 const undone = await Promise.all(
-                    activities.map((a) => MARK_AS[a.status](a.id))
+                    activities.map((a) =>
+                        restoreAttendance(a.id, attendanceState(a))
+                    )
                 );
                 refresh();
-                if (undone.some((status) => status !== 201)) showError();
+                if (!undone.every(isSuccess)) showError();
             },
         });
     };
 
-    return { markOne, markMany };
+    return { change, markOne, markMany };
 };

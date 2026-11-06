@@ -4,7 +4,7 @@ import { StaffActivityStatus, StaffRole } from '@prisma/client';
 
 import { AppGateway } from '../app.gateway';
 import { DbService } from '../db/db.service';
-import { AttendanceService } from './attendance.service';
+import { AttendanceService, tagsClearedBy } from './attendance.service';
 
 describe('AttendanceService', () => {
   let service: AttendanceService;
@@ -77,6 +77,7 @@ describe('AttendanceService', () => {
         include: {
           person: true,
           device: true,
+          replacedBy: { select: { id: true, name: true } },
         },
       });
     });
@@ -206,7 +207,10 @@ describe('AttendanceService', () => {
       expect(result).toEqual(mockActivities);
       expect(dbService.staffActivity.findMany).toHaveBeenCalledWith({
         where: { person: { id: 'person1' } },
-        include: { device: true },
+        include: {
+          device: true,
+          replacedBy: { select: { id: true, name: true } },
+        },
       });
     });
   });
@@ -230,12 +234,43 @@ describe('AttendanceService', () => {
       expect(result).toEqual(mockAttendance);
       expect(dbService.staffActivity.update).toHaveBeenCalledWith({
         where: { id: 'attendance1' },
-        data: { status: StaffActivityStatus.PRESENT },
+        data: {
+          status: StaffActivityStatus.PRESENT,
+          noShow: false,
+          replacedById: null,
+        },
       });
       expect(appGateway.handleNewAttendance).toHaveBeenCalledWith(
         '333-r1-g1',
         'person1',
       );
+    });
+  });
+
+  describe('tagsClearedBy', () => {
+    it('clears the no-show and replacement of someone who did the job', () => {
+      for (const status of [
+        StaffActivityStatus.PRESENT,
+        StaffActivityStatus.LATE,
+      ]) {
+        expect(tagsClearedBy(status)).toEqual({
+          noShow: false,
+          replacedById: null,
+        });
+      }
+    });
+
+    it('keeps the replacement of someone replaced, and nothing else', () => {
+      expect(tagsClearedBy(StaffActivityStatus.REPLACED)).toEqual({
+        leftEarly: false,
+        noShow: false,
+      });
+    });
+
+    it('keeps the no-show and replacement of someone absent', () => {
+      expect(tagsClearedBy(StaffActivityStatus.ABSENT)).toEqual({
+        leftEarly: false,
+      });
     });
   });
 

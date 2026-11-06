@@ -187,6 +187,13 @@ export interface StaffActivity {
     status: StaffActivityStatus;
     comment?: string;
     isAssigned: boolean;
+    /** Left before the group ended; only when present or late */
+    leftEarly: boolean;
+    /** Not coming for the rest of the day; only when absent */
+    noShow: boolean;
+    /** Who did the job instead; only when replaced or absent */
+    replacedById?: string | null;
+    replacedBy?: Pick<Person, "id" | "name"> | null;
     createdAt: Date;
     updatedAt: Date;
 }
@@ -558,6 +565,10 @@ export interface MissedAssignments {
     lateAssignments: StaffActivity[];
     presentButReplacedAssignments: StaffActivity[];
     presentButReplacedAssignmentsCount: number;
+    leftEarlyAssignments: StaffActivity[];
+    leftEarlyAssignmentsCount: number;
+    noShowAssignments: StaffActivity[];
+    noShowAssignmentsCount: number;
     comments: StaffActivity[];
     commentsCount: number;
 }

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { Competition as WCIF } from "wcif-helpers";
 
+import { groupDay, noShowGroupIds } from "../attendance";
 import { StaffActivity, StaffActivityStatus } from "../interfaces";
 import { getPersonSchedule, groupScheduleByDay } from "../personSchedule";
 
@@ -90,7 +91,8 @@ const staffActivity = (
     groupId: string,
     role: string,
     status: StaffActivityStatus,
-    isAssigned = true
+    isAssigned = true,
+    extra: Partial<StaffActivity> = {}
 ) =>
     ({
         id: `${groupId}-${role}`,
@@ -98,6 +100,7 @@ const staffActivity = (
         role,
         status,
         isAssigned,
+        ...extra,
     }) as StaffActivity;
 
 // Between the two competition days
@@ -170,6 +173,87 @@ describe("getPersonSchedule", () => {
             isAssigned: false,
             attendance: StaffActivityStatus.PRESENT,
         });
+    });
+});
+
+describe("getPersonSchedule tags", () => {
+    it("shows a day off in advance, and who covered or replaced", () => {
+        const before = new Date("2026-04-18T07:00:00Z");
+        const entries = getPersonSchedule(
+            wcif,
+            7,
+            [
+                staffActivity(
+                    "333-r1-g2",
+                    "JUDGE",
+                    StaffActivityStatus.ABSENT,
+                    true,
+                    {
+                        noShow: true,
+                        replacedBy: { id: "p2", name: "Ann Cover" },
+                    }
+                ),
+                staffActivity(
+                    "222-r1-g1",
+                    "SCRAMBLER",
+                    StaffActivityStatus.LATE,
+                    true,
+                    { leftEarly: true }
+                ),
+            ],
+            before
+        );
+        const judging = entries.find((e) => e.activityCode === "333-r1-g2");
+        expect(judging).toMatchObject({
+            attendance: StaffActivityStatus.ABSENT,
+            noShow: true,
+            replacedByName: "Ann Cover",
+        });
+        const scrambling = entries.find((e) => e.activityCode === "222-r1-g1");
+        expect(scrambling).toMatchObject({
+            attendance: StaffActivityStatus.LATE,
+            leftEarly: true,
+        });
+    });
+});
+
+describe("noShowGroupIds", () => {
+    const activities = [
+        staffActivity("333-r1-g1", "RUNNER", StaffActivityStatus.ABSENT),
+        staffActivity("333-r1-g2", "JUDGE", StaffActivityStatus.ABSENT),
+        staffActivity("333-r1-g2", "COMPETITOR", StaffActivityStatus.ABSENT),
+        staffActivity("222-r1-g1", "SCRAMBLER", StaffActivityStatus.ABSENT),
+    ];
+
+    it("takes the person's staffing that day in groups not over yet", () => {
+        expect(groupDay(wcif, "333-r1-g2")).toBe("2026-04-18");
+        expect(
+            noShowGroupIds(
+                wcif,
+                activities,
+                "2026-04-18",
+                new Date("2026-04-18T08:15:00Z")
+            )
+        ).toEqual(["333-r1-g1", "333-r1-g2"]);
+        expect(
+            noShowGroupIds(
+                wcif,
+                activities,
+                "2026-04-18",
+                new Date("2026-04-18T08:45:00Z")
+            )
+        ).toEqual(["333-r1-g2"]);
+    });
+
+    it("leaves other days alone", () => {
+        expect(
+            noShowGroupIds(
+                wcif,
+                activities,
+                "2026-04-19",
+                new Date("2026-04-18T08:15:00Z")
+            )
+        ).toEqual(["222-r1-g1"]);
     });
 });
 
