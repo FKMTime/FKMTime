@@ -1,20 +1,25 @@
+import { useQuery } from "@tanstack/react-query";
 import { useAtom } from "jotai";
 import { Maximize } from "lucide-react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import LoadingPage from "@/Components/LoadingPage";
 import LiveSolvingBoard from "@/Components/shared/LiveSolvingBoard";
 import { StatusDot } from "@/Components/shared/StatusBadge";
 import { Button } from "@/Components/ui/button";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
+import { useLiveQuery } from "@/hooks/useLiveQuery";
+import { useRefetchOnReconnect } from "@/hooks/useRefetchOnReconnect";
+import { useSocketEvents } from "@/hooks/useSocketEvents";
+import { useSocketRoom } from "@/hooks/useSocketRoom";
 import { useWakeLock } from "@/hooks/useWakeLock";
 import { competitionAtom } from "@/lib/atoms";
-import { getPublicCompetitionInfo, getPublicRooms } from "@/lib/competition";
+import { getPublicCompetitionInfo, publicRoomsQuery } from "@/lib/competition";
 import { getEventIconClass, getEventName, getEvents } from "@/lib/events";
-import { Result, Room } from "@/lib/interfaces";
 import { StationInfo } from "@/lib/liveSolving";
 import { getTvSlides, getTvZoom, stepSlide, TV_SLIDE_MS } from "@/lib/publicTv";
-import { getPublicResultsByRoundId } from "@/lib/results";
+import { toQueryOptions } from "@/lib/queryCache";
+import { publicRoundResultsQuery } from "@/lib/results";
 import { formatClockTime, formatElapsed } from "@/lib/time";
 import { cn } from "@/lib/utils";
 import { socket } from "@/socket";
@@ -30,18 +35,21 @@ const CONTROLS_HIDE_MS = 3_000;
  */
 const PublicTv = () => {
     const [competition, setCompetition] = useAtom(competitionAtom);
-    const [rooms, setRooms] = useState<Room[]>([]);
+    // Polled as well as refetched on reconnect, in case a group change
+    // was missed
+    const { data: roomsData, dataUpdatedAt: roomsUpdatedAt } = useQuery({
+        ...toQueryOptions(publicRoomsQuery),
+        refetchInterval: ROOMS_REFRESH_MS,
+    });
+    const rooms = useMemo(() => roomsData ?? [], [roomsData]);
     const [stations, setStations] = useState<Map<number, StationInfo>>(
         new Map()
     );
-    // Results with the round they belong to, so a slide never shows another's
-    const [results, setResults] = useState<{
-        roundId: string;
-        results: Result[];
-    } | null>(null);
     const [slideIndex, setSlideIndex] = useState(0);
     const [isLive, setIsLive] = useState(socket.connected);
-    const [lastUpdate, setLastUpdate] = useState(new Date());
+    const [stationsUpdatedAt, setStationsUpdatedAt] = useState(() =>
+        Date.now()
+    );
     const [now, setNow] = useState(new Date());
     const [zoom, setZoom] = useState(() =>
         getTvZoom(window.innerWidth, window.innerHeight)
@@ -71,67 +79,55 @@ const PublicTv = () => {
         );
     }, [setCompetition]);
 
-    const fetchRooms = useCallback(() => {
-        getPublicRooms().then((data: Room[]) => {
-            setRooms(data ?? []);
-            setLastUpdate(new Date());
-        });
-    }, []);
+    // Results for the round on screen, keyed by round so a slide never
+    // shows another round's results
+    const resultsQuery = publicRoundResultsQuery(roundId ?? "");
+    const { data: results, dataUpdatedAt: resultsUpdatedAt } = useLiveQuery(
+        resultsQuery,
+        { enabled: !!roundId }
+    );
 
-    useEffect(() => {
-        fetchRooms();
-        const interval = setInterval(fetchRooms, ROOMS_REFRESH_MS);
-        return () => clearInterval(interval);
-    }, [fetchRooms]);
+    // This page runs its own connection, outside the layouts, so it also
+    // refetches on reconnect itself. The rooms are joined again on every
+    // connect.
+    useRefetchOnReconnect();
+    useSocketRoom("LiveSolving");
+    useSocketRoom(roundId ? "Results" : null, {
+        params: { roundId: roundId ?? "" },
+        invalidateOn: { resultEntered: [resultsQuery.key] },
+    });
+    useSocketEvents({
+        currentStations: (data) => {
+            setStations(
+                new Map((data as StationInfo[]).map((s) => [s.espId, s]))
+            );
+            setStationsUpdatedAt(Date.now());
+        },
+        currentTimeInfo: (data) => {
+            const station = data as StationInfo;
+            setStations((prev) => new Map(prev).set(station.espId, station));
+            setStationsUpdatedAt(Date.now());
+        },
+    });
 
-    // Live solving over the socket, which also tells us when we're offline
+    // The socket also tells us when we're offline
     useEffect(() => {
-        const handleConnect = () => {
-            setIsLive(true);
-            socket.emit("joinLiveSolving");
-            fetchRooms();
-        };
+        const handleConnect = () => setIsLive(true);
         const handleDisconnect = () => setIsLive(false);
-        const handleStations = (data: StationInfo[]) => {
-            setStations(new Map(data.map((s) => [s.espId, s])));
-            setLastUpdate(new Date());
-        };
-        const handleTimeInfo = (data: StationInfo) => {
-            setStations((prev) => new Map(prev).set(data.espId, data));
-            setLastUpdate(new Date());
-        };
         socket.on("connect", handleConnect);
         socket.on("disconnect", handleDisconnect);
-        socket.on("currentStations", handleStations);
-        socket.on("currentTimeInfo", handleTimeInfo);
         socket.connect();
-        if (socket.connected) handleConnect();
         return () => {
-            socket.emit("leaveLiveSolving");
             socket.off("connect", handleConnect);
             socket.off("disconnect", handleDisconnect);
-            socket.off("currentStations", handleStations);
-            socket.off("currentTimeInfo", handleTimeInfo);
             socket.disconnect();
         };
-    }, [fetchRooms]);
+    }, []);
 
-    // Results for the round on screen, kept current while it's shown
-    useEffect(() => {
-        if (!roundId) return;
-        const fetchResults = () =>
-            getPublicResultsByRoundId(roundId).then((data: Result[]) => {
-                setResults({ roundId, results: data });
-                setLastUpdate(new Date());
-            });
-        fetchResults();
-        socket.emit("joinResults", { roundId });
-        socket.on("resultEntered", fetchResults);
-        return () => {
-            socket.off("resultEntered", fetchResults);
-            socket.emit("leaveResults", { roundId });
-        };
-    }, [roundId]);
+    // The newest of anything that arrived: stations, rooms or results
+    const lastUpdate = new Date(
+        Math.max(stationsUpdatedAt, roomsUpdatedAt, resultsUpdatedAt)
+    );
 
     // Rotation, clock, arrow keys and screen size
     useEffect(() => {
@@ -269,11 +265,7 @@ const PublicTv = () => {
                     <TvResultsSlide
                         wcif={competition.wcif}
                         roundId={slide.roundId}
-                        results={
-                            results?.roundId === slide.roundId
-                                ? results.results
-                                : null
-                        }
+                        results={results ?? null}
                     />
                 )}
             </div>
