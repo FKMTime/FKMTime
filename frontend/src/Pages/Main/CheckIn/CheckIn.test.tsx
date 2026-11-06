@@ -10,17 +10,43 @@ import {
     getPersons,
     undoCheckIn,
 } from "@/lib/persons";
+import { clearQueryCache } from "@/lib/queryCache";
+import { renderWithQueryClient } from "@/test/queryClient";
 
 import CheckIn from "./CheckIn";
 import CheckInPanel from "./Components/CheckInPanel";
 
-vi.mock("@/lib/persons", () => ({
-    checkedInCount: vi.fn(),
-    checkIn: vi.fn(),
-    getPersonInfoByCardIdWithSensitiveData: vi.fn(),
-    getPersons: vi.fn().mockResolvedValue({ data: [] }),
-    undoCheckIn: vi.fn(),
-}));
+vi.mock("@/lib/persons", () => {
+    const countMock = vi.fn();
+    const personsMock = vi.fn().mockResolvedValue({ data: [] });
+    const pages = new Map<string, object>();
+    return {
+        checkedInCount: countMock,
+        checkIn: vi.fn(),
+        getPersonInfoByCardIdWithSensitiveData: vi.fn(),
+        getPersons: personsMock,
+        undoCheckIn: vi.fn(),
+        // The queries call the mocks above, so the tests can stub those
+        checkInCountsQuery: {
+            key: "person/check-in",
+            fetch: () => countMock(),
+        },
+        personsPageQuery: (params: {
+            page: number;
+            pageSize: number;
+            search?: string;
+        }) => {
+            const key = JSON.stringify(params);
+            const page = pages.get(key) ?? {
+                key,
+                fetch: () =>
+                    personsMock(params.page, params.pageSize, params.search),
+            };
+            pages.set(key, page);
+            return page;
+        },
+    };
+});
 vi.mock("@/hooks/useToast", () => ({ useToast: () => ({ toast: vi.fn() }) }));
 const showUndo = vi.fn();
 vi.mock("@/hooks/useUndoToast", () => ({ useUndoToast: () => showUndo }));
@@ -80,6 +106,7 @@ describe("CheckInPanel", () => {
 
 describe("CheckIn", () => {
     beforeEach(() => {
+        clearQueryCache();
         vi.mocked(checkedInCount).mockResolvedValue({
             checkedInPersonsCount: 16,
             totalPersonsCount: 18,
@@ -93,7 +120,7 @@ describe("CheckIn", () => {
                 status: 200,
                 data: { ...newcomer, checkedInAt: new Date() },
             });
-        render(<CheckIn />);
+        renderWithQueryClient(<CheckIn />);
         const scan = await screen.findByLabelText("Scan the competitor's card");
         expect(screen.getByText("2 to go")).toBeTruthy();
 
@@ -114,7 +141,7 @@ describe("CheckIn", () => {
             data: { ...newcomer, wcaId: "2019EXAM01", cardId: "0009" },
         });
         vi.mocked(checkIn).mockResolvedValue({ status: 200, data: {} });
-        render(<CheckIn />);
+        renderWithQueryClient(<CheckIn />);
         await userEvent.type(
             await screen.findByLabelText("Scan the competitor's card"),
             "0009{Enter}"
@@ -134,7 +161,7 @@ describe("CheckIn", () => {
         vi.mocked(checkIn).mockResolvedValue({ status: 200, data: {} });
         vi.mocked(undoCheckIn).mockResolvedValue(204);
         showUndo.mockClear();
-        render(<CheckIn />);
+        renderWithQueryClient(<CheckIn />);
         await userEvent.type(
             await screen.findByLabelText("Scan the competitor's card"),
             "0009{Enter}"
@@ -169,7 +196,7 @@ describe("CheckIn", () => {
                     data: returning,
                 }
             );
-            render(<CheckIn />);
+            renderWithQueryClient(<CheckIn />);
             const scan = await screen.findByLabelText(
                 "Scan the competitor's card"
             );
@@ -191,7 +218,7 @@ describe("CheckIn", () => {
                     data: returning,
                 }
             );
-            render(<CheckIn />);
+            renderWithQueryClient(<CheckIn />);
             const scan = await screen.findByLabelText(
                 "Scan the competitor's card"
             );
@@ -204,7 +231,7 @@ describe("CheckIn", () => {
 
         it("keeps the name and checks in on a second Enter", async () => {
             vi.mocked(getPersons).mockResolvedValue({ data: [returning] });
-            render(<CheckIn />);
+            renderWithQueryClient(<CheckIn />);
             const search = await screen.findByLabelText(
                 "Find a competitor by name"
             );
@@ -228,7 +255,7 @@ describe("CheckIn", () => {
                     data: { ...newcomer, cardId: "0004" },
                 }
             );
-            render(<CheckIn />);
+            renderWithQueryClient(<CheckIn />);
             const scan = await screen.findByLabelText(
                 "Scan the competitor's card"
             );
