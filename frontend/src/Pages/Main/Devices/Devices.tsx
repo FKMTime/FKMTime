@@ -1,9 +1,10 @@
 import { LayoutGrid, List, Plus, Radio, WandSparkles } from "lucide-react";
-import { useContext, useEffect, useState } from "react";
+import { useState } from "react";
 import { useSearchParams } from "react-router-dom";
 
 import LoadingPage from "@/Components/LoadingPage";
 import EmptyState from "@/Components/shared/EmptyState";
+import RequestError from "@/Components/shared/RequestError";
 import SegmentedControl from "@/Components/shared/SegmentedControl";
 import { Button } from "@/Components/ui/button";
 import {
@@ -20,8 +21,10 @@ import {
     TableHeader,
     TableRow,
 } from "@/Components/ui/table";
-import { useCachedQuery } from "@/hooks/useCachedQuery";
+import { useLiveQuery } from "@/hooks/useLiveQuery";
 import { useIsMobile } from "@/hooks/useMobile";
+import { useSocketEvents } from "@/hooks/useSocketEvents";
+import { useSocketRoom } from "@/hooks/useSocketRoom";
 import { useToast } from "@/hooks/useToast";
 import { competitionSettingsQuery } from "@/lib/competition";
 import {
@@ -32,11 +35,11 @@ import {
 } from "@/lib/devices";
 import { AvailableDevice, Device } from "@/lib/interfaces";
 import { isAdmin } from "@/lib/permissions";
-import { fetchQuery } from "@/lib/queryCache";
+import { fetchQuery, setQueryData } from "@/lib/queryCache";
 import { roomsQuery } from "@/lib/rooms";
 import { idToHex } from "@/lib/utils";
 import SetupTabs from "@/Pages/Main/Setup/SetupTabs";
-import { socket, SocketContext } from "@/socket";
+import { socket } from "@/socket";
 
 import { AutoSetupModal } from "./Components/AutoSetupModal";
 import CreateDeviceModal from "./Components/CreateDeviceModal";
@@ -68,13 +71,15 @@ const Devices = () => {
         getInitialTab(searchParams.get("tab"))
     );
     const [view, setView] = useState<"table" | "cards">("table");
-    const { data: rooms = [] } = useCachedQuery(roomsQuery);
+    const { data: rooms = [] } = useLiveQuery(roomsQuery);
     const [selectedRoomId, setSelectedRoomId] = useState<string>("ALL");
     const {
         data: fetchedDevices,
+        isError,
         refetch,
-        setData: setDevices,
-    } = useCachedQuery(devicesQuery);
+    } = useLiveQuery(devicesQuery);
+    const setDevices = (update: (previous?: Device[]) => Device[]) =>
+        setQueryData(devicesQuery.key, update);
     // Filtering here keeps switching rooms instant
     const devices = sortDevicesByName(
         (fetchedDevices ?? []).filter(
@@ -83,7 +88,7 @@ const Devices = () => {
         )
     );
     const { data: retiredDevices = [], refetch: refetchRetired } =
-        useCachedQuery(retiredDevicesQuery);
+        useLiveQuery(retiredDevicesQuery);
     const [deviceToAdd, setDeviceToAdd] = useState<AvailableDevice | null>(
         null
     );
@@ -92,8 +97,8 @@ const Devices = () => {
     const [isAutoSetupModalOpen, setIsAutoSetupModalOpen] = useState(false);
 
     const fetchData = () => {
-        refetch().catch(() => undefined);
-        refetchRetired().catch(() => undefined);
+        void refetch();
+        void refetchRetired();
     };
 
     const handleCloseCreateDeviceModal = (device?: Device) => {
@@ -162,36 +167,18 @@ const Devices = () => {
         setIsAutoSetupModalOpen(true);
     };
 
-    const [isConnected] = useContext(SocketContext) as [
-        number,
-        React.Dispatch<React.SetStateAction<number>>,
-    ];
-    useEffect(() => {
-        socket.emit("joinDevices");
-        socket.on("deviceRequests", (data: AvailableDevice[]) => {
-            setAvailableDevices(data);
-        });
+    // Joined again on every reconnect; useRefetchOnReconnect picks up
+    // device changes missed while disconnected
+    useSocketRoom("Devices");
+    useSocketEvents({
+        deviceUpdated: fetchData,
+        deviceRequests: (data) =>
+            setAvailableDevices(data as AvailableDevice[]),
+    });
 
-        return () => {
-            socket.emit("leaveDevices");
-        };
-    }, [isConnected]);
-
-    useEffect(() => {
-        const handleDevicesChanged = () => {
-            refetch().catch(() => undefined);
-            refetchRetired().catch(() => undefined);
-        };
-        socket.on("deviceUpdated", handleDevicesChanged);
-        // Picks up whatever changed while the socket was disconnected
-        socket.on("connect", handleDevicesChanged);
-        return () => {
-            socket.off("deviceUpdated", handleDevicesChanged);
-            socket.off("connect", handleDevicesChanged);
-        };
-    }, [refetch, refetchRetired]);
-
-    if (!fetchedDevices) return <LoadingPage />;
+    if (!fetchedDevices) {
+        return isError ? <RequestError onRetry={fetchData} /> : <LoadingPage />;
+    }
 
     const handleChangeTab = (value: DevicesTab) => {
         setTab(value);
