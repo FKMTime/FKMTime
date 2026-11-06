@@ -1,9 +1,11 @@
 import { useAtom, useAtomValue } from "jotai";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect } from "react";
 import { Outlet, useLocation } from "react-router-dom";
 
 import PageTabs, { PageTab } from "@/Components/shared/PageTabs";
+import { useLiveQuery } from "@/hooks/useLiveQuery";
 import { usePageHeader } from "@/hooks/usePageHeader";
+import { useSocketEvents } from "@/hooks/useSocketEvents";
 import { competitionAtom, unresolvedIncidentsCountAtom } from "@/lib/atoms";
 import {
     getUnresolvedIncidentsCount,
@@ -12,21 +14,16 @@ import {
     resolvedIncidentsQuery,
     unresolvedIncidentsQuery,
 } from "@/lib/incidents";
-import { fetchQuery, LIVE_MAX_AGE, prefetchQuery } from "@/lib/queryCache";
+import { LIVE_MAX_AGE } from "@/lib/queryCache";
 import { cn } from "@/lib/utils";
 import { warningsQuery } from "@/lib/warnings";
-import { socket } from "@/socket";
 
-import { IncidentsOutletContext } from "./incidentsContext";
+import {
+    IncidentsOutletContext,
+    invalidateIncidentLists,
+} from "./incidentsContext";
 
 type IncidentTab = "open" | "resolved" | "noteworthy" | "warnings" | "manual";
-
-interface IncidentCounts {
-    resolved?: number;
-    noteworthy?: number;
-    warnings?: number;
-    manual?: number;
-}
 
 const TAB_LABELS: Record<IncidentTab, string> = {
     open: "Open",
@@ -52,58 +49,59 @@ const IncidentsLayout = () => {
     const { pathname } = useLocation();
     const competition = useAtomValue(competitionAtom);
     const [openCount, setOpenCount] = useAtom(unresolvedIncidentsCountAtom);
-    const [counts, setCounts] = useState<IncidentCounts>({});
     const useDevices = !!competition?.useFkmTimeDevices;
     const activeTab = getActiveTab(pathname);
     // An open incident takes the whole screen on mobile
     const isIncidentOpen =
         activeTab === "open" && pathname.replace(/\/$/, "") !== "/incidents";
 
-    // The counts come from the full lists, which also fills each tab's cache
-    const loadCounts = useCallback(
-        async (reuseRunning: boolean) => {
-            const options = { reuseRunning };
-            const [open, resolved, noteworthy, warnings, manual] =
-                await Promise.all([
-                    useDevices ? getUnresolvedIncidentsCount() : undefined,
-                    useDevices
-                        ? fetchQuery(resolvedIncidentsQuery(), options)
-                        : undefined,
-                    useDevices
-                        ? fetchQuery(noteworthyIncidentsQuery(), options)
-                        : undefined,
-                    fetchQuery(warningsQuery(), options),
-                    fetchQuery(manualIncidentsQuery(), options),
-                ]);
-            if (open) setOpenCount(open.count);
-            setCounts({
-                resolved: resolved?.length,
-                noteworthy: noteworthy?.length,
-                warnings: warnings.length,
-                manual: manual.length,
-            });
-        },
-        [useDevices, setOpenCount]
-    );
+    // The counts come from the full lists, the same cache entries the tabs
+    // show, so a tab and its count can't disagree
+    const liveOptions = { maxAge: LIVE_MAX_AGE };
+    useLiveQuery(unresolvedIncidentsQuery, {
+        ...liveOptions,
+        enabled: useDevices,
+    });
+    const { data: resolved } = useLiveQuery(resolvedIncidentsQuery(), {
+        ...liveOptions,
+        enabled: useDevices,
+    });
+    const { data: noteworthy } = useLiveQuery(noteworthyIncidentsQuery(), {
+        ...liveOptions,
+        enabled: useDevices,
+    });
+    const { data: warnings } = useLiveQuery(warningsQuery(), liveOptions);
+    const { data: manual } = useLiveQuery(manualIncidentsQuery(), liveOptions);
+    const counts = {
+        resolved: resolved?.length,
+        noteworthy: noteworthy?.length,
+        warnings: warnings?.length,
+        manual: manual?.length,
+    };
 
-    const refreshCounts = useCallback(() => {
-        loadCounts(false).catch(() => undefined);
-    }, [loadCounts]);
+    // The open count also feeds the navigation badge
+    const refreshOpenCount = useCallback(() => {
+        if (!useDevices) return;
+        getUnresolvedIncidentsCount()
+            .then((data) => setOpenCount(data.count))
+            .catch(() => undefined);
+    }, [useDevices, setOpenCount]);
 
     useEffect(() => {
-        // The open tab's own load may already be on its way
-        loadCounts(true).catch(() => undefined);
-        if (useDevices) {
-            prefetchQuery(unresolvedIncidentsQuery, { maxAge: LIVE_MAX_AGE });
-        }
-        // The layout keeps the incidents socket room joined; only listen here
-        socket.on("newIncident", refreshCounts);
-        socket.on("attemptUpdated", refreshCounts);
-        return () => {
-            socket.off("newIncident", refreshCounts);
-            socket.off("attemptUpdated", refreshCounts);
-        };
-    }, [loadCounts, refreshCounts, useDevices]);
+        refreshOpenCount();
+    }, [refreshOpenCount]);
+
+    const refreshCounts = useCallback(() => {
+        invalidateIncidentLists();
+        refreshOpenCount();
+    }, [refreshOpenCount]);
+
+    // The layout keeps the incidents socket room joined; only listen here.
+    // This covers every tab, which render inside the layout.
+    useSocketEvents({
+        newIncident: refreshCounts,
+        attemptUpdated: refreshCounts,
+    });
 
     const activeLabel = TAB_LABELS[activeTab];
     usePageHeader(

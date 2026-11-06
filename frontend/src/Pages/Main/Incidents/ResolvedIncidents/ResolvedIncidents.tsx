@@ -3,6 +3,7 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
 import EmptyState from "@/Components/shared/EmptyState";
+import RequestError from "@/Components/shared/RequestError";
 import RowActions, { RowAction } from "@/Components/shared/RowActions";
 import SearchInput from "@/Components/shared/SearchInput";
 import SectionLoading from "@/Components/shared/SectionLoading";
@@ -15,7 +16,7 @@ import {
     TableHeader,
     TableRow,
 } from "@/Components/ui/table";
-import { useCachedQuery } from "@/hooks/useCachedQuery";
+import { useLiveQuery } from "@/hooks/useLiveQuery";
 import { useToast } from "@/hooks/useToast";
 import { getEventIconClass } from "@/lib/events";
 import {
@@ -37,10 +38,13 @@ const ResolvedIncidents = () => {
     const { toast } = useToast();
     const { refreshCounts } = useIncidentsContext();
     const [search, setSearch] = useState("");
-    const { data } = useCachedQuery(resolvedIncidentsQuery(search), {
-        maxAge: LIVE_MAX_AGE,
-        keepPreviousData: true,
-    });
+    const { data, isError, refetch } = useLiveQuery(
+        resolvedIncidentsQuery(search),
+        {
+            maxAge: LIVE_MAX_AGE,
+            keepPreviousData: true,
+        }
+    );
     const incidents: Incident[] = data ?? [];
     const [isSummaryOpen, setIsSummaryOpen] = useState(false);
 
@@ -112,6 +116,9 @@ const ResolvedIncidents = () => {
 
     return (
         <div className="flex flex-col gap-4">
+            {isError && (
+                <RequestError hasData={!!data} onRetry={() => void refetch()} />
+            )}
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <SearchInput
                     value={search}

@@ -1,34 +1,57 @@
-import { render, screen } from "@testing-library/react";
+import { act, render, screen } from "@testing-library/react";
 import { createStore, Provider } from "jotai";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { competitionAtom } from "@/lib/atoms";
 import { Competition, Incident } from "@/lib/interfaces";
+import { clearQueryCache } from "@/lib/queryCache";
+import { QueryWrapper } from "@/test/queryClient";
 
 import IncidentsLayout from "./IncidentsLayout";
 import IncidentListItem from "./OpenIncidents/IncidentListItem";
 
-const { listQuery } = vi.hoisted(() => ({
-    listQuery: (key: string, items: object[]) => () => ({
-        key,
-        fetch: () => Promise.resolve(items),
-    }),
-}));
+const { listQuery, lists, socketHandlers } = vi.hoisted(() => {
+    const served: Record<string, object[]> = {};
+    return {
+        lists: served,
+        socketHandlers: new Map<string, () => void>(),
+        // Serves whatever `lists` holds when the request is made
+        listQuery: (key: string, items: object[]) => {
+            served[key] = items;
+            return () => ({
+                key,
+                fetch: () => Promise.resolve(served[key]),
+            });
+        },
+    };
+});
 
-vi.mock("@/socket", () => ({ socket: { on: vi.fn(), off: vi.fn() } }));
+vi.mock("@/socket", () => ({
+    socket: {
+        on: (event: string, handler: () => void) =>
+            socketHandlers.set(event, handler),
+        off: (event: string) => socketHandlers.delete(event),
+    },
+}));
 vi.mock("@/lib/incidents", () => ({
     getUnresolvedIncidentsCount: vi.fn().mockResolvedValue({ count: 3 }),
     unresolvedIncidentsQuery: {
         key: "incident/unresolved",
         fetch: () => Promise.resolve([]),
     },
-    resolvedIncidentsQuery: listQuery("resolved", [{}, {}, {}, {}, {}]),
-    noteworthyIncidentsQuery: listQuery("noteworthy", [{}, {}]),
-    manualIncidentsQuery: listQuery("manual", [{}]),
+    resolvedIncidentsQuery: listQuery("incident/resolved", [
+        {},
+        {},
+        {},
+        {},
+        {},
+    ]),
+    noteworthyIncidentsQuery: listQuery("incident/noteworthy", [{}, {}]),
+    manualIncidentsQuery: listQuery("incident/manual", [{}]),
 }));
 vi.mock("@/lib/warnings", () => ({
-    warningsQuery: listQuery("warnings", [{}, {}]),
+    warningsQuery: listQuery("incident/warnings", [{}, {}]),
 }));
 
 const renderLayout = (path: string, useFkmTimeDevices: boolean) => {
@@ -44,11 +67,17 @@ const renderLayout = (path: string, useFkmTimeDevices: boolean) => {
                     </Route>
                 </Routes>
             </MemoryRouter>
-        </Provider>
+        </Provider>,
+        { wrapper: QueryWrapper }
     );
 };
 
 describe("IncidentsLayout", () => {
+    beforeEach(() => {
+        clearQueryCache();
+        socketHandlers.clear();
+    });
+
     it("shows every tab with its count and marks the current one", async () => {
         renderLayout("/incidents/resolved", true);
         expect(
@@ -75,6 +104,20 @@ describe("IncidentsLayout", () => {
             "Warnings2",
             "Manual1",
         ]);
+    });
+
+    it("refreshes the lists and their counts on an incident event", async () => {
+        renderLayout("/incidents/warnings", true);
+        expect(
+            await screen.findByRole("tab", { name: "Warnings 2" })
+        ).toBeTruthy();
+
+        lists["incident/warnings"] = [{}, {}, {}];
+        act(() => socketHandlers.get("newIncident")?.());
+
+        expect(
+            await screen.findByRole("tab", { name: "Warnings 3" })
+        ).toBeTruthy();
     });
 });
 
