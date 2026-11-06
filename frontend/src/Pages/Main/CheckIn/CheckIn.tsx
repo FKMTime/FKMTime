@@ -1,21 +1,24 @@
 import { Check, Nfc } from "lucide-react";
-import { FormEvent, useCallback, useEffect, useRef, useState } from "react";
+import { FormEvent, useRef, useState } from "react";
 
 import LoadingPage from "@/Components/LoadingPage";
 import EmptyState from "@/Components/shared/EmptyState";
 import InlineError from "@/Components/shared/InlineError";
 import ProgressBar from "@/Components/shared/ProgressBar";
+import RequestError from "@/Components/shared/RequestError";
 import SearchInput from "@/Components/shared/SearchInput";
 import { Input } from "@/Components/ui/input";
 import { Label } from "@/Components/ui/label";
+import { useDebouncedValue } from "@/hooks/useDebouncedValue";
+import { useLiveQuery } from "@/hooks/useLiveQuery";
 import { useToast } from "@/hooks/useToast";
 import { useUndoToast } from "@/hooks/useUndoToast";
 import { Person } from "@/lib/interfaces";
 import {
-    checkedInCount,
     checkIn,
+    checkInCountsQuery,
     getPersonInfoByCardIdWithSensitiveData,
-    getPersons,
+    personsPageQuery,
     undoCheckIn,
 } from "@/lib/persons";
 import { playScanSound } from "@/lib/scanSound";
@@ -35,46 +38,35 @@ const CheckIn = () => {
     const searchInputRef = useRef<HTMLInputElement>(null);
     // Where the selected person came from, so the cursor goes back there
     const sourceRef = useRef<LookupSource>("scan");
-    const [counts, setCounts] = useState<{ done: number; total: number }>();
+    const {
+        data: countsData,
+        isError: isCountsError,
+        refetch: refetchCounts,
+    } = useLiveQuery(checkInCountsQuery);
+    const counts = countsData && {
+        done: countsData.checkedInPersonsCount,
+        total: countsData.totalPersonsCount,
+    };
+    const fetchCounts = () => void refetchCounts();
     const [scannedCard, setScannedCard] = useState("");
     const [scanError, setScanError] = useState("");
     const [query, setQuery] = useState("");
     // The search text the selected person was picked with
     const [pickedQuery, setPickedQuery] = useState<string | null>(null);
-    const [results, setResults] = useState<Person[]>([]);
     const [selected, setSelected] = useState<Person | null>(null);
     const [checkInError, setCheckInError] = useState("");
     const [isLoading, setIsLoading] = useState(false);
     const [recent, setRecent] = useState<Person[]>([]);
 
-    const fetchCounts = useCallback(async () => {
-        const data = await checkedInCount();
-        setCounts({
-            done: data.checkedInPersonsCount,
-            total: data.totalPersonsCount,
-        });
-    }, []);
-
-    useEffect(() => {
-        fetchCounts();
-    }, [fetchCounts]);
-
-    useEffect(() => {
-        const trimmed = query.trim();
-        if (trimmed.length < 2) {
-            setResults([]);
-            return;
-        }
-        let isCancelled = false;
-        const timeout = setTimeout(async () => {
-            const response = await getPersons(1, SEARCH_RESULTS, trimmed);
-            if (!isCancelled) setResults(response.data ?? []);
-        }, 250);
-        return () => {
-            isCancelled = true;
-            clearTimeout(timeout);
-        };
-    }, [query]);
+    // Searching starts at two characters, once typing pauses
+    const trimmed = query.trim();
+    const search = useDebouncedValue(trimmed, 250);
+    const isSearching = trimmed.length >= 2 && search.length >= 2;
+    const { data: searchData } = useLiveQuery(
+        personsPageQuery({ page: 1, pageSize: SEARCH_RESULTS, search }),
+        { keepPreviousData: true, enabled: search.length >= 2 }
+    );
+    const results: Person[] = isSearching ? searchData?.data ?? [] : [];
 
     const select = (person: Person | null) => {
         setSelected(person);
@@ -200,7 +192,13 @@ const CheckIn = () => {
         }
     };
 
-    if (!counts) return <LoadingPage />;
+    if (!counts) {
+        return isCountsError ? (
+            <RequestError onRetry={fetchCounts} />
+        ) : (
+            <LoadingPage />
+        );
+    }
 
     const left = counts.total - counts.done;
 
