@@ -78,6 +78,13 @@ describe('Attempt lifecycle and edit log (e2e)', () => {
         .expect(200)
     ).body;
 
+  // Without this the attempt already names the delegate who entered it
+  const clearUpdatedBy = (ids: string[]) =>
+    db.attempt.updateMany({
+      where: { id: { in: ids } },
+      data: { updatedById: null },
+    });
+
   const clearResults = async () => {
     await db.noteworthyIncident.deleteMany({
       where: {
@@ -344,6 +351,7 @@ describe('Attempt lifecycle and edit log (e2e)', () => {
     });
 
     it('PUT /attempt/swap swaps numbers and logs both attempts', async () => {
+      await clearUpdatedBy([second.id, third.id]);
       await request(server())
         .put('/attempt/swap')
         .set(auth(delegate))
@@ -354,18 +362,26 @@ describe('Attempt lifecycle and edit log (e2e)', () => {
         db.attempt.findUnique({ where: { id: second.id } }),
         db.attempt.findUnique({ where: { id: third.id } }),
       ]);
-      expect(s.attemptNumber).toBe(3);
-      expect(t.attemptNumber).toBe(2);
+      expect(s).toMatchObject({
+        attemptNumber: 3,
+        updatedById: users.userIds.DELEGATE,
+      });
+      expect(t).toMatchObject({
+        attemptNumber: 2,
+        updatedById: users.userIds.DELEGATE,
+      });
 
       const secondLog = await editLog(second.id);
       expect(secondLog[secondLog.length - 1]).toMatchObject({
         comment: 'Swapped with attempt 2',
         attemptNumber: 3,
+        editedBy: { id: users.userIds.DELEGATE },
       });
       const thirdLog = await editLog(third.id);
       expect(thirdLog[thirdLog.length - 1]).toMatchObject({
         comment: 'Swapped with attempt 3',
         attemptNumber: 2,
+        editedBy: { id: users.userIds.DELEGATE },
       });
     });
 
@@ -374,6 +390,7 @@ describe('Attempt lifecycle and edit log (e2e)', () => {
       const result = await db.result.findFirst({
         where: { personId: competitor.id, roundId: ROUND_ID },
       });
+      await clearUpdatedBy([first.id, second.id, third.id]);
 
       await request(server())
         .put('/attempt/reorder')
@@ -393,10 +410,16 @@ describe('Attempt lifecycle and edit log (e2e)', () => {
         third.id,
         first.id,
       ]);
+      expect(attempts.map((a) => a.updatedById)).toEqual([
+        users.userIds.DELEGATE,
+        users.userIds.DELEGATE,
+        users.userIds.DELEGATE,
+      ]);
       const log = await editLog(first.id);
       expect(log[log.length - 1]).toMatchObject({
         comment: 'Reordered',
         attemptNumber: 3,
+        editedBy: { id: users.userIds.DELEGATE },
       });
       expect(stub.lastAttemptsFor(competitor.registrantId, ROUND_ID)).toEqual([
         1200, 1300, -1,
@@ -485,13 +508,22 @@ describe('Attempt lifecycle and edit log (e2e)', () => {
         .expect(200);
 
       // The extra attempt is solved later and entered as E1
+      await clearUpdatedBy([incident.id]);
       const extra = await createAttempt({
         attemptNumber: 1,
         value: 1111,
         type: AttemptType.EXTRA_ATTEMPT,
       });
       expect(extra.type).toBe(AttemptType.EXTRA_ATTEMPT);
+      expect(
+        await db.attempt.findUnique({ where: { id: incident.id } }),
+      ).toMatchObject({ replacedBy: 1, updatedById: users.userIds.DELEGATE });
+      expect((await editLog(incident.id)).pop()).toMatchObject({
+        comment: 'Replaced by extra 1',
+        editedBy: { id: users.userIds.DELEGATE },
+      });
 
+      await clearUpdatedBy([incident.id]);
       await request(server())
         .put(`/attempt/${incident.id}/replacement`)
         .set(auth(delegate))
@@ -504,11 +536,13 @@ describe('Attempt lifecycle and edit log (e2e)', () => {
       expect(replaced).toMatchObject({
         status: AttemptStatus.EXTRA_GIVEN,
         replacedBy: 1,
+        updatedById: users.userIds.DELEGATE,
       });
       const log = await editLog(incident.id);
       expect(log[log.length - 1]).toMatchObject({
         comment: 'Replacement set',
         replacedBy: 1,
+        editedBy: { id: users.userIds.DELEGATE },
       });
       expect(stub.lastAttemptsFor(competitor.registrantId, ROUND_ID)).toEqual([
         1000, 1700, 1111,
@@ -524,6 +558,7 @@ describe('Attempt lifecycle and edit log (e2e)', () => {
         previous.body.previousIncidents.map((a: any) => a.status).sort(),
       ).toEqual([AttemptStatus.EXTRA_GIVEN, AttemptStatus.RESOLVED]);
 
+      await clearUpdatedBy([incident.id]);
       await request(server())
         .put(`/attempt/${incident.id}/replacement`)
         .set(auth(delegate))
@@ -535,6 +570,7 @@ describe('Attempt lifecycle and edit log (e2e)', () => {
       expect(cleared).toMatchObject({
         status: AttemptStatus.STANDARD,
         replacedBy: null,
+        updatedById: users.userIds.DELEGATE,
       });
       expect((await editLog(incident.id)).pop().comment).toBe(
         'Replacement cleared',
