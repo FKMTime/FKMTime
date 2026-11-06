@@ -2,6 +2,33 @@ import { AddPerson, Person } from "./interfaces";
 import { queryFamily } from "./queryCache";
 import { backendQuery, backendRequest, wcaApiRequest } from "./request";
 
+export interface PersonsPageParams {
+    page: number;
+    pageSize: number;
+    search?: string;
+    registrantId?: number;
+    withoutCardAssigned?: boolean;
+    cardId?: string;
+    onlyNewcomers?: boolean;
+    onlyNotCheckedIn?: boolean;
+}
+
+const personsPagePath = (params: PersonsPageParams) => {
+    const searchParams = new URLSearchParams();
+    searchParams.append("page", params.page.toString());
+    searchParams.append("pageSize", params.pageSize.toString());
+    if (params.search) searchParams.append("search", params.search);
+    if (params.registrantId)
+        searchParams.append("registrantId", params.registrantId.toString());
+    if (params.withoutCardAssigned)
+        searchParams.append("withoutCardAssigned", "true");
+    if (params.cardId) searchParams.append("cardId", params.cardId);
+    if (params.onlyNewcomers) searchParams.append("onlyNewcomers", "true");
+    if (params.onlyNotCheckedIn)
+        searchParams.append("onlyNotCheckedIn", "true");
+    return `person?${searchParams.toString()}`;
+};
+
 export const getPersons = async (
     page = 1,
     pageSize = 10,
@@ -12,26 +39,33 @@ export const getPersons = async (
     onlyNewcomers?: boolean,
     onlyNotCheckedIn?: boolean
 ) => {
-    const searchParams = new URLSearchParams();
-    searchParams.append("page", page.toString());
-    searchParams.append("pageSize", pageSize.toString());
-    if (search) searchParams.append("search", search);
-    if (registrantId)
-        searchParams.append("registrantId", registrantId.toString());
-    if (withoutCardAssigned) searchParams.append("withoutCardAssigned", "true");
-    if (cardId) searchParams.append("cardId", cardId);
-    if (onlyNewcomers) searchParams.append("onlyNewcomers", "true");
-    if (onlyNotCheckedIn) searchParams.append("onlyNotCheckedIn", "true");
-    const query = `person?${searchParams.toString()}`;
-    const response = await backendRequest(query, "GET", true);
+    const path = personsPagePath({
+        page,
+        pageSize,
+        search,
+        registrantId,
+        withoutCardAssigned,
+        cardId,
+        onlyNewcomers,
+        onlyNotCheckedIn,
+    });
+    const response = await backendRequest(path, "GET", true);
     return await response.json();
 };
 
+const personsPages = queryFamily((path) =>
+    backendQuery<{ data: Person[]; count: number }>(path)
+);
+
+/** One page of the Persons list, one query per page and set of filters */
+export const personsPageQuery = (params: PersonsPageParams) =>
+    personsPages(personsPagePath(params));
+
 /** The Persons tab as it first opens: page 1 of 10, no filters */
-export const firstPersonsPageQuery = backendQuery<{
-    data: Person[];
-    count: number;
-}>("person?page=1&pageSize=10");
+export const firstPersonsPageQuery = personsPageQuery({
+    page: 1,
+    pageSize: 10,
+});
 
 export const getAllPersons = async (
     withoutCardAssigned = false,

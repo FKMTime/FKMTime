@@ -1,10 +1,11 @@
 import { useAtomValue } from "jotai";
 import { SlidersHorizontal, UserPlus } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 
 import LoadingPage from "@/Components/LoadingPage";
 import Pagination from "@/Components/Pagination";
 import EmptyState from "@/Components/shared/EmptyState";
+import RequestError from "@/Components/shared/RequestError";
 import SearchInput from "@/Components/shared/SearchInput";
 import SectionLoading from "@/Components/shared/SectionLoading";
 import ToggleChip from "@/Components/shared/ToggleChip";
@@ -23,12 +24,14 @@ import {
     SheetHeader,
     SheetTitle,
 } from "@/Components/ui/sheet";
+import { useDebouncedValue } from "@/hooks/useDebouncedValue";
+import { useLiveQuery } from "@/hooks/useLiveQuery";
 import { useIsMobile } from "@/hooks/useMobile";
 import { competitionAtom } from "@/lib/atoms";
 import { Person } from "@/lib/interfaces";
 import { isOrganizerOrDelegate } from "@/lib/permissions";
-import { firstPersonsPageQuery, getPersons } from "@/lib/persons";
-import { fetchQuery, getFreshQueryData, LIVE_MAX_AGE } from "@/lib/queryCache";
+import { personsPageQuery } from "@/lib/persons";
+import { LIVE_MAX_AGE } from "@/lib/queryCache";
 import { calculateTotalPages } from "@/lib/utils";
 
 import AddPersonModal from "./Components/AddPersonModal";
@@ -62,19 +65,6 @@ const Persons = () => {
     });
     const [page, setPage] = useState(1);
     const [pageSize, setPageSize] = useState(10);
-    // The first page the Assign cards tab loaded moments ago shows at once
-    const [cachedFirstPage] = useState(() =>
-        getFreshQueryData<{ data: Person[]; count: number }>(
-            firstPersonsPageQuery.key,
-            LIVE_MAX_AGE
-        )
-    );
-    const [persons, setPersons] = useState<Person[] | null>(
-        cachedFirstPage?.data ?? null
-    );
-    const [count, setCount] = useState(cachedFirstPage?.count ?? 0);
-    // The first load has nothing to debounce; only typing does
-    const isFirstLoad = useRef(true);
     const [refreshKey, setRefreshKey] = useState(0);
     const [isAddOpen, setIsAddOpen] = useState(false);
     const [dialog, setDialog] = useState<{
@@ -87,45 +77,35 @@ const Persons = () => {
         setPage(1);
     };
 
-    useEffect(() => {
-        let isCancelled = false;
-        const delay = isFirstLoad.current ? 0 : SEARCH_DEBOUNCE_MS;
-        const timeout = setTimeout(async () => {
-            const registrantId = parseInt(filters.registrantId);
-            const isFirstPage =
-                page === 1 &&
-                pageSize === 10 &&
-                !filters.search &&
-                !filters.registrantId &&
-                !filters.cardId &&
-                !filters.onlyNewcomers &&
-                !filters.onlyNotCheckedIn;
-            const response = isFirstPage
-                ? await fetchQuery(firstPersonsPageQuery).catch(() => null)
-                : await getPersons(
-                      page,
-                      pageSize,
-                      filters.search || undefined,
-                      Number.isNaN(registrantId) ? undefined : registrantId,
-                      undefined,
-                      filters.cardId || undefined,
-                      filters.onlyNewcomers,
-                      filters.onlyNotCheckedIn
-                  );
-            if (isCancelled || !response) return;
-            isFirstLoad.current = false;
-            setPersons(response.data);
-            setCount(response.count);
-        }, delay);
-        return () => {
-            isCancelled = true;
-            clearTimeout(timeout);
-        };
-    }, [filters, page, pageSize, refreshKey]);
+    const registrantId = parseInt(filters.registrantId);
+    // Typing waits until it pauses; the first load doesn't wait
+    const params = useDebouncedValue(
+        JSON.stringify({
+            page,
+            pageSize,
+            search: filters.search || undefined,
+            registrantId: Number.isNaN(registrantId) ? undefined : registrantId,
+            cardId: filters.cardId || undefined,
+            onlyNewcomers: filters.onlyNewcomers,
+            onlyNotCheckedIn: filters.onlyNotCheckedIn,
+        }),
+        SEARCH_DEBOUNCE_MS
+    );
+    // The first page the Assign cards tab loaded moments ago shows at once,
+    // and the last page stays while the next one loads
+    const { data, isError, refetch } = useLiveQuery(
+        personsPageQuery(JSON.parse(params)),
+        { maxAge: LIVE_MAX_AGE, keepPreviousData: true }
+    );
+    const persons = data?.data ?? null;
+    const count = data?.count ?? 0;
 
     if (!competition) return <LoadingPage />;
 
-    const refresh = () => setRefreshKey((key) => key + 1);
+    const refresh = () => {
+        setRefreshKey((key) => key + 1);
+        void refetch();
+    };
     const closeDialog = () => {
         setDialog(null);
         refresh();
@@ -178,6 +158,12 @@ const Persons = () => {
     return (
         <div className="flex flex-col gap-4">
             <PersonsTabs value="all" refreshKey={refreshKey} />
+            {isError && (
+                <RequestError
+                    hasData={!!persons}
+                    onRetry={() => void refetch()}
+                />
+            )}
 
             <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
                 <div className="flex flex-1 flex-wrap items-center gap-2">

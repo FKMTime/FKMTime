@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { createStore, Provider } from "jotai";
 import { MemoryRouter } from "react-router-dom";
@@ -8,16 +8,38 @@ import { competitionAtom } from "@/lib/atoms";
 import { Competition } from "@/lib/interfaces";
 import { firstPersonsPageQuery } from "@/lib/persons";
 import { clearQueryCache } from "@/lib/queryCache";
+import { renderWithQueryClient } from "@/test/queryClient";
 
 import Persons from "./Persons";
 
-vi.mock("@/lib/persons", () => ({
-    getPersons: vi.fn(() =>
-        Promise.resolve({ data: [], count: 0, personsWithCardAssigned: 0 })
-    ),
-    firstPersonsPageQuery: {
+const { firstPage, pages } = vi.hoisted(() => ({
+    firstPage: {
         key: "person?page=1&pageSize=10",
         fetch: vi.fn(() => Promise.resolve({ data: [], count: 0 })),
+    },
+    pages: new Map<string, { key: string; fetch: () => Promise<object> }>(),
+}));
+
+vi.mock("@/lib/persons", () => ({
+    firstPersonsPageQuery: firstPage,
+    // One stable query per page and set of filters, like the real one
+    personsPageQuery: (params: Record<string, unknown>) => {
+        const isFirstPage =
+            params.page === 1 &&
+            params.pageSize === 10 &&
+            !params.search &&
+            !params.registrantId &&
+            !params.cardId &&
+            !params.onlyNewcomers &&
+            !params.onlyNotCheckedIn;
+        if (isFirstPage) return firstPage;
+        const key = JSON.stringify(params);
+        const page = pages.get(key) ?? {
+            key,
+            fetch: () => Promise.resolve({ data: [], count: 0 }),
+        };
+        pages.set(key, page);
+        return page;
     },
     personsWithoutCardQuery: {
         key: "person/all?withoutCardAssigned=true",
@@ -38,7 +60,7 @@ const renderAt = (width: number) => {
         useFkmTimeDevices: true,
         wcif: { events: [], persons: [] },
     } as unknown as Competition);
-    render(
+    renderWithQueryClient(
         <Provider store={store}>
             <MemoryRouter>
                 <Persons />
