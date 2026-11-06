@@ -1,4 +1,5 @@
-import { Scramble } from "./interfaces";
+import { Scramble, ScrambleSet } from "./interfaces";
+import { Query, queryFamily } from "./queryCache";
 import { scramblingDeviceBackendRequest } from "./request";
 import { decryptText } from "./utils";
 
@@ -9,6 +10,14 @@ export const getScrambleSetsForScramblingDevice = async (roundId: string) => {
     );
     return await response.json();
 };
+
+/** A round's scramble sets, as a scrambling device sees them */
+export const scramblingDeviceSetsQuery = queryFamily(
+    (roundId): Query<ScrambleSet[]> => ({
+        key: `scrambling/sets/round/${roundId}`,
+        fetch: () => getScrambleSetsForScramblingDevice(roundId),
+    })
+);
 
 export const getScrambleSetById = async (id: string) => {
     const response = await scramblingDeviceBackendRequest(

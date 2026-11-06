@@ -1,26 +1,52 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { getAllDevices } from "@/lib/devices";
 import { assignCard, getAllPersons } from "@/lib/persons";
+import { clearQueryCache } from "@/lib/queryCache";
 import { getAllRooms } from "@/lib/rooms";
 import { sendStationPacket } from "@/lib/stationTester";
+import { renderWithQueryClient } from "@/test/queryClient";
 
 import StationTester from "./StationTester";
 
 const toast = vi.fn();
 vi.mock("@/hooks/useToast", () => ({ useToast: () => ({ toast }) }));
-vi.mock("@/lib/persons", async (importOriginal) => ({
-    ...(await importOriginal<typeof import("@/lib/persons")>()),
-    assignCard: vi.fn(),
-    getAllPersons: vi.fn(),
-}));
-vi.mock("@/lib/rooms", () => ({ getAllRooms: vi.fn() }));
-vi.mock("@/lib/devices", async (importOriginal) => ({
-    ...(await importOriginal<typeof import("@/lib/devices")>()),
-    getAllDevices: vi.fn(),
-}));
+// The queries call these mocks, so the tests can stub them
+vi.mock("@/lib/persons", async (importOriginal) => {
+    const getAllPersonsMock = vi.fn();
+    return {
+        ...(await importOriginal<typeof import("@/lib/persons")>()),
+        assignCard: vi.fn(),
+        getAllPersons: getAllPersonsMock,
+        allPersonsQuery: {
+            key: "person/all?",
+            fetch: () => getAllPersonsMock(),
+        },
+    };
+});
+vi.mock("@/lib/rooms", () => {
+    const getAllRoomsMock = vi.fn();
+    return {
+        getAllRooms: getAllRoomsMock,
+        roomsQuery: {
+            key: "competition/rooms",
+            fetch: () => getAllRoomsMock(),
+        },
+    };
+});
+vi.mock("@/lib/devices", async (importOriginal) => {
+    const getAllDevicesMock = vi.fn();
+    return {
+        ...(await importOriginal<typeof import("@/lib/devices")>()),
+        getAllDevices: getAllDevicesMock,
+        stationDevicesQuery: {
+            key: "device?type=STATION",
+            fetch: () => getAllDevicesMock(),
+        },
+    };
+});
 vi.mock("@/lib/stationTester", async (importOriginal) => ({
     ...(await importOriginal<typeof import("@/lib/stationTester")>()),
     sendStationPacket: vi.fn(),
@@ -33,7 +59,7 @@ const acceptedExchange = (type: string, message: string) => ({
 });
 
 const renderPage = async () => {
-    render(<StationTester />);
+    renderWithQueryClient(<StationTester />);
     return await screen.findByLabelText("Session ID");
 };
 
@@ -47,6 +73,7 @@ const sendAttempt = async (user: ReturnType<typeof userEvent.setup>) => {
 
 describe("StationTester", () => {
     beforeEach(() => {
+        clearQueryCache();
         vi.clearAllMocks();
         vi.mocked(getAllPersons).mockResolvedValue([
             { id: "p1", name: "Alex Example", cardId: "111" },

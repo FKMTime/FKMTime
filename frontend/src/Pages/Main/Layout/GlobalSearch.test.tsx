@@ -1,4 +1,4 @@
-import { render, screen, within } from "@testing-library/react";
+import { screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { createStore, Provider } from "jotai";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
@@ -9,12 +9,50 @@ import { getAllDevices } from "@/lib/devices";
 import { getUnresolvedIncidents } from "@/lib/incidents";
 import { Competition } from "@/lib/interfaces";
 import { getPersons } from "@/lib/persons";
+import { clearQueryCache } from "@/lib/queryCache";
+import { renderWithQueryClient } from "@/test/queryClient";
 
 import GlobalSearch from "./GlobalSearch";
 
-vi.mock("@/lib/persons", () => ({ getPersons: vi.fn() }));
-vi.mock("@/lib/devices", () => ({ getAllDevices: vi.fn() }));
-vi.mock("@/lib/incidents", () => ({ getUnresolvedIncidents: vi.fn() }));
+// The queries call these mocks, so the tests can stub and inspect them
+vi.mock("@/lib/persons", () => {
+    const getPersonsMock = vi.fn();
+    const pages = new Map<string, object>();
+    return {
+        getPersons: getPersonsMock,
+        personsPageQuery: (params: {
+            page: number;
+            pageSize: number;
+            search?: string;
+        }) => {
+            const key = JSON.stringify(params);
+            const page = pages.get(key) ?? {
+                key,
+                fetch: () =>
+                    getPersonsMock(params.page, params.pageSize, params.search),
+            };
+            pages.set(key, page);
+            return page;
+        },
+    };
+});
+vi.mock("@/lib/devices", () => {
+    const getAllDevicesMock = vi.fn();
+    return {
+        getAllDevices: getAllDevicesMock,
+        devicesQuery: { key: "device", fetch: () => getAllDevicesMock() },
+    };
+});
+vi.mock("@/lib/incidents", () => {
+    const getUnresolvedIncidentsMock = vi.fn();
+    return {
+        getUnresolvedIncidents: getUnresolvedIncidentsMock,
+        unresolvedIncidentsQuery: {
+            key: "incident/unresolved",
+            fetch: () => getUnresolvedIncidentsMock(),
+        },
+    };
+});
 const roles = vi.hoisted(() => ({ delegate: true }));
 vi.mock("@/lib/permissions", () => ({
     isDelegate: () => roles.delegate,
@@ -38,7 +76,7 @@ const competition = {
 const renderSearch = () => {
     const store = createStore();
     store.set(competitionAtom, competition);
-    render(
+    renderWithQueryClient(
         <Provider store={store}>
             <MemoryRouter initialEntries={["/"]}>
                 <Routes>
@@ -56,6 +94,7 @@ const renderSearch = () => {
 
 describe("GlobalSearch", () => {
     beforeEach(() => {
+        clearQueryCache();
         roles.delegate = true;
         vi.mocked(getPersons).mockResolvedValue({ data: persons, count: 2 });
         vi.mocked(getAllDevices).mockResolvedValue([

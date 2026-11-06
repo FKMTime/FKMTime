@@ -79,6 +79,9 @@ export const getAllPersons = async (
     return await response.json();
 };
 
+/** Everyone, for the station tester */
+export const allPersonsQuery = backendQuery<Person[]>("person/all?");
+
 /** Everyone without a card, as Assign cards lists them before a search */
 export const personsWithoutCardQuery = backendQuery<Person[]>(
     "person/all?withoutCardAssigned=true"

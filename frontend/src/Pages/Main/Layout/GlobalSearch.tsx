@@ -1,6 +1,6 @@
 import { useAtomValue } from "jotai";
 import { Search } from "lucide-react";
-import { KeyboardEvent, useEffect, useMemo, useState } from "react";
+import { KeyboardEvent, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import {
@@ -8,9 +8,11 @@ import {
     PopoverAnchor,
     PopoverContent,
 } from "@/Components/ui/popover";
+import { useDebouncedValue } from "@/hooks/useDebouncedValue";
+import { useLiveQuery } from "@/hooks/useLiveQuery";
 import { useNavItems } from "@/hooks/useNavItems";
 import { competitionAtom } from "@/lib/atoms";
-import { getAllDevices } from "@/lib/devices";
+import { devicesQuery } from "@/lib/devices";
 import {
     deviceToItem,
     getGroupItems,
@@ -21,9 +23,9 @@ import {
     SearchItem,
     searchItems,
 } from "@/lib/globalSearch";
-import { getUnresolvedIncidents } from "@/lib/incidents";
-import { Device, Incident, Person } from "@/lib/interfaces";
-import { getPersons } from "@/lib/persons";
+import { unresolvedIncidentsQuery } from "@/lib/incidents";
+import { Person } from "@/lib/interfaces";
+import { personsPageQuery } from "@/lib/persons";
 import { cn } from "@/lib/utils";
 
 const MIN_QUERY_LENGTH = 2;
@@ -39,13 +41,8 @@ const GlobalSearch = () => {
     const competition = useAtomValue(competitionAtom);
     const { items: navItems } = useNavItems();
     const [query, setQuery] = useState("");
-    const [persons, setPersons] = useState<Person[]>([]);
-    // Loaded once, on the first search, and only when the user can open them
-    const [devices, setDevices] = useState<Device[] | null>(null);
-    const [incidents, setIncidents] = useState<Incident[] | null>(null);
     // Closed after blur, Escape or picking a result; typing reopens it
     const [isDismissed, setIsDismissed] = useState(false);
-    const [isLoading, setIsLoading] = useState(false);
     const [highlighted, setHighlighted] = useState(0);
     const trimmed = query.trim();
     const [highlightedQuery, setHighlightedQuery] = useState(trimmed);
@@ -75,33 +72,29 @@ const GlobalSearch = () => {
         [competition, navItems, useDevices]
     );
 
-    useEffect(() => {
-        if (!isOpen) return;
-        if (canSeeDevices && devices === null)
-            getAllDevices().then((data: Device[]) => setDevices(data ?? []));
-        if (canSeeIncidents && incidents === null)
-            getUnresolvedIncidents().then((data) => setIncidents(data ?? []));
-    }, [isOpen, canSeeDevices, canSeeIncidents, devices, incidents]);
+    // Loaded on the first search, and only when the user can open them
+    const { data: devices } = useLiveQuery(devicesQuery, {
+        enabled: isOpen && canSeeDevices,
+    });
+    const { data: incidents } = useLiveQuery(unresolvedIncidentsQuery, {
+        enabled: isOpen && canSeeIncidents,
+    });
 
-    useEffect(() => {
-        if (trimmed.length < MIN_QUERY_LENGTH) {
-            setPersons([]);
-            setIsLoading(false);
-            return;
+    // People are searched once typing pauses
+    const search = useDebouncedValue(trimmed, DEBOUNCE_MS);
+    const isSearchLongEnough = trimmed.length >= MIN_QUERY_LENGTH;
+    const { data: personsPage, isFetching } = useLiveQuery(
+        personsPageQuery({ page: 1, pageSize: MAX_PERSONS, search }),
+        {
+            keepPreviousData: true,
+            enabled: search.length >= MIN_QUERY_LENGTH,
         }
-        let isCancelled = false;
-        setIsLoading(true);
-        const timeout = setTimeout(async () => {
-            const response = await getPersons(1, MAX_PERSONS, trimmed);
-            if (isCancelled) return;
-            setPersons(response.data ?? []);
-            setIsLoading(false);
-        }, DEBOUNCE_MS);
-        return () => {
-            isCancelled = true;
-            clearTimeout(timeout);
-        };
-    }, [trimmed]);
+    );
+    const persons: Person[] = useMemo(
+        () => (isSearchLongEnough ? personsPage?.data ?? [] : []),
+        [isSearchLongEnough, personsPage]
+    );
+    const isLoading = isSearchLongEnough && (search !== trimmed || isFetching);
 
     const sections = useMemo(
         () =>

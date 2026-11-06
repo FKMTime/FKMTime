@@ -1,6 +1,6 @@
 import { useAtomValue } from "jotai";
 import { CircleCheck, Users } from "lucide-react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 
 import AttemptWarnings from "@/Components/AttemptWarnings";
@@ -10,9 +10,10 @@ import ProgressBar from "@/Components/shared/ProgressBar";
 import { StatusDot } from "@/Components/shared/StatusBadge";
 import { Button } from "@/Components/ui/button";
 import { useConfirm } from "@/hooks/useConfirm";
+import { useLiveQuery } from "@/hooks/useLiveQuery";
 import { useToast } from "@/hooks/useToast";
 import { competitionAtom } from "@/lib/atoms";
-import { getIncidentsByRoundId } from "@/lib/incidents";
+import { roundIncidentsQuery } from "@/lib/incidents";
 import {
     Attempt,
     Incident,
@@ -23,10 +24,10 @@ import {
 } from "@/lib/interfaces";
 import { attemptWithPenaltyToString } from "@/lib/resultFormatters";
 import {
+    doubleCheckQuery,
     doubleCheckResult,
     getPersonsWithNoResultsByRoundId,
-    getResultById,
-    getResultsToDoubleCheckByRoundId,
+    resultQuery,
     undoDoubleCheck,
 } from "@/lib/results";
 import { getSubmissionPlatformName } from "@/lib/utils";
@@ -45,59 +46,53 @@ const DoubleCheck = () => {
     const { id } = useParams<{ id: string }>();
     const confirm = useConfirm();
     const { toast } = useToast();
-    const [resultsToDoubleCheck, setResultsToDoubleCheck] = useState<
-        ResultToDoubleCheck[]
-    >([]);
-    const [checkedResults, setCheckedResults] = useState<CheckedResult[]>([]);
+    const roundId = id ?? "";
+    const { data: roundData, refetch: refetchRound } = useLiveQuery(
+        doubleCheckQuery(roundId),
+        { enabled: !!id }
+    );
+    const { data: incidentsData, refetch: refetchIncidents } = useLiveQuery(
+        roundIncidentsQuery(roundId),
+        { enabled: !!id }
+    );
+    const resultsToDoubleCheck: ResultToDoubleCheck[] = useMemo(
+        () =>
+            (roundData?.results ?? []).map((r: Result) => ({
+                ...r,
+                combinedName: `${r.person.name} (${r.person.registrantId})`,
+            })),
+        [roundData]
+    );
+    const checkedResults: CheckedResult[] = roundData?.checkedResults ?? [];
+    const totalResults = roundData?.totalCount ?? 0;
+    const doubleCheckedResults = roundData?.doubleCheckedCount ?? 0;
+    const incidents: Incident[] = incidentsData ?? [];
     const [inputValue, setInputValue] = useState<string>("");
     const [result, setResult] = useState<ResultToDoubleCheck | null>(null);
     const [alreadyCheckedResult, setAlreadyCheckedResult] =
         useState<CheckedResult | null>(null);
-    const [totalResults, setTotalResults] = useState<number>(0);
-    const [doubleCheckedResults, setDoubleCheckedResults] = useState<number>(0);
     const [justSelected, setJustSelected] = useState<boolean>(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [missingPersons, setMissingPersons] = useState<
         Pick<Person, "id" | "name" | "registrantId" | "wcaId">[]
     >([]);
     const [showMissingPersons, setShowMissingPersons] = useState(false);
-    const [incidents, setIncidents] = useState<Incident[]>([]);
-    const [cumulativeLimit, setCumulativeLimit] =
-        useState<RemainingAndUsedCumulativeLimit | null>(null);
     const competition = useAtomValue(competitionAtom);
     const idInputRef = useRef<HTMLInputElement>(null);
 
-    const fetchData = useCallback(async () => {
-        if (!id) return;
-        const [data, checks] = await Promise.all([
-            getResultsToDoubleCheckByRoundId(id),
-            getIncidentsByRoundId(id),
-        ]);
-        setResultsToDoubleCheck(
-            data.results.map((r: Result) => ({
-                ...r,
-                combinedName: `${r.person.name} (${r.person.registrantId})`,
-            }))
-        );
-        setCheckedResults(data.checkedResults ?? []);
-        setTotalResults(data.totalCount);
-        setDoubleCheckedResults(data.doubleCheckedCount);
-        setIncidents(checks);
-    }, [id]);
+    const fetchData = useCallback(
+        () => Promise.all([refetchRound(), refetchIncidents()]),
+        [refetchRound, refetchIncidents]
+    );
 
-    useEffect(() => {
-        fetchData();
-    }, [fetchData, id]);
-
-    useEffect(() => {
-        if (!result) {
-            setCumulativeLimit(null);
-            return;
-        }
-        getResultById(result.id).then((r) =>
-            setCumulativeLimit(r.data.remainingAndUsedCumulativeLimit ?? null)
-        );
-    }, [result]);
+    // The selected result's cumulative time limit, from the saved attempts
+    const { data: selectedResult } = useLiveQuery(
+        resultQuery(result?.id ?? ""),
+        { enabled: !!result }
+    );
+    const cumulativeLimit: RemainingAndUsedCumulativeLimit | null = result
+        ? selectedResult?.remainingAndUsedCumulativeLimit ?? null
+        : null;
 
     const handleUpdateAttempt = (attempt: Attempt) => {
         if (!result) return;

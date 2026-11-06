@@ -1,8 +1,9 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 import { Modal } from "@/Components/Modal";
 import ModalLoading from "@/Components/ModalLoading";
 import { useDialogError } from "@/hooks/useDialogError";
+import { useLiveQuery } from "@/hooks/useLiveQuery";
 import { createDevice } from "@/lib/devices";
 import {
     AvailableDevice,
@@ -13,7 +14,7 @@ import {
     HardwareVersion,
     Room,
 } from "@/lib/interfaces";
-import { getAllRooms } from "@/lib/rooms";
+import { roomsQuery } from "@/lib/rooms";
 
 import DeviceForm from "./DeviceForm";
 
@@ -30,12 +31,18 @@ const CreateDeviceModal = ({
 }: CreateDeviceModalProps) => {
     const [error, setError] = useDialogError(isOpen);
     const [isLoading, setIsLoading] = useState(false);
-    const [rooms, setRooms] = useState<Room[]>([]);
-    const [availableTypes, setAvailableTypes] = useState<DeviceType[]>([
-        DeviceType.STATION,
-        DeviceType.ATTENDANCE_SCRAMBLER,
-        DeviceType.ATTENDANCE_RUNNER,
-    ]);
+    const { data: roomsData } = useLiveQuery(roomsQuery, { enabled: isOpen });
+    const rooms: Room[] = roomsData ?? [];
+    // A device asking to be added can only be its own kind
+    const availableTypes: DeviceType[] = !deviceToAdd
+        ? [
+              DeviceType.STATION,
+              DeviceType.ATTENDANCE_SCRAMBLER,
+              DeviceType.ATTENDANCE_RUNNER,
+          ]
+        : deviceToAdd.type === "STAFF_ATTENDANCE"
+          ? [DeviceType.ATTENDANCE_SCRAMBLER, DeviceType.ATTENDANCE_RUNNER]
+          : [DeviceType.STATION];
 
     const handleSubmit = async (data: DeviceData) => {
         setIsLoading(true);
@@ -51,23 +58,6 @@ const CreateDeviceModal = ({
         }
         setIsLoading(false);
     };
-
-    useEffect(() => {
-        if (!isOpen) return;
-        getAllRooms().then((data: Room[]) => {
-            setRooms(data);
-        });
-        if (deviceToAdd) {
-            if (deviceToAdd.type === "STAFF_ATTENDANCE") {
-                setAvailableTypes([
-                    DeviceType.ATTENDANCE_SCRAMBLER,
-                    DeviceType.ATTENDANCE_RUNNER,
-                ]);
-            } else {
-                setAvailableTypes([DeviceType.STATION]);
-            }
-        }
-    }, [deviceToAdd, isOpen]);
 
     const defaultValues: DeviceData = {
         name: "",

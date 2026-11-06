@@ -1,11 +1,13 @@
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { Search } from "lucide-react";
-import { KeyboardEvent, useEffect, useState } from "react";
+import { KeyboardEvent, useState } from "react";
 
 import {
     Popover,
     PopoverAnchor,
     PopoverContent,
 } from "@/Components/ui/popover";
+import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import { searchCompetitions } from "@/lib/competition";
 import { WCACompetition } from "@/lib/interfaces";
 import { cn } from "@/lib/utils";
@@ -22,34 +24,28 @@ interface CompetitionSearchProps {
 /** WCA admins only: search every WCA competition and add one to the list */
 const CompetitionSearch = ({ onSelect }: CompetitionSearchProps) => {
     const [query, setQuery] = useState("");
-    const [results, setResults] = useState<WCACompetition[]>([]);
     // Closed after blur, Escape or picking a result; typing reopens it
     const [isDismissed, setIsDismissed] = useState(false);
-    const [isLoading, setIsLoading] = useState(false);
     const [highlighted, setHighlighted] = useState(0);
     const trimmed = query.trim();
     const isOpen = !isDismissed && trimmed.length > 0;
 
-    useEffect(() => {
-        if (!trimmed) {
-            setResults([]);
-            setIsLoading(false);
-            return;
-        }
-        let isCancelled = false;
-        setIsLoading(true);
-        const timeout = setTimeout(async () => {
-            const data: WCACompetition[] = await searchCompetitions(trimmed);
-            if (isCancelled) return;
-            setResults(data.slice(0, MAX_RESULTS));
-            setHighlighted(0);
-            setIsLoading(false);
-        }, DEBOUNCE_MS);
-        return () => {
-            isCancelled = true;
-            clearTimeout(timeout);
-        };
-    }, [trimmed]);
+    // Searches once typing pauses; the last results stay while the next load
+    const search = useDebouncedValue(trimmed, DEBOUNCE_MS);
+    const { data, isFetching } = useQuery({
+        queryKey: ["wca-competition-search", search],
+        queryFn: (): Promise<WCACompetition[]> => searchCompetitions(search),
+        enabled: !!search,
+        placeholderData: keepPreviousData,
+    });
+    const results = trimmed ? (data ?? []).slice(0, MAX_RESULTS) : [];
+    const isLoading = !!trimmed && (search !== trimmed || isFetching);
+    // New results start with the first one highlighted
+    const [highlightedData, setHighlightedData] = useState(data);
+    if (data !== highlightedData) {
+        setHighlightedData(data);
+        setHighlighted(0);
+    }
 
     const pick = (competition: WCACompetition) => {
         setQuery("");

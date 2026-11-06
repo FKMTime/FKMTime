@@ -80,16 +80,13 @@ const Login = () => {
         setError("");
     };
 
-    const handleCode = useCallback(async () => {
-        if (code) {
-            const res = await loginWithWca(code, window.location.href);
-            handleLoginResponse(res.status, res.data.message);
-        }
-    }, [code, handleLoginResponse]);
-
+    // Coming back from WCA sign-in: exchange the code once
     useEffect(() => {
-        handleCode();
-    }, [code, handleCode, navigate]);
+        if (!code) return;
+        loginWithWca(code, window.location.href).then((res) =>
+            handleLoginResponse(res.status, res.data.message)
+        );
+    }, [code, handleLoginResponse]);
 
     useEffect(() => {
         const isLoggedIn = async () => {

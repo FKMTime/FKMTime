@@ -1,5 +1,11 @@
 import { ScrambleSet } from "./interfaces";
-import { backendRequest } from "./request";
+import { queryFamily } from "./queryCache";
+import { backendQuery, backendRequest } from "./request";
+
+/** A round's scramble sets */
+export const scrambleSetsQuery = queryFamily((roundId) =>
+    backendQuery<ScrambleSet[]>(`scramble-set/${roundId}`)
+);
 
 export const getScrambleSets = async (roundId: string) => {
     const response = await backendRequest(
@@ -33,6 +39,10 @@ export interface ScrambleSetCount {
     roundId: string;
     count: number;
 }
+
+export const scrambleSetCountsQuery = backendQuery<ScrambleSetCount[]>(
+    "scramble-set/counts"
+);
 
 export const getScrambleSetCounts = async (): Promise<ScrambleSetCount[]> => {
     const response = await backendRequest("scramble-set/counts", "GET", true);

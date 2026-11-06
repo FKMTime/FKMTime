@@ -6,6 +6,7 @@ import {
     NoteworthyIncidentData,
     PersonIncidents,
 } from "./interfaces";
+import { queryFamily } from "./queryCache";
 import { backendQuery, backendRequest, backendSearchQuery } from "./request";
 
 export const groupIncidents = (incidents: Incident[]) => {
@@ -46,6 +47,11 @@ export const getUnresolvedIncidents = async (
 
 export const unresolvedIncidentsQuery = backendQuery<Incident[]>(
     "incident/unresolved"
+);
+
+/** A round's incidents, for double-checking */
+export const roundIncidentsQuery = queryFamily((roundId) =>
+    backendQuery<Incident[]>(`incident/round/${roundId}`)
 );
 
 export const getIncidentsByRoundId = async (
