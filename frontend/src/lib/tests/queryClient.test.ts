@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { act, renderHook, waitFor } from "@testing-library/react";
-import { beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { clearQueryCache, toQueryOptions } from "@/lib/queryCache";
 import { QueryWrapper } from "@/test/queryClient";
@@ -62,5 +62,25 @@ describe("useQuery with the app's query client", () => {
 
         await waitFor(() => expect(result.current.isError).toBe(true));
         expect(result.current.data).toEqual(["a"]);
+    });
+
+    it("shares rooms between components and pages for a while", async () => {
+        const fetch = vi.fn().mockResolvedValue([{ id: "room-1" }]);
+        const rooms = { key: "competition/rooms", fetch };
+        const useRooms = () => useQuery(toQueryOptions(rooms));
+
+        // Two components mounted together make one request
+        const first = renderHook(useRooms, { wrapper: QueryWrapper });
+        const second = renderHook(useRooms, { wrapper: QueryWrapper });
+        await waitFor(() => expect(first.result.current.data).toBeTruthy());
+        expect(second.result.current.data).toEqual([{ id: "room-1" }]);
+        expect(fetch).toHaveBeenCalledTimes(1);
+
+        // Moving to another page that needs them soon after reuses them
+        first.unmount();
+        second.unmount();
+        const next = renderHook(useRooms, { wrapper: QueryWrapper });
+        expect(next.result.current.data).toEqual([{ id: "room-1" }]);
+        expect(fetch).toHaveBeenCalledTimes(1);
     });
 });
