@@ -27,7 +27,6 @@ interface CompetitionSocketHandlers {
 export const useCompetitionSocketEvents = (
     socket: AppSocket,
     userId: string | undefined,
-    connectionCount: number,
     handlers: CompetitionSocketHandlers
 ) => {
     // The latest handlers, so listeners are registered once per user rather
@@ -55,7 +54,16 @@ export const useCompetitionSocketEvents = (
 
     useEffect(() => {
         if (!userId) return;
-        socket.emit("joinIncidents");
-        socket.emit("joinCompetition");
-    }, [socket, userId, connectionCount]);
+        const join = () => {
+            socket.emit("joinIncidents");
+            socket.emit("joinCompetition");
+        };
+        // Emits sent while disconnected are buffered and replayed, which
+        // would join twice: wait for the connect handler instead
+        if (socket.connected) join();
+        socket.on("connect", join);
+        return () => {
+            socket.off("connect", join);
+        };
+    }, [socket, userId]);
 };

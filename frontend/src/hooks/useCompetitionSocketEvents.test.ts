@@ -8,6 +8,7 @@ type Listener = (data: unknown) => void;
 const createSocket = () => {
     const listeners = new Map<string, Set<Listener>>();
     return {
+        connected: true,
         emit: vi.fn(),
         on: vi.fn((event: string, listener: Listener) => {
             if (!listeners.has(event)) listeners.set(event, new Set());
@@ -26,24 +27,14 @@ const createSocket = () => {
 describe("useCompetitionSocketEvents", () => {
     let socket: ReturnType<typeof createSocket>;
     const emitted = () => socket.emit.mock.calls.map(([event]) => event);
-    const render = (initialUserId: string | undefined, initialCount = 1) =>
+    const render = (initialUserId: string | undefined) =>
         renderHook(
-            ({ userId, connectionCount }) =>
-                useCompetitionSocketEvents(
-                    socket as never,
-                    userId,
-                    connectionCount,
-                    {
-                        onNewIncident: vi.fn(),
-                        onGroupShouldBeChanged: vi.fn(),
-                    }
-                ),
-            {
-                initialProps: {
-                    userId: initialUserId,
-                    connectionCount: initialCount,
-                },
-            }
+            ({ userId }) =>
+                useCompetitionSocketEvents(socket as never, userId, {
+                    onNewIncident: vi.fn(),
+                    onGroupShouldBeChanged: vi.fn(),
+                }),
+            { initialProps: { userId: initialUserId } }
         );
 
     beforeEach(() => {
@@ -57,16 +48,16 @@ describe("useCompetitionSocketEvents", () => {
 
     it("does not leave and re-join the rooms when the shell re-renders", () => {
         const { rerender } = render("user-1");
-        rerender({ userId: "user-1", connectionCount: 1 });
-        rerender({ userId: "user-1", connectionCount: 1 });
+        rerender({ userId: "user-1" });
+        rerender({ userId: "user-1" });
 
         expect(emitted()).toEqual(["joinIncidents", "joinCompetition"]);
         expect(socket.listenerCount("newIncident")).toBe(1);
     });
 
     it("joins again after a reconnect without leaving first", () => {
-        const { rerender } = render("user-1", 1);
-        rerender({ userId: "user-1", connectionCount: 2 });
+        render("user-1");
+        socket.receive("connect", undefined);
 
         expect(emitted()).toEqual([
             "joinIncidents",
@@ -93,7 +84,7 @@ describe("useCompetitionSocketEvents", () => {
         const latest = vi.fn();
         const { rerender } = renderHook(
             ({ onNewIncident }) =>
-                useCompetitionSocketEvents(socket as never, "user-1", 1, {
+                useCompetitionSocketEvents(socket as never, "user-1", {
                     onNewIncident,
                     onGroupShouldBeChanged: vi.fn(),
                 }),
@@ -106,6 +97,16 @@ describe("useCompetitionSocketEvents", () => {
 
         expect(first).not.toHaveBeenCalled();
         expect(latest).toHaveBeenCalledWith(incident);
+    });
+
+    it("waits for the connection instead of joining twice", () => {
+        socket.connected = false;
+        render("user-1");
+        expect(emitted()).toEqual([]);
+
+        socket.receive("connect", undefined);
+
+        expect(emitted()).toEqual(["joinIncidents", "joinCompetition"]);
     });
 
     it("does nothing while signed out", () => {

@@ -1,5 +1,5 @@
 import { QueryClientProvider } from "@tanstack/react-query";
-import { lazy, Suspense, useState } from "react";
+import { lazy, Suspense } from "react";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 
 import LoadingPage from "@/Components/LoadingPage";
@@ -11,7 +11,6 @@ import { ThemeProvider } from "@/providers/ThemeProvider";
 import { THEME_STORAGE_KEY } from "./lib/constants";
 import { queryClient } from "./lib/queryClient";
 import EnterScorecard from "./Pages/Main/Results/EnterScorecard/EnterScorecard";
-import { SocketContext } from "./socket";
 const CompetitionStatistics = lazy(
     () => import("./Components/CompetitionStatistics/CompetitionStatistics")
 );
@@ -111,8 +110,6 @@ const StationTester = import.meta.env.DEV
     : null;
 
 const App = () => {
-    const [isConnected, setConnected] = useState(0);
-
     const router = createBrowserRouter([
         {
             path: "/auth/login",
@@ -335,12 +332,10 @@ const App = () => {
         <QueryClientProvider client={queryClient}>
             <ThemeProvider defaultTheme="dark" storageKey={THEME_STORAGE_KEY}>
                 <ConfirmProvider>
-                    <SocketContext.Provider value={[isConnected, setConnected]}>
-                        <Suspense fallback={<LoadingPage />}>
-                            <RouterProvider router={router} />
-                        </Suspense>
-                        <Toaster />
-                    </SocketContext.Provider>
+                    <Suspense fallback={<LoadingPage />}>
+                        <RouterProvider router={router} />
+                    </Suspense>
+                    <Toaster />
                 </ConfirmProvider>
             </ThemeProvider>
         </QueryClientProvider>
