@@ -254,6 +254,35 @@ test.describe("devices", () => {
         ).toHaveAttribute("aria-checked", String(!wasOn));
     });
 
+    test("sets the buzzer volume for the stations", async ({ page, api }) => {
+        const savedVolume = async () =>
+            (await (await api.get("competition/settings")).json()).buzzerVolume;
+
+        await page.goto("/devices");
+        await page.getByRole("radio", { name: "Settings" }).click();
+        const setVolume = page.getByRole("switch", {
+            name: /Set buzzer volume/,
+        });
+        const slider = page.getByRole("slider", { name: /Buzzer volume/ });
+        await expect(setVolume).not.toBeChecked();
+        await expect(slider).toHaveCount(0);
+
+        await setVolume.click();
+        await slider.fill("12");
+        await expect(page.getByText("Buzzer volume: 12 / 25")).toBeVisible();
+        await page.getByRole("button", { name: "Save" }).click();
+        await expectToast(page, "Device settings saved");
+        expect(await savedVolume()).toBe(12);
+
+        await page.reload();
+        await expect(slider).toHaveValue("12");
+
+        await setVolume.click();
+        await page.getByRole("button", { name: "Save" }).click();
+        await expectToast(page, "Device settings saved");
+        expect(await savedVolume()).toBeNull();
+    });
+
     test("only admins can upload firmware", async ({ page, browser }) => {
         await page.goto("/devices");
         await expect(

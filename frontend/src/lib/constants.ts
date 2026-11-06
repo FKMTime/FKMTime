@@ -51,3 +51,7 @@ export const GITHUB_URL = "https://github.com/FKMTime/FKMTime";
 // Also read by the pre-paint theme script in index.html
 export const THEME_STORAGE_KEY = "fkmtime-theme";
 export const POSSIBLE_GENDERS = ["m", "f", "o"];
+// The V4 station firmware's buzzer volume range and its out-of-the-box level
+export const BUZZER_VOLUME_MIN = 0;
+export const BUZZER_VOLUME_MAX = 25;
+export const BUZZER_VOLUME_DEFAULT = 5;

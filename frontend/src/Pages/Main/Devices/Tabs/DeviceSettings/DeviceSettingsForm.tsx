@@ -23,6 +23,11 @@ import {
     SelectValue,
 } from "@/Components/ui/select";
 import { getAvailableLocales } from "@/lib/competition";
+import {
+    BUZZER_VOLUME_DEFAULT,
+    BUZZER_VOLUME_MAX,
+    BUZZER_VOLUME_MIN,
+} from "@/lib/constants";
 import { AvailableLocale, Competition } from "@/lib/interfaces";
 import { deviceSettingsSchema } from "@/lib/schema/deviceSchema";
 
@@ -55,6 +60,7 @@ const DeviceSettingsForm = ({
             hilTesting: competition.hilTesting,
             secureRfid: competition.secureRfid,
             soundEnabled: competition.soundEnabled,
+            buzzerVolume: competition.buzzerVolume ?? null,
         },
     });
 
@@ -122,6 +128,50 @@ const DeviceSettingsForm = ({
                                 checked={field.value}
                                 onCheckedChange={field.onChange}
                             />
+                        )}
+                    />
+                    <FormField
+                        control={form.control}
+                        name="buzzerVolume"
+                        render={({ field }) => (
+                            <>
+                                <SwitchRow
+                                    label="Set buzzer volume"
+                                    description="Applies to every V4 station. When off, each station keeps the volume set in its own menu"
+                                    checked={field.value !== null}
+                                    onCheckedChange={(checked) =>
+                                        field.onChange(
+                                            checked
+                                                ? BUZZER_VOLUME_DEFAULT
+                                                : null
+                                        )
+                                    }
+                                />
+                                {field.value !== null && (
+                                    <FormItem className="space-y-1.5 py-3 md:py-1.5 md:pl-12">
+                                        <FormLabel className="text-[13px] font-semibold text-muted-foreground">
+                                            Buzzer volume: {field.value} /{" "}
+                                            {BUZZER_VOLUME_MAX}
+                                        </FormLabel>
+                                        <FormControl>
+                                            <input
+                                                type="range"
+                                                min={BUZZER_VOLUME_MIN}
+                                                max={BUZZER_VOLUME_MAX}
+                                                step={1}
+                                                value={field.value}
+                                                onChange={(e) =>
+                                                    field.onChange(
+                                                        e.target.valueAsNumber
+                                                    )
+                                                }
+                                                className="w-full accent-primary"
+                                            />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            </>
                         )}
                     />
                     <FormField

@@ -171,6 +171,16 @@ export class SocketServer {
     });
   }
 
+  sendDeviceSettings(espIds: number[], volume: number) {
+    this.sendToAll({
+      type: 'SetDeviceSettings',
+      data: {
+        devices: espIds,
+        volume,
+      },
+    });
+  }
+
   async toggleHil(state: boolean) {
     this.logger.log('HIL testing state change: ' + state);
     if (this.hilInterval != null) clearInterval(this.hilInterval);
