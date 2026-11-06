@@ -1,6 +1,9 @@
-import { render, screen } from "@testing-library/react";
+import { screen } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
+import { clearQueryCache } from "@/lib/queryCache";
+import { renderWithQueryClient } from "@/test/queryClient";
 
 import MostMissedAssignments from "./MostMissedAssignments";
 
@@ -15,9 +18,11 @@ vi.mock("@/lib/attendance", () => ({
     },
 }));
 
+beforeEach(() => clearQueryCache());
+
 describe("MostMissedAssignments", () => {
     it("keeps the attendance tabs on screen while the list loads", () => {
-        render(
+        renderWithQueryClient(
             <MemoryRouter>
                 <MostMissedAssignments />
             </MemoryRouter>

@@ -12,7 +12,7 @@ import {
     TableHeader,
     TableRow,
 } from "@/Components/ui/table";
-import { useCachedQuery } from "@/hooks/useCachedQuery";
+import { useLiveQuery } from "@/hooks/useLiveQuery";
 import { attendanceStatisticsQuery } from "@/lib/attendance";
 import { LIVE_MAX_AGE } from "@/lib/queryCache";
 import { cn } from "@/lib/utils";
@@ -45,7 +45,7 @@ const attendanceTone = (percentage: number) =>
           : "bg-destructive";
 
 const AttendanceStatistics = () => {
-    const { data: statistics } = useCachedQuery(attendanceStatisticsQuery, {
+    const { data: statistics } = useLiveQuery(attendanceStatisticsQuery, {
         maxAge: LIVE_MAX_AGE,
     });
     const [search, setSearch] = useState("");

@@ -1,20 +1,24 @@
 import { useAtomValue } from "jotai";
 import { Footprints, Gavel, Shuffle, Users } from "lucide-react";
-import { useCallback, useContext, useEffect, useState } from "react";
+import { useCallback, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 
 import LoadingPage from "@/Components/LoadingPage";
 import EmptyState from "@/Components/shared/EmptyState";
 import RefreshingRegion from "@/Components/shared/RefreshingRegion";
+import RequestError from "@/Components/shared/RequestError";
 import ToggleChip from "@/Components/shared/ToggleChip";
 import { useConfirm } from "@/hooks/useConfirm";
+import { useLiveQuery } from "@/hooks/useLiveQuery";
+import { useSocketRoom } from "@/hooks/useSocketRoom";
 import { activityCodeToName } from "@/lib/activities";
 import { competitionAtom } from "@/lib/atoms";
-import { getAttendanceByGroupId, getRoundStaffing } from "@/lib/attendance";
-import { Room, StaffActivity, StaffActivityStatus } from "@/lib/interfaces";
+import { groupAttendanceQuery, roundStaffingQuery } from "@/lib/attendance";
+import { StaffActivity, StaffActivityStatus } from "@/lib/interfaces";
+import { toQueryOptions } from "@/lib/queryCache";
+import { queryClient } from "@/lib/queryClient";
 import { getRankingFromPreviousRound } from "@/lib/results";
-import { getAllRooms } from "@/lib/rooms";
-import { socket, SocketContext } from "@/socket";
+import { roomsQuery } from "@/lib/rooms";
 
 import AttendanceTabs from "./Components/AttendanceTabs";
 import GroupPicker from "./Components/GroupPicker";
@@ -36,61 +40,49 @@ const Attendance = () => {
     const navigate = useNavigate();
     const confirm = useConfirm();
     const competition = useAtomValue(competitionAtom);
-    const [isConnected] = useContext(SocketContext) as [
-        number,
-        React.Dispatch<React.SetStateAction<number>>,
-    ];
-    const [rooms, setRooms] = useState<Room[]>([]);
-    const [attendance, setAttendance] = useState<StaffActivity[]>([]);
-    const [hasAssignedRunners, setHasAssignedRunners] = useState(false);
     const roundId = selectedGroup.split("-g")[0];
+    const { data: roomsData } = useLiveQuery(roomsQuery);
+    const rooms = roomsData ?? [];
+    const { data: staffing } = useLiveQuery(roundStaffingQuery(roundId), {
+        enabled: !!roundId,
+    });
+    const hasAssignedRunners = staffing?.hasAssignedRunners ?? false;
+    // The last group's attendance stays while the next group loads
+    const attendanceQuery = groupAttendanceQuery(selectedGroup);
+    const {
+        data: attendanceData,
+        isError,
+        isPreviousData,
+        refetch,
+    } = useLiveQuery(attendanceQuery, {
+        keepPreviousData: true,
+        enabled: !!selectedGroup,
+    });
+    const attendance: StaffActivity[] = attendanceData ?? [];
+    const fetchAttendance = () =>
+        void queryClient.invalidateQueries({
+            queryKey: toQueryOptions(attendanceQuery).queryKey,
+        });
+    useSocketRoom(selectedGroup ? "Attendance" : null, {
+        params: { groupId: selectedGroup },
+        invalidateOn: {
+            newAttendance: toQueryOptions(attendanceQuery).queryKey,
+        },
+    });
 
     const selectGroup = useCallback(
         (groupId: string) => navigate(`/attendance/${groupId}`),
         [navigate]
     );
 
-    // The group the shown attendance belongs to; differs while the next loads
-    const [attendanceGroupId, setAttendanceGroupId] = useState<string>();
-    const fetchAttendance = useCallback(async () => {
-        if (!selectedGroup) return;
-        setAttendance(await getAttendanceByGroupId(selectedGroup));
-        setAttendanceGroupId(selectedGroup);
-    }, [selectedGroup]);
-
+    // Open the only running group straight away
     useEffect(() => {
-        getAllRooms().then((data: Room[]) => {
-            setRooms(data);
-            // Open the only running group straight away
-            const running = data.filter((r) => r.currentGroupIds.length === 1);
-            if (!selectedGroup && running.length === 1)
-                selectGroup(running[0].currentGroupIds[0]);
-        });
-    }, [selectGroup, selectedGroup]);
-
-    useEffect(() => {
-        let isCancelled = false;
-        setHasAssignedRunners(false);
-        if (roundId)
-            getRoundStaffing(roundId).then((data) => {
-                if (!isCancelled)
-                    setHasAssignedRunners(data.hasAssignedRunners);
-            });
-        return () => {
-            isCancelled = true;
-        };
-    }, [roundId, isConnected]);
-
-    useEffect(() => {
-        if (!selectedGroup) return;
-        fetchAttendance();
-        socket.emit("joinAttendance", { groupId: selectedGroup });
-        socket.on("newAttendance", fetchAttendance);
-        return () => {
-            socket.off("newAttendance", fetchAttendance);
-            socket.emit("leaveAttendance", { groupId: selectedGroup });
-        };
-    }, [selectedGroup, fetchAttendance, isConnected]);
+        if (selectedGroup || !roomsData) return;
+        const running = roomsData.filter(
+            (room) => room.currentGroupIds.length === 1
+        );
+        if (running.length === 1) selectGroup(running[0].currentGroupIds[0]);
+    }, [roomsData, selectGroup, selectedGroup]);
 
     const { shown: shownRoles, toggle: toggleRole } = useShownRoles(
         ROLE_KEYS,
@@ -172,8 +164,14 @@ const Attendance = () => {
                             </ToggleChip>
                         ))}
                     </div>
+                    {isError && (
+                        <RequestError
+                            hasData={!!attendanceData}
+                            onRetry={() => void refetch()}
+                        />
+                    )}
                     <RefreshingRegion
-                        isRefreshing={attendanceGroupId !== selectedGroup}
+                        isRefreshing={isPreviousData}
                         className="grid grid-cols-1 items-start gap-4 md:grid-cols-2 2xl:grid-cols-4"
                     >
                         {ROLES.filter(({ role }) =>
