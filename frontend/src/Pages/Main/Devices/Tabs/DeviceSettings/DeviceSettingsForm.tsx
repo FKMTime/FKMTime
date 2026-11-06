@@ -136,8 +136,8 @@ const DeviceSettingsForm = ({
                         render={({ field }) => (
                             <>
                                 <SwitchRow
-                                    label="Set buzzer volume"
-                                    description="Applies to every V4 station. When off, each station keeps the volume set in its own menu"
+                                    label="Set device volume"
+                                    description="How loud V4 stations beep when a card is scanned. When off, each station keeps the volume set in its own menu"
                                     checked={field.value !== null}
                                     onCheckedChange={(checked) =>
                                         field.onChange(
@@ -150,7 +150,7 @@ const DeviceSettingsForm = ({
                                 {field.value !== null && (
                                     <FormItem className="space-y-1.5 py-3 md:py-1.5 md:pl-12">
                                         <FormLabel className="text-[13px] font-semibold text-muted-foreground">
-                                            Buzzer volume: {field.value} /{" "}
+                                            Device volume: {field.value} /{" "}
                                             {BUZZER_VOLUME_MAX}
                                         </FormLabel>
                                         <FormControl>
