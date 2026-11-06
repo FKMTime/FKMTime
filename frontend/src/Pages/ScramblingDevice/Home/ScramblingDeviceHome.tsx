@@ -1,10 +1,11 @@
 import { useAtomValue } from "jotai";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 import LoadingPage from "@/Components/LoadingPage";
 import EventChips from "@/Components/shared/EventChips";
 import SegmentedControl from "@/Components/shared/SegmentedControl";
 import { StatusDot } from "@/Components/shared/StatusBadge";
+import { useLiveQuery } from "@/hooks/useLiveQuery";
 import { competitionAtom } from "@/lib/atoms";
 import {
     getEventIconClass,
@@ -12,7 +13,7 @@ import {
     getEventShortName,
 } from "@/lib/events";
 import { ScrambleSet } from "@/lib/interfaces";
-import { getScrambleSetsForScramblingDevice } from "@/lib/scrambling";
+import { scramblingDeviceSetsQuery } from "@/lib/scrambling";
 import { cn } from "@/lib/utils";
 
 import DevicePage from "../Components/DevicePage";
@@ -28,10 +29,6 @@ const ScramblingDeviceHome = () => {
     const competition = useAtomValue(competitionAtom);
     const room = useScramblingDeviceRoom();
     const [selectedRoundId, setSelectedRoundId] = useState("");
-    // null while the selected round's sets load
-    const [scrambleSets, setScrambleSets] = useState<ScrambleSet[] | null>(
-        null
-    );
 
     const events = competition?.wcif.events ?? [];
     const liveRoundIds = room?.currentGroupIds.map(groupIdToRoundId) ?? [];
@@ -42,17 +39,12 @@ const ScramblingDeviceHome = () => {
     const event = events.find((e) => e.id === eventId);
     const currentGroupId = currentGroupIdForRound(room, roundId);
 
-    useEffect(() => {
-        if (!roundId) return;
-        let isCancelled = false;
-        setScrambleSets(null);
-        getScrambleSetsForScramblingDevice(roundId).then((data) => {
-            if (!isCancelled) setScrambleSets(data);
-        });
-        return () => {
-            isCancelled = true;
-        };
-    }, [roundId]);
+    // null while the selected round's sets load
+    const { data: scrambleSetsData } = useLiveQuery(
+        scramblingDeviceSetsQuery(roundId),
+        { enabled: !!roundId }
+    );
+    const scrambleSets: ScrambleSet[] | null = scrambleSetsData ?? null;
 
     const pickEvent = (id: string) => {
         const rounds = events.find((e) => e.id === id)?.rounds ?? [];

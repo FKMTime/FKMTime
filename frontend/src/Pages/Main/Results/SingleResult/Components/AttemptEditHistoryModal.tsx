@@ -1,8 +1,7 @@
-import { useEffect, useState } from "react";
-
 import { Modal } from "@/Components/Modal";
 import { Badge } from "@/Components/ui/badge";
-import { getAttemptEditLog } from "@/lib/attempt";
+import { useLiveQuery } from "@/hooks/useLiveQuery";
+import { attemptEditLogQuery } from "@/lib/attempt";
 import {
     AttemptEditLogEntry,
     AttemptStatus,
@@ -136,17 +135,11 @@ const AttemptEditHistoryModal = ({
     onClose,
     attemptId,
 }: AttemptEditHistoryModalProps) => {
-    const [log, setLog] = useState<AttemptEditLogEntry[]>([]);
-    const [loading, setLoading] = useState(false);
-
-    useEffect(() => {
-        if (!isOpen) return;
-        setLoading(true);
-        getAttemptEditLog(attemptId).then((data) => {
-            setLog(Array.isArray(data) ? data : []);
-            setLoading(false);
-        });
-    }, [isOpen, attemptId]);
+    const { data } = useLiveQuery(attemptEditLogQuery(attemptId), {
+        enabled: isOpen,
+    });
+    const log: AttemptEditLogEntry[] = Array.isArray(data) ? data : [];
+    const loading = isOpen && data === undefined;
 
     return (
         <Modal isOpen={isOpen} onClose={onClose} title="Edit history">

@@ -1,15 +1,17 @@
 import { RefreshCw } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
+import { useMemo, useState } from "react";
 
 import LoadingPage from "@/Components/LoadingPage";
 import SegmentedControl from "@/Components/shared/SegmentedControl";
 import { Button } from "@/Components/ui/button";
 import { Card, CardContent } from "@/Components/ui/card";
+import { useLiveQuery } from "@/hooks/useLiveQuery";
 import { useToast } from "@/hooks/useToast";
-import { getAllDevices, sortDevicesByName } from "@/lib/devices";
-import { Device, DeviceType, Person, Room } from "@/lib/interfaces";
-import { assignCard, getAllPersons } from "@/lib/persons";
-import { getAllRooms } from "@/lib/rooms";
+import { sortDevicesByName, stationDevicesQuery } from "@/lib/devices";
+import { Device, Person, Room } from "@/lib/interfaces";
+import { allPersonsQuery, assignCard } from "@/lib/persons";
+import { setQueryData } from "@/lib/queryCache";
+import { roomsQuery } from "@/lib/rooms";
 import {
     generateCardId,
     hasCard,
@@ -33,29 +35,26 @@ const TABS: { value: StationTesterTab; label: string }[] = [
 /** Plays a station in dev, so a flow can be tried without the hardware */
 const StationTester = () => {
     const { toast } = useToast();
-    const [isLoading, setIsLoading] = useState<boolean>(true);
     const [tab, setTab] = useState<StationTesterTab>("attempt");
-    const [persons, setPersons] = useState<Person[]>([]);
-    const [devices, setDevices] = useState<Device[]>([]);
-    const [rooms, setRooms] = useState<Room[]>([]);
+    const personsQuery = useLiveQuery(allPersonsQuery);
+    const devicesQuery = useLiveQuery(stationDevicesQuery);
+    const roomsResult = useLiveQuery(roomsQuery);
+    const persons: Person[] = personsQuery.data ?? [];
+    const devices: Device[] = useMemo(
+        () => sortDevicesByName(devicesQuery.data ?? []),
+        [devicesQuery.data]
+    );
+    const rooms: Room[] = roomsResult.data ?? [];
+    const isLoading =
+        !personsQuery.data || !devicesQuery.data || !roomsResult.data;
     const [exchange, setExchange] = useState<StationExchange | null>(null);
     const [isSending, setIsSending] = useState<boolean>(false);
 
-    const fetchData = useCallback(async () => {
-        const [personsData, devicesData, roomsData] = await Promise.all([
-            getAllPersons(),
-            getAllDevices(DeviceType.STATION),
-            getAllRooms(),
-        ]);
-        setPersons(personsData);
-        setDevices(sortDevicesByName(devicesData));
-        setRooms(roomsData);
-        setIsLoading(false);
-    }, []);
-
-    useEffect(() => {
-        fetchData();
-    }, [fetchData]);
+    const fetchData = () => {
+        void personsQuery.refetch();
+        void devicesQuery.refetch();
+        void roomsResult.refetch();
+    };
 
     const getCard = async (picked: Person) => {
         // The picker holds on to the list it was given, which may be outdated
@@ -71,7 +70,7 @@ const StationTester = () => {
             });
             return "";
         }
-        setPersons((previous) =>
+        setQueryData<Person[]>(allPersonsQuery.key, (previous = []) =>
             previous.map((p) => (p.id === person.id ? { ...p, cardId } : p))
         );
         toast({ title: `${person.name} now has card ${cardId}` });

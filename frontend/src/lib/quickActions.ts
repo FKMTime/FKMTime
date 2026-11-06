@@ -3,7 +3,7 @@ import {
     QuickAction,
     QuickActionData,
 } from "@/lib/interfaces";
-import { backendRequest } from "@/lib/request";
+import { backendQuery, backendRequest } from "@/lib/request";
 
 export const applicationQuickActions: ApplicationQuickAction[] = [
     {
@@ -31,6 +31,10 @@ export const applicationQuickActions: ApplicationQuickAction[] = [
         comment: "Timer malfunction",
     },
 ];
+
+export const quickActionsQuery = backendQuery<QuickAction[]>(
+    "settings/quick-actions"
+);
 
 export const getQuickActions = async () => {
     const response = await backendRequest(
