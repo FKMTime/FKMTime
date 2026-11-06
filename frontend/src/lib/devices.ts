@@ -14,6 +14,11 @@ export const getAllDevices = async (type?: string, roomId?: string) => {
 
 export const devicesQuery = backendQuery<Device[]>("device");
 
+/** Every timing station, so live solving can list idle ones too */
+export const stationDevicesQuery = backendQuery<Device[]>(
+    "device?type=STATION"
+);
+
 export const retiredDevicesQuery = backendQuery<Device[]>("device/retired");
 
 export const createDevice = async (

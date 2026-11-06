@@ -59,10 +59,13 @@ export const backendRequest = (
 };
 
 /** A cached GET of a backend path, keyed by the path */
-export const backendQuery = <T>(path: string): Query<T> => ({
+export const backendQuery = <T>(
+    path: string,
+    { useAuth = true }: { useAuth?: boolean } = {}
+): Query<T> => ({
     key: path,
     fetch: async () => {
-        const response = await backendRequest(path, "GET", true);
+        const response = await backendRequest(path, "GET", useAuth);
         if (!response.ok) throw new QueryError(response.status);
         return await response.json();
     },

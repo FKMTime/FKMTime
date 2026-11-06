@@ -1,7 +1,7 @@
 import { getUserInfo } from "@/lib/auth";
 import { getScramblingDeviceToken } from "@/lib/scramblingDevicesAuth";
 
-import { Activity, Competition, WCACompetition } from "./interfaces";
+import { Activity, Competition, Room, WCACompetition } from "./interfaces";
 import { queryFamily } from "./queryCache";
 import {
     backendQuery,
@@ -177,6 +177,12 @@ export const getPublicCompetitionInfo = async () => {
     const data = await response.json();
     return { status: response.status, data };
 };
+
+/** The rooms and their current groups, without signing in */
+export const publicRoomsQuery = backendQuery<Room[]>(
+    "competition/public/rooms",
+    { useAuth: false }
+);
 
 export const getPublicRooms = async () => {
     const response = await backendRequest(
