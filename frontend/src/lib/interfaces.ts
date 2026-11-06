@@ -69,6 +69,7 @@ export interface Competition extends CompetitionDataForLoginPage {
     fkmToken: number;
     secureRfid: boolean;
     soundEnabled: boolean;
+    buzzerVolume: number | null;
 }
 
 export enum SendingResultsFrequency {

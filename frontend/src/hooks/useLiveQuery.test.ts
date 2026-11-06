@@ -27,7 +27,6 @@ const advanceClock = (ms: number) => {
     vi.spyOn(Date, "now").mockReturnValue(now + ms);
 };
 
-// The same behaviour useCachedQuery promised, on useQuery
 describe("useLiveQuery", () => {
     beforeEach(() => clearQueryCache());
     afterEach(() => vi.restoreAllMocks());
@@ -102,6 +101,26 @@ describe("useLiveQuery", () => {
         expect(result.current.data).toEqual(["cached"]);
         await act(async () => fresh.resolve(["fresh"]));
         await waitFor(() => expect(result.current.data).toEqual(["fresh"]));
+    });
+
+    it("bumps the version only when the data changes", async () => {
+        let response = ["a"];
+        const itemsQuery = query(() => Promise.resolve([...response]));
+        const { result } = renderHook(() => useLiveQuery(itemsQuery), {
+            wrapper: QueryWrapper,
+        });
+        await waitFor(() => expect(result.current.version).toBe(1));
+
+        await act(async () => {
+            await result.current.refetch();
+        });
+        expect(result.current.version).toBe(1);
+
+        response = ["b"];
+        await act(async () => {
+            await result.current.refetch();
+        });
+        await waitFor(() => expect(result.current.version).toBe(2));
     });
 
     it("fetches nothing when disabled", () => {

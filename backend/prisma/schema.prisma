@@ -100,6 +100,8 @@ model Competition {
   secureRfid                      Boolean                 @default(false) @map("secure_rfid")
   useFkmTimeDevices               Boolean                 @default(true) @map("use_fkm_time_devices")
   soundEnabled                    Boolean                 @default(true) @map("sound_enabled")
+  // Null leaves each V4 station on the volume set in its own menu
+  buzzerVolume                    Int?                    @map("buzzer_volume")
 
   @@map("competition")
 }

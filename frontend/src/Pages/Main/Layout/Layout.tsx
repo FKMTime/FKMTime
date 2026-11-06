@@ -1,5 +1,5 @@
 import { useAtom, useAtomValue, useSetAtom } from "jotai";
-import { Suspense, useCallback, useContext, useEffect, useState } from "react";
+import { Suspense, useCallback, useEffect, useState } from "react";
 import { matchPath, Outlet, useNavigate } from "react-router-dom";
 
 import LoadingPage from "@/Components/LoadingPage";
@@ -31,7 +31,7 @@ import {
 } from "@/lib/navigation";
 import { isDelegate } from "@/lib/permissions";
 import { cn, isMobile, isNotificationsSupported } from "@/lib/utils";
-import { socket, SocketContext } from "@/socket";
+import { socket } from "@/socket";
 
 import DesktopHeader from "./DesktopHeader";
 import DesktopSidebar from "./DesktopSidebar";
@@ -49,11 +49,6 @@ const Layout = () => {
     );
     const [isCompetitionError, setIsCompetitionError] = useState(false);
     useRefetchOnReconnect();
-
-    const [isConnected, setConnected] = useContext(SocketContext) as [
-        number,
-        React.Dispatch<React.SetStateAction<number>>,
-    ];
 
     const fetchUnresolvedIncidentsCount = useCallback(() => {
         getUnresolvedIncidentsCount().then((data) =>
@@ -92,7 +87,7 @@ const Layout = () => {
         Notification.requestPermission();
     }, [userKey]);
 
-    useCompetitionSocketEvents(socket, userKey, isConnected, {
+    useCompetitionSocketEvents(socket, userKey, {
         onNewIncident: (data: NewIncidentSocketData) => {
             fetchUnresolvedIncidentsCount();
             if (!isNotificationsSupported()) return;
@@ -167,9 +162,6 @@ const Layout = () => {
     });
 
     useEffect(() => {
-        // Each (re)connect bumps the counter, so pages refetch what they missed
-        const handleConnect = () => setConnected((count) => count + 1);
-        socket.on("connect", handleConnect);
         isUserLoggedIn().then((isLoggedIn) => {
             if (isLoggedIn) {
                 socket.auth = { token: getToken() };
@@ -179,10 +171,7 @@ const Layout = () => {
                 window.location.reload();
             }
         });
-        return () => {
-            socket.off("connect", handleConnect);
-        };
-    }, [navigate, setConnected]);
+    }, [navigate]);
 
     useEffect(() => {
         fetchCompetition();

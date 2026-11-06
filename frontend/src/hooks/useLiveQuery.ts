@@ -23,8 +23,8 @@ const hiddenSince = (key: string, maxAge: number | undefined) =>
         : null;
 
 /**
- * `useQuery` for a query from `src/lib`, with the options `useCachedQuery`
- * offered (SPEC-003). Data is refreshed on mount and by invalidation.
+ * `useQuery` for a query from `src/lib`, with options for pages that must
+ * not show old data or blank while a new key loads (SPEC-003). Data is refreshed on mount and by invalidation.
  * `query` must be stable (module-level, from a queryFamily, or memoised).
  */
 export const useLiveQuery = <T>(
@@ -54,6 +54,16 @@ export const useLiveQuery = <T>(
         setPreviousData(shownData);
     }
 
+    // Counts changes to the data, so forms keyed on it re-seed. A refetch
+    // that brings equal data keeps the same object, so it doesn't count.
+    const [versioned, setVersioned] = useState({
+        data: shownData,
+        version: shownData === undefined ? 0 : 1,
+    });
+    if (shownData !== undefined && shownData !== versioned.data) {
+        setVersioned({ data: shownData, version: versioned.version + 1 });
+    }
+
     return {
         data: shownData ?? (keepPreviousData ? previousData : undefined),
         dataUpdatedAt: result.dataUpdatedAt,
@@ -62,6 +72,8 @@ export const useLiveQuery = <T>(
             shownData === undefined &&
             keepPreviousData &&
             previousData !== undefined,
+        version: versioned.version,
+        error: result.error,
         isError: result.isError,
         refetch: result.refetch,
     };

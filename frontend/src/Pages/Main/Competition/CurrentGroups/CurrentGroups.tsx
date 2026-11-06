@@ -40,7 +40,7 @@ import {
 } from "@/lib/currentGroups";
 import { getEventIconClass, isUnofficialEvent } from "@/lib/events";
 import { Room } from "@/lib/interfaces";
-import { fetchQuery, getQueryEntry, setQueryData } from "@/lib/queryCache";
+import { fetchQuery, getQueryData, setQueryData } from "@/lib/queryCache";
 import { roomsQuery, updateCurrentRound } from "@/lib/rooms";
 import { cn } from "@/lib/utils";
 import SetupTabs from "@/Pages/Main/Setup/SetupTabs";
@@ -53,7 +53,7 @@ const CurrentGroups = () => {
     const [competition, setCompetition] = useAtom(competitionAtom);
     // Start from the last known rooms so the page doesn't open empty
     const [savedRooms, setSavedRooms] = useState<Room[]>(
-        () => getQueryEntry<Room[]>(roomsQuery.key)?.data ?? []
+        () => getQueryData<Room[]>(roomsQuery.key) ?? []
     );
     const [rooms, setRooms] = useState<Room[]>(savedRooms);
     const [suggestedGroups, setSuggestedGroups] = useState<
@@ -72,7 +72,7 @@ const CurrentGroups = () => {
 
     useEffect(() => {
         const shownRooms = JSON.stringify(
-            getQueryEntry<Room[]>(roomsQuery.key)?.data ?? []
+            getQueryData<Room[]>(roomsQuery.key) ?? []
         );
         fetchQuery(roomsQuery, { reuseRunning: true }).then(
             async (data) => {
