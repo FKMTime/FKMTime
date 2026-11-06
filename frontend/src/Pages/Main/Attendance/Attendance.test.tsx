@@ -49,6 +49,10 @@ vi.mock("@/lib/attendance", () => ({
                 lateAssignmentsCount: 0,
                 presentButReplacedAssignments: [],
                 presentButReplacedAssignmentsCount: 0,
+                leftEarlyAssignments: [],
+                leftEarlyAssignmentsCount: 0,
+                noShowAssignments: activities(1),
+                noShowAssignmentsCount: 1,
                 comments: [],
                 commentsCount: 0,
             },
@@ -60,6 +64,10 @@ vi.mock("@/lib/attendance", () => ({
                 lateAssignmentsCount: 1,
                 presentButReplacedAssignments: [],
                 presentButReplacedAssignmentsCount: 0,
+                leftEarlyAssignments: activities(1),
+                leftEarlyAssignmentsCount: 1,
+                noShowAssignments: [],
+                noShowAssignmentsCount: 0,
                 comments: [],
                 commentsCount: 0,
             },
@@ -107,5 +115,25 @@ describe("MostMissedAssignments", () => {
         await userEvent.click(screen.getByRole("radio", { name: /Late/ }));
         expect(screen.queryByText("2 missed")).toBeNull();
         expect(screen.getByText("1 late")).toBeTruthy();
+    });
+
+    it("filters by who left early and who wasn't coming", async () => {
+        renderWithQueryClient(
+            <MemoryRouter>
+                <MostMissedAssignments />
+            </MemoryRouter>
+        );
+        expect(await screen.findByText("1 not coming")).toBeTruthy();
+        expect(screen.getByText("1 left early")).toBeTruthy();
+        await userEvent.click(
+            screen.getByRole("radio", { name: /Left early/ })
+        );
+        expect(screen.queryByText("Ada Demo")).toBeNull();
+        expect(screen.getByText("Ben Test")).toBeTruthy();
+        await userEvent.click(
+            screen.getByRole("radio", { name: /Not coming/ })
+        );
+        expect(screen.getByText("Ada Demo")).toBeTruthy();
+        expect(screen.queryByText("Ben Test")).toBeNull();
     });
 });

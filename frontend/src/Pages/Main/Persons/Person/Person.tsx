@@ -9,7 +9,7 @@ import PageTabs, { PageTab } from "@/Components/shared/PageTabs";
 import SectionLoading from "@/Components/shared/SectionLoading";
 import { usePageHeader } from "@/hooks/usePageHeader";
 import { competitionAtom } from "@/lib/atoms";
-import { getStaffActivitiesByPersonId } from "@/lib/attendance";
+import { getStaffActivitiesByPersonId, noShowGroupIds } from "@/lib/attendance";
 import { getIncidentsForPerson } from "@/lib/incidents";
 import {
     Person as PersonData,
@@ -27,6 +27,7 @@ import { getPersonSchedule } from "@/lib/personSchedule";
 import { getAllResultsByPersonId } from "@/lib/results";
 import { regionNameByIso2 } from "@/lib/utils";
 import { getWarningsForPerson } from "@/lib/warnings";
+import { useNoShow } from "@/Pages/Main/Attendance/useNoShow";
 
 import PersonIncidents from "./PersonIncidents";
 import PersonResults from "./PersonResults";
@@ -67,6 +68,11 @@ const Person = () => {
     const showAttendance = isStageLeaderOrOrganizerOrDelegate();
     const showIncidents = isDelegate();
 
+    const fetchStaffActivities = useCallback(() => {
+        if (id) getStaffActivitiesByPersonId(id).then(setStaffActivities);
+    }, [id]);
+    const setNoShowFor = useNoShow(fetchStaffActivities);
+
     const fetchWarnings = useCallback(() => {
         if (id) getWarningsForPerson(id).then(setWarnings);
     }, [id]);
@@ -75,13 +81,19 @@ const Person = () => {
         if (!id) return;
         getPersonById(id).then(setPerson);
         if (showResults) getAllResultsByPersonId(id).then(setResults);
-        if (showAttendance)
-            getStaffActivitiesByPersonId(id).then(setStaffActivities);
+        if (showAttendance) fetchStaffActivities();
         if (showIncidents) {
             getIncidentsForPerson(id).then(setIncidents);
             fetchWarnings();
         }
-    }, [id, showResults, showAttendance, showIncidents, fetchWarnings]);
+    }, [
+        id,
+        showResults,
+        showAttendance,
+        showIncidents,
+        fetchStaffActivities,
+        fetchWarnings,
+    ]);
 
     const schedule = useMemo(
         () =>
@@ -168,6 +180,20 @@ const Person = () => {
                     <PersonSchedule
                         entries={schedule}
                         canOpenAttendance={showAttendance}
+                        onSetNoShow={
+                            showAttendance
+                                ? (day, noShow) =>
+                                      setNoShowFor(
+                                          person,
+                                          noShowGroupIds(
+                                              competition.wcif,
+                                              staffActivities ?? [],
+                                              day
+                                          ),
+                                          noShow
+                                      )
+                                : undefined
+                        }
                     />
                 );
         }

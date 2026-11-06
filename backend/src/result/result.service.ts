@@ -318,12 +318,15 @@ export class ResultService {
         roundId: roundId,
       },
     });
+    // A no-show is about the day, so it outlives the restart
     await this.prisma.staffActivity.updateMany({
       where: {
         groupId: groupId,
       },
       data: {
         status: StaffActivityStatus.ABSENT,
+        leftEarly: false,
+        replacedById: null,
       },
     });
     await this.prisma.result.deleteMany({

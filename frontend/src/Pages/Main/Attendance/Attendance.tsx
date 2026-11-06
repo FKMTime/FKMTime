@@ -13,11 +13,18 @@ import { useLiveQuery } from "@/hooks/useLiveQuery";
 import { useSocketRoom } from "@/hooks/useSocketRoom";
 import { activityCodeToName } from "@/lib/activities";
 import { competitionAtom } from "@/lib/atoms";
-import { groupAttendanceQuery, roundStaffingQuery } from "@/lib/attendance";
+import {
+    getStaffActivitiesByPersonId,
+    groupAttendanceQuery,
+    groupDay,
+    markAsReplaced,
+    noShowGroupIds,
+    roundStaffingQuery,
+    setLeftEarly,
+} from "@/lib/attendance";
 import { StaffActivity, StaffActivityStatus } from "@/lib/interfaces";
 import { toQueryOptions } from "@/lib/queryCache";
 import { queryClient } from "@/lib/queryClient";
-import { getRankingFromPreviousRound } from "@/lib/results";
 import { roomsQuery } from "@/lib/rooms";
 
 import AttendanceTabs from "./Components/AttendanceTabs";
@@ -33,6 +40,7 @@ const ROLES = [
 const ROLE_KEYS = ROLES.map(({ role }) => role);
 
 import { useMarkAttendance } from "./useMarkAttendance";
+import { useNoShow } from "./useNoShow";
 import { useShownRoles } from "./useShownRoles";
 
 const Attendance = () => {
@@ -90,10 +98,31 @@ const Attendance = () => {
         ROLE_KEYS.filter((role) => !attendance.some((a) => a.role === role))
     );
 
-    const { markOne: run, markMany } = useMarkAttendance(
-        attendance,
-        fetchAttendance
-    );
+    const {
+        change,
+        markOne: run,
+        markMany,
+    } = useMarkAttendance(attendance, fetchAttendance);
+    const setNoShowFor = useNoShow(fetchAttendance);
+
+    /** Not coming to this group or any later one that day, or coming after all */
+    const handleSetNoShow = async (
+        activity: StaffActivity,
+        noShow: boolean
+    ) => {
+        if (!competition) return;
+        const day = groupDay(competition.wcif, activity.groupId);
+        const personActivities: StaffActivity[] =
+            await getStaffActivitiesByPersonId(activity.person.id);
+        const laterGroupIds = day
+            ? noShowGroupIds(competition.wcif, personActivities, day)
+            : [];
+        setNoShowFor(
+            activity.person,
+            [...new Set([activity.groupId, ...laterGroupIds])],
+            noShow
+        );
+    };
 
     const handleMarkAbsent = async (id: string) => {
         const activity = attendance.find((a) => a.id === id);
@@ -120,7 +149,6 @@ const Attendance = () => {
     const presentCount = attendance.filter(
         (a) => a.status !== StaffActivityStatus.ABSENT
     ).length;
-    const isLaterRound = Number(roundId.split("-r")[1]) > 1;
 
     return (
         <div className="flex flex-col gap-4">
@@ -187,12 +215,7 @@ const Attendance = () => {
                                 showStations={
                                     role === "JUDGE" && hasAssignedRunners
                                 }
-                                describeCompetitor={
-                                    isLaterRound
-                                        ? (activity) =>
-                                              ` (${getRankingFromPreviousRound(roundId, activity.person.registrantId || 0, competition.wcif)})`
-                                        : undefined
-                                }
+                                wcif={competition.wcif}
                                 onChanged={fetchAttendance}
                                 onMarkPresent={(id) =>
                                     run(
@@ -212,13 +235,32 @@ const Attendance = () => {
                                 onMarkLate={(id) =>
                                     run(StaffActivityStatus.LATE, id, "late")
                                 }
-                                onMarkPresentButReplaced={(id) =>
-                                    run(
-                                        StaffActivityStatus.REPLACED,
+                                onMarkReplaced={(
+                                    id,
+                                    wasPresent,
+                                    replacedById
+                                ) =>
+                                    change(
                                         id,
-                                        "present but replaced"
+                                        () =>
+                                            markAsReplaced(
+                                                id,
+                                                wasPresent,
+                                                replacedById
+                                            ),
+                                        "marked replaced"
                                     )
                                 }
+                                onSetLeftEarly={(id, leftEarly) =>
+                                    change(
+                                        id,
+                                        () => setLeftEarly(id, leftEarly),
+                                        leftEarly
+                                            ? "marked left early"
+                                            : "marked as staying to the end"
+                                    )
+                                }
+                                onSetNoShow={handleSetNoShow}
                             />
                         ))}
                     </RefreshingRegion>
