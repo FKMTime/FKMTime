@@ -2,6 +2,11 @@ name: Test
 
 on:
   pull_request:
+    paths:
+      - 'backend/**'
+      - 'frontend/**'
+      - 'e2e/**'
+      - '.github/workflows/test-e2e.yml'
   push:
     branches:
       - main
