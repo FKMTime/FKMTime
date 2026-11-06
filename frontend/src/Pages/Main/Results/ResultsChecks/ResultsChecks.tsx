@@ -1,12 +1,13 @@
 import { useAtomValue } from "jotai";
 import { List } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 
 import AttemptWarnings from "@/Components/AttemptWarnings";
 import LoadingPage from "@/Components/LoadingPage";
 import EmptyState from "@/Components/shared/EmptyState";
 import RefreshingRegion from "@/Components/shared/RefreshingRegion";
+import RequestError from "@/Components/shared/RequestError";
 import RoundStrip from "@/Components/shared/RoundStrip";
 import RowActions from "@/Components/shared/RowActions";
 import SegmentedControl from "@/Components/shared/SegmentedControl";
@@ -19,12 +20,12 @@ import {
     TableHeader,
     TableRow,
 } from "@/Components/ui/table";
-import { useCachedQuery } from "@/hooks/useCachedQuery";
+import { useLiveQuery } from "@/hooks/useLiveQuery";
 import { usePageHeader } from "@/hooks/usePageHeader";
 import { competitionAtom } from "@/lib/atoms";
 import { getEventIconClass } from "@/lib/events";
 import { AttemptType, Incident } from "@/lib/interfaces";
-import { fetchQuery, getFreshQueryData, LIVE_MAX_AGE } from "@/lib/queryCache";
+import { LIVE_MAX_AGE } from "@/lib/queryCache";
 import {
     CHECK_TYPE_LABELS,
     CheckType,
@@ -50,43 +51,39 @@ const ResultsChecks = () => {
     const { id: roundId = "" } = useParams<{ id: string }>();
     const navigate = useNavigate();
     const competition = useAtomValue(competitionAtom);
-    const { data: rooms = [] } = useCachedQuery(roomsQuery, {
+    const { data: rooms = [] } = useLiveQuery(roomsQuery, {
         maxAge: LIVE_MAX_AGE,
     });
-    // Checks the Rounds tab loaded moments ago show straight away
-    const [checks, setChecks] = useState<Incident[] | null>(
-        () =>
-            getFreshQueryData<Incident[]>(
-                resultsChecksQuery(roundId).key,
-                LIVE_MAX_AGE
-            ) ?? null
-    );
+    // Checks the Rounds tab loaded moments ago show straight away, and the
+    // last round's stay while the next loads
+    const {
+        data: checks,
+        isError,
+        isPreviousData,
+        refetch,
+    } = useLiveQuery(resultsChecksQuery(roundId), {
+        maxAge: LIVE_MAX_AGE,
+        keepPreviousData: true,
+    });
     const [filter, setFilter] = useState<Filter>("all");
 
     usePageHeader({
         crumbs: [{ label: "Results", to: "/results" }, { label: "Checks" }],
     });
 
-    // The round the shown checks belong to; differs while the next loads
-    const [checksRoundId, setChecksRoundId] = useState(() =>
-        checks ? roundId : undefined
-    );
-    useEffect(() => {
-        fetchQuery(resultsChecksQuery(roundId)).then(
-            (data) => {
-                setChecks(data);
-                setChecksRoundId(roundId || "");
-            },
-            () => undefined
-        );
-    }, [roundId]);
-
     const rounds = useMemo(
         () => (competition ? getRoundOptions(competition.wcif, rooms) : []),
         [competition, rooms]
     );
 
-    if (!competition || !checks) return <LoadingPage />;
+    if (!competition) return <LoadingPage />;
+    if (!checks) {
+        return isError ? (
+            <RequestError onRetry={() => void refetch()} />
+        ) : (
+            <LoadingPage />
+        );
+    }
 
     const typesPresent = (Object.keys(CHECK_TYPE_LABELS) as CheckType[]).filter(
         (type) => checks.some((check) => getCheckTypes(check).includes(type))
@@ -186,7 +183,8 @@ const ResultsChecks = () => {
                 />
             )}
 
-            <RefreshingRegion isRefreshing={checksRoundId !== (roundId || "")}>
+            {isError && <RequestError hasData onRetry={() => void refetch()} />}
+            <RefreshingRegion isRefreshing={isPreviousData}>
                 {visible.length === 0 ? (
                     <EmptyState>No suspicious results found.</EmptyState>
                 ) : (

@@ -57,6 +57,11 @@ export const useLiveQuery = <T>(
     return {
         data: shownData ?? (keepPreviousData ? previousData : undefined),
         dataUpdatedAt: result.dataUpdatedAt,
+        /** The data shown is the previous key's, while this key loads */
+        isPreviousData:
+            shownData === undefined &&
+            keepPreviousData &&
+            previousData !== undefined,
         isError: result.isError,
         refetch: result.refetch,
     };
