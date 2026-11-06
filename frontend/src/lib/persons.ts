@@ -144,6 +144,12 @@ export const checkedInCount = async () => {
     return await response.json();
 };
 
+/** How many people are checked in, for the Check-in page */
+export const checkInCountsQuery = backendQuery<{
+    checkedInPersonsCount: number;
+    totalPersonsCount: number;
+}>("person/check-in");
+
 export const getPersonsWithoutCardAssigned = async () => {
     const response = await backendRequest("person/without-card", "GET", true);
     return await response.json();
