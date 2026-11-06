@@ -154,8 +154,9 @@ describe('Attendance flow for a group (e2e)', () => {
       expect(await statusOf(runnerActivity.id)).toBe(StaffActivityStatus.LATE);
 
       await request(server())
-        .post(`/attendance/present-replaced/${notHeldActivity.id}`)
+        .post(`/attendance/replaced/${notHeldActivity.id}`)
         .set(auth(users.tokens.DELEGATE))
+        .send({ wasPresent: true })
         .expect(201);
       expect(await statusOf(notHeldActivity.id)).toBe(
         StaffActivityStatus.REPLACED,
@@ -354,6 +355,207 @@ describe('Attendance flow for a group (e2e)', () => {
     });
   });
 
+  describe('tags', () => {
+    // Groups of their own, so the reports above keep their counts
+    const TAGS_GROUP_ID = `${ROUND_ID}-g2`;
+    const LATER_GROUP_ID = `${ROUND_ID}-g3`;
+    const OTHER_DAY_GROUP_ID = `${ROUND_ID}-g4`;
+    const assign = (personId: string, role: StaffRole, groupId: string) =>
+      db.staffActivity.create({
+        data: { personId, role, groupId, isAssigned: true },
+      });
+    const activityOf = (id: string) =>
+      db.staffActivity.findUnique({ where: { id } });
+
+    it('marks someone who did the job as left early, alongside late', async () => {
+      const activity = await assign(helper.id, StaffRole.JUDGE, TAGS_GROUP_ID);
+
+      await request(server())
+        .put(`/attendance/left-early/${activity.id}`)
+        .set(auth(users.tokens.STAGE_LEADER))
+        .send({ leftEarly: true })
+        .expect(409);
+
+      await request(server())
+        .post(`/attendance/late/${activity.id}`)
+        .set(auth(adminToken))
+        .expect(201);
+      const res = await request(server())
+        .put(`/attendance/left-early/${activity.id}`)
+        .set(auth(users.tokens.STAGE_LEADER))
+        .send({ leftEarly: true })
+        .expect(200);
+      expect(res.body).toMatchObject({
+        status: StaffActivityStatus.LATE,
+        leftEarly: true,
+      });
+
+      await request(server())
+        .post(`/attendance/absent/${activity.id}`)
+        .set(auth(adminToken))
+        .expect(201);
+      expect(await activityOf(activity.id)).toMatchObject({
+        status: StaffActivityStatus.ABSENT,
+        leftEarly: false,
+      });
+    });
+
+    it('records who replaced someone who was here, and adds them once', async () => {
+      const activity = await assign(
+        helper.id,
+        StaffRole.SCRAMBLER,
+        TAGS_GROUP_ID,
+      );
+      const markReplaced = () =>
+        request(server())
+          .post(`/attendance/replaced/${activity.id}`)
+          .set(auth(users.tokens.STAGE_LEADER))
+          .send({ wasPresent: true, replacedById: competitor.id })
+          .expect(201);
+
+      const res = await markReplaced();
+      expect(res.body).toMatchObject({
+        status: StaffActivityStatus.REPLACED,
+        replacedById: competitor.id,
+      });
+      await markReplaced();
+
+      const replacements = await db.staffActivity.findMany({
+        where: {
+          personId: competitor.id,
+          groupId: TAGS_GROUP_ID,
+          role: StaffRole.SCRAMBLER,
+        },
+      });
+      expect(replacements).toHaveLength(1);
+      expect(replacements[0]).toMatchObject({
+        status: StaffActivityStatus.PRESENT,
+        isAssigned: false,
+      });
+
+      const group = await request(server())
+        .get(`/attendance/group/${TAGS_GROUP_ID}`)
+        .set(auth(adminToken))
+        .expect(200);
+      expect(group.body.find((a: any) => a.id === activity.id)).toMatchObject({
+        replacedBy: { id: competitor.id, name: competitor.name },
+      });
+    });
+
+    it("keeps someone who didn't come absent, covered by their replacement", async () => {
+      const activity = await assign(helper.id, StaffRole.RUNNER, TAGS_GROUP_ID);
+
+      await request(server())
+        .post(`/attendance/replaced/${activity.id}`)
+        .set(auth(adminToken))
+        .send({ wasPresent: false, replacedById: competitor.id })
+        .expect(201);
+      expect(await activityOf(activity.id)).toMatchObject({
+        status: StaffActivityStatus.ABSENT,
+        replacedById: competitor.id,
+      });
+
+      // Doing the job after all means nobody covered for them
+      await request(server())
+        .post(`/attendance/present/${activity.id}`)
+        .set(auth(adminToken))
+        .expect(201);
+      expect((await activityOf(activity.id)).replacedById).toBeNull();
+    });
+
+    it('rejects a replacement who is the same person, or unknown', async () => {
+      const activity = await assign(
+        helper.id,
+        StaffRole.DELEGATE,
+        TAGS_GROUP_ID,
+      );
+      await request(server())
+        .post(`/attendance/replaced/${activity.id}`)
+        .set(auth(adminToken))
+        .send({ wasPresent: true, replacedById: helper.id })
+        .expect(400);
+      await request(server())
+        .post(`/attendance/replaced/${activity.id}`)
+        .set(auth(adminToken))
+        .send({ wasPresent: true, replacedById: NON_EXISTENT_ID })
+        .expect(404);
+      await request(server())
+        .post(`/attendance/replaced/${NON_EXISTENT_ID}`)
+        .set(auth(adminToken))
+        .send({ wasPresent: true })
+        .expect(404);
+    });
+
+    it('tags only the absent staffing in the given groups as not coming', async () => {
+      const later = await assign(scrambler.id, StaffRole.JUDGE, LATER_GROUP_ID);
+      const done = await assign(scrambler.id, StaffRole.JUDGE, TAGS_GROUP_ID);
+      await db.staffActivity.update({
+        where: { id: done.id },
+        data: { status: StaffActivityStatus.PRESENT },
+      });
+      const competing = await assign(
+        scrambler.id,
+        StaffRole.COMPETITOR,
+        LATER_GROUP_ID,
+      );
+      const otherDay = await assign(
+        scrambler.id,
+        StaffRole.JUDGE,
+        OTHER_DAY_GROUP_ID,
+      );
+      const setNoShow = (noShow: boolean) =>
+        request(server())
+          .post('/attendance/no-show')
+          .set(auth(users.tokens.STAGE_LEADER))
+          .send({
+            personId: scrambler.id,
+            groupIds: [TAGS_GROUP_ID, LATER_GROUP_ID],
+            noShow,
+          })
+          .expect(201);
+
+      expect((await setNoShow(true)).body).toEqual({ count: 1 });
+      expect((await activityOf(later.id)).noShow).toBe(true);
+      expect((await activityOf(done.id)).noShow).toBe(false);
+      expect((await activityOf(competing.id)).noShow).toBe(false);
+      expect((await activityOf(otherDay.id)).noShow).toBe(false);
+
+      await setNoShow(false);
+      expect((await activityOf(later.id)).noShow).toBe(false);
+
+      await setNoShow(true);
+      await request(server())
+        .post(`/attendance/present/${later.id}`)
+        .set(auth(adminToken))
+        .expect(201);
+      expect((await activityOf(later.id)).noShow).toBe(false);
+    });
+
+    it("restores a row for undo, dropping tags its status can't have", async () => {
+      const activity = await assign(
+        scrambler.id,
+        StaffRole.SCRAMBLER,
+        TAGS_GROUP_ID,
+      );
+      const res = await request(server())
+        .put(`/attendance/restore/${activity.id}`)
+        .set(auth(users.tokens.STAGE_LEADER))
+        .send({
+          status: StaffActivityStatus.LATE,
+          leftEarly: true,
+          noShow: true,
+          replacedById: competitor.id,
+        })
+        .expect(200);
+      expect(res.body).toMatchObject({
+        status: StaffActivityStatus.LATE,
+        leftEarly: true,
+        noShow: false,
+        replacedById: null,
+      });
+    });
+  });
+
   describe('guards', () => {
     const endpoints: [string, string, () => string, object][] = [
       ['get', 'group', () => `/attendance/group/${GROUP_ID}`, {}],
@@ -371,9 +573,31 @@ describe('Attendance flow for a group (e2e)', () => {
       ['post', 'absent', () => `/attendance/absent/${judgeActivity.id}`, {}],
       [
         'post',
-        'present-replaced',
-        () => `/attendance/present-replaced/${judgeActivity.id}`,
-        {},
+        'replaced',
+        () => `/attendance/replaced/${judgeActivity.id}`,
+        { wasPresent: true },
+      ],
+      [
+        'put',
+        'left-early',
+        () => `/attendance/left-early/${judgeActivity.id}`,
+        { leftEarly: true },
+      ],
+      [
+        'post',
+        'no-show',
+        () => '/attendance/no-show',
+        { personId: NON_EXISTENT_ID, groupIds: [GROUP_ID], noShow: true },
+      ],
+      [
+        'put',
+        'restore',
+        () => `/attendance/restore/${judgeActivity.id}`,
+        {
+          status: StaffActivityStatus.ABSENT,
+          leftEarly: false,
+          noShow: false,
+        },
       ],
       ['post', 'late', () => `/attendance/late/${judgeActivity.id}`, {}],
       [

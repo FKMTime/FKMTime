@@ -1,8 +1,11 @@
 import {
     ArrowLeftRight,
+    CalendarCheck,
+    CalendarX,
     Check,
     CheckCheck,
     ClockAlert,
+    DoorOpen,
     LucideIcon,
     MessageSquareText,
     Replace,
@@ -11,25 +14,35 @@ import {
     X,
 } from "lucide-react";
 import { ReactNode, useState } from "react";
+import { Competition as WCIF } from "wcif-helpers";
 
 import RowActions, { RowAction } from "@/Components/shared/RowActions";
 import { StatusBadge } from "@/Components/shared/StatusBadge";
 import { Button } from "@/Components/ui/button";
 import { StaffActivity, StaffActivityStatus } from "@/lib/interfaces";
 import { isDelegate } from "@/lib/permissions";
+import { getRankingFromPreviousRound } from "@/lib/results";
 import { cn } from "@/lib/utils";
 import IssueWarningModal from "@/Pages/Main/Persons/Components/IssueWarningModal";
 
 import ChangeCompetingGroupModal from "./AbsentCompetitors/ChangeCompetingGroupModal";
 import AddNotAssignedPersonModal from "./AddNotAssignedPersonModal";
 import DetailsModal from "./DetailsModal";
+import ReplacedModal from "./ReplacedModal";
 
 export interface AttendanceHandlers {
     onMarkPresent: (id: string) => void;
     onMarkAbsent: (id: string) => void;
     onMarkAllPresent: (ids: string[]) => void;
     onMarkLate: (id: string) => void;
-    onMarkPresentButReplaced: (id: string) => void;
+    onMarkReplaced: (
+        id: string,
+        wasPresent: boolean,
+        replacedById?: string
+    ) => void;
+    onSetLeftEarly: (id: string, leftEarly: boolean) => void;
+    /** Not coming for the rest of the day, or coming after all */
+    onSetNoShow: (activity: StaffActivity, noShow: boolean) => void;
 }
 
 interface RoleCardProps extends AttendanceHandlers {
@@ -40,8 +53,8 @@ interface RoleCardProps extends AttendanceHandlers {
     groupId: string;
     /** Judges only: stations once runners are assigned for the round */
     showStations?: boolean;
-    /** Competitors only: e.g. the ranking from the previous round */
-    describeCompetitor?: (activity: StaffActivity) => ReactNode;
+    /** For competitors' rankings in the previous round */
+    wcif?: WCIF;
     onChanged: () => void;
 }
 
@@ -52,8 +65,13 @@ const PRESENT_STATUSES = [
 ];
 
 type Dialog =
-    | { type: "comment" | "warning" | "group"; activity: StaffActivity }
+    | {
+          type: "comment" | "warning" | "group" | "replaced";
+          activity: StaffActivity;
+      }
     | { type: "add" };
+
+const DID_THE_JOB = [StaffActivityStatus.PRESENT, StaffActivityStatus.LATE];
 
 /** One role in a group: who is absent, who is present, and what to do about it */
 const RoleCard = ({
@@ -63,21 +81,52 @@ const RoleCard = ({
     attendance,
     groupId,
     showStations,
-    describeCompetitor,
+    wcif,
     onChanged,
     onMarkPresent,
     onMarkAbsent,
     onMarkAllPresent,
     onMarkLate,
-    onMarkPresentButReplaced,
+    onMarkReplaced,
+    onSetLeftEarly,
+    onSetNoShow,
 }: RoleCardProps) => {
     const [dialog, setDialog] = useState<Dialog | null>(null);
     const isCompetitor = role === "COMPETITOR";
     const people = attendance.filter((a) => a.role === role);
     const present = people.filter((a) => PRESENT_STATUSES.includes(a.status));
-    const absent = people.filter(
-        (a) => a.status === StaffActivityStatus.ABSENT
-    );
+    // People still expected first, those not coming today last
+    const absent = people
+        .filter((a) => a.status === StaffActivityStatus.ABSENT)
+        .sort((a, b) => Number(a.noShow) - Number(b.noShow));
+
+    const roundId = groupId.split("-g")[0];
+    const isLaterRound = Number(roundId.split("-r")[1]) > 1;
+    const previousRanking = (activity: StaffActivity) => {
+        if (!isCompetitor || !isLaterRound || !activity.person.registrantId)
+            return null;
+        const ranking = getRankingFromPreviousRound(
+            roundId,
+            activity.person.registrantId,
+            wcif
+        );
+        return (
+            ranking !== null && (
+                <span
+                    className="text-muted-foreground"
+                    title="Place in the previous round"
+                >
+                    {` (${ranking})`}
+                </span>
+            )
+        );
+    };
+
+    /** Who this person is covering for in this role */
+    const coveringFor = (activity: StaffActivity) =>
+        people
+            .filter((other) => other.replacedById === activity.person.id)
+            .map((other) => other.person.name);
 
     const closeDialog = () => {
         setDialog(null);
@@ -123,24 +172,92 @@ const RoleCard = ({
                         onSelect: () => onMarkLate(activity.id),
                     },
                     {
-                        label: "Present but replaced",
+                        label: "Replaced…",
                         icon: Replace,
-                        onSelect: () => onMarkPresentButReplaced(activity.id),
+                        onSelect: () =>
+                            setDialog({ type: "replaced", activity }),
                     },
+                    activity.noShow
+                        ? {
+                              label: "Coming after all",
+                              icon: CalendarCheck,
+                              onSelect: () => onSetNoShow(activity, false),
+                          }
+                        : {
+                              label: "Not coming today",
+                              icon: CalendarX,
+                              onSelect: () => onSetNoShow(activity, true),
+                          },
                     ...commentAndWarning(activity),
                 ]}
             />
         );
 
-    const presentTag = (activity: StaffActivity) => {
-        if (activity.status === StaffActivityStatus.LATE)
-            return <StatusBadge tone="warning">Late</StatusBadge>;
-        if (activity.status === StaffActivityStatus.REPLACED)
-            return <StatusBadge tone="neutral">Replaced</StatusBadge>;
-        if (!activity.isAssigned)
-            return <StatusBadge tone="primary">Unassigned</StatusBadge>;
-        return null;
+    const absentTags = (activity: StaffActivity) => (
+        <>
+            {activity.noShow && (
+                <StatusBadge tone="destructive">Not coming</StatusBadge>
+            )}
+            {activity.replacedBy && (
+                <StatusBadge tone="neutral">
+                    Covered by {activity.replacedBy.name}
+                </StatusBadge>
+            )}
+        </>
+    );
+
+    const presentTags = (activity: StaffActivity) => {
+        const covering = coveringFor(activity);
+        return (
+            <>
+                {activity.status === StaffActivityStatus.LATE && (
+                    <StatusBadge tone="warning">Late</StatusBadge>
+                )}
+                {activity.leftEarly && (
+                    <StatusBadge tone="warning">Left early</StatusBadge>
+                )}
+                {activity.status === StaffActivityStatus.REPLACED && (
+                    <StatusBadge tone="neutral">
+                        {activity.replacedBy
+                            ? `Replaced by ${activity.replacedBy.name}`
+                            : "Replaced"}
+                    </StatusBadge>
+                )}
+                {covering.length > 0 && (
+                    <StatusBadge tone="primary">
+                        Covering for {covering.join(", ")}
+                    </StatusBadge>
+                )}
+                {!activity.isAssigned && covering.length === 0 && (
+                    <StatusBadge tone="primary">Unassigned</StatusBadge>
+                )}
+            </>
+        );
     };
+
+    const presentActions = (activity: StaffActivity) => (
+        <RowActions
+            subject={activity.person.name}
+            items={[
+                {
+                    label: activity.leftEarly
+                        ? "Didn't leave early"
+                        : "Left early",
+                    icon: DoorOpen,
+                    hidden: !DID_THE_JOB.includes(activity.status),
+                    onSelect: () =>
+                        onSetLeftEarly(activity.id, !activity.leftEarly),
+                },
+                ...commentAndWarning(activity),
+                {
+                    label: "Mark absent",
+                    icon: X,
+                    destructive: true,
+                    onSelect: () => onMarkAbsent(activity.id),
+                },
+            ]}
+        />
+    );
 
     return (
         <section
@@ -204,9 +321,9 @@ const RoleCard = ({
                                 >
                                     <span className="min-w-0 flex-1 truncate text-sm">
                                         {activity.person.name}
-                                        {isCompetitor &&
-                                            describeCompetitor?.(activity)}
+                                        {previousRanking(activity)}
                                     </span>
+                                    {absentTags(activity)}
                                     {absentActions(activity)}
                                 </li>
                             ))}
@@ -221,6 +338,7 @@ const RoleCard = ({
                                 >
                                     <span className="min-w-0 flex-1 truncate text-sm">
                                         {activity.person.name}
+                                        {previousRanking(activity)}
                                         {showStations && activity.device && (
                                             <span className="text-muted-foreground">
                                                 {" "}
@@ -228,24 +346,8 @@ const RoleCard = ({
                                             </span>
                                         )}
                                     </span>
-                                    {presentTag(activity)}
-                                    {!isCompetitor && (
-                                        <RowActions
-                                            subject={activity.person.name}
-                                            items={[
-                                                ...commentAndWarning(activity),
-                                                {
-                                                    label: "Mark absent",
-                                                    icon: X,
-                                                    destructive: true,
-                                                    onSelect: () =>
-                                                        onMarkAbsent(
-                                                            activity.id
-                                                        ),
-                                                },
-                                            ]}
-                                        />
-                                    )}
+                                    {presentTags(activity)}
+                                    {!isCompetitor && presentActions(activity)}
                                 </li>
                             ))}
                         </PeopleSection>
@@ -273,6 +375,20 @@ const RoleCard = ({
                     isOpen
                     onClose={closeDialog}
                     person={dialog.activity.person}
+                />
+            )}
+            {dialog?.type === "replaced" && (
+                <ReplacedModal
+                    isOpen
+                    onClose={() => setDialog(null)}
+                    activity={dialog.activity}
+                    onConfirm={(wasPresent, replacedById) =>
+                        onMarkReplaced(
+                            dialog.activity.id,
+                            wasPresent,
+                            replacedById
+                        )
+                    }
                 />
             )}
             {dialog?.type === "group" && (

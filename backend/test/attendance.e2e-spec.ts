@@ -146,11 +146,12 @@ describe('AttendanceController (e2e)', () => {
     });
   });
 
-  describe('POST /attendance/present-replaced/:id', () => {
+  describe('POST /attendance/replaced/:id', () => {
     it('marks a staff activity as present but replaced', async () => {
       const res = await request(app.getHttpServer())
-        .post(`/attendance/present-replaced/${staffActivityId}`)
+        .post(`/attendance/replaced/${staffActivityId}`)
         .set('Authorization', `Bearer ${adminToken}`)
+        .send({ wasPresent: true })
         .expect(201);
 
       expect(res.body).toBeDefined();

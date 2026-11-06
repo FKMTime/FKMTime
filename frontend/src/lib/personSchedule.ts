@@ -20,6 +20,11 @@ export interface PersonScheduleEntry {
     isAssigned: boolean;
     /** Staff attendance once it is known; never set for competing */
     attendance?: StaffActivityStatus;
+    leftEarly?: boolean;
+    /** Not coming that day */
+    noShow?: boolean;
+    /** Who did the job instead */
+    replacedByName?: string;
 }
 
 interface ScheduledActivity {
@@ -87,6 +92,12 @@ const indexActivities = (wcif: WCIF) => {
     return { byId, byCode };
 };
 
+const attendanceTags = (staffActivity: StaffActivity | undefined) => ({
+    leftEarly: staffActivity?.leftEarly,
+    noShow: staffActivity?.noShow,
+    replacedByName: staffActivity?.replacedBy?.name,
+});
+
 /**
  * Status worth showing: a recorded one as soon as it is set, "Absent" only
  * once the group is over, since that is also the status before anyone scans.
@@ -99,6 +110,8 @@ const visibleAttendance = (
     if (!staffActivity) return undefined;
     if (staffActivity.status !== StaffActivityStatus.ABSENT)
         return staffActivity.status;
+    // Known in advance, unlike an absence
+    if (staffActivity.noShow) return staffActivity.status;
     return new Date(endTime) <= now ? staffActivity.status : undefined;
 };
 
@@ -149,9 +162,16 @@ export const getPersonSchedule = (
             startTime: activity.startTime,
             endTime: activity.endTime,
             isAssigned: true,
-            attendance: isCompetitor
-                ? undefined
-                : visibleAttendance(attendance.get(key), activity.endTime, now),
+            ...(isCompetitor
+                ? {}
+                : {
+                      attendance: visibleAttendance(
+                          attendance.get(key),
+                          activity.endTime,
+                          now
+                      ),
+                      ...attendanceTags(attendance.get(key)),
+                  }),
         });
     });
 
@@ -185,6 +205,7 @@ export const getPersonSchedule = (
                     activity.endTime,
                     now
                 ),
+                ...attendanceTags(staffActivity),
             });
         });
 

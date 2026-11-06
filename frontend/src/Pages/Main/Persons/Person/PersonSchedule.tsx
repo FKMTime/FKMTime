@@ -1,8 +1,10 @@
+import { CalendarCheck, CalendarX } from "lucide-react";
 import { Link } from "react-router-dom";
 
 import EmptyState from "@/Components/shared/EmptyState";
 import { StatusTone } from "@/Components/shared/status";
 import { StatusBadge } from "@/Components/shared/StatusBadge";
+import { Button } from "@/Components/ui/button";
 import { prettyStaffActivityStatus } from "@/lib/attendance";
 import { getEventIconClass } from "@/lib/events";
 import { StaffActivityStatus } from "@/lib/interfaces";
@@ -21,15 +23,29 @@ interface PersonScheduleProps {
     entries: PersonScheduleEntry[];
     /** Links each group to its attendance page */
     canOpenAttendance: boolean;
+    /** Offers "Not coming" for a day with staffing still to come */
+    onSetNoShow?: (day: string, noShow: boolean) => void;
     now?: Date;
 }
 
 const isOngoing = (entry: PersonScheduleEntry, now: Date) =>
     new Date(entry.startTime) <= now && now < new Date(entry.endTime);
 
+const attendanceLabel = (entry: PersonScheduleEntry) => {
+    if (!entry.attendance) return null;
+    if (entry.noShow) return "Not coming";
+    if (
+        entry.attendance === StaffActivityStatus.REPLACED &&
+        entry.replacedByName
+    )
+        return `Replaced by ${entry.replacedByName}`;
+    return prettyStaffActivityStatus(entry.attendance);
+};
+
 const PersonSchedule = ({
     entries,
     canOpenAttendance,
+    onSetNoShow,
     now = new Date(),
 }: PersonScheduleProps) => {
     if (entries.length === 0)
@@ -39,9 +55,15 @@ const PersonSchedule = ({
         <div className="flex flex-col gap-5">
             {groupScheduleByDay(entries).map(({ day, entries: dayEntries }) => (
                 <section key={day} className="flex flex-col gap-2">
-                    <h3 className="text-sm font-semibold text-muted-foreground">
-                        {formatCompetitionDay(day)}
-                    </h3>
+                    <div className="flex min-h-8 items-center justify-between gap-2">
+                        <h3 className="text-sm font-semibold text-muted-foreground">
+                            {formatCompetitionDay(day)}
+                        </h3>
+                        {onSetNoShow &&
+                            dayNoShowAction(dayEntries, now, (noShow) =>
+                                onSetNoShow(day, noShow)
+                            )}
+                    </div>
                     <ul className="flex flex-col divide-y overflow-hidden rounded-mobile-card border bg-card md:rounded-2xl">
                         {dayEntries.map((entry) => {
                             const isOther =
@@ -124,11 +146,22 @@ const PersonSchedule = ({
                                                     ]
                                                 }
                                             >
-                                                {prettyStaffActivityStatus(
-                                                    entry.attendance
-                                                )}
+                                                {attendanceLabel(entry)}
                                             </StatusBadge>
                                         )}
+                                        {entry.leftEarly && (
+                                            <StatusBadge tone="warning">
+                                                Left early
+                                            </StatusBadge>
+                                        )}
+                                        {entry.attendance ===
+                                            StaffActivityStatus.ABSENT &&
+                                            entry.replacedByName && (
+                                                <StatusBadge tone="neutral">
+                                                    Covered by{" "}
+                                                    {entry.replacedByName}
+                                                </StatusBadge>
+                                            )}
                                     </div>
                                 </li>
                             );
@@ -137,6 +170,29 @@ const PersonSchedule = ({
                 </section>
             ))}
         </div>
+    );
+};
+
+/** "Not coming" while the day has staffing to come, or undo it */
+const dayNoShowAction = (
+    entries: PersonScheduleEntry[],
+    now: Date,
+    onSetNoShow: (noShow: boolean) => void
+) => {
+    const upcoming = entries.filter(
+        (entry) => !entry.isCompetitor && new Date(entry.endTime) > now
+    );
+    if (upcoming.length === 0) return null;
+    return upcoming.some((entry) => entry.noShow) ? (
+        <Button variant="ghost" size="sm" onClick={() => onSetNoShow(false)}>
+            <CalendarCheck />
+            Coming after all
+        </Button>
+    ) : (
+        <Button variant="ghost" size="sm" onClick={() => onSetNoShow(true)}>
+            <CalendarX />
+            Not coming
+        </Button>
     );
 };
 

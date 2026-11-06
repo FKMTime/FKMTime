@@ -43,7 +43,8 @@ model Person {
   cardId            String?          @unique @map("card_id")
   results           Result[]
   judgedAttempts    Attempt[]        @relation(name: "attempt_judge")
-  StaffActivity     StaffActivity[]
+  StaffActivity     StaffActivity[]  @relation(name: "staff_activity_person")
+  replacedOthersIn  StaffActivity[]  @relation(name: "staff_activity_replaced_by")
   scrambledAttempts Attempt[]        @relation(name: "attempt_scrambler")
   receivedWarnings  Warning[]
   manualIncidents   ManualIncident[]
@@ -54,18 +55,25 @@ model Person {
 }
 
 model StaffActivity {
-  id         String              @id @default(uuid())
-  personId   String              @map("person_id")
-  person     Person              @relation(fields: [personId], references: [id], onDelete: Cascade)
-  deviceId   String?             @map("device_id")
-  device     Device?             @relation(fields: [deviceId], references: [id], onDelete: Restrict)
-  isAssigned Boolean             @default(false) @map("is_assigned")
-  status     StaffActivityStatus @default(ABSENT)
-  groupId    String              @map("group_id")
-  comment    String?
-  role       StaffRole
-  createdAt  DateTime            @default(now()) @map("created_at")
-  updatedAt  DateTime            @updatedAt @map("updated_at")
+  id           String              @id @default(uuid())
+  personId     String              @map("person_id")
+  person       Person              @relation(name: "staff_activity_person", fields: [personId], references: [id], onDelete: Cascade)
+  deviceId     String?             @map("device_id")
+  device       Device?             @relation(fields: [deviceId], references: [id], onDelete: Restrict)
+  isAssigned   Boolean             @default(false) @map("is_assigned")
+  status       StaffActivityStatus @default(ABSENT)
+  groupId      String              @map("group_id")
+  comment      String?
+  role         StaffRole
+  /// Left before the group ended; only with PRESENT or LATE
+  leftEarly    Boolean             @default(false) @map("left_early")
+  /// Not coming for the rest of the day; only with ABSENT
+  noShow       Boolean             @default(false) @map("no_show")
+  /// Who did the job instead; only with REPLACED or ABSENT
+  replacedById String?             @map("replaced_by_id")
+  replacedBy   Person?             @relation(name: "staff_activity_replaced_by", fields: [replacedById], references: [id], onDelete: SetNull)
+  createdAt    DateTime            @default(now()) @map("created_at")
+  updatedAt    DateTime            @updatedAt @map("updated_at")
 
   @@unique([personId, groupId, role])
   @@map("staff_activity")
@@ -92,6 +100,8 @@ model Competition {
   secureRfid                      Boolean                 @default(false) @map("secure_rfid")
   useFkmTimeDevices               Boolean                 @default(true) @map("use_fkm_time_devices")
   soundEnabled                    Boolean                 @default(true) @map("sound_enabled")
+  // Null leaves each V4 station on the volume set in its own menu
+  buzzerVolume                    Int?                    @map("buzzer_volume")
 
   @@map("competition")
 }

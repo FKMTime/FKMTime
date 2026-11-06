@@ -12,6 +12,10 @@ import { StageLeaderGuard } from 'src/auth/guards/stageLeader.guard';
 
 import { AttendanceService } from './attendance.service';
 import { AddNotAssignedPersonDto } from './dto/addNotAssignedPerson.dto';
+import { MarkReplacedDto } from './dto/markReplaced.dto';
+import { RestoreAttendanceDto } from './dto/restoreAttendance.dto';
+import { SetLeftEarlyDto } from './dto/setLeftEarly.dto';
+import { SetNoShowDto } from './dto/setNoShow.dto';
 import { UpdateCommentDto } from './dto/updateComment.dto';
 
 @UseGuards(AuthGuard('jwt'))
@@ -71,9 +75,27 @@ export class AttendanceController {
   }
 
   @UseGuards(StageLeaderGuard)
-  @Post('present-replaced/:id')
-  async markAsPresentButReplaced(@Param('id') id: string) {
-    return this.attendanceService.markAsPresentButReplaced(id);
+  @Post('replaced/:id')
+  async markAsReplaced(@Param('id') id: string, @Body() data: MarkReplacedDto) {
+    return this.attendanceService.markAsReplaced(id, data);
+  }
+
+  @UseGuards(StageLeaderGuard)
+  @Put('left-early/:id')
+  async setLeftEarly(@Param('id') id: string, @Body() data: SetLeftEarlyDto) {
+    return this.attendanceService.setLeftEarly(id, data.leftEarly);
+  }
+
+  @UseGuards(StageLeaderGuard)
+  @Post('no-show')
+  async setNoShow(@Body() data: SetNoShowDto) {
+    return this.attendanceService.setNoShow(data);
+  }
+
+  @UseGuards(StageLeaderGuard)
+  @Put('restore/:id')
+  async restore(@Param('id') id: string, @Body() data: RestoreAttendanceDto) {
+    return this.attendanceService.restore(id, data);
   }
 
   @UseGuards(StageLeaderGuard)

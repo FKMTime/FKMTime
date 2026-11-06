@@ -1,11 +1,15 @@
+import { Competition as WCIF } from "wcif-helpers";
+
 import {
     AttendanceStatistics,
     MissedAssignments,
     StaffActivity,
     StaffActivityStatus,
 } from "./interfaces";
+import { venueDay } from "./personSchedule";
 import { queryFamily } from "./queryCache";
 import { backendQuery, backendRequest } from "./request";
+import { findGroupSchedule } from "./schedule";
 
 export const getRoundStaffing = async (
     roundId: string
@@ -75,13 +79,97 @@ export const markAsLate = async (id: string) => {
     return response.status;
 };
 
-export const markAsPresentButReplaced = async (id: string) => {
+/** Someone else did the job, whether or not the person was here */
+export const markAsReplaced = async (
+    id: string,
+    wasPresent: boolean,
+    replacedById?: string
+) => {
     const response = await backendRequest(
-        `attendance/present-replaced/${id}`,
+        `attendance/replaced/${id}`,
         "POST",
-        true
+        true,
+        { wasPresent, replacedById }
     );
     return response.status;
+};
+
+export const setLeftEarly = async (id: string, leftEarly: boolean) => {
+    const response = await backendRequest(
+        `attendance/left-early/${id}`,
+        "PUT",
+        true,
+        { leftEarly }
+    );
+    return response.status;
+};
+
+/** Tags the person's absent staffing in these groups as not coming */
+export const setNoShow = async (
+    personId: string,
+    groupIds: string[],
+    noShow: boolean
+) => {
+    const response = await backendRequest("attendance/no-show", "POST", true, {
+        personId,
+        groupIds,
+        noShow,
+    });
+    return response.status;
+};
+
+export type AttendanceState = Pick<
+    StaffActivity,
+    "status" | "leftEarly" | "noShow" | "replacedById"
+>;
+
+export const attendanceState = (activity: StaffActivity): AttendanceState => ({
+    status: activity.status,
+    leftEarly: activity.leftEarly,
+    noShow: activity.noShow,
+    replacedById: activity.replacedById ?? null,
+});
+
+/** Puts a row back as it was, for undo */
+export const restoreAttendance = async (id: string, state: AttendanceState) => {
+    const response = await backendRequest(
+        `attendance/restore/${id}`,
+        "PUT",
+        true,
+        state
+    );
+    return response.status;
+};
+
+/**
+ * Groups a person is not coming to if they are out for the rest of `day`:
+ * their staffing that day in groups that haven't ended. Only absent rows get
+ * tagged, so groups they were at can be included.
+ */
+export const noShowGroupIds = (
+    wcif: WCIF,
+    staffActivities: StaffActivity[],
+    day: string,
+    now = new Date()
+) => {
+    const groupIds = staffActivities
+        .filter((activity) => activity.role !== "COMPETITOR")
+        .filter((activity) => {
+            const schedule = findGroupSchedule(wcif, activity.groupId);
+            return (
+                schedule &&
+                venueDay(schedule.startTime, schedule.timezone) === day &&
+                new Date(schedule.endTime) > now
+            );
+        })
+        .map((activity) => activity.groupId);
+    return [...new Set(groupIds)];
+};
+
+/** Venue day a group is scheduled on, or undefined if it isn't */
+export const groupDay = (wcif: WCIF, groupId: string) => {
+    const schedule = findGroupSchedule(wcif, groupId);
+    return schedule && venueDay(schedule.startTime, schedule.timezone);
 };
 
 export const attendanceStatisticsQuery = backendQuery<AttendanceStatistics[]>(

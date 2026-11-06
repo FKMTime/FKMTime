@@ -20,7 +20,7 @@ import IssueWarningModal from "@/Pages/Main/Persons/Components/IssueWarningModal
 
 import AttendanceTabs from "../Components/AttendanceTabs";
 
-type Filter = "all" | "missed" | "late" | "replaced";
+type Filter = "all" | "missed" | "noShow" | "late" | "leftEarly" | "replaced";
 
 const KINDS: {
     key: Exclude<Filter, "all">;
@@ -35,10 +35,22 @@ const KINDS: {
         get: (item) => item.missedAssignments,
     },
     {
+        key: "noShow",
+        label: "not coming",
+        tone: "destructive",
+        get: (item) => item.noShowAssignments,
+    },
+    {
         key: "late",
         label: "late",
         tone: "warning",
         get: (item) => item.lateAssignments,
+    },
+    {
+        key: "leftEarly",
+        label: "left early",
+        tone: "warning",
+        get: (item) => item.leftEarlyAssignments,
     },
     {
         key: "replaced",
@@ -47,6 +59,15 @@ const KINDS: {
         get: (item) => item.presentButReplacedAssignments,
     },
 ];
+
+const FILTER_LABELS: Record<Filter, string> = {
+    all: "All",
+    missed: "Missed",
+    noShow: "Not coming",
+    late: "Late",
+    leftEarly: "Left early",
+    replaced: "Replaced",
+};
 
 type Dialog = { type: "groups" | "warnings" | "warn"; person: Person };
 
@@ -88,25 +109,23 @@ const MostMissedAssignments = () => {
                 label="Show"
                 value={filter}
                 onValueChange={setFilter}
-                options={(
-                    ["all", "missed", "late", "replaced"] as Filter[]
-                ).map((key) => ({
-                    value: key,
-                    label: (
-                        <>
-                            {key === "all"
-                                ? "All"
-                                : key[0].toUpperCase() + key.slice(1)}
-                            <span className="text-xs text-faint">
-                                {
-                                    assignments.filter((item) =>
-                                        matches(item, key)
-                                    ).length
-                                }
-                            </span>
-                        </>
-                    ),
-                }))}
+                options={(Object.keys(FILTER_LABELS) as Filter[]).map(
+                    (key) => ({
+                        value: key,
+                        label: (
+                            <>
+                                {FILTER_LABELS[key]}
+                                <span className="text-xs text-faint">
+                                    {
+                                        assignments.filter((item) =>
+                                            matches(item, key)
+                                        ).length
+                                    }
+                                </span>
+                            </>
+                        ),
+                    })
+                )}
             />
 
             {visible.length === 0 ? (
@@ -117,9 +136,7 @@ const MostMissedAssignments = () => {
                         const isOpen = expanded.includes(item.person.id);
                         const sections = [
                             ...KINDS.map((kind) => ({
-                                title:
-                                    kind.key[0].toUpperCase() +
-                                    kind.key.slice(1),
+                                title: FILTER_LABELS[kind.key],
                                 tone: kind.tone,
                                 items: kind.get(item).map(describe),
                             })),

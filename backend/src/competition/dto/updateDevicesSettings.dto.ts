@@ -1,4 +1,16 @@
-import { IsBoolean, IsOptional, IsString } from 'class-validator';
+import {
+  IsBoolean,
+  IsInt,
+  IsOptional,
+  IsString,
+  Max,
+  Min,
+} from 'class-validator';
+
+import {
+  BUZZER_VOLUME_MAX,
+  BUZZER_VOLUME_MIN,
+} from '../../device/buzzer-volume';
 
 export class UpdateDevicesSettingsDto {
   @IsBoolean()
@@ -31,4 +43,10 @@ export class UpdateDevicesSettingsDto {
 
   @IsBoolean()
   soundEnabled: boolean;
+
+  @IsInt()
+  @Min(BUZZER_VOLUME_MIN)
+  @Max(BUZZER_VOLUME_MAX)
+  @IsOptional()
+  buzzerVolume?: number | null;
 }
