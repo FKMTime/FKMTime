@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+import { BUZZER_VOLUME_MAX, BUZZER_VOLUME_MIN } from "@/lib/constants";
+
 import { requiredText } from "./fields";
 
 export const deviceSchema = z.object({
@@ -30,4 +32,10 @@ export const deviceSettingsSchema = z.object({
     hilTesting: z.boolean(),
     secureRfid: z.boolean(),
     soundEnabled: z.boolean(),
+    buzzerVolume: z
+        .number()
+        .int()
+        .min(BUZZER_VOLUME_MIN)
+        .max(BUZZER_VOLUME_MAX)
+        .nullable(),
 });
