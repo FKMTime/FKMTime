@@ -75,6 +75,7 @@ export const useLiveQuery = <T>(
         version: versioned.version,
         error: result.error,
         isError: result.isError,
+        isFetching: result.isFetching,
         refetch: result.refetch,
     };
 };

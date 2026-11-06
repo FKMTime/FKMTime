@@ -1,5 +1,5 @@
 import { ScramblingDevice, ScramblingDeviceData } from "./interfaces";
-import { backendRequest } from "./request";
+import { backendQuery, backendRequest } from "./request";
 
 export const defaultScramblingDevice: ScramblingDevice = {
     id: "",
@@ -14,6 +14,9 @@ export const defaultScramblingDevice: ScramblingDevice = {
     createdAt: new Date(),
     updatedAt: new Date(),
 };
+
+export const scramblingDevicesQuery =
+    backendQuery<ScramblingDevice[]>("scrambling-device/");
 
 export const getScramblingDevices = async () => {
     const response = await backendRequest("scrambling-device/", "GET", true);

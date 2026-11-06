@@ -1,5 +1,5 @@
 import { useAtom } from "jotai";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import {
     getLimitByRoundId,
@@ -11,19 +11,22 @@ import LoadingPage from "@/Components/LoadingPage";
 import EmptyState from "@/Components/shared/EmptyState";
 import PageTabs from "@/Components/shared/PageTabs";
 import { Button } from "@/Components/ui/button";
+import { useLiveQuery } from "@/hooks/useLiveQuery";
 import { usePageHeader } from "@/hooks/usePageHeader";
 import { useToast } from "@/hooks/useToast";
 import { competitionAtom } from "@/lib/atoms";
-import { ExtrasContext, getExtrasContext, updateAttempt } from "@/lib/attempt";
+import {
+    ExtrasContext,
+    extrasContextQuery,
+    updateAttempt,
+} from "@/lib/attempt";
 import { average, formattedBest } from "@/lib/average";
 import { getCompetitionInfo } from "@/lib/competition";
-import {
-    AttemptStatus,
-    RemainingAndUsedCumulativeLimit,
-    Result,
-} from "@/lib/interfaces";
+import { AttemptStatus, Result } from "@/lib/interfaces";
+import { QueryError, toQueryOptions } from "@/lib/queryCache";
+import { queryClient } from "@/lib/queryClient";
 import { resultToString } from "@/lib/resultFormatters";
-import { getResultById } from "@/lib/results";
+import { resultQuery } from "@/lib/results";
 import { getSubmittedAttempts, shortRoundName } from "@/lib/utils";
 
 import CreateAttemptModal from "../Components/CreateAttemptModal";
@@ -43,20 +46,24 @@ const SingleResult = () => {
     const navigate = useNavigate();
     const { toast } = useToast();
     const [competition, setCompetition] = useAtom(competitionAtom);
-    const [result, setResult] = useState<Result | null>(null);
+    const resultId = id ?? "";
+    const { data: resultData, error } = useLiveQuery(resultQuery(resultId), {
+        enabled: !!id,
+    });
+    const result: Result | null = resultData ?? null;
+    const remainingAndUsedCumulativeLimit =
+        resultData?.remainingAndUsedCumulativeLimit ?? null;
+    const { data: extrasContextData } = useLiveQuery(
+        extrasContextQuery(resultId),
+        { enabled: !!id }
+    );
+    const extrasContext: ExtrasContext | null = extrasContextData ?? null;
     const [isOpenCreateAttemptModal, setIsOpenCreateAttemptModal] =
         useState<boolean>(false);
     const [isOpenSwapAttemptsModal, setIsOpenSwapAttemptsModal] =
         useState<boolean>(false);
     const [tab, setTab] = useState<Tab>("submitted");
     const [isOpenGiveExtrasModal, setIsOpenGiveExtrasModal] = useState(false);
-    const [extrasContext, setExtrasContext] = useState<ExtrasContext | null>(
-        null
-    );
-    const [
-        remainingAndUsedCumulativeLimit,
-        setRemainingAndUsedCumulativeLimit,
-    ] = useState<RemainingAndUsedCumulativeLimit | null>(null);
     const standardAttempts = useMemo(() => {
         if (!result) return [];
         return (
@@ -92,15 +99,14 @@ const SingleResult = () => {
         return getNumberOfAttemptsForRound(result.roundId, competition.wcif);
     }, [competition, result]);
 
-    const fetchData = useCallback(async () => {
-        if (!id) return;
-        if (!competition) {
-            const competitionData = await getCompetitionInfo();
-            setCompetition(competitionData.data);
-        }
-        const response = await getResultById(id);
-        getExtrasContext(id).then(setExtrasContext);
-        if (response.status === 404) {
+    // Opened from a link, the competition may not be loaded yet
+    useEffect(() => {
+        if (competition) return;
+        getCompetitionInfo().then((response) => setCompetition(response.data));
+    }, [competition, setCompetition]);
+
+    useEffect(() => {
+        if (error instanceof QueryError && error.status === 404) {
             toast({
                 title: "Error",
                 description: "Result not found",
@@ -108,11 +114,17 @@ const SingleResult = () => {
             });
             navigate("/results");
         }
-        setResult(response.data);
-        setRemainingAndUsedCumulativeLimit(
-            response.data.remainingAndUsedCumulativeLimit
-        );
-    }, [competition, id, navigate, setCompetition, toast]);
+    }, [error, navigate, toast]);
+
+    const fetchData = () =>
+        Promise.all([
+            queryClient.invalidateQueries({
+                queryKey: toQueryOptions(resultQuery(resultId)).queryKey,
+            }),
+            queryClient.invalidateQueries({
+                queryKey: toQueryOptions(extrasContextQuery(resultId)).queryKey,
+            }),
+        ]);
 
     const handleCloseModal = () => {
         fetchData();
@@ -120,10 +132,6 @@ const SingleResult = () => {
         setIsOpenSwapAttemptsModal(false);
         setIsOpenGiveExtrasModal(false);
     };
-
-    useEffect(() => {
-        fetchData();
-    }, [fetchData]);
 
     usePageHeader({
         crumbs: result

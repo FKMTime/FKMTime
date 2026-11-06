@@ -1,5 +1,5 @@
 import { Plus } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 import { Button } from "@/Components/ui/button";
 import {
@@ -10,32 +10,27 @@ import {
     TableRow,
 } from "@/Components/ui/table";
 import { useDeferredDelete } from "@/hooks/useDeferredDelete";
+import { useLiveQuery } from "@/hooks/useLiveQuery";
 import { useIsMobile } from "@/hooks/useMobile";
 import { QuickAction } from "@/lib/interfaces";
-import { deleteQuickAction, getQuickActions } from "@/lib/quickActions";
+import { deleteQuickAction, quickActionsQuery } from "@/lib/quickActions";
 
 import CreateQuickActionModal from "./CreateQuickActionModal";
 import QuickActionRow from "./QuickActionRow";
 
 const QuickActions = () => {
     const isMobile = useIsMobile();
-    const [quickActions, setQuickActions] = useState<QuickAction[]>([]);
+    const { data, refetch } = useLiveQuery(quickActionsQuery);
+    const quickActions: QuickAction[] = data ?? [];
     const [isOpenCreateQuickActionModal, setIsOpenCreateQuickActionModal] =
         useState<boolean>(false);
 
-    const fetchData = async () => {
-        const data = await getQuickActions();
-        setQuickActions(data);
-    };
+    const fetchData = () => void refetch();
 
     const handleCloseCreateQuickActionModal = () => {
         setIsOpenCreateQuickActionModal(false);
         fetchData();
     };
-
-    useEffect(() => {
-        fetchData();
-    }, []);
 
     const { deleteLater, isPending } = useDeferredDelete({
         remove: deleteQuickAction,

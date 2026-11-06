@@ -1,7 +1,14 @@
 import { Competition } from "wcif-helpers";
 import { getLimitByRoundId, getRoundInfoFromWcif } from "wcif-helpers";
 
-import { Attempt, AttemptData, Incident, Result } from "./interfaces";
+import {
+    Attempt,
+    AttemptData,
+    Incident,
+    Person,
+    RemainingAndUsedCumulativeLimit,
+    Result,
+} from "./interfaces";
 import { queryFamily } from "./queryCache";
 import { queryClient } from "./queryClient";
 import { backendQuery, backendRequest } from "./request";
@@ -65,6 +72,25 @@ export const getAllResultsByPersonId = async (id: string) => {
     const response = await backendRequest(`result/person/${id}`, "GET", true);
     return await response.json();
 };
+
+/** One result with its attempts and cumulative time limit */
+export const resultQuery = queryFamily((id) =>
+    backendQuery<
+        Result & {
+            remainingAndUsedCumulativeLimit?: RemainingAndUsedCumulativeLimit;
+        }
+    >(`result/${id}`)
+);
+
+/** A round's results for double-checking, with who has been checked */
+export const doubleCheckQuery = queryFamily((roundId) =>
+    backendQuery<{
+        results: Result[];
+        checkedResults?: { id: string; person: Person }[];
+        totalCount: number;
+        doubleCheckedCount: number;
+    }>(`result/round/${roundId}/double-check`)
+);
 
 export const getResultById = async (id: string) => {
     const response = await backendRequest(`result/${id}`, "GET", true);

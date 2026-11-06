@@ -56,20 +56,29 @@ const Layout = () => {
         );
     }, [setUnresolvedIncidentsCount]);
 
-    const fetchCompetition = useCallback(async () => {
-        const response = await getCompetitionInfo().catch(() => null);
-        if (response?.status === 404) {
-            navigate("/competition/import");
-            return;
-        }
-        // 35 files read this atom: only a real competition goes in
-        if (response?.status !== 200) {
-            setIsCompetitionError(true);
-            return;
-        }
-        setIsCompetitionError(false);
-        setCompetition(response.data);
-    }, [navigate, setCompetition]);
+    const applyCompetition = useCallback(
+        (response: Awaited<ReturnType<typeof getCompetitionInfo>> | null) => {
+            if (response?.status === 404) {
+                navigate("/competition/import");
+                return;
+            }
+            // 35 files read this atom: only a real competition goes in
+            if (response?.status !== 200) {
+                setIsCompetitionError(true);
+                return;
+            }
+            setIsCompetitionError(false);
+            setCompetition(response.data);
+        },
+        [navigate, setCompetition]
+    );
+    const fetchCompetition = useCallback(
+        () =>
+            getCompetitionInfo()
+                .catch(() => null)
+                .then(applyCompetition),
+        [applyCompetition]
+    );
 
     const fetchEvents = async () => {
         await getEvents();
@@ -174,8 +183,10 @@ const Layout = () => {
     }, [navigate]);
 
     useEffect(() => {
-        fetchCompetition();
-    }, [fetchCompetition]);
+        getCompetitionInfo()
+            .catch(() => null)
+            .then(applyCompetition);
+    }, [applyCompetition]);
 
     useEffect(() => {
         fetchEvents();

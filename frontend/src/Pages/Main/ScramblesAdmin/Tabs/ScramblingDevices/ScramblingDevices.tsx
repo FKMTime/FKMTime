@@ -1,12 +1,12 @@
 import { Plus } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 import LoadingPage from "@/Components/LoadingPage";
 import EmptyState from "@/Components/shared/EmptyState";
 import { Button } from "@/Components/ui/button";
+import { useLiveQuery } from "@/hooks/useLiveQuery";
 import { useIsMobile } from "@/hooks/useMobile";
-import { ScramblingDevice } from "@/lib/interfaces";
-import { getScramblingDevices } from "@/lib/scramblingDevices";
+import { scramblingDevicesQuery } from "@/lib/scramblingDevices";
 
 import CreateScramblingDeviceModal from "./Components/CreateScramblingDeviceModal";
 import ScramblingDeviceRow from "./Components/ScramblingDeviceRow";
@@ -14,22 +14,16 @@ import ScramblingDeviceRow from "./Components/ScramblingDeviceRow";
 const ScramblingDevices = () => {
     const isMobile = useIsMobile();
     // null until the first load; refreshes keep the list on screen
-    const [devices, setDevices] = useState<ScramblingDevice[] | null>(null);
+    const { data: devices, refetch } = useLiveQuery(scramblingDevicesQuery);
     const [isOpenCreateDeviceModal, setIsOpenCreateDeviceModal] =
         useState<boolean>(false);
 
-    const fetchData = async () => {
-        setDevices(await getScramblingDevices());
-    };
+    const fetchData = () => void refetch();
 
     const handleCloseCreateDeviceModal = () => {
         setIsOpenCreateDeviceModal(false);
         fetchData();
     };
-
-    useEffect(() => {
-        fetchData();
-    }, []);
 
     if (!devices) return <LoadingPage />;
 

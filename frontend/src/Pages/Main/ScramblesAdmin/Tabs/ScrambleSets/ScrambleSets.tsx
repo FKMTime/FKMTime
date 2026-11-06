@@ -1,6 +1,6 @@
 import { useAtomValue } from "jotai";
 import { EllipsisVertical, Plus, Trash2 } from "lucide-react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 
 import LoadingPage from "@/Components/LoadingPage";
@@ -14,6 +14,7 @@ import {
     DropdownMenuTrigger,
 } from "@/Components/ui/dropdown-menu";
 import { useConfirm } from "@/hooks/useConfirm";
+import { useLiveQuery } from "@/hooks/useLiveQuery";
 import { useToast } from "@/hooks/useToast";
 import { activityCodeToName } from "@/lib/activities";
 import { competitionAtom } from "@/lib/atoms";
@@ -22,8 +23,8 @@ import { ScrambleSet } from "@/lib/interfaces";
 import {
     deleteAllScrambleSets,
     deleteScrambleSetsByRoundId,
-    getScrambleSetCounts,
-    getScrambleSets,
+    scrambleSetCountsQuery,
+    scrambleSetsQuery,
 } from "@/lib/scrambleSets";
 import { cn, letterToNumber } from "@/lib/utils";
 
@@ -41,8 +42,6 @@ const ScrambleSets = () => {
     const { toast } = useToast();
     const competition = useAtomValue(competitionAtom);
     const [searchParams, setSearchParams] = useSearchParams();
-    const [scrambleSets, setScrambleSets] = useState<ScrambleSet[]>([]);
-    const [counts, setCounts] = useState<Map<string, number>>(new Map());
     const [isAddOpen, setIsAddOpen] = useState(false);
 
     const roundIds = useMemo(
@@ -54,30 +53,41 @@ const ScrambleSets = () => {
     );
     const roundId = searchParams.get("roundId") || roundIds[0] || "";
 
+    // The round the shown sets belong to; differs while the next loads
+    // The last round's sets stay while the next round loads
+    const {
+        data: setsData,
+        isPreviousData,
+        refetch: refetchSets,
+    } = useLiveQuery(scrambleSetsQuery(roundId ?? ""), {
+        keepPreviousData: true,
+        enabled: !!roundId,
+    });
+    const scrambleSets: ScrambleSet[] = useMemo(
+        () => (roundId ? setsData ?? [] : []),
+        [roundId, setsData]
+    );
+    const { data: countsData, refetch: refetchCounts } = useLiveQuery(
+        scrambleSetCountsQuery
+    );
+    const counts = useMemo(
+        () =>
+            new Map(
+                (countsData ?? []).map((entry) => [entry.roundId, entry.count])
+            ),
+        [countsData]
+    );
+    const fetchData = useCallback(
+        () => Promise.all([refetchSets(), refetchCounts()]),
+        [refetchSets, refetchCounts]
+    );
+
     const lastSetNumber = letterToNumber(
         scrambleSets.reduce(
             (last, set) => (last < set.set ? set.set : last),
             "A"
         )
     );
-
-    // The round the shown sets belong to; differs while the next loads
-    const [setsRoundId, setSetsRoundId] = useState<string>();
-    const fetchData = useCallback(async () => {
-        const [sets, setCountsData] = await Promise.all([
-            roundId ? getScrambleSets(roundId) : [],
-            getScrambleSetCounts(),
-        ]);
-        setScrambleSets(sets);
-        setSetsRoundId(roundId);
-        setCounts(
-            new Map(setCountsData.map((entry) => [entry.roundId, entry.count]))
-        );
-    }, [roundId]);
-
-    useEffect(() => {
-        fetchData();
-    }, [fetchData]);
 
     const selectRound = (id: string) =>
         setSearchParams({ tab: "scrambleSets", roundId: id });
@@ -203,7 +213,7 @@ const ScrambleSets = () => {
                             </DropdownMenuContent>
                         </DropdownMenu>
                     </div>
-                    <RefreshingRegion isRefreshing={setsRoundId !== roundId}>
+                    <RefreshingRegion isRefreshing={isPreviousData}>
                         {scrambleSets.length === 0 ? (
                             <EmptyState className="min-h-[160px] text-destructive">
                                 No scrambles for this round yet

@@ -107,6 +107,11 @@ export interface ExtrasContext {
     grant: ExtraGrantState | null;
 }
 
+/** What giving extras for all attempts would do for a result */
+export const extrasContextQuery = queryFamily((resultId) =>
+    backendQuery<ExtrasContext>(`attempt/give-extras-for-all/${resultId}`)
+);
+
 export const getExtrasContext = async (
     resultId: string
 ): Promise<ExtrasContext> => {
@@ -160,6 +165,11 @@ export const reapplyExtraGrant = async (
     const message = !response.ok ? (await response.json()).message : undefined;
     return { status: response.status, message };
 };
+
+/** Every change made to an attempt */
+export const attemptEditLogQuery = queryFamily((id) =>
+    backendQuery<AttemptEditLogEntry[]>(`attempt/${id}/edit-log`)
+);
 
 export const getAttemptEditLog = async (
     id: string
