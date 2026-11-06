@@ -1,7 +1,10 @@
-import { render, screen, within } from "@testing-library/react";
+import { screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router-dom";
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
+import { clearQueryCache } from "@/lib/queryCache";
+import { renderWithQueryClient } from "@/test/queryClient";
 
 import AttendanceStatistics from "./AttendanceStatistics/AttendanceStatistics";
 import MostMissedAssignments from "./MostMissedAssignments/MostMissedAssignments";
@@ -64,9 +67,11 @@ vi.mock("@/lib/attendance", () => ({
     },
 }));
 
+beforeEach(() => clearQueryCache());
+
 describe("AttendanceStatistics", () => {
     it("summarises attendance and sorts by column", async () => {
-        render(
+        renderWithQueryClient(
             <MemoryRouter>
                 <AttendanceStatistics />
             </MemoryRouter>
@@ -92,7 +97,7 @@ describe("AttendanceStatistics", () => {
 
 describe("MostMissedAssignments", () => {
     it("filters people by what they missed and shows count chips", async () => {
-        render(
+        renderWithQueryClient(
             <MemoryRouter>
                 <MostMissedAssignments />
             </MemoryRouter>

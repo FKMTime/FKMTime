@@ -7,7 +7,7 @@ import SectionLoading from "@/Components/shared/SectionLoading";
 import SegmentedControl from "@/Components/shared/SegmentedControl";
 import { StatusTone } from "@/Components/shared/status";
 import { StatusBadge } from "@/Components/shared/StatusBadge";
-import { useCachedQuery } from "@/hooks/useCachedQuery";
+import { useLiveQuery } from "@/hooks/useLiveQuery";
 import { activityCodeToName, prettyActivityName } from "@/lib/activities";
 import { mostMissedAssignmentsQuery } from "@/lib/attendance";
 import { MissedAssignments, Person, StaffActivity } from "@/lib/interfaces";
@@ -54,7 +54,7 @@ const describe = (activity: StaffActivity) =>
     `${activityCodeToName(activity.groupId, true, true, true)} · ${prettyActivityName(activity.role)}`;
 
 const MostMissedAssignments = () => {
-    const { data: assignments } = useCachedQuery(mostMissedAssignmentsQuery, {
+    const { data: assignments } = useLiveQuery(mostMissedAssignmentsQuery, {
         maxAge: LIVE_MAX_AGE,
     });
     const [filter, setFilter] = useState<Filter>("all");

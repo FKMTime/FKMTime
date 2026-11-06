@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 
 import PageTabs from "@/Components/shared/PageTabs";
-import { useCachedQuery } from "@/hooks/useCachedQuery";
+import { useLiveQuery } from "@/hooks/useLiveQuery";
 import {
     attendanceStatisticsQuery,
     mostMissedAssignmentsQuery,
@@ -14,7 +14,7 @@ interface AttendanceTabsProps {
 
 const AttendanceTabs = ({ value }: AttendanceTabsProps) => {
     // Loading the list for its count also fills the Most missed tab
-    const { data: missed } = useCachedQuery(mostMissedAssignmentsQuery);
+    const { data: missed } = useLiveQuery(mostMissedAssignmentsQuery);
     const missedCount = missed?.length;
 
     useEffect(() => {

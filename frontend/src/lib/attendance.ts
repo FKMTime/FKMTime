@@ -1,8 +1,10 @@
 import {
     AttendanceStatistics,
     MissedAssignments,
+    StaffActivity,
     StaffActivityStatus,
 } from "./interfaces";
+import { queryFamily } from "./queryCache";
 import { backendQuery, backendRequest } from "./request";
 
 export const getRoundStaffing = async (
@@ -15,6 +17,18 @@ export const getRoundStaffing = async (
     );
     return await response.json();
 };
+
+/** Whether a round has runners assigned, so the runner card shows */
+export const roundStaffingQuery = queryFamily((roundId) =>
+    backendQuery<{ hasAssignedRunners: boolean }>(
+        `attendance/round/${roundId}/staffing`
+    )
+);
+
+/** Everyone assigned to a group, with their attendance */
+export const groupAttendanceQuery = queryFamily((groupId) =>
+    backendQuery<StaffActivity[]>(`attendance/group/${groupId}`)
+);
 
 export const getAttendanceByGroupId = async (groupId: string) => {
     const response = await backendRequest(
