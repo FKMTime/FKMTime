@@ -253,6 +253,14 @@ export interface Attempt {
     staffingWarnings?: StaffingWarning[];
 }
 
+/** An attempt as the home page lists it, with its competitor */
+export interface RecentAttempt extends Attempt {
+    result: {
+        id: string;
+        person: { id: string; name: string };
+    };
+}
+
 export interface AttemptToEnterWithScorecard extends Attempt {
     isNew?: boolean;
 }

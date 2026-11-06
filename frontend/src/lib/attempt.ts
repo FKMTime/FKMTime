@@ -3,8 +3,10 @@ import {
     AttemptData,
     AttemptEditLogEntry,
     Incident,
+    RecentAttempt,
 } from "./interfaces";
-import { backendRequest } from "./request";
+import { queryFamily } from "./queryCache";
+import { backendQuery, backendRequest } from "./request";
 
 interface UpdateAttemptData extends Attempt {
     updateReplacedBy?: boolean;
@@ -54,6 +56,11 @@ export const updateAttempt = async (
     const message = !response.ok ? (await response.json()).message : undefined;
     return { status: response.status, message };
 };
+
+/** A round's latest attempts, for the home page */
+export const recentAttemptsQuery = queryFamily((roundId) =>
+    backendQuery<RecentAttempt[]>(`attempt/round/${roundId}/recent`)
+);
 
 export const getRecentAttemptsByRoundId = async (roundId: string) => {
     const response = await backendRequest(

@@ -1,35 +1,69 @@
+import { useQueries } from "@tanstack/react-query";
 import { useAtomValue, useSetAtom } from "jotai";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import LoadingPage from "@/Components/LoadingPage";
 import EmptyState from "@/Components/shared/EmptyState";
 import SegmentedControl from "@/Components/shared/SegmentedControl";
 import { useConfirm } from "@/hooks/useConfirm";
+import { useLiveQuery } from "@/hooks/useLiveQuery";
+import { useSocketEvents } from "@/hooks/useSocketEvents";
+import { useSocketRoom } from "@/hooks/useSocketRoom";
 import { useToast } from "@/hooks/useToast";
 import { competitionAtom, quickEntryAtom } from "@/lib/atoms";
-import { getRecentAttemptsByRoundId } from "@/lib/attempt";
-import { getNextGroupsFromScheduleForRoom } from "@/lib/competition";
-import { getUnresolvedIncidents } from "@/lib/incidents";
-import { Incident, Room } from "@/lib/interfaces";
+import { recentAttemptsQuery } from "@/lib/attempt";
+import { nextGroupsQuery } from "@/lib/competition";
+import { unresolvedIncidentsQuery } from "@/lib/incidents";
+import { Room } from "@/lib/interfaces";
 import {
     isDelegate,
     isOrganizerOrDelegate,
     isStageLeaderOrOrganizerOrDelegate,
 } from "@/lib/permissions";
+import { toQueryOptions } from "@/lib/queryCache";
+import { queryClient } from "@/lib/queryClient";
 import {
-    getAllRooms,
-    getRoomsProgress,
-    RoomProgress,
+    roomsProgressQuery,
+    roomsQuery,
     updateCurrentRound,
 } from "@/lib/rooms";
 import { getStartLabel } from "@/lib/schedule";
-import { socket } from "@/socket";
+import { invalidateIncidentLists } from "@/Pages/Main/Incidents/incidentsContext";
 
 import NextGroupInAllRooms from "./Components/NextGroupInAllRooms";
-import RoomCard, { RecentAttempt } from "./Components/RoomCard";
+import RoomCard from "./Components/RoomCard";
 
 /** Re-render this often so the schedule offset stays current */
 const CLOCK_TICK_MS = 30_000;
+
+/** Refetches every query whose path matches */
+const invalidatePaths = (matches: (path: string) => boolean) =>
+    void queryClient.invalidateQueries({
+        predicate: ({ queryKey: [path] }) =>
+            typeof path === "string" && matches(path),
+    });
+
+const refreshResults = () =>
+    invalidatePaths(
+        (path) =>
+            path === roomsProgressQuery.key ||
+            (path.startsWith("attempt/round/") && path.endsWith("/recent"))
+    );
+
+const refreshRooms = () =>
+    invalidatePaths(
+        (path) =>
+            path === roomsQuery.key ||
+            path === roomsProgressQuery.key ||
+            (path.startsWith("competition/rooms/") &&
+                path.endsWith("/next-groups"))
+    );
+
+/** Keeps a round's results room joined while its group runs */
+const ResultsRoom = ({ roundId }: { roundId: string }) => {
+    useSocketRoom("Results", { params: { roundId } });
+    return null;
+};
 
 const Home = () => {
     const competition = useAtomValue(competitionAtom);
@@ -37,13 +71,9 @@ const Home = () => {
     const confirm = useConfirm();
     const { toast } = useToast();
 
-    const [rooms, setRooms] = useState<Room[] | null>(null);
-    const [progress, setProgress] = useState<RoomProgress[]>([]);
-    const [incidents, setIncidents] = useState<Incident[]>([]);
-    const [recentAttempts, setRecentAttempts] = useState<
-        Record<string, RecentAttempt[]>
-    >({});
-    const [nextGroups, setNextGroups] = useState<Record<string, string[]>>({});
+    const { data: rooms } = useLiveQuery(roomsQuery);
+    const { data: progressData } = useLiveQuery(roomsProgressQuery);
+    const progress = progressData ?? [];
     const [selectedRoomId, setSelectedRoomId] = useState<string>();
     const [now, setNow] = useState(() => new Date());
 
@@ -61,66 +91,42 @@ const Home = () => {
         [rooms]
     );
 
-    const fetchResults = useCallback(async (roundIds: string[]) => {
-        const [progressData, ...recent] = await Promise.all([
-            getRoomsProgress(),
-            ...roundIds.map(getRecentAttemptsByRoundId),
-        ]);
-        setProgress(progressData);
-        setRecentAttempts(
+    const { data: incidentsData } = useLiveQuery(unresolvedIncidentsQuery, {
+        enabled: canResolveIncidents,
+    });
+    const incidents = incidentsData ?? [];
+
+    // Keyed by round and by room, only once each has loaded
+    const recentAttempts = useQueries({
+        queries: currentRoundIds.map((roundId) =>
+            toQueryOptions(recentAttemptsQuery(roundId))
+        ),
+        combine: (results) =>
             Object.fromEntries(
-                roundIds.map((roundId, index) => [roundId, recent[index]])
-            )
-        );
-    }, []);
+                currentRoundIds.flatMap((roundId, index) =>
+                    results[index].data ? [[roundId, results[index].data]] : []
+                )
+            ),
+    });
+    const nextGroups = useQueries({
+        queries: (canStartGroups ? rooms ?? [] : []).map((room) =>
+            toQueryOptions(nextGroupsQuery(room.id))
+        ),
+        combine: (results): Record<string, string[]> =>
+            Object.fromEntries(
+                (rooms ?? []).flatMap((room, index) =>
+                    results[index]?.data ? [[room.id, results[index].data]] : []
+                )
+            ),
+    });
 
-    const fetchIncidents = useCallback(async () => {
-        if (!canResolveIncidents) return;
-        setIncidents(await getUnresolvedIncidents());
-    }, [canResolveIncidents]);
-
-    const fetchRooms = useCallback(async () => {
-        const data: Room[] = await getAllRooms();
-        setRooms(data);
-        if (canStartGroups) {
-            const next = await Promise.all(
-                data.map((room) => getNextGroupsFromScheduleForRoom(room.id))
-            );
-            setNextGroups(
-                Object.fromEntries(data.map((room, i) => [room.id, next[i]]))
-            );
-        }
-    }, [canStartGroups]);
-
-    useEffect(() => {
-        fetchRooms();
-        fetchIncidents();
-    }, [fetchRooms, fetchIncidents]);
-
-    useEffect(() => {
-        fetchResults(currentRoundIds);
-        const onResultEntered = () => fetchResults(currentRoundIds);
-        currentRoundIds.forEach((roundId) =>
-            socket.emit("joinResults", { roundId })
-        );
-        socket.on("resultEntered", onResultEntered);
-        return () => {
-            socket.off("resultEntered", onResultEntered);
-            currentRoundIds.forEach((roundId) =>
-                socket.emit("leaveResults", { roundId })
-            );
-        };
-    }, [currentRoundIds, fetchResults]);
-
-    useEffect(() => {
-        // The layout keeps the incidents room joined; only listen here
-        socket.on("newIncident", fetchIncidents);
-        socket.on("attemptUpdated", fetchIncidents);
-        return () => {
-            socket.off("newIncident", fetchIncidents);
-            socket.off("attemptUpdated", fetchIncidents);
-        };
-    }, [fetchIncidents]);
+    // The layout keeps the incidents room joined; ResultsRoom joins each
+    // running round's results room
+    useSocketEvents({
+        resultEntered: refreshResults,
+        newIncident: () => void invalidateIncidentLists(),
+        attemptUpdated: () => void invalidateIncidentLists(),
+    });
 
     useEffect(() => {
         const interval = setInterval(() => setNow(new Date()), CLOCK_TICK_MS);
@@ -152,7 +158,7 @@ const Home = () => {
         );
         if (response.status === 200) {
             toast({ title: `${room.name}: group started`, variant: "success" });
-            fetchRooms();
+            refreshRooms();
         } else {
             toast({
                 title: "Failed to start the group",
@@ -167,7 +173,7 @@ const Home = () => {
         if (response.status !== 200)
             return response.data?.message ?? "Failed to start the next groups";
         toast({ title: "Next group started in all rooms", variant: "success" });
-        fetchRooms();
+        refreshRooms();
         return null;
     };
 
@@ -200,6 +206,9 @@ const Home = () => {
 
     return (
         <>
+            {currentRoundIds.map((roundId) => (
+                <ResultsRoom key={roundId} roundId={roundId} />
+            ))}
             {canStartGroups && (
                 <NextGroupInAllRooms
                     rooms={rooms}
