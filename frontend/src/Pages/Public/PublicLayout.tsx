@@ -1,13 +1,6 @@
 import { useAtom } from "jotai";
 import { ChevronRight } from "lucide-react";
-import {
-    Suspense,
-    useCallback,
-    useContext,
-    useEffect,
-    useMemo,
-    useState,
-} from "react";
+import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import { Outlet, useLocation } from "react-router-dom";
 
 import LoadingPage from "@/Components/LoadingPage";
@@ -20,7 +13,7 @@ import { competitionAtom } from "@/lib/atoms";
 import { getPublicCompetitionInfo, publicRoomsQuery } from "@/lib/competition";
 import { getEvents } from "@/lib/events";
 import { cn } from "@/lib/utils";
-import { socket, SocketContext } from "@/socket";
+import { socket } from "@/socket";
 
 import { isPublicResultsPath, PublicOutletContext } from "./publicNavigation";
 import PublicSidebar from "./PublicSidebar";
@@ -53,10 +46,6 @@ const PublicLayout = () => {
     );
     useRefetchOnReconnect();
     const [isLive, setIsLive] = useState(socket.connected);
-    const [, setConnected] = useContext(SocketContext) as [
-        number,
-        React.Dispatch<React.SetStateAction<number>>,
-    ];
     const isResults = isPublicResultsPath(location.pathname);
 
     // Event names and icons are read from what getEvents stores, so they
@@ -76,10 +65,7 @@ const PublicLayout = () => {
     }, [fetchCompetition]);
 
     useEffect(() => {
-        const handleConnect = () => {
-            setIsLive(true);
-            setConnected((c) => c + 1);
-        };
+        const handleConnect = () => setIsLive(true);
         const handleDisconnect = () => setIsLive(false);
         socket.on("connect", handleConnect);
         socket.on("disconnect", handleDisconnect);
@@ -89,7 +75,7 @@ const PublicLayout = () => {
             socket.off("disconnect", handleDisconnect);
             socket.disconnect();
         };
-    }, [setConnected]);
+    }, []);
 
     useDocumentTitle(isResults ? "Results" : "Live solving", competition?.name);
 
