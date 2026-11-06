@@ -104,6 +104,26 @@ describe("useLiveQuery", () => {
         await waitFor(() => expect(result.current.data).toEqual(["fresh"]));
     });
 
+    it("bumps the version only when the data changes", async () => {
+        let response = ["a"];
+        const itemsQuery = query(() => Promise.resolve([...response]));
+        const { result } = renderHook(() => useLiveQuery(itemsQuery), {
+            wrapper: QueryWrapper,
+        });
+        await waitFor(() => expect(result.current.version).toBe(1));
+
+        await act(async () => {
+            await result.current.refetch();
+        });
+        expect(result.current.version).toBe(1);
+
+        response = ["b"];
+        await act(async () => {
+            await result.current.refetch();
+        });
+        await waitFor(() => expect(result.current.version).toBe(2));
+    });
+
     it("fetches nothing when disabled", () => {
         const fetch = vi.fn().mockResolvedValue(["a"]);
 

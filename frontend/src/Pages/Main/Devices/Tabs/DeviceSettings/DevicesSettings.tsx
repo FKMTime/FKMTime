@@ -1,5 +1,5 @@
 import LoadingPage from "@/Components/LoadingPage";
-import { useCachedQuery } from "@/hooks/useCachedQuery";
+import { useLiveQuery } from "@/hooks/useLiveQuery";
 import { useToast } from "@/hooks/useToast";
 import {
     competitionSettingsQuery,
@@ -15,13 +15,13 @@ const DevicesSettings = () => {
         data: competition,
         version,
         refetch,
-    } = useCachedQuery(competitionSettingsQuery);
+    } = useLiveQuery(competitionSettingsQuery);
 
     const handleSubmit = async (values: Competition) => {
         if (!competition || !values) return;
         const status = await updateDevicesSettings(competition.id, values);
         if (status === 200) {
-            refetch().catch(() => undefined);
+            void refetch();
             toast({ title: "Device settings saved", variant: "success" });
         } else {
             toast({

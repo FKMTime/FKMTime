@@ -6,7 +6,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import LoadingPage from "@/Components/LoadingPage";
 import { Alert, AlertTitle } from "@/Components/ui/alert";
 import { Button } from "@/Components/ui/button";
-import { useCachedQuery } from "@/hooks/useCachedQuery";
+import { useLiveQuery } from "@/hooks/useLiveQuery";
 import { useToast } from "@/hooks/useToast";
 import { competitionAtom } from "@/lib/atoms";
 import {
@@ -16,7 +16,7 @@ import {
     updateCompetitionSettings,
 } from "@/lib/competition";
 import { Competition as CompetitionInterface } from "@/lib/interfaces";
-import { QueryError } from "@/lib/queryCache";
+import { QueryError, setQueryData } from "@/lib/queryCache";
 import { getGitCommitValue } from "@/lib/utils";
 import SetupTabs from "@/Pages/Main/Setup/SetupTabs";
 
@@ -37,8 +37,9 @@ const Competition = () => {
         data: fetchedCompetition,
         version,
         error,
-        setData: setCompetition,
-    } = useCachedQuery(competitionSettingsQuery);
+    } = useLiveQuery(competitionSettingsQuery);
+    const setCompetition = (data: CompetitionInterface) =>
+        setQueryData(competitionSettingsQuery.key, data);
     const competition = fetchedCompetition ?? importedCompetition;
 
     useEffect(() => {

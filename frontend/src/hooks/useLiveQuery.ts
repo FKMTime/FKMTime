@@ -54,6 +54,16 @@ export const useLiveQuery = <T>(
         setPreviousData(shownData);
     }
 
+    // Counts changes to the data, so forms keyed on it re-seed. A refetch
+    // that brings equal data keeps the same object, so it doesn't count.
+    const [versioned, setVersioned] = useState({
+        data: shownData,
+        version: shownData === undefined ? 0 : 1,
+    });
+    if (shownData !== undefined && shownData !== versioned.data) {
+        setVersioned({ data: shownData, version: versioned.version + 1 });
+    }
+
     return {
         data: shownData ?? (keepPreviousData ? previousData : undefined),
         dataUpdatedAt: result.dataUpdatedAt,
@@ -62,6 +72,8 @@ export const useLiveQuery = <T>(
             shownData === undefined &&
             keepPreviousData &&
             previousData !== undefined,
+        version: versioned.version,
+        error: result.error,
         isError: result.isError,
         refetch: result.refetch,
     };
