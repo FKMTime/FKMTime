@@ -78,8 +78,12 @@ test.describe("after the socket reconnects", () => {
         const socket = await controlSocket(page);
         const person = await getPersonByRegistrantId(api, 2);
         await page.goto("/");
-        await expect(page.getByRole("main")).toBeVisible();
+        await expect(
+            page.getByRole("main").getByRole("region", { name: MAIN_HALL })
+        ).not.toHaveCount(0);
         await socket.connected();
+        // The name may already show elsewhere on the page; count from here
+        const shownBefore = await page.getByText(person.name).count();
 
         await socket.drop();
         await createAttempt(api, {
@@ -88,11 +92,13 @@ test.describe("after the socket reconnects", () => {
             attemptNumber: 1,
             value: 2345,
         });
-        await expect(page.getByText(person.name)).toHaveCount(0);
+        await expect(page.getByText(person.name)).toHaveCount(shownBefore);
 
         socket.restore();
-        await expect(page.getByRole("main").getByText(person.name)).toBeVisible(
-            { timeout: 15_000 }
-        );
+        await expect
+            .poll(() => page.getByText(person.name).count(), {
+                timeout: 15_000,
+            })
+            .toBeGreaterThan(shownBefore);
     });
 });
