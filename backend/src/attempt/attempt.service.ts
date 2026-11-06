@@ -216,7 +216,10 @@ export class AttemptService {
   ) {
     const replaced = await this.prisma.attempt.update({
       where: { id: attemptId },
-      data: { replacedBy: extraNumber },
+      data: {
+        replacedBy: extraNumber,
+        updatedBy: { connect: { id: userId } },
+      },
     });
     await this.attemptEditLogService.log(
       replaced as AttemptSnapshot,
@@ -253,7 +256,10 @@ export class AttemptService {
     for (let i = 0; i < attemptIds.length; i++) {
       const updated = await this.prisma.attempt.update({
         where: { id: attemptIds[i] },
-        data: { attemptNumber: i + 1 },
+        data: {
+          attemptNumber: i + 1,
+          updatedBy: { connect: { id: userId } },
+        },
       });
       await this.attemptEditLogService.log(
         updated as AttemptSnapshot,
@@ -284,7 +290,11 @@ export class AttemptService {
 
     const updated = await this.prisma.attempt.update({
       where: { id },
-      data: { status: newStatus, replacedBy: replacedByExtraNumber },
+      data: {
+        status: newStatus,
+        replacedBy: replacedByExtraNumber,
+        updatedBy: { connect: { id: userId } },
+      },
     });
     await this.attemptEditLogService.log(
       updated as AttemptSnapshot,
@@ -560,11 +570,17 @@ export class AttemptService {
 
     const updatedFirst = await this.prisma.attempt.update({
       where: { id: attemptId },
-      data: { attemptNumber: secondAttempt.attemptNumber },
+      data: {
+        attemptNumber: secondAttempt.attemptNumber,
+        updatedBy: { connect: { id: userId } },
+      },
     });
     const updatedSecond = await this.prisma.attempt.update({
       where: { id: secondAttemptId },
-      data: { attemptNumber: firstAttempt.attemptNumber },
+      data: {
+        attemptNumber: firstAttempt.attemptNumber,
+        updatedBy: { connect: { id: userId } },
+      },
     });
     const now = new Date();
     await this.attemptEditLogService.log(
@@ -668,12 +684,11 @@ export class AttemptService {
         },
       });
       if (attemptToReplace) {
-        await this.prisma.attempt.update({
-          where: { id: attemptToReplace.id },
-          data: {
-            replacedBy: attempt.attemptNumber,
-          },
-        });
+        await this.setReplacedBy(
+          attemptToReplace.id,
+          attempt.attemptNumber,
+          userId,
+        );
       }
     }
     await this.resultService.settleWaitingExtras(attempt.resultId);
