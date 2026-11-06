@@ -1,26 +1,17 @@
 import { CircleCheck, Nfc } from "lucide-react";
-import {
-    FormEvent,
-    KeyboardEvent,
-    useCallback,
-    useEffect,
-    useRef,
-    useState,
-} from "react";
+import { FormEvent, KeyboardEvent, useEffect, useRef, useState } from "react";
 
 import EmptyState from "@/Components/shared/EmptyState";
 import InlineError from "@/Components/shared/InlineError";
+import RequestError from "@/Components/shared/RequestError";
 import SearchInput from "@/Components/shared/SearchInput";
 import { Button } from "@/Components/ui/button";
 import { Input } from "@/Components/ui/input";
+import { useLiveQuery } from "@/hooks/useLiveQuery";
 import { useToast } from "@/hooks/useToast";
 import { Person } from "@/lib/interfaces";
-import {
-    assignCard,
-    getAllPersons,
-    personsWithoutCardQuery,
-} from "@/lib/persons";
-import { fetchQuery, getFreshQueryData, LIVE_MAX_AGE } from "@/lib/queryCache";
+import { assignCard, personsWithoutCardSearchQuery } from "@/lib/persons";
+import { LIVE_MAX_AGE } from "@/lib/queryCache";
 import { playScanSound } from "@/lib/scanSound";
 import { cn, getInitials, regionNameByIso2 } from "@/lib/utils";
 import PersonsTabs from "@/Pages/Main/Persons/Components/PersonsTabs";
@@ -31,14 +22,17 @@ const AssignCards = () => {
     const cardInputRef = useRef<HTMLInputElement>(null);
     const searchInputRef = useRef<HTMLInputElement>(null);
     const [search, setSearch] = useState("");
-    // The list the All persons tab loaded moments ago shows at once
-    const [persons, setPersons] = useState<Person[] | null>(
-        () =>
-            getFreshQueryData<Person[]>(
-                personsWithoutCardQuery.key,
-                LIVE_MAX_AGE
-            ) ?? null
-    );
+    // The list the All persons tab loaded moments ago shows at once, and
+    // the last list stays while a new search loads
+    const {
+        data,
+        isError,
+        refetch: refetchPersons,
+    } = useLiveQuery(personsWithoutCardSearchQuery(search), {
+        maxAge: LIVE_MAX_AGE,
+        keepPreviousData: true,
+    });
+    const persons: Person[] | null = data ?? null;
     const [selected, setSelected] = useState<Person | null>(null);
     const [cardId, setCardId] = useState("");
     const [error, setError] = useState("");
@@ -51,18 +45,6 @@ const AssignCards = () => {
         setHighlighted(0);
     }
     const listRef = useRef<HTMLUListElement>(null);
-
-    const fetchPersons = useCallback(async () => {
-        const data: Person[] | null = search
-            ? await getAllPersons(true, search)
-            : await fetchQuery(personsWithoutCardQuery).catch(() => null);
-        if (data) setPersons(data);
-        return data;
-    }, [search]);
-
-    useEffect(() => {
-        fetchPersons();
-    }, [fetchPersons]);
 
     useEffect(() => {
         listRef.current
@@ -104,7 +86,7 @@ const AssignCards = () => {
             // Back to the search, ready for the next person
             select(null);
             if (search) setSearch("");
-            else fetchPersons();
+            else void refetchPersons();
             // After the re-render: on phones the list is hidden until then
             setTimeout(() => searchInputRef.current?.focus());
         } else if (status === 409) {
@@ -122,6 +104,12 @@ const AssignCards = () => {
     return (
         <div className="flex flex-col gap-4">
             <PersonsTabs value="cards" refreshKey={assignedCount} />
+            {isError && (
+                <RequestError
+                    hasData={!!persons}
+                    onRetry={() => void refetchPersons()}
+                />
+            )}
 
             {isDone ? (
                 <EmptyState icon={<CircleCheck />}>

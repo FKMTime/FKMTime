@@ -1,4 +1,5 @@
 import { AddPerson, Person } from "./interfaces";
+import { queryFamily } from "./queryCache";
 import { backendQuery, backendRequest, wcaApiRequest } from "./request";
 
 export const getPersons = async (
@@ -47,6 +48,15 @@ export const getAllPersons = async (
 /** Everyone without a card, as Assign cards lists them before a search */
 export const personsWithoutCardQuery = backendQuery<Person[]>(
     "person/all?withoutCardAssigned=true"
+);
+
+/** People without a card matching a search; no search is the full list */
+export const personsWithoutCardSearchQuery = queryFamily((search) =>
+    search
+        ? backendQuery<Person[]>(
+              `person/all?search=${encodeURIComponent(search)}&withoutCardAssigned=true`
+          )
+        : personsWithoutCardQuery
 );
 
 export const getPersonById = async (id: string) => {
