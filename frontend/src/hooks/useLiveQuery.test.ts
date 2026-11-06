@@ -27,7 +27,6 @@ const advanceClock = (ms: number) => {
     vi.spyOn(Date, "now").mockReturnValue(now + ms);
 };
 
-// The same behaviour useCachedQuery promised, on useQuery
 describe("useLiveQuery", () => {
     beforeEach(() => clearQueryCache());
     afterEach(() => vi.restoreAllMocks());

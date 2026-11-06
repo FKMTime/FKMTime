@@ -23,8 +23,8 @@ const hiddenSince = (key: string, maxAge: number | undefined) =>
         : null;
 
 /**
- * `useQuery` for a query from `src/lib`, with the options `useCachedQuery`
- * offered (SPEC-003). Data is refreshed on mount and by invalidation.
+ * `useQuery` for a query from `src/lib`, with options for pages that must
+ * not show old data or blank while a new key loads (SPEC-003). Data is refreshed on mount and by invalidation.
  * `query` must be stable (module-level, from a queryFamily, or memoised).
  */
 export const useLiveQuery = <T>(

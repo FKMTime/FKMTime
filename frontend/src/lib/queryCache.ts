@@ -3,22 +3,14 @@ import { queryOptions } from "@tanstack/react-query";
 import { queryClient } from "./queryClient";
 
 /**
- * Keeps the last response of each query so a page can render it right away
- * and refresh in the background, instead of showing a loader on every visit.
- *
- * The data lives in the TanStack Query cache, under the key `[query.key]`,
- * so pages using `useQuery` with `toQueryOptions` share it (SPEC-003).
+ * Helpers over the app's QueryClient for queries declared in `src/lib`
+ * (SPEC-003). A query's TanStack key is `[query.key]`, its request path,
+ * so imperative calls here and `useQuery` share the same cache entries.
  */
 
 export interface Query<T> {
     key: string;
     fetch: () => Promise<T>;
-}
-
-export interface QueryEntry<T> {
-    data: T;
-    /** Bumped whenever the data changes, so forms can re-seed their defaults */
-    version: number;
 }
 
 export class QueryError extends Error {
@@ -37,31 +29,6 @@ export const toQueryOptions = <T>(query: Query<T>) =>
     });
 
 const cache = queryClient.getQueryCache();
-const entries = new Map<string, QueryEntry<unknown>>();
-const listeners = new Map<string, Set<() => void>>();
-
-const notify = (key: string) =>
-    listeners.get(key)?.forEach((listener) => listener());
-
-// Versions count changes to the data. Structural sharing keeps the same
-// object when a refetch brings equal data, so that doesn't bump the version
-// and a form being edited is left alone.
-cache.subscribe((event) => {
-    const [key, ...rest] = event.query.queryKey;
-    if (typeof key !== "string" || rest.length > 0) return;
-    if (event.type === "removed") {
-        if (entries.delete(key)) notify(key);
-        return;
-    }
-    const data = event.query.state.data;
-    const current = entries.get(key);
-    if (data === undefined || current?.data === data) return;
-    entries.set(key, { data, version: (current?.version ?? 0) + 1 });
-    notify(key);
-});
-
-export const getQueryEntry = <T>(key: string) =>
-    entries.get(key) as QueryEntry<T> | undefined;
 
 /** Whether the key was fetched or saved within the last `maxAge` ms */
 export const isQueryFresh = (key: string, maxAge: number) => {
@@ -72,7 +39,11 @@ export const isQueryFresh = (key: string, maxAge: number) => {
 
 /** The cached data, if it was fetched within the last `maxAge` ms */
 export const getFreshQueryData = <T>(key: string, maxAge: number) =>
-    isQueryFresh(key, maxAge) ? getQueryEntry<T>(key)?.data : undefined;
+    isQueryFresh(key, maxAge) ? queryClient.getQueryData<T>([key]) : undefined;
+
+/** The cached data, however old */
+export const getQueryData = <T>(key: string) =>
+    queryClient.getQueryData<T>([key]);
 
 /** Writes data the page already knows, e.g. after a save */
 export const setQueryData = <T>(
@@ -143,17 +114,5 @@ export const prefetchQuery = <T>(
     fetchQuery(query).catch(() => undefined);
 };
 
-export const subscribeToQuery = (key: string, listener: () => void) => {
-    const keyListeners = listeners.get(key) ?? new Set();
-    keyListeners.add(listener);
-    listeners.set(key, keyListeners);
-    return () => {
-        keyListeners.delete(listener);
-    };
-};
-
 /** Drops everything cached, e.g. when the user signs out */
-export const clearQueryCache = () => {
-    queryClient.clear();
-    entries.clear();
-};
+export const clearQueryCache = () => queryClient.clear();
