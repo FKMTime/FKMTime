@@ -1,13 +1,14 @@
 import { useAtomValue } from "jotai";
-import { useCallback, useContext, useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useNavigate, useOutletContext, useParams } from "react-router-dom";
 
 import LoadingPage from "@/Components/LoadingPage";
 import PublicResultsBoard from "@/Components/results/PublicResultsBoard";
+import { useLiveQuery } from "@/hooks/useLiveQuery";
+import { useSocketRoom } from "@/hooks/useSocketRoom";
 import { competitionAtom } from "@/lib/atoms";
 import { Result } from "@/lib/interfaces";
-import { getPublicResultsByRoundId } from "@/lib/results";
-import { socket, SocketContext } from "@/socket";
+import { publicRoundResultsQuery } from "@/lib/results";
 
 import { PublicOutletContext } from "./publicNavigation";
 
@@ -16,11 +17,17 @@ const PublicResults = () => {
     const navigate = useNavigate();
     const competition = useAtomValue(competitionAtom);
     const { liveRoundIds } = useOutletContext<PublicOutletContext>();
-    const [isConnected] = useContext(SocketContext) as [
-        number,
-        React.Dispatch<React.SetStateAction<number>>,
-    ];
-    const [results, setResults] = useState<Result[]>([]);
+    // The last round's results stay while the next round loads
+    const resultsQuery = publicRoundResultsQuery(roundId);
+    const { data } = useLiveQuery(resultsQuery, {
+        keepPreviousData: true,
+        enabled: !!roundId,
+    });
+    const results: Result[] = data ?? [];
+    useSocketRoom(roundId ? "Results" : null, {
+        params: { roundId },
+        invalidateOn: { resultEntered: [resultsQuery.key] },
+    });
 
     // Without a round, open the one in progress or the first one
     useEffect(() => {
@@ -29,22 +36,6 @@ const PublicResults = () => {
             liveRoundIds[0] ?? competition.wcif.events[0]?.rounds[0]?.id;
         if (first) navigate(`/public/results/${first}`, { replace: true });
     }, [roundId, competition, liveRoundIds, navigate]);
-
-    const fetchResults = useCallback(async () => {
-        if (!roundId) return;
-        setResults(await getPublicResultsByRoundId(roundId));
-    }, [roundId]);
-
-    useEffect(() => {
-        if (!roundId) return;
-        fetchResults();
-        socket.emit("joinResults", { roundId });
-        socket.on("resultEntered", fetchResults);
-        return () => {
-            socket.off("resultEntered", fetchResults);
-            socket.emit("leaveResults", { roundId });
-        };
-    }, [roundId, fetchResults, isConnected]);
 
     if (!competition) return <LoadingPage />;
 

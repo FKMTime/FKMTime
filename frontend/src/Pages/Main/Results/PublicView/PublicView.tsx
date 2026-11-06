@@ -1,28 +1,50 @@
 import { useAtomValue } from "jotai";
-import { useCallback, useContext, useEffect, useState } from "react";
+import { useEffect, useMemo } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 
 import LoadingPage from "@/Components/LoadingPage";
 import PublicResultsBoard from "@/Components/results/PublicResultsBoard";
+import { useLiveQuery } from "@/hooks/useLiveQuery";
 import { usePageHeader } from "@/hooks/usePageHeader";
+import { useSocketRoom } from "@/hooks/useSocketRoom";
 import { competitionAtom } from "@/lib/atoms";
-import { Result, Room } from "@/lib/interfaces";
-import { getResultsByRoundId } from "@/lib/results";
-import { getAllRooms } from "@/lib/rooms";
+import { Result } from "@/lib/interfaces";
+import { roundResultsQuery } from "@/lib/results";
+import { roomsQuery } from "@/lib/rooms";
 import { shortRoundName } from "@/lib/utils";
-import { socket, SocketContext } from "@/socket";
 
 /** Staff copy of the public results; also the Results page for non-delegates */
 const PublicView = () => {
     const { id: roundId = "" } = useParams<{ id: string }>();
     const navigate = useNavigate();
     const competition = useAtomValue(competitionAtom);
-    const [isConnected] = useContext(SocketContext) as [
-        number,
-        React.Dispatch<React.SetStateAction<number>>,
-    ];
-    const [results, setResults] = useState<Result[]>([]);
-    const [liveRoundIds, setLiveRoundIds] = useState<string[] | null>(null);
+    const { data: rooms } = useLiveQuery(roomsQuery);
+    const liveRoundIds = useMemo(
+        () =>
+            rooms
+                ? [
+                      ...new Set(
+                          rooms.flatMap((room) =>
+                              room.currentGroupIds.map(
+                                  (id) => id.split("-g")[0]
+                              )
+                          )
+                      ),
+                  ]
+                : null,
+        [rooms]
+    );
+    // The last round's results stay while the next round loads
+    const resultsQuery = roundResultsQuery(roundId);
+    const { data } = useLiveQuery(resultsQuery, {
+        keepPreviousData: true,
+        enabled: !!roundId,
+    });
+    const results: Result[] = data ?? [];
+    useSocketRoom(roundId ? "Results" : null, {
+        params: { roundId },
+        invalidateOn: { resultEntered: [resultsQuery.key] },
+    });
 
     usePageHeader({
         crumbs: roundId
@@ -37,18 +59,6 @@ const PublicView = () => {
             : [{ label: "Results" }],
     });
 
-    useEffect(() => {
-        getAllRooms().then((rooms: Room[]) =>
-            setLiveRoundIds([
-                ...new Set(
-                    rooms.flatMap((room) =>
-                        room.currentGroupIds.map((id) => id.split("-g")[0])
-                    )
-                ),
-            ])
-        );
-    }, []);
-
     // Without a round, open the one in progress or the first one
     useEffect(() => {
         if (roundId || !competition || !liveRoundIds) return;
@@ -56,22 +66,6 @@ const PublicView = () => {
             liveRoundIds[0] ?? competition.wcif.events[0]?.rounds[0]?.id;
         if (first) navigate(`/results/public/${first}`, { replace: true });
     }, [roundId, competition, liveRoundIds, navigate]);
-
-    const fetchResults = useCallback(async () => {
-        if (!roundId) return;
-        setResults(await getResultsByRoundId(roundId));
-    }, [roundId]);
-
-    useEffect(() => {
-        if (!roundId) return;
-        fetchResults();
-        socket.emit("joinResults", { roundId });
-        socket.on("resultEntered", fetchResults);
-        return () => {
-            socket.off("resultEntered", fetchResults);
-            socket.emit("leaveResults", { roundId });
-        };
-    }, [roundId, fetchResults, isConnected]);
 
     if (!competition) return <LoadingPage />;
 

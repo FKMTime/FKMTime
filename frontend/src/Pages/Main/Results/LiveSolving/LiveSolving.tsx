@@ -1,11 +1,13 @@
-import { useCallback, useContext, useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 
 import LiveSolvingBoard from "@/Components/shared/LiveSolvingBoard";
-import { getAllDevices } from "@/lib/devices";
-import { Device, DeviceType, Room } from "@/lib/interfaces";
+import { useLiveQuery } from "@/hooks/useLiveQuery";
+import { useSocketEvents } from "@/hooks/useSocketEvents";
+import { useSocketRoom } from "@/hooks/useSocketRoom";
+import { stationDevicesQuery } from "@/lib/devices";
+import { Device } from "@/lib/interfaces";
 import { StationInfo } from "@/lib/liveSolving";
-import { getAllRooms } from "@/lib/rooms";
-import { socket, SocketContext } from "@/socket";
+import { roomsQuery } from "@/lib/rooms";
 
 interface NewIncidentData {
     id: string;
@@ -63,37 +65,19 @@ const LiveSolving = () => {
         new Set()
     );
 
-    const [rooms, setRooms] = useState<Room[]>([]);
+    const { data: rooms = [] } = useLiveQuery(roomsQuery);
+    // Every station shows, idle until it sends something
+    const { data: devices } = useLiveQuery(stationDevicesQuery);
 
-    const [isConnected] = useContext(SocketContext) as [
-        number,
-        React.Dispatch<React.SetStateAction<number>>,
-    ];
-
-    useEffect(() => {
-        getAllRooms().then(setRooms);
-        getAllDevices(DeviceType.STATION).then((devices: Device[]) => {
-            setStations((prev) => {
-                const next = new Map(prev);
-                for (const device of devices) {
-                    if (!next.has(device.espId)) {
-                        next.set(device.espId, idleStation(device));
-                    }
-                }
-                return next;
-            });
-        });
-    }, [isConnected]);
-
-    const handleCurrentStations = useCallback((data: StationInfo[]) => {
+    const handleCurrentStations = (data: StationInfo[]) => {
         setStations((prev) => {
             const next = new Map(prev);
             data.forEach((s) => next.set(s.espId, s));
             return next;
         });
-    }, []);
+    };
 
-    const handleCurrentTimeInfo = useCallback((data: StationInfo) => {
+    const handleCurrentTimeInfo = (data: StationInfo) => {
         setIncidentDevices((prev) => {
             if (!prev.has(data.deviceName)) return prev;
             const next = new Set(prev);
@@ -105,15 +89,19 @@ const LiveSolving = () => {
             next.set(data.espId, data);
             return next;
         });
-    }, []);
+    };
 
-    const handleNewIncident = useCallback((data: NewIncidentData) => {
+    const handleNewIncident = (data: NewIncidentData) => {
         playIncidentAlert();
         setIncidentDevices((prev) => new Set([...prev, data.deviceName]));
+        // An idle station is only in the device list until it sends data
+        const idleDevice = devices?.find((d) => d.name === data.deviceName);
         setStations((prev) => {
-            const entry = [...prev.values()].find(
-                (s) => s.deviceName === data.deviceName
-            );
+            const entry =
+                [...prev.values()].find(
+                    (s) => s.deviceName === data.deviceName
+                ) ??
+                (idleDevice && idleStation(idleDevice));
             if (!entry) return prev;
             const next = new Map(prev);
             next.set(entry.espId, {
@@ -122,31 +110,24 @@ const LiveSolving = () => {
             });
             return next;
         });
-    }, []);
+    };
 
-    useEffect(() => {
-        socket.emit("joinLiveSolving");
-        socket.on("currentStations", handleCurrentStations);
-        socket.on("currentTimeInfo", handleCurrentTimeInfo);
-        socket.on("newIncident", handleNewIncident);
+    // Stations stream over the socket; the room is joined again on reconnect
+    useSocketRoom("LiveSolving");
+    useSocketEvents({
+        currentStations: (data) => handleCurrentStations(data as StationInfo[]),
+        currentTimeInfo: (data) => handleCurrentTimeInfo(data as StationInfo),
+        newIncident: (data) => handleNewIncident(data as NewIncidentData),
+    });
 
-        return () => {
-            socket.emit("leaveLiveSolving");
-            socket.off("currentStations", handleCurrentStations);
-            socket.off("currentTimeInfo", handleCurrentTimeInfo);
-            socket.off("newIncident", handleNewIncident);
-        };
-    }, [
-        handleCurrentStations,
-        handleCurrentTimeInfo,
-        handleNewIncident,
-        isConnected,
-    ]);
-
-    const stationList = useMemo(
-        () => Array.from(stations.values()),
-        [stations]
-    );
+    const stationList = useMemo(() => {
+        const all = new Map(stations);
+        for (const device of devices ?? []) {
+            if (!all.has(device.espId))
+                all.set(device.espId, idleStation(device));
+        }
+        return Array.from(all.values());
+    }, [stations, devices]);
 
     return (
         <LiveSolvingBoard

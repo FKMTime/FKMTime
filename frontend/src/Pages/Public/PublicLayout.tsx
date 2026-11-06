@@ -1,17 +1,24 @@
 import { useAtom } from "jotai";
 import { ChevronRight } from "lucide-react";
-import { Suspense, useCallback, useContext, useEffect, useState } from "react";
+import {
+    Suspense,
+    useCallback,
+    useContext,
+    useEffect,
+    useMemo,
+    useState,
+} from "react";
 import { Outlet, useLocation } from "react-router-dom";
 
 import LoadingPage from "@/Components/LoadingPage";
 import ModeToggle from "@/Components/ModeToggle";
 import { StatusDot } from "@/Components/shared/StatusBadge";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
+import { useLiveQuery } from "@/hooks/useLiveQuery";
 import { useRefetchOnReconnect } from "@/hooks/useRefetchOnReconnect";
 import { competitionAtom } from "@/lib/atoms";
-import { getPublicCompetitionInfo, getPublicRooms } from "@/lib/competition";
+import { getPublicCompetitionInfo, publicRoomsQuery } from "@/lib/competition";
 import { getEvents } from "@/lib/events";
-import { Room } from "@/lib/interfaces";
 import { cn } from "@/lib/utils";
 import { socket, SocketContext } from "@/socket";
 
@@ -26,10 +33,27 @@ import PublicTabs from "./PublicTabs";
 const PublicLayout = () => {
     const location = useLocation();
     const [competition, setCompetition] = useAtom(competitionAtom);
-    const [liveRoundIds, setLiveRoundIds] = useState<string[] | null>(null);
+    // Shared with the live solving page, and refetched on reconnect, since a
+    // dropped socket may have missed group changes
+    const { data: rooms } = useLiveQuery(publicRoomsQuery);
+    const liveRoundIds = useMemo(
+        () =>
+            rooms
+                ? [
+                      ...new Set(
+                          rooms.flatMap((room) =>
+                              room.currentGroupIds.map(
+                                  (id) => id.split("-g")[0]
+                              )
+                          )
+                      ),
+                  ]
+                : null,
+        [rooms]
+    );
     useRefetchOnReconnect();
     const [isLive, setIsLive] = useState(socket.connected);
-    const [isConnected, setConnected] = useContext(SocketContext) as [
+    const [, setConnected] = useContext(SocketContext) as [
         number,
         React.Dispatch<React.SetStateAction<number>>,
     ];
@@ -50,19 +74,6 @@ const PublicLayout = () => {
     useEffect(() => {
         fetchCompetition();
     }, [fetchCompetition]);
-
-    // Refetched on reconnect: a dropped socket may have missed group changes
-    useEffect(() => {
-        getPublicRooms().then((rooms: Room[]) =>
-            setLiveRoundIds([
-                ...new Set(
-                    (rooms ?? []).flatMap((room) =>
-                        room.currentGroupIds.map((id) => id.split("-g")[0])
-                    )
-                ),
-            ])
-        );
-    }, [isConnected]);
 
     useEffect(() => {
         const handleConnect = () => {

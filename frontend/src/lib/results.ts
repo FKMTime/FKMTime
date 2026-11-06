@@ -42,6 +42,13 @@ export const invalidateRoundResults = (roundId: string) => {
     });
 };
 
+/** A round's results as the public pages show them, without signing in */
+export const publicRoundResultsQuery = queryFamily((roundId) =>
+    backendQuery<Result[]>(`result/public/round/${roundId}`, {
+        useAuth: false,
+    })
+);
+
 export const getPublicResultsByRoundId = async (
     roundId: string,
     search?: string
