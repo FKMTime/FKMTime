@@ -15,6 +15,12 @@ updates:
         update-types:
           - minor
           - patch
+    ignore:
+      # TypeScript 7 drops the JS compiler API that ts-jest, ts-node,
+      # typescript-eslint and the Nest CLI use. Lift this once they support it.
+      - dependency-name: typescript
+        update-types:
+          - version-update:semver-major
   - package-ecosystem: github-actions
     directory: "/"
     schedule:
