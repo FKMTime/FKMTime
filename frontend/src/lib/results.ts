@@ -3,6 +3,7 @@ import { getLimitByRoundId, getRoundInfoFromWcif } from "wcif-helpers";
 
 import { Attempt, AttemptData, Incident, Result } from "./interfaces";
 import { queryFamily } from "./queryCache";
+import { queryClient } from "./queryClient";
 import { backendQuery, backendRequest } from "./request";
 
 export const getResultsByRoundId = async (roundId: string, search?: string) => {
@@ -18,6 +19,28 @@ export const getResultsByRoundId = async (roundId: string, search?: string) => {
 export const roundResultsQuery = queryFamily((roundId) =>
     backendQuery<Result[]>(`result/round/${roundId}`)
 );
+
+const searchedRoundResults = queryFamily((path) =>
+    backendQuery<Result[]>(path)
+);
+
+/** A round's results matching a search; no search is the full round */
+export const roundResultsSearchQuery = (roundId: string, search: string) =>
+    search
+        ? searchedRoundResults(
+              `result/round/${roundId}?search=${encodeURIComponent(search)}`
+          )
+        : roundResultsQuery(roundId);
+
+/** Refetches a round's results on screen, searched or not */
+export const invalidateRoundResults = (roundId: string) => {
+    const path = roundResultsQuery(roundId).key;
+    return queryClient.invalidateQueries({
+        predicate: ({ queryKey: [key] }) =>
+            typeof key === "string" &&
+            (key === path || key.startsWith(`${path}?`)),
+    });
+};
 
 export const getPublicResultsByRoundId = async (
     roundId: string,

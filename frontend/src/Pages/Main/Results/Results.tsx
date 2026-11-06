@@ -1,27 +1,30 @@
 import { useAtomValue } from "jotai";
-import { useCallback, useContext, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { getLimitByRoundId, getNumberOfAttemptsForRound } from "wcif-helpers";
 
 import LoadingPage from "@/Components/LoadingPage";
 import EmptyState from "@/Components/shared/EmptyState";
 import RefreshingRegion from "@/Components/shared/RefreshingRegion";
+import RequestError from "@/Components/shared/RequestError";
 import RoundStrip from "@/Components/shared/RoundStrip";
 import SearchInput from "@/Components/shared/SearchInput";
 import SegmentedControl from "@/Components/shared/SegmentedControl";
-import { useCachedQuery } from "@/hooks/useCachedQuery";
+import { useDebouncedValue } from "@/hooks/useDebouncedValue";
+import { useLiveQuery } from "@/hooks/useLiveQuery";
 import { usePageHeader } from "@/hooks/usePageHeader";
+import { useSocketEvents } from "@/hooks/useSocketEvents";
+import { useSocketRoom } from "@/hooks/useSocketRoom";
 import { competitionAtom } from "@/lib/atoms";
 import { Result } from "@/lib/interfaces";
 import { isDelegate } from "@/lib/permissions";
-import { fetchQuery, getFreshQueryData, LIVE_MAX_AGE } from "@/lib/queryCache";
+import { LIVE_MAX_AGE } from "@/lib/queryCache";
 import { rankResults } from "@/lib/ranking";
-import { getResultsByRoundId, roundResultsQuery } from "@/lib/results";
+import { invalidateRoundResults, roundResultsSearchQuery } from "@/lib/results";
 import { roomsQuery } from "@/lib/rooms";
 import { getRoundMeta } from "@/lib/roundInfo";
 import { getRoundOptions, getStripRounds } from "@/lib/roundOptions";
 import { getAdvancementText, shortRoundName } from "@/lib/utils";
-import { socket, SocketContext } from "@/socket";
 
 import CreateAttemptModal from "./Components/CreateAttemptModal";
 import RestartGroupModal from "./Components/RestartGroupModal";
@@ -31,34 +34,30 @@ import RoundHeader from "./Components/RoundHeader";
 
 type Order = "ranking" | "latest";
 
-const getCachedResults = (roundId: string) =>
-    roundId
-        ? getFreshQueryData<Result[]>(
-              roundResultsQuery(roundId).key,
-              LIVE_MAX_AGE
-          )
-        : undefined;
-
 const Results = () => {
     const { id: roundId = "" } = useParams<{ id: string }>();
     const navigate = useNavigate();
     const competition = useAtomValue(competitionAtom);
-    const [isConnected] = useContext(SocketContext) as [
-        number,
-        React.Dispatch<React.SetStateAction<number>>,
-    ];
-    const { data: rooms } = useCachedQuery(roomsQuery, {
+    const { data: rooms } = useLiveQuery(roomsQuery, {
         maxAge: LIVE_MAX_AGE,
     });
-    // Results the Checks tab loaded moments ago show straight away
-    const [results, setResults] = useState<Result[]>(
-        () => getCachedResults(roundId) ?? []
-    );
-    // The round the shown results belong to; differs while the next loads
-    const [resultsRoundId, setResultsRoundId] = useState(() =>
-        getCachedResults(roundId) ? roundId : undefined
-    );
     const [search, setSearch] = useState("");
+    // Results the Checks tab loaded moments ago show straight away, and the
+    // last results stay while the next round or search loads
+    const debouncedSearch = useDebouncedValue(search, 250);
+    const { data, isError, isPreviousData, refetch } = useLiveQuery(
+        roundResultsSearchQuery(roundId, debouncedSearch),
+        {
+            maxAge: LIVE_MAX_AGE,
+            keepPreviousData: true,
+            enabled: !!roundId,
+        }
+    );
+    const results: Result[] = useMemo(() => data ?? [], [data]);
+    const refreshResults = () => void invalidateRoundResults(roundId);
+    // Joined per round, not per search, so typing doesn't leave the room
+    useSocketRoom(roundId ? "Results" : null, { params: { roundId } });
+    useSocketEvents(roundId ? { resultEntered: refreshResults } : {});
     const [order, setOrder] = useState<Order>("ranking");
     const [isRestartOpen, setIsRestartOpen] = useState(false);
     const [isCreateOpen, setIsCreateOpen] = useState(false);
@@ -91,31 +90,6 @@ const Results = () => {
         const target = rounds.find((round) => round.isLive) ?? rounds[0];
         navigate(`/results/round/${target.id}`, { replace: true });
     }, [roundId, rounds, navigate]);
-
-    const fetchResults = useCallback(async () => {
-        if (!roundId) return;
-        const data = search
-            ? await getResultsByRoundId(roundId, search)
-            : await fetchQuery(roundResultsQuery(roundId)).catch(() => null);
-        if (!data) return;
-        setResults(data);
-        setResultsRoundId(roundId);
-    }, [roundId, search]);
-
-    useEffect(() => {
-        const timeout = setTimeout(fetchResults, 250);
-        return () => clearTimeout(timeout);
-    }, [fetchResults]);
-
-    useEffect(() => {
-        if (!roundId) return;
-        socket.emit("joinResults", { roundId });
-        socket.on("resultEntered", fetchResults);
-        return () => {
-            socket.off("resultEntered", fetchResults);
-            socket.emit("leaveResults", { roundId });
-        };
-    }, [roundId, fetchResults, isConnected]);
 
     if (!competition || !rooms) return <LoadingPage />;
 
@@ -182,9 +156,13 @@ const Results = () => {
                                 {results.length === 1 ? "result" : "results"}
                             </span>
                         </div>
-                        <RefreshingRegion
-                            isRefreshing={resultsRoundId !== roundId}
-                        >
+                        {isError && (
+                            <RequestError
+                                hasData={!!data}
+                                onRetry={() => void refetch()}
+                            />
+                        )}
+                        <RefreshingRegion isRefreshing={isPreviousData}>
                             {rows.length === 0 ? (
                                 <p className="p-8 text-center text-sm text-muted-foreground">
                                     {search
@@ -195,7 +173,7 @@ const Results = () => {
                                 <ResultsTable
                                     rows={rows}
                                     maxAttempts={maxAttempts}
-                                    onDeleted={fetchResults}
+                                    onDeleted={refreshResults}
                                 />
                             )}
                         </RefreshingRegion>
@@ -205,7 +183,7 @@ const Results = () => {
                         isOpen={isCreateOpen}
                         onClose={() => {
                             setIsCreateOpen(false);
-                            fetchResults();
+                            refreshResults();
                         }}
                         roundId={roundId}
                         timeLimit={
@@ -216,7 +194,7 @@ const Results = () => {
                         isOpen={isRestartOpen}
                         onClose={() => {
                             setIsRestartOpen(false);
-                            fetchResults();
+                            refreshResults();
                         }}
                         roundId={roundId}
                         wcif={wcif}
