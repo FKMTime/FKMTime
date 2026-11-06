@@ -21,3 +21,13 @@ export const queryClient = new QueryClient({
  * them. No socket event announces changes to either.
  */
 export const SHARED_DATA_STALE_TIME = 30_000;
+
+// Rooms and competition settings are read by many pages; share them for a
+// while instead of refetching on every page change
+for (const path of [
+    "competition/rooms",
+    "competition/public/rooms",
+    "competition/settings",
+]) {
+    queryClient.setQueryDefaults([path], { staleTime: SHARED_DATA_STALE_TIME });
+}
