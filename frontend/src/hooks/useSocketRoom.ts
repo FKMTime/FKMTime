@@ -35,7 +35,11 @@ export const useSocketRoom = (
             handler: () => void queryClient.invalidateQueries({ queryKey }),
         }));
 
-        const join = () => socket.emit(`join${room}`, roomParams);
+        // A room without params is joined with no payload, as before
+        const join = () =>
+            roomParams === undefined
+                ? socket.emit(`join${room}`)
+                : socket.emit(`join${room}`, roomParams);
         // Emits sent while disconnected are buffered and replayed, which
         // would join twice: wait for the connect handler instead
         if (socket.connected) join();
@@ -48,7 +52,8 @@ export const useSocketRoom = (
             invalidations.forEach(({ event, handler }) =>
                 socket.off(event, handler)
             );
-            socket.emit(`leave${room}`, roomParams);
+            if (roomParams === undefined) socket.emit(`leave${room}`);
+            else socket.emit(`leave${room}`, roomParams);
         };
     }, [room, paramsJson, invalidateOnJson, queryClient]);
 };
