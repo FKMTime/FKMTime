@@ -1,5 +1,6 @@
 import { AVAILABLE_PENALTIES } from "./constants";
 import { Event } from "./interfaces";
+import { Query } from "./queryCache";
 import { backendRequest } from "./request";
 
 const EVENTS_KEY = "fkmtime-events";
@@ -10,6 +11,12 @@ export const getEvents = async () => {
     const data = await response.json();
     localStorage.setItem(EVENTS_KEY, JSON.stringify(data));
     return data;
+};
+
+/** Every event, official or not; loading it also stores the names */
+export const eventsQuery: Query<Event[]> = {
+    key: "events",
+    fetch: () => getEvents(),
 };
 
 export const getUnofficialEvents = async () => {

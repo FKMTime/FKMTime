@@ -68,6 +68,11 @@ export const getPublicResultsByRoundId = async (
     return (await response.json()) || [];
 };
 
+/** Every result a person has */
+export const personResultsQuery = queryFamily((id) =>
+    backendQuery<Result[]>(`result/person/${id}`)
+);
+
 export const getAllResultsByPersonId = async (id: string) => {
     const response = await backendRequest(`result/person/${id}`, "GET", true);
     return await response.json();

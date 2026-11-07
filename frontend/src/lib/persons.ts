@@ -96,6 +96,11 @@ export const personsWithoutCardSearchQuery = queryFamily((search) =>
         : personsWithoutCardQuery
 );
 
+/** One person, with their registration */
+export const personQuery = queryFamily((id) =>
+    backendQuery<Person>(`person/${id}`)
+);
+
 export const getPersonById = async (id: string) => {
     const response = await backendRequest(`person/${id}`, "GET", true);
     return await response.json();

@@ -1,5 +1,5 @@
 import { useAtomValue } from "jotai";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
 import { Navigate, useParams } from "react-router-dom";
 import { getPersonFromWcif } from "wcif-helpers";
 
@@ -7,10 +7,11 @@ import Avatar from "@/Components/Avatar/Avatar";
 import LoadingPage from "@/Components/LoadingPage";
 import PageTabs, { PageTab } from "@/Components/shared/PageTabs";
 import SectionLoading from "@/Components/shared/SectionLoading";
+import { useLiveQuery } from "@/hooks/useLiveQuery";
 import { usePageHeader } from "@/hooks/usePageHeader";
 import { competitionAtom } from "@/lib/atoms";
-import { getStaffActivitiesByPersonId, noShowGroupIds } from "@/lib/attendance";
-import { getIncidentsForPerson } from "@/lib/incidents";
+import { noShowGroupIds, personStaffActivitiesQuery } from "@/lib/attendance";
+import { personIncidentsQuery } from "@/lib/incidents";
 import {
     Person as PersonData,
     PersonIncidents as PersonIncidentsData,
@@ -22,11 +23,11 @@ import {
     isDelegate,
     isStageLeaderOrOrganizerOrDelegate,
 } from "@/lib/permissions";
-import { getPersonById } from "@/lib/persons";
+import { personQuery } from "@/lib/persons";
 import { getPersonSchedule } from "@/lib/personSchedule";
-import { getAllResultsByPersonId } from "@/lib/results";
+import { personResultsQuery } from "@/lib/results";
 import { regionNameByIso2 } from "@/lib/utils";
-import { getWarningsForPerson } from "@/lib/warnings";
+import { personWarningsQuery } from "@/lib/warnings";
 import { useNoShow } from "@/Pages/Main/Attendance/useNoShow";
 
 import PersonIncidents from "./PersonIncidents";
@@ -54,46 +55,36 @@ const incidentsCount = (incidents: PersonIncidentsData | null) =>
 const Person = () => {
     const { id, tab = "schedule" } = useParams<{ id: string; tab?: string }>();
     const competition = useAtomValue(competitionAtom);
-    const [person, setPerson] = useState<PersonData | null>(null);
-    const [results, setResults] = useState<Result[] | null>(null);
-    const [staffActivities, setStaffActivities] = useState<
-        StaffActivity[] | null
-    >(null);
-    const [incidents, setIncidents] = useState<PersonIncidentsData | null>(
-        null
-    );
-    const [warnings, setWarnings] = useState<Warning[] | null>(null);
 
     const showResults = !!competition?.useFkmTimeDevices;
     const showAttendance = isStageLeaderOrOrganizerOrDelegate();
     const showIncidents = isDelegate();
 
-    const fetchStaffActivities = useCallback(() => {
-        if (id) getStaffActivitiesByPersonId(id).then(setStaffActivities);
-    }, [id]);
+    const personId = id ?? "";
+    const person: PersonData | null =
+        useLiveQuery(personQuery(personId), { enabled: !!id }).data ?? null;
+    const results: Result[] | null =
+        useLiveQuery(personResultsQuery(personId), {
+            enabled: !!id && showResults,
+        }).data ?? null;
+    const staffActivitiesResult = useLiveQuery(
+        personStaffActivitiesQuery(personId),
+        { enabled: !!id && showAttendance }
+    );
+    const staffActivities: StaffActivity[] | null =
+        staffActivitiesResult.data ?? null;
+    const incidents: PersonIncidentsData | null =
+        useLiveQuery(personIncidentsQuery(personId), {
+            enabled: !!id && showIncidents,
+        }).data ?? null;
+    const warningsResult = useLiveQuery(personWarningsQuery(personId), {
+        enabled: !!id && showIncidents,
+    });
+    const warnings: Warning[] | null = warningsResult.data ?? null;
+
+    const fetchStaffActivities = () => void staffActivitiesResult.refetch();
     const setNoShowFor = useNoShow(fetchStaffActivities);
-
-    const fetchWarnings = useCallback(() => {
-        if (id) getWarningsForPerson(id).then(setWarnings);
-    }, [id]);
-
-    useEffect(() => {
-        if (!id) return;
-        getPersonById(id).then(setPerson);
-        if (showResults) getAllResultsByPersonId(id).then(setResults);
-        if (showAttendance) fetchStaffActivities();
-        if (showIncidents) {
-            getIncidentsForPerson(id).then(setIncidents);
-            fetchWarnings();
-        }
-    }, [
-        id,
-        showResults,
-        showAttendance,
-        showIncidents,
-        fetchStaffActivities,
-        fetchWarnings,
-    ]);
+    const fetchWarnings = () => void warningsResult.refetch();
 
     const schedule = useMemo(
         () =>

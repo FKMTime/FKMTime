@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { createStore, Provider } from "jotai";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -6,23 +6,49 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { competitionAtom } from "@/lib/atoms";
 import { createAttempt } from "@/lib/attempt";
 import { AttemptType, Competition, Person } from "@/lib/interfaces";
+import { clearQueryCache } from "@/lib/queryCache";
 import { getResultsByRoundId } from "@/lib/results";
+import { renderWithQueryClient } from "@/test/queryClient";
 
 import QuickEnterAttemptModal from "./QuickEnterAttemptModal";
 
-vi.mock("@/lib/persons", () => ({
-    getAllPersons: vi.fn().mockResolvedValue([
-        {
-            id: "p1",
-            registrantId: 7,
-            name: "Anna Example",
-            canCompete: true,
-        } as Person,
-    ]),
+vi.mock("@/lib/persons", () => {
+    const mocks = {
+        getAllPersons: vi.fn().mockResolvedValue([
+            {
+                id: "p1",
+                registrantId: 7,
+                name: "Anna Example",
+                canCompete: true,
+            } as Person,
+        ]),
+    };
+    return {
+        ...mocks,
+        allPersonsQuery: {
+            key: "person/all?",
+            fetch: () => mocks.getAllPersons(),
+        },
+    };
+});
+vi.mock("@/lib/attempt", () => ({
+    createAttempt: vi.fn(),
 }));
-vi.mock("@/lib/attempt", () => ({ createAttempt: vi.fn() }));
-vi.mock("@/lib/results", () => ({ getResultsByRoundId: vi.fn() }));
-vi.mock("@/hooks/useToast", () => ({ useToast: () => ({ toast: vi.fn() }) }));
+vi.mock("@/lib/results", () => {
+    const mocks = {
+        getResultsByRoundId: vi.fn(),
+    };
+    return {
+        ...mocks,
+        roundResultsQuery: (roundId: string) => ({
+            key: `result/round/${roundId}`,
+            fetch: () => mocks.getResultsByRoundId(roundId),
+        }),
+    };
+});
+vi.mock("@/hooks/useToast", () => ({
+    useToast: () => ({ toast: vi.fn() }),
+}));
 
 const competition = {
     wcif: {
@@ -34,7 +60,7 @@ const competition = {
 const renderModal = (onClose = vi.fn()) => {
     const store = createStore();
     store.set(competitionAtom, competition);
-    render(
+    renderWithQueryClient(
         <Provider store={store}>
             <QuickEnterAttemptModal
                 isOpen
@@ -47,6 +73,8 @@ const renderModal = (onClose = vi.fn()) => {
     );
     return onClose;
 };
+
+beforeEach(() => clearQueryCache());
 
 describe("QuickEnterAttemptModal", () => {
     beforeEach(() => {
