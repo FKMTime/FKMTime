@@ -5,7 +5,7 @@ import { Input } from "@/Components/ui/input";
 import { Person } from "@/lib/interfaces";
 
 interface SelectCompetitorProps {
-    idInputRef: React.RefObject<HTMLInputElement>;
+    idInputRef: React.RefObject<HTMLInputElement | null>;
     handleSubmit: () => void;
     persons: Person[];
     onSelect: (person: Person | null) => void;
