@@ -1,5 +1,5 @@
 import { useAtomValue } from "jotai";
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useState } from "react";
 import { getNumberOfAttemptsForRound } from "wcif-helpers";
 
 import { Modal } from "@/Components/Modal.tsx";
@@ -10,9 +10,10 @@ import { Checkbox } from "@/Components/ui/checkbox";
 import { Input } from "@/Components/ui/input";
 import { Label } from "@/Components/ui/label";
 import { useDialogError } from "@/hooks/useDialogError";
+import { useLiveQuery } from "@/hooks/useLiveQuery";
 import { useToast } from "@/hooks/useToast";
 import { competitionAtom } from "@/lib/atoms";
-import { ExtrasContext, getExtrasContext, giveExtras } from "@/lib/attempt";
+import { ExtrasContext, extrasContextQuery, giveExtras } from "@/lib/attempt";
 import {
     ApplicationQuickAction,
     Attempt,
@@ -60,15 +61,14 @@ const GiveExtrasModal = ({
     const { toast } = useToast();
     const [error, setError] = useDialogError(isOpen);
     const [isLoading, setIsLoading] = useState(false);
-    const [context, setContext] = useState<ExtrasContext | null>(null);
+    const { data: contextData } = useLiveQuery(extrasContextQuery(resultId), {
+        enabled: isOpen,
+    });
+    const context: ExtrasContext | null = contextData ?? null;
     const [comment, setComment] = useState(lockedAttempt?.comment ?? "");
     const [uncheckedIds, setUncheckedIds] = useState<string[]>([]);
     const [chosenFreshSet, setChosenFreshSet] = useState<boolean | null>(null);
     const [removeFromLive, setRemoveFromLive] = useState(true);
-
-    useEffect(() => {
-        if (isOpen) getExtrasContext(resultId).then(setContext);
-    }, [isOpen, resultId]);
 
     const countingAttempts = getSubmittedAttempts(attempts) as (Attempt & {
         number: number;

@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { screen } from "@testing-library/react";
 import { createStore, Provider } from "jotai";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -10,6 +10,8 @@ import {
     Person as PersonData,
 } from "@/lib/interfaces";
 import { isDelegate } from "@/lib/permissions";
+import { clearQueryCache } from "@/lib/queryCache";
+import { renderWithQueryClient } from "@/test/queryClient";
 
 import Person from "./Person";
 
@@ -20,59 +22,104 @@ const person = {
     wcaId: "2019EXAM01",
 } as PersonData;
 
-vi.mock("@/lib/persons", () => ({
-    getPersonById: vi.fn(() => Promise.resolve(person)),
-}));
-vi.mock("@/lib/results", () => ({
-    getAllResultsByPersonId: vi.fn(() => Promise.resolve([])),
-}));
-vi.mock("@/lib/attendance", async (importOriginal) => ({
-    ...(await importOriginal<object>()),
-    getStaffActivitiesByPersonId: vi.fn(() => Promise.resolve([])),
-}));
-vi.mock("@/lib/warnings", () => ({
-    getWarningsForPerson: vi.fn(() =>
-        Promise.resolve([
-            {
-                id: "w1",
-                description: "Left the station early",
-                createdAt: "2026-04-18T10:00:00Z",
-                createdBy: { fullName: "Dana Delegate" },
-            },
-        ])
-    ),
-    deleteWarning: vi.fn(),
-}));
-vi.mock("@/lib/incidents", () => ({
-    getIncidentsForPerson: vi.fn(() =>
-        Promise.resolve({
-            attempts: [
+vi.mock("@/lib/persons", () => {
+    const mocks = {
+        getPersonById: vi.fn(() => Promise.resolve(person)),
+    };
+    return {
+        ...mocks,
+        personQuery: (id: string) => ({
+            key: `person/${id}`,
+            fetch: () => mocks.getPersonById(),
+        }),
+    };
+});
+vi.mock("@/lib/results", () => {
+    const mocks = {
+        getAllResultsByPersonId: vi.fn(() => Promise.resolve([])),
+    };
+    return {
+        ...mocks,
+        personResultsQuery: (id: string) => ({
+            key: `result/person/${id}`,
+            fetch: () => mocks.getAllResultsByPersonId(),
+        }),
+    };
+});
+vi.mock("@/lib/attendance", async (importOriginal) => {
+    const mocks = {
+        ...(await importOriginal<object>()),
+        getStaffActivitiesByPersonId: vi.fn(() => Promise.resolve([])),
+    };
+    return {
+        ...mocks,
+        personStaffActivitiesQuery: (id: string) => ({
+            key: `attendance/person/${id}`,
+            fetch: () => mocks.getStaffActivitiesByPersonId(),
+        }),
+    };
+});
+vi.mock("@/lib/warnings", () => {
+    const mocks = {
+        getWarningsForPerson: vi.fn(() =>
+            Promise.resolve([
                 {
-                    id: "a1",
-                    attemptNumber: 2,
-                    value: 1234,
-                    penalty: 0,
-                    status: AttemptStatus.EXTRA_GIVEN,
-                    solvedAt: "2026-04-18T08:10:00Z",
-                    result: {
-                        id: "r1",
-                        roundId: "333-r1",
-                        eventId: "333",
-                        person: { id: "p2", name: "Ben Example" },
+                    id: "w1",
+                    description: "Left the station early",
+                    createdAt: "2026-04-18T10:00:00Z",
+                    createdBy: { fullName: "Dana Delegate" },
+                },
+            ])
+        ),
+        deleteWarning: vi.fn(),
+    };
+    return {
+        ...mocks,
+        personWarningsQuery: (id: string) => ({
+            key: `incident/warnings/person/${id}`,
+            fetch: () => mocks.getWarningsForPerson(),
+        }),
+    };
+});
+vi.mock("@/lib/incidents", () => {
+    const mocks = {
+        getIncidentsForPerson: vi.fn(() =>
+            Promise.resolve({
+                attempts: [
+                    {
+                        id: "a1",
+                        attemptNumber: 2,
+                        value: 1234,
+                        penalty: 0,
+                        status: AttemptStatus.EXTRA_GIVEN,
+                        solvedAt: "2026-04-18T08:10:00Z",
+                        result: {
+                            id: "r1",
+                            roundId: "333-r1",
+                            eventId: "333",
+                            person: { id: "p2", name: "Ben Example" },
+                        },
                     },
-                },
-            ],
-            manual: [
-                {
-                    id: "m1",
-                    roundId: "333-r1",
-                    description: "Misscramble reported late",
-                },
-            ],
-            noteworthy: [],
-        })
-    ),
-}));
+                ],
+                manual: [
+                    {
+                        id: "m1",
+                        roundId: "333-r1",
+                        description: "Misscramble reported late",
+                    },
+                ],
+                noteworthy: [],
+            })
+        ),
+    };
+    return {
+        ...mocks,
+        personIncidentsQuery: (id: string) => ({
+            key: `incident/person/${id}`,
+            fetch: () => mocks.getIncidentsForPerson(),
+        }),
+    };
+});
 vi.mock("@/lib/permissions", () => ({
     isDelegate: vi.fn(() => true),
     isOrganizerOrDelegate: vi.fn(() => true),
@@ -132,7 +179,7 @@ const competition = {
 const renderAt = (path: string) => {
     const store = createStore();
     store.set(competitionAtom, competition);
-    render(
+    renderWithQueryClient(
         <Provider store={store}>
             <MemoryRouter initialEntries={[path]}>
                 <Routes>
@@ -142,6 +189,8 @@ const renderAt = (path: string) => {
         </Provider>
     );
 };
+
+beforeEach(() => clearQueryCache());
 
 describe("Person", () => {
     beforeEach(() => vi.mocked(isDelegate).mockReturnValue(true));

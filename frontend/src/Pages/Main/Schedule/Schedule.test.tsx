@@ -1,4 +1,4 @@
-import { render, screen, within } from "@testing-library/react";
+import { screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { createStore, Provider } from "jotai";
 import { MemoryRouter } from "react-router-dom";
@@ -8,12 +8,23 @@ import { competitionAtom } from "@/lib/atoms";
 import { getRoomActivities } from "@/lib/competition";
 import { Activity, Competition } from "@/lib/interfaces";
 import { isDelegate } from "@/lib/permissions";
+import { clearQueryCache } from "@/lib/queryCache";
+import { renderWithQueryClient } from "@/test/queryClient";
 
 import Schedule from "./Schedule";
 
-vi.mock("@/lib/competition", () => ({
-    getRoomActivities: vi.fn(),
-}));
+vi.mock("@/lib/competition", () => {
+    const mocks = {
+        getRoomActivities: vi.fn(),
+    };
+    return {
+        ...mocks,
+        roomActivitiesQuery: (venueId: number, roomId: number, date: Date) => ({
+            key: `activities-${venueId}-${roomId}-${date.toISOString()}`,
+            fetch: () => mocks.getRoomActivities(venueId, roomId, date),
+        }),
+    };
+});
 vi.mock("@/lib/permissions", () => ({
     isDelegate: vi.fn(() => false),
     isStageLeaderOrOrganizerOrDelegate: vi.fn(() => false),
@@ -79,7 +90,7 @@ const renderPage = (useFkmTimeDevices = true) => {
         useFkmTimeDevices,
         wcif,
     } as unknown as Competition);
-    render(
+    renderWithQueryClient(
         <Provider store={store}>
             <MemoryRouter>
                 <Schedule />
@@ -87,6 +98,8 @@ const renderPage = (useFkmTimeDevices = true) => {
         </Provider>
     );
 };
+
+beforeEach(() => clearQueryCache());
 
 describe("Schedule", () => {
     beforeEach(() => {
@@ -146,7 +159,7 @@ describe("Schedule", () => {
                 schedule: { ...wcif.schedule, venues: [] },
             },
         } as unknown as Competition);
-        render(
+        renderWithQueryClient(
             <Provider store={store}>
                 <MemoryRouter>
                     <Schedule />
