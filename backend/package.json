@@ -38,7 +38,7 @@
     "@nestjs/websockets": "^12.3.3",
     "@prisma/adapter-pg": "^7.10.1",
     "@prisma/client": "^7.10.1",
-    "@wca/helpers": "^1.1.7",
+    "@wca/helpers": "^2.0.0",
     "bcrypt": "^6.0.0",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.15.1",
