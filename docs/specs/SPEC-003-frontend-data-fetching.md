@@ -1,12 +1,13 @@
 # SPEC-003: Shared data fetching in the frontend
 
-- **Status:** Accepted
+- **Status:** Implemented
 - **Created:** 2026-11-03
 - **Related:** #543 (`eslint-plugin-react-hooks` 7), #553 (first
   `set-state-in-effect` batch)
 
-**Decided:** adopt TanStack Query for reading server data, and migrate page by
-page. See *Decisions* at the end.
+**Implemented:** the frontend reads server data through TanStack Query, page by
+page as planned. See *Decisions* at the end, and *Acceptance criteria* for how
+each one is covered.
 
 ## Problem
 
@@ -132,10 +133,11 @@ goes in the key, with `keepPreviousData` so the list doesn't blank while typing.
 ### The in-repo cache
 
 #564 and #565 added an in-repo cache (`lib/queryCache.ts` and `useCachedQuery`)
-while this spec was a draft. Rather than run two caches, `queryCache` keeps its
-API but stores its data in the same `QueryClient`, so its callers keep working
-unchanged and share data with `useQuery` pages. Pages move from
-`useCachedQuery` to `useQuery` as they migrate, and step 5 removes the bridge.
+while this spec was a draft. Rather than run two caches, `queryCache` was moved
+onto the same `QueryClient` during the migration, and once no page used
+`useCachedQuery` it was removed. `lib/queryCache` now only holds small helpers
+over the `QueryClient`: `toQueryOptions`, `fetchQuery`, `prefetchQuery`,
+`setQueryData`, `getQueryData` and `getFreshQueryData`.
 
 One behaviour differs from the in-repo cache. A fetch while the first load of a
 key is running shares that load instead of starting a second request. Once a key
@@ -167,9 +169,9 @@ counts come from the same lists the tabs show.
 `Layout` and `PublicLayout` mount `useRefetchOnReconnect`, which calls
 `queryClient.invalidateQueries()` after every socket reconnect. That refetches
 every `useQuery` on screen, closing the reconnect gap in one place instead of on
-each page. Pages still on `useCachedQuery` keep their own reconnect handling
-until they migrate. Pages can drop the connection counter from `SocketContext`
-as they migrate, and it's removed once nothing reads it.
+each page. The venue TV runs its own connection outside the layouts, so it
+mounts the hook itself. The connection counter pages used to read from
+`SocketContext` is gone.
 
 ### Errors and loading
 
@@ -198,19 +200,21 @@ Playwright tests cover the migrated pages end to end.
 
 ### Migration
 
-Each step is a separate PR, and pages can be migrated in any order after step 1.
+Done in five steps, each a separate PR or a few:
 
 1. **Foundation:** the client, the in-repo cache moved onto it,
-   `useSocketRoom`, reconnect invalidation, the error component, the test helper,
-   and the `competitionAtom` check.
-2. **Proof:** `Settings`, `Users` and `UnofficialEvents`, which are simple
-   fetch-on-mount pages. Stop here and review before going further.
-3. **Lists and search:** the incident lists, `AssignCards`, `Persons`, `CheckIn`.
+   `useSocketRoom`, reconnect invalidation, the error component, the test
+   helper, and the `competitionAtom` check. #575.
+2. **Proof:** `Settings`, `Users` and `UnofficialEvents`. #575.
+3. **Lists and search:** the incident lists, `AssignCards`, `Persons`,
+   `CheckIn`. #577, #578, #579, #580.
 4. **Live pages:** `Results`, `Attendance`, `Devices`, `Home`, the public pages.
-   These matter most on competition day, so they go last, one per PR.
-5. **Clean-up:** remaining findings, remove `useCachedQuery` and the
-   `queryCache` bridge, remove the connection counter, turn on
-   `set-state-in-effect`.
+   #583, #586, #587, #588, #589.
+5. **Clean-up:** the settings pages and the venue TV (#590, #593), removing
+   `useCachedQuery` and the cache bookkeeping (#604), removing the connection
+   counter (#606), turning on `set-state-in-effect` (#608), the reconnect
+   Playwright test (#609), the 30-second shared data (#610), and moving the
+   last effects that read data (#612, #613).
 
 ### Competition day
 
@@ -224,23 +228,40 @@ timing or attempt recording.
 
 ## Acceptance criteria
 
+Each criterion and where it's covered:
+
 - Pages using `useQuery` show the newest request's data when responses return out
-  of order. Unit test.
-- A failed refetch leaves existing data on screen and shows the notice. Unit
-  test. The docs reviewed for this spec don't state this behaviour, so prove it
-  in step 1 before relying on it.
-- A failed first load shows the error and "Try again" works. Unit test.
-- `useSocketRoom` rejoins on connect and leaves no listeners after unmount. Unit
-  test.
+  of order. `lib/tests/queryClient.test.ts`.
+- A failed refetch leaves existing data on screen and shows the notice.
+  `lib/tests/queryClient.test.ts` and `UnofficialEvents.test.tsx`.
+- A failed first load shows the error and "Try again" works.
+  `UnofficialEvents.test.tsx`.
+- `useSocketRoom` rejoins on connect and leaves no listeners after unmount.
+  `hooks/useSocketRoom.test.ts`.
 - After a socket reconnect, `Home` and `Results` show a result entered during the
-  disconnect. Playwright test.
+  disconnect. `e2e/tests/reconnect.spec.ts`.
 - With the browser's offline flag set but the backend reachable, data still loads.
-  Manual check of `networkMode`.
-- Typing in `Results` search sends no leave or join events. Unit test.
+  `lib/tests/queryClient.test.ts`, which marks the app offline the way the
+  browser's flag does and checks the query still runs. This replaced the
+  planned manual check.
+- Typing in `Results` search sends no leave or join events.
+  `Results.test.tsx`.
 - Components mounted together that need rooms cause one request, not one each.
-  Unit test.
-- `set-state-in-effect` is on and `npm run lint` passes.
-- No `useEffect` calls a read function from `src/lib`.
+  `lib/tests/queryClient.test.ts`.
+- `set-state-in-effect` is on and `npm run lint` passes. On since #608.
+- No `useEffect` calls a read function from `src/lib`, with these exceptions:
+  - **The competition:** `Layout`, `PublicLayout`, `PublicTv`, `SingleResult`
+    and the import page's "already imported" check load it into
+    `competitionAtom`, which decision 2 kept as an atom.
+  - **Event names:** `getEvents` stores them in `localStorage` for synchronous
+    lookups, and the layouts load them before rendering.
+  - **Actions, not reads:** Login's WCA code exchange and the scrambling
+    device's one-time code.
+  - **Cache warming:** the tab bars prefetch their sibling tabs with
+    `prefetchQuery`.
+  - **Edit-in-place:** `CurrentGroups` merges fresh rooms into groups picked but
+    not saved. The incident panel edits a local copy of the attempt and only
+    checks that it still exists, so a refetch can't overwrite edits in progress.
 
 ## Decisions
 
