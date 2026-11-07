@@ -1,6 +1,5 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Save } from "lucide-react";
-import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 
@@ -22,7 +21,8 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/Components/ui/select";
-import { getAvailableLocales } from "@/lib/competition";
+import { useLiveQuery } from "@/hooks/useLiveQuery";
+import { availableLocalesQuery } from "@/lib/competition";
 import {
     BUZZER_VOLUME_DEFAULT,
     BUZZER_VOLUME_MAX,
@@ -40,9 +40,8 @@ const DeviceSettingsForm = ({
     competition,
     handleSubmit,
 }: DeviceSettingsFormProps) => {
-    const [availableLocales, setAvailableLocales] = useState<AvailableLocale[]>(
-        []
-    );
+    const { data: localesData } = useLiveQuery(availableLocalesQuery);
+    const availableLocales: AvailableLocale[] = localesData ?? [];
 
     const form = useForm<
         z.input<typeof deviceSettingsSchema>,
@@ -70,10 +69,6 @@ const DeviceSettingsForm = ({
             ...values,
         });
     };
-
-    useEffect(() => {
-        getAvailableLocales().then(setAvailableLocales);
-    }, []);
 
     return (
         <Form {...form}>

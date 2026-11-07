@@ -1,7 +1,8 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 import { Modal } from "@/Components/Modal";
 import { useDialogError } from "@/hooks/useDialogError";
+import { useLiveQuery } from "@/hooks/useLiveQuery";
 import { updateDevice } from "@/lib/devices";
 import {
     Device,
@@ -10,7 +11,7 @@ import {
     HardwareVersion,
     Room,
 } from "@/lib/interfaces";
-import { getAllRooms } from "@/lib/rooms";
+import { roomsQuery } from "@/lib/rooms";
 
 import DeviceForm from "./DeviceForm";
 
@@ -23,7 +24,8 @@ interface EditDeviceModalProps {
 const EditDeviceModal = ({ isOpen, onClose, device }: EditDeviceModalProps) => {
     const [error, setError] = useDialogError(isOpen);
     const [isLoading, setIsLoading] = useState(false);
-    const [rooms, setRooms] = useState<Room[]>([]);
+    const { data: roomsData } = useLiveQuery(roomsQuery, { enabled: isOpen });
+    const rooms: Room[] = roomsData ?? [];
 
     const handleSubmit = async (data: DeviceData) => {
         setIsLoading(true);
@@ -43,13 +45,6 @@ const EditDeviceModal = ({ isOpen, onClose, device }: EditDeviceModalProps) => {
         }
         setIsLoading(false);
     };
-
-    useEffect(() => {
-        if (!isOpen) return;
-        getAllRooms().then((data: Room[]) => {
-            setRooms(data);
-        });
-    }, [isOpen]);
 
     return (
         <Modal
