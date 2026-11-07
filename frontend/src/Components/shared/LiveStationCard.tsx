@@ -2,8 +2,13 @@ import { useEffect, useRef, useState } from "react";
 
 import useStationTimer from "@/hooks/useStationTimer";
 import { activityCodeToName } from "@/lib/activities";
-import { StationInfo, StationPhase } from "@/lib/liveSolving";
+import {
+    formatLastSolveTime,
+    StationInfo,
+    StationPhase,
+} from "@/lib/liveSolving";
 import { centisecondsToClockFormat } from "@/lib/resultFormatters";
+import { formatClockTime } from "@/lib/time";
 import { cn } from "@/lib/utils";
 
 import StationCard from "./StationCard";
@@ -65,6 +70,8 @@ const LiveStationCard = ({
         !isOffline &&
         station.cumulativeLimitCentiseconds != null &&
         station.cumulativeRemainingCentiseconds != null;
+    // While finished, the big time is most likely that very solve
+    const lastSolve = phase !== "finished" ? station.lastSolve : null;
 
     return (
         <StationCard
@@ -84,6 +91,15 @@ const LiveStationCard = ({
                               station.cumulativeRemainingCentiseconds!
                           ),
                           limit: formatCs(station.cumulativeLimitCentiseconds!),
+                      }
+                    : null
+            }
+            lastSolve={
+                lastSolve
+                    ? {
+                          personName: lastSolve.personName,
+                          time: formatLastSolveTime(lastSolve),
+                          at: formatClockTime(new Date(lastSolve.enteredAt)),
                       }
                     : null
             }

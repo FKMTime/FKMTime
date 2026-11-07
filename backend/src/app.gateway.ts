@@ -12,6 +12,16 @@ import { DelegateGuard } from './auth/guards/delegate.guard';
 import { OrganizerGuard } from './auth/guards/organizer.guard';
 import { DeviceRequest } from './device/dto/requestToConnect.dto';
 
+/** The last attempt a station entered, kept to show after it resets */
+export interface LastSolve {
+  personName: string;
+  /** Centiseconds, before the penalty */
+  value: number;
+  /** Seconds added, as stored on attempts; -1 for DNF */
+  penalty: number;
+  enteredAt: number;
+}
+
 export interface StationInfo {
   espId: number;
   deviceName: string;
@@ -28,6 +38,7 @@ export interface StationInfo {
   cumulativeLimitCentiseconds: number | null;
   cumulativeRemainingCentiseconds: number | null;
   serverReceivedAt: number;
+  lastSolve: LastSolve | null;
 }
 
 @WebSocketGateway({
@@ -41,6 +52,7 @@ export class AppGateway {
   @WebSocketServer() server: Server;
   deviceRequests: DeviceRequest[] = [];
   private stations: Map<number, StationInfo> = new Map();
+  private lastSolves: Map<number, LastSolve> = new Map();
   private logger = new Logger(`AppGateway`);
 
   /* ====================== */
@@ -253,7 +265,21 @@ export class AppGateway {
     socket.leave('live-solving');
   }
 
-  broadcastCurrentTimeInfo(info: StationInfo) {
+  broadcastCurrentTimeInfo(info: Omit<StationInfo, 'lastSolve'>) {
+    this.emitStation({
+      ...info,
+      lastSolve: this.lastSolves.get(info.espId) ?? null,
+    });
+  }
+
+  recordLastSolve(espId: number, lastSolve: LastSolve) {
+    this.lastSolves.set(espId, lastSolve);
+    // A station not heard from yet picks it up with its first packet
+    const station = this.stations.get(espId);
+    if (station) this.emitStation({ ...station, lastSolve });
+  }
+
+  private emitStation(info: StationInfo) {
     this.stations.set(info.espId, info);
     this.server.to('live-solving').emit('currentTimeInfo', info);
   }

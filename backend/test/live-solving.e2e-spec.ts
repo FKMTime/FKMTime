@@ -134,6 +134,7 @@ describe('Live solving (e2e)', () => {
       cumulativeLimitCentiseconds: null,
       cumulativeRemainingCentiseconds: null,
       serverReceivedAt: expect.any(Number),
+      lastSolve: null,
     });
   });
 
@@ -154,6 +155,7 @@ describe('Live solving (e2e)', () => {
       cumulativeLimitCentiseconds: null,
       cumulativeRemainingCentiseconds: null,
       serverReceivedAt: expect.any(Number),
+      lastSolve: null,
     });
   });
 
@@ -314,6 +316,36 @@ describe('Live solving (e2e)', () => {
 
     const result = res.body.find((r: any) => r.person.id === competitor.id);
     expect(result.attempts[0].device).not.toHaveProperty('signKey');
+  });
+
+  it('sends viewers the station with its entered solve and who did it', async () => {
+    const received = waitForEvent<StationInfo>(
+      viewer,
+      'currentTimeInfo',
+      (info) => info.espId === ESP.stationA && info.lastSolve?.value === 1700,
+    );
+
+    const entered = await station.request('EnterAttempt', {
+      value: 1700,
+      valueMs: 17000,
+      penalty: 2,
+      inspectionTime: 5000,
+      solvedAt: new Date().toISOString(),
+      espId: ESP.stationA,
+      judgeId: CARD.judge,
+      competitorId: CARD.competitor,
+      groupId: '333-r1-g3',
+      sessionId: 'e2e-rt-live-session-2',
+    });
+    expect(entered.data.status).toBe(200);
+
+    const info = await received;
+    expect(info.lastSolve).toEqual({
+      personName: competitor.name,
+      value: 1700,
+      penalty: 2,
+      enteredAt: expect.any(Number),
+    });
   });
 
   describe('public competition endpoints used by the live pages', () => {

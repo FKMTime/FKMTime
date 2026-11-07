@@ -55,6 +55,7 @@ const idleStation = (device: Device): StationInfo => ({
     cumulativeRemainingCentiseconds: null,
     // Never heard from, so it shows as offline until its first packet
     serverReceivedAt: 0,
+    lastSolve: null,
 });
 
 const LiveSolving = () => {

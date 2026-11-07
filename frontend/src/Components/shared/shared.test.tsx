@@ -184,7 +184,7 @@ describe("StationCard", () => {
             <StationCard deviceName="Station 2" phase="idle" time="0.00" />
         );
         expect(screen.getByText("Waiting")).toBeTruthy();
-        expect(screen.getByText("No competitor")).toBeTruthy();
+        expect(screen.getByText("Waiting for competitor")).toBeTruthy();
         expect(screen.queryByText("0.00")).toBeNull();
 
         rerender(
@@ -209,6 +209,24 @@ describe("StationCard", () => {
         expect(screen.getByText("Finished")).toBeTruthy();
         expect(screen.getByText("Cumulative limit")).toBeTruthy();
         expect(screen.getByText("3:12.00")).toBeTruthy();
+    });
+
+    it("shows who did the last solve and when", () => {
+        render(
+            <StationCard
+                deviceName="Station 4"
+                phase="idle"
+                lastSolve={{
+                    personName: "Ada Example",
+                    time: "14.34",
+                    at: "11:02",
+                }}
+            />
+        );
+        expect(screen.getByText("Last solve")).toBeTruthy();
+        expect(screen.getByText("Ada Example")).toBeTruthy();
+        expect(screen.getByText("14.34")).toBeTruthy();
+        expect(screen.getByText("11:02")).toBeTruthy();
     });
 });
 

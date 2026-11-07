@@ -330,6 +330,12 @@ export class ResultFromDeviceService {
       );
     }
     this.appGateway.handleResultEntered(result.roundId);
+    this.appGateway.recordLastSolve(data.espId, {
+      personName: competitor.name,
+      value: finalData.value,
+      penalty: finalData.penalty,
+      enteredAt: Date.now(),
+    });
     const enteredMessage = finalData.limitPassed
       ? getTranslation('attemptEntered', locale)
       : getTranslation('attemptEnteredButReplacedToDnf', locale);
