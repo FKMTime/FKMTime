@@ -43,6 +43,11 @@ export const getAttendanceByGroupId = async (groupId: string) => {
     return await response.json();
 };
 
+/** A person's staffing assignments and attendance */
+export const personStaffActivitiesQuery = queryFamily((id) =>
+    backendQuery<StaffActivity[]>(`attendance/person/${id}`)
+);
+
 export const getStaffActivitiesByPersonId = async (id: string) => {
     const response = await backendRequest(
         `attendance/person/${id}`,

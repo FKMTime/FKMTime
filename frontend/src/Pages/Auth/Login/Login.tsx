@@ -4,6 +4,7 @@ import { Link, useNavigate } from "react-router-dom";
 
 import WordmarkHeader from "@/Components/shared/WordmarkHeader";
 import { Button } from "@/Components/ui/button";
+import { useLiveQuery } from "@/hooks/useLiveQuery";
 import { useToast } from "@/hooks/useToast";
 import {
     isUserLoggedIn,
@@ -11,8 +12,8 @@ import {
     loginErrorMessage,
     loginWithWca,
 } from "@/lib/auth";
-import { getInfoForLoginPage } from "@/lib/competition";
-import { CompetitionDataForLoginPage } from "@/lib/interfaces";
+import { loginInfoQuery } from "@/lib/competition";
+import { QueryError } from "@/lib/queryCache";
 import { WCA_CLIENT_ID, WCA_ORIGIN } from "@/lib/request";
 import { getScramblingDeviceTokenFromCode } from "@/lib/scramblingDevicesAuth";
 
@@ -32,9 +33,8 @@ const Login = () => {
     const [mode, setMode] = useState<LoginMode>("signin");
     const [isLoading, setIsLoading] = useState<boolean>(code ? true : false);
     const [error, setError] = useState<string>("");
-    const [competition, setCompetition] = useState<
-        CompetitionDataForLoginPage | undefined
-    >(undefined);
+    const { data: competition, error: competitionError } =
+        useLiveQuery(loginInfoQuery);
 
     const handleLoginResponse = useCallback(
         (status: number, errorMessage?: string) => {
@@ -97,23 +97,20 @@ const Login = () => {
         isLoggedIn();
     }, [navigate]);
 
+    // No competition yet is a normal answer here, not a failure
     useEffect(() => {
-        getInfoForLoginPage()
-            .then((data) => {
-                setCompetition(data);
-                if (!code) setIsLoading(false);
-            })
-            .catch((status) => {
-                if (status !== 404) {
-                    toast({
-                        title: "Error",
-                        description: "Failed to fetch competition data.",
-                        variant: "destructive",
-                    });
-                }
-                if (!code) setIsLoading(false);
-            });
-    }, [code, toast]);
+        if (!competitionError) return;
+        if (
+            competitionError instanceof QueryError &&
+            competitionError.status === 404
+        )
+            return;
+        toast({
+            title: "Error",
+            description: "Failed to fetch competition data.",
+            variant: "destructive",
+        });
+    }, [competitionError, toast]);
 
     const isDeviceMode = mode === "device";
 

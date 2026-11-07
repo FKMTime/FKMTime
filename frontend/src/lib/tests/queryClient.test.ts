@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { onlineManager, useQuery } from "@tanstack/react-query";
 import { act, renderHook, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -82,5 +82,23 @@ describe("useQuery with the app's query client", () => {
         const next = renderHook(useRooms, { wrapper: QueryWrapper });
         expect(next.result.current.data).toEqual([{ id: "room-1" }]);
         expect(fetch).toHaveBeenCalledTimes(1);
+    });
+
+    it("still loads when the browser says it's offline", async () => {
+        // A venue network can make the browser report offline while the
+        // backend is reachable; networkMode "always" still sends the request
+        onlineManager.setOnline(false);
+        try {
+            const fetch = vi.fn().mockResolvedValue(["a"]);
+            const { result } = renderHook(
+                () => useQuery(toQueryOptions({ key: "items", fetch })),
+                { wrapper: QueryWrapper }
+            );
+
+            await waitFor(() => expect(result.current.data).toEqual(["a"]));
+            expect(fetch).toHaveBeenCalledTimes(1);
+        } finally {
+            onlineManager.setOnline(true);
+        }
     });
 });

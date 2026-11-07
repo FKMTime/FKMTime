@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Round } from "wcif-helpers";
 
 import { Modal } from "@/Components/Modal";
@@ -12,7 +12,8 @@ import {
     SelectValue,
 } from "@/Components/ui/select";
 import { useDialogError } from "@/hooks/useDialogError";
-import { getUnofficialEvents } from "@/lib/events";
+import { useLiveQuery } from "@/hooks/useLiveQuery";
+import { eventsQuery } from "@/lib/events";
 import { Event } from "@/lib/interfaces";
 import { createUnofficialEvent } from "@/lib/unofficialEvents";
 
@@ -29,7 +30,10 @@ const CreateUnofficialEventModal = ({
 }: CreateUnofficialEventModalProps) => {
     const [error, setError] = useDialogError(isOpen);
     const [isLoading, setIsLoading] = useState(false);
-    const [events, setEvents] = useState<Event[]>([]);
+    const { data: allEvents } = useLiveQuery(eventsQuery);
+    const events: Event[] = (allEvents ?? []).filter(
+        (event) => event.isUnofficial
+    );
     const [selectedEventId, setSelectedEventId] = useState<string>("");
     const [rounds, setRounds] = useState<Round[]>([]);
 
@@ -61,12 +65,6 @@ const CreateUnofficialEventModal = ({
         setSelectedEventId(value);
         setRounds([]);
     };
-
-    useEffect(() => {
-        getUnofficialEvents().then((data) => {
-            setEvents(data);
-        });
-    }, []);
 
     return (
         <Modal

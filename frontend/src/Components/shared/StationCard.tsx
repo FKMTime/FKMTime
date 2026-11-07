@@ -14,6 +14,8 @@ interface StationCardProps {
     time?: string | null;
     /** Formatted cumulative time limit, e.g. remaining "3:12.00" of "5:00.00" */
     cumulative?: { remaining: string; limit: string } | null;
+    /** The station's last entered attempt, e.g. "14.34" at "11:02" */
+    lastSolve?: { personName: string; time: string; at: string } | null;
     /** Shown when a room runs more than one round */
     roundLabel?: string;
     /** Staff only: red border and badge */
@@ -38,6 +40,7 @@ const StationCard = ({
     phase,
     time,
     cumulative,
+    lastSolve,
     roundLabel,
     hasIncident,
     className,
@@ -75,21 +78,26 @@ const StationCard = ({
                             </span>
                         )}
                     </div>
-                    <div className="flex min-w-0 items-center gap-2.5">
-                        <span
-                            aria-hidden
-                            className="hidden size-9 shrink-0 items-center justify-center rounded-full bg-secondary text-xs font-bold text-muted-foreground md:flex"
-                        >
-                            {competitorName ? getInitials(competitorName) : "?"}
-                        </span>
-                        <span
-                            className={cn(
-                                "truncate text-[15px] font-semibold",
-                                !competitorName && "text-muted-foreground"
-                            )}
-                        >
-                            {competitorName ?? "No competitor"}
-                        </span>
+                    <div className="flex min-w-0 items-center gap-2.5 md:min-h-9">
+                        {competitorName ? (
+                            <>
+                                <span
+                                    aria-hidden
+                                    className="hidden size-9 shrink-0 items-center justify-center rounded-full bg-secondary text-xs font-bold text-muted-foreground md:flex"
+                                >
+                                    {getInitials(competitorName)}
+                                </span>
+                                <span className="truncate text-[15px] font-semibold">
+                                    {competitorName}
+                                </span>
+                            </>
+                        ) : (
+                            <span className="truncate text-sm text-muted-foreground">
+                                {phase === "offline"
+                                    ? "No competitor"
+                                    : "Waiting for competitor"}
+                            </span>
+                        )}
                     </div>
                     {roundLabel && (
                         <span className="text-xs text-muted-foreground md:hidden">
@@ -115,15 +123,35 @@ const StationCard = ({
                     )}
                 </div>
             </div>
-            {cumulative && (
-                <div className="flex flex-wrap justify-between gap-x-2 gap-y-0.5 border-t pt-2 text-xs text-muted-foreground md:pt-2.5">
-                    <span className="whitespace-nowrap">Cumulative limit</span>
-                    <span className="whitespace-nowrap">
-                        <b className="font-semibold text-foreground">
-                            {cumulative.remaining}
-                        </b>{" "}
-                        / {cumulative.limit}
-                    </span>
+            {(cumulative || lastSolve) && (
+                <div className="flex flex-col gap-1 border-t pt-2 text-xs text-muted-foreground md:pt-2.5">
+                    {cumulative && (
+                        <div className="flex flex-wrap justify-between gap-x-2 gap-y-0.5">
+                            <span className="whitespace-nowrap">
+                                Cumulative limit
+                            </span>
+                            <span className="whitespace-nowrap">
+                                <b className="font-semibold text-foreground">
+                                    {cumulative.remaining}
+                                </b>{" "}
+                                / {cumulative.limit}
+                            </span>
+                        </div>
+                    )}
+                    {lastSolve && (
+                        <div className="flex items-baseline gap-1.5">
+                            <span className="shrink-0">Last solve</span>
+                            <span className="min-w-0 flex-1 truncate font-semibold text-foreground">
+                                {lastSolve.personName}
+                            </span>
+                            <b className="shrink-0 font-semibold tabular-nums text-foreground">
+                                {lastSolve.time}
+                            </b>
+                            <span className="shrink-0 tabular-nums">
+                                {lastSolve.at}
+                            </span>
+                        </div>
+                    )}
                 </div>
             )}
         </article>

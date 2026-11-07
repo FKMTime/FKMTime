@@ -65,6 +65,11 @@ export const getIncidentsByRoundId = async (
     return await response.json();
 };
 
+/** A person's incidents */
+export const personIncidentsQuery = queryFamily((id) =>
+    backendQuery<PersonIncidents>(`incident/person/${id}`)
+);
+
 export const getIncidentsForPerson = async (
     personId: string
 ): Promise<PersonIncidents> => {

@@ -44,3 +44,71 @@ describe('AppGateway device requests', () => {
     ]);
   });
 });
+
+describe('AppGateway last solve', () => {
+  let gateway: AppGateway;
+  let emit: jest.Mock;
+
+  const packet = (espId: number) => ({
+    espId,
+    deviceName: `Station ${espId}`,
+    roomId: 'room-1',
+    personName: null,
+    registrantId: null,
+    groupId: null,
+    time: null,
+    inspection: null,
+    timerRunning: null,
+    inspectionRunning: null,
+    cumulativeLimitCentiseconds: null,
+    cumulativeRemainingCentiseconds: null,
+    serverReceivedAt: 1000,
+  });
+  const lastSolve = {
+    personName: 'Ada Example',
+    value: 1234,
+    penalty: 2,
+    enteredAt: 5000,
+  };
+
+  beforeEach(() => {
+    gateway = new AppGateway();
+    emit = jest.fn();
+    gateway.server = { to: jest.fn(() => ({ emit })) } as any;
+  });
+
+  it('sends a station without a last solve until one is entered', () => {
+    gateway.broadcastCurrentTimeInfo(packet(1));
+
+    expect(emit).toHaveBeenLastCalledWith('currentTimeInfo', {
+      ...packet(1),
+      lastSolve: null,
+    });
+  });
+
+  it('re-sends a known station as soon as its solve is entered', () => {
+    gateway.broadcastCurrentTimeInfo(packet(1));
+    gateway.recordLastSolve(1, lastSolve);
+
+    expect(emit).toHaveBeenLastCalledWith('currentTimeInfo', {
+      ...packet(1),
+      lastSolve,
+    });
+  });
+
+  it('keeps the last solve on later packets', () => {
+    gateway.recordLastSolve(1, lastSolve);
+    gateway.broadcastCurrentTimeInfo(packet(1));
+
+    expect(emit).toHaveBeenLastCalledWith('currentTimeInfo', {
+      ...packet(1),
+      lastSolve,
+    });
+  });
+
+  it('only stores the solve of a station not heard from yet', () => {
+    gateway.recordLastSolve(2, lastSolve);
+
+    expect(emit).not.toHaveBeenCalled();
+  });
+});
