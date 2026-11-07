@@ -6,12 +6,13 @@ import { useNavigate } from "react-router-dom";
 import LoadingPage from "@/Components/LoadingPage";
 import WordmarkHeader from "@/Components/shared/WordmarkHeader";
 import { Button } from "@/Components/ui/button";
+import { useLiveQuery } from "@/hooks/useLiveQuery";
 import { competitionAtom } from "@/lib/atoms";
 import { getUserInfo, logout, updateUserInfo } from "@/lib/auth";
 import {
     getCompetitionInfo,
-    getUpcomingManageableCompetitions,
     importCompetition,
+    upcomingManageableCompetitionsQuery,
 } from "@/lib/competition";
 import { WCACompetition } from "@/lib/interfaces";
 
@@ -21,8 +22,16 @@ import CompetitionsList from "./Components/CompetitionsList";
 const ImportCompetition = () => {
     const navigate = useNavigate();
     const userInfo = getUserInfo();
-    const [competitions, setCompetitions] = useState<WCACompetition[]>([]);
-    const [isLoading, setIsLoading] = useState<boolean>(true);
+    const { data: upcoming } = useLiveQuery(
+        upcomingManageableCompetitionsQuery
+    );
+    // Competitions found by searching, added to the managed ones
+    const [found, setFound] = useState<WCACompetition[]>([]);
+    const competitions = [
+        ...(upcoming ?? []),
+        ...found.filter((c) => !(upcoming ?? []).some((u) => u.id === c.id)),
+    ];
+    const isLoading = upcoming === undefined;
     const [importingId, setImportingId] = useState<string | null>(null);
     const [importError, setImportError] = useState<{
         competitionId: string;
@@ -54,7 +63,7 @@ const ImportCompetition = () => {
 
     const handleSelect = (competition: WCACompetition) => {
         if (!competitions.some((c) => c.id === competition.id)) {
-            setCompetitions((prev) => [...prev, competition]);
+            setFound((prev) => [...prev, competition]);
         }
     };
 
@@ -63,16 +72,10 @@ const ImportCompetition = () => {
         navigate("/auth/login");
     };
 
+    // Nothing to import once a competition exists
     useEffect(() => {
-        Promise.all([
-            getCompetitionInfo(),
-            getUpcomingManageableCompetitions(),
-        ]).then(([competitionRes, competitionsData]) => {
-            if (competitionRes.status === 200) {
-                navigate("/");
-            }
-            setCompetitions(competitionsData);
-            setIsLoading(false);
+        getCompetitionInfo().then((response) => {
+            if (response.status === 200) navigate("/");
         });
     }, [navigate]);
 

@@ -1,5 +1,4 @@
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 
@@ -21,8 +20,9 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/Components/ui/select";
+import { useLiveQuery } from "@/hooks/useLiveQuery";
 import { Room, ScramblingDevice } from "@/lib/interfaces";
-import { getAllRooms } from "@/lib/rooms";
+import { roomsQuery } from "@/lib/rooms";
 import { scramblingDeviceSchema } from "@/lib/schema/scramblingDeviceSchema";
 
 interface ScramblingDeviceFormProps {
@@ -36,7 +36,8 @@ const ScramblingDeviceForm = ({
     device,
     isLoading,
 }: ScramblingDeviceFormProps) => {
-    const [rooms, setRooms] = useState<Room[]>([]);
+    const { data: roomsData } = useLiveQuery(roomsQuery);
+    const rooms: Room[] = roomsData ?? [];
 
     const form = useForm<z.infer<typeof scramblingDeviceSchema>>({
         resolver: zodResolver(scramblingDeviceSchema),
@@ -55,12 +56,6 @@ const ScramblingDeviceForm = ({
             ...values,
         });
     };
-
-    useEffect(() => {
-        getAllRooms().then((data: Room[]) => {
-            setRooms(data);
-        });
-    }, [form]);
 
     return (
         <Form {...form}>

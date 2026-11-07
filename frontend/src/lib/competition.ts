@@ -1,8 +1,16 @@
 import { getUserInfo } from "@/lib/auth";
 import { getScramblingDeviceToken } from "@/lib/scramblingDevicesAuth";
 
-import { Activity, Competition, Room, WCACompetition } from "./interfaces";
-import { queryFamily } from "./queryCache";
+import {
+    Activity,
+    AvailableLocale,
+    Competition,
+    CompetitionDataForLoginPage,
+    CompetitionStatistics,
+    Room,
+    WCACompetition,
+} from "./interfaces";
+import { Query, queryFamily } from "./queryCache";
 import {
     backendQuery,
     backendRequest,
@@ -145,6 +153,11 @@ export const searchCompetitions = async (name: string) => {
     }
 };
 
+/** Solve and incident statistics for the whole competition */
+export const competitionStatisticsQuery = backendQuery<CompetitionStatistics>(
+    "competition/statistics/"
+);
+
 export const getCompetitionStatistics = async () => {
     const response = await backendRequest(
         `competition/statistics/`,
@@ -154,6 +167,11 @@ export const getCompetitionStatistics = async () => {
     return await response.json();
 };
 
+/** The languages devices can be set to */
+export const availableLocalesQuery = backendQuery<AvailableLocale[]>(
+    "competition/available-locales/"
+);
+
 export const getAvailableLocales = async () => {
     const response = await backendRequest(
         `competition/available-locales/`,
@@ -161,6 +179,18 @@ export const getAvailableLocales = async () => {
         true
     );
     return await response.json();
+};
+
+/** The competition as the login page shows it, without signing in */
+export const loginInfoQuery = backendQuery<CompetitionDataForLoginPage>(
+    "competition/login-info/",
+    { useAuth: false }
+);
+
+/** Competitions the WCA user manages, starting from a week ago */
+export const upcomingManageableCompetitionsQuery: Query<WCACompetition[]> = {
+    key: "wca/competitions/managed-by-me",
+    fetch: () => getUpcomingManageableCompetitions(),
 };
 
 export const getInfoForLoginPage = async () => {
