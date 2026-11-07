@@ -40,6 +40,7 @@ import {
   getRoundResultText,
   getSortedStandardAttempts,
   isCompetitorSignedInForEvent,
+  isSameAttemptResent,
 } from './helpers';
 import { ResultService } from './result.service';
 
@@ -139,6 +140,7 @@ export class ResultFromDeviceService {
           sessionId: data.sessionId,
           deviceId: device.id,
         },
+        include: { result: { select: { personId: true } } },
       });
     if (previousAttemptWithSameSessionId) {
       if (previousAttemptWithSameSessionId.status === AttemptStatus.RESOLVED) {
@@ -157,10 +159,26 @@ export class ResultFromDeviceService {
           };
         }
       }
+      // The reply to the first send was lost: the station may drop its copy,
+      // but only if it is the attempt we have, unchanged
+      const judge = data.judgeId
+        ? await this.personService.getPersonByCardId(data.judgeId.toString())
+        : null;
+      const sameAttempt = isSameAttemptResent(
+        previousAttemptWithSameSessionId,
+        {
+          value: data.value,
+          valueMs: data.valueMs,
+          inspectionTime: data.inspectionTime,
+          penalty: data.penalty,
+          competitorId: competitor.id,
+          judgeId: judge?.id ?? null,
+        },
+      );
       return {
         message: getTranslation('attemptAlreadyEntered', locale),
-        shouldResetTime: false,
-        status: 400,
+        shouldResetTime: sameAttempt,
+        status: 409,
         error: true,
       };
     }
@@ -330,6 +348,12 @@ export class ResultFromDeviceService {
       );
     }
     this.appGateway.handleResultEntered(result.roundId);
+    this.appGateway.recordLastSolve(data.espId, {
+      personName: competitor.name,
+      value: finalData.value,
+      penalty: finalData.penalty,
+      enteredAt: Date.now(),
+    });
     const enteredMessage = finalData.limitPassed
       ? getTranslation('attemptEntered', locale)
       : getTranslation('attemptEnteredButReplacedToDnf', locale);

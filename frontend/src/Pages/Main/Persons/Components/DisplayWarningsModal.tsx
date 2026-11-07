@@ -1,8 +1,7 @@
-import { useEffect, useState } from "react";
-
 import { Modal } from "@/Components/Modal";
+import { useLiveQuery } from "@/hooks/useLiveQuery";
 import { Person, Warning } from "@/lib/interfaces";
-import { getWarningsForPerson } from "@/lib/warnings";
+import { personWarningsQuery } from "@/lib/warnings";
 
 interface DisplayWarningsModalProps {
     isOpen: boolean;
@@ -15,15 +14,10 @@ const DisplayWarningsModal = ({
     onClose,
     person,
 }: DisplayWarningsModalProps) => {
-    const [warnings, setWarnings] = useState<Warning[]>([]);
-
-    useEffect(() => {
-        if (isOpen) {
-            getWarningsForPerson(person.id).then((data) => {
-                setWarnings(data);
-            });
-        }
-    }, [isOpen, person.id]);
+    const { data } = useLiveQuery(personWarningsQuery(person.id), {
+        enabled: isOpen,
+    });
+    const warnings: Warning[] = data ?? [];
 
     return (
         <Modal

@@ -1,4 +1,4 @@
-import { Attempt, AttemptStatus, AttemptType } from '@prisma/client';
+import { Attempt, AttemptStatus, AttemptType, Result } from '@prisma/client';
 import { formatCentiseconds } from '@wca/helpers';
 import { DNF_VALUE, DNS_VALUE } from 'src/constants';
 import { Person } from 'wcif-helpers';
@@ -19,6 +19,42 @@ export const isCompetitorSignedInForEvent = (
 export const attemptTimeWithPenalty = (
   attempt: Pick<Attempt, 'value' | 'penalty'>,
 ) => attempt.value + (attempt.penalty > 0 ? attempt.penalty * 100 : 0);
+
+/**
+ * A station sends an attempt again when the reply to its first send was lost.
+ * It may drop its copy only when the stored attempt is still exactly what it
+ * sent: nobody edited it, and the time, inspection, competitor and judge all
+ * match. The server itself only ever turns the penalty into a DNF (time
+ * limit), so a stored DNF still counts as the penalty the station sent.
+ */
+export const isSameAttemptResent = (
+  stored: Pick<
+    Attempt,
+    | 'status'
+    | 'updatedById'
+    | 'value'
+    | 'originalTime'
+    | 'inspectionTime'
+    | 'penalty'
+    | 'judgeId'
+  > & { result: Pick<Result, 'personId'> },
+  sent: {
+    value: number;
+    valueMs: number;
+    inspectionTime: number;
+    penalty: number;
+    competitorId: string;
+    judgeId: string | null;
+  },
+) =>
+  stored.status === AttemptStatus.STANDARD &&
+  stored.updatedById === null &&
+  stored.value === sent.value &&
+  stored.originalTime === sent.valueMs &&
+  stored.inspectionTime === sent.inspectionTime &&
+  (stored.penalty === sent.penalty || stored.penalty === DNF_VALUE) &&
+  stored.result.personId === sent.competitorId &&
+  stored.judgeId === sent.judgeId;
 
 export const checkAttemptLimit = (time: number, limit: number) => {
   return time < limit;

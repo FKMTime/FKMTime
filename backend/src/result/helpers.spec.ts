@@ -12,6 +12,7 @@ import {
   getNextExtraNumber,
   getRoundResultText,
   isRedoNotStarted,
+  isSameAttemptResent,
   sortByPosition,
 } from './helpers';
 
@@ -461,5 +462,63 @@ describe('getRoundResultText', () => {
 
   it('shows the best single when the cutoff stopped the average', () => {
     expect(getRoundResultText(times([1500], [1600]), 'a')).toBe('Best: 15.00');
+  });
+});
+
+describe('isSameAttemptResent', () => {
+  const stored = {
+    status: AttemptStatus.STANDARD,
+    updatedById: null,
+    value: 1234,
+    originalTime: 12345,
+    inspectionTime: 8000,
+    penalty: 0,
+    judgeId: 'judge-1',
+    result: { personId: 'competitor-1' },
+  };
+  const sent = {
+    value: 1234,
+    valueMs: 12345,
+    inspectionTime: 8000,
+    penalty: 0,
+    competitorId: 'competitor-1',
+    judgeId: 'judge-1',
+  };
+
+  it('is true for the attempt sent again unchanged', () => {
+    expect(isSameAttemptResent(stored, sent)).toBe(true);
+  });
+
+  it('is true when the server turned it into a DNF for the time limit', () => {
+    expect(isSameAttemptResent({ ...stored, penalty: DNF_VALUE }, sent)).toBe(
+      true,
+    );
+  });
+
+  it.each([
+    ['time', { value: 1235 }],
+    ['exact time', { valueMs: 12346 }],
+    ['inspection', { inspectionTime: 9000 }],
+    ['penalty', { penalty: 2 }],
+    ['competitor', { competitorId: 'competitor-2' }],
+    ['judge', { judgeId: 'judge-2' }],
+    ['missing judge', { judgeId: null }],
+  ])('is false for another %s', (_, change) => {
+    expect(isSameAttemptResent(stored, { ...sent, ...change })).toBe(false);
+  });
+
+  it('is false once someone edited it', () => {
+    expect(
+      isSameAttemptResent({ ...stored, updatedById: 'user-1' }, sent),
+    ).toBe(false);
+  });
+
+  it('is false for an attempt waiting for a delegate', () => {
+    expect(
+      isSameAttemptResent(
+        { ...stored, status: AttemptStatus.UNRESOLVED },
+        sent,
+      ),
+    ).toBe(false);
   });
 });

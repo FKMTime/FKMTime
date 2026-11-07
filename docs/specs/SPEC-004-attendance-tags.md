@@ -1,6 +1,6 @@
 # SPEC-004: Attendance tags — left early, replaced by, no-show for the day
 
-- **Status:** Accepted
+- **Status:** Implemented
 - **Created:** 2026-11-06
 - **Related:** #260 (the items still open there), #567 (WCIF sync removes
   assignments)

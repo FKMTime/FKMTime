@@ -7,19 +7,19 @@ import {
     RefreshCw,
     User,
 } from "lucide-react";
-import { useEffect, useState } from "react";
 
 import LoadingPage from "@/Components/LoadingPage";
+import { useLiveQuery } from "@/hooks/useLiveQuery";
+import { useSocketRoom } from "@/hooks/useSocketRoom";
 import { activityCodeToName } from "@/lib/activities";
 import { competitionAtom } from "@/lib/atoms";
-import { getCompetitionStatistics } from "@/lib/competition";
+import { competitionStatisticsQuery } from "@/lib/competition";
 import { getEventIconClass } from "@/lib/events";
 import {
     CompetitionStatistics as ICompetitionStatistics,
     RoundAttemptStatistics,
 } from "@/lib/interfaces";
 import { cn } from "@/lib/utils";
-import { socket } from "@/socket";
 
 import Charts from "./Charts";
 
@@ -52,20 +52,11 @@ const Bar = ({ value, max }: { value: number; max: number }) => (
 
 const CompetitionStatistics = () => {
     const competition = useAtomValue(competitionAtom);
-    const [statistics, setStatistics] = useState<ICompetitionStatistics | null>(
-        null
-    );
-
-    useEffect(() => {
-        const fetchData = () => getCompetitionStatistics().then(setStatistics);
-        fetchData();
-        socket.emit("joinStatistics");
-        socket.on("statisticsUpdated", fetchData);
-        return () => {
-            socket.off("statisticsUpdated", fetchData);
-            socket.emit("leaveStatistics");
-        };
-    }, []);
+    const { data } = useLiveQuery(competitionStatisticsQuery);
+    const statistics: ICompetitionStatistics | null = data ?? null;
+    useSocketRoom("Statistics", {
+        invalidateOn: { statisticsUpdated: [competitionStatisticsQuery.key] },
+    });
 
     if (!statistics) return <LoadingPage />;
 

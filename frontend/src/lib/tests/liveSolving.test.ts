@@ -1,4 +1,5 @@
 import {
+    formatLastSolveTime,
     getStationTimer,
     groupStationsByRoom,
     StationInfo,
@@ -19,6 +20,7 @@ const packet = (
     inspectionRunning: null,
     cumulativeLimitCentiseconds: null,
     cumulativeRemainingCentiseconds: null,
+    lastSolve: null,
     ...overrides,
 });
 
@@ -251,7 +253,26 @@ describe("groupStationsByRoom", () => {
     const station = (espId: number, roomId: string | null) =>
         packet({ espId, roomId, serverReceivedAt: 0 });
 
-    it("groups stations by their device's room, sorted by ESP ID", () => {
+    it("sorts stations by device name, numbers in numeric order", () => {
+        const named = (espId: number, deviceName: string) =>
+            packet({ espId, deviceName, roomId: "main", serverReceivedAt: 0 });
+        const groups = groupStationsByRoom(
+            [
+                named(1, "Station 10"),
+                named(2, "Station 2"),
+                named(3, "Judge A"),
+            ],
+            rooms
+        );
+
+        expect(groups[0].stations.map((s) => s.deviceName)).toEqual([
+            "Judge A",
+            "Station 2",
+            "Station 10",
+        ]);
+    });
+
+    it("groups stations by their device's room, by ESP ID for equal names", () => {
         const groups = groupStationsByRoom(
             [station(3, "main"), station(1, "main"), station(2, "side")],
             rooms
@@ -274,5 +295,23 @@ describe("groupStationsByRoom", () => {
             "Other stations",
         ]);
         expect(groups[1].stations.map((s) => s.espId)).toEqual([5, 9]);
+    });
+});
+
+describe("formatLastSolveTime", () => {
+    const solve = (value: number, penalty: number) => ({
+        personName: "Jane Doe",
+        value,
+        penalty,
+        enteredAt: 0,
+    });
+
+    it("shows the time with any penalty added", () => {
+        expect(formatLastSolveTime(solve(1234, 0))).toBe("12.34");
+        expect(formatLastSolveTime(solve(1234, 2))).toBe("14.34");
+    });
+
+    it("shows a DNF instead of the time", () => {
+        expect(formatLastSolveTime(solve(1234, -1))).toBe("DNF");
     });
 });

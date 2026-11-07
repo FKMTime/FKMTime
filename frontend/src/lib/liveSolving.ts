@@ -1,3 +1,16 @@
+import { DNF_VALUE, DNS_VALUE } from "@/lib/constants";
+import { resultToString } from "@/lib/resultFormatters";
+
+/** The last attempt a station entered, kept to show after it resets */
+export interface LastSolve {
+    personName: string;
+    // Centiseconds, before the penalty
+    value: number;
+    // Seconds added, as stored on attempts; -1 for DNF
+    penalty: number;
+    enteredAt: number;
+}
+
 export interface StationInfo {
     espId: number;
     deviceName: string;
@@ -16,7 +29,15 @@ export interface StationInfo {
     cumulativeLimitCentiseconds: number | null;
     cumulativeRemainingCentiseconds: number | null;
     serverReceivedAt: number;
+    lastSolve: LastSolve | null;
 }
+
+/** "12.34", "14.34" for a +2, "DNF" */
+export const formatLastSolveTime = ({ value, penalty }: LastSolve) => {
+    if (penalty === DNF_VALUE) return "DNF";
+    if (penalty === DNS_VALUE) return "DNS";
+    return resultToString(value + Math.max(0, penalty) * 100);
+};
 
 export type StationPhase =
     | "offline"
@@ -118,16 +139,21 @@ const toRoundIds = (groupIds: string[]) => [
     ...new Set(groupIds.map((groupId) => groupId.split("-g")[0])),
 ];
 
+// "Station 2" before "Station 10"
+const byDeviceName = (a: StationInfo, b: StationInfo) =>
+    a.deviceName.localeCompare(b.deviceName, undefined, { numeric: true }) ||
+    a.espId - b.espId;
+
 /**
  * Stations grouped by the room their device belongs to, in room order and by
- * ESP ID within a room. Stations without a known room (a device deleted since
+ * device name within a room. Stations without a known room (a device deleted since
  * its last packet) go last, under "Other stations".
  */
 export const groupStationsByRoom = (
     stations: StationInfo[],
     rooms: StationRoom[]
 ): StationRoomGroup[] => {
-    const sorted = [...stations].sort((a, b) => a.espId - b.espId);
+    const sorted = [...stations].sort(byDeviceName);
     const roomIds = new Set(rooms.map((room) => room.id));
     const groups: StationRoomGroup[] = rooms.map((room) => ({
         id: room.id,

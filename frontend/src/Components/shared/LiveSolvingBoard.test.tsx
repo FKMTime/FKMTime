@@ -26,6 +26,7 @@ const station = (espId: number, roomId: string | null): StationInfo => ({
     cumulativeRemainingCentiseconds: null,
     // Never heard from, so offline
     serverReceivedAt: 0,
+    lastSolve: null,
 });
 
 const stations = [station(1, "main"), station(2, "side"), station(3, "side")];
@@ -66,5 +67,27 @@ describe("LiveSolvingBoard", () => {
         await userEvent.click(screen.getByRole("radio", { name: "Main Room" }));
         expect(screen.queryByRole("region", { name: "Side Room" })).toBeNull();
         expect(screen.getByText("Station 1")).toBeTruthy();
+    });
+
+    it("shows each station's last entered solve", () => {
+        render(
+            <LiveSolvingBoard
+                stations={[
+                    {
+                        ...station(1, "main"),
+                        lastSolve: {
+                            personName: "Ada Example",
+                            value: 1234,
+                            penalty: 2,
+                            enteredAt: 0,
+                        },
+                    },
+                ]}
+                rooms={rooms}
+            />
+        );
+        const card = screen.getByRole("article", { name: /Station 1/ });
+        expect(within(card).getByText("Ada Example")).toBeTruthy();
+        expect(within(card).getByText("14.34")).toBeTruthy();
     });
 });

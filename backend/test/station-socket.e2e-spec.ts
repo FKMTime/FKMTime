@@ -538,10 +538,62 @@ describe('Station socket protocol (e2e)', () => {
         expect(res).toEqual(
           errorResponse(
             getTranslation('attemptAlreadyEntered', defaultLocale),
-            400,
+            409,
           ),
         );
         expect(await attemptsOf(c1.id, '333-r1')).toHaveLength(1);
+      });
+
+      it('lets the station drop an attempt it sends again unchanged', async () => {
+        const res = await station.request(
+          'EnterAttempt',
+          attempt({ competitorId: CARD.c1, sessionId }),
+        );
+
+        expect(res.data).toMatchObject({ status: 409, shouldResetTime: true });
+      });
+
+      it.each([
+        ['another time', { value: 1235 }],
+        ['another judge', { judgeId: CARD.foreignJudge }],
+      ])(
+        'keeps the attempt on the station when it differs: %s',
+        async (_, change) => {
+          const res = await station.request(
+            'EnterAttempt',
+            attempt({ competitorId: CARD.c1, sessionId, ...change }),
+          );
+
+          expect(res.data).toMatchObject({
+            status: 409,
+            shouldResetTime: false,
+          });
+        },
+      );
+
+      it('keeps the attempt on the station once someone edited it', async () => {
+        const [entered] = await attemptsOf(c1.id, '333-r1');
+        const user = await db.user.findFirst();
+        await db.attempt.update({
+          where: { id: entered.id },
+          data: { updatedById: user.id },
+        });
+        try {
+          const res = await station.request(
+            'EnterAttempt',
+            attempt({ competitorId: CARD.c1, sessionId }),
+          );
+
+          expect(res.data).toMatchObject({
+            status: 409,
+            shouldResetTime: false,
+          });
+        } finally {
+          await db.attempt.update({
+            where: { id: entered.id },
+            data: { updatedById: null },
+          });
+        }
       });
 
       it('answers in the competition language before the judge card is checked', async () => {
