@@ -44,7 +44,7 @@
     "class-validator": "^0.15.1",
     "crypto": "^1.0.1",
     "crypto-js": "^4.2.0",
-    "dotenv": "^16.3.1",
+    "dotenv": "^18.0.9",
     "js-sha512": "^0.9.0",
     "passport": "^0.7.0",
     "passport-jwt": "^4.0.1",
