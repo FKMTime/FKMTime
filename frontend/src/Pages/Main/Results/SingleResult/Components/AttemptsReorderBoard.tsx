@@ -201,7 +201,7 @@ interface Arrow {
 interface ArrowLayerProps {
     arrows: Arrow[];
     cardNodes: React.MutableRefObject<Map<string, HTMLDivElement>>;
-    containerRef: React.RefObject<HTMLDivElement>;
+    containerRef: React.RefObject<HTMLDivElement | null>;
 }
 
 const ArrowLayer = ({ arrows, cardNodes, containerRef }: ArrowLayerProps) => {
