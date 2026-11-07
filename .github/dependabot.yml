@@ -27,6 +27,11 @@ updates:
       - dependency-name: typescript
         update-types:
           - version-update:semver-major
+      # @types/node follows the Node major the backend runs on (node:24 in the
+      # Dockerfile). Bump it together with the image.
+      - dependency-name: "@types/node"
+        update-types:
+          - version-update:semver-major
   - package-ecosystem: github-actions
     directory: "/"
     schedule:
