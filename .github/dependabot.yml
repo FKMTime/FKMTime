@@ -7,6 +7,14 @@ updates:
       day: monday
       time: "06:00"
       timezone: Europe/Warsaw
+    groups:
+      # react-dom requires the react version it ships with, so they move together
+      react:
+        patterns:
+          - react
+          - react-dom
+          - "@types/react"
+          - "@types/react-dom"
   - package-ecosystem: npm
     directory: "/backend"
     schedule:

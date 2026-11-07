@@ -25,7 +25,7 @@ interface StationCardProps {
 
 const PHASES: Record<
     StationPhase,
-    { label: string; tone: StatusTone; icon?: JSX.Element }
+    { label: string; tone: StatusTone; icon?: React.JSX.Element }
 > = {
     idle: { label: "Waiting", tone: "neutral" },
     inspection: { label: "Inspection", tone: "warning" },

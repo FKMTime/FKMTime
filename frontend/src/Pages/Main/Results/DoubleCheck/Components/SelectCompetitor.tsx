@@ -8,7 +8,7 @@ interface CheckedResult {
 }
 
 interface SelectCompetitorProps {
-    idInputRef: React.RefObject<HTMLInputElement>;
+    idInputRef: React.RefObject<HTMLInputElement | null>;
     handleSubmit: () => void;
     resultsToDoubleCheck: ResultToDoubleCheck[];
     checkedResults: CheckedResult[];
