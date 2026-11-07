@@ -1,12 +1,13 @@
 import { useAtomValue } from "jotai";
 import { CircleCheck } from "lucide-react";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { getNumberOfAttemptsForRound } from "wcif-helpers";
 
 import LoadingPage from "@/Components/LoadingPage";
 import EmptyState from "@/Components/shared/EmptyState";
 import InlineError from "@/Components/shared/InlineError";
+import { useLiveQuery } from "@/hooks/useLiveQuery";
 import { competitionAtom } from "@/lib/atoms";
 import {
     AttemptStatus,
@@ -15,7 +16,7 @@ import {
     Person,
     Result,
 } from "@/lib/interfaces";
-import { getAllPersons } from "@/lib/persons";
+import { allPersonsQuery } from "@/lib/persons";
 import { enterScorecard, getResultByRoundIdAndPersonId } from "@/lib/results";
 import { getSubmittedAttempts } from "@/lib/utils";
 
@@ -28,7 +29,8 @@ const EnterScorecard = () => {
     const { id } = useParams<{ id: string }>();
     const [result, setResult] = useState<Result | null>(null);
     const [attempts, setAttempts] = useState<AttemptToEnterWithScorecard[]>([]);
-    const [persons, setPersons] = useState<Person[]>([]);
+    const { data: personsData } = useLiveQuery(allPersonsQuery);
+    const persons: Person[] = personsData ?? [];
     const [inputValue, setInputValue] = useState<string>("");
     const [isSaving, setIsSaving] = useState(false);
     const [saveError, setSaveError] = useState("");
@@ -47,10 +49,6 @@ const EnterScorecard = () => {
                 : 5,
         [id, competition]
     );
-
-    useEffect(() => {
-        getAllPersons().then(setPersons);
-    }, []);
 
     const handleSelectPerson = useCallback(
         async (person: Person | null) => {

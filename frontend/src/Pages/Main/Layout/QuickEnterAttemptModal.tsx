@@ -4,7 +4,6 @@ import {
     FormEvent,
     KeyboardEvent,
     useCallback,
-    useEffect,
     useMemo,
     useRef,
     useState,
@@ -21,6 +20,7 @@ import {
     DialogTitle,
 } from "@/Components/ui/dialog";
 import { Input } from "@/Components/ui/input";
+import { useLiveQuery } from "@/hooks/useLiveQuery";
 import { useToast } from "@/hooks/useToast";
 import { activityCodeToName } from "@/lib/activities";
 import { competitionAtom } from "@/lib/atoms";
@@ -28,7 +28,7 @@ import { createAttempt } from "@/lib/attempt";
 import { DNF_VALUE, DNS_VALUE } from "@/lib/constants";
 import { getEventIconClass } from "@/lib/events";
 import { Attempt, AttemptStatus, Person, Result } from "@/lib/interfaces";
-import { getAllPersons } from "@/lib/persons";
+import { allPersonsQuery } from "@/lib/persons";
 import {
     getAttemptOptions,
     getNextAttemptValue,
@@ -38,7 +38,7 @@ import {
     parseQuickTime,
 } from "@/lib/quickEntry";
 import { reformatInput, resultToString } from "@/lib/resultFormatters";
-import { getResultsByRoundId } from "@/lib/results";
+import { roundResultsQuery } from "@/lib/results";
 import { cn, getSubmissionPlatformName } from "@/lib/utils";
 
 export interface QuickEntryRound {
@@ -78,7 +78,10 @@ const QuickEnterAttemptModal = ({
     const { toast } = useToast();
     const competition = useAtomValue(competitionAtom);
     const timeInputRef = useRef<HTMLInputElement>(null);
-    const [persons, setPersons] = useState<Person[]>([]);
+    const { data: personsData } = useLiveQuery(allPersonsQuery, {
+        enabled: isOpen,
+    });
+    const persons: Person[] = personsData ?? [];
     const [selectedRoundId, setSelectedRoundId] = useState<string>();
     const [query, setQuery] = useState("");
     const [highlighted, setHighlighted] = useState(0);
@@ -97,27 +100,21 @@ const QuickEnterAttemptModal = ({
     const eventId = roundId?.split("-r")[0] ?? "";
     const wcif = competition?.wcif;
 
-    useEffect(() => {
-        if (isOpen) getAllPersons().then(setPersons);
-    }, [isOpen]);
-
     // Existing attempts per competitor, to preselect their next attempt
-    const [roundAttempts, setRoundAttempts] = useState<Map<string, Attempt[]>>(
-        new Map()
+    const { data: roundResults } = useLiveQuery(
+        roundResultsQuery(roundId ?? ""),
+        { enabled: isOpen && !!roundId }
     );
-    useEffect(() => {
-        if (!isOpen || !roundId) return;
-        let isCancelled = false;
-        getResultsByRoundId(roundId).then((results: Result[]) => {
-            if (isCancelled) return;
-            setRoundAttempts(
-                new Map(results.map((r) => [r.person.id, r.attempts]))
-            );
-        });
-        return () => {
-            isCancelled = true;
-        };
-    }, [isOpen, roundId]);
+    const roundAttempts = useMemo(
+        () =>
+            new Map<string, Attempt[]>(
+                (roundResults ?? []).map((r: Result) => [
+                    r.person.id,
+                    r.attempts,
+                ])
+            ),
+        [roundResults]
+    );
 
     const optionsFor = useCallback(
         (personId?: string) =>

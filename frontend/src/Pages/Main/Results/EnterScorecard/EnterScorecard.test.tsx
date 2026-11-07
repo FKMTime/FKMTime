@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { createStore, Provider } from "jotai";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
@@ -6,7 +6,9 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { competitionAtom } from "@/lib/atoms";
 import { Competition, Person } from "@/lib/interfaces";
+import { clearQueryCache } from "@/lib/queryCache";
 import { enterScorecard, getResultByRoundIdAndPersonId } from "@/lib/results";
+import { renderWithQueryClient } from "@/test/queryClient";
 
 import EnterScorecard from "./EnterScorecard";
 
@@ -14,9 +16,18 @@ const persons = [
     { id: "p3", registrantId: 3, name: "Casey Tester" },
 ] as Person[];
 
-vi.mock("@/lib/persons", () => ({
-    getAllPersons: vi.fn(() => Promise.resolve(persons)),
-}));
+vi.mock("@/lib/persons", () => {
+    const mocks = {
+        getAllPersons: vi.fn(() => Promise.resolve(persons)),
+    };
+    return {
+        ...mocks,
+        allPersonsQuery: {
+            key: "person/all?",
+            fetch: () => mocks.getAllPersons(),
+        },
+    };
+});
 vi.mock("@/lib/results", () => ({
     getResultByRoundIdAndPersonId: vi.fn(),
     enterScorecard: vi.fn(),
@@ -60,7 +71,7 @@ const typeId = async (value: string) => {
 const renderPage = () => {
     const store = createStore();
     store.set(competitionAtom, competition);
-    render(
+    renderWithQueryClient(
         <Provider store={store}>
             <MemoryRouter
                 initialEntries={["/results/round/333-r1/enter-scorecard"]}
@@ -75,6 +86,8 @@ const renderPage = () => {
         </Provider>
     );
 };
+
+beforeEach(() => clearQueryCache());
 
 describe("EnterScorecard", () => {
     beforeEach(() => {

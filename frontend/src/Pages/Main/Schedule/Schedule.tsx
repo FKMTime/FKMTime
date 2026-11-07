@@ -1,6 +1,6 @@
 import { useAtomValue } from "jotai";
 import { CalendarDays } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { Competition as WCIF } from "wcif-helpers";
 
@@ -11,9 +11,10 @@ import SectionLoading from "@/Components/shared/SectionLoading";
 import SegmentedControl from "@/Components/shared/SegmentedControl";
 import { StatusBadge } from "@/Components/shared/StatusBadge";
 import { Button } from "@/Components/ui/button";
+import { useLiveQuery } from "@/hooks/useLiveQuery";
 import { getActivityName } from "@/lib/activities";
 import { competitionAtom } from "@/lib/atoms";
-import { getRoomActivities } from "@/lib/competition";
+import { roomActivitiesQuery } from "@/lib/competition";
 import { getEventIconClass } from "@/lib/events";
 import { Activity } from "@/lib/interfaces";
 import {
@@ -125,27 +126,25 @@ const Schedule = () => {
             : getDefaultCompetitionDay(days);
 
     const requestKey = room && day ? `${room.key}|${day}` : undefined;
-    const [loaded, setLoaded] = useState<Loaded>();
-
-    useEffect(() => {
-        if (!room || !day || !requestKey) return;
-        let cancelled = false;
-        getRoomActivities(
-            room.venueId,
-            room.roomId,
-            competitionDayToQueryDate(day)
-        )
-            .then((activities) => {
-                if (!cancelled) setLoaded({ key: requestKey, activities });
-            })
-            .catch((error: Error) => {
-                if (!cancelled)
-                    setLoaded({ key: requestKey, error: error.message });
-            });
-        return () => {
-            cancelled = true;
-        };
-    }, [room, day, requestKey]);
+    const activitiesQuery =
+        room && day
+            ? roomActivitiesQuery(
+                  room.venueId,
+                  room.roomId,
+                  competitionDayToQueryDate(day)
+              )
+            : null;
+    const activitiesResult = useLiveQuery(
+        activitiesQuery ?? { key: "", fetch: () => Promise.resolve([]) },
+        { enabled: !!activitiesQuery }
+    );
+    const loaded: Loaded | undefined = !requestKey
+        ? undefined
+        : activitiesResult.data
+          ? { key: requestKey, activities: activitiesResult.data }
+          : activitiesResult.error
+            ? { key: requestKey, error: activitiesResult.error.message }
+            : undefined;
 
     if (!competition || !wcif) return <LoadingPage />;
 

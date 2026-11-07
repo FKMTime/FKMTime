@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { createStore, Provider } from "jotai";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -12,15 +12,30 @@ import {
     Competition,
     SendingResultsFrequency,
 } from "@/lib/interfaces";
+import { clearQueryCache } from "@/lib/queryCache";
+import { renderWithQueryClient } from "@/test/queryClient";
 
 import GiveExtrasModal from "./GiveExtrasModal";
 
-vi.mock("@/lib/attempt", () => ({
-    getExtrasContext: vi.fn(),
-    giveExtras: vi.fn(),
+vi.mock("@/lib/attempt", () => {
+    const mocks = {
+        getExtrasContext: vi.fn(),
+        giveExtras: vi.fn(),
+    };
+    return {
+        ...mocks,
+        extrasContextQuery: (id: string) => ({
+            key: `attempt/give-extras-for-all/${id}`,
+            fetch: () => mocks.getExtrasContext(id),
+        }),
+    };
+});
+vi.mock("@/Components/QuickActions", () => ({
+    default: () => null,
 }));
-vi.mock("@/Components/QuickActions", () => ({ default: () => null }));
-vi.mock("@/hooks/useToast", () => ({ useToast: () => ({ toast: vi.fn() }) }));
+vi.mock("@/hooks/useToast", () => ({
+    useToast: () => ({ toast: vi.fn() }),
+}));
 
 const attempt = (id: string, attemptNumber: number) =>
     ({
@@ -53,7 +68,7 @@ const renderModal = ({
         },
     } as unknown as Competition);
     const onDone = vi.fn();
-    render(
+    renderWithQueryClient(
         <Provider store={store}>
             <GiveExtrasModal
                 isOpen
@@ -69,6 +84,8 @@ const renderModal = ({
     );
     return onDone;
 };
+
+beforeEach(() => clearQueryCache());
 
 describe("GiveExtrasModal", () => {
     beforeEach(() => {

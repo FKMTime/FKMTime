@@ -238,6 +238,23 @@ export const getRoomActivities = async (
     return await response.json();
 };
 
+const roomActivitiesQueries = new Map<string, Query<Activity[]>>();
+
+/** A room's schedule for one day; one stable query per room and day */
+export const roomActivitiesQuery = (
+    venueId: number,
+    roomId: number,
+    date: Date
+) => {
+    const key = `competition/activities?venueId=${venueId}&roomId=${roomId}&date=${date.toISOString()}`;
+    const query = roomActivitiesQueries.get(key) ?? {
+        key,
+        fetch: () => getRoomActivities(venueId, roomId, date),
+    };
+    roomActivitiesQueries.set(key, query);
+    return query;
+};
+
 const groupIdsQuery = (groupIds?: string[]) =>
     groupIds ? `?groupIds=${groupIds.join(",")}` : "";
 

@@ -1,5 +1,3 @@
-import { useEffect, useState } from "react";
-
 import { Modal } from "@/Components/Modal";
 import {
     Table,
@@ -9,9 +7,10 @@ import {
     TableHeader,
     TableRow,
 } from "@/Components/ui/table";
+import { useLiveQuery } from "@/hooks/useLiveQuery";
 import { activityCodeToName, prettyActivityName } from "@/lib/activities";
 import {
-    getStaffActivitiesByPersonId,
+    personStaffActivitiesQuery,
     prettyStaffActivityStatus,
 } from "@/lib/attendance";
 import { Person, StaffActivity } from "@/lib/interfaces";
@@ -27,15 +26,10 @@ const DisplayGroupsModal = ({
     onClose,
     person,
 }: DisplayGroupsModalProps) => {
-    const [staffActivity, setStaffActivity] = useState<StaffActivity[]>([]);
-
-    useEffect(() => {
-        if (person.registrantId && isOpen) {
-            getStaffActivitiesByPersonId(person.id).then((data) => {
-                setStaffActivity(data);
-            });
-        }
-    }, [isOpen, person.id, person.registrantId]);
+    const { data } = useLiveQuery(personStaffActivitiesQuery(person.id), {
+        enabled: !!person.registrantId && isOpen,
+    });
+    const staffActivity: StaffActivity[] = data ?? [];
 
     return (
         <Modal isOpen={isOpen} onClose={onClose} title="Groups">
