@@ -63,6 +63,12 @@ export default defineConfig({
             "@": path.resolve(__dirname, "./src"),
         },
     },
+    build: {
+        // flag-icons has hundreds of small SVGs: keep them as files the browser
+        // loads per flag shown, instead of inlining them all into the CSS
+        assetsInlineLimit: (file) =>
+            file.includes("flag-icons") ? false : undefined,
+    },
     test: {
         globals: true,
         environment: "jsdom",

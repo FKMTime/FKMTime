@@ -215,6 +215,14 @@
     {
       "key": "exit",
       "translation": "Wyjdz"
+    },
+    {
+      "key": "resetAttemptHeader",
+      "translation": "Skasowac czas?"
+    },
+    {
+      "key": "resetAttemptFooter",
+      "translation": "Submit = tak"
     }
   ]
 }
