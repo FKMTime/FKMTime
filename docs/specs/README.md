@@ -50,4 +50,4 @@ Update `Status` as the spec moves:
 | [SPEC-002](SPEC-002-extras-for-all-attempts.md) | Extras for all attempts so far | Implemented |
 | [SPEC-003](SPEC-003-frontend-data-fetching.md) | Shared data fetching in the frontend | Implemented |
 | [SPEC-004](SPEC-004-attendance-tags.md) | Attendance tags: left early, replaced by, no-show for the day | Implemented |
-| [SPEC-005](SPEC-005-later-rounds-after-dnf-ruling.md) | Removing later-round results after a DNF ruling | Draft |
+| [SPEC-005](SPEC-005-later-rounds-after-dnf-ruling.md) | Removing later-round results after a DNF ruling | Accepted |

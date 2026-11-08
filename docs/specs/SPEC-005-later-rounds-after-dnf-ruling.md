@@ -1,6 +1,6 @@
 # SPEC-005: Removing later-round results after a DNF ruling
 
-- **Status:** Draft
+- **Status:** Accepted
 - **Created:** 2026-11-08
 - **Related:** #514 and PR #630 (DNF all attempts, built on), WCA Regulations
   9t, 9t++, 9t3, 9p4, 2j1a, 3k2
