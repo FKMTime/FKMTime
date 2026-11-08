@@ -437,16 +437,36 @@ describe('AttemptService extras for all attempts', () => {
     const dnf = (attemptIds: string[]) =>
       service.dnfAttempts({ attemptIds, comment: 'Illegal cube' }, 'user-1');
 
+    /** Every snapshot the service logged for an attempt, as the edit history holds them */
+    const editLogs = (id: string) =>
+      ((service as any).attemptEditLogService.log as jest.Mock).mock.calls
+        .filter(([snapshot]) => snapshot.id === id)
+        .map(([snapshot, editedAt, , comment]) => ({
+          comment,
+          penalty: snapshot.penalty,
+          editedAt,
+        }));
+    const entered = (attempt: Attempt) =>
+      (service as any).attemptEditLogService.log(
+        { ...attempt },
+        new Date(Date.now() - 60_000),
+        null,
+        'Entered',
+      );
+
     beforeEach(() => {
       prisma.attempt.findMany = jest
         .fn()
         .mockImplementation(async ({ where }) =>
           where.id
             ? attempts.filter((a) => where.id.in.includes(a.id))
-            : attempts.filter((a) => a.penaltyBeforeDnf != null),
+            : attempts
+                .filter((a) => a.penalty === where.penalty)
+                .map((a) => ({ ...a, editLogs: editLogs(a.id) })),
         );
       attempts.forEach((a) => (a.resultId = 'result-1'));
       attempts[1].penalty = 2;
+      attempts.forEach(entered);
     });
 
     it('keeps the times and sets the penalty to DNF', async () => {
@@ -454,7 +474,6 @@ describe('AttemptService extras for all attempts', () => {
 
       expect(attempts.map((a) => a.penalty)).toEqual([-1, -1]);
       expect(attempts.map((a) => a.value)).toEqual([1500, 1500]);
-      expect(attempts.map((a) => a.penaltyBeforeDnf)).toEqual([0, 2]);
       expect(attempts.every((a) => a.comment === 'Illegal cube')).toBe(true);
     });
 
@@ -517,10 +536,28 @@ describe('AttemptService extras for all attempts', () => {
       ).resolves.toEqual({ restored: 2 });
 
       expect(attempts.map((a) => a.penalty)).toEqual([0, 2]);
-      expect(attempts.map((a) => a.penaltyBeforeDnf)).toEqual([null, null]);
       expect(
         resultService.enterWholeScorecardToWcaLiveOrCubingContests,
       ).toHaveBeenCalledWith('result-1');
+    });
+
+    it('lists the ruled attempts with their penalty before', async () => {
+      await dnf(['s2']);
+
+      await expect(service.getDnfRuling('result-1')).resolves.toEqual([
+        { id: 's2', penaltyBeforeDnf: 2 },
+      ]);
+    });
+
+    it('can be ruled again after a restore', async () => {
+      await dnf(['s1', 's2']);
+      await service.restoreDnfAttempts('result-1', 'user-1');
+
+      await expect(service.getDnfRuling('result-1')).resolves.toEqual([]);
+      await dnf(['s2']);
+      await service.restoreDnfAttempts('result-1', 'user-1');
+
+      expect(attempts.map((a) => a.penalty)).toEqual([0, 2]);
     });
 
     it('has nothing to restore without a ruling', async () => {

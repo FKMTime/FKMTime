@@ -3,7 +3,7 @@ import { Undo2 } from "lucide-react";
 import { Button } from "@/Components/ui/button";
 import { useConfirm } from "@/hooks/useConfirm";
 import { useToast } from "@/hooks/useToast";
-import { restoreDnfAttempts } from "@/lib/attempt";
+import { restoreDnfAttempts, RuledDnfAttempt } from "@/lib/attempt";
 import { Attempt, AttemptType } from "@/lib/interfaces";
 import { attemptWithPenaltyToString } from "@/lib/resultFormatters";
 
@@ -14,8 +14,9 @@ const attemptLabel = (attempt: Attempt) =>
 
 interface DnfRulingCardProps {
     resultId: string;
-    /** Attempts a delegate ruled DNF, still holding their own penalty */
     attempts: Attempt[];
+    /** Attempts a delegate ruled DNF, with the penalty each had before */
+    ruled: RuledDnfAttempt[];
     onRestored: () => void;
 }
 
@@ -23,6 +24,7 @@ interface DnfRulingCardProps {
 const DnfRulingCard = ({
     resultId,
     attempts,
+    ruled,
     onRestored,
 }: DnfRulingCardProps) => {
     const confirm = useConfirm();
@@ -52,11 +54,16 @@ const DnfRulingCard = ({
             },
         }).catch(() => undefined);
 
-    const sorted = [...attempts].sort(
-        (a, b) =>
-            a.type.localeCompare(b.type) * -1 ||
-            a.attemptNumber - b.attemptNumber
+    const penaltyBefore = new Map(
+        ruled.map((attempt) => [attempt.id, attempt.penaltyBeforeDnf])
     );
+    const sorted = attempts
+        .filter((attempt) => penaltyBefore.has(attempt.id))
+        .sort(
+            (a, b) =>
+                a.type.localeCompare(b.type) * -1 ||
+                a.attemptNumber - b.attemptNumber
+        );
 
     return (
         <section
@@ -83,7 +90,7 @@ const DnfRulingCard = ({
                         <span>
                             {attemptWithPenaltyToString({
                                 ...attempt,
-                                penalty: attempt.penaltyBeforeDnf ?? 0,
+                                penalty: penaltyBefore.get(attempt.id) ?? 0,
                             })}
                         </span>
                     </div>

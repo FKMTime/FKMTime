@@ -134,6 +134,11 @@ export class AttemptController {
     );
   }
 
+  @Get('dnf/:resultId')
+  async getDnfRuling(@Param('resultId') resultId: string) {
+    return await this.attemptService.getDnfRuling(resultId);
+  }
+
   @Get('give-extras-for-all/:resultId')
   async getExtrasContext(@Param('resultId') resultId: string) {
     return await this.attemptService.getExtrasContext(resultId);

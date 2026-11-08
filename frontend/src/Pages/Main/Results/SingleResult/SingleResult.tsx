@@ -16,6 +16,7 @@ import { usePageHeader } from "@/hooks/usePageHeader";
 import { useToast } from "@/hooks/useToast";
 import { competitionAtom } from "@/lib/atoms";
 import {
+    dnfRulingQuery,
     ExtrasContext,
     extrasContextQuery,
     updateAttempt,
@@ -64,6 +65,9 @@ const SingleResult = () => {
         { enabled: !!id }
     );
     const extrasContext: ExtrasContext | null = extrasContextData ?? null;
+    const { data: ruledDnf = [] } = useLiveQuery(dnfRulingQuery(resultId), {
+        enabled: !!id,
+    });
     const [isOpenCreateAttemptModal, setIsOpenCreateAttemptModal] =
         useState<boolean>(false);
     const [isOpenSwapAttemptsModal, setIsOpenSwapAttemptsModal] =
@@ -131,6 +135,9 @@ const SingleResult = () => {
             queryClient.invalidateQueries({
                 queryKey: toQueryOptions(extrasContextQuery(resultId)).queryKey,
             }),
+            queryClient.invalidateQueries({
+                queryKey: toQueryOptions(dnfRulingQuery(resultId)).queryKey,
+            }),
         ]);
 
     const handleCloseModal = () => {
@@ -164,9 +171,6 @@ const SingleResult = () => {
     const canGiveExtras = submittedAttempts.length > 0 && !isHeadToHead;
     const canDnfAll =
         getAttemptsToDnf(result.attempts).length > 0 && !isHeadToHead;
-    const ruledDnf = result.attempts.filter(
-        (attempt) => attempt.penaltyBeforeDnf != null
-    );
     const openIncidents = result.attempts.filter(
         (attempt) => attempt.status === AttemptStatus.UNRESOLVED
     );
@@ -272,7 +276,8 @@ const SingleResult = () => {
             {ruledDnf.length > 0 && (
                 <DnfRulingCard
                     resultId={result.id}
-                    attempts={ruledDnf}
+                    attempts={result.attempts}
+                    ruled={ruledDnf}
                     onRestored={fetchData}
                 />
             )}

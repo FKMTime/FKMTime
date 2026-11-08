@@ -166,6 +166,16 @@ export const reapplyExtraGrant = async (
     return { status: response.status, message };
 };
 
+export interface RuledDnfAttempt {
+    id: string;
+    penaltyBeforeDnf: number | null;
+}
+
+/** Attempts of a result under a DNF ruling, with the penalty each had before */
+export const dnfRulingQuery = queryFamily((resultId) =>
+    backendQuery<RuledDnfAttempt[]>(`attempt/dnf/${resultId}`)
+);
+
 /** Rule attempts DNF, keeping their times */
 export const dnfAttempts = async (data: {
     attemptIds: string[];

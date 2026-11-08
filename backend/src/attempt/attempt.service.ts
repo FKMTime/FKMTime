@@ -26,6 +26,11 @@ import { getRoundInfoFromWcif } from 'wcif-helpers';
 import { DbService } from '../db/db.service';
 import { ResultService } from '../result/result.service';
 import { SocketController } from '../socket/socket.controller';
+import {
+  DNF_RULING_UNDONE,
+  getPenaltyBeforeRuling,
+  RULED_DNF,
+} from './dnfRuling';
 import { CreateAttemptDto } from './dto/createAttempt.dto';
 import { DnfAttemptsDto } from './dto/dnfAttempts.dto';
 import { EnterScorecardDto } from './dto/enterScorecard.dto';
@@ -516,7 +521,6 @@ export class AttemptService {
             where: { id: attempt.id },
             data: {
               penalty: DNF_VALUE,
-              penaltyBeforeDnf: attempt.penalty,
               comment: data.comment,
               updatedBy: { connect: { id: userId } },
             },
@@ -524,7 +528,7 @@ export class AttemptService {
         ),
       );
     });
-    await this.logAll(updated, userId, 'Ruled DNF');
+    await this.logAll(updated, userId, RULED_DNF);
 
     for (const resultId of resultIds) {
       await this.sendScorecardUnlessNever(resultId, competition);
@@ -533,12 +537,26 @@ export class AttemptService {
     return { updated: updated.length };
   }
 
+  /** Attempts of a result under a DNF ruling, with the penalty each had before */
+  async getDnfRuling(resultId: string) {
+    const attempts = await this.prisma.attempt.findMany({
+      where: { resultId, penalty: DNF_VALUE },
+      include: {
+        editLogs: { select: { comment: true, penalty: true, editedAt: true } },
+      },
+    });
+    return attempts.flatMap((attempt) => {
+      const before = getPenaltyBeforeRuling(attempt.penalty, attempt.editLogs);
+      return before
+        ? [{ id: attempt.id, penaltyBeforeDnf: before.penalty }]
+        : [];
+    });
+  }
+
   /** Undo a DNF ruling: the attempts get their own penalty back */
   async restoreDnfAttempts(resultId: string, userId: string) {
     await this.getResultForExtras(resultId);
-    const ruled = await this.prisma.attempt.findMany({
-      where: { resultId, penaltyBeforeDnf: { not: null } },
-    });
+    const ruled = await this.getDnfRuling(resultId);
     if (!ruled.length) {
       throw new HttpException('No attempts were ruled DNF', 400);
     }
@@ -554,14 +572,13 @@ export class AttemptService {
             where: { id: attempt.id },
             data: {
               penalty: attempt.penaltyBeforeDnf,
-              penaltyBeforeDnf: null,
               updatedBy: { connect: { id: userId } },
             },
           }),
         ),
       );
     });
-    await this.logAll(restored, userId, 'DNF ruling undone');
+    await this.logAll(restored, userId, DNF_RULING_UNDONE);
 
     const competition = await this.prisma.competition.findFirst();
     await this.sendScorecardUnlessNever(resultId, competition);
@@ -750,10 +767,6 @@ export class AttemptService {
       attemptNumber: data.attemptNumber,
       replacedBy: data.replacedBy,
       penalty: data.penalty,
-      // A penalty set by hand replaces any DNF ruling on this attempt
-      ...(data.penalty !== attemptToUpdate.penalty && {
-        penaltyBeforeDnf: null,
-      }),
       status: data.status,
       type: data.type,
       value: data.value,
