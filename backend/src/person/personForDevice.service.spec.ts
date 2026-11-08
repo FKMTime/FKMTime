@@ -16,7 +16,6 @@ describe('PersonForDeviceService finished rounds', () => {
             format: 'a',
             cutoff: {
               numberOfAttempts: 2,
-              attemptResult: 1200,
               resultValue: 1200,
             },
           },

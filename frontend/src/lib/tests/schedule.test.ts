@@ -337,7 +337,7 @@ describe("getScheduleRoundDetails", () => {
                             centiseconds: 60000,
                             cumulativeRoundIds: [],
                         },
-                        cutoff: { numberOfAttempts: 2, attemptResult: 3000 },
+                        cutoff: { numberOfAttempts: 2, resultValue: 3000 },
                         advancementCondition: null,
                     },
                     {
