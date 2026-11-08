@@ -66,6 +66,7 @@ const DoubleCheck = () => {
     const checkedResults: CheckedResult[] = roundData?.checkedResults ?? [];
     const totalResults = roundData?.totalCount ?? 0;
     const doubleCheckedResults = roundData?.doubleCheckedCount ?? 0;
+    const notFinishedResults = roundData?.notFinishedCount ?? 0;
     const incidents: Incident[] = incidentsData ?? [];
     const [inputValue, setInputValue] = useState<string>("");
     const [result, setResult] = useState<ResultToDoubleCheck | null>(null);
@@ -211,7 +212,9 @@ const DoubleCheck = () => {
     if (!resultsToDoubleCheck || !id) return <LoadingPage />;
 
     const isFinished =
-        doubleCheckedResults === totalResults && totalResults > 0;
+        doubleCheckedResults === totalResults &&
+        totalResults > 0 &&
+        notFinishedResults === 0;
 
     return (
         <div className="flex flex-col gap-5">
@@ -219,14 +222,21 @@ const DoubleCheck = () => {
                 roundId={id}
                 title="Double check"
                 aside={
-                    <div className="flex w-full flex-col gap-1.5 sm:w-56">
-                        <p className="text-sm text-muted-foreground">
-                            <b className="text-lg font-semibold text-foreground">
+                    <div className="flex w-full items-center gap-3 md:w-56 md:flex-col md:items-stretch md:gap-1.5">
+                        <p className="shrink-0 text-sm text-muted-foreground">
+                            <b className="font-semibold text-foreground md:text-lg">
                                 {doubleCheckedResults}
                             </b>{" "}
                             / {totalResults} double-checked
+                            {notFinishedResults > 0 && (
+                                <span className="text-faint">
+                                    {" "}
+                                    · {notFinishedResults} not finished
+                                </span>
+                            )}
                         </p>
                         <ProgressBar
+                            className="flex-1 md:flex-none"
                             value={doubleCheckedResults}
                             max={totalResults}
                             label="Double-checked results"
@@ -249,27 +259,28 @@ const DoubleCheck = () => {
                     </Button>
                 </section>
             ) : (
-                <div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,340px),1fr))] items-start gap-5">
-                    <div className="flex min-w-0 flex-col gap-3.5">
-                        <div className="flex flex-col gap-1.5">
-                            <span className="text-[13px] font-semibold text-muted-foreground">
-                                Competitor ID
-                            </span>
-                            <SelectCompetitor
-                                idInputRef={idInputRef}
-                                handleSubmit={handleSubmit}
-                                resultsToDoubleCheck={resultsToDoubleCheck}
-                                checkedResults={checkedResults}
-                                setResult={setResult}
-                                setAlreadyCheckedResult={
-                                    setAlreadyCheckedResult
-                                }
-                                inputValue={inputValue}
-                                setJustSelected={setJustSelected}
-                                setInputValue={setInputValue}
-                            />
-                        </div>
-                        <p className="text-[13px] text-muted-foreground">
+                // Phones: input, then the scorecard right under it, then the
+                // rest. Wide screens: input and the rest left, scorecard right
+                <div className="grid grid-cols-1 items-start gap-3 md:gap-5 lg:grid-cols-2 lg:grid-rows-[auto_1fr]">
+                    <div className="flex min-w-0 flex-col gap-1.5">
+                        <span className="hidden text-[13px] font-semibold text-muted-foreground md:block">
+                            Competitor ID
+                        </span>
+                        <SelectCompetitor
+                            idInputRef={idInputRef}
+                            handleSubmit={handleSubmit}
+                            resultsToDoubleCheck={resultsToDoubleCheck}
+                            checkedResults={checkedResults}
+                            setResult={setResult}
+                            setAlreadyCheckedResult={setAlreadyCheckedResult}
+                            inputValue={inputValue}
+                            setJustSelected={setJustSelected}
+                            setInputValue={setInputValue}
+                        />
+                    </div>
+
+                    <div className="flex min-w-0 flex-col gap-3.5 max-lg:order-last max-lg:mt-2">
+                        <p className="hidden text-[13px] text-muted-foreground md:block">
                             Press Enter again to confirm the result. Use Details
                             for full editing.
                         </p>
@@ -319,45 +330,56 @@ const DoubleCheck = () => {
                         )}
                     </div>
 
-                    {result && competition ? (
-                        <ResultCheckCard
-                            result={result}
-                            competition={competition}
-                            cumulativeLimit={cumulativeLimit}
-                            isSubmitting={isSubmitting}
-                            updateAttempt={handleUpdateAttempt}
-                            onConfirm={handleSubmit}
-                            onSkip={handleSkip}
-                        />
-                    ) : alreadyCheckedResult ? (
-                        <section className="flex flex-col gap-3.5 rounded-mobile-card border bg-card p-4 md:rounded-2xl md:p-[22px]">
-                            <h3 className="text-lg font-bold">
-                                {alreadyCheckedResult.person.name}{" "}
-                                <span className="font-medium text-faint">
-                                    ({alreadyCheckedResult.person.registrantId})
-                                </span>
-                            </h3>
-                            <p className="rounded-chip bg-success-soft px-3 py-2.5 text-sm font-semibold text-success">
-                                This scorecard has already been double-checked.
-                            </p>
-                            <div className="flex gap-2">
-                                <Button variant="outline" asChild>
-                                    <Link
-                                        to={`/results/${alreadyCheckedResult.id}`}
+                    <div className="min-w-0 lg:col-start-2 lg:row-span-2 lg:row-start-1">
+                        {result && competition ? (
+                            <ResultCheckCard
+                                result={result}
+                                competition={competition}
+                                cumulativeLimit={cumulativeLimit}
+                                isSubmitting={isSubmitting}
+                                updateAttempt={handleUpdateAttempt}
+                                onConfirm={handleSubmit}
+                                onSkip={handleSkip}
+                            />
+                        ) : alreadyCheckedResult ? (
+                            <section className="flex flex-col gap-3.5 rounded-mobile-card border bg-card p-4 md:rounded-2xl md:p-[22px]">
+                                <h3 className="text-lg font-bold">
+                                    {alreadyCheckedResult.person.name}{" "}
+                                    <span className="font-medium text-faint">
+                                        (
+                                        {
+                                            alreadyCheckedResult.person
+                                                .registrantId
+                                        }
+                                        )
+                                    </span>
+                                </h3>
+                                <p className="rounded-chip bg-success-soft px-3 py-2.5 text-sm font-semibold text-success">
+                                    This scorecard has already been
+                                    double-checked.
+                                </p>
+                                <div className="flex gap-2">
+                                    <Button variant="outline" asChild>
+                                        <Link
+                                            to={`/results/${alreadyCheckedResult.id}`}
+                                        >
+                                            Open scorecard
+                                        </Link>
+                                    </Button>
+                                    <Button
+                                        variant="ghost"
+                                        onClick={handleSkip}
                                     >
-                                        Open scorecard
-                                    </Link>
-                                </Button>
-                                <Button variant="ghost" onClick={handleSkip}>
-                                    Next
-                                </Button>
-                            </div>
-                        </section>
-                    ) : (
-                        <EmptyState>
-                            Enter the ID from the next scorecard.
-                        </EmptyState>
-                    )}
+                                        Next
+                                    </Button>
+                                </div>
+                            </section>
+                        ) : (
+                            <EmptyState className="min-h-32 md:min-h-[220px]">
+                                Enter the ID from the next scorecard.
+                            </EmptyState>
+                        )}
+                    </div>
                 </div>
             )}
 

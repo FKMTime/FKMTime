@@ -52,7 +52,7 @@ const AttemptsList = ({
             <div
                 className={cn(
                     GRID,
-                    "pb-2 text-xs font-semibold text-faint [&>span:nth-child(5)]:text-right"
+                    "pb-1.5 text-xs font-semibold text-faint md:pb-2 [&>span:nth-child(5)]:text-right"
                 )}
             >
                 <span>#</span>
@@ -72,7 +72,7 @@ const AttemptsList = ({
                     // only when there's no room
                     <div
                         key={attempt.id}
-                        className="flex flex-wrap items-center gap-x-3 gap-y-1.5 border-t py-2"
+                        className="flex flex-wrap items-center gap-x-3 gap-y-1.5 border-t py-1 md:py-2"
                     >
                         <div className={GRID}>
                             <span className="text-sm font-bold text-faint">
@@ -81,7 +81,7 @@ const AttemptsList = ({
                             <AttemptResultInput
                                 value={attempt.value}
                                 onChange={(value) => updateTime(attempt, value)}
-                                className="text-right font-medium md:text-[15px]"
+                                className="h-10 text-right font-medium md:text-[15px]"
                             />
                             <PenaltySelect
                                 value={attempt.penalty}
@@ -90,7 +90,7 @@ const AttemptsList = ({
                                     updateAttempt({ ...attempt, penalty })
                                 }
                                 shortVersion
-                                className="px-2"
+                                className="h-10 px-2"
                                 aria-label={`Penalty for attempt ${number}`}
                             />
                             <ArrowRight

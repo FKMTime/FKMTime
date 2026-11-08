@@ -429,7 +429,11 @@ describe('Round flow: from check-in to submitted results (e2e)', () => {
       mine.push(scorecard.body);
     }
     const checkedBefore = list.body.doubleCheckedCount;
+    // Unfinished results are counted apart, not in the total
     expect(list.body.totalCount).toBe(
+      list.body.results.length + list.body.doubleCheckedCount,
+    );
+    expect(list.body.totalCount + list.body.notFinishedCount).toBe(
       await db.result.count({ where: { roundId: ROUND_ID } }),
     );
 

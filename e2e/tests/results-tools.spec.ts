@@ -186,7 +186,10 @@ test.describe("double check", () => {
             .getByRole("button", { name: "Mark results as not double checked" })
             .click();
         await confirm(page);
-        await expect(page.getByText("/ 2 double-checked")).toContainText("0");
+        // 16.50 beats the 20.00 cutoff, so the second scorecard now needs all
+        // its attempts and waits outside the total
+        await expect(page.getByText("/ 1 double-checked")).toContainText("0");
+        await expect(page.getByText("1 not finished")).toBeVisible();
         expect(
             (await getResult(api, "clock-r1", first.id)).isDoubleChecked
         ).toBe(false);

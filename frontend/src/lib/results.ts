@@ -94,6 +94,8 @@ export const doubleCheckQuery = queryFamily((roundId) =>
         checkedResults?: { id: string; person: Person }[];
         totalCount: number;
         doubleCheckedCount: number;
+        /** Results still waiting for attempts, not in totalCount */
+        notFinishedCount: number;
     }>(`result/round/${roundId}/double-check`)
 );
 

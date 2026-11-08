@@ -379,3 +379,60 @@ describe('ResultService next attempt during a redo', () => {
     expect(scrambleData).toEqual({ num: 1, isExtra: true });
   });
 });
+
+describe('ResultService results to double check', () => {
+  const attempts = (count: number) =>
+    Array.from({ length: count }, (_, i) => ({
+      id: `a${i + 1}`,
+      attemptNumber: i + 1,
+      value: 1500,
+      penalty: 0,
+      replacedBy: null,
+      type: AttemptType.STANDARD_ATTEMPT,
+      status: AttemptStatus.STANDARD,
+    }));
+
+  it('counts only finished results towards the total', async () => {
+    const findMany = jest.fn().mockImplementation(async ({ where }) =>
+      where.isDoubleChecked
+        ? [{ id: 'checked' }]
+        : [
+            { id: 'finished', attempts: attempts(5) },
+            { id: 'solving', attempts: attempts(2) },
+            { id: 'not-started', attempts: [] },
+          ],
+    );
+    const service = new ResultService(
+      {
+        competition: {
+          findFirst: jest.fn().mockResolvedValue({
+            wcif: {
+              events: [
+                {
+                  id: '333',
+                  rounds: [{ id: '333-r1', format: 'a', cutoff: null }],
+                },
+              ],
+            },
+          }),
+        },
+        result: { findMany },
+      } as unknown as DbService,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+    );
+
+    const data = await service.getResultsToDoubleCheckByRoundId('333-r1');
+
+    expect(data.results.map((r) => r.id)).toEqual(['finished']);
+    expect(data).toMatchObject({
+      totalCount: 2,
+      doubleCheckedCount: 1,
+      notFinishedCount: 2,
+    });
+  });
+});

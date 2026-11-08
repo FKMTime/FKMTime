@@ -75,7 +75,7 @@ const ResultCheckCard = ({
         .join(" · ");
 
     return (
-        <section className="flex flex-col gap-4 rounded-mobile-card border bg-card p-4 md:rounded-2xl md:p-[22px]">
+        <section className="flex flex-col gap-3 rounded-mobile-card border bg-card p-3 md:gap-4 md:rounded-2xl md:p-[22px]">
             <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
                     <h3 className="text-lg font-bold">
