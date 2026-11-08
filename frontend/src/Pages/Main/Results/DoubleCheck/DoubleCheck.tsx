@@ -66,6 +66,7 @@ const DoubleCheck = () => {
     const checkedResults: CheckedResult[] = roundData?.checkedResults ?? [];
     const totalResults = roundData?.totalCount ?? 0;
     const doubleCheckedResults = roundData?.doubleCheckedCount ?? 0;
+    const notFinishedResults = roundData?.notFinishedCount ?? 0;
     const incidents: Incident[] = incidentsData ?? [];
     const [inputValue, setInputValue] = useState<string>("");
     const [result, setResult] = useState<ResultToDoubleCheck | null>(null);
@@ -211,7 +212,9 @@ const DoubleCheck = () => {
     if (!resultsToDoubleCheck || !id) return <LoadingPage />;
 
     const isFinished =
-        doubleCheckedResults === totalResults && totalResults > 0;
+        doubleCheckedResults === totalResults &&
+        totalResults > 0 &&
+        notFinishedResults === 0;
 
     return (
         <div className="flex flex-col gap-5">
@@ -225,6 +228,12 @@ const DoubleCheck = () => {
                                 {doubleCheckedResults}
                             </b>{" "}
                             / {totalResults} double-checked
+                            {notFinishedResults > 0 && (
+                                <span className="text-faint">
+                                    {" "}
+                                    · {notFinishedResults} not finished
+                                </span>
+                            )}
                         </p>
                         <ProgressBar
                             className="flex-1 md:flex-none"

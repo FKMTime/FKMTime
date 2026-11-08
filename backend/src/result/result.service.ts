@@ -434,27 +434,18 @@ export class ResultService {
       return submitted.length >= expectedAttempts;
     });
 
-    const totalCount = await this.prisma.result.count({
-      where: {
-        roundId: roundId,
-      },
-    });
-    const doubleCheckedCount = await this.prisma.result.count({
-      where: {
-        roundId: roundId,
-        isDoubleChecked: true,
-      },
-    });
-
     const checkedResults = await this.prisma.result.findMany({
       where: { roundId, isDoubleChecked: true },
       select: { id: true, person: publicPersonSelect },
     });
 
+    // Only finished results can be double-checked, so the rest stay out of
+    // the total until they are done
     return {
       results,
-      totalCount,
-      doubleCheckedCount,
+      totalCount: results.length + checkedResults.length,
+      doubleCheckedCount: checkedResults.length,
+      notFinishedCount: allResults.length - results.length,
       checkedResults,
     };
   }
