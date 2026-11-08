@@ -4,7 +4,7 @@ import { Competition } from "wcif-helpers";
 import { Attempt, AttemptStatus, AttemptType, Result } from "@/lib/interfaces";
 import { attemptValue, rankResults } from "@/lib/ranking";
 import { getCheckTypes } from "@/lib/resultChecks";
-import { getCutoffValue, getRoundMeta } from "@/lib/roundInfo";
+import { getRoundMeta } from "@/lib/roundInfo";
 
 let id = 0;
 const attempt = (value: number, penalty = 0): Attempt =>
@@ -88,15 +88,6 @@ describe("rankResults", () => {
 });
 
 describe("round info", () => {
-    it("reads either cutoff field name", () => {
-        expect(
-            getCutoffValue({ numberOfAttempts: 2, attemptResult: 1200 })
-        ).toBe(1200);
-        expect(getCutoffValue({ numberOfAttempts: 2, resultValue: 900 })).toBe(
-            900
-        );
-    });
-
     it("describes format, limit and cutoff", () => {
         const wcif = {
             events: [
@@ -112,7 +103,7 @@ describe("round info", () => {
                             },
                             cutoff: {
                                 numberOfAttempts: 2,
-                                attemptResult: 1200,
+                                resultValue: 1200,
                             },
                         },
                     ],

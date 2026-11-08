@@ -34,7 +34,7 @@ const wcif = {
         {
           id: '666-r1',
           format: 'm',
-          cutoff: { numberOfAttempts: 1, attemptResult: 18000 },
+          cutoff: { numberOfAttempts: 1, resultValue: 18000 },
         },
       ],
     },
@@ -101,7 +101,7 @@ describe('getGroupCompetitorIds', () => {
 });
 
 describe('getExpectedAttempts', () => {
-  const cutoff = { numberOfAttempts: 2, attemptResult: 1000 };
+  const cutoff = { numberOfAttempts: 2, resultValue: 1000 };
 
   it('expects the full format without a cutoff', () => {
     expect(getExpectedAttempts([], 5)).toBe(5);
@@ -133,15 +133,6 @@ describe('getExpectedAttempts', () => {
         5,
         cutoff,
       ),
-    ).toBe(2);
-  });
-
-  it('accepts the wcif-helpers resultValue field name', () => {
-    expect(
-      getExpectedAttempts(standard(2, 2000), 5, {
-        numberOfAttempts: 2,
-        resultValue: 1000,
-      }),
     ).toBe(2);
   });
 });

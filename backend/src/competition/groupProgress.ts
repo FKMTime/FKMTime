@@ -49,9 +49,7 @@ export const getGroupCompetitorIds = (wcif: Wcif, groupId: string) => {
 
 interface Cutoff {
   numberOfAttempts: number;
-  /** WCIF names it attemptResult; wcif-helpers types call it resultValue */
-  attemptResult?: number;
-  resultValue?: number;
+  resultValue: number;
 }
 
 const beatsCutoff = (attempt: Attempt, cutoffValue: number) =>
@@ -69,11 +67,10 @@ export const getExpectedAttempts = (
   maxAttempts: number,
   cutoff?: Cutoff | null,
 ) => {
-  const cutoffValue = cutoff?.attemptResult ?? cutoff?.resultValue;
-  if (!cutoff || cutoffValue === undefined) return maxAttempts;
+  if (!cutoff) return maxAttempts;
   const cutoffAttempts = counting.slice(0, cutoff.numberOfAttempts);
   if (cutoffAttempts.length < cutoff.numberOfAttempts) return maxAttempts;
-  return cutoffAttempts.some((a) => beatsCutoff(a, cutoffValue))
+  return cutoffAttempts.some((a) => beatsCutoff(a, cutoff.resultValue))
     ? maxAttempts
     : cutoff.numberOfAttempts;
 };
