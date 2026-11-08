@@ -5,6 +5,7 @@ import ModalActions from "@/Components/ModalActions";
 import { Button } from "@/Components/ui/button";
 import { Label } from "@/Components/ui/label";
 import { useDialogError } from "@/hooks/useDialogError";
+import { useToast } from "@/hooks/useToast";
 import { swapAttempts } from "@/lib/attempt";
 import { Attempt } from "@/lib/interfaces";
 
@@ -21,6 +22,7 @@ const SwapAttemptsModal = ({
     onClose,
     attempts,
 }: SwapAttemptsModalProps) => {
+    const { toast } = useToast();
     const [error, setError] = useDialogError(isOpen);
     const [firstAttemptId, setFirstAttemptId] = useState<string>("");
     const [secondAttemptId, setSecondAttemptId] = useState<string>("");
@@ -31,6 +33,7 @@ const SwapAttemptsModal = ({
         }
         const status = await swapAttempts(firstAttemptId, secondAttemptId);
         if (status === 200) {
+            toast({ title: "Attempts swapped", variant: "success" });
             onClose();
         } else {
             setError("Something went wrong");
