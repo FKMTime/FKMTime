@@ -1,5 +1,8 @@
-import { List } from "lucide-react";
+import { useAtomValue } from "jotai";
+import { Ban, List } from "lucide-react";
+import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { getRoundInfoFromWcif } from "wcif-helpers";
 
 import EmptyState from "@/Components/shared/EmptyState";
 import RowActions from "@/Components/shared/RowActions";
@@ -11,24 +14,81 @@ import {
     TableHeader,
     TableRow,
 } from "@/Components/ui/table";
+import { useToast } from "@/hooks/useToast";
 import { activityCodeToName } from "@/lib/activities";
+import { competitionAtom } from "@/lib/atoms";
 import { average, best } from "@/lib/average";
-import { getEventIconClass } from "@/lib/events";
-import { Result } from "@/lib/interfaces";
-import { isOrganizerOrDelegate } from "@/lib/permissions";
+import { getEventIconClass, getEventName } from "@/lib/events";
+import { AttemptStatus, Result } from "@/lib/interfaces";
+import { isDelegate, isOrganizerOrDelegate } from "@/lib/permissions";
 import {
     attemptWithPenaltyToString,
     resultToString,
 } from "@/lib/resultFormatters";
-import { cn, getSubmittedAttempts, shortRoundName } from "@/lib/utils";
+import {
+    cn,
+    getAttemptsToDnf,
+    getSubmittedAttempts,
+    shortRoundName,
+} from "@/lib/utils";
+import DnfAttemptsModal from "@/Pages/Main/Results/SingleResult/Components/DnfAttemptsModal";
 
 interface PersonResultsProps {
     results: Result[];
+    onChange: () => void;
 }
 
-const PersonResults = ({ results }: PersonResultsProps) => {
+const roundNumber = (roundId: string) => +roundId.split("-r")[1];
+
+const PersonResults = ({ results, onChange }: PersonResultsProps) => {
     const navigate = useNavigate();
+    const { toast } = useToast();
+    const competition = useAtomValue(competitionAtom);
     const canViewAttempts = isOrganizerOrDelegate();
+    const canDnf = isDelegate();
+    const [dnfEventId, setDnfEventId] = useState<string | null>(null);
+
+    /** Every round of the event this competitor has a result in, in order */
+    const eventResults = (eventId: string) =>
+        results
+            .filter(
+                (result) =>
+                    result.eventId === eventId &&
+                    !!competition &&
+                    getRoundInfoFromWcif(result.roundId, competition.wcif)
+                        ?.format !== "h"
+            )
+            .sort((a, b) => roundNumber(a.roundId) - roundNumber(b.roundId));
+
+    const dnfAction = (eventId: string) => ({
+        label: `DNF all attempts in ${getEventName(eventId) || eventId}`,
+        icon: Ban,
+        hidden:
+            !canDnf ||
+            !eventResults(eventId).some(
+                (result) => getAttemptsToDnf(result.attempts).length > 0
+            ),
+        onSelect: () => {
+            const hasOpenIncident = eventResults(eventId).some((result) =>
+                result.attempts.some(
+                    (attempt) => attempt.status === AttemptStatus.UNRESOLVED
+                )
+            );
+            if (hasOpenIncident) {
+                toast({
+                    title: "Resolve the open incidents first",
+                    variant: "destructive",
+                });
+            } else {
+                setDnfEventId(eventId);
+            }
+        },
+    });
+
+    const closeDnfModal = () => {
+        setDnfEventId(null);
+        onChange();
+    };
 
     const rows = results.map((result) => {
         const submitted = getSubmittedAttempts(result.attempts);
@@ -110,6 +170,9 @@ const PersonResults = ({ results }: PersonResultsProps) => {
                                                         `/results/${row.result.id}`
                                                     ),
                                             }}
+                                            items={[
+                                                dnfAction(row.result.eventId),
+                                            ]}
                                         />
                                     </TableCell>
                                 )}
@@ -141,21 +204,44 @@ const PersonResults = ({ results }: PersonResultsProps) => {
                         </>
                     );
                     return (
-                        <li key={row.result.id}>
+                        <li
+                            key={row.result.id}
+                            className="flex items-center gap-1 pr-2"
+                        >
                             {canViewAttempts ? (
                                 <Link
                                     to={`/results/${row.result.id}`}
-                                    className="block px-4 py-3 active:bg-accent"
+                                    className="block min-w-0 flex-1 px-4 py-3 active:bg-accent"
                                 >
                                     {content}
                                 </Link>
                             ) : (
-                                <div className="px-4 py-3">{content}</div>
+                                <div className="min-w-0 flex-1 px-4 py-3">
+                                    {content}
+                                </div>
+                            )}
+                            {canDnf && (
+                                <RowActions
+                                    subject={activityCodeToName(
+                                        row.result.roundId
+                                    )}
+                                    items={[dnfAction(row.result.eventId)]}
+                                />
                             )}
                         </li>
                     );
                 })}
             </ul>
+
+            {dnfEventId && (
+                <DnfAttemptsModal
+                    isOpen
+                    onClose={closeDnfModal}
+                    onDone={closeDnfModal}
+                    personName={results[0].person.name}
+                    results={eventResults(dnfEventId)}
+                />
+            )}
         </>
     );
 };

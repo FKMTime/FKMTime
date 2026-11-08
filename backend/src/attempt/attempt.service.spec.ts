@@ -433,6 +433,102 @@ describe('AttemptService extras for all attempts', () => {
       ).rejects.toMatchObject({ status: 409 });
     });
   });
+  describe('ruling every attempt DNF', () => {
+    const dnf = (attemptIds: string[]) =>
+      service.dnfAttempts({ attemptIds, comment: 'Illegal cube' }, 'user-1');
+
+    beforeEach(() => {
+      prisma.attempt.findMany = jest
+        .fn()
+        .mockImplementation(async ({ where }) =>
+          where.id
+            ? attempts.filter((a) => where.id.in.includes(a.id))
+            : attempts.filter((a) => a.penaltyBeforeDnf != null),
+        );
+      attempts.forEach((a) => (a.resultId = 'result-1'));
+      attempts[1].penalty = 2;
+    });
+
+    it('keeps the times and sets the penalty to DNF', async () => {
+      await expect(dnf(['s1', 's2'])).resolves.toEqual({ updated: 2 });
+
+      expect(attempts.map((a) => a.penalty)).toEqual([-1, -1]);
+      expect(attempts.map((a) => a.value)).toEqual([1500, 1500]);
+      expect(attempts.map((a) => a.penaltyBeforeDnf)).toEqual([0, 2]);
+      expect(attempts.every((a) => a.comment === 'Illegal cube')).toBe(true);
+    });
+
+    it('clears the double-check and sends the scorecard', async () => {
+      await dnf(['s1']);
+
+      expect(prisma.result.update).toHaveBeenCalledWith({
+        where: { id: 'result-1' },
+        data: expect.objectContaining({ isDoubleChecked: false }),
+      });
+      expect(
+        resultService.enterWholeScorecardToWcaLiveOrCubingContests,
+      ).toHaveBeenCalledWith('result-1');
+    });
+
+    it('sends nothing on a competition set to never send', async () => {
+      sendingResultsFrequency = SendingResultsFrequency.NEVER;
+
+      await dnf(['s1']);
+
+      expect(
+        resultService.enterWholeScorecardToWcaLiveOrCubingContests,
+      ).not.toHaveBeenCalled();
+    });
+
+    it('rejects an attempt that is already DNF', async () => {
+      attempts[0].penalty = -1;
+
+      await expect(dnf(['s1'])).rejects.toMatchObject({ status: 400 });
+    });
+
+    it('rejects an attempt that does not count', async () => {
+      attempts[1].status = AttemptStatus.EXTRA_GIVEN;
+
+      await expect(dnf(['s2'])).rejects.toMatchObject({ status: 400 });
+    });
+
+    it('rejects an attempt that does not exist', async () => {
+      await expect(dnf(['missing'])).rejects.toMatchObject({ status: 404 });
+    });
+
+    it('rejects a head-to-head round', async () => {
+      format = 'h';
+
+      await expect(dnf(['s1'])).rejects.toMatchObject({ status: 400 });
+    });
+
+    it('asks to resolve an open incident first', async () => {
+      attempts[1].status = AttemptStatus.UNRESOLVED;
+
+      await expect(dnf(['s1'])).rejects.toMatchObject({ status: 409 });
+    });
+
+    it('restores the original penalties', async () => {
+      await dnf(['s1', 's2']);
+      resultService.enterWholeScorecardToWcaLiveOrCubingContests.mockClear();
+
+      await expect(
+        service.restoreDnfAttempts('result-1', 'user-1'),
+      ).resolves.toEqual({ restored: 2 });
+
+      expect(attempts.map((a) => a.penalty)).toEqual([0, 2]);
+      expect(attempts.map((a) => a.penaltyBeforeDnf)).toEqual([null, null]);
+      expect(
+        resultService.enterWholeScorecardToWcaLiveOrCubingContests,
+      ).toHaveBeenCalledWith('result-1');
+    });
+
+    it('has nothing to restore without a ruling', async () => {
+      await expect(
+        service.restoreDnfAttempts('result-1', 'user-1'),
+      ).rejects.toMatchObject({ status: 400 });
+    });
+  });
 });
 
 describe('AttemptService penalty cap', () => {

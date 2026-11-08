@@ -243,6 +243,8 @@ export interface Attempt {
     replacedByInGrant?: number | null;
     statusInGrant?: AttemptStatus | null;
     penalty: number;
+    /** Set while a delegate's DNF ruling stands, so it can be undone */
+    penaltyBeforeDnf?: number | null;
     status: AttemptStatus;
     type: AttemptType;
     inspectionTime?: number;

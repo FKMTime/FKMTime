@@ -166,6 +166,26 @@ export const reapplyExtraGrant = async (
     return { status: response.status, message };
 };
 
+/** Rule attempts DNF, keeping their times */
+export const dnfAttempts = async (data: {
+    attemptIds: string[];
+    comment: string;
+}): Promise<{ status: number; message?: string }> => {
+    const response = await backendRequest("attempt/dnf", "POST", true, data);
+    const message = !response.ok ? (await response.json()).message : undefined;
+    return { status: response.status, message };
+};
+
+export const restoreDnfAttempts = async (
+    resultId: string
+): Promise<{ status: number; message?: string }> => {
+    const response = await backendRequest("attempt/restore-dnf", "POST", true, {
+        resultId,
+    });
+    const message = !response.ok ? (await response.json()).message : undefined;
+    return { status: response.status, message };
+};
+
 /** Every change made to an attempt */
 export const attemptEditLogQuery = queryFamily((id) =>
     backendQuery<AttemptEditLogEntry[]>(`attempt/${id}/edit-log`)

@@ -27,11 +27,17 @@ import { QueryError, toQueryOptions } from "@/lib/queryCache";
 import { queryClient } from "@/lib/queryClient";
 import { resultToString } from "@/lib/resultFormatters";
 import { resultQuery } from "@/lib/results";
-import { getSubmittedAttempts, shortRoundName } from "@/lib/utils";
+import {
+    getAttemptsToDnf,
+    getSubmittedAttempts,
+    shortRoundName,
+} from "@/lib/utils";
 
 import CreateAttemptModal from "../Components/CreateAttemptModal";
 import AttemptsReorderBoard from "./Components/AttemptsReorderBoard";
 import AttemptsTable from "./Components/AttemptsTable";
+import DnfAttemptsModal from "./Components/DnfAttemptsModal";
+import DnfRulingCard from "./Components/DnfRulingCard";
 import GiveExtrasModal from "./Components/GiveExtrasModal";
 import LastAttemptCard from "./Components/LastAttemptCard";
 import ReplacedAttemptsCard from "./Components/ReplacedAttemptsCard";
@@ -64,6 +70,7 @@ const SingleResult = () => {
         useState<boolean>(false);
     const [tab, setTab] = useState<Tab>("submitted");
     const [isOpenGiveExtrasModal, setIsOpenGiveExtrasModal] = useState(false);
+    const [isOpenDnfModal, setIsOpenDnfModal] = useState(false);
     const standardAttempts = useMemo(() => {
         if (!result) return [];
         return (
@@ -131,6 +138,7 @@ const SingleResult = () => {
         setIsOpenCreateAttemptModal(false);
         setIsOpenSwapAttemptsModal(false);
         setIsOpenGiveExtrasModal(false);
+        setIsOpenDnfModal(false);
     };
 
     usePageHeader({
@@ -151,9 +159,14 @@ const SingleResult = () => {
 
     if (!result || !competition) return <LoadingPage />;
 
-    const canGiveExtras =
-        submittedAttempts.length > 0 &&
-        getRoundInfoFromWcif(result.roundId, competition.wcif)?.format !== "h";
+    const isHeadToHead =
+        getRoundInfoFromWcif(result.roundId, competition.wcif)?.format === "h";
+    const canGiveExtras = submittedAttempts.length > 0 && !isHeadToHead;
+    const canDnfAll =
+        getAttemptsToDnf(result.attempts).length > 0 && !isHeadToHead;
+    const ruledDnf = result.attempts.filter(
+        (attempt) => attempt.penaltyBeforeDnf != null
+    );
     const openIncidents = result.attempts.filter(
         (attempt) => attempt.status === AttemptStatus.UNRESOLVED
     );
@@ -167,6 +180,17 @@ const SingleResult = () => {
             });
         } else {
             setIsOpenGiveExtrasModal(true);
+        }
+    };
+
+    const handleDnfAll = () => {
+        if (openIncidents.length > 0) {
+            toast({
+                title: "Resolve the open incident first",
+                variant: "destructive",
+            });
+        } else {
+            setIsOpenDnfModal(true);
         }
     };
 
@@ -195,6 +219,7 @@ const SingleResult = () => {
                 standardAttempts={standardAttempts}
                 maxAttempts={maxAttempts}
                 onGiveExtras={canGiveExtras ? handleGiveExtras : undefined}
+                onDnfAll={canDnfAll ? handleDnfAll : undefined}
             />
 
             <div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,240px),1fr))] items-start gap-3.5">
@@ -241,6 +266,14 @@ const SingleResult = () => {
                     attempts={result.attempts}
                     grant={extrasContext.grant}
                     onSwitched={fetchData}
+                />
+            )}
+
+            {ruledDnf.length > 0 && (
+                <DnfRulingCard
+                    resultId={result.id}
+                    attempts={ruledDnf}
+                    onRestored={fetchData}
                 />
             )}
 
@@ -368,6 +401,15 @@ const SingleResult = () => {
                     beforeGrant={
                         openIncident ? saveIncidentBeforeExtras : undefined
                     }
+                />
+            )}
+            {isOpenDnfModal && (
+                <DnfAttemptsModal
+                    isOpen
+                    onClose={handleCloseModal}
+                    onDone={handleCloseModal}
+                    personName={result.person.name}
+                    results={[result]}
                 />
             )}
         </div>

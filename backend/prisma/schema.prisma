@@ -181,6 +181,8 @@ model Attempt {
   statusBeforeGrant  AttemptStatus?       @map("status_before_grant")
   statusInGrant      AttemptStatus?       @map("status_in_grant")
   replacedByInGrant  Int?                 @map("replaced_by_in_grant")
+  /// The penalty before a delegate ruled every attempt DNF, so it can be restored
+  penaltyBeforeDnf   Int?                 @map("penalty_before_dnf")
 
   @@map("attempt")
 }

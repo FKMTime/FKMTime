@@ -1,4 +1,5 @@
 import {
+    Ban,
     CircleCheck,
     MessageSquarePlus,
     OctagonX,
@@ -32,6 +33,8 @@ interface SingleResultHeaderProps {
     maxAttempts: number;
     /** Left out when extras can't be given for this result */
     onGiveExtras?: () => void;
+    /** Left out when no attempt can be set to DNF */
+    onDnfAll?: () => void;
 }
 
 const SingleResultHeader = ({
@@ -41,6 +44,7 @@ const SingleResultHeader = ({
     standardAttempts,
     maxAttempts,
     onGiveExtras,
+    onDnfAll,
 }: SingleResultHeaderProps) => {
     const navigate = useNavigate();
     const confirm = useConfirm();
@@ -158,6 +162,12 @@ const SingleResultHeader = ({
                             icon: MessageSquarePlus,
                             hidden: !onGiveExtras,
                             onSelect: () => onGiveExtras?.(),
+                        },
+                        {
+                            label: "DNF all attempts",
+                            icon: Ban,
+                            hidden: !onDnfAll,
+                            onSelect: () => onDnfAll?.(),
                         },
                         {
                             label: `Resubmit scorecard to ${platform}`,
