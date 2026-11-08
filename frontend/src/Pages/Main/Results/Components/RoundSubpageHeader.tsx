@@ -35,7 +35,9 @@ const RoundSubpageHeader = ({
     });
 
     return (
-        <div className="flex flex-col gap-2">
+        // The mobile header already shows the title and round, so on phones
+        // only the aside is left
+        <div className={cn("flex flex-col gap-2", !aside && "hidden md:flex")}>
             <Link
                 to={backTo}
                 className="-ml-1.5 hidden w-fit items-center gap-1 rounded-md px-1.5 py-1 text-sm font-semibold text-muted-foreground hover:bg-accent hover:text-foreground md:inline-flex"
@@ -44,7 +46,7 @@ const RoundSubpageHeader = ({
                 {shortRoundName(roundId)}
             </Link>
             <div className="flex flex-wrap items-end justify-between gap-3">
-                <div>
+                <div className="hidden md:block">
                     <h2 className="text-xl font-bold">{title}</h2>
                     <p className="flex items-center gap-1.5 text-sm text-muted-foreground">
                         <span
