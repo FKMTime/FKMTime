@@ -4,6 +4,7 @@ import {
   StaffActivityStatus,
   StaffRole,
 } from '@prisma/client';
+import { AppGateway } from 'src/app.gateway';
 import { AttemptEditLogService } from 'src/attempt-edit-log/attempt-edit-log.service';
 import { DbService } from 'src/db/db.service';
 import { PersonService } from 'src/person/person.service';
@@ -434,5 +435,104 @@ describe('ResultService results to double check', () => {
       doubleCheckedCount: 1,
       notFinishedCount: 2,
     });
+  });
+});
+
+describe('ResultService removing a result (Regulation 9t)', () => {
+  let stored: Record<string, any>;
+  let service: ResultService;
+  let sent: jest.Mock;
+  let appGateway: { handleResultEntered: jest.Mock };
+
+  beforeEach(() => {
+    stored = {
+      id: 'result-2',
+      roundId: '333-r2',
+      removedAt: null,
+      removedByRulingOf: null,
+      attempts: [{ status: AttemptStatus.STANDARD }],
+    };
+    const prisma = {
+      result: {
+        findUnique: jest.fn(async ({ where }) =>
+          where.id === stored.id ? stored : null,
+        ),
+        update: jest.fn(async ({ data }) => {
+          stored.removedAt = data.removedAt;
+          stored.removedReason = data.removedReason;
+        }),
+      },
+      competition: {
+        findFirst: jest.fn(async () => ({
+          sendingResultsFrequency: 'AFTER_SOLVE',
+        })),
+      },
+    };
+    appGateway = { handleResultEntered: jest.fn() };
+    service = new ResultService(
+      prisma as unknown as DbService,
+      appGateway as unknown as AppGateway,
+      null,
+      null,
+      null,
+      null,
+      null,
+    );
+    sent = jest.fn();
+    service.enterWholeScorecardToWcaLiveOrCubingContests = sent;
+  });
+
+  it('keeps the result, with its reason, and sends it empty', async () => {
+    await service.removeResult('result-2', 'Score-taking mistake', 'user-1');
+
+    expect(stored.removedAt).toBeInstanceOf(Date);
+    expect(stored.removedReason).toBe('Score-taking mistake');
+    expect(sent).toHaveBeenCalledWith('result-2');
+    expect(appGateway.handleResultEntered).toHaveBeenCalledWith('333-r2');
+  });
+
+  it('brings it back and sends it again', async () => {
+    await service.removeResult('result-2', undefined, 'user-1');
+    sent.mockClear();
+
+    await service.bringBackResult('result-2');
+
+    expect(stored.removedAt).toBeNull();
+    expect(sent).toHaveBeenCalledWith('result-2');
+  });
+
+  it('has nothing to remove in a first round', async () => {
+    stored.roundId = '333-r1';
+
+    await expect(
+      service.removeResult('result-2', undefined, 'user-1'),
+    ).rejects.toMatchObject({ status: 400 });
+  });
+
+  it('asks to resolve an open incident first', async () => {
+    stored.attempts = [{ status: AttemptStatus.UNRESOLVED }];
+
+    await expect(
+      service.removeResult('result-2', undefined, 'user-1'),
+    ).rejects.toMatchObject({ status: 409 });
+  });
+
+  it('points to the ruling for a result a ruling removed', async () => {
+    stored.removedAt = new Date();
+    stored.removedByRulingOf = { roundId: '333-r1' };
+
+    await expect(service.bringBackResult('result-2')).rejects.toMatchObject({
+      status: 409,
+    });
+  });
+
+  it('refuses a removed result to whoever enters an attempt', async () => {
+    jest
+      .spyOn(service, 'getResultOrCreateIncludingRemoved')
+      .mockResolvedValue({ ...stored, removedAt: new Date() } as never);
+
+    await expect(
+      service.getResultOrCreate('person-1', '333-r2'),
+    ).rejects.toMatchObject({ status: 409 });
   });
 });

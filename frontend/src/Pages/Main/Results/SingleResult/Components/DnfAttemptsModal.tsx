@@ -13,6 +13,7 @@ import { useLiveQuery } from "@/hooks/useLiveQuery";
 import { useToast } from "@/hooks/useToast";
 import { competitionAtom } from "@/lib/atoms";
 import { dnfAttempts, extrasContextQuery } from "@/lib/attempt";
+import { DNF_VALUE, DNS_VALUE } from "@/lib/constants";
 import {
     ApplicationQuickAction,
     Attempt,
@@ -21,9 +22,17 @@ import {
 import { attemptWithPenaltyToString } from "@/lib/resultFormatters";
 import {
     getAttemptsToDnf,
+    getSubmittedAttempts,
     hasRemainingAttempts,
     shortRoundName,
 } from "@/lib/utils";
+
+type ScopeResult = { id: string; roundId: string; attempts: Attempt[] };
+
+const roundNumber = (roundId: string) => +roundId.split("-r")[1];
+
+const isDnfOrDns = (attempt: Attempt) =>
+    attempt.penalty === DNF_VALUE || attempt.penalty === DNS_VALUE;
 
 interface DnfAttemptsModalProps {
     isOpen: boolean;
@@ -31,7 +40,9 @@ interface DnfAttemptsModalProps {
     onDone: () => void;
     personName: string;
     /** One round, or every round of an event, in round order */
-    results: { id: string; roundId: string; attempts: Attempt[] }[];
+    results: ScopeResult[];
+    /** Every result the competitor has in the event, for Regulation 9t */
+    eventResults?: ScopeResult[];
 }
 
 /** Rule a competitor's attempts DNF, in one round or across an event */
@@ -41,6 +52,7 @@ const DnfAttemptsModal = ({
     onDone,
     personName,
     results,
+    eventResults = results,
 }: DnfAttemptsModalProps) => {
     const competition = useAtomValue(competitionAtom);
     const { toast } = useToast();
@@ -49,29 +61,56 @@ const DnfAttemptsModal = ({
     const [comment, setComment] = useState("");
     const [uncheckedIds, setUncheckedIds] = useState<string[]>([]);
     const [disqualify, setDisqualify] = useState(false);
-    const lastResult = results.at(-1);
-    const { data: context } = useLiveQuery(
-        extrasContextQuery(lastResult?.id ?? ""),
-        { enabled: isOpen && !!lastResult }
+    const [chosenRemoveLater, setChosenRemoveLater] = useState<boolean | null>(
+        null
     );
+    const isTicked = (attempt: Attempt) => !uncheckedIds.includes(attempt.id);
 
-    const rounds = results
-        .map((result) => ({
-            roundId: result.roundId,
-            attempts: getAttemptsToDnf(result.attempts),
-        }))
-        .filter((round) => round.attempts.length > 0);
-    const chosen = rounds
-        .flatMap((round) => round.attempts)
-        .filter((attempt) => !uncheckedIds.includes(attempt.id));
+    const allRounds = results.map((result) => ({
+        result,
+        attempts: getAttemptsToDnf(result.attempts),
+    }));
+    const lastResult = results.at(-1);
+    // The earliest round this ruling changes; later rounds go whole (9t)
+    const firstChanged =
+        allRounds.find((round) => round.attempts.some(isTicked))?.result ??
+        lastResult;
+    const laterResults = firstChanged
+        ? eventResults.filter(
+              (other) =>
+                  roundNumber(other.roundId) > roundNumber(firstChanged.roundId)
+          )
+        : [];
+    // Regulation 9p4: with only DNF and DNS left, they can't have advanced
+    const leavesOnlyDnf =
+        !!firstChanged &&
+        getSubmittedAttempts(firstChanged.attempts).every(
+            (attempt) => isDnfOrDns(attempt) || isTicked(attempt)
+        );
+    const removeLater =
+        laterResults.length > 0 && (chosenRemoveLater ?? leavesOnlyDnf);
+
+    const rounds = allRounds.filter(
+        (round) =>
+            round.attempts.length > 0 &&
+            (!removeLater ||
+                roundNumber(round.result.roundId) <=
+                    roundNumber(firstChanged!.roundId))
+    );
+    const chosen = rounds.flatMap((round) => round.attempts).filter(isTicked);
     const showRoundNames = rounds.length > 1;
-    // A disqualification applies to the round in progress, the last one
+    // A disqualification applies to the round in progress: the last one that stays
+    const stayingResult = removeLater ? firstChanged : lastResult;
+    const { data: context } = useLiveQuery(
+        extrasContextQuery(stayingResult?.id ?? ""),
+        { enabled: isOpen && !!stayingResult }
+    );
     const canDisqualify =
-        !!lastResult &&
+        !!stayingResult &&
         !!competition &&
         hasRemainingAttempts(
-            lastResult.attempts,
-            getNumberOfAttemptsForRound(lastResult.roundId, competition.wcif)
+            stayingResult.attempts,
+            getNumberOfAttemptsForRound(stayingResult.roundId, competition.wcif)
         );
     const disqualifies = canDisqualify && disqualify;
 
@@ -89,7 +128,8 @@ const DnfAttemptsModal = ({
         setIsLoading(true);
         const { status, message } = await dnfAttempts({
             attemptIds: chosen.map((attempt) => attempt.id),
-            remainingInResultId: disqualifies ? lastResult?.id : undefined,
+            remainingInResultId: disqualifies ? stayingResult?.id : undefined,
+            removeLaterRounds: removeLater,
             comment,
         });
         setIsLoading(false);
@@ -117,12 +157,12 @@ const DnfAttemptsModal = ({
                 </div>
                 {rounds.map((round) => (
                     <fieldset
-                        key={round.roundId}
+                        key={round.result.roundId}
                         className="flex flex-col gap-2"
                     >
                         <legend className="mb-1 text-sm font-medium">
                             {showRoundNames
-                                ? shortRoundName(round.roundId)
+                                ? shortRoundName(round.result.roundId)
                                 : "Attempts to set to DNF"}
                         </legend>
                         {round.attempts.map((attempt) => (
@@ -142,15 +182,43 @@ const DnfAttemptsModal = ({
                         ))}
                     </fieldset>
                 ))}
-                {canDisqualify && lastResult && (
+                {canDisqualify && stayingResult && (
                     <Label className="flex min-h-11 cursor-pointer items-center gap-3 font-normal md:min-h-0">
                         <Checkbox
                             checked={disqualify}
                             onCheckedChange={(value) => setDisqualify(!!value)}
                         />
                         DNF all remaining attempts in{" "}
-                        {shortRoundName(lastResult.roundId)}
+                        {shortRoundName(stayingResult.roundId)}
                     </Label>
+                )}
+                {laterResults.length > 0 && (
+                    <div className="flex flex-col gap-1">
+                        <Label className="flex min-h-11 cursor-pointer items-center gap-3 font-normal md:min-h-0">
+                            <Checkbox
+                                checked={removeLater}
+                                onCheckedChange={(value) =>
+                                    setChosenRemoveLater(!!value)
+                                }
+                            />
+                            Remove results in later rounds (Regulation 9t):{" "}
+                            {laterResults
+                                .map((later) => shortRoundName(later.roundId))
+                                .join(", ")}
+                        </Label>
+                        <p className="text-[13px] text-muted-foreground">
+                            {leavesOnlyDnf
+                                ? `With only DNF results, ${personName} can't advance.`
+                                : `Tick if ${personName} would no longer have advanced.`}
+                        </p>
+                    </div>
+                )}
+                {removeLater && (
+                    <p className="text-sm font-medium">
+                        Remove {personName} from these rounds in WCA Live too.
+                        {sendsToLive &&
+                            " FKMTime only clears their times there."}
+                    </p>
                 )}
                 {disqualifies && (
                     <p className="text-sm text-muted-foreground">

@@ -27,7 +27,7 @@ import { AttemptStatus, Result } from "@/lib/interfaces";
 import { QueryError, toQueryOptions } from "@/lib/queryCache";
 import { queryClient } from "@/lib/queryClient";
 import { resultToString } from "@/lib/resultFormatters";
-import { resultQuery } from "@/lib/results";
+import { personResultsQuery, resultQuery } from "@/lib/results";
 import {
     getAttemptsToDnf,
     getSubmittedAttempts,
@@ -42,12 +42,16 @@ import DnfAttemptsModal from "./Components/DnfAttemptsModal";
 import DnfRulingCard from "./Components/DnfRulingCard";
 import GiveExtrasModal from "./Components/GiveExtrasModal";
 import LastAttemptCard from "./Components/LastAttemptCard";
+import RemovedResultBanner from "./Components/RemovedResultBanner";
+import RemoveResultModal from "./Components/RemoveResultModal";
 import ReplacedAttemptsCard from "./Components/ReplacedAttemptsCard";
 import SingleResultHeader from "./Components/SingleResultHeader";
 import SwapAttemptsModal from "./Components/SwapAttemptsModal";
 import WarningsAndLimitsCard from "./Components/WarningsAndLimitsCard";
 
 type Tab = "submitted" | "standard" | "extra" | "reorder";
+
+const roundNumber = (roundId: string) => +roundId.split("-r")[1];
 
 const SingleResult = () => {
     const { id } = useParams<{ id: string }>();
@@ -66,7 +70,7 @@ const SingleResult = () => {
         { enabled: !!id }
     );
     const extrasContext: ExtrasContext | null = extrasContextData ?? null;
-    const { data: ruledDnf = [] } = useLiveQuery(dnfRulingQuery(resultId), {
+    const { data: dnfRuling } = useLiveQuery(dnfRulingQuery(resultId), {
         enabled: !!id,
     });
     const [isOpenCreateAttemptModal, setIsOpenCreateAttemptModal] =
@@ -76,6 +80,12 @@ const SingleResult = () => {
     const [tab, setTab] = useState<Tab>("submitted");
     const [isOpenGiveExtrasModal, setIsOpenGiveExtrasModal] = useState(false);
     const [isOpenDnfModal, setIsOpenDnfModal] = useState(false);
+    const [isOpenRemoveModal, setIsOpenRemoveModal] = useState(false);
+    // The competitor's other rounds, for removing later ones (Regulation 9t)
+    const { data: personResults } = useLiveQuery(
+        personResultsQuery(resultData?.person.id ?? ""),
+        { enabled: !!resultData && isOpenDnfModal }
+    );
     const standardAttempts = useMemo(() => {
         if (!result) return [];
         return (
@@ -139,6 +149,15 @@ const SingleResult = () => {
             queryClient.invalidateQueries({
                 queryKey: toQueryOptions(dnfRulingQuery(resultId)).queryKey,
             }),
+            ...(resultData
+                ? [
+                      queryClient.invalidateQueries({
+                          queryKey: toQueryOptions(
+                              personResultsQuery(resultData.person.id)
+                          ).queryKey,
+                      }),
+                  ]
+                : []),
         ]);
 
     const handleCloseModal = () => {
@@ -147,6 +166,7 @@ const SingleResult = () => {
         setIsOpenSwapAttemptsModal(false);
         setIsOpenGiveExtrasModal(false);
         setIsOpenDnfModal(false);
+        setIsOpenRemoveModal(false);
     };
 
     usePageHeader({
@@ -170,10 +190,16 @@ const SingleResult = () => {
     const isHeadToHead =
         getRoundInfoFromWcif(result.roundId, competition.wcif)?.format === "h";
     const canGiveExtras = submittedAttempts.length > 0 && !isHeadToHead;
+    const isRemoved = !!result.removedAt;
     const canDnfAll =
         (getAttemptsToDnf(result.attempts).length > 0 ||
             hasRemainingAttempts(result.attempts, maxAttempts)) &&
-        !isHeadToHead;
+        !isHeadToHead &&
+        !isRemoved;
+    const canRemove = roundNumber(result.roundId) > 1 && !isRemoved;
+    const eventResults = (personResults ?? [])
+        .filter((other) => other.eventId === result.eventId && !other.removedAt)
+        .sort((a, b) => roundNumber(a.roundId) - roundNumber(b.roundId));
     const openIncidents = result.attempts.filter(
         (attempt) => attempt.status === AttemptStatus.UNRESOLVED
     );
@@ -225,9 +251,22 @@ const SingleResult = () => {
                 onEnterAttempt={() => setIsOpenCreateAttemptModal(true)}
                 standardAttempts={standardAttempts}
                 maxAttempts={maxAttempts}
-                onGiveExtras={canGiveExtras ? handleGiveExtras : undefined}
+                onGiveExtras={
+                    canGiveExtras && !isRemoved ? handleGiveExtras : undefined
+                }
                 onDnfAll={canDnfAll ? handleDnfAll : undefined}
+                onRemove={
+                    canRemove ? () => setIsOpenRemoveModal(true) : undefined
+                }
+                isRemoved={isRemoved}
             />
+
+            {isRemoved && (
+                <RemovedResultBanner
+                    result={result}
+                    onBroughtBack={fetchData}
+                />
+            )}
 
             <div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,240px),1fr))] items-start gap-3.5">
                 <section
@@ -276,14 +315,16 @@ const SingleResult = () => {
                 />
             )}
 
-            {ruledDnf.length > 0 && (
-                <DnfRulingCard
-                    resultId={result.id}
-                    attempts={result.attempts}
-                    ruled={ruledDnf}
-                    onRestored={fetchData}
-                />
-            )}
+            {dnfRuling &&
+                (dnfRuling.attempts.length > 0 ||
+                    dnfRuling.removedResults.length > 0) && (
+                    <DnfRulingCard
+                        resultId={result.id}
+                        attempts={result.attempts}
+                        ruling={dnfRuling}
+                        onRestored={fetchData}
+                    />
+                )}
 
             <PageTabs
                 label="Attempts"
@@ -309,7 +350,14 @@ const SingleResult = () => {
                               },
                           ]
                         : []),
-                    { value: "reorder", label: "Reorder & extras" },
+                    ...(isRemoved
+                        ? []
+                        : [
+                              {
+                                  value: "reorder" as Tab,
+                                  label: "Reorder & extras",
+                              },
+                          ]),
                 ]}
             />
 
@@ -335,17 +383,19 @@ const SingleResult = () => {
                         </EmptyState>
                     ) : (
                         <>
-                            <div className="flex justify-end border-b p-3">
-                                <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() =>
-                                        setIsOpenSwapAttemptsModal(true)
-                                    }
-                                >
-                                    Swap attempts
-                                </Button>
-                            </div>
+                            {!isRemoved && (
+                                <div className="flex justify-end border-b p-3">
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() =>
+                                            setIsOpenSwapAttemptsModal(true)
+                                        }
+                                    >
+                                        Swap attempts
+                                    </Button>
+                                </div>
+                            )}
                             <div className="overflow-x-auto">
                                 <AttemptsTable
                                     attempts={standardAttempts}
@@ -418,6 +468,17 @@ const SingleResult = () => {
                     onDone={handleCloseModal}
                     personName={result.person.name}
                     results={[result]}
+                    eventResults={eventResults}
+                />
+            )}
+            {isOpenRemoveModal && (
+                <RemoveResultModal
+                    isOpen
+                    onClose={handleCloseModal}
+                    onDone={handleCloseModal}
+                    resultId={result.id}
+                    roundId={result.roundId}
+                    personName={result.person.name}
                 />
             )}
         </div>

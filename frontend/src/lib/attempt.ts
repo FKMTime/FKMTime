@@ -173,9 +173,15 @@ export interface RuledDnfAttempt {
     penaltyBeforeDnf: number | null;
 }
 
-/** Attempts of a result under a DNF ruling, with the penalty each had before */
+export interface DnfRuling {
+    attempts: RuledDnfAttempt[];
+    /** Later-round results the ruling removed (Regulation 9t) */
+    removedResults: { id: string; roundId: string }[];
+}
+
+/** A result's DNF ruling: its attempts and the later-round results it removed */
 export const dnfRulingQuery = queryFamily((resultId) =>
-    backendQuery<RuledDnfAttempt[]>(`attempt/dnf/${resultId}`)
+    backendQuery<DnfRuling>(`attempt/dnf/${resultId}`)
 );
 
 /** Rule attempts DNF, keeping their times */
@@ -183,6 +189,8 @@ export const dnfAttempts = async (data: {
     attemptIds: string[];
     /** Disqualify from this result's round: its remaining attempts become DNF */
     remainingInResultId?: string;
+    /** Regulation 9t: also remove the competitor's results in later rounds */
+    removeLaterRounds?: boolean;
     comment: string;
 }): Promise<{ status: number; message?: string }> => {
     const response = await backendRequest("attempt/dnf", "POST", true, data);

@@ -6,6 +6,7 @@ import {
     Plus,
     Send,
     Trash2,
+    UserX,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
@@ -35,6 +36,10 @@ interface SingleResultHeaderProps {
     onGiveExtras?: () => void;
     /** Left out when no attempt can be set to DNF */
     onDnfAll?: () => void;
+    /** Left out for a first round or a result already removed */
+    onRemove?: () => void;
+    /** Removed under Regulation 9t: nothing more is entered */
+    isRemoved?: boolean;
 }
 
 const SingleResultHeader = ({
@@ -45,6 +50,8 @@ const SingleResultHeader = ({
     maxAttempts,
     onGiveExtras,
     onDnfAll,
+    onRemove,
+    isRemoved = false,
 }: SingleResultHeaderProps) => {
     const navigate = useNavigate();
     const confirm = useConfirm();
@@ -150,10 +157,12 @@ const SingleResultHeader = ({
                 </div>
             </div>
             <div className="flex items-center gap-1">
-                <Button onClick={onEnterAttempt}>
-                    <Plus />
-                    Enter attempt
-                </Button>
+                {!isRemoved && (
+                    <Button onClick={onEnterAttempt}>
+                        <Plus />
+                        Enter attempt
+                    </Button>
+                )}
                 <RowActions
                     subject={result.person.name}
                     items={[
@@ -177,8 +186,17 @@ const SingleResultHeader = ({
                         {
                             label: "Assign DNS on remaining attempts",
                             icon: OctagonX,
-                            hidden: standardAttempts.length >= maxAttempts,
+                            hidden:
+                                isRemoved ||
+                                standardAttempts.length >= maxAttempts,
                             onSelect: handleAssignDns,
+                        },
+                        {
+                            label: "Remove from this round (Regulation 9t)",
+                            icon: UserX,
+                            destructive: true,
+                            hidden: !onRemove,
+                            onSelect: () => onRemove?.(),
                         },
                         {
                             label: "Delete result",

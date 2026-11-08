@@ -3,6 +3,7 @@ import {
   Attempt,
   AttemptStatus,
   AttemptType,
+  SendingResultsFrequency,
   StaffActivityStatus,
   StaffRole,
 } from '@prisma/client';
@@ -18,7 +19,7 @@ import {
   publicUserSelect,
 } from 'src/constants';
 import { ContestsService } from 'src/contests/contests.service';
-import { DbService } from 'src/db/db.service';
+import { DbService, INCLUDING_REMOVED } from 'src/db/db.service';
 import { isUnofficialEvent } from 'src/events';
 import { PersonService } from 'src/person/person.service';
 import { getMaxAttempts, isCumulativeLimit } from 'src/wcif-helpers';
@@ -118,6 +119,85 @@ export class ResultService {
     });
   }
 
+  /**
+   * Regulation 9t: the competitor would not have reached this round, so the
+   * result is kept but counts nowhere. Restoring brings it back unchanged.
+   */
+  async removeResult(id: string, reason: string | undefined, userId: string) {
+    const result = await this.prisma.result.findUnique({
+      where: { id },
+      include: { attempts: { select: { status: true } } },
+    });
+    if (!result) throw new HttpException('Result not found', 404);
+    if (result.removedAt) {
+      throw new HttpException('This result is already removed', 409);
+    }
+    if (+result.roundId.split('-r')[1] === 1) {
+      throw new HttpException(
+        'A first-round result has no round to advance from',
+        400,
+      );
+    }
+    if (result.attempts.some((a) => a.status === AttemptStatus.UNRESOLVED)) {
+      throw new HttpException('Resolve the open incident first', 409);
+    }
+    await this.prisma.result.update({
+      where: { id },
+      data: {
+        removedAt: new Date(),
+        removedBy: { connect: { id: userId } },
+        removedReason: reason,
+      },
+    });
+    await this.sendScorecardUnlessNever(id);
+    this.appGateway.handleResultEntered(result.roundId);
+    return { message: 'Result removed' };
+  }
+
+  async bringBackResult(id: string) {
+    const result = await this.prisma.result.findUnique({
+      where: { id },
+      include: { removedByRulingOf: { select: { roundId: true } } },
+    });
+    if (!result) throw new HttpException('Result not found', 404);
+    if (!result.removedAt) {
+      throw new HttpException('This result is not removed', 409);
+    }
+    if (result.removedByRulingOf) {
+      throw new HttpException(
+        `Restore the DNF ruling in round ${result.removedByRulingOf.roundId.split('-r')[1]} instead`,
+        409,
+      );
+    }
+    await this.prisma.result.update({
+      where: { id },
+      data: this.notRemoved,
+    });
+    await this.sendScorecardUnlessNever(id);
+    this.appGateway.handleResultEntered(result.roundId);
+    return { message: 'Result brought back' };
+  }
+
+  notRemoved = {
+    removedAt: null,
+    removedBy: { disconnect: true },
+    removedReason: null,
+    removedByRulingOf: { disconnect: true },
+  };
+
+  /** A failed send is logged; the change itself already happened */
+  async sendScorecardUnlessNever(resultId: string) {
+    const competition = await this.prisma.competition.findFirst();
+    if (competition.sendingResultsFrequency === SendingResultsFrequency.NEVER) {
+      return;
+    }
+    try {
+      await this.enterWholeScorecardToWcaLiveOrCubingContests(resultId);
+    } catch (e) {
+      console.error(e);
+    }
+  }
+
   async deleteResultById(id: string) {
     const result = await this.prisma.result.findUnique({
       where: {
@@ -164,10 +244,12 @@ export class ResultService {
     });
   }
 
-  async getAllResultsByPerson(personId: string) {
+  /** Only delegates see results removed under Regulation 9t */
+  async getAllResultsByPerson(personId: string, includeRemoved = false) {
     return this.prisma.result.findMany({
       where: {
         personId: personId,
+        ...(includeRemoved && INCLUDING_REMOVED),
       },
       include: {
         person: publicPersonSelect,
@@ -189,6 +271,8 @@ export class ResultService {
       include: {
         person: publicPersonSelect,
         doubleCheckedBy: publicUserSelect,
+        removedBy: publicUserSelect,
+        removedByRulingOf: { select: { id: true, roundId: true } },
         attempts: {
           include: {
             judge: publicPersonSelect,
@@ -226,7 +310,22 @@ export class ResultService {
     };
   }
 
+  /** Whoever enters an attempt: a removed result takes no more (Regulation 9t) */
   async getResultOrCreate(personId: string, roundId: string) {
+    const result = await this.getResultOrCreateIncludingRemoved(
+      personId,
+      roundId,
+    );
+    if (result.removedAt) {
+      throw new HttpException(
+        'Removed from this round (Regulation 9t)',
+        HttpStatus.CONFLICT,
+      );
+    }
+    return result;
+  }
+
+  async getResultOrCreateIncludingRemoved(personId: string, roundId: string) {
     return this.prisma.result.upsert({
       where: {
         personId_roundId: {
@@ -269,7 +368,9 @@ export class ResultService {
   }
 
   async enterWholeScorecardToWcaLiveOrCubingContests(resultId: string) {
-    const result = await this.getResultById(resultId);
+    const found = await this.getResultById(resultId);
+    // A removed result's times come off the public results
+    const result = found.removedAt ? { ...found, attempts: [] } : found;
     const isUnofficial = isUnofficialEvent(result.eventId);
     const competition = await this.prisma.competition.findFirst();
     if (isUnofficial) {
