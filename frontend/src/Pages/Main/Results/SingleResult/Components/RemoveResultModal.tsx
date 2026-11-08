@@ -76,9 +76,16 @@ const RemoveResultModal = ({
                         onChange={(event) => setReason(event.target.value)}
                     />
                 </div>
-                <p className="text-sm font-medium">
-                    {sendsToLive ? "Their times are cleared in WCA Live. " : ""}
-                    Remove {personName} from this round in WCA Live too.
+                <p
+                    className={
+                        sendsToLive
+                            ? "text-sm text-muted-foreground"
+                            : "text-sm font-medium"
+                    }
+                >
+                    {sendsToLive
+                        ? "The result is emptied in WCA Live, which then counts it as not competed and drops it when the next round opens."
+                        : `Results aren't sent to WCA Live in this competition, so remove ${personName} from this round there.`}
                 </p>
                 <Button
                     type="submit"

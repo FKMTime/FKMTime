@@ -214,10 +214,10 @@ const DnfAttemptsModal = ({
                     </div>
                 )}
                 {removeLater && (
-                    <p className="text-sm font-medium">
-                        Remove {personName} from these rounds in WCA Live too.
-                        {sendsToLive &&
-                            " FKMTime only clears their times there."}
+                    <p className="text-sm text-muted-foreground">
+                        {sendsToLive
+                            ? `Their results in these rounds are emptied in WCA Live, which then counts them as not competed and drops them when the next round opens.`
+                            : `Results aren't sent to WCA Live in this competition, so remove ${personName} from these rounds there.`}
                     </p>
                 )}
                 {disqualifies && (
