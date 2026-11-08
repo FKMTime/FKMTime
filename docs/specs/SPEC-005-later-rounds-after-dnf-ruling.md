@@ -155,9 +155,13 @@ stored; the competitor is no longer in the round.
 - **Result page of the trigger round:** the "Ruled DNF" card adds "Also removed:
   3x3x3 R2", with links. Restoring says it brings those results back.
 - **Competitor page, Results tab:** removed results stay listed for delegates,
-  greyed out, marked "Removed".
+  greyed out, marked "Removed". Organisers and everyone else don't see them.
 - **Everywhere else** (round results, double-check, public view, statistics,
   live solving), they don't appear.
+
+Only delegates see removed results. `GET /result/person/:id` includes them only
+for a delegate, and `GET /result/:id` returns `404` for a removed result to
+anyone else.
 
 ## Acceptance criteria
 
@@ -175,6 +179,8 @@ stored; the competitor is no longer in the round.
 - [ ] Restoring the R1 ruling brings R2 and R3 back unchanged, double-check
       included, and sends their scorecards.
 - [ ] A removed result's page opens with the banner and can't be edited.
+- [ ] Only delegates see removed results, on the competitor page and the result
+      page; organisers get `404` for a removed result.
 - [ ] Removal is refused with `409` while a later result has an open incident.
 - [ ] Other competitors' results are never changed.
 - [ ] Every `attempt` query that filters through `result` excludes removed
@@ -196,14 +202,14 @@ stored; the competitor is no longer in the round.
 1. **Hide removed results instead of deleting them.** A ruling can be
    reversed, and restoring it must bring the later rounds back. Rejected: hard
    delete (simpler, but irreversible and loses the edit history).
-2. **The delegate decides advancement, except under 9p4.** Rejected: ranking
+2. **Only delegates see removed results.** They apply 9t, and nobody else needs
+   a result that no longer counts.
+3. **The delegate decides advancement, except under 9p4.** Rejected: ranking
    the round in FKMTime from the WCIF advancement condition (new logic that
    would have to match WCA Live exactly, ties included) and always asking (the
    9p4 case is certain).
 
 ## Open questions
 
-- Should a removed result be visible to anyone but delegates, for example on
-  the competitor page for organisers?
 - Should removing be offered on its own, without a DNF ruling, for other 9t
   causes such as a score-taking mistake found later?
