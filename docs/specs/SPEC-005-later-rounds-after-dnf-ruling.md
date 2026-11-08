@@ -23,6 +23,10 @@ Regulation 9t says what happens then:
 the change means another competitor would not have advanced either, their
 results stay.
 
+The same rule covers any other change that costs the competitor their place,
+which 9t names itself: a score-taking mistake corrected later, or a retroactive
+penalty. In FKMTime those are ordinary attempt edits, not DNF rulings.
+
 Today the only way to remove a result is "Delete result", which deletes its
 attempts and their edit history for good. A ruling can be reversed later (a
 later ruling says the cube was fine), and then the round 2 result is gone with
@@ -32,10 +36,13 @@ nothing to bring it back.
 
 - In the DNF modal, the delegate can also remove the competitor's results in
   every later round of the event, in the same action.
+- For any other 9t cause, the delegate can remove a later-round result on its
+  own, with a reason, and bring it back later.
 - Removed results are kept with their attempts and edit history, but count
   nowhere: not in results, double-check, statistics, public views, group
   progress or scorecards sent.
-- Restoring the ruling brings the removed results back exactly as they were.
+- Restoring the ruling, or bringing back a result removed on its own, returns
+  it exactly as it was.
 - A station refuses further attempts for a competitor whose result in that
   round was removed.
 - No change to station firmware or the micro-connector.
@@ -50,7 +57,6 @@ nothing to bring it back.
   competitor into the round (9p3).
 - Removing the competitor from the round in WCA Live. FKMTime can only send
   scorecards; the delegate removes them there by hand.
-- A separate "remove from later rounds" action outside a DNF ruling.
 - Head-to-head rounds, which the DNF ruling doesn't cover (and 9t4 excludes
   between stages).
 
@@ -58,15 +64,18 @@ nothing to bring it back.
 
 ### Schema
 
-`Result` gains three nullable columns:
+`Result` gains four nullable columns:
 
 ```prisma
 model Result {
   // …
-  removedAt         DateTime? @map("removed_at")
-  removedById       String?   @map("removed_by_id")
-  /// The result whose DNF ruling removed this one, so restoring it brings this back
-  removedByRulingOfId String? @map("removed_by_ruling_of_id")
+  removedAt           DateTime? @map("removed_at")
+  removedById         String?   @map("removed_by_id")
+  /// Why it was removed, shown on its page
+  removedReason       String?   @map("removed_reason")
+  /// The result whose DNF ruling removed this one, so restoring it brings this
+  /// back. Null when it was removed on its own.
+  removedByRulingOfId String?   @map("removed_by_ruling_of_id")
 }
 ```
 
@@ -119,8 +128,32 @@ the card.
 attempts were never touched, so they come back exactly as they were, including
 their double-check.
 
-A removed result can't be restored on its own: the ruling on the trigger round
-is what removed it.
+A result a ruling removed comes back only with that ruling, so the two can't
+disagree. A result removed on its own comes back from its own page (see below).
+
+### Removing on its own
+
+For any other 9t cause, a later-round result can be removed directly:
+
+```
+POST /result/:id/remove        (DelegateGuard)
+{ "reason": "Score-taking mistake in R1" }
+→ 200
+
+POST /result/:id/bring-back    (DelegateGuard)
+→ 200
+```
+
+- **Remove** sets `removedAt`, `removedById` and `removedReason`, leaves
+  `removedByRulingOfId` null, and sends an empty scorecard unless the
+  competition never sends. It is refused with `400` for a first round (nothing
+  to advance from) and `409` with an open incident on the result.
+- **Bring back** clears those columns and sends the scorecard again. It is
+  refused with `409` for a result a ruling removed: "Restore the ruling in
+  3x3x3 R1 instead".
+- The same rounds as in the DNF modal are affected only if the delegate removes
+  each one. The action removes one result, since the delegate is the one who
+  knows which rounds the competitor would not have reached.
 
 ### Reading results
 
@@ -150,8 +183,12 @@ stored; the competitor is no longer in the round.
 ### Frontend
 
 - **Result page of a removed result:** a banner "Removed from this round under
-  Regulation 9t, after the ruling in 3x3x3 R1", linking to that result. Editing
-  is disabled; the way back is restoring the ruling.
+  Regulation 9t", with the reason, or "after the ruling in 3x3x3 R1" linking to
+  that result. Editing is disabled. A result removed on its own has a "Bring
+  back" button; one a ruling removed points to restoring the ruling.
+- **Result page of a later round:** "Remove from this round (Regulation 9t)" in
+  the ⋮ menu, opening a short modal with a reason (quick actions as elsewhere)
+  and the WCA Live reminder. Not shown for a first round.
 - **Result page of the trigger round:** the "Ruled DNF" card adds "Also removed:
   3x3x3 R2", with links. Restoring says it brings those results back.
 - **Competitor page, Results tab:** removed results stay listed for delegates,
@@ -182,13 +219,17 @@ anyone else.
 - [ ] Only delegates see removed results, on the competitor page and the result
       page; organisers get `404` for a removed result.
 - [ ] Removal is refused with `409` while a later result has an open incident.
+- [ ] "Remove from this round" hides an R2 result with its reason and sends an
+      empty scorecard; "Bring back" returns it unchanged and sends its scorecard.
+- [ ] "Remove from this round" isn't offered for a first round, and "Bring back"
+      is refused for a result a ruling removed.
 - [ ] Other competitors' results are never changed.
 - [ ] Every `attempt` query that filters through `result` excludes removed
       results (checked by a unit test).
 
 ## Rollout
 
-- Three nullable columns on `Result`, applied by `prisma db push` on start.
+- Four nullable columns on `Result`, applied by `prisma db push` on start.
   Only adds to the schema.
 - Backend and frontend ship together. Stations and the micro-connector don't
   change.
@@ -204,12 +245,12 @@ anyone else.
    delete (simpler, but irreversible and loses the edit history).
 2. **Only delegates see removed results.** They apply 9t, and nobody else needs
    a result that no longer counts.
-3. **The delegate decides advancement, except under 9p4.** Rejected: ranking
+3. **Removing is also offered on its own, one result at a time.** 9t covers
+   score-taking mistakes and retroactive penalties too, which are ordinary
+   edits in FKMTime. It reuses the same hiding, so the only extra is an action
+   and a way back. Rejected: removal only through the DNF modal (every other 9t
+   case would fall back to "Delete result").
+4. **The delegate decides advancement, except under 9p4.** Rejected: ranking
    the round in FKMTime from the WCIF advancement condition (new logic that
    would have to match WCA Live exactly, ties included) and always asking (the
    9p4 case is certain).
-
-## Open questions
-
-- Should removing be offered on its own, without a DNF ruling, for other 9t
-  causes such as a score-taking mistake found later?
