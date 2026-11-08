@@ -213,6 +213,24 @@ export const getSubmittedAttempts = (attempts: Attempt[]) => {
         .map((a) => a as Attempt);
 };
 
+/** Attempts a disqualification from the round would record as DNF */
+export const hasRemainingAttempts = (
+    attempts: Attempt[],
+    maxAttempts: number
+) => {
+    const standard = attempts.filter(
+        (attempt) => attempt.type === AttemptType.STANDARD_ATTEMPT
+    );
+    // With no attempt started, a disqualification records no result
+    return (
+        standard.length > 0 &&
+        (standard.length < maxAttempts ||
+            standard.some(
+                (attempt) => attempt.status === AttemptStatus.SCRAMBLED
+            ))
+    );
+};
+
 /** Counting attempts that still have a time of their own */
 export const getAttemptsToDnf = (attempts: Attempt[]) =>
     (getSubmittedAttempts(attempts) as AttemptWithNumber[]).filter(

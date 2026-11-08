@@ -2,7 +2,10 @@ import { useAtomValue } from "jotai";
 import { Ban, List } from "lucide-react";
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { getRoundInfoFromWcif } from "wcif-helpers";
+import {
+    getNumberOfAttemptsForRound,
+    getRoundInfoFromWcif,
+} from "wcif-helpers";
 
 import EmptyState from "@/Components/shared/EmptyState";
 import RowActions from "@/Components/shared/RowActions";
@@ -29,6 +32,7 @@ import {
     cn,
     getAttemptsToDnf,
     getSubmittedAttempts,
+    hasRemainingAttempts,
     shortRoundName,
 } from "@/lib/utils";
 import DnfAttemptsModal from "@/Pages/Main/Results/SingleResult/Components/DnfAttemptsModal";
@@ -66,7 +70,16 @@ const PersonResults = ({ results, onChange }: PersonResultsProps) => {
         hidden:
             !canDnf ||
             !eventResults(eventId).some(
-                (result) => getAttemptsToDnf(result.attempts).length > 0
+                (result) =>
+                    getAttemptsToDnf(result.attempts).length > 0 ||
+                    (!!competition &&
+                        hasRemainingAttempts(
+                            result.attempts,
+                            getNumberOfAttemptsForRound(
+                                result.roundId,
+                                competition.wcif
+                            )
+                        ))
             ),
         onSelect: () => {
             const hasOpenIncident = eventResults(eventId).some((result) =>

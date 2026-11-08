@@ -31,6 +31,7 @@ import { resultQuery } from "@/lib/results";
 import {
     getAttemptsToDnf,
     getSubmittedAttempts,
+    hasRemainingAttempts,
     shortRoundName,
 } from "@/lib/utils";
 
@@ -170,7 +171,9 @@ const SingleResult = () => {
         getRoundInfoFromWcif(result.roundId, competition.wcif)?.format === "h";
     const canGiveExtras = submittedAttempts.length > 0 && !isHeadToHead;
     const canDnfAll =
-        getAttemptsToDnf(result.attempts).length > 0 && !isHeadToHead;
+        (getAttemptsToDnf(result.attempts).length > 0 ||
+            hasRemainingAttempts(result.attempts, maxAttempts)) &&
+        !isHeadToHead;
     const openIncidents = result.attempts.filter(
         (attempt) => attempt.status === AttemptStatus.UNRESOLVED
     );

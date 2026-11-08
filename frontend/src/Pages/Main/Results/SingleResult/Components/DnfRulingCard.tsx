@@ -34,7 +34,7 @@ const DnfRulingCard = ({
         confirm({
             title: "Restore the original attempts?",
             description:
-                "Each attempt gets back its own time and penalty, and the scorecard is sent again.",
+                "Each attempt gets back its own time and penalty, remaining attempts can be done again, and the scorecard is sent again.",
             confirmLabel: "Restore",
             onConfirm: async () => {
                 const { status, message } = await restoreDnfAttempts(resultId);
@@ -54,11 +54,9 @@ const DnfRulingCard = ({
             },
         }).catch(() => undefined);
 
-    const penaltyBefore = new Map(
-        ruled.map((attempt) => [attempt.id, attempt.penaltyBeforeDnf])
-    );
+    const byId = new Map(ruled.map((attempt) => [attempt.id, attempt]));
     const sorted = attempts
-        .filter((attempt) => penaltyBefore.has(attempt.id))
+        .filter((attempt) => byId.has(attempt.id))
         .sort(
             (a, b) =>
                 a.type.localeCompare(b.type) * -1 ||
@@ -88,10 +86,14 @@ const DnfRulingCard = ({
                             {attemptLabel(attempt)}
                         </span>
                         <span>
-                            {attemptWithPenaltyToString({
-                                ...attempt,
-                                penalty: penaltyBefore.get(attempt.id) ?? 0,
-                            })}
+                            {byId.get(attempt.id)?.addedByRuling
+                                ? "Not done"
+                                : attemptWithPenaltyToString({
+                                      ...attempt,
+                                      penalty:
+                                          byId.get(attempt.id)
+                                              ?.penaltyBeforeDnf ?? 0,
+                                  })}
                         </span>
                     </div>
                 ))}

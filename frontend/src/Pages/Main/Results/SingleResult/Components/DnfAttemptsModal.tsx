@@ -1,5 +1,6 @@
 import { useAtomValue } from "jotai";
 import { FormEvent, useState } from "react";
+import { getNumberOfAttemptsForRound } from "wcif-helpers";
 
 import { Modal } from "@/Components/Modal.tsx";
 import QuickActions from "@/Components/QuickActions";
@@ -18,7 +19,11 @@ import {
     SendingResultsFrequency,
 } from "@/lib/interfaces";
 import { attemptWithPenaltyToString } from "@/lib/resultFormatters";
-import { getAttemptsToDnf, shortRoundName } from "@/lib/utils";
+import {
+    getAttemptsToDnf,
+    hasRemainingAttempts,
+    shortRoundName,
+} from "@/lib/utils";
 
 interface DnfAttemptsModalProps {
     isOpen: boolean;
@@ -43,6 +48,7 @@ const DnfAttemptsModal = ({
     const [isLoading, setIsLoading] = useState(false);
     const [comment, setComment] = useState("");
     const [uncheckedIds, setUncheckedIds] = useState<string[]>([]);
+    const [disqualify, setDisqualify] = useState(false);
     const lastResult = results.at(-1);
     const { data: context } = useLiveQuery(
         extrasContextQuery(lastResult?.id ?? ""),
@@ -59,6 +65,15 @@ const DnfAttemptsModal = ({
         .flatMap((round) => round.attempts)
         .filter((attempt) => !uncheckedIds.includes(attempt.id));
     const showRoundNames = rounds.length > 1;
+    // A disqualification applies to the round in progress, the last one
+    const canDisqualify =
+        !!lastResult &&
+        !!competition &&
+        hasRemainingAttempts(
+            lastResult.attempts,
+            getNumberOfAttemptsForRound(lastResult.roundId, competition.wcif)
+        );
+    const disqualifies = canDisqualify && disqualify;
 
     const toggle = (id: string, checked: boolean) =>
         setUncheckedIds((ids) =>
@@ -74,6 +89,7 @@ const DnfAttemptsModal = ({
         setIsLoading(true);
         const { status, message } = await dnfAttempts({
             attemptIds: chosen.map((attempt) => attempt.id),
+            remainingInResultId: disqualifies ? lastResult?.id : undefined,
             comment,
         });
         setIsLoading(false);
@@ -126,6 +142,23 @@ const DnfAttemptsModal = ({
                         ))}
                     </fieldset>
                 ))}
+                {canDisqualify && lastResult && (
+                    <Label className="flex min-h-11 cursor-pointer items-center gap-3 font-normal md:min-h-0">
+                        <Checkbox
+                            checked={disqualify}
+                            onCheckedChange={(value) => setDisqualify(!!value)}
+                        />
+                        DNF all remaining attempts in{" "}
+                        {shortRoundName(lastResult.roundId)}
+                    </Label>
+                )}
+                {disqualifies && (
+                    <p className="text-sm text-muted-foreground">
+                        {personName} is disqualified from the round and can't do
+                        any more attempts. Completed attempts stay as they are
+                        unless ticked above.
+                    </p>
+                )}
                 {chosen.length > 0 && (
                     <p className="text-sm text-muted-foreground">
                         {chosen.length === 1
@@ -154,7 +187,7 @@ const DnfAttemptsModal = ({
                 <Button
                     type="submit"
                     variant="destructive"
-                    disabled={isLoading || !chosen.length}
+                    disabled={isLoading || (!chosen.length && !disqualifies)}
                 >
                     Set to DNF
                 </Button>

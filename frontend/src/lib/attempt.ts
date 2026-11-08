@@ -168,6 +168,8 @@ export const reapplyExtraGrant = async (
 
 export interface RuledDnfAttempt {
     id: string;
+    /** A remaining attempt the ruling recorded, removed on restore */
+    addedByRuling: boolean;
     penaltyBeforeDnf: number | null;
 }
 
@@ -179,6 +181,8 @@ export const dnfRulingQuery = queryFamily((resultId) =>
 /** Rule attempts DNF, keeping their times */
 export const dnfAttempts = async (data: {
     attemptIds: string[];
+    /** Disqualify from this result's round: its remaining attempts become DNF */
+    remainingInResultId?: string;
     comment: string;
 }): Promise<{ status: number; message?: string }> => {
     const response = await backendRequest("attempt/dnf", "POST", true, data);

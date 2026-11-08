@@ -16,19 +16,26 @@ import { DNF_VALUE, DNS_VALUE, publicPersonSelect } from 'src/constants';
 import { getMaxPenalty, isUnofficialEvent } from 'src/events';
 import { IncidentService } from 'src/incident/incident.service';
 import {
+  checkCutoff,
   getAttemptsWaitingForExtra,
   getCountingAttempts,
+  getSortedStandardAttempts,
   sortByPosition,
 } from 'src/result/helpers';
 import { getNextGroupInRoom } from 'src/wcif-helpers';
-import { getRoundInfoFromWcif } from 'wcif-helpers';
+import {
+  Competition,
+  getNumberOfAttemptsForRound,
+  getRoundInfoFromWcif,
+} from 'wcif-helpers';
 
 import { DbService } from '../db/db.service';
 import { ResultService } from '../result/result.service';
 import { SocketController } from '../socket/socket.controller';
 import {
   DNF_RULING_UNDONE,
-  getPenaltyBeforeRuling,
+  getStateBeforeRuling,
+  REMAINING_RULED_DNF,
   RULED_DNF,
 } from './dnfRuling';
 import { CreateAttemptDto } from './dto/createAttempt.dto';
@@ -471,8 +478,15 @@ export class AttemptService {
     return { reapplied: reapplied.length };
   }
 
-  /** A delegate rules that attempts stand as DNF, in one round or several */
+  /**
+   * A delegate rules that attempts stand as DNF, in one round or several, and
+   * may disqualify the competitor from a round: its remaining attempts become
+   * DNF (Regulation 2j1a)
+   */
   async dnfAttempts(data: DnfAttemptsDto, userId: string) {
+    if (!data.attemptIds.length && !data.remainingInResultId) {
+      throw new HttpException('Nothing to set to DNF', 400);
+    }
     const attempts = await this.prisma.attempt.findMany({
       where: { id: { in: data.attemptIds } },
       select: { resultId: true },
@@ -480,7 +494,12 @@ export class AttemptService {
     if (attempts.length !== data.attemptIds.length) {
       throw new HttpException('Attempt not found', 404);
     }
-    const resultIds = [...new Set(attempts.map((a) => a.resultId))];
+    const resultIds = [
+      ...new Set([
+        ...attempts.map((a) => a.resultId),
+        ...(data.remainingInResultId ? [data.remainingInResultId] : []),
+      ]),
+    ];
     const results = await Promise.all(
       resultIds.map((id) => this.getResultForExtras(id)),
     );
@@ -507,71 +526,190 @@ export class AttemptService {
     ) {
       throw new HttpException('These attempts cannot be set to DNF', 400);
     }
+    const remainingResult = results.find(
+      (result) => result.id === data.remainingInResultId,
+    );
+    const remaining = remainingResult
+      ? this.getRemainingAttempts(remainingResult, targets, wcif)
+      : { numbers: [], scrambled: [] };
 
-    const updated = await this.prisma.$transaction(async (tx) => {
+    // Scrambled attempts have no history yet; this keeps them restorable
+    for (const attempt of remaining.scrambled) {
+      await this.attemptEditLogService.log(
+        attempt as AttemptSnapshot,
+        attempt.scrambledAt ?? new Date(Date.now() - 1000),
+        null,
+        'Scrambled',
+      );
+    }
+    const { updated, added } = await this.prisma.$transaction(async (tx) => {
       for (const resultId of resultIds) {
         await tx.result.update({
           where: { id: resultId },
           data: this.doubleCheckCleared,
         });
       }
-      return Promise.all(
-        targets.map((attempt) =>
+      const changed = await Promise.all(
+        [...targets, ...remaining.scrambled].map((attempt) =>
           tx.attempt.update({
             where: { id: attempt.id },
             data: {
               penalty: DNF_VALUE,
+              // A scrambled attempt now has its result
+              ...(attempt.status === AttemptStatus.SCRAMBLED && {
+                status: AttemptStatus.STANDARD,
+              }),
               comment: data.comment,
               updatedBy: { connect: { id: userId } },
             },
           }),
         ),
       );
+      const solvedAt = new Date();
+      const created = await Promise.all(
+        remaining.numbers.map((attemptNumber) =>
+          tx.attempt.create({
+            data: {
+              attemptNumber,
+              type: AttemptType.STANDARD_ATTEMPT,
+              status: AttemptStatus.STANDARD,
+              penalty: DNF_VALUE,
+              value: 0,
+              solvedAt,
+              comment: data.comment,
+              result: { connect: { id: remainingResult.id } },
+              updatedBy: { connect: { id: userId } },
+            },
+          }),
+        ),
+      );
+      return { updated: changed, added: created };
     });
     await this.logAll(updated, userId, RULED_DNF);
+    await this.logAll(added, userId, REMAINING_RULED_DNF);
 
     for (const resultId of resultIds) {
       await this.sendScorecardUnlessNever(resultId, competition);
     }
+    if (remainingResult) {
+      this.appGateway.handleResultEntered(remainingResult.roundId);
+    }
     this.appGateway.handleAttemptUpdated();
-    return { updated: updated.length };
+    return { updated: updated.length + added.length };
   }
 
-  /** Attempts of a result under a DNF ruling, with the penalty each had before */
+  /**
+   * The attempts a disqualification from the round records as DNF: up to the
+   * cutoff if the competitor can no longer make it, otherwise every attempt
+   */
+  private getRemainingAttempts(
+    result: { roundId: string; attempts: Attempt[] },
+    targets: Attempt[],
+    wcif: Competition,
+  ) {
+    const standard = getSortedStandardAttempts(result.attempts);
+    if (!standard.length) {
+      throw new HttpException(
+        'No attempt started in this round, so no result is recorded',
+        400,
+      );
+    }
+    if (getAttemptsWaitingForExtra(result.attempts).length) {
+      throw new HttpException(
+        'Attempts are waiting for extras. Switch back to the originals first',
+        409,
+      );
+    }
+    const targetIds = targets.map((attempt) => attempt.id);
+    const countingAfter = getCountingAttempts(result.attempts).map((attempt) =>
+      targetIds.includes(attempt.id)
+        ? { ...attempt, penalty: DNF_VALUE }
+        : attempt,
+    );
+    const cutoff = getRoundInfoFromWcif(result.roundId, wcif)?.cutoff;
+    const cutoffMissed =
+      cutoff &&
+      !checkCutoff(
+        countingAfter.slice(0, cutoff.numberOfAttempts),
+        cutoff.resultValue,
+        0,
+      );
+    const last = cutoffMissed
+      ? cutoff.numberOfAttempts
+      : getNumberOfAttemptsForRound(result.roundId, wcif);
+    const numbers = Array.from({ length: last }, (_, i) => i + 1).filter(
+      (number) => !standard.some((attempt) => attempt.attemptNumber === number),
+    );
+    const scrambled = standard.filter(
+      (attempt) =>
+        attempt.status === AttemptStatus.SCRAMBLED &&
+        attempt.attemptNumber <= last,
+    );
+    if (!numbers.length && !scrambled.length && !targets.length) {
+      throw new HttpException('No attempts left', 400);
+    }
+    return { numbers, scrambled };
+  }
+
+  /** Attempts of a result under a DNF ruling, with how each was before */
   async getDnfRuling(resultId: string) {
     const attempts = await this.prisma.attempt.findMany({
       where: { resultId, penalty: DNF_VALUE },
       include: {
-        editLogs: { select: { comment: true, penalty: true, editedAt: true } },
+        editLogs: {
+          select: {
+            comment: true,
+            penalty: true,
+            status: true,
+            editedAt: true,
+          },
+        },
       },
     });
     return attempts.flatMap((attempt) => {
-      const before = getPenaltyBeforeRuling(attempt.penalty, attempt.editLogs);
-      return before
-        ? [{ id: attempt.id, penaltyBeforeDnf: before.penalty }]
-        : [];
+      const before = getStateBeforeRuling(attempt.penalty, attempt.editLogs);
+      if (!before) return [];
+      return [
+        before.addedByRuling
+          ? { id: attempt.id, addedByRuling: true, penaltyBeforeDnf: null }
+          : {
+              id: attempt.id,
+              addedByRuling: false,
+              penaltyBeforeDnf: before.penalty,
+              statusBeforeDnf: before.status,
+            },
+      ];
     });
   }
 
-  /** Undo a DNF ruling: the attempts get their own penalty back */
+  /**
+   * Undo a DNF ruling: the attempts get their own penalty back, and remaining
+   * attempts it recorded are removed so the competitor can do them
+   */
   async restoreDnfAttempts(resultId: string, userId: string) {
-    await this.getResultForExtras(resultId);
+    const result = await this.getResultForExtras(resultId);
     const ruled = await this.getDnfRuling(resultId);
     if (!ruled.length) {
       throw new HttpException('No attempts were ruled DNF', 400);
     }
+    const toRestore = ruled.filter((attempt) => !attempt.addedByRuling);
+    const toRemove = ruled.filter((attempt) => attempt.addedByRuling);
 
     const restored = await this.prisma.$transaction(async (tx) => {
       await tx.result.update({
         where: { id: resultId },
         data: this.doubleCheckCleared,
       });
+      await tx.attempt.deleteMany({
+        where: { id: { in: toRemove.map((attempt) => attempt.id) } },
+      });
       return Promise.all(
-        ruled.map((attempt) =>
+        toRestore.map((attempt) =>
           tx.attempt.update({
             where: { id: attempt.id },
             data: {
               penalty: attempt.penaltyBeforeDnf,
+              status: attempt.statusBeforeDnf,
               updatedBy: { connect: { id: userId } },
             },
           }),
@@ -582,8 +720,9 @@ export class AttemptService {
 
     const competition = await this.prisma.competition.findFirst();
     await this.sendScorecardUnlessNever(resultId, competition);
+    if (toRemove.length) this.appGateway.handleResultEntered(result.roundId);
     this.appGateway.handleAttemptUpdated();
-    return { restored: restored.length };
+    return { restored: restored.length, removed: toRemove.length };
   }
 
   /** What the delegate needs to know before giving extras for a result */

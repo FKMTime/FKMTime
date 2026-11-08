@@ -28,6 +28,7 @@ describe('AttemptService extras for all attempts', () => {
   let attempts: Attempt[];
   let grants: { id: string; restoredAt: Date | null; attempts: Attempt[] }[];
   let format: string;
+  let cutoff: { numberOfAttempts: number; resultValue: number } | null;
   let sendingResultsFrequency: SendingResultsFrequency;
   let prisma: Record<string, any>;
   let resultService: {
@@ -64,12 +65,15 @@ describe('AttemptService extras for all attempts', () => {
     ];
     grants = [];
     format = 'a';
+    cutoff = null;
     sendingResultsFrequency = SendingResultsFrequency.AFTER_SOLVE;
     prisma = {
       competition: {
         findFirst: jest.fn().mockImplementation(async () => ({
           sendingResultsFrequency,
-          wcif: { events: [{ id: '333', rounds: [{ id: '333-r1', format }] }] },
+          wcif: {
+            events: [{ id: '333', rounds: [{ id: '333-r1', format, cutoff }] }],
+          },
         })),
       },
       result: {
@@ -437,13 +441,15 @@ describe('AttemptService extras for all attempts', () => {
     const dnf = (attemptIds: string[]) =>
       service.dnfAttempts({ attemptIds, comment: 'Illegal cube' }, 'user-1');
 
+    let logged: [Attempt, Date, string | null, string][];
     /** Every snapshot the service logged for an attempt, as the edit history holds them */
     const editLogs = (id: string) =>
-      ((service as any).attemptEditLogService.log as jest.Mock).mock.calls
+      logged
         .filter(([snapshot]) => snapshot.id === id)
         .map(([snapshot, editedAt, , comment]) => ({
           comment,
           penalty: snapshot.penalty,
+          status: snapshot.status,
           editedAt,
         }));
     const entered = (attempt: Attempt) =>
@@ -455,6 +461,17 @@ describe('AttemptService extras for all attempts', () => {
       );
 
     beforeEach(() => {
+      logged = [];
+      (service as any).attemptEditLogService.log = jest.fn(
+        async (
+          snapshot: Attempt,
+          editedAt: Date,
+          userId: string | null,
+          comment: string,
+        ) => {
+          logged.push([{ ...snapshot }, editedAt, userId, comment]);
+        },
+      );
       prisma.attempt.findMany = jest
         .fn()
         .mockImplementation(async ({ where }) =>
@@ -464,9 +481,150 @@ describe('AttemptService extras for all attempts', () => {
                 .filter((a) => a.penalty === where.penalty)
                 .map((a) => ({ ...a, editLogs: editLogs(a.id) })),
         );
+      prisma.attempt.create = jest.fn().mockImplementation(async ({ data }) => {
+        const { result, ...scalars } = data;
+        delete scalars.updatedBy;
+        const created = {
+          ...scalars,
+          id: `new-${scalars.attemptNumber}`,
+          resultId: result.connect.id,
+          replacedBy: null,
+        } as Attempt;
+        attempts.push(created);
+        return created;
+      });
+      prisma.attempt.deleteMany = jest
+        .fn()
+        .mockImplementation(async ({ where }) => {
+          attempts = attempts.filter((a) => !where.id.in.includes(a.id));
+        });
       attempts.forEach((a) => (a.resultId = 'result-1'));
       attempts[1].penalty = 2;
       attempts.forEach(entered);
+    });
+
+    const disqualify = (attemptIds: string[] = []) =>
+      service.dnfAttempts(
+        { attemptIds, remainingInResultId: 'result-1', comment: 'DQ' },
+        'user-1',
+      );
+    const numbers = () =>
+      attempts
+        .filter((a) => a.type === AttemptType.STANDARD_ATTEMPT)
+        .map((a) => [a.attemptNumber, a.penalty]);
+
+    it('records the remaining attempts as DNF and keeps completed ones', async () => {
+      await expect(disqualify()).resolves.toEqual({ updated: 3 });
+
+      expect(numbers()).toEqual([
+        [1, 0],
+        [2, 2],
+        [3, -1],
+        [4, -1],
+        [5, -1],
+      ]);
+      expect(appGateway.handleResultEntered).toHaveBeenCalledWith('333-r1');
+    });
+
+    it('can rule completed attempts DNF as well', async () => {
+      await disqualify(['s1']);
+
+      expect(numbers().map(([, penalty]) => penalty)).toEqual([
+        -1, 2, -1, -1, -1,
+      ]);
+    });
+
+    it('stops at the cutoff the competitor can no longer make', async () => {
+      cutoff = { numberOfAttempts: 2, resultValue: 1000 };
+      attempts.pop();
+
+      await disqualify();
+
+      expect(numbers()).toEqual([
+        [1, 0],
+        [2, -1],
+      ]);
+    });
+
+    it('fills every attempt when the cutoff was already made', async () => {
+      cutoff = { numberOfAttempts: 2, resultValue: 2000 };
+
+      await disqualify();
+
+      expect(numbers()).toHaveLength(5);
+    });
+
+    it('records a scrambled attempt as DNF', async () => {
+      attempts.push({
+        ...attempts[0],
+        id: 's3',
+        attemptNumber: 3,
+        status: AttemptStatus.SCRAMBLED,
+        value: 0,
+      });
+
+      await disqualify();
+
+      expect(attempts.find((a) => a.id === 's3')).toMatchObject({
+        status: AttemptStatus.STANDARD,
+        penalty: -1,
+      });
+      expect(numbers()).toHaveLength(5);
+    });
+
+    it('records nothing for a competitor with no attempt yet', async () => {
+      attempts = [];
+
+      await expect(disqualify()).rejects.toMatchObject({ status: 400 });
+    });
+
+    it('asks to switch back while attempts wait for extras', async () => {
+      attempts[1].status = AttemptStatus.EXTRA_GIVEN;
+
+      await expect(disqualify()).rejects.toMatchObject({ status: 409 });
+    });
+
+    it('rejects a round with no attempts left', async () => {
+      attempts.push(
+        ...[3, 4, 5].map((n) => ({
+          ...attempts[0],
+          id: `s${n}`,
+          attemptNumber: n,
+        })),
+      );
+
+      await expect(disqualify()).rejects.toMatchObject({ status: 400 });
+    });
+
+    it('removes the recorded attempts on restore', async () => {
+      await disqualify(['s1']);
+
+      await expect(
+        service.restoreDnfAttempts('result-1', 'user-1'),
+      ).resolves.toEqual({ restored: 1, removed: 3 });
+      expect(numbers()).toEqual([
+        [1, 0],
+        [2, 2],
+      ]);
+    });
+
+    it('puts a scrambled attempt back on restore', async () => {
+      attempts.push({
+        ...attempts[0],
+        id: 's3',
+        attemptNumber: 3,
+        status: AttemptStatus.SCRAMBLED,
+        value: 0,
+        scrambledAt: new Date(Date.now() - 30_000),
+      });
+
+      await disqualify();
+      await service.restoreDnfAttempts('result-1', 'user-1');
+
+      expect(attempts.find((a) => a.id === 's3')).toMatchObject({
+        status: AttemptStatus.SCRAMBLED,
+        penalty: 0,
+      });
     });
 
     it('keeps the times and sets the penalty to DNF', async () => {
@@ -533,7 +691,7 @@ describe('AttemptService extras for all attempts', () => {
 
       await expect(
         service.restoreDnfAttempts('result-1', 'user-1'),
-      ).resolves.toEqual({ restored: 2 });
+      ).resolves.toEqual({ restored: 2, removed: 0 });
 
       expect(attempts.map((a) => a.penalty)).toEqual([0, 2]);
       expect(
@@ -545,7 +703,12 @@ describe('AttemptService extras for all attempts', () => {
       await dnf(['s2']);
 
       await expect(service.getDnfRuling('result-1')).resolves.toEqual([
-        { id: 's2', penaltyBeforeDnf: 2 },
+        {
+          id: 's2',
+          addedByRuling: false,
+          penaltyBeforeDnf: 2,
+          statusBeforeDnf: AttemptStatus.RESOLVED,
+        },
       ]);
     });
 

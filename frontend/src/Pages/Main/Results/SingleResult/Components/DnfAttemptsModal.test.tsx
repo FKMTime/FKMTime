@@ -66,7 +66,17 @@ const renderModal = (
     const store = createStore();
     store.set(competitionAtom, {
         sendingResultsFrequency: frequency,
-        wcif: { events: [] },
+        wcif: {
+            events: [
+                {
+                    id: "333",
+                    rounds: [
+                        { id: "333-r1", format: "a" },
+                        { id: "333-r2", format: "a" },
+                    ],
+                },
+            ],
+        },
     } as unknown as Competition);
     const onDone = vi.fn();
     renderWithQueryClient(
@@ -134,8 +144,8 @@ describe("DnfAttemptsModal", () => {
     it("covers every round of an event", async () => {
         renderModal([firstRound, secondRound]);
 
-        expect(screen.getByText(/R1$/)).toBeTruthy();
-        expect(screen.getByText(/R2$/)).toBeTruthy();
+        expect(screen.getByText(/R1$/, { selector: "legend" })).toBeTruthy();
+        expect(screen.getByText(/R2$/, { selector: "legend" })).toBeTruthy();
         await userEvent.click(
             screen.getByRole("button", { name: "Set to DNF" })
         );
@@ -144,6 +154,46 @@ describe("DnfAttemptsModal", () => {
             expect.objectContaining({ attemptIds: ["a1", "a3", "b1"] })
         );
         expect(getExtrasContext).toHaveBeenCalledWith("result-2");
+    });
+
+    it("disqualifies from the last round when ticked", async () => {
+        renderModal([firstRound, secondRound]);
+
+        for (const ticked of screen.getAllByRole("checkbox", {
+            checked: true,
+        })) {
+            await userEvent.click(ticked);
+        }
+        expect(
+            screen.getByRole("button", { name: "Set to DNF" })
+        ).toHaveProperty("disabled", true);
+        await userEvent.click(
+            screen.getByRole("checkbox", {
+                name: /DNF all remaining attempts in .*R2/,
+            })
+        );
+        expect(screen.getByText(/is disqualified from the round/)).toBeTruthy();
+        await userEvent.click(
+            screen.getByRole("button", { name: "Set to DNF" })
+        );
+
+        expect(dnfAttempts).toHaveBeenCalledWith({
+            attemptIds: [],
+            remainingInResultId: "result-2",
+            comment: "",
+        });
+    });
+
+    it("leaves the remaining attempts alone by default", async () => {
+        renderModal();
+
+        await userEvent.click(
+            screen.getByRole("button", { name: "Set to DNF" })
+        );
+
+        expect(dnfAttempts).toHaveBeenCalledWith(
+            expect.objectContaining({ remainingInResultId: undefined })
+        );
     });
 
     it("warns when the next round has started", async () => {
