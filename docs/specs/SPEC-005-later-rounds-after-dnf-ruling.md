@@ -166,9 +166,16 @@ incidents, device, attendance, events, person for device).
   `removedAt: null` to `findMany`, `findFirst`, `count`, `groupBy` and
   `aggregate` unless the query sets `removedAt` itself. `findUnique` by id is
   left alone, so a removed result's page still opens.
-- **`Attempt` queries through the result** (`where: { result: { roundId } }`)
-  aren't covered by the extension. Each one adds `result: { removedAt: null }`.
-  A unit test lists them, so a new one can't miss it silently.
+- **`Attempt` queries** get the same extension: it adds
+  `result: { removedAt: null }`, merged into any `result` filter the query
+  already has. A query that names one result or one attempt (`resultId` or `id`
+  in `where`) is left alone, because it is about that result's own rows. Doing
+  this in one place means a new query can't forget it.
+- A query that needs removed results too spreads `INCLUDING_REMOVED` into its
+  `where`. Only the competitor's results for a delegate and the results a
+  ruling removed use it.
+- Nested reads (`include: { results }`, relation filters such as
+  `results: { some: … }`) aren't covered by the extension and filter by hand.
 - `getPersonsWithNoResultsByRoundId` treats a removed result as no result, but
   doesn't list the competitor as missing.
 
@@ -187,8 +194,9 @@ stored; the competitor is no longer in the round.
   that result. Editing is disabled. A result removed on its own has a "Bring
   back" button; one a ruling removed points to restoring the ruling.
 - **Result page of a later round:** "Remove from this round (Regulation 9t)" in
-  the ⋮ menu, opening a short modal with a reason (quick actions as elsewhere)
-  and the WCA Live reminder. Not shown for a first round.
+  the ⋮ menu, opening a short modal with a reason and the WCA Live reminder.
+  Not shown for a first round. The incident quick actions don't apply here,
+  so the reason is typed.
 - **Result page of the trigger round:** the "Ruled DNF" card adds "Also removed:
   3x3x3 R2", with links. Restoring says it brings those results back.
 - **Competitor page, Results tab:** removed results stay listed for delegates,
@@ -225,7 +233,7 @@ anyone else.
       is refused for a result a ruling removed.
 - [ ] Other competitors' results are never changed.
 - [ ] Every `attempt` query that filters through `result` excludes removed
-      results (checked by a unit test).
+      results, without each query filtering by hand.
 
 ## Rollout
 
