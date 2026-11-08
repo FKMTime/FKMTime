@@ -172,7 +172,11 @@ describe('Result checks, double check and submission (e2e)', () => {
       expect(ids).not.toContain(underCutoff.result.id);
       expect(ids).not.toContain(waiting.result.id);
       expect(ids).not.toContain(extraPending.result.id);
+      // Unfinished results are counted apart, not in the total
       expect(res.body.totalCount).toBe(
+        res.body.results.length + res.body.doubleCheckedCount,
+      );
+      expect(res.body.totalCount + res.body.notFinishedCount).toBe(
         await db.result.count({ where: { roundId: ROUND_ID } }),
       );
     });
