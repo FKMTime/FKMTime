@@ -7,8 +7,8 @@ import {
   Role,
   SendingResultsFrequency,
 } from '@prisma/client';
-import { Activity, Assignment, Competition, Person } from '@wca/helpers';
 import { sha512 } from 'js-sha512';
+import { Activity, Assignment, Competition, Person } from 'wcif-helpers';
 
 import { wcifRoleToAttendanceRole } from '../../src/wcif-helpers';
 
