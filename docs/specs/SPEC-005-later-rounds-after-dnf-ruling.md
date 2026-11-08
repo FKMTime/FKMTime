@@ -55,8 +55,9 @@ nothing to bring it back.
   call.
 - Touching other competitors' results (9t3), or moving the next-ranked
   competitor into the round (9p3).
-- Removing the competitor from the round in WCA Live. FKMTime can only send
-  scorecards; the delegate removes them there by hand.
+- Calling WCA Live's "remove person from round". It needs a signed-in WCA Live
+  session, and the empty scorecard already has the same effect (see *WCA
+  Live*).
 - Head-to-head rounds, which the DNF ruling doesn't cover (and 9t4 excludes
   between stages).
 
@@ -102,8 +103,9 @@ Shown only when the competitor has results in later rounds:
   why: "With only DNF results, Jane Doe can't advance."
 - **Unticked** otherwise, with a hint: "Tick if Jane Doe would no longer have
   advanced."
-- When ticked: "Remove Jane Doe from these rounds in WCA Live too. FKMTime only
-  clears their times there."
+- When ticked, it says what happens in WCA Live (see *WCA Live*). Only a
+  competition set never to send results asks the delegate to remove the
+  competitor there.
 
 ### API
 
@@ -115,7 +117,24 @@ result has an open incident, because it would disappear from the incident lists
 
 After the transaction, an empty scorecard (`attempts: []`) is sent for each
 removed result unless the competition never sends, the same payload as deleting
-a result's last attempt, which clears the times in WCA Live.
+a result's last attempt.
+
+### WCA Live
+
+An empty result is enough; FKMTime doesn't need to remove the competitor from
+the round. In WCA Live's source, a result with no attempts:
+
+- gets no ranking (`Scoretaking.Ranking`),
+- is left out of the results export used for submission
+  (`CompetitionController.show_results`),
+- is dropped when the next round opens, which recomputes who advanced
+  (`Scoretaking.finish_round`).
+
+Sending the trigger round's DNFs also recomputes advancement there, so a
+competitor left with only DNFs loses "advancing". What remains is a blank row on
+the WCA Live round page until the next round opens; in a final it stays, but
+doesn't count. WCA Live's own "remove person from round" is a GraphQL mutation
+that needs a signed-in session, which the scoretaking token can't provide.
 
 `GET /attempt/dnf/:resultId` also returns the results that ruling removed, for
 the card.
@@ -194,7 +213,7 @@ stored; the competitor is no longer in the round.
   that result. Editing is disabled. A result removed on its own has a "Bring
   back" button; one a ruling removed points to restoring the ruling.
 - **Result page of a later round:** "Remove from this round (Regulation 9t)" in
-  the ⋮ menu, opening a short modal with a reason and the WCA Live reminder.
+  the ⋮ menu, opening a short modal with a reason and what happens in WCA Live.
   Not shown for a first round. The incident quick actions don't apply here,
   so the reason is typed.
 - **Result page of the trigger round:** the "Ruled DNF" card adds "Also removed:
