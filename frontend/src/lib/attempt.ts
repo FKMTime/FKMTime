@@ -166,6 +166,40 @@ export const reapplyExtraGrant = async (
     return { status: response.status, message };
 };
 
+export interface RuledDnfAttempt {
+    id: string;
+    /** A remaining attempt the ruling recorded, removed on restore */
+    addedByRuling: boolean;
+    penaltyBeforeDnf: number | null;
+}
+
+/** Attempts of a result under a DNF ruling, with the penalty each had before */
+export const dnfRulingQuery = queryFamily((resultId) =>
+    backendQuery<RuledDnfAttempt[]>(`attempt/dnf/${resultId}`)
+);
+
+/** Rule attempts DNF, keeping their times */
+export const dnfAttempts = async (data: {
+    attemptIds: string[];
+    /** Disqualify from this result's round: its remaining attempts become DNF */
+    remainingInResultId?: string;
+    comment: string;
+}): Promise<{ status: number; message?: string }> => {
+    const response = await backendRequest("attempt/dnf", "POST", true, data);
+    const message = !response.ok ? (await response.json()).message : undefined;
+    return { status: response.status, message };
+};
+
+export const restoreDnfAttempts = async (
+    resultId: string
+): Promise<{ status: number; message?: string }> => {
+    const response = await backendRequest("attempt/restore-dnf", "POST", true, {
+        resultId,
+    });
+    const message = !response.ok ? (await response.json()).message : undefined;
+    return { status: response.status, message };
+};
+
 /** Every change made to an attempt */
 export const attemptEditLogQuery = queryFamily((id) =>
     backendQuery<AttemptEditLogEntry[]>(`attempt/${id}/edit-log`)

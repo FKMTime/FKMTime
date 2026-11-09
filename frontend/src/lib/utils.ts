@@ -3,7 +3,7 @@ import * as CryptoJS from "crypto-js";
 import { twMerge } from "tailwind-merge";
 import { Competition, Event, getRoundInfoFromWcif } from "wcif-helpers";
 
-import { DNF_VALUE, roundFormats } from "../lib/constants";
+import { DNF_VALUE, DNS_VALUE, roundFormats } from "../lib/constants";
 import { getEventShortName, isUnofficialEvent } from "../lib/events";
 import {
     Attempt,
@@ -212,6 +212,31 @@ export const getSubmittedAttempts = (attempts: Attempt[]) => {
         .sort((a, b) => a.number - b.number)
         .map((a) => a as Attempt);
 };
+
+/** Attempts a disqualification from the round would record as DNF */
+export const hasRemainingAttempts = (
+    attempts: Attempt[],
+    maxAttempts: number
+) => {
+    const standard = attempts.filter(
+        (attempt) => attempt.type === AttemptType.STANDARD_ATTEMPT
+    );
+    // With no attempt started, a disqualification records no result
+    return (
+        standard.length > 0 &&
+        (standard.length < maxAttempts ||
+            standard.some(
+                (attempt) => attempt.status === AttemptStatus.SCRAMBLED
+            ))
+    );
+};
+
+/** Counting attempts that still have a time of their own */
+export const getAttemptsToDnf = (attempts: Attempt[]) =>
+    (getSubmittedAttempts(attempts) as AttemptWithNumber[]).filter(
+        (attempt) =>
+            attempt.penalty !== DNF_VALUE && attempt.penalty !== DNS_VALUE
+    );
 
 export const isThereADifferenceBetweenResults = (
     result: Result,

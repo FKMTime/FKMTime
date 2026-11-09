@@ -63,10 +63,10 @@ const Person = () => {
     const personId = id ?? "";
     const person: PersonData | null =
         useLiveQuery(personQuery(personId), { enabled: !!id }).data ?? null;
-    const results: Result[] | null =
-        useLiveQuery(personResultsQuery(personId), {
-            enabled: !!id && showResults,
-        }).data ?? null;
+    const resultsResult = useLiveQuery(personResultsQuery(personId), {
+        enabled: !!id && showResults,
+    });
+    const results: Result[] | null = resultsResult.data ?? null;
     const staffActivitiesResult = useLiveQuery(
         personStaffActivitiesQuery(personId),
         { enabled: !!id && showAttendance }
@@ -85,6 +85,7 @@ const Person = () => {
     const fetchStaffActivities = () => void staffActivitiesResult.refetch();
     const setNoShowFor = useNoShow(fetchStaffActivities);
     const fetchWarnings = () => void warningsResult.refetch();
+    const fetchResults = () => void resultsResult.refetch();
 
     const schedule = useMemo(
         () =>
@@ -141,7 +142,7 @@ const Person = () => {
         switch (activeTab.value) {
             case "results":
                 return results ? (
-                    <PersonResults results={results} />
+                    <PersonResults results={results} onChange={fetchResults} />
                 ) : (
                     <SectionLoading label="Loading results" />
                 );

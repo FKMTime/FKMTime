@@ -17,9 +17,11 @@ import { DelegateGuard } from 'src/auth/guards/delegate.guard';
 
 import { AttemptService } from './attempt.service';
 import { CreateAttemptDto } from './dto/createAttempt.dto';
+import { DnfAttemptsDto } from './dto/dnfAttempts.dto';
 import { EnterScorecardDto } from './dto/enterScorecard.dto';
 import { GiveExtrasDto } from './dto/giveExtras.dto';
 import { ReorderAttemptsDto } from './dto/reorderAttempts.dto';
+import { RestoreDnfAttemptsDto } from './dto/restoreDnfAttempts.dto';
 import { RestoreExtraGrantDto } from './dto/restoreExtraGrant.dto';
 import { SetReplacementDto } from './dto/setReplacement.dto';
 import { SwapAttemptsDto } from './dto/swapAttempts.dto';
@@ -112,6 +114,29 @@ export class AttemptController {
       data.grantId,
       user.userId,
     );
+  }
+
+  @HttpCode(HttpStatus.OK)
+  @Post('dnf')
+  async dnfAttempts(@Body() data: DnfAttemptsDto, @GetUser() user: JwtAuthDto) {
+    return await this.attemptService.dnfAttempts(data, user.userId);
+  }
+
+  @HttpCode(HttpStatus.OK)
+  @Post('restore-dnf')
+  async restoreDnfAttempts(
+    @Body() data: RestoreDnfAttemptsDto,
+    @GetUser() user: JwtAuthDto,
+  ) {
+    return await this.attemptService.restoreDnfAttempts(
+      data.resultId,
+      user.userId,
+    );
+  }
+
+  @Get('dnf/:resultId')
+  async getDnfRuling(@Param('resultId') resultId: string) {
+    return await this.attemptService.getDnfRuling(resultId);
   }
 
   @Get('give-extras-for-all/:resultId')
