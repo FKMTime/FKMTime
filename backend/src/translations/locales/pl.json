@@ -223,6 +223,14 @@
     {
       "key": "resetAttemptFooter",
       "translation": "Submit = tak"
+    },
+    {
+      "key": "resetTimerHeader",
+      "translation": "Zresetuj timer"
+    },
+    {
+      "key": "resetTimerFooter",
+      "translation": "przed inspekcja"
     }
   ]
 }
