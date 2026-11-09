@@ -15,27 +15,27 @@ import {
 import { Input } from "@/Components/ui/input";
 import { MultiSelect } from "@/Components/ui/multi-select";
 import { NewUserData } from "@/lib/interfaces";
-import { createFKMUserSchema } from "@/lib/schema/userSchema";
+import { createFKMTimeUserSchema } from "@/lib/schema/userSchema";
 import { getAvailableRoles } from "@/lib/utils";
 
-interface CreateFKMAccountFormProps {
+interface CreateFKMTimeAccountFormProps {
     handleSubmit: (data: NewUserData) => void;
     isLoading?: boolean;
 }
 
-const CreateFKMAccountForm = ({
+const CreateFKMTimeAccountForm = ({
     handleSubmit,
     isLoading,
-}: CreateFKMAccountFormProps) => {
+}: CreateFKMTimeAccountFormProps) => {
     const form = useForm<
-        z.input<typeof createFKMUserSchema>,
+        z.input<typeof createFKMTimeUserSchema>,
         unknown,
-        z.output<typeof createFKMUserSchema>
+        z.output<typeof createFKMTimeUserSchema>
     >({
-        resolver: zodResolver(createFKMUserSchema),
+        resolver: zodResolver(createFKMTimeUserSchema),
     });
 
-    const onSubmit = (values: z.infer<typeof createFKMUserSchema>) => {
+    const onSubmit = (values: z.infer<typeof createFKMTimeUserSchema>) => {
         handleSubmit(values);
     };
 
@@ -115,4 +115,4 @@ const CreateFKMAccountForm = ({
     );
 };
 
-export default CreateFKMAccountForm;
+export default CreateFKMTimeAccountForm;

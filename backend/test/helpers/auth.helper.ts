@@ -1,7 +1,7 @@
 import { INestApplication } from '@nestjs/common';
 import * as request from 'supertest';
 
-export const loginWithFKMAccount = async (
+export const loginWithFKMTimeAccount = async (
   app: INestApplication,
   user: { username: string; password: string },
 ): Promise<{ token: string; userInfo: any }> => {

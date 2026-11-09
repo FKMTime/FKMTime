@@ -9,7 +9,7 @@ import {
 import { sha512 } from 'js-sha512';
 import { DbService } from 'src/db/db.service';
 
-import { loginWithFKMAccount } from './auth.helper';
+import { loginWithFKMTimeAccount } from './auth.helper';
 
 /**
  * Builds the world a physical station needs (rooms with current groups,
@@ -137,7 +137,10 @@ export class StationFixtures {
       data: { username, fullName: username, roles, password: sha512(password) },
     });
     this.userIds.push(user.id);
-    const { token } = await loginWithFKMAccount(app, { username, password });
+    const { token } = await loginWithFKMTimeAccount(app, {
+      username,
+      password,
+    });
     return token;
   }
 

@@ -10,7 +10,7 @@ import { quickActionSchema } from "../schema/quickActionsSchema";
 import { scramblingDeviceSchema } from "../schema/scramblingDeviceSchema";
 import { changePasswordSchema } from "../schema/settingsSchema";
 import {
-    createFKMUserSchema,
+    createFKMTimeUserSchema,
     createWCAUserSchema,
     editUserPasswordSchema,
 } from "../schema/userSchema";
@@ -35,7 +35,7 @@ describe("form schemas", () => {
         ],
         ["scrambling device", scramblingDeviceSchema, {}],
         ["change password", changePasswordSchema, {}],
-        ["FKM account", createFKMUserSchema, {}],
+        ["FKMTime account", createFKMTimeUserSchema, {}],
         ["WCA user", createWCAUserSchema, {}],
         ["user password", editUserPasswordSchema, {}],
         ["warning", warningSchema, {}],
@@ -45,8 +45,8 @@ describe("form schemas", () => {
         expect(found.filter((text) => zodDefaultText.test(text))).toEqual([]);
     });
 
-    it("refuses a blank FKM account", () => {
-        expect(messages(createFKMUserSchema, {})).toEqual([
+    it("refuses a blank FKMTime account", () => {
+        expect(messages(createFKMTimeUserSchema, {})).toEqual([
             "Username is required",
             "Full name is required",
             "Password is required",

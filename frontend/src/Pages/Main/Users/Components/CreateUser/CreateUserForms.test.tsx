@@ -2,13 +2,13 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 
-import CreateFKMAccountForm from "./CreateFKMAccountForm";
+import CreateFKMTimeAccountForm from "./CreateFKMTimeAccountForm";
 import CreateWCAUserForm from "./CreateWCAUserForm";
 
 describe("creating a user", () => {
-    it("explains what is missing from a blank FKM account", async () => {
+    it("explains what is missing from a blank FKMTime account", async () => {
         const handleSubmit = vi.fn();
-        render(<CreateFKMAccountForm handleSubmit={handleSubmit} />);
+        render(<CreateFKMTimeAccountForm handleSubmit={handleSubmit} />);
 
         await userEvent.click(screen.getByRole("button", { name: "Create" }));
 
