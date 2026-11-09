@@ -133,6 +133,12 @@ iterating; leave the full run to CI.
   `backend/prisma/seed/` must still work afterwards.
 - **UI copy uses the user's task language**, not internal names — "Extra
   granted", not a status enum.
+- **The brand is "FKMTime"** — one word, exactly that capitalisation — in UI
+  copy, docs, comments, test names, commits and PRs. Never "FKM", "FKM Time" or
+  "Fkmtime". New code names follow it too (`CreateFKMTimeAccountForm`,
+  `FKMTimeLogo`). Existing lowercase names that other things depend on stay as
+  they are: `fkmToken` / `fkm_token` (devices read it), `fkmtime-*` storage
+  keys, container and database names, repo names.
 - **Tests come with the change.** Bug fixes get a test that fails without the
   fix; new endpoints and socket events get e2e coverage in `backend/test/`.
 - **No real data** in code, tests, fixtures, commits or PRs — no real
