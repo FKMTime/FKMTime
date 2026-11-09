@@ -3,7 +3,7 @@ import { DbService } from 'src/db/db.service';
 import * as request from 'supertest';
 
 import { createTestApp } from './helpers/app.helper';
-import { loginWithFKMAccount } from './helpers/auth.helper';
+import { loginWithFKMTimeAccount } from './helpers/auth.helper';
 
 describe('AuthController (e2e)', () => {
   let app: INestApplication;
@@ -68,7 +68,7 @@ describe('AuthController (e2e)', () => {
     });
 
     it('should change password', async () => {
-      const user = await loginWithFKMAccount(app, {
+      const user = await loginWithFKMTimeAccount(app, {
         username: 'admin',
         password: 'admin',
       });
@@ -79,7 +79,7 @@ describe('AuthController (e2e)', () => {
         .send({ oldPassword: 'admin', newPassword: 'newPassword' })
         .expect(200);
 
-      const newLogin = await loginWithFKMAccount(app, {
+      const newLogin = await loginWithFKMTimeAccount(app, {
         username: 'admin',
         password: 'newPassword',
       });

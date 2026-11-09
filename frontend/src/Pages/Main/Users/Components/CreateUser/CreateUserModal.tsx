@@ -6,7 +6,7 @@ import { useDialogError } from "@/hooks/useDialogError";
 import { NewUserData } from "@/lib/interfaces";
 import { createUser } from "@/lib/user";
 
-import CreateFKMAccountForm from "./CreateFKMAccountForm";
+import CreateFKMTimeAccountForm from "./CreateFKMTimeAccountForm";
 import CreateWCAUserForm from "./CreateWCAUserForm";
 
 interface CreateUserModalProps {
@@ -41,13 +41,15 @@ const CreateUserModal = ({ isOpen, onClose }: CreateUserModalProps) => {
             title="Create user"
         >
             <div className="flex flex-col gap-5">
-                <Tabs defaultValue="fkm">
+                <Tabs defaultValue="fkmtime">
                     <TabsList>
-                        <TabsTrigger value="fkm">FKMTime Account</TabsTrigger>
+                        <TabsTrigger value="fkmtime">
+                            FKMTime Account
+                        </TabsTrigger>
                         <TabsTrigger value="wca">WCA Login</TabsTrigger>
                     </TabsList>
-                    <TabsContent value="fkm">
-                        <CreateFKMAccountForm
+                    <TabsContent value="fkmtime">
+                        <CreateFKMTimeAccountForm
                             handleSubmit={handleSubmit}
                             isLoading={isLoading}
                         />

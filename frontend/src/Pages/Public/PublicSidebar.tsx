@@ -1,7 +1,7 @@
 import { LogIn, Tv } from "lucide-react";
 import { Link, matchPath, useLocation } from "react-router-dom";
 
-import FkmLogo from "@/Components/shared/FkmLogo";
+import FKMTimeLogo from "@/Components/shared/FKMTimeLogo";
 import { getEventIconClass } from "@/lib/events";
 import { cn } from "@/lib/utils";
 
@@ -24,7 +24,7 @@ const PublicSidebar = ({ liveRoundIds }: PublicSidebarProps) => {
     return (
         <aside className="sticky top-0 hidden h-dvh w-60 shrink-0 flex-col border-r bg-card min-[760px]:flex">
             <div className="flex justify-center border-b p-4">
-                <FkmLogo className="h-auto w-44" />
+                <FKMTimeLogo className="h-auto w-44" />
             </div>
             <nav
                 aria-label="Public display"

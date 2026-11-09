@@ -2,7 +2,7 @@ import { z } from "zod";
 
 import { limitedText, requiredText } from "./fields";
 
-export const createFKMUserSchema = z.object({
+export const createFKMTimeUserSchema = z.object({
     username: limitedText("Username", 2, 50),
     fullName: limitedText("Full name", 2, 50),
     password: limitedText("Password", 6, 50),

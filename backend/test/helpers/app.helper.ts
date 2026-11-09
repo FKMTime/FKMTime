@@ -3,7 +3,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { DbService } from 'src/db/db.service';
 
 import { AppModule } from '../../src/app.module';
-import { loginWithFKMAccount } from './auth.helper';
+import { loginWithFKMTimeAccount } from './auth.helper';
 
 export const createTestApp = async (): Promise<{
   app: INestApplication;
@@ -25,7 +25,7 @@ export const createTestApp = async (): Promise<{
   await app.init();
 
   const db = moduleFixture.get<DbService>(DbService);
-  const { token } = await loginWithFKMAccount(app, {
+  const { token } = await loginWithFKMTimeAccount(app, {
     username: 'admin',
     password: 'admin',
   });

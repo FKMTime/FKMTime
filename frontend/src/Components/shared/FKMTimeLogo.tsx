@@ -4,7 +4,7 @@ import { cn } from "@/lib/utils";
 // The stopwatch alone, for the collapsed sidebar
 const MARK_VIEW_BOX = "26 50 168 202";
 
-interface FkmLogoProps {
+interface FKMTimeLogoProps {
     /** "mark" shows only the stopwatch */
     variant?: "full" | "mark";
     className?: string;
@@ -14,7 +14,7 @@ interface FkmLogoProps {
  * FKMTime logo. The stopwatch uses the current text colour, so it reads in
  * both themes; the red and yellow lettering is outlined and works on either.
  */
-const FkmLogo = ({ variant = "full", className }: FkmLogoProps) => (
+const FKMTimeLogo = ({ variant = "full", className }: FKMTimeLogoProps) => (
     <Logo
         role="img"
         aria-label="FKMTime"
@@ -24,4 +24,4 @@ const FkmLogo = ({ variant = "full", className }: FkmLogoProps) => (
     />
 );
 
-export default FkmLogo;
+export default FKMTimeLogo;
