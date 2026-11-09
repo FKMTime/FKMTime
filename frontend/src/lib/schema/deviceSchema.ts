@@ -36,6 +36,5 @@ export const deviceSettingsSchema = z.object({
         .number()
         .int()
         .min(BUZZER_VOLUME_MIN)
-        .max(BUZZER_VOLUME_MAX)
-        .nullable(),
+        .max(BUZZER_VOLUME_MAX),
 });

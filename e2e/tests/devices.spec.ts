@@ -260,14 +260,9 @@ test.describe("devices", () => {
 
         await page.goto("/devices");
         await page.getByRole("radio", { name: "Settings" }).click();
-        const setVolume = page.getByRole("switch", {
-            name: /Set device volume/,
-        });
         const slider = page.getByRole("slider", { name: /Device volume/ });
-        await expect(setVolume).not.toBeChecked();
-        await expect(slider).toHaveCount(0);
+        await expect(slider).toHaveValue("5");
 
-        await setVolume.click();
         await slider.fill("12");
         await expect(page.getByText("Device volume: 12 / 25")).toBeVisible();
         await page.getByRole("button", { name: "Save" }).click();
@@ -276,11 +271,6 @@ test.describe("devices", () => {
 
         await page.reload();
         await expect(slider).toHaveValue("12");
-
-        await setVolume.click();
-        await page.getByRole("button", { name: "Save" }).click();
-        await expectToast(page, "Device settings saved");
-        expect(await savedVolume()).toBeNull();
     });
 
     test("only admins can upload firmware", async ({ page, browser }) => {
