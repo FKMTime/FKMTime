@@ -80,11 +80,16 @@ export async function seedDb() {
   );
 
   const adminPassword = sha512('admin');
+  // Stations from earlier testing stay unless removed: attendance and
+  // attempts (deleted with their people) point at them, and they point at
+  // rooms, all without a cascade
   await prisma.user.deleteMany();
   await prisma.competition.deleteMany();
-  await prisma.person.deleteMany();
-  await prisma.room.deleteMany();
   await prisma.staffActivity.deleteMany();
+  await prisma.person.deleteMany();
+  await prisma.device.deleteMany();
+  await prisma.scramblingDevice.deleteMany();
+  await prisma.room.deleteMany();
   await prisma.unofficialEvent.deleteMany();
   await prisma.user.create({
     data: {
@@ -165,6 +170,9 @@ export async function seedDb() {
     `Test database seeded with ${wcifPublic.id}, starting on ${generated.startDate}`,
   );
 }
+/** Closes the seed's own connection (a test that imports seedDb must) */
+export const disconnectSeedDb = () => prisma.$disconnect();
+
 // Seed when run as a script; importing seedDb runs nothing
 if (require.main === module) {
   seedDb()
