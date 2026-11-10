@@ -1,6 +1,7 @@
-import { Github, LogOut, Settings } from "lucide-react";
+import { LogOut, Settings } from "lucide-react";
 import { Link } from "react-router-dom";
 
+import GithubIcon from "@/assets/github.svg?react";
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -55,7 +56,7 @@ const UserMenu = ({ canAccessSettings }: UserMenuProps) => {
                 )}
                 <DropdownMenuItem asChild>
                     <a href={GITHUB_URL} target="_blank" rel="noreferrer">
-                        <Github />
+                        <GithubIcon />
                         Source code
                     </a>
                 </DropdownMenuItem>

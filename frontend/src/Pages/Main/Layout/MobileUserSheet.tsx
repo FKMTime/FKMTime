@@ -1,6 +1,7 @@
-import { Github, LogOut, Settings } from "lucide-react";
+import { LogOut, Settings } from "lucide-react";
 import { Link } from "react-router-dom";
 
+import GithubIcon from "@/assets/github.svg?react";
 import {
     Sheet,
     SheetContent,
@@ -68,7 +69,7 @@ const MobileUserSheet = ({
                     rel="noreferrer"
                     className={itemClassName}
                 >
-                    <Github />
+                    <GithubIcon />
                     Source code
                 </a>
                 <button
