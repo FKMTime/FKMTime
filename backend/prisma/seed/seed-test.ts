@@ -165,6 +165,9 @@ export async function seedDb() {
     `Test database seeded with ${wcifPublic.id}, starting on ${generated.startDate}`,
   );
 }
+/** Closes the seed's own connection (a test that imports seedDb must) */
+export const disconnectSeedDb = () => prisma.$disconnect();
+
 // Seed when run as a script; importing seedDb runs nothing
 if (require.main === module) {
   seedDb()
