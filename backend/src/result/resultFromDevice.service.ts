@@ -239,10 +239,18 @@ export class ResultFromDeviceService {
         error: true,
       };
     }
-    const result = await this.resultService.getResultOrCreate(
+    const result = await this.resultService.getResultOrCreateIncludingRemoved(
       competitor.id,
       currentRoundId,
     );
+    if (result.removedAt) {
+      return {
+        message: getTranslation('competitorRemovedFromRound', locale),
+        shouldResetTime: false,
+        status: 409,
+        error: true,
+      };
+    }
 
     const attempts = await this.prisma.attempt.findMany({
       where: {

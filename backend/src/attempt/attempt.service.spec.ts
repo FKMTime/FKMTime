@@ -460,7 +460,57 @@ describe('AttemptService extras for all attempts', () => {
         'Entered',
       );
 
+    let results: Record<string, any>[];
+
     beforeEach(() => {
+      results = [
+        {
+          id: 'result-1',
+          personId: 'person-1',
+          eventId: '333',
+          roundId: '333-r1',
+          removedAt: null,
+        },
+        {
+          id: 'result-2',
+          personId: 'person-1',
+          eventId: '333',
+          roundId: '333-r2',
+          removedAt: null,
+          attempts: [],
+        },
+      ];
+      prisma.result.findUnique = jest
+        .fn()
+        .mockImplementation(async ({ where }) => {
+          const result = results.find((r) => r.id === where.id);
+          return result && { ...result, attempts: result.attempts ?? attempts };
+        });
+      prisma.result.findMany = jest
+        .fn()
+        .mockImplementation(async ({ where }) =>
+          results.filter((r) =>
+            where.removedByRulingOfId
+              ? r.removedByRulingOfId === where.removedByRulingOfId
+              : r.personId === where.personId && r.eventId === where.eventId,
+          ),
+        );
+      prisma.result.update = jest
+        .fn()
+        .mockImplementation(async ({ where, data }) => {
+          const result = results.find((r) => r.id === where.id);
+          if ('removedAt' in data) result.removedAt = data.removedAt;
+          if (data.removedByRulingOf?.connect) {
+            result.removedByRulingOfId = data.removedByRulingOf.connect.id;
+          }
+          if (data.removedByRulingOf?.disconnect) {
+            result.removedByRulingOfId = null;
+          }
+        });
+      (service as any).resultService.notRemoved = {
+        removedAt: null,
+        removedByRulingOf: { disconnect: true },
+      };
       logged = [];
       (service as any).attemptEditLogService.log = jest.fn(
         async (
@@ -514,7 +564,10 @@ describe('AttemptService extras for all attempts', () => {
         .map((a) => [a.attemptNumber, a.penalty]);
 
     it('records the remaining attempts as DNF and keeps completed ones', async () => {
-      await expect(disqualify()).resolves.toEqual({ updated: 3 });
+      await expect(disqualify()).resolves.toEqual({
+        updated: 3,
+        removedResults: 0,
+      });
 
       expect(numbers()).toEqual([
         [1, 0],
@@ -601,7 +654,11 @@ describe('AttemptService extras for all attempts', () => {
 
       await expect(
         service.restoreDnfAttempts('result-1', 'user-1'),
-      ).resolves.toEqual({ restored: 1, removed: 3 });
+      ).resolves.toEqual({
+        restored: 1,
+        removed: 3,
+        broughtBack: 0,
+      });
       expect(numbers()).toEqual([
         [1, 0],
         [2, 2],
@@ -628,7 +685,10 @@ describe('AttemptService extras for all attempts', () => {
     });
 
     it('keeps the times and sets the penalty to DNF', async () => {
-      await expect(dnf(['s1', 's2'])).resolves.toEqual({ updated: 2 });
+      await expect(dnf(['s1', 's2'])).resolves.toEqual({
+        updated: 2,
+        removedResults: 0,
+      });
 
       expect(attempts.map((a) => a.penalty)).toEqual([-1, -1]);
       expect(attempts.map((a) => a.value)).toEqual([1500, 1500]);
@@ -691,7 +751,11 @@ describe('AttemptService extras for all attempts', () => {
 
       await expect(
         service.restoreDnfAttempts('result-1', 'user-1'),
-      ).resolves.toEqual({ restored: 2, removed: 0 });
+      ).resolves.toEqual({
+        restored: 2,
+        removed: 0,
+        broughtBack: 0,
+      });
 
       expect(attempts.map((a) => a.penalty)).toEqual([0, 2]);
       expect(
@@ -702,25 +766,92 @@ describe('AttemptService extras for all attempts', () => {
     it('lists the ruled attempts with their penalty before', async () => {
       await dnf(['s2']);
 
-      await expect(service.getDnfRuling('result-1')).resolves.toEqual([
-        {
-          id: 's2',
-          addedByRuling: false,
-          penaltyBeforeDnf: 2,
-          statusBeforeDnf: AttemptStatus.RESOLVED,
-        },
-      ]);
+      await expect(service.getDnfRuling('result-1')).resolves.toEqual({
+        attempts: [
+          {
+            id: 's2',
+            addedByRuling: false,
+            penaltyBeforeDnf: 2,
+            statusBeforeDnf: AttemptStatus.RESOLVED,
+          },
+        ],
+        removedResults: [],
+      });
     });
 
     it('can be ruled again after a restore', async () => {
       await dnf(['s1', 's2']);
       await service.restoreDnfAttempts('result-1', 'user-1');
 
-      await expect(service.getDnfRuling('result-1')).resolves.toEqual([]);
+      await expect(service.getDnfRuling('result-1')).resolves.toEqual({
+        attempts: [],
+        removedResults: [],
+      });
       await dnf(['s2']);
       await service.restoreDnfAttempts('result-1', 'user-1');
 
       expect(attempts.map((a) => a.penalty)).toEqual([0, 2]);
+    });
+
+    describe('removing later rounds (Regulation 9t)', () => {
+      const dnfRemoving = (attemptIds: string[]) =>
+        service.dnfAttempts(
+          { attemptIds, removeLaterRounds: true, comment: 'Illegal cube' },
+          'user-1',
+        );
+
+      it('removes the results in later rounds', async () => {
+        await expect(dnfRemoving(['s1', 's2'])).resolves.toEqual({
+          updated: 2,
+          removedResults: 1,
+        });
+
+        expect(results[1].removedAt).toBeInstanceOf(Date);
+        expect(results[1].removedByRulingOfId).toBe('result-1');
+        expect(results[0].removedAt).toBeNull();
+        expect(
+          resultService.enterWholeScorecardToWcaLiveOrCubingContests,
+        ).toHaveBeenCalledWith('result-2');
+      });
+
+      it('lists them with the ruling', async () => {
+        await dnfRemoving(['s1']);
+
+        await expect(service.getDnfRuling('result-1')).resolves.toMatchObject({
+          removedResults: [{ id: 'result-2', roundId: '333-r2' }],
+        });
+      });
+
+      it('brings them back when the ruling is restored', async () => {
+        await dnfRemoving(['s1', 's2']);
+
+        await expect(
+          service.restoreDnfAttempts('result-1', 'user-1'),
+        ).resolves.toMatchObject({ restored: 2, broughtBack: 1 });
+        expect(results[1].removedAt).toBeNull();
+        expect(results[1].removedByRulingOfId).toBeNull();
+      });
+
+      it('leaves later rounds alone unless asked', async () => {
+        await dnf(['s1']);
+
+        expect(results[1].removedAt).toBeNull();
+      });
+
+      it('asks to resolve an open incident in a later round first', async () => {
+        results[1].attempts = [{ status: AttemptStatus.UNRESOLVED }];
+
+        await expect(dnfRemoving(['s1'])).rejects.toMatchObject({
+          status: 409,
+        });
+        expect(results[1].removedAt).toBeNull();
+      });
+
+      it('refuses a ruling on a removed result', async () => {
+        results[0].removedAt = new Date();
+
+        await expect(dnf(['s1'])).rejects.toMatchObject({ status: 409 });
+      });
     });
 
     it('has nothing to restore without a ruling', async () => {

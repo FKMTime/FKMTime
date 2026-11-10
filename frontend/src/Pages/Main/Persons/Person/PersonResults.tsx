@@ -58,6 +58,7 @@ const PersonResults = ({ results, onChange }: PersonResultsProps) => {
             .filter(
                 (result) =>
                     result.eventId === eventId &&
+                    !result.removedAt &&
                     !!competition &&
                     getRoundInfoFromWcif(result.roundId, competition.wcif)
                         ?.format !== "h"
@@ -139,7 +140,12 @@ const PersonResults = ({ results, onChange }: PersonResultsProps) => {
                     </TableHeader>
                     <TableBody>
                         {rows.map((row) => (
-                            <TableRow key={row.result.id}>
+                            <TableRow
+                                key={row.result.id}
+                                className={cn(
+                                    row.result.removedAt && "text-faint"
+                                )}
+                            >
                                 <TableCell className="pl-5">
                                     <Link
                                         to={`/results/round/${row.result.roundId}`}
@@ -158,6 +164,11 @@ const PersonResults = ({ results, onChange }: PersonResultsProps) => {
                                             row.result.roundId
                                         ).replace(", ", " · ")}
                                     </Link>
+                                    {row.result.removedAt && (
+                                        <span className="ml-2 text-xs font-normal">
+                                            Removed
+                                        </span>
+                                    )}
                                 </TableCell>
                                 <TableCell>{row.group ?? "—"}</TableCell>
                                 <TableCell className="text-right font-bold">
@@ -202,6 +213,12 @@ const PersonResults = ({ results, onChange }: PersonResultsProps) => {
                             <div className="flex items-baseline gap-2">
                                 <span className="min-w-0 flex-1 truncate font-semibold">
                                     {shortRoundName(row.result.roundId)}
+                                    {row.result.removedAt && (
+                                        <span className="font-normal">
+                                            {" "}
+                                            · Removed
+                                        </span>
+                                    )}
                                     {row.group && (
                                         <span className="font-normal text-muted-foreground">
                                             {" "}
@@ -219,7 +236,10 @@ const PersonResults = ({ results, onChange }: PersonResultsProps) => {
                     return (
                         <li
                             key={row.result.id}
-                            className="flex items-center gap-1 pr-2"
+                            className={cn(
+                                "flex items-center gap-1 pr-2",
+                                row.result.removedAt && "text-faint"
+                            )}
                         >
                             {canViewAttempts ? (
                                 <Link
@@ -253,6 +273,7 @@ const PersonResults = ({ results, onChange }: PersonResultsProps) => {
                     onDone={closeDnfModal}
                     personName={results[0].person.name}
                     results={eventResults(dnfEventId)}
+                    eventResults={eventResults(dnfEventId)}
                 />
             )}
         </>

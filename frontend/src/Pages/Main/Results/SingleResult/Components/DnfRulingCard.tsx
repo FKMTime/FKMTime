@@ -1,11 +1,13 @@
 import { Undo2 } from "lucide-react";
+import { Link } from "react-router-dom";
 
 import { Button } from "@/Components/ui/button";
 import { useConfirm } from "@/hooks/useConfirm";
 import { useToast } from "@/hooks/useToast";
-import { restoreDnfAttempts, RuledDnfAttempt } from "@/lib/attempt";
+import { DnfRuling, restoreDnfAttempts } from "@/lib/attempt";
 import { Attempt, AttemptType } from "@/lib/interfaces";
 import { attemptWithPenaltyToString } from "@/lib/resultFormatters";
+import { shortRoundName } from "@/lib/utils";
 
 const attemptLabel = (attempt: Attempt) =>
     attempt.type === AttemptType.EXTRA_ATTEMPT
@@ -15,8 +17,8 @@ const attemptLabel = (attempt: Attempt) =>
 interface DnfRulingCardProps {
     resultId: string;
     attempts: Attempt[];
-    /** Attempts a delegate ruled DNF, with the penalty each had before */
-    ruled: RuledDnfAttempt[];
+    /** Attempts a delegate ruled DNF, and later-round results it removed */
+    ruling: DnfRuling;
     onRestored: () => void;
 }
 
@@ -24,7 +26,7 @@ interface DnfRulingCardProps {
 const DnfRulingCard = ({
     resultId,
     attempts,
-    ruled,
+    ruling,
     onRestored,
 }: DnfRulingCardProps) => {
     const confirm = useConfirm();
@@ -34,7 +36,9 @@ const DnfRulingCard = ({
         confirm({
             title: "Restore the original attempts?",
             description:
-                "Each attempt gets back its own time and penalty, remaining attempts can be done again, and the scorecard is sent again.",
+                ruling.removedResults.length > 0
+                    ? "Each attempt gets back its own time and penalty, remaining attempts can be done again, the removed results in later rounds count again, and the scorecards are sent again."
+                    : "Each attempt gets back its own time and penalty, remaining attempts can be done again, and the scorecard is sent again.",
             confirmLabel: "Restore",
             onConfirm: async () => {
                 const { status, message } = await restoreDnfAttempts(resultId);
@@ -54,7 +58,9 @@ const DnfRulingCard = ({
             },
         }).catch(() => undefined);
 
-    const byId = new Map(ruled.map((attempt) => [attempt.id, attempt]));
+    const byId = new Map(
+        ruling.attempts.map((attempt) => [attempt.id, attempt])
+    );
     const sorted = attempts
         .filter((attempt) => byId.has(attempt.id))
         .sort(
@@ -98,6 +104,22 @@ const DnfRulingCard = ({
                     </div>
                 ))}
             </div>
+            {ruling.removedResults.length > 0 && (
+                <p className="text-sm text-muted-foreground">
+                    Also removed (Regulation 9t):{" "}
+                    {ruling.removedResults.map((removed, index) => (
+                        <span key={removed.id}>
+                            {index > 0 && ", "}
+                            <Link
+                                to={`/results/${removed.id}`}
+                                className="text-primary hover:underline"
+                            >
+                                {shortRoundName(removed.roundId)}
+                            </Link>
+                        </span>
+                    ))}
+                </p>
+            )}
         </section>
     );
 };

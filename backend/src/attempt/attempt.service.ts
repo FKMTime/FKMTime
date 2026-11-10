@@ -29,7 +29,7 @@ import {
   getRoundInfoFromWcif,
 } from 'wcif-helpers';
 
-import { DbService } from '../db/db.service';
+import { DbService, INCLUDING_REMOVED } from '../db/db.service';
 import { ResultService } from '../result/result.service';
 import { SocketController } from '../socket/socket.controller';
 import {
@@ -43,6 +43,8 @@ import { DnfAttemptsDto } from './dto/dnfAttempts.dto';
 import { EnterScorecardDto } from './dto/enterScorecard.dto';
 import { GiveExtrasDto } from './dto/giveExtras.dto';
 import { UpdateAttemptDto } from './dto/updateAttempt.dto';
+
+const roundNumber = (roundId: string) => +roundId.split('-r')[1];
 
 /** Has a time of its own, so a DNF ruling can change it */
 const isSolve = (attempt: Pick<Attempt, 'penalty'>) =>
@@ -529,6 +531,9 @@ export class AttemptService {
     const remainingResult = results.find(
       (result) => result.id === data.remainingInResultId,
     );
+    const { trigger, laterResults } = data.removeLaterRounds
+      ? await this.getLaterResults(results, targets, remainingResult)
+      : { trigger: null, laterResults: [] };
     const remaining = remainingResult
       ? this.getRemainingAttempts(remainingResult, targets, wcif)
       : { numbers: [], scrambled: [] };
@@ -583,19 +588,84 @@ export class AttemptService {
           }),
         ),
       );
+      for (const later of laterResults) {
+        await tx.result.update({
+          where: { id: later.id },
+          data: {
+            removedAt: new Date(),
+            removedBy: { connect: { id: userId } },
+            removedReason: data.comment,
+            removedByRulingOf: { connect: { id: trigger.id } },
+          },
+        });
+      }
       return { updated: changed, added: created };
     });
     await this.logAll(updated, userId, RULED_DNF);
     await this.logAll(added, userId, REMAINING_RULED_DNF);
 
-    for (const resultId of resultIds) {
+    // A removed result goes out empty, taking its times off WCA Live
+    for (const resultId of [...resultIds, ...laterResults.map((r) => r.id)]) {
       await this.sendScorecardUnlessNever(resultId, competition);
     }
-    if (remainingResult) {
-      this.appGateway.handleResultEntered(remainingResult.roundId);
+    for (const result of [remainingResult, ...laterResults].filter(Boolean)) {
+      this.appGateway.handleResultEntered(result.roundId);
     }
     this.appGateway.handleAttemptUpdated();
-    return { updated: updated.length + added.length };
+    return {
+      updated: updated.length + added.length,
+      removedResults: laterResults.length,
+    };
+  }
+
+  /**
+   * Regulation 9t: the competitor's results in rounds after the earliest one
+   * this ruling changes. Their attempts can't be ruled too, as they go whole.
+   */
+  private async getLaterResults(
+    results: {
+      id: string;
+      personId: string;
+      eventId: string;
+      roundId: string;
+    }[],
+    targets: Attempt[],
+    remainingResult?: { id: string; roundId: string },
+  ) {
+    const changed = results.filter(
+      (result) =>
+        result.id === remainingResult?.id ||
+        targets.some((attempt) => attempt.resultId === result.id),
+    );
+    const trigger = changed.reduce((earliest, result) =>
+      roundNumber(result.roundId) < roundNumber(earliest.roundId)
+        ? result
+        : earliest,
+    );
+    const laterResults = (
+      await this.prisma.result.findMany({
+        where: { personId: trigger.personId, eventId: trigger.eventId },
+        include: { attempts: { select: { status: true } } },
+      })
+    ).filter(
+      (result) => roundNumber(result.roundId) > roundNumber(trigger.roundId),
+    );
+    if (laterResults.some((later) => changed.some((r) => r.id === later.id))) {
+      throw new HttpException(
+        'Attempts in rounds being removed cannot be set to DNF',
+        400,
+      );
+    }
+    const withIncident = laterResults.find((result) =>
+      result.attempts.some((a) => a.status === AttemptStatus.UNRESOLVED),
+    );
+    if (withIncident) {
+      throw new HttpException(
+        `Resolve the open incident in round ${roundNumber(withIncident.roundId)} first`,
+        409,
+      );
+    }
+    return { trigger, laterResults };
   }
 
   /**
@@ -651,8 +721,22 @@ export class AttemptService {
     return { numbers, scrambled };
   }
 
-  /** Attempts of a result under a DNF ruling, with how each was before */
+  /**
+   * Attempts of a result under a DNF ruling, with how each was before, and the
+   * later-round results the ruling removed
+   */
   async getDnfRuling(resultId: string) {
+    const [attempts, removedResults] = await Promise.all([
+      this.getRuledAttempts(resultId),
+      this.prisma.result.findMany({
+        where: { removedByRulingOfId: resultId, ...INCLUDING_REMOVED },
+        select: { id: true, roundId: true },
+      }),
+    ]);
+    return { attempts, removedResults };
+  }
+
+  private async getRuledAttempts(resultId: string) {
     const attempts = await this.prisma.attempt.findMany({
       where: { resultId, penalty: DNF_VALUE },
       include: {
@@ -688,8 +772,9 @@ export class AttemptService {
    */
   async restoreDnfAttempts(resultId: string, userId: string) {
     const result = await this.getResultForExtras(resultId);
-    const ruled = await this.getDnfRuling(resultId);
-    if (!ruled.length) {
+    const { attempts: ruled, removedResults } =
+      await this.getDnfRuling(resultId);
+    if (!ruled.length && !removedResults.length) {
       throw new HttpException('No attempts were ruled DNF', 400);
     }
     const toRestore = ruled.filter((attempt) => !attempt.addedByRuling);
@@ -703,6 +788,12 @@ export class AttemptService {
       await tx.attempt.deleteMany({
         where: { id: { in: toRemove.map((attempt) => attempt.id) } },
       });
+      for (const removed of removedResults) {
+        await tx.result.update({
+          where: { id: removed.id },
+          data: this.resultService.notRemoved,
+        });
+      }
       return Promise.all(
         toRestore.map((attempt) =>
           tx.attempt.update({
@@ -719,10 +810,19 @@ export class AttemptService {
     await this.logAll(restored, userId, DNF_RULING_UNDONE);
 
     const competition = await this.prisma.competition.findFirst();
-    await this.sendScorecardUnlessNever(resultId, competition);
+    for (const id of [resultId, ...removedResults.map((r) => r.id)]) {
+      await this.sendScorecardUnlessNever(id, competition);
+    }
     if (toRemove.length) this.appGateway.handleResultEntered(result.roundId);
+    for (const removed of removedResults) {
+      this.appGateway.handleResultEntered(removed.roundId);
+    }
     this.appGateway.handleAttemptUpdated();
-    return { restored: restored.length, removed: toRemove.length };
+    return {
+      restored: restored.length,
+      removed: toRemove.length,
+      broughtBack: removedResults.length,
+    };
   }
 
   /** What the delegate needs to know before giving extras for a result */
@@ -741,9 +841,11 @@ export class AttemptService {
           getNextGroupInRoom(groupId, room.name, wcif),
       ),
     );
-    const [eventId, roundNumber] = result.roundId.split('-r');
+    const eventId = result.roundId.split('-r')[0];
     const nextRoundAttempts = await this.prisma.attempt.count({
-      where: { result: { roundId: `${eventId}-r${+roundNumber + 1}` } },
+      where: {
+        result: { roundId: `${eventId}-r${roundNumber(result.roundId) + 1}` },
+      },
     });
     const grant = await this.getSwitchableGrant(resultId);
     return {
@@ -769,6 +871,9 @@ export class AttemptService {
       include: { attempts: true },
     });
     if (!result) throw new HttpException('Result not found', 404);
+    if (result.removedAt) {
+      throw new HttpException('Removed from this round (Regulation 9t)', 409);
+    }
     if (result.attempts.some((a) => a.status === AttemptStatus.UNRESOLVED)) {
       throw new HttpException('Resolve the open incident first', 409);
     }
@@ -867,10 +972,15 @@ export class AttemptService {
   async updateAttempt(id: string, data: UpdateAttemptDto, userId: string) {
     const attemptToUpdate = await this.prisma.attempt.findUnique({
       where: { id: id },
-      include: { result: { select: { personId: true, roundId: true } } },
+      include: {
+        result: { select: { personId: true, roundId: true, removedAt: true } },
+      },
     });
     if (!attemptToUpdate) {
       throw new HttpException('Attempt not found', 404);
+    }
+    if (attemptToUpdate.result.removedAt) {
+      throw new HttpException('Removed from this round (Regulation 9t)', 409);
     }
     // An attempt saved over the cap before it existed can still be edited otherwise
     if (data.penalty !== attemptToUpdate.penalty) {

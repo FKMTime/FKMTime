@@ -112,6 +112,30 @@ export const deleteResultById = async (id: string) => {
     return response.status;
 };
 
+/** Regulation 9t: keep the result, but let it count nowhere */
+export const removeResult = async (
+    id: string,
+    reason: string
+): Promise<{ status: number; message?: string }> => {
+    const response = await backendRequest(`result/${id}/remove`, "POST", true, {
+        reason,
+    });
+    const message = !response.ok ? (await response.json()).message : undefined;
+    return { status: response.status, message };
+};
+
+export const bringBackResult = async (
+    id: string
+): Promise<{ status: number; message?: string }> => {
+    const response = await backendRequest(
+        `result/${id}/bring-back`,
+        "POST",
+        true
+    );
+    const message = !response.ok ? (await response.json()).message : undefined;
+    return { status: response.status, message };
+};
+
 export const reSubmitScorecardToWcaLive = async (id: string) => {
     const response = await backendRequest(`result/${id}/enter`, "GET", true);
     const data = await response.json();

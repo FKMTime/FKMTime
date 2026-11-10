@@ -217,6 +217,12 @@ export interface Result {
     doubleCheckedBy?: PublicUser;
     person: Person;
     attempts: Attempt[];
+    /** Removed under Regulation 9t: kept, but counts nowhere */
+    removedAt?: Date | null;
+    removedBy?: PublicUser | null;
+    removedReason?: string | null;
+    /** The result whose DNF ruling removed this one */
+    removedByRulingOf?: { id: string; roundId: string } | null;
 }
 
 export interface ResultToDoubleCheck extends Result {

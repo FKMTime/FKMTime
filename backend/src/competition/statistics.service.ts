@@ -128,7 +128,7 @@ export class StatisticsService {
     const personsCompeted = await this.prisma.person.count({
       where: {
         results: {
-          some: {},
+          some: { removedAt: null },
         },
       },
     });

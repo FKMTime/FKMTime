@@ -45,6 +45,10 @@
       "translation": "You are not signed for this event"
     },
     {
+      "key": "competitorRemovedFromRound",
+      "translation": "Removed from this round"
+    },
+    {
       "key": "attemptAlreadyEntered",
       "translation": "This attempt has already been entered"
     },

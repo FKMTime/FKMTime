@@ -122,6 +122,7 @@ describe("DnfAttemptsModal", () => {
         await waitFor(() => expect(onDone).toHaveBeenCalled());
         expect(dnfAttempts).toHaveBeenCalledWith({
             attemptIds: ["a1", "a3"],
+            removeLaterRounds: false,
             comment: "",
         });
     });
@@ -143,6 +144,10 @@ describe("DnfAttemptsModal", () => {
 
     it("covers every round of an event", async () => {
         renderModal([firstRound, secondRound]);
+        // Round 1 left with only DNF would remove round 2 (Regulation 9t)
+        await userEvent.click(
+            screen.getByRole("checkbox", { name: /Remove results in later/ })
+        );
 
         expect(screen.getByText(/R1$/, { selector: "legend" })).toBeTruthy();
         expect(screen.getByText(/R2$/, { selector: "legend" })).toBeTruthy();
@@ -159,10 +164,11 @@ describe("DnfAttemptsModal", () => {
     it("disqualifies from the last round when ticked", async () => {
         renderModal([firstRound, secondRound]);
 
-        for (const ticked of screen.getAllByRole("checkbox", {
-            checked: true,
-        })) {
-            await userEvent.click(ticked);
+        // Unticking can reveal more rounds, so until nothing is ticked
+        while (screen.queryAllByRole("checkbox", { checked: true }).length) {
+            await userEvent.click(
+                screen.getAllByRole("checkbox", { checked: true })[0]
+            );
         }
         expect(
             screen.getByRole("button", { name: "Set to DNF" })
@@ -180,6 +186,7 @@ describe("DnfAttemptsModal", () => {
         expect(dnfAttempts).toHaveBeenCalledWith({
             attemptIds: [],
             remainingInResultId: "result-2",
+            removeLaterRounds: false,
             comment: "",
         });
     });
@@ -194,6 +201,60 @@ describe("DnfAttemptsModal", () => {
         expect(dnfAttempts).toHaveBeenCalledWith(
             expect.objectContaining({ remainingInResultId: undefined })
         );
+    });
+
+    describe("removing later rounds (Regulation 9t)", () => {
+        it("is ticked when the round is left with only DNF", async () => {
+            renderModal([firstRound, secondRound]);
+
+            expect(
+                screen.getByRole("checkbox", {
+                    name: /Remove results in later rounds .*R2/,
+                })
+            ).toHaveProperty("ariaChecked", "true");
+            expect(screen.getByText(/can't advance/)).toBeTruthy();
+            // Round 2 goes whole, so its attempts aren't offered
+            expect(
+                screen.queryByText(/R2$/, { selector: "legend" })
+            ).toBeNull();
+            await userEvent.click(
+                screen.getByRole("button", { name: "Set to DNF" })
+            );
+
+            expect(dnfAttempts).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    attemptIds: ["a1", "a3"],
+                    removeLaterRounds: true,
+                })
+            );
+        });
+
+        it("is left to the delegate when a time still counts", async () => {
+            renderModal([firstRound, secondRound]);
+
+            await userEvent.click(
+                screen.getByRole("checkbox", { name: /Attempt 3/ })
+            );
+
+            expect(
+                screen.getByRole("checkbox", {
+                    name: /Remove results in later rounds/,
+                })
+            ).toHaveProperty("ariaChecked", "false");
+            expect(
+                screen.getByText(/would no longer have advanced/)
+            ).toBeTruthy();
+        });
+
+        it("isn't offered without later rounds", () => {
+            renderModal();
+
+            expect(
+                screen.queryByRole("checkbox", {
+                    name: /Remove results in later rounds/,
+                })
+            ).toBeNull();
+        });
     });
 
     it("warns when the next round has started", async () => {

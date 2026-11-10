@@ -527,7 +527,11 @@ export class CompetitionService {
     // has to wait for any redo, while earlier ones can leave it to the next
     const hasNextGroup = !!getNextGroupInRoom(currentGroupId, room.name, wcif);
     const freshSetGrants = await this.prisma.extraGrant.findMany({
-      where: { useFreshSet: true, restoredAt: null, result: { roundId } },
+      where: {
+        useFreshSet: true,
+        restoredAt: null,
+        result: { roundId, removedAt: null },
+      },
       select: { id: true },
     });
     const freshSetGrantIds = freshSetGrants.map((grant) => grant.id);

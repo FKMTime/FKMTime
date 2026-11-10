@@ -26,6 +26,7 @@ model User {
   ManualIncident             ManualIncident[]
   attemptEditLogs            AttemptEditLog[]
   extraGrants                ExtraGrant[]
+  removedResults             Result[]             @relation("result_removed_by")
 
   @@map("users")
 }
@@ -130,19 +131,28 @@ model Room {
 }
 
 model Result {
-  id                String       @id @default(uuid())
-  personId          String       @map("person_id")
-  person            Person       @relation(fields: [personId], references: [id], onDelete: Cascade)
-  eventId           String       @map("event_id")
-  roundId           String       @map("round_id")
-  doubleCheckedBy   User?        @relation(fields: [doubleCheckedById], references: [id], onDelete: SetNull)
-  doubleCheckedById String?      @map("double_checked_by")
-  doubleCheckedAt   DateTime?    @map("double_checked_at")
-  isDoubleChecked   Boolean      @default(false) @map("is_double_checked")
-  attempts          Attempt[]
-  extraGrants       ExtraGrant[]
-  createdAt         DateTime     @default(now()) @map("created_at")
-  updatedAt         DateTime     @updatedAt @map("updated_at")
+  id                  String       @id @default(uuid())
+  personId            String       @map("person_id")
+  person              Person       @relation(fields: [personId], references: [id], onDelete: Cascade)
+  eventId             String       @map("event_id")
+  roundId             String       @map("round_id")
+  doubleCheckedBy     User?        @relation(fields: [doubleCheckedById], references: [id], onDelete: SetNull)
+  doubleCheckedById   String?      @map("double_checked_by")
+  doubleCheckedAt     DateTime?    @map("double_checked_at")
+  isDoubleChecked     Boolean      @default(false) @map("is_double_checked")
+  attempts            Attempt[]
+  extraGrants         ExtraGrant[]
+  /// Removed under Regulation 9t: kept, but left out of every list (SPEC-005)
+  removedAt           DateTime?    @map("removed_at")
+  removedById         String?      @map("removed_by_id")
+  removedBy           User?        @relation("result_removed_by", fields: [removedById], references: [id], onDelete: SetNull)
+  removedReason       String?      @map("removed_reason")
+  /// The result whose DNF ruling removed this one; restoring it brings this back
+  removedByRulingOfId String?      @map("removed_by_ruling_of_id")
+  removedByRulingOf   Result?      @relation("result_removed_by_ruling", fields: [removedByRulingOfId], references: [id], onDelete: SetNull)
+  removedByRuling     Result[]     @relation("result_removed_by_ruling")
+  createdAt           DateTime     @default(now()) @map("created_at")
+  updatedAt           DateTime     @updatedAt @map("updated_at")
 
   @@unique([personId, roundId])
   @@map("result")

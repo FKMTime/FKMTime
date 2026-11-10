@@ -34,6 +34,8 @@ const AttemptRow = ({
     const navigate = useNavigate();
     const { toast } = useToast();
     const confirm = useConfirm();
+    // A removed result is kept as it was; only its history can be read
+    const isRemoved = !!result.removedAt;
     const [isOpenEditAttemptModal, setIsOpenEditAttemptModal] =
         useState<boolean>(false);
     const [isOpenGiveExtraAttemptModal, setIsOpenGiveExtraAttemptModal] =
@@ -136,6 +138,7 @@ const AttemptRow = ({
                         primary={{
                             label: "Edit attempt",
                             icon: Pencil,
+                            hidden: isRemoved,
                             onSelect: () => setIsOpenEditAttemptModal(true),
                         }}
                         items={[
@@ -147,12 +150,14 @@ const AttemptRow = ({
                             {
                                 label: "Give extra attempt",
                                 icon: MessageSquarePlus,
+                                hidden: isRemoved,
                                 onSelect: () =>
                                     setIsOpenGiveExtraAttemptModal(true),
                             },
                             {
                                 label: "Delete attempt",
                                 icon: Trash2,
+                                hidden: isRemoved,
                                 destructive: true,
                                 onSelect: handleDelete,
                             },
