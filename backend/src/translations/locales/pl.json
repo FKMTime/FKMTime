@@ -229,6 +229,14 @@
       "translation": "Submit = tak"
     },
     {
+      "key": "sendingHeader",
+      "translation": "Wysylanie..."
+    },
+    {
+      "key": "sendingFooter",
+      "translation": "Prosze czekac"
+    },
+    {
       "key": "resetTimerHeader",
       "translation": "Zresetuj timer"
     },

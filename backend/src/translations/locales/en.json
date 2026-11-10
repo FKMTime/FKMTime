@@ -229,6 +229,14 @@
       "translation": "Submit = confirm"
     },
     {
+      "key": "sendingHeader",
+      "translation": "Sending..."
+    },
+    {
+      "key": "sendingFooter",
+      "translation": "Please wait"
+    },
+    {
       "key": "resetTimerHeader",
       "translation": "Reset the timer"
     },
