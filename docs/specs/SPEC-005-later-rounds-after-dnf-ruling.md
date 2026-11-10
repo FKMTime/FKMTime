@@ -1,6 +1,6 @@
 # SPEC-005: Removing later-round results after a DNF ruling
 
-- **Status:** Accepted
+- **Status:** Implemented
 - **Created:** 2026-11-08
 - **Related:** #514 and PR #630 (DNF all attempts, built on), WCA Regulations
   9t, 9t++, 9t3, 9p4, 2j1a, 3k2
@@ -229,30 +229,54 @@ anyone else.
 
 ## Acceptance criteria
 
-- [ ] Ruling R1 attempts DNF with removal ticked hides the R2 and R3 results, and
-      their attempts and edit history stay in the database.
-- [ ] The checkbox is ticked by default when R1 is left with only DNF/DNS, and
-      unticked otherwise.
-- [ ] Hidden results don't appear in round results, double-check, the public
-      view, statistics, live solving, group progress or incident lists, and
-      don't hold back an automatic group change.
-- [ ] A station entering an attempt for a removed result gets "Removed from this
-      round", and nothing is stored.
-- [ ] An empty scorecard is sent for each removed result, unless the competition
-      never sends.
-- [ ] Restoring the R1 ruling brings R2 and R3 back unchanged, double-check
-      included, and sends their scorecards.
-- [ ] A removed result's page opens with the banner and can't be edited.
-- [ ] Only delegates see removed results, on the competitor page and the result
-      page; organisers get `404` for a removed result.
-- [ ] Removal is refused with `409` while a later result has an open incident.
-- [ ] "Remove from this round" hides an R2 result with its reason and sends an
-      empty scorecard; "Bring back" returns it unchanged and sends its scorecard.
-- [ ] "Remove from this round" isn't offered for a first round, and "Bring back"
-      is refused for a result a ruling removed.
-- [ ] Other competitors' results are never changed.
-- [ ] Every `attempt` query that filters through `result` excludes removed
-      results, without each query filtering by hand.
+Each criterion and where it's covered. Backend tests are in
+`backend/src/attempt/attempt.service.spec.ts` ("removing later rounds"),
+`backend/src/result/result.service.spec.ts` ("removing a result") and
+`backend/src/db/db.service.spec.ts`; frontend tests sit next to their
+components in `Results/SingleResult/Components`.
+
+- Ruling R1 attempts DNF with removal ticked hides the later results and keeps
+  their rows, attempts and edit history. `attempt.service.spec.ts`: "removes
+  the results in later rounds".
+- The checkbox is ticked by default when R1 is left with only DNF/DNS, and left
+  to the delegate otherwise. `DnfAttemptsModal.test.tsx`: "removing later
+  rounds (Regulation 9t)".
+- Removed results don't appear in round results, double-check, the public view,
+  statistics, live solving, group progress or incident lists, and don't hold
+  back an automatic group change. They all read through the filter in
+  `DbService` (`db.service.spec.ts`). Round results were checked by hand on the
+  dev stack; the other screens aren't covered one by one.
+- Entering an attempt for a removed result is refused, and a station gets
+  "Removed from this round". `result.service.spec.ts`: "refuses a removed
+  result to whoever enters an attempt"; the station message itself isn't
+  covered by a test.
+- An empty scorecard is sent for each removed result, unless the competition
+  never sends. `attempt.service.spec.ts`: "removes the results in later
+  rounds"; `result.service.spec.ts`: "keeps the result, with its reason, and
+  sends it empty".
+- Restoring the R1 ruling brings the later results back unchanged and sends
+  their scorecards. `attempt.service.spec.ts`: "brings them back when the
+  ruling is restored".
+- A removed result's page opens with the banner and its way back.
+  `RemovedResultBanner.test.tsx`. Editing its attempts is refused by the
+  backend (`updateAttempt`), which isn't covered by a test.
+- Only delegates see removed results: the competitor page lists them only for a
+  delegate, and a result page is delegate-only anyway. Not covered by a test.
+- Removal is refused with `409` while a later result has an open incident.
+  `attempt.service.spec.ts`: "asks to resolve an open incident in a later round
+  first"; `result.service.spec.ts`: "asks to resolve an open incident first".
+- "Remove from this round" hides a result with its reason and sends an empty
+  scorecard; "Bring back" returns it and sends its scorecard.
+  `result.service.spec.ts`: "keeps the result, with its reason, and sends it
+  empty" and "brings it back and sends it again".
+- Removing is refused for a first round, and "Bring back" for a result a ruling
+  removed. `result.service.spec.ts`: "has nothing to remove in a first round"
+  and "points to the ruling for a result a ruling removed".
+- Other competitors' results are never changed: only the competitor's own later
+  results are looked up. `attempt.service.spec.ts`: "removes the results in
+  later rounds" checks the ruled round itself stays.
+- Every `attempt` query excludes removed results without filtering by hand.
+  `db.service.spec.ts`.
 
 ## Rollout
 
