@@ -4,15 +4,6 @@ import {
     Event as WCIFEvent,
 } from "wcif-helpers";
 
-export interface UserInfo {
-    username: string;
-    fullName?: string;
-    roles: UserRole[];
-    wcaUserId?: number;
-    wcaAccessToken?: string;
-    avatarUrl?: string;
-}
-
 export interface PublicUser {
     id: string;
     fullName?: string;
@@ -25,12 +16,6 @@ export interface User extends PublicUser {
     roles: string[];
     createdAt: Date;
     updatedAt: Date;
-}
-
-export interface INotification {
-    id: string;
-    message: string;
-    type: "incident" | "info";
 }
 
 //eslint-disable-next-line
@@ -418,11 +403,6 @@ export interface UnofficialEvent {
     wcif: WCIFEvent;
     createdAt: Date;
     updatedAt: Date;
-}
-
-export interface GroupedIncidents {
-    category: string;
-    incidents: Incident[];
 }
 
 export interface AddPerson {

@@ -23,14 +23,6 @@ export class ScramblingDeviceService {
     });
   }
 
-  async getScramblingDeviceByToken(token: string) {
-    return this.prisma.scramblingDevice.findFirst({
-      where: {
-        encryptedToken: sha512(token),
-      },
-    });
-  }
-
   async createScramblingDevice(data: ScramblingDeviceDto) {
     return this.prisma.scramblingDevice.create({
       data,
@@ -77,18 +69,6 @@ export class ScramblingDeviceService {
       token,
       device: scramblingDevice,
     };
-  }
-
-  async validateToken(token: string) {
-    const scramblingDevice = await this.prisma.scramblingDevice.findFirst({
-      where: {
-        encryptedToken: sha512(token),
-      },
-    });
-    if (!scramblingDevice) {
-      throw new HttpException('Not found', 404);
-    }
-    return scramblingDevice;
   }
 
   async isTokenValid(data: CheckTokenDto) {

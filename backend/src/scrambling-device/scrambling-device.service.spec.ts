@@ -130,30 +130,6 @@ describe('ScramblingDeviceService', () => {
     });
   });
 
-  describe('validateToken', () => {
-    it('should return device for valid token', async () => {
-      const mockDevice = { id: 'device1', name: 'Device 1' };
-
-      jest
-        .spyOn(dbService.scramblingDevice, 'findFirst')
-        .mockResolvedValue(mockDevice as any);
-
-      const result = await service.validateToken('valid-token');
-
-      expect(result).toEqual(mockDevice);
-    });
-
-    it('should throw error for invalid token', async () => {
-      jest
-        .spyOn(dbService.scramblingDevice, 'findFirst')
-        .mockResolvedValue(null);
-
-      await expect(service.validateToken('invalid-token')).rejects.toThrow(
-        HttpException,
-      );
-    });
-  });
-
   describe('isTokenValid', () => {
     it('should return true for valid token', async () => {
       const mockDevice = { id: 'device1', name: 'Device 1' };
