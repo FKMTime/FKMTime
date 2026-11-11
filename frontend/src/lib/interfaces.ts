@@ -28,12 +28,6 @@ export interface User extends PublicUser {
     updatedAt: Date;
 }
 
-export interface INotification {
-    id: string;
-    message: string;
-    type: "incident" | "info";
-}
-
 export enum UserRole {
     ADMIN = "ADMIN",
     DELEGATE = "DELEGATE",
@@ -453,11 +447,6 @@ export interface UnofficialEvent {
     wcif: WCIFEvent;
     createdAt: Date;
     updatedAt: Date;
-}
-
-export interface GroupedIncidents {
-    category: string;
-    incidents: Incident[];
 }
 
 export interface AddPerson {

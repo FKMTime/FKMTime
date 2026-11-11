@@ -12,45 +12,6 @@ export class ContestsService {
   ) {}
   private cubingContestLogger = new Logger(`CubingContests`);
 
-  async enterAttemptToCubingContests(
-    competitionId: string,
-    apiToken: string,
-    eventId: string,
-    roundNumber: number,
-    wcaId: string,
-    attemptNumber: number,
-    attemptResult: number,
-  ) {
-    try {
-      const response = await fetch(
-        `${CUBING_CONTESTS_API_ORIGIN}/enter-attempt`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${apiToken}`,
-          },
-          body: JSON.stringify({
-            competitionWcaId: competitionId,
-            eventId: eventId,
-            roundNumber: roundNumber,
-            wcaId: wcaId,
-            attemptNumber: attemptNumber,
-            attemptResult: attemptResult,
-          }),
-        },
-      );
-      const data = await response.json();
-      this.cubingContestLogger.log(
-        `Sending attempt to CubingContests: ${eventId}-r${roundNumber} competitorId: ${wcaId} attemptNumber: ${attemptNumber} attemptResult: ${attemptResult} status ${response.status} data ${JSON.stringify(data)}`,
-      );
-    } catch (error) {
-      this.cubingContestLogger.error(
-        `Error sending attempt to CubingContests: ${eventId}-r${roundNumber} competitorId: ${wcaId} attemptNumber: ${attemptNumber} attemptResult: ${attemptResult} error ${error}`,
-      );
-    }
-  }
-
   async enterWholeScorecardToCubingContests(result: any) {
     const competition = await this.prisma.competition.findFirst();
     const { competitionId, eventId, roundNumber, apiToken, results } =

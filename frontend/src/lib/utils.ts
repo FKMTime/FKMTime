@@ -1,7 +1,7 @@
 import { type ClassValue, clsx } from "clsx";
 import * as CryptoJS from "crypto-js";
 import { twMerge } from "tailwind-merge";
-import { Competition, Event, getRoundInfoFromWcif } from "wcif-helpers";
+import { Competition, Event } from "wcif-helpers";
 
 import { DNF_VALUE, DNS_VALUE, roundFormats } from "../lib/constants";
 import { getEventShortName, isUnofficialEvent } from "../lib/events";
@@ -270,10 +270,6 @@ export const isMobile = () => {
     return regex.test(navigator.userAgent);
 };
 
-export const isMobileView = () => {
-    return window.innerWidth < 768;
-};
-
 export const isNotificationsSupported = () => {
     return "Notification" in window;
 };
@@ -371,11 +367,6 @@ export const decryptText = (encryptedText: string, password: string) => {
 export const idToHex = (id: number) => {
     if (!id) return "";
     return id.toString(16).toUpperCase();
-};
-
-export const isDualRound = (roundId: string, wcif: Competition): boolean => {
-    const roundInfo = getRoundInfoFromWcif(roundId, wcif);
-    return (roundInfo?.linkedRounds?.length || 0) === 2;
 };
 
 export const getAdvancementText = (roundId: string, event?: Event) => {

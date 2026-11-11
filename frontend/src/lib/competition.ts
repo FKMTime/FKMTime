@@ -99,15 +99,6 @@ export const updateDevicesSettings = async (id: string, data: Competition) => {
     return response.status;
 };
 
-export const generateApiToken = async () => {
-    const response = await backendRequest(
-        "competition/settings/token",
-        "GET",
-        true
-    );
-    return await response.json();
-};
-
 export const getUpcomingManageableCompetitions = async (): Promise<
     WCACompetition[]
 > => {

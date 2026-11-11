@@ -32,16 +32,6 @@ export const logoutScramblingDevice = () => {
     localStorage.removeItem(SCRAMBLING_DEVICE_INFO_NAME);
 };
 
-export const getScramblingDeviceInfo = () => {
-    const scramblingDeviceInfo = localStorage.getItem(
-        SCRAMBLING_DEVICE_INFO_NAME
-    );
-    if (scramblingDeviceInfo === null) {
-        return null;
-    }
-    return JSON.parse(scramblingDeviceInfo);
-};
-
 export const isScrambleDeviceTokenValid = async () => {
     try {
         const response = await backendRequest(

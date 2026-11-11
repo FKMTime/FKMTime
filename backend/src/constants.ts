@@ -1,23 +1,8 @@
-import { Attempt, HardwareVersion } from '@prisma/client';
+import { HardwareVersion } from '@prisma/client';
 
 export const SKIPPED_VALUE = 0;
 export const DNF_VALUE = -1;
 export const DNS_VALUE = -2;
-
-export interface ResultWithAttempts {
-  roundId: string;
-  attempts: Attempt[];
-  person: PublicPerson;
-}
-
-export interface PublicPerson {
-  id: string;
-  name: string;
-  wcaId: string;
-  registrantId: number;
-  countryIso2: string;
-  canCompete: boolean;
-}
 
 export const publicPersonSelect = {
   select: {
