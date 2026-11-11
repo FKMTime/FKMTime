@@ -37,6 +37,10 @@ const attempt = (
   createdAt: at(minute),
   updatedAt: at(minute),
   updatedById: null,
+  extraGrantId: null,
+  statusBeforeGrant: null,
+  statusInGrant: null,
+  replacedByInGrant: null,
   ...overrides,
   result: { personId, roundId, person: { name: personId } },
 });

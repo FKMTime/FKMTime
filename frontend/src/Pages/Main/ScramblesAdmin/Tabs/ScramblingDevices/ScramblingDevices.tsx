@@ -1,73 +1,61 @@
-import { Laptop } from "lucide-react";
-import { useEffect, useState } from "react";
+import { Plus } from "lucide-react";
+import { useState } from "react";
 
 import LoadingPage from "@/Components/LoadingPage";
-import PlusButton from "@/Components/PlusButton";
-import { Card, CardContent, CardHeader, CardTitle } from "@/Components/ui/card";
-import { ScramblingDevice } from "@/lib/interfaces";
-import { getScramblingDevices } from "@/lib/scramblingDevices";
-import PageTransition from "@/Pages/PageTransition";
+import EmptyState from "@/Components/shared/EmptyState";
+import { Button } from "@/Components/ui/button";
+import { useLiveQuery } from "@/hooks/useLiveQuery";
+import { useIsMobile } from "@/hooks/useMobile";
+import { scramblingDevicesQuery } from "@/lib/scramblingDevices";
 
 import CreateScramblingDeviceModal from "./Components/CreateScramblingDeviceModal";
-import ScramblingDevicesTable from "./Components/ScramblingDevicesTable";
+import ScramblingDeviceRow from "./Components/ScramblingDeviceRow";
 
 const ScramblingDevices = () => {
-    const [devices, setDevices] = useState<ScramblingDevice[]>([]);
-    const [isLoading, setIsLoading] = useState<boolean>(true);
+    const isMobile = useIsMobile();
+    // null until the first load; refreshes keep the list on screen
+    const { data: devices, refetch } = useLiveQuery(scramblingDevicesQuery);
     const [isOpenCreateDeviceModal, setIsOpenCreateDeviceModal] =
         useState<boolean>(false);
 
-    const fetchData = async () => {
-        setIsLoading(true);
-        const data = await getScramblingDevices();
-        setDevices(data);
-        setIsLoading(false);
-    };
+    const fetchData = () => void refetch();
 
     const handleCloseCreateDeviceModal = () => {
         setIsOpenCreateDeviceModal(false);
         fetchData();
     };
 
-    useEffect(() => {
-        fetchData();
-    }, []);
-
-    if (isLoading) return <LoadingPage />;
+    if (!devices) return <LoadingPage />;
 
     return (
-        <PageTransition>
-            <div className="flex flex-col gap-4">
-                <Card>
-                    <CardHeader>
-                        <CardTitle className="flex items-center justify-between">
-                            <div className="flex gap-2 items-center">
-                                <Laptop size={20} />
-                                Scrambling devices
-                            </div>
-                            <PlusButton
-                                onClick={() => setIsOpenCreateDeviceModal(true)}
-                                title="Add new device"
-                            />
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        {devices.length === 0 ? (
-                            <p>No scrambling devices found</p>
-                        ) : (
-                            <ScramblingDevicesTable
-                                devices={devices}
-                                fetchData={fetchData}
-                            />
-                        )}
-                    </CardContent>
-                </Card>
-                <CreateScramblingDeviceModal
-                    isOpen={isOpenCreateDeviceModal}
-                    onClose={handleCloseCreateDeviceModal}
-                />
-            </div>
-        </PageTransition>
+        <>
+            <Button
+                onClick={() => setIsOpenCreateDeviceModal(true)}
+                variant={isMobile ? "outline" : "default"}
+                size={isMobile ? "lg" : "default"}
+                className="md:ml-auto md:w-fit"
+            >
+                <Plus />
+                Add device
+            </Button>
+            {devices.length === 0 ? (
+                <EmptyState>No scrambling devices yet</EmptyState>
+            ) : (
+                <ul className="overflow-hidden rounded-mobile-card border bg-card md:rounded-2xl">
+                    {devices.map((device) => (
+                        <ScramblingDeviceRow
+                            key={device.id}
+                            device={device}
+                            fetchData={fetchData}
+                        />
+                    ))}
+                </ul>
+            )}
+            <CreateScramblingDeviceModal
+                isOpen={isOpenCreateDeviceModal}
+                onClose={handleCloseCreateDeviceModal}
+            />
+        </>
     );
 };
 

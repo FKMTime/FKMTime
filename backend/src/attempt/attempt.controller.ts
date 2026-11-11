@@ -17,8 +17,12 @@ import { DelegateGuard } from 'src/auth/guards/delegate.guard';
 
 import { AttemptService } from './attempt.service';
 import { CreateAttemptDto } from './dto/createAttempt.dto';
+import { DnfAttemptsDto } from './dto/dnfAttempts.dto';
 import { EnterScorecardDto } from './dto/enterScorecard.dto';
+import { GiveExtrasDto } from './dto/giveExtras.dto';
 import { ReorderAttemptsDto } from './dto/reorderAttempts.dto';
+import { RestoreDnfAttemptsDto } from './dto/restoreDnfAttempts.dto';
+import { RestoreExtraGrantDto } from './dto/restoreExtraGrant.dto';
 import { SetReplacementDto } from './dto/setReplacement.dto';
 import { SwapAttemptsDto } from './dto/swapAttempts.dto';
 import { UpdateAttemptDto } from './dto/updateAttempt.dto';
@@ -80,6 +84,64 @@ export class AttemptController {
     @GetUser() user: JwtAuthDto,
   ) {
     return await this.attemptService.enterScorecard(data, user.userId);
+  }
+
+  @HttpCode(HttpStatus.OK)
+  @Post('give-extras-for-all')
+  async giveExtras(@Body() data: GiveExtrasDto, @GetUser() user: JwtAuthDto) {
+    return await this.attemptService.giveExtras(data, user.userId);
+  }
+
+  @HttpCode(HttpStatus.OK)
+  @Post('restore-extra-grant')
+  async restoreExtraGrant(
+    @Body() data: RestoreExtraGrantDto,
+    @GetUser() user: JwtAuthDto,
+  ) {
+    return await this.attemptService.restoreExtraGrant(
+      data.grantId,
+      user.userId,
+    );
+  }
+
+  @HttpCode(HttpStatus.OK)
+  @Post('reapply-extra-grant')
+  async reapplyExtraGrant(
+    @Body() data: RestoreExtraGrantDto,
+    @GetUser() user: JwtAuthDto,
+  ) {
+    return await this.attemptService.reapplyExtraGrant(
+      data.grantId,
+      user.userId,
+    );
+  }
+
+  @HttpCode(HttpStatus.OK)
+  @Post('dnf')
+  async dnfAttempts(@Body() data: DnfAttemptsDto, @GetUser() user: JwtAuthDto) {
+    return await this.attemptService.dnfAttempts(data, user.userId);
+  }
+
+  @HttpCode(HttpStatus.OK)
+  @Post('restore-dnf')
+  async restoreDnfAttempts(
+    @Body() data: RestoreDnfAttemptsDto,
+    @GetUser() user: JwtAuthDto,
+  ) {
+    return await this.attemptService.restoreDnfAttempts(
+      data.resultId,
+      user.userId,
+    );
+  }
+
+  @Get('dnf/:resultId')
+  async getDnfRuling(@Param('resultId') resultId: string) {
+    return await this.attemptService.getDnfRuling(resultId);
+  }
+
+  @Get('give-extras-for-all/:resultId')
+  async getExtrasContext(@Param('resultId') resultId: string) {
+    return await this.attemptService.getExtrasContext(resultId);
   }
 
   @Get('round/:roundId/recent')

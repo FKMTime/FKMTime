@@ -26,7 +26,7 @@ const AttemptsTable = ({
         <Table>
             <TableHeader>
                 <TableRow>
-                    <TableHead>Attempt number</TableHead>
+                    <TableHead className="pl-5">Attempt</TableHead>
                     <TableHead>Time</TableHead>
                     {showExtraColumns && (
                         <>
@@ -39,9 +39,11 @@ const AttemptsTable = ({
                     <TableHead>Station</TableHead>
                     <TableHead>Comment</TableHead>
                     <TableHead>Solved at</TableHead>
-                    <TableHead>Updated by</TableHead>
-                    <TableHead>Actions</TableHead>
-                    <TableHead></TableHead>
+                    <TableHead>Edited by</TableHead>
+                    <TableHead>Warnings</TableHead>
+                    <TableHead>
+                        <span className="sr-only">Actions</span>
+                    </TableHead>
                 </TableRow>
             </TableHeader>
             <TableBody>

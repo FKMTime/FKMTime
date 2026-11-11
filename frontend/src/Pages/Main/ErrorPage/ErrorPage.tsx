@@ -1,24 +1,24 @@
-import { useState } from "react";
-import {
-    isRouteErrorResponse,
-    useNavigate,
-    useRouteError,
-} from "react-router-dom";
+import { CircleAlert, CloudOff, SearchX } from "lucide-react";
+import { isRouteErrorResponse, useRouteError } from "react-router-dom";
 
-import ModeToggle from "@/Components/ModeToggle";
-import { Button } from "@/Components/ui/button";
-import PageTransition from "@/Pages/PageTransition";
+import ErrorScreen from "./ErrorScreen";
+
+const iconForStatus = (status?: number) => {
+    if (status === 404) return SearchX;
+    if (status && status >= 500) return CloudOff;
+    return CircleAlert;
+};
 
 const ErrorPage = () => {
     const error = useRouteError();
-    const navigate = useNavigate();
-    const [showDetails, setShowDetails] = useState(false);
 
     let title = "Something went wrong";
     let message = "An unexpected error occurred.";
+    let status: number | undefined;
     let details: string | undefined;
 
     if (isRouteErrorResponse(error)) {
+        status = error.status;
         title = `Error ${error.status}`;
         message = error.statusText || message;
         if (error.data) {
@@ -35,41 +35,12 @@ const ErrorPage = () => {
     }
 
     return (
-        <PageTransition>
-            <div className="flex flex-col gap-6 justify-center items-center h-screen px-4">
-                <div className="flex flex-col items-center gap-2 text-center">
-                    <span className="text-6xl">💥</span>
-                    <h2 className="text-2xl font-bold">{title}</h2>
-                    <p className="text-red-500 text-lg max-w-md">{message}</p>
-                </div>
-
-                {details && (
-                    <div className="flex flex-col items-center gap-2 w-full max-w-2xl">
-                        <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => setShowDetails((v) => !v)}
-                        >
-                            {showDetails ? "Hide" : "Show"} details
-                        </Button>
-                        {showDetails && (
-                            <pre className="w-full overflow-auto rounded-md bg-muted p-4 text-xs text-left max-h-64">
-                                {details}
-                            </pre>
-                        )}
-                    </div>
-                )}
-
-                <div className="flex gap-3">
-                    <Button onClick={() => navigate(-1)} variant="outline">
-                        Go back
-                    </Button>
-                    <Button onClick={() => navigate("/")}>Home</Button>
-                </div>
-
-                <ModeToggle />
-            </div>
-        </PageTransition>
+        <ErrorScreen
+            icon={iconForStatus(status)}
+            title={title}
+            message={message}
+            details={details}
+        />
     );
 };
 

@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   HttpCode,
   HttpStatus,
@@ -76,6 +77,15 @@ export class PersonController {
   @Post('check-in/:id')
   async checkIn(@Param('id') id: string, @Body() data: UpdatePersonDto) {
     return await this.personService.checkIn(id, data);
+  }
+
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @Delete('check-in/:id')
+  async undoCheckIn(
+    @Param('id') id: string,
+    @Query('removeCard') removeCard?: string,
+  ) {
+    await this.personService.undoCheckIn(id, removeCard === 'true');
   }
 
   @Get('check-in')

@@ -1,10 +1,13 @@
+import { getEventShortName } from "./events";
 import {
     Incident,
     ManualIncident,
     NoteworthyIncident,
     NoteworthyIncidentData,
+    PersonIncidents,
 } from "./interfaces";
-import { backendRequest } from "./request";
+import { queryFamily } from "./queryCache";
+import { backendQuery, backendRequest, backendSearchQuery } from "./request";
 
 export const groupIncidents = (incidents: Incident[]) => {
     const grouped: { [key: string]: Incident[] } = {};
@@ -42,6 +45,15 @@ export const getUnresolvedIncidents = async (
     return await response.json();
 };
 
+export const unresolvedIncidentsQuery = backendQuery<Incident[]>(
+    "incident/unresolved"
+);
+
+/** A round's incidents, for double-checking */
+export const roundIncidentsQuery = queryFamily((roundId) =>
+    backendQuery<Incident[]>(`incident/round/${roundId}`)
+);
+
 export const getIncidentsByRoundId = async (
     roundId: string
 ): Promise<Incident[]> => {
@@ -53,15 +65,24 @@ export const getIncidentsByRoundId = async (
     return await response.json();
 };
 
-export const getResolvedIncidents = async (
-    search?: string
-): Promise<Incident[]> => {
-    const url = search
-        ? `incident/resolved?search=${search}`
-        : "incident/resolved";
-    const response = await backendRequest(url, "GET", true);
+/** A person's incidents */
+export const personIncidentsQuery = queryFamily((id) =>
+    backendQuery<PersonIncidents>(`incident/person/${id}`)
+);
+
+export const getIncidentsForPerson = async (
+    personId: string
+): Promise<PersonIncidents> => {
+    const response = await backendRequest(
+        `incident/person/${personId}`,
+        "GET",
+        true
+    );
     return await response.json();
 };
+
+export const resolvedIncidentsQuery =
+    backendSearchQuery<Incident[]>("incident/resolved");
 
 export const saveAttemptAsNoteworthyIncident = async (id: string) => {
     const response = await backendRequest(
@@ -72,15 +93,9 @@ export const saveAttemptAsNoteworthyIncident = async (id: string) => {
     return response.status;
 };
 
-export const getNoteworthyIncidents = async (
-    search?: string
-): Promise<NoteworthyIncident[]> => {
-    const url = search
-        ? `incident/noteworthy?search=${search}`
-        : "incident/noteworthy";
-    const response = await backendRequest(url, "GET", true);
-    return await response.json();
-};
+export const noteworthyIncidentsQuery = backendSearchQuery<
+    NoteworthyIncident[]
+>("incident/noteworthy");
 
 export const createNoteworthyIncident = async (
     data: NoteworthyIncidentData
@@ -116,13 +131,8 @@ export const deleteNoteworthyIncident = async (id: string) => {
     return response.status;
 };
 
-export const getManualIncidents = async (
-    search?: string
-): Promise<ManualIncident[]> => {
-    const url = search ? `incident/manual?search=${search}` : "incident/manual";
-    const response = await backendRequest(url, "GET", true);
-    return await response.json();
-};
+export const manualIncidentsQuery =
+    backendSearchQuery<ManualIncident[]>("incident/manual");
 
 export const createManualIncident = async (data: {
     personId: string;
@@ -158,4 +168,13 @@ export const updateManualIncident = async (
         data
     );
     return response.status;
+};
+
+/** "Anna Example (2019EXAM01), 3x3 R1A2" for pasting into reports */
+export const getIncidentInfoText = (incident: Incident) => {
+    const [eventId, roundNumber] = incident.result.roundId.split("-r");
+    const wcaId = incident.result.person.wcaId
+        ? ` (${incident.result.person.wcaId})`
+        : "";
+    return `${incident.result.person.name}${wcaId}, ${getEventShortName(eventId)} R${roundNumber}A${incident.attemptNumber}`;
 };

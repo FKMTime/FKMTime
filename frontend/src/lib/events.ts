@@ -1,13 +1,22 @@
+import { AVAILABLE_PENALTIES } from "./constants";
 import { Event } from "./interfaces";
+import { Query } from "./queryCache";
 import { backendRequest } from "./request";
 
 const EVENTS_KEY = "fkmtime-events";
+const DEFAULT_MAX_PENALTY = 16;
 
 export const getEvents = async () => {
     const response = await backendRequest("events", "GET", false);
     const data = await response.json();
     localStorage.setItem(EVENTS_KEY, JSON.stringify(data));
     return data;
+};
+
+/** Every event, official or not; loading it also stores the names */
+export const eventsQuery: Query<Event[]> = {
+    key: "events",
+    fetch: () => getEvents(),
 };
 
 export const getUnofficialEvents = async () => {
@@ -70,4 +79,27 @@ export const getUsualExtraScramblesCount = (eventId: string) => {
             ?.usualExtraScramblesCount;
     }
     return 2;
+};
+
+export const getMaxPenalty = (eventId: string) => {
+    const eventsData = localStorage.getItem(EVENTS_KEY);
+    if (eventsData) {
+        const events: Event[] = JSON.parse(eventsData);
+        return (
+            events.find((event) => event.id === eventId)?.maxPenalty ??
+            DEFAULT_MAX_PENALTY
+        );
+    }
+    return DEFAULT_MAX_PENALTY;
+};
+
+/**
+ * Penalties that can be given in the event. A saved penalty over the cap
+ * stays listed, so an older attempt still shows what it has.
+ */
+export const getAvailablePenalties = (eventId: string, current?: number) => {
+    const maxPenalty = getMaxPenalty(eventId);
+    return AVAILABLE_PENALTIES.filter(
+        (penalty) => penalty.value <= maxPenalty || penalty.value === current
+    );
 };

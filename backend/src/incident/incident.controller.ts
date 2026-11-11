@@ -41,6 +41,11 @@ export class IncidentController {
     return this.incidentService.getUnresolvedIncidentsCount();
   }
 
+  @Get('person/:id')
+  async getIncidentsForPerson(@Param('id') personId: string) {
+    return this.incidentService.getIncidentsForPerson(personId);
+  }
+
   @Get('resolved')
   async getResolvedIncidents(@Query('search') search: string) {
     return this.incidentService.getResolvedIncidents(search);

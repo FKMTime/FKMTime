@@ -1,44 +1,28 @@
-import { Settings } from "lucide-react";
-import { useEffect, useState } from "react";
-
-import { Card, CardContent, CardHeader, CardTitle } from "@/Components/ui/card";
+import LoadingPage from "@/Components/LoadingPage";
+import { useLiveQuery } from "@/hooks/useLiveQuery";
 import { useToast } from "@/hooks/useToast";
 import {
-    getCompetitionSettings,
+    competitionSettingsQuery,
     updateDevicesSettings,
 } from "@/lib/competition";
 import { Competition } from "@/lib/interfaces";
-import PageTransition from "@/Pages/PageTransition";
 
 import DeviceSettingsForm from "./DeviceSettingsForm";
 
 const DevicesSettings = () => {
     const { toast } = useToast();
-    const [competition, setCompetition] = useState<Competition | null>(null);
+    const {
+        data: competition,
+        version,
+        refetch,
+    } = useLiveQuery(competitionSettingsQuery);
 
-    useEffect(() => {
-        const fetchSettings = async () => {
-            const response = await getCompetitionSettings();
-            if (response.status === 200) {
-                setCompetition({
-                    ...response.data,
-                    wcif: undefined,
-                });
-            }
-        };
-        fetchSettings();
-    }, []);
-
-    const handleSubmit = async (data: Competition) => {
-        if (!competition || !data) return;
-        const status = await updateDevicesSettings(competition.id, {
-            ...data,
-        });
+    const handleSubmit = async (values: Competition) => {
+        if (!competition || !values) return;
+        const status = await updateDevicesSettings(competition.id, values);
         if (status === 200) {
-            toast({
-                title: "Successfully updated devices settings",
-                variant: "success",
-            });
+            void refetch();
+            toast({ title: "Device settings saved", variant: "success" });
         } else {
             toast({
                 title: "Error",
@@ -48,27 +32,17 @@ const DevicesSettings = () => {
         }
     };
 
-    if (!competition) {
-        return <div>Loading...</div>;
-    }
+    if (!competition) return <LoadingPage />;
 
     return (
-        <PageTransition>
-            <Card>
-                <CardHeader>
-                    <CardTitle className="flex gap-2 items-center">
-                        <Settings size={20} />
-                        Settings
-                    </CardTitle>
-                </CardHeader>
-                <CardContent>
-                    <DeviceSettingsForm
-                        competition={competition}
-                        handleSubmit={handleSubmit}
-                    />
-                </CardContent>
-            </Card>
-        </PageTransition>
+        <div className="rounded-mobile-card border bg-card p-4 md:rounded-2xl md:p-6">
+            <DeviceSettingsForm
+                // Fresh settings from the server re-seed the form
+                key={version}
+                competition={competition}
+                handleSubmit={handleSubmit}
+            />
+        </div>
     );
 };
 

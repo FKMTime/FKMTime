@@ -1,14 +1,13 @@
+import { Pencil, Trash2 } from "lucide-react";
 import { useState } from "react";
 
-import DeleteButton from "@/Components/DeleteButton";
-import EditButton from "@/Components/EditButton";
-import EventIcon from "@/Components/Icons/EventIcon";
-import { TableCell, TableRow } from "@/Components/ui/table";
+import RowActions from "@/Components/shared/RowActions";
 import { useConfirm } from "@/hooks/useConfirm";
 import { useToast } from "@/hooks/useToast";
-import { getEventName } from "@/lib/events";
+import { getEventIconClass, getEventName } from "@/lib/events";
 import { UnofficialEvent } from "@/lib/interfaces";
 import { deleteUnofficialEvent } from "@/lib/unofficialEvents";
+import { cn } from "@/lib/utils";
 
 import EditUnofficialEventModal from "./EditUnofficialEventModal";
 
@@ -31,11 +30,6 @@ const UnofficialEventRow = ({ event, fetchData }: UnofficialEventRowProps) => {
             .then(async () => {
                 const status = await deleteUnofficialEvent(event.id);
                 if (status === 204) {
-                    toast({
-                        title: "Success",
-                        description: "Successfully deleted event.",
-                        variant: "success",
-                    });
                     fetchData();
                 } else if (status === 409) {
                     toast({
@@ -52,11 +46,7 @@ const UnofficialEventRow = ({ event, fetchData }: UnofficialEventRowProps) => {
                 }
             })
             .catch(() => {
-                toast({
-                    title: "Cancelled",
-                    description:
-                        "You have cancelled the deletion of the event.",
-                });
+                // Declined: closing the dialog is feedback enough
             });
     };
 
@@ -64,26 +54,48 @@ const UnofficialEventRow = ({ event, fetchData }: UnofficialEventRowProps) => {
         setIsOpenEditUnofficialEventModal(false);
         fetchData();
     };
+    const roundCount = event.wcif.rounds.length;
+    const name = getEventName(event.eventId) ?? event.eventId;
+
     return (
-        <>
-            <TableRow key={event.id}>
-                <TableCell className="flex items-center gap-2">
-                    <EventIcon eventId={event.eventId} selected />
-                    {getEventName(event.eventId)}
-                </TableCell>
-                <TableCell>
-                    <EditButton
-                        onClick={() => setIsOpenEditUnofficialEventModal(true)}
-                    />
-                    <DeleteButton onClick={handleDelete} />
-                </TableCell>
-            </TableRow>
+        <li className="flex items-center gap-3 border-b py-2 pl-3.5 pr-1 last:border-b-0 md:gap-3.5 md:py-3 md:pl-5 md:pr-3">
+            <span
+                aria-hidden
+                className={cn(
+                    "cubing-icon text-[22px]",
+                    getEventIconClass(event.eventId)
+                )}
+            />
+            <div className="flex min-w-0 flex-1 flex-col md:flex-row md:items-center md:gap-3.5">
+                <span className="truncate text-[15px] font-semibold md:flex-1">
+                    {name}
+                </span>
+                <span className="text-[13px] text-muted-foreground">
+                    {roundCount === 1 ? "1 round" : `${roundCount} rounds`}
+                </span>
+            </div>
+            <RowActions
+                subject={name}
+                primary={{
+                    label: "Edit rounds",
+                    icon: Pencil,
+                    onSelect: () => setIsOpenEditUnofficialEventModal(true),
+                }}
+                items={[
+                    {
+                        label: "Delete event",
+                        icon: Trash2,
+                        destructive: true,
+                        onSelect: handleDelete,
+                    },
+                ]}
+            />
             <EditUnofficialEventModal
                 isOpen={isOpenEditUnofficialEventModal}
                 onClose={handleCloseEditModal}
                 unofficialEvent={event}
             />
-        </>
+        </li>
     );
 };
 

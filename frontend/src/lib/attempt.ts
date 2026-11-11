@@ -3,8 +3,10 @@ import {
     AttemptData,
     AttemptEditLogEntry,
     Incident,
+    RecentAttempt,
 } from "./interfaces";
-import { backendRequest } from "./request";
+import { queryFamily } from "./queryCache";
+import { backendQuery, backendRequest } from "./request";
 
 interface UpdateAttemptData extends Attempt {
     updateReplacedBy?: boolean;
@@ -18,13 +20,15 @@ export const createAttempt = async (
     return { status: response.status, message };
 };
 
+/** Resolves to null when the attempt no longer exists (e.g. it was deleted) */
 export const getIncidentById = async (
     id: string
 ): Promise<{
     attempt: Incident;
     previousIncidents: Incident[];
-}> => {
+} | null> => {
     const response = await backendRequest(`attempt/${id}`, "GET", true);
+    if (response.status === 404) return null;
     return await response.json();
 };
 
@@ -52,6 +56,11 @@ export const updateAttempt = async (
     const message = !response.ok ? (await response.json()).message : undefined;
     return { status: response.status, message };
 };
+
+/** A round's latest attempts, for the home page */
+export const recentAttemptsQuery = queryFamily((roundId) =>
+    backendQuery<RecentAttempt[]>(`attempt/round/${roundId}/recent`)
+);
 
 export const getRecentAttemptsByRoundId = async (roundId: string) => {
     const response = await backendRequest(
@@ -85,6 +94,124 @@ export const setAttemptReplacement = async (
     );
     return response.status;
 };
+
+export interface ExtraGrantState {
+    id: string;
+    usingOriginals: boolean;
+    attemptIds: string[];
+}
+
+export interface ExtrasContext {
+    hasNextGroup: boolean;
+    nextRoundStarted: boolean;
+    grant: ExtraGrantState | null;
+}
+
+/** What giving extras for all attempts would do for a result */
+export const extrasContextQuery = queryFamily((resultId) =>
+    backendQuery<ExtrasContext>(`attempt/give-extras-for-all/${resultId}`)
+);
+
+export const getExtrasContext = async (
+    resultId: string
+): Promise<ExtrasContext> => {
+    const response = await backendRequest(
+        `attempt/give-extras-for-all/${resultId}`,
+        "GET",
+        true
+    );
+    return await response.json();
+};
+
+export const giveExtras = async (data: {
+    resultId: string;
+    attemptIds: string[];
+    comment: string;
+    useFreshSet: boolean;
+    removeFromLive: boolean;
+}): Promise<{ status: number; message?: string }> => {
+    const response = await backendRequest(
+        "attempt/give-extras-for-all",
+        "POST",
+        true,
+        data
+    );
+    const message = !response.ok ? (await response.json()).message : undefined;
+    return { status: response.status, message };
+};
+
+export const restoreExtraGrant = async (
+    grantId: string
+): Promise<{ status: number; message?: string }> => {
+    const response = await backendRequest(
+        "attempt/restore-extra-grant",
+        "POST",
+        true,
+        { grantId }
+    );
+    const message = !response.ok ? (await response.json()).message : undefined;
+    return { status: response.status, message };
+};
+
+export const reapplyExtraGrant = async (
+    grantId: string
+): Promise<{ status: number; message?: string }> => {
+    const response = await backendRequest(
+        "attempt/reapply-extra-grant",
+        "POST",
+        true,
+        { grantId }
+    );
+    const message = !response.ok ? (await response.json()).message : undefined;
+    return { status: response.status, message };
+};
+
+export interface RuledDnfAttempt {
+    id: string;
+    /** A remaining attempt the ruling recorded, removed on restore */
+    addedByRuling: boolean;
+    penaltyBeforeDnf: number | null;
+}
+
+export interface DnfRuling {
+    attempts: RuledDnfAttempt[];
+    /** Later-round results the ruling removed (Regulation 9t) */
+    removedResults: { id: string; roundId: string }[];
+}
+
+/** A result's DNF ruling: its attempts and the later-round results it removed */
+export const dnfRulingQuery = queryFamily((resultId) =>
+    backendQuery<DnfRuling>(`attempt/dnf/${resultId}`)
+);
+
+/** Rule attempts DNF, keeping their times */
+export const dnfAttempts = async (data: {
+    attemptIds: string[];
+    /** Disqualify from this result's round: its remaining attempts become DNF */
+    remainingInResultId?: string;
+    /** Regulation 9t: also remove the competitor's results in later rounds */
+    removeLaterRounds?: boolean;
+    comment: string;
+}): Promise<{ status: number; message?: string }> => {
+    const response = await backendRequest("attempt/dnf", "POST", true, data);
+    const message = !response.ok ? (await response.json()).message : undefined;
+    return { status: response.status, message };
+};
+
+export const restoreDnfAttempts = async (
+    resultId: string
+): Promise<{ status: number; message?: string }> => {
+    const response = await backendRequest("attempt/restore-dnf", "POST", true, {
+        resultId,
+    });
+    const message = !response.ok ? (await response.json()).message : undefined;
+    return { status: response.status, message };
+};
+
+/** Every change made to an attempt */
+export const attemptEditLogQuery = queryFamily((id) =>
+    backendQuery<AttemptEditLogEntry[]>(`attempt/${id}/edit-log`)
+);
 
 export const getAttemptEditLog = async (
     id: string

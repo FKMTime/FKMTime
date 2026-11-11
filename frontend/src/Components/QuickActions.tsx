@@ -1,43 +1,46 @@
-import { useEffect, useState } from "react";
+import { CircleCheck, RotateCcw } from "lucide-react";
 
 import { Button } from "@/Components/ui/button";
+import { useLiveQuery } from "@/hooks/useLiveQuery";
 import { ApplicationQuickAction, QuickAction } from "@/lib/interfaces";
-import { applicationQuickActions, getQuickActions } from "@/lib/quickActions";
+import { applicationQuickActions, quickActionsQuery } from "@/lib/quickActions";
 
 interface QuickActionsProps {
     handleQuickAction: (action: ApplicationQuickAction) => void;
 }
 
+/** Built-in and shared quick actions: give an extra or resolve with a comment */
 const QuickActions = ({ handleQuickAction }: QuickActionsProps) => {
-    const [quickActions, setQuickActions] = useState<ApplicationQuickAction[]>(
-        applicationQuickActions
-    );
-    useEffect(() => {
-        getQuickActions().then((data) => {
-            setQuickActions([
-                ...applicationQuickActions,
-                ...data.map((q: QuickAction) => {
-                    return {
-                        id: q.id,
-                        name: q.name,
-                        giveExtra: q.giveExtra,
-                        comment: q.comment,
-                    };
-                }),
-            ]);
-        });
-    }, []);
+    // The built-in actions first, then the competition's own
+    const { data } = useLiveQuery(quickActionsQuery);
+    const quickActions: ApplicationQuickAction[] = [
+        ...applicationQuickActions,
+        ...(data ?? []).map((q: QuickAction) => ({
+            id: q.id,
+            name: q.name,
+            giveExtra: q.giveExtra,
+            comment: q.comment,
+        })),
+    ];
+
     return quickActions.map((quickAction) => (
-        <div key={quickAction.id}>
-            <Button
-                key={quickAction.id}
-                className="w-full"
-                variant={quickAction.giveExtra ? "success" : "destructive"}
-                onClick={() => handleQuickAction(quickAction)}
-            >
-                {quickAction.name}
-            </Button>
-        </div>
+        <Button
+            key={quickAction.id}
+            type="button"
+            variant="outline"
+            size="sm"
+            title={
+                quickAction.giveExtra ? "Gives an extra attempt" : "Resolves"
+            }
+            onClick={() => handleQuickAction(quickAction)}
+        >
+            {quickAction.giveExtra ? (
+                <RotateCcw className="text-primary" />
+            ) : (
+                <CircleCheck className="text-success" />
+            )}
+            {quickAction.name}
+        </Button>
     ));
 };
 

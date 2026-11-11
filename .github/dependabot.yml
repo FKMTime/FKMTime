@@ -3,12 +3,47 @@ updates:
   - package-ecosystem: npm
     directory: "/frontend"
     schedule:
-      interval: monthly
+      interval: weekly
+      day: monday
+      time: "06:00"
+      timezone: Europe/Warsaw
+    groups:
+      # react-dom requires the react version it ships with, so they move together
+      react:
+        patterns:
+          - react
+          - react-dom
+          - "@types/react"
+          - "@types/react-dom"
   - package-ecosystem: npm
     directory: "/backend"
     schedule:
-      interval: monthly
+      interval: weekly
+      day: monday
+      time: "06:00"
+      timezone: Europe/Warsaw
+    groups:
+      nestjs:
+        patterns:
+          - "@nestjs/*"
+        update-types:
+          - minor
+          - patch
+    ignore:
+      # TypeScript 7 drops the JS compiler API that ts-jest, ts-node,
+      # typescript-eslint and the Nest CLI use. Lift this once they support it.
+      - dependency-name: typescript
+        update-types:
+          - version-update:semver-major
+      # @types/node follows the Node major the backend runs on (node:24 in the
+      # Dockerfile). Bump it together with the image.
+      - dependency-name: "@types/node"
+        update-types:
+          - version-update:semver-major
   - package-ecosystem: github-actions
     directory: "/"
     schedule:
-      interval: monthly
+      interval: weekly
+      day: monday
+      time: "06:00"
+      timezone: Europe/Warsaw

@@ -34,9 +34,13 @@ import { EnterAttemptDto } from './dto/enterAttempt.dto';
 import {
   checkAttemptLimit,
   checkCutoff,
-  getSortedExtraAttempts,
+  getAttemptsWaitingForExtra,
+  getCountingAttempts,
+  getNextExtraNumber,
+  getRoundResultText,
   getSortedStandardAttempts,
   isCompetitorSignedInForEvent,
+  isSameAttemptResent,
 } from './helpers';
 import { ResultService } from './result.service';
 
@@ -114,6 +118,7 @@ export class ResultFromDeviceService {
     const competitor = await this.personService.getPersonByCardId(
       data.competitorId.toString(),
     );
+    // The competition language until a judge card tells us who is reading
     let locale = competition.defaultLocale;
     if (!competitor) {
       return {
@@ -128,7 +133,6 @@ export class ResultFromDeviceService {
       groupId,
       device.id,
     );
-    locale = competitor.countryIso2;
 
     const previousAttemptWithSameSessionId =
       await this.prisma.attempt.findFirst({
@@ -136,6 +140,7 @@ export class ResultFromDeviceService {
           sessionId: data.sessionId,
           deviceId: device.id,
         },
+        include: { result: { select: { personId: true } } },
       });
     if (previousAttemptWithSameSessionId) {
       if (previousAttemptWithSameSessionId.status === AttemptStatus.RESOLVED) {
@@ -154,17 +159,34 @@ export class ResultFromDeviceService {
           };
         }
       }
+      // The reply to the first send was lost: the station may drop its copy,
+      // but only if it is the attempt we have, unchanged
+      const judge = data.judgeId
+        ? await this.personService.getPersonByCardId(data.judgeId.toString())
+        : null;
+      const sameAttempt = isSameAttemptResent(
+        previousAttemptWithSameSessionId,
+        {
+          value: data.value,
+          valueMs: data.valueMs,
+          inspectionTime: data.inspectionTime,
+          penalty: data.penalty,
+          competitorId: competitor.id,
+          judgeId: judge?.id ?? null,
+        },
+      );
       return {
         message: getTranslation('attemptAlreadyEntered', locale),
-        shouldResetTime: false,
-        status: 400,
+        shouldResetTime: sameAttempt,
+        status: 409,
         error: true,
       };
     }
 
-    const judge = await this.personService.getPersonByCardId(
-      data.judgeId.toString(),
-    );
+    // judgeId is optional: a delegate call can come without a judge card
+    const judge = data.judgeId
+      ? await this.personService.getPersonByCardId(data.judgeId.toString())
+      : null;
 
     if (!judge && !data.isDelegate) {
       return {
@@ -217,10 +239,18 @@ export class ResultFromDeviceService {
         error: true,
       };
     }
-    const result = await this.resultService.getResultOrCreate(
+    const result = await this.resultService.getResultOrCreateIncludingRemoved(
       competitor.id,
       currentRoundId,
     );
+    if (result.removedAt) {
+      return {
+        message: getTranslation('competitorRemovedFromRound', locale),
+        shouldResetTime: false,
+        status: 409,
+        error: true,
+      };
+    }
 
     const attempts = await this.prisma.attempt.findMany({
       where: {
@@ -246,48 +276,43 @@ export class ResultFromDeviceService {
       };
     }
     const sortedAttempts = getSortedStandardAttempts(attempts);
-    const sortedExtraAttempts = getSortedExtraAttempts(attempts);
 
-    const lastExtra =
-      sortedExtraAttempts.length > 0 ? sortedExtraAttempts.length : 0;
     let extraEntered = false;
-    if (
-      attempts.some(
-        (attempt) =>
-          attempt.status === AttemptStatus.EXTRA_GIVEN &&
-          (attempt.replacedBy === 0 || attempt.replacedBy === null),
-      )
-    ) {
-      const lastAttemptToReplace = attempts.find(
-        (attempt) =>
-          attempt.status === AttemptStatus.EXTRA_GIVEN &&
-          (attempt.replacedBy === 0 || attempt.replacedBy === null),
-      );
-      await this.createAnExtraAttemptAnReplaceTheOriginalOne(
-        {
-          ...finalData,
-          device,
-          judge,
-          competitor,
-          result,
-          attemptNumber: lastExtra + 1,
-        },
-        lastAttemptToReplace.id,
-      );
+    const [attemptToReplace] = getAttemptsWaitingForExtra(attempts);
+    if (attemptToReplace) {
+      const extraAttempt =
+        await this.createAnExtraAttemptAnReplaceTheOriginalOne(
+          {
+            ...finalData,
+            device,
+            judge,
+            competitor,
+            result,
+            attemptNumber: getNextExtraNumber(attempts),
+          },
+          attemptToReplace.id,
+        );
       extraEntered = true;
       if (data.isDelegate) {
         return this.notifyDelegate(
           device.name,
           competitor.name,
           locale,
-          lastAttemptToReplace.id,
+          extraAttempt.id,
+        );
+      }
+      const voided = await this.resultService.settleWaitingExtras(result.id);
+      if (finalData.dnsOther && voided === 0) {
+        await this.dnsRemainingAttempts(
+          result.id,
+          getMaxAttempts(roundInfo.format),
         );
       }
     }
     if (!extraEntered) {
       let attemptNumber = 1;
       const maxAttempts = getMaxAttempts(roundInfo.format);
-      let lastAttempt = sortedAttempts[sortedAttempts.length - 1];
+      const lastAttempt = sortedAttempts[sortedAttempts.length - 1];
       if (lastAttempt && lastAttempt.attemptNumber === maxAttempts) {
         return {
           message: getTranslation('noAttemptsLeft', locale),
@@ -308,15 +333,12 @@ export class ResultFromDeviceService {
         result,
         judge as Person,
       );
-      if (!lastAttempt) {
-        lastAttempt = attempt;
-      }
       if (data.isDelegate) {
         return this.notifyDelegate(
           device.name,
           competitor.name,
           locale,
-          lastAttempt.id,
+          attempt.id,
         );
       }
       if (finalData.dnsOther) {
@@ -334,10 +356,25 @@ export class ResultFromDeviceService {
       );
     }
     this.appGateway.handleResultEntered(result.roundId);
+    this.appGateway.recordLastSolve(data.espId, {
+      personName: competitor.name,
+      value: finalData.value,
+      penalty: finalData.penalty,
+      enteredAt: Date.now(),
+    });
+    const enteredMessage = finalData.limitPassed
+      ? getTranslation('attemptEntered', locale)
+      : getTranslation('attemptEnteredButReplacedToDnf', locale);
+    const roundResultText = await this.getFinishedRoundResultText(
+      result.id,
+      roundInfo,
+    );
     return {
-      message: finalData.limitPassed
-        ? getTranslation('attemptEntered', locale)
-        : getTranslation('attemptEnteredButReplacedToDnf', locale),
+      // The station shows the first two words on the top line and the rest
+      // below, so the two-word result goes first to get a line of its own
+      message: roundResultText
+        ? `${roundResultText} ${enteredMessage}`
+        : enteredMessage,
       shouldResetTime: true,
       status: 200,
       error: false,
@@ -463,7 +500,7 @@ export class ResultFromDeviceService {
       null,
       `Replaced by extra ${extraAttempt.attemptNumber}`,
     );
-    return attempt.attemptNumber;
+    return extraAttempt;
   }
 
   async updateResolvedIncident(
@@ -537,6 +574,74 @@ export class ResultFromDeviceService {
         'DNS auto-assigned',
       );
     }
+  }
+
+  /** With no time left, nothing more can be solved: DNS whatever remains */
+  private async dnsRemainingAttempts(resultId: string, maxAttempts: number) {
+    const attempts = await this.prisma.attempt.findMany({
+      where: { resultId, status: { not: AttemptStatus.SCRAMBLED } },
+    });
+    const now = new Date();
+    let extraNumber = getNextExtraNumber(attempts) - 1;
+    for (const original of getAttemptsWaitingForExtra(attempts)) {
+      extraNumber++;
+      const created = await this.prisma.attempt.create({
+        data: {
+          attemptNumber: extraNumber,
+          status: AttemptStatus.STANDARD,
+          type: AttemptType.EXTRA_ATTEMPT,
+          penalty: DNS_VALUE,
+          value: 0,
+          solvedAt: now,
+          result: { connect: { id: resultId } },
+        },
+      });
+      await this.attemptEditLogService.log(
+        created as AttemptSnapshot,
+        now,
+        null,
+        'DNS auto-assigned',
+      );
+      const replaced = await this.prisma.attempt.update({
+        where: { id: original.id },
+        data: { replacedBy: extraNumber },
+      });
+      await this.attemptEditLogService.log(
+        replaced as AttemptSnapshot,
+        now,
+        null,
+        `Replaced by extra ${extraNumber}`,
+      );
+    }
+    const lastAttempt = getSortedStandardAttempts(attempts).at(-1);
+    await this.dnsOtherAttempts(
+      lastAttempt?.attemptNumber ?? 0,
+      maxAttempts,
+      resultId,
+    );
+  }
+
+  /** The round's result once the competitor has no attempts left, else null */
+  private async getFinishedRoundResultText(resultId: string, roundInfo: any) {
+    const attempts = await this.prisma.attempt.findMany({
+      where: { resultId },
+    });
+    const countingAttempts = getCountingAttempts(attempts);
+    const cutoffAttempts = roundInfo.cutoff?.numberOfAttempts;
+    const stoppedAtCutoff =
+      cutoffAttempts &&
+      countingAttempts.length === cutoffAttempts &&
+      !checkCutoff(
+        countingAttempts,
+        roundInfo.cutoff.resultValue,
+        cutoffAttempts,
+      );
+    const isFinished =
+      stoppedAtCutoff ||
+      countingAttempts.length === getMaxAttempts(roundInfo.format);
+    return isFinished
+      ? getRoundResultText(countingAttempts, roundInfo.format)
+      : null;
   }
 
   private notifyDelegate(

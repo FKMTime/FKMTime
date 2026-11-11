@@ -1,16 +1,17 @@
 import { Competition } from "wcif-helpers";
-import {
-    getLimitByRoundId,
-    getNumberOfAttemptsForRound,
-    getRoundInfoFromWcif,
-} from "wcif-helpers";
+import { getLimitByRoundId, getRoundInfoFromWcif } from "wcif-helpers";
 
-import { average, best, formattedBest } from "./average";
-import { DNF_VALUE } from "./constants";
-import { Attempt, AttemptData, Result, ResultWithAverage } from "./interfaces";
-import { backendRequest } from "./request";
-import { resultToString } from "./resultFormatters";
-import { getSubmittedAttempts } from "./utils";
+import {
+    Attempt,
+    AttemptData,
+    Incident,
+    Person,
+    RemainingAndUsedCumulativeLimit,
+    Result,
+} from "./interfaces";
+import { queryFamily } from "./queryCache";
+import { queryClient } from "./queryClient";
+import { backendQuery, backendRequest } from "./request";
 
 export const getResultsByRoundId = async (roundId: string, search?: string) => {
     let route = `result/round/${roundId}`;
@@ -21,10 +22,82 @@ export const getResultsByRoundId = async (roundId: string, search?: string) => {
     return (await response.json()) || [];
 };
 
+/** A round's results without a search, as the Rounds tab first shows them */
+export const roundResultsQuery = queryFamily((roundId) =>
+    backendQuery<Result[]>(`result/round/${roundId}`)
+);
+
+const searchedRoundResults = queryFamily((path) =>
+    backendQuery<Result[]>(path)
+);
+
+/** A round's results matching a search; no search is the full round */
+export const roundResultsSearchQuery = (roundId: string, search: string) =>
+    search
+        ? searchedRoundResults(
+              `result/round/${roundId}?search=${encodeURIComponent(search)}`
+          )
+        : roundResultsQuery(roundId);
+
+/** Refetches a round's results on screen, searched or not */
+export const invalidateRoundResults = (roundId: string) => {
+    const path = roundResultsQuery(roundId).key;
+    return queryClient.invalidateQueries({
+        predicate: ({ queryKey: [key] }) =>
+            typeof key === "string" &&
+            (key === path || key.startsWith(`${path}?`)),
+    });
+};
+
+/** A round's results as the public pages show them, without signing in */
+export const publicRoundResultsQuery = queryFamily((roundId) =>
+    backendQuery<Result[]>(`result/public/round/${roundId}`, {
+        useAuth: false,
+    })
+);
+
+export const getPublicResultsByRoundId = async (
+    roundId: string,
+    search?: string
+) => {
+    let route = `result/public/round/${roundId}`;
+    if (search) {
+        route += `?search=${search}`;
+    }
+    const response = await backendRequest(route, "GET", false);
+    return (await response.json()) || [];
+};
+
+/** Every result a person has */
+export const personResultsQuery = queryFamily((id) =>
+    backendQuery<Result[]>(`result/person/${id}`)
+);
+
 export const getAllResultsByPersonId = async (id: string) => {
     const response = await backendRequest(`result/person/${id}`, "GET", true);
     return await response.json();
 };
+
+/** One result with its attempts and cumulative time limit */
+export const resultQuery = queryFamily((id) =>
+    backendQuery<
+        Result & {
+            remainingAndUsedCumulativeLimit?: RemainingAndUsedCumulativeLimit;
+        }
+    >(`result/${id}`)
+);
+
+/** A round's results for double-checking, with who has been checked */
+export const doubleCheckQuery = queryFamily((roundId) =>
+    backendQuery<{
+        results: Result[];
+        checkedResults?: { id: string; person: Person }[];
+        totalCount: number;
+        doubleCheckedCount: number;
+        /** Results still waiting for attempts, not in totalCount */
+        notFinishedCount: number;
+    }>(`result/round/${roundId}/double-check`)
+);
 
 export const getResultById = async (id: string) => {
     const response = await backendRequest(`result/${id}`, "GET", true);
@@ -37,6 +110,30 @@ export const getResultById = async (id: string) => {
 export const deleteResultById = async (id: string) => {
     const response = await backendRequest(`result/${id}`, "DELETE", true);
     return response.status;
+};
+
+/** Regulation 9t: keep the result, but let it count nowhere */
+export const removeResult = async (
+    id: string,
+    reason: string
+): Promise<{ status: number; message?: string }> => {
+    const response = await backendRequest(`result/${id}/remove`, "POST", true, {
+        reason,
+    });
+    const message = !response.ok ? (await response.json()).message : undefined;
+    return { status: response.status, message };
+};
+
+export const bringBackResult = async (
+    id: string
+): Promise<{ status: number; message?: string }> => {
+    const response = await backendRequest(
+        `result/${id}/bring-back`,
+        "POST",
+        true
+    );
+    const message = !response.ok ? (await response.json()).message : undefined;
+    return { status: response.status, message };
 };
 
 export const reSubmitScorecardToWcaLive = async (id: string) => {
@@ -69,59 +166,6 @@ export const checkTimeLimit = (
     return time < timeLimit.centiseconds;
 };
 
-export const resultsWithAverageProperty = (
-    results: Result[],
-    wcif: Competition
-) => {
-    return results.map((result) => {
-        const submittedAttempts = getSubmittedAttempts(result.attempts);
-        const maxAttempts = getNumberOfAttemptsForRound(result.roundId, wcif);
-        const calculatedAverage =
-            submittedAttempts.length === maxAttempts &&
-            average(submittedAttempts);
-        return {
-            ...result,
-            eventId: result.roundId.split("-")[0],
-            average: calculatedAverage || 0,
-            averageString: calculatedAverage
-                ? resultToString(calculatedAverage)
-                : "",
-            best: best(submittedAttempts) || 0,
-            bestString: formattedBest(submittedAttempts) || "",
-        };
-    });
-};
-
-export const orderResultsByAverage = (results: ResultWithAverage[]) => {
-    const blindEvents = ["333bf", "444bf", "555bf", "333mbf"];
-    if (blindEvents.includes(results[0].eventId)) {
-        return results.sort((a, b) => {
-            if (a.best === b.best) {
-                return a.average - b.average;
-            }
-            return a.best - b.best;
-        });
-    }
-    return results.sort((a, b) => {
-        if (a.average && b.average) {
-            if (a.average === b.average) {
-                return a.best - b.best;
-            }
-            if (a.average === DNF_VALUE) {
-                return 1;
-            }
-            return a.average - b.average;
-        }
-        if (a.average) {
-            return -1;
-        } else if (b.average) {
-            return 1;
-        } else {
-            return a.best - b.best;
-        }
-    });
-};
-
 export const restartGroup = async (id: string) => {
     const response = await backendRequest(
         `result/group/${id}/restart`,
@@ -137,7 +181,10 @@ export const assignDnsOnRemainingSolves = async (id: string) => {
         "POST",
         true
     );
-    return response.status;
+    return {
+        data: await response.json(),
+        status: response.status,
+    };
 };
 
 export const getResultsToDoubleCheckByRoundId = async (roundId: string) => {
@@ -178,14 +225,12 @@ export const undoDoubleCheck = async (roundId: string) => {
     return response.status;
 };
 
-export const getResultsChecks = async (roundId?: string) => {
-    const response = await backendRequest(
-        `result/checks${roundId ? `?roundId=${roundId}` : ""}`,
-        "GET",
-        true
-    );
-    return await response.json();
-};
+/** Checks for one round, or for all of them with an empty round id */
+export const resultsChecksQuery = queryFamily((roundId) =>
+    backendQuery<Incident[]>(
+        `result/checks${roundId ? `?roundId=${roundId}` : ""}`
+    )
+);
 
 export const getRankingFromPreviousRound = (
     roundId: string,

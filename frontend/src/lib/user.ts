@@ -1,10 +1,7 @@
 import { NewUserData, User } from "./interfaces";
-import { backendRequest } from "./request";
+import { backendQuery, backendRequest } from "./request";
 
-export const getAllUsers = async (): Promise<User[]> => {
-    const response = await backendRequest("user", "GET", true);
-    return await response.json();
-};
+export const usersQuery = backendQuery<User[]>("user");
 
 export const createUser = async (body: NewUserData) => {
     const response = await backendRequest("user", "POST", true, body);

@@ -1,14 +1,13 @@
-import { WarningData } from "./interfaces";
-import { backendRequest } from "./request";
+import { Warning, WarningData } from "./interfaces";
+import { queryFamily } from "./queryCache";
+import { backendQuery, backendRequest, backendSearchQuery } from "./request";
 
-export const getAllWarnings = async (search?: string) => {
-    const url = search
-        ? `incident/warnings?search=${search}`
-        : "incident/warnings";
+export const warningsQuery = backendSearchQuery<Warning[]>("incident/warnings");
 
-    const response = await backendRequest(url, "GET", true);
-    return await response.json();
-};
+/** Warnings issued to a person */
+export const personWarningsQuery = queryFamily((personId) =>
+    backendQuery<Warning[]>(`incident/warnings/person/${personId}`)
+);
 
 export const getWarningsForPerson = async (personId: string) => {
     const response = await backendRequest(

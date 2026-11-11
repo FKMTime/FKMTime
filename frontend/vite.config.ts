@@ -18,8 +18,8 @@ const manifestForPlugIn = {
         name: "FKMTime",
         short_name: "FKMTime",
         description: "FKMTime app",
-        theme_color: "#2D3748",
-        background_color: "#2D3748",
+        theme_color: "#0f1217",
+        background_color: "#0f1217",
         display: "standalone",
         scope: "/",
         start_url: "/",
@@ -42,13 +42,16 @@ const manifestForPlugIn = {
 export default defineConfig({
     plugins: [
         react(),
-        checker({
-            overlay: { initialIsOpen: false },
-            typescript: true,
-            eslint: {
-                lintCommand: "eslint --ext .js,.jsx,.ts,.tsx src",
-            },
-        }),
+        // The checker's worker aborts the process when vitest exits
+        !process.env.VITEST &&
+            checker({
+                overlay: { initialIsOpen: false },
+                typescript: true,
+                eslint: {
+                    lintCommand: "eslint src",
+                    useFlatConfig: true,
+                },
+            }),
         viteTsconfigPaths(),
         svgrPlugin(),
         //eslint-disable-next-line @typescript-eslint/ban-ts-comment
@@ -59,6 +62,12 @@ export default defineConfig({
         alias: {
             "@": path.resolve(__dirname, "./src"),
         },
+    },
+    build: {
+        // flag-icons has hundreds of small SVGs: keep them as files the browser
+        // loads per flag shown, instead of inlining them all into the CSS
+        assetsInlineLimit: (file) =>
+            file.includes("flag-icons") ? false : undefined,
     },
     test: {
         globals: true,

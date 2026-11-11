@@ -1,0 +1,134 @@
+import { useAtom } from "jotai";
+import { ChevronRight } from "lucide-react";
+import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
+import { Outlet, useLocation } from "react-router-dom";
+
+import LoadingPage from "@/Components/LoadingPage";
+import ModeToggle from "@/Components/ModeToggle";
+import { StatusDot } from "@/Components/shared/StatusBadge";
+import { useDocumentTitle } from "@/hooks/useDocumentTitle";
+import { useLiveQuery } from "@/hooks/useLiveQuery";
+import { useRefetchOnReconnect } from "@/hooks/useRefetchOnReconnect";
+import { competitionAtom } from "@/lib/atoms";
+import { getPublicCompetitionInfo, publicRoomsQuery } from "@/lib/competition";
+import { getEvents } from "@/lib/events";
+import { cn } from "@/lib/utils";
+import { socket } from "@/socket";
+
+import { isPublicResultsPath, PublicOutletContext } from "./publicNavigation";
+import PublicSidebar from "./PublicSidebar";
+import PublicTabs from "./PublicTabs";
+
+/**
+ * Public display shell: a 240px sidebar from 760px up, below that the
+ * wordmark in the header and two tabs under it.
+ */
+const PublicLayout = () => {
+    const location = useLocation();
+    const [competition, setCompetition] = useAtom(competitionAtom);
+    // Shared with the live solving page, and refetched on reconnect, since a
+    // dropped socket may have missed group changes
+    const { data: rooms } = useLiveQuery(publicRoomsQuery);
+    const liveRoundIds = useMemo(
+        () =>
+            rooms
+                ? [
+                      ...new Set(
+                          rooms.flatMap((room) =>
+                              room.currentGroupIds.map(
+                                  (id) => id.split("-g")[0]
+                              )
+                          )
+                      ),
+                  ]
+                : null,
+        [rooms]
+    );
+    useRefetchOnReconnect();
+    const [isLive, setIsLive] = useState(socket.connected);
+    const isResults = isPublicResultsPath(location.pathname);
+
+    // Event names and icons are read from what getEvents stores, so they
+    // must be in place before the competition renders anything
+    const fetchCompetition = useCallback(async () => {
+        const [response] = await Promise.all([
+            getPublicCompetitionInfo(),
+            getEvents(),
+        ]);
+        if (response.status === 200) {
+            setCompetition(response.data);
+        }
+    }, [setCompetition]);
+
+    useEffect(() => {
+        fetchCompetition();
+    }, [fetchCompetition]);
+
+    useEffect(() => {
+        const handleConnect = () => setIsLive(true);
+        const handleDisconnect = () => setIsLive(false);
+        socket.on("connect", handleConnect);
+        socket.on("disconnect", handleDisconnect);
+        socket.connect();
+        return () => {
+            socket.off("connect", handleConnect);
+            socket.off("disconnect", handleDisconnect);
+            socket.disconnect();
+        };
+    }, []);
+
+    useDocumentTitle(isResults ? "Results" : "Live solving", competition?.name);
+
+    const outletContext: PublicOutletContext = { liveRoundIds };
+
+    return (
+        <div className="flex min-h-dvh">
+            <PublicSidebar liveRoundIds={liveRoundIds ?? []} />
+            <div className="flex min-w-0 flex-1 flex-col">
+                <header className="sticky top-0 z-10 flex flex-col border-b bg-background">
+                    <div className="flex min-h-[62px] items-center gap-3 px-4 py-3 min-[760px]:px-7">
+                        <div className="flex min-w-0 flex-1 flex-col min-[760px]:hidden">
+                            <span className="text-base font-bold">FKMTime</span>
+                            <span className="truncate text-xs text-muted-foreground">
+                                {competition?.name}
+                            </span>
+                        </div>
+                        <div className="hidden min-w-0 flex-1 items-center gap-1 text-[15px] min-[760px]:flex">
+                            <span
+                                title={competition?.name}
+                                className="min-w-0 truncate font-medium text-muted-foreground"
+                            >
+                                {competition?.name}
+                            </span>
+                            <ChevronRight className="size-4 shrink-0 text-faint" />
+                            <h1 className="shrink-0 font-semibold">
+                                {isResults ? "Results" : "Live solving"}
+                            </h1>
+                        </div>
+                        <span className="flex items-center gap-1.5 whitespace-nowrap text-[13px] text-muted-foreground">
+                            <StatusDot
+                                tone={isLive ? "success" : "neutral"}
+                                className="size-2"
+                            />
+                            {isLive ? "Live" : "Reconnecting"}
+                        </span>
+                        <ModeToggle className="size-[38px] shrink-0" />
+                    </div>
+                    <PublicTabs />
+                </header>
+                <main
+                    className={cn(
+                        "flex w-full flex-col px-4 pb-10 pt-4 min-[760px]:px-7 min-[760px]:pb-14 min-[760px]:pt-5",
+                        isResults ? "max-w-[1100px]" : "max-w-[1440px]"
+                    )}
+                >
+                    <Suspense fallback={<LoadingPage />}>
+                        <Outlet context={outletContext} />
+                    </Suspense>
+                </main>
+            </div>
+        </div>
+    );
+};
+
+export default PublicLayout;

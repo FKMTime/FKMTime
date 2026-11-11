@@ -1,4 +1,5 @@
-import { Scramble } from "./interfaces";
+import { Room, Scramble, ScrambleSet } from "./interfaces";
+import { Query, queryFamily } from "./queryCache";
 import { scramblingDeviceBackendRequest } from "./request";
 import { decryptText } from "./utils";
 
@@ -9,6 +10,14 @@ export const getScrambleSetsForScramblingDevice = async (roundId: string) => {
     );
     return await response.json();
 };
+
+/** A round's scramble sets, as a scrambling device sees them */
+export const scramblingDeviceSetsQuery = queryFamily(
+    (roundId): Query<ScrambleSet[]> => ({
+        key: `scrambling/sets/round/${roundId}`,
+        fetch: () => getScrambleSetsForScramblingDevice(roundId),
+    })
+);
 
 export const getScrambleSetById = async (id: string) => {
     const response = await scramblingDeviceBackendRequest(
@@ -37,6 +46,14 @@ export const getScramblingDeviceRoom = async () => {
     );
     return await response.json();
 };
+
+/** The device's room; one query per page, so each page gets current groups */
+export const scramblingDeviceRoomQuery = queryFamily(
+    (page): Query<Room> => ({
+        key: `scrambling/room#${page}`,
+        fetch: () => getScramblingDeviceRoom(),
+    })
+);
 
 export const decryptScrambles = (
     encryptedScrambles: Scramble[],

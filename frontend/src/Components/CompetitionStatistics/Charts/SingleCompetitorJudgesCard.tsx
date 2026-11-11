@@ -19,9 +19,9 @@ const SingleCompetitorJudgesCard = ({
     if (flagged.length === 0) return null;
 
     return (
-        <Card className="border-amber-500/40">
+        <Card className="border-warning/40">
             <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-amber-500">
+                <CardTitle className="flex items-center gap-2 text-warning">
                     <AlertTriangle size={18} />
                     Judges mostly judging one competitor
                 </CardTitle>
@@ -35,7 +35,7 @@ const SingleCompetitorJudgesCard = ({
                         return (
                             <div
                                 key={entry.personName}
-                                className="flex items-center justify-between rounded-md border border-amber-500/30 bg-amber-500/5 px-3 py-2"
+                                className="flex items-center justify-between rounded-md border border-warning/30 bg-warning-soft px-3 py-2"
                             >
                                 <div className="flex flex-col">
                                     <span className="text-sm font-medium">

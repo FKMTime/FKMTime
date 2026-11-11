@@ -1,5 +1,4 @@
 import { Logger, UseGuards } from '@nestjs/common';
-import { AuthGuard } from '@nestjs/passport';
 import {
   ConnectedSocket,
   MessageBody,
@@ -11,7 +10,36 @@ import { Server, Socket } from 'socket.io';
 
 import { DelegateGuard } from './auth/guards/delegate.guard';
 import { OrganizerGuard } from './auth/guards/organizer.guard';
-import { RequestToConnectDto } from './device/dto/requestToConnect.dto';
+import { DeviceRequest } from './device/dto/requestToConnect.dto';
+
+/** The last attempt a station entered, kept to show after it resets */
+export interface LastSolve {
+  personName: string;
+  /** Centiseconds, before the penalty */
+  value: number;
+  /** Seconds added, as stored on attempts; -1 for DNF */
+  penalty: number;
+  enteredAt: number;
+}
+
+export interface StationInfo {
+  espId: number;
+  deviceName: string;
+  roomId: string | null;
+  personName: string | null;
+  registrantId: number | null;
+  groupId: string | null;
+  time: number | null;
+  inspection: number | null;
+  /** Whether the solve timer is running; null when the firmware doesn't say */
+  timerRunning: boolean | null;
+  /** Whether inspection is running; null when the firmware doesn't say */
+  inspectionRunning: boolean | null;
+  cumulativeLimitCentiseconds: number | null;
+  cumulativeRemainingCentiseconds: number | null;
+  serverReceivedAt: number;
+  lastSolve: LastSolve | null;
+}
 
 @WebSocketGateway({
   namespace: '/',
@@ -20,10 +48,11 @@ import { RequestToConnectDto } from './device/dto/requestToConnect.dto';
     origin: '*',
   },
 })
-@UseGuards(AuthGuard('jwt'))
 export class AppGateway {
   @WebSocketServer() server: Server;
-  deviceRequests: RequestToConnectDto[] = [];
+  deviceRequests: DeviceRequest[] = [];
+  private stations: Map<number, StationInfo> = new Map();
+  private lastSolves: Map<number, LastSolve> = new Map();
   private logger = new Logger(`AppGateway`);
 
   /* ====================== */
@@ -45,16 +74,10 @@ export class AppGateway {
     socket.leave(`results-${roundId}`);
   }
 
-  @SubscribeMessage('resultEntered')
+  // Server-side only: called after a result is saved, never by clients
   handleResultEntered(roundId: string) {
     this.handleStatisticsUpdated();
     this.server.to(`results-${roundId}`).emit('resultEntered');
-  }
-
-  @SubscribeMessage('groupShouldBeChanged')
-  handleGroupShouldBeChanged(message: string) {
-    this.logger.log(`Group should be changed: ${message}`);
-    this.server.to(`competition`).emit('groupShouldBeChanged', { message });
   }
 
   /* ====================== */
@@ -86,10 +109,29 @@ export class AppGateway {
   }
 
   @UseGuards(OrganizerGuard)
-  handleDeviceRequest(device: RequestToConnectDto) {
-    if (this.deviceRequests.some((req) => req.espId === device.espId)) return;
-    this.deviceRequests.push(device);
+  handleDeviceRequest(device: DeviceRequest) {
+    const pending = this.deviceRequests.find(
+      (req) => req.espId === device.espId,
+    );
+    if (
+      pending &&
+      pending.signKey === device.signKey &&
+      pending.type === device.type &&
+      pending.hw === device.hw &&
+      pending.existingDevice?.id === device.existingDevice?.id
+    )
+      return;
+    // a reset device asks again with a new sign key; approving the old request would
+    // store a key the device no longer has, so only its latest request is kept
+    this.deviceRequests = [
+      ...this.deviceRequests.filter((req) => req.espId !== device.espId),
+      device,
+    ];
     this.server.to(`device`).emit('deviceRequests', this.deviceRequests);
+  }
+
+  getDeviceRequest(espId: number) {
+    return this.deviceRequests.find((req) => req.espId === espId);
   }
 
   @SubscribeMessage('removeDeviceRequest')
@@ -186,8 +228,7 @@ export class AppGateway {
     socket.leave(`incidents`);
   }
 
-  @SubscribeMessage('newIncident')
-  @UseGuards(DelegateGuard)
+  // Server-side only: called when a station calls a delegate
   handleNewIncident(
     deviceName: string,
     competitorName: string,
@@ -208,5 +249,38 @@ export class AppGateway {
   handleAttemptUpdated() {
     this.handleStatisticsUpdated();
     this.server.to(`incidents`).emit('attemptUpdated');
+  }
+
+  /* ====================== */
+  /* ==== Live Solving ==== */
+  /* ====================== */
+  @SubscribeMessage('joinLiveSolving')
+  async handleJoinLiveSolving(@ConnectedSocket() socket: Socket) {
+    socket.join('live-solving');
+    socket.emit('currentStations', Array.from(this.stations.values()));
+  }
+
+  @SubscribeMessage('leaveLiveSolving')
+  async handleLeaveLiveSolving(@ConnectedSocket() socket: Socket) {
+    socket.leave('live-solving');
+  }
+
+  broadcastCurrentTimeInfo(info: Omit<StationInfo, 'lastSolve'>) {
+    this.emitStation({
+      ...info,
+      lastSolve: this.lastSolves.get(info.espId) ?? null,
+    });
+  }
+
+  recordLastSolve(espId: number, lastSolve: LastSolve) {
+    this.lastSolves.set(espId, lastSolve);
+    // A station not heard from yet picks it up with its first packet
+    const station = this.stations.get(espId);
+    if (station) this.emitStation({ ...station, lastSolve });
+  }
+
+  private emitStation(info: StationInfo) {
+    this.stations.set(info.espId, info);
+    this.server.to('live-solving').emit('currentTimeInfo', info);
   }
 }

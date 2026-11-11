@@ -1,16 +1,21 @@
 import { forwardRef, Inject, Injectable } from '@nestjs/common';
+import { PersonService } from 'src/person/person.service';
 import { PersonForDeviceService } from 'src/person/personForDevice.service';
 import { ResultFromDeviceService } from 'src/result/resultFromDevice.service';
+import { getRoundInfoFromWcif } from 'wcif-helpers';
 
+import { AppGateway } from '../app.gateway';
 import { AttendanceService } from '../attendance/attendance.service';
 import { CreateAttendaceDto } from '../attendance/dto/createAttendance.dto';
 import { CompetitionService } from '../competition/competition.service';
 import { DeviceService } from '../device/device.service';
+import { DeviceConnectedDto } from '../device/dto/deviceConnected.dto';
 import { RequestToConnectDto } from '../device/dto/requestToConnect.dto';
 import { UpdateBatteryPercentageDto } from '../device/dto/updateBatteryPercentage.dto';
 import { CheckIfAttemptEnteredDto } from '../result/dto/checkIfAttemptEntered.dto';
 import { EnterAttemptDto } from '../result/dto/enterAttempt.dto';
 import { ResultService } from '../result/result.service';
+import { CurrentTimeInfoDto } from './dto/currentTimeInfo.dto';
 
 @Injectable()
 export class SocketService {
@@ -25,6 +30,9 @@ export class SocketService {
     @Inject(forwardRef(() => CompetitionService))
     private readonly competitionService: CompetitionService,
     private readonly personForDevice: PersonForDeviceService,
+    private readonly personService: PersonService,
+    @Inject(forwardRef(() => AppGateway))
+    private readonly appGateway: AppGateway,
   ) {}
 
   async enterAttempt(data: EnterAttemptDto) {
@@ -37,6 +45,14 @@ export class SocketService {
 
   async updateBatteryPercentage(data: UpdateBatteryPercentageDto) {
     return await this.deviceService.updateBatteryPercentage(data);
+  }
+
+  async deviceConnected(data: DeviceConnectedDto) {
+    const response = await this.deviceService.updateFirmwareVersion(data);
+    if (!response.error) {
+      await this.competitionService.sendBuzzerVolume(data.espId);
+    }
+    return response;
   }
 
   async createAttendance(data: CreateAttendaceDto) {
@@ -61,5 +77,66 @@ export class SocketService {
 
   async checkIfAttemptEntered(data: CheckIfAttemptEnteredDto) {
     return await this.resultService.checkIfAttemptEntered(data);
+  }
+
+  async handleCurrentTimeInfo(data: CurrentTimeInfoDto) {
+    const device = await this.deviceService.getStationByEspIdCached(data.espId);
+    const deviceName = device?.name ?? `Station ${data.espId}`;
+
+    let personName: string | null = null;
+    let registrantId: number | null = null;
+    let personId: string | null = null;
+
+    if (data.competitor != null) {
+      const person = await this.personService.getPersonByCardIdCached(
+        data.competitor.toString(),
+      );
+      if (person) {
+        personName = person.name;
+        registrantId = person.registrantId ?? null;
+        personId = person.id;
+      }
+    }
+
+    let cumulativeLimitCentiseconds: number | null = null;
+    let cumulativeRemainingCentiseconds: number | null = null;
+
+    if (data.groupId && personId) {
+      const roundId = data.groupId.split('-g')[0];
+      const wcif = await this.competitionService.getWcifCached();
+      const roundInfo = getRoundInfoFromWcif(roundId, wcif);
+
+      if (roundInfo?.timeLimit?.cumulativeRoundIds?.length > 0) {
+        const roundsIds =
+          roundInfo.timeLimit.cumulativeRoundIds.length > 1
+            ? roundInfo.timeLimit.cumulativeRoundIds
+            : [roundId];
+        const used = await this.resultService.getCumulativeSumForMultipleRounds(
+          personId,
+          roundsIds,
+        );
+        cumulativeLimitCentiseconds = roundInfo.timeLimit.centiseconds;
+        cumulativeRemainingCentiseconds = Math.max(
+          0,
+          roundInfo.timeLimit.centiseconds - used,
+        );
+      }
+    }
+
+    this.appGateway.broadcastCurrentTimeInfo({
+      espId: data.espId,
+      deviceName,
+      roomId: device?.roomId ?? null,
+      personName,
+      registrantId,
+      groupId: data.groupId ?? null,
+      time: data.time ?? null,
+      inspection: data.inspection ?? null,
+      timerRunning: data.timerRunning ?? null,
+      inspectionRunning: data.inspectionRunning ?? null,
+      cumulativeLimitCentiseconds,
+      cumulativeRemainingCentiseconds,
+      serverReceivedAt: Date.now(),
+    });
   }
 }

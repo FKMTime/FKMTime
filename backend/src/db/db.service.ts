@@ -3,6 +3,46 @@ import { ConfigService } from '@nestjs/config';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { PrismaClient } from '@prisma/client';
 
+/**
+ * Spread into a result query's `where` to also get results removed under
+ * Regulation 9t, which every result query leaves out otherwise
+ */
+export const INCLUDING_REMOVED = { removedAt: undefined };
+
+type Where = Record<string, unknown> | undefined;
+
+/** Results removed under Regulation 9t count nowhere (SPEC-005) */
+export const withoutRemovedResults = (where: Where) =>
+  where && 'removedAt' in where ? where : { ...where, removedAt: null };
+
+/**
+ * Attempts of removed results count nowhere either. A query about one result's
+ * or one attempt's own rows is left alone: it already knows which it wants.
+ */
+export const withoutRemovedResultAttempts = (where: Where) => {
+  if (where && ('id' in where || 'resultId' in where)) return where;
+  const result = where?.result as Where;
+  if (result && 'removedAt' in result) return where;
+  return { ...where, result: { ...result, removedAt: null } };
+};
+
+const LIST_OPERATIONS = [
+  'findMany',
+  'findFirst',
+  'findFirstOrThrow',
+  'count',
+  'groupBy',
+  'aggregate',
+] as const;
+
+const filtering = (filter: (where: Where) => Where) =>
+  Object.fromEntries(
+    LIST_OPERATIONS.map((operation) => [
+      operation,
+      ({ args, query }) => query({ ...args, where: filter(args.where) }),
+    ]),
+  );
+
 @Injectable()
 export class DbService extends PrismaClient implements OnModuleDestroy {
   constructor(config: ConfigService) {
@@ -11,8 +51,22 @@ export class DbService extends PrismaClient implements OnModuleDestroy {
         connectionString: config.get('DATABASE_URL'),
       }),
       log: [{ emit: 'stdout', level: 'error' }],
+      // signKey is the key a station signs its packets with. Only the
+      // stations themselves need it, so no query returns it unless it opts
+      // back in with omit: { signKey: false }
+      omit: { device: { signKey: true } },
       errorFormat: 'colorless',
     });
+    // The extended client replaces this instance, so Nest injects it everywhere
+    const extended = this.$extends({
+      query: {
+        result: filtering(withoutRemovedResults),
+        attempt: filtering(withoutRemovedResultAttempts),
+      },
+    });
+    return Object.assign(extended, {
+      onModuleDestroy: () => extended.$disconnect(),
+    }) as unknown as DbService;
   }
 
   async onModuleDestroy() {

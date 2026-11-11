@@ -1,7 +1,6 @@
-import { useEffect, useState } from "react";
-
-import { getAllDevices } from "@/lib/devices";
-import { Device, DeviceType } from "@/lib/interfaces";
+import { useLiveQuery } from "@/hooks/useLiveQuery";
+import { stationDevicesQuery } from "@/lib/devices";
+import { Device } from "@/lib/interfaces";
 
 import {
     Select,
@@ -22,13 +21,8 @@ const DeviceSelect = ({
     onChange,
     disabled = false,
 }: DeviceSelectProps) => {
-    const [devices, setDevices] = useState<Device[]>([]);
-
-    useEffect(() => {
-        getAllDevices(DeviceType.STATION).then((data) => {
-            setDevices(data);
-        });
-    }, []);
+    const { data } = useLiveQuery(stationDevicesQuery);
+    const devices: Device[] = data ?? [];
 
     return (
         <Select

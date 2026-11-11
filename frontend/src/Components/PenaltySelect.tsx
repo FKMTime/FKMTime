@@ -1,4 +1,4 @@
-import { AVAILABLE_PENALTIES } from "@/lib/constants";
+import { getAvailablePenalties } from "@/lib/events";
 
 import {
     Select,
@@ -10,28 +10,35 @@ import {
 
 interface PenaltySelectProps {
     value: number;
+    /** Only penalties up to this event's maximum are offered */
+    eventId: string;
     onChange: (value: number) => void;
     disabled?: boolean;
     shortVersion?: boolean;
+    className?: string;
+    "aria-label"?: string;
 }
 
 const PenaltySelect = ({
     value,
+    eventId,
     onChange,
     disabled = false,
     shortVersion,
+    className,
+    "aria-label": ariaLabel,
 }: PenaltySelectProps) => {
     return (
         <Select
             onValueChange={(newValue) => onChange(+newValue)}
-            defaultValue={value.toString()}
+            value={value.toString()}
             disabled={disabled}
         >
-            <SelectTrigger>
+            <SelectTrigger className={className} aria-label={ariaLabel}>
                 <SelectValue placeholder="Select penalty" />
             </SelectTrigger>
             <SelectContent>
-                {AVAILABLE_PENALTIES.map((penalty) => (
+                {getAvailablePenalties(eventId, value).map((penalty) => (
                     <SelectItem
                         key={penalty.value}
                         value={penalty.value.toString()}

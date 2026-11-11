@@ -1,4 +1,5 @@
-import { lazy, Suspense, useState } from "react";
+import { QueryClientProvider } from "@tanstack/react-query";
+import { lazy, Suspense } from "react";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 
 import LoadingPage from "@/Components/LoadingPage";
@@ -8,8 +9,8 @@ import { ConfirmProvider } from "@/providers/ConfirmProvider";
 import { ThemeProvider } from "@/providers/ThemeProvider";
 
 import { THEME_STORAGE_KEY } from "./lib/constants";
+import { queryClient } from "./lib/queryClient";
 import EnterScorecard from "./Pages/Main/Results/EnterScorecard/EnterScorecard";
-import { SocketContext } from "./socket";
 const CompetitionStatistics = lazy(
     () => import("./Components/CompetitionStatistics/CompetitionStatistics")
 );
@@ -30,13 +31,19 @@ const MostMissedAssignments = lazy(
 );
 const CheckIn = lazy(() => import("./Pages/Main/CheckIn/CheckIn"));
 const Competition = lazy(() => import("./Pages/Main/Competition/Competition"));
+const CurrentGroups = lazy(
+    () => import("./Pages/Main/Competition/CurrentGroups/CurrentGroups")
+);
 const Devices = lazy(() => import("./Pages/Main/Devices/Devices"));
 const Home = lazy(() => import("./Pages/Main/Home/Home"));
 const ImportCompetition = lazy(
     () => import("./Pages/Main/ImportCompetition/ImportCompetition")
 );
-const Incidents = lazy(
-    () => import("./Pages/Main/Incidents/AllIncidents/Incidents")
+const IncidentsLayout = lazy(
+    () => import("./Pages/Main/Incidents/IncidentsLayout")
+);
+const OpenIncidents = lazy(
+    () => import("./Pages/Main/Incidents/OpenIncidents/OpenIncidents")
 );
 const ResolvedIncidents = lazy(
     () => import("./Pages/Main/Incidents/ResolvedIncidents/ResolvedIncidents")
@@ -57,6 +64,7 @@ const ResultsChecks = lazy(
 const ScramblesAdmin = lazy(
     () => import("./Pages/Main/ScramblesAdmin/ScramblesAdmin")
 );
+const Schedule = lazy(() => import("./Pages/Main/Schedule/Schedule"));
 const Settings = lazy(() => import("./Pages/Main/Settings/Settings"));
 const UnofficialEvents = lazy(
     () => import("./Pages/Main/UnofficialEvents/UnofficialEvents")
@@ -74,6 +82,7 @@ const ScrambleSet = lazy(
 const ScramblingDeviceLayout = lazy(
     () => import("./Pages/ScramblingDevice/ScramblingDeviceLayout")
 );
+const More = lazy(() => import("./Pages/Main/More/More"));
 const Persons = lazy(() => import("./Pages/Main/Persons/Persons"));
 const Results = lazy(() => import("./Pages/Main/Results/Results"));
 const PublicView = lazy(
@@ -82,25 +91,25 @@ const PublicView = lazy(
 const SingleResult = lazy(
     () => import("./Pages/Main/Results/SingleResult/SingleResult")
 );
-const IncidentPage = lazy(
-    () => import("./Pages/Main/Incidents/IncidentPage/IncidentPage")
+const LiveSolving = lazy(
+    () => import("./Pages/Main/Results/LiveSolving/LiveSolving")
 );
-const PersonResults = lazy(
-    () => import("./Pages/Main/Persons/PersonResults/PersonResults")
-);
+const Person = lazy(() => import("./Pages/Main/Persons/Person/Person"));
 const ManualIncidents = lazy(
     () => import("./Pages/Main/Incidents/ManualIncidents/ManualIncidents")
 );
-const CreateManualIncident = lazy(
-    () =>
-        import(
-            "./Pages/Main/Incidents/ManualIncidents/CreateManualIncident/CreateManualIncident"
-        )
+const PublicLayout = lazy(() => import("./Pages/Public/PublicLayout"));
+const PublicTv = lazy(() => import("./Pages/Public/Tv/PublicTv"));
+const PublicResults = lazy(() => import("./Pages/Public/PublicResults"));
+const PublicLiveSolving = lazy(
+    () => import("./Pages/Public/PublicLiveSolving")
 );
+// DEV is false at build time, so a production bundle doesn't contain the page
+const StationTester = import.meta.env.DEV
+    ? lazy(() => import("./Pages/Main/StationTester/StationTester"))
+    : null;
 
 const App = () => {
-    const [isConnected, setConnected] = useState(0);
-
     const router = createBrowserRouter([
         {
             path: "/auth/login",
@@ -122,6 +131,14 @@ const App = () => {
                     element: <Home />,
                 },
                 {
+                    path: "schedule",
+                    element: <Schedule />,
+                },
+                {
+                    path: "more",
+                    element: <More />,
+                },
+                {
                     path: "users",
                     element: <Users />,
                 },
@@ -130,40 +147,35 @@ const App = () => {
                     element: <Competition />,
                 },
                 {
+                    path: "competition/groups",
+                    element: <CurrentGroups />,
+                },
+                {
                     path: "incidents",
-                    element: <Incidents />,
-                },
-                {
-                    path: "incidents/resolved",
-                    element: <ResolvedIncidents />,
-                },
-                {
-                    path: "incidents/noteworthy",
-                    element: <NoteworthyIncidents />,
-                },
-                {
-                    path: "incidents/warnings",
-                    element: <Warnings />,
-                },
-                {
-                    path: "incidents/manual",
-                    element: <ManualIncidents />,
-                },
-                {
-                    path: "incidents/manual/create",
-                    element: <CreateManualIncident />,
-                },
-                {
-                    path: "incidents/:id",
-                    element: <IncidentPage />,
+                    element: <IncidentsLayout />,
+                    children: [
+                        { index: true, element: <OpenIncidents /> },
+                        { path: "resolved", element: <ResolvedIncidents /> },
+                        {
+                            path: "noteworthy",
+                            element: <NoteworthyIncidents />,
+                        },
+                        { path: "warnings", element: <Warnings /> },
+                        { path: "manual", element: <ManualIncidents /> },
+                        {
+                            path: "manual/create",
+                            element: <ManualIncidents createOnOpen />,
+                        },
+                        { path: ":id", element: <OpenIncidents /> },
+                    ],
                 },
                 {
                     path: "persons",
                     element: <Persons />,
                 },
                 {
-                    path: "persons/:id/results",
-                    element: <PersonResults />,
+                    path: "persons/:id/:tab?",
+                    element: <Person />,
                 },
                 {
                     path: "cards",
@@ -196,6 +208,10 @@ const App = () => {
                 {
                     path: "results/round",
                     element: <Results />,
+                },
+                {
+                    path: "results/live",
+                    element: <LiveSolving />,
                 },
                 {
                     path: "results/checks",
@@ -243,11 +259,47 @@ const App = () => {
                 },
                 {
                     path: "statistics",
-                    element: <CompetitionStatistics showCharts />,
+                    element: <CompetitionStatistics />,
                 },
                 {
                     path: "events",
                     element: <UnofficialEvents />,
+                },
+                ...(StationTester
+                    ? [
+                          {
+                              path: "station-tester",
+                              element: <StationTester />,
+                          },
+                      ]
+                    : []),
+            ],
+        },
+        {
+            path: "/public/tv",
+            element: <PublicTv />,
+            errorElement: <ErrorPage />,
+        },
+        {
+            path: "/public",
+            element: <PublicLayout />,
+            errorElement: <ErrorPage />,
+            children: [
+                {
+                    path: "",
+                    element: <PublicLiveSolving />,
+                },
+                {
+                    path: "live",
+                    element: <PublicLiveSolving />,
+                },
+                {
+                    path: "results",
+                    element: <PublicResults />,
+                },
+                {
+                    path: "results/:id",
+                    element: <PublicResults />,
                 },
             ],
         },
@@ -277,16 +329,16 @@ const App = () => {
     ]);
 
     return (
-        <ThemeProvider defaultTheme="dark" storageKey={THEME_STORAGE_KEY}>
-            <ConfirmProvider>
-                <SocketContext.Provider value={[isConnected, setConnected]}>
+        <QueryClientProvider client={queryClient}>
+            <ThemeProvider defaultTheme="dark" storageKey={THEME_STORAGE_KEY}>
+                <ConfirmProvider>
                     <Suspense fallback={<LoadingPage />}>
                         <RouterProvider router={router} />
                     </Suspense>
                     <Toaster />
-                </SocketContext.Provider>
-            </ConfirmProvider>
-        </ThemeProvider>
+                </ConfirmProvider>
+            </ThemeProvider>
+        </QueryClientProvider>
     );
 };
 

@@ -9,12 +9,24 @@ on:
       - 'nginx/**'
       - 'nginx.Dockerfile'
       - '.github/workflows/publish-nginx-image.yml'
+  # builds both platforms without pushing, so image changes are checked before merge
+  pull_request:
+    paths:
+      - 'nginx.Dockerfile'
+      - 'frontend/package.json'
+      - 'frontend/package-lock.json'
+      - '.github/workflows/publish-nginx-image.yml'
   repository_dispatch:
     types:
       - ghcr-image-updated
   workflow_dispatch:
 
       
+# a newer push supersedes the image being built; queued runs also stop racing for the cache
+concurrency:
+  group: publish-nginx-image-${{ github.ref }}
+  cancel-in-progress: true
+
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: fkmtime/fkmtime-nginx
@@ -28,6 +40,7 @@ jobs:
         - name: Setup Docker buildx
           uses: docker/setup-buildx-action@v4
         - name: Log into registry ${{ env.REGISTRY }}
+          if: github.event_name != 'pull_request'
           uses: docker/login-action@v4
           with:
             registry: ${{ env.REGISTRY }}
@@ -44,9 +57,16 @@ jobs:
           with:
             context: ./
             file: nginx.Dockerfile
-            push: true
+            push: ${{ github.event_name != 'pull_request' }}
             platforms: linux/amd64, linux/arm64
             tags: ${{ steps.meta.outputs.tags }}
             labels: ${{ steps.meta.outputs.labels }}
             cache-from: type=gha
             cache-to: type=gha,mode=max            
+
+   alert:
+      name: Alert on failure
+      needs: push
+      if: failure() && github.event_name != 'pull_request'
+      uses: FKMTime/.github/.github/workflows/discord-alert.yml@main
+      secrets: inherit

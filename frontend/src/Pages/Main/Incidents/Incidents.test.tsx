@@ -1,0 +1,168 @@
+import { act, render, screen } from "@testing-library/react";
+import { createStore, Provider } from "jotai";
+import { MemoryRouter, Route, Routes } from "react-router-dom";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
+import { competitionAtom } from "@/lib/atoms";
+import { Competition, Incident } from "@/lib/interfaces";
+import { clearQueryCache } from "@/lib/queryCache";
+import { QueryWrapper } from "@/test/queryClient";
+
+import IncidentsLayout from "./IncidentsLayout";
+import IncidentListItem from "./OpenIncidents/IncidentListItem";
+
+const { listQuery, lists, socketHandlers } = vi.hoisted(() => {
+    const served: Record<string, object[]> = {};
+    return {
+        lists: served,
+        socketHandlers: new Map<string, () => void>(),
+        // Serves whatever `lists` holds when the request is made
+        listQuery: (key: string, items: object[]) => {
+            served[key] = items;
+            return () => ({
+                key,
+                fetch: () => Promise.resolve(served[key]),
+            });
+        },
+    };
+});
+
+vi.mock("@/socket", () => ({
+    socket: {
+        on: (event: string, handler: () => void) =>
+            socketHandlers.set(event, handler),
+        off: (event: string) => socketHandlers.delete(event),
+    },
+}));
+vi.mock("@/lib/incidents", () => ({
+    getUnresolvedIncidentsCount: vi.fn().mockResolvedValue({ count: 3 }),
+    unresolvedIncidentsQuery: {
+        key: "incident/unresolved",
+        fetch: () => Promise.resolve([]),
+    },
+    resolvedIncidentsQuery: listQuery("incident/resolved", [
+        {},
+        {},
+        {},
+        {},
+        {},
+    ]),
+    noteworthyIncidentsQuery: listQuery("incident/noteworthy", [{}, {}]),
+    manualIncidentsQuery: listQuery("incident/manual", [{}]),
+}));
+vi.mock("@/lib/warnings", () => ({
+    warningsQuery: listQuery("incident/warnings", [{}, {}]),
+}));
+
+const renderLayout = (path: string, useFkmTimeDevices: boolean) => {
+    const store = createStore();
+    store.set(competitionAtom, { useFkmTimeDevices } as Competition);
+    return render(
+        <Provider store={store}>
+            <MemoryRouter initialEntries={[path]}>
+                <Routes>
+                    <Route path="/incidents" element={<IncidentsLayout />}>
+                        <Route path="*" element={<p>Tab content</p>} />
+                        <Route index element={<p>Tab content</p>} />
+                    </Route>
+                </Routes>
+            </MemoryRouter>
+        </Provider>,
+        { wrapper: QueryWrapper }
+    );
+};
+
+describe("IncidentsLayout", () => {
+    beforeEach(() => {
+        clearQueryCache();
+        socketHandlers.clear();
+    });
+
+    it("shows every tab with its count and marks the current one", async () => {
+        renderLayout("/incidents/resolved", true);
+        expect(
+            await screen.findByRole("tab", { name: "Resolved 5" })
+        ).toBeTruthy();
+        expect(screen.getByRole("tab", { name: "Open 3" })).toBeTruthy();
+        expect(screen.getByRole("tab", { name: "Noteworthy 2" })).toBeTruthy();
+        expect(screen.getByRole("tab", { name: "Warnings 2" })).toBeTruthy();
+        expect(screen.getByRole("tab", { name: "Manual 1" })).toBeTruthy();
+        expect(
+            screen
+                .getByRole("tab", { name: "Resolved 5" })
+                .getAttribute("aria-selected")
+        ).toBe("true");
+        expect(screen.getByText("Tab content")).toBeTruthy();
+    });
+
+    it("only offers warnings and manual incidents without FKMTime devices", async () => {
+        renderLayout("/incidents/manual", false);
+        expect(
+            await screen.findByRole("tab", { name: "Manual 1" })
+        ).toBeTruthy();
+        expect(screen.getAllByRole("tab").map((t) => t.textContent)).toEqual([
+            "Warnings2",
+            "Manual1",
+        ]);
+    });
+
+    it("refreshes the lists and their counts on an incident event", async () => {
+        renderLayout("/incidents/warnings", true);
+        expect(
+            await screen.findByRole("tab", { name: "Warnings 2" })
+        ).toBeTruthy();
+
+        lists["incident/warnings"] = [{}, {}, {}];
+        act(() => socketHandlers.get("newIncident")?.());
+
+        expect(
+            await screen.findByRole("tab", { name: "Warnings 3" })
+        ).toBeTruthy();
+    });
+});
+
+describe("IncidentListItem", () => {
+    beforeEach(() => {
+        localStorage.setItem(
+            "fkmtime-events",
+            JSON.stringify([
+                { id: "333", name: "3x3x3 Cube", shortName: "3x3" },
+            ])
+        );
+    });
+
+    it("summarises the attempt, station, judge, room and age", () => {
+        const incident = {
+            id: "inc1",
+            attemptNumber: 3,
+            value: 1284,
+            penalty: 0,
+            solvedAt: "2026-04-18T11:58:00Z",
+            device: { name: "Station 4", roomId: "r1" },
+            judge: { name: "Jan Test" },
+            result: {
+                eventId: "333",
+                roundId: "333-r1",
+                person: { name: "Anna Example" },
+            },
+        } as unknown as Incident;
+        render(
+            <MemoryRouter>
+                <IncidentListItem
+                    incident={incident}
+                    roomName="Main Room"
+                    isSelected
+                    now={new Date("2026-04-18T12:00:00Z")}
+                />
+            </MemoryRouter>
+        );
+        const link = screen.getByRole("link");
+        expect(link.getAttribute("href")).toBe("/incidents/inc1");
+        expect(link.getAttribute("aria-current")).toBe("true");
+        expect(
+            screen.getByText("3x3 R1 · Attempt 3 · Station 4 · Judge Jan Test")
+        ).toBeTruthy();
+        expect(screen.getByText("12.84")).toBeTruthy();
+        expect(screen.getByText("Main Room · 2 min")).toBeTruthy();
+    });
+});

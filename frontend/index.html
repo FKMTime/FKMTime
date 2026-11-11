@@ -5,7 +5,25 @@
     <link rel="icon" type="image/svg+xml" href="/favicon.ico" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>FKMTime</title>
-    <meta name="theme-color" content="#ffffff">
+    <meta name="theme-color" content="#0f1217">
+    <meta name="color-scheme" content="light dark">
+    <script>
+      // Apply the saved theme before the first paint, so dark mode doesn't
+      // flash light while the app loads. Mirrors ThemeProvider (default: dark).
+      (function () {
+        var theme = "dark";
+        try {
+          theme = localStorage.getItem("fkmtime-theme") || theme;
+        } catch (e) {}
+        if (theme === "system") {
+          theme = matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+        }
+        document.documentElement.classList.add(theme);
+        if (theme === "light") {
+          document.querySelector('meta[name="theme-color"]').setAttribute("content", "#f5f6f8");
+        }
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

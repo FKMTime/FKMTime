@@ -49,7 +49,7 @@ const WCAPersonsAutocomplete = ({ onSelect }: WCAPersonsAutocompleteProps) => {
                     <ChevronsUpDown className="opacity-50" />
                 </Button>
             </PopoverTrigger>
-            <PopoverContent className="w-full p-0 min-w-[var(--radix-popper-anchor-width)]">
+            <PopoverContent className="w-full p-0 min-w-(--radix-popper-anchor-width)">
                 <Command className="w-full">
                     <CommandInput
                         placeholder="Search for a person..."

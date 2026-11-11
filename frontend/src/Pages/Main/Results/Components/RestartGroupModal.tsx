@@ -13,6 +13,7 @@ import {
     SelectValue,
 } from "@/Components/ui/select";
 import { useConfirm } from "@/hooks/useConfirm";
+import { useDialogError } from "@/hooks/useDialogError";
 import { useToast } from "@/hooks/useToast";
 import { activityCodeToName, getGroupsByRoundId } from "@/lib/activities";
 import { getAttendanceByGroupId } from "@/lib/attendance";
@@ -32,6 +33,7 @@ const RestartGroupModal = ({
     roundId,
     wcif,
 }: RestartGroupModalProps) => {
+    const [error, setError] = useDialogError(isOpen);
     const { toast } = useToast();
     const confirm = useConfirm();
     const [selectedGroup, setSelectedGroup] = useState<string>("");
@@ -65,10 +67,7 @@ const RestartGroupModal = ({
                     });
                     onClose();
                 } else {
-                    toast({
-                        title: "Something went wrong",
-                        variant: "destructive",
-                    });
+                    setError("Something went wrong");
                 }
             })
             .catch(() => {
@@ -86,6 +85,7 @@ const RestartGroupModal = ({
 
     return (
         <Modal
+            error={error}
             isOpen={isOpen}
             onClose={handleClose}
             title={

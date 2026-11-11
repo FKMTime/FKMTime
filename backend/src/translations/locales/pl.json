@@ -45,6 +45,10 @@
       "translation": "Nie jestes zapisany na ta konkurencje"
     },
     {
+      "key": "competitorRemovedFromRound",
+      "translation": "Usunieto z tej rundy"
+    },
+    {
       "key": "attemptAlreadyEntered",
       "translation": "To ulozenie zostalo juz wprowadzone"
     },
@@ -187,6 +191,58 @@
     {
       "key": "judgeIsCompetitor",
       "translation": "Sedzia nie moze byc tym samym zawodnikiem"
+    },
+    {
+      "key": "sleep",
+      "translation": "Uspienie"
+    },
+    {
+      "key": "deepSleep",
+      "translation": "Pelne uspienie"
+    },
+    {
+      "key": "pressAnyKey",
+      "translation": "Wcisnij przycisk"
+    },
+    {
+      "key": "configMenu",
+      "translation": "Konfiguracja"
+    },
+    {
+      "key": "scanTheCard",
+      "translation": "Zeskanuj karte"
+    },
+    {
+      "key": "unpair",
+      "translation": "Odlacz"
+    },
+    {
+      "key": "exit",
+      "translation": "Wyjdz"
+    },
+    {
+      "key": "resetAttemptHeader",
+      "translation": "Skasowac czas?"
+    },
+    {
+      "key": "resetAttemptFooter",
+      "translation": "Submit = tak"
+    },
+    {
+      "key": "sendingHeader",
+      "translation": "Wysylanie..."
+    },
+    {
+      "key": "sendingFooter",
+      "translation": "Prosze czekac"
+    },
+    {
+      "key": "resetTimerHeader",
+      "translation": "Zresetuj timer"
+    },
+    {
+      "key": "resetTimerFooter",
+      "translation": "przed inspekcja"
     }
   ]
 }

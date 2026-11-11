@@ -49,16 +49,40 @@ export class SocketServer {
         let nullIdx = buffer.indexOf(0x00);
         while (nullIdx !== -1) {
           const packet = buffer.subarray(0, nullIdx);
+          // Drop the packet before handling it, so one that fails cannot
+          // block every packet after it on this connection
+          buffer = buffer.subarray(nullIdx + 1);
+          nullIdx = buffer.indexOf(0x00);
 
           if (this.hilRunning) {
             this.hilProcessor.feed_packet(packet.toString());
-          } else {
-            const request: RequestDto<any> = JSON.parse(packet.toString());
-            this.parsePacket(socket, request);
+            continue;
           }
-
-          buffer = buffer.subarray(nullIdx + 1);
-          nullIdx = buffer.indexOf(0x00);
+          let request: RequestDto<any>;
+          try {
+            request = JSON.parse(packet.toString());
+          } catch {
+            this.logger.warn(`Dropped malformed packet: ${packet.toString()}`);
+            continue;
+          }
+          this.parsePacket(socket, request).catch((e) => {
+            // An unhandled rejection would take the whole backend down, and
+            // the station would wait for an answer that never comes
+            this.logger.error(
+              `Failed to handle request of type ${request.type}, tag ${request.tag}`,
+              e instanceof Error ? e.stack : e,
+            );
+            this.sendResponseWithTag(socket, {
+              type: request.type,
+              tag: request.tag,
+              data: {
+                message: 'Internal server error',
+                status: 500,
+                error: true,
+                shouldResetTime: false,
+              },
+            });
+          });
         }
       });
     });
@@ -147,6 +171,16 @@ export class SocketServer {
     });
   }
 
+  sendDeviceSettings(espIds: number[], volume: number) {
+    this.sendToAll({
+      type: 'SetDeviceSettings',
+      data: {
+        devices: espIds,
+        volume,
+      },
+    });
+  }
+
   async toggleHil(state: boolean) {
     this.logger.log('HIL testing state change: ' + state);
     if (this.hilInterval != null) clearInterval(this.hilInterval);
@@ -164,7 +198,7 @@ export class SocketServer {
           this.connectedSockets.forEach((cs) => {
             try {
               cs.write(res);
-            } catch (e) {
+            } catch {
               this.logger.log(`[HIL] Socket write error`);
             }
           });
@@ -204,6 +238,15 @@ export class SocketServer {
       );
       this.sendResponseWithTag(socket, {
         type: 'UpdateBatteryPercentage',
+        tag: request.tag,
+        data: responseData,
+      });
+    } else if (request.type === 'DeviceConnected') {
+      const responseData = await this.socketService.deviceConnected(
+        request.data,
+      );
+      this.sendResponseWithTag(socket, {
+        type: 'DeviceConnected',
         tag: request.tag,
         data: responseData,
       });
@@ -262,6 +305,7 @@ export class SocketServer {
         },
         false,
       );
+      this.socketService.handleCurrentTimeInfo(request.data).catch(() => {});
     } else {
       this.logger.error('Unknown request type');
     }

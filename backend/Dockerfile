@@ -1,4 +1,4 @@
-FROM node:22-alpine AS build
+FROM node:24-alpine AS build
 RUN npm install --global npm@11.16.0
 RUN apk add --no-cache openssl
 
@@ -9,11 +9,10 @@ RUN npm ci
 
 COPY . .
 RUN npx prisma generate
-RUN npx prisma -v
 RUN npm run build
 RUN npm prune --omit=dev
 
-FROM node:22-alpine
+FROM node:24-alpine
 RUN apk add --no-cache curl
 RUN apk add --no-cache openssl
 

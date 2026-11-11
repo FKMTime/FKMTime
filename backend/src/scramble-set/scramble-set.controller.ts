@@ -19,6 +19,11 @@ import { ScrambleSetService } from './scramble-set.service';
 export class ScrambleSetController {
   constructor(private readonly scrambleSetService: ScrambleSetService) {}
 
+  @Get('counts')
+  async getScrambleSetCounts() {
+    return this.scrambleSetService.getScrambleSetCounts();
+  }
+
   @Get(':roundId')
   async getScrambleSets(@Param('roundId') roundId: string) {
     return this.scrambleSetService.getScrambleSets(roundId);

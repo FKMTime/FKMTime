@@ -33,6 +33,10 @@ export class SocketController implements OnModuleInit, OnModuleDestroy {
     await this.socketServer.sendFirmware(fileName, fileData);
   }
 
+  sendDeviceSettings(espIds: number[], volume: number) {
+    this.socketServer.sendDeviceSettings(espIds, volume);
+  }
+
   async sendAutoSetupStatus() {
     await this.socketServer.sendAutoSetupStatus();
   }

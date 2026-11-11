@@ -22,15 +22,21 @@ export class ScramblingService {
       where: { id },
       include: { scrambles: true },
     });
+    if (!set || set.scrambles.length === 0) {
+      throw new HttpException('Scramble set not found', 404);
+    }
     const exampleScramble = set.scrambles[0];
-    const decryptedScramble = CryptoJS.AES.decrypt(
-      exampleScramble.encryptedScramble,
-      data.password,
-    );
-    if (!decryptedScramble) {
+    let str: string;
+    try {
+      // A wrong password often decrypts to bytes that are not valid UTF-8,
+      // which makes toString throw instead of returning garbage
+      str = CryptoJS.AES.decrypt(
+        exampleScramble.encryptedScramble,
+        data.password,
+      ).toString(CryptoJS.enc.Utf8);
+    } catch {
       throw new HttpException('Invalid password', 403);
     }
-    const str = decryptedScramble.toString(CryptoJS.enc.Utf8);
     if (!str || !str.includes(' ')) {
       throw new HttpException('Invalid password', 403);
     }
@@ -49,7 +55,7 @@ export class ScramblingService {
 
   async getPersonDataByCardId(token: string, cardId: string) {
     await this.verifyToken(token);
-    const person = this.personService.getPersonByCardId(cardId);
+    const person = await this.personService.getPersonByCardId(cardId);
     if (!person) {
       throw new HttpException('Person not found', 404);
     }

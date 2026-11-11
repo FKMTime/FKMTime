@@ -2,7 +2,7 @@ import { HttpException, Injectable } from '@nestjs/common';
 import { SyncService } from 'src/competition/sync.service';
 import { DbService } from 'src/db/db.service';
 
-import { eventsData } from '../events';
+import { eventsData, isUnofficialEvent } from '../events';
 import { CreateUnofficialEventDto } from './dto/createUnofficialEvent.dto';
 import { UpdateUnofficialEventDto } from './dto/updateUnofficialEvent.dto';
 
@@ -23,6 +23,14 @@ export class EventsService {
 
   async createUnofficialEvent(data: CreateUnofficialEventDto) {
     const { eventId, rounds } = data;
+    // An official event (FTO included, since WCIF v2) comes from the WCA
+    // website; saved here it would never reach the competition WCIF
+    if (!isUnofficialEvent(eventId)) {
+      throw new HttpException(
+        'Only unofficial events can be added here. Official events come from the WCA website.',
+        400,
+      );
+    }
     const existingEvent = await this.prisma.unofficialEvent.findFirst({
       where: { eventId: eventId },
     });

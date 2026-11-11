@@ -2,6 +2,9 @@ import { createContext, useContext, useEffect, useState } from "react";
 
 type Theme = "dark" | "light" | "system";
 
+// Matches the --background token so the PWA status bar blends in
+const THEME_COLORS = { light: "#f5f6f8", dark: "#0f1217" };
+
 type ThemeProviderProps = {
     children: React.ReactNode;
     defaultTheme?: Theme;
@@ -32,21 +35,22 @@ export function ThemeProvider({
 
     useEffect(() => {
         const root = window.document.documentElement;
+        const media = window.matchMedia("(prefers-color-scheme: dark)");
 
-        root.classList.remove("light", "dark");
+        const apply = () => {
+            const resolved =
+                theme === "system" ? (media.matches ? "dark" : "light") : theme;
+            root.classList.remove("light", "dark");
+            root.classList.add(resolved);
+            document
+                .querySelector('meta[name="theme-color"]')
+                ?.setAttribute("content", THEME_COLORS[resolved]);
+        };
 
-        if (theme === "system") {
-            const systemTheme = window.matchMedia(
-                "(prefers-color-scheme: dark)"
-            ).matches
-                ? "dark"
-                : "light";
-
-            root.classList.add(systemTheme);
-            return;
-        }
-
-        root.classList.add(theme);
+        apply();
+        if (theme !== "system") return;
+        media.addEventListener("change", apply);
+        return () => media.removeEventListener("change", apply);
     }, [theme]);
 
     const value = {

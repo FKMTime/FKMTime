@@ -21,6 +21,10 @@ describe('ScrambleSetService', () => {
               delete: jest.fn(),
               deleteMany: jest.fn(),
             },
+            // Runs the callback against this same mock, as a transaction client
+            $transaction: jest.fn(function (callback) {
+              return callback(this);
+            }),
           },
         },
       ],
@@ -32,6 +36,26 @@ describe('ScrambleSetService', () => {
 
   it('should be defined', () => {
     expect(service).toBeDefined();
+  });
+
+  describe('getScrambleSetCounts', () => {
+    it('counts scramble sets per round', async () => {
+      jest
+        .spyOn(dbService.scrambleSet, 'findMany')
+        .mockResolvedValue([
+          { roundId: '333-r1' },
+          { roundId: 'pyram-r1' },
+          { roundId: '333-r1' },
+        ] as any);
+
+      expect(await service.getScrambleSetCounts()).toEqual([
+        { roundId: '333-r1', count: 2 },
+        { roundId: 'pyram-r1', count: 1 },
+      ]);
+      expect(dbService.scrambleSet.findMany).toHaveBeenCalledWith({
+        select: { roundId: true },
+      });
+    });
   });
 
   describe('importScrambles', () => {
@@ -153,14 +177,14 @@ describe('ScrambleSetService', () => {
       });
     });
 
-    it('should throw error if scramble set not found', async () => {
-      const prismaError = { code: 'P2016' };
+    it('lets the not-found error through for the HTTP filter to map to 404', async () => {
+      const prismaError = { code: 'P2025' };
       jest
         .spyOn(dbService.scrambleSet, 'delete')
         .mockRejectedValue(prismaError);
 
-      await expect(service.deleteScrambleSet('nonexistent')).rejects.toThrow(
-        HttpException,
+      await expect(service.deleteScrambleSet('nonexistent')).rejects.toBe(
+        prismaError,
       );
     });
   });

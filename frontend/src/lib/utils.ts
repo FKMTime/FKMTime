@@ -3,7 +3,7 @@ import * as CryptoJS from "crypto-js";
 import { twMerge } from "tailwind-merge";
 import { Competition, Event } from "wcif-helpers";
 
-import { DNF_VALUE, roundFormats } from "../lib/constants";
+import { DNF_VALUE, DNS_VALUE, roundFormats } from "../lib/constants";
 import { getEventShortName, isUnofficialEvent } from "../lib/events";
 import {
     Attempt,
@@ -179,7 +179,8 @@ export const getSubmittedAttempts = (attempts: Attempt[]) => {
             !attemptsToReturn.some((a) => a.id === attempt.id) &&
             attempt.status !== AttemptStatus.UNRESOLVED &&
             attempt.status !== AttemptStatus.EXTRA_GIVEN &&
-            attempt.status !== AttemptStatus.SCRAMBLED
+            attempt.status !== AttemptStatus.SCRAMBLED &&
+            attempt.status !== AttemptStatus.VOIDED
         ) {
             attemptsToReturn.push({
                 ...attempt,
@@ -190,7 +191,16 @@ export const getSubmittedAttempts = (attempts: Attempt[]) => {
             attempt.status === AttemptStatus.EXTRA_GIVEN
         ) {
             const extraAttempt = getExtra(attempt.id, attempts);
-            if (extraAttempt && !attemptsToReturn.includes(extraAttempt)) {
+            // An extra that was given an extra itself has no valid time yet
+            const isWaiting =
+                extraAttempt?.status === AttemptStatus.EXTRA_GIVEN &&
+                !extraAttempt.replacedBy;
+            if (
+                extraAttempt &&
+                !isWaiting &&
+                extraAttempt.status !== AttemptStatus.VOIDED &&
+                !attemptsToReturn.includes(extraAttempt)
+            ) {
                 attemptsToReturn.push({
                     ...extraAttempt,
                     number: attemptsToReturn.length + 1,
@@ -202,6 +212,31 @@ export const getSubmittedAttempts = (attempts: Attempt[]) => {
         .sort((a, b) => a.number - b.number)
         .map((a) => a as Attempt);
 };
+
+/** Attempts a disqualification from the round would record as DNF */
+export const hasRemainingAttempts = (
+    attempts: Attempt[],
+    maxAttempts: number
+) => {
+    const standard = attempts.filter(
+        (attempt) => attempt.type === AttemptType.STANDARD_ATTEMPT
+    );
+    // With no attempt started, a disqualification records no result
+    return (
+        standard.length > 0 &&
+        (standard.length < maxAttempts ||
+            standard.some(
+                (attempt) => attempt.status === AttemptStatus.SCRAMBLED
+            ))
+    );
+};
+
+/** Counting attempts that still have a time of their own */
+export const getAttemptsToDnf = (attempts: Attempt[]) =>
+    (getSubmittedAttempts(attempts) as AttemptWithNumber[]).filter(
+        (attempt) =>
+            attempt.penalty !== DNF_VALUE && attempt.penalty !== DNS_VALUE
+    );
 
 export const isThereADifferenceBetweenResults = (
     result: Result,
@@ -256,6 +291,8 @@ export const prettyAttemptStatus = (
             return "Extra given";
         case AttemptStatus.SCRAMBLED:
             return "Scrambled";
+        case AttemptStatus.VOIDED:
+            return "Extra not needed";
         default:
             return "Unknown";
     }
@@ -371,4 +408,20 @@ export const getAdvancementText = (roundId: string, event?: Event) => {
             : "Dual Round";
     }
     return advancementText;
+};
+
+export const getInitials = (fullName?: string) => {
+    const parts = (fullName ?? "").trim().split(/\s+/).filter(Boolean);
+    if (parts.length === 0) return "?";
+    const first = parts[0][0];
+    const last = parts.length > 1 ? parts[parts.length - 1][0] : "";
+    return (first + last).toUpperCase();
+};
+
+/** "Results · Example Open 2026"; falls back to "FKMTime" with no parts */
+export const formatDocumentTitle = (
+    ...parts: (string | null | undefined)[]
+) => {
+    const filled = parts.filter((part): part is string => !!part?.trim());
+    return filled.length ? filled.join(" · ") : "FKMTime";
 };

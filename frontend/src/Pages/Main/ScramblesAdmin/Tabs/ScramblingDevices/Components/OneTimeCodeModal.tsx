@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 
 import { Modal } from "@/Components/Modal";
 import { ScramblingDevice } from "@/lib/interfaces";
@@ -17,15 +17,11 @@ const OneTimeCodeModal: React.FC<OneTimeCodeModalProps> = ({
 }) => {
     const [oneTimeCode, setOneTimeCode] = useState<string>("");
 
-    const generateOneTimeCode = useCallback(async () => {
-        if (!isOpen) return;
-        const data = await getOneTimeCode(device.id);
-        setOneTimeCode(data.code);
-    }, [device.id, isOpen]);
-
+    // A new code each time the dialog opens
     useEffect(() => {
-        generateOneTimeCode();
-    }, [generateOneTimeCode, isOpen]);
+        if (!isOpen) return;
+        getOneTimeCode(device.id).then((data) => setOneTimeCode(data.code));
+    }, [device.id, isOpen]);
 
     return (
         <Modal

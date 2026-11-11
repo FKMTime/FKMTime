@@ -1,13 +1,13 @@
 import { useAtomValue } from "jotai";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { CircleCheck } from "lucide-react";
+import { useCallback, useMemo, useRef, useState } from "react";
+import { Link, useParams } from "react-router-dom";
 import { getNumberOfAttemptsForRound } from "wcif-helpers";
 
-import EventIcon from "@/Components/Icons/EventIcon";
 import LoadingPage from "@/Components/LoadingPage";
-import { Card, CardContent, CardHeader, CardTitle } from "@/Components/ui/card";
-import { useToast } from "@/hooks/useToast";
-import { activityCodeToName } from "@/lib/activities";
+import EmptyState from "@/Components/shared/EmptyState";
+import InlineError from "@/Components/shared/InlineError";
+import { useLiveQuery } from "@/hooks/useLiveQuery";
 import { competitionAtom } from "@/lib/atoms";
 import {
     AttemptStatus,
@@ -16,26 +16,31 @@ import {
     Person,
     Result,
 } from "@/lib/interfaces";
-import { getAllPersons } from "@/lib/persons";
+import { allPersonsQuery } from "@/lib/persons";
 import { enterScorecard, getResultByRoundIdAndPersonId } from "@/lib/results";
 import { getSubmittedAttempts } from "@/lib/utils";
-import PageTransition from "@/Pages/PageTransition";
 
+import RoundSubpageHeader from "../Components/RoundSubpageHeader";
 import SelectCompetitor from "../Components/SelectCompetitor";
 import AttemptsList from "./Components/AttemptsList";
 import EnterScorecardActions from "./Components/EnterScorecardActions";
 
 const EnterScorecard = () => {
     const { id } = useParams<{ id: string }>();
-    const { toast } = useToast();
-    const navigate = useNavigate();
     const [result, setResult] = useState<Result | null>(null);
     const [attempts, setAttempts] = useState<AttemptToEnterWithScorecard[]>([]);
-    const [persons, setPersons] = useState<Person[]>([]);
+    const { data: personsData } = useLiveQuery(allPersonsQuery);
+    const persons: Person[] = personsData ?? [];
     const [inputValue, setInputValue] = useState<string>("");
+    const [isSaving, setIsSaving] = useState(false);
+    const [saveError, setSaveError] = useState("");
+    // The scorecard saved last, so the desk can go straight on to the next
+    const [lastSaved, setLastSaved] = useState<{
+        name: string;
+        resultId: string;
+    } | null>(null);
 
     const idInputRef = useRef<HTMLInputElement>(null);
-    const roundName = activityCodeToName(id || "");
     const competition = useAtomValue(competitionAtom);
     const maxAttempts = useMemo(
         () =>
@@ -44,10 +49,6 @@ const EnterScorecard = () => {
                 : 5,
         [id, competition]
     );
-
-    useEffect(() => {
-        getAllPersons().then(setPersons);
-    }, []);
 
     const handleSelectPerson = useCallback(
         async (person: Person | null) => {
@@ -80,6 +81,7 @@ const EnterScorecard = () => {
 
             setResult(response.data);
             setAttempts(filled);
+            setSaveError("");
         },
         [id, maxAttempts]
     );
@@ -93,17 +95,19 @@ const EnterScorecard = () => {
     };
 
     const handleSubmit = async () => {
-        if (!result) return;
+        if (!result || isSaving) return;
         const attemptsToCreate = attempts.filter(
             (a) => a.isNew && (a.value !== 0 || a.penalty !== 0)
         );
         const attemptsToUpdate = attempts.filter((a) => !a.isNew);
+        setIsSaving(true);
+        setSaveError("");
         const response = await enterScorecard({
-            resultId: result!.id,
+            resultId: result.id,
             attempts: attemptsToUpdate,
             newAttempts: attemptsToCreate.map((a) => ({
-                roundId: result!.roundId,
-                competitorId: result!.person.id,
+                roundId: result.roundId,
+                competitorId: result.person.id,
                 comment: "",
                 attemptNumber: a.attemptNumber,
                 type: a.type,
@@ -112,78 +116,105 @@ const EnterScorecard = () => {
                 status: a.status,
             })),
         });
-        if (response.status === 200) {
-            toast({
-                title: "Scorecard entered",
-                description: "The scorecard has been successfully entered.",
-                variant: "success",
-            });
-            navigate(`/results/round/${result.roundId}/`);
-        } else {
-            toast({
-                title: "Error entering scorecard",
-                description:
-                    response.data.message ||
-                    "An error occurred while entering the scorecard.",
-                variant: "destructive",
-            });
+        setIsSaving(false);
+        if (response.status !== 200) {
+            setSaveError(
+                response.data.message || "The scorecard could not be saved."
+            );
+            return;
         }
+        setLastSaved({ name: result.person.name, resultId: result.id });
+        setResult(null);
+        setAttempts([]);
+        setInputValue("");
+        // After the re-render, which unmounts the attempts and remounts the
+        // name picker; focusing before it could lose the cursor
+        setTimeout(() => idInputRef.current?.focus());
     };
 
     if (!id) return <LoadingPage />;
 
-    return (
-        <PageTransition>
-            <div className="flex flex-col gap-4">
-                <Card>
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-2">
-                            <EventIcon
-                                eventId={id.split("-r")[0]}
-                                size={20}
-                                selected
-                            />
-                            {roundName}
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent className="flex flex-col gap-4">
-                        <SelectCompetitor
-                            idInputRef={idInputRef}
-                            handleSubmit={handleSubmit}
-                            persons={persons}
-                            onSelect={handleSelectPerson}
-                            inputValue={inputValue}
-                            setInputValue={setInputValue}
-                        />
-                    </CardContent>
-                </Card>
+    const isWaitingForRedo = result?.attempts.some(
+        (a) => a.status === AttemptStatus.EXTRA_GIVEN && !a.replacedBy
+    );
 
-                {result && (
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>
-                                {result.person.name} (
-                                {result.person.registrantId})
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent className="flex flex-col gap-4">
-                            {competition && (
-                                <AttemptsList
-                                    attempts={attempts}
-                                    competition={competition}
-                                    roundId={result.roundId}
-                                    onChange={updateAttempt}
+    return (
+        <div className="flex flex-col gap-5">
+            <RoundSubpageHeader roundId={id} title="Enter scorecard" />
+            <div className="grid grid-cols-1 items-start gap-5 lg:grid-cols-2">
+                <section className="flex flex-col gap-3 rounded-mobile-card border bg-card p-4 md:rounded-2xl md:p-5">
+                    {lastSaved && (
+                        <p
+                            role="status"
+                            className="flex flex-wrap items-center gap-2 rounded-chip bg-success-soft px-3 py-2.5 text-sm font-semibold text-success"
+                        >
+                            <CircleCheck className="size-[18px] shrink-0" />
+                            Saved {lastSaved.name}&apos;s scorecard
+                            <Link
+                                to={`/results/${lastSaved.resultId}`}
+                                className="ml-auto font-semibold underline-offset-4 hover:underline"
+                            >
+                                Open result
+                            </Link>
+                        </p>
+                    )}
+                    <h3 className="text-sm font-semibold">Competitor</h3>
+                    <SelectCompetitor
+                        idInputRef={idInputRef}
+                        handleSubmit={handleSubmit}
+                        persons={persons}
+                        onSelect={handleSelectPerson}
+                        inputValue={inputValue}
+                        setInputValue={setInputValue}
+                    />
+                </section>
+                {result ? (
+                    <section className="flex flex-col gap-4 rounded-mobile-card border bg-card p-4 md:rounded-2xl md:p-5">
+                        <h3 className="text-lg font-bold">
+                            {result.person.name}
+                            <span className="font-normal text-muted-foreground">
+                                {" "}
+                                ({result.person.registrantId})
+                            </span>
+                        </h3>
+                        {isWaitingForRedo ? (
+                            <p className="text-sm text-muted-foreground">
+                                This competitor has attempts waiting for a redo.
+                                Enter them on{" "}
+                                <Link
+                                    to={`/results/${result.id}`}
+                                    className="font-semibold underline-offset-4 hover:underline"
+                                >
+                                    their result
+                                </Link>
+                                .
+                            </p>
+                        ) : (
+                            <>
+                                {competition && (
+                                    <AttemptsList
+                                        attempts={attempts}
+                                        competition={competition}
+                                        roundId={result.roundId}
+                                        onChange={updateAttempt}
+                                    />
+                                )}
+                                <InlineError>{saveError}</InlineError>
+                                <EnterScorecardActions
+                                    handleSubmit={handleSubmit}
+                                    result={result}
+                                    isSaving={isSaving}
                                 />
-                            )}
-                            <EnterScorecardActions
-                                handleSubmit={handleSubmit}
-                                result={result}
-                            />
-                        </CardContent>
-                    </Card>
+                            </>
+                        )}
+                    </section>
+                ) : (
+                    <EmptyState className="hidden lg:flex">
+                        Enter the ID from the next scorecard.
+                    </EmptyState>
                 )}
             </div>
-        </PageTransition>
+        </div>
     );
 };
 

@@ -1,5 +1,5 @@
 import { Device, DeviceData } from "./interfaces";
-import { backendRequest } from "./request";
+import { backendQuery, backendRequest } from "./request";
 
 export const getAllDevices = async (type?: string, roomId?: string) => {
     let url = "device";
@@ -11,6 +11,15 @@ export const getAllDevices = async (type?: string, roomId?: string) => {
     if (!response.ok) return [];
     return await response.json();
 };
+
+export const devicesQuery = backendQuery<Device[]>("device");
+
+/** Every timing station, so live solving can list idle ones too */
+export const stationDevicesQuery = backendQuery<Device[]>(
+    "device?type=STATION"
+);
+
+export const retiredDevicesQuery = backendQuery<Device[]>("device/retired");
 
 export const createDevice = async (
     data: DeviceData
@@ -33,6 +42,20 @@ export const updateDevice = async (data: Device) => {
 
 export const deleteDevice = async (id: string) => {
     const response = await backendRequest(`device/${id}`, "DELETE", true);
+    return response.status;
+};
+
+export const reconnectDevice = async (id: string) => {
+    const response = await backendRequest(
+        `device/${id}/reconnect`,
+        "POST",
+        true
+    );
+    return response.status;
+};
+
+export const restoreDevice = async (id: string) => {
+    const response = await backendRequest(`device/${id}/restore`, "POST", true);
     return response.status;
 };
 

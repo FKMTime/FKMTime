@@ -1,12 +1,36 @@
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
-import { StaffActivityStatus, StaffRole } from '@prisma/client';
+import { Prisma, StaffActivityStatus, StaffRole } from '@prisma/client';
 import { AppGateway } from 'src/app.gateway';
 
 import { DbService } from '../db/db.service';
 import { getTranslation } from '../translations/translations';
 import { AddNotAssignedPersonDto } from './dto/addNotAssignedPerson.dto';
 import { CreateAttendaceDto } from './dto/createAttendance.dto';
+import { MarkReplacedDto } from './dto/markReplaced.dto';
+import { RestoreAttendanceDto } from './dto/restoreAttendance.dto';
+import { SetNoShowDto } from './dto/setNoShow.dto';
 import { UpdateCommentDto } from './dto/updateComment.dto';
+
+/**
+ * Tags that can't go with a status, cleared whenever a row moves to it:
+ * left early needs them to have done the job, a no-show needs them absent,
+ * and nobody replaced someone who did the job themselves.
+ */
+export const tagsClearedBy = (
+  status: StaffActivityStatus,
+): Prisma.StaffActivityUncheckedUpdateInput => {
+  switch (status) {
+    case StaffActivityStatus.PRESENT:
+    case StaffActivityStatus.LATE:
+      return { noShow: false, replacedById: null };
+    case StaffActivityStatus.REPLACED:
+      return { leftEarly: false, noShow: false };
+    case StaffActivityStatus.ABSENT:
+      return { leftEarly: false };
+  }
+};
+
+const replacedByInclude = { replacedBy: { select: { id: true, name: true } } };
 
 @Injectable()
 export class AttendanceService {
@@ -23,6 +47,7 @@ export class AttendanceService {
       include: {
         person: true,
         device: true,
+        ...replacedByInclude,
       },
     });
   }
@@ -40,58 +65,46 @@ export class AttendanceService {
   }
 
   async getMostMissedAssignments() {
-    const persons = await this.prisma.person.findMany();
-    const data = [];
-    for (const person of persons) {
-      const lateAssignments = await this.prisma.staffActivity.findMany({
-        where: {
-          status: StaffActivityStatus.LATE,
-          role: {
-            not: StaffRole.COMPETITOR,
-          },
-          personId: person.id,
-        },
-      });
-      const presentButReplacedAssignments =
-        await this.prisma.staffActivity.findMany({
-          where: {
-            status: StaffActivityStatus.REPLACED,
-            role: {
-              not: StaffRole.COMPETITOR,
-            },
-            personId: person.id,
-          },
-        });
-      const missedAssignments = await this.prisma.staffActivity.findMany({
-        where: {
-          status: StaffActivityStatus.ABSENT,
-          role: {
-            not: StaffRole.COMPETITOR,
-          },
-          personId: person.id,
-        },
-      });
-      const comments = await this.prisma.staffActivity.findMany({
-        where: {
-          personId: person.id,
-          comment: {
-            not: null,
-          },
-        },
-      });
-      data.push({
+    const [persons, activities] = await Promise.all([
+      this.prisma.person.findMany(),
+      this.prisma.staffActivity.findMany(),
+    ]);
+    const data = persons.map((person) => {
+      const own = activities.filter(
+        (activity) => activity.personId === person.id,
+      );
+      const staffing = own.filter(
+        (activity) => activity.role !== StaffRole.COMPETITOR,
+      );
+      const withStatus = (status: StaffActivityStatus) =>
+        staffing.filter((activity) => activity.status === status);
+      const missedAssignments = withStatus(StaffActivityStatus.ABSENT);
+      const lateAssignments = withStatus(StaffActivityStatus.LATE);
+      const presentButReplacedAssignments = withStatus(
+        StaffActivityStatus.REPLACED,
+      );
+      const leftEarlyAssignments = staffing.filter(
+        (activity) => activity.leftEarly,
+      );
+      const noShowAssignments = staffing.filter((activity) => activity.noShow);
+      const comments = own.filter((activity) => activity.comment !== null);
+      return {
         person,
-        missedAssignments: missedAssignments,
+        missedAssignments,
         missedAssignmentsCount: missedAssignments.length,
-        lateAssignments: lateAssignments,
+        lateAssignments,
         lateAssignmentsCount: lateAssignments.length,
-        presentButReplacedAssignments: presentButReplacedAssignments,
+        presentButReplacedAssignments,
         presentButReplacedAssignmentsCount:
           presentButReplacedAssignments.length,
-        comments: comments,
+        leftEarlyAssignments,
+        leftEarlyAssignmentsCount: leftEarlyAssignments.length,
+        noShowAssignments,
+        noShowAssignmentsCount: noShowAssignments.length,
+        comments,
         commentsCount: comments.length,
-      });
-    }
+      };
+    });
 
     return data.sort(
       (a, b) => b.missedAssignmentsCount - a.missedAssignmentsCount,
@@ -135,6 +148,7 @@ export class AttendanceService {
       },
       update: {
         status: StaffActivityStatus.PRESENT,
+        ...tagsClearedBy(StaffActivityStatus.PRESENT),
       },
       create: {
         groupId: groupId,
@@ -162,6 +176,7 @@ export class AttendanceService {
       },
       include: {
         device: true,
+        ...replacedByInclude,
       },
     });
   }
@@ -173,6 +188,7 @@ export class AttendanceService {
       },
       data: {
         status: StaffActivityStatus.PRESENT,
+        ...tagsClearedBy(StaffActivityStatus.PRESENT),
       },
     });
     this.appGateway.handleNewAttendance(
@@ -243,6 +259,8 @@ export class AttendanceService {
           },
         },
         status: StaffActivityStatus.PRESENT,
+        noShow: false,
+        replacedBy: { disconnect: true },
       },
       create: {
         groupId: groupId,
@@ -316,6 +334,7 @@ export class AttendanceService {
     const device = await this.prisma.device.findFirst({
       where: {
         espId: data.espId,
+        retiredAt: null,
       },
       include: {
         room: true,
@@ -348,7 +367,6 @@ export class AttendanceService {
           ? 'RUNNER'
           : 'JUDGE';
     for (const groupId of device.room.currentGroupIds) {
-      this.appGateway.handleNewAttendance(groupId, person.id);
       try {
         await this.prisma.staffActivity.upsert({
           where: {
@@ -381,9 +399,14 @@ export class AttendanceService {
               },
             },
             status: StaffActivityStatus.PRESENT,
+            noShow: false,
+            replacedBy: { disconnect: true },
           },
         });
-      } catch (e) {
+        // Only after the scan is saved: an open attendance page refetches
+        // as soon as it hears this, and would otherwise miss the scan
+        this.appGateway.handleNewAttendance(groupId, person.id);
+      } catch {
         return {
           message: getTranslation('attendanceConfirmed', person.countryIso2),
         };
@@ -436,6 +459,7 @@ export class AttendanceService {
         },
         data: {
           status: StaffActivityStatus.ABSENT,
+          ...tagsClearedBy(StaffActivityStatus.ABSENT),
         },
       });
     } else {
@@ -459,6 +483,7 @@ export class AttendanceService {
       },
       data: {
         status: StaffActivityStatus.LATE,
+        ...tagsClearedBy(StaffActivityStatus.LATE),
       },
     });
     this.appGateway.handleNewAttendance(
@@ -468,13 +493,139 @@ export class AttendanceService {
     return attendance;
   }
 
-  async markAsPresentButReplaced(id: string) {
+  async setLeftEarly(id: string, leftEarly: boolean) {
+    const activity = await this.findActivity(id);
+    const didTheJob: StaffActivityStatus[] = [
+      StaffActivityStatus.PRESENT,
+      StaffActivityStatus.LATE,
+    ];
+    if (leftEarly && !didTheJob.includes(activity.status)) {
+      throw new HttpException(
+        'Only someone who did the job can have left early',
+        HttpStatus.CONFLICT,
+      );
+    }
     const attendance = await this.prisma.staffActivity.update({
+      where: { id },
+      data: { leftEarly },
+    });
+    this.appGateway.handleNewAttendance(
+      attendance.groupId,
+      attendance.personId,
+    );
+    return attendance;
+  }
+
+  /**
+   * Someone else did the job. A replacement who isn't present in this group
+   * and role yet is added as present, like a walk-in.
+   */
+  async markAsReplaced(id: string, data: MarkReplacedDto) {
+    const activity = await this.findActivity(id);
+    if (data.replacedById === activity.personId) {
+      throw new HttpException(
+        'Nobody can replace themselves',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+    if (data.replacedById) {
+      const replacement = await this.prisma.person.findUnique({
+        where: { id: data.replacedById },
+      });
+      if (!replacement) {
+        throw new HttpException('Person not found', HttpStatus.NOT_FOUND);
+      }
+    }
+    const status = data.wasPresent
+      ? StaffActivityStatus.REPLACED
+      : StaffActivityStatus.ABSENT;
+    const replacementActivity = data.replacedById
+      ? await this.prisma.staffActivity.findUnique({
+          where: {
+            personId_groupId_role: {
+              personId: data.replacedById,
+              groupId: activity.groupId,
+              role: activity.role,
+            },
+          },
+        })
+      : null;
+    const [attendance] = await this.prisma.$transaction([
+      this.prisma.staffActivity.update({
+        where: { id },
+        data: {
+          status,
+          ...tagsClearedBy(status),
+          replacedById: data.replacedById ?? null,
+        },
+      }),
+      // A replacement already marked present, or late, stays as recorded
+      ...(data.replacedById && !replacementActivity
+        ? [
+            this.prisma.staffActivity.create({
+              data: {
+                personId: data.replacedById,
+                groupId: activity.groupId,
+                role: activity.role,
+                status: StaffActivityStatus.PRESENT,
+                isAssigned: false,
+              },
+            }),
+          ]
+        : []),
+      ...(replacementActivity?.status === StaffActivityStatus.ABSENT
+        ? [
+            this.prisma.staffActivity.update({
+              where: { id: replacementActivity.id },
+              data: {
+                status: StaffActivityStatus.PRESENT,
+                ...tagsClearedBy(StaffActivityStatus.PRESENT),
+              },
+            }),
+          ]
+        : []),
+    ]);
+    if (data.replacedById) {
+      this.appGateway.handleNewAttendance(activity.groupId, data.replacedById);
+    }
+    this.appGateway.handleNewAttendance(
+      attendance.groupId,
+      attendance.personId,
+    );
+    return attendance;
+  }
+
+  /**
+   * Not coming for the rest of the day. Only staffing they haven't turned up
+   * for is tagged; groups they were at keep their attendance.
+   */
+  async setNoShow(data: SetNoShowDto) {
+    const { count } = await this.prisma.staffActivity.updateMany({
       where: {
-        id: id,
+        personId: data.personId,
+        groupId: { in: data.groupIds },
+        role: { not: StaffRole.COMPETITOR },
+        status: StaffActivityStatus.ABSENT,
       },
+      data: { noShow: data.noShow },
+    });
+    data.groupIds.forEach((groupId) =>
+      this.appGateway.handleNewAttendance(groupId, data.personId),
+    );
+    return { count };
+  }
+
+  /** Puts a row back as it was, for undo */
+  async restore(id: string, data: RestoreAttendanceDto) {
+    await this.findActivity(id);
+    const attendance = await this.prisma.staffActivity.update({
+      where: { id },
       data: {
-        status: StaffActivityStatus.REPLACED,
+        status: data.status,
+        leftEarly: data.leftEarly,
+        noShow: data.noShow,
+        replacedById: data.replacedById ?? null,
+        ...tagsClearedBy(data.status),
       },
     });
     this.appGateway.handleNewAttendance(
@@ -482,5 +633,15 @@ export class AttendanceService {
       attendance.personId,
     );
     return attendance;
+  }
+
+  private async findActivity(id: string) {
+    const activity = await this.prisma.staffActivity.findUnique({
+      where: { id },
+    });
+    if (!activity) {
+      throw new HttpException('Attendance not found', HttpStatus.NOT_FOUND);
+    }
+    return activity;
   }
 }

@@ -1,5 +1,6 @@
 import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+import { APP_FILTER } from '@nestjs/core';
 import { ScheduleModule } from '@nestjs/schedule';
 import { ThrottlerModule } from '@nestjs/throttler';
 
@@ -11,6 +12,7 @@ import { AuthModule } from './auth/auth.module';
 import { CompetitionModule } from './competition/competition.module';
 import { ContestsModule } from './contests/contests.module';
 import { DbModule } from './db/db.module';
+import { PrismaNotFoundFilter } from './db/prisma-not-found.filter';
 import { DeviceModule } from './device/device.module';
 import { validate } from './env.validation';
 import { EventsModule } from './events/events.module';
@@ -23,11 +25,15 @@ import { ScramblingModule } from './scrambling/scrambling.module';
 import { ScramblingDeviceModule } from './scrambling-device/scrambling-device.module';
 import { SettingsModule } from './settings/settings.module';
 import { SocketModule } from './socket/socket.module';
+import { StationTesterModule } from './station-tester/station-tester.module';
 import { UserModule } from './user/user.module';
 import { WcaModule } from './wca/wca.module';
 
 @Module({
-  providers: [AppGateway],
+  providers: [
+    AppGateway,
+    { provide: APP_FILTER, useClass: PrismaNotFoundFilter },
+  ],
   controllers: [AppController],
   imports: [
     ConfigModule.forRoot({
@@ -51,6 +57,7 @@ import { WcaModule } from './wca/wca.module';
     AttendanceModule,
     WcaModule,
     SocketModule,
+    StationTesterModule,
     EventsModule,
     ContestsModule,
     ScramblingDeviceModule,

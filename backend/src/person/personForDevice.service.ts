@@ -6,8 +6,12 @@ import {
   SHOW_SECONDARY_TEXT_HW_VERSIONS,
 } from 'src/constants';
 import { DbService } from 'src/db/db.service';
-import { eventsData } from 'src/events';
-import { checkCutoff } from 'src/result/helpers';
+import { eventsData, getMaxPenalty } from 'src/events';
+import {
+  attemptTimeWithPenalty,
+  checkCutoff,
+  getCountingAttempts,
+} from 'src/result/helpers';
 import { ResultService } from 'src/result/result.service';
 import { convertToLatin, getTranslation } from 'src/translations/translations';
 import { WcaService } from 'src/wca/wca.service';
@@ -60,6 +64,7 @@ export class PersonForDeviceService {
     const device = await this.prisma.device.findFirst({
       where: {
         espId: espId,
+        retiredAt: null,
       },
       include: {
         room: true,
@@ -123,6 +128,7 @@ export class PersonForDeviceService {
               groupId: g,
               useInspection: eventsData.find((e) => e.id === g.split('-')[0])
                 .useInspection,
+              maxPenalty: getMaxPenalty(g.split('-')[0]),
               ...(await this.computeSecondaryText(
                 g,
                 wcif,
@@ -155,6 +161,7 @@ export class PersonForDeviceService {
         return {
           groupId: g,
           useInspection: eventsData.find((e) => e.id === eventId).useInspection,
+          maxPenalty: getMaxPenalty(eventId),
           ...(await this.computeSecondaryText(
             g,
             wcif,
@@ -208,7 +215,7 @@ export class PersonForDeviceService {
       let maxAttempts = getMaxAttempts(roundInfo.format);
       if (roundInfo.cutoff) {
         const cutoffPassed = checkCutoff(
-          result.attempts,
+          getCountingAttempts(result.attempts),
           roundInfo.cutoff.resultValue,
           roundInfo.cutoff.numberOfAttempts,
         );
@@ -250,7 +257,9 @@ export class PersonForDeviceService {
       cardId,
       roundId,
     );
-    const attemptText = `${getTranslation('attempt', locale)} ${nextAttemptData.scrambleData.isExtra ? 'E' : ''}${nextAttemptData.scrambleData.num}`;
+    const shownAttempt =
+      nextAttemptData.scrambleData.scramble ?? nextAttemptData.scrambleData;
+    const attemptText = `${getTranslation('attempt', locale)} ${shownAttempt.isExtra ? 'E' : ''}${shownAttempt.num}`;
 
     if (
       SHOW_SECONDARY_TEXT_HW_VERSIONS.includes(hwVersion) &&
@@ -268,7 +277,7 @@ export class PersonForDeviceService {
           personId,
         );
         submittedAttempts.forEach((a) => {
-          used += a.penalty !== -1 ? a.value + a.penalty * 100 : a.value;
+          used += attemptTimeWithPenalty(a);
         });
       }
       const limit = roundInfo.timeLimit.centiseconds;

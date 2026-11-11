@@ -1,0 +1,356 @@
+import { INestApplication } from '@nestjs/common';
+import { DeviceType, HardwareVersion, Role, Room } from '@prisma/client';
+import { AppGateway } from 'src/app.gateway';
+import { DbService } from 'src/db/db.service';
+import { DeviceService } from 'src/device/device.service';
+import * as request from 'supertest';
+
+import { createTestApp } from './helpers/app.helper';
+import { listenOnLoopback } from './helpers/loopback.helper';
+import {
+  createUserWithRoles,
+  deleteSetupUsers,
+  TestUser,
+} from './helpers/setup-roles.helper';
+
+const SUFFIX = 'device-management';
+const PREFIX = 'e2e-setup-device-';
+const FAKE_ID = '00000000-0000-4000-8000-000000000000';
+
+describe('Device management (e2e)', () => {
+  let app: INestApplication;
+  let db: DbService;
+  let adminToken: string;
+  let organizer: TestUser;
+  let mainHall: Room;
+  let sideHall: Room;
+  let stationId: string;
+  let resultId: string;
+
+  const server = () => app.getHttpServer();
+  const asOrganizer = (req: request.Test) =>
+    req.set('Authorization', `Bearer ${organizer.token}`);
+  const device = (overrides: Record<string, unknown> = {}) => ({
+    name: `${PREFIX}station-a`,
+    espId: 98001,
+    signKey: 98101,
+    roomId: mainHall.id,
+    type: DeviceType.STATION,
+    hwVersion: HardwareVersion.V4,
+    ...overrides,
+  });
+
+  beforeAll(async () => {
+    ({ app, db, adminToken } = await createTestApp());
+    await listenOnLoopback(app);
+    await deleteSetupUsers(db, SUFFIX);
+    await db.device.deleteMany({ where: { name: { startsWith: PREFIX } } });
+    organizer = await createUserWithRoles(app, db, `organizer-${SUFFIX}`, [
+      Role.ORGANIZER,
+    ]);
+    mainHall = await db.room.findFirst({ where: { name: 'Main Hall' } });
+    sideHall = await db.room.findFirst({ where: { name: 'Side Hall' } });
+  }, 30000);
+
+  afterAll(async () => {
+    if (resultId) {
+      await db.result.delete({ where: { id: resultId } });
+    }
+    await db.device.deleteMany({ where: { name: { startsWith: PREFIX } } });
+    await deleteSetupUsers(db, SUFFIX);
+    await app.close();
+  }, 30000);
+
+  describe('POST /device', () => {
+    it('registers a station in a room', async () => {
+      const res = await asOrganizer(request(server()).post('/device'))
+        .send(device())
+        .expect(201);
+
+      expect(res.body).toMatchObject({
+        id: expect.any(String),
+        name: `${PREFIX}station-a`,
+        espId: 98001,
+        type: DeviceType.STATION,
+        hwVersion: HardwareVersion.V4,
+        room: { id: mainHall.id, name: 'Main Hall' },
+        count: 0,
+      });
+      stationId = res.body.id;
+      // The API does not return the sign key; it is stored for the stations
+      expect(
+        await db.device.findUnique({
+          where: { id: stationId },
+          omit: { signKey: false },
+        }),
+      ).toMatchObject({ roomId: mainHall.id, signKey: 98101 });
+    });
+
+    it('registers an attendance device in another room', async () => {
+      await asOrganizer(request(server()).post('/device'))
+        .send(
+          device({
+            name: `${PREFIX}attendance-b`,
+            espId: 98002,
+            signKey: 98102,
+            roomId: sideHall.id,
+            type: DeviceType.ATTENDANCE_SCRAMBLER,
+          }),
+        )
+        .expect(201);
+    });
+
+    it('rejects a duplicate ESP id with 409', async () => {
+      await asOrganizer(request(server()).post('/device'))
+        .send(device({ name: `${PREFIX}station-dup`, signKey: 98199 }))
+        .expect(409);
+      expect(
+        await db.device.count({ where: { name: `${PREFIX}station-dup` } }),
+      ).toBe(0);
+    });
+
+    it.each([
+      ['an unknown type', { type: 'TIMER' }],
+      ['an unknown hardware version', { hwVersion: 'V9' }],
+      ['a non-integer ESP id', { espId: 'abc' }],
+      ['an empty name', { name: '' }],
+    ])('rejects %s', async (_, overrides) => {
+      await asOrganizer(request(server()).post('/device'))
+        .send(device({ name: `${PREFIX}invalid`, espId: 98003, ...overrides }))
+        .expect(400);
+    });
+
+    it('rejects an unknown room', async () => {
+      await asOrganizer(request(server()).post('/device'))
+        .send(
+          device({ name: `${PREFIX}nowhere`, espId: 98004, roomId: FAKE_ID }),
+        )
+        .expect(404);
+    });
+  });
+
+  describe('GET /device', () => {
+    it('filters by room', async () => {
+      const res = await asOrganizer(
+        request(server()).get(`/device?roomId=${sideHall.id}`),
+      ).expect(200);
+
+      const names = res.body.map((d: { name: string }) => d.name);
+      expect(names).toContain(`${PREFIX}attendance-b`);
+      expect(names).not.toContain(`${PREFIX}station-a`);
+      res.body.forEach((d: { roomId: string }) =>
+        expect(d.roomId).toBe(sideHall.id),
+      );
+    });
+
+    it('returns every room for roomId=ALL, sorted by name', async () => {
+      const res = await asOrganizer(
+        request(server()).get('/device?roomId=ALL'),
+      ).expect(200);
+
+      const names = res.body.map((d: { name: string }) => d.name);
+      expect(names).toEqual(
+        expect.arrayContaining([`${PREFIX}attendance-b`, `${PREFIX}station-a`]),
+      );
+      expect([...names].sort()).toEqual(names);
+    });
+
+    it('rejects an unknown type filter', async () => {
+      await asOrganizer(request(server()).get('/device?type=TIMER')).expect(
+        400,
+      );
+    });
+
+    it('counts the attempts entered on each device', async () => {
+      const person = await db.person.findFirst({ where: { registrantId: 7 } });
+      await db.result.deleteMany({
+        where: { personId: person.id, roundId: 'minx-r1' },
+      });
+      const result = await db.result.create({
+        data: { personId: person.id, eventId: 'minx', roundId: 'minx-r1' },
+      });
+      resultId = result.id;
+      await db.attempt.createMany({
+        data: [1, 2, 3].map((attemptNumber) => ({
+          resultId,
+          attemptNumber,
+          value: 6000 + attemptNumber,
+          deviceId: stationId,
+        })),
+      });
+
+      const res = await asOrganizer(
+        request(server()).get(`/device?type=${DeviceType.STATION}`),
+      ).expect(200);
+
+      const station = res.body.find((d: { id: string }) => d.id === stationId);
+      expect(station.count).toBe(3);
+    });
+  });
+
+  describe('PUT /device/:id', () => {
+    it('moves a device to another room and changes its type', async () => {
+      const res = await asOrganizer(
+        request(server()).put(`/device/${stationId}`),
+      )
+        .send(
+          device({
+            roomId: sideHall.id,
+            type: DeviceType.ATTENDANCE_RUNNER,
+            hwVersion: HardwareVersion.V3,
+          }),
+        )
+        .expect(200);
+
+      expect(res.body).toEqual({ message: 'Device updated' });
+      expect(
+        await db.device.findUnique({ where: { id: stationId } }),
+      ).toMatchObject({
+        roomId: sideHall.id,
+        type: DeviceType.ATTENDANCE_RUNNER,
+        hwVersion: HardwareVersion.V3,
+      });
+    });
+
+    it("rejects taking another device's ESP id with 409", async () => {
+      await asOrganizer(request(server()).put(`/device/${stationId}`))
+        .send(device({ espId: 98002 }))
+        .expect(409);
+      expect(
+        (await db.device.findUnique({ where: { id: stationId } })).espId,
+      ).toBe(98001);
+    });
+
+    it('returns 404 for an unknown device', async () => {
+      await asOrganizer(request(server()).put(`/device/${FAKE_ID}`))
+        .send(device({ name: `${PREFIX}ghost`, espId: 98005 }))
+        .expect(404);
+    });
+  });
+
+  describe('retiring a device', () => {
+    it('retires a device with recorded attempts instead of deleting it', async () => {
+      await asOrganizer(
+        request(server()).delete(`/device/${stationId}`),
+      ).expect(204);
+
+      expect(
+        await db.device.findUnique({ where: { id: stationId } }),
+      ).toMatchObject({ retiredAt: expect.any(Date) });
+      expect(
+        await db.attempt.count({
+          where: { resultId, deviceId: stationId },
+        }),
+      ).toBe(3);
+    });
+
+    it('lists it only among retired devices', async () => {
+      const active = await asOrganizer(request(server()).get('/device')).expect(
+        200,
+      );
+      const retired = await asOrganizer(
+        request(server()).get('/device/retired'),
+      ).expect(200);
+
+      expect(active.body.map((d: { id: string }) => d.id)).not.toContain(
+        stationId,
+      );
+      expect(retired.body).toContainEqual(
+        expect.objectContaining({ id: stationId, count: 3 }),
+      );
+    });
+
+    it('restores it', async () => {
+      await asOrganizer(
+        request(server()).post(`/device/${stationId}/restore`),
+      ).expect(200);
+
+      expect(
+        await db.device.findUnique({ where: { id: stationId } }),
+      ).toMatchObject({ retiredAt: null });
+    });
+  });
+
+  describe('POST /device/:id/reconnect', () => {
+    it('stores the new sign key of a reset device on its existing row', async () => {
+      await app.get(DeviceService).requestToConnect({
+        espId: 98001,
+        signKey: 98777,
+        type: 'STATION' as never,
+        hw: 'V4',
+      });
+      expect(app.get(AppGateway).getDeviceRequest(98001)).toMatchObject({
+        existingDevice: { id: stationId },
+      });
+
+      await asOrganizer(
+        request(server()).post(`/device/${stationId}/reconnect`),
+      ).expect(200);
+
+      expect(
+        await db.device.findUnique({
+          where: { id: stationId },
+          omit: { signKey: false },
+        }),
+      ).toMatchObject({ signKey: 98777, retiredAt: null });
+      expect(app.get(AppGateway).getDeviceRequest(98001)).toBeUndefined();
+      expect(await db.attempt.count({ where: { deviceId: stationId } })).toBe(
+        3,
+      );
+    });
+
+    it('returns 404 when the device has not asked to connect', async () => {
+      await asOrganizer(
+        request(server()).post(`/device/${stationId}/reconnect`),
+      ).expect(404);
+    });
+  });
+
+  describe('DELETE /device/:id', () => {
+    it('deletes a device', async () => {
+      const created = await db.device.create({
+        data: {
+          name: `${PREFIX}to-delete`,
+          espId: 98006,
+          type: DeviceType.STATION,
+          roomId: mainHall.id,
+        },
+      });
+
+      await asOrganizer(
+        request(server()).delete(`/device/${created.id}`),
+      ).expect(204);
+
+      expect(
+        await db.device.findUnique({ where: { id: created.id } }),
+      ).toBeNull();
+    });
+
+    it('returns 404 for an unknown device', async () => {
+      await asOrganizer(request(server()).delete(`/device/${FAKE_ID}`)).expect(
+        404,
+      );
+    });
+  });
+
+  describe('POST /device/upload-firmware', () => {
+    it('accepts a firmware file from an admin', async () => {
+      await request(server())
+        .post('/device/upload-firmware')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ fileName: 'station-v4.bin', fileData: 'AAECAw==' })
+        .expect(200);
+    });
+
+    it.each([
+      ['a path in the file name', '../station.bin'],
+      ['a non-.bin file', 'station.exe'],
+    ])('rejects %s', async (_, fileName) => {
+      await request(server())
+        .post('/device/upload-firmware')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ fileName, fileData: 'AAECAw==' })
+        .expect(400);
+    });
+  });
+});

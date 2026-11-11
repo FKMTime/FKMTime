@@ -1,0 +1,294 @@
+import { screen, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { createStore, Provider } from "jotai";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
+import { competitionAtom } from "@/lib/atoms";
+import { dnfAttempts, getExtrasContext } from "@/lib/attempt";
+import {
+    Attempt,
+    AttemptStatus,
+    AttemptType,
+    Competition,
+    SendingResultsFrequency,
+} from "@/lib/interfaces";
+import { clearQueryCache } from "@/lib/queryCache";
+import { renderWithQueryClient } from "@/test/queryClient";
+
+import DnfAttemptsModal from "./DnfAttemptsModal";
+
+vi.mock("@/lib/attempt", () => {
+    const mocks = {
+        getExtrasContext: vi.fn(),
+        dnfAttempts: vi.fn(),
+    };
+    return {
+        ...mocks,
+        extrasContextQuery: (id: string) => ({
+            key: `attempt/give-extras-for-all/${id}`,
+            fetch: () => mocks.getExtrasContext(id),
+        }),
+    };
+});
+vi.mock("@/Components/QuickActions", () => ({
+    default: () => null,
+}));
+vi.mock("@/hooks/useToast", () => ({
+    useToast: () => ({ toast: vi.fn() }),
+}));
+
+const attempt = (id: string, attemptNumber: number, penalty = 0) =>
+    ({
+        id,
+        attemptNumber,
+        type: AttemptType.STANDARD_ATTEMPT,
+        status: AttemptStatus.STANDARD,
+        replacedBy: null,
+        penalty,
+        value: 1234,
+    }) as unknown as Attempt;
+
+const firstRound = {
+    id: "result-1",
+    roundId: "333-r1",
+    attempts: [attempt("a1", 1), attempt("a2", 2, -1), attempt("a3", 3)],
+};
+const secondRound = {
+    id: "result-2",
+    roundId: "333-r2",
+    attempts: [attempt("b1", 1, 2)],
+};
+
+const renderModal = (
+    results = [firstRound],
+    frequency = SendingResultsFrequency.AFTER_SOLVE
+) => {
+    const store = createStore();
+    store.set(competitionAtom, {
+        sendingResultsFrequency: frequency,
+        wcif: {
+            events: [
+                {
+                    id: "333",
+                    rounds: [
+                        { id: "333-r1", format: "a" },
+                        { id: "333-r2", format: "a" },
+                    ],
+                },
+            ],
+        },
+    } as unknown as Competition);
+    const onDone = vi.fn();
+    renderWithQueryClient(
+        <Provider store={store}>
+            <DnfAttemptsModal
+                isOpen
+                onClose={vi.fn()}
+                onDone={onDone}
+                personName="Anna Example"
+                results={results}
+            />
+        </Provider>
+    );
+    return onDone;
+};
+
+beforeEach(() => clearQueryCache());
+
+describe("DnfAttemptsModal", () => {
+    beforeEach(() => {
+        vi.mocked(dnfAttempts).mockReset();
+        vi.mocked(dnfAttempts).mockResolvedValue({ status: 200 });
+        vi.mocked(getExtrasContext).mockResolvedValue({
+            hasNextGroup: false,
+            nextRoundStarted: false,
+            grant: null,
+        });
+    });
+
+    it("ticks every attempt that is not already DNF", async () => {
+        const onDone = renderModal();
+
+        expect(screen.getAllByRole("checkbox", { checked: true })).toHaveLength(
+            2
+        );
+        expect(
+            screen.getByText(/These 2 attempts count as DNF for Anna Example/)
+        ).toBeTruthy();
+
+        await userEvent.click(
+            screen.getByRole("button", { name: "Set to DNF" })
+        );
+        await waitFor(() => expect(onDone).toHaveBeenCalled());
+        expect(dnfAttempts).toHaveBeenCalledWith({
+            attemptIds: ["a1", "a3"],
+            removeLaterRounds: false,
+            comment: "",
+        });
+    });
+
+    it("only sets the ticked attempts", async () => {
+        renderModal();
+
+        await userEvent.click(
+            screen.getByRole("checkbox", { name: /Attempt 1/ })
+        );
+        await userEvent.click(
+            screen.getByRole("button", { name: "Set to DNF" })
+        );
+
+        expect(dnfAttempts).toHaveBeenCalledWith(
+            expect.objectContaining({ attemptIds: ["a3"] })
+        );
+    });
+
+    it("covers every round of an event", async () => {
+        renderModal([firstRound, secondRound]);
+        // Round 1 left with only DNF would remove round 2 (Regulation 9t)
+        await userEvent.click(
+            screen.getByRole("checkbox", { name: /Remove results in later/ })
+        );
+
+        expect(screen.getByText(/R1$/, { selector: "legend" })).toBeTruthy();
+        expect(screen.getByText(/R2$/, { selector: "legend" })).toBeTruthy();
+        await userEvent.click(
+            screen.getByRole("button", { name: "Set to DNF" })
+        );
+
+        expect(dnfAttempts).toHaveBeenCalledWith(
+            expect.objectContaining({ attemptIds: ["a1", "a3", "b1"] })
+        );
+        expect(getExtrasContext).toHaveBeenCalledWith("result-2");
+    });
+
+    it("disqualifies from the last round when ticked", async () => {
+        renderModal([firstRound, secondRound]);
+
+        // Unticking can reveal more rounds, so until nothing is ticked
+        while (screen.queryAllByRole("checkbox", { checked: true }).length) {
+            await userEvent.click(
+                screen.getAllByRole("checkbox", { checked: true })[0]
+            );
+        }
+        expect(
+            screen.getByRole("button", { name: "Set to DNF" })
+        ).toHaveProperty("disabled", true);
+        await userEvent.click(
+            screen.getByRole("checkbox", {
+                name: /DNF all remaining attempts in .*R2/,
+            })
+        );
+        expect(screen.getByText(/is disqualified from the round/)).toBeTruthy();
+        await userEvent.click(
+            screen.getByRole("button", { name: "Set to DNF" })
+        );
+
+        expect(dnfAttempts).toHaveBeenCalledWith({
+            attemptIds: [],
+            remainingInResultId: "result-2",
+            removeLaterRounds: false,
+            comment: "",
+        });
+    });
+
+    it("leaves the remaining attempts alone by default", async () => {
+        renderModal();
+
+        await userEvent.click(
+            screen.getByRole("button", { name: "Set to DNF" })
+        );
+
+        expect(dnfAttempts).toHaveBeenCalledWith(
+            expect.objectContaining({ remainingInResultId: undefined })
+        );
+    });
+
+    describe("removing later rounds (Regulation 9t)", () => {
+        it("is ticked when the round is left with only DNF", async () => {
+            renderModal([firstRound, secondRound]);
+
+            expect(
+                screen.getByRole("checkbox", {
+                    name: /Remove results in later rounds .*R2/,
+                })
+            ).toHaveProperty("ariaChecked", "true");
+            expect(screen.getByText(/can't advance/)).toBeTruthy();
+            // Round 2 goes whole, so its attempts aren't offered
+            expect(
+                screen.queryByText(/R2$/, { selector: "legend" })
+            ).toBeNull();
+            await userEvent.click(
+                screen.getByRole("button", { name: "Set to DNF" })
+            );
+
+            expect(dnfAttempts).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    attemptIds: ["a1", "a3"],
+                    removeLaterRounds: true,
+                })
+            );
+        });
+
+        it("is left to the delegate when a time still counts", async () => {
+            renderModal([firstRound, secondRound]);
+
+            await userEvent.click(
+                screen.getByRole("checkbox", { name: /Attempt 3/ })
+            );
+
+            expect(
+                screen.getByRole("checkbox", {
+                    name: /Remove results in later rounds/,
+                })
+            ).toHaveProperty("ariaChecked", "false");
+            expect(
+                screen.getByText(/would no longer have advanced/)
+            ).toBeTruthy();
+        });
+
+        it("isn't offered without later rounds", () => {
+            renderModal();
+
+            expect(
+                screen.queryByRole("checkbox", {
+                    name: /Remove results in later rounds/,
+                })
+            ).toBeNull();
+        });
+    });
+
+    it("warns when the next round has started", async () => {
+        vi.mocked(getExtrasContext).mockResolvedValue({
+            hasNextGroup: false,
+            nextRoundStarted: true,
+            grant: null,
+        });
+        renderModal();
+
+        expect(
+            await screen.findByText(/The next round has started/)
+        ).toBeTruthy();
+    });
+
+    it("says nothing about WCA Live on a competition that never sends", () => {
+        renderModal([firstRound], SendingResultsFrequency.NEVER);
+
+        expect(screen.queryByText(/sent to WCA Live/)).toBeNull();
+    });
+
+    it("shows what went wrong", async () => {
+        vi.mocked(dnfAttempts).mockResolvedValue({
+            status: 409,
+            message: "Resolve the open incident first",
+        });
+        renderModal();
+
+        await userEvent.click(
+            screen.getByRole("button", { name: "Set to DNF" })
+        );
+
+        expect(
+            await screen.findByText("Resolve the open incident first")
+        ).toBeTruthy();
+    });
+});

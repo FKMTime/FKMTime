@@ -16,7 +16,7 @@ describe('EventsController (e2e)', () => {
   }, 30000);
 
   afterAll(async () => {
-    await db.unofficialEvent.deleteMany({ where: { eventId: 'fto' } });
+    await db.unofficialEvent.deleteMany({ where: { eventId: 'mirror' } });
     await app.close();
   }, 30000);
 
@@ -34,10 +34,10 @@ describe('EventsController (e2e)', () => {
         .post('/events')
         .set('Authorization', `Bearer ${adminToken}`)
         .send({
-          eventId: 'fto',
+          eventId: 'mirror',
           rounds: [
             {
-              id: 'fto-r1',
+              id: 'mirror-r1',
               timeLimit: {
                 centiseconds: 60000,
                 cumulativeRoundIds: [],
@@ -72,10 +72,10 @@ describe('EventsController (e2e)', () => {
       .set('Authorization', `Bearer ${adminToken}`)
       .send({
         wcif: {
-          id: 'fto',
+          id: 'mirror',
           rounds: [
             {
-              id: 'fto-r1',
+              id: 'mirror-r1',
               timeLimit: {
                 centiseconds: 60000,
                 cumulativeRoundIds: [],

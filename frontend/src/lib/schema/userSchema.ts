@@ -1,23 +1,25 @@
 import { z } from "zod";
 
-export const createFKMUserSchema = z.object({
-    username: z.string().min(2).max(50).default(""),
-    fullName: z.string().min(2).max(50).default(""),
-    password: z.string().min(6).max(50).default(""),
+import { limitedText, requiredText } from "./fields";
+
+export const createFKMTimeUserSchema = z.object({
+    username: limitedText("Username", 2, 50),
+    fullName: limitedText("Full name", 2, 50),
+    password: limitedText("Password", 6, 50),
     roles: z.array(z.string()).default([]),
 });
 
 export const createWCAUserSchema = z.object({
-    wcaId: z.string().min(2).max(50).default(""),
+    wcaId: requiredText("Please select a person"),
     roles: z.array(z.string()).default([]),
 });
 
 export const editUserSchema = z.object({
-    username: z.string().min(2).max(50).default("").optional(),
-    fullName: z.string().min(2).max(50).default("").optional(),
+    username: limitedText("Username", 2, 50).default("").optional(),
+    fullName: limitedText("Full name", 2, 50).default("").optional(),
     roles: z.array(z.string()).default([]),
 });
 
 export const editUserPasswordSchema = z.object({
-    password: z.string().min(6).max(50),
+    password: limitedText("Password", 6, 50),
 });

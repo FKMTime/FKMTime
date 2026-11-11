@@ -4,6 +4,16 @@ import {
     Event as WCIFEvent,
 } from "wcif-helpers";
 
+export interface UserInfo {
+    id?: string;
+    username: string;
+    fullName?: string;
+    roles: UserRole[];
+    wcaUserId?: number;
+    wcaAccessToken?: string;
+    avatarUrl?: string;
+}
+
 export interface PublicUser {
     id: string;
     fullName?: string;
@@ -18,7 +28,6 @@ export interface User extends PublicUser {
     updatedAt: Date;
 }
 
-//eslint-disable-next-line
 export enum UserRole {
     ADMIN = "ADMIN",
     DELEGATE = "DELEGATE",
@@ -54,9 +63,9 @@ export interface Competition extends CompetitionDataForLoginPage {
     fkmToken: number;
     secureRfid: boolean;
     soundEnabled: boolean;
+    buzzerVolume: number | null;
 }
 
-//eslint-disable-next-line
 export enum SendingResultsFrequency {
     AFTER_SOLVE = "AFTER_SOLVE",
     EVERY_5_MINUTES = "EVERY_5_MINUTES",
@@ -116,9 +125,18 @@ export interface CompetitionStatistics {
     suspiciousAverages: SuspiciousAverage[];
     byEventStats: EventStatistics[];
     byRoundStats: RoundStatisticsByDay[];
+    byRoundAttemptStats: RoundAttemptStatistics[];
     attemptsByDevice: DeviceStatistics[];
     scorecardsCount: number;
     personsCompeted: number;
+}
+
+export interface RoundAttemptStatistics {
+    roundId: string;
+    solves: number;
+    manual: number;
+    extras: number;
+    dnf: number;
 }
 
 export interface EventStatistics {
@@ -163,11 +181,17 @@ export interface StaffActivity {
     status: StaffActivityStatus;
     comment?: string;
     isAssigned: boolean;
+    /** Left before the group ended; only when present or late */
+    leftEarly: boolean;
+    /** Not coming for the rest of the day; only when absent */
+    noShow: boolean;
+    /** Who did the job instead; only when replaced or absent */
+    replacedById?: string | null;
+    replacedBy?: Pick<Person, "id" | "name"> | null;
     createdAt: Date;
     updatedAt: Date;
 }
 
-//eslint-disable-next-line
 export enum StaffActivityStatus {
     PRESENT = "PRESENT",
     ABSENT = "ABSENT",
@@ -187,17 +211,16 @@ export interface Result {
     doubleCheckedBy?: PublicUser;
     person: Person;
     attempts: Attempt[];
+    /** Removed under Regulation 9t: kept, but counts nowhere */
+    removedAt?: Date | null;
+    removedBy?: PublicUser | null;
+    removedReason?: string | null;
+    /** The result whose DNF ruling removed this one */
+    removedByRulingOf?: { id: string; roundId: string } | null;
 }
 
 export interface ResultToDoubleCheck extends Result {
     combinedName: string;
-}
-
-export interface ResultWithAverage extends Result {
-    average: number;
-    best: number;
-    averageString: string;
-    bestString: string;
 }
 
 export interface StaffingWarning {
@@ -216,6 +239,9 @@ export interface Attempt {
     attemptNumber: number;
     comment?: string;
     replacedBy?: number | null;
+    /** What a set-aside grant had, so it can be used again */
+    replacedByInGrant?: number | null;
+    statusInGrant?: AttemptStatus | null;
     penalty: number;
     status: AttemptStatus;
     type: AttemptType;
@@ -235,20 +261,27 @@ export interface Attempt {
     staffingWarnings?: StaffingWarning[];
 }
 
+/** An attempt as the home page lists it, with its competitor */
+export interface RecentAttempt extends Attempt {
+    result: {
+        id: string;
+        person: { id: string; name: string };
+    };
+}
+
 export interface AttemptToEnterWithScorecard extends Attempt {
     isNew?: boolean;
 }
 
-//eslint-disable-next-line
 export enum AttemptStatus {
     STANDARD = "STANDARD",
     UNRESOLVED = "UNRESOLVED",
     RESOLVED = "RESOLVED",
     EXTRA_GIVEN = "EXTRA_GIVEN",
     SCRAMBLED = "SCRAMBLED",
+    VOIDED = "VOIDED",
 }
 
-//eslint-disable-next-line
 export enum AttemptType {
     STANDARD_ATTEMPT = "STANDARD_ATTEMPT",
     EXTRA_ATTEMPT = "EXTRA_ATTEMPT",
@@ -259,7 +292,6 @@ export interface Incident extends Attempt {
     updateReplacedBy?: boolean;
 }
 
-//eslint-disable-next-line
 export enum IncidentAction {
     "RESOLVED" = "RESOLVED",
     "EXTRA_GIVEN" = "EXTRA_GIVEN",
@@ -294,6 +326,13 @@ export interface ManualIncident extends ManualIncidentData {
     createdBy: User;
 }
 
+/** Everything incident-related for one person, as competitor or judge */
+export interface PersonIncidents {
+    attempts: Incident[];
+    manual: ManualIncident[];
+    noteworthy: NoteworthyIncident[];
+}
+
 export interface WarningData {
     description: string;
 }
@@ -309,20 +348,21 @@ export interface Warning extends WarningData {
 export interface Device extends DeviceData {
     id: string;
     batteryPercentage?: number;
+    firmwareVersion?: string | null;
     count?: number;
+    /** Set when the device was deleted while its solves still point to it */
+    retiredAt?: string | null;
     createdAt: Date;
     updatedAt: Date;
     hwVersion: HardwareVersion;
 }
 
-//eslint-disable-next-line
 export enum DeviceType {
     STATION = "STATION",
     ATTENDANCE_SCRAMBLER = "ATTENDANCE_SCRAMBLER",
     ATTENDANCE_RUNNER = "ATTENDANCE_RUNNER",
 }
 
-//eslint-disable-next-line
 export enum HardwareVersion {
     V3 = "V3",
     V4 = "V4",
@@ -342,9 +382,10 @@ export interface AvailableDevice {
     signKey: number;
     type: AvailableDeviceType;
     hw: string;
+    /** Set when a device already in the database asks to connect again */
+    existingDevice?: { id: string; name: string };
 }
 
-//eslint-disable-next-line
 export enum AvailableDeviceType {
     STATION = "STATION",
     STAFF_ATTENDANCE = "STAFF_ATTENDANCE",
@@ -384,6 +425,8 @@ export interface WCACompetition {
     country_iso2: string;
     registration_open: string;
     start_date: string;
+    end_date: string;
+    city: string;
 }
 
 export interface Event {
@@ -392,6 +435,7 @@ export interface Event {
     shortName?: string;
     icon: string;
     useInspection?: boolean;
+    maxPenalty?: number;
     isUnofficial?: boolean;
     usualScramblesCount?: number;
     usualExtraScramblesCount?: number;
@@ -465,6 +509,8 @@ export interface DecryptedScramble {
 export interface ScrambleData {
     num: number;
     isExtra: boolean;
+    /** What to show and scramble, when it differs from the attempt to sign */
+    scramble?: { num: number; isExtra: boolean };
 }
 
 export interface ImportedScrambleSet {
@@ -514,6 +560,10 @@ export interface MissedAssignments {
     lateAssignments: StaffActivity[];
     presentButReplacedAssignments: StaffActivity[];
     presentButReplacedAssignmentsCount: number;
+    leftEarlyAssignments: StaffActivity[];
+    leftEarlyAssignmentsCount: number;
+    noShowAssignments: StaffActivity[];
+    noShowAssignmentsCount: number;
     comments: StaffActivity[];
     commentsCount: number;
 }

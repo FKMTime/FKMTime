@@ -96,6 +96,82 @@ export class IncidentService {
     });
   }
 
+  /**
+   * Everything incident-related for one person: device incidents on their own
+   * attempts and on attempts they judged, manual incidents about them, and
+   * noteworthy incidents saved from either kind of attempt.
+   */
+  async getIncidentsForPerson(personId: string) {
+    const personAttempt = {
+      OR: [{ result: { personId } }, { judgeId: personId }],
+    };
+    const [attempts, manual, noteworthy] = await Promise.all([
+      this.prisma.attempt.findMany({
+        where: {
+          ...personAttempt,
+          status: {
+            in: [
+              AttemptStatus.UNRESOLVED,
+              AttemptStatus.RESOLVED,
+              AttemptStatus.EXTRA_GIVEN,
+            ],
+          },
+        },
+        orderBy: { solvedAt: 'desc' },
+        include: {
+          judge: publicPersonSelect,
+          updatedBy: {
+            select: {
+              id: true,
+              fullName: true,
+            },
+          },
+          device: true,
+          result: {
+            include: {
+              person: publicPersonSelect,
+            },
+          },
+        },
+      }),
+      this.prisma.manualIncident.findMany({
+        where: { personId },
+        orderBy: { createdAt: 'desc' },
+        include: {
+          person: publicPersonSelect,
+          createdBy: {
+            select: {
+              id: true,
+              fullName: true,
+            },
+          },
+        },
+      }),
+      this.prisma.noteworthyIncident.findMany({
+        where: { attempt: personAttempt },
+        orderBy: { createdAt: 'desc' },
+        include: {
+          attempt: {
+            include: {
+              result: {
+                include: {
+                  person: publicPersonSelect,
+                },
+              },
+            },
+          },
+          createdBy: {
+            select: {
+              id: true,
+              fullName: true,
+            },
+          },
+        },
+      }),
+    ]);
+    return { attempts, manual, noteworthy };
+  }
+
   async getResolvedIncidents(search?: string) {
     const whereParams = {};
     if (search) {

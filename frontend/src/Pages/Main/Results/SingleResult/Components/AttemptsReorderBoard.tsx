@@ -48,7 +48,7 @@ interface SortableCardProps {
     isOver: boolean;
     draggedExtraNumber: number | null;
     onClearReplacement: (attempt: Attempt) => void;
-    cardRef?: React.RefObject<HTMLDivElement>;
+    onCardNode: (id: string, node: HTMLDivElement | null) => void;
 }
 
 const SortableAttemptCard = ({
@@ -56,7 +56,7 @@ const SortableAttemptCard = ({
     isOver,
     draggedExtraNumber,
     onClearReplacement,
-    cardRef,
+    onCardNode,
 }: SortableCardProps) => {
     const {
         attributes,
@@ -74,10 +74,7 @@ const SortableAttemptCard = ({
         <div
             ref={(node) => {
                 setNodeRef(node);
-                if (cardRef)
-                    (
-                        cardRef as React.MutableRefObject<HTMLDivElement | null>
-                    ).current = node;
+                onCardNode(attempt.id, node);
             }}
             style={style}
             className={[
@@ -131,14 +128,14 @@ const SortableAttemptCard = ({
 interface ExtraCardProps {
     attempt: Attempt;
     isActive: boolean;
-    cardRef?: React.RefObject<HTMLDivElement>;
+    onCardNode: (id: string, node: HTMLDivElement | null) => void;
     onClearReplacement: (attempt: Attempt) => void;
 }
 
 const ExtraAttemptCard = ({
     attempt,
     isActive,
-    cardRef,
+    onCardNode,
     onClearReplacement,
 }: ExtraCardProps) => {
     const { attributes, listeners, setNodeRef, isDragging } = useSortable({
@@ -152,10 +149,7 @@ const ExtraAttemptCard = ({
         <div
             ref={(node) => {
                 setNodeRef(node);
-                if (cardRef)
-                    (
-                        cardRef as React.MutableRefObject<HTMLDivElement | null>
-                    ).current = node;
+                onCardNode(attempt.id, node);
             }}
             className={[
                 cardBase,
@@ -206,11 +200,11 @@ interface Arrow {
 
 interface ArrowLayerProps {
     arrows: Arrow[];
-    cardRefs: Map<string, React.RefObject<HTMLDivElement>>;
-    containerRef: React.RefObject<HTMLDivElement>;
+    cardNodes: React.MutableRefObject<Map<string, HTMLDivElement>>;
+    containerRef: React.RefObject<HTMLDivElement | null>;
 }
 
-const ArrowLayer = ({ arrows, cardRefs, containerRef }: ArrowLayerProps) => {
+const ArrowLayer = ({ arrows, cardNodes, containerRef }: ArrowLayerProps) => {
     const [paths, setPaths] = useState<{ d: string; key: string }[]>([]);
 
     const measure = useCallback(() => {
@@ -219,12 +213,12 @@ const ArrowLayer = ({ arrows, cardRefs, containerRef }: ArrowLayerProps) => {
         const newPaths: { d: string; key: string }[] = [];
 
         for (const arrow of arrows) {
-            const fromRef = cardRefs.get(arrow.fromId);
-            const toRef = cardRefs.get(arrow.toId);
-            if (!fromRef?.current || !toRef?.current) continue;
+            const fromNode = cardNodes.current.get(arrow.fromId);
+            const toNode = cardNodes.current.get(arrow.toId);
+            if (!fromNode || !toNode) continue;
 
-            const from = fromRef.current.getBoundingClientRect();
-            const to = toRef.current.getBoundingClientRect();
+            const from = fromNode.getBoundingClientRect();
+            const to = toNode.getBoundingClientRect();
 
             let d: string;
             if (arrow.fromType === "extra") {
@@ -262,7 +256,7 @@ const ArrowLayer = ({ arrows, cardRefs, containerRef }: ArrowLayerProps) => {
             }
             return newPaths;
         });
-    }, [arrows, cardRefs, containerRef]);
+    }, [arrows, cardNodes, containerRef]);
 
     useLayoutEffect(() => {
         measure();
@@ -317,24 +311,24 @@ const AttemptsReorderBoard = ({
 }: AttemptsReorderBoardProps) => {
     const { toast } = useToast();
     const [standard, setStandard] = useState<Attempt[]>(initialStandard);
+    const [loadedStandard, setLoadedStandard] = useState(initialStandard);
+    if (initialStandard !== loadedStandard) {
+        setLoadedStandard(initialStandard);
+        setStandard(initialStandard);
+    }
     const [activeId, setActiveId] = useState<string | null>(null);
     const [overId, setOverId] = useState<string | null>(null);
     const containerRef = useRef<HTMLDivElement>(null);
 
     // refs for SVG arrows
-    const cardRefs = useRef(new Map<string, React.RefObject<HTMLDivElement>>());
-    const getCardRef = (id: string) => {
-        if (!cardRefs.current.has(id)) {
-            cardRefs.current.set(id, {
-                current: null,
-            } as React.RefObject<HTMLDivElement>);
-        }
-        return cardRefs.current.get(id)!;
-    };
-
-    useEffect(() => {
-        setStandard(initialStandard);
-    }, [initialStandard]);
+    const cardNodes = useRef(new Map<string, HTMLDivElement>());
+    const handleCardNode = useCallback(
+        (id: string, node: HTMLDivElement | null) => {
+            if (node) cardNodes.current.set(id, node);
+            else cardNodes.current.delete(id);
+        },
+        []
+    );
 
     const sensors = useSensors(
         useSensor(PointerSensor, { activationConstraint: { distance: 5 } })
@@ -427,6 +421,7 @@ const AttemptsReorderBoard = ({
                 variant: "destructive",
             });
         } else {
+            toast({ title: "Replacement cleared", variant: "success" });
             fetchData();
         }
     };
@@ -480,7 +475,7 @@ const AttemptsReorderBoard = ({
                                 }
                                 draggedExtraNumber={draggedExtraNumber}
                                 onClearReplacement={handleClearReplacement}
-                                cardRef={getCardRef(attempt.id)}
+                                onCardNode={handleCardNode}
                             />
                         ))}
                     </SortableContext>
@@ -504,7 +499,7 @@ const AttemptsReorderBoard = ({
                                     key={attempt.id}
                                     attempt={attempt}
                                     isActive={activeId === attempt.id}
-                                    cardRef={getCardRef(attempt.id)}
+                                    onCardNode={handleCardNode}
                                     onClearReplacement={handleClearReplacement}
                                 />
                             ))}
@@ -515,7 +510,7 @@ const AttemptsReorderBoard = ({
                 {/* SVG connection arrows */}
                 <ArrowLayer
                     arrows={arrows}
-                    cardRefs={cardRefs.current}
+                    cardNodes={cardNodes}
                     containerRef={containerRef}
                 />
             </div>

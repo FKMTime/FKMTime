@@ -3,8 +3,13 @@ import { AttemptStatus, DeviceType } from '@prisma/client';
 import { DNS_VALUE } from 'src/constants';
 import { DbService } from 'src/db/db.service';
 import { getEventShortName } from 'src/events';
+import { isSameDay } from 'src/wcif-helpers';
 import { Activity, Room as WCIFRoom, Venue } from 'wcif-helpers';
 import { getActivityInfoFromSchedule, getCompetitionDates } from 'wcif-helpers';
+
+import { getRoundAttemptStats } from './roundAttemptStats';
+
+const NOT_SOLVES = [AttemptStatus.SCRAMBLED, AttemptStatus.VOIDED];
 
 export class StatisticsService {
   constructor(
@@ -17,18 +22,14 @@ export class StatisticsService {
     const wcif = JSON.parse(JSON.stringify(competition.wcif));
     const allAttempts = await this.prisma.attempt.count({
       where: {
-        status: {
-          not: AttemptStatus.SCRAMBLED,
-        },
+        status: { notIn: NOT_SOLVES },
       },
     });
     const attemptsEnteredManually = await this.prisma.attempt.count({
       where: {
         AND: [
           {
-            status: {
-              not: AttemptStatus.SCRAMBLED,
-            },
+            status: { notIn: NOT_SOLVES },
           },
           {
             sessionId: null,
@@ -113,10 +114,21 @@ export class StatisticsService {
         status: AttemptStatus.STANDARD,
       },
     });
+    const byRoundAttemptStats = getRoundAttemptStats(
+      await this.prisma.attempt.findMany({
+        select: {
+          status: true,
+          type: true,
+          penalty: true,
+          sessionId: true,
+          result: { select: { roundId: true } },
+        },
+      }),
+    );
     const personsCompeted = await this.prisma.person.count({
       where: {
         results: {
-          some: {},
+          some: { removedAt: null },
         },
       },
     });
@@ -185,7 +197,7 @@ export class StatisticsService {
       wcif.schedule.venues.forEach((venue: Venue) => {
         venue.rooms.forEach((room: WCIFRoom) => {
           room.activities.forEach((activity: Activity) => {
-            if (new Date(activity.startTime).getDay() === day.getDay()) {
+            if (isSameDay(new Date(activity.startTime), day)) {
               activities.push(activity);
             }
           });
@@ -266,7 +278,7 @@ export class StatisticsService {
         person: { select: { name: true } },
         attempts: {
           where: {
-            status: { not: AttemptStatus.SCRAMBLED },
+            status: { notIn: NOT_SOLVES },
             penalty: { not: DNS_VALUE },
             deviceId: { not: null },
             judgeId: { not: null },
@@ -299,6 +311,7 @@ export class StatisticsService {
       allAttempts,
       byEventStats,
       byRoundStats,
+      byRoundAttemptStats,
       attemptsByDevice: devices
         .filter((d) => d.type === DeviceType.STATION)
         .map((device) => ({

@@ -1,78 +1,99 @@
-import { UserCog } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { UserPlus } from "lucide-react";
+import { useState } from "react";
 
-import PlusButton from "@/Components/PlusButton.tsx";
-import { Card, CardContent, CardHeader, CardTitle } from "@/Components/ui/card";
-import { User } from "@/lib/interfaces";
-import { getAllUsers } from "@/lib/user";
-import PageTransition from "@/Pages/PageTransition";
+import RequestError from "@/Components/shared/RequestError";
+import { Button } from "@/Components/ui/button";
+import {
+    Table,
+    TableBody,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from "@/Components/ui/table";
+import { useIsMobile } from "@/hooks/useMobile";
+import { toQueryOptions } from "@/lib/queryCache";
+import { usersQuery } from "@/lib/user";
+import SetupTabs from "@/Pages/Main/Setup/SetupTabs";
 
 import CreateUserModal from "./Components/CreateUser/CreateUserModal";
-import UserCard from "./Components/UserCard";
-import UsersTable from "./Components/UsersTable";
+import UserRow from "./Components/UserRow";
 
 const Users = () => {
-    const [users, setUsers] = useState<User[]>([]);
+    const isMobile = useIsMobile();
+    const queryClient = useQueryClient();
+    const { data, isError, refetch } = useQuery(toQueryOptions(usersQuery));
+    const users = data ?? [];
     const [isOpenCreateUserModal, setIsOpenCreateUserModal] =
         useState<boolean>(false);
 
-    const fetchData = async () => {
-        const data = await getAllUsers();
-        setUsers(data);
-    };
+    const fetchData = () =>
+        queryClient.invalidateQueries({
+            queryKey: toQueryOptions(usersQuery).queryKey,
+        });
+    const retry = () => void refetch();
 
     const handleCloseCreateUserModal = async () => {
         await fetchData();
         setIsOpenCreateUserModal(false);
     };
 
-    useEffect(() => {
-        fetchData();
-    }, []);
-
     return (
-        <PageTransition>
-            <div className="flex flex-col gap-5">
-                <div className="flex md:hidden flex-col gap-3">
-                    <PlusButton
-                        aria-label="Add"
-                        onClick={() => setIsOpenCreateUserModal(true)}
-                    />
+        <>
+            <SetupTabs value="users" />
+            <Button
+                onClick={() => setIsOpenCreateUserModal(true)}
+                variant={isMobile ? "outline" : "default"}
+                size={isMobile ? "lg" : "default"}
+                className="md:ml-auto md:w-fit"
+            >
+                <UserPlus />
+                Create user
+            </Button>
+            {isError && <RequestError hasData={!!data} onRetry={retry} />}
+            {isError && !data ? null : isMobile ? (
+                <ul className="overflow-hidden rounded-mobile-card border bg-card">
                     {users.map((user) => (
-                        <UserCard
+                        <UserRow
                             key={user.id}
                             user={user}
                             fetchData={fetchData}
+                            variant="list"
                         />
                     ))}
-                </div>
-                <div className="hidden md:block">
-                    <Card>
-                        <CardHeader>
-                            <CardTitle className="flex justify-between items-center">
-                                <div className="flex gap-2 items-center">
-                                    <UserCog size={20} />
-                                    Users
-                                </div>
-                                <PlusButton
-                                    aria-label="Add"
-                                    onClick={() =>
-                                        setIsOpenCreateUserModal(true)
-                                    }
+                </ul>
+            ) : (
+                <div className="overflow-hidden rounded-2xl border bg-card">
+                    <Table className="min-w-[640px]">
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead className="pl-5">
+                                    Full name
+                                </TableHead>
+                                <TableHead>Account type</TableHead>
+                                <TableHead>Role</TableHead>
+                                <TableHead>
+                                    <span className="sr-only">Actions</span>
+                                </TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {users.map((user) => (
+                                <UserRow
+                                    key={user.id}
+                                    user={user}
+                                    fetchData={fetchData}
                                 />
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <UsersTable users={users} fetchData={fetchData} />
-                        </CardContent>
-                    </Card>
+                            ))}
+                        </TableBody>
+                    </Table>
                 </div>
-                <CreateUserModal
-                    isOpen={isOpenCreateUserModal}
-                    onClose={handleCloseCreateUserModal}
-                />
-            </div>
-        </PageTransition>
+            )}
+            <CreateUserModal
+                isOpen={isOpenCreateUserModal}
+                onClose={handleCloseCreateUserModal}
+            />
+        </>
     );
 };
 

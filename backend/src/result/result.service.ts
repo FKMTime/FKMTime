@@ -1,7 +1,9 @@
-import { HttpException, Injectable } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import {
+  Attempt,
   AttemptStatus,
   AttemptType,
+  SendingResultsFrequency,
   StaffActivityStatus,
   StaffRole,
 } from '@prisma/client';
@@ -17,7 +19,7 @@ import {
   publicUserSelect,
 } from 'src/constants';
 import { ContestsService } from 'src/contests/contests.service';
-import { DbService } from 'src/db/db.service';
+import { DbService, INCLUDING_REMOVED } from 'src/db/db.service';
 import { isUnofficialEvent } from 'src/events';
 import { PersonService } from 'src/person/person.service';
 import { getMaxAttempts, isCumulativeLimit } from 'src/wcif-helpers';
@@ -31,7 +33,16 @@ import { AttendanceService } from '../attendance/attendance.service';
 import { WcaService } from '../wca/wca.service';
 import { CheckIfAttemptEnteredDto } from './dto/checkIfAttemptEntered.dto';
 import { DoubleCheckDto } from './dto/doubleCheck.dto';
-import { getSortedExtraAttempts, getSortedStandardAttempts } from './helpers';
+import {
+  attemptTimeWithPenalty,
+  getAttemptPosition,
+  getAttemptsToVoid,
+  getAttemptsWaitingForExtra,
+  getCountingAttempts,
+  getNextExtraNumber,
+  getSortedExtraAttempts,
+  getSortedStandardAttempts,
+} from './helpers';
 import { getStaffingWarnings } from './staffingWarnings';
 
 @Injectable()
@@ -108,6 +119,85 @@ export class ResultService {
     });
   }
 
+  /**
+   * Regulation 9t: the competitor would not have reached this round, so the
+   * result is kept but counts nowhere. Restoring brings it back unchanged.
+   */
+  async removeResult(id: string, reason: string | undefined, userId: string) {
+    const result = await this.prisma.result.findUnique({
+      where: { id },
+      include: { attempts: { select: { status: true } } },
+    });
+    if (!result) throw new HttpException('Result not found', 404);
+    if (result.removedAt) {
+      throw new HttpException('This result is already removed', 409);
+    }
+    if (+result.roundId.split('-r')[1] === 1) {
+      throw new HttpException(
+        'A first-round result has no round to advance from',
+        400,
+      );
+    }
+    if (result.attempts.some((a) => a.status === AttemptStatus.UNRESOLVED)) {
+      throw new HttpException('Resolve the open incident first', 409);
+    }
+    await this.prisma.result.update({
+      where: { id },
+      data: {
+        removedAt: new Date(),
+        removedBy: { connect: { id: userId } },
+        removedReason: reason,
+      },
+    });
+    await this.sendScorecardUnlessNever(id);
+    this.appGateway.handleResultEntered(result.roundId);
+    return { message: 'Result removed' };
+  }
+
+  async bringBackResult(id: string) {
+    const result = await this.prisma.result.findUnique({
+      where: { id },
+      include: { removedByRulingOf: { select: { roundId: true } } },
+    });
+    if (!result) throw new HttpException('Result not found', 404);
+    if (!result.removedAt) {
+      throw new HttpException('This result is not removed', 409);
+    }
+    if (result.removedByRulingOf) {
+      throw new HttpException(
+        `Restore the DNF ruling in round ${result.removedByRulingOf.roundId.split('-r')[1]} instead`,
+        409,
+      );
+    }
+    await this.prisma.result.update({
+      where: { id },
+      data: this.notRemoved,
+    });
+    await this.sendScorecardUnlessNever(id);
+    this.appGateway.handleResultEntered(result.roundId);
+    return { message: 'Result brought back' };
+  }
+
+  notRemoved = {
+    removedAt: null,
+    removedBy: { disconnect: true },
+    removedReason: null,
+    removedByRulingOf: { disconnect: true },
+  };
+
+  /** A failed send is logged; the change itself already happened */
+  async sendScorecardUnlessNever(resultId: string) {
+    const competition = await this.prisma.competition.findFirst();
+    if (competition.sendingResultsFrequency === SendingResultsFrequency.NEVER) {
+      return;
+    }
+    try {
+      await this.enterWholeScorecardToWcaLiveOrCubingContests(resultId);
+    } catch (e) {
+      console.error(e);
+    }
+  }
+
   async deleteResultById(id: string) {
     const result = await this.prisma.result.findUnique({
       where: {
@@ -154,10 +244,12 @@ export class ResultService {
     });
   }
 
-  async getAllResultsByPerson(personId: string) {
+  /** Only delegates see results removed under Regulation 9t */
+  async getAllResultsByPerson(personId: string, includeRemoved = false) {
     return this.prisma.result.findMany({
       where: {
         personId: personId,
+        ...(includeRemoved && INCLUDING_REMOVED),
       },
       include: {
         person: publicPersonSelect,
@@ -179,6 +271,8 @@ export class ResultService {
       include: {
         person: publicPersonSelect,
         doubleCheckedBy: publicUserSelect,
+        removedBy: publicUserSelect,
+        removedByRulingOf: { select: { id: true, roundId: true } },
         attempts: {
           include: {
             judge: publicPersonSelect,
@@ -194,20 +288,21 @@ export class ResultService {
         },
       },
     });
+    if (!result) {
+      throw new HttpException('Result not found', HttpStatus.NOT_FOUND);
+    }
 
     const remainingAndUsedCumulativeLimit =
       await this.getRemainingAndUsedCumulativeLimit(id);
 
-    const staffingChecks = result
-      ? await this.getStaffingChecks(result.roundId)
-      : [];
+    const staffingChecks = await this.getStaffingChecks(result.roundId);
     const warningsByAttempt = new Map(
       staffingChecks.map((attempt) => [attempt.id, attempt.staffingWarnings]),
     );
 
     return {
       ...result,
-      attempts: result?.attempts.map((attempt) => ({
+      attempts: result.attempts.map((attempt) => ({
         ...attempt,
         staffingWarnings: warningsByAttempt.get(attempt.id) ?? [],
       })),
@@ -215,7 +310,22 @@ export class ResultService {
     };
   }
 
+  /** Whoever enters an attempt: a removed result takes no more (Regulation 9t) */
   async getResultOrCreate(personId: string, roundId: string) {
+    const result = await this.getResultOrCreateIncludingRemoved(
+      personId,
+      roundId,
+    );
+    if (result.removedAt) {
+      throw new HttpException(
+        'Removed from this round (Regulation 9t)',
+        HttpStatus.CONFLICT,
+      );
+    }
+    return result;
+  }
+
+  async getResultOrCreateIncludingRemoved(personId: string, roundId: string) {
     return this.prisma.result.upsert({
       where: {
         personId_roundId: {
@@ -258,7 +368,9 @@ export class ResultService {
   }
 
   async enterWholeScorecardToWcaLiveOrCubingContests(resultId: string) {
-    const result = await this.getResultById(resultId);
+    const found = await this.getResultById(resultId);
+    // A removed result's times come off the public results
+    const result = found.removedAt ? { ...found, attempts: [] } : found;
     const isUnofficial = isUnofficialEvent(result.eventId);
     const competition = await this.prisma.competition.findFirst();
     if (isUnofficial) {
@@ -307,12 +419,15 @@ export class ResultService {
         roundId: roundId,
       },
     });
+    // A no-show is about the day, so it outlives the restart
     await this.prisma.staffActivity.updateMany({
       where: {
         groupId: groupId,
       },
       data: {
         status: StaffActivityStatus.ABSENT,
+        leftEarly: false,
+        replacedById: null,
       },
     });
     await this.prisma.result.deleteMany({
@@ -343,13 +458,16 @@ export class ResultService {
     );
     const maxAttempts = getMaxAttempts(roundInfo.format);
     const sortedAttempts = getSortedStandardAttempts(attempts);
+    // A result made only of DNS is not a valid result: delete it instead
+    if (!sortedAttempts.some((attempt) => attempt.penalty !== DNS_VALUE)) {
+      throw new HttpException(
+        'Cannot assign DNS to every attempt, delete the result instead',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
     const lastAttempt = sortedAttempts[sortedAttempts.length - 1];
-    if (lastAttempt.attemptNumber === maxAttempts) {
-      return {
-        message: 'No attempts left',
-        status: 400,
-        error: true,
-      };
+    if (lastAttempt.attemptNumber >= maxAttempts) {
+      throw new HttpException('No attempts left', HttpStatus.BAD_REQUEST);
     }
     const now = new Date();
     for (let i = lastAttempt.attemptNumber + 1; i <= maxAttempts; i++) {
@@ -394,13 +512,7 @@ export class ResultService {
     });
 
     const results = allResults.filter((result) => {
-      const submitted = getSortedStandardAttempts(result.attempts).filter(
-        (a) =>
-          a.replacedBy === null &&
-          a.status !== AttemptStatus.UNRESOLVED &&
-          a.status !== AttemptStatus.EXTRA_GIVEN &&
-          a.status !== AttemptStatus.SCRAMBLED,
-      );
+      const submitted = getCountingAttempts(result.attempts);
       if (submitted.length === 0) return false;
       if (result.attempts.some((a) => a.status === AttemptStatus.UNRESOLVED))
         return false;
@@ -416,24 +528,11 @@ export class ResultService {
           (a) =>
             a.penalty !== DNF_VALUE &&
             a.penalty !== DNS_VALUE &&
-            a.value + (a.penalty > 0 ? a.penalty * 100 : 0) <
-              roundInfo.cutoff.resultValue,
+            attemptTimeWithPenalty(a) < roundInfo.cutoff.resultValue,
         )
           ? roundInfo.cutoff.numberOfAttempts
           : maxAttempts;
       return submitted.length >= expectedAttempts;
-    });
-
-    const totalCount = await this.prisma.result.count({
-      where: {
-        roundId: roundId,
-      },
-    });
-    const doubleCheckedCount = await this.prisma.result.count({
-      where: {
-        roundId: roundId,
-        isDoubleChecked: true,
-      },
     });
 
     const checkedResults = await this.prisma.result.findMany({
@@ -441,10 +540,13 @@ export class ResultService {
       select: { id: true, person: publicPersonSelect },
     });
 
+    // Only finished results can be double-checked, so the rest stay out of
+    // the total until they are done
     return {
       results,
-      totalCount,
-      doubleCheckedCount,
+      totalCount: results.length + checkedResults.length,
+      doubleCheckedCount: checkedResults.length,
+      notFinishedCount: allResults.length - results.length,
       checkedResults,
     };
   }
@@ -650,8 +752,7 @@ export class ResultService {
       { attempt: (typeof allValidAttempts)[0]; effectiveTime: number }[]
     >();
     for (const attempt of allValidAttempts) {
-      const t =
-        attempt.value + (attempt.penalty > 0 ? attempt.penalty * 100 : 0);
+      const t = attemptTimeWithPenalty(attempt);
       if (!byResult.has(attempt.resultId)) byResult.set(attempt.resultId, []);
       byResult.get(attempt.resultId).push({ attempt, effectiveTime: t });
     }
@@ -723,13 +824,17 @@ export class ResultService {
         },
       },
     });
+    // An attempt that went through an incident counts once it's resolved
+    const isDone = (attempt: Attempt) =>
+      attempt.status === AttemptStatus.STANDARD ||
+      attempt.status === AttemptStatus.RESOLVED;
     const submittedAttempts = [];
     attempts.forEach((attempt) => {
       if (
         attempt.replacedBy === null &&
         attempt.type === AttemptType.STANDARD_ATTEMPT &&
         !submittedAttempts.some((a) => a.id === attempt.id) &&
-        attempt.status === AttemptStatus.STANDARD
+        isDone(attempt)
       ) {
         submittedAttempts.push(attempt);
       } else if (
@@ -740,7 +845,7 @@ export class ResultService {
         if (
           extraAttempt &&
           !submittedAttempts.some((a) => a.id === extraAttempt.id) &&
-          extraAttempt.status === AttemptStatus.STANDARD
+          isDone(extraAttempt)
         ) {
           submittedAttempts.push(extraAttempt);
         }
@@ -756,14 +861,10 @@ export class ResultService {
   ) {
     if (limit.cumulativeRoundIds.length === 0) return true;
     if (limit.cumulativeRoundIds.length === 1) {
-      let sum = 0;
-      submittedAttempts.forEach((attempt) => {
-        if (attempt.penalty !== -1) {
-          sum += attempt.value + attempt.penalty * 100;
-        } else {
-          sum += attempt.value;
-        }
-      });
+      const sum = submittedAttempts.reduce(
+        (total, attempt) => total + attemptTimeWithPenalty(attempt),
+        0,
+      );
       return sum < limit.centiseconds;
     }
     if (limit.cumulativeRoundIds.length > 1) {
@@ -786,11 +887,7 @@ export class ResultService {
         personId,
       );
       submittedAttempts.forEach((attempt) => {
-        if (attempt.penalty !== -1) {
-          used += attempt.value + attempt.penalty * 100;
-        } else {
-          used += attempt.value;
-        }
+        used += attemptTimeWithPenalty(attempt);
       });
     }
     return used;
@@ -845,6 +942,36 @@ export class ResultService {
     };
   }
 
+  /** Closes attempts a missed cutoff made unnecessary. Returns how many */
+  async settleWaitingExtras(resultId: string) {
+    const competition = await this.prisma.competition.findFirst();
+    const result = await this.prisma.result.findUnique({
+      where: { id: resultId },
+      include: { attempts: true },
+    });
+    if (!competition || !result) return 0;
+    const wcif = JSON.parse(JSON.stringify(competition.wcif));
+    const roundInfo = getRoundInfoFromWcif(result.roundId, wcif);
+    const attemptsToVoid = getAttemptsToVoid(
+      result.attempts,
+      roundInfo?.cutoff,
+    );
+    const now = new Date();
+    for (const attempt of attemptsToVoid) {
+      const voided = await this.prisma.attempt.update({
+        where: { id: attempt.id },
+        data: { status: AttemptStatus.VOIDED },
+      });
+      await this.attemptEditLogService.log(
+        voided as AttemptSnapshot,
+        now,
+        null,
+        'No longer needed: cutoff not met',
+      );
+    }
+    return attemptsToVoid.length;
+  }
+
   async getNextAttemptData(cardId: string, roundId: string) {
     const competitor = await this.personService.getPersonByCardId(cardId);
     if (!competitor) {
@@ -855,6 +982,7 @@ export class ResultService {
       where: {
         resultId: result.id,
       },
+      include: { extraGrant: { select: { useFreshSet: true } } },
     });
     const sortedAttempts = getSortedStandardAttempts(attempts);
     const sortedExtraAttempts = getSortedExtraAttempts(attempts);
@@ -867,13 +995,16 @@ export class ResultService {
         person: competitor,
       };
     }
-    if (
-      attempts.some(
-        (attempt) =>
-          attempt.status === AttemptStatus.EXTRA_GIVEN &&
-          (attempt.replacedBy === 0 || attempt.replacedBy === null),
-      )
-    ) {
+    const [waitingAttempt] = getAttemptsWaitingForExtra(attempts);
+    if (waitingAttempt) {
+      // A redo on a fresh set is stored as extras, but the competitor sees the
+      // attempt it replaces and gets that set's normal scramble for it
+      const scramble = waitingAttempt.extraGrant?.useFreshSet
+        ? {
+            num: getAttemptPosition(waitingAttempt, attempts),
+            isExtra: false,
+          }
+        : undefined;
       const lastExtraAttempt =
         sortedExtraAttempts[sortedExtraAttempts.length - 1];
       if (
@@ -884,15 +1015,16 @@ export class ResultService {
           scrambleData: {
             num: lastExtraAttempt.attemptNumber,
             isExtra: true,
+            scramble,
           },
           person: competitor,
         };
       }
-      const extrasCount = sortedExtraAttempts.length;
       return {
         scrambleData: {
-          num: extrasCount + 1,
+          num: getNextExtraNumber(attempts),
           isExtra: true,
+          scramble,
         },
         person: competitor,
       };

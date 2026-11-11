@@ -1,9 +1,10 @@
 import { Save, ShieldAlert } from "lucide-react";
-import { ChangeEvent, useEffect, useState } from "react";
+import { ChangeEvent, useState } from "react";
 
 import { Modal } from "@/Components/Modal";
 import { Button } from "@/Components/ui/button";
 import { Textarea } from "@/Components/ui/textarea";
+import { useDialogError } from "@/hooks/useDialogError";
 import { useToast } from "@/hooks/useToast";
 import { updateComment } from "@/lib/attendance";
 import { StaffActivity } from "@/lib/interfaces";
@@ -22,6 +23,7 @@ const DetailsModal = ({
     onClose,
     staffActivity,
 }: DetailsModalProps) => {
+    const [error, setError] = useDialogError(isOpen);
     const { toast } = useToast();
     const [comment, setComment] = useState<string>(
         staffActivity?.comment || ""
@@ -36,18 +38,12 @@ const DetailsModal = ({
     const handleSave = async () => {
         const status = await updateComment(staffActivity?.id || "", comment);
         if (status === 200) {
-            toast({
-                title: "Comment updated successfully",
-                description: "Your comment has been saved.",
-                variant: "success",
-            });
+            toast({ title: "Comment saved", variant: "success" });
             handleClose();
         } else {
-            toast({
-                title: "Something went wrong",
-                description: "There was an error saving your comment.",
-                variant: "destructive",
-            });
+            setError(
+                `${"Something went wrong"}. ${"There was an error saving your comment."}`
+            );
         }
     };
 
@@ -56,16 +52,19 @@ const DetailsModal = ({
         onClose();
     };
 
-    useEffect(() => {
-        if (isOpen && staffActivity) {
-            setComment(staffActivity.comment || "");
-        }
-    }, [isOpen, staffActivity]);
+    const openActivity = isOpen ? staffActivity : null;
+    const [loadedActivity, setLoadedActivity] =
+        useState<typeof openActivity>(null);
+    if (openActivity !== loadedActivity) {
+        setLoadedActivity(openActivity);
+        if (openActivity) setComment(openActivity.comment || "");
+    }
 
     if (!staffActivity || !staffActivity.person) return null;
 
     return (
         <Modal
+            error={error}
             isOpen={isOpen}
             onClose={handleClose}
             title={staffActivity?.person.name || "Details"}
@@ -75,7 +74,7 @@ const DetailsModal = ({
                 value={comment}
                 onChange={handleCommentChange}
             />
-            <Button variant="success" onClick={handleSave}>
+            <Button onClick={handleSave}>
                 <Save />
                 Save
             </Button>

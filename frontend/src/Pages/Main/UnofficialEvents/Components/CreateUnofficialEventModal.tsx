@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Round } from "wcif-helpers";
 
 import { Modal } from "@/Components/Modal";
@@ -11,8 +11,9 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/Components/ui/select";
-import { useToast } from "@/hooks/useToast";
-import { getUnofficialEvents } from "@/lib/events";
+import { useDialogError } from "@/hooks/useDialogError";
+import { useLiveQuery } from "@/hooks/useLiveQuery";
+import { eventsQuery } from "@/lib/events";
 import { Event } from "@/lib/interfaces";
 import { createUnofficialEvent } from "@/lib/unofficialEvents";
 
@@ -27,9 +28,12 @@ const CreateUnofficialEventModal = ({
     isOpen,
     onClose,
 }: CreateUnofficialEventModalProps) => {
-    const { toast } = useToast();
+    const [error, setError] = useDialogError(isOpen);
     const [isLoading, setIsLoading] = useState(false);
-    const [events, setEvents] = useState<Event[]>([]);
+    const { data: allEvents } = useLiveQuery(eventsQuery);
+    const events: Event[] = (allEvents ?? []).filter(
+        (event) => event.isUnofficial
+    );
     const [selectedEventId, setSelectedEventId] = useState<string>("");
     const [rounds, setRounds] = useState<Round[]>([]);
 
@@ -46,25 +50,13 @@ const CreateUnofficialEventModal = ({
             roundsToSend
         );
         if (status === 201) {
-            toast({
-                title: "Successfully added unofficial event",
-                variant: "success",
-            });
             setRounds([]);
             setSelectedEventId("");
             onClose();
         } else if (status === 409) {
-            toast({
-                title: "Error",
-                description: "Event already exists",
-                variant: "destructive",
-            });
+            setError("Event already exists");
         } else {
-            toast({
-                title: "Error",
-                description: "Something went wrong",
-                variant: "destructive",
-            });
+            setError("Something went wrong");
         }
         setIsLoading(false);
     };
@@ -74,14 +66,13 @@ const CreateUnofficialEventModal = ({
         setRounds([]);
     };
 
-    useEffect(() => {
-        getUnofficialEvents().then((data) => {
-            setEvents(data);
-        });
-    }, []);
-
     return (
-        <Modal isOpen={isOpen} onClose={onClose} title="Add unofficial event">
+        <Modal
+            error={error}
+            isOpen={isOpen}
+            onClose={onClose}
+            title="Add unofficial event"
+        >
             <Select
                 value={selectedEventId}
                 onValueChange={updateSelectedEventId}
@@ -105,11 +96,7 @@ const CreateUnofficialEventModal = ({
                 />
             ) : null}
             <ModalActions>
-                <Button
-                    variant="success"
-                    onClick={handleSubmit}
-                    disabled={isLoading}
-                >
+                <Button onClick={handleSubmit} disabled={isLoading}>
                     Add unofficial event
                 </Button>
             </ModalActions>

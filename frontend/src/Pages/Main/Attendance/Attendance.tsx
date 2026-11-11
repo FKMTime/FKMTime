@@ -1,277 +1,274 @@
-import { useAtom } from "jotai";
-import { useCallback, useContext, useEffect, useState } from "react";
+import { useAtomValue } from "jotai";
+import { Footprints, Gavel, Shuffle, Users } from "lucide-react";
+import { useCallback, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 
 import LoadingPage from "@/Components/LoadingPage";
+import EmptyState from "@/Components/shared/EmptyState";
+import RefreshingRegion from "@/Components/shared/RefreshingRegion";
+import RequestError from "@/Components/shared/RequestError";
+import ToggleChip from "@/Components/shared/ToggleChip";
 import { useConfirm } from "@/hooks/useConfirm";
-import { useToast } from "@/hooks/useToast";
+import { useLiveQuery } from "@/hooks/useLiveQuery";
+import { useSocketRoom } from "@/hooks/useSocketRoom";
+import { activityCodeToName } from "@/lib/activities";
 import { competitionAtom } from "@/lib/atoms";
 import {
-    getAttendanceByGroupId,
-    getRoundStaffing,
-    markAsAbsent,
-    markAsLate,
-    markAsPresent,
-    markAsPresentButReplaced,
+    getStaffActivitiesByPersonId,
+    groupAttendanceQuery,
+    groupDay,
+    markAsReplaced,
+    noShowGroupIds,
+    roundStaffingQuery,
+    setLeftEarly,
 } from "@/lib/attendance";
-import { getCompetitionInfo } from "@/lib/competition";
-import { Room, StaffActivity } from "@/lib/interfaces";
-import { getAllRooms } from "@/lib/rooms";
-import PageTransition from "@/Pages/PageTransition";
-import { socket, SocketContext } from "@/socket";
+import { StaffActivity, StaffActivityStatus } from "@/lib/interfaces";
+import { toQueryOptions } from "@/lib/queryCache";
+import { queryClient } from "@/lib/queryClient";
+import { roomsQuery } from "@/lib/rooms";
 
-import AttendanceHeaderCard from "./Components/AttendanceHeaderCard";
-import CompetitorsCard from "./Components/CompetitorsCard";
-import CurrentGroupsCard from "./Components/CurrentGroupsCard";
-import JudgesCard from "./Components/JudgesCard";
-import RunnersCard from "./Components/RunnersCard";
-import ScramblersCard from "./Components/ScramblersCard";
+import AttendanceTabs from "./Components/AttendanceTabs";
+import GroupPicker from "./Components/GroupPicker";
+import RoleCard from "./Components/RoleCard";
+
+const ROLES = [
+    { role: "COMPETITOR", title: "Competitors", icon: Users },
+    { role: "SCRAMBLER", title: "Scramblers", icon: Shuffle },
+    { role: "RUNNER", title: "Runners", icon: Footprints },
+    { role: "JUDGE", title: "Judges", icon: Gavel },
+] as const;
+const ROLE_KEYS = ROLES.map(({ role }) => role);
+
+import { useMarkAttendance } from "./useMarkAttendance";
+import { useNoShow } from "./useNoShow";
+import { useShownRoles } from "./useShownRoles";
 
 const Attendance = () => {
-    const { id } = useParams<{ id: string }>();
+    const { id: selectedGroup = "" } = useParams<{ id: string }>();
     const navigate = useNavigate();
     const confirm = useConfirm();
-    const { toast } = useToast();
-    const selectedGroup = id ? id : "";
-    const [competition, setCompetition] = useAtom(competitionAtom);
-    const [attendance, setAttendance] = useState<StaffActivity[]>([]);
-    const [rooms, setRooms] = useState<Room[]>([]);
-    const [roundStaffing, setRoundStaffing] = useState<{
-        roundId: string;
-        hasAssignedRunners: boolean;
-    } | null>(null);
-    const attendanceRoundId = selectedGroup.split("-g")[0];
-
-    const [selectedEvent, setSelectedEvent] = useState<string>("");
-    const [selectedRound, setSelectedRound] = useState<string>("");
-
-    const handleGroupChange = useCallback(
-        (groupId: string) => {
-            navigate(`/attendance/${groupId}`);
+    const competition = useAtomValue(competitionAtom);
+    const roundId = selectedGroup.split("-g")[0];
+    const { data: roomsData } = useLiveQuery(roomsQuery);
+    const rooms = roomsData ?? [];
+    const { data: staffing } = useLiveQuery(roundStaffingQuery(roundId), {
+        enabled: !!roundId,
+    });
+    const hasAssignedRunners = staffing?.hasAssignedRunners ?? false;
+    // The last group's attendance stays while the next group loads
+    const attendanceQuery = groupAttendanceQuery(selectedGroup);
+    const {
+        data: attendanceData,
+        isError,
+        isPreviousData,
+        refetch,
+    } = useLiveQuery(attendanceQuery, {
+        keepPreviousData: true,
+        enabled: !!selectedGroup,
+    });
+    const attendance: StaffActivity[] = attendanceData ?? [];
+    const fetchAttendance = () =>
+        void queryClient.invalidateQueries({
+            queryKey: toQueryOptions(attendanceQuery).queryKey,
+        });
+    useSocketRoom(selectedGroup ? "Attendance" : null, {
+        params: { groupId: selectedGroup },
+        invalidateOn: {
+            newAttendance: toQueryOptions(attendanceQuery).queryKey,
         },
+    });
+
+    const selectGroup = useCallback(
+        (groupId: string) => navigate(`/attendance/${groupId}`),
         [navigate]
     );
 
-    const fetchAttendanceData = async (groupId: string) => {
-        const data = await getAttendanceByGroupId(groupId);
-        setAttendance(data);
+    // Open the only running group straight away
+    useEffect(() => {
+        if (selectedGroup || !roomsData) return;
+        const running = roomsData.filter(
+            (room) => room.currentGroupIds.length === 1
+        );
+        if (running.length === 1) selectGroup(running[0].currentGroupIds[0]);
+    }, [roomsData, selectGroup, selectedGroup]);
+
+    const { shown: shownRoles, toggle: toggleRole } = useShownRoles(
+        ROLE_KEYS,
+        selectedGroup,
+        ROLE_KEYS.filter((role) => !attendance.some((a) => a.role === role))
+    );
+
+    const {
+        change,
+        markOne: run,
+        markMany,
+    } = useMarkAttendance(attendance, fetchAttendance);
+    const setNoShowFor = useNoShow(fetchAttendance);
+
+    /** Not coming to this group or any later one that day, or coming after all */
+    const handleSetNoShow = async (
+        activity: StaffActivity,
+        noShow: boolean
+    ) => {
+        if (!competition) return;
+        const day = groupDay(competition.wcif, activity.groupId);
+        const personActivities: StaffActivity[] =
+            await getStaffActivitiesByPersonId(activity.person.id);
+        const laterGroupIds = day
+            ? noShowGroupIds(competition.wcif, personActivities, day)
+            : [];
+        setNoShowFor(
+            activity.person,
+            [...new Set([activity.groupId, ...laterGroupIds])],
+            noShow
+        );
     };
 
-    const handleMarkAsPresent = async (staffActivityId: string) => {
-        const status = await markAsPresent(staffActivityId);
-        if (status === 201) {
-            toast({
-                title: "Success",
-                description: "Marked as present",
-                variant: "success",
-            });
-            fetchAttendanceData(selectedGroup);
-        } else {
-            toast({
-                title: "Error",
-                description: "Something went wrong",
-                variant: "destructive",
-            });
-        }
-    };
-
-    const handleMarkAsAbsent = async (staffActivityId: string) => {
-        const activity = attendance.find((a) => a.id === staffActivityId);
-
+    const handleMarkAbsent = async (id: string) => {
+        const activity = attendance.find((a) => a.id === id);
         if (activity && !activity.isAssigned) {
             const confirmed = await confirm({
-                title: "Are you sure you want to mark this person as absent?",
+                title: `Mark ${activity.person.name} as absent?`,
                 description:
-                    "This person is not assigned to this group. Are you sure you want to mark them as absent? This would completely remove them from the attendance list for this group.",
+                    "This person is not assigned to this group, so marking them absent removes them from this group's attendance list.",
+                confirmLabel: "Mark absent",
             })
                 .then(() => true)
                 .catch(() => false);
-
             if (!confirmed) return;
         }
-
-        const status = await markAsAbsent(staffActivityId);
-        if (status === 201) {
-            toast({
-                title: "Success",
-                description: "Marked as absent",
-                variant: "success",
-            });
-            fetchAttendanceData(selectedGroup);
-        } else {
-            toast({
-                title: "Error",
-                description: "Something went wrong",
-                variant: "destructive",
-            });
-        }
-    };
-
-    const handleMarkAsLate = async (staffActivityId: string) => {
-        const status = await markAsLate(staffActivityId);
-        if (status === 201) {
-            toast({
-                title: "Success",
-                description: "Marked as late",
-                variant: "success",
-            });
-            fetchAttendanceData(selectedGroup);
-        } else {
-            toast({
-                title: "Error",
-                description: "Something went wrong",
-                variant: "destructive",
-            });
-        }
-    };
-
-    const handleMarkAsPresentButReplaced = async (staffActivityId: string) => {
-        const status = await markAsPresentButReplaced(staffActivityId);
-        if (status === 201) {
-            toast({
-                title: "Success",
-                description: "Marked as present but replaced",
-                variant: "success",
-            });
-            fetchAttendanceData(selectedGroup);
-        } else {
-            toast({
-                title: "Error",
-                description: "Something went wrong",
-                variant: "destructive",
-            });
-        }
-    };
-
-    useEffect(() => {
-        getAllRooms().then((data: Room[]) => {
-            setRooms(data);
-            const roomsWithOneGroup = data.filter(
-                (r) => r.currentGroupIds.length === 1
-            );
-            if (roomsWithOneGroup.length === 1) {
-                handleGroupChange(roomsWithOneGroup[0].currentGroupIds[0]);
-            }
+        // Removing an unassigned person can't be put back
+        run(StaffActivityStatus.ABSENT, id, "absent", {
+            canUndo: !!activity?.isAssigned,
         });
-    }, [handleGroupChange]);
+    };
 
-    useEffect(() => {
-        if (!competition) {
-            getCompetitionInfo().then((response) => {
-                setCompetition(response.data);
-            });
-        }
-    }, [competition, setCompetition]);
+    if (!competition) return <LoadingPage />;
 
-    const [isConnected] = useContext(SocketContext) as [
-        number,
-        React.Dispatch<React.SetStateAction<number>>,
-    ];
-    useEffect(() => {
-        let cancelled = false;
-        setRoundStaffing(null);
-        if (attendanceRoundId) {
-            getRoundStaffing(attendanceRoundId).then((data) => {
-                if (!cancelled) {
-                    setRoundStaffing({ ...data, roundId: attendanceRoundId });
-                }
-            });
-        }
-        return () => {
-            cancelled = true;
-        };
-    }, [attendanceRoundId, isConnected]);
-
-    useEffect(() => {
-        if (selectedGroup) {
-            setSelectedEvent(selectedGroup.split("-")[0]);
-            setSelectedRound(selectedGroup.split("-g")[0]);
-            fetchAttendanceData(selectedGroup);
-
-            socket.emit("joinAttendance", { groupId: selectedGroup });
-            socket.on("newAttendance", () => {
-                fetchAttendanceData(selectedGroup);
-            });
-
-            return () => {
-                socket.emit("leaveAttendance", { groupId: selectedGroup });
-            };
-        }
-    }, [rooms, selectedGroup, isConnected]);
-
-    if (!competition) {
-        return <LoadingPage />;
-    }
+    const staff = attendance.filter((a) => a.role !== "COMPETITOR");
+    const presentCount = attendance.filter(
+        (a) => a.status !== StaffActivityStatus.ABSENT
+    ).length;
 
     return (
-        <PageTransition>
-            <div className="flex flex-col gap-4">
-                <AttendanceHeaderCard
-                    competition={competition}
-                    selectedEvent={selectedEvent}
-                    selectedRound={selectedRound}
-                    selectedGroup={selectedGroup}
-                    setSelectedEvent={setSelectedEvent}
-                    setSelectedRound={setSelectedRound}
-                    handleGroupChange={handleGroupChange}
-                />
-                {rooms.filter((r) => r.currentGroupIds.length > 0).length >
-                    0 && (
-                    <CurrentGroupsCard
-                        rooms={rooms}
-                        setSelectedEvent={setSelectedEvent}
-                        setSelectedRound={setSelectedRound}
-                        handleGroupChange={handleGroupChange}
-                    />
-                )}
-                {selectedGroup ? (
-                    <div className="flex flex-col gap-5 md:grid md:grid-cols-4">
-                        <CompetitorsCard
-                            attendance={attendance}
-                            fetchData={() => fetchAttendanceData(selectedGroup)}
-                            groupId={selectedGroup}
-                        />
-                        <ScramblersCard
-                            attendance={attendance}
-                            handleMarkAsPresent={handleMarkAsPresent}
-                            handleMarkAsAbsent={handleMarkAsAbsent}
-                            handleMarkAsLate={handleMarkAsLate}
-                            handleMarkAsPresentButReplaced={
-                                handleMarkAsPresentButReplaced
-                            }
-                            fetchData={() => fetchAttendanceData(selectedGroup)}
-                            groupId={selectedGroup}
-                        />
-                        <RunnersCard
-                            attendance={attendance}
-                            handleMarkAsPresent={handleMarkAsPresent}
-                            handleMarkAsAbsent={handleMarkAsAbsent}
-                            handleMarkAsLate={handleMarkAsLate}
-                            handleMarkAsPresentButReplaced={
-                                handleMarkAsPresentButReplaced
-                            }
-                            fetchData={() => fetchAttendanceData(selectedGroup)}
-                            groupId={selectedGroup}
-                        />
-                        <JudgesCard
-                            attendance={attendance}
-                            showStations={
-                                roundStaffing?.roundId === attendanceRoundId &&
-                                roundStaffing.hasAssignedRunners
-                            }
-                            handleMarkAsPresent={handleMarkAsPresent}
-                            handleMarkAsAbsent={handleMarkAsAbsent}
-                            handleMarkAsLate={handleMarkAsLate}
-                            handleMarkAsPresentButReplaced={
-                                handleMarkAsPresentButReplaced
-                            }
-                            fetchData={() => fetchAttendanceData(selectedGroup)}
-                            groupId={selectedGroup}
-                        />
+        <div className="flex flex-col gap-4">
+            <AttendanceTabs value="groups" />
+            <GroupPicker
+                wcif={competition.wcif}
+                rooms={rooms}
+                value={selectedGroup}
+                onValueChange={selectGroup}
+            />
+
+            {selectedGroup ? (
+                <>
+                    <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+                        <h2 className="text-lg font-bold">
+                            {activityCodeToName(selectedGroup)
+                                .split(", ")
+                                .join(" · ")}
+                        </h2>
+                        <p className="text-sm text-muted-foreground">
+                            {presentCount} present ·{" "}
+                            {attendance.length - presentCount} absent
+                            {staff.length === 0 &&
+                                attendance.length > 0 &&
+                                " · no staff assigned"}
+                        </p>
                     </div>
-                ) : null}
-            </div>
-        </PageTransition>
+                    <div
+                        role="group"
+                        aria-label="Roles shown"
+                        className="flex flex-wrap gap-2"
+                    >
+                        {ROLES.map(({ role, title, icon: Icon }) => (
+                            <ToggleChip
+                                key={role}
+                                pressed={shownRoles.includes(role)}
+                                onPressedChange={() => toggleRole(role)}
+                            >
+                                <Icon aria-hidden className="size-4" />
+                                {title}
+                            </ToggleChip>
+                        ))}
+                    </div>
+                    {isError && (
+                        <RequestError
+                            hasData={!!attendanceData}
+                            onRetry={() => void refetch()}
+                        />
+                    )}
+                    <RefreshingRegion
+                        isRefreshing={isPreviousData}
+                        className="grid grid-cols-1 items-start gap-4 md:grid-cols-2 2xl:grid-cols-4"
+                    >
+                        {ROLES.filter(({ role }) =>
+                            shownRoles.includes(role)
+                        ).map(({ role, title, icon }) => (
+                            <RoleCard
+                                key={role}
+                                role={role}
+                                title={title}
+                                icon={icon}
+                                attendance={attendance}
+                                groupId={selectedGroup}
+                                showStations={
+                                    role === "JUDGE" && hasAssignedRunners
+                                }
+                                wcif={competition.wcif}
+                                onChanged={fetchAttendance}
+                                onMarkPresent={(id) =>
+                                    run(
+                                        StaffActivityStatus.PRESENT,
+                                        id,
+                                        "present"
+                                    )
+                                }
+                                onMarkAbsent={handleMarkAbsent}
+                                onMarkAllPresent={(ids) =>
+                                    markMany(
+                                        StaffActivityStatus.PRESENT,
+                                        ids,
+                                        "present"
+                                    )
+                                }
+                                onMarkLate={(id) =>
+                                    run(StaffActivityStatus.LATE, id, "late")
+                                }
+                                onMarkReplaced={(
+                                    id,
+                                    wasPresent,
+                                    replacedById
+                                ) =>
+                                    change(
+                                        id,
+                                        () =>
+                                            markAsReplaced(
+                                                id,
+                                                wasPresent,
+                                                replacedById
+                                            ),
+                                        "marked replaced"
+                                    )
+                                }
+                                onSetLeftEarly={(id, leftEarly) =>
+                                    change(
+                                        id,
+                                        () => setLeftEarly(id, leftEarly),
+                                        leftEarly
+                                            ? "marked left early"
+                                            : "marked as staying to the end"
+                                    )
+                                }
+                                onSetNoShow={handleSetNoShow}
+                            />
+                        ))}
+                    </RefreshingRegion>
+                </>
+            ) : (
+                <EmptyState>Pick a group to take attendance.</EmptyState>
+            )}
+        </div>
     );
 };
 

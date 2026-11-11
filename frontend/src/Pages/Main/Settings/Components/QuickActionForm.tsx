@@ -108,7 +108,7 @@ const QuickActionForm = ({
                         </FormItem>
                     )}
                 />
-                <Button variant="success" type="submit" disabled={isLoading}>
+                <Button type="submit" disabled={isLoading}>
                     Save
                 </Button>
             </form>

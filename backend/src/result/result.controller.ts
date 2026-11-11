@@ -11,12 +11,14 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
+import { Role } from '@prisma/client';
 import { GetUser } from 'src/auth/decorator/getUser.decorator';
 import { JwtAuthDto } from 'src/auth/dto/jwt-auth.dto';
 import { DelegateGuard } from 'src/auth/guards/delegate.guard';
 import { OrganizerGuard } from 'src/auth/guards/organizer.guard';
 
 import { DoubleCheckDto } from './dto/doubleCheck.dto';
+import { RemoveResultDto } from './dto/removeResult.dto';
 import { ResultService } from './result.service';
 
 @UseGuards(AuthGuard('jwt'))
@@ -71,8 +73,31 @@ export class ResultController {
 
   @UseGuards(AuthGuard('jwt'))
   @Get('person/:id')
-  async getAllResultsByPersonId(@Param('id') id: string) {
-    return this.resultService.getAllResultsByPerson(id);
+  async getAllResultsByPersonId(
+    @Param('id') id: string,
+    @GetUser() user: JwtAuthDto,
+  ) {
+    const isDelegate =
+      user.roles.includes(Role.DELEGATE) || user.roles.includes(Role.ADMIN);
+    return this.resultService.getAllResultsByPerson(id, isDelegate);
+  }
+
+  @HttpCode(HttpStatus.OK)
+  @UseGuards(DelegateGuard)
+  @Post(':id/remove')
+  async removeResult(
+    @Param('id') id: string,
+    @Body() data: RemoveResultDto,
+    @GetUser() user: JwtAuthDto,
+  ) {
+    return await this.resultService.removeResult(id, data.reason, user.userId);
+  }
+
+  @HttpCode(HttpStatus.OK)
+  @UseGuards(DelegateGuard)
+  @Post(':id/bring-back')
+  async bringBackResult(@Param('id') id: string) {
+    return await this.resultService.bringBackResult(id);
   }
 
   @UseGuards(DelegateGuard)

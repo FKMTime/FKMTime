@@ -1,84 +1,62 @@
 import { useSetAtom } from "jotai";
-import { RefreshCw, Server } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
-import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
+import { RefreshCw, Server, TriangleAlert } from "lucide-react";
+import { useEffect, useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 
 import LoadingPage from "@/Components/LoadingPage";
+import { Alert, AlertTitle } from "@/Components/ui/alert";
 import { Button } from "@/Components/ui/button";
-import {
-    Card,
-    CardContent,
-    CardDescription,
-    CardHeader,
-    CardTitle,
-} from "@/Components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/Components/ui/tabs";
+import { useLiveQuery } from "@/hooks/useLiveQuery";
 import { useToast } from "@/hooks/useToast";
 import { competitionAtom } from "@/lib/atoms";
 import {
+    competitionSettingsQuery,
     getCompetitionInfo,
-    getCompetitionSettings,
     syncCompetition,
+    updateCompetitionSettings,
 } from "@/lib/competition";
 import { Competition as CompetitionInterface } from "@/lib/interfaces";
+import { QueryError, setQueryData } from "@/lib/queryCache";
 import { getGitCommitValue } from "@/lib/utils";
-import PageTransition from "@/Pages/PageTransition";
+import SetupTabs from "@/Pages/Main/Setup/SetupTabs";
 
-import ManageCompetition from "./Tabs/ManageCompetition/ManageCompetition";
-import Rooms from "./Tabs/Rooms/Rooms";
+import CompetitionForm from "./Components/CompetitionForm";
 
-const tabs = [
-    {
-        id: "competitionSettings",
-        name: "Manage competition",
-    },
-    {
-        id: "rooms",
-        name: "Current groups",
-    },
-];
+const TOKEN_MAY_EXPIRE_AFTER_MS = 7 * 24 * 60 * 60 * 1000;
 
 const Competition = () => {
     const { toast } = useToast();
     const navigate = useNavigate();
     const location = useLocation();
     const setCompetitionAtom = useSetAtom(competitionAtom);
-    const initialCompetition: CompetitionInterface | null =
-        location.state?.importedCompetition ?? null;
-    const [isLoading, setIsLoading] = useState<boolean>(!initialCompetition);
-    const [competition, setCompetition] = useState<CompetitionInterface | null>(
-        initialCompetition
-    );
-    const [tabIndex, setTabIndex] = useState<string>(tabs[0].id);
-    const [searchParams, setSearchParams] = useSearchParams();
+    const importedCompetition: CompetitionInterface | undefined =
+        location.state?.importedCompetition;
+    const [isSyncing, setIsSyncing] = useState(false);
+    const [openedAt] = useState(() => Date.now());
+    const {
+        data: fetchedCompetition,
+        version,
+        error,
+    } = useLiveQuery(competitionSettingsQuery);
+    const setCompetition = (data: CompetitionInterface) =>
+        setQueryData(competitionSettingsQuery.key, data);
+    const competition = fetchedCompetition ?? importedCompetition;
 
-    const fetchData = useCallback(async () => {
-        const response = await getCompetitionSettings();
-        if (response.status === 200) {
-            setCompetition(response.data);
-        } else if (response.status === 404) {
+    useEffect(() => {
+        if (error instanceof QueryError && error.status === 404) {
             navigate("/competition/import");
         }
-        setIsLoading(false);
-    }, [navigate]);
-
-    const fetchCompetitionDataAndSetAtom = async () => {
-        const response = await getCompetitionInfo();
-        setCompetitionAtom(response.data);
-    };
+    }, [error, navigate]);
 
     const handleSync = async () => {
-        if (!competition || !competition.wcaId) {
-            return;
-        }
+        if (!competition?.wcaId) return;
+        setIsSyncing(true);
         const status = await syncCompetition(competition.wcaId);
+        setIsSyncing(false);
         if (status === 200) {
-            toast({
-                title: "Success",
-                description: "Competition synced",
-                variant: "success",
-            });
-            await fetchCompetitionDataAndSetAtom();
+            toast({ title: "Synced with the WCA website", variant: "success" });
+            const response = await getCompetitionInfo();
+            setCompetitionAtom(response.data);
         } else if (status === 403) {
             toast({
                 title: "Error",
@@ -95,82 +73,83 @@ const Competition = () => {
         }
     };
 
-    const onChangeTab = (id: string) => {
-        setTabIndex(id);
-        const tab = tabs.find((t) => t.id === id)?.id;
-        if (!tab) return;
-        setSearchParams({ tab: tab });
+    const handleSubmit = async (data: CompetitionInterface) => {
+        if (!competition) return false;
+        const status = await updateCompetitionSettings(competition.id, data);
+        if (status === 200) {
+            setCompetition(data);
+            setCompetitionAtom(data);
+            toast({ title: "Settings saved", variant: "success" });
+            return true;
+        }
+        toast({
+            title: "Error",
+            description: "Settings could not be saved. Try again.",
+            variant: "destructive",
+        });
+        return false;
     };
 
-    useEffect(() => {
-        const tab = searchParams.get("tab");
-        const index = tabs.find((t) => t.id === tab)?.id;
-        if (index) {
-            setTabIndex(index);
-        }
-    }, [searchParams]);
+    if (!competition) return <LoadingPage />;
 
-    useEffect(() => {
-        fetchData();
-    }, [fetchData]);
-
-    if (isLoading || !competition) {
-        return <LoadingPage />;
-    }
+    const isTokenEmpty = !competition.scoretakingToken;
+    const mayTokenHaveExpired =
+        !!competition.scoretakingTokenUpdatedAt &&
+        new Date(competition.scoretakingTokenUpdatedAt).getTime() <
+            openedAt - TOKEN_MAY_EXPIRE_AFTER_MS;
 
     return (
-        <PageTransition>
-            <Tabs defaultValue={tabIndex}>
-                <Card className="mb-5">
-                    <CardHeader className="flex flex-row justify-between items-center">
-                        <div className="flex flex-col gap-2">
-                            <CardTitle>{competition.name}</CardTitle>
-                            <CardDescription>
-                                Version: {getGitCommitValue()}
-                            </CardDescription>
-                        </div>
-                        <div className="flex gap-2">
-                            <Button
-                                variant="success"
-                                onClick={handleSync}
-                                className="w-full"
-                            >
-                                <RefreshCw />
-                                Sync
-                            </Button>
-                            {import.meta.env.PROD && (
-                                <Button onClick={() => window.open("/logs")}>
-                                    <Server />
-                                    Logs
-                                </Button>
-                            )}
-                        </div>
-                    </CardHeader>
-                    <CardContent>
-                        <TabsList>
-                            {tabs.map((tab) => (
-                                <TabsTrigger
-                                    key={tab.id}
-                                    value={tab.id}
-                                    onClick={() => onChangeTab(tab.id)}
-                                >
-                                    {tab.name}
-                                </TabsTrigger>
-                            ))}
-                        </TabsList>
-                    </CardContent>
-                </Card>
-                <TabsContent value={tabs[0].id}>
-                    <ManageCompetition
-                        competition={competition}
-                        setCompetition={setCompetition}
-                    />
-                </TabsContent>
-                <TabsContent value={tabs[1].id}>
-                    <Rooms />
-                </TabsContent>
-            </Tabs>
-        </PageTransition>
+        <>
+            <SetupTabs value="competition" />
+            <div className="flex flex-wrap items-center gap-3">
+                <div className="min-w-0 flex-1">
+                    <h2 className="truncate text-base font-bold">
+                        {competition.name}
+                    </h2>
+                    <p className="text-[13px] text-muted-foreground">
+                        Version {getGitCommitValue()}
+                    </p>
+                </div>
+                <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleSync}
+                    disabled={isSyncing}
+                >
+                    <RefreshCw className={isSyncing ? "animate-spin" : ""} />
+                    Sync with WCA
+                </Button>
+                {import.meta.env.PROD && (
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => window.open("/logs")}
+                    >
+                        <Server />
+                        Logs
+                    </Button>
+                )}
+            </div>
+            {competition.useFkmTimeDevices &&
+                (isTokenEmpty || mayTokenHaveExpired) && (
+                    <Alert variant="warning">
+                        <TriangleAlert />
+                        <AlertTitle>
+                            {isTokenEmpty
+                                ? "Set the scoretaking token from WCA Live before the competition"
+                                : "The scoretaking token may have expired"}
+                        </AlertTitle>
+                    </Alert>
+                )}
+            <div className="rounded-mobile-card border bg-card p-4 md:rounded-2xl md:p-6">
+                <CompetitionForm
+                    // Fresh settings from the server re-seed the form
+                    key={version}
+                    competition={competition}
+                    handleSubmit={handleSubmit}
+                />
+            </div>
+        </>
     );
 };
 

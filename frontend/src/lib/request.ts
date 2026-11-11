@@ -1,4 +1,5 @@
 import { getToken } from "./auth";
+import { Query, QueryError, queryFamily } from "./queryCache";
 import { getScramblingDeviceToken } from "./scramblingDevicesAuth";
 
 // this will be changed inside docker env
@@ -56,6 +57,27 @@ export const backendRequest = (
         body: JSON.stringify(body),
     });
 };
+
+/** A cached GET of a backend path, keyed by the path */
+export const backendQuery = <T>(
+    path: string,
+    { useAuth = true }: { useAuth?: boolean } = {}
+): Query<T> => ({
+    key: path,
+    fetch: async () => {
+        const response = await backendRequest(path, "GET", useAuth);
+        if (!response.ok) throw new QueryError(response.status);
+        return await response.json();
+    },
+});
+
+/** A cached GET of a searchable list, one query per search term */
+export const backendSearchQuery = <T>(path: string) =>
+    queryFamily((search) =>
+        backendQuery<T>(
+            search ? `${path}?search=${encodeURIComponent(search)}` : path
+        )
+    );
 
 export const scramblingDeviceBackendRequest = (
     path: string,

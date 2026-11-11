@@ -22,6 +22,9 @@ import { RoomsService } from './rooms.service';
 import { StatisticsService } from './statistics.service';
 import { SyncService } from './sync.service';
 
+const parseGroupIds = (groupIds?: string) =>
+  groupIds?.split(',').filter(Boolean);
+
 @Controller('competition')
 export class CompetitionController {
   constructor(
@@ -35,6 +38,16 @@ export class CompetitionController {
   @Get('login-info')
   async getCompetitionLoginInfo() {
     return await this.competitionService.getInfoForLoginPage();
+  }
+
+  @Get('public')
+  async getPublicCompetitionInfo() {
+    return await this.competitionService.getCompetitionInfo();
+  }
+
+  @Get('public/rooms')
+  async getPublicRooms() {
+    return await this.roomsService.getAllRooms();
   }
 
   @UseGuards(AuthGuard('jwt'))
@@ -102,6 +115,12 @@ export class CompetitionController {
     return this.roomsService.getAllRooms();
   }
 
+  @UseGuards(AuthGuard('jwt'))
+  @Get('rooms/progress')
+  async getRoomsProgress() {
+    return this.roomsService.getRoomsProgress();
+  }
+
   @UseGuards(OrganizerGuard)
   @Get('available-locales')
   async getAvailableLocales() {
@@ -140,15 +159,25 @@ export class CompetitionController {
 
   @UseGuards(OrganizerGuard)
   @Get('rooms/:id/next-groups')
-  async getNextGroupsFromScheduleForRoom(@Param('id') id: string) {
-    return await this.competitionService.getNextGroupsFromScheduleForRoom(id);
+  async getNextGroupsFromScheduleForRoom(
+    @Param('id') id: string,
+    @Query('groupIds') groupIds?: string,
+  ) {
+    return await this.competitionService.getNextGroupsFromScheduleForRoom(
+      id,
+      parseGroupIds(groupIds),
+    );
   }
 
   @UseGuards(OrganizerGuard)
   @Get('rooms/:id/previous-groups')
-  async getPreviousGroupsFromScheduleForRoom(@Param('id') id: string) {
+  async getPreviousGroupsFromScheduleForRoom(
+    @Param('id') id: string,
+    @Query('groupIds') groupIds?: string,
+  ) {
     return await this.competitionService.getPreviousGroupsFromScheduleForRoom(
       id,
+      parseGroupIds(groupIds),
     );
   }
 }

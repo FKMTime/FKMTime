@@ -4,7 +4,7 @@ import { StaffActivityStatus, StaffRole } from '@prisma/client';
 
 import { AppGateway } from '../app.gateway';
 import { DbService } from '../db/db.service';
-import { AttendanceService } from './attendance.service';
+import { AttendanceService, tagsClearedBy } from './attendance.service';
 
 describe('AttendanceService', () => {
   let service: AttendanceService;
@@ -28,6 +28,10 @@ describe('AttendanceService', () => {
             person: {
               findMany: jest.fn(),
               findUnique: jest.fn(),
+              findFirst: jest.fn(),
+            },
+            device: {
+              findFirst: jest.fn(),
             },
           },
         },
@@ -73,6 +77,7 @@ describe('AttendanceService', () => {
         include: {
           person: true,
           device: true,
+          replacedBy: { select: { id: true, name: true } },
         },
       });
     });
@@ -202,7 +207,10 @@ describe('AttendanceService', () => {
       expect(result).toEqual(mockActivities);
       expect(dbService.staffActivity.findMany).toHaveBeenCalledWith({
         where: { person: { id: 'person1' } },
-        include: { device: true },
+        include: {
+          device: true,
+          replacedBy: { select: { id: true, name: true } },
+        },
       });
     });
   });
@@ -226,12 +234,43 @@ describe('AttendanceService', () => {
       expect(result).toEqual(mockAttendance);
       expect(dbService.staffActivity.update).toHaveBeenCalledWith({
         where: { id: 'attendance1' },
-        data: { status: StaffActivityStatus.PRESENT },
+        data: {
+          status: StaffActivityStatus.PRESENT,
+          noShow: false,
+          replacedById: null,
+        },
       });
       expect(appGateway.handleNewAttendance).toHaveBeenCalledWith(
         '333-r1-g1',
         'person1',
       );
+    });
+  });
+
+  describe('tagsClearedBy', () => {
+    it('clears the no-show and replacement of someone who did the job', () => {
+      for (const status of [
+        StaffActivityStatus.PRESENT,
+        StaffActivityStatus.LATE,
+      ]) {
+        expect(tagsClearedBy(status)).toEqual({
+          noShow: false,
+          replacedById: null,
+        });
+      }
+    });
+
+    it('keeps the replacement of someone replaced, and nothing else', () => {
+      expect(tagsClearedBy(StaffActivityStatus.REPLACED)).toEqual({
+        leftEarly: false,
+        noShow: false,
+      });
+    });
+
+    it('keeps the no-show and replacement of someone absent', () => {
+      expect(tagsClearedBy(StaffActivityStatus.ABSENT)).toEqual({
+        leftEarly: false,
+      });
     });
   });
 
@@ -253,6 +292,55 @@ describe('AttendanceService', () => {
         '333-r1-g1',
         'competitor1',
       );
+    });
+  });
+
+  describe('createAttendance', () => {
+    it('announces a device scan only after saving it', async () => {
+      jest.spyOn(dbService.device, 'findFirst').mockResolvedValue({
+        id: 'device1',
+        type: 'ATTENDANCE_SCRAMBLER',
+        room: { currentGroupIds: ['333-r1-g1'] },
+      } as any);
+      jest.spyOn(dbService.person, 'findFirst').mockResolvedValue({
+        id: 'person1',
+        countryIso2: 'PL',
+      } as any);
+      const upsert = jest
+        .spyOn(dbService.staffActivity, 'upsert')
+        .mockResolvedValue({} as any);
+      const announce = jest
+        .spyOn(appGateway, 'handleNewAttendance')
+        .mockImplementation();
+
+      await service.createAttendance({ espId: 1, cardId: 123 } as any);
+
+      expect(announce).toHaveBeenCalledWith('333-r1-g1', 'person1');
+      expect(upsert.mock.invocationCallOrder[0]).toBeLessThan(
+        announce.mock.invocationCallOrder[0],
+      );
+    });
+
+    it('does not announce a scan that failed to save', async () => {
+      jest.spyOn(dbService.device, 'findFirst').mockResolvedValue({
+        id: 'device1',
+        type: 'ATTENDANCE_JUDGE',
+        room: { currentGroupIds: ['333-r1-g1'] },
+      } as any);
+      jest.spyOn(dbService.person, 'findFirst').mockResolvedValue({
+        id: 'person1',
+        countryIso2: 'PL',
+      } as any);
+      jest
+        .spyOn(dbService.staffActivity, 'upsert')
+        .mockRejectedValue(new Error('database down'));
+      const announce = jest
+        .spyOn(appGateway, 'handleNewAttendance')
+        .mockImplementation();
+
+      await service.createAttendance({ espId: 1, cardId: 123 } as any);
+
+      expect(announce).not.toHaveBeenCalled();
     });
   });
 

@@ -2,6 +2,9 @@ name: Test
 
 on:
   pull_request:
+    paths:
+      - 'backend/**'
+      - '.github/workflows/test-backend.yml'
   push:
     branches:
       - main
@@ -34,13 +37,13 @@ jobs:
           ports:
             - 5432:5432
         dummy-wca:
-          image: maxidragon/dummy-wca:latest
+          image: maxidragon/dummy-wca:main
           ports:
             - 3000:3000
 
       strategy:
         matrix:
-          node-version: [22.x]
+          node-version: [24.x]
       steps:
         - uses: actions/checkout@v7
         - name: Use Node.js ${{ matrix.node-version }}

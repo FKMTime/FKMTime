@@ -33,6 +33,12 @@ export class DeviceController {
   }
 
   @UseGuards(OrganizerGuard)
+  @Get('retired')
+  async getRetiredDevices() {
+    return this.deviceService.getRetiredDevices();
+  }
+
+  @UseGuards(OrganizerGuard)
   @Post()
   async createDevice(@Body() data: DeviceDto) {
     return this.deviceService.createDevice(data);
@@ -42,6 +48,20 @@ export class DeviceController {
   @Put(':id')
   async updateDevice(@Param('id') id: string, @Body() data: DeviceDto) {
     return this.deviceService.updateDevice(id, data);
+  }
+
+  @UseGuards(OrganizerGuard)
+  @HttpCode(HttpStatus.OK)
+  @Post(':id/reconnect')
+  async reconnectDevice(@Param('id') id: string) {
+    return this.deviceService.reconnectDevice(id);
+  }
+
+  @UseGuards(OrganizerGuard)
+  @HttpCode(HttpStatus.OK)
+  @Post(':id/restore')
+  async restoreDevice(@Param('id') id: string) {
+    return this.deviceService.restoreDevice(id);
   }
 
   @UseGuards(OrganizerGuard)

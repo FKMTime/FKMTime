@@ -1,8 +1,9 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 import { Modal } from "@/Components/Modal";
 import ModalLoading from "@/Components/ModalLoading";
-import { useToast } from "@/hooks/useToast";
+import { useDialogError } from "@/hooks/useDialogError";
+import { useLiveQuery } from "@/hooks/useLiveQuery";
 import { createDevice } from "@/lib/devices";
 import {
     AvailableDevice,
@@ -13,7 +14,7 @@ import {
     HardwareVersion,
     Room,
 } from "@/lib/interfaces";
-import { getAllRooms } from "@/lib/rooms";
+import { roomsQuery } from "@/lib/rooms";
 
 import DeviceForm from "./DeviceForm";
 
@@ -28,57 +29,35 @@ const CreateDeviceModal = ({
     onClose,
     deviceToAdd,
 }: CreateDeviceModalProps) => {
-    const { toast } = useToast();
+    const [error, setError] = useDialogError(isOpen);
     const [isLoading, setIsLoading] = useState(false);
-    const [rooms, setRooms] = useState<Room[]>([]);
-    const [availableTypes, setAvailableTypes] = useState<DeviceType[]>([
-        DeviceType.STATION,
-        DeviceType.ATTENDANCE_SCRAMBLER,
-        DeviceType.ATTENDANCE_RUNNER,
-    ]);
+    const { data: roomsData } = useLiveQuery(roomsQuery, { enabled: isOpen });
+    const rooms: Room[] = roomsData ?? [];
+    // A device asking to be added can only be its own kind
+    const availableTypes: DeviceType[] = !deviceToAdd
+        ? [
+              DeviceType.STATION,
+              DeviceType.ATTENDANCE_SCRAMBLER,
+              DeviceType.ATTENDANCE_RUNNER,
+          ]
+        : deviceToAdd.type === "STAFF_ATTENDANCE"
+          ? [DeviceType.ATTENDANCE_SCRAMBLER, DeviceType.ATTENDANCE_RUNNER]
+          : [DeviceType.STATION];
 
     const handleSubmit = async (data: DeviceData) => {
         setIsLoading(true);
         const { status, device } = await createDevice(data);
         if (status === 201) {
-            toast({
-                title: "Successfully created new device.",
-                variant: "success",
-            });
             onClose(device);
         } else if (status === 409) {
-            toast({
-                title: "Error",
-                description:
-                    "Device with this name or ESP ID already exists in database",
-                variant: "destructive",
-            });
+            setError(
+                "A device with this name or ESP ID already exists, maybe among retired devices"
+            );
         } else {
-            toast({
-                title: "Error",
-                description: "Something went wrong",
-                variant: "destructive",
-            });
+            setError("Something went wrong");
         }
         setIsLoading(false);
     };
-
-    useEffect(() => {
-        if (!isOpen) return;
-        getAllRooms().then((data: Room[]) => {
-            setRooms(data);
-        });
-        if (deviceToAdd) {
-            if (deviceToAdd.type === "STAFF_ATTENDANCE") {
-                setAvailableTypes([
-                    DeviceType.ATTENDANCE_SCRAMBLER,
-                    DeviceType.ATTENDANCE_RUNNER,
-                ]);
-            } else {
-                setAvailableTypes([DeviceType.STATION]);
-            }
-        }
-    }, [deviceToAdd, isOpen]);
 
     const defaultValues: DeviceData = {
         name: "",
@@ -96,7 +75,12 @@ const CreateDeviceModal = ({
     };
 
     return (
-        <Modal isOpen={isOpen} onClose={onClose} title="Create device">
+        <Modal
+            error={error}
+            isOpen={isOpen}
+            onClose={onClose}
+            title="Create device"
+        >
             {rooms.length ? (
                 <DeviceForm
                     isLoading={isLoading}

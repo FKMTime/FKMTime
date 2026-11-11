@@ -1,5 +1,33 @@
 import { AddPerson, Person } from "./interfaces";
-import { backendRequest, wcaApiRequest } from "./request";
+import { queryFamily } from "./queryCache";
+import { backendQuery, backendRequest, wcaApiRequest } from "./request";
+
+export interface PersonsPageParams {
+    page: number;
+    pageSize: number;
+    search?: string;
+    registrantId?: number;
+    withoutCardAssigned?: boolean;
+    cardId?: string;
+    onlyNewcomers?: boolean;
+    onlyNotCheckedIn?: boolean;
+}
+
+const personsPagePath = (params: PersonsPageParams) => {
+    const searchParams = new URLSearchParams();
+    searchParams.append("page", params.page.toString());
+    searchParams.append("pageSize", params.pageSize.toString());
+    if (params.search) searchParams.append("search", params.search);
+    if (params.registrantId)
+        searchParams.append("registrantId", params.registrantId.toString());
+    if (params.withoutCardAssigned)
+        searchParams.append("withoutCardAssigned", "true");
+    if (params.cardId) searchParams.append("cardId", params.cardId);
+    if (params.onlyNewcomers) searchParams.append("onlyNewcomers", "true");
+    if (params.onlyNotCheckedIn)
+        searchParams.append("onlyNotCheckedIn", "true");
+    return `person?${searchParams.toString()}`;
+};
 
 export const getPersons = async (
     page = 1,
@@ -11,20 +39,33 @@ export const getPersons = async (
     onlyNewcomers?: boolean,
     onlyNotCheckedIn?: boolean
 ) => {
-    const searchParams = new URLSearchParams();
-    searchParams.append("page", page.toString());
-    searchParams.append("pageSize", pageSize.toString());
-    if (search) searchParams.append("search", search);
-    if (registrantId)
-        searchParams.append("registrantId", registrantId.toString());
-    if (withoutCardAssigned) searchParams.append("withoutCardAssigned", "true");
-    if (cardId) searchParams.append("cardId", cardId);
-    if (onlyNewcomers) searchParams.append("onlyNewcomers", "true");
-    if (onlyNotCheckedIn) searchParams.append("onlyNotCheckedIn", "true");
-    const query = `person?${searchParams.toString()}`;
-    const response = await backendRequest(query, "GET", true);
+    const path = personsPagePath({
+        page,
+        pageSize,
+        search,
+        registrantId,
+        withoutCardAssigned,
+        cardId,
+        onlyNewcomers,
+        onlyNotCheckedIn,
+    });
+    const response = await backendRequest(path, "GET", true);
     return await response.json();
 };
+
+const personsPages = queryFamily((path) =>
+    backendQuery<{ data: Person[]; count: number }>(path)
+);
+
+/** One page of the Persons list, one query per page and set of filters */
+export const personsPageQuery = (params: PersonsPageParams) =>
+    personsPages(personsPagePath(params));
+
+/** The Persons tab as it first opens: page 1 of 10, no filters */
+export const firstPersonsPageQuery = personsPageQuery({
+    page: 1,
+    pageSize: 10,
+});
 
 export const getAllPersons = async (
     withoutCardAssigned = false,
@@ -37,6 +78,28 @@ export const getAllPersons = async (
     const response = await backendRequest(path, "GET", true);
     return await response.json();
 };
+
+/** Everyone, for the station tester */
+export const allPersonsQuery = backendQuery<Person[]>("person/all?");
+
+/** Everyone without a card, as Assign cards lists them before a search */
+export const personsWithoutCardQuery = backendQuery<Person[]>(
+    "person/all?withoutCardAssigned=true"
+);
+
+/** People without a card matching a search; no search is the full list */
+export const personsWithoutCardSearchQuery = queryFamily((search) =>
+    search
+        ? backendQuery<Person[]>(
+              `person/all?search=${encodeURIComponent(search)}&withoutCardAssigned=true`
+          )
+        : personsWithoutCardQuery
+);
+
+/** One person, with their registration */
+export const personQuery = queryFamily((id) =>
+    backendQuery<Person>(`person/${id}`)
+);
 
 export const getPersonById = async (id: string) => {
     const response = await backendRequest(`person/${id}`, "GET", true);
@@ -74,10 +137,26 @@ export const checkIn = async (id: string, cardId: string) => {
     };
 };
 
+/** Reverts a check-in; removeCard also clears a card assigned with it */
+export const undoCheckIn = async (id: string, removeCard: boolean) => {
+    const response = await backendRequest(
+        `person/check-in/${id}?removeCard=${removeCard}`,
+        "DELETE",
+        true
+    );
+    return response.status;
+};
+
 export const checkedInCount = async () => {
     const response = await backendRequest("person/check-in", "GET", true);
     return await response.json();
 };
+
+/** How many people are checked in, for the Check-in page */
+export const checkInCountsQuery = backendQuery<{
+    checkedInPersonsCount: number;
+    totalPersonsCount: number;
+}>("person/check-in");
 
 export const getPersonsWithoutCardAssigned = async () => {
     const response = await backendRequest("person/without-card", "GET", true);

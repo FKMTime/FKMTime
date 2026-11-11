@@ -1,7 +1,11 @@
 import { describe } from "vitest";
 
+import { Attempt, AttemptStatus, AttemptType } from "@/lib/interfaces";
 import {
     calculateTotalPages,
+    formatDocumentTitle,
+    getInitials,
+    getSubmittedAttempts,
     prettyAvailableDeviceType,
     prettyDeviceType,
     prettyGender,
@@ -50,5 +54,79 @@ describe("prettyAvailableDeviceType", () => {
 describe("prettyUserRoleName", () => {
     it("return pretty user role name", () => {
         expect(prettyUserRoleName("ADMIN")).toEqual("Admin");
+    });
+});
+
+describe("getInitials", () => {
+    it("takes the first and last name initials", () => {
+        expect(getInitials("Anna Maria Nowak")).toBe("AN");
+    });
+
+    it("handles single names and missing names", () => {
+        expect(getInitials("cher")).toBe("C");
+        expect(getInitials("  ")).toBe("?");
+        expect(getInitials(undefined)).toBe("?");
+    });
+});
+
+describe("formatDocumentTitle", () => {
+    it("joins the page and competition names", () => {
+        expect(formatDocumentTitle("Results", "Example Open 2026")).toBe(
+            "Results · Example Open 2026"
+        );
+    });
+
+    it("skips missing parts", () => {
+        expect(formatDocumentTitle(undefined, "Example Open 2026", " ")).toBe(
+            "Example Open 2026"
+        );
+    });
+
+    it("falls back to the app name", () => {
+        expect(formatDocumentTitle()).toBe("FKMTime");
+        expect(formatDocumentTitle(null, "")).toBe("FKMTime");
+    });
+});
+
+describe("getSubmittedAttempts", () => {
+    const attempt = (overrides: Partial<Attempt>) =>
+        ({
+            replacedBy: null,
+            type: AttemptType.STANDARD_ATTEMPT,
+            status: AttemptStatus.STANDARD,
+            ...overrides,
+        }) as Attempt;
+
+    it("leaves out an extra that is itself waiting for an extra", () => {
+        const submitted = getSubmittedAttempts([
+            attempt({
+                id: "s1",
+                attemptNumber: 1,
+                replacedBy: 1,
+                status: AttemptStatus.EXTRA_GIVEN,
+            }),
+            attempt({
+                id: "e1",
+                attemptNumber: 1,
+                type: AttemptType.EXTRA_ATTEMPT,
+                status: AttemptStatus.EXTRA_GIVEN,
+            }),
+            attempt({ id: "s2", attemptNumber: 2 }),
+        ]);
+
+        expect(submitted.map((a) => a.id)).toEqual(["s2"]);
+    });
+
+    it("leaves out a voided attempt", () => {
+        const submitted = getSubmittedAttempts([
+            attempt({ id: "s1", attemptNumber: 1 }),
+            attempt({
+                id: "s2",
+                attemptNumber: 2,
+                status: AttemptStatus.VOIDED,
+            }),
+        ]);
+
+        expect(submitted.map((a) => a.id)).toEqual(["s1"]);
     });
 });

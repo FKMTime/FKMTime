@@ -1,7 +1,8 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 import { Modal } from "@/Components/Modal";
-import { useToast } from "@/hooks/useToast";
+import { useDialogError } from "@/hooks/useDialogError";
+import { useLiveQuery } from "@/hooks/useLiveQuery";
 import { updateDevice } from "@/lib/devices";
 import {
     Device,
@@ -10,7 +11,7 @@ import {
     HardwareVersion,
     Room,
 } from "@/lib/interfaces";
-import { getAllRooms } from "@/lib/rooms";
+import { roomsQuery } from "@/lib/rooms";
 
 import DeviceForm from "./DeviceForm";
 
@@ -21,9 +22,10 @@ interface EditDeviceModalProps {
 }
 
 const EditDeviceModal = ({ isOpen, onClose, device }: EditDeviceModalProps) => {
-    const { toast } = useToast();
+    const [error, setError] = useDialogError(isOpen);
     const [isLoading, setIsLoading] = useState(false);
-    const [rooms, setRooms] = useState<Room[]>([]);
+    const { data: roomsData } = useLiveQuery(roomsQuery, { enabled: isOpen });
+    const rooms: Room[] = roomsData ?? [];
 
     const handleSubmit = async (data: DeviceData) => {
         setIsLoading(true);
@@ -33,37 +35,24 @@ const EditDeviceModal = ({ isOpen, onClose, device }: EditDeviceModalProps) => {
             ...data,
         });
         if (status === 200) {
-            toast({
-                title: "Successfully updated this device.",
-                variant: "success",
-            });
             onClose();
         } else if (status === 409) {
-            toast({
-                title: "Error",
-                description:
-                    "Device with this name or ESP ID already exists in database",
-                variant: "destructive",
-            });
+            setError(
+                "Device with this name or ESP ID already exists in database"
+            );
         } else {
-            toast({
-                title: "Error",
-                description: "Something went wrong",
-                variant: "destructive",
-            });
+            setError("Something went wrong");
         }
         setIsLoading(false);
     };
 
-    useEffect(() => {
-        if (!isOpen) return;
-        getAllRooms().then((data: Room[]) => {
-            setRooms(data);
-        });
-    }, [isOpen]);
-
     return (
-        <Modal isOpen={isOpen} onClose={onClose} title="Edit device">
+        <Modal
+            error={error}
+            isOpen={isOpen}
+            onClose={onClose}
+            title="Edit device"
+        >
             <DeviceForm
                 isLoading={isLoading}
                 handleSubmit={handleSubmit}

@@ -1,167 +1,82 @@
-import { useAtom } from "jotai";
-import { AlarmClock } from "lucide-react";
-import { useCallback, useContext, useEffect, useMemo, useState } from "react";
+import { useAtomValue } from "jotai";
+import { useEffect, useMemo } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { getNumberOfAttemptsForRound } from "wcif-helpers";
 
-import EventIcon from "@/Components/Icons/EventIcon";
 import LoadingPage from "@/Components/LoadingPage";
-import { Card, CardContent, CardHeader, CardTitle } from "@/Components/ui/card";
-import { activityCodeToName } from "@/lib/activities";
+import PublicResultsBoard from "@/Components/results/PublicResultsBoard";
+import { useLiveQuery } from "@/hooks/useLiveQuery";
+import { usePageHeader } from "@/hooks/usePageHeader";
+import { useSocketRoom } from "@/hooks/useSocketRoom";
 import { competitionAtom } from "@/lib/atoms";
-import { getCompetitionInfo } from "@/lib/competition";
-import { ResultWithAverage, Room } from "@/lib/interfaces";
-import {
-    getResultsByRoundId,
-    orderResultsByAverage,
-    resultsWithAverageProperty,
-} from "@/lib/results";
-import { getAllRooms } from "@/lib/rooms";
-import PageTransition from "@/Pages/PageTransition";
-import { socket, SocketContext } from "@/socket";
+import { Result } from "@/lib/interfaces";
+import { roundResultsQuery } from "@/lib/results";
+import { roomsQuery } from "@/lib/rooms";
+import { shortRoundName } from "@/lib/utils";
 
-import EventAndRoundSelector from "../../../../Components/EventAndRoundSelector";
-import PublicResultsTable from "./Components/PublicResultsTable";
-
+/** Staff copy of the public results; also the Results page for non-delegates */
 const PublicView = () => {
-    const { id } = useParams<{ id: string }>();
+    const { id: roundId = "" } = useParams<{ id: string }>();
     const navigate = useNavigate();
-    const filters = {
-        eventId: id?.split("-")[0] || "",
-        roundId: id || "",
-    };
-    const [competition, setCompetition] = useAtom(competitionAtom);
-    const [results, setResults] = useState<ResultWithAverage[]>([]);
-    const [currentRounds, setCurrentRounds] = useState<string[]>([]);
-
-    const maxAttempts = useMemo(() => {
-        if (!competition) {
-            return 0;
-        }
-        return getNumberOfAttemptsForRound(filters.roundId, competition.wcif);
-    }, [competition, filters.roundId]);
-
-    const fetchData = useCallback(
-        async (roundId: string) => {
-            const data = await getResultsByRoundId(roundId);
-            if (!competition) return;
-            const resultsWithAverage = resultsWithAverageProperty(
-                data,
-                competition.wcif
-            );
-            if (roundId === filters.roundId && roundId !== "") {
-                setResults(orderResultsByAverage(resultsWithAverage));
-            }
-        },
-        [competition, filters.roundId]
+    const competition = useAtomValue(competitionAtom);
+    const { data: rooms } = useLiveQuery(roomsQuery);
+    const liveRoundIds = useMemo(
+        () =>
+            rooms
+                ? [
+                      ...new Set(
+                          rooms.flatMap((room) =>
+                              room.currentGroupIds.map(
+                                  (id) => id.split("-g")[0]
+                              )
+                          )
+                      ),
+                  ]
+                : null,
+        [rooms]
     );
+    // The last round's results stay while the next round loads
+    const resultsQuery = roundResultsQuery(roundId);
+    const { data } = useLiveQuery(resultsQuery, {
+        keepPreviousData: true,
+        enabled: !!roundId,
+    });
+    const results: Result[] = data ?? [];
+    useSocketRoom(roundId ? "Results" : null, {
+        params: { roundId },
+        invalidateOn: { resultEntered: [resultsQuery.key] },
+    });
 
-    const fetchCompetition = useCallback(async () => {
-        const response = await getCompetitionInfo();
-        if (response.status !== 200) {
-            navigate("/competition");
-        }
-        setCompetition(response.data);
-    }, [navigate, setCompetition]);
+    usePageHeader({
+        crumbs: roundId
+            ? [
+                  { label: "Results", to: "/results" },
+                  {
+                      label: shortRoundName(roundId),
+                      to: `/results/round/${roundId}`,
+                  },
+                  { label: "Public view" },
+              ]
+            : [{ label: "Results" }],
+    });
 
-    const handleEventChange = async (eventId: string) => {
-        const roundId = eventId + "-r1";
-        navigate(`/results/public/${roundId}`);
-        await fetchData(roundId);
-    };
-
-    const handleRoundChange = (roundId: string) => {
-        navigate(`/results/public/${roundId}`);
-    };
-
+    // Without a round, open the one in progress or the first one
     useEffect(() => {
-        if (!competition) {
-            fetchCompetition();
-        }
-    }, [competition, fetchCompetition]);
+        if (roundId || !competition || !liveRoundIds) return;
+        const first =
+            liveRoundIds[0] ?? competition.wcif.events[0]?.rounds[0]?.id;
+        if (first) navigate(`/results/public/${first}`, { replace: true });
+    }, [roundId, competition, liveRoundIds, navigate]);
 
-    const [isConnected] = useContext(SocketContext) as [
-        number,
-        React.Dispatch<React.SetStateAction<number>>,
-    ];
-    useEffect(() => {
-        if (filters.roundId) {
-            fetchData(filters.roundId);
-        } else {
-            if (currentRounds.length === 1) {
-                navigate(`/results/public/${currentRounds[0]}`);
-            }
-        }
-
-        socket.emit("joinResults", { roundId: filters.roundId });
-        socket.on("resultEntered", () => {
-            fetchData(filters.roundId);
-        });
-
-        return () => {
-            socket.emit("leaveResults", { roundId: filters.roundId });
-        };
-    }, [fetchData, filters.roundId, navigate, isConnected, currentRounds]);
-
-    useEffect(() => {
-        getAllRooms().then((rooms: Room[]) => {
-            const ids = new Set<string>(
-                rooms
-                    .flatMap((room: Room) => room.currentGroupIds)
-                    .map((groupId: string) => groupId.split("-g")[0])
-            );
-            const idsArray = [...ids];
-            setCurrentRounds(idsArray);
-        });
-    }, []);
-
-    if (!competition || !results) {
-        return <LoadingPage />;
-    }
+    if (!competition) return <LoadingPage />;
 
     return (
-        <PageTransition>
-            <div className="flex flex-col gap-4">
-                <Card>
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-2">
-                            <AlarmClock size={20} />
-                            Results
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent className="flex flex-col gap-5">
-                        <EventAndRoundSelector
-                            competition={competition}
-                            filters={filters}
-                            handleEventChange={handleEventChange}
-                            handleRoundChange={handleRoundChange}
-                        />
-                    </CardContent>
-                </Card>
-                <Card>
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-2">
-                            <EventIcon
-                                eventId={filters.eventId}
-                                size={20}
-                                selected
-                            />
-                            {activityCodeToName(filters.roundId)}
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        {results && results.length > 0 ? (
-                            <PublicResultsTable
-                                results={results}
-                                maxAttempts={maxAttempts}
-                            />
-                        ) : (
-                            <h2 className="text-lg">No results found</h2>
-                        )}
-                    </CardContent>
-                </Card>
-            </div>
-        </PageTransition>
+        <PublicResultsBoard
+            wcif={competition.wcif}
+            roundId={roundId}
+            results={results}
+            liveRoundIds={liveRoundIds ?? []}
+            onRoundChange={(id) => navigate(`/results/public/${id}`)}
+        />
     );
 };
 

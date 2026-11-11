@@ -1,221 +1,242 @@
-import { useAtom } from "jotai";
-import { useCallback, useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { getCompetitionDates } from "wcif-helpers";
+import { useQueries } from "@tanstack/react-query";
+import { useAtomValue, useSetAtom } from "jotai";
+import { useEffect, useMemo, useState } from "react";
 
-import CompetitionStatistics from "@/Components/CompetitionStatistics/CompetitionStatistics";
 import LoadingPage from "@/Components/LoadingPage";
-import { competitionAtom } from "@/lib/atoms";
+import EmptyState from "@/Components/shared/EmptyState";
+import SegmentedControl from "@/Components/shared/SegmentedControl";
+import { useConfirm } from "@/hooks/useConfirm";
+import { useLiveQuery } from "@/hooks/useLiveQuery";
+import { useSocketEvents } from "@/hooks/useSocketEvents";
+import { useSocketRoom } from "@/hooks/useSocketRoom";
+import { useToast } from "@/hooks/useToast";
+import { competitionAtom, quickEntryAtom } from "@/lib/atoms";
+import { recentAttemptsQuery } from "@/lib/attempt";
+import { nextGroupsQuery } from "@/lib/competition";
+import { unresolvedIncidentsQuery } from "@/lib/incidents";
+import { Room } from "@/lib/interfaces";
 import {
-    getActivitiesWithRealEndTime,
-    getCompetitionInfo,
-} from "@/lib/competition";
-import { Activity, Room } from "@/lib/interfaces";
-import { isDelegate, isOrganizerOrDelegate } from "@/lib/permissions";
-import { getAllRooms } from "@/lib/rooms";
-import PageTransition from "@/Pages/PageTransition";
+    isDelegate,
+    isOrganizerOrDelegate,
+    isStageLeaderOrOrganizerOrDelegate,
+} from "@/lib/permissions";
+import { toQueryOptions } from "@/lib/queryCache";
+import { queryClient } from "@/lib/queryClient";
+import {
+    roomsProgressQuery,
+    roomsQuery,
+    updateCurrentRound,
+} from "@/lib/rooms";
+import { getStartLabel } from "@/lib/schedule";
+import { invalidateIncidentLists } from "@/Pages/Main/Incidents/incidentsContext";
 
-import HomeIncidentsCard from "./Components/HomeIncidentsCard";
-import NextGroupCard from "./Components/NextGroupCard";
-import OngoingRoundCard from "./Components/OngoingRoundCard";
-import MobileSchedule from "./Components/Schedule/MobileSchedule";
-import ScheduleInfoCard from "./Components/ScheduleInfoCard";
+import NextGroupInAllRooms from "./Components/NextGroupInAllRooms";
+import RoomCard from "./Components/RoomCard";
+
+/** Re-render this often so the schedule offset stays current */
+const CLOCK_TICK_MS = 30_000;
+
+/** Refetches every query whose path matches */
+const invalidatePaths = (matches: (path: string) => boolean) =>
+    void queryClient.invalidateQueries({
+        predicate: ({ queryKey: [path] }) =>
+            typeof path === "string" && matches(path),
+    });
+
+const refreshResults = () =>
+    invalidatePaths(
+        (path) =>
+            path === roomsProgressQuery.key ||
+            (path.startsWith("attempt/round/") && path.endsWith("/recent"))
+    );
+
+const refreshRooms = () =>
+    invalidatePaths(
+        (path) =>
+            path === roomsQuery.key ||
+            path === roomsProgressQuery.key ||
+            (path.startsWith("competition/rooms/") &&
+                path.endsWith("/next-groups"))
+    );
+
+/** Keeps a round's results room joined while its group runs */
+const ResultsRoom = ({ roundId }: { roundId: string }) => {
+    useSocketRoom("Results", { params: { roundId } });
+    return null;
+};
 
 const Home = () => {
-    const navigate = useNavigate();
-    const [competition, setCompetition] = useAtom(competitionAtom);
-    const [rooms, setRooms] = useState<Room[]>([]);
-    const [selectedVenue, setSelectedVenue] = useState<number>(0);
-    const [selectedRoom, setSelectedRoom] = useState<number>(0);
-    const [selectedDate, setSelectedDate] = useState<Date>(new Date());
-    const [possibleDates, setPossibleDates] = useState<Date[]>([]);
-    const [activities, setActivities] = useState<Activity[]>([]);
+    const competition = useAtomValue(competitionAtom);
+    const setQuickEntry = useSetAtom(quickEntryAtom);
+    const confirm = useConfirm();
+    const { toast } = useToast();
 
-    const fetchActivitiesData = (
-        selectedVenueId: number,
-        selectedRoomId: number,
-        date: Date
-    ) => {
-        getActivitiesWithRealEndTime(
-            selectedVenueId,
-            selectedRoomId,
-            date
-        ).then((data) => {
-            setActivities(data);
-        });
-    };
+    const { data: rooms } = useLiveQuery(roomsQuery);
+    const { data: progressData } = useLiveQuery(roomsProgressQuery);
+    const progress = progressData ?? [];
+    const [selectedRoomId, setSelectedRoomId] = useState<string>();
+    const [now, setNow] = useState(() => new Date());
 
-    const fetchRooms = useCallback(async () => {
-        const data = await getAllRooms();
-        setRooms(data);
+    const canStartGroups = isOrganizerOrDelegate();
+    const canResolveIncidents = isDelegate();
+
+    const currentRoundIds = useMemo(
+        () => [
+            ...new Set(
+                (rooms ?? []).flatMap((room) =>
+                    room.currentGroupIds.map((id) => id.split("-g")[0])
+                )
+            ),
+        ],
+        [rooms]
+    );
+
+    const { data: incidentsData } = useLiveQuery(unresolvedIncidentsQuery, {
+        enabled: canResolveIncidents,
+    });
+    const incidents = incidentsData ?? [];
+
+    // Keyed by round and by room, only once each has loaded
+    const recentAttempts = useQueries({
+        queries: currentRoundIds.map((roundId) =>
+            toQueryOptions(recentAttemptsQuery(roundId))
+        ),
+        combine: (results) =>
+            Object.fromEntries(
+                currentRoundIds.flatMap((roundId, index) =>
+                    results[index].data ? [[roundId, results[index].data]] : []
+                )
+            ),
+    });
+    const nextGroups = useQueries({
+        queries: (canStartGroups ? rooms ?? [] : []).map((room) =>
+            toQueryOptions(nextGroupsQuery(room.id))
+        ),
+        combine: (results): Record<string, string[]> =>
+            Object.fromEntries(
+                (rooms ?? []).flatMap((room, index) =>
+                    results[index]?.data ? [[room.id, results[index].data]] : []
+                )
+            ),
+    });
+
+    // The layout keeps the incidents room joined; ResultsRoom joins each
+    // running round's results room
+    useSocketEvents({
+        resultEntered: refreshResults,
+        newIncident: () => void invalidateIncidentLists(),
+        attemptUpdated: () => void invalidateIncidentLists(),
+    });
+
+    useEffect(() => {
+        const interval = setInterval(() => setNow(new Date()), CLOCK_TICK_MS);
+        return () => clearInterval(interval);
     }, []);
 
-    const fetchData = useCallback(async () => {
-        const response = await getCompetitionInfo();
-        if (response.status === 404) {
-            navigate("/competition");
+    if (!competition || !rooms) return <LoadingPage />;
+
+    const incidentsByRoom = (roomId: string) =>
+        incidents.filter((incident) => incident.device?.roomId === roomId);
+
+    const handleStartNext = async (room: Room, nextGroupIds: string[]) => {
+        const label = getStartLabel(room.currentGroupIds, nextGroupIds);
+        try {
+            await confirm({
+                title: `${label} in ${room.name}?`,
+                description:
+                    "Devices in this room will switch to the new group.",
+                confirmLabel: label ?? "Start",
+                variant: "default",
+            });
+        } catch {
+            return;
         }
-        setCompetition(response.data);
-        setSelectedVenue(response.data.wcif.schedule.venues[0].id);
-        const competitionDates = getCompetitionDates(
-            new Date(response.data.wcif.schedule.startDate),
-            response.data.wcif.schedule.numberOfDays
-        );
-        setPossibleDates(competitionDates);
-        const todayPresent = competitionDates.find(
-            (date) => date.toDateString() === new Date().toDateString()
-        );
-        if (todayPresent) {
-            setSelectedDate(new Date());
-        } else {
-            setSelectedDate(competitionDates[0]);
-        }
-        setSelectedRoom(response.data.wcif.schedule.venues[0].rooms[0].id);
-    }, [navigate, setCompetition]);
-
-    useEffect(() => {
-        fetchData();
-    }, [fetchData]);
-
-    useEffect(() => {
-        fetchRooms().then(() => {
-            fetchActivitiesData(selectedVenue, selectedRoom, selectedDate);
-        });
-    }, [selectedDate, selectedRoom, selectedVenue, fetchRooms]);
-
-    if (!competition || !rooms) {
-        return <LoadingPage />;
-    }
-
-    const ongoingRoundIds = [
-        ...new Set(
-            rooms.flatMap((room) =>
-                room.currentGroupIds.map((gid) => gid.split("-g")[0])
+        const response = await updateCurrentRound(
+            rooms.map((r) =>
+                r.id === room.id ? { ...r, currentGroupIds: nextGroupIds } : r
             )
-        ),
-    ].filter(Boolean);
+        );
+        if (response.status === 200) {
+            toast({ title: `${room.name}: group started`, variant: "success" });
+            refreshRooms();
+        } else {
+            toast({
+                title: "Failed to start the group",
+                description: response.data?.message,
+                variant: "destructive",
+            });
+        }
+    };
 
-    const showNextGroup = isOrganizerOrDelegate() && rooms.length > 0;
-    const showIncidents = isDelegate();
-    const hasOngoingRounds =
-        isOrganizerOrDelegate() && ongoingRoundIds.length > 0;
-    // Merge round cards into the top row when there are 1–2 rounds and at least one top card
-    const mergeTopRow =
-        hasOngoingRounds &&
-        ongoingRoundIds.length <= 2 &&
-        (showNextGroup || showIncidents);
+    const handleSwitchAll = async (updated: Room[]) => {
+        const response = await updateCurrentRound(updated);
+        if (response.status !== 200)
+            return response.data?.message ?? "Failed to start the next groups";
+        toast({ title: "Next group started in all rooms", variant: "success" });
+        refreshRooms();
+        return null;
+    };
 
-    const topCardCount =
-        (showNextGroup ? 1 : 0) +
-        (showIncidents ? 1 : 0) +
-        (mergeTopRow ? ongoingRoundIds.length : 0);
+    const selectedRoom =
+        rooms.find((room) => room.id === selectedRoomId) ?? rooms[0];
 
-    const topGridCols =
-        topCardCount === 4
-            ? "md:grid-cols-4"
-            : topCardCount === 3
-              ? "md:grid-cols-3"
-              : topCardCount === 2
-                ? "md:grid-cols-2"
-                : "";
+    const renderRoom = (room: Room) => (
+        <RoomCard
+            key={room.id}
+            room={room}
+            wcif={competition.wcif}
+            progress={progress.find((p) => p.roomId === room.id)?.groups ?? []}
+            incidents={incidentsByRoom(room.id)}
+            recentAttempts={recentAttempts}
+            nextGroupIds={canStartGroups ? nextGroups[room.id] : undefined}
+            now={now}
+            isRoomNamedElsewhere={rooms.length > 1}
+            canEnterAttempts={isDelegate() && competition.useFkmTimeDevices}
+            canOpenAttendance={isStageLeaderOrOrganizerOrDelegate()}
+            canResolveIncidents={canResolveIncidents}
+            onStartNext={handleStartNext}
+            onEnterAttempt={(roundId) =>
+                setQuickEntry({ isOpen: true, roundId })
+            }
+        />
+    );
+
+    if (rooms.length === 0)
+        return <EmptyState>This competition has no rooms.</EmptyState>;
 
     return (
-        <PageTransition>
-            <div className="flex flex-col gap-4">
-                {(showNextGroup || showIncidents || mergeTopRow) && (
-                    <div className={`grid grid-cols-1 gap-4 ${topGridCols}`}>
-                        {showNextGroup && (
-                            <NextGroupCard
-                                rooms={rooms}
-                                onGroupSwitched={fetchRooms}
-                            />
-                        )}
-                        {showIncidents && <HomeIncidentsCard />}
-                        {mergeTopRow &&
-                            ongoingRoundIds.map((roundId) => (
-                                <OngoingRoundCard
-                                    key={roundId}
-                                    roundId={roundId}
-                                    rooms={rooms}
-                                    onGroupSwitched={fetchRooms}
-                                />
-                            ))}
-                    </div>
-                )}
-
-                {!mergeTopRow && hasOngoingRounds && (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                        {ongoingRoundIds.map((roundId) => (
-                            <OngoingRoundCard
-                                key={roundId}
-                                roundId={roundId}
-                                rooms={rooms}
-                                onGroupSwitched={fetchRooms}
-                            />
-                        ))}
-                    </div>
-                )}
-
-                {isOrganizerOrDelegate() && competition.useFkmTimeDevices && (
-                    <CompetitionStatistics combined />
-                )}
-
-                {activities && activities.length > 0 ? (
-                    <>
-                        <div className="hidden md:block">
-                            <ScheduleInfoCard
-                                competition={competition}
-                                fetchActivitiesData={fetchActivitiesData}
-                                activities={activities}
-                                possibleDates={possibleDates}
-                                selectedDate={selectedDate}
-                                setSelectedDate={setSelectedDate}
-                                selectedVenue={selectedVenue}
-                                setSelectedVenue={setSelectedVenue}
-                                selectedRoom={selectedRoom}
-                                setSelectedRoom={setSelectedRoom}
-                            />
-                        </div>
-                        <div className="block md:hidden">
-                            <MobileSchedule
-                                activities={activities}
-                                competition={competition}
-                                possibleDates={possibleDates}
-                                selectedDate={selectedDate}
-                                selectedVenue={selectedVenue}
-                                selectedRoom={selectedRoom}
-                                onDateChange={(date) => {
-                                    setSelectedDate(date);
-                                    fetchActivitiesData(
-                                        selectedVenue,
-                                        selectedRoom,
-                                        date
-                                    );
-                                }}
-                                onVenueChange={(id) => {
-                                    setSelectedVenue(id);
-                                    fetchActivitiesData(
-                                        id,
-                                        selectedRoom,
-                                        selectedDate
-                                    );
-                                }}
-                                onRoomChange={(id) => {
-                                    setSelectedRoom(id);
-                                    fetchActivitiesData(
-                                        selectedVenue,
-                                        id,
-                                        selectedDate
-                                    );
-                                }}
-                            />
-                        </div>
-                    </>
-                ) : (
-                    <p>No activities</p>
-                )}
+        <>
+            {currentRoundIds.map((roundId) => (
+                <ResultsRoom key={roundId} roundId={roundId} />
+            ))}
+            {canStartGroups && (
+                <NextGroupInAllRooms
+                    rooms={rooms}
+                    nextGroups={nextGroups}
+                    onSwitch={handleSwitchAll}
+                />
+            )}
+            {rooms.length > 1 && (
+                <SegmentedControl
+                    label="Room"
+                    fullWidth
+                    className="md:hidden"
+                    value={selectedRoom.id}
+                    onValueChange={setSelectedRoomId}
+                    options={rooms.map((room) => ({
+                        value: room.id,
+                        label: room.name,
+                        badge: canResolveIncidents
+                            ? incidentsByRoom(room.id).length
+                            : undefined,
+                    }))}
+                />
+            )}
+            <div className="md:hidden">{renderRoom(selectedRoom)}</div>
+            <div className="hidden grid-cols-1 items-start gap-6 md:grid lg:grid-cols-2 2xl:grid-cols-3">
+                {rooms.map(renderRoom)}
             </div>
-        </PageTransition>
+        </>
     );
 };
 

@@ -1,8 +1,8 @@
-import GridLoader from "react-spinners/GridLoader";
+import { GridLoader } from "react-spinners";
 
 const LoadingPage = () => {
     return (
-        <div className="flex justify-center items-center h-screen">
+        <div className="flex justify-center items-center h-dvh">
             <GridLoader color="lightBlue" />
         </div>
     );

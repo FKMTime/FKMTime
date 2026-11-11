@@ -1,0 +1,994 @@
+import {
+  Attempt,
+  AttemptStatus,
+  AttemptType,
+  SendingResultsFrequency,
+} from '@prisma/client';
+import { AppGateway } from 'src/app.gateway';
+import { AttemptEditLogService } from 'src/attempt-edit-log/attempt-edit-log.service';
+import { AttendanceService } from 'src/attendance/attendance.service';
+import { DbService } from 'src/db/db.service';
+import { IncidentService } from 'src/incident/incident.service';
+import { ResultService } from 'src/result/result.service';
+import { SocketController } from 'src/socket/socket.controller';
+
+import { AttemptService } from './attempt.service';
+
+describe('AttemptService extras for all attempts', () => {
+  const stored = (overrides: Partial<Attempt>) =>
+    ({
+      replacedBy: null,
+      type: AttemptType.STANDARD_ATTEMPT,
+      status: AttemptStatus.STANDARD,
+      penalty: 0,
+      value: 1500,
+      ...overrides,
+    }) as Attempt;
+
+  let attempts: Attempt[];
+  let grants: { id: string; restoredAt: Date | null; attempts: Attempt[] }[];
+  let format: string;
+  let cutoff: { numberOfAttempts: number; resultValue: number } | null;
+  let sendingResultsFrequency: SendingResultsFrequency;
+  let prisma: Record<string, any>;
+  let resultService: {
+    enterWholeScorecardToWcaLiveOrCubingContests: jest.Mock;
+    settleWaitingExtras: jest.Mock;
+  };
+  let appGateway: {
+    handleAttemptUpdated: jest.Mock;
+    handleResultEntered: jest.Mock;
+  };
+  let service: AttemptService;
+
+  const give = (attemptIds: string[], extra = {}) =>
+    service.giveExtras(
+      {
+        resultId: 'result-1',
+        attemptIds,
+        comment: 'Illegal cube',
+        useFreshSet: false,
+        removeFromLive: true,
+        ...extra,
+      },
+      'user-1',
+    );
+
+  beforeEach(() => {
+    attempts = [
+      stored({ id: 's1', attemptNumber: 1 }),
+      stored({
+        id: 's2',
+        attemptNumber: 2,
+        status: AttemptStatus.RESOLVED,
+      }),
+    ];
+    grants = [];
+    format = 'a';
+    cutoff = null;
+    sendingResultsFrequency = SendingResultsFrequency.AFTER_SOLVE;
+    prisma = {
+      competition: {
+        findFirst: jest.fn().mockImplementation(async () => ({
+          sendingResultsFrequency,
+          wcif: {
+            events: [{ id: '333', rounds: [{ id: '333-r1', format, cutoff }] }],
+          },
+        })),
+      },
+      result: {
+        findUnique: jest
+          .fn()
+          .mockImplementation(async ({ where }) =>
+            where.id === 'result-1'
+              ? { id: 'result-1', roundId: '333-r1', attempts }
+              : null,
+          ),
+        update: jest.fn(),
+      },
+      attempt: {
+        update: jest.fn().mockImplementation(async ({ where, data }) => {
+          const attempt = attempts.find((a) => a.id === where.id);
+          const { extraGrant, ...scalars } = data;
+          delete scalars.updatedBy;
+          Object.assign(attempt, scalars);
+          if (extraGrant) {
+            attempt.extraGrantId = extraGrant.connect?.id ?? null;
+          }
+          return attempt;
+        }),
+      },
+      extraGrant: {
+        create: jest.fn().mockImplementation(async () => {
+          const grant = {
+            id: `grant-${grants.length + 1}`,
+            resultId: 'result-1',
+            restoredAt: null,
+            attempts: [],
+          };
+          grants.push(grant);
+          return grant;
+        }),
+        findUnique: jest.fn().mockImplementation(async ({ where }) => {
+          const grant = grants.find((g) => g.id === where.id);
+          return (
+            grant && {
+              ...grant,
+              attempts: attempts.filter((a) => a.extraGrantId === grant.id),
+            }
+          );
+        }),
+        findFirst: jest.fn().mockImplementation(async ({ where }) => {
+          const grant = (
+            where.restoredAt === null
+              ? grants.filter((g) => !g.restoredAt)
+              : grants.filter((g) => g.restoredAt)
+          ).at(-1);
+          return grant ? { ...grant, attempts: [] } : null;
+        }),
+        update: jest.fn().mockImplementation(async ({ where, data }) => {
+          Object.assign(
+            grants.find((g) => g.id === where.id),
+            data,
+          );
+        }),
+      },
+    };
+    prisma.$transaction = jest.fn().mockImplementation((work) => work(prisma));
+    resultService = {
+      enterWholeScorecardToWcaLiveOrCubingContests: jest.fn(),
+      settleWaitingExtras: jest.fn(),
+    };
+    appGateway = {
+      handleAttemptUpdated: jest.fn(),
+      handleResultEntered: jest.fn(),
+    };
+    service = new AttemptService(
+      appGateway as unknown as AppGateway,
+      prisma as unknown as DbService,
+      { markCompetitorAsPresent: jest.fn() } as unknown as AttendanceService,
+      { log: jest.fn() } as unknown as AttemptEditLogService,
+      resultService as unknown as ResultService,
+      null as SocketController,
+      null as IncidentService,
+    );
+  });
+
+  it('leaves the chosen attempts waiting for extras', async () => {
+    await expect(give(['s1', 's2'])).resolves.toEqual({ replaced: 2 });
+
+    expect(attempts.map((a) => a.status)).toEqual([
+      AttemptStatus.EXTRA_GIVEN,
+      AttemptStatus.EXTRA_GIVEN,
+    ]);
+    expect(attempts.map((a) => a.statusBeforeGrant)).toEqual([
+      AttemptStatus.STANDARD,
+      AttemptStatus.RESOLVED,
+    ]);
+    expect(attempts.every((a) => a.comment === 'Illegal cube')).toBe(true);
+  });
+
+  it('only touches the chosen attempts', async () => {
+    await give(['s2']);
+
+    expect(attempts[0].status).toBe(AttemptStatus.STANDARD);
+    expect(attempts[1].status).toBe(AttemptStatus.EXTRA_GIVEN);
+  });
+
+  it('clears the double-check', async () => {
+    await give(['s1']);
+
+    expect(prisma.result.update).toHaveBeenCalledWith({
+      where: { id: 'result-1' },
+      data: expect.objectContaining({ isDoubleChecked: false }),
+    });
+  });
+
+  it('sends the scorecard when asked to remove the times', async () => {
+    await give(['s1']);
+
+    expect(
+      resultService.enterWholeScorecardToWcaLiveOrCubingContests,
+    ).toHaveBeenCalledWith('result-1');
+  });
+
+  it('sends nothing when not asked to', async () => {
+    await give(['s1'], { removeFromLive: false });
+
+    expect(
+      resultService.enterWholeScorecardToWcaLiveOrCubingContests,
+    ).not.toHaveBeenCalled();
+  });
+
+  it('sends nothing on a competition set to never send', async () => {
+    sendingResultsFrequency = SendingResultsFrequency.NEVER;
+
+    await give(['s1']);
+
+    expect(
+      resultService.enterWholeScorecardToWcaLiveOrCubingContests,
+    ).not.toHaveBeenCalled();
+  });
+
+  it('survives a failed send', async () => {
+    jest.spyOn(console, 'error').mockImplementation(() => undefined);
+    resultService.enterWholeScorecardToWcaLiveOrCubingContests.mockRejectedValue(
+      new Error('offline'),
+    );
+
+    await expect(give(['s1'])).resolves.toEqual({ replaced: 1 });
+  });
+
+  it('rejects a result that does not exist', async () => {
+    await expect(
+      service.giveExtras(
+        {
+          resultId: 'missing',
+          attemptIds: ['s1'],
+          useFreshSet: false,
+          removeFromLive: true,
+        },
+        'user-1',
+      ),
+    ).rejects.toMatchObject({ status: 404 });
+  });
+
+  it('rejects an attempt that does not count', async () => {
+    attempts[1].status = AttemptStatus.SCRAMBLED;
+
+    await expect(give(['s2'])).rejects.toMatchObject({ status: 400 });
+  });
+
+  it('rejects a head-to-head round', async () => {
+    format = 'h';
+
+    await expect(give(['s1'])).rejects.toMatchObject({ status: 400 });
+  });
+
+  it('asks to resolve an open incident first', async () => {
+    attempts[1].status = AttemptStatus.UNRESOLVED;
+
+    await expect(give(['s1'])).rejects.toMatchObject({ status: 409 });
+  });
+
+  describe('entering an extra by hand', () => {
+    const enter = (attemptNumber: number, type: AttemptType) =>
+      service.createAttempt(
+        {
+          attemptNumber,
+          type,
+          value: 1500,
+          penalty: 0,
+          status: AttemptStatus.STANDARD,
+          comment: '',
+          competitorId: 'person-1',
+          roundId: '333-r1',
+          replacedBy: 0,
+        } as never,
+        'user-1',
+      );
+
+    beforeEach(() => {
+      prisma.attempt.findFirst = jest.fn().mockResolvedValue(null);
+      prisma.attempt.findMany = jest
+        .fn()
+        .mockImplementation(async () => attempts);
+      prisma.attempt.create = jest.fn().mockImplementation(async ({ data }) => {
+        const created = stored({
+          id: `new-${attempts.length}`,
+          attemptNumber: data.attemptNumber,
+          type: data.type,
+          status: data.status,
+        });
+        attempts.push(created);
+        return created;
+      });
+      prisma.staffActivity = { findFirst: jest.fn().mockResolvedValue(null) };
+      Object.assign(resultService, {
+        getResultOrCreate: jest.fn().mockResolvedValue({
+          id: 'result-1',
+          roundId: '333-r1',
+          person: { id: 'person-1' },
+        }),
+      });
+    });
+
+    it('replaces the next attempt waiting for a redo', async () => {
+      attempts[0].status = AttemptStatus.EXTRA_GIVEN;
+      attempts[1].status = AttemptStatus.EXTRA_GIVEN;
+
+      await enter(1, AttemptType.EXTRA_ATTEMPT);
+
+      expect(attempts[0].replacedBy).toBe(1);
+      expect(attempts[1].replacedBy).toBeNull();
+    });
+
+    it('keeps extras in order whichever is entered first', async () => {
+      attempts[0].status = AttemptStatus.EXTRA_GIVEN;
+      attempts[1].status = AttemptStatus.EXTRA_GIVEN;
+      attempts[0].extraGrantId = 'grant-1';
+      attempts[1].extraGrantId = 'grant-1';
+
+      await enter(2, AttemptType.EXTRA_ATTEMPT);
+      await enter(1, AttemptType.EXTRA_ATTEMPT);
+
+      expect(attempts[0].replacedBy).toBe(1);
+      expect(attempts[1].replacedBy).toBe(2);
+    });
+
+    it('leaves extras a delegate assigned outside a grant', async () => {
+      attempts[0].status = AttemptStatus.EXTRA_GIVEN;
+      attempts[0].replacedBy = 2;
+      attempts[1].status = AttemptStatus.EXTRA_GIVEN;
+
+      await enter(1, AttemptType.EXTRA_ATTEMPT);
+
+      expect(attempts[0].replacedBy).toBe(2);
+      expect(attempts[1].replacedBy).toBe(1);
+    });
+
+    it('leaves attempts alone for a standard attempt', async () => {
+      attempts[0].status = AttemptStatus.EXTRA_GIVEN;
+
+      await enter(3, AttemptType.STANDARD_ATTEMPT);
+
+      expect(attempts[0].replacedBy).toBeNull();
+    });
+  });
+
+  describe('restoring the original attempts', () => {
+    it('puts every attempt back as it was', async () => {
+      await give(['s1', 's2']);
+      attempts[0].replacedBy = 1;
+
+      await expect(
+        service.restoreExtraGrant('grant-1', 'user-1'),
+      ).resolves.toEqual({ restored: 2 });
+
+      expect(attempts.map((a) => a.status)).toEqual([
+        AttemptStatus.STANDARD,
+        AttemptStatus.RESOLVED,
+      ]);
+      expect(attempts.map((a) => a.replacedBy)).toEqual([null, null]);
+      expect(grants[0].restoredAt).toBeInstanceOf(Date);
+    });
+
+    it('brings back an attempt that was voided', async () => {
+      await give(['s1']);
+      attempts[0].status = AttemptStatus.VOIDED;
+
+      await service.restoreExtraGrant('grant-1', 'user-1');
+
+      expect(attempts[0].status).toBe(AttemptStatus.STANDARD);
+    });
+
+    it('clears the double-check and sends the scorecard', async () => {
+      await give(['s1'], { removeFromLive: false });
+      prisma.result.update.mockClear();
+
+      await service.restoreExtraGrant('grant-1', 'user-1');
+
+      expect(prisma.result.update).toHaveBeenCalled();
+      expect(
+        resultService.enterWholeScorecardToWcaLiveOrCubingContests,
+      ).toHaveBeenCalledWith('result-1');
+    });
+
+    it('only restores the latest grant', async () => {
+      await give(['s1']);
+      await give(['s2']);
+
+      await expect(
+        service.restoreExtraGrant('grant-1', 'user-1'),
+      ).rejects.toMatchObject({ status: 409 });
+    });
+
+    it('switches back to the extras without entering them again', async () => {
+      await give(['s1', 's2']);
+      attempts[0].replacedBy = 1;
+      attempts[1].status = AttemptStatus.VOIDED;
+
+      await service.restoreExtraGrant('grant-1', 'user-1');
+      await expect(
+        service.reapplyExtraGrant('grant-1', 'user-1'),
+      ).resolves.toEqual({ reapplied: 2 });
+
+      expect(attempts.map((a) => a.status)).toEqual([
+        AttemptStatus.EXTRA_GIVEN,
+        AttemptStatus.VOIDED,
+      ]);
+      expect(attempts[0].replacedBy).toBe(1);
+      expect(grants[0].restoredAt).toBeNull();
+      expect(
+        resultService.enterWholeScorecardToWcaLiveOrCubingContests,
+      ).toHaveBeenCalledTimes(3);
+    });
+
+    it('can switch back and forth', async () => {
+      await give(['s1']);
+
+      await service.restoreExtraGrant('grant-1', 'user-1');
+      await service.reapplyExtraGrant('grant-1', 'user-1');
+      await service.restoreExtraGrant('grant-1', 'user-1');
+
+      expect(attempts[0].status).toBe(AttemptStatus.STANDARD);
+    });
+
+    it('refuses to reapply extras already in use', async () => {
+      await give(['s1']);
+
+      await expect(
+        service.reapplyExtraGrant('grant-1', 'user-1'),
+      ).rejects.toMatchObject({ status: 409 });
+    });
+
+    it('rejects a grant that does not exist', async () => {
+      await expect(
+        service.restoreExtraGrant('missing', 'user-1'),
+      ).rejects.toMatchObject({ status: 404 });
+    });
+
+    it('asks to resolve an open incident first', async () => {
+      await give(['s1']);
+      attempts[1].status = AttemptStatus.UNRESOLVED;
+
+      await expect(
+        service.restoreExtraGrant('grant-1', 'user-1'),
+      ).rejects.toMatchObject({ status: 409 });
+    });
+  });
+  describe('ruling every attempt DNF', () => {
+    const dnf = (attemptIds: string[]) =>
+      service.dnfAttempts({ attemptIds, comment: 'Illegal cube' }, 'user-1');
+
+    let logged: [Attempt, Date, string | null, string][];
+    /** Every snapshot the service logged for an attempt, as the edit history holds them */
+    const editLogs = (id: string) =>
+      logged
+        .filter(([snapshot]) => snapshot.id === id)
+        .map(([snapshot, editedAt, , comment]) => ({
+          comment,
+          penalty: snapshot.penalty,
+          status: snapshot.status,
+          editedAt,
+        }));
+    const entered = (attempt: Attempt) =>
+      (service as any).attemptEditLogService.log(
+        { ...attempt },
+        new Date(Date.now() - 60_000),
+        null,
+        'Entered',
+      );
+
+    let results: Record<string, any>[];
+
+    beforeEach(() => {
+      results = [
+        {
+          id: 'result-1',
+          personId: 'person-1',
+          eventId: '333',
+          roundId: '333-r1',
+          removedAt: null,
+        },
+        {
+          id: 'result-2',
+          personId: 'person-1',
+          eventId: '333',
+          roundId: '333-r2',
+          removedAt: null,
+          attempts: [],
+        },
+      ];
+      prisma.result.findUnique = jest
+        .fn()
+        .mockImplementation(async ({ where }) => {
+          const result = results.find((r) => r.id === where.id);
+          return result && { ...result, attempts: result.attempts ?? attempts };
+        });
+      prisma.result.findMany = jest
+        .fn()
+        .mockImplementation(async ({ where }) =>
+          results.filter((r) =>
+            where.removedByRulingOfId
+              ? r.removedByRulingOfId === where.removedByRulingOfId
+              : r.personId === where.personId && r.eventId === where.eventId,
+          ),
+        );
+      prisma.result.update = jest
+        .fn()
+        .mockImplementation(async ({ where, data }) => {
+          const result = results.find((r) => r.id === where.id);
+          if ('removedAt' in data) result.removedAt = data.removedAt;
+          if (data.removedByRulingOf?.connect) {
+            result.removedByRulingOfId = data.removedByRulingOf.connect.id;
+          }
+          if (data.removedByRulingOf?.disconnect) {
+            result.removedByRulingOfId = null;
+          }
+        });
+      (service as any).resultService.notRemoved = {
+        removedAt: null,
+        removedByRulingOf: { disconnect: true },
+      };
+      logged = [];
+      (service as any).attemptEditLogService.log = jest.fn(
+        async (
+          snapshot: Attempt,
+          editedAt: Date,
+          userId: string | null,
+          comment: string,
+        ) => {
+          logged.push([{ ...snapshot }, editedAt, userId, comment]);
+        },
+      );
+      prisma.attempt.findMany = jest
+        .fn()
+        .mockImplementation(async ({ where }) =>
+          where.id
+            ? attempts.filter((a) => where.id.in.includes(a.id))
+            : attempts
+                .filter((a) => a.penalty === where.penalty)
+                .map((a) => ({ ...a, editLogs: editLogs(a.id) })),
+        );
+      prisma.attempt.create = jest.fn().mockImplementation(async ({ data }) => {
+        const { result, ...scalars } = data;
+        delete scalars.updatedBy;
+        const created = {
+          ...scalars,
+          id: `new-${scalars.attemptNumber}`,
+          resultId: result.connect.id,
+          replacedBy: null,
+        } as Attempt;
+        attempts.push(created);
+        return created;
+      });
+      prisma.attempt.deleteMany = jest
+        .fn()
+        .mockImplementation(async ({ where }) => {
+          attempts = attempts.filter((a) => !where.id.in.includes(a.id));
+        });
+      attempts.forEach((a) => (a.resultId = 'result-1'));
+      attempts[1].penalty = 2;
+      attempts.forEach(entered);
+    });
+
+    const disqualify = (attemptIds: string[] = []) =>
+      service.dnfAttempts(
+        { attemptIds, remainingInResultId: 'result-1', comment: 'DQ' },
+        'user-1',
+      );
+    const numbers = () =>
+      attempts
+        .filter((a) => a.type === AttemptType.STANDARD_ATTEMPT)
+        .map((a) => [a.attemptNumber, a.penalty]);
+
+    it('records the remaining attempts as DNF and keeps completed ones', async () => {
+      await expect(disqualify()).resolves.toEqual({
+        updated: 3,
+        removedResults: 0,
+      });
+
+      expect(numbers()).toEqual([
+        [1, 0],
+        [2, 2],
+        [3, -1],
+        [4, -1],
+        [5, -1],
+      ]);
+      expect(appGateway.handleResultEntered).toHaveBeenCalledWith('333-r1');
+    });
+
+    it('can rule completed attempts DNF as well', async () => {
+      await disqualify(['s1']);
+
+      expect(numbers().map(([, penalty]) => penalty)).toEqual([
+        -1, 2, -1, -1, -1,
+      ]);
+    });
+
+    it('stops at the cutoff the competitor can no longer make', async () => {
+      cutoff = { numberOfAttempts: 2, resultValue: 1000 };
+      attempts.pop();
+
+      await disqualify();
+
+      expect(numbers()).toEqual([
+        [1, 0],
+        [2, -1],
+      ]);
+    });
+
+    it('fills every attempt when the cutoff was already made', async () => {
+      cutoff = { numberOfAttempts: 2, resultValue: 2000 };
+
+      await disqualify();
+
+      expect(numbers()).toHaveLength(5);
+    });
+
+    it('records a scrambled attempt as DNF', async () => {
+      attempts.push({
+        ...attempts[0],
+        id: 's3',
+        attemptNumber: 3,
+        status: AttemptStatus.SCRAMBLED,
+        value: 0,
+      });
+
+      await disqualify();
+
+      expect(attempts.find((a) => a.id === 's3')).toMatchObject({
+        status: AttemptStatus.STANDARD,
+        penalty: -1,
+      });
+      expect(numbers()).toHaveLength(5);
+    });
+
+    it('records nothing for a competitor with no attempt yet', async () => {
+      attempts = [];
+
+      await expect(disqualify()).rejects.toMatchObject({ status: 400 });
+    });
+
+    it('asks to switch back while attempts wait for extras', async () => {
+      attempts[1].status = AttemptStatus.EXTRA_GIVEN;
+
+      await expect(disqualify()).rejects.toMatchObject({ status: 409 });
+    });
+
+    it('rejects a round with no attempts left', async () => {
+      attempts.push(
+        ...[3, 4, 5].map((n) => ({
+          ...attempts[0],
+          id: `s${n}`,
+          attemptNumber: n,
+        })),
+      );
+
+      await expect(disqualify()).rejects.toMatchObject({ status: 400 });
+    });
+
+    it('removes the recorded attempts on restore', async () => {
+      await disqualify(['s1']);
+
+      await expect(
+        service.restoreDnfAttempts('result-1', 'user-1'),
+      ).resolves.toEqual({
+        restored: 1,
+        removed: 3,
+        broughtBack: 0,
+      });
+      expect(numbers()).toEqual([
+        [1, 0],
+        [2, 2],
+      ]);
+    });
+
+    it('puts a scrambled attempt back on restore', async () => {
+      attempts.push({
+        ...attempts[0],
+        id: 's3',
+        attemptNumber: 3,
+        status: AttemptStatus.SCRAMBLED,
+        value: 0,
+        scrambledAt: new Date(Date.now() - 30_000),
+      });
+
+      await disqualify();
+      await service.restoreDnfAttempts('result-1', 'user-1');
+
+      expect(attempts.find((a) => a.id === 's3')).toMatchObject({
+        status: AttemptStatus.SCRAMBLED,
+        penalty: 0,
+      });
+    });
+
+    it('keeps the times and sets the penalty to DNF', async () => {
+      await expect(dnf(['s1', 's2'])).resolves.toEqual({
+        updated: 2,
+        removedResults: 0,
+      });
+
+      expect(attempts.map((a) => a.penalty)).toEqual([-1, -1]);
+      expect(attempts.map((a) => a.value)).toEqual([1500, 1500]);
+      expect(attempts.every((a) => a.comment === 'Illegal cube')).toBe(true);
+    });
+
+    it('clears the double-check and sends the scorecard', async () => {
+      await dnf(['s1']);
+
+      expect(prisma.result.update).toHaveBeenCalledWith({
+        where: { id: 'result-1' },
+        data: expect.objectContaining({ isDoubleChecked: false }),
+      });
+      expect(
+        resultService.enterWholeScorecardToWcaLiveOrCubingContests,
+      ).toHaveBeenCalledWith('result-1');
+    });
+
+    it('sends nothing on a competition set to never send', async () => {
+      sendingResultsFrequency = SendingResultsFrequency.NEVER;
+
+      await dnf(['s1']);
+
+      expect(
+        resultService.enterWholeScorecardToWcaLiveOrCubingContests,
+      ).not.toHaveBeenCalled();
+    });
+
+    it('rejects an attempt that is already DNF', async () => {
+      attempts[0].penalty = -1;
+
+      await expect(dnf(['s1'])).rejects.toMatchObject({ status: 400 });
+    });
+
+    it('rejects an attempt that does not count', async () => {
+      attempts[1].status = AttemptStatus.EXTRA_GIVEN;
+
+      await expect(dnf(['s2'])).rejects.toMatchObject({ status: 400 });
+    });
+
+    it('rejects an attempt that does not exist', async () => {
+      await expect(dnf(['missing'])).rejects.toMatchObject({ status: 404 });
+    });
+
+    it('rejects a head-to-head round', async () => {
+      format = 'h';
+
+      await expect(dnf(['s1'])).rejects.toMatchObject({ status: 400 });
+    });
+
+    it('asks to resolve an open incident first', async () => {
+      attempts[1].status = AttemptStatus.UNRESOLVED;
+
+      await expect(dnf(['s1'])).rejects.toMatchObject({ status: 409 });
+    });
+
+    it('restores the original penalties', async () => {
+      await dnf(['s1', 's2']);
+      resultService.enterWholeScorecardToWcaLiveOrCubingContests.mockClear();
+
+      await expect(
+        service.restoreDnfAttempts('result-1', 'user-1'),
+      ).resolves.toEqual({
+        restored: 2,
+        removed: 0,
+        broughtBack: 0,
+      });
+
+      expect(attempts.map((a) => a.penalty)).toEqual([0, 2]);
+      expect(
+        resultService.enterWholeScorecardToWcaLiveOrCubingContests,
+      ).toHaveBeenCalledWith('result-1');
+    });
+
+    it('lists the ruled attempts with their penalty before', async () => {
+      await dnf(['s2']);
+
+      await expect(service.getDnfRuling('result-1')).resolves.toEqual({
+        attempts: [
+          {
+            id: 's2',
+            addedByRuling: false,
+            penaltyBeforeDnf: 2,
+            statusBeforeDnf: AttemptStatus.RESOLVED,
+          },
+        ],
+        removedResults: [],
+      });
+    });
+
+    it('can be ruled again after a restore', async () => {
+      await dnf(['s1', 's2']);
+      await service.restoreDnfAttempts('result-1', 'user-1');
+
+      await expect(service.getDnfRuling('result-1')).resolves.toEqual({
+        attempts: [],
+        removedResults: [],
+      });
+      await dnf(['s2']);
+      await service.restoreDnfAttempts('result-1', 'user-1');
+
+      expect(attempts.map((a) => a.penalty)).toEqual([0, 2]);
+    });
+
+    describe('removing later rounds (Regulation 9t)', () => {
+      const dnfRemoving = (attemptIds: string[]) =>
+        service.dnfAttempts(
+          { attemptIds, removeLaterRounds: true, comment: 'Illegal cube' },
+          'user-1',
+        );
+
+      it('removes the results in later rounds', async () => {
+        await expect(dnfRemoving(['s1', 's2'])).resolves.toEqual({
+          updated: 2,
+          removedResults: 1,
+        });
+
+        expect(results[1].removedAt).toBeInstanceOf(Date);
+        expect(results[1].removedByRulingOfId).toBe('result-1');
+        expect(results[0].removedAt).toBeNull();
+        expect(
+          resultService.enterWholeScorecardToWcaLiveOrCubingContests,
+        ).toHaveBeenCalledWith('result-2');
+      });
+
+      it('lists them with the ruling', async () => {
+        await dnfRemoving(['s1']);
+
+        await expect(service.getDnfRuling('result-1')).resolves.toMatchObject({
+          removedResults: [{ id: 'result-2', roundId: '333-r2' }],
+        });
+      });
+
+      it('brings them back when the ruling is restored', async () => {
+        await dnfRemoving(['s1', 's2']);
+
+        await expect(
+          service.restoreDnfAttempts('result-1', 'user-1'),
+        ).resolves.toMatchObject({ restored: 2, broughtBack: 1 });
+        expect(results[1].removedAt).toBeNull();
+        expect(results[1].removedByRulingOfId).toBeNull();
+      });
+
+      it('leaves later rounds alone unless asked', async () => {
+        await dnf(['s1']);
+
+        expect(results[1].removedAt).toBeNull();
+      });
+
+      it('asks to resolve an open incident in a later round first', async () => {
+        results[1].attempts = [{ status: AttemptStatus.UNRESOLVED }];
+
+        await expect(dnfRemoving(['s1'])).rejects.toMatchObject({
+          status: 409,
+        });
+        expect(results[1].removedAt).toBeNull();
+      });
+
+      it('refuses a ruling on a removed result', async () => {
+        results[0].removedAt = new Date();
+
+        await expect(dnf(['s1'])).rejects.toMatchObject({ status: 409 });
+      });
+    });
+
+    it('has nothing to restore without a ruling', async () => {
+      await expect(
+        service.restoreDnfAttempts('result-1', 'user-1'),
+      ).rejects.toMatchObject({ status: 400 });
+    });
+  });
+});
+
+describe('AttemptService penalty cap', () => {
+  let prisma: Record<string, any>;
+  let resultService: { getResultOrCreate: jest.Mock };
+  let service: AttemptService;
+
+  const attempt = (penalty: number, roundId: string) =>
+    ({
+      attemptNumber: 1,
+      type: AttemptType.STANDARD_ATTEMPT,
+      status: AttemptStatus.STANDARD,
+      value: 1500,
+      penalty,
+      comment: '',
+      competitorId: 'person-1',
+      roundId,
+    }) as never;
+
+  beforeEach(() => {
+    prisma = {
+      attempt: {
+        findUnique: jest.fn(),
+        findFirst: jest.fn().mockResolvedValue(null),
+        update: jest.fn().mockRejectedValue(new Error('saved')),
+      },
+    };
+    resultService = {
+      getResultOrCreate: jest.fn().mockRejectedValue(new Error('saved')),
+    };
+    service = new AttemptService(
+      null as AppGateway,
+      prisma as unknown as DbService,
+      null as AttendanceService,
+      null as AttemptEditLogService,
+      resultService as unknown as ResultService,
+      null as SocketController,
+      null as IncidentService,
+    );
+  });
+
+  const storedClockAttempt = (penalty: number) =>
+    prisma.attempt.findUnique.mockResolvedValue({
+      id: 'a1',
+      resultId: 'result-1',
+      penalty,
+      result: { personId: 'person-1', roundId: 'clock-r1' },
+    });
+
+  it('rejects +16 on clock before creating anything', async () => {
+    await expect(
+      service.createAttempt(attempt(16, 'clock-r1'), 'user-1'),
+    ).rejects.toMatchObject({ status: 400 });
+    expect(resultService.getResultOrCreate).not.toHaveBeenCalled();
+  });
+
+  it('accepts +14 on clock and +16 on other events', async () => {
+    await expect(
+      service.createAttempt(attempt(14, 'clock-r1'), 'user-1'),
+    ).rejects.toThrow('saved');
+    await expect(
+      service.createAttempt(attempt(16, '333-r1'), 'user-1'),
+    ).rejects.toThrow('saved');
+  });
+
+  it('rejects changing a clock attempt to +16', async () => {
+    storedClockAttempt(0);
+    await expect(
+      service.updateAttempt('a1', attempt(16, 'clock-r1'), 'user-1'),
+    ).rejects.toMatchObject({ status: 400 });
+    expect(prisma.attempt.update).not.toHaveBeenCalled();
+  });
+
+  it('still saves other edits to a clock attempt already at +16', async () => {
+    storedClockAttempt(16);
+    await expect(
+      service.updateAttempt('a1', attempt(16, 'clock-r1'), 'user-1'),
+    ).rejects.toThrow('saved');
+  });
+});
+
+describe('AttemptService deleted attempts', () => {
+  let prisma: Record<string, any>;
+  let appGateway: { handleAttemptUpdated: jest.Mock };
+  let service: AttemptService;
+
+  beforeEach(() => {
+    prisma = {
+      attempt: {
+        findUnique: jest.fn(),
+        findMany: jest.fn().mockResolvedValue([]),
+        delete: jest.fn(),
+        count: jest.fn(),
+      },
+      result: { delete: jest.fn() },
+    };
+    appGateway = { handleAttemptUpdated: jest.fn() };
+    service = new AttemptService(
+      appGateway as unknown as AppGateway,
+      prisma as unknown as DbService,
+      null as AttendanceService,
+      null as AttemptEditLogService,
+      {
+        enterWholeScorecardToWcaLiveOrCubingContests: jest.fn(),
+      } as unknown as ResultService,
+      null as SocketController,
+      null as IncidentService,
+    );
+  });
+
+  it('answers 404 for an attempt that no longer exists', async () => {
+    prisma.attempt.findUnique.mockResolvedValue(null);
+    await expect(service.getAttemptById('gone')).rejects.toMatchObject({
+      status: 404,
+    });
+    expect(prisma.attempt.findMany).not.toHaveBeenCalled();
+  });
+
+  it('tells open panels when the last attempt of a result is deleted', async () => {
+    prisma.attempt.findUnique.mockResolvedValue({
+      id: 'a1',
+      resultId: 'result-1',
+      status: AttemptStatus.STANDARD,
+      device: null,
+    });
+    prisma.attempt.count.mockResolvedValue(0);
+    await expect(service.deleteAttempt('a1')).resolves.toEqual({
+      resultDeleted: true,
+    });
+    expect(appGateway.handleAttemptUpdated).toHaveBeenCalled();
+  });
+});

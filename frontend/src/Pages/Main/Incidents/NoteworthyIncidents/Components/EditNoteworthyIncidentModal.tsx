@@ -1,6 +1,7 @@
 import { useState } from "react";
 
 import { Modal } from "@/Components/Modal";
+import { useDialogError } from "@/hooks/useDialogError";
 import { useToast } from "@/hooks/useToast";
 import { updateNoteworthyIncident } from "@/lib/incidents";
 import { NoteworthyIncident, NoteworthyIncidentData } from "@/lib/interfaces";
@@ -18,6 +19,7 @@ const EditNoteworthyIncidentModal = ({
     onClose,
     incident,
 }: EditNoteworthyIncidentModalProps) => {
+    const [error, setError] = useDialogError(isOpen);
     const { toast } = useToast();
     const [isLoading, setIsLoading] = useState(false);
 
@@ -30,17 +32,14 @@ const EditNoteworthyIncidentModal = ({
             });
             onClose();
         } else {
-            toast({
-                title: "Error",
-                description: "Something went wrong",
-                variant: "destructive",
-            });
+            setError("Something went wrong");
         }
         setIsLoading(false);
     };
 
     return (
         <Modal
+            error={error}
             isOpen={isOpen}
             onClose={onClose}
             title="Edit noteworthy incident"

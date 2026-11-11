@@ -25,6 +25,8 @@ model User {
   Result                     Result[]
   ManualIncident             ManualIncident[]
   attemptEditLogs            AttemptEditLog[]
+  extraGrants                ExtraGrant[]
+  removedResults             Result[]             @relation("result_removed_by")
 
   @@map("users")
 }
@@ -42,7 +44,8 @@ model Person {
   cardId            String?          @unique @map("card_id")
   results           Result[]
   judgedAttempts    Attempt[]        @relation(name: "attempt_judge")
-  StaffActivity     StaffActivity[]
+  StaffActivity     StaffActivity[]  @relation(name: "staff_activity_person")
+  replacedOthersIn  StaffActivity[]  @relation(name: "staff_activity_replaced_by")
   scrambledAttempts Attempt[]        @relation(name: "attempt_scrambler")
   receivedWarnings  Warning[]
   manualIncidents   ManualIncident[]
@@ -53,18 +56,25 @@ model Person {
 }
 
 model StaffActivity {
-  id         String              @id @default(uuid())
-  personId   String              @map("person_id")
-  person     Person              @relation(fields: [personId], references: [id], onDelete: Cascade)
-  deviceId   String?             @map("device_id")
-  device     Device?             @relation(fields: [deviceId], references: [id])
-  isAssigned Boolean             @default(false) @map("is_assigned")
-  status     StaffActivityStatus @default(ABSENT)
-  groupId    String              @map("group_id")
-  comment    String?
-  role       StaffRole
-  createdAt  DateTime            @default(now()) @map("created_at")
-  updatedAt  DateTime            @updatedAt @map("updated_at")
+  id           String              @id @default(uuid())
+  personId     String              @map("person_id")
+  person       Person              @relation(name: "staff_activity_person", fields: [personId], references: [id], onDelete: Cascade)
+  deviceId     String?             @map("device_id")
+  device       Device?             @relation(fields: [deviceId], references: [id], onDelete: Restrict)
+  isAssigned   Boolean             @default(false) @map("is_assigned")
+  status       StaffActivityStatus @default(ABSENT)
+  groupId      String              @map("group_id")
+  comment      String?
+  role         StaffRole
+  /// Left before the group ended; only with PRESENT or LATE
+  leftEarly    Boolean             @default(false) @map("left_early")
+  /// Not coming for the rest of the day; only with ABSENT
+  noShow       Boolean             @default(false) @map("no_show")
+  /// Who did the job instead; only with REPLACED or ABSENT
+  replacedById String?             @map("replaced_by_id")
+  replacedBy   Person?             @relation(name: "staff_activity_replaced_by", fields: [replacedById], references: [id], onDelete: SetNull)
+  createdAt    DateTime            @default(now()) @map("created_at")
+  updatedAt    DateTime            @updatedAt @map("updated_at")
 
   @@unique([personId, groupId, role])
   @@map("staff_activity")
@@ -91,6 +101,8 @@ model Competition {
   secureRfid                      Boolean                 @default(false) @map("secure_rfid")
   useFkmTimeDevices               Boolean                 @default(true) @map("use_fkm_time_devices")
   soundEnabled                    Boolean                 @default(true) @map("sound_enabled")
+  // Null leaves each V4 station on the volume set in its own menu
+  buzzerVolume                    Int?                    @map("buzzer_volume")
 
   @@map("competition")
 }
@@ -119,18 +131,28 @@ model Room {
 }
 
 model Result {
-  id                String    @id @default(uuid())
-  personId          String    @map("person_id")
-  person            Person    @relation(fields: [personId], references: [id], onDelete: Cascade)
-  eventId           String    @map("event_id")
-  roundId           String    @map("round_id")
-  doubleCheckedBy   User?     @relation(fields: [doubleCheckedById], references: [id], onDelete: SetNull)
-  doubleCheckedById String?   @map("double_checked_by")
-  doubleCheckedAt   DateTime? @map("double_checked_at")
-  isDoubleChecked   Boolean   @default(false) @map("is_double_checked")
-  attempts          Attempt[]
-  createdAt         DateTime  @default(now()) @map("created_at")
-  updatedAt         DateTime  @updatedAt @map("updated_at")
+  id                  String       @id @default(uuid())
+  personId            String       @map("person_id")
+  person              Person       @relation(fields: [personId], references: [id], onDelete: Cascade)
+  eventId             String       @map("event_id")
+  roundId             String       @map("round_id")
+  doubleCheckedBy     User?        @relation(fields: [doubleCheckedById], references: [id], onDelete: SetNull)
+  doubleCheckedById   String?      @map("double_checked_by")
+  doubleCheckedAt     DateTime?    @map("double_checked_at")
+  isDoubleChecked     Boolean      @default(false) @map("is_double_checked")
+  attempts            Attempt[]
+  extraGrants         ExtraGrant[]
+  /// Removed under Regulation 9t: kept, but left out of every list (SPEC-005)
+  removedAt           DateTime?    @map("removed_at")
+  removedById         String?      @map("removed_by_id")
+  removedBy           User?        @relation("result_removed_by", fields: [removedById], references: [id], onDelete: SetNull)
+  removedReason       String?      @map("removed_reason")
+  /// The result whose DNF ruling removed this one; restoring it brings this back
+  removedByRulingOfId String?      @map("removed_by_ruling_of_id")
+  removedByRulingOf   Result?      @relation("result_removed_by_ruling", fields: [removedByRulingOfId], references: [id], onDelete: SetNull)
+  removedByRuling     Result[]     @relation("result_removed_by_ruling")
+  createdAt           DateTime     @default(now()) @map("created_at")
+  updatedAt           DateTime     @updatedAt @map("updated_at")
 
   @@unique([personId, roundId])
   @@map("result")
@@ -156,7 +178,7 @@ model Attempt {
   scrambler          Person?              @relation(fields: [scramblerId], references: [id], name: "attempt_scrambler")
   scrambledAt        DateTime?            @map("scrambled_at")
   deviceId           String?              @map("device_id")
-  device             Device?              @relation(fields: [deviceId], references: [id])
+  device             Device?              @relation(fields: [deviceId], references: [id], onDelete: Restrict)
   solvedAt           DateTime?            @map("solved_at")
   createdAt          DateTime             @default(now()) @map("created_at")
   updatedAt          DateTime             @updatedAt @map("updated_at")
@@ -164,8 +186,27 @@ model Attempt {
   updatedBy          User?                @relation(fields: [updatedById], references: [id])
   noteworthyIncident NoteworthyIncident[]
   editLogs           AttemptEditLog[]
+  extraGrantId       String?              @map("extra_grant_id")
+  extraGrant         ExtraGrant?          @relation(fields: [extraGrantId], references: [id], onDelete: SetNull)
+  statusBeforeGrant  AttemptStatus?       @map("status_before_grant")
+  statusInGrant      AttemptStatus?       @map("status_in_grant")
+  replacedByInGrant  Int?                 @map("replaced_by_in_grant")
 
   @@map("attempt")
+}
+
+model ExtraGrant {
+  id          String    @id @default(uuid())
+  resultId    String    @map("result_id")
+  result      Result    @relation(fields: [resultId], references: [id], onDelete: Cascade)
+  useFreshSet Boolean   @map("use_fresh_set")
+  createdById String?   @map("created_by_id")
+  createdBy   User?     @relation(fields: [createdById], references: [id], onDelete: SetNull)
+  createdAt   DateTime  @default(now()) @map("created_at")
+  restoredAt  DateTime? @map("restored_at")
+  attempts    Attempt[]
+
+  @@map("extra_grant")
 }
 
 model AttemptEditLog {
@@ -187,7 +228,7 @@ model AttemptEditLog {
   scramblerId    String?       @map("scrambler_id")
   scrambler      Person?       @relation(fields: [scramblerId], references: [id], onDelete: SetNull, name: "edit_log_scrambler")
   deviceId       String?       @map("device_id")
-  device         Device?       @relation(fields: [deviceId], references: [id], onDelete: SetNull)
+  device         Device?       @relation(fields: [deviceId], references: [id], onDelete: Restrict)
   attemptComment String?       @map("attempt_comment")
 
   @@map("attempt_edit_log")
@@ -245,6 +286,9 @@ model Device {
   type              DeviceType
   batteryPercentage Int?             @map("battery_percentage")
   hwVersion         HardwareVersion? @map("hw_version")
+  firmwareVersion   String?          @map("firmware_version")
+  // Set instead of deleting a device that has history, so its attempts keep their station
+  retiredAt         DateTime?        @map("retired_at")
   roomId            String           @map("room_id")
   room              Room             @relation(fields: [roomId], references: [id])
   createdAt         DateTime         @default(now()) @map("created_at")
@@ -325,6 +369,7 @@ enum AttemptStatus {
   UNRESOLVED
   RESOLVED
   EXTRA_GIVEN
+  VOIDED
 }
 
 enum Role {
