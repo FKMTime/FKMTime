@@ -645,12 +645,18 @@ optional ("may").
 | ILR's answer | The dialog shows | The choices |
 |---|---|---|
 | One person | "Anna Example withdraws from 333-r2. Next in line: Jan Example." | **Withdraw, Jan Example advances** (`advancing_ids: [Jan]`) or **Withdraw, nobody advances** (no `advancing_ids`) |
-| Several people (a tie for the last place) | "… Next in line, tied: Jan Example and Ola Example." | **Withdraw, both advance** (`advancing_ids: [Jan, Ola]`) or **Withdraw, nobody advances** |
+| Several people | "… Next in line: Jan Example and Ola Example." | **Withdraw, both advance** (`advancing_ids: [Jan, Ola]`) or **Withdraw, nobody advances** |
 | Nobody | "… Nobody is next in line." | **Withdraw** only (no `advancing_ids`) |
 
-- **Ties can't be split.** ILR accepts a replacement only if `advancing_ids`
-  is exactly its own list, so letting one of two tied competitors advance
-  isn't possible through the API. The dialog says so under the tie.
+- **Several people, not only on a tie.** Besides ties for the last place,
+  ILR's calculation (`next_participating_without`) also sets aside the round's
+  top-placed competitor, so a withdrawal by anyone else frees two places and
+  ILR names two people. FKMTime doesn't second-guess this. It shows the names
+  as ILR gives them and doesn't call them tied.
+- **The list can't be split.** ILR accepts a replacement only if
+  `advancing_ids` is exactly its own list, so letting only some of the named
+  people advance isn't possible through the API. The choice is everyone ILR
+  names or nobody, and the dialog says so.
 
 - **Why nobody advances:** when the answer is nobody, the dialog adds the most
   likely reason, worked out from the WCIF and the previous round:
@@ -911,7 +917,7 @@ count against the writes FKMTime rations.
       confirmation removes the ticked ones from the ILR round, without
       replacements, and the next round can then open.
 - [ ] "Remove from round" for a later round shows ILR's answer before
-      anything is sent: one person, several tied people, or nobody, with the
+      anything is sent: one person, several people, or nobody, with the
       likely reason when it is nobody. The person must choose between letting
       them advance and nobody advancing; there is no default. A changed answer
       from the WCA, including a change to nobody, asks again.
