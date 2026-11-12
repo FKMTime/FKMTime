@@ -1,6 +1,6 @@
 # SPEC-006: Sending results where the WCA says, and running rounds in WCA integrated live results
 
-- **Status:** Draft
+- **Status:** Accepted
 - **Created:** 2026-11-08
 - **Related:** WCA live API docs
   (https://next.worldcubeassociation.org/api.html#/live), WCA source
