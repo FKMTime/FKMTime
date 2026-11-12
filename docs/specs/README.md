@@ -51,3 +51,4 @@ Update `Status` as the spec moves:
 | [SPEC-003](SPEC-003-frontend-data-fetching.md) | Shared data fetching in the frontend | Implemented |
 | [SPEC-004](SPEC-004-attendance-tags.md) | Attendance tags: left early, replaced by, no-show for the day | Implemented |
 | [SPEC-005](SPEC-005-later-rounds-after-dnf-ruling.md) | Removing later-round results after a DNF ruling | Implemented |
+| [SPEC-006](SPEC-006-results-destinations.md) | Sending results where the WCA says, and running rounds in WCA integrated live results | Draft |
