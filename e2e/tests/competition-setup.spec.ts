@@ -167,18 +167,21 @@ test.describe("current groups", () => {
         await expect(section.getByText("No groups in progress")).toBeVisible();
         await expect(page.getByRole("button", { name: "Save" })).toBeDisabled();
 
-        await section.getByRole("combobox", { name: "Add group" }).click();
-        await page
-            .getByRole("option", { name: "3x3x3 Cube · Round 1 · Group 1" })
-            .click();
-        await section.getByRole("combobox", { name: "Add group" }).click();
+        const picker = page.getByRole("dialog");
+        const pickRound = (name: RegExp) =>
+            picker.getByRole("button", { name }).click();
+        await section.getByRole("button", { name: "Add group" }).click();
+        await pickRound(/^3x3x3 Cube · Round 1/);
+        await picker.getByRole("button", { name: "Group 1" }).click();
+        await section.getByRole("button", { name: "Add group" }).click();
+        await pickRound(/^3x3x3 Cube · Round 1/);
         // Another group of the same event cannot run in the same room
         await expect(
-            page.getByRole("option", { name: "3x3x3 Cube · Round 1 · Group 2" })
-        ).toHaveAttribute("aria-disabled", "true");
-        await page
-            .getByRole("option", { name: "2x2x2 Cube · Round 1 · Group 1" })
-            .click();
+            picker.getByRole("button", { name: "Group 2" })
+        ).toBeDisabled();
+        await picker.getByRole("button", { name: "Back to rounds" }).click();
+        await pickRound(/^2x2x2 Cube · Round 1/);
+        await picker.getByRole("button", { name: "Group 1" }).click();
         await expect(section.getByText("2 groups")).toBeVisible();
 
         const changes = page.getByRole("region", { name: "Changes to save" });

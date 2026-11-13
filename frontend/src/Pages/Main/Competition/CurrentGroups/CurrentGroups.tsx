@@ -14,14 +14,6 @@ import LoadingPage from "@/Components/LoadingPage";
 import EmptyState from "@/Components/shared/EmptyState";
 import { Alert } from "@/Components/ui/alert";
 import { Button } from "@/Components/ui/button";
-import { Label } from "@/Components/ui/label";
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from "@/Components/ui/select";
 import { useToast } from "@/hooks/useToast";
 import { activityCodeToName } from "@/lib/activities";
 import { competitionAtom } from "@/lib/atoms";
@@ -31,7 +23,6 @@ import {
     getPreviousGroupsFromScheduleForRoom,
 } from "@/lib/competition";
 import {
-    canAddGroup,
     describeGroupChanges,
     getGroupLabel,
     getGroupOptions,
@@ -44,6 +35,8 @@ import { fetchQuery, getQueryData, setQueryData } from "@/lib/queryCache";
 import { roomsQuery, updateCurrentRound } from "@/lib/rooms";
 import { cn } from "@/lib/utils";
 import SetupTabs from "@/Pages/Main/Setup/SetupTabs";
+
+import AddGroupPicker from "./AddGroupPicker";
 
 const groupCountLabel = (count: number) =>
     count === 1 ? "1 group" : `${count} groups`;
@@ -312,47 +305,18 @@ const CurrentGroups = () => {
                                 No groups in progress
                             </EmptyState>
                         )}
-                        <div className="flex max-w-[360px] flex-col gap-1.5">
-                            <Label className="text-[13px] font-semibold text-muted-foreground max-md:sr-only">
-                                Add group
-                            </Label>
-                            <Select
-                                value=""
-                                onValueChange={(groupId) =>
-                                    setRoomGroups(room.id, [
-                                        ...room.currentGroupIds,
-                                        groupId,
-                                    ])
-                                }
-                            >
-                                <SelectTrigger aria-label="Add group">
-                                    <SelectValue placeholder="Select group…" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {groupOptions
-                                        .filter(
-                                            (option) =>
-                                                !room.currentGroupIds.includes(
-                                                    option.id
-                                                )
-                                        )
-                                        .map((option) => (
-                                            <SelectItem
-                                                key={option.id}
-                                                value={option.id}
-                                                disabled={
-                                                    !canAddGroup(
-                                                        room.currentGroupIds,
-                                                        option.id
-                                                    )
-                                                }
-                                            >
-                                                {option.label}
-                                            </SelectItem>
-                                        ))}
-                                </SelectContent>
-                            </Select>
-                        </div>
+                        <AddGroupPicker
+                            events={competition.wcif.events}
+                            groupOptions={groupOptions}
+                            currentGroupIds={room.currentGroupIds}
+                            suggestedRoundId={suggested[0]?.split("-g")[0]}
+                            onAdd={(groupId) =>
+                                setRoomGroups(room.id, [
+                                    ...room.currentGroupIds,
+                                    groupId,
+                                ])
+                            }
+                        />
                     </section>
                 );
             })}

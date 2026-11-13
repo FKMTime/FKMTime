@@ -11,6 +11,7 @@ import { StatusDot } from "@/Components/shared/StatusBadge";
 import { Button } from "@/Components/ui/button";
 import { useConfirm } from "@/hooks/useConfirm";
 import { useLiveQuery } from "@/hooks/useLiveQuery";
+import { useIsMobile } from "@/hooks/useMobile";
 import { useSubmissionPlatformName } from "@/hooks/useSubmissionPlatformName";
 import { useToast } from "@/hooks/useToast";
 import { competitionAtom } from "@/lib/atoms";
@@ -79,6 +80,7 @@ const DoubleCheck = () => {
         Pick<Person, "id" | "name" | "registrantId" | "wcaId">[]
     >([]);
     const [showMissingPersons, setShowMissingPersons] = useState(false);
+    const isMobile = useIsMobile();
     const competition = useAtomValue(competitionAtom);
     const idInputRef = useRef<HTMLInputElement>(null);
 
@@ -226,33 +228,54 @@ const DoubleCheck = () => {
         totalResults > 0 &&
         notFinishedResults === 0;
 
+    const progressText = (
+        <p className="shrink-0 text-sm text-muted-foreground">
+            <b className="font-semibold text-foreground md:text-lg">
+                {doubleCheckedResults}
+            </b>{" "}
+            / {totalResults} double-checked
+            {notFinishedResults > 0 && (
+                <span className="text-faint">
+                    {" "}
+                    · {notFinishedResults} not finished
+                </span>
+            )}
+        </p>
+    );
+    const progressBar = (
+        <ProgressBar
+            className="flex-1 md:flex-none"
+            value={doubleCheckedResults}
+            max={totalResults}
+            label="Double-checked results"
+        />
+    );
+    const progress = (
+        <div className="flex w-full items-center gap-3">
+            {progressText}
+            {progressBar}
+        </div>
+    );
+    const missingButton = (
+        <Button
+            variant="outline"
+            size="sm"
+            className="w-fit"
+            onClick={handleShowMissingPersons}
+        >
+            <Users />
+            Missing competitors
+        </Button>
+    );
+
     return (
         <div className="flex flex-col gap-5">
             <RoundSubpageHeader
                 roundId={id}
                 title="Double check"
-                aside={
-                    <div className="flex w-full items-center gap-3 md:w-56 md:flex-col md:items-stretch md:gap-1.5">
-                        <p className="shrink-0 text-sm text-muted-foreground">
-                            <b className="font-semibold text-foreground md:text-lg">
-                                {doubleCheckedResults}
-                            </b>{" "}
-                            / {totalResults} double-checked
-                            {notFinishedResults > 0 && (
-                                <span className="text-faint">
-                                    {" "}
-                                    · {notFinishedResults} not finished
-                                </span>
-                            )}
-                        </p>
-                        <ProgressBar
-                            className="flex-1 md:flex-none"
-                            value={doubleCheckedResults}
-                            max={totalResults}
-                            label="Double-checked results"
-                        />
-                    </div>
-                }
+                // Phones keep the progress up top; wide screens show it
+                // beside the competitor ID instead
+                aside={isMobile ? progress : undefined}
             />
 
             {isFinished ? (
@@ -294,15 +317,20 @@ const DoubleCheck = () => {
                             Press Enter again to confirm the result. Use Details
                             for full editing.
                         </p>
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            className="w-fit"
-                            onClick={handleShowMissingPersons}
-                        >
-                            <Users />
-                            Missing competitors
-                        </Button>
+                        {isMobile ? (
+                            missingButton
+                        ) : (
+                            <section
+                                aria-label="Progress"
+                                className="flex flex-col gap-2.5 rounded-2xl border bg-card p-4"
+                            >
+                                <div className="flex items-center justify-between gap-3">
+                                    {progressText}
+                                    {missingButton}
+                                </div>
+                                {progressBar}
+                            </section>
+                        )}
                         {incidents.length > 0 && (
                             <div className="flex flex-col gap-1.5 border-t pt-3">
                                 <span className="text-xs font-semibold text-faint">

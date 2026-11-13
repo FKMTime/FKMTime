@@ -2,14 +2,13 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useMemo } from "react";
 import { Competition as WCIF } from "wcif-helpers";
 
-import RoundStrip from "@/Components/shared/RoundStrip";
+import RoundPicker from "@/Components/shared/RoundPicker";
 import SegmentedControl from "@/Components/shared/SegmentedControl";
 import { StatusDot } from "@/Components/shared/StatusBadge";
 import { Button } from "@/Components/ui/button";
 import { getGroupsByRoundId } from "@/lib/activities";
 import { Room } from "@/lib/interfaces";
-import { getRoundOptions, RoundOption } from "@/lib/roundOptions";
-import { shortRoundName } from "@/lib/utils";
+import { getLiveRoundIds, getRoundsInScheduleOrder } from "@/lib/roundOptions";
 
 interface GroupPickerProps {
     wcif: WCIF;
@@ -20,7 +19,13 @@ interface GroupPickerProps {
 
 const groupNumber = (groupId: string) => Number(groupId.split("-g")[1]);
 
-/** Current groups as quick switches, any round via "All rounds", then groups */
+const sortedGroupIds = (roundId: string, wcif: WCIF) =>
+    getGroupsByRoundId(roundId, wcif)
+        .map((group) => group.activityCode)
+        .filter((code, i, all) => all.indexOf(code) === i)
+        .sort((a, b) => groupNumber(a) - groupNumber(b));
+
+/** Event, then round, then group; previous/next steps across rounds */
 const GroupPicker = ({
     wcif,
     rooms,
@@ -29,66 +34,39 @@ const GroupPicker = ({
 }: GroupPickerProps) => {
     const roundId = value ? value.split("-g")[0] : "";
     const liveGroupIds = rooms.flatMap((room) => room.currentGroupIds);
-
-    const rounds = useMemo(() => getRoundOptions(wcif, rooms), [wcif, rooms]);
-
-    // Strip entries are groups, not rounds: "3x3 R1" with "Main room · G2"
-    const currentGroups: RoundOption[] = rooms.flatMap((room) =>
-        room.currentGroupIds.map((groupId) => {
-            const round = rounds.find((r) => groupId.startsWith(`${r.id}-g`));
-            return {
-                id: groupId,
-                eventId: groupId.split("-")[0],
-                eventName: round?.eventName ?? "",
-                label: shortRoundName(groupId.split("-g")[0]),
-                name: `${round?.name ?? groupId} · Group ${groupNumber(groupId)}`,
-                liveRooms: [`${room.name} · G${groupNumber(groupId)}`],
-                isLive: true,
-            };
-        })
-    );
+    const liveRoundIds = useMemo(() => getLiveRoundIds(rooms), [rooms]);
 
     const groups = useMemo(
-        () =>
-            roundId
-                ? getGroupsByRoundId(roundId, wcif)
-                      .map((group) => group.activityCode)
-                      .filter((code, i, all) => all.indexOf(code) === i)
-                      .sort((a, b) => groupNumber(a) - groupNumber(b))
-                : [],
+        () => (roundId ? sortedGroupIds(roundId, wcif) : []),
         [roundId, wcif]
     );
 
-    // Every group of every round, for previous/next across round boundaries
+    // Every group in schedule order, for previous/next across rounds
     const sequence = useMemo(
         () =>
-            rounds.flatMap((round) =>
-                getGroupsByRoundId(round.id, wcif)
-                    .map((group) => group.activityCode)
-                    .sort((a, b) => groupNumber(a) - groupNumber(b))
+            getRoundsInScheduleOrder(wcif).flatMap((id) =>
+                sortedGroupIds(id, wcif)
             ),
-        [rounds, wcif]
+        [wcif]
     );
     const index = sequence.indexOf(value);
 
+    // A new round opens on its group in progress, or its first group
     const selectRound = (id: string) => {
-        if (id.includes("-g")) return onValueChange(id);
         const live = liveGroupIds.find((groupId) =>
             groupId.startsWith(`${id}-g`)
         );
-        const first = getGroupsByRoundId(id, wcif)
-            .map((group) => group.activityCode)
-            .sort((a, b) => groupNumber(a) - groupNumber(b))[0];
-        if (live ?? first) onValueChange(live ?? first);
+        const target = live ?? sortedGroupIds(id, wcif)[0];
+        if (target) onValueChange(target);
     };
 
     return (
         <div className="flex flex-col gap-3">
-            <RoundStrip
-                rounds={currentGroups}
-                allRounds={rounds}
-                value={value || undefined}
-                allRoundsValue={roundId || undefined}
+            <RoundPicker
+                wcif={wcif}
+                timeline
+                liveRoundIds={liveRoundIds}
+                value={roundId}
                 onValueChange={selectRound}
             />
             {groups.length > 0 && (

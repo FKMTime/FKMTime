@@ -23,6 +23,8 @@ interface AttemptsListProps {
     competition: Competition;
     roundId: string;
     onChange: (attempt: AttemptToEnterWithScorecard) => void;
+    /** Enter on the last time saves, with that attempt as just typed */
+    onSubmit: (lastAttempt: AttemptToEnterWithScorecard) => void;
 }
 
 const AttemptsList: React.FC<AttemptsListProps> = ({
@@ -30,7 +32,20 @@ const AttemptsList: React.FC<AttemptsListProps> = ({
     competition,
     roundId,
     onChange,
+    onSubmit,
 }) => {
+    // A time over the limit is a DNF
+    const withValue = (
+        attempt: AttemptToEnterWithScorecard,
+        value: number
+    ) => ({
+        ...attempt,
+        value,
+        penalty: checkTimeLimit(value, competition.wcif, roundId)
+            ? attempt.penalty
+            : DNF_VALUE,
+    });
+
     return (
         <div className="flex flex-col gap-5">
             <Table>
@@ -55,7 +70,7 @@ const AttemptsList: React.FC<AttemptsListProps> = ({
                     </TableRow>
                 </TableHeader>
                 <TableBody>
-                    {attempts.map((attempt) => (
+                    {attempts.map((attempt, index) => (
                         <TableRow key={attempt.id}>
                             <TableCell>
                                 {attempt.type === AttemptType.EXTRA_ATTEMPT
@@ -69,21 +84,17 @@ const AttemptsList: React.FC<AttemptsListProps> = ({
                                     onPenaltyShortcut={(penalty) =>
                                         onChange({ ...attempt, penalty })
                                     }
-                                    onChange={(value) => {
-                                        const passed = checkTimeLimit(
-                                            value,
-                                            competition.wcif,
-                                            roundId
-                                        );
-
-                                        onChange({
-                                            ...attempt,
-                                            value,
-                                            penalty: passed
-                                                ? attempt.penalty
-                                                : DNF_VALUE,
-                                        });
-                                    }}
+                                    onChange={(value) =>
+                                        onChange(withValue(attempt, value))
+                                    }
+                                    onEnter={
+                                        index === attempts.length - 1
+                                            ? (value) =>
+                                                  onSubmit(
+                                                      withValue(attempt, value)
+                                                  )
+                                            : undefined
+                                    }
                                 />
                             </TableCell>
 
@@ -94,6 +105,9 @@ const AttemptsList: React.FC<AttemptsListProps> = ({
                                     onChange={(penalty) =>
                                         onChange({ ...attempt, penalty })
                                     }
+                                    // Tab goes from time to time; D and S
+                                    // set DNF and DNS from the time field
+                                    tabIndex={-1}
                                     shortVersion
                                 />
                             </TableCell>

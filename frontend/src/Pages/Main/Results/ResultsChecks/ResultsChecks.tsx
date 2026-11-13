@@ -8,10 +8,9 @@ import LoadingPage from "@/Components/LoadingPage";
 import EmptyState from "@/Components/shared/EmptyState";
 import RefreshingRegion from "@/Components/shared/RefreshingRegion";
 import RequestError from "@/Components/shared/RequestError";
-import RoundStrip from "@/Components/shared/RoundStrip";
+import RoundPicker from "@/Components/shared/RoundPicker";
 import RowActions from "@/Components/shared/RowActions";
 import SegmentedControl from "@/Components/shared/SegmentedControl";
-import { Button } from "@/Components/ui/button";
 import {
     Table,
     TableBody,
@@ -34,7 +33,7 @@ import {
 import { attemptWithPenaltyToString } from "@/lib/resultFormatters";
 import { resultsChecksQuery } from "@/lib/results";
 import { roomsQuery } from "@/lib/rooms";
-import { getRoundOptions, getStripRounds } from "@/lib/roundOptions";
+import { getLiveRoundIds } from "@/lib/roundOptions";
 import { cn, shortRoundName } from "@/lib/utils";
 
 import ResultsTabs from "../Components/ResultsTabs";
@@ -71,10 +70,7 @@ const ResultsChecks = () => {
         crumbs: [{ label: "Results", to: "/results" }, { label: "Checks" }],
     });
 
-    const rounds = useMemo(
-        () => (competition ? getRoundOptions(competition.wcif, rooms) : []),
-        [competition, rooms]
-    );
+    const liveRoundIds = useMemo(() => getLiveRoundIds(rooms), [rooms]);
 
     if (!competition) return <LoadingPage />;
     if (!checks) {
@@ -123,28 +119,17 @@ const ResultsChecks = () => {
     return (
         <div className="flex flex-col gap-4">
             <ResultsTabs value="checks" roundId={roundId} />
-            <RoundStrip
-                rounds={getStripRounds(rounds, roundId)}
-                allRounds={rounds}
+            <RoundPicker
+                wcif={competition.wcif}
+                liveRoundIds={liveRoundIds}
+                timeline
+                steps
                 value={roundId}
-                onValueChange={(id) => navigate(`/results/checks/${id}`)}
+                clearLabel="All rounds"
+                onValueChange={(id) =>
+                    navigate(id ? `/results/checks/${id}` : "/results/checks")
+                }
             />
-            <div className="flex flex-wrap items-center gap-3">
-                <p className="text-sm text-muted-foreground">
-                    {roundId
-                        ? `Checks for ${shortRoundName(roundId)}`
-                        : "Checks across every round"}
-                </p>
-                {roundId && (
-                    <Button
-                        variant="link"
-                        className="h-auto px-0"
-                        onClick={() => navigate("/results/checks")}
-                    >
-                        Show every round
-                    </Button>
-                )}
-            </div>
             {typesPresent.length > 1 && (
                 <SegmentedControl
                     label="Check type"

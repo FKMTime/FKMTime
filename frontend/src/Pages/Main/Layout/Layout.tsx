@@ -350,6 +350,7 @@ const AppShell = ({ competition, unresolvedIncidentsCount }: AppShellProps) => {
                 <MobileHeader
                     title={mobileTitle}
                     subtitle={mobileSubtitle}
+                    subtitleEventId={pageHeader?.subtitleEventId}
                     backTo={backTo}
                     canAccessSettings={canAccessSettings}
                 />

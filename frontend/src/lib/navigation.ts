@@ -56,6 +56,8 @@ export interface NavContext {
 export interface Crumb {
     label: string;
     to?: string;
+    /** Event icon before the label, e.g. on a round's page */
+    eventId?: string;
 }
 
 /**

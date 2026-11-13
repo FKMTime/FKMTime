@@ -1,3 +1,11 @@
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/Components/ui/select";
+import { useIsMobile } from "@/hooks/useMobile";
 import { useScrollFade } from "@/hooks/useScrollFade";
 import { getEventIconClass } from "@/lib/events";
 import { cn } from "@/lib/utils";
@@ -21,7 +29,7 @@ interface EventChipsProps {
     className?: string;
 }
 
-/** Event picker: scrolls horizontally on mobile, wraps on wider screens */
+/** Event picker: chips that wrap on wider screens, a dropdown on phones */
 const EventChips = ({
     events,
     value,
@@ -29,6 +37,17 @@ const EventChips = ({
     className,
 }: EventChipsProps) => {
     const scrollRef = useScrollFade<HTMLDivElement>();
+    const isMobile = useIsMobile();
+    // A row of chips is too long to scan on a phone
+    if (isMobile)
+        return (
+            <EventSelect
+                events={events}
+                value={value}
+                onValueChange={onValueChange}
+                className={className}
+            />
+        );
     return (
         <div
             ref={scrollRef}
@@ -59,13 +78,16 @@ const EventChips = ({
                                 : "bg-card text-foreground hover:bg-accent"
                         )}
                     >
-                        <span
-                            aria-hidden
-                            className={cn(
-                                "cubing-icon text-lg",
-                                getEventIconClass(event.id)
-                            )}
-                        />
+                        {/* An empty id is a "no event" chip, e.g. "All rounds" */}
+                        {event.id && (
+                            <span
+                                aria-hidden
+                                className={cn(
+                                    "cubing-icon text-lg",
+                                    getEventIconClass(event.id)
+                                )}
+                            />
+                        )}
                         {event.label}
                         {event.live && <StatusDot tone="primary" />}
                     </button>
@@ -74,5 +96,51 @@ const EventChips = ({
         </div>
     );
 };
+
+// Radix Select items can't have an empty value, which the "no event" chip uses
+const NO_EVENT = "__none__";
+
+const EventSelect = ({
+    events,
+    value,
+    onValueChange,
+    className,
+}: EventChipsProps) => (
+    <Select
+        value={
+            events.some((event) => event.id === value)
+                ? value || NO_EVENT
+                : undefined
+        }
+        onValueChange={(id) => onValueChange(id === NO_EVENT ? "" : id)}
+    >
+        <SelectTrigger aria-label="Event" className={cn("h-12", className)}>
+            <SelectValue placeholder="Choose an event" />
+        </SelectTrigger>
+        <SelectContent>
+            {events.map((event) => (
+                <SelectItem
+                    key={event.id || NO_EVENT}
+                    value={event.id || NO_EVENT}
+                    aria-label={event.live ? `${event.name}, live` : event.name}
+                >
+                    <span className="flex items-center gap-2.5">
+                        {event.id && (
+                            <span
+                                aria-hidden
+                                className={cn(
+                                    "cubing-icon text-lg",
+                                    getEventIconClass(event.id)
+                                )}
+                            />
+                        )}
+                        {event.name}
+                        {event.live && <StatusDot tone="primary" />}
+                    </span>
+                </SelectItem>
+            ))}
+        </SelectContent>
+    </Select>
+);
 
 export default EventChips;

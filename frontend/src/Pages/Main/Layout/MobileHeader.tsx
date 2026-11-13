@@ -6,13 +6,16 @@ import ModeToggle from "@/Components/ModeToggle";
 import ConnectionStatus from "@/Components/shared/ConnectionStatus";
 import UserAvatar from "@/Components/UserAvatar";
 import { getUserInfo } from "@/lib/auth";
+import { getEventIconClass } from "@/lib/events";
 import { UserInfo } from "@/lib/interfaces";
+import { cn } from "@/lib/utils";
 
 import MobileUserSheet from "./MobileUserSheet";
 
 interface MobileHeaderProps {
     title: string;
     subtitle?: string;
+    subtitleEventId?: string;
     backTo: string | null;
     canAccessSettings: boolean;
 }
@@ -20,6 +23,7 @@ interface MobileHeaderProps {
 const MobileHeader = ({
     title,
     subtitle,
+    subtitleEventId,
     backTo,
     canAccessSettings,
 }: MobileHeaderProps) => {
@@ -42,8 +46,17 @@ const MobileHeader = ({
                 <div className="min-w-0 flex-1 pl-1">
                     <div className="truncate text-lg font-bold">{title}</div>
                     {subtitle && (
-                        <div className="mt-px truncate text-[13px] text-muted-foreground">
-                            {subtitle}
+                        <div className="mt-px flex min-w-0 items-center gap-1.5 text-[13px] text-muted-foreground">
+                            {subtitleEventId && (
+                                <span
+                                    aria-hidden
+                                    className={cn(
+                                        "cubing-icon shrink-0 text-sm",
+                                        getEventIconClass(subtitleEventId)
+                                    )}
+                                />
+                            )}
+                            <span className="truncate">{subtitle}</span>
                         </div>
                     )}
                 </div>

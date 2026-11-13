@@ -12,15 +12,15 @@ import RowActions from "@/Components/shared/RowActions";
 import { Button } from "@/Components/ui/button";
 import { useConfirm } from "@/hooks/useConfirm";
 import { useIntegratedLiveRoundActions } from "@/hooks/useIntegratedLiveRoundActions";
+import { useIsMobile } from "@/hooks/useMobile";
 import { useSubmissionPlatformName } from "@/hooks/useSubmissionPlatformName";
 import { useToast } from "@/hooks/useToast";
 import { activityCodeToName } from "@/lib/activities";
-import { getEventIconClass } from "@/lib/events";
 import { reSubmitRoundToWcaLive } from "@/lib/results";
 import { RoundMeta } from "@/lib/roundInfo";
-import { cn } from "@/lib/utils";
 
 import AddCompetitorToRoundModal from "./AddCompetitorToRoundModal";
+import RoundMetaLine from "./RoundMetaLine";
 
 interface RoundHeaderProps {
     roundId: string;
@@ -45,6 +45,7 @@ const RoundHeader = ({
     const eventId = roundId.split("-")[0];
     const platform = useSubmissionPlatformName()(eventId);
     const integratedLive = useIntegratedLiveRoundActions(roundId);
+    const isMobile = useIsMobile();
 
     const handleResubmit = () => {
         confirm({
@@ -72,47 +73,56 @@ const RoundHeader = ({
         }).catch(() => undefined);
     };
 
+    const menu = (
+        <RowActions
+            subject={activityCodeToName(roundId)}
+            items={[
+                {
+                    label: "Public view",
+                    icon: Eye,
+                    onSelect: () => navigate(`/results/public/${roundId}`),
+                },
+                {
+                    label: `Resubmit to ${platform}`,
+                    icon: Send,
+                    hidden: !platform,
+                    onSelect: handleResubmit,
+                },
+                ...integratedLive.items,
+                {
+                    label: "Restart group",
+                    icon: RotateCcw,
+                    destructive: true,
+                    hidden: !hasResults,
+                    onSelect: onRestartGroup,
+                },
+            ]}
+        />
+    );
+
     return (
         <>
-            <div className="flex flex-wrap items-center gap-x-2 gap-y-3">
-                <div className="flex min-w-0 flex-[1_1_320px] flex-col gap-1">
-                    <h2 className="flex items-center gap-2.5 text-xl font-bold leading-tight">
-                        <span
-                            aria-hidden
-                            className={cn(
-                                "cubing-icon text-[22px]",
-                                getEventIconClass(eventId)
-                            )}
+            {/* The round's name is the page heading; on desktop the details sit in the results card */}
+            <div className="flex flex-col gap-3 lg:shrink-0">
+                {isMobile && (
+                    <div className="flex items-center gap-2">
+                        <RoundMetaLine
+                            meta={meta}
+                            advancement={advancement}
+                            className="min-w-0 flex-1"
                         />
-                        {activityCodeToName(roundId).replace(", ", " · ")}
-                    </h2>
-                    <div className="flex flex-wrap gap-x-4 gap-y-0.5 text-[13px] text-muted-foreground">
-                        {meta?.format && <span>{meta.format}</span>}
-                        {meta?.timeLimit && (
-                            <span>
-                                Time limit{" "}
-                                <b className="font-semibold text-foreground">
-                                    {meta.timeLimit}
-                                </b>
-                            </span>
-                        )}
-                        {meta?.cutoff && (
-                            <span>
-                                Cutoff{" "}
-                                <b className="font-semibold text-foreground">
-                                    {meta.cutoff}
-                                </b>
-                            </span>
-                        )}
-                        {advancement && <span>{advancement}</span>}
+                        {menu}
                     </div>
-                </div>
-                <div className="flex w-full flex-wrap gap-2 sm:w-auto">
-                    <Button onClick={onEnterAttempt} className="max-sm:flex-1">
-                        <Plus />
-                        Enter attempt
-                    </Button>
-                    <Button variant="outline" asChild className="max-sm:flex-1">
+                )}
+                <div className="flex w-full flex-wrap gap-2 md:justify-end lg:w-auto lg:flex-nowrap">
+                    {/* Phones use the floating Enter attempt button instead */}
+                    {!isMobile && (
+                        <Button onClick={onEnterAttempt}>
+                            <Plus />
+                            Enter attempt
+                        </Button>
+                    )}
+                    <Button variant="outline" asChild className="max-md:flex-1">
                         <Link to={`/results/round/${roundId}/enter-scorecard`}>
                             <NotebookPen />
                             Enter scorecard
@@ -122,7 +132,7 @@ const RoundHeader = ({
                         <Button
                             variant="outline"
                             asChild
-                            className="max-sm:flex-1"
+                            className="max-md:flex-1"
                         >
                             <Link to={`/results/round/${roundId}/double-check`}>
                                 <ClipboardCheck />
@@ -130,31 +140,7 @@ const RoundHeader = ({
                             </Link>
                         </Button>
                     )}
-                    <RowActions
-                        subject={activityCodeToName(roundId)}
-                        items={[
-                            {
-                                label: "Public view",
-                                icon: Eye,
-                                onSelect: () =>
-                                    navigate(`/results/public/${roundId}`),
-                            },
-                            {
-                                label: `Resubmit to ${platform}`,
-                                icon: Send,
-                                hidden: !platform,
-                                onSelect: handleResubmit,
-                            },
-                            ...integratedLive.items,
-                            {
-                                label: "Restart group",
-                                icon: RotateCcw,
-                                destructive: true,
-                                hidden: !hasResults,
-                                onSelect: onRestartGroup,
-                            },
-                        ]}
-                    />
+                    {!isMobile && menu}
                 </div>
             </div>
             <AddCompetitorToRoundModal

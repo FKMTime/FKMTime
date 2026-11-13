@@ -1,6 +1,6 @@
 import { useAtomValue } from "jotai";
 import { CircleCheck } from "lucide-react";
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { getNumberOfAttemptsForRound } from "wcif-helpers";
 
@@ -41,6 +41,9 @@ const EnterScorecard = () => {
     } | null>(null);
 
     const idInputRef = useRef<HTMLInputElement>(null);
+    const attemptsRef = useRef<HTMLDivElement>(null);
+    // Enter on the ID asks for the first time field, which may still be loading
+    const wantsFirstTimeRef = useRef(false);
     const competition = useAtomValue(competitionAtom);
     const maxAttempts = useMemo(
         () =>
@@ -86,6 +89,22 @@ const EnterScorecard = () => {
         [id, maxAttempts]
     );
 
+    const focusFirstTime = () =>
+        attemptsRef.current?.querySelector("input")?.focus();
+
+    useEffect(() => {
+        if (!wantsFirstTimeRef.current || attempts.length === 0) return;
+        wantsFirstTimeRef.current = false;
+        focusFirstTime();
+    }, [attempts]);
+
+    const handleIdEnter = () => {
+        if (!persons.some((p) => p.registrantId === +inputValue)) return;
+        if (result?.person.registrantId === +inputValue && attempts.length)
+            return focusFirstTime();
+        wantsFirstTimeRef.current = true;
+    };
+
     const updateAttempt = (updated: AttemptToEnterWithScorecard) => {
         setAttempts((prev) =>
             prev.map((a) =>
@@ -94,12 +113,20 @@ const EnterScorecard = () => {
         );
     };
 
-    const handleSubmit = async () => {
+    /** lastAttempt: typed into the last field, before state caught up */
+    const handleSubmit = async (lastAttempt?: AttemptToEnterWithScorecard) => {
         if (!result || isSaving) return;
-        const attemptsToCreate = attempts.filter(
+        const toSave = lastAttempt
+            ? attempts.map((a) =>
+                  a.attemptNumber === lastAttempt.attemptNumber
+                      ? lastAttempt
+                      : a
+              )
+            : attempts;
+        const attemptsToCreate = toSave.filter(
             (a) => a.isNew && (a.value !== 0 || a.penalty !== 0)
         );
-        const attemptsToUpdate = attempts.filter((a) => !a.isNew);
+        const attemptsToUpdate = toSave.filter((a) => !a.isNew);
         setIsSaving(true);
         setSaveError("");
         const response = await enterScorecard({
@@ -161,7 +188,7 @@ const EnterScorecard = () => {
                     <h3 className="text-sm font-semibold">Competitor</h3>
                     <SelectCompetitor
                         idInputRef={idInputRef}
-                        handleSubmit={handleSubmit}
+                        handleSubmit={handleIdEnter}
                         persons={persons}
                         onSelect={handleSelectPerson}
                         inputValue={inputValue}
@@ -191,17 +218,20 @@ const EnterScorecard = () => {
                             </p>
                         ) : (
                             <>
-                                {competition && (
-                                    <AttemptsList
-                                        attempts={attempts}
-                                        competition={competition}
-                                        roundId={result.roundId}
-                                        onChange={updateAttempt}
-                                    />
-                                )}
+                                <div ref={attemptsRef}>
+                                    {competition && (
+                                        <AttemptsList
+                                            attempts={attempts}
+                                            competition={competition}
+                                            roundId={result.roundId}
+                                            onChange={updateAttempt}
+                                            onSubmit={handleSubmit}
+                                        />
+                                    )}
+                                </div>
                                 <InlineError>{saveError}</InlineError>
                                 <EnterScorecardActions
-                                    handleSubmit={handleSubmit}
+                                    handleSubmit={() => handleSubmit()}
                                     result={result}
                                     isSaving={isSaving}
                                 />

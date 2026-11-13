@@ -17,6 +17,8 @@ interface PenaltySelectProps {
     shortVersion?: boolean;
     className?: string;
     "aria-label"?: string;
+    /** -1 leaves it out of the Tab order, e.g. between time fields */
+    tabIndex?: number;
 }
 
 const PenaltySelect = ({
@@ -27,6 +29,7 @@ const PenaltySelect = ({
     shortVersion,
     className,
     "aria-label": ariaLabel,
+    tabIndex,
 }: PenaltySelectProps) => {
     return (
         <Select
@@ -34,7 +37,11 @@ const PenaltySelect = ({
             value={value.toString()}
             disabled={disabled}
         >
-            <SelectTrigger className={className} aria-label={ariaLabel}>
+            <SelectTrigger
+                className={className}
+                aria-label={ariaLabel}
+                tabIndex={tabIndex}
+            >
                 <SelectValue placeholder="Select penalty" />
             </SelectTrigger>
             <SelectContent>

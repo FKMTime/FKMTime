@@ -5,14 +5,6 @@ import { Modal } from "@/Components/Modal";
 import ModalActions from "@/Components/ModalActions";
 import { Button } from "@/Components/ui/button";
 import { Checkbox } from "@/Components/ui/checkbox";
-import { Label } from "@/Components/ui/label";
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from "@/Components/ui/select";
 import { useDialogError } from "@/hooks/useDialogError";
 import { useLiveQuery } from "@/hooks/useLiveQuery";
 import { useToast } from "@/hooks/useToast";
@@ -27,6 +19,9 @@ import {
 } from "@/lib/devices";
 import { Device, DeviceType } from "@/lib/interfaces";
 import { roomsQuery } from "@/lib/rooms";
+import { getLiveRoundIds } from "@/lib/roundOptions";
+
+import RoundPicker from "./RoundPicker";
 
 interface RunDifferentRoundModalProps {
     isOpen: boolean;
@@ -98,10 +93,6 @@ const RunDifferentRoundForm = ({
             stations: stations.filter((s) => s.roomId === room.id),
         }))
         .filter((room) => room.stations.length > 0);
-    const rounds =
-        competition?.wcif.events.flatMap((event) =>
-            event.rounds.map((round) => round.id)
-        ) ?? [];
     const chosenNames = stations
         .filter((s) => stationIds.includes(s.id))
         .map((s) => s.name);
@@ -130,21 +121,17 @@ const RunDifferentRoundForm = ({
 
     return (
         <>
-            <div className="flex flex-col gap-1.5">
-                <Label htmlFor="run-different-round">Round</Label>
-                <Select value={roundId} onValueChange={setRoundId}>
-                    <SelectTrigger id="run-different-round">
-                        <SelectValue placeholder="Choose a round" />
-                    </SelectTrigger>
-                    <SelectContent>
-                        {rounds.map((id) => (
-                            <SelectItem key={id} value={id}>
-                                {activityCodeToName(id)}
-                            </SelectItem>
-                        ))}
-                    </SelectContent>
-                </Select>
-            </div>
+            <fieldset className="flex min-w-0 flex-col gap-1.5">
+                <legend className="mb-1.5 text-sm font-medium">Round</legend>
+                {competition && (
+                    <RoundPicker
+                        wcif={competition.wcif}
+                        liveRoundIds={getLiveRoundIds(rooms)}
+                        value={roundId}
+                        onValueChange={setRoundId}
+                    />
+                )}
+            </fieldset>
             <fieldset className="flex flex-col gap-3">
                 <legend className="mb-1.5 text-sm font-medium">Stations</legend>
                 {roomsWithStations.map((room) => (

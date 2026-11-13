@@ -1,4 +1,4 @@
-import { fireEvent, screen, waitFor } from "@testing-library/react";
+import { fireEvent, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { createStore, Provider } from "jotai";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
@@ -105,6 +105,43 @@ describe("EnterScorecard", () => {
             status: 200,
             data: {},
         } as never);
+    });
+
+    it("jumps from the ID to the first time, and tabs time to time", async () => {
+        renderPage();
+        const idInput = await typeId("3");
+        await screen.findByRole("heading", { name: /Casey Tester/ });
+
+        fireEvent.keyDown(idInput, { key: "Enter" });
+
+        const firstTime = screen.getByLabelText("Attempt 1 time");
+        await waitFor(() => expect(document.activeElement).toBe(firstTime));
+        // Penalties are left out of the Tab order
+        for (const penalty of within(screen.getByRole("table")).getAllByRole(
+            "combobox"
+        )) {
+            expect(penalty.getAttribute("tabindex")).toBe("-1");
+        }
+        expect(enterScorecard).not.toHaveBeenCalled();
+    });
+
+    it("saves with Enter on the last time, then goes back to the ID", async () => {
+        renderPage();
+        const idInput = await typeId("3");
+        await screen.findByRole("heading", { name: /Casey Tester/ });
+
+        // Average of 5: the fifth time is the last
+        const lastTime = screen.getByLabelText("Attempt 5 time");
+        fireEvent.change(lastTime, { target: { value: "1234" } });
+        fireEvent.keyDown(lastTime, { key: "Enter" });
+
+        expect((await screen.findByRole("status")).textContent).toContain(
+            "Saved Casey Tester's scorecard"
+        );
+        expect(vi.mocked(enterScorecard).mock.calls[0][0].newAttempts).toEqual([
+            expect.objectContaining({ value: 1234 }),
+        ]);
+        await waitFor(() => expect(document.activeElement).toBe(idInput));
     });
 
     it("stays on the page, ready for the next scorecard", async () => {
