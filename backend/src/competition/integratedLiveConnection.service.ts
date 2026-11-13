@@ -1,16 +1,8 @@
-import {
-  forwardRef,
-  HttpException,
-  Inject,
-  Injectable,
-  Logger,
-} from '@nestjs/common';
+import { HttpException, Injectable, Logger } from '@nestjs/common';
 import { AppGateway } from 'src/app.gateway';
 import { DbService } from 'src/db/db.service';
 import { decryptSecret, encryptSecret } from 'src/secret-box';
 import { WcaService, WcaTokens } from 'src/wca/wca.service';
-
-import { CompetitionService } from './competition.service';
 
 /** Refresh this long before the token expires, so no send meets a dead one */
 const REFRESH_MARGIN_MS = 5 * 60 * 1000;
@@ -48,8 +40,6 @@ export class IntegratedLiveConnectionService {
   constructor(
     private readonly prisma: DbService,
     private readonly wcaService: WcaService,
-    @Inject(forwardRef(() => CompetitionService))
-    private readonly competitionService: CompetitionService,
     private readonly appGateway: AppGateway,
   ) {}
 
@@ -74,10 +64,6 @@ export class IntegratedLiveConnectionService {
     if (!wcaUser?.id) {
       throw new HttpException('Could not read the WCA account', 502);
     }
-    // Fresh, in case the competition was switched on the WCA in between
-    await this.competitionService
-      .refreshWcaScoretakingSoftware()
-      .catch(() => undefined);
     const canEnterScores = await this.checkCanEnterScores(
       tokens.accessToken,
       competition.wcaId,

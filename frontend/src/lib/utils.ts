@@ -353,8 +353,14 @@ export const getSubmissionPlatformName = (
     destination: OfficialResultsDestination | undefined
 ): string | null => {
     if (isUnofficialEvent(eventId)) return "Cubing Contests";
-    // Sending to WCA live results on the WCA website isn't built yet
-    return destination === "WCA_LIVE" ? "WCA Live" : null;
+    switch (destination) {
+        case "WCA_LIVE":
+            return "WCA Live";
+        case "WCA_INTEGRATED_LIVE":
+            return "WCA Integrated Live Results";
+        default:
+            return null;
+    }
 };
 
 export const officialResultsDestinationName = (

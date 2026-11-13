@@ -114,6 +114,7 @@ export class ImportService {
           wcaId: person.wcaId,
           name: person.name,
           registrantId: person.registrantId,
+          wcaRegistrationId: person.registration?.wcaRegistrationId ?? null,
           gender: person.gender,
           countryIso2: person.countryIso2,
           canCompete: person.registration && person.registration.isCompeting,

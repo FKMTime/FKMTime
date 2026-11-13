@@ -141,6 +141,11 @@ export class CompetitionController {
     @Body() dto: ConnectIntegratedLiveDto,
     @GetUser() user: JwtAuthDto,
   ) {
+    // Fresh, in case the competition was switched on the WCA in between. Done
+    // here so the connection service needn't depend on CompetitionService.
+    await this.competitionService
+      .refreshWcaScoretakingSoftware()
+      .catch(() => undefined);
     return await this.integratedLiveConnectionService.connect(
       user.userId,
       dto.code,

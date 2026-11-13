@@ -7,7 +7,13 @@ describe("getSubmissionPlatformName", () => {
         expect(getSubmissionPlatformName("333", "WCA_LIVE")).toBe("WCA Live");
     });
 
-    it.each(["WCA_INTEGRATED_LIVE", "NONE", undefined] as const)(
+    it("names WCA Integrated Live Results when official results go there", () => {
+        expect(getSubmissionPlatformName("333", "WCA_INTEGRATED_LIVE")).toBe(
+            "WCA Integrated Live Results"
+        );
+    });
+
+    it.each(["NONE", undefined] as const)(
         "names nothing for official events when the destination is %s",
         (destination) => {
             expect(getSubmissionPlatformName("333", destination)).toBeNull();

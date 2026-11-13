@@ -5,6 +5,7 @@ import { DbModule } from 'src/db/db.module';
 import { PersonModule } from 'src/person/person.module';
 import { ResultModule } from 'src/result/result.module';
 
+import { IntegratedLiveService } from '../integrated-live/integratedLive.service';
 import { SocketModule } from '../socket/socket.module';
 import { WcaModule } from '../wca/wca.module';
 import { AutoSetupGateway } from './autosetup.gateway';
@@ -25,6 +26,7 @@ import { SyncService } from './sync.service';
     StatisticsService,
     AutoSetupGateway,
     IntegratedLiveConnectionService,
+    IntegratedLiveService,
   ],
   controllers: [CompetitionController],
   imports: [
@@ -36,6 +38,11 @@ import { SyncService } from './sync.service';
     forwardRef(() => PersonModule),
     forwardRef(() => AppModule),
   ],
-  exports: [CompetitionService, SyncService, IntegratedLiveConnectionService],
+  exports: [
+    CompetitionService,
+    SyncService,
+    IntegratedLiveConnectionService,
+    IntegratedLiveService,
+  ],
 })
 export class CompetitionModule {}

@@ -99,6 +99,7 @@ describe('ResultFromDeviceService with a resolved attempt', () => {
         null,
         null,
         null,
+        null,
       ),
       null,
     );

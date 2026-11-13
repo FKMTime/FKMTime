@@ -70,6 +70,7 @@ describe('ResultService staffing checks', () => {
       null,
       null,
       null,
+      null,
     );
   });
 
@@ -159,6 +160,7 @@ describe('ResultService submitted attempts', () => {
       null,
       null,
       { getExtra: getFinalExtraAttempt } as unknown as WcaService,
+      null,
       null,
       null,
       null,
@@ -282,6 +284,7 @@ describe('ResultService settling waiting extras', () => {
       null,
       null,
       { log } as unknown as AttemptEditLogService,
+      null,
     );
     return {
       voided: await service.settleWaitingExtras('result-1'),
@@ -343,6 +346,7 @@ describe('ResultService next attempt during a redo', () => {
       {
         getPersonByCardId: jest.fn().mockResolvedValue({ id: 'person-1' }),
       } as unknown as PersonService,
+      null,
       null,
     );
     jest
@@ -425,6 +429,7 @@ describe('ResultService results to double check', () => {
       null,
       null,
       null,
+      null,
     );
 
     const data = await service.getResultsToDoubleCheckByRoundId('333-r1');
@@ -472,6 +477,7 @@ describe('ResultService removing a result (Regulation 9t)', () => {
     service = new ResultService(
       prisma as unknown as DbService,
       appGateway as unknown as AppGateway,
+      null,
       null,
       null,
       null,
@@ -558,6 +564,9 @@ describe('ResultService sending where the WCA setting says', () => {
     const contestsService = {
       enterWholeScorecardToCubingContests: jest.fn().mockResolvedValue({}),
     };
+    const integratedLiveService = {
+      markDirty: jest.fn().mockResolvedValue(undefined),
+    };
     const service = new ResultService(
       prisma as unknown as DbService,
       null,
@@ -566,11 +575,12 @@ describe('ResultService sending where the WCA setting says', () => {
       contestsService as never,
       null,
       null,
+      integratedLiveService as never,
     );
     service.getResultById = jest
       .fn()
       .mockResolvedValue({ id: 'result-1', eventId, attempts: [] });
-    return { service, wcaService, contestsService };
+    return { service, wcaService, contestsService, integratedLiveService };
   };
 
   it('sends to WCA Live when the WCA says wca_live', async () => {
@@ -581,17 +591,24 @@ describe('ResultService sending where the WCA setting says', () => {
     expect(wcaService.enterWholeScorecardToWcaLive).toHaveBeenCalled();
   });
 
-  it.each(['internal', 'external'])(
-    'does not send to WCA Live when the WCA says %s',
-    async (software) => {
-      const { service, wcaService } = setup(software);
+  it('queues the result for WCA Integrated Live Results when the WCA says internal', async () => {
+    const { service, wcaService, integratedLiveService } = setup('internal');
 
-      const reply = await service.sendResult('result-1');
+    await service.sendResult('result-1');
 
-      expect(wcaService.enterWholeScorecardToWcaLive).not.toHaveBeenCalled();
-      expect(reply).toMatchObject({ sent: false });
-    },
-  );
+    expect(integratedLiveService.markDirty).toHaveBeenCalledWith(['result-1']);
+    expect(wcaService.enterWholeScorecardToWcaLive).not.toHaveBeenCalled();
+  });
+
+  it('sends nowhere when the WCA says external', async () => {
+    const { service, wcaService, integratedLiveService } = setup('external');
+
+    const reply = await service.sendResult('result-1');
+
+    expect(wcaService.enterWholeScorecardToWcaLive).not.toHaveBeenCalled();
+    expect(integratedLiveService.markDirty).not.toHaveBeenCalled();
+    expect(reply).toMatchObject({ sent: false });
+  });
 
   it('keeps sending to WCA Live before the first read when a token is set', async () => {
     const { service, wcaService } = setup(null);

@@ -6,6 +6,7 @@ import { ContestsModule } from 'src/contests/contests.module';
 import { AttemptModule } from '../attempt/attempt.module';
 import { AttendanceModule } from '../attendance/attendance.module';
 import { AuthModule } from '../auth/auth.module';
+import { CompetitionModule } from '../competition/competition.module';
 import { DeviceModule } from '../device/device.module';
 import { PersonModule } from '../person/person.module';
 import { WcaModule } from '../wca/wca.module';
@@ -27,6 +28,7 @@ import { ResultFromDeviceService } from './resultFromDevice.service';
     PersonModule,
     AttemptEditLogModule,
     forwardRef(() => AppModule),
+    forwardRef(() => CompetitionModule),
   ],
   exports: [ResultService, ResultFromDeviceService],
 })
