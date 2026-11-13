@@ -24,8 +24,8 @@ const IntegratedLiveConnectionAlert = ({
             <TriangleAlert />
             <AlertTitle>
                 {isBroken
-                    ? "WCA live results disconnected"
-                    : "Not connected to WCA live results"}
+                    ? "Integrated Live Results disconnected"
+                    : "Not connected to Integrated Live Results"}
             </AlertTitle>
             <AlertDescription>
                 <Link className="font-semibold underline" to="/competition">

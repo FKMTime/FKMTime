@@ -36,7 +36,7 @@ const WcaLiveConnect = () => {
                     queryKey: [integratedLiveConnectionQuery.key],
                 });
                 toast({
-                    title: `Connected to WCA live results as ${data.connectedAs ?? "your WCA account"}`,
+                    title: `Connected to Integrated Live Results as ${data.connectedAs ?? "your WCA account"}`,
                     variant: "success",
                 });
                 navigate("/competition", { replace: true });
@@ -54,7 +54,7 @@ const WcaLiveConnect = () => {
                 </Button>
             }
         >
-            Couldn't connect to WCA live results. {error}
+            Couldn't connect to Integrated Live Results. {error}
         </EmptyState>
     );
 };

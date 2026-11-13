@@ -364,7 +364,7 @@ export const officialResultsDestinationName = (
         case "WCA_LIVE":
             return "WCA Live";
         case "WCA_INTEGRATED_LIVE":
-            return "WCA live results on the WCA website";
+            return "Integrated Live Results";
         default:
             return "Nowhere";
     }

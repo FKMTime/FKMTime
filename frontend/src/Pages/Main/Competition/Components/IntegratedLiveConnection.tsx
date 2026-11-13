@@ -32,7 +32,7 @@ const IntegratedLiveConnection = () => {
 
     const disconnect = () =>
         confirm({
-            title: "Disconnect from WCA live results?",
+            title: "Disconnect from Integrated Live Results?",
             description:
                 "Results won't be sent to the WCA website until someone connects again.",
             confirmLabel: "Disconnect",
@@ -43,7 +43,7 @@ const IntegratedLiveConnection = () => {
                         queryKey: [integratedLiveConnectionQuery.key],
                     });
                     toast({
-                        title: "Disconnected from WCA live results",
+                        title: "Disconnected from Integrated Live Results",
                         variant: "success",
                     });
                 } else {
@@ -60,7 +60,7 @@ const IntegratedLiveConnection = () => {
     return (
         <div className="space-y-2 rounded-xl border p-3">
             <p className="text-[13px] font-semibold text-muted-foreground">
-                Connection to WCA live results
+                Connection to Integrated Live Results
             </p>
             {state === "NOT_CONNECTED" && (
                 <p className="text-[13px] text-muted-foreground">
@@ -82,8 +82,8 @@ const IntegratedLiveConnection = () => {
                 <Alert variant="warning">
                     <TriangleAlert />
                     <AlertTitle>
-                        WCA live results disconnected. Reconnect to keep sending
-                        results.
+                        Integrated Live Results disconnected. Reconnect to keep
+                        sending results.
                     </AlertTitle>
                 </Alert>
             )}
@@ -112,7 +112,7 @@ const IntegratedLiveConnection = () => {
                 >
                     <Link2 />
                     {state === "NOT_CONNECTED"
-                        ? "Connect to WCA live results"
+                        ? "Connect to Integrated Live Results"
                         : "Reconnect"}
                 </Button>
                 {state !== "NOT_CONNECTED" && (
