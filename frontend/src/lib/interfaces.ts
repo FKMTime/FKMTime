@@ -68,6 +68,22 @@ export interface Competition extends CompetitionDataForLoginPage {
     wcaScoretakingSoftware?: string | null;
     wcaScoretakingCheckedAt?: string | null;
     officialResultsDestination?: OfficialResultsDestination;
+    integratedLiveConnection?: IntegratedLiveConnectionState;
+}
+
+export type IntegratedLiveConnectionState =
+    | "NOT_CONNECTED"
+    | "CONNECTED"
+    | "BROKEN";
+
+export interface IntegratedLiveConnectionStatus {
+    state: IntegratedLiveConnectionState;
+    /** The WCA account results are entered as */
+    connectedAs: string | null;
+    /** Null when the WCA couldn't tell at connect time */
+    canEnterScores: boolean | null;
+    brokenAt: string | null;
+    usesIntegratedLive: boolean;
 }
 
 export interface ScoretakingSoftwareStatus {

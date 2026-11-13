@@ -23,7 +23,7 @@ const explanation = (software: string | null | undefined) => {
         case "wca_live":
             return "The WCA website says results are entered in WCA Live.";
         case "internal":
-            return "The WCA website says results are entered in its own live results. FKMTime can't send them there yet, so official results aren't sent anywhere for now.";
+            return "The WCA website says results are entered in its own live results. Connect below to choose the WCA account results are entered as. FKMTime can't send them there yet, so official results aren't sent anywhere for now.";
         case "external":
             return "The WCA website says results are entered with another tool, so FKMTime doesn't send official results anywhere.";
         default:

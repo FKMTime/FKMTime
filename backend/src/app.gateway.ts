@@ -74,6 +74,11 @@ export class AppGateway {
     socket.leave(`results-${roundId}`);
   }
 
+  // Server-side only: the WCA live results connection was made, ended or broke
+  handleIntegratedLiveConnectionChanged() {
+    this.server.to(`competition`).emit('integratedLiveConnectionChanged');
+  }
+
   // Server-side only: the WCA website now names another scoretaking tool
   handleScoretakingSoftwareChanged(officialResultsDestination: string) {
     this.server

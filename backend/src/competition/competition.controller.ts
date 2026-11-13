@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   HttpCode,
   HttpStatus,
@@ -17,10 +18,12 @@ import { ScramblingDeviceGuard } from 'src/auth/guards/scramblingDevice.guard';
 import { GetUser } from '../auth/decorator/getUser.decorator';
 import { JwtAuthDto } from '../auth/dto/jwt-auth.dto';
 import { CompetitionService } from './competition.service';
+import { ConnectIntegratedLiveDto } from './dto/connectIntegratedLive.dto';
 import { UpdateCompetitionDto } from './dto/updateCompetition.dto';
 import { UpdateRoomsDto } from './dto/updateCurrentRound.dto';
 import { UpdateDevicesSettingsDto } from './dto/updateDevicesSettings.dto';
 import { ImportService } from './import.service';
+import { IntegratedLiveConnectionService } from './integratedLiveConnection.service';
 import { RoomsService } from './rooms.service';
 import { StatisticsService } from './statistics.service';
 import { SyncService } from './sync.service';
@@ -36,6 +39,7 @@ export class CompetitionController {
     private readonly importService: ImportService,
     private readonly syncService: SyncService,
     private readonly statisticsService: StatisticsService,
+    private readonly integratedLiveConnectionService: IntegratedLiveConnectionService,
   ) {}
 
   @Get('login-info')
@@ -122,6 +126,32 @@ export class CompetitionController {
   @Get('rooms/progress')
   async getRoomsProgress() {
     return this.roomsService.getRoomsProgress();
+  }
+
+  @UseGuards(OrganizerGuard)
+  @Get('integrated-live/connection')
+  async getIntegratedLiveConnection() {
+    return await this.integratedLiveConnectionService.getStatus();
+  }
+
+  @HttpCode(HttpStatus.OK)
+  @UseGuards(AuthGuard('jwt'), OrganizerGuard)
+  @Post('integrated-live/connection')
+  async connectIntegratedLive(
+    @Body() dto: ConnectIntegratedLiveDto,
+    @GetUser() user: JwtAuthDto,
+  ) {
+    return await this.integratedLiveConnectionService.connect(
+      user.userId,
+      dto.code,
+      dto.redirectUri,
+    );
+  }
+
+  @UseGuards(OrganizerGuard)
+  @Delete('integrated-live/connection')
+  async disconnectIntegratedLive() {
+    return await this.integratedLiveConnectionService.disconnect();
   }
 
   @HttpCode(HttpStatus.OK)

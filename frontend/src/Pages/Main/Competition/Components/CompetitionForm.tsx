@@ -27,6 +27,7 @@ import { Competition, SendingResultsFrequency } from "@/lib/interfaces";
 import { competitionSchema } from "@/lib/schema/competitionSchema";
 import { prettySendingResultsFrequency } from "@/lib/utils";
 
+import IntegratedLiveConnection from "./IntegratedLiveConnection";
 import ResultsDestination from "./ResultsDestination";
 
 interface CompetitionFormProps {
@@ -88,6 +89,9 @@ const CompetitionForm = ({
                 {useDevices && (
                     <>
                         <ResultsDestination competition={competition} />
+                        {competition.wcaScoretakingSoftware === "internal" && (
+                            <IntegratedLiveConnection />
+                        )}
                         {showsScoretakingToken && (
                             <FormField
                                 control={form.control}

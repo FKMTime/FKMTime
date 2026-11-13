@@ -25,6 +25,7 @@ import {
 } from "@/lib/competition";
 import { getEvents } from "@/lib/events";
 import { getUnresolvedIncidentsCount } from "@/lib/incidents";
+import { integratedLiveConnectionQuery } from "@/lib/integratedLive";
 import { Competition } from "@/lib/interfaces";
 import {
     getCompetitionDayLabel,
@@ -108,6 +109,15 @@ const Layout = () => {
     }, [userKey]);
 
     useCompetitionSocketEvents(socket, userKey, {
+        onIntegratedLiveConnectionChanged: () => {
+            fetchCompetition();
+            void queryClient.invalidateQueries({
+                queryKey: [integratedLiveConnectionQuery.key],
+            });
+            void queryClient.invalidateQueries({
+                queryKey: [competitionSettingsQuery.key],
+            });
+        },
         onScoretakingSoftwareChanged: ({ officialResultsDestination }) => {
             fetchCompetition();
             void queryClient.invalidateQueries({

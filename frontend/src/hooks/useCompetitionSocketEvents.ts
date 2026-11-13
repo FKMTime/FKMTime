@@ -18,6 +18,8 @@ interface CompetitionSocketHandlers {
     onScoretakingSoftwareChanged?: (data: {
         officialResultsDestination: OfficialResultsDestination;
     }) => void;
+    /** The WCA live results connection was made, ended or broke */
+    onIntegratedLiveConnectionChanged?: () => void;
 }
 
 /**
@@ -51,7 +53,13 @@ export const useCompetitionSocketEvents = (
         const handleScoretakingSoftwareChanged = (data: {
             officialResultsDestination: OfficialResultsDestination;
         }) => handlersRef.current.onScoretakingSoftwareChanged?.(data);
+        const handleIntegratedLiveConnectionChanged = () =>
+            handlersRef.current.onIntegratedLiveConnectionChanged?.();
         socket.on("newIncident", handleNewIncident);
+        socket.on(
+            "integratedLiveConnectionChanged",
+            handleIntegratedLiveConnectionChanged
+        );
         socket.on("groupShouldBeChanged", handleGroupShouldBeChanged);
         socket.on(
             "scoretakingSoftwareChanged",
@@ -59,6 +67,10 @@ export const useCompetitionSocketEvents = (
         );
         return () => {
             socket.off("newIncident", handleNewIncident);
+            socket.off(
+                "integratedLiveConnectionChanged",
+                handleIntegratedLiveConnectionChanged
+            );
             socket.off("groupShouldBeChanged", handleGroupShouldBeChanged);
             socket.off(
                 "scoretakingSoftwareChanged",

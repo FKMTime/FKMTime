@@ -15,6 +15,9 @@ const CompetitionStatistics = lazy(
     () => import("./Components/CompetitionStatistics/CompetitionStatistics")
 );
 const Login = lazy(() => import("./Pages/Auth/Login/Login"));
+const WcaLiveConnect = lazy(
+    () => import("./Pages/Main/Competition/WcaLiveConnect/WcaLiveConnect")
+);
 const AssignCards = lazy(() => import("./Pages/Main/AssignCards/AssignCards"));
 const Attendance = lazy(() => import("./Pages/Main/Attendance/Attendance"));
 const AttendanceStatistics = lazy(
@@ -145,6 +148,10 @@ const App = () => {
                 {
                     path: "competition",
                     element: <Competition />,
+                },
+                {
+                    path: "competition/wca-live-connect",
+                    element: <WcaLiveConnect />,
                 },
                 {
                     path: "competition/groups",
