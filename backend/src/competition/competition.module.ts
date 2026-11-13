@@ -11,6 +11,7 @@ import { AutoSetupGateway } from './autosetup.gateway';
 import { CompetitionController } from './competition.controller';
 import { CompetitionService } from './competition.service';
 import { ImportService } from './import.service';
+import { IntegratedLiveConnectionService } from './integratedLiveConnection.service';
 import { RoomsService } from './rooms.service';
 import { StatisticsService } from './statistics.service';
 import { SyncService } from './sync.service';
@@ -23,6 +24,7 @@ import { SyncService } from './sync.service';
     SyncService,
     StatisticsService,
     AutoSetupGateway,
+    IntegratedLiveConnectionService,
   ],
   controllers: [CompetitionController],
   imports: [
@@ -34,6 +36,6 @@ import { SyncService } from './sync.service';
     forwardRef(() => PersonModule),
     forwardRef(() => AppModule),
   ],
-  exports: [CompetitionService, SyncService],
+  exports: [CompetitionService, SyncService, IntegratedLiveConnectionService],
 })
 export class CompetitionModule {}

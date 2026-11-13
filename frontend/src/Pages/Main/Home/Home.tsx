@@ -30,6 +30,7 @@ import {
 import { getStartLabel } from "@/lib/schedule";
 import { invalidateIncidentLists } from "@/Pages/Main/Incidents/incidentsContext";
 
+import IntegratedLiveConnectionAlert from "./Components/IntegratedLiveConnectionAlert";
 import NextGroupInAllRooms from "./Components/NextGroupInAllRooms";
 import RoomCard from "./Components/RoomCard";
 
@@ -206,6 +207,9 @@ const Home = () => {
 
     return (
         <>
+            {competition && isOrganizerOrDelegate() && (
+                <IntegratedLiveConnectionAlert competition={competition} />
+            )}
             {currentRoundIds.map((roundId) => (
                 <ResultsRoom key={roundId} roundId={roundId} />
             ))}

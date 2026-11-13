@@ -252,17 +252,27 @@ model Competition {
   // ...
   wcaLiveConnectedById       String?   @map("wca_live_connected_by_id")   // FKMTime user who connected
   wcaLiveConnectedWcaUserId  Int?      @map("wca_live_connected_wca_user_id")
+  wcaLiveConnectedName       String?   @map("wca_live_connected_name")     // shown on the card
+  wcaLiveCanEnterScores      Boolean?  @map("wca_live_can_enter_scores")   // null: the WCA couldn't tell
   wcaLiveAccessToken         String?   @map("wca_live_access_token")      // encrypted
   wcaLiveRefreshToken        String?   @map("wca_live_refresh_token")     // encrypted
   wcaLiveTokenExpiresAt      DateTime? @map("wca_live_token_expires_at")
+  wcaLiveConnectionBrokenAt  DateTime? @map("wca_live_connection_broken_at")
 }
 ```
 
-The tokens are encrypted at rest the same way as `ScramblingDevice.encryptedToken`.
+- **Encryption:** the tokens are encrypted at rest with AES-256-GCM, using a
+  key derived from the server's `SECRET` (`src/secret-box.ts`). Device tokens
+  are only hashed, but these have to be sent back to the WCA, so they need
+  reversible encryption.
+- **Never sent to the panel:** the settings response leaves out the tokens.
+  The panel only gets the connection's state (`NOT_CONNECTED`, `CONNECTED`
+  or `BROKEN`) and the card's details from
+  `GET /competition/integrated-live/connection`.
 
 #### Connect flow
 
-1. An organiser, Delegate or admin clicks **Connect to WCA live results** on
+1. An organiser, Delegate or admin clicks **Connect to WCA Integrated Live Results** on
    the settings page.
 2. FKMTime runs the WCA OAuth authorisation-code flow with the existing client
    and the scope `public manage_competitions`, the same as the login. ILR
@@ -281,8 +291,12 @@ The tokens are encrypted at rest the same way as `ScramblingDevice.encryptedToke
      in `GET /api/v1/competitions/{id}/scoretakers`, which any signed-in user
      can read. If neither holds, the card says so and offers to reconnect as
      someone else.
-5. The card shows "Connected as <name>, results are entered as this person",
-   with **Reconnect** and **Disconnect** buttons.
+5. The card shows "Connected as <name>. Results are entered as this
+   person.", with **Reconnect** and **Disconnect** buttons.
+
+The redirect path is `/competition/wca-live-connect`. It has to be registered
+as a redirect URI on FKMTime's WCA OAuth application, for each deployment
+origin.
 
 #### Keeping the token alive
 
@@ -293,9 +307,14 @@ The tokens are encrypted at rest the same way as `ScramblingDevice.encryptedToke
   - One refresh at a time per competition, behind an in-process lock, so two
     sends can't both use the same refresh token.
 - **On a 401:** refresh once and retry.
-- **If the refresh fails:** mark the connection broken. Home and the settings
-  card show "Integrated live results disconnected — reconnect" until someone
-  reconnects. Results keep being stored and are sent after reconnecting (see
+- **If the refresh fails:** mark the connection broken. Until someone
+  reconnects:
+  - Home shows organisers and Delegates "WCA Integrated Live Results disconnected", with
+    a link to reconnect in settings. It shows "Not connected to WCA
+    Integrated Live Results" the same way when nobody has connected yet;
+  - the settings card shows the same message;
+  - every open panel updates straight away, through the socket event
+    `integratedLiveConnectionChanged`. Results keep being stored and are sent after reconnecting (see
   Sync state).
 
 ### 3. Sending results to ILR

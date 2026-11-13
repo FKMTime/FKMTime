@@ -46,6 +46,7 @@ import { SocketController } from '../socket/socket.controller';
 import { WcaService } from '../wca/wca.service';
 import { UpdateCompetitionDto } from './dto/updateCompetition.dto';
 import { UpdateDevicesSettingsDto } from './dto/updateDevicesSettings.dto';
+import { getIntegratedLiveConnectionState } from './integratedLiveConnection.service';
 
 const autoSetupSettingsSelect = {
   id: true,
@@ -264,13 +265,21 @@ export class CompetitionService {
   }
 
   async getCompetitionSettings() {
-    const competition = await this.prisma.competition.findFirst();
+    // The connection's tokens never leave the backend
+    const competition = await this.prisma.competition.findFirst({
+      omit: { wcaLiveRefreshToken: true },
+    });
     if (!competition) {
       throw new HttpException('Competition not found', 404);
     }
+    const { wcaLiveAccessToken, ...settings } = competition;
     return {
-      ...competition,
+      ...settings,
       officialResultsDestination: getOfficialResultsDestination(competition),
+      integratedLiveConnection: getIntegratedLiveConnectionState({
+        wcaLiveAccessToken,
+        wcaLiveConnectionBrokenAt: competition.wcaLiveConnectionBrokenAt,
+      }),
       hilTesting: this.socketController.hilRunning(),
     };
   }
@@ -279,12 +288,19 @@ export class CompetitionService {
   async getCompetitionForPanel() {
     const info = await this.getCompetitionInfo();
     const destinationInput = await this.prisma.competition.findFirst({
-      select: { wcaScoretakingSoftware: true, scoretakingToken: true },
+      select: {
+        wcaScoretakingSoftware: true,
+        scoretakingToken: true,
+        wcaLiveAccessToken: true,
+        wcaLiveConnectionBrokenAt: true,
+      },
     });
     return {
       ...info,
       officialResultsDestination:
         getOfficialResultsDestination(destinationInput),
+      integratedLiveConnection:
+        getIntegratedLiveConnectionState(destinationInput),
     };
   }
 
@@ -435,6 +451,7 @@ export class CompetitionService {
       where: {
         id: id,
       },
+      omit: { wcaLiveAccessToken: true, wcaLiveRefreshToken: true },
       data: {
         scoretakingToken: dto.scoretakingToken,
         scoretakingTokenUpdatedAt:

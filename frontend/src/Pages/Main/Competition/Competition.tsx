@@ -92,6 +92,10 @@ const Competition = () => {
 
     if (!competition) return <LoadingPage />;
 
+    // The token only matters when official results go to WCA Live
+    const usesWcaLiveToken =
+        !competition.wcaScoretakingSoftware ||
+        competition.wcaScoretakingSoftware === "wca_live";
     const isTokenEmpty = !competition.scoretakingToken;
     const mayTokenHaveExpired =
         !!competition.scoretakingTokenUpdatedAt &&
@@ -131,6 +135,7 @@ const Competition = () => {
                 )}
             </div>
             {competition.useFkmTimeDevices &&
+                usesWcaLiveToken &&
                 (isTokenEmpty || mayTokenHaveExpired) && (
                     <Alert variant="warning">
                         <TriangleAlert />

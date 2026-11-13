@@ -98,6 +98,16 @@ model Competition {
   // Mirrors scoretaking_software on the WCA website; null until first read
   wcaScoretakingSoftware          String?                 @map("wca_scoretaking_software")
   wcaScoretakingCheckedAt         DateTime?               @map("wca_scoretaking_checked_at")
+  // The WCA account results are entered as in integrated live results; the
+  // tokens are encrypted (src/secret-box.ts)
+  wcaLiveConnectedById            String?                 @map("wca_live_connected_by_id")
+  wcaLiveConnectedWcaUserId       Int?                    @map("wca_live_connected_wca_user_id")
+  wcaLiveConnectedName            String?                 @map("wca_live_connected_name")
+  wcaLiveCanEnterScores           Boolean?                @map("wca_live_can_enter_scores")
+  wcaLiveAccessToken              String?                 @map("wca_live_access_token")
+  wcaLiveRefreshToken             String?                 @map("wca_live_refresh_token")
+  wcaLiveTokenExpiresAt           DateTime?               @map("wca_live_token_expires_at")
+  wcaLiveConnectionBrokenAt       DateTime?               @map("wca_live_connection_broken_at")
   cubingContestsToken             String?                 @map("cubing_contests_token")
   defaultLocale                   String?                 @default("en") @map("default_locale")
   fkmToken                        Int                     @map("fkm_token")

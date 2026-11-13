@@ -25,6 +25,13 @@ export const assertWcaCompetitionFound = (statusCode: number) => {
   }
 };
 
+export interface WcaTokens {
+  accessToken: string;
+  refreshToken: string;
+  /** Seconds */
+  expiresIn: number;
+}
+
 @Injectable()
 export class WcaService {
   constructor(private readonly prisma: DbService) {}
@@ -233,6 +240,92 @@ export class WcaService {
     this.wcaLogger.log(`Fetching access token ${tokenResponse.status}`);
     const tokenData = await tokenResponse.json();
     return tokenData.access_token;
+  }
+
+  /** The full token answer for a sign-in code; null if the WCA refuses it */
+  async exchangeCodeForTokens(
+    code: string,
+    redirectUrl: string,
+  ): Promise<WcaTokens | null> {
+    return this.requestTokens({
+      code,
+      redirect_uri: redirectUrl,
+      grant_type: 'authorization_code',
+    });
+  }
+
+  /**
+   * A new token pair. The WCA rotates refresh tokens, so the one passed in
+   * stops working. Null if the WCA refuses it.
+   */
+  async refreshTokens(refreshToken: string): Promise<WcaTokens | null> {
+    return this.requestTokens({
+      refresh_token: refreshToken,
+      grant_type: 'refresh_token',
+    });
+  }
+
+  private async requestTokens(
+    grant: Record<string, string>,
+  ): Promise<WcaTokens | null> {
+    try {
+      const response = await fetch(`${WCA_ORIGIN}/oauth/token`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...grant,
+          client_id: process.env.WCA_CLIENT_ID,
+          client_secret: process.env.WCA_CLIENT_SECRET,
+        }),
+      });
+      this.wcaLogger.log(
+        `Requesting tokens (${grant.grant_type}) ${response.status}`,
+      );
+      if (!response.ok) return null;
+      const data = await response.json();
+      if (!data.access_token || !data.refresh_token) return null;
+      return {
+        accessToken: data.access_token,
+        refreshToken: data.refresh_token,
+        expiresIn: data.expires_in ?? 7200,
+      };
+    } catch (e) {
+      this.wcaLogger.error(`Requesting tokens failed: ${e}`);
+      return null;
+    }
+  }
+
+  /** Whether the token's user manages the competition; null if unknown */
+  async managesCompetition(
+    token: string,
+    competitionId: string,
+  ): Promise<boolean | null> {
+    const competitions = await this.getUpcomingManageableCompetitions(
+      token,
+    ).catch(() => null);
+    if (!Array.isArray(competitions)) return null;
+    return competitions.some((c: { id: string }) => c.id === competitionId);
+  }
+
+  /** Whether the user is a scoretaker of the competition; null if unknown */
+  async isScoretaker(
+    token: string,
+    competitionId: string,
+    wcaUserId: number,
+  ): Promise<boolean | null> {
+    try {
+      const response = await fetch(
+        `${WCA_ORIGIN}/api/v1/competitions/${competitionId}/scoretakers`,
+        { headers: { Authorization: `Bearer ${token}` } },
+      );
+      this.wcaLogger.log(`Fetching scoretakers ${response.status}`);
+      if (!response.ok) return null;
+      const scoretakers: { user_id: number }[] = await response.json();
+      return scoretakers.some((s) => s.user_id === wcaUserId);
+    } catch (e) {
+      this.wcaLogger.error(`Fetching scoretakers failed: ${e}`);
+      return null;
+    }
   }
 
   async getUserInfo(token: string) {
