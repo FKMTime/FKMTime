@@ -64,7 +64,7 @@ test.describe("competition settings", () => {
         await page.getByLabel("CubingContests token").fill("e2e-cc-token");
         await page
             .getByRole("combobox", {
-                name: "Send results to WCA Live/CubingContests",
+                name: "When to send results",
             })
             .click();
         await page.getByRole("option", { name: "Do not send" }).click();
@@ -89,7 +89,7 @@ test.describe("competition settings", () => {
         );
         await expect(
             page.getByRole("combobox", {
-                name: "Send results to WCA Live/CubingContests",
+                name: "When to send results",
             })
         ).toHaveText("Do not send");
     });
