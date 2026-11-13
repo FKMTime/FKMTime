@@ -68,6 +68,9 @@ below.
 
 The seed needs the current dummy WCA image, hence the pull. Backend and frontend
 source are mounted, so changes reload; rebuild after changing dependencies.
+File events from the Mac don't reach the containers, so the watchers poll
+instead (env vars in `docker-compose.yml`): expect a change to show up a few
+seconds after saving. Native `npm run dev` keeps the event-based watchers.
 
 - **Keep the backend in Docker.** The connector talks to it over a unix socket
   in the `sock` volume, and a unix socket can't cross into the Docker VM on

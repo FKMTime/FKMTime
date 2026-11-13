@@ -63,6 +63,14 @@ export default defineConfig({
             "@": path.resolve(__dirname, "./src"),
         },
     },
+    server: {
+        // The Docker dev stack sets this: on macOS, file events from the
+        // bind-mounted source don't reach the container, so Vite has to poll.
+        // Native `npm run dev` and CI keep the event-based watcher.
+        watch: process.env.FKMTIME_WATCH_POLLING
+            ? { usePolling: true, interval: 1000, binaryInterval: 3000 }
+            : undefined,
+    },
     build: {
         // flag-icons has hundreds of small SVGs: keep them as files the browser
         // loads per flag shown, instead of inlining them all into the CSS
