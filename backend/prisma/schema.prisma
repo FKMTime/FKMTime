@@ -142,6 +142,9 @@ model Room {
   name              String
   color             String
   currentGroupIds   String[]           @map("current_group_ids")
+  /// Every group this room has started, so a round counts as over only once
+  /// all of its groups have run, not whenever none is running
+  startedGroupIds   String[]           @default([]) @map("started_group_ids")
   createdAt         DateTime           @default(now()) @map("created_at")
   updatedAt         DateTime           @updatedAt @map("updated_at")
   devices           Device[]

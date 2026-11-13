@@ -611,8 +611,12 @@ FKMTime finds the no-shows itself, and a person confirms the removal.
 
 **When a round's last group ends:**
 
-A round counts as ended when it is open in ILR, has results in FKMTime, and
-none of its groups is current in any room.
+A round counts as ended when it is open in ILR, has results in FKMTime, every
+group with competitors assigned to it has been started in some room, and none
+of its groups is current in any room. "None is current" alone is not enough: a
+round paused between groups (another event in between, lunch) would look over,
+and the people in its groups that already ran would be offered for removal.
+Each room remembers the groups it has started for this.
 
 1. FKMTime lists the competitors who are assigned to the round, were absent in
    every group of it they were assigned to, have no attempts, and still have
@@ -623,6 +627,9 @@ none of its groups is current in any room.
    `DELETE /rounds/{roundId}/bulk_quit`, with no replacements. The round is
    over, so nobody could take their place anyway.
 
+- **Only listed people can be removed.** The backend checks each removal
+  against the list as it stands, so a stale card or a hand-made request can't
+  remove someone whose group hasn't run.
 - **The list is a proposal.** The confirmation lets the person untick
   competitors, e.g. someone the Delegate allowed to compete late (Regulation
   2u1+). Unticked competitors keep their empty result until it is filled or

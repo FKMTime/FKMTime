@@ -66,7 +66,6 @@ export class RoomsService {
   }
 
   async updateRooms(data: UpdateRoomsDto) {
-    const transactions = [];
     for (const room of data.rooms) {
       //If there are 2 or more groups in the room with same roundId
       const roundIds = [];
@@ -89,17 +88,26 @@ export class RoomsService {
         }
         roundIds.push(roundId);
       }
-      transactions.push(
-        this.prisma.room.update({
-          where: {
-            id: room.id,
-          },
-          data: {
-            currentGroupIds: room.currentGroupIds,
-          },
-        }),
-      );
     }
+    const existing = await this.prisma.room.findMany({
+      where: { id: { in: data.rooms.map((room) => room.id) } },
+      select: { id: true, startedGroupIds: true },
+    });
+    const transactions = data.rooms.map((room) => {
+      const startedBefore =
+        existing.find((r) => r.id === room.id)?.startedGroupIds ?? [];
+      return this.prisma.room.update({
+        where: {
+          id: room.id,
+        },
+        data: {
+          currentGroupIds: room.currentGroupIds,
+          startedGroupIds: [
+            ...new Set([...startedBefore, ...room.currentGroupIds]),
+          ],
+        },
+      });
+    });
     await this.prisma.$transaction(transactions);
     await this.socketController.sendServerStatus();
     // Not awaited: starting a group mustn't wait for the WCA

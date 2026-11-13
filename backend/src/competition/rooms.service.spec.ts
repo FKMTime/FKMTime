@@ -84,6 +84,7 @@ describe('RoomsService', () => {
         ],
       };
 
+      jest.spyOn(dbService.room, 'findMany').mockResolvedValue([]);
       jest.spyOn(dbService, '$transaction').mockResolvedValue([]);
       jest.spyOn(socketController, 'sendServerStatus').mockResolvedValue();
 
@@ -94,6 +95,27 @@ describe('RoomsService', () => {
       expect(socketController.sendServerStatus).toHaveBeenCalled();
       // Each started round may need opening in WCA Integrated Live Results
       expect(onRoundStarted.mock.calls).toEqual([['333-r1'], ['222-r1']]);
+    });
+
+    it('remembers every group a room has started', async () => {
+      jest
+        .spyOn(dbService.room, 'findMany')
+        .mockResolvedValue([
+          { id: 'room1', startedGroupIds: ['333-r1-g1', '333-r1-g3'] },
+        ] as any);
+      jest.spyOn(dbService, '$transaction').mockResolvedValue([]);
+
+      await service.updateRooms({
+        rooms: [{ id: 'room1', currentGroupIds: ['333-r1-g3', '222-r1-g1'] }],
+      });
+
+      expect(dbService.room.update).toHaveBeenCalledWith({
+        where: { id: 'room1' },
+        data: {
+          currentGroupIds: ['333-r1-g3', '222-r1-g1'],
+          startedGroupIds: ['333-r1-g1', '333-r1-g3', '222-r1-g1'],
+        },
+      });
     });
 
     it('should throw error if two groups from same round', async () => {
