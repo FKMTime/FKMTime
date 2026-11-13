@@ -91,6 +91,12 @@ source are mounted, so changes reload; rebuild after changing dependencies.
   taken, so two worktrees set up before either stack is up still get
   different ports. Without `.env` the stack uses the
   default ports above.
+- **Removing a stack.** `./scripts/dev-teardown.sh` removes this worktree's
+  stack for good: containers, volumes (its database too), the images built for
+  it, and the ports in `.env`. Paseo runs it on its own when a workspace's
+  worktree is archived (`worktree.teardown` in `paseo.json`), so archived
+  workspaces don't leave stacks holding memory. Other worktrees' stacks are
+  left alone.
 - **One micro connector per machine.** It listens on port 8080 of the Docker
   VM's host network and registers a fixed mDNS name with the one docker-adapter,
   so a second connector clashes on that port and devices only find the first.
