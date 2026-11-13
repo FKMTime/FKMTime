@@ -1,5 +1,5 @@
-import { createHash } from 'crypto';
 import { Attempt } from '@prisma/client';
+import { createHash } from 'crypto';
 import { DNF_VALUE, DNS_VALUE } from 'src/constants';
 import { getCountingAttempts } from 'src/result/helpers';
 import { Cutoff, TimeLimit } from 'wcif-helpers';
