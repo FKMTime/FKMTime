@@ -1,6 +1,6 @@
 # SPEC-007: Stations running a different round from their room
 
-- **Status:** Draft
+- **Status:** Accepted
 - **Created:** 2026-11-13
 - **Related:** #513, [SPEC-002](SPEC-002-extras-for-all-attempts.md) (extras
   for all attempts so far, whose warning this answers),
