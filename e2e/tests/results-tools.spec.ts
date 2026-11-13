@@ -269,7 +269,11 @@ test.describe("results checks", () => {
         await page.goto("/results/round/666-r1");
         await page.getByRole("tab", { name: "Checks" }).click();
         await expect(page).toHaveURL(/\/results\/checks\/666-r1$/);
-        await expect(page.getByText("Checks for 6x6 R1")).toBeVisible();
+        await expect(
+            page.getByRole("button", {
+                name: /^Find a round, now 6x6x6 Cube · Round 1/,
+            })
+        ).toBeVisible();
         const table = page.getByRole("main").getByRole("table");
         await expect(table).toContainText(penalised.name);
         await expect(table).toContainText(absent.name);

@@ -122,8 +122,9 @@ test.describe("staff pages", () => {
     test("opens a round from the bare results routes", async ({ page }) => {
         await page.goto("/results/round");
         await expect(page).toHaveURL(/\/results\/round\/[\w-]+-r\d+$/);
+        // The round is named by the breadcrumb heading
         await expect(
-            page.getByRole("main").getByRole("heading", { level: 2 }).first()
+            page.getByRole("heading", { level: 1, name: / · Round \d/ })
         ).toBeVisible();
 
         await page.goto("/results/public");

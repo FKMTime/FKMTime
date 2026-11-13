@@ -64,6 +64,14 @@ describe("AddGroupPicker", () => {
         ).toEqual(["Group 1", "Group 2"]);
         await userEvent.click(screen.getByRole("button", { name: "Group 2" }));
         expect(onAdd).toHaveBeenCalledWith("333-r1-g2");
+
+        // Opening it again starts from the rounds
+        await userEvent.click(
+            screen.getByRole("button", { name: "Add group" })
+        );
+        expect(
+            await screen.findByRole("button", { name: "2x2x2 Cube · Round 1" })
+        ).toBeTruthy();
     });
 
     it("blocks a second group of an event already in the room", async () => {

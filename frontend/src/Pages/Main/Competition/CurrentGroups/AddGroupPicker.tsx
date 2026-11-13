@@ -47,7 +47,9 @@ const AddGroupPicker = ({
     ].sort((a, b) => groupNumber(a) - groupNumber(b));
 
     const add = (groupId: string) => {
+        // Closing from code skips onOpenChange, so start over here too
         setIsOpen(false);
+        setRoundId("");
         onAdd(groupId);
     };
 

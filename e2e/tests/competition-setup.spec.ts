@@ -267,7 +267,7 @@ test.describe("current groups", () => {
         const section = roomSection(page, room.name);
         await expect(section.getByText("No groups in progress")).toBeVisible();
 
-        await section.getByRole("button", { name: /^Add / }).click();
+        await section.getByRole("button", { name: /^Add .+ · Group/ }).click();
         await expect(
             section.getByText("1 group", { exact: true })
         ).toBeVisible();
