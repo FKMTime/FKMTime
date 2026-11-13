@@ -32,7 +32,7 @@ don't need one — the PR description is enough.
 | `frontend/` | React + Vite + TypeScript panel, Tailwind + shadcn/ui               |
 | `e2e/`      | Playwright tests driving the real frontend against the real backend |
 | `nginx/`    | Reverse proxy config for the bundled image                         |
-| `scripts/`  | Dev helpers (e.g. `docker-adapter.sh` for Bluetooth on macOS)      |
+| `scripts/`  | Dev helpers: `docker-adapter.sh` (Bluetooth on macOS), `dev-ports.sh` (parallel stacks) |
 | `docs/specs/` | Specs                                                            |
 
 Station firmware lives in [FKMTime/firmware](https://github.com/FKMTime/firmware)
@@ -54,12 +54,15 @@ docker compose up -d --build
 docker compose exec backend npx ts-node prisma/seed/seed-test.ts
 ```
 
-| What | Where |
+| What | Where (default ports) |
 |------|-------|
 | Panel | http://localhost:5173, sign in with `admin` / `admin` |
 | Backend | http://localhost:5000 (`/health`) |
 | Station tester, for station messages | http://localhost:5173/station-tester |
 | Dummy WCA / WCA Live | http://localhost:3005 / http://localhost:4000 |
+
+A second worktree on the same machine gets its own ports, see "Several stacks"
+below.
 
 The seed needs the current dummy WCA image, hence the pull. Backend and frontend
 source are mounted, so changes reload; rebuild after changing dependencies.
@@ -72,8 +75,20 @@ source are mounted, so changes reload; rebuild after changing dependencies.
   startup, so otherwise run `docker compose restart micro_connector`. macOS
   grants Bluetooth per app, so run the adapter from the person's own terminal
   and have them allow it under System Settings → Privacy & Security → Bluetooth.
-- **One stack per machine.** The containers have fixed names, so stop a stack
-  running from another worktree with `docker compose down` there first.
+- **Several stacks.** Each worktree is its own compose project (named after
+  its directory), with its own database. To run one next to a stack from
+  another worktree, run `./scripts/dev-ports.sh` before `docker compose up`.
+  It picks free ports, writes them to the gitignored `.env` and prints the
+  URLs; `--clear` goes back to the defaults. Without `.env` the stack uses the
+  default ports above.
+- **One micro connector per machine.** It listens on port 8080 of the Docker
+  VM's host network and registers a fixed mDNS name with the one
+  docker-adapter, so a second connector clashes on that port and devices only
+  find the first. `dev-ports.sh` therefore turns the connector off in the
+  stack it sets up (`FKM_MICRO_CONNECTOR=0` in `.env`). To move a real device
+  to that stack, stop the connector in the other one
+  (`docker compose stop micro_connector` there), set `FKM_MICRO_CONNECTOR=1`
+  and run `docker compose up -d` again.
 - **Run the frontend with Vite's dev server, never `vite preview`.** A production
   build ignores `VITE_BACKEND_ORIGIN` and `VITE_WCA_ORIGIN`.
 - **Sample data:** a real device needs the competition's Wi-Fi details set in

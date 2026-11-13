@@ -35,3 +35,7 @@ Bluetooth**.
 Start the adapter **before** `docker compose up`: the connector looks for it
 only at startup. If the stack is already running, restart the connector with
 `docker compose restart micro_connector`.
+
+Only one dev stack on a machine can run the micro connector. A second stack
+set up with `./scripts/dev-ports.sh` (to run several worktrees at once) leaves
+it out; see "Running the app" in `AGENTS.md`.
