@@ -1,3 +1,4 @@
+import { useAtomValue } from "jotai";
 import {
     ArrowLeftRight,
     CalendarCheck,
@@ -10,17 +11,20 @@ import {
     MessageSquareText,
     Replace,
     ShieldAlert,
+    UserMinus,
     UserPlus,
     X,
 } from "lucide-react";
 import { ReactNode, useState } from "react";
 import { Competition as WCIF } from "wcif-helpers";
 
+import WithdrawFromRoundModal from "@/Components/IntegratedLive/WithdrawFromRoundModal";
 import RowActions, { RowAction } from "@/Components/shared/RowActions";
 import { StatusBadge } from "@/Components/shared/StatusBadge";
 import { Button } from "@/Components/ui/button";
+import { competitionAtom } from "@/lib/atoms";
 import { StaffActivity, StaffActivityStatus } from "@/lib/interfaces";
-import { isDelegate } from "@/lib/permissions";
+import { isDelegate, isOrganizerOrDelegate } from "@/lib/permissions";
 import { getRankingFromPreviousRound } from "@/lib/results";
 import { cn } from "@/lib/utils";
 import IssueWarningModal from "@/Pages/Main/Persons/Components/IssueWarningModal";
@@ -66,7 +70,7 @@ const PRESENT_STATUSES = [
 
 type Dialog =
     | {
-          type: "comment" | "warning" | "group" | "replaced";
+          type: "comment" | "warning" | "group" | "replaced" | "withdraw";
           activity: StaffActivity;
       }
     | { type: "add" };
@@ -102,6 +106,14 @@ const RoleCard = ({
 
     const roundId = groupId.split("-g")[0];
     const isLaterRound = Number(roundId.split("-r")[1]) > 1;
+    const competition = useAtomValue(competitionAtom);
+    // Withdrawing from a later round, with the WCA's next in line (9p3)
+    const canWithdraw =
+        isCompetitor &&
+        isLaterRound &&
+        isOrganizerOrDelegate() &&
+        competition?.officialResultsDestination === "WCA_INTEGRATED_LIVE" &&
+        competition.integratedLiveConnection === "CONNECTED";
     const previousRanking = (activity: StaffActivity) => {
         if (!isCompetitor || !isLaterRound || !activity.person.registrantId)
             return null;
@@ -156,6 +168,15 @@ const RoleCard = ({
                     icon: ArrowLeftRight,
                     onSelect: () => setDialog({ type: "group", activity }),
                 }}
+                items={[
+                    {
+                        label: "Remove from round",
+                        icon: UserMinus,
+                        hidden: !canWithdraw,
+                        onSelect: () =>
+                            setDialog({ type: "withdraw", activity }),
+                    },
+                ]}
             />
         ) : (
             <RowActions
@@ -396,6 +417,14 @@ const RoleCard = ({
                     isOpen
                     onClose={closeDialog}
                     activity={dialog.activity}
+                />
+            )}
+            {dialog?.type === "withdraw" && (
+                <WithdrawFromRoundModal
+                    isOpen
+                    onClose={closeDialog}
+                    roundId={roundId}
+                    personId={dialog.activity.person.id}
                 />
             )}
         </section>

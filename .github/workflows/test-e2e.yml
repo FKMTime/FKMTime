@@ -44,6 +44,11 @@ jobs:
           - 5432:5432
       dummy-wca:
         image: maxidragon/dummy-wca:main
+        env:
+          # The tests expect results to go to WCA Live. FKMTime re-reads this
+          # every 5 minutes, so the dummy's default (internal) would switch the
+          # test competition mid-run whenever a run crosses a 5-minute mark
+          GENERATED_SCORETAKING_SOFTWARE: wca_live
         ports:
           - 3000:3000
       dummy-wca-live:

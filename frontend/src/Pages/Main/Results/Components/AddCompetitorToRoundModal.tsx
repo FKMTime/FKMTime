@@ -1,5 +1,6 @@
 import { useState } from "react";
 
+import GroupPlacement from "@/Components/IntegratedLive/GroupPlacement";
 import { Modal } from "@/Components/Modal";
 import ModalActions from "@/Components/ModalActions";
 import { Button } from "@/Components/ui/button";
@@ -40,6 +41,10 @@ const AddCompetitorToRoundModal = ({
     const { toast } = useToast();
     const [registrationId, setRegistrationId] = useState("");
     const [isAdding, setIsAdding] = useState(false);
+    const [added, setAdded] = useState<{
+        personId: string;
+        name: string;
+    } | null>(null);
     const { data: addable } = useLiveQuery(
         integratedLiveAddableQuery(roundId),
         { enabled: isOpen }
@@ -49,10 +54,11 @@ const AddCompetitorToRoundModal = ({
     const handleAdd = async () => {
         if (!registrationId) return;
         setIsAdding(true);
-        const { ok, message } = await addCompetitorToIntegratedLiveRound(
-            roundId,
-            Number(registrationId)
-        );
+        const { ok, message, personId } =
+            await addCompetitorToIntegratedLiveRound(
+                roundId,
+                Number(registrationId)
+            );
         setIsAdding(false);
         if (!ok) {
             setError(message);
@@ -67,62 +73,89 @@ const AddCompetitorToRoundModal = ({
         });
         void invalidateIntegratedLiveRounds();
         setRegistrationId("");
+        if (personId) {
+            // Offer a group before closing, like after a withdrawal
+            setAdded({ personId, name: person?.name ?? "They" });
+            return;
+        }
+        onClose();
+    };
+
+    const handleClose = () => {
+        setAdded(null);
         onClose();
     };
 
     return (
         <Modal
             isOpen={isOpen}
-            onClose={onClose}
+            onClose={handleClose}
             title={`Add competitor to ${roundName}`}
             error={error}
         >
-            <div className="flex flex-col gap-3">
-                <p className="text-sm text-muted-foreground">
-                    Adds them to the round in WCA Integrated Live Results.
-                </p>
-                {addable && addable.length === 0 ? (
+            {added ? (
+                <div className="flex flex-col gap-3">
+                    <GroupPlacement
+                        roundId={roundId}
+                        personId={added.personId}
+                        name={added.name}
+                    />
+                    <ModalActions>
+                        <Button variant="outline" onClick={handleClose}>
+                            Done
+                        </Button>
+                    </ModalActions>
+                </div>
+            ) : (
+                <div className="flex flex-col gap-3">
                     <p className="text-sm text-muted-foreground">
-                        Everyone registered for this event is already in the
-                        round.
+                        Adds them to the round in WCA Integrated Live Results.
                     </p>
-                ) : (
-                    <Select
-                        value={registrationId}
-                        onValueChange={setRegistrationId}
-                    >
-                        <SelectTrigger aria-label="Competitor">
-                            <SelectValue placeholder="Choose a competitor" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            {(addable ?? []).map((competitor) => (
-                                <SelectItem
-                                    key={competitor.registrationId}
-                                    value={String(competitor.registrationId)}
-                                >
-                                    {competitor.name}
-                                    {competitor.wcaId
-                                        ? ` (${competitor.wcaId})`
-                                        : ""}
-                                </SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
-                )}
-                <p className="text-[13px] text-muted-foreground">
-                    Not in the list? Only people whose WCA registration includes
-                    this event can be added. Adding the event to a registration
-                    happens on the WCA website.
-                </p>
-                <ModalActions>
-                    <Button
-                        onClick={handleAdd}
-                        disabled={!registrationId || isAdding}
-                    >
-                        Add to round
-                    </Button>
-                </ModalActions>
-            </div>
+                    {addable && addable.length === 0 ? (
+                        <p className="text-sm text-muted-foreground">
+                            Everyone registered for this event is already in the
+                            round.
+                        </p>
+                    ) : (
+                        <Select
+                            value={registrationId}
+                            onValueChange={setRegistrationId}
+                        >
+                            <SelectTrigger aria-label="Competitor">
+                                <SelectValue placeholder="Choose a competitor" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {(addable ?? []).map((competitor) => (
+                                    <SelectItem
+                                        key={competitor.registrationId}
+                                        value={String(
+                                            competitor.registrationId
+                                        )}
+                                    >
+                                        {competitor.name}
+                                        {competitor.wcaId
+                                            ? ` (${competitor.wcaId})`
+                                            : ""}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    )}
+                    <p className="text-[13px] text-muted-foreground">
+                        Not in the list? Only people whose WCA registration
+                        includes this event can be added. Adding the event to a
+                        registration happens on the WCA website.
+                    </p>
+                    <ModalActions>
+                        <Button
+                            onClick={handleAdd}
+                            disabled={!registrationId || isAdding}
+                        >
+                            Add to round
+                        </Button>
+                    </ModalActions>
+                </div>
+            )}
         </Modal>
     );
 };

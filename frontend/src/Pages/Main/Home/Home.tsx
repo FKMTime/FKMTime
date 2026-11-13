@@ -38,6 +38,7 @@ import { invalidateIncidentLists } from "@/Pages/Main/Incidents/incidentsContext
 import IntegratedLiveConnectionAlert from "./Components/IntegratedLiveConnectionAlert";
 import IntegratedLiveRoundsToOpen from "./Components/IntegratedLiveRoundsToOpen";
 import NextGroupInAllRooms from "./Components/NextGroupInAllRooms";
+import NoShowsToRemove from "./Components/NoShowsToRemove";
 import RoomCard from "./Components/RoomCard";
 
 /** Re-render this often so the schedule offset stays current */
@@ -252,7 +253,12 @@ const Home = () => {
                 competition?.officialResultsDestination ===
                     "WCA_INTEGRATED_LIVE" &&
                 competition.integratedLiveConnection === "CONNECTED" && (
-                    <IntegratedLiveRoundsToOpen roundIds={currentRoundIds} />
+                    <>
+                        <IntegratedLiveRoundsToOpen
+                            roundIds={currentRoundIds}
+                        />
+                        <NoShowsToRemove />
+                    </>
                 )}
             {currentRoundIds.map((roundId) => (
                 <ResultsRoom key={roundId} roundId={roundId} />

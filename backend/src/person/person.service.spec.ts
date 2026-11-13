@@ -20,6 +20,7 @@ describe('PersonService', () => {
           useValue: {
             person: {
               findMany: jest.fn(),
+              findUnique: jest.fn(),
               count: jest.fn(),
               update: jest.fn(),
               delete: jest.fn(),
@@ -29,6 +30,7 @@ describe('PersonService', () => {
               findMany: jest.fn(),
               deleteMany: jest.fn(),
               update: jest.fn(),
+              create: jest.fn(),
             },
             user: {
               findUnique: jest.fn(),
@@ -148,6 +150,101 @@ describe('PersonService', () => {
         totalPersonsCount: 50,
         personsWhoDidNotCheckIn: mockPersonsWhoDidNotCheckIn,
       });
+    });
+  });
+
+  describe('addCompetingGroup', () => {
+    const wcif = {
+      id: 'ExampleOpen2026',
+      formatVersion: '2.1.1',
+      persons: [{ registrantId: 7, assignments: [] }],
+      schedule: {
+        venues: [
+          {
+            rooms: [
+              {
+                activities: [
+                  { id: 203, activityCode: '333-r2-g3', childActivities: [] },
+                ],
+              },
+            ],
+          },
+        ],
+      },
+    };
+
+    beforeEach(() => {
+      jest.spyOn(dbService.staffActivity, 'findFirst').mockResolvedValue(null);
+      jest
+        .spyOn(dbService.person, 'findUnique')
+        .mockResolvedValue({ id: 'person-7', registrantId: 7 } as never);
+      jest.spyOn(dbService.user, 'findUnique').mockResolvedValue({
+        wcaUserId: '1',
+        wcaAccessToken: 'token',
+      } as never);
+      jest.spyOn(dbService.competition, 'findFirst').mockResolvedValue({
+        wcaId: 'ExampleOpen2026',
+      } as never);
+      jest.spyOn(wcaService, 'getWcif').mockResolvedValue(wcif as never);
+      jest
+        .spyOn(dbService.staffActivity, 'create')
+        .mockResolvedValue({} as never);
+    });
+
+    it('adds the assignment to the WCIF, then the group record', async () => {
+      jest
+        .spyOn(wcaService, 'patchWcif')
+        .mockResolvedValue({ statusCode: 200 });
+
+      await service.addCompetingGroup('user-1', 'person-7', '333-r2-g3');
+
+      expect(wcaService.patchWcif).toHaveBeenCalledWith(
+        'ExampleOpen2026',
+        expect.objectContaining({
+          persons: [
+            expect.objectContaining({
+              registrantId: 7,
+              assignments: [
+                {
+                  activityId: 203,
+                  stationNumber: null,
+                  assignmentCode: 'competitor',
+                },
+              ],
+            }),
+          ],
+        }),
+        'token',
+      );
+      expect(dbService.staffActivity.create).toHaveBeenCalledWith({
+        data: {
+          personId: 'person-7',
+          groupId: '333-r2-g3',
+          role: 'COMPETITOR',
+          isAssigned: true,
+        },
+      });
+    });
+
+    it('changes nothing in FKMTime when the WCA rejects the WCIF', async () => {
+      jest
+        .spyOn(wcaService, 'patchWcif')
+        .mockResolvedValue({ statusCode: 422, error: 'Invalid WCIF' });
+
+      await expect(
+        service.addCompetingGroup('user-1', 'person-7', '333-r2-g3'),
+      ).rejects.toMatchObject({ status: 422 });
+      expect(dbService.staffActivity.create).not.toHaveBeenCalled();
+    });
+
+    it('refuses someone who already has a group in the round', async () => {
+      jest
+        .spyOn(dbService.staffActivity, 'findFirst')
+        .mockResolvedValue({ id: 'existing' } as never);
+
+      await expect(
+        service.addCompetingGroup('user-1', 'person-7', '333-r2-g3'),
+      ).rejects.toMatchObject({ status: 409 });
     });
   });
 

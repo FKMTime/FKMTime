@@ -1,5 +1,5 @@
 import { useAtomValue } from "jotai";
-import { Lock, LockOpen, UserPlus } from "lucide-react";
+import { Eraser, Lock, LockOpen, UserPlus } from "lucide-react";
 import { useState } from "react";
 
 import { RowAction } from "@/Components/shared/RowActions";
@@ -26,6 +26,7 @@ export const useIntegratedLiveRoundActions = (roundId: string) => {
     const { toast } = useToast();
     const confirm = useConfirm();
     const [isAddOpen, setIsAddOpen] = useState(false);
+    const [isClearOpen, setIsClearOpen] = useState(false);
     const enabled =
         isOrganizerOrDelegate() &&
         competition?.officialResultsDestination === "WCA_INTEGRATED_LIVE" &&
@@ -101,11 +102,22 @@ export const useIntegratedLiveRoundActions = (roundId: string) => {
                           (round.completedCompetitors ?? 0) > 0,
                       onSelect: close,
                   },
+                  {
+                      label: "Clear in WCA Integrated Live Results",
+                      icon: Eraser,
+                      destructive: true,
+                      hidden:
+                          round.state !== "open" ||
+                          (round.completedCompetitors ?? 0) === 0,
+                      onSelect: () => setIsClearOpen(true),
+                  },
               ];
 
     return {
         items,
         isAddOpen,
         closeAdd: () => setIsAddOpen(false),
+        isClearOpen,
+        closeClear: () => setIsClearOpen(false),
     };
 };

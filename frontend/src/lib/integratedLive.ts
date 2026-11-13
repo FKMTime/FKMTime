@@ -1,7 +1,10 @@
 import {
     IntegratedLiveAddableCompetitor,
     IntegratedLiveConnectionStatus,
+    IntegratedLiveNoShows,
     IntegratedLiveRound,
+    IntegratedLiveWithdrawalPreview,
+    IntegratedLiveWithdrawalResult,
 } from "./interfaces";
 import { queryFamily } from "./queryCache";
 import { queryClient } from "./queryClient";
@@ -76,7 +79,7 @@ const roundAction = async (
     path: string,
     method: string,
     body?: unknown
-): Promise<{ ok: boolean; message: string }> => {
+): Promise<{ ok: boolean; message: string; personId?: string | null }> => {
     const response = await backendRequest(
         `competition/integrated-live/rounds/${path}`,
         method,
@@ -87,6 +90,7 @@ const roundAction = async (
     return {
         ok: response.ok && data.ok !== false,
         message: data.message ?? "Something went wrong",
+        personId: data.personId,
     };
 };
 
@@ -109,3 +113,59 @@ export const invalidateIntegratedLiveRounds = () =>
                 "competition/integrated-live/rounds"
             ),
     });
+
+/** Finished rounds with competitors who never came (SPEC-006 section 4) */
+export const integratedLiveNoShowsQuery = backendQuery<IntegratedLiveNoShows[]>(
+    "competition/integrated-live/rounds/no-shows"
+);
+
+export const removeNoShows = (roundId: string, registrationIds: number[]) =>
+    roundAction(`${roundId}/no-shows`, "POST", { registrationIds });
+
+export const clearIntegratedLiveRound = (roundId: string) =>
+    roundAction(`${roundId}/clear`, "POST");
+
+export const previewWithdrawal = async (
+    roundId: string,
+    personId: string
+): Promise<IntegratedLiveWithdrawalPreview> => {
+    const response = await backendRequest(
+        `competition/integrated-live/rounds/${roundId}/withdrawal/${personId}`,
+        "GET",
+        true
+    );
+    return response.json();
+};
+
+export const withdrawFromRound = async (
+    roundId: string,
+    personId: string,
+    advancingIds: number[]
+): Promise<IntegratedLiveWithdrawalResult> => {
+    const response = await backendRequest(
+        `competition/integrated-live/rounds/${roundId}/withdrawal/${personId}`,
+        "POST",
+        true,
+        { advancingIds }
+    );
+    return response.json();
+};
+
+/** Puts a replacement, or someone added to a round, into a group */
+export const placeInGroup = async (
+    roundId: string,
+    personId: string,
+    groupId: string
+) => {
+    const response = await backendRequest(
+        `competition/integrated-live/rounds/${roundId}/group-placement`,
+        "POST",
+        true,
+        { personId, groupId }
+    );
+    const data = await response.json().catch(() => ({}));
+    return {
+        ok: response.ok,
+        message: data.error ?? data.message ?? "The group could not be changed",
+    };
+};
