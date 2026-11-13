@@ -69,6 +69,23 @@ export interface Competition extends CompetitionDataForLoginPage {
     wcaScoretakingCheckedAt?: string | null;
     officialResultsDestination?: OfficialResultsDestination;
     integratedLiveConnection?: IntegratedLiveConnectionState;
+    openRoundsAutomatically?: boolean;
+}
+
+/** A round as WCA Integrated Live Results has it */
+export interface IntegratedLiveRound {
+    roundId: string;
+    /** pending, blocked, ready, open or locked */
+    state: string;
+    totalCompetitors?: number;
+    completedCompetitors?: number;
+    competitorCountNeeded?: number;
+}
+
+export interface IntegratedLiveAddableCompetitor {
+    registrationId: number;
+    name: string | null;
+    wcaId: string | null;
 }
 
 export type IntegratedLiveConnectionState =

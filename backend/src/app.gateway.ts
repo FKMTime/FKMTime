@@ -74,6 +74,19 @@ export class AppGateway {
     socket.leave(`results-${roundId}`);
   }
 
+  // Server-side only: a round started but isn't open in WCA Integrated Live
+  // Results; blockers say what argues against opening it yet
+  handleRoundShouldBeOpened(roundId: string, blockers: string[]) {
+    this.server
+      .to(`competition`)
+      .emit('roundShouldBeOpened', { roundId, blockers });
+  }
+
+  // Server-side only: a round was opened or closed, or someone added to one
+  handleIntegratedLiveRoundsChanged() {
+    this.server.to(`competition`).emit('integratedLiveRoundsChanged');
+  }
+
   // Server-side only: the WCA live results connection was made, ended or broke
   handleIntegratedLiveConnectionChanged() {
     this.server.to(`competition`).emit('integratedLiveConnectionChanged');

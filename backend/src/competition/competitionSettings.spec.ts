@@ -20,9 +20,16 @@ describe('CompetitionService settings', () => {
         ),
       },
     };
-    const service = new CompetitionService(prisma as never, null, null, null, {
-      hilRunning: () => false,
-    } as never);
+    const service = new CompetitionService(
+      prisma as never,
+      null,
+      null,
+      null,
+      {
+        hilRunning: () => false,
+      } as never,
+      null,
+    );
 
     const settings = await service.getCompetitionSettings();
 

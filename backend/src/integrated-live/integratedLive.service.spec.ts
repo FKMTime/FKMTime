@@ -13,6 +13,7 @@ type Sync = {
   sentAt: Date | null;
   checks: number;
   error: string | null;
+  removedFromRound: boolean;
   updatedAt: Date;
 };
 
@@ -48,6 +49,7 @@ const createStore = () => {
               timeLimit: { centiseconds: 60000, cumulativeRoundIds: [] },
               cutoff: null,
             },
+            { id: '333-r2', format: 'a', timeLimit: null, cutoff: null },
           ],
         },
       ],
@@ -112,6 +114,7 @@ const createStore = () => {
           sentAt: null,
           checks: 0,
           error: null,
+          removedFromRound: false,
           updatedAt: new Date(),
           ...create,
         };
@@ -137,14 +140,17 @@ const createStore = () => {
     id: string,
     wcaRegistrationId: number | null,
     attempts: ReturnType<typeof attempt>[],
+    roundId = '333-r1',
   ) => {
-    results.set(id, {
+    const result = {
       id,
-      roundId: '333-r1',
-      removedAt: null,
+      roundId,
+      removedAt: null as Date | null,
       attempts,
       person: { wcaRegistrationId },
-    });
+    };
+    results.set(id, result);
+    return result;
   };
   return { prisma, syncs, clears, competition, addResult };
 };
@@ -386,5 +392,155 @@ describe('IntegratedLiveService', () => {
     const reply = await service.sendRoundNow('333-r1');
 
     expect(reply).toMatchObject({ accepted: 1, notAccepted: 1, waiting: 0 });
+  });
+
+  describe('running rounds', () => {
+    it('opens a first round that is not open yet, then sends to it', async () => {
+      held.clear();
+      store.addResult('r1', 101, [attempt(1, 1234)]);
+      await service.markDirty(['r1']);
+      respond = (url, init) => {
+        if (init.method === 'PUT' && url.endsWith('/rounds/333-r1/open')) {
+          held.set(101, []);
+          return json(200, { status: 'ok' });
+        }
+        return null;
+      };
+
+      await service.run();
+
+      expect(calls()).toEqual([
+        'GET /rounds/333-r1',
+        'PUT /rounds/333-r1/open',
+        'GET /rounds/333-r1',
+        'POST /rounds/333-r1/batch',
+      ]);
+      expect(store.syncs.get('r1').status).toBe(LiveSyncStatus.SENT);
+    });
+
+    it('adds a competitor registered for the event to a first round', async () => {
+      store.addResult('late', 105, [attempt(1, 1500)]);
+      await service.markDirty(['late']);
+      respond = (url, init) => {
+        if (url.endsWith('/addable_competitors')) {
+          return json(200, {
+            registrations: [{ id: 105, competing: { event_ids: ['333'] } }],
+          });
+        }
+        if (init.method === 'PUT' && url.endsWith('/rounds/333-r1/105')) {
+          held.set(105, []);
+          return json(200, { status: 'ok' });
+        }
+        return null;
+      };
+
+      await service.run();
+
+      expect(calls()).toContain('PUT /rounds/333-r1/105');
+      expect(store.syncs.get('late').status).toBe(LiveSyncStatus.SENT);
+    });
+
+    it('does not add someone who is not registered for the event', async () => {
+      store.addResult('other', 106, [attempt(1, 1500)]);
+      await service.markDirty(['other']);
+      respond = (url) =>
+        url.endsWith('/addable_competitors')
+          ? json(200, {
+              registrations: [{ id: 106, competing: { event_ids: ['222'] } }],
+            })
+          : null;
+
+      await service.run();
+
+      expect(calls()).not.toContain('PUT /rounds/333-r1/106');
+      expect(store.syncs.get('other')).toMatchObject({
+        status: LiveSyncStatus.NOT_IN_ROUND,
+        error: 'Not registered for 333 on the WCA website',
+      });
+    });
+
+    it('never adds anyone to a later round on its own', async () => {
+      store.addResult('r2', 101, [attempt(1, 1234)], '333-r2');
+      await service.markDirty(['r2']);
+      respond = (url, init) =>
+        (init.method ?? 'GET') === 'GET' && url.endsWith('/rounds/333-r2')
+          ? json(200, { results: [{ registration_id: 102, attempts: [] }] })
+          : null;
+
+      await service.run();
+
+      expect(store.syncs.get('r2')).toMatchObject({
+        status: LiveSyncStatus.NOT_IN_ROUND,
+        error: "Didn't advance to 333-r2 in WCA Integrated Live Results",
+      });
+    });
+
+    it('removes a competitor from the round after a Regulation 9t removal', async () => {
+      const result = store.addResult('r1', 101, [attempt(1, 1234)]);
+      result.removedAt = new Date();
+      await service.markDirty(['r1']);
+      respond = (url, init) =>
+        init.method === 'DELETE' ? json(200, { status: 'ok', quit: 1 }) : null;
+
+      await service.run();
+
+      expect(calls()).toEqual([
+        'GET /rounds/333-r1',
+        'PUT /rounds/333-r1/101/clear',
+        'DELETE /rounds/333-r1/101',
+      ]);
+      expect(store.syncs.get('r1')).toMatchObject({
+        status: LiveSyncStatus.CONFIRMED,
+        removedFromRound: true,
+      });
+    });
+
+    it('adds them back when the ruling is restored', async () => {
+      store.addResult('r2', 101, [attempt(1, 1234)], '333-r2');
+      await service.markDirty(['r2']);
+      store.syncs.get('r2').removedFromRound = true;
+      respond = (url, init) => {
+        const method = init.method ?? 'GET';
+        if (method === 'GET' && url.endsWith('/rounds/333-r2')) {
+          return json(200, {
+            results: [{ registration_id: 102, attempts: [] }],
+          });
+        }
+        if (method === 'PUT' && url.endsWith('/rounds/333-r2/101')) {
+          return json(200, { status: 'ok' });
+        }
+        return null;
+      };
+
+      await service.run();
+
+      expect(calls()).toEqual([
+        'GET /rounds/333-r2',
+        'PUT /rounds/333-r2/101',
+        'POST /rounds/333-r2/batch',
+      ]);
+      expect(store.syncs.get('r2')).toMatchObject({
+        status: LiveSyncStatus.SENT,
+        removedFromRound: false,
+      });
+    });
+
+    it('says so when the WCA refuses to remove them from the round', async () => {
+      const result = store.addResult('r1', 101, [attempt(1, 1234)]);
+      result.removedAt = new Date();
+      await service.markDirty(['r1']);
+      respond = (url, init) =>
+        init.method === 'DELETE'
+          ? json(400, { status: 'Cannot quit competitor with results' })
+          : null;
+
+      await service.run();
+
+      expect(store.syncs.get('r1')).toMatchObject({
+        status: LiveSyncStatus.REJECTED,
+        error:
+          'Emptied, but not removed from the round: Cannot quit competitor with results',
+      });
+    });
   });
 });

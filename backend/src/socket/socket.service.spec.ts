@@ -97,6 +97,7 @@ describe('SocketService', () => {
         resultService as never,
         {} as never,
         socketController as never,
+        null,
       );
       service = new SocketService(
         resultService as never,

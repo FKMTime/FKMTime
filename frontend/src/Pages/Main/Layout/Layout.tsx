@@ -12,6 +12,7 @@ import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import { useNavItems } from "@/hooks/useNavItems";
 import { useRefetchOnReconnect } from "@/hooks/useRefetchOnReconnect";
 import { useToast } from "@/hooks/useToast";
+import { activityCodeToName } from "@/lib/activities";
 import {
     competitionAtom,
     pageHeaderAtom,
@@ -25,7 +26,10 @@ import {
 } from "@/lib/competition";
 import { getEvents } from "@/lib/events";
 import { getUnresolvedIncidentsCount } from "@/lib/incidents";
-import { integratedLiveConnectionQuery } from "@/lib/integratedLive";
+import {
+    integratedLiveConnectionQuery,
+    invalidateIntegratedLiveRounds,
+} from "@/lib/integratedLive";
 import { Competition } from "@/lib/interfaces";
 import {
     getCompetitionDayLabel,
@@ -34,7 +38,7 @@ import {
     getMobileBackTarget,
     MORE_PATH,
 } from "@/lib/navigation";
-import { isDelegate } from "@/lib/permissions";
+import { isDelegate, isOrganizerOrDelegate } from "@/lib/permissions";
 import { queryClient } from "@/lib/queryClient";
 import {
     cn,
@@ -109,6 +113,40 @@ const Layout = () => {
     }, [userKey]);
 
     useCompetitionSocketEvents(socket, userKey, {
+        onIntegratedLiveRoundsChanged: () => {
+            void invalidateIntegratedLiveRounds();
+        },
+        onRoundShouldBeOpened: ({ roundId, blockers }) => {
+            void invalidateIntegratedLiveRounds();
+            if (!isOrganizerOrDelegate() || !isNotificationsSupported()) {
+                return;
+            }
+            const title = `Open ${activityCodeToName(roundId)} in WCA Integrated Live Results?`;
+            const body =
+                blockers.length > 0
+                    ? blockers.join(". ")
+                    : "Its first group started. Open it from Home.";
+            Notification.requestPermission().then((permission) => {
+                if (permission !== "granted") return;
+                if (isMobile()) {
+                    navigator.serviceWorker.ready.then((registration) =>
+                        registration.showNotification(title, {
+                            body,
+                            tag: `roundShouldBeOpened-${roundId}`,
+                        })
+                    );
+                } else {
+                    const notification = new Notification(title, {
+                        body,
+                        tag: `roundShouldBeOpened-${roundId}`,
+                    });
+                    notification.onclick = () => {
+                        window.focus();
+                        navigate("/");
+                    };
+                }
+            });
+        },
         onIntegratedLiveConnectionChanged: () => {
             fetchCompetition();
             void queryClient.invalidateQueries({

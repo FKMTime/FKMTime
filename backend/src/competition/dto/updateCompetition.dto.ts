@@ -24,4 +24,9 @@ export class UpdateCompetitionDto {
 
   @IsBoolean()
   useFkmTimeDevices: boolean;
+
+  /** Open later rounds in WCA Integrated Live Results without asking */
+  @IsBoolean()
+  @IsOptional()
+  openRoundsAutomatically?: boolean;
 }

@@ -53,6 +53,7 @@ const CompetitionForm = ({
             shouldChangeGroupsAutomatically:
                 competition.shouldChangeGroupsAutomatically,
             useFkmTimeDevices: competition.useFkmTimeDevices,
+            openRoundsAutomatically: competition.openRoundsAutomatically,
         },
     });
 
@@ -90,7 +91,21 @@ const CompetitionForm = ({
                     <>
                         <ResultsDestination competition={competition} />
                         {competition.wcaScoretakingSoftware === "internal" && (
-                            <IntegratedLiveConnection />
+                            <>
+                                <IntegratedLiveConnection />
+                                <FormField
+                                    control={form.control}
+                                    name="openRoundsAutomatically"
+                                    render={({ field }) => (
+                                        <SwitchRow
+                                            label="Open later rounds automatically"
+                                            description="Opening a round in WCA Integrated Live Results locks the round before it, so corrections there no longer change who advances. Off: FKMTime suggests opening and someone clicks. On: it opens the round itself when its first group starts, if every result of the previous round is confirmed and none is waiting for an extra."
+                                            checked={!!field.value}
+                                            onCheckedChange={field.onChange}
+                                        />
+                                    )}
+                                />
+                            </>
                         )}
                         {showsScoretakingToken && (
                             <FormField

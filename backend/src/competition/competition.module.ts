@@ -5,7 +5,9 @@ import { DbModule } from 'src/db/db.module';
 import { PersonModule } from 'src/person/person.module';
 import { ResultModule } from 'src/result/result.module';
 
+import { IntegratedLiveController } from '../integrated-live/integratedLive.controller';
 import { IntegratedLiveService } from '../integrated-live/integratedLive.service';
+import { IntegratedLiveRoundsService } from '../integrated-live/integratedLiveRounds.service';
 import { SocketModule } from '../socket/socket.module';
 import { WcaModule } from '../wca/wca.module';
 import { AutoSetupGateway } from './autosetup.gateway';
@@ -27,8 +29,9 @@ import { SyncService } from './sync.service';
     AutoSetupGateway,
     IntegratedLiveConnectionService,
     IntegratedLiveService,
+    IntegratedLiveRoundsService,
   ],
-  controllers: [CompetitionController],
+  controllers: [CompetitionController, IntegratedLiveController],
   imports: [
     AuthModule,
     WcaModule,
@@ -43,6 +46,7 @@ import { SyncService } from './sync.service';
     SyncService,
     IntegratedLiveConnectionService,
     IntegratedLiveService,
+    IntegratedLiveRoundsService,
   ],
 })
 export class CompetitionModule {}

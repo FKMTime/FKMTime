@@ -2,6 +2,7 @@ import { HttpException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 
 import { DbService } from '../db/db.service';
+import { IntegratedLiveRoundsService } from '../integrated-live/integratedLiveRounds.service';
 import { SocketController } from '../socket/socket.controller';
 import { RoomsService } from './rooms.service';
 
@@ -9,8 +10,10 @@ describe('RoomsService', () => {
   let service: RoomsService;
   let dbService: DbService;
   let socketController: SocketController;
+  const onRoundStarted = jest.fn().mockResolvedValue(undefined);
 
   beforeEach(async () => {
+    onRoundStarted.mockClear();
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         RoomsService,
@@ -35,6 +38,10 @@ describe('RoomsService', () => {
           useValue: {
             sendServerStatus: jest.fn(),
           },
+        },
+        {
+          provide: IntegratedLiveRoundsService,
+          useValue: { onRoundStarted },
         },
       ],
     }).compile();
@@ -85,6 +92,8 @@ describe('RoomsService', () => {
       expect(result).toEqual({ message: 'Rooms updated' });
       expect(dbService.$transaction).toHaveBeenCalled();
       expect(socketController.sendServerStatus).toHaveBeenCalled();
+      // Each started round may need opening in WCA Integrated Live Results
+      expect(onRoundStarted.mock.calls).toEqual([['333-r1'], ['222-r1']]);
     });
 
     it('should throw error if two groups from same round', async () => {

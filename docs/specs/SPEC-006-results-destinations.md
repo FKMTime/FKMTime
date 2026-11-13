@@ -507,19 +507,19 @@ the group start was missed, the first result to send for the round opens it.
     socket event. The panel shows a browser notification, "Open 333-r2 in WCA
     live results?", the same way it already does for "Group should be
     changed".
-  - Home's room card shows **Open 333-r2 in WCA live results** with one click
-    to confirm. The card also lists anything that argues against opening yet:
-    results of the previous round not yet confirmed in ILR, results waiting
-    for an extra, open extra grants. Each one links to its result.
+  - Home shows a card above the rooms for each round in progress that isn't
+    open in ILR, with **Open 333-r2** (or **Open anyway**) and anything that
+    argues against opening yet: results of the previous round not yet
+    confirmed in ILR, and results waiting for an extra. An open extra grant
+    always has an attempt waiting for its extra, so it needs no check of its
+    own. The card also says that opening locks the previous round.
   - Until someone opens the round, its results queue up as `DIRTY` and are
     sent once it is open. Nothing is lost.
 - **Opt-in automatic opening:** with **Open later rounds automatically** on in
   the competition settings, FKMTime opens a later round itself when its first
   group starts, but only when **all** of these are true:
   - every result of the previous round is `CONFIRMED` in ILR;
-  - no result of the previous round is waiting for an extra (the existing
-    "round finished" check in `CompetitionService`);
-  - no extra grant on the previous round is still open.
+  - no result of the previous round is waiting for an extra.
 
   When a check fails, it falls back to the suggestion above, with the reasons
   listed.
@@ -567,8 +567,8 @@ For each person missing from a first round, FKMTime reads two things fresh.
 | The WCA data says | FKMTime does |
 |---|---|
 | Accepted, registered for this event | Adds them automatically. This is the ordinary case: the registration was accepted after the round was opened |
-| Accepted, not registered for this event | Doesn't add them. Shows "Not registered for 3x3x3 on the WCA website", with a link to the competition's registrations on the WCA website, and the rule that applies: before the deadline for adding events, "they can add it until <deadline>" (WCRP 6.4); after it, or with no deadline once the round has started, "adding it now is the Delegate's decision (WCRP 6.4.2.1 / 6.4.4)". Once the event is on their registration and the WCIF is synced, FKMTime adds them automatically, as in the row above |
-| Not in `addable_competitors` (no accepted registration on the WCA website) | Can't add them. Shows "No accepted WCA registration". If the competition offers on-site registration, it adds "Register them on the WCA website first", and, when `competitor_limit` is set, "On-site registration isn't allowed if the competitor limit was reached when registration closed (WCRP 5.2.1)". The next WCIF sync and run pick them up once they are accepted |
+| Accepted, not registered for this event | Doesn't add them. The result is marked "Not registered for 333 on the WCA website". Once the event is on their registration, FKMTime adds them automatically on a later run, as in the row above. Showing the WCRP 6.4 rule that applies and a link to the WCA website belongs with the result's sync details (section 5) |
+| Not in `addable_competitors` (no accepted registration on the WCA website) | Can't add them. The result is marked "No accepted WCA registration". The on-site registration hints (WCRP 5.2.1) belong with the result's sync details (section 5). The next WCIF sync and run pick them up once they are accepted |
 
 People created by hand in FKMTime have no WCA registration, so they always
 fall in the last row.
@@ -583,9 +583,10 @@ e.g. someone moved between groups at the desk.
   registration includes the event and who aren't in the round yet.
 - **First rounds only.** Later rounds stay as described below.
 - **What it writes:** the competitor in the ILR round
-  (`PUT /live/rounds/{roundId}/{registration_id}`). The dialog then offers
-  **Put them in a group**, the same one-click placement as for replacements
-  (section 4, "Competitors who don't come").
+  (`PUT /live/rounds/{roundId}/{registration_id}`), then their FKMTime result
+  is sent if they have one. Offering **Put them in a group** comes with the
+  same one-click placement as for replacements (section 4, "Competitors who
+  don't come").
 - **Not registered for the event:** the person isn't in the picker. Below
   it, FKMTime says that adding an event happens on the WCA website, with the
   link and the rule from the table above. FKMTime doesn't change
@@ -596,8 +597,10 @@ decided by advancement (Regulation 9p). The only regular way in for someone
 who didn't advance is replacing a competitor who withdraws (9p3), which ILR
 does when the withdrawal is confirmed (see below). A result in a later round
 for someone ILR doesn't list there is almost always a group assignment mistake,
-and the result says so: "Didn't advance to 333-r2 in WCA live results". If a
-Delegate does decide otherwise, they do it on the WCA website.
+and the result says so: "Didn't advance to 333-r2 in WCA Integrated Live
+Results". If a Delegate does decide otherwise, they do it on the WCA website.
+The one exception is a competitor FKMTime itself removed under Regulation 9t
+(`LiveSync.removedFromRound`): restoring the ruling adds them back.
 
 #### Competitors who don't come
 
@@ -723,11 +726,17 @@ with integrated live results a removal does two things:
    Regulation 9t doesn't move anyone else up, and ILR can't recompute
    advancement from a locked round anyway.
 
+- **If ILR refuses the removal**, the result is marked `REJECTED` with
+  "Emptied, but not removed from the round: <ILR's reason>". Left in the round
+  with an empty result, the competitor would keep the next round pending, so
+  it must not look done.
+- **`LiveSync.removedFromRound`** records that FKMTime removed them.
+
 **Restoring the ruling** (SPEC-005 lets it be restored) adds them back with
 `PUT /rounds/{roundId}/{registration_id}` and sends the result again. ILR only
-allows that while the round is open. Once it is locked, the result shows
-"Can't be restored in WCA live results: 333-r2 is closed", and the Delegate
-fixes it in the results submission on the WCA website.
+adds people to open rounds. Once the round is locked, the write is refused and
+the result shows ILR's reason as "not in round". The Delegate then fixes it in
+the results submission on the WCA website.
 
 #### Who advances
 
