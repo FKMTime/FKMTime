@@ -94,7 +94,6 @@ const SUB_PAGES: SubPage[] = [
         to: "/events",
         needsDevices: true,
     },
-    { parent: "setup", label: "Devices", to: "/devices", needsDevices: true },
     { parent: "setup", label: "Users", to: "/users" },
     {
         parent: "scrambles",

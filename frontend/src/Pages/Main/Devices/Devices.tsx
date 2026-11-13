@@ -38,7 +38,6 @@ import { isAdmin } from "@/lib/permissions";
 import { fetchQuery, setQueryData } from "@/lib/queryCache";
 import { roomsQuery } from "@/lib/rooms";
 import { idToHex } from "@/lib/utils";
-import SetupTabs from "@/Pages/Main/Setup/SetupTabs";
 import { socket } from "@/socket";
 
 import { AutoSetupModal } from "./Components/AutoSetupModal";
@@ -243,7 +242,6 @@ const Devices = () => {
 
     return (
         <>
-            <SetupTabs value="devices" />
             <div className="flex flex-col gap-3 md:flex-row md:items-center">
                 {tabSwitch}
                 <div className="hidden gap-2 md:ml-auto md:flex">

@@ -49,6 +49,7 @@ describe("getNavItems", () => {
             "attendance",
             "results",
             "live",
+            "devices",
             "setup",
             "scrambles",
             "statistics",
@@ -97,7 +98,7 @@ describe("findActiveNavItem", () => {
     });
 
     it("groups setup routes and card assignment", () => {
-        expect(active("/devices")).toBe("setup");
+        expect(active("/devices")).toBe("devices");
         expect(active("/users")).toBe("setup");
         expect(active("/cards")).toBe("persons");
     });
