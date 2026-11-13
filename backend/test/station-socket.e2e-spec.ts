@@ -744,7 +744,7 @@ describe('Station socket protocol (e2e)', () => {
         await expectNoAttemptFor(c4.id);
       });
 
-      it('rejects a group that is not running in the station room', async () => {
+      it('refuses a round the station room no longer runs and keeps the time', async () => {
         const res = await station.request(
           'EnterAttempt',
           attempt({
@@ -755,8 +755,12 @@ describe('Station socket protocol (e2e)', () => {
         );
 
         expect(res).toEqual(
-          errorResponse(getTranslation('groupNotFound', defaultLocale), 404),
+          errorResponse(
+            getTranslation('stationRoundChanged', defaultLocale),
+            409,
+          ),
         );
+        expect(res.data.shouldResetTime).toBe(false);
         await expectNoAttemptFor(c4.id);
       });
 

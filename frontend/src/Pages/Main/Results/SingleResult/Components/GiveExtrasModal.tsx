@@ -4,6 +4,7 @@ import { getNumberOfAttemptsForRound } from "wcif-helpers";
 
 import { Modal } from "@/Components/Modal.tsx";
 import QuickActions from "@/Components/QuickActions";
+import RunDifferentRoundModal from "@/Components/shared/RunDifferentRoundModal";
 import SegmentedControl from "@/Components/shared/SegmentedControl";
 import { Button } from "@/Components/ui/button";
 import { Checkbox } from "@/Components/ui/checkbox";
@@ -57,6 +58,7 @@ const GiveExtrasModal = ({
     lockedAttempt,
     beforeGrant,
 }: GiveExtrasModalProps) => {
+    const [isRunRoundOpen, setIsRunRoundOpen] = useState(false);
     const competition = useAtomValue(competitionAtom);
     const { toast } = useToast();
     const [error, setError] = useDialogError(isOpen);
@@ -214,9 +216,17 @@ const GiveExtrasModal = ({
                 </div>
                 {context?.nextRoundStarted && (
                     <p role="alert" className="text-sm font-medium">
-                        The next round has started. Stations can't take these
-                        attempts, and any change to who advanced must be made in
-                        WCA Live.
+                        The next round has started.{" "}
+                        <Button
+                            type="button"
+                            variant="link"
+                            className="h-auto p-0 text-sm font-medium"
+                            onClick={() => setIsRunRoundOpen(true)}
+                        >
+                            Run this round on a station
+                        </Button>{" "}
+                        to take these attempts, and make any change to who
+                        advanced in WCA Live.
                     </p>
                 )}
                 <div className="flex flex-col gap-2">
@@ -243,6 +253,11 @@ const GiveExtrasModal = ({
                     Give extras
                 </Button>
             </form>
+            <RunDifferentRoundModal
+                isOpen={isRunRoundOpen}
+                onClose={() => setIsRunRoundOpen(false)}
+                initialRoundId={roundId}
+            />
         </Modal>
     );
 };

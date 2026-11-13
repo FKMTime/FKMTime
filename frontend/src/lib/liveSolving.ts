@@ -135,6 +135,10 @@ export interface StationRoomGroup {
 
 export const OTHER_STATIONS_ID = "other";
 
+/** A station a delegate pointed at a round its room isn't running (SPEC-007) */
+export const isOnAnotherRound = (station: StationInfo, roundIds: string[]) =>
+    !!station.groupId && !roundIds.includes(station.groupId.split("-g")[0]);
+
 const toRoundIds = (groupIds: string[]) => [
     ...new Set(groupIds.map((groupId) => groupId.split("-g")[0])),
 ];

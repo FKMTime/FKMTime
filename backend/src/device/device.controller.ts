@@ -11,12 +11,17 @@ import {
   Query,
   UseGuards,
 } from '@nestjs/common';
+import { AuthGuard } from '@nestjs/passport';
 import { DeviceType } from '@prisma/client';
+import { GetUser } from 'src/auth/decorator/getUser.decorator';
+import { JwtAuthDto } from 'src/auth/dto/jwt-auth.dto';
+import { DelegateGuard } from 'src/auth/guards/delegate.guard';
 import { OrganizerGuard } from 'src/auth/guards/organizer.guard';
 
 import { AdminGuard } from '../auth/guards/admin.guard';
 import { DeviceService } from './device.service';
 import { DeviceDto } from './dto/device.dto';
+import { SetCustomRoundDto } from './dto/setCustomRound.dto';
 import { UploadFirmwareDto } from './dto/uploadFirmware.dto';
 
 @Controller('device')
@@ -42,6 +47,16 @@ export class DeviceController {
   @Post()
   async createDevice(@Body() data: DeviceDto) {
     return this.deviceService.createDevice(data);
+  }
+
+  // Before ':id', which would otherwise take "custom-round" as an id
+  @UseGuards(AuthGuard('jwt'), DelegateGuard)
+  @Put('custom-round')
+  async setCustomRound(
+    @Body() data: SetCustomRoundDto,
+    @GetUser() user: JwtAuthDto,
+  ) {
+    return this.deviceService.setCustomRound(data, user.userId);
   }
 
   @UseGuards(OrganizerGuard)

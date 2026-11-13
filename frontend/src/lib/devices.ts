@@ -1,4 +1,5 @@
-import { Device, DeviceData } from "./interfaces";
+import { activityCodeToName } from "./activities";
+import { Device, DeviceData, DeviceType } from "./interfaces";
 import { backendQuery, backendRequest } from "./request";
 
 export const getAllDevices = async (type?: string, roomId?: string) => {
@@ -58,6 +59,43 @@ export const restoreDevice = async (id: string) => {
     const response = await backendRequest(`device/${id}/restore`, "POST", true);
     return response.status;
 };
+
+/**
+ * Points stations at a round, or sends them back to their room's groups with
+ * a null round (SPEC-007)
+ */
+export const setStationsRound = async (
+    deviceIds: string[],
+    roundId: string | null
+) => {
+    const response = await backendRequest("device/custom-round", "PUT", true, {
+        deviceIds,
+        roundId,
+    });
+    return response.status;
+};
+
+/** "Station 1", "Station 1 and Station 2", "Station 1, Station 2 and Station 3" */
+export const joinNames = (names: string[]) =>
+    names.length > 1
+        ? `${names.slice(0, -1).join(", ")} and ${names[names.length - 1]}`
+        : names[0] ?? "";
+
+/** What pointing stations at a round does, in the delegate's words */
+export const runDifferentRoundSummary = (
+    stationNames: string[],
+    roundId: string
+) =>
+    `${joinNames(stationNames)} will only take attempts for ${activityCodeToName(roundId)}. Other stations carry on with their room's groups.`;
+
+/** Stations pointed at another round than their room's */
+export const getPointedStations = (devices: Device[]) =>
+    devices.filter(
+        (device) =>
+            device.type === DeviceType.STATION &&
+            !device.retiredAt &&
+            !!device.customRoundId
+    );
 
 export const uploadFirmware = async (fileName: string, fileData: string) => {
     const response = await backendRequest(

@@ -1,4 +1,4 @@
-import { Room, Scramble, ScrambleSet } from "./interfaces";
+import { Scramble, ScrambleSet, ScramblingDeviceRoom } from "./interfaces";
 import { Query, queryFamily } from "./queryCache";
 import { scramblingDeviceBackendRequest } from "./request";
 import { decryptText } from "./utils";
@@ -49,7 +49,7 @@ export const getScramblingDeviceRoom = async () => {
 
 /** The device's room; one query per page, so each page gets current groups */
 export const scramblingDeviceRoomQuery = queryFamily(
-    (page): Query<Room> => ({
+    (page): Query<ScramblingDeviceRoom> => ({
         key: `scrambling/room#${page}`,
         fetch: () => getScramblingDeviceRoom(),
     })

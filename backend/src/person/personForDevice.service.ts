@@ -6,6 +6,7 @@ import {
   SHOW_SECONDARY_TEXT_HW_VERSIONS,
 } from 'src/constants';
 import { DbService } from 'src/db/db.service';
+import { getStationGroupIds } from 'src/device/stationRounds';
 import { eventsData, getMaxPenalty } from 'src/events';
 import {
   attemptTimeWithPenalty,
@@ -70,8 +71,11 @@ export class PersonForDeviceService {
         room: true,
       },
     });
-    const possibleGroups = device?.room.currentGroupIds || [];
     const wcif = JSON.parse(JSON.stringify(competition.wcif));
+    // A station pointed at a round offers only that round (SPEC-007)
+    const possibleGroups = device
+      ? getStationGroupIds(device, person.registrantId, wcif)
+      : [];
     const competitorWcifInfo = getPersonFromWcif(person.registrantId, wcif);
     const competingAssignments = competitorWcifInfo.assignments.filter(
       (a) => a.assignmentCode === 'competitor',

@@ -1,6 +1,7 @@
 import { forwardRef, HttpException, Inject, Injectable } from '@nestjs/common';
 import { DeviceType, Prisma } from '@prisma/client';
 import { AppGateway } from 'src/app.gateway';
+import { Competition as WCIF, getRoundInfoFromWcif } from 'wcif-helpers';
 
 import { DbService } from '../db/db.service';
 import { SocketController } from '../socket/socket.controller';
@@ -8,6 +9,7 @@ import { LIVE_LOOKUP_TTL_MS, TtlCache } from '../ttl-cache';
 import { DeviceDto } from './dto/device.dto';
 import { DeviceConnectedDto } from './dto/deviceConnected.dto';
 import { RequestToConnectDto } from './dto/requestToConnect.dto';
+import { SetCustomRoundDto } from './dto/setCustomRound.dto';
 import { UpdateBatteryPercentageDto } from './dto/updateBatteryPercentage.dto';
 import { UploadFirmwareDto } from './dto/uploadFirmware.dto';
 
@@ -202,6 +204,61 @@ export class DeviceService {
     return {
       message: 'Device updated',
     };
+  }
+
+  /**
+   * Points stations at a round, or sends them back to their room's groups
+   * with a null round (SPEC-007)
+   */
+  async setCustomRound(data: SetCustomRoundDto, userId: string) {
+    const deviceIds = [...new Set(data.deviceIds)];
+    if (data.roundId !== null) {
+      const competition = await this.prisma.competition.findFirst();
+      const wcif = competition?.wcif as unknown as WCIF | undefined;
+      const round = wcif && getRoundInfoFromWcif(data.roundId, wcif);
+      if (!round) {
+        throw new HttpException({ message: 'Round not found' }, 400);
+      }
+      // Head-to-head stations pair competitors by stage (SPEC-001)
+      if ((round.format as string) === 'h') {
+        throw new HttpException(
+          { message: "Head-to-head rounds can't run on a single station" },
+          400,
+        );
+      }
+    }
+    const stations = await this.prisma.device.findMany({
+      where: {
+        id: { in: deviceIds },
+        type: DeviceType.STATION,
+        retiredAt: null,
+      },
+      select: { id: true },
+    });
+    if (stations.length !== deviceIds.length) {
+      throw new HttpException(
+        { message: 'Only stations in use can run a different round' },
+        400,
+      );
+    }
+    const { count } = await this.prisma.device.updateMany({
+      where: { id: { in: deviceIds } },
+      data:
+        data.roundId === null
+          ? {
+              customRoundId: null,
+              customRoundSetAt: null,
+              customRoundSetById: null,
+            }
+          : {
+              customRoundId: data.roundId,
+              customRoundSetAt: new Date(),
+              customRoundSetById: userId,
+            },
+    });
+    this.stationsByEspId.clear();
+    this.appGateway.handleDeviceUpdated();
+    return { updated: count };
   }
 
   async updateBatteryPercentage(data: UpdateBatteryPercentageDto) {

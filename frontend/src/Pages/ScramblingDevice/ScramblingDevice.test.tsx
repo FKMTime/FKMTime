@@ -13,7 +13,11 @@ import {
 import ScramblesList from "./AllScrambles/Components/ScramblesList";
 import ScrambleSetsList from "./Home/Components/ScrambleSetsList";
 import Scrambling from "./ScrambleSet/Components/Scrambling";
-import { currentGroupIdForRound } from "./scramblingDeviceContext";
+import {
+    currentGroupIdForRound,
+    roundIdsRunningHere,
+    stationNamesForRound,
+} from "./scramblingDeviceContext";
 
 vi.mock("@/lib/scrambling", () => ({
     getPersonByCardId: vi.fn(),
@@ -75,6 +79,38 @@ describe("scramblingDeviceContext helpers", () => {
         expect(currentGroupIdForRound(room, "333-r1")).toBe("333-r1-g2");
         expect(currentGroupIdForRound(room, "333-r2")).toBeUndefined();
         expect(currentGroupIdForRound(null, "333-r1")).toBeUndefined();
+    });
+
+    describe("stations pointed at another round (SPEC-007)", () => {
+        const withStations = {
+            ...room,
+            stationRounds: [
+                { roundId: "333-r1", stationNames: ["Station 3"] },
+                {
+                    roundId: "skewb-r1",
+                    stationNames: ["Station 4", "Station 5"],
+                },
+            ],
+        };
+
+        it("counts their rounds as running in this room", () => {
+            expect(roundIdsRunningHere(withStations)).toEqual([
+                "333-r1",
+                "pyram-r1",
+                "skewb-r1",
+            ]);
+            expect(roundIdsRunningHere(room)).toEqual(["333-r1", "pyram-r1"]);
+            expect(roundIdsRunningHere(null)).toEqual([]);
+        });
+
+        it("names the stations running a round", () => {
+            expect(stationNamesForRound(withStations, "skewb-r1")).toEqual([
+                "Station 4",
+                "Station 5",
+            ]);
+            expect(stationNamesForRound(withStations, "pyram-r1")).toEqual([]);
+            expect(stationNamesForRound(room, "333-r1")).toEqual([]);
+        });
     });
 });
 

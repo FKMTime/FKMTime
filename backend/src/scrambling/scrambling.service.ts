@@ -1,4 +1,5 @@
 import { HttpException, Injectable } from '@nestjs/common';
+import { DeviceType } from '@prisma/client';
 import * as CryptoJS from 'crypto-js';
 import { sha512 } from 'js-sha512';
 import { DbService } from 'src/db/db.service';
@@ -45,7 +46,31 @@ export class ScramblingService {
 
   async getDeviceRoom(token: string) {
     const device = await this.verifyToken(token);
-    return device.room;
+    // Stations of this room pointed at another round, so the scrambling
+    // device can scramble for it too (SPEC-007)
+    const pointedStations = await this.prisma.device.findMany({
+      where: {
+        roomId: device.roomId,
+        type: DeviceType.STATION,
+        retiredAt: null,
+        customRoundId: { not: null },
+      },
+      select: { name: true, customRoundId: true },
+      orderBy: { name: 'asc' },
+    });
+    const stationRounds: { roundId: string; stationNames: string[] }[] = [];
+    for (const station of pointedStations) {
+      const entry = stationRounds.find(
+        (r) => r.roundId === station.customRoundId,
+      );
+      if (entry) entry.stationNames.push(station.name);
+      else
+        stationRounds.push({
+          roundId: station.customRoundId,
+          stationNames: [station.name],
+        });
+    }
+    return { ...device.room, stationRounds };
   }
 
   async getScrambleData(token: string, cardId: string, roundId: string) {

@@ -7,7 +7,13 @@ import { Button } from "@/Components/ui/button";
 import { getEventIdFromRoundId } from "@/lib/activities";
 import { activityCodeToName } from "@/lib/activities";
 import { getEventIconClass } from "@/lib/events";
-import { AttemptType, Incident, RecentAttempt, Room } from "@/lib/interfaces";
+import {
+    AttemptType,
+    Device,
+    Incident,
+    RecentAttempt,
+    Room,
+} from "@/lib/interfaces";
 import { attemptWithPenaltyToString } from "@/lib/resultFormatters";
 import { GroupProgress } from "@/lib/rooms";
 import {
@@ -37,6 +43,10 @@ interface RoomCardProps {
     canResolveIncidents: boolean;
     onStartNext: (room: Room, nextGroupIds: string[]) => void;
     onEnterAttempt: (roundId: string) => void;
+    /** Stations of this room running another round (SPEC-007) */
+    pointedStations?: Device[];
+    /** Sends a station back to the room's round; undefined hides the button */
+    onBackToRoom?: (station: Device) => void;
 }
 
 const RoomCard = ({
@@ -53,6 +63,8 @@ const RoomCard = ({
     canResolveIncidents,
     onStartNext,
     onEnterAttempt,
+    pointedStations = [],
+    onBackToRoom,
 }: RoomCardProps) => {
     const groupId = room.currentGroupIds[0];
     const schedule = groupId
@@ -149,6 +161,36 @@ const RoomCard = ({
                     <p className="py-2 text-[15px] font-semibold text-muted-foreground">
                         No group in progress
                     </p>
+                )}
+
+                {pointedStations.length > 0 && (
+                    <ul
+                        aria-label="Stations running another round"
+                        className="flex flex-col gap-2"
+                    >
+                        {pointedStations.map((station) => (
+                            <li
+                                key={station.id}
+                                className="flex items-center gap-3 rounded-lg bg-warning-soft px-3 py-2 text-sm"
+                            >
+                                <span className="min-w-0 flex-1 font-semibold text-warning">
+                                    {station.name} is running{" "}
+                                    {activityCodeToName(
+                                        station.customRoundId ?? ""
+                                    ).replace(", ", " · ")}
+                                </span>
+                                {onBackToRoom && (
+                                    <Button
+                                        size="sm"
+                                        variant="outline"
+                                        onClick={() => onBackToRoom(station)}
+                                    >
+                                        Back to the room&apos;s round
+                                    </Button>
+                                )}
+                            </li>
+                        ))}
+                    </ul>
                 )}
 
                 {groupProgress && groupProgress.expected > 0 && (

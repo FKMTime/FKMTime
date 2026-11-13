@@ -49,6 +49,10 @@
       "translation": "Removed from this round"
     },
     {
+      "key": "stationRoundChanged",
+      "translation": "Round changed, call the delegate"
+    },
+    {
       "key": "attemptAlreadyEntered",
       "translation": "This attempt has already been entered"
     },
