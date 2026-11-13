@@ -74,6 +74,13 @@ export class AppGateway {
     socket.leave(`results-${roundId}`);
   }
 
+  // Server-side only: the WCA website now names another scoretaking tool
+  handleScoretakingSoftwareChanged(officialResultsDestination: string) {
+    this.server
+      .to(`competition`)
+      .emit('scoretakingSoftwareChanged', { officialResultsDestination });
+  }
+
   // Server-side only: called after a result is saved, never by clients
   handleResultEntered(roundId: string) {
     this.handleStatisticsUpdated();

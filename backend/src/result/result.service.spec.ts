@@ -479,7 +479,7 @@ describe('ResultService removing a result (Regulation 9t)', () => {
       null,
     );
     sent = jest.fn();
-    service.enterWholeScorecardToWcaLiveOrCubingContests = sent;
+    service.sendResult = sent;
   });
 
   it('keeps the result, with its reason, and sends it empty', async () => {
@@ -534,5 +534,84 @@ describe('ResultService removing a result (Regulation 9t)', () => {
     await expect(
       service.getResultOrCreate('person-1', '333-r2'),
     ).rejects.toMatchObject({ status: 409 });
+  });
+});
+
+describe('ResultService sending where the WCA setting says', () => {
+  const setup = (
+    wcaScoretakingSoftware: string | null,
+    eventId = '333',
+    scoretakingToken: string | null = 'token',
+  ) => {
+    const prisma = {
+      competition: {
+        findFirst: jest.fn().mockResolvedValue({
+          wcaScoretakingSoftware,
+          scoretakingToken,
+          cubingContestsToken: 'cc-token',
+        }),
+      },
+    };
+    const wcaService = {
+      enterWholeScorecardToWcaLive: jest.fn().mockResolvedValue({}),
+    };
+    const contestsService = {
+      enterWholeScorecardToCubingContests: jest.fn().mockResolvedValue({}),
+    };
+    const service = new ResultService(
+      prisma as unknown as DbService,
+      null,
+      null,
+      wcaService as unknown as WcaService,
+      contestsService as never,
+      null,
+      null,
+    );
+    service.getResultById = jest
+      .fn()
+      .mockResolvedValue({ id: 'result-1', eventId, attempts: [] });
+    return { service, wcaService, contestsService };
+  };
+
+  it('sends to WCA Live when the WCA says wca_live', async () => {
+    const { service, wcaService } = setup('wca_live');
+
+    await service.sendResult('result-1');
+
+    expect(wcaService.enterWholeScorecardToWcaLive).toHaveBeenCalled();
+  });
+
+  it.each(['internal', 'external'])(
+    'does not send to WCA Live when the WCA says %s',
+    async (software) => {
+      const { service, wcaService } = setup(software);
+
+      const reply = await service.sendResult('result-1');
+
+      expect(wcaService.enterWholeScorecardToWcaLive).not.toHaveBeenCalled();
+      expect(reply).toMatchObject({ sent: false });
+    },
+  );
+
+  it('keeps sending to WCA Live before the first read when a token is set', async () => {
+    const { service, wcaService } = setup(null);
+
+    await service.sendResult('result-1');
+
+    expect(wcaService.enterWholeScorecardToWcaLive).toHaveBeenCalled();
+  });
+
+  it('sends unofficial events to Cubing Contests whatever the WCA says', async () => {
+    const { service, wcaService, contestsService } = setup(
+      'internal',
+      'mirror',
+    );
+
+    await service.sendResult('result-1');
+
+    expect(
+      contestsService.enterWholeScorecardToCubingContests,
+    ).toHaveBeenCalled();
+    expect(wcaService.enterWholeScorecardToWcaLive).not.toHaveBeenCalled();
   });
 });

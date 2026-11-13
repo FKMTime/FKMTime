@@ -21,6 +21,7 @@ import {
 } from "@/Components/ui/dialog";
 import { Input } from "@/Components/ui/input";
 import { useLiveQuery } from "@/hooks/useLiveQuery";
+import { useSubmissionPlatformName } from "@/hooks/useSubmissionPlatformName";
 import { useToast } from "@/hooks/useToast";
 import { activityCodeToName } from "@/lib/activities";
 import { competitionAtom } from "@/lib/atoms";
@@ -39,7 +40,7 @@ import {
 } from "@/lib/quickEntry";
 import { reformatInput, resultToString } from "@/lib/resultFormatters";
 import { roundResultsQuery } from "@/lib/results";
-import { cn, getSubmissionPlatformName } from "@/lib/utils";
+import { cn } from "@/lib/utils";
 
 export interface QuickEntryRound {
     roundId: string;
@@ -76,6 +77,7 @@ const QuickEnterAttemptModal = ({
     roundOptions = [],
 }: QuickEnterAttemptModalProps) => {
     const { toast } = useToast();
+    const platformName = useSubmissionPlatformName();
     const competition = useAtomValue(competitionAtom);
     const timeInputRef = useRef<HTMLInputElement>(null);
     const { data: personsData } = useLiveQuery(allPersonsQuery, {
@@ -207,9 +209,10 @@ const QuickEnterAttemptModal = ({
         const result = isTimeless
             ? resultToString(penalty)
             : `${resultToString(value)}${penalty ? ` (+${penalty})` : ""}`;
+        const platform = platformName(eventId);
         toast({
             title: `Saved ${competitor.name} · ${shortRoundName(roundId)} · ${option.title} · ${result}`,
-            description: `Submitted to ${getSubmissionPlatformName(eventId)}`,
+            description: platform ? `Submitted to ${platform}` : undefined,
             variant: "success",
         });
         close();

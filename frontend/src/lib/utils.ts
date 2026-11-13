@@ -9,6 +9,7 @@ import {
     Attempt,
     AttemptStatus,
     AttemptType,
+    OfficialResultsDestination,
     Person,
     Result,
     UserRole,
@@ -346,8 +347,27 @@ export const prettyRoundFormat = (format: string) => {
     return foundFormat ? foundFormat.name : "Unknown format";
 };
 
-export const getSubmissionPlatformName = (eventId: string) => {
-    return isUnofficialEvent(eventId) ? "Cubing Contests" : "WCA Live";
+/** Where FKMTime sends this event's results; null when it sends nowhere */
+export const getSubmissionPlatformName = (
+    eventId: string,
+    destination: OfficialResultsDestination | undefined
+): string | null => {
+    if (isUnofficialEvent(eventId)) return "Cubing Contests";
+    // Sending to WCA live results on the WCA website isn't built yet
+    return destination === "WCA_LIVE" ? "WCA Live" : null;
+};
+
+export const officialResultsDestinationName = (
+    destination: OfficialResultsDestination | undefined
+) => {
+    switch (destination) {
+        case "WCA_LIVE":
+            return "WCA Live";
+        case "WCA_INTEGRATED_LIVE":
+            return "WCA live results on the WCA website";
+        default:
+            return "Nowhere";
+    }
 };
 
 export const numberToLetter = (number: number) => {

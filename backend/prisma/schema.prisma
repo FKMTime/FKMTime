@@ -95,6 +95,9 @@ model Competition {
   wcif                            Json?
   scoretakingToken                String?                 @map("scoretaking_token")
   scoretakingTokenUpdatedAt       DateTime?               @map("scoretaking_token_updated_at")
+  // Mirrors scoretaking_software on the WCA website; null until first read
+  wcaScoretakingSoftware          String?                 @map("wca_scoretaking_software")
+  wcaScoretakingCheckedAt         DateTime?               @map("wca_scoretaking_checked_at")
   cubingContestsToken             String?                 @map("cubing_contests_token")
   defaultLocale                   String?                 @default("en") @map("default_locale")
   fkmToken                        Int                     @map("fkm_token")

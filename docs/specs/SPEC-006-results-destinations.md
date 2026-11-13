@@ -180,10 +180,14 @@ when that was.
 competition to integrated live results on the WCA website:
 
 1. FKMTime switches destination at the next read.
-2. Home shows "The WCA website now uses WCA live results on the WCA website.
-   FKMTime sends results there from now on."
-3. It sends every result already entered to the new destination, so nothing
-   entered before the switch is missing there. For integrated live results,
+2. Every open panel shows a notice, whatever page it is on (socket event
+   `scoretakingSoftwareChanged`): "The WCA website changed where results go.
+   FKMTime sends official results to WCA live results on the WCA website
+   from now on." The first read after import or deploy only replaces the
+   guess made before it, so it shows no notice.
+3. Unless sending is paused ("Do not send"), it sends every official result
+   already entered to the new destination, so nothing entered before the
+   switch is missing there. For integrated live results,
    it marks every result `DIRTY` and the normal delivery runs. For WCA Live,
    it resubmits every round.
 4. Switching to integrated live results without a connection makes the
@@ -216,13 +220,16 @@ The current "Scoretaking token" field and frequency select become a
 
 ```
 unofficial event        -> ContestsService (unchanged)
-wca_live                -> WcaLiveService (today's WcaService WCA Live code, moved)
+wca_live                -> WcaService (today's WCA Live code)
 internal                -> IntegratedLiveService (new)
 external                -> nothing
 ```
 
 Every caller uses these two: attempt edits, extras, `removeFromLive`, restart
-group, the 5-minute cron, and the "resubmit" buttons. `sendingResultsFrequency
+group, solves from stations, the 5-minute cron, and the "resubmit" buttons.
+The backend also adds `officialResultsDestination` to the panel's
+competition data, so the panel names the destination in its messages and
+hides the "Resubmit to …" actions when official results go nowhere. `sendingResultsFrequency
 = NEVER` still blocks the automatic paths, and the manual "resubmit" buttons
 still work, as today.
 

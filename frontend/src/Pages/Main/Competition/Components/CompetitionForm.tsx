@@ -27,6 +27,8 @@ import { Competition, SendingResultsFrequency } from "@/lib/interfaces";
 import { competitionSchema } from "@/lib/schema/competitionSchema";
 import { prettySendingResultsFrequency } from "@/lib/utils";
 
+import ResultsDestination from "./ResultsDestination";
+
 interface CompetitionFormProps {
     competition: Competition;
     /** Resolves to whether the save worked */
@@ -71,6 +73,11 @@ const CompetitionForm = ({
     };
 
     const useDevices = form.watch("useFkmTimeDevices");
+    // The WCA Live token only matters when results go there; before the
+    // first read of the WCA setting it still decides, as before
+    const showsScoretakingToken =
+        !competition.wcaScoretakingSoftware ||
+        competition.wcaScoretakingSoftware === "wca_live";
 
     return (
         <Form {...form}>
@@ -80,38 +87,41 @@ const CompetitionForm = ({
             >
                 {useDevices && (
                     <>
-                        <FormField
-                            control={form.control}
-                            name="scoretakingToken"
-                            render={({ field }) => (
-                                <FormItem className="space-y-1.5">
-                                    <FormLabel className="text-[13px] font-semibold text-muted-foreground">
-                                        Scoretaking token
-                                    </FormLabel>
-                                    <FormControl>
-                                        <Input
-                                            {...field}
-                                            type="password"
-                                            autoComplete="off"
-                                            placeholder="Scoretaking token"
-                                        />
-                                    </FormControl>
-                                    <FormDescription className="text-[13px]">
-                                        You can get this token{" "}
-                                        <a
-                                            className="text-primary hover:underline"
-                                            href="https://live.worldcubeassociation.org/account"
-                                            target="_blank"
-                                            rel="noreferrer"
-                                        >
-                                            on WCA Live
-                                        </a>
-                                        . It may expire after 7 days.
-                                    </FormDescription>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
+                        <ResultsDestination competition={competition} />
+                        {showsScoretakingToken && (
+                            <FormField
+                                control={form.control}
+                                name="scoretakingToken"
+                                render={({ field }) => (
+                                    <FormItem className="space-y-1.5">
+                                        <FormLabel className="text-[13px] font-semibold text-muted-foreground">
+                                            Scoretaking token
+                                        </FormLabel>
+                                        <FormControl>
+                                            <Input
+                                                {...field}
+                                                type="password"
+                                                autoComplete="off"
+                                                placeholder="Scoretaking token"
+                                            />
+                                        </FormControl>
+                                        <FormDescription className="text-[13px]">
+                                            You can get this token{" "}
+                                            <a
+                                                className="text-primary hover:underline"
+                                                href="https://live.worldcubeassociation.org/account"
+                                                target="_blank"
+                                                rel="noreferrer"
+                                            >
+                                                on WCA Live
+                                            </a>
+                                            . It may expire after 7 days.
+                                        </FormDescription>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                        )}
                         <FormField
                             control={form.control}
                             name="cubingContestsToken"
@@ -151,7 +161,7 @@ const CompetitionForm = ({
                             render={({ field }) => (
                                 <FormItem className="space-y-1.5">
                                     <FormLabel className="text-[13px] font-semibold text-muted-foreground">
-                                        Send results to WCA Live/CubingContests
+                                        When to send results
                                     </FormLabel>
                                     <Select
                                         onValueChange={field.onChange}

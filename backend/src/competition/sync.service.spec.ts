@@ -88,15 +88,32 @@ describe('SyncService', () => {
           typeof arg === 'function' ? arg(prisma) : Promise.all(arg),
         ),
       };
+      const competitionService = {
+        refreshWcaScoretakingSoftware: jest.fn().mockResolvedValue(null),
+      };
       const service = new SyncService(
         prisma as never,
         { getWcif: jest.fn().mockResolvedValue(wcif) } as never,
-        {} as never,
+        competitionService as never,
         { invalidateCardCache: jest.fn() } as never,
       );
       jest.spyOn(service, 'addUnofficialEventsToWcif').mockResolvedValue();
-      return { prisma, service };
+      return { prisma, service, competitionService };
     };
+
+    it('reads the WCA scoretaking software, and a failed read does not fail the sync', async () => {
+      const { service, competitionService } = setup([]);
+      competitionService.refreshWcaScoretakingSoftware.mockRejectedValue(
+        new Error('WCA down'),
+      );
+
+      await expect(
+        service.updateWcif('TestOpen2026', 'user-1'),
+      ).resolves.toBeUndefined();
+      expect(
+        competitionService.refreshWcaScoretakingSoftware,
+      ).toHaveBeenCalled();
+    });
 
     it('removes assignments that are no longer in the WCIF', async () => {
       const { prisma, service } = setup([

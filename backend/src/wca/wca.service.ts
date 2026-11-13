@@ -195,6 +195,27 @@ export class WcaService {
     return await response.json();
   }
 
+  /**
+   * How the competition's results are entered, per the WCA website
+   * (`external`, `wca_live` or `internal`); null when the WCA can't be reached
+   */
+  async getScoretakingSoftware(competitionId: string): Promise<string | null> {
+    try {
+      const response = await fetch(
+        `${WCA_ORIGIN}/api/v0/competitions/${competitionId}`,
+      );
+      this.wcaLogger.log(`Fetching scoretaking software ${response.status}`);
+      if (!response.ok) return null;
+      const data = await response.json();
+      return typeof data.scoretaking_software === 'string'
+        ? data.scoretaking_software
+        : null;
+    } catch (e) {
+      this.wcaLogger.error(`Fetching scoretaking software failed: ${e}`);
+      return null;
+    }
+  }
+
   async getAccessToken(code: string, redirectUrl: string) {
     const tokenResponse = await fetch(`${WCA_ORIGIN}/oauth/token`, {
       method: 'POST',

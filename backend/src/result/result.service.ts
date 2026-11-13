@@ -22,6 +22,7 @@ import { ContestsService } from 'src/contests/contests.service';
 import { DbService, INCLUDING_REMOVED } from 'src/db/db.service';
 import { isUnofficialEvent } from 'src/events';
 import { PersonService } from 'src/person/person.service';
+import { getOfficialResultsDestination } from 'src/results-destination';
 import { getMaxAttempts, isCumulativeLimit } from 'src/wcif-helpers';
 import { Event, Round, TimeLimit } from 'wcif-helpers';
 import {
@@ -192,7 +193,7 @@ export class ResultService {
       return;
     }
     try {
-      await this.enterWholeScorecardToWcaLiveOrCubingContests(resultId);
+      await this.sendResult(resultId);
     } catch (e) {
       console.error(e);
     }
@@ -367,13 +368,17 @@ export class ResultService {
     return !!attempt;
   }
 
-  async enterWholeScorecardToWcaLiveOrCubingContests(resultId: string) {
+  /**
+   * Sends one competitor's scorecard where the competition's results go:
+   * Cubing Contests for unofficial events, otherwise the destination the
+   * WCA website's scoretaking setting gives (SPEC-006)
+   */
+  async sendResult(resultId: string) {
     const found = await this.getResultById(resultId);
     // A removed result's times come off the public results
     const result = found.removedAt ? { ...found, attempts: [] } : found;
-    const isUnofficial = isUnofficialEvent(result.eventId);
     const competition = await this.prisma.competition.findFirst();
-    if (isUnofficial) {
+    if (isUnofficialEvent(result.eventId)) {
       if (!competition.cubingContestsToken) {
         return {
           message: 'Cubing Contests token not found',
@@ -385,21 +390,40 @@ export class ResultService {
         result,
       );
     }
-    return await this.wcaService.enterWholeScorecardToWcaLive(result);
+    switch (getOfficialResultsDestination(competition)) {
+      case 'WCA_LIVE':
+        return await this.wcaService.enterWholeScorecardToWcaLive(result);
+      default:
+        return this.notSentReply(competition);
+    }
   }
 
-  async enterRoundToWcaLiveOrCubingContests(roundId: string) {
-    const isUnofficial = isUnofficialEvent(roundId.split('-')[0]);
+  /** Sends a whole round, the same way as sendResult */
+  async sendRound(roundId: string) {
     const competition = await this.prisma.competition.findFirst();
     const results = await this.getAllResultsByRound(roundId);
-    if (isUnofficial) {
+    if (isUnofficialEvent(roundId.split('-')[0])) {
       if (!competition.cubingContestsToken) {
         throw new HttpException('Cubing Contests token not found', 404);
       }
       return await this.contestsService.enterRoundToCubingContests(results);
-    } else {
-      return await this.wcaService.enterRoundToWcaLive(roundId, results);
     }
+    switch (getOfficialResultsDestination(competition)) {
+      case 'WCA_LIVE':
+        return await this.wcaService.enterRoundToWcaLive(roundId, results);
+      default:
+        return this.notSentReply(competition);
+    }
+  }
+
+  private notSentReply(competition: { wcaScoretakingSoftware: string | null }) {
+    return {
+      message:
+        competition.wcaScoretakingSoftware === 'internal'
+          ? 'Sending to WCA live results on the WCA website is not available yet'
+          : 'Official results are not sent anywhere for this competition',
+      sent: false,
+    };
   }
 
   async restartGroup(groupId: string) {
@@ -437,7 +461,7 @@ export class ResultService {
         },
       },
     });
-    await this.enterRoundToWcaLiveOrCubingContests(roundId);
+    await this.sendRound(roundId);
   }
 
   async assignDnsOnRemainingAttempts(resultId: string) {
@@ -580,7 +604,7 @@ export class ResultService {
       );
     }
     this.appGateway.handleResultEntered(result.roundId);
-    await this.enterWholeScorecardToWcaLiveOrCubingContests(result.id);
+    await this.sendResult(result.id);
   }
 
   async undoDoubleCheckResultsByRoundId(roundId: string) {
