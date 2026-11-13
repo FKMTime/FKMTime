@@ -42,6 +42,7 @@ describe('CompetitionService following the WCA scoretaking software', () => {
       resultService as never,
       wcaService as never,
       {} as never,
+      null,
     );
     return { service, prisma, appGateway, resultService };
   };

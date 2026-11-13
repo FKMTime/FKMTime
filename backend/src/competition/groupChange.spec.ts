@@ -89,6 +89,7 @@ describe('CompetitionService group change with a redo outstanding', () => {
       resultService as unknown as ResultService,
       new WcaService(null),
       null,
+      null,
     );
     const changeGroup = jest
       .spyOn(service, 'changeGroup')

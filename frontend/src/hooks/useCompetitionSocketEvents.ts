@@ -20,6 +20,13 @@ interface CompetitionSocketHandlers {
     }) => void;
     /** The WCA live results connection was made, ended or broke */
     onIntegratedLiveConnectionChanged?: () => void;
+    /** A round started but isn't open in WCA Integrated Live Results */
+    onRoundShouldBeOpened?: (data: {
+        roundId: string;
+        blockers: string[];
+    }) => void;
+    /** A round was opened or closed there, or someone added to one */
+    onIntegratedLiveRoundsChanged?: () => void;
 }
 
 /**
@@ -55,6 +62,17 @@ export const useCompetitionSocketEvents = (
         }) => handlersRef.current.onScoretakingSoftwareChanged?.(data);
         const handleIntegratedLiveConnectionChanged = () =>
             handlersRef.current.onIntegratedLiveConnectionChanged?.();
+        const handleRoundShouldBeOpened = (data: {
+            roundId: string;
+            blockers: string[];
+        }) => handlersRef.current.onRoundShouldBeOpened?.(data);
+        const handleIntegratedLiveRoundsChanged = () =>
+            handlersRef.current.onIntegratedLiveRoundsChanged?.();
+        socket.on("roundShouldBeOpened", handleRoundShouldBeOpened);
+        socket.on(
+            "integratedLiveRoundsChanged",
+            handleIntegratedLiveRoundsChanged
+        );
         socket.on("newIncident", handleNewIncident);
         socket.on(
             "integratedLiveConnectionChanged",
@@ -67,6 +85,11 @@ export const useCompetitionSocketEvents = (
         );
         return () => {
             socket.off("newIncident", handleNewIncident);
+            socket.off("roundShouldBeOpened", handleRoundShouldBeOpened);
+            socket.off(
+                "integratedLiveRoundsChanged",
+                handleIntegratedLiveRoundsChanged
+            );
             socket.off(
                 "integratedLiveConnectionChanged",
                 handleIntegratedLiveConnectionChanged

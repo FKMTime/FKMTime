@@ -1,6 +1,7 @@
 import { forwardRef, HttpException, Inject } from '@nestjs/common';
 import { Attempt } from '@prisma/client';
 import { DbService } from 'src/db/db.service';
+import { IntegratedLiveRoundsService } from 'src/integrated-live/integratedLiveRounds.service';
 import { SocketController } from 'src/socket/socket.controller';
 import { Competition as Wcif } from 'wcif-helpers';
 
@@ -13,6 +14,8 @@ export class RoomsService {
     private readonly prisma: DbService,
     @Inject(forwardRef(() => SocketController))
     private readonly socketController: SocketController,
+    @Inject(forwardRef(() => IntegratedLiveRoundsService))
+    private readonly integratedLiveRounds: IntegratedLiveRoundsService,
   ) {}
 
   async getAllRooms() {
@@ -99,6 +102,15 @@ export class RoomsService {
     }
     await this.prisma.$transaction(transactions);
     await this.socketController.sendServerStatus();
+    // Not awaited: starting a group mustn't wait for the WCA
+    const startedRoundIds = new Set(
+      data.rooms.flatMap((room) =>
+        room.currentGroupIds.map((groupId) => groupId.split('-g')[0]),
+      ),
+    );
+    for (const roundId of startedRoundIds) {
+      this.integratedLiveRounds.onRoundStarted(roundId).catch(() => undefined);
+    }
     return {
       message: 'Rooms updated',
     };

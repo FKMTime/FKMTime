@@ -13,6 +13,7 @@ import {
   SendingResultsFrequency,
 } from '@prisma/client';
 import { AppGateway } from 'src/app.gateway';
+import { IntegratedLiveRoundsService } from 'src/integrated-live/integratedLiveRounds.service';
 import {
   getAttemptsWaitingForExtra,
   isRedoNotStarted,
@@ -65,6 +66,8 @@ export class CompetitionService {
     private readonly wcaService: WcaService,
     @Inject(forwardRef(() => SocketController))
     private readonly socketController: SocketController,
+    @Inject(forwardRef(() => IntegratedLiveRoundsService))
+    private readonly integratedLiveRounds: IntegratedLiveRoundsService,
   ) {}
 
   private logger = new Logger(CompetitionService.name);
@@ -462,6 +465,7 @@ export class CompetitionService {
         sendingResultsFrequency: dto.sendingResultsFrequency,
         shouldChangeGroupsAutomatically: dto.shouldChangeGroupsAutomatically,
         useFkmTimeDevices: dto.useFkmTimeDevices,
+        openRoundsAutomatically: dto.openRoundsAutomatically,
       },
     });
   }
@@ -728,6 +732,9 @@ export class CompetitionService {
           currentGroupIds: [nextGroup.activityCode],
         },
       });
+      this.integratedLiveRounds
+        .onRoundStarted(nextGroup.activityCode.split('-g')[0])
+        .catch(() => undefined);
       const message = `Group in room ${room.name} was changed to ${nextGroup.activityCode}`;
       this.appGateway.server.to(`competition`).emit('groupShouldBeChanged', {
         message: message,
@@ -768,6 +775,9 @@ export class CompetitionService {
             currentGroupIds: [nextGroupId],
           },
         });
+        this.integratedLiveRounds
+          .onRoundStarted(nextGroupId.split('-g')[0])
+          .catch(() => undefined);
         const message = `Group in room ${room.name} was changed to ${nextGroupId}`;
         this.appGateway.server.to(`competition`).emit('groupShouldBeChanged', {
           message: message,

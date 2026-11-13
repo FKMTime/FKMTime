@@ -32,6 +32,11 @@ type SyncWithResult = Prisma.LiveSyncGetPayload<{
   include: { result: { include: { attempts: true; person: true } } };
 }>;
 
+interface AddableRegistration {
+  id: number;
+  competing?: { event_ids?: string[] };
+}
+
 interface LiveRound {
   results?: {
     registration_id: number;
@@ -211,12 +216,36 @@ export class IntegratedLiveService {
       );
       return true;
     }
-    const response = await this.request(`${base}/rounds/${roundId}`);
-    if (!response) return false;
-    const liveRound: LiveRound = response.ok ? await response.json() : {};
+    const isFirstRound = Number(roundId.split('-r')[1]) === 1;
+    let liveRound = await this.getLiveRound(base, roundId);
+    if (!liveRound) return false;
+    // A first round touches no other round when it opens, so the first
+    // result to send opens it if the group start didn't
+    if ((liveRound.results ?? []).length === 0 && isFirstRound) {
+      const opened = await this.request(`${base}/rounds/${roundId}/open`, {
+        method: 'PUT',
+      });
+      if (!opened) return false;
+      if (opened.ok) {
+        liveRound = await this.getLiveRound(base, roundId);
+        if (!liveRound) return false;
+      }
+    }
     const inRound = new Set(
       (liveRound.results ?? []).map((result) => result.registration_id),
     );
+    // Fetched once per round, only if someone turns out to be missing
+    let addable: AddableRegistration[] | null = null;
+    const getAddable = async () => {
+      if (addable === null) {
+        const found = await this.request(
+          `${base}/rounds/${roundId}/addable_competitors`,
+        );
+        if (!found) return null;
+        addable = found.ok ? ((await found.json()).registrations ?? []) : [];
+      }
+      return addable;
+    };
     const rules = {
       maxAttempts: getNumberOfAttemptsForRound(roundId, wcif),
       cutoff: round.cutoff,
@@ -235,14 +264,39 @@ export class IntegratedLiveService {
         continue;
       }
       if (!inRound.has(registrationId)) {
-        await this.setStatus(
-          [sync],
-          LiveSyncStatus.NOT_IN_ROUND,
-          inRound.size === 0
-            ? 'Round not open in WCA Integrated Live Results'
-            : 'Not in this round in WCA Integrated Live Results',
+        if (sync.result.removedAt) {
+          // Removed under Regulation 9t and already out of the round
+          await this.prisma.liveSync.update({
+            where: { resultId: sync.resultId },
+            data: {
+              status: LiveSyncStatus.CONFIRMED,
+              removedFromRound: true,
+              error: null,
+            },
+          });
+          continue;
+        }
+        if (inRound.size === 0) {
+          await this.setStatus(
+            [sync],
+            LiveSyncStatus.NOT_IN_ROUND,
+            'Round not open in WCA Integrated Live Results',
+          );
+          continue;
+        }
+        const added = await this.addToRound(
+          base,
+          roundId,
+          sync,
+          isFirstRound,
+          getAddable,
         );
-        continue;
+        if (added === null) return false;
+        if (added !== true) {
+          await this.setStatus([sync], LiveSyncStatus.NOT_IN_ROUND, added);
+          continue;
+        }
+        inRound.add(registrationId);
       }
       // A removed result's times come off the public results
       const attempts = sync.result.removedAt
@@ -260,6 +314,35 @@ export class IntegratedLiveService {
           { method: 'PUT' },
         );
         if (!cleared) return false;
+        if (cleared.ok && sync.result.removedAt) {
+          // Regulation 9t: they wouldn't have advanced, so they leave the
+          // round, with nobody moving up in their place
+          const quit = await this.request(
+            `${base}/rounds/${roundId}/${registrationId}`,
+            { method: 'DELETE' },
+          );
+          if (!quit) return false;
+          if (quit.ok) {
+            await this.prisma.liveSync.update({
+              where: { resultId: sync.resultId },
+              data: {
+                status: LiveSyncStatus.CONFIRMED,
+                removedFromRound: true,
+                error: null,
+              },
+            });
+          } else {
+            // Left in the round with an empty result, they'd keep the next
+            // round pending on the WCA: say so rather than look done
+            const body = await quit.json().catch(() => ({}));
+            await this.setStatus(
+              [sync],
+              LiveSyncStatus.REJECTED,
+              `Emptied, but not removed from the round: ${body?.status ?? body?.error ?? `the WCA answered ${quit.status}`}`,
+            );
+          }
+          continue;
+        }
         await this.afterWrite([{ sync, attempts }], cleared);
         continue;
       }
@@ -282,6 +365,61 @@ export class IntegratedLiveService {
       if (!(await this.afterWrite(chunk, sent))) return false;
     }
     return true;
+  }
+
+  /**
+   * Puts someone missing from the WCA's round into it when the rules allow:
+   * in a first round, an accepted registration for the event; in a later
+   * round, only a competitor FKMTime itself removed (a restored Regulation 9t
+   * ruling). True when added, null when the run has to stop, otherwise the
+   * reason they weren't.
+   */
+  private async addToRound(
+    base: string,
+    roundId: string,
+    sync: SyncWithResult,
+    isFirstRound: boolean,
+    getAddable: () => Promise<AddableRegistration[] | null>,
+  ): Promise<true | string | null> {
+    const registrationId = sync.result.person.wcaRegistrationId;
+    if (!isFirstRound && !sync.removedFromRound) {
+      return `Didn't advance to ${roundId} in WCA Integrated Live Results`;
+    }
+    if (isFirstRound) {
+      const addable = await getAddable();
+      if (addable === null) return null;
+      const registration = addable.find((r) => r.id === registrationId);
+      if (!registration) return 'No accepted WCA registration';
+      const eventId = roundId.split('-r')[0];
+      if (!registration.competing?.event_ids?.includes(eventId)) {
+        return `Not registered for ${eventId} on the WCA website`;
+      }
+    }
+    const added = await this.request(
+      `${base}/rounds/${roundId}/${registrationId}`,
+      { method: 'PUT' },
+    );
+    if (!added) return null;
+    if (!added.ok) {
+      const body = await added.json().catch(() => ({}));
+      return body?.status ?? body?.error ?? `The WCA answered ${added.status}`;
+    }
+    if (sync.removedFromRound) {
+      await this.prisma.liveSync.update({
+        where: { resultId: sync.resultId },
+        data: { removedFromRound: false },
+      });
+    }
+    return true;
+  }
+
+  private async getLiveRound(
+    base: string,
+    roundId: string,
+  ): Promise<LiveRound | null> {
+    const response = await this.request(`${base}/rounds/${roundId}`);
+    if (!response) return null;
+    return response.ok ? await response.json() : {};
   }
 
   /** False when the connection itself was refused and the run should stop */

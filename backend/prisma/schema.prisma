@@ -111,6 +111,9 @@ model Competition {
   wcaLiveRefreshToken             String?                 @map("wca_live_refresh_token")
   wcaLiveTokenExpiresAt           DateTime?               @map("wca_live_token_expires_at")
   wcaLiveConnectionBrokenAt       DateTime?               @map("wca_live_connection_broken_at")
+  // Off: FKMTime suggests opening later rounds in WCA Integrated Live Results
+  // and a person clicks, because opening one locks the round before it
+  openRoundsAutomatically         Boolean                 @default(false) @map("open_rounds_automatically")
   cubingContestsToken             String?                 @map("cubing_contests_token")
   defaultLocale                   String?                 @default("en") @map("default_locale")
   fkmToken                        Int                     @map("fkm_token")
@@ -435,16 +438,19 @@ enum LiveSyncStatus {
 }
 
 model LiveSync {
-  resultId  String         @id @map("result_id")
-  result    Result         @relation(fields: [resultId], references: [id], onDelete: Cascade)
-  status    LiveSyncStatus
+  resultId         String         @id @map("result_id")
+  result           Result         @relation(fields: [resultId], references: [id], onDelete: Cascade)
+  status           LiveSyncStatus
   // Hash of the attempts last sent, compared with what the WCA holds
-  sentHash  String?        @map("sent_hash")
-  sentAt    DateTime?      @map("sent_at")
+  sentHash         String?        @map("sent_hash")
+  sentAt           DateTime?      @map("sent_at")
   // Read-backs that didn't match yet
-  checks    Int            @default(0)
-  error     String?
-  updatedAt DateTime       @updatedAt @map("updated_at")
+  checks           Int            @default(0)
+  // FKMTime removed the competitor from the round (Regulation 9t), so
+  // restoring the result has to add them back first
+  removedFromRound Boolean        @default(false) @map("removed_from_round")
+  error            String?
+  updatedAt        DateTime       @updatedAt @map("updated_at")
 
   @@index([status])
   @@map("live_sync")

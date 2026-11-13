@@ -1,4 +1,10 @@
-import { IntegratedLiveConnectionStatus } from "./interfaces";
+import {
+    IntegratedLiveAddableCompetitor,
+    IntegratedLiveConnectionStatus,
+    IntegratedLiveRound,
+} from "./interfaces";
+import { queryFamily } from "./queryCache";
+import { queryClient } from "./queryClient";
 import {
     backendQuery,
     backendRequest,
@@ -48,3 +54,58 @@ export const disconnectIntegratedLive = async () => {
     );
     return response.status;
 };
+
+export const integratedLiveRoundsQuery = backendQuery<IntegratedLiveRound[]>(
+    "competition/integrated-live/rounds"
+);
+
+/** What argues against opening a later round yet */
+export const integratedLiveBlockersQuery = queryFamily((roundId) =>
+    backendQuery<string[]>(
+        `competition/integrated-live/rounds/${roundId}/blockers`
+    )
+);
+
+export const integratedLiveAddableQuery = queryFamily((roundId) =>
+    backendQuery<IntegratedLiveAddableCompetitor[]>(
+        `competition/integrated-live/rounds/${roundId}/addable`
+    )
+);
+
+const roundAction = async (
+    path: string,
+    method: string,
+    body?: unknown
+): Promise<{ ok: boolean; message: string }> => {
+    const response = await backendRequest(
+        `competition/integrated-live/rounds/${path}`,
+        method,
+        true,
+        body
+    );
+    const data = await response.json().catch(() => ({}));
+    return {
+        ok: response.ok && data.ok !== false,
+        message: data.message ?? "Something went wrong",
+    };
+};
+
+export const openIntegratedLiveRound = (roundId: string) =>
+    roundAction(`${roundId}/open`, "POST");
+
+export const closeIntegratedLiveRound = (roundId: string) =>
+    roundAction(`${roundId}/close`, "DELETE");
+
+export const addCompetitorToIntegratedLiveRound = (
+    roundId: string,
+    registrationId: number
+) => roundAction(`${roundId}/competitors`, "POST", { registrationId });
+
+/** Rounds and their checks changed: refetch everything that shows them */
+export const invalidateIntegratedLiveRounds = () =>
+    queryClient.invalidateQueries({
+        predicate: (query) =>
+            String(query.queryKey[0]).startsWith(
+                "competition/integrated-live/rounds"
+            ),
+    });

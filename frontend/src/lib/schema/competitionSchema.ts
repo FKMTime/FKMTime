@@ -10,4 +10,5 @@ export const competitionSchema = z.object({
         .default(SendingResultsFrequency.AFTER_SOLVE),
     shouldChangeGroupsAutomatically: z.boolean().default(true),
     useFkmTimeDevices: z.boolean().default(false),
+    openRoundsAutomatically: z.boolean().default(false),
 });
