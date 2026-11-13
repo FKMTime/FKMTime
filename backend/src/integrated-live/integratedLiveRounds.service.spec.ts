@@ -8,7 +8,7 @@ describe('IntegratedLiveRoundsService', () => {
   const origin = process.env.WCA_ORIGIN;
   let competition: Record<string, unknown>;
   let previousResults: unknown[];
-  let rooms: { currentGroupIds: string[] }[];
+  let rooms: { currentGroupIds: string[]; startedGroupIds: string[] }[];
   let activities: Record<string, unknown>[];
   let persons: Record<string, unknown>[];
   let rounds: { id: string; state: string }[];
@@ -281,6 +281,9 @@ describe('IntegratedLiveRoundsService', () => {
         { personId: 'p-came', groupId: '333-r1-g1', status: 'PRESENT' },
       ];
       previousResults = [{ personId: 'p-came', attempts: [{ id: 'a1' }] }];
+      rooms = [
+        { currentGroupIds: [], startedGroupIds: ['333-r1-g1', '333-r1-g2'] },
+      ];
       responses['GET /rounds/333-r1'] = {
         status: 200,
         body: {
@@ -309,20 +312,69 @@ describe('IntegratedLiveRoundsService', () => {
     });
 
     it('waits while the round is still running in a room', async () => {
-      rooms = [{ currentGroupIds: ['333-r1-g2'] }];
+      rooms = [
+        {
+          currentGroupIds: ['333-r1-g2'],
+          startedGroupIds: ['333-r1-g1', '333-r1-g2'],
+        },
+      ];
 
       await expect(service.getNoShows()).resolves.toEqual([]);
     });
 
-    it('removes the ticked ones in one call, with nobody moving up', async () => {
-      await service.removeNoShows('333-r1', [201]);
+    it('waits while the round is paused before its last groups', async () => {
+      // g1 ran, then the room moved on to another event; g2 hasn't started
+      rooms = [
+        { currentGroupIds: ['222-r1-g1'], startedGroupIds: ['333-r1-g1'] },
+      ];
 
-      const [url, init] = connection.authorizedFetch.mock.calls[0];
+      await expect(service.getNoShows()).resolves.toEqual([]);
+    });
+
+    it('counts groups started in any room', async () => {
+      rooms = [
+        { currentGroupIds: [], startedGroupIds: ['333-r1-g1'] },
+        { currentGroupIds: [], startedGroupIds: ['333-r1-g2'] },
+      ];
+
+      const [round] = await service.getNoShows();
+      expect(round.competitors.map((c) => c.registrationId)).toEqual([201]);
+    });
+
+    it('removes the ticked ones in one call, with nobody moving up', async () => {
+      await expect(service.removeNoShows('333-r1', [201])).resolves.toEqual(
+        expect.objectContaining({ ok: true }),
+      );
+
+      const [url, init] = connection.authorizedFetch.mock.calls.find(
+        ([calledUrl]) => String(calledUrl).endsWith('/bulk_quit'),
+      );
       expect(url).toMatch(/\/rounds\/333-r1\/bulk_quit$/);
       expect(init.method).toBe('DELETE');
       expect(JSON.parse(init.body as string)).toEqual({
         registration_ids: [201],
       });
+    });
+
+    it.each([
+      ['someone who came late', [202]],
+      ['someone unknown', [999]],
+      ['a mix', [201, 202]],
+      ['nobody', []],
+    ])('refuses to remove %s', async (_, ids) => {
+      const result = await service.removeNoShows('333-r1', ids);
+
+      expect(result.ok).toBe(false);
+      expect(calls()).not.toContain('DELETE /rounds/333-r1/bulk_quit');
+    });
+
+    it('refuses while the round is paused', async () => {
+      rooms = [{ currentGroupIds: [], startedGroupIds: ['333-r1-g1'] }];
+
+      const result = await service.removeNoShows('333-r1', [201]);
+
+      expect(result.ok).toBe(false);
+      expect(calls()).not.toContain('DELETE /rounds/333-r1/bulk_quit');
     });
   });
 

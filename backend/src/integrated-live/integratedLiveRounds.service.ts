@@ -233,8 +233,14 @@ export class IntegratedLiveRoundsService {
    * came: assigned, absent in every group of the round they were in, no
    * attempts, and still in the WCA's round with nothing entered. They keep
    * the WCA's next round pending until they are removed.
+   *
+   * A round paused between groups (another event in between, lunch) isn't
+   * over: until every group with competitors in it has been started, and none
+   * is running, nobody is listed.
    */
-  async getNoShows(): Promise<{ roundId: string; competitors: NoShow[] }[]> {
+  async getNoShows(
+    onlyRoundId?: string,
+  ): Promise<{ roundId: string; competitors: NoShow[] }[]> {
     const base = await this.base();
     if (!base) return [];
     const rooms = await this.prisma.room.findMany();
@@ -243,12 +249,16 @@ export class IntegratedLiveRoundsService {
         room.currentGroupIds.map((groupId) => groupId.split('-g')[0]),
       ),
     );
-    const finished = (await this.getRounds()).filter(
-      (round) => round.state === 'open' && !running.has(round.roundId),
+    const started = new Set(rooms.flatMap((room) => room.startedGroupIds));
+    const openRounds = (await this.getRounds()).filter(
+      (round) =>
+        round.state === 'open' &&
+        !running.has(round.roundId) &&
+        (!onlyRoundId || round.roundId === onlyRoundId),
     );
     const found: { roundId: string; competitors: NoShow[] }[] = [];
-    for (const round of finished) {
-      const absent = await this.findAbsentCompetitors(round.roundId);
+    for (const round of openRounds) {
+      const absent = await this.findAbsentCompetitors(round.roundId, started);
       if (absent.length === 0) continue;
       const live = await this.getJson(`${base}/rounds/${round.roundId}`);
       const emptyInWca = new Set<number>(
@@ -269,13 +279,31 @@ export class IntegratedLiveRoundsService {
     return found;
   }
 
-  /** Removes them all in one call, with nobody moving up: the round is over */
+  /**
+   * Removes them all in one call, with nobody moving up: the round is over.
+   * Only people the no-shows list names right now, so a stale list or a
+   * hand-made request can't quit someone whose group hasn't run.
+   */
   async removeNoShows(roundId: string, registrationIds: number[]) {
     const base = await this.base();
     if (!base) {
       return {
         ok: false,
         message: 'Not connected to WCA Integrated Live Results',
+      };
+    }
+    const [listed] = await this.getNoShows(roundId);
+    const noShowIds = new Set(
+      (listed?.competitors ?? []).map((c) => c.registrationId),
+    );
+    if (
+      registrationIds.length === 0 ||
+      registrationIds.some((id) => !noShowIds.has(id))
+    ) {
+      return {
+        ok: false,
+        message:
+          "Only competitors who didn't come to a finished round can be removed. Check the list again.",
       };
     }
     const response = await this.connection
@@ -406,7 +434,10 @@ export class IntegratedLiveRoundsService {
     };
   }
 
-  private async findAbsentCompetitors(roundId: string): Promise<NoShow[]> {
+  private async findAbsentCompetitors(
+    roundId: string,
+    startedGroupIds: Set<string>,
+  ): Promise<NoShow[]> {
     const results = await this.prisma.result.findMany({
       where: { roundId },
       include: { attempts: true },
@@ -423,6 +454,9 @@ export class IntegratedLiveRoundsService {
       },
       include: { person: true },
     });
+    // Status defaults to ABSENT, so a group that never started looks like
+    // everyone in it stayed away
+    if (activities.some((a) => !startedGroupIds.has(a.groupId))) return [];
     const byPerson = new Map<string, typeof activities>();
     for (const activity of activities) {
       const list = byPerson.get(activity.personId) ?? [];
