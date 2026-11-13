@@ -48,6 +48,7 @@ import { DbService } from '../db/db.service';
 import { eventsData, isUnofficialEvent } from '../events';
 import { SocketController } from '../socket/socket.controller';
 import { WcaService } from '../wca/wca.service';
+import { AUTO_SETUP_DURATION_MS } from './autoSetup';
 import { UpdateCompetitionDto } from './dto/updateCompetition.dto';
 import { UpdateDevicesSettingsDto } from './dto/updateDevicesSettings.dto';
 import { getIntegratedLiveConnectionState } from './integratedLiveConnection.service';
@@ -74,15 +75,15 @@ export class CompetitionService {
   ) {}
 
   private logger = new Logger(CompetitionService.name);
-  // Last heartbeat of every panel running auto setup, by socket id. It stays
-  // on until the last one stops, so nobody's screen says on while it is off.
-  private autoSetupHeartbeats = new Map<string, number>();
+  // Switches auto setup off when its time is up; the deadline itself lives in
+  // AppGateway, in memory only, so a restart always leaves it off
+  private autoSetupTimeout: NodeJS.Timeout | null = null;
   // The stored WCIF for live solving updates. Callers only read it, so it is
   // shared rather than copied.
   private wcifCache = new TtlCache<'wcif', Competition>(LIVE_LOOKUP_TTL_MS);
 
   private get autoSetup() {
-    return this.autoSetupHeartbeats.size > 0;
+    return this.appGateway.autoSetupEndsAt !== null;
   }
 
   private async hasWifiDetails() {
@@ -92,38 +93,33 @@ export class CompetitionService {
     return Boolean(competition?.wifiSsid && competition?.wifiPassword);
   }
 
-  async handleAutoSetupHeartbeat(clientId: string) {
-    if (!this.autoSetup && !(await this.hasWifiDetails())) {
+  /** Switches auto setup on for AUTO_SETUP_DURATION_MS, or restarts the countdown */
+  async startAutoSetup() {
+    if (!(await this.hasWifiDetails())) {
       return;
     }
 
     const wasRunning = this.autoSetup;
-    this.autoSetupHeartbeats.set(clientId, Date.now());
+    if (this.autoSetupTimeout) clearTimeout(this.autoSetupTimeout);
+    this.autoSetupTimeout = setTimeout(
+      () => void this.stopAutoSetup(),
+      AUTO_SETUP_DURATION_MS,
+    );
+    this.appGateway.setAutoSetupEndsAt(Date.now() + AUTO_SETUP_DURATION_MS);
 
     if (!wasRunning) {
       await this.socketController.sendServerStatus();
     }
   }
 
-  async stopAutoSetup(clientId: string) {
-    if (this.autoSetupHeartbeats.delete(clientId) && !this.autoSetup) {
-      await this.socketController.sendServerStatus();
+  async stopAutoSetup() {
+    if (this.autoSetupTimeout) clearTimeout(this.autoSetupTimeout);
+    this.autoSetupTimeout = null;
+    if (!this.autoSetup) {
+      return;
     }
-  }
-
-  @Cron(CronExpression.EVERY_10_SECONDS)
-  async checkHeartbeat() {
-    const wasRunning = this.autoSetup;
-    const now = Date.now();
-    for (const [clientId, lastHeartbeat] of this.autoSetupHeartbeats) {
-      if (now - lastHeartbeat > 10000) {
-        this.autoSetupHeartbeats.delete(clientId);
-      }
-    }
-
-    if (wasRunning && !this.autoSetup) {
-      await this.socketController.sendServerStatus();
-    }
+    this.appGateway.setAutoSetupEndsAt(null);
+    await this.socketController.sendServerStatus();
   }
 
   async getCompetitionInfo() {

@@ -10,6 +10,7 @@ import { Server, Socket } from 'socket.io';
 
 import { DelegateGuard } from './auth/guards/delegate.guard';
 import { OrganizerGuard } from './auth/guards/organizer.guard';
+import { AUTO_SETUP_DURATION_MS } from './competition/autoSetup';
 import { DeviceRequest } from './device/dto/requestToConnect.dto';
 
 /** The last attempt a station entered, kept to show after it resets */
@@ -51,6 +52,8 @@ export interface StationInfo {
 export class AppGateway {
   @WebSocketServer() server: Server;
   deviceRequests: DeviceRequest[] = [];
+  /** When auto setup switches itself off, in ms since epoch; null while off */
+  autoSetupEndsAt: number | null = null;
   private stations: Map<number, StationInfo> = new Map();
   private lastSolves: Map<number, LastSolve> = new Map();
   private logger = new Logger(`AppGateway`);
@@ -113,6 +116,25 @@ export class AppGateway {
   async handleJoinDevices(@ConnectedSocket() socket: Socket) {
     socket.join(`device`);
     this.sendDeviceRequests(socket);
+    socket.emit('autoSetupStatus', this.autoSetupStatus());
+  }
+
+  // Server-side only: auto setup was switched on, off, or ran out
+  setAutoSetupEndsAt(endsAt: number | null) {
+    this.autoSetupEndsAt = endsAt;
+    this.server.to(`device`).emit('autoSetupStatus', this.autoSetupStatus());
+  }
+
+  // Time left rather than the deadline, so a panel whose clock is off by a
+  // few minutes still counts down correctly
+  private autoSetupStatus() {
+    return {
+      remainingMs:
+        this.autoSetupEndsAt === null
+          ? null
+          : Math.max(0, this.autoSetupEndsAt - Date.now()),
+      durationMs: AUTO_SETUP_DURATION_MS,
+    };
   }
 
   @SubscribeMessage('leaveDevices')

@@ -1,4 +1,4 @@
-import { LayoutGrid, List, Plus, Radio, WandSparkles } from "lucide-react";
+import { LayoutGrid, List, Plus, Radio } from "lucide-react";
 import { useState } from "react";
 import { useSearchParams } from "react-router-dom";
 
@@ -26,7 +26,6 @@ import { useIsMobile } from "@/hooks/useMobile";
 import { useSocketEvents } from "@/hooks/useSocketEvents";
 import { useSocketRoom } from "@/hooks/useSocketRoom";
 import { useToast } from "@/hooks/useToast";
-import { competitionSettingsQuery } from "@/lib/competition";
 import {
     devicesQuery,
     reconnectDevice,
@@ -35,12 +34,12 @@ import {
 } from "@/lib/devices";
 import { AvailableDevice, Device } from "@/lib/interfaces";
 import { isAdmin } from "@/lib/permissions";
-import { fetchQuery, setQueryData } from "@/lib/queryCache";
+import { setQueryData } from "@/lib/queryCache";
 import { roomsQuery } from "@/lib/rooms";
 import { idToHex } from "@/lib/utils";
 import { socket } from "@/socket";
 
-import { AutoSetupModal } from "./Components/AutoSetupModal";
+import { AutoSetupSwitch } from "./Components/AutoSetupSwitch";
 import CreateDeviceModal from "./Components/CreateDeviceModal";
 import DeviceItem from "./Components/DeviceItem";
 import DevicesSettings from "./Tabs/DeviceSettings/DevicesSettings";
@@ -93,7 +92,12 @@ const Devices = () => {
     );
     const [isOpenCreateDeviceModal, setIsOpenCreateDeviceModal] =
         useState<boolean>(false);
-    const [isAutoSetupModalOpen, setIsAutoSetupModalOpen] = useState(false);
+    // Local time the server switches auto setup off at (null while off), and
+    // how long a run lasts
+    const [autoSetup, setAutoSetup] = useState<{
+        endsAt: number | null;
+        durationMs: number;
+    }>({ endsAt: null, durationMs: 0 });
 
     const fetchData = () => {
         void refetch();
@@ -142,30 +146,6 @@ const Devices = () => {
         setIsOpenCreateDeviceModal(true);
     };
 
-    const handleStartAutoSetup = async () => {
-        const data = await fetchQuery(competitionSettingsQuery).catch(
-            () => null
-        );
-        if (!data) {
-            toast({
-                title: "Error",
-                description: "Something went wrong",
-                variant: "destructive",
-            });
-            return;
-        }
-        if (!data.wifiSsid || !data.wifiPassword) {
-            toast({
-                title: "WiFi details are missing",
-                description:
-                    "Set the WiFi SSID and password in the Settings tab before running auto setup",
-                variant: "destructive",
-            });
-            return;
-        }
-        setIsAutoSetupModalOpen(true);
-    };
-
     // Joined again on every reconnect; useRefetchOnReconnect picks up
     // device changes missed while disconnected
     useSocketRoom("Devices");
@@ -173,6 +153,18 @@ const Devices = () => {
         deviceUpdated: fetchData,
         deviceRequests: (data) =>
             setAvailableDevices(data as AvailableDevice[]),
+        // Sent on joining the room and on every change; the time left rather
+        // than the deadline, so a skewed local clock still counts down right
+        autoSetupStatus: (data) => {
+            const { remainingMs, durationMs } = data as {
+                remainingMs: number | null;
+                durationMs: number;
+            };
+            setAutoSetup({
+                endsAt: remainingMs === null ? null : Date.now() + remainingMs,
+                durationMs,
+            });
+        },
     });
 
     if (!fetchedDevices) {
@@ -200,15 +192,10 @@ const Devices = () => {
     );
     const deviceButtons = (
         <>
-            <Button
-                variant="outline"
-                size={isMobile ? "lg" : "default"}
-                className="max-md:flex-1"
-                onClick={handleStartAutoSetup}
-            >
-                <WandSparkles />
-                {isMobile ? "Auto setup" : "Auto setup devices"}
-            </Button>
+            <AutoSetupSwitch
+                endsAt={autoSetup.endsAt}
+                durationMs={autoSetup.durationMs}
+            />
             <Button
                 size={isMobile ? "lg" : "default"}
                 className="max-md:flex-1"
@@ -437,10 +424,6 @@ const Devices = () => {
                 isOpen={isOpenCreateDeviceModal}
                 onClose={handleCloseCreateDeviceModal}
                 deviceToAdd={deviceToAdd || undefined}
-            />
-            <AutoSetupModal
-                open={isAutoSetupModalOpen}
-                onClose={() => setIsAutoSetupModalOpen(false)}
             />
         </>
     );

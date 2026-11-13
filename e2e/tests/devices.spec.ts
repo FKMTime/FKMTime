@@ -192,15 +192,23 @@ test.describe("devices", () => {
         }
     });
 
-    test("runs and stops the auto setup mode", async ({ page }) => {
+    test("switches the auto setup mode on and off", async ({ page }) => {
         await page.goto("/devices");
-        await page.getByRole("button", { name: "Auto setup devices" }).click();
-        const dialog = page.getByRole("dialog", { name: "Auto Setup Devices" });
+        const autoSetup = page.getByRole("switch", { name: "Auto setup" });
+        await autoSetup.click();
+        await expect(autoSetup).toBeChecked();
+        // Counting down from five minutes, and the page stays usable
+        await expect(page.getByLabel("Time left")).toHaveText(/^[45]:\d\d$/);
         await expect(
-            dialog.getByText("The system is now in auto setup mode.")
-        ).toBeVisible();
-        await dialog.getByRole("button", { name: "Stop" }).click();
-        await expect(dialog).toBeHidden();
+            page.getByRole("button", { name: "Add device" })
+        ).toBeEnabled();
+
+        await page.reload();
+        await expect(autoSetup).toBeChecked();
+
+        await autoSetup.click();
+        await expect(autoSetup).not.toBeChecked();
+        await expect(page.getByLabel("Time left")).toHaveCount(0);
     });
 
     test("does not run auto setup without the WiFi details", async ({
@@ -215,9 +223,10 @@ test.describe("devices", () => {
         await expectToast(page, "Device settings saved");
 
         await page.getByRole("radio", { name: "All devices" }).click();
-        await page.getByRole("button", { name: "Auto setup devices" }).click();
+        const autoSetup = page.getByRole("switch", { name: "Auto setup" });
+        await autoSetup.click();
         await expectToast(page, "WiFi details are missing");
-        await expect(page.getByRole("dialog")).toHaveCount(0);
+        await expect(autoSetup).not.toBeChecked();
 
         await page.getByRole("radio", { name: "Settings" }).click();
         await page.getByLabel("WiFi SSID").fill(originalSsid);
