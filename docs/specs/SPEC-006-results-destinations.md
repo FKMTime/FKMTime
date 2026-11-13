@@ -611,10 +611,14 @@ FKMTime finds the no-shows itself, and a person confirms the removal.
 
 **When a round's last group ends:**
 
+A round counts as ended when it is open in ILR, has results in FKMTime, and
+none of its groups is current in any room.
+
 1. FKMTime lists the competitors who are assigned to the round, were absent in
-   every group of it they were assigned to, and have no attempts.
-2. Home shows "3 competitors didn't come to 333-r1", with the names and
-   **Remove from round in WCA live results**.
+   every group of it they were assigned to, have no attempts, and still have
+   an empty result in ILR.
+2. Home shows a card above the rooms, "3 competitors didn't come to 333-r1",
+   with the names and **Remove from 333-r1 in WCA Integrated Live Results**.
 3. One confirmation removes them all with
    `DELETE /rounds/{roundId}/bulk_quit`, with no replacements. The round is
    over, so nobody could take their place anyway.
@@ -690,17 +694,15 @@ optional ("may").
   They can already compete in it, because a station accepts anyone registered
   for the event (`PersonForDeviceService`). But they aren't in the group lists
   or attendance, so nobody calls them up or notices if they don't come.
-  - The confirmation offers, per replacement, **Put Jan Example in Anna
-    Example's group (333-r2 g3)**. The group is pre-filled with the
-    withdrawing competitor's group and can be changed to any group of the
-    round that hasn't ended yet. If that group has already ended, the
-    pre-fill is the round's next group that hasn't started.
+  - The confirmation offers, per replacement, **Put Jan Example in this
+    group**. The group is pre-filled with the withdrawing competitor's group
+    and can be changed to any group of the round. FKMTime doesn't skip groups
+    that already ran; the person picks.
   - A person clicks it; nothing is assigned automatically.
   - It works like the existing "move competitor to another group" action in
     `PersonService`: it adds a `competitor` assignment to the person in the
-    WCIF through `WcaService.patchWcif`, with the clicking user's WCA sign-in
-    (or the competition's connection, if that sign-in has expired), and then
-    creates the FKMTime group record (`StaffActivity`, role
+    WCIF through `WcaService.patchWcif`, with the clicking user's WCA sign-in,
+    and then creates the FKMTime group record (`StaffActivity`, role
     competitor). Because the assignment is on the WCA side too, the next WCIF
     sync keeps it.
   - If the WCA rejects the WCIF write, nothing changes in FKMTime, and the

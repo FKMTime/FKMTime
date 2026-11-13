@@ -475,6 +475,86 @@ export class PersonService {
     return person;
   }
 
+  /**
+   * Puts a competitor with no group in the round into one, e.g. someone who
+   * advanced because another competitor withdrew. Like changeCompetingGroup,
+   * the assignment goes into the WCIF first, so the next sync keeps it.
+   */
+  async addCompetingGroup(userId: string, personId: string, groupId: string) {
+    const roundId = groupId.split('-g')[0];
+    const existing = await this.prisma.staffActivity.findFirst({
+      where: {
+        personId,
+        role: StaffRole.COMPETITOR,
+        groupId: { startsWith: `${roundId}-g` },
+      },
+    });
+    if (existing) {
+      throw new HttpException('They already have a group in this round', 409);
+    }
+    const person = await this.prisma.person.findUnique({
+      where: { id: personId },
+    });
+    if (!person?.registrantId) {
+      throw new HttpException('Competitor not found in the WCIF', 404);
+    }
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    if (!user?.wcaUserId) {
+      throw new HttpException('Sign in with WCA to change groups', 403);
+    }
+    const competition = await this.prisma.competition.findFirst();
+    const wcif: Competition = await this.wcaService.getWcif(
+      competition.wcaId,
+      user.wcaAccessToken,
+    );
+    const personInfo = getPersonFromWcif(person.registrantId, wcif);
+    const activity: Activity = getActivityInfoFromSchedule(groupId, wcif);
+    if (!personInfo || !activity) {
+      throw new HttpException('Group or competitor not in the WCIF', 404);
+    }
+    const response = await this.wcaService.patchWcif(
+      competition.wcaId,
+      {
+        id: wcif.id,
+        formatVersion: wcif.formatVersion,
+        persons: [
+          ...wcif.persons.filter((p) => p.registrantId !== person.registrantId),
+          {
+            ...personInfo,
+            assignments: [
+              ...personInfo.assignments,
+              {
+                activityId: activity.id,
+                stationNumber: null,
+                assignmentCode: 'competitor',
+              },
+            ],
+          },
+        ],
+      },
+      user.wcaAccessToken,
+    );
+    if (response.statusCode !== 200) {
+      const error = response.error ?? response.message ?? 'Unknown WCA error';
+      throw new HttpException(
+        {
+          message: 'The WCA rejected the WCIF update',
+          error: typeof error === 'string' ? error : JSON.stringify(error),
+        },
+        response.statusCode || 500,
+      );
+    }
+    await this.prisma.staffActivity.create({
+      data: {
+        personId,
+        groupId,
+        role: StaffRole.COMPETITOR,
+        isAssigned: true,
+      },
+    });
+    return { message: `Put in ${groupId}` };
+  }
+
   async changeCompetingGroup(userId: string, data: ChangeCompetingGroupDto) {
     const roundId = data.newGroupId.split('-g')[0];
     const currentGroup = await this.prisma.staffActivity.findFirst({

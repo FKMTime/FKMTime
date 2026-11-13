@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 
+import ClearRoundModal from "@/Components/IntegratedLive/ClearRoundModal";
 import RowActions from "@/Components/shared/RowActions";
 import { Button } from "@/Components/ui/button";
 import { useConfirm } from "@/hooks/useConfirm";
@@ -160,6 +161,11 @@ const RoundHeader = ({
             <AddCompetitorToRoundModal
                 isOpen={integratedLive.isAddOpen}
                 onClose={integratedLive.closeAdd}
+                roundId={roundId}
+            />
+            <ClearRoundModal
+                isOpen={integratedLive.isClearOpen}
+                onClose={integratedLive.closeClear}
                 roundId={roundId}
             />
         </>

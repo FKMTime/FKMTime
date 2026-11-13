@@ -82,6 +82,39 @@ export interface IntegratedLiveRound {
     competitorCountNeeded?: number;
 }
 
+export interface IntegratedLiveNoShows {
+    roundId: string;
+    competitors: { personId: string; name: string; registrationId: number }[];
+}
+
+export interface IntegratedLiveNextInLine {
+    registrationId: number;
+    name: string | null;
+    personId: string | null;
+}
+
+export interface IntegratedLiveWithdrawalPreview {
+    ok: boolean;
+    message?: string;
+    name?: string;
+    roundOpen?: boolean;
+    roundState?: string | null;
+    next?: IntegratedLiveNextInLine[];
+    nobodyReason?: string | null;
+}
+
+export interface IntegratedLiveWithdrawalResult {
+    ok: boolean;
+    message: string;
+    changed?: boolean;
+    next?: IntegratedLiveNextInLine[];
+    replacements?: {
+        personId: string;
+        name: string;
+        suggestedGroupId: string | null;
+    }[];
+}
+
 export interface IntegratedLiveAddableCompetitor {
     registrationId: number;
     name: string | null;
