@@ -1,10 +1,5 @@
 import { UseGuards } from '@nestjs/common';
-import {
-  ConnectedSocket,
-  SubscribeMessage,
-  WebSocketGateway,
-} from '@nestjs/websockets';
-import { Socket } from 'socket.io';
+import { SubscribeMessage, WebSocketGateway } from '@nestjs/websockets';
 import { OrganizerGuard } from 'src/auth/guards/organizer.guard';
 
 import { CompetitionService } from './competition.service';
@@ -15,13 +10,13 @@ export class AutoSetupGateway {
 
   @UseGuards(OrganizerGuard)
   @SubscribeMessage('autosetup:start')
-  async handleAutoSetupStart(@ConnectedSocket() socket: Socket) {
-    await this.competitionService.handleAutoSetupHeartbeat(socket.id);
+  async handleAutoSetupStart() {
+    await this.competitionService.startAutoSetup();
   }
 
   @UseGuards(OrganizerGuard)
   @SubscribeMessage('autosetup:stop')
-  async handleAutoSetupStop(@ConnectedSocket() socket: Socket) {
-    await this.competitionService.stopAutoSetup(socket.id);
+  async handleAutoSetupStop() {
+    await this.competitionService.stopAutoSetup();
   }
 }
