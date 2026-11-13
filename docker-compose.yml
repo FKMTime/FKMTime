@@ -21,7 +21,7 @@ services:
       - WCA_CLIENT_SECRET=example-secret
       - SOCKET_PATH=/app/sock/socket.sock
     ports:
-      - "${FKM_BACKEND_PORT:-5000}:5000"
+      - "${FKMTIME_BACKEND_PORT:-5000}:5000"
     depends_on:
       database:
         condition: service_healthy
@@ -36,14 +36,14 @@ services:
       context: ./frontend
       dockerfile: Dockerfile.dev
     environment:
-      - VITE_BACKEND_ORIGIN=http://localhost:${FKM_BACKEND_PORT:-5000}
-      - VITE_WCA_ORIGIN=http://127.0.0.1:${FKM_DUMMY_WCA_PORT:-3005}
+      - VITE_BACKEND_ORIGIN=http://localhost:${FKMTIME_BACKEND_PORT:-5000}
+      - VITE_WCA_ORIGIN=http://127.0.0.1:${FKMTIME_DUMMY_WCA_PORT:-3005}
       - VITE_GIT_COMMIT=dummy-commit
     volumes:
       - ./frontend/src:/app/src
       - ./frontend/index.html:/app/index.html
     ports:
-      - "${FKM_FRONTEND_PORT:-5173}:5173"
+      - "${FKMTIME_FRONTEND_PORT:-5173}:5173"
     restart: unless-stopped
     dns:
       - 8.8.8.8
@@ -53,7 +53,7 @@ services:
   database:
     image: postgres:18-alpine
     ports:
-      - "${FKM_DATABASE_PORT:-5433}:5432"
+      - "${FKMTIME_DATABASE_PORT:-5433}:5432"
     restart: unless-stopped
     dns:
       - 8.8.8.8
@@ -80,7 +80,7 @@ services:
       - 1.1.1.1
     # Feel free to change this if you are not using CubingContests
     ports:
-    - "${FKM_DUMMY_WCA_PORT:-3005}:3000"
+    - "${FKMTIME_DUMMY_WCA_PORT:-3005}:3000"
 
   dummy_wca_live:
     restart: unless-stopped
@@ -90,14 +90,14 @@ services:
       - 8.8.4.4
       - 1.1.1.1
     ports:
-      - "${FKM_DUMMY_WCA_LIVE_PORT:-4000}:4000"
+      - "${FKMTIME_DUMMY_WCA_LIVE_PORT:-4000}:4000"
   
   # Only one stack per machine can own the connector: it listens on port 8080
   # of the Docker VM's host network and registers a fixed mDNS name with the
-  # shared docker-adapter. Extra stacks set FKM_MICRO_CONNECTOR=0 to skip it.
+  # shared docker-adapter. Extra stacks set FKMTIME_MICRO_CONNECTOR=0 to skip it.
   micro_connector:
     image: "ghcr.io/fkmtime/fkmtime-micro-connector:master"
-    scale: ${FKM_MICRO_CONNECTOR:-1}
+    scale: ${FKMTIME_MICRO_CONNECTOR:-1}
     network_mode: host
     dns:
       - 8.8.8.8

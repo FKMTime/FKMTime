@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Gives this checkout its own host ports, so its dev stack (docker-compose.yml)
-# can run next to a stack from another worktree. Writes the FKM_* variables to
-# the gitignored .env, which docker compose reads on its own.
+# can run next to a stack from another worktree. Writes the FKMTIME_* variables
+# to the gitignored .env, which docker compose reads on its own.
 #
 #   ./scripts/dev-ports.sh                  pick free ports, skip the connector
 #   ./scripts/dev-ports.sh --with-connector pick free ports, keep the connector
@@ -13,7 +13,7 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 ENV_FILE="$ROOT/.env"
-KEYS=(FKM_BACKEND_PORT FKM_FRONTEND_PORT FKM_DATABASE_PORT FKM_DUMMY_WCA_PORT FKM_DUMMY_WCA_LIVE_PORT FKM_MICRO_CONNECTOR)
+KEYS=(FKMTIME_BACKEND_PORT FKMTIME_FRONTEND_PORT FKMTIME_DATABASE_PORT FKMTIME_DUMMY_WCA_PORT FKMTIME_DUMMY_WCA_LIVE_PORT FKMTIME_MICRO_CONNECTOR)
 DEFAULTS=(5000 5173 5433 3005 4000)
 
 with_connector=0
@@ -41,7 +41,7 @@ if [[ $clear -eq 1 ]]; then
     exit 0
 fi
 
-if [[ -f "$ENV_FILE" ]] && grep -q '^FKM_BACKEND_PORT=' "$ENV_FILE"; then
+if [[ -f "$ENV_FILE" ]] && grep -q '^FKMTIME_BACKEND_PORT=' "$ENV_FILE"; then
     echo "This checkout already has its ports in .env:" >&2
     grep -E "^($(IFS='|'; echo "${KEYS[*]}"))=" "$ENV_FILE" >&2
     echo "Run with --clear first to pick new ones." >&2
@@ -67,14 +67,14 @@ for slot in 1 2 3 4 5 6 7 8 9; do
 done
 
 if [[ ${#ports[@]} -eq 0 ]]; then
-    echo "No free slot found; set the FKM_*_PORT variables in .env by hand." >&2
+    echo "No free slot found; set the FKMTIME_*_PORT variables in .env by hand." >&2
     exit 1
 fi
 
 {
     strip_keys
     for i in "${!DEFAULTS[@]}"; do echo "${KEYS[$i]}=${ports[$i]}"; done
-    echo "FKM_MICRO_CONNECTOR=$with_connector"
+    echo "FKMTIME_MICRO_CONNECTOR=$with_connector"
 } > "$ENV_FILE.tmp"
 mv "$ENV_FILE.tmp" "$ENV_FILE"
 

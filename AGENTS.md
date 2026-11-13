@@ -82,13 +82,12 @@ source are mounted, so changes reload; rebuild after changing dependencies.
   URLs; `--clear` goes back to the defaults. Without `.env` the stack uses the
   default ports above.
 - **One micro connector per machine.** It listens on port 8080 of the Docker
-  VM's host network and registers a fixed mDNS name with the one
-  docker-adapter, so a second connector clashes on that port and devices only
-  find the first. `dev-ports.sh` therefore turns the connector off in the
-  stack it sets up (`FKM_MICRO_CONNECTOR=0` in `.env`). To move a real device
-  to that stack, stop the connector in the other one
-  (`docker compose stop micro_connector` there), set `FKM_MICRO_CONNECTOR=1`
-  and run `docker compose up -d` again.
+  VM's host network and registers a fixed mDNS name with the one docker-adapter,
+  so a second connector clashes on that port and devices only find the first.
+  `dev-ports.sh` therefore turns the connector off in the stack it sets up
+  (`FKMTIME_MICRO_CONNECTOR=0` in `.env`). To move a real device to that stack,
+  stop the connector in the other one (`docker compose stop micro_connector`
+  there), set `FKMTIME_MICRO_CONNECTOR=1` and run `docker compose up -d` again.
 - **Run the frontend with Vite's dev server, never `vite preview`.** A production
   build ignores `VITE_BACKEND_ORIGIN` and `VITE_WCA_ORIGIN`.
 - **Sample data:** a real device needs the competition's Wi-Fi details set in
