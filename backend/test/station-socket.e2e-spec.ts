@@ -10,7 +10,10 @@ import {
 } from '@prisma/client';
 import { AppGateway } from 'src/app.gateway';
 import { DbService } from 'src/db/db.service';
-import { getTranslation } from 'src/translations/translations';
+import {
+  getTranslation,
+  isLocaleAvailable,
+} from 'src/translations/translations';
 import * as request from 'supertest';
 
 import { createTestApp } from './helpers/app.helper';
@@ -754,11 +757,14 @@ describe('Station socket protocol (e2e)', () => {
           }),
         );
 
+        // In the judge's language when they share the competitor's country
+        const locale =
+          c4.countryIso2 === judge.countryIso2 &&
+          isLocaleAvailable(judge.countryIso2.toLowerCase())
+            ? judge.countryIso2.toLowerCase()
+            : defaultLocale;
         expect(res).toEqual(
-          errorResponse(
-            getTranslation('stationRoundChanged', defaultLocale),
-            409,
-          ),
+          errorResponse(getTranslation('stationRoundChanged', locale), 409),
         );
         expect(res.data.shouldResetTime).toBe(false);
         await expectNoAttemptFor(c4.id);

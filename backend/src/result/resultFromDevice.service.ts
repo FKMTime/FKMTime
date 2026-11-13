@@ -61,6 +61,28 @@ export class ResultFromDeviceService {
 
   private logger = new Logger('ResultFromDeviceService');
 
+  /**
+   * The language a station reply is shown in: the judge's when the judge and
+   * the competitor share a country and it is available, otherwise the
+   * competition's
+   */
+  private getReaderLocale(
+    competitor: Pick<Person, 'countryIso2'> | null,
+    judge: Pick<Person, 'countryIso2'> | null,
+    defaultLocale: string,
+  ) {
+    const country = judge?.countryIso2?.toLowerCase();
+    if (
+      competitor &&
+      country &&
+      judge.countryIso2 === competitor.countryIso2 &&
+      isLocaleAvailable(country)
+    ) {
+      return country;
+    }
+    return defaultLocale;
+  }
+
   async getStationByEspId(espId: number) {
     return await this.deviceService.getDeviceByEspId(espId, DeviceType.STATION);
   }
@@ -107,10 +129,17 @@ export class ResultFromDeviceService {
         select: { id: true },
       }));
       if (!stationRoundIds.includes(roundId) && !isResent) {
+        // In the language the judge and competitor read, like every other reply
+        const [competitor, judge] = await Promise.all([
+          this.personService.getPersonByCardId(data.competitorId.toString()),
+          data.judgeId
+            ? this.personService.getPersonByCardId(data.judgeId.toString())
+            : null,
+        ]);
         return {
           message: getTranslation(
             'stationRoundChanged',
-            competition.defaultLocale,
+            this.getReaderLocale(competitor, judge, competition.defaultLocale),
           ),
           shouldResetTime: false,
           status: 409,
@@ -238,13 +267,11 @@ export class ResultFromDeviceService {
           device.id,
         );
       }
-      if (judge.countryIso2 === competitor.countryIso2) {
-        if (isLocaleAvailable(judge.countryIso2.toLowerCase())) {
-          locale = judge.countryIso2.toLowerCase();
-        }
-      } else {
-        locale = competition.defaultLocale;
-      }
+      locale = this.getReaderLocale(
+        competitor,
+        judge,
+        competition.defaultLocale,
+      );
     }
 
     const currentRoundId = roundId;

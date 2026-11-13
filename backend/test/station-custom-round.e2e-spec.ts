@@ -54,6 +54,8 @@ describe('Stations running a different round (e2e)', () => {
   let organizerToken: string;
   let wcif: WCIF;
   let defaultLocale: string;
+  /** The language of replies to the other competitor and the judge */
+  let readerLocale: string;
 
   let roomId: string;
   let pointedId: string;
@@ -159,14 +161,21 @@ describe('Stations running a different round (e2e)', () => {
       ),
       CARD.competitor,
     );
+    // From the host country, like the judge, so replies are in their language
+    const fromHost = (p: WcifPerson) =>
+      p.countryIso2 === competition.countryIso2;
     other = await fixtures.giveCard(
-      pick('in 333 and skewb', inBoth),
+      pick(
+        'in 333 and skewb, from the host country',
+        (p) => inBoth(p) && fromHost(p),
+      ),
       CARD.other,
     );
     judge = await fixtures.giveCard(
-      pick('anyone', () => true),
+      pick('from the host country', fromHost),
       CARD.judge,
     );
+    readerLocale = competition.countryIso2.toLowerCase();
 
     delegateToken = await fixtures.createUserToken(app, 'delegate', [
       Role.DELEGATE,
@@ -300,7 +309,7 @@ describe('Stations running a different round (e2e)', () => {
       );
 
       expect(res.data).toMatchObject({
-        message: getTranslation('stationRoundChanged', defaultLocale),
+        message: getTranslation('stationRoundChanged', readerLocale),
         status: 409,
         error: true,
         shouldResetTime: false,
