@@ -55,6 +55,67 @@ export const getTranslationsJSON = (locale: string) => {
   }
 };
 
+/**
+ * Texts the station firmware shows itself (its src/default_translation.json).
+ * Every other text here is a reply message the backend fills in, so it never
+ * needs to reach a station.
+ */
+export const STATION_TEXT_KEYS = new Set([
+  'scanCompetitorCardHeader',
+  'scanCompetitorCardFooter',
+  'scanCompetitorCardWithTimeFooter',
+  'selectGroup',
+  'confirmTime',
+  'scanJudgeCard',
+  'scanCompetitorCard',
+  'waitingForWifiHeader',
+  'waitingForWifiFooter',
+  'waitingForMdnsHeader',
+  'waitingForMdnsFooter',
+  'wifiSetupHeader',
+  'callingForDelegateHeader',
+  'callingForDelegateFooter',
+  'waitingForDelegateHeader',
+  'waitingForDelegateFooter',
+  'errorHeader',
+  'deviceNotAddedHeader',
+  'deviceNotAddedFooter',
+  'emptyGroupsError',
+  'serverDisconnectedHeader',
+  'stackmatDisconnectedHeader',
+  'stackmatDisconnectedFooter',
+  'serverDisconnectedFooter',
+  'inspection',
+  'cardsCannotBeTheSameHeader',
+  'cardsCannotBeTheSameFooter',
+  'sleep',
+  'deepSleep',
+  'pressAnyKey',
+  'configMenu',
+  'scanTheCard',
+  'unpair',
+  'exit',
+  'resetAttemptHeader',
+  'resetAttemptFooter',
+  'sendingHeader',
+  'sendingFooter',
+  'resetTimerHeader',
+  'resetTimerFooter',
+]);
+
+/**
+ * The station receives every locale in one websocket frame, and the firmware
+ * drops a frame over WS_BUF_SIZE (8192 bytes): the station then never learns
+ * whether it is added, or its texts. So only the texts it shows go out.
+ */
+export const getStationTranslations = () =>
+  getAllTranslations().map((l) => ({
+    locale: l.locale,
+    translations: l.translations?.filter((t: { key: string }) =>
+      STATION_TEXT_KEYS.has(t.key),
+    ),
+  }));
+
 export const getAllTranslations = () => {
   const locales = getAvailableLocales();
   return locales.map((l) => ({

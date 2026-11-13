@@ -19,7 +19,10 @@ import {
 } from 'src/result/helpers';
 import { ResultService } from 'src/result/result.service';
 import { getOfficialResultsDestination } from 'src/results-destination';
-import { getAllTranslations, getLocales } from 'src/translations/translations';
+import {
+  getLocales,
+  getStationTranslations,
+} from 'src/translations/translations';
 import { LIVE_LOOKUP_TTL_MS, TtlCache } from 'src/ttl-cache';
 import {
   getFirstGroupInRoom,
@@ -432,7 +435,7 @@ export class CompetitionService {
         espId: d.espId,
         signKey: d.signKey,
       })),
-      translations: getAllTranslations(),
+      translations: getStationTranslations(),
       defaultLocale: competition.defaultLocale,
       fkmToken: competition.fkmToken,
       secureRfid: competition.secureRfid,

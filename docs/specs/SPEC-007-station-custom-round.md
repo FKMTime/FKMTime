@@ -307,8 +307,12 @@ doesn't cache rounds, so nothing there goes stale.
 - Backend and frontend ship together. Station firmware and the micro-connector
   don't change, and an older connector that doesn't pass `groupId` falls back
   as described in *`EnterAttempt`*.
-- `stationRoundChanged` is a new translation and needs every locale the station
-  texts have.
+- `stationRoundChanged` is a new reply message and needs every locale the
+  station texts have. The backend sends stations only the texts the firmware
+  shows itself (`STATION_TEXT_KEYS`), not reply messages it fills in: every
+  locale travels in one websocket frame, and the firmware drops a frame over
+  8192 bytes. Sending all texts, this message pushed that frame to 8210 bytes,
+  and stations then never learned whether they were added.
 - Revert: clear `customRoundId` on every station first, so no station is left
   pointed by code that no longer reads it, then remove the columns. The change
   to refuse solves from a round the room has left can be reverted on its own.
