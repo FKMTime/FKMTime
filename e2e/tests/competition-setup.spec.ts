@@ -120,7 +120,7 @@ test.describe("competition settings", () => {
         await expect(
             nav.getByRole("link", { name: "Incidents" })
         ).toHaveAttribute("href", "/incidents/manual");
-        await expect(page.getByRole("tab", { name: "Devices" })).toHaveCount(0);
+        await expect(nav.getByRole("link", { name: "Devices" })).toHaveCount(0);
 
         await devices.click();
         await page
@@ -129,6 +129,9 @@ test.describe("competition settings", () => {
             .click();
         await expectToast(page, "Settings saved");
         await expect(nav.getByRole("link", { name: "Results" })).toBeVisible();
+        await expect(
+            nav.getByRole("link", { name: "Devices" })
+        ).toHaveAttribute("href", "/devices");
         const settings = await (await api.get("competition/settings")).json();
         expect(settings.useFkmTimeDevices).toBe(true);
     });
@@ -138,7 +141,6 @@ test.describe("competition settings", () => {
         for (const [tab, path] of [
             ["Current groups", "/competition/groups"],
             ["Unofficial events", "/events"],
-            ["Devices", "/devices"],
             ["Users", "/users"],
             ["Competition", "/competition"],
         ]) {

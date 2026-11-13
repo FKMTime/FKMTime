@@ -2,6 +2,7 @@ import {
     CalendarDays,
     ChartColumn,
     ClipboardList,
+    Cpu,
     FlaskConical,
     House,
     LucideIcon,
@@ -25,6 +26,7 @@ export type NavId =
     | "attendance"
     | "results"
     | "live"
+    | "devices"
     | "setup"
     | "scrambles"
     | "statistics"
@@ -140,13 +142,22 @@ export const getNavItems = (ctx: NavContext): NavItem[] => {
             group: "Competition day",
             paths: ["/results/live"],
         },
+        ctx.isOrganizerOrDelegate &&
+            ctx.useFkmTimeDevices && {
+                id: "devices",
+                label: "Devices",
+                icon: Cpu,
+                to: "/devices",
+                group: "Competition day",
+                paths: ["/devices"],
+            },
         ctx.isOrganizerOrDelegate && {
             id: "setup",
             label: "Setup",
             icon: SlidersHorizontal,
             to: "/competition",
             group: "Admin",
-            paths: ["/competition", "/devices", "/users", "/events"],
+            paths: ["/competition", "/users", "/events"],
         },
         ctx.isDelegate &&
             ctx.useFkmTimeDevices && {

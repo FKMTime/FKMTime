@@ -4,18 +4,12 @@ import { useEffect } from "react";
 import PageTabs, { PageTab } from "@/Components/shared/PageTabs";
 import { competitionAtom } from "@/lib/atoms";
 import { competitionSettingsQuery } from "@/lib/competition";
-import { devicesQuery } from "@/lib/devices";
 import { prefetchQuery } from "@/lib/queryCache";
 import { roomsQuery } from "@/lib/rooms";
 import { unofficialEventsQuery } from "@/lib/unofficialEvents";
 import { usersQuery } from "@/lib/user";
 
-export type SetupTab =
-    | "competition"
-    | "groups"
-    | "events"
-    | "devices"
-    | "users";
+export type SetupTab = "competition" | "groups" | "events" | "users";
 
 const ignoreFailure = () => undefined;
 
@@ -37,19 +31,13 @@ const PRELOAD_TAB: Record<SetupTab, () => void> = {
         );
         prefetchQuery(unofficialEventsQuery);
     },
-    devices: () => {
-        import("@/Pages/Main/Devices/Devices").catch(ignoreFailure);
-        prefetchQuery(devicesQuery);
-        prefetchQuery(roomsQuery);
-        prefetchQuery(competitionSettingsQuery);
-    },
     users: () => {
         import("@/Pages/Main/Users/Users").catch(ignoreFailure);
         prefetchQuery(usersQuery);
     },
 };
 
-/** Competition / Current groups / Unofficial events / Devices / Users */
+/** Competition / Current groups / Unofficial events / Users */
 const SetupTabs = ({ value }: { value: SetupTab }) => {
     const competition = useAtomValue(competitionAtom);
     const useDevices = !!competition?.useFkmTimeDevices;
@@ -62,13 +50,12 @@ const SetupTabs = ({ value }: { value: SetupTab }) => {
             label: "Unofficial events",
             to: "/events",
         },
-        useDevices && { value: "devices", label: "Devices", to: "/devices" },
         { value: "users", label: "Users", to: "/users" },
     ];
 
     useEffect(() => {
         const preloaded: SetupTab[] = ["competition", "groups", "users"];
-        if (useDevices) preloaded.push("events", "devices");
+        if (useDevices) preloaded.push("events");
         preloaded.forEach((tab) => PRELOAD_TAB[tab]());
     }, [useDevices]);
 
