@@ -132,6 +132,17 @@ export interface Room {
     color: string;
 }
 
+/** Stations of a room pointed at another round, as the scrambling device sees them */
+export interface StationRound {
+    roundId: string;
+    stationNames: string[];
+}
+
+/** The scrambling device's room, with its stations running other rounds */
+export interface ScramblingDeviceRoom extends Room {
+    stationRounds?: StationRound[];
+}
+
 export interface Round {
     id: string;
     name: string;
@@ -401,6 +412,9 @@ export interface Device extends DeviceData {
     count?: number;
     /** Set when the device was deleted while its solves still point to it */
     retiredAt?: string | null;
+    /** The round a delegate pointed this station at, instead of its room's (SPEC-007) */
+    customRoundId?: string | null;
+    customRoundSetAt?: string | null;
     createdAt: Date;
     updatedAt: Date;
     hwVersion: HardwareVersion;

@@ -1,13 +1,24 @@
-import { ArchiveRestore, Nfc, Pencil, Timer, Trash2 } from "lucide-react";
+import {
+    ArchiveRestore,
+    Nfc,
+    Pencil,
+    Route,
+    Timer,
+    Trash2,
+    Undo2,
+} from "lucide-react";
 import { useState } from "react";
 
 import BatteryIcon from "@/Components/Icons/BatteryIcon";
+import PointedStationBadge from "@/Components/shared/PointedStationBadge";
 import RowActions from "@/Components/shared/RowActions";
+import RunDifferentRoundModal from "@/Components/shared/RunDifferentRoundModal";
 import { TableCell, TableRow } from "@/Components/ui/table";
 import { useConfirm } from "@/hooks/useConfirm";
 import { useToast } from "@/hooks/useToast";
-import { deleteDevice, restoreDevice } from "@/lib/devices";
+import { deleteDevice, restoreDevice, setStationsRound } from "@/lib/devices";
 import { Device, DeviceType } from "@/lib/interfaces";
+import { isDelegate } from "@/lib/permissions";
 import { cn, idToHex, prettyDeviceType } from "@/lib/utils";
 
 import EditDeviceModal from "./EditDeviceModal";
@@ -38,6 +49,9 @@ const DeviceItem = ({
     const { toast } = useToast();
     const confirm = useConfirm();
     const [isEditOpen, setIsEditOpen] = useState(false);
+    const [isRoundOpen, setIsRoundOpen] = useState(false);
+    const canPoint =
+        isDelegate() && device.type === DeviceType.STATION && !device.retiredAt;
 
     const handleDelete = () => {
         confirm({
@@ -75,6 +89,19 @@ const DeviceItem = ({
         }
     };
 
+    const handleBackToRoom = async () => {
+        const status = await setStationsRound([device.id], null);
+        if (status === 200) {
+            fetchData();
+        } else {
+            toast({
+                title: "Error",
+                description: "Something went wrong",
+                variant: "destructive",
+            });
+        }
+    };
+
     const actions = (
         <RowActions
             subject={device.name}
@@ -84,6 +111,18 @@ const DeviceItem = ({
                 onSelect: () => setIsEditOpen(true),
             }}
             items={[
+                {
+                    label: "Run a different round…",
+                    icon: Route,
+                    onSelect: () => setIsRoundOpen(true),
+                    hidden: !canPoint,
+                },
+                {
+                    label: "Back to the room's round",
+                    icon: Undo2,
+                    onSelect: handleBackToRoom,
+                    hidden: !canPoint || !device.customRoundId,
+                },
                 {
                     label: "Restore device",
                     icon: ArchiveRestore,
@@ -101,13 +140,32 @@ const DeviceItem = ({
         />
     );
     const modal = (
-        <EditDeviceModal
-            isOpen={isEditOpen}
-            onClose={() => {
-                fetchData();
-                setIsEditOpen(false);
-            }}
-            device={device}
+        <>
+            <EditDeviceModal
+                isOpen={isEditOpen}
+                onClose={() => {
+                    fetchData();
+                    setIsEditOpen(false);
+                }}
+                device={device}
+            />
+            {canPoint && (
+                <RunDifferentRoundModal
+                    isOpen={isRoundOpen}
+                    onClose={() => {
+                        fetchData();
+                        setIsRoundOpen(false);
+                    }}
+                    initialStationIds={[device.id]}
+                    initialRoundId={device.customRoundId ?? undefined}
+                />
+            )}
+        </>
+    );
+    const pointedBadge = device.customRoundId && !device.retiredAt && (
+        <PointedStationBadge
+            roundId={device.customRoundId}
+            since={device.customRoundSetAt}
         />
     );
     const battery = device.batteryPercentage;
@@ -121,7 +179,10 @@ const DeviceItem = ({
         return (
             <TableRow>
                 <TableCell className="whitespace-nowrap pl-5 font-semibold">
-                    {device.name}
+                    <span className="flex items-center gap-2">
+                        {device.name}
+                        {pointedBadge}
+                    </span>
                 </TableCell>
                 <TableCell className="font-mono text-[13px] text-muted-foreground">
                     {idToHex(device.espId)}
@@ -176,6 +237,7 @@ const DeviceItem = ({
                             .filter(Boolean)
                             .join(" · ")}
                     </p>
+                    {pointedBadge && <div className="mt-1">{pointedBadge}</div>}
                 </div>
                 <div className="md:-mr-1 md:-mt-1">{actions}</div>
             </div>

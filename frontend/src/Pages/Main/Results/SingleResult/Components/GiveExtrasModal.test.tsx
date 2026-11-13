@@ -186,6 +186,15 @@ describe("GiveExtrasModal", () => {
         expect(
             await screen.findByText(/The next round has started/)
         ).toBeTruthy();
+        // A station can take the redo instead (SPEC-007)
+        await userEvent.click(
+            screen.getByRole("button", { name: "Run this round on a station" })
+        );
+        expect(
+            await screen.findByRole("heading", {
+                name: "Run a different round",
+            })
+        ).toBeTruthy();
     });
 
     it("can leave the times on WCA Live", async () => {

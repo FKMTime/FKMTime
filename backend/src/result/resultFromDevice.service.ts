@@ -17,6 +17,12 @@ import { AttendanceService } from 'src/attendance/attendance.service';
 import { DNS_VALUE } from 'src/constants';
 import { DbService } from 'src/db/db.service';
 import { DeviceService } from 'src/device/device.service';
+import {
+  getCompetitorGroupInRound,
+  getStationRoundIds,
+  groupIdToRoundId,
+  isPointedStation,
+} from 'src/device/stationRounds';
 import { isUnofficialEvent } from 'src/events';
 import { PersonService } from 'src/person/person.service';
 import { CreateScrambledAttemptDto } from 'src/scrambling/dto/createScrambledAttempt.dto';
@@ -55,6 +61,28 @@ export class ResultFromDeviceService {
 
   private logger = new Logger('ResultFromDeviceService');
 
+  /**
+   * The language a station reply is shown in: the judge's when the judge and
+   * the competitor share a country and it is available, otherwise the
+   * competition's
+   */
+  private getReaderLocale(
+    competitor: Pick<Person, 'countryIso2'> | null,
+    judge: Pick<Person, 'countryIso2'> | null,
+    defaultLocale: string,
+  ) {
+    const country = judge?.countryIso2?.toLowerCase();
+    if (
+      competitor &&
+      country &&
+      judge.countryIso2 === competitor.countryIso2 &&
+      isLocaleAvailable(country)
+    ) {
+      return country;
+    }
+    return defaultLocale;
+  }
+
   async getStationByEspId(espId: number) {
     return await this.deviceService.getDeviceByEspId(espId, DeviceType.STATION);
   }
@@ -79,7 +107,8 @@ export class ResultFromDeviceService {
         error: true,
       };
     }
-    if (device.room.currentGroupIds.length === 0) {
+    const stationRoundIds = getStationRoundIds(device);
+    if (stationRoundIds.length === 0) {
       return {
         message: getTranslation('noGroups', competition.defaultLocale),
         status: 400,
@@ -87,27 +116,45 @@ export class ResultFromDeviceService {
         error: true,
       };
     }
-    let groupId = '';
-
-    if (device.room.currentGroupIds.length === 1) {
-      groupId = device.room.currentGroupIds[0];
-    } else if (device.room.currentGroupIds.length > 1 && !data.groupId) {
+    const isPointed = isPointedStation(device);
+    // The station sends the group it was given at the card scan. A solve from
+    // a round the station no longer takes (its room or a delegate changed it
+    // mid-solve) must not land in the new round (SPEC-007)
+    let roundId: string;
+    if (data.groupId) {
+      roundId = groupIdToRoundId(data.groupId);
+      // A solve resent after a lost reply is answered as already entered below
+      const isResent = !!(await this.prisma.attempt.findFirst({
+        where: { sessionId: data.sessionId, deviceId: device.id },
+        select: { id: true },
+      }));
+      if (!stationRoundIds.includes(roundId) && !isResent) {
+        // In the language the judge and competitor read, like every other reply
+        const [competitor, judge] = await Promise.all([
+          this.personService.getPersonByCardId(data.competitorId.toString()),
+          data.judgeId
+            ? this.personService.getPersonByCardId(data.judgeId.toString())
+            : null,
+        ]);
+        return {
+          message: getTranslation(
+            'stationRoundChanged',
+            this.getReaderLocale(competitor, judge, competition.defaultLocale),
+          ),
+          shouldResetTime: false,
+          status: 409,
+          error: true,
+        };
+      }
+    } else if (stationRoundIds.length === 1) {
+      roundId = stationRoundIds[0];
+    } else {
       return {
         message: getTranslation('groupNotFound', competition.defaultLocale),
         shouldResetTime: false,
         status: 400,
         error: true,
       };
-    } else if (device.room.currentGroupIds.length > 1 && data.groupId) {
-      if (!device.room.currentGroupIds.includes(data.groupId)) {
-        return {
-          message: getTranslation('groupNotFound', competition.defaultLocale),
-          shouldResetTime: false,
-          status: 404,
-          error: true,
-        };
-      }
-      groupId = data.groupId;
     }
 
     const competitor = await this.personService.getPersonByCardId(
@@ -123,11 +170,22 @@ export class ResultFromDeviceService {
         error: true,
       };
     }
-    await this.attendanceService.markCompetitorAsPresent(
-      competitor.id,
-      groupId,
-      device.id,
-    );
+    const wcif = JSON.parse(JSON.stringify(competition.wcif));
+    // A pointed station times a round whose groups are over: the competitor
+    // counts only in their own group, and nobody new is added to it
+    const groupId = isPointed
+      ? getCompetitorGroupInRound(roundId, competitor.registrantId, wcif)
+      : (device.room.currentGroupIds.find((g) => g === data.groupId) ??
+        device.room.currentGroupIds.find(
+          (g) => groupIdToRoundId(g) === roundId,
+        ));
+    if (groupId) {
+      await this.attendanceService.markCompetitorAsPresent(
+        competitor.id,
+        groupId,
+        device.id,
+      );
+    }
 
     const previousAttemptWithSameSessionId =
       await this.prisma.attempt.findFirst({
@@ -201,22 +259,22 @@ export class ResultFromDeviceService {
     }
 
     if (judge) {
-      await this.attendanceService.markJudgeAsPresent(
-        judge.id,
-        groupId,
-        device.id,
-      );
-      if (judge.countryIso2 === competitor.countryIso2) {
-        if (isLocaleAvailable(judge.countryIso2.toLowerCase())) {
-          locale = judge.countryIso2.toLowerCase();
-        }
-      } else {
-        locale = competition.defaultLocale;
+      // The judge of a redo is usually staffing the room's current group
+      if (!isPointed && groupId) {
+        await this.attendanceService.markJudgeAsPresent(
+          judge.id,
+          groupId,
+          device.id,
+        );
       }
+      locale = this.getReaderLocale(
+        competitor,
+        judge,
+        competition.defaultLocale,
+      );
     }
 
-    const wcif = JSON.parse(JSON.stringify(competition.wcif));
-    const currentRoundId = groupId.split('-g')[0];
+    const currentRoundId = roundId;
     const roundInfo = getRoundInfoFromWcif(currentRoundId, wcif);
     const competitorWcifInfo = getPersonFromWcif(competitor.registrantId, wcif);
     const competitorSignedInForEvent = isCompetitorSignedInForEvent(

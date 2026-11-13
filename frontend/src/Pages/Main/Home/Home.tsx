@@ -13,8 +13,13 @@ import { useToast } from "@/hooks/useToast";
 import { competitionAtom, quickEntryAtom } from "@/lib/atoms";
 import { recentAttemptsQuery } from "@/lib/attempt";
 import { nextGroupsQuery } from "@/lib/competition";
+import {
+    getPointedStations,
+    setStationsRound,
+    stationDevicesQuery,
+} from "@/lib/devices";
 import { unresolvedIncidentsQuery } from "@/lib/incidents";
-import { Room } from "@/lib/interfaces";
+import { Device, Room } from "@/lib/interfaces";
 import {
     isDelegate,
     isOrganizerOrDelegate,
@@ -81,6 +86,16 @@ const Home = () => {
 
     const canStartGroups = isOrganizerOrDelegate();
     const canResolveIncidents = isDelegate();
+
+    // Stations pointed at another round stay listed on their room's card
+    // until a delegate sends them back (SPEC-007)
+    const { data: stations } = useLiveQuery(stationDevicesQuery, {
+        enabled: canStartGroups,
+    });
+    const pointedStations = getPointedStations(stations ?? []);
+    useSocketRoom(canStartGroups ? "Devices" : null, {
+        invalidateOn: { deviceUpdated: [stationDevicesQuery.key] },
+    });
 
     const currentRoundIds = useMemo(
         () => [
@@ -179,6 +194,24 @@ const Home = () => {
         return null;
     };
 
+    const handleBackToRoom = async (station: Device) => {
+        const status = await setStationsRound([station.id], null);
+        if (status === 200) {
+            toast({
+                title: `${station.name} is back on its room's round`,
+                variant: "success",
+            });
+            void queryClient.invalidateQueries({
+                queryKey: [stationDevicesQuery.key],
+            });
+        } else {
+            toast({
+                title: "Failed to send the station back",
+                variant: "destructive",
+            });
+        }
+    };
+
     const selectedRoom =
         rooms.find((room) => room.id === selectedRoomId) ?? rooms[0];
 
@@ -200,6 +233,10 @@ const Home = () => {
             onEnterAttempt={(roundId) =>
                 setQuickEntry({ isOpen: true, roundId })
             }
+            pointedStations={pointedStations.filter(
+                (station) => station.roomId === room.id
+            )}
+            onBackToRoom={isDelegate() ? handleBackToRoom : undefined}
         />
     );
 

@@ -2,6 +2,7 @@ import {
     formatLastSolveTime,
     getStationTimer,
     groupStationsByRoom,
+    isOnAnotherRound,
     StationInfo,
 } from "@/lib/liveSolving";
 
@@ -313,5 +314,19 @@ describe("formatLastSolveTime", () => {
 
     it("shows a DNF instead of the time", () => {
         expect(formatLastSolveTime(solve(1234, -1))).toBe("DNF");
+    });
+});
+
+describe("isOnAnotherRound (SPEC-007)", () => {
+    const at = (groupId: string | null) =>
+        packet({ serverReceivedAt: 0, groupId });
+
+    it("spots a station timing a round its room isn't running", () => {
+        expect(isOnAnotherRound(at("333-r1-g2"), ["pyram-r1"])).toBe(true);
+    });
+
+    it("leaves stations on their room's rounds alone", () => {
+        expect(isOnAnotherRound(at("333-r1-g2"), ["333-r1"])).toBe(false);
+        expect(isOnAnotherRound(at(null), ["pyram-r1"])).toBe(false);
     });
 });

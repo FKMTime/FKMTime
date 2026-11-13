@@ -7,7 +7,7 @@ import { useLiveQuery } from "@/hooks/useLiveQuery";
 import { competitionAtom } from "@/lib/atoms";
 import { getCompetitionInfo } from "@/lib/competition";
 import { getEvents } from "@/lib/events";
-import { Room } from "@/lib/interfaces";
+import { ScramblingDeviceRoom } from "@/lib/interfaces";
 import { scramblingDeviceRoomQuery } from "@/lib/scrambling";
 import { isScrambleDeviceTokenValid } from "@/lib/scramblingDevicesAuth";
 
@@ -22,7 +22,7 @@ const ScramblingDeviceLayout = () => {
     const { data: roomData } = useLiveQuery(
         scramblingDeviceRoomQuery(pathname)
     );
-    const room: Room | null = roomData ?? null;
+    const room: ScramblingDeviceRoom | null = roomData ?? null;
 
     useEffect(() => {
         isScrambleDeviceTokenValid().then((isLoggedIn) => {

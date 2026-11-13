@@ -8,6 +8,7 @@ import UnlockCard from "../Components/UnlockCard";
 import {
     currentGroupIdForRound,
     scrambleSetName,
+    stationNamesForRound,
     useScramblingDeviceRoom,
 } from "../scramblingDeviceContext";
 import { useUnlockableScrambleSet } from "../useUnlockableScrambleSet";
@@ -29,12 +30,15 @@ const ScrambleSet = () => {
 
     const setName = scrambleSetName(scrambleSet);
     const groupId = currentGroupIdForRound(room, scrambleSet.roundId);
+    // A station of this room pointed at the round (SPEC-007) has no group
+    const isAtPointedStation =
+        stationNamesForRound(room, scrambleSet.roundId).length > 0;
 
     return (
         <DevicePage title={setName}>
             {scrambles ? (
                 <>
-                    {!groupId && (
+                    {!groupId && !isAtPointedStation && (
                         <p
                             role="alert"
                             className="flex items-start gap-2.5 rounded-xl bg-warning-soft px-4 py-3 text-sm font-semibold text-warning"

@@ -9,6 +9,7 @@ import { useIsMobile } from "@/hooks/useMobile";
 import { activityCodeToName } from "@/lib/activities";
 import {
     groupStationsByRoom,
+    isOnAnotherRound,
     OTHER_STATIONS_ID,
     StationInfo,
     StationPhase,
@@ -152,7 +153,10 @@ const LiveSolvingBoard = ({
                             <LiveStationCard
                                 key={station.espId}
                                 station={station}
-                                showRound={group.roundIds.length > 1}
+                                showRound={
+                                    group.roundIds.length > 1 ||
+                                    isOnAnotherRound(station, group.roundIds)
+                                }
                                 hasIncident={
                                     incidentDevices?.has(station.deviceName) ??
                                     false

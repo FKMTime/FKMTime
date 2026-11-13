@@ -10,7 +10,10 @@ import {
 } from '@prisma/client';
 import { AppGateway } from 'src/app.gateway';
 import { DbService } from 'src/db/db.service';
-import { getTranslation } from 'src/translations/translations';
+import {
+  getTranslation,
+  isLocaleAvailable,
+} from 'src/translations/translations';
 import * as request from 'supertest';
 
 import { createTestApp } from './helpers/app.helper';
@@ -744,7 +747,7 @@ describe('Station socket protocol (e2e)', () => {
         await expectNoAttemptFor(c4.id);
       });
 
-      it('rejects a group that is not running in the station room', async () => {
+      it('refuses a round the station room no longer runs and keeps the time', async () => {
         const res = await station.request(
           'EnterAttempt',
           attempt({
@@ -754,9 +757,16 @@ describe('Station socket protocol (e2e)', () => {
           }),
         );
 
+        // In the judge's language when they share the competitor's country
+        const locale =
+          c4.countryIso2 === judge.countryIso2 &&
+          isLocaleAvailable(judge.countryIso2.toLowerCase())
+            ? judge.countryIso2.toLowerCase()
+            : defaultLocale;
         expect(res).toEqual(
-          errorResponse(getTranslation('groupNotFound', defaultLocale), 404),
+          errorResponse(getTranslation('stationRoundChanged', locale), 409),
         );
+        expect(res.data.shouldResetTime).toBe(false);
         await expectNoAttemptFor(c4.id);
       });
 

@@ -19,8 +19,9 @@ import { cn } from "@/lib/utils";
 import DevicePage from "../Components/DevicePage";
 import {
     currentGroupIdForRound,
-    groupIdToRoundId,
+    roundIdsRunningHere,
     roundName,
+    stationNamesForRound,
     useScramblingDeviceRoom,
 } from "../scramblingDeviceContext";
 import ScrambleSetsList from "./Components/ScrambleSetsList";
@@ -31,13 +32,16 @@ const ScramblingDeviceHome = () => {
     const [selectedRoundId, setSelectedRoundId] = useState("");
 
     const events = competition?.wcif.events ?? [];
-    const liveRoundIds = room?.currentGroupIds.map(groupIdToRoundId) ?? [];
+    // Includes rounds a delegate pointed a station of this room at
+    const liveRoundIds = roundIdsRunningHere(room);
     // Until something is picked, follow the round running in this room
     const roundId =
         selectedRoundId || liveRoundIds[0] || events[0]?.rounds[0]?.id || "";
     const eventId = roundId.split("-")[0];
     const event = events.find((e) => e.id === eventId);
     const currentGroupId = currentGroupIdForRound(room, roundId);
+    const pointedStationNames = stationNamesForRound(room, roundId);
+    const isRunningHere = !!currentGroupId || pointedStationNames.length > 0;
 
     // null while the selected round's sets load
     const { data: scrambleSetsData } = useLiveQuery(
@@ -83,14 +87,16 @@ const ScramblingDeviceHome = () => {
                             <p
                                 className={cn(
                                     "text-[13px]",
-                                    currentGroupId
+                                    isRunningHere
                                         ? "text-primary"
                                         : "text-muted-foreground"
                                 )}
                             >
                                 {currentGroupId
                                     ? `In progress in this room · Group ${currentGroupId.split("-g")[1]}`
-                                    : "Not in progress in this room"}
+                                    : pointedStationNames.length > 0
+                                      ? `Running at ${pointedStationNames.join(", ")}`
+                                      : "Not in progress in this room"}
                             </p>
                         </div>
                         {event && event.rounds.length > 1 && (
@@ -114,7 +120,7 @@ const ScramblingDeviceHome = () => {
                     </div>
                     <ScrambleSetsList
                         scrambleSets={scrambleSets}
-                        canScramble={!!currentGroupId}
+                        canScramble={isRunningHere}
                     />
                 </section>
             )}

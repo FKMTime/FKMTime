@@ -4,7 +4,13 @@ import { MemoryRouter } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { Competition } from "wcif-helpers";
 
-import { AttemptType, Incident, Room } from "@/lib/interfaces";
+import {
+    AttemptType,
+    Device,
+    DeviceType,
+    Incident,
+    Room,
+} from "@/lib/interfaces";
 
 import RoomCard, { RecentAttempt } from "./RoomCard";
 
@@ -213,5 +219,48 @@ describe("RoomCard", () => {
             screen.getByRole("button", { name: "Start 3x3 R1 · Group 1" })
         ).toBeTruthy();
         expect(screen.queryByRole("progressbar")).toBeNull();
+    });
+
+    describe("stations running another round (SPEC-007)", () => {
+        const pointed = {
+            id: "dev3",
+            name: "Station 3",
+            roomId: "room1",
+            type: DeviceType.STATION,
+            customRoundId: "pyram-r1",
+        } as unknown as Device;
+
+        it("lists each one, with a way back for a delegate", async () => {
+            const onBackToRoom = vi.fn();
+            renderCard({ pointedStations: [pointed], onBackToRoom });
+
+            expect(
+                screen.getByText("Station 3 is running Pyraminx · Round 1")
+            ).toBeTruthy();
+            await userEvent.click(
+                screen.getByRole("button", { name: "Back to the room's round" })
+            );
+            expect(onBackToRoom).toHaveBeenCalledWith(pointed);
+        });
+
+        it("lists them without the button for someone who can't change it", () => {
+            renderCard({ pointedStations: [pointed] });
+
+            expect(screen.getByText(/Station 3 is running/)).toBeTruthy();
+            expect(
+                screen.queryByRole("button", {
+                    name: "Back to the room's round",
+                })
+            ).toBeNull();
+        });
+
+        it("lists them in a room with no group running", () => {
+            renderCard({
+                room: { ...room, currentGroupIds: [] },
+                pointedStations: [pointed],
+            });
+
+            expect(screen.getByText(/Station 3 is running/)).toBeTruthy();
+        });
     });
 });

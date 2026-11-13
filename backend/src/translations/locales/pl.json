@@ -49,6 +49,10 @@
       "translation": "Usunieto z tej rundy"
     },
     {
+      "key": "stationRoundChanged",
+      "translation": "Runda zmieniona, zawolaj delegata"
+    },
+    {
       "key": "attemptAlreadyEntered",
       "translation": "To ulozenie zostalo juz wprowadzone"
     },

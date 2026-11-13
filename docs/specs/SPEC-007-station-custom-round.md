@@ -1,6 +1,6 @@
 # SPEC-007: Stations running a different round from their room
 
-- **Status:** Accepted
+- **Status:** Implemented
 - **Created:** 2026-11-13
 - **Related:** #513, [SPEC-002](SPEC-002-extras-for-all-attempts.md) (extras
   for all attempts so far, whose warning this answers),
@@ -107,7 +107,8 @@ PUT /device/custom-round        (DelegateGuard)
 - After the update: clear those stations from the `stationsByEspId` cache, and
   call `appGateway.handleDeviceUpdated()` so open panels refetch.
 
-`GET /device` returns the three columns, with the round's name for display.
+`GET /device` returns the three columns; the panel names the round from the
+WCIF it already has.
 
 ### What a pointed station accepts
 
@@ -191,9 +192,10 @@ is lost.
 
 ### Automatic group change
 
-`checkIfGroupCanBeChanged` runs after a station enters an attempt, for the
-station's room. For an attempt at a pointed station it doesn't run: the attempt
-is for another round, so it can't finish the room's group.
+The automatic group change checks each room's own round: whether its group is
+over by the schedule or quiet for five minutes, and whether every result of that
+round is in. Attempts at a pointed station are for another round, so they
+neither finish nor hold back the room's group, and nothing changes here.
 
 The rule from SPEC-002 stays: in the last group of a round, an attempt waiting
 for an extra still blocks the automatic change. Pointing a station is the way to
@@ -223,13 +225,16 @@ normal scrambles of a fresh set in fresh-set mode.
 Plain task language; the delegate never sees `customRoundId`.
 
 **Devices page.** Each station row shows a badge when it is pointed:
-"Running 3x3x3 Cube R1 · since 14:05". The row's ⋮ menu has "Run a different
-round…" and, when pointed, "Back to the room's round". "Run a different
-round…" opens a small modal with an event and round picker, defaulting to the
-event the room ran last, and the stations of the same room as checkboxes with
-the one it was opened from ticked, so several can be pointed at once. A line
-says what happens: "Station 3 will only take attempts for 3x3x3 Cube Round 1.
-The rest of Main Room carries on."
+"Running 3x3 R1 · since 14:05". For a delegate, the row's ⋮ menu has "Run a
+different round…" and, when pointed, "Back to the room's round".
+
+**"Run a different round" modal.** A round picker listing every round, and every
+station in use as a checkbox, grouped by room, with the one it was opened from
+ticked, so several can be pointed at once. A station already pointed says which
+round it is on. A line says what happens: "Station 3 will only take attempts
+for 3x3x3 Cube, Round 1. Other stations carry on with their room's groups." The
+round starts empty unless the opener passes one (the extras modal does, and so
+does a station already pointed).
 
 **Home, room card.** Below the room's current group, a line per pointed station
 in the room: "Station 3 is running 3x3x3 Cube R1", with "Back to the room's
@@ -237,16 +242,18 @@ round" next to it. This is where a station left behind is spotted, since the
 home page is open all day. A pointed station in a room with no group running is
 still listed.
 
-**Live solving board.** A pointed station's tile shows its round as a badge, so
-a time running on 3x3x3 R1 in a room on Pyraminx isn't mistaken for a Pyraminx
-solve. `groupStationsByRoom` still groups it under its room.
+**Live solving board.** A tile whose station is timing a round its room isn't
+running shows that round, as tiles already do in a room running several rounds,
+so a time on 3x3 R1 in a room on Pyraminx isn't mistaken for a Pyraminx solve.
+The round comes from the station's packets, so an idle pointed station shows it
+once a card is scanned. `groupStationsByRoom` still groups it under its room.
 
 **Extras modals (SPEC-002).** The warning "The next round has started. Stations
 can't take these attempts…" becomes "The next round has started. Run this round
 on a station to take these attempts, and make any change to who advanced in WCA
 Live.", with "Run this round on a station" opening the modal above with the
-round filled in. The same applies to the hint shown in the last group of a
-round.
+round filled in. The hint about generating a set in the last group is about
+scrambles and stays as it is.
 
 **Station tester.** Unchanged; it already sends `groupId`.
 
@@ -278,8 +285,8 @@ doesn't cache rounds, so nothing there goes stale.
 - [ ] A solve without `groupId` is filed in the station's round, pointed or not.
 - [ ] An attempt at a pointed station marks the competitor present only in their
       own group of that round, and doesn't mark the judge.
-- [ ] An attempt at a pointed station doesn't trigger the automatic group change
-      of its room.
+- [ ] Attempts at a pointed station don't affect the automatic group change of
+      its room, which only looks at the room's own round.
 - [ ] The scrambling device in the station's room enables "Scramble" for the
       pointed round and shows "Running at Station 3"; in another room it
       doesn't.
@@ -300,8 +307,12 @@ doesn't cache rounds, so nothing there goes stale.
 - Backend and frontend ship together. Station firmware and the micro-connector
   don't change, and an older connector that doesn't pass `groupId` falls back
   as described in *`EnterAttempt`*.
-- `stationRoundChanged` is a new translation and needs every locale the station
-  texts have.
+- `stationRoundChanged` is a new reply message and needs every locale the
+  station texts have. The backend sends stations only the texts the firmware
+  shows itself (`STATION_TEXT_KEYS`), not reply messages it fills in: every
+  locale travels in one websocket frame, and the firmware drops a frame over
+  8192 bytes. Sending all texts, this message pushed that frame to 8210 bytes,
+  and stations then never learned whether they were added.
 - Revert: clear `customRoundId` on every station first, so no station is left
   pointed by code that no longer reads it, then remove the columns. The change
   to refuse solves from a round the room has left can be reverted on its own.
