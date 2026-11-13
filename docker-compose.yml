@@ -20,6 +20,14 @@ services:
       - WCA_CLIENT_ID=example-application-id
       - WCA_CLIENT_SECRET=example-secret
       - SOCKET_PATH=/app/sock/socket.sock
+      # File events from the bind-mounted source don't reach the container on
+      # macOS (Colima, Docker Desktop), so the watchers poll instead: tsc for
+      # the code (dynamic polling checks files that haven't changed lately less
+      # often), chokidar for the assets nest copies (translations, wasm).
+      - TSC_WATCHFILE=DynamicPriorityPolling
+      - TSC_WATCHDIRECTORY=RecursiveDirectoryUsingDynamicPriorityPolling
+      - CHOKIDAR_USEPOLLING=1
+      - CHOKIDAR_INTERVAL=1000
     ports:
       - "${FKMTIME_BACKEND_PORT:-5000}:5000"
     depends_on:
@@ -39,6 +47,8 @@ services:
       - VITE_BACKEND_ORIGIN=http://localhost:${FKMTIME_BACKEND_PORT:-5000}
       - VITE_WCA_ORIGIN=http://127.0.0.1:${FKMTIME_DUMMY_WCA_PORT:-3005}
       - VITE_GIT_COMMIT=dummy-commit
+      # Makes Vite poll for changes, see server.watch in vite.config.ts
+      - FKMTIME_WATCH_POLLING=1
     volumes:
       - ./frontend/src:/app/src
       - ./frontend/index.html:/app/index.html
