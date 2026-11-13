@@ -86,7 +86,10 @@ source are mounted, so changes reload; rebuild after changing dependencies.
   its directory), with its own database. To run one next to a stack from
   another worktree, run `./scripts/dev-ports.sh` before `docker compose up`.
   It picks free ports, writes them to the gitignored `.env` and prints the
-  URLs; `--clear` goes back to the defaults. Without `.env` the stack uses the
+  URLs; `--clear` goes back to the defaults. Ports another worktree's `.env`
+  claims, or any Docker container publishes (stopped ones too), count as
+  taken, so two worktrees set up before either stack is up still get
+  different ports. Without `.env` the stack uses the
   default ports above.
 - **One micro connector per machine.** It listens on port 8080 of the Docker
   VM's host network and registers a fixed mDNS name with the one docker-adapter,
