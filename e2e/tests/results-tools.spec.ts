@@ -286,9 +286,15 @@ test.describe("results checks", () => {
         await expect(table).toContainText(penalised.name);
         await expect(table).not.toContainText(absent.name);
 
-        await page.getByRole("button", { name: "Show every round" }).click();
+        await page.getByRole("button", { name: /^Find a round/ }).click();
+        await page
+            .getByRole("dialog")
+            .getByRole("button", { name: "All rounds" })
+            .click();
         await expect(page).toHaveURL(/\/results\/checks$/);
-        await expect(page.getByText("Checks across every round")).toBeVisible();
+        await expect(
+            page.getByRole("button", { name: "Find a round, now All rounds" })
+        ).toBeVisible();
     });
 
     test("says so when nothing is suspicious", async ({ page }) => {
