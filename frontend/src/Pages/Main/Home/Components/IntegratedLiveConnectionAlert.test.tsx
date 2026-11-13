@@ -16,14 +16,14 @@ const renderAlert = (competition: Partial<Competition>) =>
     );
 
 describe("IntegratedLiveConnectionAlert", () => {
-    it("asks to connect when results go to Integrated Live Results and nobody has", () => {
+    it("asks to connect when results go to WCA Integrated Live Results and nobody has", () => {
         renderAlert({
             officialResultsDestination: "WCA_INTEGRATED_LIVE",
             integratedLiveConnection: "NOT_CONNECTED",
         });
 
         expect(
-            screen.getByText("Not connected to Integrated Live Results")
+            screen.getByText("Not connected to WCA Integrated Live Results")
         ).toBeTruthy();
         expect(
             screen.getByRole("link", { name: /Connect in settings/ })
@@ -37,7 +37,7 @@ describe("IntegratedLiveConnectionAlert", () => {
         });
 
         expect(
-            screen.getByText("Integrated Live Results disconnected")
+            screen.getByText("WCA Integrated Live Results disconnected")
         ).toBeTruthy();
     });
 

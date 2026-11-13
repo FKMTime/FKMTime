@@ -420,7 +420,7 @@ export class ResultService {
     return {
       message:
         competition.wcaScoretakingSoftware === 'internal'
-          ? 'Sending to Integrated Live Results is not available yet'
+          ? 'Sending to WCA Integrated Live Results is not available yet'
           : 'Official results are not sent anywhere for this competition',
       sent: false,
     };

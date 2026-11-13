@@ -272,7 +272,7 @@ model Competition {
 
 #### Connect flow
 
-1. An organiser, Delegate or admin clicks **Connect to Integrated Live Results** on
+1. An organiser, Delegate or admin clicks **Connect to WCA Integrated Live Results** on
    the settings page.
 2. FKMTime runs the WCA OAuth authorisation-code flow with the existing client
    and the scope `public manage_competitions`, the same as the login. ILR
@@ -309,9 +309,9 @@ origin.
 - **On a 401:** refresh once and retry.
 - **If the refresh fails:** mark the connection broken. Until someone
   reconnects:
-  - Home shows organisers and Delegates "Integrated Live Results disconnected", with
-    a link to reconnect in settings. It shows "Not connected to Integrated
-    Live Results" the same way when nobody has connected yet;
+  - Home shows organisers and Delegates "WCA Integrated Live Results disconnected", with
+    a link to reconnect in settings. It shows "Not connected to WCA
+    Integrated Live Results" the same way when nobody has connected yet;
   - the settings card shows the same message;
   - every open panel updates straight away, through the socket event
     `integratedLiveConnectionChanged`. Results keep being stored and are sent after reconnecting (see

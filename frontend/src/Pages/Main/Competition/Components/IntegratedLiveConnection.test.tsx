@@ -53,7 +53,7 @@ describe("IntegratedLiveConnection", () => {
 
         await userEvent.click(
             await screen.findByRole("button", {
-                name: "Connect to Integrated Live Results",
+                name: "Connect to WCA Integrated Live Results",
             })
         );
 
@@ -85,7 +85,7 @@ describe("IntegratedLiveConnection", () => {
         renderCard();
 
         expect(
-            await screen.findByText(/Integrated Live Results disconnected/)
+            await screen.findByText(/WCA Integrated Live Results disconnected/)
         ).toBeTruthy();
     });
 
