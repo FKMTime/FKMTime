@@ -53,13 +53,9 @@ describe('IntegratedLiveConnectionService', () => {
       isScoretaker: jest.fn().mockResolvedValue(false),
     };
     appGateway = { handleIntegratedLiveConnectionChanged: jest.fn() };
-    const competitionService = {
-      refreshWcaScoretakingSoftware: jest.fn().mockResolvedValue(null),
-    };
     service = new IntegratedLiveConnectionService(
       prisma as never,
       wcaService as never,
-      competitionService as never,
       appGateway as never,
     );
     fetchMock = jest.fn();

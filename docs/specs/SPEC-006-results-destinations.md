@@ -354,6 +354,8 @@ validates nothing.
   - A result that fails the check is not sent. It is marked `REJECTED` with
     the reason, so an edit in the panel that breaks a rule shows up instead of
     reaching the WCA site.
+  - A cumulative time limit isn't checked here: it can span rounds, and the
+    station already enforces it.
 - **An empty result** (every attempt removed, or the result deleted by
   restarting a group) uses
   `PUT /live/rounds/{round}/{registration_id}/clear`, because the write
@@ -385,8 +387,9 @@ stations can produce more than one solve a second.
   any are waiting:
   - It groups them by round and sends one batch per round. A batch holds at
     most 100 results; that number is a guess, not a documented ILR limit.
-  - It sends at most 30 requests a minute in total, which leaves room for the
-    other WCA calls (WCIF sync, imports) coming from the same IP.
+  - It sends at most 30 requests a minute in total, reads included, which
+    leaves room for the other WCA calls (WCIF sync, imports) coming from the
+    same IP.
   - On a 429 or 5xx, it backs off exponentially, up to 1 minute.
 - "After every solve" therefore means "within a few seconds of the solve".
   "Every 5 minutes" marks all results of the active rounds dirty every 5
@@ -417,13 +420,21 @@ model LiveSync {
   result       Result         @relation(fields: [resultId], references: [id], onDelete: Cascade)
   status       LiveSyncStatus
   sentHash     String?        @map("sent_hash")     // hash of the attempts last sent
+  sentAt       DateTime?      @map("sent_at")
+  checks       Int            @default(0)           // read-backs that didn't match yet
   error        String?
-  attempts     Int            @default(0)           // send attempts, for backoff
   updatedAt    DateTime       @updatedAt @map("updated_at")
 
   @@map("live_sync")
 }
 ```
+
+- **Backoff is worker-wide**, not per result: a 429 or 5xx pauses the whole
+  worker, doubling up to 1 minute.
+- **`NOT_IN_ROUND` and `NOT_SENDABLE` are tried again** after 5 minutes. The
+  person may have been added to the round, or registered on the WCA website,
+  in the meantime. Section 4 also re-sends them when it opens a round or adds
+  someone.
 
 - **After a batch is accepted:** the results become `SENT`. About 10 s later
   the worker reads the round (`GET /rounds/{roundId}`) and compares each

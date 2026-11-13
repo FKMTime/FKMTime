@@ -12,6 +12,8 @@ import { CompetitionService } from './competition.service';
 
 type PersonSyncData = {
   registrantId: number;
+  // Needed to send results to WCA Integrated Live Results (SPEC-006)
+  wcaRegistrationId?: number | null;
   name: string;
   wcaId: string | null;
   gender: string;
@@ -72,6 +74,7 @@ export class SyncService {
         )
         .map((person: Person) => ({
           registrantId: person.registrantId,
+          wcaRegistrationId: person.registration?.wcaRegistrationId,
           name: person.name,
           wcaId: person.wcaId,
           gender: person.gender,
@@ -95,6 +98,7 @@ export class SyncService {
         .filter((person: Person) => person.registrantId)
         .map((person: Person) => ({
           registrantId: person.registrantId,
+          wcaRegistrationId: person.registration?.wcaRegistrationId,
           name: person.name,
           wcaId: person.wcaId,
           gender: person.gender,

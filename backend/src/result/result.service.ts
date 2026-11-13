@@ -1,4 +1,10 @@
-import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import {
+  forwardRef,
+  HttpException,
+  HttpStatus,
+  Inject,
+  Injectable,
+} from '@nestjs/common';
 import {
   Attempt,
   AttemptStatus,
@@ -21,6 +27,7 @@ import {
 import { ContestsService } from 'src/contests/contests.service';
 import { DbService, INCLUDING_REMOVED } from 'src/db/db.service';
 import { isUnofficialEvent } from 'src/events';
+import { IntegratedLiveService } from 'src/integrated-live/integratedLive.service';
 import { PersonService } from 'src/person/person.service';
 import { getOfficialResultsDestination } from 'src/results-destination';
 import { getMaxAttempts, isCumulativeLimit } from 'src/wcif-helpers';
@@ -56,6 +63,8 @@ export class ResultService {
     private readonly contestsService: ContestsService,
     private readonly personService: PersonService,
     private readonly attemptEditLogService: AttemptEditLogService,
+    @Inject(forwardRef(() => IntegratedLiveService))
+    private readonly integratedLiveService: IntegratedLiveService,
   ) {}
 
   resultsInclude = {
@@ -204,6 +213,7 @@ export class ResultService {
       where: {
         id: id,
       },
+      include: { person: { select: { wcaRegistrationId: true } } },
     });
     if (!result) {
       throw new HttpException('Result not found', 404);
@@ -238,6 +248,7 @@ export class ResultService {
         }
       }
     }
+    await this.queueIntegratedLiveClears([result]);
     return this.prisma.result.delete({
       where: {
         id: id,
@@ -393,8 +404,12 @@ export class ResultService {
     switch (getOfficialResultsDestination(competition)) {
       case 'WCA_LIVE':
         return await this.wcaService.enterWholeScorecardToWcaLive(result);
+      case 'WCA_INTEGRATED_LIVE':
+        // Sent in a batch within seconds, within the WCA's rate limit
+        await this.integratedLiveService.markDirty([resultId]);
+        return { message: 'Queued for WCA Integrated Live Results' };
       default:
-        return this.notSentReply(competition);
+        return this.notSentReply();
     }
   }
 
@@ -411,17 +426,35 @@ export class ResultService {
     switch (getOfficialResultsDestination(competition)) {
       case 'WCA_LIVE':
         return await this.wcaService.enterRoundToWcaLive(roundId, results);
+      case 'WCA_INTEGRATED_LIVE':
+        return await this.integratedLiveService.sendRoundNow(roundId);
       default:
-        return this.notSentReply(competition);
+        return this.notSentReply();
     }
   }
 
-  private notSentReply(competition: { wcaScoretakingSoftware: string | null }) {
+  /** Before deleting results: their copies on the WCA have to be emptied */
+  private async queueIntegratedLiveClears(
+    results: {
+      roundId: string;
+      person: { wcaRegistrationId: number | null };
+    }[],
+  ) {
+    const competition = await this.prisma.competition.findFirst();
+    if (getOfficialResultsDestination(competition) !== 'WCA_INTEGRATED_LIVE') {
+      return;
+    }
+    for (const result of results) {
+      await this.integratedLiveService.queueClear(
+        result.roundId,
+        result.person.wcaRegistrationId,
+      );
+    }
+  }
+
+  private notSentReply() {
     return {
-      message:
-        competition.wcaScoretakingSoftware === 'internal'
-          ? 'Sending to WCA Integrated Live Results is not available yet'
-          : 'Official results are not sent anywhere for this competition',
+      message: 'Official results are not sent anywhere for this competition',
       sent: false,
     };
   }
@@ -442,6 +475,7 @@ export class ResultService {
         },
         roundId: roundId,
       },
+      include: { person: { select: { wcaRegistrationId: true } } },
     });
     // A no-show is about the day, so it outlives the restart
     await this.prisma.staffActivity.updateMany({
@@ -454,6 +488,7 @@ export class ResultService {
         replacedById: null,
       },
     });
+    await this.queueIntegratedLiveClears(results);
     await this.prisma.result.deleteMany({
       where: {
         id: {

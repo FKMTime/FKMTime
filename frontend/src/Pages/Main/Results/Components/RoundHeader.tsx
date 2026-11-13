@@ -49,10 +49,12 @@ const RoundHeader = ({
             confirmLabel: "Resubmit",
             variant: "default",
             onConfirm: async () => {
-                const status = await reSubmitRoundToWcaLive(roundId);
+                const { status, message } =
+                    await reSubmitRoundToWcaLive(roundId);
                 if (status === 200) {
                     toast({
                         title: `Results resubmitted to ${platform}`,
+                        description: message,
                         variant: "success",
                     });
                 } else {

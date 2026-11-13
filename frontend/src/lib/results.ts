@@ -151,7 +151,9 @@ export const reSubmitRoundToWcaLive = async (roundId: string) => {
         "POST",
         true
     );
-    return response.status;
+    // For WCA Integrated Live Results, says how many results were accepted
+    const data: { message?: string } = await response.json().catch(() => ({}));
+    return { status: response.status, message: data.message };
 };
 
 export const checkTimeLimit = (

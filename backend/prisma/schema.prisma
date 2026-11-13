@@ -34,6 +34,9 @@ model User {
 model Person {
   id                String           @id @default(uuid())
   registrantId      Int?             @unique @map("registrant_id")
+  // The WCA registration's database id, which WCA Integrated Live Results
+  // calls registration_id (SPEC-006); null for people created on site
+  wcaRegistrationId Int?             @map("wca_registration_id")
   name              String
   wcaId             String?          @map("wca_id")
   countryIso2       String?          @map("country_iso_2")
@@ -155,6 +158,7 @@ model Result {
   isDoubleChecked     Boolean      @default(false) @map("is_double_checked")
   attempts            Attempt[]
   extraGrants         ExtraGrant[]
+  liveSync            LiveSync?
   /// Removed under Regulation 9t: kept, but left out of every list (SPEC-005)
   removedAt           DateTime?    @map("removed_at")
   removedById         String?      @map("removed_by_id")
@@ -418,4 +422,42 @@ enum StaffActivityStatus {
 enum HardwareVersion {
   V3
   V4
+}
+
+/// Where a result stands in WCA Integrated Live Results (SPEC-006)
+enum LiveSyncStatus {
+  DIRTY // changed since it was last sent
+  SENT // the WCA accepted the write (202), not read back yet
+  CONFIRMED // read back from the WCA and matches
+  NOT_IN_ROUND // the WCA doesn't list the person in the round
+  NOT_SENDABLE // e.g. the person has no WCA registration
+  REJECTED // the WCA refused it, or it breaks the round's rules
+}
+
+model LiveSync {
+  resultId  String         @id @map("result_id")
+  result    Result         @relation(fields: [resultId], references: [id], onDelete: Cascade)
+  status    LiveSyncStatus
+  // Hash of the attempts last sent, compared with what the WCA holds
+  sentHash  String?        @map("sent_hash")
+  sentAt    DateTime?      @map("sent_at")
+  // Read-backs that didn't match yet
+  checks    Int            @default(0)
+  error     String?
+  updatedAt DateTime       @updatedAt @map("updated_at")
+
+  @@index([status])
+  @@map("live_sync")
+}
+
+/// A result deleted in FKMTime whose WCA Integrated Live Results copy still
+/// has to be cleared; it outlives the deleted Result row
+model LiveClear {
+  id                String   @id @default(uuid())
+  roundId           String   @map("round_id")
+  wcaRegistrationId Int      @map("wca_registration_id")
+  createdAt         DateTime @default(now()) @map("created_at")
+
+  @@unique([roundId, wcaRegistrationId])
+  @@map("live_clear")
 }
