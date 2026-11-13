@@ -8,10 +8,12 @@
 #   ./scripts/dev-ports.sh --clear          back to the default ports
 #
 # Ports move by 100 per slot (slot 1: backend 5100, panel 5273, ...). The first
-# slot whose ports are all free wins.
+# slot whose ports are all free wins; a port counts as taken when something
+# listens on it, a Docker container publishes it, or another worktree's .env
+# claims it.
 set -euo pipefail
 
-ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+ROOT="$(cd "$(dirname "$0")/.." && pwd -P)"
 ENV_FILE="$ROOT/.env"
 KEYS=(FKMTIME_BACKEND_PORT FKMTIME_FRONTEND_PORT FKMTIME_DATABASE_PORT FKMTIME_DUMMY_WCA_PORT FKMTIME_DUMMY_WCA_LIVE_PORT FKMTIME_MICRO_CONNECTOR)
 DEFAULTS=(5000 5173 5433 3005 4000)
@@ -48,11 +50,24 @@ if [[ -f "$ENV_FILE" ]] && grep -q '^FKMTIME_BACKEND_PORT=' "$ENV_FILE"; then
     exit 1
 fi
 
-# Ports Docker publishes are not always visible to lsof, so ask both
-docker_ports="$(docker ps --format '{{.Ports}}' 2>/dev/null || true)"
+# A port is taken when something listens on it, or when a stack that is not up
+# yet will want it: a Docker container publishes it (stopped ones too; lsof
+# misses Docker's ports anyway), or another worktree's .env claims it. Without
+# Docker, the .env claims and lsof still apply.
+claimed_ports="$(
+    docker inspect --format '{{range .HostConfig.PortBindings}}{{range .}}{{.HostPort}} {{end}}{{end}}' \
+        $(docker ps -aq 2>/dev/null) 2>/dev/null || true
+    git -C "$ROOT" worktree list --porcelain 2>/dev/null | sed -n 's/^worktree //p' |
+        while IFS= read -r tree; do
+            if [[ "$tree" != "$ROOT" && -f "$tree/.env" ]]; then
+                sed -nE 's/^FKMTIME_[A-Z_]+_PORT=([0-9]+).*/\1/p' "$tree/.env"
+            fi
+        done || true
+)"
+claimed_ports="$(tr -s ' ' '\n' <<<"$claimed_ports")"
 port_busy() {
-    lsof -nP -iTCP:"$1" -sTCP:LISTEN >/dev/null 2>&1 && return 0
-    grep -Eq ":$1->" <<<"$docker_ports"
+    grep -qx "$1" <<<"$claimed_ports" && return 0
+    lsof -nP -iTCP:"$1" -sTCP:LISTEN >/dev/null 2>&1
 }
 
 ports=()
