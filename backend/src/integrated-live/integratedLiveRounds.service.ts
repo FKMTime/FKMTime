@@ -13,14 +13,63 @@ import { getOfficialResultsDestination } from 'src/results-destination';
 import { Competition as Wcif, getRoundInfoFromWcif } from 'wcif-helpers';
 
 import { IntegratedLiveService } from './integratedLive.service';
+import { LiveAttempt, toLiveAttempts } from './liveAttempts';
+import {
+  advancingLabel,
+  LiveRoundDot,
+  LiveRoundState,
+  liveValues,
+  NEEDS_ATTENTION,
+  ON_THE_WAY,
+  roundDot,
+  sameValues,
+  waitingReason,
+} from './liveRoundView';
 
-export interface IntegratedLiveRound {
+export type IntegratedLiveRound = LiveRoundState;
+
+/** A round in the Results page's round strip */
+export interface IntegratedLiveRoundSummary extends IntegratedLiveRound {
+  dot: LiveRoundDot;
+  /** Results the WCA won't take until someone acts */
+  needsAttention: number;
+}
+
+/** One FKMTime result of a round, next to the WCA's copy of it */
+export interface IntegratedLiveResultView {
+  resultId: string;
+  personId: string;
+  registrationId: number | null;
+  status: LiveSyncStatus | null;
+  error: string | null;
+  sentAt: Date | null;
+  advancing: 'advances' | 'mayAdvance' | null;
+  /** The WCA's attempts, or null when the WCA has no result for them */
+  wcaAttempts: number[] | null;
+  /** The WCA holds other attempts than FKMTime, and nothing is on its way */
+  differs: boolean;
+}
+
+/** A result the WCA holds that FKMTime has no result for */
+export interface IntegratedLiveOnlyInWca {
+  registrationId: number;
+  name: string | null;
+  wcaId: string | null;
+  attempts: number[];
+}
+
+/** What the Results page shows about one round (SPEC-006 section 5) */
+export interface IntegratedLiveRoundDetails {
   roundId: string;
-  /** pending, blocked, ready, open or locked, as the WCA says */
   state: string;
-  totalCompetitors?: number;
-  completedCompetitors?: number;
-  competitorCountNeeded?: number;
+  totalCompetitors: number | null;
+  completedCompetitors: number | null;
+  /** Why it can't open yet, in plain words */
+  waitingReason: string | null;
+  onTheWay: number;
+  needsAttention: number;
+  results: IntegratedLiveResultView[];
+  onlyInWca: IntegratedLiveOnlyInWca[];
 }
 
 export interface NoShow {
@@ -79,6 +128,184 @@ export class IntegratedLiveRoundsService {
           number | undefined,
       }),
     );
+  }
+
+  /** Every round with its strip dot: the WCA state, or needs attention */
+  async getRoundSummaries(): Promise<IntegratedLiveRoundSummary[]> {
+    const rounds = await this.getRounds();
+    if (rounds.length === 0) return [];
+    const problems = await this.prisma.liveSync.findMany({
+      where: { status: { in: NEEDS_ATTENTION } },
+      select: { result: { select: { roundId: true } } },
+    });
+    const byRound = new Map<string, number>();
+    for (const { result } of problems) {
+      byRound.set(result.roundId, (byRound.get(result.roundId) ?? 0) + 1);
+    }
+    return rounds.map((round) => {
+      const needsAttention = byRound.get(round.roundId) ?? 0;
+      return {
+        ...round,
+        needsAttention,
+        dot: roundDot(round.state, needsAttention),
+      };
+    });
+  }
+
+  /**
+   * The round as the Results page shows it: the WCA state and why it can't
+   * open, each FKMTime result's sync status, advancing flag and the WCA's
+   * attempts, and results only the WCA has. Null when results don't go to
+   * WCA Integrated Live Results or it can't be read.
+   */
+  async getRoundDetails(
+    roundId: string,
+  ): Promise<IntegratedLiveRoundDetails | null> {
+    const base = await this.base();
+    if (!base) return null;
+    const [rounds, live, results, competition] = await Promise.all([
+      this.getRounds(),
+      this.getJson(`${base}/rounds/${roundId}`),
+      this.prisma.result.findMany({
+        where: { roundId },
+        include: { attempts: true, liveSync: true, person: true },
+      }),
+      this.prisma.competition.findFirst(),
+    ]);
+    const round = rounds.find((r) => r.roundId === roundId);
+    if (!round) return null;
+    const previousRoundId = this.previousRoundId(
+      roundId,
+      competition.wcif as unknown as Wcif,
+    );
+    const previous = rounds.find((r) => r.roundId === previousRoundId);
+
+    type LiveResult = {
+      registration_id: number;
+      attempts?: LiveAttempt[];
+      advancing?: boolean;
+      advancing_questionable?: boolean;
+    };
+    const liveResults = new Map<number, LiveResult>(
+      ((live?.results ?? []) as LiveResult[]).map((r) => [
+        r.registration_id,
+        r,
+      ]),
+    );
+    const views = results.map((result): IntegratedLiveResultView => {
+      const registrationId = result.person.wcaRegistrationId;
+      const inWca =
+        registrationId !== null ? liveResults.get(registrationId) : undefined;
+      const status = result.liveSync?.status ?? null;
+      const wcaAttempts = inWca ? liveValues(inWca.attempts) : null;
+      const ours = toLiveAttempts(result.attempts).map((a) => a.value);
+      return {
+        resultId: result.id,
+        personId: result.personId,
+        registrationId,
+        status,
+        error: result.liveSync?.error ?? null,
+        sentAt: result.liveSync?.sentAt ?? null,
+        advancing: inWca
+          ? advancingLabel(inWca.advancing, inWca.advancing_questionable)
+          : null,
+        wcaAttempts,
+        differs:
+          wcaAttempts !== null &&
+          !(status && ON_THE_WAY.includes(status)) &&
+          !sameValues(wcaAttempts, ours),
+      };
+    });
+
+    const ourRegistrations = new Set(
+      results.map((r) => r.person.wcaRegistrationId).filter((id) => id),
+    );
+    type LiveCompetitor = {
+      id: number;
+      name?: string;
+      wca_id?: string | null;
+    };
+    const competitors = new Map<number, LiveCompetitor>(
+      ((live?.competitors ?? []) as LiveCompetitor[]).map((c) => [c.id, c]),
+    );
+    const onlyInWca = [...liveResults.values()]
+      .filter(
+        (r) =>
+          (r.attempts ?? []).length > 0 &&
+          !ourRegistrations.has(r.registration_id),
+      )
+      .map((r) => ({
+        registrationId: r.registration_id,
+        name: competitors.get(r.registration_id)?.name ?? null,
+        wcaId: competitors.get(r.registration_id)?.wca_id ?? null,
+        attempts: liveValues(r.attempts),
+      }));
+
+    return {
+      roundId,
+      state: round.state,
+      totalCompetitors: round.totalCompetitors ?? null,
+      completedCompetitors: round.completedCompetitors ?? null,
+      waitingReason: waitingReason(round, previous, previousRoundId),
+      onTheWay: views.filter((v) => v.status && ON_THE_WAY.includes(v.status))
+        .length,
+      needsAttention: views.filter(
+        (v) => v.status && NEEDS_ATTENTION.includes(v.status),
+      ).length,
+      results: views,
+      onlyInWca,
+    };
+  }
+
+  /**
+   * Empties one competitor's result in the WCA. When FKMTime has a result
+   * for them it is sent again, so the WCA ends up matching FKMTime; a result
+   * only the WCA had stays empty.
+   */
+  async clearResult(roundId: string, registrationId: number) {
+    const base = await this.base();
+    if (!base) {
+      return {
+        ok: false,
+        message: 'Not connected to WCA Integrated Live Results',
+      };
+    }
+    const response = await this.connection
+      .authorizedFetch(`${base}/rounds/${roundId}/${registrationId}/clear`, {
+        method: 'PUT',
+      })
+      .catch(() => null);
+    if (!response?.ok) {
+      return { ok: false, message: await this.reason(response) };
+    }
+    const ours = await this.prisma.result.findFirst({
+      where: { roundId, person: { wcaRegistrationId: registrationId } },
+      select: { id: true },
+    });
+    if (ours) await this.sender.markDirty([ours.id]);
+    this.appGateway.handleIntegratedLiveRoundsChanged();
+    return {
+      ok: true,
+      message: ours ? 'Cleared, and sending it again' : 'Cleared',
+    };
+  }
+
+  /** The round a later round's competitors come from */
+  private previousRoundId(roundId: string, wcif: Wcif | null): string | null {
+    const number = roundNumber(roundId);
+    if (number <= 1) return null;
+    const source = (
+      wcif?.events
+        ?.flatMap((event) => event.rounds)
+        .find((r) => r.id === roundId) as
+        | {
+            participationRuleset?: {
+              participationSource?: { roundId?: string };
+            };
+          }
+        | undefined
+    )?.participationRuleset?.participationSource?.roundId;
+    return source ?? `${roundId.split('-r')[0]}-r${number - 1}`;
   }
 
   async openRound(roundId: string) {

@@ -14,6 +14,8 @@ interface LiveQueryOptions {
     keepPreviousData?: boolean;
     /** Off: don't fetch, and show only what's cached */
     enabled?: boolean;
+    /** Refetch every this many ms while mounted */
+    refetchInterval?: number;
 }
 
 /** When the key's data was stored, if it's too old to show */
@@ -29,10 +31,19 @@ const hiddenSince = (key: string, maxAge: number | undefined) =>
  */
 export const useLiveQuery = <T>(
     query: Query<T>,
-    { maxAge, keepPreviousData = false, enabled = true }: LiveQueryOptions = {}
+    {
+        maxAge,
+        keepPreviousData = false,
+        enabled = true,
+        refetchInterval,
+    }: LiveQueryOptions = {}
 ) => {
     const { key } = query;
-    const result = useQuery({ ...toQueryOptions(query), enabled });
+    const result = useQuery({
+        ...toQueryOptions(query),
+        enabled,
+        refetchInterval,
+    });
 
     // Data too old to show stays hidden until data newer than it arrives,
     // and stays hidden if that refresh fails: it would look current

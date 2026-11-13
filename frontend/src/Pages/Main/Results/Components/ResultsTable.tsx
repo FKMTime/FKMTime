@@ -1,7 +1,11 @@
-import { List, Trash2 } from "lucide-react";
+import { Eraser, List, Trash2 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 
-import RowActions from "@/Components/shared/RowActions";
+import {
+    AdvancingBadge,
+    LiveSyncBadge,
+} from "@/Components/IntegratedLive/LiveResultBadges";
+import RowActions, { RowAction } from "@/Components/shared/RowActions";
 import {
     Table,
     TableBody,
@@ -13,7 +17,11 @@ import {
 import { useConfirm } from "@/hooks/useConfirm";
 import { useToast } from "@/hooks/useToast";
 import { formattedBest } from "@/lib/average";
-import { Result } from "@/lib/interfaces";
+import {
+    IntegratedLiveOnlyInWca,
+    IntegratedLiveResultView,
+    Result,
+} from "@/lib/interfaces";
 import { RankedResult } from "@/lib/ranking";
 import {
     attemptWithPenaltyToString,
@@ -21,16 +29,32 @@ import {
 } from "@/lib/resultFormatters";
 import { deleteResultById } from "@/lib/results";
 
+/** WCA Integrated Live Results next to the table (SPEC-006 section 5) */
+export interface ResultsTableLive {
+    byResultId: Map<string, IntegratedLiveResultView>;
+    /** Results the WCA has that FKMTime doesn't, shown greyed at the end */
+    onlyInWca: IntegratedLiveOnlyInWca[];
+    /** Extra row menu items, e.g. Clear and Remove from round */
+    itemsFor: (result: Result, view?: IntegratedLiveResultView) => RowAction[];
+    onClearOnlyInWca: (row: IntegratedLiveOnlyInWca) => void;
+}
+
 interface ResultsTableProps {
     rows: RankedResult[];
     maxAttempts: number;
     onDeleted: () => void;
+    live?: ResultsTableLive;
 }
 
 const averageText = (row: RankedResult) =>
     row.average === null ? "" : resultToString(row.average);
 
-const ResultsTable = ({ rows, maxAttempts, onDeleted }: ResultsTableProps) => {
+const ResultsTable = ({
+    rows,
+    maxAttempts,
+    onDeleted,
+    live,
+}: ResultsTableProps) => {
     const navigate = useNavigate();
     const confirm = useConfirm();
     const { toast } = useToast();
@@ -64,6 +88,8 @@ const ResultsTable = ({ rows, maxAttempts, onDeleted }: ResultsTableProps) => {
                 onSelect: () => navigate(`/results/${result.id}`),
             }}
             items={[
+                ...(live?.itemsFor(result, live.byResultId.get(result.id)) ??
+                    []),
                 {
                     label: "Delete result",
                     icon: Trash2,
@@ -84,6 +110,34 @@ const ResultsTable = ({ rows, maxAttempts, onDeleted }: ResultsTableProps) => {
                 </span>
             )}
         </>
+    );
+
+    const badges = (result: Result) => {
+        const view = live?.byResultId.get(result.id);
+        if (!view) return null;
+        return (
+            <span className="ml-2 inline-flex gap-1 align-middle">
+                <AdvancingBadge view={view} />
+                <LiveSyncBadge view={view} />
+            </span>
+        );
+    };
+
+    const onlyInWca = live?.onlyInWca ?? [];
+    const onlyInWcaName = (row: IntegratedLiveOnlyInWca) =>
+        row.name ?? `Registration ${row.registrationId}`;
+    const onlyInWcaActions = (row: IntegratedLiveOnlyInWca) => (
+        <RowActions
+            subject={onlyInWcaName(row)}
+            items={[
+                {
+                    label: "Clear in WCA live results",
+                    icon: Eraser,
+                    destructive: true,
+                    onSelect: () => live?.onClearOnlyInWca(row),
+                },
+            ]}
+        />
     );
 
     return (
@@ -121,6 +175,7 @@ const ResultsTable = ({ rows, maxAttempts, onDeleted }: ResultsTableProps) => {
                                     >
                                         {name(row.result)}
                                     </Link>
+                                    {badges(row.result)}
                                 </TableCell>
                                 {Array.from({ length: maxAttempts }, (_, i) => (
                                     <TableCell
@@ -145,6 +200,37 @@ const ResultsTable = ({ rows, maxAttempts, onDeleted }: ResultsTableProps) => {
                                 </TableCell>
                             </TableRow>
                         ))}
+                        {onlyInWca.map((row) => (
+                            <TableRow
+                                key={`wca-${row.registrationId}`}
+                                className="text-muted-foreground"
+                            >
+                                <TableCell className="pl-5">—</TableCell>
+                                <TableCell>
+                                    <span className="font-semibold">
+                                        {onlyInWcaName(row)}
+                                    </span>
+                                    <span className="ml-2 text-xs">
+                                        Only in WCA live results
+                                    </span>
+                                </TableCell>
+                                {Array.from({ length: maxAttempts }, (_, i) => (
+                                    <TableCell
+                                        key={i}
+                                        className="whitespace-nowrap text-right"
+                                    >
+                                        {row.attempts[i] !== undefined
+                                            ? resultToString(row.attempts[i])
+                                            : ""}
+                                    </TableCell>
+                                ))}
+                                <TableCell />
+                                <TableCell />
+                                <TableCell className="pr-3">
+                                    {onlyInWcaActions(row)}
+                                </TableCell>
+                            </TableRow>
+                        ))}
                     </TableBody>
                 </Table>
             </div>
@@ -164,6 +250,7 @@ const ResultsTable = ({ rows, maxAttempts, onDeleted }: ResultsTableProps) => {
                         >
                             <p className="truncate text-sm">
                                 {name(row.result)}
+                                {badges(row.result)}
                             </p>
                             <p className="truncate text-xs text-muted-foreground">
                                 {row.submitted
@@ -178,6 +265,24 @@ const ResultsTable = ({ rows, maxAttempts, onDeleted }: ResultsTableProps) => {
                             </p>
                         </div>
                         {actions(row.result)}
+                    </li>
+                ))}
+                {onlyInWca.map((row) => (
+                    <li
+                        key={`wca-${row.registrationId}`}
+                        className="flex items-center gap-3 py-2.5 pl-4 pr-1.5 text-muted-foreground"
+                    >
+                        <span className="w-6 text-sm text-faint">—</span>
+                        <div className="min-w-0 flex-1">
+                            <p className="truncate text-sm font-semibold">
+                                {onlyInWcaName(row)}
+                            </p>
+                            <p className="truncate text-xs">
+                                Only in WCA live results:{" "}
+                                {row.attempts.map(resultToString).join("  ")}
+                            </p>
+                        </div>
+                        {onlyInWcaActions(row)}
                     </li>
                 ))}
             </ul>

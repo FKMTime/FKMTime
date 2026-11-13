@@ -91,7 +91,23 @@ describe('IntegratedLiveRoundsService', () => {
         String(a.groupId).startsWith(where.groupId.startsWith));
     const prisma = {
       competition: { findFirst: jest.fn(async () => competition) },
-      result: { findMany: jest.fn(async () => previousResults) },
+      result: {
+        findMany: jest.fn(async () => previousResults),
+        findFirst: jest.fn(
+          async ({ where }) =>
+            (previousResults as Record<string, any>[]).find(
+              (r) =>
+                r.person?.wcaRegistrationId === where.person?.wcaRegistrationId,
+            ) ?? null,
+        ),
+      },
+      liveSync: {
+        findMany: jest.fn(async ({ where }) =>
+          (previousResults as Record<string, any>[])
+            .filter((r) => where.status.in.includes(r.liveSync?.status))
+            .map((r) => ({ result: { roundId: r.roundId } })),
+        ),
+      },
       room: { findMany: jest.fn(async () => rooms) },
       staffActivity: {
         findMany: jest.fn(async ({ where }) =>
@@ -375,6 +391,184 @@ describe('IntegratedLiveRoundsService', () => {
 
       expect(result.ok).toBe(false);
       expect(calls()).not.toContain('DELETE /rounds/333-r1/bulk_quit');
+    });
+  });
+
+  describe('Results page details', () => {
+    const solve = (attemptNumber: number, value: number) => ({
+      id: `a${attemptNumber}`,
+      attemptNumber,
+      value,
+      penalty: 0,
+      status: AttemptStatus.STANDARD,
+      type: AttemptType.STANDARD_ATTEMPT,
+      replacedBy: null,
+    });
+    const result = (
+      id: string,
+      registrationId: number,
+      values: number[],
+      status: LiveSyncStatus | null,
+    ) => ({
+      id,
+      roundId: '333-r2',
+      personId: `p-${id}`,
+      person: { wcaRegistrationId: registrationId },
+      attempts: values.map((value, i) => solve(i + 1, value)),
+      liveSync: status ? { status, error: null, sentAt: null } : null,
+    });
+
+    beforeEach(() => {
+      rounds = [
+        {
+          id: '333-r1',
+          state: 'locked',
+          total_competitors: 20,
+        } as never,
+        {
+          id: '333-r2',
+          state: 'open',
+          total_competitors: 8,
+          completed_competitors: 3,
+        } as never,
+      ];
+      previousResults = [
+        result('same', 301, [1000, 1100], LiveSyncStatus.CONFIRMED),
+        result('different', 302, [900, 950], LiveSyncStatus.CONFIRMED),
+        result('sending', 303, [800], LiveSyncStatus.SENT),
+        result('rejected', 304, [700], LiveSyncStatus.REJECTED),
+      ];
+      responses['GET /rounds/333-r2'] = {
+        status: 200,
+        body: {
+          competitors: [{ id: 305, name: 'Typed In Example', wca_id: null }],
+          results: [
+            {
+              registration_id: 301,
+              advancing: true,
+              advancing_questionable: true,
+              attempts: [
+                { attempt_number: 2, value: 1100 },
+                { attempt_number: 1, value: 1000 },
+              ],
+            },
+            {
+              registration_id: 302,
+              advancing: false,
+              advancing_questionable: true,
+              attempts: [{ attempt_number: 1, value: 900 }],
+            },
+            {
+              registration_id: 303,
+              attempts: [],
+            },
+            {
+              registration_id: 305,
+              attempts: [{ attempt_number: 1, value: 1500 }],
+            },
+            { registration_id: 306, attempts: [] },
+          ],
+        },
+      };
+    });
+
+    it('puts the WCA copy, flags and differences next to each result', async () => {
+      const details = await service.getRoundDetails('333-r2');
+
+      expect(details).toMatchObject({
+        state: 'open',
+        totalCompetitors: 8,
+        completedCompetitors: 3,
+        waitingReason: null,
+        onTheWay: 1,
+        needsAttention: 1,
+      });
+      const byId = Object.fromEntries(
+        details.results.map((r) => [r.resultId, r]),
+      );
+      expect(byId.same).toMatchObject({
+        advancing: 'advances',
+        wcaAttempts: [1000, 1100],
+        differs: false,
+      });
+      expect(byId.different).toMatchObject({
+        advancing: 'mayAdvance',
+        wcaAttempts: [900],
+        differs: true,
+      });
+      // On its way: a difference is expected until it is read back
+      expect(byId.sending).toMatchObject({ wcaAttempts: [], differs: false });
+      expect(byId.rejected).toMatchObject({
+        status: LiveSyncStatus.REJECTED,
+        wcaAttempts: null,
+        differs: false,
+      });
+    });
+
+    it('lists results only the WCA has, but not empty ones', async () => {
+      const details = await service.getRoundDetails('333-r2');
+
+      expect(details.onlyInWca).toEqual([
+        {
+          registrationId: 305,
+          name: 'Typed In Example',
+          wcaId: null,
+          attempts: [1500],
+        },
+      ]);
+    });
+
+    it('says why a round cannot open yet', async () => {
+      rounds = [
+        {
+          id: '333-r1',
+          state: 'open',
+          total_competitors: 20,
+          completed_competitors: 18,
+        } as never,
+        { id: '333-r2', state: 'pending' },
+      ];
+
+      await expect(service.getRoundDetails('333-r2')).resolves.toMatchObject({
+        waitingReason: 'Waiting for 333-r1: 2 empty results',
+      });
+    });
+
+    it('is empty when results do not go to WCA Integrated Live Results', async () => {
+      competition.wcaScoretakingSoftware = 'wca_live';
+
+      await expect(service.getRoundDetails('333-r2')).resolves.toBeNull();
+      await expect(service.getRoundSummaries()).resolves.toEqual([]);
+    });
+
+    it('marks rounds with results to look at in the strip', async () => {
+      const summaries = await service.getRoundSummaries();
+
+      expect(
+        summaries.map(({ roundId, dot, needsAttention }) => ({
+          roundId,
+          dot,
+          needsAttention,
+        })),
+      ).toEqual([
+        { roundId: '333-r1', dot: 'done', needsAttention: 0 },
+        { roundId: '333-r2', dot: 'attention', needsAttention: 1 },
+      ]);
+    });
+
+    it("clears one result and sends FKMTime's again", async () => {
+      const outcome = await service.clearResult('333-r2', 302);
+
+      expect(outcome.ok).toBe(true);
+      expect(calls()).toContain('PUT /rounds/333-r2/302/clear');
+      expect(sender.markDirty).toHaveBeenCalledWith(['different']);
+    });
+
+    it('clears a result only the WCA has without sending anything', async () => {
+      const outcome = await service.clearResult('333-r2', 305);
+
+      expect(outcome).toEqual({ ok: true, message: 'Cleared' });
+      expect(sender.markDirty).not.toHaveBeenCalled();
     });
   });
 

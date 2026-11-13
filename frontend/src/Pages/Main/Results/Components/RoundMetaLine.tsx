@@ -1,9 +1,13 @@
+import { liveStatusLine } from "@/lib/integratedLive";
+import { IntegratedLiveRoundDetails } from "@/lib/interfaces";
 import { RoundMeta } from "@/lib/roundInfo";
 import { cn } from "@/lib/utils";
 
 interface RoundMetaLineProps {
     meta: RoundMeta | null;
     advancement?: string | null;
+    /** The round in WCA Integrated Live Results, when results go there */
+    live?: IntegratedLiveRoundDetails;
     className?: string;
 }
 
@@ -11,6 +15,7 @@ interface RoundMetaLineProps {
 const RoundMetaLine = ({
     meta,
     advancement,
+    live,
     className,
 }: RoundMetaLineProps) => (
     <div
@@ -35,6 +40,16 @@ const RoundMetaLine = ({
             </span>
         )}
         {advancement && <span>{advancement}</span>}
+        {live && (
+            <span
+                className={cn(
+                    (live.needsAttention > 0 || live.waitingReason) &&
+                        "text-warning"
+                )}
+            >
+                WCA live results: {liveStatusLine(live)}
+            </span>
+        )}
     </div>
 );
 

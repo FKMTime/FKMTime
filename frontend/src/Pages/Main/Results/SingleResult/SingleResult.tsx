@@ -48,6 +48,7 @@ import ReplacedAttemptsCard from "./Components/ReplacedAttemptsCard";
 import SingleResultHeader from "./Components/SingleResultHeader";
 import SwapAttemptsModal from "./Components/SwapAttemptsModal";
 import WarningsAndLimitsCard from "./Components/WarningsAndLimitsCard";
+import WcaLiveResultsCard from "./Components/WcaLiveResultsCard";
 
 type Tab = "submitted" | "standard" | "extra" | "reorder";
 
@@ -305,6 +306,10 @@ const SingleResult = () => {
                     }
                 />
                 <LastAttemptCard result={result} fetchData={fetchData} />
+                <WcaLiveResultsCard
+                    result={result}
+                    submittedAttempts={submittedAttempts}
+                />
             </div>
 
             {extrasContext?.grant && (
