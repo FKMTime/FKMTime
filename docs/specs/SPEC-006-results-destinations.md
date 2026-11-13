@@ -91,6 +91,12 @@ ILR is harder to talk to than WCA Live:
   condition. FKMTime only shows ILR's answer and never sends its own.
 - **Group assignments for the next round.** FKMTime takes them from the WCIF,
   as today. ILR's list of who advances isn't turned into group assignments.
+- **Changing WCA registrations from FKMTime**, e.g. adding an event to
+  someone's registration so they can compete in it. It isn't needed to run a
+  competition: the WCA website already lets organisers and Delegates edit
+  registrations. It would also need the `manage_registrations` OAuth scope,
+  which the WCA is limiting to applications its admins approve. FKMTime
+  points to the WCA website instead.
 - **Importing results from ILR into FKMTime.** FKMTime reads ILR to compare
   it with its own results, and can make ILR match FKMTime. It never copies
   ILR's results into its own database. Results typed into ILR by hand show up
@@ -252,17 +258,11 @@ The tokens are encrypted at rest the same way as `ScramblingDevice.encryptedToke
 1. An organiser, Delegate or admin clicks **Connect to WCA live results** on
    the settings page.
 2. FKMTime runs the WCA OAuth authorisation-code flow with the existing client
-   and the scope `public manage_competitions manage_registrations`, the same
-   as the login (see below). ILR checks no scope today, but asking for the
-   same scope as the login avoids every competition having to reconnect if
-   the WCA starts checking one. It also lets the connection make WCIF writes
-   and add events to registrations. It uses a dedicated redirect path, so it
-   doesn't change the login flow.
-
-   The login scope grows from `public manage_competitions` to
-   `public manage_competitions manage_registrations`, because adding an event
-   to a registration needs it (section 4). Users signed in before the change
-   are asked to sign in with WCA again the first time they use that action.
+   and the scope `public manage_competitions`, the same as the login. ILR
+   checks no scope today, but asking for the same scope as the login avoids
+   every competition having to reconnect if the WCA starts checking one. It
+   also lets the connection make WCIF writes. It uses a dedicated redirect
+   path, so it doesn't change the login flow.
 3. The backend swaps the code for the access token, refresh token and
    `expires_in`, and stores them on the competition.
 4. The backend checks the connection and shows the result straight away:
@@ -432,8 +432,7 @@ to users with the `ORGANIZER`, `DELEGATE` or `ADMIN` role, i.e. the backend
 endpoints use `OrganizerGuard`. That covers:
 
 - opening, closing and clearing rounds;
-- resending, clearing and adding results or competitors, including adding
-  past the event rules;
+- resending and clearing results, and adding competitors to rounds;
 - removing no-shows;
 - withdrawals, with or without a replacement;
 - placing a replacement in a group;
@@ -531,8 +530,7 @@ For each person missing from a first round, FKMTime reads two things fresh.
 | The WCA data says | FKMTime does |
 |---|---|
 | Accepted, registered for this event | Adds them automatically. This is the ordinary case: the registration was accepted after the round was opened |
-| Accepted, not registered for this event, deadline for adding events still ahead (or no deadline and the round hasn't started) | Doesn't add them automatically. Shows "Not registered for 3x3x3 on the WCA website", with **Add to round**. That button adds 3x3x3 to their WCA registration and then adds them to the round (see "Adding a competitor by hand") |
-| Accepted, not registered for this event, deadline passed, or no deadline and the round already started | Doesn't add them automatically. Shows "Not registered for 3x3x3. Adding the event now is the Delegate's decision (WCRP 6.4.2.1 / 6.4.4)", with **Add to round (Delegate's decision)**. It does the same as Add to round, after a confirmation that names the rule |
+| Accepted, not registered for this event | Doesn't add them. Shows "Not registered for 3x3x3 on the WCA website", with a link to the competition's registrations on the WCA website, and the rule that applies: before the deadline for adding events, "they can add it until <deadline>" (WCRP 6.4); after it, or with no deadline once the round has started, "adding it now is the Delegate's decision (WCRP 6.4.2.1 / 6.4.4)". Once the event is on their registration and the WCIF is synced, FKMTime adds them automatically, as in the row above |
 | Not in `addable_competitors` (no accepted registration on the WCA website) | Can't add them. Shows "No accepted WCA registration". If the competition offers on-site registration, it adds "Register them on the WCA website first", and, when `competitor_limit` is set, "On-site registration isn't allowed if the competitor limit was reached when registration closed (WCRP 5.2.1)". The next WCIF sync and run pick them up once they are accepted |
 
 People created by hand in FKMTime have no WCA registration, so they always
@@ -540,51 +538,21 @@ fall in the last row.
 
 #### Adding a competitor by hand
 
-Besides fixing the rows above, an organiser can add a competitor to a first
-round before they've competed, e.g. someone who asks at the desk to do an
-event they didn't register for.
+An organiser can add a competitor to a first round before they've competed,
+e.g. someone moved between groups at the desk.
 
 - **Where:** **Add competitor to round** in the round header menu on the
-  Results page. A picker lists the competitors with an accepted WCA
-  registration who aren't in the round yet. The same action is behind the
-  **Add to round** buttons in the table above.
+  Results page. A picker lists the competitors whose accepted WCA
+  registration includes the event and who aren't in the round yet.
 - **First rounds only.** Later rounds stay as described below.
-- **Checks before anything is written,** read fresh from the WCA:
-  - an accepted registration (Regulation 2c1). Without one the person isn't
-    in the picker; on-site registration happens on the WCA website;
-  - if they aren't registered for the event: the event-change deadline
-    (`event_change_deadline_date`, WCRP 6.4) and whether the round has
-    started (6.4.2.1). If adding the event is allowed, the button just works.
-    If it is at the Delegate's discretion, the confirmation names the rule
-    and says it is the Delegate's decision. The WCA itself doesn't check the
-    deadline for organisers, so FKMTime's check is the only one;
-  - the events-per-registration limit (`events_per_registration_limit`). If
-    adding the event would exceed it, the button is disabled with the reason.
-    The WCA would refuse anyway.
-- **What it writes, in order:**
-  1. **The event on their WCA registration**, only if missing:
-     `PATCH /api/v1/registrations/{registrationId}` with
-     `{"competing": {"event_ids": [...existing, "<event>"]}}`. The list
-     replaces the registration's events, so FKMTime sends the current ones
-     plus the new one, read just before. The WCA records the change in the
-     registration's history under the signed-in person.
-  2. **The competitor in the ILR round:**
-     `PUT /live/rounds/{roundId}/{registration_id}`.
-  3. **In FKMTime:** the person's registered events are updated straight
-     away, so a station accepts them for the event without waiting for the
-     next WCIF sync. The dialog then offers **Put them in a group**, the same
-     one-click placement as for replacements (section 4, "Competitors who
-     don't come").
-- **If a step fails,** the earlier steps stay done and the dialog says which
-  step failed and why, using the WCA's own message. For example: the event
-  was added to the registration, but the round couldn't be updated because it
-  isn't open yet. Retrying runs only the missing steps.
-- **Whose WCA sign-in:** changing a registration needs the
-  `manage_registrations` scope and someone who manages the competition on the
-  WCA website. FKMTime uses the clicking user's WCA sign-in, or the
-  connection if the connected person manages the competition. If neither
-  has the rights, the dialog says that an organiser or Delegate listed on the
-  WCA website has to do it.
+- **What it writes:** the competitor in the ILR round
+  (`PUT /live/rounds/{roundId}/{registration_id}`). The dialog then offers
+  **Put them in a group**, the same one-click placement as for replacements
+  (section 4, "Competitors who don't come").
+- **Not registered for the event:** the person isn't in the picker. Below
+  it, FKMTime says that adding an event happens on the WCA website, with the
+  link and the rule from the table above. FKMTime doesn't change
+  registrations (see Non-goals).
 
 **Later rounds:** FKMTime never adds anyone. Getting into a later round is
 decided by advancement (Regulation 9p). The only regular way in for someone
@@ -753,7 +721,7 @@ This list comes from the WCA live admin pages (`next-frontend/.../live/admin`,
 | Warning when too few competitors are left (regulation 9m) | Round header, as the reason the round can't open |
 | Enter or edit attempts | FKMTime's stations and attempt editing, as today. Sending is automatic (section 3) |
 | Double-check page | FKMTime's double-check, as today |
-| Add a person to a round | Automatic, **Add competitor to round** in the round header menu, or in the result's menu. All of them make the regulation checks, and add the event to the WCA registration when it's missing (section 4) |
+| Add a person to a round | Automatic, or **Add competitor to round** in the round header menu, for people registered for the event. Adding an event to a registration stays on the WCA website (section 4) |
 | Quit a competitor, with who advances instead | Attendance and the result's menu (section 4) |
 | Remove several competitors at once | Home's room card at the end of a round (section 4) |
 | Clear one competitor's result | Automatic on restart group and delete result, plus the result's menu |
@@ -785,8 +753,9 @@ the round's public page.
   - Each row gets a sync badge (sent, or needs attention with the reason on
     hover) and ILR's "advances" / "may advance" flag. Confirmed results show
     no badge, to keep the table quiet.
-  - The row menu gets **Clear in WCA live results**, **Add to round** and
-    **Remove from round** when they apply, next to "Delete result".
+  - The row menu gets **Clear in WCA live results** and **Remove from
+    round** when they apply, next to "Delete result". A result marked "not in
+    round" links to the reason (section 4).
   - A result that is in ILR but has no FKMTime result gets a greyed row,
     "Only in WCA live results". Its only action is Clear. FKMTime never copies
     it in.
@@ -895,24 +864,16 @@ count against the writes FKMTime rations.
 - [ ] "Close round" undoes an opening while the round has no results.
 - [ ] A first-round competitor missing from the ILR round is added
       automatically only when the WCA data shows an accepted registration for
-      that event. Each other case in the table shows its reason and doesn't
-      add them. The Delegate-only button is the one way past the
-      event-change rules.
+      that event. Each other case in the table shows its reason, with a link
+      to the WCA website, and doesn't add them.
 - [ ] FKMTime never adds anyone to a later round.
 - [ ] A result removed under Regulation 9t (SPEC-005) is cleared in ILR and
       the competitor is removed from that round with nobody advancing.
       Restoring the ruling adds them back while the round is open, and says
       why when it isn't.
-- [ ] "Add competitor to round" adds a competitor with an accepted
-      registration to a first round. If the event is missing from their
-      registration, it adds it on the WCA website first, sending the full
-      event list. Then it adds them to the ILR round, and the station accepts
-      them without waiting for a WCIF sync.
-- [ ] Adding an event is refused past the events-per-registration limit. Past
-      the event-change deadline, or after the round started with no deadline,
-      it needs the Delegate's-decision confirmation.
-- [ ] A failure part-way leaves the earlier steps done, says which step
-      failed, and a retry runs only the missing steps.
+- [ ] "Add competitor to round" adds a competitor registered for the event to
+      a first round, and offers to put them in a group. FKMTime never
+      changes a WCA registration.
 - [ ] When a round's last group ends, Home lists its no-shows. One
       confirmation removes the ticked ones from the ILR round, without
       replacements, and the next round can then open.
@@ -969,9 +930,7 @@ count against the writes FKMTime rations.
 - **Dummy WCA image:** it needs the ILR endpoints before the e2e tests can
   run. It is a separate repository, so that change goes first.
 - **WCA OAuth client:** the connect flow's redirect URI has to be registered
-  on FKMTime's WCA OAuth application, for each deployment origin. The
-  application's allowed scopes must include `manage_registrations`, or the
-  WCA refuses the sign-in once the login asks for it.
+  on FKMTime's WCA OAuth application, for each deployment origin.
 - **First real use:** a small competition already set to `internal` on the
   WCA site, with the delegate checking the WCA round pages during the first
   rounds.
