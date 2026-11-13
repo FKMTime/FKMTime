@@ -44,11 +44,13 @@ breaking unless proven otherwise.
 ## Running the app
 
 To run the app for a person to try, use the dev stack in `docker-compose.yml`.
-On macOS always include the Bluetooth adapter and the micro connector, so a
-real device can be connected at any point.
+If the change needs a real device to try — anything stations, the connector or
+Bluetooth touch — include the micro connector, and on macOS the Bluetooth
+adapter. Otherwise leave both out; see "Micro connector only for device work"
+below.
 
 ```bash
-./scripts/docker-adapter.sh      # macOS only: start first and keep it running
+./scripts/docker-adapter.sh      # macOS, device work only: start first, keep it running
 docker compose pull dummy_wca dummy_wca_live micro_connector
 docker compose up -d --build
 docker compose exec backend npx ts-node prisma/seed/seed-test.ts
@@ -71,6 +73,11 @@ source are mounted, so changes reload; rebuild after changing dependencies.
   in the `sock` volume, and a unix socket can't cross into the Docker VM on
   macOS. A backend started on the Mac itself looks fine, but no device can
   reach it.
+- **Micro connector only for device work.** When nothing in the change needs a
+  real device (panel pages, API, results, docs), skip the adapter and the
+  connector: put `FKMTIME_MICRO_CONNECTOR=0` in `.env` (`dev-ports.sh` already
+  does), and leave `micro_connector` out of the pull. The station tester still
+  covers station messages without one.
 - **Start the adapter before the stack.** The connector looks for it only at
   startup, so otherwise run `docker compose restart micro_connector`. macOS
   grants Bluetooth per app, so run the adapter from the person's own terminal
