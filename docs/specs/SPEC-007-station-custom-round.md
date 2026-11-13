@@ -55,7 +55,7 @@ running in its room.
 - Head-to-head rounds (format `h`, SPEC-001). Once SPEC-001 is built, the
   setting is refused for them, since their stations pair competitors by stage.
 - Clearing the setting automatically, for example when the round has nothing
-  left to enter. See *Open questions*.
+  left to enter. See *Decisions*.
 - Changing who advanced. As in SPEC-002, a late redo doesn't move anyone into or
   out of the next round by itself.
 
@@ -155,7 +155,7 @@ group 3 of the same round mid-solve still files the attempt as before. For a
 station following its room, step 3 changes one thing: a solve started in a round
 the room has since left is refused instead of being filed in the room's new
 round. That was wrong before, and is rare, since the room changes group only
-when every result is in. Open question 4 asks whether to keep this part.
+when every result is in.
 
 Everything after the round is chosen is unchanged: result lookup, extras,
 cutoff, limits, sending.
@@ -324,25 +324,22 @@ doesn't cache rounds, so nothing there goes stale.
 3. **Delegates set it.** Like extras, it follows a delegate's ruling. Admins can
    too, as with every `DelegateGuard`. Organizers, who manage devices, can't
    change which round a station times.
-
-## Open questions
-
-1. **Replace the room's groups, or add to them?** Recommended: replace. A
-   pointed station takes only the chosen round. Adding it would make a station
-   in a room running one group show a choice of two at every card scan, and the
-   firmware asks the competitor to pick, which invites the wrong round.
-2. **Should a station ever go back to its room on its own?** Recommended: no,
-   only when the delegate says so, with the home room card making a pointed
-   station hard to miss. Alternatives: back when the round has nothing waiting
-   and every result is in, or at the end of the competition day.
-3. **Judge attendance for attempts at a pointed station.** Recommended: don't
-   mark it. Alternative: mark the judge present in the competitor's group of
-   that round, as an unassigned judge, which keeps a record of who judged in
-   attendance at the cost of noise on that group's list.
-4. **Refuse a solve from a round the station no longer takes for every station,
-   or only pointed ones?** Pointed ones need it, so changing the setting
-   mid-solve is safe. Recommended: every station, since the same check stops a
-   solve started before a room changed round from being filed in the new one,
-   and it compares rounds, so group changes within a round are unaffected.
-   Alternative: only pointed stations, leaving today's behaviour for rooms
-   untouched.
+4. **A pointed station replaces its room's groups.** It takes only the chosen
+   round. Rejected: adding the round to the room's groups (a station in a room
+   running one group would offer two rounds at every card scan, and the
+   firmware asks the competitor to pick, which invites the wrong round).
+5. **A station goes back to its room only when a delegate says so.** The home
+   room card makes a station left behind hard to miss. Rejected: going back
+   once the round has nothing waiting and every result is in (a station could
+   switch mid-redo if an incident is resolved and reopened) and going back at
+   the end of the competition day.
+6. **The judge isn't marked present for attempts at a pointed station.** The
+   attempt still records who judged. Rejected: marking the judge as unassigned
+   in the competitor's group of that round (noise on a group that already
+   happened, for a judge who is usually staffing the room's current group).
+7. **Refuse a solve from a round the station no longer takes, for every
+   station.** Pointed stations need it, so changing the setting mid-solve is
+   safe, and the same check stops a solve started before a room changed round
+   from being filed in the new one. It compares rounds, so group changes within
+   a round are unaffected. Rejected: checking only pointed stations (leaves the
+   misfiling in rooms as it is).
