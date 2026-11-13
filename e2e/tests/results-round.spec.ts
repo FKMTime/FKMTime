@@ -43,11 +43,10 @@ test.describe("round results", () => {
             "true"
         );
 
-        await page.getByRole("button", { name: /^All rounds/ }).click();
-        await page.getByRole("textbox", { name: "Search rounds" }).fill("2x2");
+        await page.getByRole("button", { name: /^Find a round/ }).click();
         await page
             .getByRole("dialog")
-            .getByRole("button", { name: /Round 1/ })
+            .getByRole("button", { name: /^2x2x2 Cube · Round 1/ })
             .click();
         await expect(page).toHaveURL(/\/results\/round\/222-r1$/);
         await expect(

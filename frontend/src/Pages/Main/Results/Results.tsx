@@ -7,14 +7,16 @@ import LoadingPage from "@/Components/LoadingPage";
 import EmptyState from "@/Components/shared/EmptyState";
 import RefreshingRegion from "@/Components/shared/RefreshingRegion";
 import RequestError from "@/Components/shared/RequestError";
-import RoundStrip from "@/Components/shared/RoundStrip";
+import RoundPicker from "@/Components/shared/RoundPicker";
 import SearchInput from "@/Components/shared/SearchInput";
 import SegmentedControl from "@/Components/shared/SegmentedControl";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import { useLiveQuery } from "@/hooks/useLiveQuery";
+import { useIsMobile } from "@/hooks/useMobile";
 import { usePageHeader } from "@/hooks/usePageHeader";
 import { useSocketEvents } from "@/hooks/useSocketEvents";
 import { useSocketRoom } from "@/hooks/useSocketRoom";
+import { activityCodeToName } from "@/lib/activities";
 import { competitionAtom } from "@/lib/atoms";
 import { Result } from "@/lib/interfaces";
 import { isDelegate } from "@/lib/permissions";
@@ -23,14 +25,15 @@ import { rankResults } from "@/lib/ranking";
 import { invalidateRoundResults, roundResultsSearchQuery } from "@/lib/results";
 import { roomsQuery } from "@/lib/rooms";
 import { getRoundMeta } from "@/lib/roundInfo";
-import { getRoundOptions, getStripRounds } from "@/lib/roundOptions";
-import { getAdvancementText, shortRoundName } from "@/lib/utils";
+import { getLiveRoundIds } from "@/lib/roundOptions";
+import { cn, getAdvancementText } from "@/lib/utils";
 
 import CreateAttemptModal from "./Components/CreateAttemptModal";
 import RestartGroupModal from "./Components/RestartGroupModal";
 import ResultsTable from "./Components/ResultsTable";
 import ResultsTabs from "./Components/ResultsTabs";
 import RoundHeader from "./Components/RoundHeader";
+import RoundMetaLine from "./Components/RoundMetaLine";
 
 type Order = "ranking" | "latest";
 
@@ -61,12 +64,16 @@ const Results = () => {
     const [order, setOrder] = useState<Order>("ranking");
     const [isRestartOpen, setIsRestartOpen] = useState(false);
     const [isCreateOpen, setIsCreateOpen] = useState(false);
+    const isMobile = useIsMobile();
 
     usePageHeader({
         crumbs: roundId
             ? [
                   { label: "Results", to: "/results" },
-                  { label: shortRoundName(roundId) },
+                  {
+                      label: activityCodeToName(roundId).replace(", ", " · "),
+                      eventId: roundId.split("-")[0],
+                  },
               ]
             : [{ label: "Results" }],
     });
@@ -76,20 +83,15 @@ const Results = () => {
             navigate(`/results/public/${roundId}`, { replace: true });
     }, [navigate, roundId]);
 
-    const rounds = useMemo(
-        () =>
-            competition && rooms
-                ? getRoundOptions(competition.wcif, rooms)
-                : [],
-        [competition, rooms]
-    );
+    const liveRoundIds = useMemo(() => getLiveRoundIds(rooms ?? []), [rooms]);
 
     // /results opens the round in progress, or the first one
     useEffect(() => {
-        if (roundId || rounds.length === 0) return;
-        const target = rounds.find((round) => round.isLive) ?? rounds[0];
-        navigate(`/results/round/${target.id}`, { replace: true });
-    }, [roundId, rounds, navigate]);
+        if (roundId || !competition || !rooms) return;
+        const target =
+            liveRoundIds[0] ?? competition.wcif.events[0]?.rounds[0]?.id;
+        if (target) navigate(`/results/round/${target}`, { replace: true });
+    }, [roundId, competition, rooms, liveRoundIds, navigate]);
 
     if (!competition || !rooms) return <LoadingPage />;
 
@@ -115,15 +117,18 @@ const Results = () => {
     return (
         <div className="flex flex-col gap-4">
             <ResultsTabs value="rounds" roundId={roundId} />
-            <RoundStrip
-                rounds={getStripRounds(rounds, roundId)}
-                allRounds={rounds}
-                value={roundId}
-                onValueChange={(id) => navigate(`/results/round/${id}`)}
-            />
-
-            {roundId && (
-                <>
+            {/* Desktop: the round's actions share the picker's row */}
+            <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:gap-3">
+                <RoundPicker
+                    className="min-w-0 lg:flex-1"
+                    wcif={wcif}
+                    liveRoundIds={liveRoundIds}
+                    timeline
+                    steps
+                    value={roundId}
+                    onValueChange={(id) => navigate(`/results/round/${id}`)}
+                />
+                {roundId && (
                     <RoundHeader
                         roundId={roundId}
                         meta={getRoundMeta(roundId, wcif)}
@@ -132,7 +137,11 @@ const Results = () => {
                         onEnterAttempt={() => setIsCreateOpen(true)}
                         onRestartGroup={() => setIsRestartOpen(true)}
                     />
+                )}
+            </div>
 
+            {roundId && (
+                <>
                     <section className="overflow-hidden rounded-mobile-card border bg-card md:rounded-2xl">
                         <div className="flex flex-wrap items-center gap-3 border-b p-3 md:px-5">
                             <SearchInput
@@ -151,7 +160,22 @@ const Results = () => {
                                     { value: "latest", label: "Latest" },
                                 ]}
                             />
-                            <span className="ml-auto text-sm text-muted-foreground">
+                            {!isMobile && (
+                                <RoundMetaLine
+                                    meta={getRoundMeta(roundId, wcif)}
+                                    advancement={getAdvancementText(
+                                        roundId,
+                                        event
+                                    )}
+                                    className="ml-auto"
+                                />
+                            )}
+                            <span
+                                className={cn(
+                                    "text-sm text-muted-foreground",
+                                    isMobile ? "ml-auto" : "border-l pl-4"
+                                )}
+                            >
                                 {results.length}{" "}
                                 {results.length === 1 ? "result" : "results"}
                             </span>
@@ -202,7 +226,7 @@ const Results = () => {
                 </>
             )}
 
-            {!roundId && rounds.length === 0 && (
+            {!roundId && !wcif.events.some((e) => e.rounds.length > 0) && (
                 <EmptyState>This competition has no rounds.</EmptyState>
             )}
         </div>

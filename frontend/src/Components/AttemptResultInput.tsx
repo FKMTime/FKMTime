@@ -20,8 +20,11 @@ interface AttemptResultInputProps {
     className?: string;
     id?: string;
     "aria-label"?: string;
-    /** Called after Enter commits the typed time, e.g. to submit the form */
-    onEnter?: () => void;
+    /**
+     * Called after Enter commits the typed time, with that time, e.g. to
+     * submit the form; the caller's state has not caught up with it yet
+     */
+    onEnter?: (value: number) => void;
     /** Opts in to D for DNF and S for DNS; the typed time is kept */
     onPenaltyShortcut?: (penalty: number) => void;
 }
@@ -68,8 +71,8 @@ const AttemptResultInput = ({
         if (event.key !== "Enter" || !onEnter) return;
         // The time is only committed on blur; commit it before submitting
         event.preventDefault();
-        handleBlur();
-        setTimeout(onEnter);
+        const committed = handleBlur();
+        setTimeout(() => onEnter(committed));
     };
 
     const handleBlur = () => {
@@ -78,6 +81,7 @@ const AttemptResultInput = ({
             : SKIPPED_VALUE;
         onChange(attempt);
         setDraftInput(attemptResultToInput(value));
+        return attempt;
     };
 
     return (

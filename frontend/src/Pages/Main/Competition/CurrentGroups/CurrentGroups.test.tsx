@@ -81,7 +81,9 @@ describe("CurrentGroups", () => {
         await renderPage();
 
         expect(await screen.findByText("No groups in progress")).toBeTruthy();
-        expect(screen.queryByRole("button", { name: /^Add / })).toBeNull();
+        expect(
+            screen.queryByRole("button", { name: /^Add .+ · Group/ })
+        ).toBeNull();
     });
 
     it("steps from the groups on screen, not the saved ones", async () => {

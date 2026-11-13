@@ -1,67 +1,61 @@
-import { beforeEach, describe, expect, it } from "vitest";
+import { describe, expect, it } from "vitest";
 import { Competition } from "wcif-helpers";
 
 import { Room } from "@/lib/interfaces";
-import { getRoundOptions, getStripRounds } from "@/lib/roundOptions";
+import { getLiveRoundIds, getRoundsInScheduleOrder } from "@/lib/roundOptions";
 
-const wcif = {
-    events: [
-        { id: "333", rounds: [{ id: "333-r1" }, { id: "333-r2" }] },
-        { id: "pyram", rounds: [{ id: "pyram-r1" }] },
-    ],
-} as unknown as Competition;
-
-const rooms = [
-    { id: "1", name: "Main room", currentGroupIds: ["333-r1-g2"], color: "" },
-    { id: "2", name: "Side room", currentGroupIds: ["333-r1-g3"], color: "" },
-] as Room[];
-
-describe("getRoundOptions", () => {
-    beforeEach(() => {
-        localStorage.setItem(
-            "fkmtime-events",
-            JSON.stringify([
-                { id: "333", name: "3x3x3 Cube", shortName: "3x3" },
-                { id: "pyram", name: "Pyraminx", shortName: "Pyra" },
-            ])
-        );
-    });
-
-    it("lists every round with names and the rooms running it", () => {
-        const options = getRoundOptions(wcif, rooms);
-        expect(options.map((o) => o.id)).toEqual([
-            "333-r1",
-            "333-r2",
-            "pyram-r1",
-        ]);
-        expect(options[0]).toMatchObject({
-            label: "3x3 R1",
-            name: "3x3x3 Cube · Round 1",
-            eventName: "3x3x3 Cube",
-            liveRooms: ["Main room", "Side room"],
-            isLive: true,
-        });
-        expect(options[1].isLive).toBe(false);
-    });
-
-    it("does not treat round 1 groups as round 10", () => {
-        const options = getRoundOptions(
+describe("getLiveRoundIds", () => {
+    it("lists each round with a current group once", () => {
+        const rooms = [
+            { id: "1", name: "Main", currentGroupIds: ["333-r1-g2"] },
             {
-                events: [{ id: "333", rounds: [{ id: "333-r10" }] }],
-            } as unknown as Competition,
-            rooms
-        );
-        expect(options[0].isLive).toBe(false);
+                id: "2",
+                name: "Side",
+                currentGroupIds: ["333-r1-g3", "pyram-r10-g1"],
+            },
+            { id: "3", name: "Empty", currentGroupIds: [] },
+        ] as unknown as Room[];
+        expect(getLiveRoundIds(rooms)).toEqual(["333-r1", "pyram-r10"]);
     });
 });
 
-describe("getStripRounds", () => {
-    it("keeps live rounds and the selected one", () => {
-        const options = getRoundOptions(wcif, rooms);
-        expect(getStripRounds(options, "pyram-r1").map((o) => o.id)).toEqual([
+describe("getRoundsInScheduleOrder", () => {
+    it("orders rounds by their earliest start, unscheduled ones last", () => {
+        const activity = (activityCode: string, startTime: string) => ({
+            activityCode,
+            startTime,
+        });
+        const wcif = {
+            events: [
+                { id: "333", rounds: [{ id: "333-r1" }, { id: "333-r2" }] },
+                { id: "222", rounds: [{ id: "222-r1" }, { id: "222-r2" }] },
+            ],
+            schedule: {
+                venues: [
+                    {
+                        rooms: [
+                            {
+                                activities: [
+                                    activity("333-r1", "2026-05-01T09:00:00Z"),
+                                    activity("333-r2", "2026-05-01T14:00:00Z"),
+                                ],
+                            },
+                            {
+                                activities: [
+                                    activity("222-r1", "2026-05-01T11:00:00Z"),
+                                    activity("333-r1", "2026-05-01T08:00:00Z"),
+                                ],
+                            },
+                        ],
+                    },
+                ],
+            },
+        } as unknown as Competition;
+        expect(getRoundsInScheduleOrder(wcif)).toEqual([
             "333-r1",
-            "pyram-r1",
+            "222-r1",
+            "333-r2",
+            "222-r2",
         ]);
-        expect(getStripRounds(options).map((o) => o.id)).toEqual(["333-r1"]);
     });
 });

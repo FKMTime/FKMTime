@@ -1,46 +1,57 @@
 import { Competition as WCIF } from "wcif-helpers";
 
 import { activityCodeToName } from "./activities";
-import { getEventName } from "./events";
 import { Room } from "./interfaces";
-import { shortRoundName } from "./utils";
 
-export interface RoundOption {
-    id: string;
-    eventId: string;
-    eventName: string;
-    /** "3x3 R1" */
-    label: string;
-    /** "3x3x3 Cube · Round 1" */
-    name: string;
-    /** Rooms where one of this round's groups is current */
-    liveRooms: string[];
-    isLive: boolean;
+/** Rounds with a group in progress in any room, each listed once */
+export const getLiveRoundIds = (rooms: Room[]): string[] => [
+    ...new Set(
+        rooms.flatMap((room) =>
+            room.currentGroupIds.map((groupId) => groupId.split("-g")[0])
+        )
+    ),
+];
+
+export interface ScheduledRound {
+    roundId: string;
+    /** Earliest start of the round in any room; missing if unscheduled */
+    startTime?: string;
 }
 
-/** All rounds in schedule order, with the rooms currently running each one */
-export const getRoundOptions = (wcif: WCIF, rooms: Room[]): RoundOption[] =>
-    wcif.events.flatMap((event) =>
-        event.rounds.map((round) => {
-            const liveRooms = rooms
-                .filter((room) =>
-                    room.currentGroupIds.some((groupId) =>
-                        groupId.startsWith(`${round.id}-g`)
-                    )
-                )
-                .map((room) => room.name);
-            return {
-                id: round.id,
-                eventId: event.id,
-                eventName: getEventName(event.id) || event.id,
-                label: shortRoundName(round.id),
-                name: activityCodeToName(round.id).replace(", ", " · "),
-                liveRooms,
-                isLive: liveRooms.length > 0,
-            };
-        })
-    );
+/**
+ * Every round in the order the schedule runs them: by the earliest start of
+ * the round in any room. Rounds missing from the schedule come last, in event
+ * order.
+ */
+export const getScheduledRounds = (wcif: WCIF): ScheduledRound[] => {
+    const starts = new Map<string, string>();
+    for (const venue of wcif.schedule?.venues ?? []) {
+        for (const room of venue.rooms) {
+            for (const activity of room.activities) {
+                const known = starts.get(activity.activityCode);
+                if (!known || new Date(activity.startTime) < new Date(known))
+                    starts.set(activity.activityCode, activity.startTime);
+            }
+        }
+    }
+    const startOf = (round: ScheduledRound) =>
+        round.startTime ? new Date(round.startTime).getTime() : Infinity;
+    // Array sort is stable, so ties and unscheduled rounds keep event order
+    return wcif.events
+        .flatMap((event) =>
+            event.rounds.map((round) => ({
+                roundId: round.id,
+                startTime: starts.get(round.id),
+            }))
+        )
+        .sort((a, b) =>
+            startOf(a) === startOf(b) ? 0 : startOf(a) - startOf(b)
+        );
+};
 
-/** The round strip shows the selected round plus every live round */
-export const getStripRounds = (options: RoundOption[], selectedId?: string) =>
-    options.filter((option) => option.isLive || option.id === selectedId);
+export const getRoundsInScheduleOrder = (wcif: WCIF): string[] =>
+    getScheduledRounds(wcif).map((round) => round.roundId);
+
+/** "3x3x3 Cube · Round 1" */
+export const roundName = (roundId: string) =>
+    activityCodeToName(roundId).replace(", ", " · ");

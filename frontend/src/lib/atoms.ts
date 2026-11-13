@@ -13,6 +13,8 @@ export interface PageHeader {
     /** Mobile header title and subtitle */
     title?: string;
     subtitle?: string;
+    /** Event icon before the mobile subtitle, e.g. on a round's sub-pages */
+    subtitleEventId?: string;
     /** Mobile back target; null hides the back button */
     backTo?: string | null;
 }

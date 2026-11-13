@@ -1,11 +1,7 @@
-import { ChevronLeft } from "lucide-react";
 import { ReactNode } from "react";
-import { Link } from "react-router-dom";
 
 import { usePageHeader } from "@/hooks/usePageHeader";
-import { activityCodeToName } from "@/lib/activities";
-import { getEventIconClass } from "@/lib/events";
-import { cn, shortRoundName } from "@/lib/utils";
+import { roundName } from "@/lib/roundOptions";
 
 interface RoundSubpageHeaderProps {
     roundId: string;
@@ -16,7 +12,10 @@ interface RoundSubpageHeaderProps {
     backTo?: string;
 }
 
-/** Back to the round, page title and round name for round sub-pages */
+/**
+ * Round sub-pages are named by the shell: breadcrumbs with the round on
+ * desktop, title and back button on phones. Only the aside renders here.
+ */
 const RoundSubpageHeader = ({
     roundId,
     title,
@@ -26,41 +25,23 @@ const RoundSubpageHeader = ({
     usePageHeader({
         crumbs: [
             { label: "Results", to: "/results" },
-            { label: shortRoundName(roundId), to: backTo },
+            {
+                label: roundName(roundId),
+                to: backTo,
+                eventId: roundId.split("-")[0],
+            },
             { label: title },
         ],
         title,
-        subtitle: shortRoundName(roundId),
+        subtitle: roundName(roundId),
+        subtitleEventId: roundId.split("-")[0],
         backTo,
     });
 
+    if (!aside) return null;
     return (
-        // The mobile header already shows the title and round, so on phones
-        // only the aside is left
-        <div className={cn("flex flex-col gap-2", !aside && "hidden md:flex")}>
-            <Link
-                to={backTo}
-                className="-ml-1.5 hidden w-fit items-center gap-1 rounded-md px-1.5 py-1 text-sm font-semibold text-muted-foreground hover:bg-accent hover:text-foreground md:inline-flex"
-            >
-                <ChevronLeft className="size-4" />
-                {shortRoundName(roundId)}
-            </Link>
-            <div className="flex flex-wrap items-end justify-between gap-3">
-                <div className="hidden md:block">
-                    <h2 className="text-xl font-bold">{title}</h2>
-                    <p className="flex items-center gap-1.5 text-sm text-muted-foreground">
-                        <span
-                            aria-hidden
-                            className={cn(
-                                "cubing-icon",
-                                getEventIconClass(roundId.split("-")[0])
-                            )}
-                        />
-                        {activityCodeToName(roundId).replace(", ", " · ")}
-                    </p>
-                </div>
-                {aside}
-            </div>
+        <div className="flex flex-wrap items-end justify-end gap-3">
+            {aside}
         </div>
     );
 };
