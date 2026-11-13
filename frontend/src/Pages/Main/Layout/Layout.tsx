@@ -11,6 +11,7 @@ import {
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import { useNavItems } from "@/hooks/useNavItems";
 import { useRefetchOnReconnect } from "@/hooks/useRefetchOnReconnect";
+import { useToast } from "@/hooks/useToast";
 import {
     competitionAtom,
     pageHeaderAtom,
@@ -18,7 +19,10 @@ import {
     unresolvedIncidentsCountAtom,
 } from "@/lib/atoms";
 import { getToken, getUserInfo, isUserLoggedIn } from "@/lib/auth";
-import { getCompetitionInfo } from "@/lib/competition";
+import {
+    competitionSettingsQuery,
+    getCompetitionInfo,
+} from "@/lib/competition";
 import { getEvents } from "@/lib/events";
 import { getUnresolvedIncidentsCount } from "@/lib/incidents";
 import { Competition } from "@/lib/interfaces";
@@ -30,7 +34,13 @@ import {
     MORE_PATH,
 } from "@/lib/navigation";
 import { isDelegate } from "@/lib/permissions";
-import { cn, isMobile, isNotificationsSupported } from "@/lib/utils";
+import { queryClient } from "@/lib/queryClient";
+import {
+    cn,
+    isMobile,
+    isNotificationsSupported,
+    officialResultsDestinationName,
+} from "@/lib/utils";
 import { socket } from "@/socket";
 
 import DesktopHeader from "./DesktopHeader";
@@ -48,6 +58,7 @@ const Layout = () => {
         unresolvedIncidentsCountAtom
     );
     const [isCompetitionError, setIsCompetitionError] = useState(false);
+    const { toast } = useToast();
     useRefetchOnReconnect();
 
     const fetchUnresolvedIncidentsCount = useCallback(() => {
@@ -97,6 +108,19 @@ const Layout = () => {
     }, [userKey]);
 
     useCompetitionSocketEvents(socket, userKey, {
+        onScoretakingSoftwareChanged: ({ officialResultsDestination }) => {
+            fetchCompetition();
+            void queryClient.invalidateQueries({
+                queryKey: [competitionSettingsQuery.key],
+            });
+            toast({
+                title: "The WCA website changed where results go",
+                description:
+                    officialResultsDestination === "NONE"
+                        ? "FKMTime doesn't send official results anywhere from now on."
+                        : `FKMTime sends official results to ${officialResultsDestinationName(officialResultsDestination)} from now on, starting with every result entered so far.`,
+            });
+        },
         onNewIncident: (data: NewIncidentSocketData) => {
             fetchUnresolvedIncidentsCount();
             if (!isNotificationsSupported()) return;

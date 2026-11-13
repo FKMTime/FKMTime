@@ -11,12 +11,13 @@ import { Link, useNavigate } from "react-router-dom";
 import RowActions from "@/Components/shared/RowActions";
 import { Button } from "@/Components/ui/button";
 import { useConfirm } from "@/hooks/useConfirm";
+import { useSubmissionPlatformName } from "@/hooks/useSubmissionPlatformName";
 import { useToast } from "@/hooks/useToast";
 import { activityCodeToName } from "@/lib/activities";
 import { getEventIconClass } from "@/lib/events";
 import { reSubmitRoundToWcaLive } from "@/lib/results";
 import { RoundMeta } from "@/lib/roundInfo";
-import { cn, getSubmissionPlatformName } from "@/lib/utils";
+import { cn } from "@/lib/utils";
 
 interface RoundHeaderProps {
     roundId: string;
@@ -39,7 +40,7 @@ const RoundHeader = ({
     const confirm = useConfirm();
     const navigate = useNavigate();
     const eventId = roundId.split("-")[0];
-    const platform = getSubmissionPlatformName(eventId);
+    const platform = useSubmissionPlatformName()(eventId);
 
     const handleResubmit = () => {
         confirm({
@@ -130,6 +131,7 @@ const RoundHeader = ({
                         {
                             label: `Resubmit to ${platform}`,
                             icon: Send,
+                            hidden: !platform,
                             onSelect: handleResubmit,
                         },
                         {

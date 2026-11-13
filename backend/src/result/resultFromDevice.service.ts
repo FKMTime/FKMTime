@@ -2,7 +2,6 @@ import { forwardRef, Inject, Logger } from '@nestjs/common';
 import {
   AttemptStatus,
   AttemptType,
-  Competition,
   Device,
   DeviceType,
   Person,
@@ -16,7 +15,6 @@ import {
 } from 'src/attempt-edit-log/attempt-edit-log.service';
 import { AttendanceService } from 'src/attendance/attendance.service';
 import { DNS_VALUE } from 'src/constants';
-import { ContestsService } from 'src/contests/contests.service';
 import { DbService } from 'src/db/db.service';
 import { DeviceService } from 'src/device/device.service';
 import { isUnofficialEvent } from 'src/events';
@@ -26,7 +24,6 @@ import {
   getTranslation,
   isLocaleAvailable,
 } from 'src/translations/translations';
-import { WcaService } from 'src/wca/wca.service';
 import { getMaxAttempts } from 'src/wcif-helpers';
 import { getPersonFromWcif, getRoundInfoFromWcif } from 'wcif-helpers';
 
@@ -49,8 +46,6 @@ export class ResultFromDeviceService {
     private readonly prisma: DbService,
     private readonly appGateway: AppGateway,
     private readonly attendanceService: AttendanceService,
-    private readonly wcaService: WcaService,
-    private readonly contestsService: ContestsService,
     @Inject(forwardRef(() => DeviceService))
     private readonly deviceService: DeviceService,
     private readonly personService: PersonService,
@@ -349,11 +344,7 @@ export class ResultFromDeviceService {
       competition.sendingResultsFrequency ===
       SendingResultsFrequency.AFTER_SOLVE
     ) {
-      await this.enterResultToExternalService(
-        result.id,
-        competition,
-        currentRoundId,
-      );
+      this.enterResultToExternalService(result.id);
     }
     this.appGateway.handleResultEntered(result.roundId);
     this.appGateway.recordLastSolve(data.espId, {
@@ -527,26 +518,12 @@ export class ResultFromDeviceService {
     };
   }
 
-  private async enterResultToExternalService(
-    resultId: string,
-    competition: Competition,
-    currentRoundId: string,
-  ) {
-    const resultToEnter = await this.resultService.getResultById(resultId);
-    if (isUnofficialEvent(currentRoundId.split('-')[0])) {
-      if (competition.cubingContestsToken) {
-        //This is intentionally not awaited
-        this.contestsService.enterWholeScorecardToCubingContests(resultToEnter);
-      }
-    } else {
-      try {
-        //This is intentionally not awaited
-        this.wcaService.enterWholeScorecardToWcaLive(resultToEnter);
-      } catch (e) {
-        this.logger.error('Error while entering result to WCA Live');
-        this.logger.error(e);
-      }
-    }
+  private enterResultToExternalService(resultId: string) {
+    // Not awaited: the station shouldn't wait for an outside service
+    this.resultService.sendResult(resultId).catch((e) => {
+      this.logger.error('Error while sending the result');
+      this.logger.error(e);
+    });
   }
 
   private async dnsOtherAttempts(

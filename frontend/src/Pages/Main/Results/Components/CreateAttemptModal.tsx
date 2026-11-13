@@ -2,10 +2,10 @@ import { useState } from "react";
 import { TimeLimit } from "wcif-helpers";
 
 import { Modal } from "@/Components/Modal";
+import { useSubmissionPlatformName } from "@/hooks/useSubmissionPlatformName";
 import { useToast } from "@/hooks/useToast";
 import { createAttempt } from "@/lib/attempt";
 import { Attempt, AttemptData } from "@/lib/interfaces";
-import { getSubmissionPlatformName } from "@/lib/utils";
 
 import AttemptForm from "./AttemptForm";
 
@@ -31,7 +31,8 @@ const CreateAttemptModal = ({
     const [isLoading, setIsLoading] = useState<boolean>(false);
     const [submitError, setSubmitError] = useState("");
 
-    const submissionPlatform = getSubmissionPlatformName(roundId.split("-")[0]);
+    const platformName = useSubmissionPlatformName();
+    const submissionPlatform = platformName(roundId.split("-")[0]);
 
     const onSubmit = async (data: AttemptData) => {
         setIsLoading(true);
@@ -41,7 +42,9 @@ const CreateAttemptModal = ({
         if (status === 201) {
             toast({
                 title: "Attempt saved",
-                description: `Submitted to ${submissionPlatform}`,
+                description: submissionPlatform
+                    ? `Submitted to ${submissionPlatform}`
+                    : undefined,
                 variant: "success",
             });
             onClose();

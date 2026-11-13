@@ -129,19 +129,15 @@ export class ResultController {
   @HttpCode(HttpStatus.OK)
   @UseGuards(DelegateGuard)
   @Post('round/:roundId/enter')
-  async enterRoundToWcaLiveOrCubingContests(@Param('roundId') roundId: string) {
-    return await this.resultService.enterRoundToWcaLiveOrCubingContests(
-      roundId,
-    );
+  async sendRound(@Param('roundId') roundId: string) {
+    return await this.resultService.sendRound(roundId);
   }
 
   @HttpCode(HttpStatus.OK)
   @UseGuards(DelegateGuard)
   @Get(':id/enter')
-  async enterWholeScorecardToWcaLiveOrCubingContests(@Param('id') id: string) {
-    return await this.resultService.enterWholeScorecardToWcaLiveOrCubingContests(
-      id,
-    );
+  async sendResult(@Param('id') id: string) {
+    return await this.resultService.sendResult(id);
   }
 
   @HttpCode(HttpStatus.NO_CONTENT)

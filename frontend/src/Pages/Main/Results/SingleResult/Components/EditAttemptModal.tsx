@@ -2,11 +2,11 @@ import { useState } from "react";
 import { TimeLimit } from "wcif-helpers";
 
 import { Modal } from "@/Components/Modal";
+import { useSubmissionPlatformName } from "@/hooks/useSubmissionPlatformName";
 import { useToast } from "@/hooks/useToast";
 import { updateAttempt } from "@/lib/attempt";
 import { Attempt, AttemptData, Result } from "@/lib/interfaces";
 import { milisecondsToClockFormat } from "@/lib/resultFormatters";
-import { getSubmissionPlatformName } from "@/lib/utils";
 
 import AttemptForm from "../../Components/AttemptForm";
 
@@ -29,7 +29,8 @@ const EditAttemptModal = ({
     const [isLoading, setIsLoading] = useState(false);
     const [submitError, setSubmitError] = useState("");
 
-    const submissionPlatform = getSubmissionPlatformName(result.eventId);
+    const platformName = useSubmissionPlatformName();
+    const submissionPlatform = platformName(result.eventId);
 
     const handleSubmit = async (data: AttemptData) => {
         setIsLoading(true);
@@ -42,7 +43,9 @@ const EditAttemptModal = ({
         if (status === 200) {
             toast({
                 title: "Attempt updated",
-                description: `Resubmitted to ${submissionPlatform}`,
+                description: submissionPlatform
+                    ? `Resubmitted to ${submissionPlatform}`
+                    : undefined,
                 variant: "success",
             });
             onClose();

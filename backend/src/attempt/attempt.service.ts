@@ -182,9 +182,7 @@ export class AttemptService {
     }
     await this.resultService.settleWaitingExtras(result.id);
     if (data.status !== AttemptStatus.EXTRA_GIVEN) {
-      await this.resultService.enterWholeScorecardToWcaLiveOrCubingContests(
-        result.id,
-      );
+      await this.resultService.sendResult(result.id);
     }
     this.appGateway.handleResultEntered(result.roundId);
     return {
@@ -287,9 +285,7 @@ export class AttemptService {
         'Reordered',
       );
     }
-    await this.resultService.enterWholeScorecardToWcaLiveOrCubingContests(
-      resultId,
-    );
+    await this.resultService.sendResult(resultId);
     this.appGateway.handleAttemptUpdated();
     return { message: 'Attempts reordered successfully' };
   }
@@ -328,9 +324,7 @@ export class AttemptService {
     const result = await this.prisma.result.findUnique({
       where: { id: attempt.resultId },
     });
-    await this.resultService.enterWholeScorecardToWcaLiveOrCubingContests(
-      result.id,
-    );
+    await this.resultService.sendResult(result.id);
     this.appGateway.handleAttemptUpdated();
     return { message: 'Replacement updated successfully' };
   }
@@ -917,9 +911,7 @@ export class AttemptService {
       return;
     }
     try {
-      await this.resultService.enterWholeScorecardToWcaLiveOrCubingContests(
-        resultId,
-      );
+      await this.resultService.sendResult(resultId);
     } catch (e) {
       console.error(e);
     }
@@ -1100,9 +1092,7 @@ export class AttemptService {
         attempt.result.roundId,
       );
       try {
-        await this.resultService.enterWholeScorecardToWcaLiveOrCubingContests(
-          result.id,
-        );
+        await this.resultService.sendResult(result.id);
       } catch (e) {
         console.error(e);
       }
@@ -1134,9 +1124,7 @@ export class AttemptService {
     await this.prisma.attempt.delete({
       where: { id: id },
     });
-    await this.resultService.enterWholeScorecardToWcaLiveOrCubingContests(
-      attempt.resultId,
-    );
+    await this.resultService.sendResult(attempt.resultId);
 
     const allAttempts = await this.prisma.attempt.count({
       where: {

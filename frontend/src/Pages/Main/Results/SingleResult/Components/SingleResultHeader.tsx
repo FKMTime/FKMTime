@@ -15,6 +15,7 @@ import RowActions from "@/Components/shared/RowActions";
 import { StatusBadge } from "@/Components/shared/StatusBadge";
 import { Button } from "@/Components/ui/button";
 import { useConfirm } from "@/hooks/useConfirm";
+import { useSubmissionPlatformName } from "@/hooks/useSubmissionPlatformName";
 import { useToast } from "@/hooks/useToast";
 import { activityCodeToName } from "@/lib/activities";
 import { Attempt, Result } from "@/lib/interfaces";
@@ -24,7 +25,6 @@ import {
     deleteResultById,
     reSubmitScorecardToWcaLive,
 } from "@/lib/results";
-import { getSubmissionPlatformName } from "@/lib/utils";
 
 interface SingleResultHeaderProps {
     result: Result;
@@ -56,7 +56,7 @@ const SingleResultHeader = ({
     const navigate = useNavigate();
     const confirm = useConfirm();
     const { toast } = useToast();
-    const platform = getSubmissionPlatformName(result.eventId || "");
+    const platform = useSubmissionPlatformName()(result.eventId || "");
 
     const report = (ok: boolean, success: string) =>
         toast(
@@ -181,6 +181,7 @@ const SingleResultHeader = ({
                         {
                             label: `Resubmit scorecard to ${platform}`,
                             icon: Send,
+                            hidden: !platform,
                             onSelect: handleResubmit,
                         },
                         {

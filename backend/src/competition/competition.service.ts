@@ -18,6 +18,7 @@ import {
   isRedoNotStarted,
 } from 'src/result/helpers';
 import { ResultService } from 'src/result/result.service';
+import { getOfficialResultsDestination } from 'src/results-destination';
 import { getAllTranslations, getLocales } from 'src/translations/translations';
 import { LIVE_LOOKUP_TTL_MS, TtlCache } from 'src/ttl-cache';
 import {
@@ -40,7 +41,7 @@ import {
 } from 'wcif-helpers';
 
 import { DbService } from '../db/db.service';
-import { eventsData } from '../events';
+import { eventsData, isUnofficialEvent } from '../events';
 import { SocketController } from '../socket/socket.controller';
 import { WcaService } from '../wca/wca.service';
 import { UpdateCompetitionDto } from './dto/updateCompetition.dto';
@@ -267,7 +268,103 @@ export class CompetitionService {
     if (!competition) {
       throw new HttpException('Competition not found', 404);
     }
-    return { ...competition, hilTesting: this.socketController.hilRunning() };
+    return {
+      ...competition,
+      officialResultsDestination: getOfficialResultsDestination(competition),
+      hilTesting: this.socketController.hilRunning(),
+    };
+  }
+
+  /** The panel's competition data, with where official results go */
+  async getCompetitionForPanel() {
+    const info = await this.getCompetitionInfo();
+    const destinationInput = await this.prisma.competition.findFirst({
+      select: { wcaScoretakingSoftware: true, scoretakingToken: true },
+    });
+    return {
+      ...info,
+      officialResultsDestination:
+        getOfficialResultsDestination(destinationInput),
+    };
+  }
+
+  /**
+   * Reads the competition's scoretaking software from the WCA website, which
+   * decides where official results go (SPEC-006). A switch tells the panel
+   * and sends every entered result to the new destination.
+   */
+  async refreshWcaScoretakingSoftware() {
+    const competition = await this.prisma.competition.findFirst();
+    if (!competition) {
+      throw new HttpException('Competition not found', 404);
+    }
+    const software = await this.wcaService.getScoretakingSoftware(
+      competition.wcaId,
+    );
+    if (software === null) {
+      // The WCA couldn't be reached: keep the last value
+      return this.scoretakingStatus(competition);
+    }
+    const updated = await this.prisma.competition.update({
+      where: { id: competition.id },
+      data: {
+        wcaScoretakingSoftware: software,
+        wcaScoretakingCheckedAt: new Date(),
+      },
+    });
+    const previous = competition.wcaScoretakingSoftware;
+    // The first read only replaces the guess made before it
+    if (previous !== null && previous !== software) {
+      this.logger.log(
+        `The WCA scoretaking software changed from ${previous} to ${software}`,
+      );
+      this.appGateway.handleScoretakingSoftwareChanged(
+        getOfficialResultsDestination(updated),
+      );
+      if (updated.sendingResultsFrequency !== SendingResultsFrequency.NEVER) {
+        await this.sendAllOfficialRounds();
+      }
+    }
+    return this.scoretakingStatus(updated);
+  }
+
+  private scoretakingStatus(competition: {
+    wcaScoretakingSoftware: string | null;
+    wcaScoretakingCheckedAt: Date | null;
+    scoretakingToken: string | null;
+  }) {
+    return {
+      wcaScoretakingSoftware: competition.wcaScoretakingSoftware,
+      wcaScoretakingCheckedAt: competition.wcaScoretakingCheckedAt,
+      officialResultsDestination: getOfficialResultsDestination(competition),
+    };
+  }
+
+  /** After a switch, so nothing entered before it is missing there */
+  private async sendAllOfficialRounds() {
+    const rounds = await this.prisma.result.findMany({
+      distinct: ['roundId'],
+      select: { roundId: true },
+    });
+    for (const { roundId } of rounds) {
+      if (isUnofficialEvent(roundId.split('-')[0])) continue;
+      try {
+        await this.resultService.sendRound(roundId);
+      } catch (e) {
+        this.logger.error(`Sending ${roundId} after the switch failed: ${e}`);
+      }
+    }
+  }
+
+  @Cron(CronExpression.EVERY_5_MINUTES)
+  async refreshWcaScoretakingSoftwareOnSchedule() {
+    const competition = await this.prisma.competition.findFirst();
+    if (!competition) return;
+    try {
+      await this.refreshWcaScoretakingSoftware();
+    } catch (e) {
+      this.logger.error(`Reading the WCA scoretaking software failed: ${e}`);
+    }
   }
 
   async getRoundsInfo() {
@@ -437,7 +534,7 @@ export class CompetitionService {
       competition.sendingResultsFrequency ===
       SendingResultsFrequency.EVERY_5_MINUTES
     ) {
-      this.sendResultsToWcaLive();
+      this.sendActiveRounds();
     }
     const wcif = JSON.parse(JSON.stringify(competition.wcif));
     const rooms = await this.prisma.room.findMany({
@@ -900,16 +997,19 @@ export class CompetitionService {
     return previousGroups;
   }
 
-  async sendResultsToWcaLive() {
+  /** Sends the rounds in progress, for the "every 5 minutes" setting */
+  async sendActiveRounds() {
     const rooms = await this.prisma.room.findMany();
-    for (const room of rooms) {
-      if (room.currentGroupIds.length > 0) {
-        for (const currentGroupId of room.currentGroupIds) {
-          const roundId = currentGroupId.split('-g')[0];
-          const results =
-            await this.resultService.getAllResultsByRound(roundId);
-          await this.wcaService.enterRoundToWcaLive(roundId, results);
-        }
+    const roundIds = new Set(
+      rooms.flatMap((room) =>
+        room.currentGroupIds.map((groupId) => groupId.split('-g')[0]),
+      ),
+    );
+    for (const roundId of roundIds) {
+      try {
+        await this.resultService.sendRound(roundId);
+      } catch (e) {
+        this.logger.error(`Sending ${roundId} failed: ${e}`);
       }
     }
   }

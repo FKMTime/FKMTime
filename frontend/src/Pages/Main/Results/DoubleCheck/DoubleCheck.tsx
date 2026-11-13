@@ -11,6 +11,7 @@ import { StatusDot } from "@/Components/shared/StatusBadge";
 import { Button } from "@/Components/ui/button";
 import { useConfirm } from "@/hooks/useConfirm";
 import { useLiveQuery } from "@/hooks/useLiveQuery";
+import { useSubmissionPlatformName } from "@/hooks/useSubmissionPlatformName";
 import { useToast } from "@/hooks/useToast";
 import { competitionAtom } from "@/lib/atoms";
 import { roundIncidentsQuery } from "@/lib/incidents";
@@ -30,7 +31,6 @@ import {
     resultQuery,
     undoDoubleCheck,
 } from "@/lib/results";
-import { getSubmissionPlatformName } from "@/lib/utils";
 
 import RoundSubpageHeader from "../Components/RoundSubpageHeader";
 import MissingPersonsModal from "./Components/MissingPersonsModal";
@@ -46,6 +46,7 @@ const DoubleCheck = () => {
     const { id } = useParams<{ id: string }>();
     const confirm = useConfirm();
     const { toast } = useToast();
+    const platformName = useSubmissionPlatformName();
     const roundId = id ?? "";
     const { data: roundData, refetch: refetchRound } = useLiveQuery(
         doubleCheckQuery(roundId),
@@ -144,8 +145,11 @@ const DoubleCheck = () => {
             }) ?? false;
 
         if (hasChanged) {
+            const platform = platformName(result.eventId);
             confirm({
-                title: `Are you sure you want to save and resubmit this result to ${getSubmissionPlatformName(result.eventId)}?`,
+                title: platform
+                    ? `Are you sure you want to save and resubmit this result to ${platform}?`
+                    : "Are you sure you want to save this result?",
                 description: "You changed some times/penalties",
             })
                 .then(submitDoubleCheckedResult)
@@ -155,7 +159,13 @@ const DoubleCheck = () => {
         } else {
             await submitDoubleCheckedResult();
         }
-    }, [confirm, result, resultsToDoubleCheck, submitDoubleCheckedResult]);
+    }, [
+        confirm,
+        platformName,
+        result,
+        resultsToDoubleCheck,
+        submitDoubleCheckedResult,
+    ]);
 
     const handleSkip = () => {
         setResult(null);

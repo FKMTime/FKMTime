@@ -32,8 +32,6 @@ describe('ResultFromDeviceService cutoff check', () => {
       null,
       null,
       null,
-      null,
-      null,
       resultService as unknown as ResultService,
       null,
     );
@@ -88,8 +86,6 @@ describe('ResultFromDeviceService with a resolved attempt', () => {
         { ...resolved('s3', 3, 9000), status: AttemptStatus.UNRESOLVED },
       ]);
     service = new ResultFromDeviceService(
-      null,
-      null,
       null,
       null,
       null,
@@ -212,8 +208,6 @@ describe('ResultFromDeviceService when the time limit runs out on an extra', () 
     };
     service = new ResultFromDeviceService(
       prisma as unknown as DbService,
-      null,
-      null,
       null,
       null,
       null,

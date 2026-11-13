@@ -64,7 +64,23 @@ export interface Competition extends CompetitionDataForLoginPage {
     secureRfid: boolean;
     soundEnabled: boolean;
     buzzerVolume: number | null;
+    /** How the WCA website says results are entered; null until first read */
+    wcaScoretakingSoftware?: string | null;
+    wcaScoretakingCheckedAt?: string | null;
+    officialResultsDestination?: OfficialResultsDestination;
 }
+
+export interface ScoretakingSoftwareStatus {
+    wcaScoretakingSoftware: string | null;
+    wcaScoretakingCheckedAt: string | null;
+    officialResultsDestination: OfficialResultsDestination;
+}
+
+/** Where official results go, following the WCA setting (SPEC-006) */
+export type OfficialResultsDestination =
+    | "WCA_LIVE"
+    | "WCA_INTEGRATED_LIVE"
+    | "NONE";
 
 export enum SendingResultsFrequency {
     AFTER_SOLVE = "AFTER_SOLVE",

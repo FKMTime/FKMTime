@@ -94,6 +94,12 @@ export class ImportService {
         countryIso2: wcifPublic.countryIso2,
         wcif: wcifPublic,
         sendingResultsFrequency: SendingResultsFrequency.AFTER_SOLVE,
+        // Decides where official results go (SPEC-006)
+        wcaScoretakingSoftware:
+          typeof competitionInfo.scoretaking_software === 'string'
+            ? competitionInfo.scoretaking_software
+            : null,
+        wcaScoretakingCheckedAt: new Date(),
         wifiSsid: '',
         wifiPassword: '',
         fkmToken: fkmToken[0],

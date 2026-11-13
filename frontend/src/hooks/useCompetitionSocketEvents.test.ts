@@ -114,4 +114,23 @@ describe("useCompetitionSocketEvents", () => {
         expect(socket.emit).not.toHaveBeenCalled();
         expect(socket.on).not.toHaveBeenCalled();
     });
+
+    it("passes a WCA scoretaking switch to its handler", () => {
+        const onScoretakingSoftwareChanged = vi.fn();
+        renderHook(() =>
+            useCompetitionSocketEvents(socket as never, "user-1", {
+                onNewIncident: vi.fn(),
+                onGroupShouldBeChanged: vi.fn(),
+                onScoretakingSoftwareChanged,
+            })
+        );
+
+        socket.receive("scoretakingSoftwareChanged", {
+            officialResultsDestination: "WCA_LIVE",
+        });
+
+        expect(onScoretakingSoftwareChanged).toHaveBeenCalledWith({
+            officialResultsDestination: "WCA_LIVE",
+        });
+    });
 });

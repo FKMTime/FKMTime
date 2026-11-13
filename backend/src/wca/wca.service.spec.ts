@@ -64,4 +64,49 @@ describe('WcaService', () => {
       });
     });
   });
+
+  describe('getScoretakingSoftware', () => {
+    it('returns how the WCA says results are entered', async () => {
+      fetchMock.mockResolvedValue({
+        ok: true,
+        status: 200,
+        json: jest.fn().mockResolvedValue({ scoretaking_software: 'internal' }),
+      });
+
+      await expect(
+        service.getScoretakingSoftware('ExampleOpen2026'),
+      ).resolves.toBe('internal');
+      expect(fetchMock).toHaveBeenCalledWith(
+        expect.stringMatching(/\/api\/v0\/competitions\/ExampleOpen2026$/),
+      );
+    });
+
+    it('returns null when the WCA answers with an error', async () => {
+      fetchMock.mockResolvedValue({ ok: false, status: 502 });
+
+      await expect(
+        service.getScoretakingSoftware('ExampleOpen2026'),
+      ).resolves.toBeNull();
+    });
+
+    it('returns null when the field is missing', async () => {
+      fetchMock.mockResolvedValue({
+        ok: true,
+        status: 200,
+        json: jest.fn().mockResolvedValue({ id: 'ExampleOpen2026' }),
+      });
+
+      await expect(
+        service.getScoretakingSoftware('ExampleOpen2026'),
+      ).resolves.toBeNull();
+    });
+
+    it('returns null when the WCA cannot be reached', async () => {
+      fetchMock.mockRejectedValue(new Error('offline'));
+
+      await expect(
+        service.getScoretakingSoftware('ExampleOpen2026'),
+      ).resolves.toBeNull();
+    });
+  });
 });

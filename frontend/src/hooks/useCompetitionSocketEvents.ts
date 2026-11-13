@@ -1,6 +1,8 @@
 import { useEffect, useRef } from "react";
 import type { io } from "socket.io-client";
 
+import { OfficialResultsDestination } from "@/lib/interfaces";
+
 type AppSocket = ReturnType<typeof io>;
 
 export interface NewIncidentSocketData {
@@ -12,6 +14,10 @@ export interface NewIncidentSocketData {
 interface CompetitionSocketHandlers {
     onNewIncident: (data: NewIncidentSocketData) => void;
     onGroupShouldBeChanged: (data: { message: string }) => void;
+    /** The WCA website now names another scoretaking tool */
+    onScoretakingSoftwareChanged?: (data: {
+        officialResultsDestination: OfficialResultsDestination;
+    }) => void;
 }
 
 /**
@@ -42,11 +48,22 @@ export const useCompetitionSocketEvents = (
             handlersRef.current.onNewIncident(data);
         const handleGroupShouldBeChanged = (data: { message: string }) =>
             handlersRef.current.onGroupShouldBeChanged(data);
+        const handleScoretakingSoftwareChanged = (data: {
+            officialResultsDestination: OfficialResultsDestination;
+        }) => handlersRef.current.onScoretakingSoftwareChanged?.(data);
         socket.on("newIncident", handleNewIncident);
         socket.on("groupShouldBeChanged", handleGroupShouldBeChanged);
+        socket.on(
+            "scoretakingSoftwareChanged",
+            handleScoretakingSoftwareChanged
+        );
         return () => {
             socket.off("newIncident", handleNewIncident);
             socket.off("groupShouldBeChanged", handleGroupShouldBeChanged);
+            socket.off(
+                "scoretakingSoftwareChanged",
+                handleScoretakingSoftwareChanged
+            );
             socket.emit("leaveIncidents");
             socket.emit("leaveCompetition");
         };

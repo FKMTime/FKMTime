@@ -253,6 +253,10 @@ export class SyncService {
       },
     });
     await this.addUnofficialEventsToWcif();
+    // A failed read keeps the last value; the sync itself has succeeded
+    await this.competitionService
+      .refreshWcaScoretakingSoftware()
+      .catch(() => undefined);
   }
 
   async addUnofficialEventsToWcif() {

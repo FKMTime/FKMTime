@@ -2,7 +2,10 @@ import {
   Body,
   Controller,
   Get,
+  HttpCode,
+  HttpStatus,
   Param,
+  Post,
   Put,
   Query,
   UseGuards,
@@ -53,7 +56,7 @@ export class CompetitionController {
   @UseGuards(AuthGuard('jwt'))
   @Get()
   async getCompetitionInfo() {
-    return await this.competitionService.getCompetitionInfo();
+    return await this.competitionService.getCompetitionForPanel();
   }
 
   @UseGuards(ScramblingDeviceGuard)
@@ -119,6 +122,13 @@ export class CompetitionController {
   @Get('rooms/progress')
   async getRoomsProgress() {
     return this.roomsService.getRoomsProgress();
+  }
+
+  @HttpCode(HttpStatus.OK)
+  @UseGuards(OrganizerGuard)
+  @Post('scoretaking-software/refresh')
+  async refreshScoretakingSoftware() {
+    return await this.competitionService.refreshWcaScoretakingSoftware();
   }
 
   @UseGuards(OrganizerGuard)

@@ -32,7 +32,7 @@ describe('AttemptService extras for all attempts', () => {
   let sendingResultsFrequency: SendingResultsFrequency;
   let prisma: Record<string, any>;
   let resultService: {
-    enterWholeScorecardToWcaLiveOrCubingContests: jest.Mock;
+    sendResult: jest.Mock;
     settleWaitingExtras: jest.Mock;
   };
   let appGateway: {
@@ -136,7 +136,7 @@ describe('AttemptService extras for all attempts', () => {
     };
     prisma.$transaction = jest.fn().mockImplementation((work) => work(prisma));
     resultService = {
-      enterWholeScorecardToWcaLiveOrCubingContests: jest.fn(),
+      sendResult: jest.fn(),
       settleWaitingExtras: jest.fn(),
     };
     appGateway = {
@@ -187,17 +187,13 @@ describe('AttemptService extras for all attempts', () => {
   it('sends the scorecard when asked to remove the times', async () => {
     await give(['s1']);
 
-    expect(
-      resultService.enterWholeScorecardToWcaLiveOrCubingContests,
-    ).toHaveBeenCalledWith('result-1');
+    expect(resultService.sendResult).toHaveBeenCalledWith('result-1');
   });
 
   it('sends nothing when not asked to', async () => {
     await give(['s1'], { removeFromLive: false });
 
-    expect(
-      resultService.enterWholeScorecardToWcaLiveOrCubingContests,
-    ).not.toHaveBeenCalled();
+    expect(resultService.sendResult).not.toHaveBeenCalled();
   });
 
   it('sends nothing on a competition set to never send', async () => {
@@ -205,16 +201,12 @@ describe('AttemptService extras for all attempts', () => {
 
     await give(['s1']);
 
-    expect(
-      resultService.enterWholeScorecardToWcaLiveOrCubingContests,
-    ).not.toHaveBeenCalled();
+    expect(resultService.sendResult).not.toHaveBeenCalled();
   });
 
   it('survives a failed send', async () => {
     jest.spyOn(console, 'error').mockImplementation(() => undefined);
-    resultService.enterWholeScorecardToWcaLiveOrCubingContests.mockRejectedValue(
-      new Error('offline'),
-    );
+    resultService.sendResult.mockRejectedValue(new Error('offline'));
 
     await expect(give(['s1'])).resolves.toEqual({ replaced: 1 });
   });
@@ -369,9 +361,7 @@ describe('AttemptService extras for all attempts', () => {
       await service.restoreExtraGrant('grant-1', 'user-1');
 
       expect(prisma.result.update).toHaveBeenCalled();
-      expect(
-        resultService.enterWholeScorecardToWcaLiveOrCubingContests,
-      ).toHaveBeenCalledWith('result-1');
+      expect(resultService.sendResult).toHaveBeenCalledWith('result-1');
     });
 
     it('only restores the latest grant', async () => {
@@ -399,9 +389,7 @@ describe('AttemptService extras for all attempts', () => {
       ]);
       expect(attempts[0].replacedBy).toBe(1);
       expect(grants[0].restoredAt).toBeNull();
-      expect(
-        resultService.enterWholeScorecardToWcaLiveOrCubingContests,
-      ).toHaveBeenCalledTimes(3);
+      expect(resultService.sendResult).toHaveBeenCalledTimes(3);
     });
 
     it('can switch back and forth', async () => {
@@ -702,9 +690,7 @@ describe('AttemptService extras for all attempts', () => {
         where: { id: 'result-1' },
         data: expect.objectContaining({ isDoubleChecked: false }),
       });
-      expect(
-        resultService.enterWholeScorecardToWcaLiveOrCubingContests,
-      ).toHaveBeenCalledWith('result-1');
+      expect(resultService.sendResult).toHaveBeenCalledWith('result-1');
     });
 
     it('sends nothing on a competition set to never send', async () => {
@@ -712,9 +698,7 @@ describe('AttemptService extras for all attempts', () => {
 
       await dnf(['s1']);
 
-      expect(
-        resultService.enterWholeScorecardToWcaLiveOrCubingContests,
-      ).not.toHaveBeenCalled();
+      expect(resultService.sendResult).not.toHaveBeenCalled();
     });
 
     it('rejects an attempt that is already DNF', async () => {
@@ -747,7 +731,7 @@ describe('AttemptService extras for all attempts', () => {
 
     it('restores the original penalties', async () => {
       await dnf(['s1', 's2']);
-      resultService.enterWholeScorecardToWcaLiveOrCubingContests.mockClear();
+      resultService.sendResult.mockClear();
 
       await expect(
         service.restoreDnfAttempts('result-1', 'user-1'),
@@ -758,9 +742,7 @@ describe('AttemptService extras for all attempts', () => {
       });
 
       expect(attempts.map((a) => a.penalty)).toEqual([0, 2]);
-      expect(
-        resultService.enterWholeScorecardToWcaLiveOrCubingContests,
-      ).toHaveBeenCalledWith('result-1');
+      expect(resultService.sendResult).toHaveBeenCalledWith('result-1');
     });
 
     it('lists the ruled attempts with their penalty before', async () => {
@@ -809,9 +791,7 @@ describe('AttemptService extras for all attempts', () => {
         expect(results[1].removedAt).toBeInstanceOf(Date);
         expect(results[1].removedByRulingOfId).toBe('result-1');
         expect(results[0].removedAt).toBeNull();
-        expect(
-          resultService.enterWholeScorecardToWcaLiveOrCubingContests,
-        ).toHaveBeenCalledWith('result-2');
+        expect(resultService.sendResult).toHaveBeenCalledWith('result-2');
       });
 
       it('lists them with the ruling', async () => {
@@ -963,7 +943,7 @@ describe('AttemptService deleted attempts', () => {
       null as AttendanceService,
       null as AttemptEditLogService,
       {
-        enterWholeScorecardToWcaLiveOrCubingContests: jest.fn(),
+        sendResult: jest.fn(),
       } as unknown as ResultService,
       null as SocketController,
       null as IncidentService,

@@ -8,6 +8,7 @@ import {
     CompetitionDataForLoginPage,
     CompetitionStatistics,
     Room,
+    ScoretakingSoftwareStatus,
     WCACompetition,
 } from "./interfaces";
 import { Query, queryFamily } from "./queryCache";
@@ -77,6 +78,22 @@ export const updateCompetitionSettings = async (
         competition
     );
     return response.status;
+};
+
+/** Reads how the WCA website says results are entered, again */
+export const refreshScoretakingSoftware = async (): Promise<{
+    status: number;
+    data: ScoretakingSoftwareStatus | null;
+}> => {
+    const response = await backendRequest(
+        "competition/scoretaking-software/refresh",
+        "POST",
+        true
+    );
+    return {
+        status: response.status,
+        data: response.ok ? await response.json() : null,
+    };
 };
 
 export const getDevicesSettings = async () => {
