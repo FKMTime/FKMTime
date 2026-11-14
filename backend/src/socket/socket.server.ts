@@ -210,7 +210,8 @@ export class SocketServer {
   }
 
   private async parsePacket(socket: net.Socket, request: RequestDto<any>) {
-    if (request.type !== 'CurrentTimeInfo') {
+    // Live packets arrive every few seconds per station: too many to log
+    if (request.type !== 'CurrentTimeInfo' && request.type !== 'StationLink') {
       this.logger.log(
         `Received request of type ${request.type}, tag ${request.tag}, data ${JSON.stringify(request.data)}`,
       );
@@ -306,6 +307,20 @@ export class SocketServer {
         false,
       );
       this.socketService.handleCurrentTimeInfo(request.data).catch(() => {});
+    } else if (request.type === 'StationLink') {
+      // The connector doesn't wait for this answer; older ones don't send it
+      this.sendResponseWithTag(
+        socket,
+        {
+          type: 'Empty',
+          tag: request.tag,
+          data: {
+            error: false,
+          },
+        },
+        false,
+      );
+      this.socketService.handleStationLink(request.data);
     } else {
       this.logger.error('Unknown request type');
     }

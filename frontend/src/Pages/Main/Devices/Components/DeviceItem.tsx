@@ -10,6 +10,7 @@ import {
 import { useState } from "react";
 
 import BatteryIcon from "@/Components/Icons/BatteryIcon";
+import SignalIcon from "@/Components/Icons/SignalIcon";
 import PointedStationBadge from "@/Components/shared/PointedStationBadge";
 import RowActions from "@/Components/shared/RowActions";
 import RunDifferentRoundModal from "@/Components/shared/RunDifferentRoundModal";
@@ -174,6 +175,11 @@ const DeviceItem = ({
     const updatedAt = new Date(device.updatedAt).toLocaleString();
     const type = prettyDeviceType(device.type);
     const firmware = device.firmwareVersion || "—";
+    // Stations only; retired ones aren't on the network
+    const signal =
+        device.type === DeviceType.STATION && !device.retiredAt
+            ? device.signal
+            : undefined;
 
     if (variant === "row")
         return (
@@ -199,6 +205,9 @@ const DeviceItem = ({
                         )}
                         {battText}
                     </span>
+                </TableCell>
+                <TableCell>
+                    {signal && <SignalIcon signal={signal} />}
                 </TableCell>
                 <TableCell className="whitespace-nowrap">
                     {type}{" "}
@@ -242,6 +251,12 @@ const DeviceItem = ({
                 <div className="md:-mr-1 md:-mt-1">{actions}</div>
             </div>
             <div className="flex flex-col gap-1.5 pr-2.5 md:pr-0">
+                {signal && (
+                    <div className="flex items-center justify-between text-xs text-muted-foreground">
+                        <span>Wi-Fi signal</span>
+                        <SignalIcon signal={signal} />
+                    </div>
+                )}
                 <div className="flex justify-between text-xs text-muted-foreground">
                     <span>Battery</span>
                     <span className={cn("font-semibold", tone.text)}>

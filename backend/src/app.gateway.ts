@@ -12,6 +12,7 @@ import { DelegateGuard } from './auth/guards/delegate.guard';
 import { OrganizerGuard } from './auth/guards/organizer.guard';
 import { AUTO_SETUP_DURATION_MS } from './competition/autoSetup';
 import { DeviceRequest } from './device/dto/requestToConnect.dto';
+import type { DeviceSignalEvent } from './device/stationSignal.service';
 
 /** The last attempt a station entered, kept to show after it resets */
 export interface LastSolve {
@@ -147,6 +148,12 @@ export class AppGateway {
   @UseGuards(OrganizerGuard)
   handleDeviceUpdated() {
     this.server.to(`device`).emit('deviceUpdated');
+  }
+
+  // Server-side only: a station's Wi-Fi signal, patched in place on the
+  // Devices page instead of refetching the list like deviceUpdated (SPEC-008)
+  handleDeviceSignal(signal: DeviceSignalEvent) {
+    this.server.to(`device`).emit('deviceSignal', signal);
   }
 
   @SubscribeMessage('deviceRequests')
