@@ -2,6 +2,8 @@ import {
     IntegratedLiveAddableCompetitor,
     IntegratedLiveConnectionStatus,
     IntegratedLiveNoShows,
+    IntegratedLiveProblems,
+    IntegratedLiveRegistrationRules,
     IntegratedLiveRound,
     IntegratedLiveRoundDetails,
     IntegratedLiveSyncStatus,
@@ -225,3 +227,57 @@ export const ATTENTION_LABELS: Partial<
 
 export const isOnTheWay = (status: IntegratedLiveSyncStatus | null) =>
     status === "DIRTY" || status === "SENT";
+
+/** Results that aren't getting through, by round, for Home's alert */
+export const integratedLiveProblemsQuery = backendQuery<IntegratedLiveProblems>(
+    "competition/integrated-live/rounds/problems"
+);
+
+/** The WCA's rules behind "not registered" results (WCRP 6.4, 5.2.1) */
+export const integratedLiveRegistrationRulesQuery =
+    backendQuery<IntegratedLiveRegistrationRules | null>(
+        "competition/integrated-live/rounds/registration-rules"
+    );
+
+/** The competition's registrations on the WCA website */
+export const wcaRegistrationsUrl = (wcaId: string) =>
+    `${WCA_ORIGIN}/competitions/${wcaId}/registrations/edit`;
+
+const formatDate = (date: string) =>
+    new Date(date).toLocaleString("en-GB", {
+        day: "numeric",
+        month: "long",
+        hour: "2-digit",
+        minute: "2-digit",
+    });
+
+/**
+ * The rule that applies to a result the WCA wouldn't take because of the
+ * competitor's registration, in plain words (SPEC-006 section 4), or null
+ * for any other reason. FKMTime never changes registrations itself.
+ */
+export const registrationHint = (
+    error: string | null,
+    rules: IntegratedLiveRegistrationRules | null | undefined,
+    now = new Date()
+): string | null => {
+    if (error?.startsWith("Not registered for ")) {
+        const deadline = rules?.eventChangeDeadline;
+        if (deadline && new Date(deadline) >= now) {
+            return `They can add the event on the WCA website until ${formatDate(deadline)} (WCRP 6.4). Once it's on their registration, FKMTime adds them to the round by itself.`;
+        }
+        if (deadline) {
+            return `The deadline for adding events was ${formatDate(deadline)}. Only the Delegate can make an exception, for a mistake made while registering (WCRP 6.4.4).`;
+        }
+        return "With no deadline for adding events, they can add it until the event takes place (WCRP 6.4.2). Once the round has started it's at the Delegate's discretion (WCRP 6.4.2.1). Once it's on their registration, FKMTime adds them to the round by itself.";
+    }
+    if (error === "No accepted WCA registration") {
+        const accept =
+            "Competing needs an accepted registration (Regulation 2c1). Once it is accepted on the WCA website, FKMTime picks it up at the next sync.";
+        if (rules?.onTheSpotRegistration) {
+            return `${accept} On-site registration was advertised, but if the competitor limit${rules.competitorLimit ? ` (${rules.competitorLimit})` : ""} was reached when registration closed, on-site registrations must not be accepted (WCRP 5.2.1).`;
+        }
+        return accept;
+    }
+    return null;
+};

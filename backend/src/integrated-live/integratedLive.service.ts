@@ -16,6 +16,7 @@ import {
   liveAttemptsHash,
   toLiveAttempts,
 } from './liveAttempts';
+import { ROUND_NOT_OPEN } from './liveRoundView';
 
 /** Not a documented WCA limit, just a size that keeps requests small */
 const BATCH_SIZE = 100;
@@ -280,7 +281,7 @@ export class IntegratedLiveService {
           await this.setStatus(
             [sync],
             LiveSyncStatus.NOT_IN_ROUND,
-            'Round not open in WCA Integrated Live Results',
+            ROUND_NOT_OPEN,
           );
           continue;
         }

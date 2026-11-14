@@ -12,6 +12,12 @@ export interface LiveRoundState {
   competitorCountNeeded?: number;
 }
 
+/** Why a result waits for its round to open; not a problem by itself */
+export const ROUND_NOT_OPEN = 'Round not open in WCA Integrated Live Results';
+
+/** How long a result may be on its way before Home calls it stuck */
+export const STUCK_AFTER_MS = 5 * 60 * 1000;
+
 /** The dot a round gets in the Results page's round strip */
 export type LiveRoundDot = 'notOpen' | 'open' | 'done' | 'attention';
 

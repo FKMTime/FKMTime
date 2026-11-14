@@ -109,6 +109,21 @@ export interface IntegratedLiveResultView {
     differs: boolean;
 }
 
+/** Rounds with results that aren't getting through, for Home's alert */
+export interface IntegratedLiveProblems {
+    /** On their way for more than a few minutes */
+    stuck: { roundId: string; count: number }[];
+    /** Refused by the WCA, or not in its round */
+    refused: { roundId: string; count: number }[];
+}
+
+/** What the WCA says about adding events and on-site registration */
+export interface IntegratedLiveRegistrationRules {
+    eventChangeDeadline: string | null;
+    onTheSpotRegistration: boolean;
+    competitorLimit: number | null;
+}
+
 /** A result the WCA holds that FKMTime has no result for */
 export interface IntegratedLiveOnlyInWca {
     registrationId: number;

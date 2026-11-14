@@ -1,3 +1,4 @@
+import { useAtomValue } from "jotai";
 import { useState } from "react";
 
 import GroupPlacement from "@/Components/IntegratedLive/GroupPlacement";
@@ -15,10 +16,12 @@ import { useDialogError } from "@/hooks/useDialogError";
 import { useLiveQuery } from "@/hooks/useLiveQuery";
 import { useToast } from "@/hooks/useToast";
 import { activityCodeToName } from "@/lib/activities";
+import { competitionAtom } from "@/lib/atoms";
 import {
     addCompetitorToIntegratedLiveRound,
     integratedLiveAddableQuery,
     invalidateIntegratedLiveRounds,
+    wcaRegistrationsUrl,
 } from "@/lib/integratedLive";
 
 interface AddCompetitorToRoundModalProps {
@@ -38,6 +41,7 @@ const AddCompetitorToRoundModal = ({
     roundId,
 }: AddCompetitorToRoundModalProps) => {
     const [error, setError] = useDialogError(isOpen);
+    const competition = useAtomValue(competitionAtom);
     const { toast } = useToast();
     const [registrationId, setRegistrationId] = useState("");
     const [isAdding, setIsAdding] = useState(false);
@@ -144,7 +148,18 @@ const AddCompetitorToRoundModal = ({
                     <p className="text-[13px] text-muted-foreground">
                         Not in the list? Only people whose WCA registration
                         includes this event can be added. Adding the event to a
-                        registration happens on the WCA website.
+                        registration happens on the WCA website, up to the
+                        deadline for adding events (WCRP 6.4).{" "}
+                        {competition && (
+                            <a
+                                className="font-semibold text-foreground underline"
+                                href={wcaRegistrationsUrl(competition.wcaId)}
+                                target="_blank"
+                                rel="noreferrer"
+                            >
+                                Registrations on the WCA website
+                            </a>
+                        )}
                     </p>
                     <ModalActions>
                         <Button

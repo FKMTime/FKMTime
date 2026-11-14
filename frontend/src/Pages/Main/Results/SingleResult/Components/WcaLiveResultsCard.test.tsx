@@ -7,6 +7,11 @@ import { ConfirmProvider } from "@/providers/ConfirmProvider";
 import WcaLiveResultsCard from "./WcaLiveResultsCard";
 
 const view = vi.hoisted(() => ({ current: undefined as unknown }));
+const rules = vi.hoisted(() => ({ current: undefined as unknown }));
+
+vi.mock("@/hooks/useLiveQuery", () => ({
+    useLiveQuery: () => ({ data: rules.current }),
+}));
 
 vi.mock("@/hooks/useIntegratedLiveRound", () => ({
     useIntegratedLiveRound: () => ({
@@ -84,5 +89,21 @@ describe("WcaLiveResultsCard", () => {
                 "Didn't advance to 333-r2 in WCA Integrated Live Results"
             )
         ).toBeTruthy();
+    });
+
+    it("gives the rule and a link when the event isn't on their registration", () => {
+        view.current = {
+            ...base,
+            status: "NOT_IN_ROUND",
+            error: "Not registered for 333 on the WCA website",
+            wcaAttempts: null,
+        };
+        rules.current = {
+            eventChangeDeadline: null,
+            onTheSpotRegistration: false,
+            competitorLimit: null,
+        };
+        renderCard();
+        expect(screen.getByText(/WCRP 6\.4\.2\b/)).toBeTruthy();
     });
 });

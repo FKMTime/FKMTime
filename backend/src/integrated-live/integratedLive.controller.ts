@@ -41,6 +41,18 @@ export class IntegratedLiveController {
     return await this.rounds.getRoundSummaries();
   }
 
+  /** Results that aren't getting through, for Home's alert */
+  @Get('problems')
+  async getProblems() {
+    return await this.rounds.getProblems();
+  }
+
+  /** The WCA's rules behind "not registered" results (WCRP 6.4, 5.2.1) */
+  @Get('registration-rules')
+  async getRegistrationRules() {
+    return await this.rounds.getRegistrationRules();
+  }
+
   @Get('no-shows')
   async getNoShows() {
     return await this.rounds.getNoShows();
