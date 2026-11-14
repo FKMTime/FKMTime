@@ -15,7 +15,7 @@ import {
 } from 'src/attempt-edit-log/attempt-edit-log.service';
 import { AttendanceService } from 'src/attendance/attendance.service';
 import { DNS_VALUE } from 'src/constants';
-import { DbService } from 'src/db/db.service';
+import { DbService, runInTransaction, Tx } from 'src/db/db.service';
 import { DeviceService } from 'src/device/device.service';
 import {
   getCompetitorGroupInRound,
@@ -46,6 +46,12 @@ import {
   isSameAttemptResent,
 } from './helpers';
 import { ResultService } from './result.service';
+
+/**
+ * Waiting for a free connection, and for the whole entry. The connector gives
+ * up on a reply after 7.5 s, and the station then resends the solve
+ */
+const ENTER_ATTEMPT_TRANSACTION = { maxWait: 5_000, timeout: 7_500 };
 
 export class ResultFromDeviceService {
   constructor(
@@ -87,8 +93,27 @@ export class ResultFromDeviceService {
     return await this.deviceService.getDeviceByEspId(espId, DeviceType.STATION);
   }
 
+  /**
+   * Everything an attempt writes is one transaction: one commit, so one wait
+   * for the disk instead of one per write, and no half-entered attempt if a
+   * write fails. A slow disk on the router made each commit cost up to
+   * seconds during a competition.
+   */
   async enterAttempt(data: EnterAttemptDto) {
-    const competition = await this.prisma.competition.findFirst();
+    return runInTransaction(
+      this.prisma,
+      (tx) => this.enterAttemptInTransaction(data, tx),
+      ENTER_ATTEMPT_TRANSACTION,
+    );
+  }
+
+  private async enterAttemptInTransaction(data: EnterAttemptDto, tx: Tx) {
+    // A station resends a solve whose reply it lost. The first send's attempt
+    // isn't visible until it commits, so the resend waits for it here and is
+    // then answered as already entered, instead of entering it twice
+    await tx.db
+      .$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`enter-attempt:${data.espId}:${data.sessionId}`}))`;
+    const competition = await tx.db.competition.findFirst();
     if (!competition) {
       return {
         message: getTranslation('competitionNotFound', 'en'),
@@ -124,7 +149,7 @@ export class ResultFromDeviceService {
     if (data.groupId) {
       roundId = groupIdToRoundId(data.groupId);
       // A solve resent after a lost reply is answered as already entered below
-      const isResent = !!(await this.prisma.attempt.findFirst({
+      const isResent = !!(await tx.db.attempt.findFirst({
         where: { sessionId: data.sessionId, deviceId: device.id },
         select: { id: true },
       }));
@@ -184,17 +209,17 @@ export class ResultFromDeviceService {
         competitor.id,
         groupId,
         device.id,
+        tx,
       );
     }
 
-    const previousAttemptWithSameSessionId =
-      await this.prisma.attempt.findFirst({
-        where: {
-          sessionId: data.sessionId,
-          deviceId: device.id,
-        },
-        include: { result: { select: { personId: true } } },
-      });
+    const previousAttemptWithSameSessionId = await tx.db.attempt.findFirst({
+      where: {
+        sessionId: data.sessionId,
+        deviceId: device.id,
+      },
+      include: { result: { select: { personId: true } } },
+    });
     if (previousAttemptWithSameSessionId) {
       if (previousAttemptWithSameSessionId.status === AttemptStatus.RESOLVED) {
         if (data.judgeId) {
@@ -202,6 +227,7 @@ export class ResultFromDeviceService {
             previousAttemptWithSameSessionId.id,
             data.judgeId.toString(),
             locale,
+            tx,
           );
         } else {
           return {
@@ -265,6 +291,7 @@ export class ResultFromDeviceService {
           judge.id,
           groupId,
           device.id,
+          tx,
         );
       }
       locale = this.getReaderLocale(
@@ -295,6 +322,7 @@ export class ResultFromDeviceService {
     const result = await this.resultService.getResultOrCreateIncludingRemoved(
       competitor.id,
       currentRoundId,
+      tx,
     );
     if (result.removedAt) {
       return {
@@ -305,7 +333,7 @@ export class ResultFromDeviceService {
       };
     }
 
-    const attempts = await this.prisma.attempt.findMany({
+    const attempts = await tx.db.attempt.findMany({
       where: {
         resultId: result.id,
         status: {
@@ -344,6 +372,7 @@ export class ResultFromDeviceService {
             attemptNumber: getNextExtraNumber(attempts),
           },
           attemptToReplace.id,
+          tx,
         );
       extraEntered = true;
       if (data.isDelegate) {
@@ -352,13 +381,18 @@ export class ResultFromDeviceService {
           competitor.name,
           locale,
           extraAttempt.id,
+          tx,
         );
       }
-      const voided = await this.resultService.settleWaitingExtras(result.id);
+      const voided = await this.resultService.settleWaitingExtras(
+        result.id,
+        tx,
+      );
       if (finalData.dnsOther && voided === 0) {
         await this.dnsRemainingAttempts(
           result.id,
           getMaxAttempts(roundInfo.format),
+          tx,
         );
       }
     }
@@ -385,6 +419,7 @@ export class ResultFromDeviceService {
         device,
         result,
         judge as Person,
+        tx,
       );
       if (data.isDelegate) {
         return this.notifyDelegate(
@@ -392,24 +427,27 @@ export class ResultFromDeviceService {
           competitor.name,
           locale,
           attempt.id,
+          tx,
         );
       }
       if (finalData.dnsOther) {
-        await this.dnsOtherAttempts(attemptNumber, maxAttempts, result.id);
+        await this.dnsOtherAttempts(attemptNumber, maxAttempts, result.id, tx);
       }
     }
     if (
       competition.sendingResultsFrequency ===
       SendingResultsFrequency.AFTER_SOLVE
     ) {
-      this.enterResultToExternalService(result.id);
+      tx.afterCommit(() => this.enterResultToExternalService(result.id));
     }
-    this.appGateway.handleResultEntered(result.roundId);
-    this.appGateway.recordLastSolve(data.espId, {
-      personName: competitor.name,
-      value: finalData.value,
-      penalty: finalData.penalty,
-      enteredAt: Date.now(),
+    tx.afterCommit(() => {
+      this.appGateway.handleResultEntered(result.roundId);
+      this.appGateway.recordLastSolve(data.espId, {
+        personName: competitor.name,
+        value: finalData.value,
+        penalty: finalData.penalty,
+        enteredAt: Date.now(),
+      });
     });
     const enteredMessage = finalData.limitPassed
       ? getTranslation('attemptEntered', locale)
@@ -417,6 +455,7 @@ export class ResultFromDeviceService {
     const roundResultText = await this.getFinishedRoundResultText(
       result.id,
       roundInfo,
+      tx,
     );
     return {
       // The station shows the first two words on the top line and the rest
@@ -468,8 +507,10 @@ export class ResultFromDeviceService {
     device: Device,
     result: Result,
     judge?: Person,
+    tx?: Tx,
   ) {
-    const scrambledAttempt = await this.prisma.attempt.findFirst({
+    const db = tx?.db ?? this.prisma;
+    const scrambledAttempt = await db.attempt.findFirst({
       where: {
         resultId: result.id,
         attemptNumber: attemptNumber,
@@ -509,18 +550,19 @@ export class ResultFromDeviceService {
     };
     let attempt;
     if (scrambledAttempt) {
-      attempt = await this.prisma.attempt.update({
+      attempt = await db.attempt.update({
         where: { id: scrambledAttempt.id },
         data: newData,
       });
     } else {
-      attempt = await this.prisma.attempt.create({ data: newData });
+      attempt = await db.attempt.create({ data: newData });
     }
     await this.attemptEditLogService.log(
       attempt as AttemptSnapshot,
       attempt.solvedAt ?? new Date(),
       null,
       'Original entry',
+      tx,
     );
     return attempt;
   }
@@ -528,6 +570,7 @@ export class ResultFromDeviceService {
   async createAnExtraAttemptAnReplaceTheOriginalOne(
     data: any,
     originalId: string,
+    tx?: Tx,
   ) {
     const extraAttempt = await this.createOrUpdateScrambledAttempt(
       data,
@@ -537,9 +580,10 @@ export class ResultFromDeviceService {
       data.device,
       data.result,
       data.judge,
+      tx,
     );
 
-    const attempt = await this.prisma.attempt.update({
+    const attempt = await (tx?.db ?? this.prisma).attempt.update({
       where: { id: originalId },
       data: { replacedBy: extraAttempt.attemptNumber },
     });
@@ -548,6 +592,7 @@ export class ResultFromDeviceService {
       new Date(),
       null,
       `Replaced by extra ${extraAttempt.attemptNumber}`,
+      tx,
     );
     return extraAttempt;
   }
@@ -556,8 +601,9 @@ export class ResultFromDeviceService {
     attemptId: string,
     judgeCardId: string,
     locale: string,
+    tx?: Tx,
   ) {
-    await this.prisma.attempt.update({
+    await (tx?.db ?? this.prisma).attempt.update({
       where: {
         id: attemptId,
       },
@@ -588,10 +634,11 @@ export class ResultFromDeviceService {
     attemptNumber: number,
     maxAttempts: number,
     resultId: string,
+    tx: Tx,
   ) {
     const now = new Date();
     for (let i = attemptNumber + 1; i <= maxAttempts; i++) {
-      const created = await this.prisma.attempt.create({
+      const created = await tx.db.attempt.create({
         data: {
           attemptNumber: i,
           status: AttemptStatus.STANDARD,
@@ -607,20 +654,25 @@ export class ResultFromDeviceService {
         now,
         null,
         'DNS auto-assigned',
+        tx,
       );
     }
   }
 
   /** With no time left, nothing more can be solved: DNS whatever remains */
-  private async dnsRemainingAttempts(resultId: string, maxAttempts: number) {
-    const attempts = await this.prisma.attempt.findMany({
+  private async dnsRemainingAttempts(
+    resultId: string,
+    maxAttempts: number,
+    tx: Tx,
+  ) {
+    const attempts = await tx.db.attempt.findMany({
       where: { resultId, status: { not: AttemptStatus.SCRAMBLED } },
     });
     const now = new Date();
     let extraNumber = getNextExtraNumber(attempts) - 1;
     for (const original of getAttemptsWaitingForExtra(attempts)) {
       extraNumber++;
-      const created = await this.prisma.attempt.create({
+      const created = await tx.db.attempt.create({
         data: {
           attemptNumber: extraNumber,
           status: AttemptStatus.STANDARD,
@@ -636,8 +688,9 @@ export class ResultFromDeviceService {
         now,
         null,
         'DNS auto-assigned',
+        tx,
       );
-      const replaced = await this.prisma.attempt.update({
+      const replaced = await tx.db.attempt.update({
         where: { id: original.id },
         data: { replacedBy: extraNumber },
       });
@@ -646,6 +699,7 @@ export class ResultFromDeviceService {
         now,
         null,
         `Replaced by extra ${extraNumber}`,
+        tx,
       );
     }
     const lastAttempt = getSortedStandardAttempts(attempts).at(-1);
@@ -653,12 +707,17 @@ export class ResultFromDeviceService {
       lastAttempt?.attemptNumber ?? 0,
       maxAttempts,
       resultId,
+      tx,
     );
   }
 
   /** The round's result once the competitor has no attempts left, else null */
-  private async getFinishedRoundResultText(resultId: string, roundInfo: any) {
-    const attempts = await this.prisma.attempt.findMany({
+  private async getFinishedRoundResultText(
+    resultId: string,
+    roundInfo: any,
+    tx: Tx,
+  ) {
+    const attempts = await tx.db.attempt.findMany({
       where: { resultId },
     });
     const countingAttempts = getCountingAttempts(attempts);
@@ -684,8 +743,11 @@ export class ResultFromDeviceService {
     competitorName: string,
     locale: string,
     attemptId: string,
+    tx: Tx,
   ) {
-    this.appGateway.handleNewIncident(deviceName, competitorName, attemptId);
+    tx.afterCommit(() =>
+      this.appGateway.handleNewIncident(deviceName, competitorName, attemptId),
+    );
     return {
       message: getTranslation('delegateWasNotified', locale),
       status: 200,

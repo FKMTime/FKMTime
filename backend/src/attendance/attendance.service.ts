@@ -2,7 +2,7 @@ import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { Prisma, StaffActivityStatus, StaffRole } from '@prisma/client';
 import { AppGateway } from 'src/app.gateway';
 
-import { DbService } from '../db/db.service';
+import { DbService, Tx } from '../db/db.service';
 import { getTranslation } from '../translations/translations';
 import { AddNotAssignedPersonDto } from './dto/addNotAssignedPerson.dto';
 import { CreateAttendaceDto } from './dto/createAttendance.dto';
@@ -202,8 +202,9 @@ export class AttendanceService {
     competitorId: string,
     groupId: string,
     deviceId?: string,
+    tx?: Tx,
   ) {
-    await this.prisma.staffActivity.upsert({
+    await (tx?.db ?? this.prisma).staffActivity.upsert({
       where: {
         personId_groupId_role: {
           groupId: groupId,
@@ -240,11 +241,16 @@ export class AttendanceService {
         isAssigned: false,
       },
     });
-    this.appGateway.handleNewAttendance(groupId, competitorId);
+    this.notifyAttendance(groupId, competitorId, tx);
   }
 
-  async markJudgeAsPresent(judgeId: string, groupId: string, deviceId: string) {
-    await this.prisma.staffActivity.upsert({
+  async markJudgeAsPresent(
+    judgeId: string,
+    groupId: string,
+    deviceId: string,
+    tx?: Tx,
+  ) {
+    await (tx?.db ?? this.prisma).staffActivity.upsert({
       where: {
         personId_groupId_role: {
           groupId: groupId,
@@ -279,7 +285,14 @@ export class AttendanceService {
         isAssigned: false,
       },
     });
-    this.appGateway.handleNewAttendance(groupId, judgeId);
+    this.notifyAttendance(groupId, judgeId, tx);
+  }
+
+  /** Inside a transaction, the panel hears of it once it commits */
+  private notifyAttendance(groupId: string, personId: string, tx?: Tx) {
+    const notify = () => this.appGateway.handleNewAttendance(groupId, personId);
+    if (tx) tx.afterCommit(notify);
+    else notify();
   }
 
   async getAttendanceStatistics() {

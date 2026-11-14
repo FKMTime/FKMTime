@@ -1,7 +1,35 @@
 import { Injectable, OnModuleDestroy } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PrismaPg } from '@prisma/adapter-pg';
-import { PrismaClient } from '@prisma/client';
+import { Prisma, PrismaClient } from '@prisma/client';
+
+/**
+ * A transaction in progress: the client to query it with, and a place for
+ * effects that must not run until it commits (socket events, sending
+ * results), since whoever they reach reads the database outside it
+ */
+export interface Tx {
+  db: Prisma.TransactionClient;
+  afterCommit: (effect: () => void) => void;
+}
+
+/**
+ * Runs `work` in one transaction, then its after-commit effects. A rolled-back
+ * transaction runs none of them.
+ */
+export async function runInTransaction<T>(
+  prisma: DbService,
+  work: (tx: Tx) => Promise<T>,
+  options?: { maxWait?: number; timeout?: number },
+): Promise<T> {
+  const effects: (() => void)[] = [];
+  const result = await prisma.$transaction(
+    (db) => work({ db, afterCommit: (effect) => effects.push(effect) }),
+    options,
+  );
+  for (const effect of effects) effect();
+  return result;
+}
 
 /**
  * Spread into a result query's `where` to also get results removed under
