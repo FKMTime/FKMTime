@@ -23,8 +23,18 @@ const renderIcon = (value: StationSignal) => {
 
 describe("SignalIcon", () => {
     it.each([
-        ["ok, above -55 dBm", signal({ rssi: -48 }), "lucide-wifi ", ""],
-        ["ok, the rest", signal({ rssi: -58 }), "lucide-wifi-high", ""],
+        [
+            "ok, above -55 dBm",
+            signal({ rssi: -48 }),
+            "lucide-wifi ",
+            "text-foreground",
+        ],
+        [
+            "ok, the rest",
+            signal({ rssi: -58 }),
+            "lucide-wifi-high",
+            "text-foreground",
+        ],
         [
             "weak",
             signal({ level: "weak", rssi: -66 }),
@@ -35,7 +45,7 @@ describe("SignalIcon", () => {
             "unknown",
             signal({ level: "unknown", rssi: null }),
             "lucide-wifi-zero",
-            "text-faint",
+            "text-muted-foreground",
         ],
     ])("shows the icon and tone for %s", (_, value, icon, tone) => {
         const { trigger, iconName } = renderIcon(value);

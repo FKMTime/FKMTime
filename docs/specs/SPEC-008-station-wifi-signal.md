@@ -160,10 +160,14 @@ router running the instance), the connector reads it too:
 
   | State | Icon | Tone |
   |---|---|---|
-  | `ok`, median above −55 dBm | `Wifi` | muted |
-  | `ok`, the rest | `WifiHigh` | muted |
+  | `ok`, median above −55 dBm | `Wifi` | text colour |
+  | `ok`, the rest | `WifiHigh` | text colour |
   | `weak` | `WifiLow` | amber (warning) |
-  | `unknown` | `WifiZero` | faint |
+  | `unknown` | `WifiZero` | muted |
+
+  The icon is 24 px, a little larger than the battery icon. At the battery's
+  18 px and in muted tones it was hard to spot in the list, and `WifiZero` is
+  little more than a dot.
 
   `WifiOff` isn't used. "Unknown" usually means older firmware or no reading
   yet, not a dropped connection, and the station's online state already

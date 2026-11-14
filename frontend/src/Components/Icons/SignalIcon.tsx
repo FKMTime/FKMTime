@@ -55,9 +55,9 @@ const iconFor = (signal: StationSignal) => {
                 signal.rssi !== null && signal.rssi > STRONG_ABOVE_DBM
                     ? Wifi
                     : WifiHigh,
-            tone: "text-muted-foreground",
+            tone: "text-foreground",
         };
-    return { Icon: WifiZero, tone: "text-faint" };
+    return { Icon: WifiZero, tone: "text-muted-foreground" };
 };
 
 interface SignalIconProps {
@@ -81,7 +81,7 @@ const SignalIcon = ({ signal, className }: SignalIconProps) => {
                         className
                     )}
                 >
-                    <Icon className="size-[18px]" aria-hidden />
+                    <Icon className="size-6" strokeWidth={2.25} aria-hidden />
                 </TooltipTrigger>
                 <TooltipContent>
                     {lines.map((line) => (
