@@ -80,6 +80,53 @@ export interface IntegratedLiveRound {
     totalCompetitors?: number;
     completedCompetitors?: number;
     competitorCountNeeded?: number;
+    /** The round strip's dot: the WCA state, or needs attention */
+    dot?: "notOpen" | "open" | "done" | "attention";
+    /** Results the WCA won't take until someone acts */
+    needsAttention?: number;
+}
+
+export type IntegratedLiveSyncStatus =
+    | "DIRTY"
+    | "SENT"
+    | "CONFIRMED"
+    | "NOT_IN_ROUND"
+    | "NOT_SENDABLE"
+    | "REJECTED";
+
+/** One FKMTime result next to the WCA's copy of it */
+export interface IntegratedLiveResultView {
+    resultId: string;
+    personId: string;
+    registrationId: number | null;
+    status: IntegratedLiveSyncStatus | null;
+    error: string | null;
+    sentAt: string | null;
+    advancing: "advances" | "mayAdvance" | null;
+    /** The WCA's attempts (centiseconds, -1 DNF, -2 DNS), null if none */
+    wcaAttempts: number[] | null;
+    /** The WCA holds other attempts, and nothing is on its way */
+    differs: boolean;
+}
+
+/** A result the WCA holds that FKMTime has no result for */
+export interface IntegratedLiveOnlyInWca {
+    registrationId: number;
+    name: string | null;
+    wcaId: string | null;
+    attempts: number[];
+}
+
+export interface IntegratedLiveRoundDetails {
+    roundId: string;
+    state: string;
+    totalCompetitors: number | null;
+    completedCompetitors: number | null;
+    waitingReason: string | null;
+    onTheWay: number;
+    needsAttention: number;
+    results: IntegratedLiveResultView[];
+    onlyInWca: IntegratedLiveOnlyInWca[];
 }
 
 export interface IntegratedLiveNoShows {

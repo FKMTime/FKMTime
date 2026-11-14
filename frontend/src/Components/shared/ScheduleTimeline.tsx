@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { ReactNode, useEffect, useRef } from "react";
 
 import { useScrollFade } from "@/hooks/useScrollFade";
 import { getEventIconClass } from "@/lib/events";
@@ -14,6 +14,8 @@ interface ScheduleTimelineProps {
     liveRoundIds: string[];
     value: string;
     onValueChange: (roundId: string) => void;
+    /** Small marker after a round's name, e.g. its WCA live results state */
+    getMarker?: (roundId: string) => ReactNode;
     className?: string;
 }
 
@@ -45,6 +47,7 @@ const ScheduleTimeline = ({
     liveRoundIds,
     value,
     onValueChange,
+    getMarker,
     className,
 }: ScheduleTimelineProps) => {
     const scrollRef = useScrollFade<HTMLDivElement>();
@@ -119,6 +122,7 @@ const ScheduleTimeline = ({
                                 )}
                             />
                             {shortRoundName(round.roundId)}
+                            {getMarker?.(round.roundId)}
                         </span>
                         <span
                             className={cn(

@@ -17,6 +17,7 @@ import { useIsMobile } from "@/hooks/useMobile";
 import { useSubmissionPlatformName } from "@/hooks/useSubmissionPlatformName";
 import { useToast } from "@/hooks/useToast";
 import { activityCodeToName } from "@/lib/activities";
+import { IntegratedLiveRoundDetails } from "@/lib/interfaces";
 import { reSubmitRoundToWcaLive } from "@/lib/results";
 import { RoundMeta } from "@/lib/roundInfo";
 
@@ -27,6 +28,8 @@ interface RoundHeaderProps {
     roundId: string;
     meta: RoundMeta | null;
     advancement?: string | null;
+    /** The round in WCA Integrated Live Results, when results go there */
+    live?: IntegratedLiveRoundDetails;
     hasResults: boolean;
     onEnterAttempt: () => void;
     onRestartGroup: () => void;
@@ -36,6 +39,7 @@ const RoundHeader = ({
     roundId,
     meta,
     advancement,
+    live,
     hasResults,
     onEnterAttempt,
     onRestartGroup,
@@ -110,6 +114,7 @@ const RoundHeader = ({
                         <RoundMetaLine
                             meta={meta}
                             advancement={advancement}
+                            live={live}
                             className="min-w-0 flex-1"
                         />
                         {menu}

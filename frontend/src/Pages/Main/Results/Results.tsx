@@ -1,8 +1,11 @@
 import { useAtomValue } from "jotai";
+import { Eraser, UserMinus } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { getLimitByRoundId, getNumberOfAttemptsForRound } from "wcif-helpers";
 
+import { LiveRoundDot } from "@/Components/IntegratedLive/LiveResultBadges";
+import WithdrawFromRoundModal from "@/Components/IntegratedLive/WithdrawFromRoundModal";
 import LoadingPage from "@/Components/LoadingPage";
 import EmptyState from "@/Components/shared/EmptyState";
 import RefreshingRegion from "@/Components/shared/RefreshingRegion";
@@ -10,14 +13,24 @@ import RequestError from "@/Components/shared/RequestError";
 import RoundPicker from "@/Components/shared/RoundPicker";
 import SearchInput from "@/Components/shared/SearchInput";
 import SegmentedControl from "@/Components/shared/SegmentedControl";
+import { useConfirm } from "@/hooks/useConfirm";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
+import {
+    useIntegratedLiveRound,
+    useIntegratedLiveRounds,
+} from "@/hooks/useIntegratedLiveRound";
 import { useLiveQuery } from "@/hooks/useLiveQuery";
 import { useIsMobile } from "@/hooks/useMobile";
 import { usePageHeader } from "@/hooks/usePageHeader";
 import { useSocketEvents } from "@/hooks/useSocketEvents";
 import { useSocketRoom } from "@/hooks/useSocketRoom";
+import { useToast } from "@/hooks/useToast";
 import { activityCodeToName } from "@/lib/activities";
 import { competitionAtom } from "@/lib/atoms";
+import {
+    clearIntegratedLiveResult,
+    invalidateIntegratedLiveRounds,
+} from "@/lib/integratedLive";
 import { Result } from "@/lib/interfaces";
 import { isDelegate } from "@/lib/permissions";
 import { LIVE_MAX_AGE } from "@/lib/queryCache";
@@ -30,7 +43,7 @@ import { cn, getAdvancementText } from "@/lib/utils";
 
 import CreateAttemptModal from "./Components/CreateAttemptModal";
 import RestartGroupModal from "./Components/RestartGroupModal";
-import ResultsTable from "./Components/ResultsTable";
+import ResultsTable, { ResultsTableLive } from "./Components/ResultsTable";
 import ResultsTabs from "./Components/ResultsTabs";
 import RoundHeader from "./Components/RoundHeader";
 import RoundMetaLine from "./Components/RoundMetaLine";
@@ -65,6 +78,15 @@ const Results = () => {
     const [isRestartOpen, setIsRestartOpen] = useState(false);
     const [isCreateOpen, setIsCreateOpen] = useState(false);
     const isMobile = useIsMobile();
+    const [withdrawPersonId, setWithdrawPersonId] = useState<string | null>(
+        null
+    );
+    const confirm = useConfirm();
+    const { toast } = useToast();
+    const liveRounds = useIntegratedLiveRounds();
+    const { details: live, byResultId } = useIntegratedLiveRound(
+        roundId || undefined
+    );
 
     usePageHeader({
         crumbs: roundId
@@ -92,6 +114,70 @@ const Results = () => {
             liveRoundIds[0] ?? competition.wcif.events[0]?.rounds[0]?.id;
         if (target) navigate(`/results/round/${target}`, { replace: true });
     }, [roundId, competition, rooms, liveRoundIds, navigate]);
+
+    /** Empties a result in WCA live results; FKMTime's is sent again */
+    const clearInWca = (
+        registrationId: number,
+        personName: string,
+        hasOurs: boolean
+    ) =>
+        confirm({
+            title: `Clear ${personName} in WCA live results?`,
+            description: hasOurs
+                ? "FKMTime sends its result again right after, so WCA live results ends up matching it."
+                : "FKMTime has no result for them, so it stays empty.",
+            confirmLabel: "Clear",
+            onConfirm: async () => {
+                const { ok, message } = await clearIntegratedLiveResult(
+                    roundId,
+                    registrationId
+                );
+                toast(
+                    ok
+                        ? { title: message, variant: "success" }
+                        : {
+                              title: "Error",
+                              description: message,
+                              variant: "destructive",
+                          }
+                );
+                void invalidateIntegratedLiveRounds();
+            },
+        }).catch(() => undefined);
+
+    const liveTable: ResultsTableLive | undefined = live && {
+        byResultId,
+        onlyInWca: live.onlyInWca,
+        onClearOnlyInWca: (row) =>
+            clearInWca(
+                row.registrationId,
+                row.name ?? `registration ${row.registrationId}`,
+                false
+            ),
+        itemsFor: (result, view) => [
+            {
+                label: "Clear in WCA live results",
+                icon: Eraser,
+                destructive: true,
+                hidden: !view?.registrationId || !view.wcaAttempts?.length,
+                onSelect: () =>
+                    clearInWca(view!.registrationId!, result.person.name, true),
+            },
+            {
+                // A later-round competitor who hasn't competed (9p3)
+                label: "Remove from round",
+                icon: UserMinus,
+                destructive: true,
+                hidden:
+                    roundId.endsWith("-r1") ||
+                    live.state !== "open" ||
+                    !view ||
+                    view.wcaAttempts === null ||
+                    view.wcaAttempts.length > 0,
+                onSelect: () => setWithdrawPersonId(result.person.id),
+            },
+        ],
+    };
 
     if (!competition || !rooms) return <LoadingPage />;
 
@@ -127,12 +213,24 @@ const Results = () => {
                     steps
                     value={roundId}
                     onValueChange={(id) => navigate(`/results/round/${id}`)}
+                    getMarker={
+                        liveRounds
+                            ? (id) => (
+                                  <LiveRoundDot
+                                      round={liveRounds.find(
+                                          (r) => r.roundId === id
+                                      )}
+                                  />
+                              )
+                            : undefined
+                    }
                 />
                 {roundId && (
                     <RoundHeader
                         roundId={roundId}
                         meta={getRoundMeta(roundId, wcif)}
                         advancement={getAdvancementText(roundId, event)}
+                        live={live}
                         hasResults={results.length > 0}
                         onEnterAttempt={() => setIsCreateOpen(true)}
                         onRestartGroup={() => setIsRestartOpen(true)}
@@ -167,6 +265,7 @@ const Results = () => {
                                         roundId,
                                         event
                                     )}
+                                    live={live}
                                     className="ml-auto"
                                 />
                             )}
@@ -187,7 +286,8 @@ const Results = () => {
                             />
                         )}
                         <RefreshingRegion isRefreshing={isPreviousData}>
-                            {rows.length === 0 ? (
+                            {rows.length === 0 &&
+                            !liveTable?.onlyInWca.length ? (
                                 <p className="p-8 text-center text-sm text-muted-foreground">
                                     {search
                                         ? "No results match."
@@ -198,6 +298,7 @@ const Results = () => {
                                     rows={rows}
                                     maxAttempts={maxAttempts}
                                     onDeleted={refreshResults}
+                                    live={liveTable}
                                 />
                             )}
                         </RefreshingRegion>
@@ -214,6 +315,18 @@ const Results = () => {
                             getLimitByRoundId(roundId, wcif) ?? undefined
                         }
                     />
+                    {withdrawPersonId && (
+                        <WithdrawFromRoundModal
+                            key={withdrawPersonId}
+                            isOpen
+                            onClose={() => {
+                                setWithdrawPersonId(null);
+                                refreshResults();
+                            }}
+                            roundId={roundId}
+                            personId={withdrawPersonId}
+                        />
+                    )}
                     <RestartGroupModal
                         isOpen={isRestartOpen}
                         onClose={() => {

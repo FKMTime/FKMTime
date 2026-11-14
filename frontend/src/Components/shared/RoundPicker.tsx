@@ -1,5 +1,5 @@
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { useMemo } from "react";
+import { ReactNode, useMemo } from "react";
 import { Competition as WCIF } from "wcif-helpers";
 
 import { Button } from "@/Components/ui/button";
@@ -27,6 +27,8 @@ interface RoundPickerProps {
     timeline?: boolean;
     /** Previous/next round of the schedule */
     steps?: boolean;
+    /** Small marker after a round, e.g. its WCA live results state */
+    getMarker?: (roundId: string) => ReactNode;
     className?: string;
 }
 
@@ -74,6 +76,7 @@ const RoundPicker = ({
     clearLabel,
     timeline,
     steps,
+    getMarker,
     className,
 }: RoundPickerProps) => {
     const isMobile = useIsMobile();
@@ -123,6 +126,7 @@ const RoundPicker = ({
                         liveRoundIds={liveRoundIds}
                         value={value}
                         onValueChange={onValueChange}
+                        getMarker={getMarker}
                     />
                 )}
                 {stepButton(next, "Next", "md:h-auto")}
@@ -181,6 +185,7 @@ const RoundPicker = ({
                                 {liveRoundIds.includes(r.id) && (
                                     <StatusDot tone="primary" />
                                 )}
+                                {getMarker?.(r.id)}
                             </>
                         ),
                     }))}

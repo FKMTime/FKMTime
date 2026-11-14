@@ -3,6 +3,8 @@ import {
     IntegratedLiveConnectionStatus,
     IntegratedLiveNoShows,
     IntegratedLiveRound,
+    IntegratedLiveRoundDetails,
+    IntegratedLiveSyncStatus,
     IntegratedLiveWithdrawalPreview,
     IntegratedLiveWithdrawalResult,
 } from "./interfaces";
@@ -62,6 +64,16 @@ export const integratedLiveRoundsQuery = backendQuery<IntegratedLiveRound[]>(
     "competition/integrated-live/rounds"
 );
 
+/** A round's WCA state and the WCA's copy of each result (SPEC-006 section 5) */
+export const integratedLiveRoundDetailsQuery = queryFamily((roundId) =>
+    backendQuery<IntegratedLiveRoundDetails | null>(
+        `competition/integrated-live/rounds/${roundId}/details`
+    )
+);
+
+/** How often the Results page reads the WCA while a round is on screen */
+export const INTEGRATED_LIVE_REFRESH = 10_000;
+
 /** What argues against opening a later round yet */
 export const integratedLiveBlockersQuery = queryFamily((roundId) =>
     backendQuery<string[]>(
@@ -99,6 +111,12 @@ export const openIntegratedLiveRound = (roundId: string) =>
 
 export const closeIntegratedLiveRound = (roundId: string) =>
     roundAction(`${roundId}/close`, "DELETE");
+
+/** Empties one competitor's result in the WCA; FKMTime's is sent again */
+export const clearIntegratedLiveResult = (
+    roundId: string,
+    registrationId: number
+) => roundAction(`${roundId}/results/${registrationId}/clear`, "POST");
 
 export const addCompetitorToIntegratedLiveRound = (
     roundId: string,
@@ -169,3 +187,41 @@ export const placeInGroup = async (
         message: data.error ?? data.message ?? "The group could not be changed",
     };
 };
+
+/**
+ * The round in WCA live results in one line, e.g. "open, 38 of 40 done, all
+ * sent", or why it can't open yet (SPEC-006 section 5)
+ */
+export const liveStatusLine = (live: IntegratedLiveRoundDetails) => {
+    if (live.waitingReason) return live.waitingReason;
+    const sending =
+        live.needsAttention > 0
+            ? `${live.needsAttention} need attention`
+            : live.onTheWay > 0
+              ? `${live.onTheWay} sending`
+              : "all sent";
+    switch (live.state) {
+        case "open":
+            return live.totalCompetitors !== null
+                ? `open, ${live.completedCompetitors ?? 0} of ${live.totalCompetitors} done, ${sending}`
+                : `open, ${sending}`;
+        case "locked":
+            return live.needsAttention > 0 ? `done, ${sending}` : "done";
+        case "ready":
+            return "ready to open";
+        default:
+            return "not open yet";
+    }
+};
+
+/** What a sync status that needs someone means, in plain words */
+export const ATTENTION_LABELS: Partial<
+    Record<IntegratedLiveSyncStatus, string>
+> = {
+    REJECTED: "Not accepted",
+    NOT_IN_ROUND: "Not in round",
+    NOT_SENDABLE: "Can't be sent",
+};
+
+export const isOnTheWay = (status: IntegratedLiveSyncStatus | null) =>
+    status === "DIRTY" || status === "SENT";

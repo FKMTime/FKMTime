@@ -1,20 +1,22 @@
 import { useAtomValue } from "jotai";
-import { Eraser, Lock, LockOpen, UserPlus } from "lucide-react";
+import { Eraser, ExternalLink, Lock, LockOpen, UserPlus } from "lucide-react";
 import { useState } from "react";
 
 import { RowAction } from "@/Components/shared/RowActions";
 import { useConfirm } from "@/hooks/useConfirm";
-import { useLiveQuery } from "@/hooks/useLiveQuery";
+import {
+    useIntegratedLiveEnabled,
+    useIntegratedLiveRounds,
+} from "@/hooks/useIntegratedLiveRound";
 import { useToast } from "@/hooks/useToast";
 import { activityCodeToName } from "@/lib/activities";
 import { competitionAtom } from "@/lib/atoms";
 import {
     closeIntegratedLiveRound,
-    integratedLiveRoundsQuery,
     invalidateIntegratedLiveRounds,
     openIntegratedLiveRound,
 } from "@/lib/integratedLive";
-import { isOrganizerOrDelegate } from "@/lib/permissions";
+import { WCA_ORIGIN } from "@/lib/request";
 
 /**
  * The round header's WCA Integrated Live Results actions (SPEC-006 section
@@ -27,13 +29,8 @@ export const useIntegratedLiveRoundActions = (roundId: string) => {
     const confirm = useConfirm();
     const [isAddOpen, setIsAddOpen] = useState(false);
     const [isClearOpen, setIsClearOpen] = useState(false);
-    const enabled =
-        isOrganizerOrDelegate() &&
-        competition?.officialResultsDestination === "WCA_INTEGRATED_LIVE" &&
-        competition.integratedLiveConnection === "CONNECTED";
-    const { data: rounds } = useLiveQuery(integratedLiveRoundsQuery, {
-        enabled,
-    });
+    const enabled = useIntegratedLiveEnabled();
+    const rounds = useIntegratedLiveRounds();
     const round = rounds?.find((r) => r.roundId === roundId);
     const name = activityCodeToName(roundId);
     const isFirstRound = roundId.endsWith("-r1");
@@ -101,6 +98,17 @@ export const useIntegratedLiveRoundActions = (roundId: string) => {
                           round.state !== "open" ||
                           (round.completedCompetitors ?? 0) > 0,
                       onSelect: close,
+                  },
+                  {
+                      label: "View on WCA live results",
+                      icon: ExternalLink,
+                      hidden: !["open", "locked"].includes(round.state),
+                      onSelect: () =>
+                          window.open(
+                              `${WCA_ORIGIN}/competitions/${competition?.wcaId}/live/rounds/${roundId}`,
+                              "_blank",
+                              "noopener"
+                          ),
                   },
                   {
                       label: "Clear in WCA Integrated Live Results",

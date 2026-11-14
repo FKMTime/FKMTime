@@ -8,6 +8,7 @@ import {
   HttpStatus,
   Inject,
   Param,
+  ParseIntPipe,
   Post,
   UseGuards,
 } from '@nestjs/common';
@@ -37,7 +38,7 @@ export class IntegratedLiveController {
 
   @Get()
   async getRounds() {
-    return await this.rounds.getRounds();
+    return await this.rounds.getRoundSummaries();
   }
 
   @Get('no-shows')
@@ -91,6 +92,22 @@ export class IntegratedLiveController {
       dto.personId,
       dto.groupId,
     );
+  }
+
+  /** The round's WCA state, sync status and the WCA's copy of each result */
+  @Get(':roundId/details')
+  async getRoundDetails(@Param('roundId') roundId: string) {
+    return await this.rounds.getRoundDetails(roundId);
+  }
+
+  /** Empties one competitor's result in the WCA, then resends FKMTime's */
+  @HttpCode(HttpStatus.OK)
+  @Post(':roundId/results/:registrationId/clear')
+  async clearResult(
+    @Param('roundId') roundId: string,
+    @Param('registrationId', ParseIntPipe) registrationId: number,
+  ) {
+    return await this.rounds.clearResult(roundId, registrationId);
   }
 
   @Get(':roundId/blockers')
