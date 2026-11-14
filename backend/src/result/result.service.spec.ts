@@ -309,6 +309,7 @@ describe('ResultService settling waiting extras', () => {
       expect.any(Date),
       null,
       'No longer needed: cutoff not met',
+      undefined,
     );
   });
 

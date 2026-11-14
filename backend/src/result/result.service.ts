@@ -25,7 +25,7 @@ import {
   publicUserSelect,
 } from 'src/constants';
 import { ContestsService } from 'src/contests/contests.service';
-import { DbService, INCLUDING_REMOVED } from 'src/db/db.service';
+import { DbService, INCLUDING_REMOVED, Tx } from 'src/db/db.service';
 import { isUnofficialEvent } from 'src/events';
 import { IntegratedLiveService } from 'src/integrated-live/integratedLive.service';
 import { PersonService } from 'src/person/person.service';
@@ -337,8 +337,12 @@ export class ResultService {
     return result;
   }
 
-  async getResultOrCreateIncludingRemoved(personId: string, roundId: string) {
-    return this.prisma.result.upsert({
+  async getResultOrCreateIncludingRemoved(
+    personId: string,
+    roundId: string,
+    tx?: Tx,
+  ) {
+    return (tx?.db ?? this.prisma).result.upsert({
       where: {
         personId_roundId: {
           personId: personId,
@@ -1002,9 +1006,10 @@ export class ResultService {
   }
 
   /** Closes attempts a missed cutoff made unnecessary. Returns how many */
-  async settleWaitingExtras(resultId: string) {
-    const competition = await this.prisma.competition.findFirst();
-    const result = await this.prisma.result.findUnique({
+  async settleWaitingExtras(resultId: string, tx?: Tx) {
+    const db = tx?.db ?? this.prisma;
+    const competition = await db.competition.findFirst();
+    const result = await db.result.findUnique({
       where: { id: resultId },
       include: { attempts: true },
     });
@@ -1017,7 +1022,7 @@ export class ResultService {
     );
     const now = new Date();
     for (const attempt of attemptsToVoid) {
-      const voided = await this.prisma.attempt.update({
+      const voided = await db.attempt.update({
         where: { id: attempt.id },
         data: { status: AttemptStatus.VOIDED },
       });
@@ -1026,6 +1031,7 @@ export class ResultService {
         now,
         null,
         'No longer needed: cutoff not met',
+        tx,
       );
     }
     return attemptsToVoid.length;

@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { AttemptStatus, AttemptType } from '@prisma/client';
-import { DbService } from 'src/db/db.service';
+import { DbService, Tx } from 'src/db/db.service';
 
 export interface AttemptSnapshot {
   id: string;
@@ -25,8 +25,9 @@ export class AttemptEditLogService {
     editedAt: Date,
     editedById: string | null,
     logComment: string,
+    tx?: Tx,
   ) {
-    await this.prisma.attemptEditLog.create({
+    await (tx?.db ?? this.prisma).attemptEditLog.create({
       data: {
         attemptId: snapshot.id,
         editedAt,

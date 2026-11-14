@@ -1,7 +1,7 @@
 import { Attempt, AttemptStatus, AttemptType } from '@prisma/client';
 import { AttemptEditLogService } from 'src/attempt-edit-log/attempt-edit-log.service';
 import { DNF_VALUE, DNS_VALUE } from 'src/constants';
-import { DbService } from 'src/db/db.service';
+import { DbService, Tx } from 'src/db/db.service';
 
 import { ResultService } from './result.service';
 import { ResultFromDeviceService } from './resultFromDevice.service';
@@ -160,6 +160,7 @@ describe('ResultFromDeviceService when the time limit runs out on an extra', () 
     };
   };
   let service: ResultFromDeviceService;
+  let tx: Tx;
 
   beforeEach(() => {
     attempts = [
@@ -207,6 +208,7 @@ describe('ResultFromDeviceService when the time limit runs out on an extra', () 
         }),
       },
     };
+    tx = { db: prisma, afterCommit: (effect) => effect() } as unknown as Tx;
     service = new ResultFromDeviceService(
       prisma as unknown as DbService,
       null,
@@ -219,7 +221,7 @@ describe('ResultFromDeviceService when the time limit runs out on an extra', () 
   });
 
   it('gives each waiting attempt a DNS extra, in position order', async () => {
-    await service['dnsRemainingAttempts']('result-1', 5);
+    await service['dnsRemainingAttempts']('result-1', 5, tx);
 
     const extras = attempts.filter(
       (a) => a.type === AttemptType.EXTRA_ATTEMPT && a.penalty === DNS_VALUE,
@@ -230,7 +232,7 @@ describe('ResultFromDeviceService when the time limit runs out on an extra', () 
   });
 
   it('then fills the remaining standard attempts with DNS', async () => {
-    await service['dnsRemainingAttempts']('result-1', 5);
+    await service['dnsRemainingAttempts']('result-1', 5, tx);
 
     const standard = attempts.filter(
       (a) => a.type === AttemptType.STANDARD_ATTEMPT && a.penalty === DNS_VALUE,

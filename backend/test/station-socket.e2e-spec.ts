@@ -44,6 +44,7 @@ const CARD = {
   c2: 7710021,
   c3: 7710024,
   c4: 7710019,
+  resent: 7710026,
   judge: 7710025,
   foreignJudge: 7710022,
   notRegistered: 7710016,
@@ -68,6 +69,7 @@ describe('Station socket protocol (e2e)', () => {
   let c2: Person;
   let c3: Person;
   let c4: Person;
+  let resent: Person;
   let judge: Person;
   let foreignJudge: Person;
   let defaultLocale: string;
@@ -157,6 +159,10 @@ describe('Station socket protocol (e2e)', () => {
     );
     c3 = await fixtures.giveCard(pick('in 333', registeredFor('333')), CARD.c3);
     c4 = await fixtures.giveCard(pick('in 333', registeredFor('333')), CARD.c4);
+    resent = await fixtures.giveCard(
+      pick('in 333', registeredFor('333')),
+      CARD.resent,
+    );
     judge = await fixtures.giveCard(
       pick(
         'from the host country',
@@ -545,6 +551,20 @@ describe('Station socket protocol (e2e)', () => {
           ),
         );
         expect(await attemptsOf(c1.id, '333-r1')).toHaveLength(1);
+      });
+
+      it('enters a solve resent before the first send was answered once', async () => {
+        // The station resends when the reply is lost, and the first send can
+        // still be being entered when the resend arrives
+        const data = attempt({ competitorId: CARD.resent });
+
+        const responses = await Promise.all([
+          station.request('EnterAttempt', data),
+          station.request('EnterAttempt', data),
+        ]);
+
+        expect(responses.map((r) => r.data.status).sort()).toEqual([200, 409]);
+        expect(await attemptsOf(resent.id, '333-r1')).toHaveLength(1);
       });
 
       it('lets the station drop an attempt it sends again unchanged', async () => {
