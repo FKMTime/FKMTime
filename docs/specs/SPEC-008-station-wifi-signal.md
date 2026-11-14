@@ -3,8 +3,7 @@
 - **Status:** Draft
 - **Created:** 2026-11-14
 - **Related:** FKMTime/micro-connector#28 (connector CPU), #676 (EnterAttempt
-  in one transaction), esp-hal-wifimanager (an RSSI API, being added by its
-  maintainer)
+  in one transaction), esp-hal-wifimanager 0.6.7 (`WifiManager::rssi`)
 
 ## Problem
 
@@ -56,11 +55,11 @@ The station reads its own RSSI from the Wi-Fi driver and sends it in the live
 header it already sends every 5 s while idle and every 1 s during a solve
 (`src/utils/live_send.rs`).
 
-- **Reading it:** esp-hal-wifimanager keeps the Wi-Fi controller inside its
-  private connection task, so the firmware can't call
-  `WifiController::rssi()` today. Its maintainer is adding an accessor (along
-  the lines of `rssi() -> Option<i8>`, refreshed every ~2 s while connected
-  and `None` after a disconnect). The firmware work waits for that release.
+- **Reading it:** `WifiManager::rssi() -> Option<i8>` from
+  esp-hal-wifimanager 0.6.7. The connection task samples it every 2 s while
+  connected, and it's `None` while disconnected, reconnecting or with the
+  radio stopped. The firmware bumps the crate to 0.6.7 and calls it when
+  building the live header.
 - **Carrying it:** byte 86 of the 100-byte live header, as an `i8` in dBm.
   `0` means unknown (no reading yet, or disconnected). Bytes 86..99 are zero
   padding today (`src/utils/live_header.rs`, `write_header` fills
@@ -158,8 +157,8 @@ No migration. Each part tolerates the others being older:
 1. **Backend and frontend** first. Testable with the station tester or the
    e2e station helper sending `rssi`.
 2. **Connector.** Older backends ignore the extra JSON field.
-3. **Firmware**, once the esp-hal-wifimanager release with the RSSI accessor
-   is out. Until then every station shows "—".
+3. **Firmware**, on esp-hal-wifimanager 0.6.7. Until stations are updated,
+   they show "—".
 
 Reverting any one part leaves the others working, with every station shown
 as unknown.
