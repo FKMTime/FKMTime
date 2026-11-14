@@ -5,11 +5,12 @@ import { AuthModule } from '../auth/auth.module';
 import { SocketModule } from '../socket/socket.module';
 import { DeviceController } from './device.controller';
 import { DeviceService } from './device.service';
+import { StationSignalService } from './stationSignal.service';
 
 @Module({
-  providers: [DeviceService],
+  providers: [DeviceService, StationSignalService],
   controllers: [DeviceController],
-  exports: [DeviceService],
+  exports: [DeviceService, StationSignalService],
   imports: [
     AuthModule,
     forwardRef(() => SocketModule),

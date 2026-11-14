@@ -6,6 +6,7 @@ import { AppGateway } from '../app.gateway';
 import { DbService } from '../db/db.service';
 import { SocketController } from '../socket/socket.controller';
 import { DeviceService } from './device.service';
+import { StationSignalService } from './stationSignal.service';
 
 describe('DeviceService', () => {
   let service: DeviceService;
@@ -56,6 +57,17 @@ describe('DeviceService', () => {
             sendFirmware: jest.fn(),
           },
         },
+        {
+          provide: StationSignalService,
+          useValue: {
+            getSignal: jest.fn().mockReturnValue({
+              level: 'weak',
+              rssi: -66,
+              link: null,
+              reportedRssi: true,
+            }),
+          },
+        },
       ],
     }).compile();
 
@@ -91,8 +103,29 @@ describe('DeviceService', () => {
 
       const result = await service.getAllDevices();
 
-      expect(result).toEqual([{ ...mockDevices[0], count: 5 }]);
+      expect(result).toEqual([
+        {
+          ...mockDevices[0],
+          count: 5,
+          signal: { level: 'weak', rssi: -66, link: null, reportedRssi: true },
+        },
+      ]);
       expect(dbService.device.findMany).toHaveBeenCalled();
+    });
+
+    it('adds the Wi-Fi signal to stations only', async () => {
+      jest.spyOn(dbService.device, 'findMany').mockResolvedValue([
+        { id: 'station', espId: 1, type: DeviceType.STATION },
+        { id: 'attendance', espId: 2, type: DeviceType.ATTENDANCE_RUNNER },
+      ] as any);
+      (dbService.attempt.groupBy as jest.Mock) = jest
+        .fn()
+        .mockResolvedValue([]);
+
+      const [station, attendance] = await service.getAllDevices();
+
+      expect(station).toHaveProperty('signal.level', 'weak');
+      expect(attendance).not.toHaveProperty('signal');
     });
 
     it('should filter by device type', async () => {

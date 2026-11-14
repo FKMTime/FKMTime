@@ -110,8 +110,11 @@ export class Station {
         inspection?: number;
         competitorCardId?: string;
         groupId?: string;
+        /** The station's Wi-Fi RSSI in dBm, sent by newer firmware */
+        rssi?: number;
     }) {
         return this.send("CurrentTimeInfo", {
+            rssi: info.rssi,
             espId: info.espId,
             time: info.timeCs,
             inspection: info.inspection,

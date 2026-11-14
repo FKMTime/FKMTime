@@ -8,4 +8,6 @@ export interface CurrentTimeInfoDto {
   timerRunning?: boolean | null;
   /** Whether inspection is running; absent from older firmware */
   inspectionRunning?: boolean | null;
+  /** The station's Wi-Fi RSSI in dBm; absent or null when unknown (SPEC-008) */
+  rssi?: number | null;
 }

@@ -61,6 +61,17 @@ export const setQueryData = <T>(
 };
 
 /**
+ * Changes cached data in place, e.g. from a live event, and does nothing
+ * while the key has no data. Unlike setQueryData it leaves a running fetch
+ * alone: a frequent event mustn't cancel the refetch another change started.
+ */
+export const patchQueryData = <T>(key: string, update: (previous: T) => T) => {
+    queryClient.setQueryData<T>([key], (previous) =>
+        previous === undefined ? previous : update(previous)
+    );
+};
+
+/**
  * Fetches and caches a query. A fetch while another is loading replaces it
  * once the key has data, and the replaced call resolves with the newer data,
  * so a slow older response can't overwrite a newer one.

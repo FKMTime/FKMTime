@@ -1223,6 +1223,82 @@ describe('Station socket protocol (e2e)', () => {
     });
   });
 
+  describe('Wi-Fi signal (SPEC-008)', () => {
+    const signalOf = async (espId: number) => {
+      const res = await request(app.getHttpServer())
+        .get('/device')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .expect(200);
+      return res.body.find((d: { espId: number }) => d.espId === espId)?.signal;
+    };
+
+    it("shows a station's own RSSI from CurrentTimeInfo on the device list", async () => {
+      for (const rssi of [-66, -67, -65]) {
+        const res = await station.request('CurrentTimeInfo', {
+          espId: ESP.stationA,
+          rssi,
+        });
+        expect(res).toMatchObject({ type: 'EmptyResp' });
+      }
+
+      expect(await signalOf(ESP.stationA)).toEqual({
+        level: 'weak',
+        rssi: -66,
+        link: null,
+        reportedRssi: true,
+      });
+    });
+
+    it('answers StationLink and shows what the router reports', async () => {
+      const res = await station.request('StationLink', {
+        espId: ESP.stationB,
+        apSignal: -52,
+        txBitrateKbps: 72200,
+        txRetriesPercent: 14,
+      });
+
+      expect(res).toMatchObject({ type: 'EmptyResp', data: { error: false } });
+      // Older firmware: the level comes from the access point's reading
+      expect(await signalOf(ESP.stationB)).toEqual({
+        level: 'ok',
+        rssi: -52,
+        link: { apSignal: -52, txBitrateKbps: 72200, txRetriesPercent: 14 },
+        reportedRssi: false,
+      });
+    });
+
+    it('leaves a station on older firmware unknown', async () => {
+      await station.request('CurrentTimeInfo', {
+        espId: ESP.stationEmpty,
+        time: 1500,
+      });
+      await station.request('CurrentTimeInfo', {
+        espId: ESP.stationEmpty,
+        rssi: null,
+      });
+
+      expect(await signalOf(ESP.stationEmpty)).toEqual({
+        level: 'unknown',
+        rssi: null,
+        link: null,
+        reportedRssi: false,
+      });
+    });
+
+    it('adds no signal to attendance devices', async () => {
+      const res = await request(app.getHttpServer())
+        .get('/device')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .expect(200);
+      const attendance = res.body.find(
+        (d: { espId: number }) => d.espId === ESP.runnerAttendance,
+      );
+
+      expect(attendance).toBeDefined();
+      expect(attendance).not.toHaveProperty('signal');
+    });
+  });
+
   describe('messages pushed to stations by the backend', () => {
     let second: StationClient;
 

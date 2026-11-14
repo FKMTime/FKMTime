@@ -135,12 +135,19 @@ router running the instance), the connector reads it too:
   one. For a station on older firmware, the access point's signal for it,
   with the same median, thresholds and staleness.
 - **Device list:** `GET /device` adds to each station, from memory:
-  `signal: { level: 'ok' | 'weak' | 'unknown', rssi: number | null, link: { apSignal, txBitrateKbps, txRetriesPercent } | null }`.
+  `signal: { level: 'ok' | 'weak' | 'unknown', rssi: number | null, link: { apSignal, txBitrateKbps, txRetriesPercent } | null, reportedRssi: boolean }`.
   `link` is `null` when the router side isn't available, or hasn't reported
-  for 30 s.
-- **Live updates:** a new `deviceSignal` event (`{ espId, level, rssi, link }`) to
+  for 30 s. `reportedRssi` says whether the station has sent its own RSSI
+  since the backend started. Without it the panel couldn't tell a station
+  that stopped reporting ("Waiting for the station") from one on older
+  firmware ("Needs newer station firmware"): both are `unknown` with no
+  `rssi`.
+- **Live updates:** a new `deviceSignal` event (`{ espId, level, rssi, link, reportedRssi }`) to
   the `device` room. It fires when a station's level changes, and at most
   every 10 s per station otherwise, so the dBm in the tooltip stays fresh.
+  A station that stops reporting sends nothing, so the backend checks every
+  5 s for stations whose readings or link went stale and sends their
+  `unknown` level or `null` link then.
   It does **not** reuse `deviceUpdated`, which makes every open Devices page
   refetch the whole list. With ~15 stations sending every 5 s, that would
   mean several refetches a second.
@@ -165,8 +172,8 @@ router running the instance), the connector reads it too:
   `aria-label`. Its first line is the action:
   - `weak`: "Weak signal — move closer to the router"
   - `ok`: "Good signal"
-  - `unknown`: "Waiting for the station" if it reported before, otherwise
-    "Needs newer station firmware"
+  - `unknown`: "Waiting for the station" if it reported before
+    (`reportedRssi`), otherwise "Needs newer station firmware"
 - Below that, the detail:
   - "−66 dBm (median of the last 5 readings)"
   - when `link` is there, the router's view: "Router hears it at −68 dBm,
