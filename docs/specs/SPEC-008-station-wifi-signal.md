@@ -28,7 +28,7 @@ start seeing timeouts mid-round.
 ## Goals
 
 - During setup, the Devices page tells the organiser which stations have a
-  weak signal, in plain words, while there is still time to move the station
+  weak signal, with an icon whose tooltip says what to do, while there is still time to move the station
   or the router.
 - The hint is steady: one bad reading doesn't flip it, and a station sitting
   near the threshold doesn't flicker.
