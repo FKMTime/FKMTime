@@ -124,8 +124,10 @@ router running the instance), the connector reads it too:
   - −63 dBm is where retries passed 100% at the competition above. The 4 dB
     band stops a station at −62/−63 from flickering.
 - `StationLink` updates the same service with the router's view of the
-  station. A backend that doesn't know `StationLink` answers it as an
-  unknown request type, which the connector already tolerates.
+  station. The connector sends it without waiting for a reply. A backend
+  that doesn't know it logs "Unknown request type" and carries on (covered
+  by the station socket e2e tests). That's another reason the backend ships
+  first.
 - **Which reading decides the level:** the station's own RSSI when it has
   one. For a station on older firmware, the access point's signal for it,
   with the same median, thresholds and staleness.
@@ -203,7 +205,7 @@ No migration. Each part tolerates the others being older:
 
 1. **Backend and frontend** first. Testable with the station tester or the
    e2e station helper sending `rssi`.
-2. **Connector.** Older backends ignore the extra JSON field and answer
+2. **Connector.** Older backends ignore the extra JSON field, and only log
    `StationLink` as an unknown request.
 3. **Firmware**, on esp-hal-wifimanager 0.6.7. Until stations are updated,
    they show "—".
