@@ -1,6 +1,6 @@
 # SPEC-008: Station Wi-Fi signal on the Devices page
 
-- **Status:** Draft
+- **Status:** Accepted
 - **Created:** 2026-11-14
 - **Related:** FKMTime/micro-connector#28 (connector CPU), #676 (EnterAttempt
   in one transaction), esp-hal-wifimanager 0.6.7 (`WifiManager::rssi`)
