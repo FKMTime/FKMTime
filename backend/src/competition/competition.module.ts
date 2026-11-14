@@ -16,6 +16,7 @@ import { CompetitionService } from './competition.service';
 import { ImportService } from './import.service';
 import { IntegratedLiveConnectionService } from './integratedLiveConnection.service';
 import { RoomsService } from './rooms.service';
+import { ScoretakersService } from './scoretakers.service';
 import { StatisticsService } from './statistics.service';
 import { SyncService } from './sync.service';
 
@@ -30,6 +31,7 @@ import { SyncService } from './sync.service';
     IntegratedLiveConnectionService,
     IntegratedLiveService,
     IntegratedLiveRoundsService,
+    ScoretakersService,
   ],
   controllers: [CompetitionController, IntegratedLiveController],
   imports: [

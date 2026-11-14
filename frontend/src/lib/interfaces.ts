@@ -124,6 +124,19 @@ export interface IntegratedLiveRegistrationRules {
     competitorLimit: number | null;
 }
 
+/** A WCA user who may enter results for the competition */
+export interface IntegratedLiveScoretaker {
+    wcaUserId: number;
+    name: string;
+}
+
+export interface IntegratedLiveScoretakers {
+    ok: boolean;
+    scoretakers: IntegratedLiveScoretaker[];
+    message?: string;
+    needsWcaSignIn?: boolean;
+}
+
 /** A result the WCA holds that FKMTime has no result for */
 export interface IntegratedLiveOnlyInWca {
     registrationId: number;
