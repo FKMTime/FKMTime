@@ -1,6 +1,6 @@
 # SPEC-006: Sending results where the WCA says, and running rounds in WCA integrated live results
 
-- **Status:** Accepted
+- **Status:** Implemented
 - **Created:** 2026-11-08
 - **Related:** WCA live API docs
   (https://next.worldcubeassociation.org/api.html#/live), WCA source
@@ -769,16 +769,16 @@ This list comes from the WCA live admin pages (`next-frontend/.../live/admin`,
 
 | WCA live admin | In FKMTime |
 |---|---|
-| Rounds overview with each round's state | Results: the round strip and the round header |
-| Open a round | First rounds: automatic at the first group. Later rounds: suggested by a notification and Home's room card, one click to open, or automatic if the competition opted in. Also in the round header menu |
+| Rounds overview with each round's state | Results: the round picker and the round's details line |
+| Open a round | First rounds: automatic at the first group. Later rounds: suggested by a notification and a card on Home, one click to open, or automatic if the competition opted in. Also in the round header menu |
 | Close a round with no results | Round header menu |
 | Clear a whole round | Round header menu, followed by an automatic resend |
-| Warning when too few competitors are left (regulation 9m) | Round header, as the reason the round can't open |
+| Warning when too few competitors are left (regulation 9m) | The round's details line, as the reason the round can't open |
 | Enter or edit attempts | FKMTime's stations and attempt editing, as today. Sending is automatic (section 3) |
 | Double-check page | FKMTime's double-check, as today |
 | Add a person to a round | Automatic, or **Add competitor to round** in the round header menu, for people registered for the event. Adding an event to a registration stays on the WCA website (section 4) |
 | Quit a competitor, with who advances instead | Attendance and the result's menu (section 4) |
-| Remove several competitors at once | Home's room card at the end of a round (section 4) |
+| Remove several competitors at once | A card on Home once every group of the round has run (section 4) |
 | Clear one competitor's result | Automatic on restart group and delete result, plus the result's menu |
 | Round's time limit and cutoff | Round header, as today |
 | A competitor's results across rounds | Person page, as today |
@@ -790,12 +790,14 @@ the round's public page.
 
 #### Results page
 
-- **Round strip:** each round gets a small dot for its WCA state: not open
-  yet, open, done (locked), or needs attention.
-- **Round header:** a line under the time limit and cutoff, e.g. "WCA live
-  results: open, 38 of 40 done, all sent". When the round can't open, the
-  reason replaces the line, in plain words: "Waiting for 333-r1: 2 empty
-  results" or "Needs at least 8 competitors (regulation 9m), 6 left".
+- **Round picker:** each round in the schedule timeline (desktop) and the
+  round tabs (phones) gets a small dot for its WCA state: not open yet, open,
+  done (locked), or needs attention. Results that only wait for their round
+  to open don't count as needing attention.
+- **Round details:** next to the format, time limit and cutoff, a line such
+  as "WCA live results: open, 38 of 40 done, all sent". When the round can't
+  open, the reason replaces it, in plain words: "Waiting for 333-r1: 2 empty
+  results" or "Needs at least 8 competitors (regulation 9m)".
 - **Round header menu:** the existing "Resubmit to <platform>" item stays and
   means "send the whole round again". Next to it, depending on the round's
   state: **Open in WCA live results**, **Close in WCA live results**, **Clear
@@ -805,12 +807,13 @@ the round's public page.
     ILR ends up matching FKMTime. It is for when ILR holds something nobody
     can explain, e.g. results typed in by hand on the WCA website.
 - **Results table:**
-  - Each row gets a sync badge (sent, or needs attention with the reason on
-    hover) and ILR's "advances" / "may advance" flag. Confirmed results show
-    no badge, to keep the table quiet.
-  - The row menu gets **Clear in WCA live results** and **Remove from
-    round** when they apply, next to "Delete result". A result marked "not in
-    round" links to the reason (section 4).
+  - Each row gets a sync badge ("Sending", "Not accepted", "Not in round",
+    "Can't be sent" with the reason on hover, or "Differs") and ILR's
+    "advances" / "may advance" flag. Confirmed results show no badge, to keep
+    the table quiet.
+  - The row menu gets **Clear in WCA live results** when ILR has attempts for
+    the result, and **Remove from round** for a later-round competitor ILR
+    lists without attempts, next to "Delete result".
   - A result that is in ILR but has no FKMTime result gets a greyed row,
     "Only in WCA live results". Its only action is Clear. FKMTime never copies
     it in.
@@ -819,22 +822,32 @@ the round's public page.
 
 - **"WCA live results" card**, next to the warnings and limits card: sync
   status, the last send, and the reason if something is wrong.
+- **Registration reasons:** for "Not registered for 333 on the WCA website"
+  and "No accepted WCA registration", the card gives the rule that applies,
+  from the WCA's competition data (the deadline for adding events, WCRP 6.4,
+  6.4.2, 6.4.2.1, 6.4.4; Regulation 2c1 and, with on-site registration
+  advertised, WCRP 5.2.1), with a link to the registrations on the WCA
+  website.
 - **Differences:** when ILR's attempts differ from FKMTime's, the card lists
-  ILR's attempts and highlights the differences.
-- **Menu:** the existing "Resubmit scorecard to <platform>" item stays. The
-  same Clear, Add and Remove items as in the table go next to it.
+  ILR's attempts next to FKMTime's and highlights the differences.
+- **Clear:** the card has **Clear in WCA live results**, which empties the
+  result in ILR and sends FKMTime's again. The existing "Resubmit scorecard
+  to <platform>" item stays in the menu.
 
 #### Home
 
-- **Room card:** when the first group of a later round starts, the card
-  suggests **Open 333-r2 in WCA live results**, with anything that argues
-  against opening yet (section 4).
-- **End of a round:** when the last group of a round ends, the room card shows
-  "3 competitors didn't come to 333-r1", with **Remove from round in WCA live
-  results** (section 4).
-- **Connection or sending problems:** a broken connection, or results stuck for
-  more than a few minutes, show one alert above the rooms, linking to the
-  affected round. When everything is fine, Home shows nothing extra.
+Each of these is a card above the rooms:
+
+- **Opening a later round:** when its first group starts, a card suggests
+  **Open 333-r2**, with anything that argues against opening yet (section 4).
+- **End of a round:** once every group of a round with competitors in it has
+  run, a card shows "3 competitors didn't come to 333-r1", with **Remove from
+  333-r1 in WCA Integrated Live Results** (section 4).
+- **Connection or sending problems:** a broken connection has its own alert.
+  Results still on their way after 5 minutes, or refused, show one alert
+  listing each affected round with a link to it. Results that only wait for
+  their round to open aren't counted. When everything is fine, Home shows
+  nothing extra.
 
 #### Attendance
 
@@ -846,8 +859,9 @@ round** in their row menu: the withdrawal flow with who advances instead
 
 The live results section from section 1 holds:
 
-- **The connection card** (section 2): connected as whom, the last successful
-  send, the last error, and Reconnect / Disconnect.
+- **The connection card** (section 2): connected as whom, whether that
+  account can enter results, and Reconnect / Disconnect. Sending problems
+  show on Home, not here.
 - **Scoretakers:** the WCA users who may enter results for the competition.
   FKMTime needs them so that someone other than the organisers can be the
   connected person.
@@ -867,7 +881,7 @@ The live results section from section 1 holds:
 
 The round header line, the badges, the "only in WCA" rows and the differences
 all come from the same `GET /rounds/{roundId}` read that confirms delivery
-(section 3), plus `GET /rounds` for the round strip. While a round's results
+(section 3), plus `GET /rounds` for the round picker. While a round's results
 are on screen, these reads refresh every 10 seconds. They are public and don't
 count against the writes FKMTime rations.
 
@@ -948,7 +962,7 @@ count against the writes FKMTime rations.
       FKMTime's existing pages. A competition day run on the dev stack
       against dummy WCA never needs the WCA live admin pages, and FKMTime
       gets no new page or navigation entry.
-- [ ] The round strip and round header show each round's WCA state, with the
+- [ ] The round picker and the round's details line show each round's WCA state, with the
       reason when it can't open. The round header menu offers Open, Close
       and Clear only where ILR accepts them.
 - [ ] The single result page shows ILR's attempts when they differ from
