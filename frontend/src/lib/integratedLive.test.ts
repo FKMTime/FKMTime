@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { liveStatusLine } from "./integratedLive";
+import { liveStatusLine, registrationHint } from "./integratedLive";
 import { IntegratedLiveRoundDetails } from "./interfaces";
 
 const details = (
@@ -47,5 +47,68 @@ describe("liveStatusLine", () => {
         expect(liveStatusLine(details({ state: "ready" }))).toBe(
             "ready to open"
         );
+    });
+});
+
+describe("registrationHint", () => {
+    const rules = (
+        overrides: Partial<{
+            eventChangeDeadline: string | null;
+            onTheSpotRegistration: boolean;
+            competitorLimit: number | null;
+        }> = {}
+    ) => ({
+        eventChangeDeadline: null,
+        onTheSpotRegistration: false,
+        competitorLimit: null,
+        ...overrides,
+    });
+    const now = new Date("2026-11-13T10:00:00Z");
+    const notRegistered = "Not registered for 333 on the WCA website";
+
+    it("points to the deadline for adding events while it is open", () => {
+        expect(
+            registrationHint(
+                notRegistered,
+                rules({ eventChangeDeadline: "2026-11-14T10:00:00Z" }),
+                now
+            )
+        ).toMatch(/until .* \(WCRP 6\.4\)/);
+    });
+
+    it("leaves it to the Delegate once the deadline passed", () => {
+        expect(
+            registrationHint(
+                notRegistered,
+                rules({ eventChangeDeadline: "2026-11-01T10:00:00Z" }),
+                now
+            )
+        ).toMatch(/WCRP 6\.4\.4/);
+    });
+
+    it("explains the rule with no deadline", () => {
+        expect(registrationHint(notRegistered, rules(), now)).toMatch(
+            /WCRP 6\.4\.2\b.*WCRP 6\.4\.2\.1/
+        );
+    });
+
+    it("warns about on-site registration and the competitor limit", () => {
+        const hint = registrationHint(
+            "No accepted WCA registration",
+            rules({ onTheSpotRegistration: true, competitorLimit: 60 }),
+            now
+        );
+        expect(hint).toMatch(/Regulation 2c1/);
+        expect(hint).toMatch(/limit \(60\).*WCRP 5\.2\.1/);
+        expect(
+            registrationHint("No accepted WCA registration", rules(), now)
+        ).not.toMatch(/5\.2\.1/);
+    });
+
+    it("has nothing to say about other reasons", () => {
+        expect(
+            registrationHint("Attempts after a missed cutoff", rules(), now)
+        ).toBeNull();
+        expect(registrationHint(null, rules(), now)).toBeNull();
     });
 });

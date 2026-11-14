@@ -1,13 +1,20 @@
+import { useAtomValue } from "jotai";
+
 import { StatusBadge } from "@/Components/shared/StatusBadge";
 import { Button } from "@/Components/ui/button";
 import { useConfirm } from "@/hooks/useConfirm";
 import { useIntegratedLiveRound } from "@/hooks/useIntegratedLiveRound";
+import { useLiveQuery } from "@/hooks/useLiveQuery";
 import { useToast } from "@/hooks/useToast";
+import { competitionAtom } from "@/lib/atoms";
 import {
     ATTENTION_LABELS,
     clearIntegratedLiveResult,
+    integratedLiveRegistrationRulesQuery,
     invalidateIntegratedLiveRounds,
     isOnTheWay,
+    registrationHint,
+    wcaRegistrationsUrl,
 } from "@/lib/integratedLive";
 import { Attempt, IntegratedLiveResultView, Result } from "@/lib/interfaces";
 import {
@@ -47,8 +54,16 @@ const WcaLiveResultsCard = ({
     const { byResultId } = useIntegratedLiveRound(result.roundId);
     const confirm = useConfirm();
     const { toast } = useToast();
+    const competition = useAtomValue(competitionAtom);
     const view = byResultId.get(result.id);
+    // Only read for the reasons a registration change can fix
+    const isRegistrationReason =
+        registrationHint(view?.error ?? null, null) !== null;
+    const { data: rules } = useLiveQuery(integratedLiveRegistrationRulesQuery, {
+        enabled: isRegistrationReason,
+    });
     if (!view) return null;
+    const hint = registrationHint(view.error, rules);
     const registrationId = view.registrationId;
 
     const clear = () =>
@@ -98,6 +113,21 @@ const WcaLiveResultsCard = ({
             )}
             {view.error && (
                 <p className="text-[13px] text-warning">{view.error}</p>
+            )}
+            {hint && (
+                <p className="text-[13px] text-muted-foreground">
+                    {hint}{" "}
+                    {competition && (
+                        <a
+                            className="font-semibold text-foreground underline"
+                            href={wcaRegistrationsUrl(competition.wcaId)}
+                            target="_blank"
+                            rel="noreferrer"
+                        >
+                            Registrations on the WCA website
+                        </a>
+                    )}
+                </p>
             )}
             {view.differs && (
                 <div className="flex flex-col gap-1 text-[13px]">

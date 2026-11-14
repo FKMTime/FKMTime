@@ -20,6 +20,7 @@ describe('IntegratedLiveRoundsService', () => {
     handleIntegratedLiveRoundsChanged: jest.Mock;
   };
   let service: IntegratedLiveRoundsService;
+  let wcaService: { getCompetitionInfo: jest.Mock };
 
   const calls = () =>
     connection.authorizedFetch.mock.calls.map(
@@ -102,11 +103,27 @@ describe('IntegratedLiveRoundsService', () => {
         ),
       },
       liveSync: {
-        findMany: jest.fn(async ({ where }) =>
-          (previousResults as Record<string, any>[])
-            .filter((r) => where.status.in.includes(r.liveSync?.status))
-            .map((r) => ({ result: { roundId: r.roundId } })),
-        ),
+        findMany: jest.fn(async ({ where }) => {
+          const matches = (
+            sync: Record<string, any> | null,
+            condition: Record<string, any>,
+          ) =>
+            !!sync &&
+            condition.status.in.includes(sync.status) &&
+            (!condition.updatedAt ||
+              new Date(sync.updatedAt ?? 0) < condition.updatedAt.lt);
+          return (previousResults as Record<string, any>[])
+            .filter((r) =>
+              (where.OR ?? [where]).some((c: Record<string, any>) =>
+                matches(r.liveSync, c),
+              ),
+            )
+            .map((r) => ({
+              status: r.liveSync.status,
+              error: r.liveSync.error ?? null,
+              result: { roundId: r.roundId },
+            }));
+        }),
       },
       room: { findMany: jest.fn(async () => rooms) },
       staffActivity: {
@@ -131,11 +148,19 @@ describe('IntegratedLiveRoundsService', () => {
         ),
       },
     };
+    wcaService = {
+      getCompetitionInfo: jest.fn(async () => ({
+        event_change_deadline_date: '2026-11-10T23:00:00.000Z',
+        on_the_spot_registration: true,
+        competitor_limit: 60,
+      })),
+    };
     service = new IntegratedLiveRoundsService(
       prisma as never,
       connection as never,
       sender as never,
       appGateway as never,
+      wcaService as never,
     );
   });
 
@@ -569,6 +594,81 @@ describe('IntegratedLiveRoundsService', () => {
 
       expect(outcome).toEqual({ ok: true, message: 'Cleared' });
       expect(sender.markDirty).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('Home problems', () => {
+    const sync = (
+      roundId: string,
+      status: LiveSyncStatus,
+      minutesAgo: number,
+      error: string | null = null,
+    ) => ({
+      roundId,
+      liveSync: {
+        status,
+        error,
+        updatedAt: new Date(Date.now() - minutesAgo * 60_000),
+      },
+    });
+
+    it('counts results stuck on their way and refused ones, by round', async () => {
+      previousResults = [
+        sync('333-r1', LiveSyncStatus.DIRTY, 10),
+        sync('333-r1', LiveSyncStatus.SENT, 7),
+        sync('333-r1', LiveSyncStatus.DIRTY, 1),
+        sync('333-r1', LiveSyncStatus.CONFIRMED, 30),
+        sync(
+          '222-r1',
+          LiveSyncStatus.REJECTED,
+          0,
+          'Attempts after a missed cutoff',
+        ),
+        sync(
+          '222-r1',
+          LiveSyncStatus.NOT_IN_ROUND,
+          0,
+          'No accepted WCA registration',
+        ),
+      ];
+
+      await expect(service.getProblems()).resolves.toEqual({
+        stuck: [{ roundId: '333-r1', count: 2 }],
+        refused: [{ roundId: '222-r1', count: 2 }],
+      });
+    });
+
+    it('leaves out results that only wait for their round to open', async () => {
+      previousResults = [
+        sync(
+          '333-r2',
+          LiveSyncStatus.NOT_IN_ROUND,
+          20,
+          'Round not open in WCA Integrated Live Results',
+        ),
+      ];
+
+      await expect(service.getProblems()).resolves.toEqual({
+        stuck: [],
+        refused: [],
+      });
+    });
+
+    it('reads the WCA rules behind "not registered" results', async () => {
+      await expect(service.getRegistrationRules()).resolves.toEqual({
+        eventChangeDeadline: '2026-11-10T23:00:00.000Z',
+        onTheSpotRegistration: true,
+        competitorLimit: 60,
+      });
+      expect(wcaService.getCompetitionInfo).toHaveBeenCalledWith(
+        'ExampleOpen2026',
+      );
+    });
+
+    it('has no rules when the WCA cannot be reached', async () => {
+      wcaService.getCompetitionInfo.mockRejectedValue(new Error('offline'));
+
+      await expect(service.getRegistrationRules()).resolves.toBeNull();
     });
   });
 

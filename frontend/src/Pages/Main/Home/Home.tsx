@@ -36,6 +36,7 @@ import { getStartLabel } from "@/lib/schedule";
 import { invalidateIncidentLists } from "@/Pages/Main/Incidents/incidentsContext";
 
 import IntegratedLiveConnectionAlert from "./Components/IntegratedLiveConnectionAlert";
+import IntegratedLiveProblemsAlert from "./Components/IntegratedLiveProblemsAlert";
 import IntegratedLiveRoundsToOpen from "./Components/IntegratedLiveRoundsToOpen";
 import NextGroupInAllRooms from "./Components/NextGroupInAllRooms";
 import NoShowsToRemove from "./Components/NoShowsToRemove";
@@ -247,7 +248,10 @@ const Home = () => {
     return (
         <>
             {competition && isOrganizerOrDelegate() && (
-                <IntegratedLiveConnectionAlert competition={competition} />
+                <>
+                    <IntegratedLiveConnectionAlert competition={competition} />
+                    <IntegratedLiveProblemsAlert />
+                </>
             )}
             {canStartGroups &&
                 competition?.officialResultsDestination ===

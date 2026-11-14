@@ -10,6 +10,7 @@ import { IntegratedLiveConnectionService } from 'src/competition/integratedLiveC
 import { DbService } from 'src/db/db.service';
 import { getAttemptsWaitingForExtra } from 'src/result/helpers';
 import { getOfficialResultsDestination } from 'src/results-destination';
+import { WcaService } from 'src/wca/wca.service';
 import { Competition as Wcif, getRoundInfoFromWcif } from 'wcif-helpers';
 
 import { IntegratedLiveService } from './integratedLive.service';
@@ -21,12 +22,31 @@ import {
   liveValues,
   NEEDS_ATTENTION,
   ON_THE_WAY,
+  ROUND_NOT_OPEN,
   roundDot,
   sameValues,
+  STUCK_AFTER_MS,
   waitingReason,
 } from './liveRoundView';
 
 export type IntegratedLiveRound = LiveRoundState;
+
+/** Rounds with results that aren't getting through, for Home's alert */
+export interface IntegratedLiveProblems {
+  /** On their way for more than a few minutes */
+  stuck: { roundId: string; count: number }[];
+  /** Refused by the WCA, or not in its round */
+  refused: { roundId: string; count: number }[];
+}
+
+/** What the WCA says about adding events and on-site registration */
+export interface RegistrationRules {
+  /** The deadline for adding events (WCRP 6.4), if there is one */
+  eventChangeDeadline: string | null;
+  /** Whether on-site registration was advertised (WCRP 5.2.1) */
+  onTheSpotRegistration: boolean;
+  competitorLimit: number | null;
+}
 
 /** A round in the Results page's round strip */
 export interface IntegratedLiveRoundSummary extends IntegratedLiveRound {
@@ -105,6 +125,7 @@ export class IntegratedLiveRoundsService {
     @Inject(forwardRef(() => IntegratedLiveService))
     private readonly sender: IntegratedLiveService,
     private readonly appGateway: AppGateway,
+    private readonly wcaService: WcaService,
   ) {}
 
   private logger = new Logger(IntegratedLiveRoundsService.name);
@@ -130,16 +151,79 @@ export class IntegratedLiveRoundsService {
     );
   }
 
+  /**
+   * Results that aren't getting through, by round (SPEC-006 section 5):
+   * on their way for more than a few minutes, or refused. Results waiting
+   * for their round to open aren't a problem; Home suggests opening it.
+   */
+  async getProblems(): Promise<IntegratedLiveProblems> {
+    if (!(await this.base())) return { stuck: [], refused: [] };
+    const stuckSince = new Date(Date.now() - STUCK_AFTER_MS);
+    const rows = await this.prisma.liveSync.findMany({
+      where: {
+        OR: [
+          { status: { in: ON_THE_WAY }, updatedAt: { lt: stuckSince } },
+          { status: { in: NEEDS_ATTENTION } },
+        ],
+      },
+      select: {
+        status: true,
+        error: true,
+        result: { select: { roundId: true } },
+      },
+    });
+    const count = (filter: (row: (typeof rows)[number]) => boolean) => {
+      const byRound = new Map<string, number>();
+      for (const row of rows.filter(filter)) {
+        byRound.set(
+          row.result.roundId,
+          (byRound.get(row.result.roundId) ?? 0) + 1,
+        );
+      }
+      return [...byRound].map(([roundId, n]) => ({ roundId, count: n }));
+    };
+    return {
+      stuck: count((row) => ON_THE_WAY.includes(row.status)),
+      refused: count(
+        (row) =>
+          NEEDS_ATTENTION.includes(row.status) && row.error !== ROUND_NOT_OPEN,
+      ),
+    };
+  }
+
+  /**
+   * The WCA's facts behind the hints for results whose competitor isn't
+   * registered: the deadline for adding events, and whether on-site
+   * registration was advertised. Read fresh; null when the WCA can't be
+   * reached.
+   */
+  async getRegistrationRules(): Promise<RegistrationRules | null> {
+    const competition = await this.prisma.competition.findFirst();
+    if (!competition) return null;
+    const info = await this.wcaService
+      .getCompetitionInfo(competition.wcaId)
+      .catch(() => null);
+    if (!info || info.error) return null;
+    return {
+      eventChangeDeadline: info.event_change_deadline_date ?? null,
+      onTheSpotRegistration: !!info.on_the_spot_registration,
+      competitorLimit: info.competitor_limit ?? null,
+    };
+  }
+
   /** Every round with its strip dot: the WCA state, or needs attention */
   async getRoundSummaries(): Promise<IntegratedLiveRoundSummary[]> {
     const rounds = await this.getRounds();
     if (rounds.length === 0) return [];
     const problems = await this.prisma.liveSync.findMany({
       where: { status: { in: NEEDS_ATTENTION } },
-      select: { result: { select: { roundId: true } } },
+      select: { error: true, result: { select: { roundId: true } } },
     });
     const byRound = new Map<string, number>();
-    for (const { result } of problems) {
+    // Waiting for the round to open isn't something to fix
+    for (const { result } of problems.filter(
+      (p) => p.error !== ROUND_NOT_OPEN,
+    )) {
       byRound.set(result.roundId, (byRound.get(result.roundId) ?? 0) + 1);
     }
     return rounds.map((round) => {
@@ -250,7 +334,10 @@ export class IntegratedLiveRoundsService {
       onTheWay: views.filter((v) => v.status && ON_THE_WAY.includes(v.status))
         .length,
       needsAttention: views.filter(
-        (v) => v.status && NEEDS_ATTENTION.includes(v.status),
+        (v) =>
+          v.status &&
+          NEEDS_ATTENTION.includes(v.status) &&
+          v.error !== ROUND_NOT_OPEN,
       ).length,
       results: views,
       onlyInWca,
