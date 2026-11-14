@@ -6,6 +6,7 @@ import {
     IntegratedLiveRegistrationRules,
     IntegratedLiveRound,
     IntegratedLiveRoundDetails,
+    IntegratedLiveScoretakers,
     IntegratedLiveSyncStatus,
     IntegratedLiveWithdrawalPreview,
     IntegratedLiveWithdrawalResult,
@@ -281,3 +282,33 @@ export const registrationHint = (
     }
     return null;
 };
+
+/** WCA users who may enter results besides the managers (SPEC-006) */
+export const integratedLiveScoretakersQuery =
+    backendQuery<IntegratedLiveScoretakers>(
+        "competition/integrated-live/scoretakers"
+    );
+
+const scoretakerChange = async (
+    path: string,
+    method: string,
+    body?: unknown
+): Promise<{ ok: boolean; message: string }> => {
+    const response = await backendRequest(
+        `competition/integrated-live/scoretakers${path}`,
+        method,
+        true,
+        body
+    );
+    const data = await response.json().catch(() => ({}));
+    return {
+        ok: response.ok && data.ok !== false,
+        message: data.message ?? "Something went wrong",
+    };
+};
+
+export const addIntegratedLiveScoretaker = (wcaId: string) =>
+    scoretakerChange("", "POST", { wcaId });
+
+export const removeIntegratedLiveScoretaker = (wcaUserId: number) =>
+    scoretakerChange(`/${wcaUserId}`, "DELETE");

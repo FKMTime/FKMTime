@@ -24,11 +24,13 @@ import {
     SelectValue,
 } from "@/Components/ui/select";
 import { Competition, SendingResultsFrequency } from "@/lib/interfaces";
+import { isOrganizerOrDelegate } from "@/lib/permissions";
 import { competitionSchema } from "@/lib/schema/competitionSchema";
 import { prettySendingResultsFrequency } from "@/lib/utils";
 
 import IntegratedLiveConnection from "./IntegratedLiveConnection";
 import ResultsDestination from "./ResultsDestination";
+import Scoretakers from "./Scoretakers";
 
 interface CompetitionFormProps {
     competition: Competition;
@@ -93,6 +95,7 @@ const CompetitionForm = ({
                         {competition.wcaScoretakingSoftware === "internal" && (
                             <>
                                 <IntegratedLiveConnection />
+                                {isOrganizerOrDelegate() && <Scoretakers />}
                                 <FormField
                                     control={form.control}
                                     name="openRoundsAutomatically"

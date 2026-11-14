@@ -6,6 +6,7 @@ import {
   HttpCode,
   HttpStatus,
   Param,
+  ParseIntPipe,
   Post,
   Put,
   Query,
@@ -18,6 +19,7 @@ import { ScramblingDeviceGuard } from 'src/auth/guards/scramblingDevice.guard';
 import { GetUser } from '../auth/decorator/getUser.decorator';
 import { JwtAuthDto } from '../auth/dto/jwt-auth.dto';
 import { CompetitionService } from './competition.service';
+import { AddScoretakerDto } from './dto/addScoretaker.dto';
 import { ConnectIntegratedLiveDto } from './dto/connectIntegratedLive.dto';
 import { UpdateCompetitionDto } from './dto/updateCompetition.dto';
 import { UpdateRoomsDto } from './dto/updateCurrentRound.dto';
@@ -25,6 +27,7 @@ import { UpdateDevicesSettingsDto } from './dto/updateDevicesSettings.dto';
 import { ImportService } from './import.service';
 import { IntegratedLiveConnectionService } from './integratedLiveConnection.service';
 import { RoomsService } from './rooms.service';
+import { ScoretakersService } from './scoretakers.service';
 import { StatisticsService } from './statistics.service';
 import { SyncService } from './sync.service';
 
@@ -40,6 +43,7 @@ export class CompetitionController {
     private readonly syncService: SyncService,
     private readonly statisticsService: StatisticsService,
     private readonly integratedLiveConnectionService: IntegratedLiveConnectionService,
+    private readonly scoretakersService: ScoretakersService,
   ) {}
 
   @Get('login-info')
@@ -157,6 +161,32 @@ export class CompetitionController {
   @Delete('integrated-live/connection')
   async disconnectIntegratedLive() {
     return await this.integratedLiveConnectionService.disconnect();
+  }
+
+  /** WCA users who may enter results besides the managers (SPEC-006) */
+  @UseGuards(AuthGuard('jwt'), OrganizerGuard)
+  @Get('integrated-live/scoretakers')
+  async getScoretakers(@GetUser() user: JwtAuthDto) {
+    return await this.scoretakersService.list(user.userId);
+  }
+
+  @HttpCode(HttpStatus.OK)
+  @UseGuards(AuthGuard('jwt'), OrganizerGuard)
+  @Post('integrated-live/scoretakers')
+  async addScoretaker(
+    @Body() dto: AddScoretakerDto,
+    @GetUser() user: JwtAuthDto,
+  ) {
+    return await this.scoretakersService.add(user.userId, dto.wcaId);
+  }
+
+  @UseGuards(AuthGuard('jwt'), OrganizerGuard)
+  @Delete('integrated-live/scoretakers/:wcaUserId')
+  async removeScoretaker(
+    @Param('wcaUserId', ParseIntPipe) wcaUserId: number,
+    @GetUser() user: JwtAuthDto,
+  ) {
+    return await this.scoretakersService.remove(user.userId, wcaUserId);
   }
 
   @HttpCode(HttpStatus.OK)
