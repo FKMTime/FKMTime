@@ -147,18 +147,32 @@ router running the instance), the connector reads it too:
 
 ### Frontend (Devices page)
 
-- A "Wi-Fi" column next to Battery in the table, and the same line in the
-  card view (`DeviceItem.tsx`).
-- `weak`: amber text, "Weak signal — move closer to the router".
-- `ok`: muted text, "Good".
-- `unknown`: "—", with a tooltip that says why: "Waiting for the station" if
-  it reported before, otherwise "Needs newer station firmware".
-- The dBm value only appears in the tooltip: "−66 dBm (median of the last 5
-  readings)". The page speaks in actions, not in radio units.
-- When `link` is there, the tooltip adds the router's view:
-  "Router hears it at −68 dBm, sends at 6 Mbit/s, retries 120%". When
-  `link` is `null`, the line isn't shown at all. No "unavailable" text: most
-  setups without the router simply don't have it.
+- A Wi-Fi icon next to Battery in the table, and the same in the card view
+  (`DeviceItem.tsx`). A `SignalIcon` component, built like `BatteryIcon`,
+  with lucide icons:
+
+  | State | Icon | Tone |
+  |---|---|---|
+  | `ok`, median above −55 dBm | `Wifi` | muted |
+  | `ok`, the rest | `WifiHigh` | muted |
+  | `weak` | `WifiLow` | amber (warning) |
+  | `unknown` | `WifiZero` | faint |
+
+  `WifiOff` isn't used. "Unknown" usually means older firmware or no reading
+  yet, not a dropped connection, and the station's online state already
+  shows that.
+- The words live in the tooltip, and the same text is the icon's
+  `aria-label`. Its first line is the action:
+  - `weak`: "Weak signal — move closer to the router"
+  - `ok`: "Good signal"
+  - `unknown`: "Waiting for the station" if it reported before, otherwise
+    "Needs newer station firmware"
+- Below that, the detail:
+  - "−66 dBm (median of the last 5 readings)"
+  - when `link` is there, the router's view: "Router hears it at −68 dBm,
+    sends at 6 Mbit/s, retries 120%"
+  - when `link` is `null`, that line isn't shown at all, with no
+    "unavailable" text: most setups without the router simply don't have it.
 - `deviceSignal` patches the one station in place, with no list refetch.
 
 ### Edge cases
@@ -188,11 +202,12 @@ router running the instance), the connector reads it too:
       (e2e).
 - [ ] `deviceSignal` fires on a level change and not on every packet (unit
       test).
-- [ ] The Devices page shows the weak hint and the dBm tooltip, and "—" for
-      unknown (component test). A station sending a weak `rssi` through the
-      e2e station helper shows the hint (Playwright).
-- [ ] Older firmware with a new connector and backend shows "—" and nothing
-      else changes (e2e with a header that has no RSSI).
+- [ ] `SignalIcon` picks the icon and tone per state and threshold, and its
+      tooltip and `aria-label` carry the action text and the dBm (component
+      test). A station sending a weak `rssi` through the e2e station helper
+      shows the weak icon and its tooltip on Devices (Playwright).
+- [ ] Older firmware with a new connector and backend shows the unknown icon
+      and nothing else changes (e2e with a header that has no RSSI).
 - [ ] The connector turns a station dump into `StationLink` for matched
       stations, with retries over the last interval, and sends nothing when
       there is no AP interface or no match (unit tests on parsed dumps).
@@ -211,7 +226,8 @@ No migration. Each part tolerates the others being older:
 2. **Connector.** Older backends ignore the extra JSON field, and only log
    `StationLink` as an unknown request.
 3. **Firmware**, on esp-hal-wifimanager 0.6.7. Until stations are updated,
-   they show "—".
+   they show the unknown icon, or the router's reading when the router side
+   is available.
 
 Reverting any one part leaves the others working, with every station shown
 as unknown.
