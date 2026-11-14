@@ -12,6 +12,7 @@ import { RequestToConnectDto } from './dto/requestToConnect.dto';
 import { SetCustomRoundDto } from './dto/setCustomRound.dto';
 import { UpdateBatteryPercentageDto } from './dto/updateBatteryPercentage.dto';
 import { UploadFirmwareDto } from './dto/uploadFirmware.dto';
+import { StationSignalService } from './stationSignal.service';
 
 @Injectable()
 export class DeviceService {
@@ -20,6 +21,7 @@ export class DeviceService {
     private readonly appGateway: AppGateway,
     @Inject(forwardRef(() => SocketController))
     private readonly socketController: SocketController,
+    private readonly stationSignal: StationSignalService,
   ) {}
 
   private readonly stationsByEspId = new TtlCache<
@@ -47,7 +49,13 @@ export class DeviceService {
         name: 'asc',
       },
     });
-    return this.withAttemptCounts(devices);
+    const withCounts = await this.withAttemptCounts(devices);
+    // From memory, never stored: it changes every few seconds (SPEC-008)
+    return withCounts.map((device) =>
+      device.type === DeviceType.STATION && device.espId !== null
+        ? { ...device, signal: this.stationSignal.getSignal(device.espId) }
+        : device,
+    );
   }
 
   async getRetiredDevices() {

@@ -461,8 +461,8 @@ export interface Incident extends Attempt {
 }
 
 export enum IncidentAction {
-    "RESOLVED" = "RESOLVED",
-    "EXTRA_GIVEN" = "EXTRA_GIVEN",
+    RESOLVED = "RESOLVED",
+    EXTRA_GIVEN = "EXTRA_GIVEN",
 }
 
 export interface NoteworthyIncidentData {
@@ -523,9 +523,34 @@ export interface Device extends DeviceData {
     /** The round a delegate pointed this station at, instead of its room's (SPEC-007) */
     customRoundId?: string | null;
     customRoundSetAt?: string | null;
+    /** Stations only, from the backend's memory (SPEC-008) */
+    signal?: StationSignal;
     createdAt: Date;
     updatedAt: Date;
     hwVersion: HardwareVersion;
+}
+
+export type SignalLevel = "ok" | "weak" | "unknown";
+
+/** What the router reports about a station, when it runs the instance */
+export interface StationLink {
+    apSignal: number | null;
+    txBitrateKbps: number | null;
+    txRetriesPercent: number | null;
+}
+
+export interface StationSignal {
+    level: SignalLevel;
+    /** Median of the last 5 readings, in dBm */
+    rssi: number | null;
+    link: StationLink | null;
+    /** Whether the station has sent its own reading since the backend started */
+    reportedRssi: boolean;
+}
+
+/** The deviceSignal socket event */
+export interface DeviceSignalEvent extends StationSignal {
+    espId: number;
 }
 
 export enum DeviceType {

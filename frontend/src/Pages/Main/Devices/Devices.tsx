@@ -32,9 +32,14 @@ import {
     retiredDevicesQuery,
     sortDevicesByName,
 } from "@/lib/devices";
-import { AvailableDevice, Device } from "@/lib/interfaces";
+import {
+    AvailableDevice,
+    Device,
+    DeviceSignalEvent,
+    DeviceType,
+} from "@/lib/interfaces";
 import { isAdmin } from "@/lib/permissions";
-import { setQueryData } from "@/lib/queryCache";
+import { patchQueryData, setQueryData } from "@/lib/queryCache";
 import { roomsQuery } from "@/lib/rooms";
 import { idToHex } from "@/lib/utils";
 import { socket } from "@/socket";
@@ -151,6 +156,18 @@ const Devices = () => {
     useSocketRoom("Devices");
     useSocketEvents({
         deviceUpdated: fetchData,
+        // Every few seconds per station, so one row is patched in place
+        // instead of refetching the list (SPEC-008)
+        deviceSignal: (data) => {
+            const { espId, ...signal } = data as DeviceSignalEvent;
+            patchQueryData<Device[]>(devicesQuery.key, (previous) =>
+                previous.map((device) =>
+                    device.espId === espId && device.type === DeviceType.STATION
+                        ? { ...device, signal }
+                        : device
+                )
+            );
+        },
         deviceRequests: (data) =>
             setAvailableDevices(data as AvailableDevice[]),
         // Sent on joining the room and on every change; the time left rather
@@ -368,6 +385,7 @@ const Devices = () => {
                                             </TableHead>
                                             <TableHead>ESP ID</TableHead>
                                             <TableHead>Battery</TableHead>
+                                            <TableHead>Signal</TableHead>
                                             <TableHead>Type</TableHead>
                                             <TableHead>Firmware</TableHead>
                                             <TableHead>Solves</TableHead>

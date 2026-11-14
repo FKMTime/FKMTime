@@ -297,6 +297,30 @@ describe('socket.io gateways (e2e)', () => {
       await judgePresent;
     });
 
+    it("announces a station's Wi-Fi signal to the devices room without a list refetch", async () => {
+      const updates = recordEvents(observer, 'deviceUpdated');
+      const signal = waitForEvent(
+        observer,
+        'deviceSignal',
+        (p: any) => p.espId === ESP.station,
+      );
+
+      await station.request('CurrentTimeInfo', {
+        espId: ESP.station,
+        rssi: -70,
+      });
+
+      expect(await signal).toEqual({
+        espId: ESP.station,
+        level: 'weak',
+        rssi: -70,
+        link: null,
+        reportedRssi: true,
+      });
+      updates.stop();
+      expect(updates.received).toHaveLength(0);
+    });
+
     it('does not announce results to viewers of another round', async () => {
       const other = await connect();
       await joinRoom(gateway, other, 'joinResults', 'results-222-r1', {

@@ -2,6 +2,7 @@ import { DeviceType } from '@prisma/client';
 
 import { CompetitionService } from '../competition/competition.service';
 import { DeviceService } from '../device/device.service';
+import { StationSignalService } from '../device/stationSignal.service';
 import { PersonService } from '../person/person.service';
 import { LIVE_LOOKUP_TTL_MS } from '../ttl-cache';
 import { SocketService } from './socket.service';
@@ -53,6 +54,7 @@ describe('SocketService', () => {
     let resultFromDeviceService: { enterAttempt: jest.Mock };
     let appGateway: Record<string, jest.Mock>;
     let deviceService: DeviceService;
+    let stationSignal: StationSignalService;
     let personService: PersonService;
     let competitionService: CompetitionService;
     let service: SocketService;
@@ -83,12 +85,15 @@ describe('SocketService', () => {
       appGateway = {
         broadcastCurrentTimeInfo: jest.fn(),
         handleDeviceUpdated: jest.fn(),
+        handleDeviceSignal: jest.fn(),
       };
       const socketController = { sendServerStatus: jest.fn() };
+      stationSignal = new StationSignalService(appGateway as never);
       deviceService = new DeviceService(
         prisma as never,
         appGateway as never,
         socketController as never,
+        stationSignal,
       );
       personService = new PersonService(prisma as never, {} as never);
       competitionService = new CompetitionService(
@@ -108,6 +113,7 @@ describe('SocketService', () => {
         {} as never,
         personService,
         appGateway as never,
+        stationSignal,
       );
     });
 
@@ -176,6 +182,44 @@ describe('SocketService', () => {
           inspectionRunning: null,
         }),
       );
+    });
+
+    it("passes the station's RSSI to the signal service", async () => {
+      await service.handleCurrentTimeInfo({ ...update, rssi: -66 });
+
+      expect(stationSignal.getSignal(7)).toMatchObject({
+        level: 'weak',
+        rssi: -66,
+      });
+      expect(appGateway.handleDeviceSignal).toHaveBeenCalledWith(
+        expect.objectContaining({ espId: 7, level: 'weak', rssi: -66 }),
+      );
+    });
+
+    it('leaves the signal unknown without an RSSI or with null', async () => {
+      await service.handleCurrentTimeInfo(update);
+      await service.handleCurrentTimeInfo({ ...update, rssi: null });
+
+      expect(stationSignal.getSignal(7)).toMatchObject({
+        level: 'unknown',
+        reportedRssi: false,
+      });
+      expect(appGateway.handleDeviceSignal).not.toHaveBeenCalled();
+    });
+
+    it('passes StationLink to the signal service', () => {
+      service.handleStationLink({
+        espId: 7,
+        apSignal: -68,
+        txBitrateKbps: 6000,
+        txRetriesPercent: 120,
+      });
+
+      expect(stationSignal.getSignal(7)).toMatchObject({
+        level: 'weak',
+        rssi: -68,
+        link: { apSignal: -68, txBitrateKbps: 6000, txRetriesPercent: 120 },
+      });
     });
 
     it('reads each cached lookup once for repeated updates within the TTL', async () => {

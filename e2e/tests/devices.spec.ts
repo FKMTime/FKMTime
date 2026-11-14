@@ -175,6 +175,45 @@ test.describe("devices", () => {
         }
     });
 
+    test("shows a station with a weak Wi-Fi signal", async ({ page, api }) => {
+        const room = await getRoom(api);
+        await createDevice(api, {
+            name: "Station Far Corner",
+            espId: 0x7a7a,
+            roomId: room.id,
+        });
+        const joined = socketEventSent(page, "joinDevices");
+        await page.goto("/devices");
+        const row = deviceRow(page, "Station Far Corner");
+        const waiting = row.getByRole("button", {
+            name: "Needs newer station firmware",
+        });
+        await expect(waiting).toBeVisible();
+        await joined;
+
+        const station = await Station.connect();
+        try {
+            for (const rssi of [-67, -66, -68]) {
+                await station.currentTime({ espId: 0x7a7a, rssi });
+            }
+            // Arrives live, without reloading the page
+            const weak = row.getByRole("button", { name: /^Weak signal/ });
+            await expect(weak).toHaveAttribute(
+                "aria-label",
+                "Weak signal \u2014 move closer to the router. \u221267 dBm (median of the last 5 readings)"
+            );
+            await weak.hover();
+            await expect(page.getByRole("tooltip")).toContainText(
+                "Weak signal \u2014 move closer to the router"
+            );
+            await expect(page.getByRole("tooltip")).not.toContainText(
+                "Router hears it"
+            );
+        } finally {
+            station.close();
+        }
+    });
+
     test("dismisses a connection request", async ({ page }) => {
         const joined = socketEventSent(page, "joinDevices");
         await page.goto("/devices");

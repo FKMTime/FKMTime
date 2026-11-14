@@ -12,6 +12,10 @@ import { DeviceService } from '../device/device.service';
 import { DeviceConnectedDto } from '../device/dto/deviceConnected.dto';
 import { RequestToConnectDto } from '../device/dto/requestToConnect.dto';
 import { UpdateBatteryPercentageDto } from '../device/dto/updateBatteryPercentage.dto';
+import {
+  StationLinkDto,
+  StationSignalService,
+} from '../device/stationSignal.service';
 import { CheckIfAttemptEnteredDto } from '../result/dto/checkIfAttemptEntered.dto';
 import { EnterAttemptDto } from '../result/dto/enterAttempt.dto';
 import { ResultService } from '../result/result.service';
@@ -33,6 +37,8 @@ export class SocketService {
     private readonly personService: PersonService,
     @Inject(forwardRef(() => AppGateway))
     private readonly appGateway: AppGateway,
+    @Inject(forwardRef(() => StationSignalService))
+    private readonly stationSignal: StationSignalService,
   ) {}
 
   async enterAttempt(data: EnterAttemptDto) {
@@ -79,7 +85,15 @@ export class SocketService {
     return await this.resultService.checkIfAttemptEntered(data);
   }
 
+  handleStationLink(data: StationLinkDto) {
+    this.stationSignal.recordLink(data);
+  }
+
   async handleCurrentTimeInfo(data: CurrentTimeInfoDto) {
+    // Absent from older firmware and connectors, null while unknown
+    if (data.rssi != null) {
+      this.stationSignal.recordRssi(data.espId, data.rssi);
+    }
     const device = await this.deviceService.getStationByEspIdCached(data.espId);
     const deviceName = device?.name ?? `Station ${data.espId}`;
 
