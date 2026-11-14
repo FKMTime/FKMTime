@@ -45,6 +45,9 @@ start seeing timeouts mid-round.
   nothing after a restart.
 - Any automatic action (changing channel, moving stations between access
   points).
+- An alert on Home. A weak station is fixed during setup, when the organiser
+  is on the Devices page anyway. During a round nobody moves a station, so a
+  Home alert would only nag.
 - Router-side link details anywhere but the Devices page. The router's
   per-station counters are also logged on the router (fim), for after the
   competition.
@@ -212,8 +215,3 @@ No migration. Each part tolerates the others being older:
 
 Reverting any one part leaves the others working, with every station shown
 as unknown.
-
-## Open questions
-
-- **Home alert.** Should weak stations also raise an alert on Home, like the
-  one for results not reaching the WCA? This spec shows them on Devices only.
