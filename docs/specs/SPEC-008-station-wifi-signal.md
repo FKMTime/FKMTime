@@ -45,7 +45,9 @@ start seeing timeouts mid-round.
   nothing after a restart.
 - Any automatic action (changing channel, moving stations between access
   points).
-- Reading signal on the router side (`iw station dump`). See open questions.
+- Router-side link details anywhere but the Devices page. The router's
+  per-station counters are also logged on the router (fim), for after the
+  competition.
 
 ## Design
 
@@ -81,6 +83,32 @@ for "move the station and look again".
   when unknown, the same pattern as `timerRunning`.
 - An older connector ignores byte 86, and the backend sees no `rssi` field.
 
+### Router side (connector)
+
+What the station hears is only half of the link. The other half is what the
+access point hears from the station, how fast it sends to it, and how often
+it has to retry. That half is what would have caught the station stuck at
+1 Mbit/s. It is also the only reading for stations that haven't been updated
+yet. When the access point is the machine the connector runs on (an OpenWrt
+router running the instance), the connector reads it too:
+
+- **Reading it:** every 10 s, an nl80211 station dump (what
+  `iw dev <if> station dump` shows) for every interface in AP mode. Found
+  through nl80211, so no interface names are configured.
+- **Matching stations:** the connector knows each station's IP from its
+  websocket, and maps it to a MAC through the host's neighbour table. A
+  station it can't match is skipped.
+- **Sending it:** a new unix-socket request `StationLink` per matched
+  station:
+  `{ espId, apSignal, txBitrateKbps, txRetriesPercent }`. `txRetriesPercent`
+  is retries over packets sent since the previous reading, so it reflects
+  now, not the whole day.
+- **Where it can't:** in the Docker dev stack on macOS, with a separate
+  access point, or without nl80211 access, the dump finds no AP interface or
+  no matching station. The connector then sends nothing, and the panel hides
+  the router part. Not every competition runs on the router, so this is the
+  normal case for some of them, not an error.
+
 ### Backend
 
 - `CurrentTimeInfoDto` gets `rssi?: number | null`. Absent and `null` both
@@ -95,10 +123,17 @@ for "move the station and look again".
     30 s (the station is off, out of range, or on older firmware).
   - −63 dBm is where retries passed 100% at the competition above. The 4 dB
     band stops a station at −62/−63 from flickering.
-- **Device list:** `GET /device` adds
-  `signal: { level: 'ok' | 'weak' | 'unknown', rssi: number | null }` to each
-  station, from memory.
-- **Live updates:** a new `deviceSignal` event (`{ espId, level, rssi }`) to
+- `StationLink` updates the same service with the router's view of the
+  station. A backend that doesn't know `StationLink` answers it as an
+  unknown request type, which the connector already tolerates.
+- **Which reading decides the level:** the station's own RSSI when it has
+  one. For a station on older firmware, the access point's signal for it,
+  with the same median, thresholds and staleness.
+- **Device list:** `GET /device` adds to each station, from memory:
+  `signal: { level: 'ok' | 'weak' | 'unknown', rssi: number | null, link: { apSignal, txBitrateKbps, txRetriesPercent } | null }`.
+  `link` is `null` when the router side isn't available, or hasn't reported
+  for 30 s.
+- **Live updates:** a new `deviceSignal` event (`{ espId, level, rssi, link }`) to
   the `device` room. It fires when a station's level changes, and at most
   every 10 s per station otherwise, so the dBm in the tooltip stays fresh.
   It does **not** reuse `deviceUpdated`, which makes every open Devices page
@@ -115,6 +150,10 @@ for "move the station and look again".
   it reported before, otherwise "Needs newer station firmware".
 - The dBm value only appears in the tooltip: "−66 dBm (median of the last 5
   readings)". The page speaks in actions, not in radio units.
+- When `link` is there, the tooltip adds the router's view:
+  "Router hears it at −68 dBm, sends at 6 Mbit/s, retries 120%". When
+  `link` is `null`, the line isn't shown at all. No "unavailable" text: most
+  setups without the router simply don't have it.
 - `deviceSignal` patches the one station in place, with no list refetch.
 
 ### Edge cases
@@ -149,6 +188,14 @@ for "move the station and look again".
       e2e station helper shows the hint (Playwright).
 - [ ] Older firmware with a new connector and backend shows "—" and nothing
       else changes (e2e with a header that has no RSSI).
+- [ ] The connector turns a station dump into `StationLink` for matched
+      stations, with retries over the last interval, and sends nothing when
+      there is no AP interface or no match (unit tests on parsed dumps).
+- [ ] The backend takes the level from the AP signal for a station without
+      its own RSSI, and `link` goes `null` after 30 s without `StationLink`
+      (unit tests).
+- [ ] The tooltip shows the router line with `link` and hides it without
+      (component test).
 
 ## Rollout
 
@@ -156,7 +203,8 @@ No migration. Each part tolerates the others being older:
 
 1. **Backend and frontend** first. Testable with the station tester or the
    e2e station helper sending `rssi`.
-2. **Connector.** Older backends ignore the extra JSON field.
+2. **Connector.** Older backends ignore the extra JSON field and answer
+   `StationLink` as an unknown request.
 3. **Firmware**, on esp-hal-wifimanager 0.6.7. Until stations are updated,
    they show "—".
 
@@ -165,12 +213,5 @@ as unknown.
 
 ## Open questions
 
-- **Router-side reading.** The connector runs on the router and could map a
-  station's IP to its MAC and read `iw station dump`. That works with today's
-  firmware and also shows bitrate and retries (which would have caught the
-  station stuck at 1 Mbit/s). But it depends on the router's interface names
-  and on the AP being the same machine, and doesn't work in the Docker dev
-  stack. Out of scope here unless we decide to want it as a stopgap or
-  alongside.
 - **Home alert.** Should weak stations also raise an alert on Home, like the
   one for results not reaching the WCA? This spec shows them on Devices only.
