@@ -31,6 +31,8 @@ async function bootstrap() {
       'Access-Control-Allow-Credentials',
       'Origin',
     ],
+    // So the panel can name a downloaded device log file (SPEC-009)
+    exposedHeaders: ['Content-Disposition'],
   });
   await app.listen(PORT, () => {
     console.log(`Server is listening on port ${PORT}...`);

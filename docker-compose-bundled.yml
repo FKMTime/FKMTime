@@ -16,8 +16,11 @@ services:
       - WCA_CLIENT_SECRET=example-secret
       - WCA_LIVE_API_ORIGIN=http://nginx:80/dummy-wca-live/api
       - WCA_ORIGIN=http://nginx:80/dummy-wca
+      # The connector's device logs, for admins to read (SPEC-009)
+      - DEVICE_LOGS_DIR=/device-logs
     volumes:
       - sock:/app/sock
+      - logs:/device-logs:ro
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost:5000/health || exit 1"]
       interval: 5s

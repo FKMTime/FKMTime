@@ -131,6 +131,8 @@ the database.
 - `404` for an unknown device, a device without an `espId`, or a file that
   doesn't exist yet. `503` when `DEVICE_LOGS_DIR` is unset or missing.
 - The file name comes from the database, as for the live view.
+- CORS exposes `Content-Disposition`, so a panel on another origin (the
+  dev stack) can read the file name too.
 
 ### Socket.io
 
@@ -156,16 +158,18 @@ both events:
   capped.
 - An unknown device id, or a device without an `espId`, gets an
   `available: true` snapshot with no lines. The panel only offers the
-  action for stations with an `espId` anyway.
+  action for devices with an `espId` anyway.
 
 `AdminGuard` already reads the token from the socket handshake, so it works
 on gateway events the same way `OrganizerGuard` does for `joinDevices`.
 
 ### Frontend (Devices page)
 
-- A **Logs** action on each station that has an `espId`, in both the table
-  and the card view (`DeviceItem.tsx`). It's shown only when `isAdmin()`.
-  The backend still enforces this through the guard.
+- A **View logs** action in the ⋮ menu of each device that has an `espId`,
+  in both the table and the card view (`DeviceItem.tsx`). Attendance
+  devices connect through the connector too, so they have logs like
+  stations. It's shown only when `isAdmin()`. The backend still enforces
+  this through the guard.
 - It opens a `Sheet` from the right, titled with the station's name, so
   the device list stays visible behind it. The sheet joins the room through
   `useSocketRoom("DeviceLogs", { params: { deviceId } })` while it's open.
@@ -236,11 +240,12 @@ on gateway events the same way `OrganizerGuard` does for `joinDevices`.
       "Jump to latest" resumes (component test).
 - [ ] The Download button saves the file, and shows an error toast on a
       `404` (component test with a mocked API).
-- [ ] The Logs action is hidden for non-admins and for devices without an
+- [ ] The View logs action is hidden for non-admins and for devices without an
       `espId` (component test).
-- [ ] With the dev stack and a station from the e2e station helper, an admin
-      opens Logs and sees a line the connector writes appear (Playwright,
-      manual if the helper can't produce connector log lines).
+- [ ] An admin gets the snapshot of a real file, then a line appended to it
+      (backend e2e with a temporary `DEVICE_LOGS_DIR`). The e2e station
+      helper talks to the backend without a connector, so it can't write a
+      device log for a Playwright test.
 
 ## Rollout
 

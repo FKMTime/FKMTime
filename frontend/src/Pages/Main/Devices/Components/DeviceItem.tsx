@@ -3,6 +3,7 @@ import {
     Nfc,
     Pencil,
     Route,
+    ScrollText,
     Timer,
     Trash2,
     Undo2,
@@ -19,9 +20,10 @@ import { useConfirm } from "@/hooks/useConfirm";
 import { useToast } from "@/hooks/useToast";
 import { deleteDevice, restoreDevice, setStationsRound } from "@/lib/devices";
 import { Device, DeviceType } from "@/lib/interfaces";
-import { isDelegate } from "@/lib/permissions";
+import { isAdmin, isDelegate } from "@/lib/permissions";
 import { cn, idToHex, prettyDeviceType } from "@/lib/utils";
 
+import DeviceLogsSheet from "./DeviceLogsSheet";
 import EditDeviceModal from "./EditDeviceModal";
 
 interface DeviceItemProps {
@@ -51,6 +53,9 @@ const DeviceItem = ({
     const confirm = useConfirm();
     const [isEditOpen, setIsEditOpen] = useState(false);
     const [isRoundOpen, setIsRoundOpen] = useState(false);
+    const [isLogsOpen, setIsLogsOpen] = useState(false);
+    // Station logs carry every scanned card's UID, so admins only (SPEC-009)
+    const canViewLogs = isAdmin() && device.espId != null;
     const canPoint =
         isDelegate() && device.type === DeviceType.STATION && !device.retiredAt;
 
@@ -125,6 +130,12 @@ const DeviceItem = ({
                     hidden: !canPoint || !device.customRoundId,
                 },
                 {
+                    label: "View logs",
+                    icon: ScrollText,
+                    onSelect: () => setIsLogsOpen(true),
+                    hidden: !canViewLogs,
+                },
+                {
                     label: "Restore device",
                     icon: ArchiveRestore,
                     onSelect: handleRestore,
@@ -159,6 +170,14 @@ const DeviceItem = ({
                     }}
                     initialStationIds={[device.id]}
                     initialRoundId={device.customRoundId ?? undefined}
+                />
+            )}
+            {/* Mounted only while open, so rows don't each listen for log events */}
+            {canViewLogs && isLogsOpen && (
+                <DeviceLogsSheet
+                    device={device}
+                    isOpen={isLogsOpen}
+                    onClose={() => setIsLogsOpen(false)}
                 />
             )}
         </>

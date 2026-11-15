@@ -20,13 +20,17 @@ import { OrganizerGuard } from 'src/auth/guards/organizer.guard';
 
 import { AdminGuard } from '../auth/guards/admin.guard';
 import { DeviceService } from './device.service';
+import { DeviceLogService } from './deviceLog.service';
 import { DeviceDto } from './dto/device.dto';
 import { SetCustomRoundDto } from './dto/setCustomRound.dto';
 import { UploadFirmwareDto } from './dto/uploadFirmware.dto';
 
 @Controller('device')
 export class DeviceController {
-  constructor(private readonly deviceService: DeviceService) {}
+  constructor(
+    private readonly deviceService: DeviceService,
+    private readonly deviceLogService: DeviceLogService,
+  ) {}
 
   @UseGuards(OrganizerGuard)
   @Get()
@@ -63,6 +67,13 @@ export class DeviceController {
   @Put(':id')
   async updateDevice(@Param('id') id: string, @Body() data: DeviceDto) {
     return this.deviceService.updateDevice(id, data);
+  }
+
+  /** The device's whole log file, as the connector wrote it (SPEC-009) */
+  @UseGuards(AdminGuard)
+  @Get(':id/logs')
+  async downloadDeviceLogs(@Param('id') id: string) {
+    return this.deviceLogService.download(id);
   }
 
   @UseGuards(OrganizerGuard)
