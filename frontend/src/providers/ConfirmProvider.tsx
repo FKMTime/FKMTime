@@ -1,27 +1,13 @@
-import { createContext, FC, ReactNode, useCallback, useState } from "react";
+import { FC, ReactNode, useCallback, useState } from "react";
 
 import { ConfirmDialog } from "@/Components/ConfirmDialog";
 
-export interface ConfirmContextType {
-    confirm: (options: ConfirmOptions) => Promise<void>;
-}
-
-interface ConfirmOptions {
-    title: string;
-    description?: string;
-    confirmLabel?: string;
-    variant?: "destructive" | "default";
-    onConfirm?: () => void;
-}
+import { ConfirmContext, ConfirmOptions } from "./ConfirmContext";
 
 interface ConfirmState extends ConfirmOptions {
     onConfirm: () => void;
     onCancel: () => void;
 }
-
-export const ConfirmContext = createContext<ConfirmContextType | undefined>(
-    undefined
-);
 
 export const ConfirmProvider: FC<{ children: ReactNode }> = ({ children }) => {
     const [confirmState, setConfirmState] = useState<ConfirmState | null>(null);
