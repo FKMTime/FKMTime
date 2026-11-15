@@ -1,6 +1,6 @@
 # SPEC-010: A station's last error, and how to fix it, on the Devices page
 
-- **Status:** Accepted
+- **Status:** Implemented
 - **Created:** 2026-11-15
 - **Related:** SPEC-008 (Wi-Fi signal on the Devices page, same in-memory
   pattern), SPEC-009 (live device logs for admins), SPEC-005 (removed from
@@ -15,7 +15,7 @@ the screen. Even if it is still up, the message says what went wrong but not
 what to do about it. Some errors are setup problems the delegate can fix in a
 minute (a card nobody was given, a room with no group running). Others are the
 rules working as intended (cutoff not passed, no attempts left). From the
-message alone, a delegate who doesn't know FKM Time well can't tell which kind
+message alone, a delegate who doesn't know FKMTime well can't tell which kind
 it is.
 
 The backend already decides every one of these errors, but it sends the
@@ -137,9 +137,10 @@ message with no explanation.
 
 ### Frontend (Devices page)
 
-- **Where it shows.** A `StationErrorIcon` next to the signal icon, in the
-  table and in the card view (`DeviceItem.tsx`). Stations with no current
-  error show nothing.
+- **Where it shows.** A `StationErrorIcon` right after the station's name,
+  in the table and in the card view (`DeviceItem.tsx`), so it is the first
+  thing next to the name the judge called out. Stations with no current
+  error show nothing. The explanations live in `frontend/src/lib/stationErrors.ts`.
   - `problem`: `TriangleAlert`, red (destructive).
   - `rule`: `Info`, muted.
 
@@ -172,23 +173,23 @@ message with no explanation.
 
 ## Acceptance criteria
 
-- [ ] Every error reply from `EnterAttempt` and `PersonInfo` carries an
+- [x] Every error reply from `EnterAttempt` and `PersonInfo` carries an
       `errorKey`, and the reply the connector receives does not (unit tests on
       `SocketService`).
-- [ ] An error reply sets the station's entry with key, kind, message, card
+- [x] An error reply sets the station's entry with key, kind, message, card
       and count. The same key again increments `count`, and a different key
       resets it to 1 (unit tests on `StationErrorService`).
-- [ ] A successful reply, and a same-solve `attemptAlreadyEntered`, clear the
+- [x] A successful reply, and a same-solve `attemptAlreadyEntered`, clear the
       entry (unit tests).
-- [ ] An entry older than 10 minutes is dropped and `deviceError` fires with
+- [x] An entry older than 10 minutes is dropped and `deviceError` fires with
       `null` (unit test with fake timers).
-- [ ] An exception while handling a station request records `internalError`
+- [x] An exception while handling a station request records `internalError`
       (unit test).
-- [ ] `GET /device` includes `lastError` for stations (e2e).
-- [ ] `StationErrorIcon` picks the icon and tone by kind, and its popover shows
+- [x] `GET /device` includes `lastError` for stations (e2e).
+- [x] `StationErrorIcon` picks the icon and tone by kind, and its popover shows
       the message, the explanation with the card filled in, ×N and the age
       (component test).
-- [ ] An unknown card scanned through the e2e station helper shows the
+- [x] An unknown card scanned through the e2e station helper shows the
       problem icon on Devices, and its popover says to assign the card. A
       later successful scan removes it (Playwright).
 

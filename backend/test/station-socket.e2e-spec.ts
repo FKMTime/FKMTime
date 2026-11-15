@@ -1299,6 +1299,52 @@ describe('Station socket protocol (e2e)', () => {
     });
   });
 
+  describe("a station's last error (SPEC-010)", () => {
+    const lastErrorOf = async (espId: number) => {
+      const res = await request(app.getHttpServer())
+        .get('/device')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .expect(200);
+      return res.body.find((d: { espId: number }) => d.espId === espId)
+        ?.lastError;
+    };
+
+    it('shows an unknown card on the device list, not to the station', async () => {
+      const res = await station.request('PersonInfo', {
+        cardId: CARD.unknown.toString(),
+        espId: ESP.stationB,
+        isCompetitor: true,
+      });
+
+      expect(res.data).not.toHaveProperty('errorDetails');
+      expect(await lastErrorOf(ESP.stationB)).toEqual({
+        key: 'competitorNotFound',
+        kind: 'problem',
+        message: getTranslation('competitorNotFound', defaultLocale),
+        at: expect.any(String),
+        count: 1,
+        cardId: CARD.unknown.toString(),
+        competitorName: null,
+      });
+    });
+
+    it('clears it once the station scans a known card', async () => {
+      await station.request('PersonInfo', {
+        cardId: CARD.unknown.toString(),
+        espId: ESP.stationB,
+        isCompetitor: true,
+      });
+      const res = await station.request('PersonInfo', {
+        cardId: CARD.c1.toString(),
+        espId: ESP.stationB,
+        isCompetitor: true,
+      });
+
+      expect(res.type).toBe('PersonInfoResp');
+      expect(await lastErrorOf(ESP.stationB)).toBeNull();
+    });
+  });
+
   describe('messages pushed to stations by the backend', () => {
     let second: StationClient;
 

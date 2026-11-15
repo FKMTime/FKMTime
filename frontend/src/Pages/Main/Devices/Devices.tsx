@@ -35,6 +35,7 @@ import {
 import {
     AvailableDevice,
     Device,
+    DeviceErrorEvent,
     DeviceSignalEvent,
     DeviceType,
 } from "@/lib/interfaces";
@@ -164,6 +165,17 @@ const Devices = () => {
                 previous.map((device) =>
                     device.espId === espId && device.type === DeviceType.STATION
                         ? { ...device, signal }
+                        : device
+                )
+            );
+        },
+        // A station's last error, patched in place like the signal (SPEC-010)
+        deviceError: (data) => {
+            const { espId, lastError } = data as DeviceErrorEvent;
+            patchQueryData<Device[]>(devicesQuery.key, (previous) =>
+                previous.map((device) =>
+                    device.espId === espId && device.type === DeviceType.STATION
+                        ? { ...device, lastError }
                         : device
                 )
             );

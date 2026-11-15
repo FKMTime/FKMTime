@@ -48,6 +48,7 @@ export class PersonForDeviceService {
         shouldResetTime: true,
         status: 404,
         error: true,
+        errorDetails: { key: 'competitionNotFound' },
       };
     }
     const person = await this.personService.getPersonByCardId(cardId);
@@ -60,6 +61,7 @@ export class PersonForDeviceService {
         shouldResetTime: false,
         status: 404,
         error: true,
+        errorDetails: { key: 'competitorNotFound', cardId },
       };
     }
     const device = await this.prisma.device.findFirst({
@@ -121,6 +123,10 @@ export class PersonForDeviceService {
               shouldResetTime: true,
               status: 400,
               error: true,
+              errorDetails: {
+                key: 'noAttemptsLeft',
+                competitorName: person.name,
+              },
             };
           }
         }

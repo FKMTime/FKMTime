@@ -126,6 +126,11 @@ export class Station {
         });
     }
 
+    /** A card scanned on the station, as the competitor's or the judge's */
+    personInfo(espId: number, cardId: string, isCompetitor = true) {
+        return this.send("PersonInfo", { espId, cardId, isCompetitor });
+    }
+
     createAttendance(espId: number, cardId: string) {
         return this.send("CreateAttendance", {
             espId,
