@@ -1,0 +1,98 @@
+name: Preview build
+
+# Builds a pull request labelled `preview` into the two artifacts its preview
+# environment runs from. GitHub runs the PR's own copy of this file, with a
+# read-only token and no secrets, so nothing in this run is trusted, the
+# artifacts included. preview.yml decides whether they get deployed.
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, labeled]
+
+permissions: {}
+
+concurrency:
+  group: preview-build-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build
+    # Labelling with anything but `preview` must not start a build
+    if: >-
+      contains(github.event.pull_request.labels.*.name, 'preview') &&
+      (github.event.action != 'labeled' || github.event.label.name == 'preview')
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    steps:
+      # The head commit, not the merge commit: approval is given per head commit
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+
+      # No cache of any kind: a PR has nothing to gain from one, and caches
+      # are the one thing a run can leave behind for other runs
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24.x
+          package-manager-cache: false
+
+      - name: Build the backend
+        working-directory: backend
+        env:
+          # Prisma's CLI runs on the preview host, which has OpenSSL 1.1, and its
+          # sandbox can't download the engine it would want. Name every target:
+          # with `native` in the list Prisma ignores the list.
+          PRISMA_CLI_BINARY_TARGETS: debian-openssl-3.0.x,debian-openssl-1.1.x
+        run: |
+          npm ci --no-audit --no-fund
+          test -x node_modules/@prisma/engines/schema-engine-debian-openssl-1.1.x \
+            || { echo "::error::Prisma did not fetch the schema engine the preview host needs"; exit 1; }
+          npx prisma generate
+          npm run build
+          # The test seed runs under ts-node, a dev dependency; bundle it so the
+          # pruned artifact can run it with plain node
+          npx --yes esbuild@0.28.2 prisma/seed/seed-test.ts --bundle --platform=node \
+            --target=node24 --format=cjs --packages=external --outfile=seed-test.js
+          npm prune --omit=dev --no-audit --no-fund
+          # The same layout backend/Dockerfile copies into the image
+          stage="$RUNNER_TEMP/backend"
+          mkdir -p "$stage"
+          cp -r dist/src/. "$stage/"
+          cp -r node_modules prisma prisma.config.ts package.json seed-test.js "$stage/"
+          tar -C "$stage" -czf "$RUNNER_TEMP/preview-backend.tar.gz" .
+
+      - name: Build the web app
+        working-directory: frontend
+        env:
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          npm ci --no-audit --no-fund
+          VITE_DOCKERBUILD=true VITE_GIT_COMMIT="${HEAD_SHA:0:7}" npm run build
+          # What nginx/env.sh does when the bundled image starts, with the values
+          # every preview shares
+          find dist -name '*.js' -exec sed -i \
+            -e 's|{{BACKEND_ORIGIN}}|/api|g' \
+            -e 's|{{WEBSOCKET_URL}}||g' \
+            -e 's|{{WCA_ORIGIN}}|/dummy-wca|g' \
+            -e 's|{{WCA_CLIENT_ID}}|example-application-id|g' {} +
+          tar -C dist -czf "$RUNNER_TEMP/preview-web.tar.gz" .
+
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: preview-backend
+          path: ${{ runner.temp }}/preview-backend.tar.gz
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 3
+
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: preview-web
+          path: ${{ runner.temp }}/preview-web.tar.gz
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 3
