@@ -254,6 +254,39 @@ describe('Auth flows (e2e)', () => {
     });
   });
 
+  describe('WCA login the WCA refuses', () => {
+    let app: INestApplication;
+
+    beforeAll(async () => {
+      ({ app } = await createTestApp());
+      await listenOnLoopback(app);
+    }, 30000);
+
+    afterAll(async () => {
+      await app.close();
+    }, 30000);
+
+    it('answers 400 when the WCA does not accept the code', async () => {
+      // The dummy WCA only issues tokens for codes starting with "code-"
+      const res = await request(app.getHttpServer())
+        .post('/auth/wca/login')
+        .send({ code: 'not-a-wca-code', redirectUri: REDIRECT_URI })
+        .expect(400);
+
+      expect(res.body.message).toBe('The WCA did not accept the sign-in');
+    });
+
+    it('answers 502 when the WCA has no account for the token', async () => {
+      // A token is issued for any "code-…", but /me 404s for an unknown user
+      const res = await request(app.getHttpServer())
+        .post('/auth/wca/login')
+        .send({ code: 'code-1999NONE99-public', redirectUri: REDIRECT_URI })
+        .expect(502);
+
+      expect(res.body.message).toBe('Could not read the WCA account');
+    });
+  });
+
   describe('tokens and passwords', () => {
     let app: INestApplication;
     let db: DbService;

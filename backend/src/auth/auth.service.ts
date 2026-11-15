@@ -78,10 +78,13 @@ export class AuthService {
       data.code,
       data.redirectUri,
     );
-    if (token.hasOwnProperty('error') || !token) {
-      throw new HttpException('Error logging in with WCA', 500);
+    if (!token) {
+      throw new HttpException('The WCA did not accept the sign-in', 400);
     }
-    const userInfo = await this.wcaService.getUserInfo(token);
+    const userInfo = await this.wcaService.getUserInfo(token).catch(() => null);
+    if (!userInfo?.me?.id) {
+      throw new HttpException('Could not read the WCA account', 502);
+    }
     const existingUser = await this.prisma.user.findFirst({
       where: {
         wcaUserId: userInfo.me.id,
