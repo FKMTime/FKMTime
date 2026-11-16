@@ -25,7 +25,7 @@ import { ResultFromDeviceService } from './resultFromDevice.service';
     WcaModule,
     ContestsModule,
     DeviceModule,
-    PersonModule,
+    forwardRef(() => PersonModule),
     AttemptEditLogModule,
     forwardRef(() => AppModule),
     forwardRef(() => CompetitionModule),

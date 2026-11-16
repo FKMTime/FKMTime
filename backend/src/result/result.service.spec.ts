@@ -6,12 +6,17 @@ import {
 } from '@prisma/client';
 import { AppGateway } from 'src/app.gateway';
 import { AttemptEditLogService } from 'src/attempt-edit-log/attempt-edit-log.service';
+import { CompetitionService } from 'src/competition/competition.service';
 import { DbService } from 'src/db/db.service';
 import { PersonService } from 'src/person/person.service';
 import { WcaService } from 'src/wca/wca.service';
 
 import { getFinalExtraAttempt } from './helpers';
 import { ResultService } from './result.service';
+
+const competitionStub = {
+  requestGroupChangeCheck: jest.fn(),
+} as unknown as CompetitionService;
 
 describe('ResultService staffing checks', () => {
   const competed = {
@@ -71,6 +76,7 @@ describe('ResultService staffing checks', () => {
       null,
       null,
       null,
+      competitionStub,
     );
   });
 
@@ -164,6 +170,7 @@ describe('ResultService submitted attempts', () => {
       null,
       null,
       null,
+      competitionStub,
     );
   });
 
@@ -285,6 +292,7 @@ describe('ResultService settling waiting extras', () => {
       null,
       { log } as unknown as AttemptEditLogService,
       null,
+      competitionStub,
     );
     return {
       voided: await service.settleWaitingExtras('result-1'),
@@ -349,6 +357,7 @@ describe('ResultService next attempt during a redo', () => {
       } as unknown as PersonService,
       null,
       null,
+      competitionStub,
     );
     jest
       .spyOn(service, 'getResultOrCreate')
@@ -431,6 +440,7 @@ describe('ResultService results to double check', () => {
       null,
       null,
       null,
+      competitionStub,
     );
 
     const data = await service.getResultsToDoubleCheckByRoundId('333-r1');
@@ -484,6 +494,7 @@ describe('ResultService removing a result (Regulation 9t)', () => {
       null,
       null,
       null,
+      competitionStub,
     );
     sent = jest.fn();
     service.sendResult = sent;
@@ -496,6 +507,14 @@ describe('ResultService removing a result (Regulation 9t)', () => {
     expect(stored.removedReason).toBe('Score-taking mistake');
     expect(sent).toHaveBeenCalledWith('result-2');
     expect(appGateway.handleResultEntered).toHaveBeenCalledWith('333-r2');
+  });
+
+  it('asks for a group change check once the result is removed', async () => {
+    const request = competitionStub.requestGroupChangeCheck as jest.Mock;
+    request.mockClear();
+    await service.removeResult('result-2', undefined, 'user-1');
+    expect(stored.removedAt).toBeInstanceOf(Date);
+    expect(request).toHaveBeenCalledWith('333-r2');
   });
 
   it('brings it back and sends it again', async () => {
@@ -544,6 +563,61 @@ describe('ResultService removing a result (Regulation 9t)', () => {
   });
 });
 
+describe('ResultService assigning DNS to the remaining attempts', () => {
+  it('asks for a group change check once the DNS attempts are saved', async () => {
+    const request = competitionStub.requestGroupChangeCheck as jest.Mock;
+    request.mockClear();
+    const created: number[] = [];
+    const prisma = {
+      attempt: {
+        findMany: jest.fn().mockResolvedValue([
+          {
+            id: 'a1',
+            attemptNumber: 1,
+            type: AttemptType.STANDARD_ATTEMPT,
+            status: AttemptStatus.STANDARD,
+            penalty: 0,
+            value: 1500,
+          },
+        ]),
+        create: jest.fn(async ({ data }) => {
+          expect(request).not.toHaveBeenCalled();
+          created.push(data.attemptNumber);
+          return data;
+        }),
+      },
+      competition: {
+        findFirst: jest.fn().mockResolvedValue({
+          wcif: {
+            events: [{ id: '333', rounds: [{ id: '333-r1', format: 'a' }] }],
+          },
+        }),
+      },
+    };
+    const service = new ResultService(
+      prisma as unknown as DbService,
+      { handleResultEntered: jest.fn() } as unknown as AppGateway,
+      null,
+      null,
+      null,
+      null,
+      { log: jest.fn() } as unknown as AttemptEditLogService,
+      null,
+      competitionStub,
+    );
+    jest.spyOn(service, 'getResultById').mockResolvedValue({
+      id: 'result-1',
+      eventId: '333',
+      roundId: '333-r1',
+    } as never);
+
+    await service.assignDnsOnRemainingAttempts('result-1');
+
+    expect(created).toEqual([2, 3, 4, 5]);
+    expect(request).toHaveBeenCalledWith('333-r1');
+  });
+});
+
 describe('ResultService sending where the WCA setting says', () => {
   const setup = (
     wcaScoretakingSoftware: string | null,
@@ -577,6 +651,7 @@ describe('ResultService sending where the WCA setting says', () => {
       null,
       null,
       integratedLiveService as never,
+      competitionStub,
     );
     service.getResultById = jest
       .fn()
