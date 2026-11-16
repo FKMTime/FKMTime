@@ -557,18 +557,29 @@ export class PersonService {
 
   async changeCompetingGroup(userId: string, data: ChangeCompetingGroupDto) {
     const roundId = data.newGroupId.split('-g')[0];
-    const currentGroup = await this.prisma.staffActivity.findFirst({
+    // The exact `${roundId}-g` prefix: a plain "contains 333-r1" also matches 333-r10
+    const competingRows = await this.prisma.staffActivity.findMany({
       where: {
-        groupId: {
-          contains: roundId,
-        },
+        groupId: { startsWith: `${roundId}-g` },
         personId: data.personId,
         role: StaffRole.COMPETITOR,
       },
       include: {
         person: true,
       },
+      orderBy: { createdAt: 'asc' },
     });
+    const targetRow = competingRows.find(
+      (row) => row.groupId === data.newGroupId,
+    );
+    // Move the assigned row: that is the group the schedule put them in. A
+    // walk-in added on the Attendance page sits next to it and stays put.
+    // Without an assignment, move the earliest walk-in outside the new group,
+    // or, if their only row is already there, that one.
+    const currentGroup =
+      competingRows.find((row) => row.isAssigned) ??
+      competingRows.find((row) => row.groupId !== data.newGroupId) ??
+      targetRow;
     const overlappingAssignments = await this.prisma.staffActivity.findMany({
       where: {
         groupId: data.newGroupId,
@@ -644,16 +655,31 @@ export class PersonService {
           where: {
             personId: currentGroup.personId,
             groupId: data.newGroupId,
+            role: { not: StaffRole.COMPETITOR },
           },
         });
-        await this.prisma.staffActivity.update({
-          where: {
-            id: currentGroup.id,
-          },
-          data: {
-            groupId: data.newGroupId,
-          },
-        });
+        if (targetRow && targetRow.id !== currentGroup.id) {
+          // They already have a row in the new group (a walk-in). Keep that
+          // one, since it holds the attendance taken in that group, mark it
+          // assigned, and drop the moved row: (person, group, role) is unique.
+          await this.prisma.staffActivity.update({
+            where: { id: targetRow.id },
+            data: { isAssigned: true },
+          });
+          await this.prisma.staffActivity.delete({
+            where: { id: currentGroup.id },
+          });
+        } else {
+          await this.prisma.staffActivity.update({
+            where: {
+              id: currentGroup.id,
+            },
+            data: {
+              groupId: data.newGroupId,
+              isAssigned: true,
+            },
+          });
+        }
         return {
           message: 'Successfully moved the competitor to another group',
         };

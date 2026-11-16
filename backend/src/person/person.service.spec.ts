@@ -30,6 +30,7 @@ describe('PersonService', () => {
               findMany: jest.fn(),
               deleteMany: jest.fn(),
               update: jest.fn(),
+              delete: jest.fn(),
               create: jest.fn(),
             },
             user: {
@@ -288,14 +289,64 @@ describe('PersonService', () => {
       },
     };
 
-    beforeEach(() => {
-      jest.spyOn(dbService.staffActivity, 'findFirst').mockResolvedValue({
-        id: 'staff-activity-1',
+    type Row = {
+      id: string;
+      personId: string;
+      groupId: string;
+      role: string;
+      isAssigned: boolean;
+    };
+    type GroupFilter = string | { contains?: string; startsWith?: string };
+    let rows: Row[];
+
+    const groupMatches = (groupId: string, filter?: GroupFilter) => {
+      if (filter === undefined) return true;
+      if (typeof filter === 'string') return groupId === filter;
+      if (filter.contains !== undefined) {
+        return groupId.includes(filter.contains);
+      }
+      return groupId.startsWith(filter.startsWith);
+    };
+    const competitorRow = (overrides: Partial<Row>): Row => ({
+      id: 'row-assigned',
+      personId: 'person-1',
+      groupId: '333-r1-g1',
+      role: 'COMPETITOR',
+      isAssigned: true,
+      ...overrides,
+    });
+    const moveTo = (newGroupId: string) =>
+      service.changeCompetingGroup('user-1', {
         personId: 'person-1',
-        groupId: '333-r1-g1',
-        person: { id: 'person-1', registrantId: 1 },
-      } as never);
-      jest.spyOn(dbService.staffActivity, 'findMany').mockResolvedValue([]);
+        newGroupId,
+      });
+
+    beforeEach(() => {
+      rows = [competitorRow({})];
+      // Answers both lookups the way the database would, so a loose groupId
+      // filter picks up the rows it would really pick up
+      const find = ({
+        where,
+      }: {
+        where: { personId?: string; role?: string; groupId?: GroupFilter };
+      }) =>
+        rows
+          .filter(
+            (row) =>
+              (!where.personId || row.personId === where.personId) &&
+              (!where.role || row.role === where.role) &&
+              groupMatches(row.groupId, where.groupId),
+          )
+          .map((row) => ({
+            ...row,
+            person: { id: 'person-1', registrantId: 1 },
+          }));
+      jest
+        .spyOn(dbService.staffActivity, 'findFirst')
+        .mockImplementation((async (args) => find(args)[0] ?? null) as never);
+      jest
+        .spyOn(dbService.staffActivity, 'findMany')
+        .mockImplementation((async (args) => find(args)) as never);
       jest.spyOn(dbService.user, 'findUnique').mockResolvedValue({
         wcaUserId: '1',
         wcaAccessToken: 'token',
@@ -310,6 +361,80 @@ describe('PersonService', () => {
       jest
         .spyOn(dbService.staffActivity, 'update')
         .mockResolvedValue({} as never);
+      jest
+        .spyOn(dbService.staffActivity, 'delete')
+        .mockResolvedValue({} as never);
+    });
+
+    describe('picking the row to move', () => {
+      beforeEach(() => {
+        jest
+          .spyOn(wcaService, 'patchWcif')
+          .mockResolvedValue({ statusCode: 200 });
+      });
+
+      it('leaves the same group in round 10 alone when moving in round 1', async () => {
+        rows = [
+          competitorRow({ id: 'row-r10', groupId: '333-r10-g1' }),
+          competitorRow({ id: 'row-r1', groupId: '333-r1-g1' }),
+        ];
+
+        await moveTo('333-r1-g2');
+
+        expect(dbService.staffActivity.update).toHaveBeenCalledTimes(1);
+        expect(dbService.staffActivity.update).toHaveBeenCalledWith({
+          where: { id: 'row-r1' },
+          data: { groupId: '333-r1-g2', isAssigned: true },
+        });
+      });
+
+      it('moves the assigned group, not a walk-in in the same round', async () => {
+        rows = [
+          competitorRow({
+            id: 'row-walk-in',
+            groupId: '333-r1-g3',
+            isAssigned: false,
+          }),
+          competitorRow({ id: 'row-assigned', groupId: '333-r1-g1' }),
+        ];
+
+        await moveTo('333-r1-g2');
+
+        expect(dbService.staffActivity.update).toHaveBeenCalledTimes(1);
+        expect(dbService.staffActivity.update).toHaveBeenCalledWith({
+          where: { id: 'row-assigned' },
+          data: { groupId: '333-r1-g2', isAssigned: true },
+        });
+      });
+
+      it('keeps their walk-in row in the new group instead of a duplicate', async () => {
+        rows = [
+          competitorRow({ id: 'row-assigned', groupId: '333-r1-g1' }),
+          competitorRow({
+            id: 'row-walk-in',
+            groupId: '333-r1-g2',
+            isAssigned: false,
+          }),
+        ];
+
+        await moveTo('333-r1-g2');
+
+        expect(dbService.staffActivity.deleteMany).toHaveBeenCalledWith({
+          where: {
+            personId: 'person-1',
+            groupId: '333-r1-g2',
+            role: { not: 'COMPETITOR' },
+          },
+        });
+        expect(dbService.staffActivity.update).toHaveBeenCalledTimes(1);
+        expect(dbService.staffActivity.update).toHaveBeenCalledWith({
+          where: { id: 'row-walk-in' },
+          data: { isAssigned: true },
+        });
+        expect(dbService.staffActivity.delete).toHaveBeenCalledWith({
+          where: { id: 'row-assigned' },
+        });
+      });
     });
 
     it('includes the required WCIF fields when changing assignments', async () => {
