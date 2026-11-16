@@ -97,6 +97,8 @@ const Devices = () => {
     );
     const [isOpenCreateDeviceModal, setIsOpenCreateDeviceModal] =
         useState<boolean>(false);
+    // Devices tend to be added a room at a time, so the next one starts there
+    const [lastAddedRoomId, setLastAddedRoomId] = useState<string>();
     // Local time the server switches auto setup off at (null while off), and
     // how long a run lasts
     const [autoSetup, setAutoSetup] = useState<{
@@ -110,6 +112,9 @@ const Devices = () => {
     };
 
     const handleCloseCreateDeviceModal = (device?: Device) => {
+        if (device?.roomId) {
+            setLastAddedRoomId(device.roomId);
+        }
         if (device?.id && device?.name) {
             if (deviceToAdd) {
                 handleRemoveDeviceRequest(deviceToAdd.espId);
@@ -442,6 +447,9 @@ const Devices = () => {
                 isOpen={isOpenCreateDeviceModal}
                 onClose={handleCloseCreateDeviceModal}
                 deviceToAdd={deviceToAdd || undefined}
+                preferredRoomId={
+                    selectedRoomId === "ALL" ? lastAddedRoomId : selectedRoomId
+                }
             />
         </>
     );
