@@ -50,8 +50,8 @@ import {
   canLeaveGroup,
   getFirstGroupOfNextRoundInRoom,
   getGroupStatus as getGroupStatusFromResults,
-  GROUP_IDLE_BEFORE_CHANGE_MS,
   GroupChangeResult,
+  isGroupQuiet,
   planNextGroups,
 } from './groupChange';
 import { getGroupCompetitorIds } from './groupProgress';
@@ -669,13 +669,13 @@ export class CompetitionService implements OnModuleDestroy {
     const stuck: string[] = [];
     for (const groupId of room.currentGroupIds) {
       const status = await this.getGroupStatus(groupId, room.name, wcif);
-      if (canLeaveGroup(status, trigger, now)) {
+      const enteredAt = this.roomsService.getGroupEnteredAt(room.id, groupId);
+      if (canLeaveGroup(status, trigger, now, enteredAt)) {
         leaving.push(groupId);
       } else if (
         trigger === 'cron' &&
         status.state !== 'notStarted' &&
-        status.lastAttemptAt !== null &&
-        now - status.lastAttemptAt > GROUP_IDLE_BEFORE_CHANGE_MS
+        isGroupQuiet(status, enteredAt, now)
       ) {
         stuck.push(groupId);
       }
@@ -722,8 +722,13 @@ export class CompetitionService implements OnModuleDestroy {
     const roomRoundGroupIds = hasNextGroup
       ? [groupId]
       : (round?.childActivities ?? []).map((group) => group.activityCode);
-    const [results, freshSetGrants, attendance] = await Promise.all([
+    const [results, removed, freshSetGrants, attendance] = await Promise.all([
       this.resultService.getAllResultsByRound(roundId),
+      // Asked for by name, as result queries leave removed results out
+      this.prisma.result.findMany({
+        where: { roundId, removedAt: { not: null } },
+        select: { personId: true, person: { select: { registrantId: true } } },
+      }),
       this.prisma.extraGrant.findMany({
         where: {
           useFreshSet: true,
@@ -749,6 +754,10 @@ export class CompetitionService implements OnModuleDestroy {
       presentPersonIds: attendance
         .filter((a) => a.groupId === groupId)
         .map((a) => a.personId),
+      removed: removed.map((r) => ({
+        personId: r.personId,
+        registrantId: r.person.registrantId,
+      })),
       roomRoundRegistrantIds: roomRoundGroupIds.flatMap((id) =>
         getGroupCompetitorIds(wcif, id),
       ),
@@ -809,9 +818,17 @@ export class CompetitionService implements OnModuleDestroy {
       wcif,
     );
     if (!nextGroupIds) return;
-    await this.roomsService.updateRooms({
-      rooms: [{ id: room.id, currentGroupIds: nextGroupIds }],
-    });
+    const switched = await this.roomsService.switchRoomGroups(
+      room.id,
+      room.currentGroupIds,
+      nextGroupIds,
+    );
+    if (!switched) {
+      this.logger.log(
+        `Groups in room ${room.name} were changed by hand meanwhile; left as they are`,
+      );
+      return;
+    }
     this.forgetWarningsForOtherGroups(room.id, nextGroupIds);
     const message = `Group in room ${room.name} was changed to ${nextGroupIds.join(', ')}`;
     this.appGateway.server.to(`competition`).emit('groupShouldBeChanged', {

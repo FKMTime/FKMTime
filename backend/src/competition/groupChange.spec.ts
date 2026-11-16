@@ -14,6 +14,7 @@ import {
   canLeaveGroup,
   getFirstGroupOfNextRoundInRoom,
   getGroupStatus,
+  getQuietSince,
   GROUP_IDLE_BEFORE_CHANGE_MS,
   planNextGroups,
   RoundRules,
@@ -21,8 +22,8 @@ import {
 import { RoomsService } from './rooms.service';
 
 // All times are on one day, around noon UTC
-const at = (hour: number, minute = 0) =>
-  new Date(Date.UTC(2026, 8, 30, hour, minute)).toISOString();
+const at = (hour: number, minute = 0, second = 0) =>
+  new Date(Date.UTC(2026, 8, 30, hour, minute, second)).toISOString();
 
 let nextActivityId = 1;
 const group = (activityCode: string, start: number, end: number) => ({
@@ -117,6 +118,7 @@ interface TestResult {
   roundId: string;
   registrantId: number;
   attempts: Attempt[];
+  removedAt?: Date;
 }
 const toDbResult = (r: TestResult) => ({
   id: `r-${r.roundId}-${r.registrantId}`,
@@ -125,6 +127,7 @@ const toDbResult = (r: TestResult) => ({
   personId: `p${r.registrantId}`,
   person: { id: `p${r.registrantId}`, registrantId: r.registrantId },
   attempts: r.attempts,
+  removedAt: r.removedAt ?? null,
 });
 
 const setup = ({
@@ -150,6 +153,11 @@ const setup = ({
     results: results.map(toDbResult),
   };
   const roomById = (id: string) => state.rooms.find((r) => r.id === id);
+  // A read is a snapshot, as from the database
+  const readRoom = async ({ where }) => {
+    const room = roomById(where.id);
+    return room ? structuredClone(room) : null;
+  };
   const prisma = {
     competition: {
       findFirst: jest.fn(async () => ({
@@ -166,9 +174,28 @@ const setup = ({
           ? state.rooms.filter((r) => args.where.id.in.includes(r.id))
           : state.rooms,
       ),
-      findFirst: jest.fn(async ({ where }) => roomById(where.id) ?? null),
-      findUnique: jest.fn(async ({ where }) => roomById(where.id) ?? null),
+      findFirst: jest.fn(readRoom),
+      findUnique: jest.fn(readRoom),
       update: jest.fn((args) => args),
+      // Only writes while the room still runs the groups the caller read
+      updateMany: jest.fn(async ({ where, data }) => {
+        const room = roomById(where.id);
+        const unchanged =
+          room &&
+          (!where.currentGroupIds ||
+            JSON.stringify(room.currentGroupIds) ===
+              JSON.stringify(where.currentGroupIds.equals));
+        if (!unchanged) return { count: 0 };
+        Object.assign(room, data);
+        return { count: 1 };
+      }),
+    },
+    result: {
+      findMany: jest.fn(async ({ where }) =>
+        state.results.filter(
+          (r) => r.roundId === where.roundId && r.removedAt !== null,
+        ),
+      ),
     },
     extraGrant: {
       findMany: jest.fn(async () => freshSetGrantIds.map((id) => ({ id }))),
@@ -187,8 +214,9 @@ const setup = ({
   const emit = jest.fn();
   const appGateway = { server: { to: () => ({ emit }) } };
   const resultService = {
+    // Like the database, which leaves removed results out
     getAllResultsByRound: jest.fn(async (roundId: string) =>
-      state.results.filter((r) => r.roundId === roundId),
+      state.results.filter((r) => r.roundId === roundId && !r.removedAt),
     ),
   };
   const socketController = { sendServerStatus: jest.fn() };
@@ -215,6 +243,7 @@ const setup = ({
     messages,
     socketController,
     onRoundStarted,
+    roomsService,
     addResult: (r: TestResult) => state.results.push(toDbResult(r)),
   };
 };
@@ -535,6 +564,8 @@ describe('automatic group change', () => {
       const results = [
         { roundId: '333-r1', registrantId: 1, attempts: solves(3) },
       ];
+      // Running since well before the group, which the room has been in
+      jest.setSystemTime(new Date(at(12, 0)));
       const { service, roomById } = setup({
         wcif: buildWcif(schedule(), assignments),
         rooms: mainAndSide(),
@@ -551,6 +582,7 @@ describe('automatic group change', () => {
 
     it("goes by the room's own last attempt, not the round's", async () => {
       // Side's competitor solved a minute ago; Main's group has been quiet
+      jest.setSystemTime(new Date(at(12, 0)));
       const { service, roomById } = setup({
         wcif: buildWcif(schedule(), {
           ...assignments,
@@ -580,6 +612,95 @@ describe('automatic group change', () => {
       jest.setSystemTime(new Date(at(13, 30)));
       await service.checkIfGroupShouldBeChanged();
       expect(roomById('main').currentGroupIds).toEqual(['333-r1-g1']);
+    });
+
+    it('does not skip a group the room just reached because someone in it solved early', async () => {
+      jest.setSystemTime(new Date(at(12, 0)));
+      const { service, roomById } = setup({
+        wcif: buildWcif(schedule(), { ...assignments, 6: ['333-r1-g2'] }),
+        rooms: mainAndSide(),
+        results: [
+          { roundId: '333-r1', registrantId: 1, attempts: solves(3) },
+          { roundId: '333-r1', registrantId: 2, attempts: solves(3) },
+          // In g2, but done early during g1; 6 hasn't started
+          {
+            roundId: '333-r1',
+            registrantId: 3,
+            attempts: solves(3, new Date(at(12, 5))),
+          },
+        ],
+      });
+      jest.setSystemTime(new Date(at(12, 30)));
+      await service.checkIfGroupCanBeChanged('main', 'event');
+      expect(roomById('main').currentGroupIds).toEqual(['333-r1-g2']);
+
+      // The periodic check right after the switch
+      jest.setSystemTime(new Date(at(12, 31)));
+      await service.checkIfGroupShouldBeChanged();
+      expect(roomById('main').currentGroupIds).toEqual(['333-r1-g2']);
+
+      // Quiet for the whole spell since the room got there: a no-show
+      jest.setSystemTime(new Date(at(12, 35, 1)));
+      await service.checkIfGroupShouldBeChanged();
+      expect(roomById('main').currentGroupIds).toEqual(['222-r1-g1']);
+    });
+
+    it('after a restart, waits a whole quiet spell before giving up on a group', async () => {
+      // The room was already in g2 when the backend started at 12:30
+      jest.setSystemTime(new Date(at(12, 30)));
+      const { service, roomById } = setup({
+        wcif: buildWcif(schedule(), { ...assignments, 6: ['333-r1-g2'] }),
+        rooms: [{ id: 'main', name: 'Main', currentGroupIds: ['333-r1-g2'] }],
+        results: [
+          {
+            roundId: '333-r1',
+            registrantId: 3,
+            attempts: solves(3, new Date(at(12, 5))),
+          },
+        ],
+      });
+      jest.setSystemTime(new Date(at(12, 31)));
+      await service.checkIfGroupShouldBeChanged();
+      expect(roomById('main').currentGroupIds).toEqual(['333-r1-g2']);
+
+      jest.setSystemTime(new Date(at(12, 35, 1)));
+      await service.checkIfGroupShouldBeChanged();
+      expect(roomById('main').currentGroupIds).toEqual(['222-r1-g1']);
+    });
+
+    it('waits in the last group for a competitor added by hand', async () => {
+      const { service, roomById, addResult } = setup({
+        wcif: buildWcif(schedule(), assignments),
+        rooms: [{ id: 'main', name: 'Main', currentGroupIds: ['333-r1-g2'] }],
+        results: [{ roundId: '333-r1', registrantId: 3, attempts: solves(3) }],
+        // Not assigned anywhere, added to g2 in the attendance page
+        attendance: [{ personId: 'p7', groupId: '333-r1-g2' }],
+      });
+      await service.checkIfGroupCanBeChanged('main', 'event');
+      expect(roomById('main').currentGroupIds).toEqual(['333-r1-g2']);
+
+      addResult({ roundId: '333-r1', registrantId: 7, attempts: solves(3) });
+      await service.checkIfGroupCanBeChanged('main', 'event');
+      expect(roomById('main').currentGroupIds).toEqual(['222-r1-g1']);
+    });
+
+    it('is not held back by a removed result', async () => {
+      const { service, roomById } = setup({
+        wcif: buildWcif(schedule(), assignments),
+        rooms: mainAndSide(),
+        results: [
+          { roundId: '333-r1', registrantId: 1, attempts: solves(3) },
+          // Removed under Regulation 9t after one attempt
+          {
+            roundId: '333-r1',
+            registrantId: 2,
+            attempts: solves(1),
+            removedAt: new Date(at(12, 12)),
+          },
+        ],
+      });
+      await service.checkIfGroupCanBeChanged('main', 'event');
+      expect(roomById('main').currentGroupIds).toEqual(['333-r1-g2']);
     });
   });
 
@@ -713,6 +834,30 @@ describe('automatic group change', () => {
       ).resolves.toEqual(['333-r1-g1']);
     });
 
+    it('keeps a change made in the panel while the room was being moved on', async () => {
+      const { service, roomById, prisma, socketController, messages } = setup({
+        wcif: buildWcif(schedule(), assignments),
+        rooms: [mainAndSide()[0]],
+        results: [
+          { roundId: '333-r1', registrantId: 1, attempts: solves(3) },
+          { roundId: '333-r1', registrantId: 2, attempts: solves(3) },
+        ],
+      });
+      const write = prisma.room.updateMany.getMockImplementation();
+      prisma.room.updateMany.mockImplementationOnce(async (args) => {
+        // A delegate's change lands between the read and the write
+        roomById('main').currentGroupIds = ['222-r1-g1'];
+        return write(args);
+      });
+
+      await service.checkIfGroupCanBeChanged('main', 'event');
+
+      expect(roomById('main').currentGroupIds).toEqual(['222-r1-g1']);
+      expect(roomById('main').startedGroupIds).toEqual(['333-r1-g1']);
+      expect(socketController.sendServerStatus).not.toHaveBeenCalled();
+      expect(messages()).toEqual([]);
+    });
+
     it('leaves the room alone if its groups were changed by hand meanwhile', async () => {
       const { service, roomById, socketController } = setup({
         wcif: buildWcif(schedule(), assignments),
@@ -827,9 +972,62 @@ describe('group change helpers', () => {
       lastAttemptAt: 0,
     };
     const later = GROUP_IDLE_BEFORE_CHANGE_MS + 1;
-    expect(canLeaveGroup(status, 'event', later)).toBe(false);
-    expect(canLeaveGroup(status, 'cron', later - 2)).toBe(false);
-    expect(canLeaveGroup(status, 'cron', later)).toBe(true);
+    expect(canLeaveGroup(status, 'event', later, 0)).toBe(false);
+    expect(canLeaveGroup(status, 'cron', later - 2, 0)).toBe(false);
+    expect(canLeaveGroup(status, 'cron', later, 0)).toBe(true);
+  });
+
+  it('counts the quiet spell from when the room reached the group', () => {
+    const status = {
+      state: 'waitingForCompetitors' as const,
+      lastAttemptAt: 1_000,
+    };
+    const enteredAt = 60_000;
+    expect(getQuietSince(status, enteredAt)).toBe(enteredAt);
+    expect(
+      canLeaveGroup(
+        status,
+        'cron',
+        enteredAt + GROUP_IDLE_BEFORE_CHANGE_MS,
+        enteredAt,
+      ),
+    ).toBe(false);
+    expect(
+      canLeaveGroup(
+        status,
+        'cron',
+        enteredAt + GROUP_IDLE_BEFORE_CHANGE_MS + 1,
+        enteredAt,
+      ),
+    ).toBe(true);
+    // An attempt after the room got there counts from that attempt
+    expect(getQuietSince({ ...status, lastAttemptAt: 90_000 }, enteredAt)).toBe(
+      90_000,
+    );
+  });
+
+  it('leaves out a removed result and its competitor', () => {
+    const status = getGroupStatus({
+      results: [
+        result(1, solves(5)),
+        { ...result(2, solves(1)), removedAt: new Date(at(12, 20)) },
+      ],
+      assignedRegistrantIds: [1, 2],
+      presentPersonIds: ['p2'],
+      removed: [{ personId: 'p2', registrantId: 2 }],
+      rules,
+    });
+    expect(status.state).toBe('finished');
+  });
+
+  it('waits for someone marked present who has no attempt yet', () => {
+    const status = getGroupStatus({
+      results: [result(1, solves(5))],
+      assignedRegistrantIds: [1],
+      presentPersonIds: ['p7'],
+      rules,
+    });
+    expect(status.state).toBe('waitingForCompetitors');
   });
 
   it('plans nothing when there is nothing to start', () => {

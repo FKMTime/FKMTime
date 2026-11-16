@@ -20,6 +20,8 @@ export interface GroupChangeResult {
   personId: string;
   person: { registrantId: number };
   attempts: Attempt[];
+  /** Regulation 9t: such a result counts nowhere */
+  removedAt?: Date | null;
 }
 
 export interface RoundRules {
@@ -86,22 +88,39 @@ export interface GroupStatus {
 
 /**
  * Where a group stands, from its own competitors only: those assigned to it
- * and those who competed in it (attendance). Other groups and rooms of the
- * same round don't hold it back. The last group of the round in the room
- * also waits for redos of anyone from the room's earlier groups
- * (roomRoundRegistrantIds / roomRoundPersonIds).
+ * and those marked present in it (attendance, which includes competitors
+ * added by hand). Other groups and rooms of the same round don't hold it
+ * back, and neither does anyone whose result in the round was removed
+ * (Regulation 9t). The last group of the round in the room also waits for
+ * redos of anyone from the room's earlier groups (roomRoundRegistrantIds /
+ * roomRoundPersonIds).
  */
 export const getGroupStatus = (input: {
   results: GroupChangeResult[];
   assignedRegistrantIds: number[];
   presentPersonIds: string[];
+  /** Competitors whose result in the round was removed */
+  removed?: { personId: string; registrantId: number }[];
   roomRoundRegistrantIds?: number[];
   roomRoundPersonIds?: string[];
   rules: RoundRules;
 }): GroupStatus => {
-  const assigned = new Set(input.assignedRegistrantIds);
-  const present = new Set(input.presentPersonIds);
-  const members = input.results.filter(
+  const removed = input.removed ?? [];
+  const removedRegistrantIds = new Set(removed.map((r) => r.registrantId));
+  const removedPersonIds = new Set(removed.map((r) => r.personId));
+  const results = input.results.filter(
+    (r) =>
+      !r.removedAt &&
+      !removedPersonIds.has(r.personId) &&
+      !removedRegistrantIds.has(r.person.registrantId),
+  );
+  const assigned = new Set(
+    input.assignedRegistrantIds.filter((id) => !removedRegistrantIds.has(id)),
+  );
+  const present = new Set(
+    input.presentPersonIds.filter((id) => !removedPersonIds.has(id)),
+  );
+  const members = results.filter(
     (r) => assigned.has(r.person.registrantId) || present.has(r.personId),
   );
 
@@ -109,6 +128,7 @@ export const getGroupStatus = (input: {
   let pending = false;
   let lastAttemptAt: number | null = null;
   const startedRegistrantIds = new Set<number>();
+  const startedPersonIds = new Set<string>();
   for (const result of members) {
     const state = getResultState(result.attempts, input.rules);
     for (const attempt of result.attempts) {
@@ -120,13 +140,14 @@ export const getGroupStatus = (input: {
     if (state === 'notStarted') continue;
     started = true;
     startedRegistrantIds.add(result.person.registrantId);
+    startedPersonIds.add(result.personId);
     if (state === 'pending') pending = true;
   }
 
   if (!input.rules.hasNextGroup) {
     const roomAssigned = new Set(input.roomRoundRegistrantIds ?? []);
     const roomPresent = new Set(input.roomRoundPersonIds ?? []);
-    const redoWaiting = input.results.some(
+    const redoWaiting = results.some(
       (r) =>
         (roomAssigned.has(r.person.registrantId) ||
           roomPresent.has(r.personId)) &&
@@ -137,9 +158,9 @@ export const getGroupStatus = (input: {
 
   if (!started) return { state: 'notStarted', lastAttemptAt };
   if (pending) return { state: 'inProgress', lastAttemptAt };
-  const someoneNotStarted = [...assigned].some(
-    (id) => !startedRegistrantIds.has(id),
-  );
+  const someoneNotStarted =
+    [...assigned].some((id) => !startedRegistrantIds.has(id)) ||
+    [...present].some((id) => !startedPersonIds.has(id));
   return {
     state: someoneNotStarted ? 'waitingForCompetitors' : 'finished',
     lastAttemptAt,
@@ -147,23 +168,39 @@ export const getGroupStatus = (input: {
 };
 
 /**
+ * Since when the group has been quiet in the room: the later of the room
+ * reaching the group and the group's last attempt. Attempts made before the
+ * room got there (a competitor solving early during an earlier group) don't
+ * make a group the room only just reached look quiet.
+ */
+export const getQuietSince = (status: GroupStatus, enteredAt: number) =>
+  Math.max(enteredAt, status.lastAttemptAt ?? enteredAt);
+
+/** Whether nobody in the group has entered an attempt for a while */
+export const isGroupQuiet = (
+  status: GroupStatus,
+  enteredAt: number,
+  now: number,
+) => now - getQuietSince(status, enteredAt) > GROUP_IDLE_BEFORE_CHANGE_MS;
+
+/**
  * Whether the room can leave the group. Right after an attempt only a group
  * everyone in it finished can go. The periodic check also lets a group go
- * whose missing competitors haven't started and nobody in it entered an
- * attempt for a while: nothing else tells a no-show from someone still
+ * whose missing competitors haven't started once it has been quiet for a
+ * while (see getQuietSince): nothing else tells a no-show from someone still
  * waiting for a station.
  */
 export const canLeaveGroup = (
   status: GroupStatus,
   trigger: 'event' | 'cron',
   now: number,
+  enteredAt: number,
 ) => {
   if (status.state === 'finished') return true;
   return (
     trigger === 'cron' &&
     status.state === 'waitingForCompetitors' &&
-    status.lastAttemptAt !== null &&
-    now - status.lastAttemptAt > GROUP_IDLE_BEFORE_CHANGE_MS
+    isGroupQuiet(status, enteredAt, now)
   );
 };
 
