@@ -23,6 +23,14 @@ export const updateCurrentRound = async (rooms: Room[]) => {
     };
 };
 
+/**
+ * Saves one room's groups and nothing else, so a page holding older data
+ * for the other rooms can't undo what changed there meanwhile (e.g. an
+ * automatic group change).
+ */
+export const updateRoomGroups = (room: Room, currentGroupIds: string[]) =>
+    updateCurrentRound([{ ...room, currentGroupIds }]);
+
 export interface GroupProgress {
     groupId: string;
     roundId: string;
@@ -30,6 +38,12 @@ export interface GroupProgress {
     entered: number;
     expected: number;
 }
+
+/** Every attempt the group's competitors will do is in */
+export const isGroupDone = (progress?: GroupProgress) =>
+    !!progress &&
+    progress.expected > 0 &&
+    progress.entered >= progress.expected;
 
 export interface RoomProgress {
     roomId: string;

@@ -9,12 +9,15 @@ import {
     formatTimeRange,
     getCompetitionDays,
     getDefaultCompetitionDay,
+    getGroupPlaceLabel,
     getNextActivityInRoom,
+    getRoomScheduleStatus,
     getScheduleOffsetMinutes,
     getScheduleRooms,
     getScheduleRoundDetails,
     getScheduleStatus,
     getStartLabel,
+    isLastGroupInRoom,
 } from "@/lib/schedule";
 
 const wcif = {
@@ -100,6 +103,7 @@ describe("findGroupSchedule", () => {
             timezone: "Europe/Warsaw",
             groupNumber: 2,
             groupCount: 2,
+            position: 2,
             startTime: "2026-04-18T09:00:00Z",
             endTime: "2026-04-18T10:00:00Z",
             roundEndTime: "2026-04-18T10:00:00Z",
@@ -113,6 +117,94 @@ describe("findGroupSchedule", () => {
         expect(findGroupSchedule(wcif, "333-r1-g3")?.roomName).toBe(
             "Side room"
         );
+    });
+});
+
+describe("group place in the room", () => {
+    it("counts the room's own groups, whatever their numbers", () => {
+        const side = findGroupSchedule(wcif, "333-r1-g3", "Side room")!;
+        expect(side.position).toBe(1);
+        expect(side.groupCount).toBe(1);
+        expect(isLastGroupInRoom(side)).toBe(true);
+        expect(getGroupPlaceLabel(side)).toBe("Group 3 · the only one here");
+
+        const first = findGroupSchedule(wcif, "333-r1-g1", "Main room")!;
+        expect(getGroupPlaceLabel(first)).toBe("Group 1 · 1 of 2 here");
+        expect(isLastGroupInRoom(first)).toBe(false);
+    });
+
+    it("orders the room's groups by start time, not by their order in the WCIF", () => {
+        const venue = wcif.schedule.venues[0];
+        const round = venue.rooms[0].activities[0];
+        const reversed = {
+            ...wcif,
+            schedule: {
+                venues: [
+                    {
+                        ...venue,
+                        rooms: [
+                            {
+                                ...venue.rooms[0],
+                                activities: [
+                                    {
+                                        ...round,
+                                        childActivities: [
+                                            ...(round.childActivities ?? []),
+                                        ].reverse(),
+                                    },
+                                ],
+                            },
+                        ],
+                    },
+                ],
+            },
+        } as unknown as Competition;
+        expect(
+            findGroupSchedule(reversed, "333-r1-g1", "Main room")?.position
+        ).toBe(1);
+    });
+});
+
+describe("getRoomScheduleStatus", () => {
+    it("never says a running room starts later; it is ahead", () => {
+        // 333-r1-g2 in the Main room is scheduled 09:00–10:00
+        expect(
+            getRoomScheduleStatus(
+                wcif,
+                "Main room",
+                ["333-r1-g2"],
+                [],
+                new Date("2026-04-18T08:30:00Z")
+            )
+        ).toEqual({ label: "30 min ahead", tone: "neutral" });
+    });
+
+    it("judges a running room by its group furthest behind", () => {
+        expect(
+            getRoomScheduleStatus(
+                wcif,
+                "Main room",
+                ["333-r1-g1", "333-r1-g2"],
+                [],
+                new Date("2026-04-18T09:30:00Z")
+            )
+        ).toEqual({ label: "30 min behind", tone: "warning" });
+    });
+
+    it("shows when an empty room starts its next group", () => {
+        expect(
+            getRoomScheduleStatus(
+                wcif,
+                "Main room",
+                [],
+                ["333-r1-g2"],
+                new Date("2026-04-18T08:00:00Z")
+            )
+        ).toEqual({ label: "Starts 11:00", tone: "neutral" });
+    });
+
+    it("has no status for an empty room with nothing next", () => {
+        expect(getRoomScheduleStatus(wcif, "Main room", [], [])).toBeNull();
     });
 });
 

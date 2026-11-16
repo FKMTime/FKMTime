@@ -1,167 +1,60 @@
-import { useAtom } from "jotai";
-import {
-    Info,
-    ListX,
-    Plus,
-    Save,
-    SkipBack,
-    SkipForward,
-    X,
-} from "lucide-react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { Info } from "lucide-react";
+import { useMemo } from "react";
 
 import LoadingPage from "@/Components/LoadingPage";
 import EmptyState from "@/Components/shared/EmptyState";
 import { Alert } from "@/Components/ui/alert";
-import { Button } from "@/Components/ui/button";
-import { useToast } from "@/hooks/useToast";
+import { useSocketRoom } from "@/hooks/useSocketRoom";
 import { activityCodeToName } from "@/lib/activities";
-import { competitionAtom } from "@/lib/atoms";
-import {
-    getCompetitionInfo,
-    getNextGroupsFromScheduleForRoom,
-    getPreviousGroupsFromScheduleForRoom,
-} from "@/lib/competition";
-import {
-    describeGroupChanges,
-    getGroupLabel,
-    getGroupOptions,
-    getRoomGroupsError,
-    getRoundsToOpen,
-} from "@/lib/currentGroups";
-import { getEventIconClass, isUnofficialEvent } from "@/lib/events";
-import { Room } from "@/lib/interfaces";
-import { fetchQuery, getQueryData, setQueryData } from "@/lib/queryCache";
-import { roomsQuery, updateCurrentRound } from "@/lib/rooms";
-import { cn } from "@/lib/utils";
+import { getGroupOptions, getRoundsToOpen } from "@/lib/currentGroups";
+import { isUnofficialEvent } from "@/lib/events";
 import SetupTabs from "@/Pages/Main/Setup/SetupTabs";
 
-import AddGroupPicker from "./AddGroupPicker";
+import AutoChangeSwitch from "./AutoChangeSwitch";
+import RoomRow, { RoomTableHeader } from "./RoomRow";
+import { useCurrentGroups } from "./useCurrentGroups";
 
-const groupCountLabel = (count: number) =>
-    count === 1 ? "1 group" : `${count} groups`;
+/** Keeps a round's results room joined while its group runs */
+const ResultsRoom = ({ roundId }: { roundId: string }) => {
+    useSocketRoom("Results", { params: { roundId } });
+    return null;
+};
 
+/**
+ * What every room runs now, how far its groups are, and what it starts
+ * next. Each change saves at once, for that room only.
+ */
 const CurrentGroups = () => {
-    const { toast } = useToast();
-    const [competition, setCompetition] = useAtom(competitionAtom);
-    // Start from the last known rooms so the page doesn't open empty
-    const [savedRooms, setSavedRooms] = useState<Room[]>(
-        () => getQueryData<Room[]>(roomsQuery.key) ?? []
-    );
-    const [rooms, setRooms] = useState<Room[]>(savedRooms);
-    const [suggestedGroups, setSuggestedGroups] = useState<
-        Record<string, string[]>
-    >({});
-    const [isSaving, setIsSaving] = useState(false);
-
-    const fetchCompetition = useCallback(async () => {
-        const response = await getCompetitionInfo();
-        setCompetition(response.data);
-    }, [setCompetition]);
-
-    useEffect(() => {
-        if (!competition) fetchCompetition();
-    }, [competition, fetchCompetition]);
-
-    useEffect(() => {
-        const shownRooms = JSON.stringify(
-            getQueryData<Room[]>(roomsQuery.key) ?? []
-        );
-        fetchQuery(roomsQuery, { reuseRunning: true }).then(
-            async (data) => {
-                setSavedRooms(data);
-                // Keep groups picked while the fresh rooms were loading
-                setRooms((current) =>
-                    JSON.stringify(current) === shownRooms ? data : current
-                );
-                const suggested = await Promise.all(
-                    data.map((room) =>
-                        getNextGroupsFromScheduleForRoom(room.id, [])
-                    )
-                );
-                setSuggestedGroups(
-                    Object.fromEntries(
-                        data.map((room, i) => [room.id, suggested[i]])
-                    )
-                );
-            },
-            () => undefined
-        );
-    }, []);
+    const {
+        competition,
+        rooms,
+        isLoading,
+        nextGroups,
+        roundIds,
+        getProgress,
+        now,
+        setRoomGroups,
+        isAutoChange,
+        isAutoChangeKnown,
+        isAutoChangeSaving,
+        setAutoChange,
+    } = useCurrentGroups();
 
     const groupOptions = useMemo(
         () => (competition ? getGroupOptions(competition.wcif) : []),
         [competition]
     );
 
-    const isDirty = JSON.stringify(rooms) !== JSON.stringify(savedRooms);
-    const changes = describeGroupChanges(savedRooms, rooms);
+    if (isLoading || !competition) return <LoadingPage />;
+
     const roundsToOpen = getRoundsToOpen(rooms, isUnofficialEvent);
-
-    const setRoomGroups = (roomId: string, groupIds: string[]) => {
-        const error = getRoomGroupsError(groupIds);
-        if (error) {
-            toast({ title: error, variant: "destructive" });
-            return;
-        }
-        setRooms((prev) =>
-            prev.map((room) =>
-                room.id === roomId
-                    ? { ...room, currentGroupIds: groupIds }
-                    : room
-            )
-        );
-    };
-
-    /** Stepping past the end of the schedule keeps the room as it is */
-    const stepRoom = (room: Room, groupIds: string[], nothingLeft: string) => {
-        if (groupIds.length === 0) {
-            toast({ title: nothingLeft });
-            return;
-        }
-        setRoomGroups(room.id, groupIds);
-    };
-
-    const handleNext = async (room: Room) =>
-        stepRoom(
-            room,
-            await getNextGroupsFromScheduleForRoom(
-                room.id,
-                room.currentGroupIds
-            ),
-            `Nothing next in ${room.name}`
-        );
-
-    const handlePrevious = async (room: Room) =>
-        stepRoom(
-            room,
-            await getPreviousGroupsFromScheduleForRoom(
-                room.id,
-                room.currentGroupIds
-            ),
-            `Nothing earlier in ${room.name}`
-        );
-
-    const handleSave = async () => {
-        setIsSaving(true);
-        const response = await updateCurrentRound(rooms);
-        setIsSaving(false);
-        if (response.status === 200) {
-            setSavedRooms(rooms);
-            setQueryData(roomsQuery.key, rooms);
-            toast({ title: "Groups saved", variant: "success" });
-        } else if (response.status === 400) {
-            toast({ title: response.data.message, variant: "destructive" });
-        } else {
-            toast({ title: "Something went wrong!", variant: "destructive" });
-        }
-    };
-
-    if (!competition) return <LoadingPage />;
 
     return (
         <>
             <SetupTabs value="groups" />
+            {roundIds.map((roundId) => (
+                <ResultsRoom key={roundId} roundId={roundId} />
+            ))}
             {roundsToOpen.length > 0 && (
                 <Alert>
                     <Info />
@@ -181,183 +74,31 @@ const CurrentGroups = () => {
                     </p>
                 </Alert>
             )}
-            {rooms.map((room) => {
-                const saved = savedRooms.find((r) => r.id === room.id);
-                const hasGroups = room.currentGroupIds.length > 0;
-                const suggested = suggestedGroups[room.id] ?? [];
-                return (
-                    <section
-                        key={room.id}
-                        aria-label={room.name}
-                        className="flex flex-col gap-3 rounded-mobile-card border bg-card p-3.5 md:gap-3.5 md:rounded-2xl md:px-5 md:py-[18px]"
-                    >
-                        <div className="flex flex-wrap items-center justify-between gap-3">
-                            <div className="flex items-baseline gap-2.5">
-                                <h2 className="text-base font-bold">
-                                    {room.name}
-                                </h2>
-                                <span className="text-[13px] text-muted-foreground">
-                                    {groupCountLabel(
-                                        room.currentGroupIds.length
-                                    )}
-                                </span>
-                            </div>
-                            <div className="flex flex-wrap gap-1.5">
-                                <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => handlePrevious(room)}
-                                >
-                                    <SkipBack />
-                                    Previous from schedule
-                                </Button>
-                                <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => handleNext(room)}
-                                >
-                                    <SkipForward />
-                                    Next from schedule
-                                </Button>
-                                <Button
-                                    variant="outline"
-                                    size="sm"
-                                    className="text-destructive"
-                                    disabled={!hasGroups}
-                                    onClick={() => setRoomGroups(room.id, [])}
-                                >
-                                    <ListX />
-                                    Clear
-                                </Button>
-                            </div>
-                        </div>
-                        {hasGroups ? (
-                            <ul className="flex flex-col gap-1.5 md:flex-row md:flex-wrap md:gap-2">
-                                {room.currentGroupIds.map((groupId) => (
-                                    <li
-                                        key={groupId}
-                                        className="flex h-12 items-center gap-2.5 rounded-chip border border-primary bg-primary-soft pl-3 pr-0.5 text-primary md:h-9 md:gap-2 md:rounded-lg md:pr-1"
-                                    >
-                                        <span
-                                            aria-hidden
-                                            className={cn(
-                                                "cubing-icon text-lg md:text-base",
-                                                getEventIconClass(
-                                                    groupId.split("-r")[0]
-                                                )
-                                            )}
-                                        />
-                                        <span className="flex-1 whitespace-nowrap text-[15px] font-semibold md:text-sm">
-                                            {getGroupLabel(groupId)}
-                                        </span>
-                                        {!saved?.currentGroupIds.includes(
-                                            groupId
-                                        ) && (
-                                            <span
-                                                title="Not saved yet"
-                                                className="size-[7px] rounded-full bg-warning md:size-1.5"
-                                            />
-                                        )}
-                                        <Button
-                                            variant="ghost"
-                                            size="icon-sm"
-                                            className="text-primary hover:bg-card hover:text-primary md:size-7"
-                                            aria-label={`Remove ${getGroupLabel(groupId)}`}
-                                            onClick={() =>
-                                                setRoomGroups(
-                                                    room.id,
-                                                    room.currentGroupIds.filter(
-                                                        (id) => id !== groupId
-                                                    )
-                                                )
-                                            }
-                                        >
-                                            <X />
-                                        </Button>
-                                    </li>
-                                ))}
-                            </ul>
-                        ) : (
-                            <EmptyState
-                                className="min-h-0 rounded-chip p-3.5 md:rounded-chip"
-                                action={
-                                    suggested.length > 0 && (
-                                        <Button
-                                            variant="outline"
-                                            size="sm"
-                                            className="h-auto min-h-11 whitespace-normal py-1.5 md:min-h-[34px]"
-                                            onClick={() =>
-                                                setRoomGroups(
-                                                    room.id,
-                                                    suggested
-                                                )
-                                            }
-                                        >
-                                            <Plus />
-                                            Add{" "}
-                                            {suggested
-                                                .map(getGroupLabel)
-                                                .join(", ")}
-                                        </Button>
-                                    )
-                                }
-                            >
-                                No groups in progress
-                            </EmptyState>
-                        )}
-                        <AddGroupPicker
-                            events={competition.wcif.events}
+            <AutoChangeSwitch
+                isOn={isAutoChange}
+                disabled={!isAutoChangeKnown || isAutoChangeSaving}
+                onChange={setAutoChange}
+            />
+            {rooms.length === 0 ? (
+                <EmptyState>This competition has no rooms.</EmptyState>
+            ) : (
+                <div className="flex flex-col gap-3 md:gap-0 md:overflow-hidden md:rounded-2xl md:border md:bg-card">
+                    <RoomTableHeader />
+                    {rooms.map((room) => (
+                        <RoomRow
+                            key={room.id}
+                            room={room}
+                            wcif={competition.wcif}
                             groupOptions={groupOptions}
-                            currentGroupIds={room.currentGroupIds}
-                            suggestedRoundId={suggested[0]?.split("-g")[0]}
-                            onAdd={(groupId) =>
-                                setRoomGroups(room.id, [
-                                    ...room.currentGroupIds,
-                                    groupId,
-                                ])
-                            }
+                            nextGroupIds={nextGroups[room.id] ?? []}
+                            getProgress={getProgress}
+                            isAutoChange={isAutoChange}
+                            now={now}
+                            onSetGroups={setRoomGroups}
                         />
-                    </section>
-                );
-            })}
-            {changes.length > 0 && (
-                <section
-                    aria-label="Changes to save"
-                    className="flex flex-col gap-1.5 rounded-xl border border-warning/40 bg-warning-soft px-4 py-3"
-                >
-                    <p className="text-[13px] font-semibold text-warning">
-                        Saving will change:
-                    </p>
-                    <ul className="flex flex-col gap-0.5 text-sm">
-                        {changes.map((change) => (
-                            <li key={change}>{change}</li>
-                        ))}
-                    </ul>
-                </section>
+                    ))}
+                </div>
             )}
-            <div className="flex flex-col gap-2.5 md:flex-row md:items-center">
-                <Button
-                    onClick={handleSave}
-                    disabled={!isDirty || isSaving}
-                    className="md:w-fit"
-                >
-                    <Save />
-                    Save
-                </Button>
-                {isDirty && (
-                    <div className="flex items-center justify-between gap-2.5 md:contents">
-                        <span className="text-[13px] text-warning md:order-last">
-                            Unsaved changes
-                        </span>
-                        <Button
-                            variant="ghost"
-                            onClick={() => setRooms(savedRooms)}
-                        >
-                            Discard changes
-                        </Button>
-                    </div>
-                )}
-            </div>
         </>
     );
 };

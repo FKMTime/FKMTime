@@ -3,10 +3,10 @@ import { Competition } from "wcif-helpers";
 
 import {
     canAddGroup,
-    describeGroupChanges,
     getGroupOptions,
-    getRoomGroupsError,
     getRoundsToOpen,
+    roundLabel,
+    shortGroupLabel,
 } from "@/lib/currentGroups";
 
 const group = (activityCode: string) => ({ activityCode, childActivities: [] });
@@ -73,10 +73,6 @@ describe("current groups", () => {
     });
 
     it("allows one group per event in a room", () => {
-        expect(getRoomGroupsError(["333-r1-g1", "pyram-r1-g1"])).toBeNull();
-        expect(getRoomGroupsError(["333-r1-g1", "333-r2-g1"])).toBe(
-            "You cannot have 2 or more groups in the room for the same event"
-        );
         expect(canAddGroup(["333-r1-g1"], "pyram-r1-g1")).toBe(true);
         expect(canAddGroup(["333-r1-g1"], "333-r1-g2")).toBe(false);
     });
@@ -93,26 +89,8 @@ describe("current groups", () => {
         ).toEqual(["333-r1"]);
     });
 
-    it("describes what saving would change, room by room", () => {
-        const room = (id: string, name: string, currentGroupIds: string[]) => ({
-            id,
-            name,
-            currentGroupIds,
-        });
-        const saved = [
-            room("r1", "Main Hall", ["333-r1-g2"]),
-            room("r2", "Side Room", ["pyram-r1-g1"]),
-            room("r3", "Annex", []),
-        ];
-        const draft = [
-            room("r1", "Main Hall", ["333-r1-g3"]),
-            room("r2", "Side Room", ["pyram-r1-g1"]),
-            room("r3", "Annex", ["333-r1-g1"]),
-        ];
-        expect(describeGroupChanges(saved, draft)).toEqual([
-            "Main Hall: 3x3 R1 G2 → 3x3 R1 G3",
-            "Annex: no group → 3x3 R1 G1",
-        ]);
-        expect(describeGroupChanges(saved, saved)).toEqual([]);
+    it("labels groups and rounds briefly", () => {
+        expect(shortGroupLabel("333-r1-g2")).toBe("3x3 R1 G2");
+        expect(roundLabel("333-r1-g2")).toBe("3x3x3 Cube · Round 1");
     });
 });

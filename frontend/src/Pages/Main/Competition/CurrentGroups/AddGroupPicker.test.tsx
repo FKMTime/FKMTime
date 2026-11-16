@@ -36,24 +36,21 @@ beforeEach(() => {
 });
 
 const renderPicker = (currentGroupIds: string[]) => {
-    const onAdd = vi.fn();
+    const onPick = vi.fn();
     render(
         <AddGroupPicker
             events={events}
             groupOptions={groupOptions}
             currentGroupIds={currentGroupIds}
-            onAdd={onAdd}
+            onPick={onPick}
         />
     );
-    return onAdd;
+    return onPick;
 };
 
 describe("AddGroupPicker", () => {
     it("picks a round, then one of its groups in order", async () => {
-        const onAdd = renderPicker([]);
-        await userEvent.click(
-            screen.getByRole("button", { name: "Add group" })
-        );
+        const onPick = renderPicker([]);
         await userEvent.click(
             await screen.findByRole("button", { name: "3x3x3 Cube · Round 1" })
         );
@@ -63,22 +60,19 @@ describe("AddGroupPicker", () => {
                 .map((b) => b.textContent)
         ).toEqual(["Group 1", "Group 2"]);
         await userEvent.click(screen.getByRole("button", { name: "Group 2" }));
-        expect(onAdd).toHaveBeenCalledWith("333-r1-g2");
+        expect(onPick).toHaveBeenCalledWith("333-r1-g2");
 
-        // Opening it again starts from the rounds
         await userEvent.click(
-            screen.getByRole("button", { name: "Add group" })
+            screen.getByRole("button", { name: "Back to rounds" })
         );
         expect(
-            await screen.findByRole("button", { name: "2x2x2 Cube · Round 1" })
+            screen.getByRole("button", { name: "2x2x2 Cube · Round 1" })
         ).toBeTruthy();
     });
 
-    it("blocks a second group of an event already in the room", async () => {
-        renderPicker(["333-r1-g1"]);
-        await userEvent.click(
-            screen.getByRole("button", { name: "Add group" })
-        );
+    it("offers other groups of a running event, but not the running one", async () => {
+        // Picking another group of the same event can still replace it
+        const onPick = renderPicker(["333-r1-g1"]);
         await userEvent.click(
             await screen.findByRole("button", {
                 name: "3x3x3 Cube · Round 1, live",
@@ -87,26 +81,11 @@ describe("AddGroupPicker", () => {
         expect(
             (
                 screen.getByRole("button", {
-                    name: "Group 2",
-                }) as HTMLButtonElement
-            ).disabled
-        ).toBe(true);
-        expect(
-            screen.getByText("A room runs one group of an event at a time.")
-        ).toBeTruthy();
-
-        await userEvent.click(
-            screen.getByRole("button", { name: "Back to rounds" })
-        );
-        await userEvent.click(
-            screen.getByRole("button", { name: "2x2x2 Cube · Round 1" })
-        );
-        expect(
-            (
-                screen.getByRole("button", {
                     name: "Group 1",
                 }) as HTMLButtonElement
             ).disabled
-        ).toBe(false);
+        ).toBe(true);
+        await userEvent.click(screen.getByRole("button", { name: "Group 2" }));
+        expect(onPick).toHaveBeenCalledWith("333-r1-g2");
     });
 });

@@ -121,10 +121,52 @@ beforeEach(() => {
 });
 
 describe("RoomCard", () => {
+    it("counts the group's place among this room's groups, not its number", () => {
+        // Group numbers run across rooms: this room has groups 1 and 3
+        const venue = wcif.schedule.venues[0];
+        const round = venue.rooms[0].activities[0];
+        const crossRoomWcif = {
+            ...wcif,
+            schedule: {
+                venues: [
+                    {
+                        ...venue,
+                        rooms: [
+                            {
+                                ...venue.rooms[0],
+                                activities: [
+                                    {
+                                        ...round,
+                                        childActivities: [
+                                            round.childActivities[0],
+                                            {
+                                                ...round.childActivities[1],
+                                                activityCode: "333-r1-g3",
+                                            },
+                                        ],
+                                    },
+                                ],
+                            },
+                        ],
+                    },
+                ],
+            },
+        } as unknown as Competition;
+        renderCard({
+            wcif: crossRoomWcif,
+            room: { ...room, currentGroupIds: ["333-r1-g3"] },
+        });
+        expect(
+            screen.getByText("Group 3 · 2 of 2 here · 09:00–10:00")
+        ).toBeTruthy();
+    });
+
     it("shows the current group, delay, progress and next activity", () => {
         renderCard();
         expect(screen.getByText("3x3x3 Cube · Round 1")).toBeTruthy();
-        expect(screen.getByText("Group 2 of 2 · 09:00–10:00")).toBeTruthy();
+        expect(
+            screen.getByText("Group 2 · 2 of 2 here · 09:00–10:00")
+        ).toBeTruthy();
         expect(screen.getByText("4 min behind")).toBeTruthy();
         expect(
             screen
