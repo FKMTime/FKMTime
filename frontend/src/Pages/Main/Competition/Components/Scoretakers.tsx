@@ -14,6 +14,8 @@ import {
 import { IntegratedLiveScoretaker } from "@/lib/interfaces";
 import { queryClient } from "@/lib/queryClient";
 
+import SettingsCard from "./SettingsCard";
+
 const refresh = () =>
     queryClient.invalidateQueries({
         queryKey: [integratedLiveScoretakersQuery.key],
@@ -52,7 +54,8 @@ const Scoretakers = () => {
         void refresh();
     };
 
-    // The card sits inside the settings form: Enter adds, it doesn't save
+    // The card sits inside the settings form: Enter adds, it doesn't save,
+    // and adding or removing never waits for the form's Save
     const onKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
         if (event.key !== "Enter") return;
         event.preventDefault();
@@ -77,14 +80,10 @@ const Scoretakers = () => {
     if (!data) return null;
 
     return (
-        <div className="space-y-2 rounded-xl border p-3">
-            <p className="text-[13px] font-semibold text-muted-foreground">
-                Scoretakers
-            </p>
-            <p className="text-[13px] text-muted-foreground">
-                Besides organisers and Delegates, these WCA accounts may enter
-                results, so one of them can be the connected account.
-            </p>
+        <SettingsCard
+            title="Scoretakers"
+            description="Besides organisers and Delegates, these WCA accounts may enter results, so one of them can be the connected account."
+        >
             {!data.ok && data.message && (
                 <p className="text-[13px] text-warning">{data.message}</p>
             )}
@@ -132,7 +131,7 @@ const Scoretakers = () => {
                     </Button>
                 </div>
             )}
-        </div>
+        </SettingsCard>
     );
 };
 

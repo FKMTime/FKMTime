@@ -253,37 +253,37 @@ test.describe("devices", () => {
     test("does not run auto setup without the WiFi details", async ({
         page,
     }) => {
-        await page.goto("/devices");
-        await page.getByRole("radio", { name: "Settings" }).click();
+        // Device settings live in Setup → Competition
+        await page.goto("/competition");
         const ssid = page.getByLabel("WiFi SSID");
         const originalSsid = await ssid.inputValue();
         await ssid.fill("");
         await page.getByRole("button", { name: "Save" }).click();
-        await expectToast(page, "Device settings saved");
+        await expectToast(page, "Settings saved");
 
-        await page.getByRole("radio", { name: "All devices" }).click();
+        await page.goto("/devices");
         const autoSetup = page.getByRole("switch", { name: "Auto setup" });
         await autoSetup.click();
         await expectToast(page, "WiFi details are missing");
         await expect(autoSetup).not.toBeChecked();
 
-        await page.getByRole("radio", { name: "Settings" }).click();
+        await page.goto("/competition");
         await page.getByLabel("WiFi SSID").fill(originalSsid);
         await page.getByRole("button", { name: "Save" }).click();
-        await expectToast(page, "Device settings saved");
+        await expectToast(page, "Settings saved");
     });
 
     test("saves the device settings", async ({ page, api }) => {
         await page.goto("/devices");
-        await page.getByRole("radio", { name: "Settings" }).click();
-        await expect(page).toHaveURL(/tab=settings/);
+        await page.getByRole("link", { name: "Device settings" }).click();
+        await expect(page).toHaveURL(/\/competition$/);
 
         const secureRfid = page.getByRole("switch", { name: /Secure RFID/ });
         const wasOn = await secureRfid.isChecked();
         await secureRfid.click();
         await page.getByLabel("WiFi SSID").fill("e2e-venue-wifi");
         await page.getByRole("button", { name: "Save" }).click();
-        await expectToast(page, "Device settings saved");
+        await expectToast(page, "Settings saved");
 
         const competition = await (
             await api.get("competition/settings")
@@ -306,15 +306,14 @@ test.describe("devices", () => {
         const savedVolume = async () =>
             (await (await api.get("competition/settings")).json()).buzzerVolume;
 
-        await page.goto("/devices");
-        await page.getByRole("radio", { name: "Settings" }).click();
+        await page.goto("/competition");
         const slider = page.getByRole("slider", { name: /Device volume/ });
         await expect(slider).toHaveValue("5");
 
         await slider.fill("12");
         await expect(page.getByText("Device volume: 12 / 25")).toBeVisible();
         await page.getByRole("button", { name: "Save" }).click();
-        await expectToast(page, "Device settings saved");
+        await expectToast(page, "Settings saved");
         expect(await savedVolume()).toBe(12);
 
         await page.reload();
