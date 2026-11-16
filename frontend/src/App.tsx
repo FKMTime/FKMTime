@@ -3,6 +3,7 @@ import { lazy, Suspense } from "react";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 
 import LoadingPage from "@/Components/LoadingPage";
+import PreviewBanner from "@/Components/PreviewBanner";
 import { Toaster } from "@/Components/ui/toaster";
 import ErrorPage from "@/Pages/Main/ErrorPage/ErrorPage";
 import { ConfirmProvider } from "@/providers/ConfirmProvider";
@@ -339,6 +340,7 @@ const App = () => {
         <QueryClientProvider client={queryClient}>
             <ThemeProvider defaultTheme="dark" storageKey={THEME_STORAGE_KEY}>
                 <ConfirmProvider>
+                    <PreviewBanner />
                     <Suspense fallback={<LoadingPage />}>
                         <RouterProvider router={router} />
                     </Suspense>
