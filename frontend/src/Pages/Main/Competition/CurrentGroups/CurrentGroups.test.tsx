@@ -1,8 +1,8 @@
-import { screen, within } from "@testing-library/react";
+import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { createStore, Provider } from "jotai";
 import { MemoryRouter } from "react-router-dom";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { competitionAtom } from "@/lib/atoms";
 import { Competition, Room } from "@/lib/interfaces";
@@ -75,10 +75,11 @@ const group = (activityCode: string, start: number, end: number) => ({
     childActivities: [],
 });
 
-// Group numbers run across rooms: the Main Hall has 1, 3, 5, the Side Hall 2, 4
+// Group numbers run across rooms: the Main Hall has 1, 3, 5, the Side Hall 2, 4.
+// 3x3 has two rounds; 2x2 one round with a group in each room.
 const wcif = {
     events: [
-        { id: "333", rounds: [{ id: "333-r1" }] },
+        { id: "333", rounds: [{ id: "333-r1" }, { id: "333-r2" }] },
         { id: "222", rounds: [{ id: "222-r1" }] },
     ],
     persons: [],
@@ -102,6 +103,10 @@ const wcif = {
                                 ...group("222-r1", 120, 150),
                                 childActivities: [group("222-r1-g1", 120, 150)],
                             },
+                            {
+                                ...group("333-r2", 200, 230),
+                                childActivities: [group("333-r2-g1", 200, 230)],
+                            },
                         ],
                     },
                     {
@@ -113,6 +118,10 @@ const wcif = {
                                     group("333-r1-g2", 40.5, 70.5),
                                     group("333-r1-g4", 70.5, 100.5),
                                 ],
+                            },
+                            {
+                                ...group("222-r1", 120, 150),
+                                childActivities: [group("222-r1-g2", 120, 150)],
                             },
                         ],
                     },
@@ -153,8 +162,18 @@ const renderPage = async () => {
 
 const row = (name: string) => screen.getByRole("region", { name });
 
+/** Confirms in the confirm dialog, even with the picker's dialog open */
 const confirmDialog = async (label: string) => {
-    const dialog = await screen.findByRole("dialog");
+    await waitFor(() =>
+        expect(
+            screen
+                .getAllByRole("dialog")
+                .some((d) => within(d).queryByRole("button", { name: label }))
+        ).toBe(true)
+    );
+    const dialog = screen
+        .getAllByRole("dialog")
+        .find((d) => within(d).queryByRole("button", { name: label }))!;
     await userEvent.click(within(dialog).getByRole("button", { name: label }));
 };
 
@@ -167,20 +186,28 @@ const openMenuItem = async (roomName: string, item: string) => {
     await userEvent.click(await screen.findByRole("menuitem", { name: item }));
 };
 
-const pickGroup = async (
-    roomName: string,
-    round: string,
-    groupName: string
-) => {
+/** The picker: a dialog from md up, a panel under the row on phones */
+const openPicker = async (roomName: string) => {
     await openMenuItem(roomName, "Change group…");
-    const picker = await screen.findByRole("group", {
-        name: `Change group in ${roomName}`,
-    });
-    await userEvent.click(within(picker).getByRole("button", { name: round }));
-    await userEvent.click(
-        within(picker).getByRole("button", { name: groupName })
-    );
+    const name = `Change group in ${roomName}`;
+    return window.innerWidth < 768
+        ? screen.findByRole("group", { name })
+        : screen.findByRole("dialog", { name });
+};
+
+/** Opens the picker and clicks through the given chips */
+const pickGroup = async (roomName: string, chips: (string | RegExp)[]) => {
+    const picker = await openPicker(roomName);
+    for (const chip of chips)
+        await userEvent.click(
+            within(picker).getByRole("button", { name: chip })
+        );
     return picker;
+};
+
+const setViewportWidth = (width: number) => {
+    window.innerWidth = width;
+    window.dispatchEvent(new Event("resize"));
 };
 
 describe("CurrentGroups", () => {
@@ -300,73 +327,282 @@ describe("CurrentGroups", () => {
         ]);
     });
 
-    it("switches the room to a picked group", async () => {
-        await renderPage();
-        await pickGroup("Main Hall", "2x2x2 Cube · Round 1", "Group 1");
-        expect(
-            screen.getByText(
-                "Stations in this room will accept results for both groups."
-            )
-        ).toBeTruthy();
-        await userEvent.click(
-            screen.getByRole("button", { name: "Switch to 2x2 R1 G1" })
-        );
+    describe("change group on a wide screen", () => {
+        it("goes event → round → group in columns, then switches", async () => {
+            await renderPage();
+            const dialog = await pickGroup("Main Hall", ["3x3x3 Cube"]);
+            const rounds = within(dialog).getByRole("region", {
+                name: "Round",
+            });
+            expect(
+                within(rounds)
+                    .getAllByRole("button")
+                    .map((b) => b.textContent)
+            ).toEqual([
+                expect.stringMatching(/^Round 1Running · Main Hall, Side Hall/),
+                expect.stringMatching(/^Round 2Upcoming/),
+            ]);
+            await userEvent.click(
+                within(rounds).getByRole("button", { name: /^Round 1/ })
+            );
+            const groups = within(dialog).getByRole("region", {
+                name: "Group",
+            });
+            // Sorted by number, whichever room runs them
+            expect(
+                within(groups)
+                    .getAllByRole("button")
+                    .map((b) => b.getAttribute("aria-label"))
+            ).toEqual([
+                "Group 1",
+                "Group 2",
+                "Group 3, running here",
+                "Group 4",
+                "Group 5",
+            ]);
+            await userEvent.click(
+                within(groups).getByRole("button", { name: "Group 5" })
+            );
 
-        expect(backend.puts).toHaveLength(1);
-        expect(backend.puts[0].body).toEqual({
-            rooms: [
-                expect.objectContaining({
-                    id: "main",
-                    currentGroupIds: ["222-r1-g1"],
-                }),
-            ],
+            // Another group of a running event can only replace it
+            expect(
+                (
+                    within(dialog).getByRole("button", {
+                        name: "Run both",
+                    }) as HTMLButtonElement
+                ).disabled
+            ).toBe(true);
+            await userEvent.click(
+                within(dialog).getByRole("button", {
+                    name: "Switch to 3x3 R1 G5",
+                })
+            );
+            expect(backend.puts[0].body).toEqual({
+                rooms: [
+                    expect.objectContaining({
+                        id: "main",
+                        currentGroupIds: ["333-r1-g5"],
+                    }),
+                ],
+            });
+        });
+
+        it("changes an earlier column in place, dropping the group picked", async () => {
+            await renderPage();
+            const dialog = await pickGroup("Main Hall", [
+                "3x3x3 Cube",
+                /^Round 1/,
+                "Group 5",
+            ]);
+            expect(
+                within(dialog).getByRole("button", { name: "Run both" })
+            ).toBeTruthy();
+            await userEvent.click(
+                within(dialog).getByRole("button", { name: "2x2x2 Cube" })
+            );
+            expect(
+                within(dialog).queryByRole("button", { name: "Run both" })
+            ).toBeNull();
+            expect(
+                within(dialog).getByRole("button", { name: "Group 2" })
+            ).toBeTruthy();
+        });
+
+        it("keeps the running group out of reach", async () => {
+            await renderPage();
+            const dialog = await pickGroup("Main Hall", [
+                "3x3x3 Cube",
+                /^Round 1/,
+            ]);
+            expect(
+                (
+                    within(dialog).getByRole("button", {
+                        name: "Group 3, running here",
+                    }) as HTMLButtonElement
+                ).disabled
+            ).toBe(true);
+        });
+
+        it("chooses an event's only round at once and runs both groups", async () => {
+            await renderPage();
+            const dialog = await pickGroup("Main Hall", ["2x2x2 Cube"]);
+            // The round column still shows, with its round chosen
+            expect(
+                within(dialog)
+                    .getByRole("button", { name: /^Round 1/ })
+                    .getAttribute("aria-pressed")
+            ).toBe("true");
+            await userEvent.click(
+                within(dialog).getByRole("button", { name: "Group 1" })
+            );
+            expect(
+                within(dialog).getByText(
+                    "Stations in this room will accept results for both groups."
+                )
+            ).toBeTruthy();
+            await userEvent.click(
+                within(dialog).getByRole("button", { name: "Run both" })
+            );
+            expect(backend.puts[0].body).toEqual({
+                rooms: [
+                    expect.objectContaining({
+                        id: "main",
+                        currentGroupIds: ["333-r1-g3", "222-r1-g1"],
+                    }),
+                ],
+            });
+        });
+
+        it("offers the room's next group first", async () => {
+            await renderPage();
+            const dialog = await pickGroup("Main Hall", [
+                /^Next in this room: 3x3 R1 G5/,
+            ]);
+            expect(
+                within(dialog).getByRole("button", {
+                    name: "Switch to 3x3 R1 G5",
+                })
+            ).toBeTruthy();
+        });
+
+        it("can be driven from the keyboard", async () => {
+            await renderPage();
+            const dialog = await openPicker("Main Hall");
+            // Focus starts in the search box; ArrowDown enters the events
+            expect(document.activeElement).toBe(
+                within(dialog).getByRole("textbox")
+            );
+            await userEvent.keyboard("{ArrowDown}");
+            expect(document.activeElement).toBe(
+                within(dialog).getByRole("button", { name: "3x3x3 Cube" })
+            );
+            await userEvent.keyboard("{Enter}");
+            // Picking moves on to the rounds; arrows move within a column
+            await waitFor(() =>
+                expect(document.activeElement).toBe(
+                    within(dialog).getByRole("button", { name: /^Round 1/ })
+                )
+            );
+            await userEvent.keyboard("{ArrowDown}");
+            expect(document.activeElement).toBe(
+                within(dialog).getByRole("button", { name: /^Round 2/ })
+            );
+            // ArrowLeft goes back to the chosen event
+            await userEvent.keyboard("{ArrowLeft}");
+            expect(document.activeElement).toBe(
+                within(dialog).getByRole("button", { name: "3x3x3 Cube" })
+            );
+            await userEvent.keyboard("{ArrowRight}{ArrowDown}{Enter}");
+            await waitFor(() =>
+                expect(document.activeElement).toBe(
+                    within(dialog).getByRole("button", { name: "Group 1" })
+                )
+            );
+            await userEvent.keyboard("{Enter}");
+            expect(
+                within(dialog).getByRole("button", {
+                    name: "Switch to 3x3 R2 G1",
+                })
+            ).toBeTruthy();
+        });
+
+        it("starts a picked group in an empty room after confirming", async () => {
+            backend.rooms = [room("main", "Main Hall", [])];
+            await renderPage();
+            await pickGroup("Main Hall", ["2x2x2 Cube", "Group 1"]);
+            expect(
+                screen.queryByRole("button", { name: "Run both" })
+            ).toBeNull();
+            await confirmDialog("Start 2x2 R1 G1");
+
+            expect(backend.puts[0].body).toEqual({
+                rooms: [
+                    expect.objectContaining({
+                        id: "main",
+                        currentGroupIds: ["222-r1-g1"],
+                    }),
+                ],
+            });
         });
     });
 
-    it("runs a picked group next to the one already running", async () => {
-        await renderPage();
-        await pickGroup("Main Hall", "2x2x2 Cube · Round 1", "Group 1");
-        await userEvent.click(screen.getByRole("button", { name: "Run both" }));
+    describe("change group on a phone", () => {
+        beforeEach(() => setViewportWidth(390));
+        afterEach(() => setViewportWidth(1024));
 
-        expect(backend.puts[0].body).toEqual({
-            rooms: [
-                expect.objectContaining({
-                    id: "main",
-                    currentGroupIds: ["333-r1-g3", "222-r1-g1"],
-                }),
-            ],
+        it("goes one step at a time under the row, with a breadcrumb back", async () => {
+            await renderPage();
+            const panel = await pickGroup("Main Hall", ["3x3x3 Cube"]);
+            expect(screen.queryByRole("dialog")).toBeNull();
+            const crumbs = within(panel).getByRole("navigation", {
+                name: "Picker steps",
+            });
+            expect(crumbs.textContent).toContain("Event3x3 · Round");
+
+            await userEvent.click(
+                within(crumbs).getByRole("button", { name: "Event" })
+            );
+            expect(
+                within(panel).getByRole("button", { name: "2x2x2 Cube" })
+            ).toBeTruthy();
+
+            await userEvent.click(
+                within(panel).getByRole("button", { name: "3x3x3 Cube" })
+            );
+            await userEvent.click(
+                within(panel).getByRole("button", { name: /^Round 1/ })
+            );
+            expect(crumbs.textContent).toContain("Event3x3 R1Group");
+            await userEvent.click(
+                within(panel).getByRole("button", { name: "Group 1" })
+            );
+            await userEvent.click(
+                within(panel).getByRole("button", {
+                    name: "Switch to 3x3 R1 G1",
+                })
+            );
+            expect(backend.puts[0].body).toEqual({
+                rooms: [
+                    expect.objectContaining({
+                        id: "main",
+                        currentGroupIds: ["333-r1-g1"],
+                    }),
+                ],
+            });
         });
-    });
 
-    it("can only switch to another group of an event already running", async () => {
-        await renderPage();
-        await pickGroup("Main Hall", "3x3x3 Cube · Round 1, live", "Group 5");
-        expect(
-            (
-                screen.getByRole("button", {
-                    name: "Run both",
-                }) as HTMLButtonElement
-            ).disabled
-        ).toBe(true);
-        expect(
-            screen.getByText(/A room runs one group of an event at a time/)
-        ).toBeTruthy();
-    });
+        it("skips the round step for a one-round event and goes back on Escape", async () => {
+            await renderPage();
+            const panel = await pickGroup("Main Hall", ["2x2x2 Cube"]);
+            expect(
+                within(panel).getByRole("button", { name: "Group 2" })
+            ).toBeTruthy();
+            expect(
+                within(panel).queryByRole("button", { name: /^Round/ })
+            ).toBeNull();
 
-    it("starts a picked group in an empty room after confirming", async () => {
-        backend.rooms = [room("main", "Main Hall", [])];
-        await renderPage();
-        await pickGroup("Main Hall", "2x2x2 Cube · Round 1", "Group 1");
-        expect(screen.queryByRole("button", { name: "Run both" })).toBeNull();
-        await confirmDialog("Start 2x2 R1 G1");
-
-        expect(backend.puts[0].body).toEqual({
-            rooms: [
-                expect.objectContaining({
-                    id: "main",
-                    currentGroupIds: ["222-r1-g1"],
-                }),
-            ],
+            within(panel).getByRole("button", { name: "Group 2" }).focus();
+            await userEvent.keyboard("{Escape}");
+            expect(
+                within(panel).getByRole("button", { name: "3x3x3 Cube" })
+            ).toBeTruthy();
+            await userEvent.click(
+                within(panel).getByRole("button", { name: "2x2x2 Cube" })
+            );
+            await userEvent.click(
+                within(panel).getByRole("button", { name: "Group 2" })
+            );
+            await userEvent.click(
+                within(panel).getByRole("button", { name: "Run both" })
+            );
+            expect(backend.puts[0].body).toEqual({
+                rooms: [
+                    expect.objectContaining({
+                        id: "main",
+                        currentGroupIds: ["333-r1-g3", "222-r1-g2"],
+                    }),
+                ],
+            });
         });
     });
 

@@ -166,18 +166,21 @@ test.describe("current groups", () => {
         await page.getByRole("menuitem", { name: item }).click();
     };
 
+    /** The picker is a dialog at Playwright's desktop size */
     const pickGroup = async (
         page: Page,
         roomName: string,
-        round: RegExp,
-        group: string
+        chips: (string | RegExp)[]
     ) => {
         await roomMenu(page, roomName, "Change group…");
-        const picker = page.getByRole("group", {
+        const picker = page.getByRole("dialog", {
             name: `Change group in ${roomName}`,
         });
-        await picker.getByRole("button", { name: round }).click();
-        await picker.getByRole("button", { name: group }).click();
+        for (const chip of chips)
+            await picker
+                .getByRole("button", { name: chip, exact: true })
+                .click();
+        return picker;
     };
 
     test("starts, adds, stops and switches the groups in a room", async ({
@@ -193,19 +196,24 @@ test.describe("current groups", () => {
         await expect(section.getByText("Nothing running")).toBeVisible();
 
         // An empty room starts the picked group once confirmed
-        await pickGroup(page, room.name, /^3x3x3 Cube · Round 1/, "Group 1");
+        await pickGroup(page, room.name, ["3x3x3 Cube", /^Round 1/, "Group 1"]);
         await confirm(page, "Start 3x3 R1 G1");
         await expectToast(page, `${room.name} updated`);
         await expect.poll(savedGroups).toEqual(["333-r1-g1"]);
 
         // A running room can take a second group of another event
-        await pickGroup(page, room.name, /^2x2x2 Cube · Round 1/, "Group 1");
+        const picker = await pickGroup(page, room.name, [
+            "2x2x2 Cube",
+            /^Round 1/,
+            "Group 1",
+        ]);
         await expect(
-            page.getByText(
+            picker.getByText(
                 "Stations in this room will accept results for both groups."
             )
         ).toBeVisible();
-        await page.getByRole("button", { name: "Run both" }).click();
+        await picker.getByRole("button", { name: "Run both" }).click();
+        await expect(picker).toBeHidden();
         await expect.poll(savedGroups).toEqual(["333-r1-g1", "222-r1-g1"]);
         await expect(
             page.getByText(/Remember to open the following rounds in WCA Live/)
@@ -217,11 +225,21 @@ test.describe("current groups", () => {
         await expect.poll(savedGroups).toEqual(["333-r1-g1"]);
 
         // Another group of a running event can only replace it
-        await pickGroup(page, room.name, /^3x3x3 Cube · Round 1/, "Group 2");
+        const again = await pickGroup(page, room.name, [
+            "3x3x3 Cube",
+            /^Round 1/,
+            "Group 2",
+        ]);
+        // The group running here can't be picked again
         await expect(
-            page.getByRole("button", { name: "Run both" })
+            again.getByRole("button", { name: "Group 1, running here" })
         ).toBeDisabled();
-        await page.getByRole("button", { name: "Switch to 3x3 R1 G2" }).click();
+        await expect(
+            again.getByRole("button", { name: "Run both" })
+        ).toBeDisabled();
+        await again
+            .getByRole("button", { name: "Switch to 3x3 R1 G2" })
+            .click();
         await expect.poll(savedGroups).toEqual(["333-r1-g2"]);
     });
 

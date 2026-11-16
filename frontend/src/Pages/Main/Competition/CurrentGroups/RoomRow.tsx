@@ -20,12 +20,7 @@ import {
 } from "@/Components/ui/dropdown-menu";
 import { useConfirm } from "@/hooks/useConfirm";
 import { getPreviousGroupsFromScheduleForRoom } from "@/lib/competition";
-import {
-    canAddGroup,
-    GroupOption,
-    roundLabel,
-    shortGroupLabel,
-} from "@/lib/currentGroups";
+import { canAddGroup, roundLabel, shortGroupLabel } from "@/lib/currentGroups";
 import { getEventIconClass } from "@/lib/events";
 import { Room } from "@/lib/interfaces";
 import { GroupProgress, isGroupDone } from "@/lib/rooms";
@@ -38,7 +33,7 @@ import {
 } from "@/lib/schedule";
 import { cn } from "@/lib/utils";
 
-import AddGroupPicker from "./AddGroupPicker";
+import GroupPicker from "./groupPicker/GroupPicker";
 
 /** Room · Running now · Results · Next up · actions, from md up */
 const COLUMNS =
@@ -63,8 +58,9 @@ export const RoomTableHeader = () => (
 
 interface RoomRowProps {
     room: Room;
+    /** Every room, so the picker can say where other groups run */
+    rooms: Room[];
     wcif: WCIF;
-    groupOptions: GroupOption[];
     /** The groups "Start" moves the room to, from the schedule */
     nextGroupIds: string[];
     getProgress: (roomId: string, groupId: string) => GroupProgress | undefined;
@@ -87,8 +83,8 @@ const getStartLabel = (groupIds: string[], next: string[]) => {
 
 const RoomRow = ({
     room,
+    rooms,
     wcif,
-    groupOptions,
     nextGroupIds,
     getProgress,
     isAutoChange,
@@ -196,6 +192,48 @@ const RoomRow = ({
     const canRunAll = picked ? canAddGroup(groups, picked) : false;
     const runAllLabel =
         groups.length === 1 ? "Run both" : `Run all ${groups.length + 1}`;
+
+    const decisionNode = picked ? (
+        <div className="flex flex-col gap-3 rounded-xl border bg-card p-4">
+            <p className="text-sm">
+                <b className="font-semibold">
+                    {roundLabel(picked)} · Group {picked.split("-g")[1]}
+                </b>
+            </p>
+            <div className="flex flex-wrap gap-2">
+                <Button onClick={() => applyPicked([picked])}>
+                    Switch to {shortGroupLabel(picked)}
+                </Button>
+                <Button
+                    variant="outline"
+                    disabled={!canRunAll}
+                    onClick={() => applyPicked([...groups, picked])}
+                >
+                    {runAllLabel}
+                </Button>
+                <Button variant="ghost" onClick={closeChange}>
+                    Cancel
+                </Button>
+            </div>
+            <p className="text-[13px] text-muted-foreground">
+                {canRunAll
+                    ? `Stations in this room will accept results for ${groups.length === 1 ? "both groups" : "all of them"}.`
+                    : "A room runs one group of an event at a time, so this one can only replace it."}
+            </p>
+        </div>
+    ) : undefined;
+
+    const pickerProps = {
+        wcif,
+        room,
+        rooms,
+        getProgress,
+        nextGroupIds,
+        pickedGroupId: picked,
+        onClearPick: () => setPickedGroupId(undefined),
+        onPick: handlePick,
+        onCancel: closeChange,
+    };
 
     return (
         <section
@@ -398,67 +436,9 @@ const RoomRow = ({
             </div>
 
             {isChanging && (
-                <div
-                    role="group"
-                    aria-label={`Change group in ${room.name}`}
-                    className="flex flex-col gap-2.5 md:col-span-4 md:col-start-2"
-                >
-                    {picked ? (
-                        <div className="flex flex-col gap-3 rounded-xl border bg-card p-4">
-                            <p className="text-sm">
-                                <b className="font-semibold">
-                                    {roundLabel(picked)} · Group{" "}
-                                    {picked.split("-g")[1]}
-                                </b>
-                            </p>
-                            <div className="flex flex-wrap gap-2">
-                                <Button onClick={() => applyPicked([picked])}>
-                                    Switch to {shortGroupLabel(picked)}
-                                </Button>
-                                <Button
-                                    variant="outline"
-                                    disabled={!canRunAll}
-                                    onClick={() =>
-                                        applyPicked([...groups, picked])
-                                    }
-                                >
-                                    {runAllLabel}
-                                </Button>
-                                <Button variant="ghost" onClick={closeChange}>
-                                    Cancel
-                                </Button>
-                            </div>
-                            <p className="text-[13px] text-muted-foreground">
-                                {canRunAll
-                                    ? `Stations in this room will accept results for ${groups.length === 1 ? "both groups" : "all of them"}.`
-                                    : "A room runs one group of an event at a time, so this one can only replace it."}
-                            </p>
-                        </div>
-                    ) : (
-                        <>
-                            <div className="flex items-center justify-between gap-2">
-                                <span className="text-sm font-semibold">
-                                    Change group in {room.name}
-                                </span>
-                                <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={closeChange}
-                                >
-                                    Cancel
-                                </Button>
-                            </div>
-                            <AddGroupPicker
-                                events={wcif.events}
-                                groupOptions={groupOptions}
-                                currentGroupIds={groups}
-                                suggestedRoundId={
-                                    nextGroupIds[0]?.split("-g")[0]
-                                }
-                                onPick={handlePick}
-                            />
-                        </>
-                    )}
+                // The dialog renders over the page; this holds the phone panel
+                <div className="md:contents">
+                    <GroupPicker {...pickerProps} decision={decisionNode} />
                 </div>
             )}
         </section>

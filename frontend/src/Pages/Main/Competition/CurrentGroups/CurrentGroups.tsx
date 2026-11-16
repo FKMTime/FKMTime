@@ -1,12 +1,11 @@
 import { Info } from "lucide-react";
-import { useMemo } from "react";
 
 import LoadingPage from "@/Components/LoadingPage";
 import EmptyState from "@/Components/shared/EmptyState";
 import { Alert } from "@/Components/ui/alert";
 import { useSocketRoom } from "@/hooks/useSocketRoom";
 import { activityCodeToName } from "@/lib/activities";
-import { getGroupOptions, getRoundsToOpen } from "@/lib/currentGroups";
+import { getRoundsToOpen } from "@/lib/currentGroups";
 import { isUnofficialEvent } from "@/lib/events";
 import SetupTabs from "@/Pages/Main/Setup/SetupTabs";
 
@@ -39,11 +38,6 @@ const CurrentGroups = () => {
         isAutoChangeSaving,
         setAutoChange,
     } = useCurrentGroups();
-
-    const groupOptions = useMemo(
-        () => (competition ? getGroupOptions(competition.wcif) : []),
-        [competition]
-    );
 
     if (isLoading || !competition) return <LoadingPage />;
 
@@ -88,8 +82,8 @@ const CurrentGroups = () => {
                         <RoomRow
                             key={room.id}
                             room={room}
+                            rooms={rooms}
                             wcif={competition.wcif}
-                            groupOptions={groupOptions}
                             nextGroupIds={nextGroups[room.id] ?? []}
                             getProgress={getProgress}
                             isAutoChange={isAutoChange}
