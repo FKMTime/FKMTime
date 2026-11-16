@@ -36,14 +36,19 @@ export interface RoundRules {
 
 type ResultState = 'notStarted' | 'pending' | 'done';
 
-/** Scrambled and handed to the competitor, not solved yet */
+/**
+ * Scrambled and handed to the competitor, not solved yet. Only the status
+ * says so: a scrambled attempt entered by hand or ruled DNF becomes STANDARD
+ * but keeps its scrambledAt without ever getting a solvedAt.
+ */
 const isBeingSolved = (attempt: Attempt) =>
-  attempt.status === AttemptStatus.SCRAMBLED ||
-  (!!attempt.scrambledAt &&
-    !attempt.solvedAt &&
-    attempt.status !== AttemptStatus.VOIDED);
+  attempt.status === AttemptStatus.SCRAMBLED;
 
-/** The last time anything happened with the attempt: scrambled or solved */
+/**
+ * The last time anything happened with the attempt: scrambled or solved. A
+ * scrambledAt is a fixed moment, so on an attempt finished some other way it
+ * only dates the activity and can't keep the group from going quiet.
+ */
 const lastActivityAt = (attempt: Attempt) =>
   Math.max(
     ...[attempt.solvedAt, attempt.scrambledAt]

@@ -6,6 +6,7 @@ import {
   StaffRole,
 } from '@prisma/client';
 import { AppGateway } from 'src/app.gateway';
+import { DNF_VALUE } from 'src/constants';
 import { DbService } from 'src/db/db.service';
 import { IntegratedLiveRoundsService } from 'src/integrated-live/integratedLiveRounds.service';
 import { ResultService } from 'src/result/result.service';
@@ -797,6 +798,31 @@ describe('automatic group change', () => {
       expect(roomById('main').currentGroupIds).toEqual(['333-r1-g2']);
     });
 
+    it('moves on once a scrambled attempt is entered by hand', async () => {
+      const { service, roomById } = setup({
+        wcif: buildWcif(schedule(), assignments),
+        rooms: [mainAndSide()[0]],
+        results: [
+          { roundId: '333-r1', registrantId: 1, attempts: solves(3) },
+          {
+            roundId: '333-r1',
+            registrantId: 2,
+            attempts: [
+              ...solves(2),
+              // Edited from SCRAMBLED in the panel: no solvedAt is written
+              attempt(3, {
+                status: AttemptStatus.STANDARD,
+                scrambledAt: new Date(at(12, 11)),
+                solvedAt: null,
+              }),
+            ],
+          },
+        ],
+      });
+      await service.checkIfGroupCanBeChanged('main', 'event');
+      expect(roomById('main').currentGroupIds).toEqual(['333-r1-g2']);
+    });
+
     it('counts a competitor with only a scramble in hand as started', async () => {
       jest.setSystemTime(new Date(at(12, 0)));
       const { service, roomById, messages } = setup({
@@ -1181,6 +1207,45 @@ describe('group change helpers', () => {
       rules,
     });
     expect(status.state).toBe('finished');
+  });
+
+  describe('a scrambled attempt finished some other way', () => {
+    // Scrambled at 12:09, then given a time by hand or ruled DNF: STANDARD,
+    // still with its scrambledAt and never a solvedAt
+    const finishedFromScramble = (overrides: Partial<Attempt>) =>
+      attempt(5, {
+        status: AttemptStatus.STANDARD,
+        scrambledAt: new Date(at(12, 9)),
+        solvedAt: null,
+        ...overrides,
+      });
+    const statusWith = (fifth: Attempt) =>
+      getGroupStatus({
+        groupId: '333-r1-g1',
+        results: [result(1, [...solves(4), fifth])],
+        assignedRegistrantIds: [1],
+        rules,
+      });
+
+    it('is done once entered by hand', () => {
+      expect(statusWith(finishedFromScramble({ value: 1700 })).state).toBe(
+        'finished',
+      );
+    });
+
+    it('is done once ruled DNF', () => {
+      expect(
+        statusWith(finishedFromScramble({ value: 0, penalty: DNF_VALUE }))
+          .state,
+      ).toBe('finished');
+    });
+
+    it('still waits while the attempt is only scrambled', () => {
+      expect(
+        statusWith(finishedFromScramble({ status: AttemptStatus.SCRAMBLED }))
+          .state,
+      ).toBe('inProgress');
+    });
   });
 
   it('takes a scramble as activity and its competitor as started', () => {
