@@ -1,3 +1,4 @@
+import { useAtomValue } from "jotai";
 import { RefreshCw } from "lucide-react";
 import { useMemo, useState } from "react";
 
@@ -7,6 +8,7 @@ import { Button } from "@/Components/ui/button";
 import { Card, CardContent } from "@/Components/ui/card";
 import { useLiveQuery } from "@/hooks/useLiveQuery";
 import { useToast } from "@/hooks/useToast";
+import { competitionAtom } from "@/lib/atoms";
 import { sortDevicesByName, stationDevicesQuery } from "@/lib/devices";
 import { Device, Person, Room } from "@/lib/interfaces";
 import { allPersonsQuery, assignCard } from "@/lib/persons";
@@ -23,19 +25,22 @@ import CardScanForm from "./Components/CardScanForm";
 import ConnectDeviceForm from "./Components/ConnectDeviceForm";
 import EnterAttemptForm from "./Components/EnterAttemptForm";
 import ExchangePanel from "./Components/ExchangePanel";
+import FillGroupForm from "./Components/FillGroupForm";
 
-type StationTesterTab = "attempt" | "card" | "connect";
+type StationTesterTab = "attempt" | "card" | "connect" | "fill";
 
 const TABS: { value: StationTesterTab; label: string }[] = [
     { value: "attempt", label: "Enter attempt" },
     { value: "card", label: "Scan card" },
     { value: "connect", label: "Connect device" },
+    { value: "fill", label: "Fill with results" },
 ];
 
 /** Plays a station in dev, so a flow can be tried without the hardware */
 const StationTester = () => {
     const { toast } = useToast();
     const [tab, setTab] = useState<StationTesterTab>("attempt");
+    const competition = useAtomValue(competitionAtom);
     const personsQuery = useLiveQuery(allPersonsQuery);
     const devicesQuery = useLiveQuery(stationDevicesQuery);
     const roomsResult = useLiveQuery(roomsQuery);
@@ -137,6 +142,18 @@ const StationTester = () => {
                             <ConnectDeviceForm
                                 onSend={handleSend}
                                 isSending={isSending}
+                            />
+                        </div>
+                        <div hidden={tab !== "fill"}>
+                            <FillGroupForm
+                                wcif={competition?.wcif ?? null}
+                                persons={persons}
+                                devices={devices}
+                                rooms={rooms}
+                                onExchange={setExchange}
+                                onDevicesChanged={() =>
+                                    void devicesQuery.refetch()
+                                }
                             />
                         </div>
                     </CardContent>
