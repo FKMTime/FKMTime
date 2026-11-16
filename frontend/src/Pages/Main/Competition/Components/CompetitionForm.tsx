@@ -338,7 +338,10 @@ const CompetitionForm = ({
                             />
                             {useDevices && <DeviceFields />}
                         </SettingsCard>
-                        {useDevices && <AdvancedCard />}
+                        {/* Dev builds only: DEV is false at build time, so
+                            a production bundle leaves the card out, and HIL
+                            testing keeps the server's value, never changed */}
+                        {import.meta.env.DEV && useDevices && <AdvancedCard />}
                     </div>
                 </div>
                 {isDirty && (

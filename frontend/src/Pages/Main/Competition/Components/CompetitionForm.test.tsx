@@ -1,6 +1,6 @@
 import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { refreshScoretakingSoftware } from "@/lib/competition";
 import { Competition, SendingResultsFrequency } from "@/lib/interfaces";
@@ -439,5 +439,35 @@ describe("CompetitionForm", () => {
             screen.getByRole("switch", { name: /Auto server discovery/ })
         );
         expect(screen.getByLabelText("micro-connector ws URL")).toBeTruthy();
+    });
+});
+
+describe("CompetitionForm in a production build", () => {
+    afterEach(() => vi.unstubAllEnvs());
+
+    it("leaves out HIL testing and keeps the server's value on save", async () => {
+        vi.stubEnv("DEV", false);
+        const handleSubmit = savesAll();
+        render(
+            <CompetitionForm
+                competition={{ ...competition, hilTesting: true }}
+                handleSubmit={handleSubmit}
+            />
+        );
+
+        expect(screen.queryByRole("region", { name: "Advanced" })).toBeNull();
+        expect(
+            screen.queryByRole("switch", { name: /HIL Testing/, hidden: true })
+        ).toBeNull();
+
+        await userEvent.click(
+            screen.getByRole("switch", { name: /Secure RFID/ })
+        );
+        await userEvent.click(screen.getByRole("button", { name: "Save" }));
+
+        expect(handleSubmit).toHaveBeenCalledWith(
+            expect.objectContaining({ secureRfid: true, hilTesting: true }),
+            { competition: false, devices: true }
+        );
     });
 });

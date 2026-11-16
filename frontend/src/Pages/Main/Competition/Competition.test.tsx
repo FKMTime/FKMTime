@@ -1,7 +1,7 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router-dom";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import {
     updateCompetitionSettings,
@@ -146,5 +146,34 @@ describe("Competition settings save", () => {
         expect(
             screen.getByRole("region", { name: "Unsaved changes" })
         ).toBeTruthy();
+    });
+
+    describe("in a production build", () => {
+        afterEach(() => vi.unstubAllEnvs());
+
+        it("doesn't turn HIL testing off when saving device settings", async () => {
+            vi.stubEnv("DEV", false);
+            competition.hilTesting = true;
+            try {
+                renderPage();
+                expect(
+                    screen.queryByRole("region", { name: "Advanced" })
+                ).toBeNull();
+                await editDeviceField();
+                await save();
+
+                await waitFor(() =>
+                    expect(updateDevicesSettings).toHaveBeenCalledWith(
+                        "c1",
+                        expect.objectContaining({
+                            secureRfid: true,
+                            hilTesting: true,
+                        })
+                    )
+                );
+            } finally {
+                competition.hilTesting = false;
+            }
+        });
     });
 });
