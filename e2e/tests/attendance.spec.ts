@@ -32,6 +32,15 @@ const roleCard = (page: Page, title: string) =>
 const personRow = (page: Page, title: string, name: string) =>
     roleCard(page, title).getByRole("listitem").filter({ hasText: name });
 
+/**
+ * An item in one person's "More actions" menu. Scoped to that menu because
+ * the previous person's menu can still be fading out when the next opens.
+ */
+const personMenuItem = (page: Page, name: string, item: string) =>
+    page
+        .getByRole("menu", { name: `More actions for ${name}` })
+        .getByRole("menuitem", { name: item });
+
 const undoToast = async (page: Page, title: string) => {
     const notification = toast(page, title).locator("xpath=ancestor::li[1]");
     await expect(notification).toBeVisible();
@@ -124,7 +133,7 @@ test.describe("attendance for a group", () => {
                 name: `More actions for ${first.person.name}`,
             })
             .click();
-        await page.getByRole("menuitem", { name: "Mark absent" }).click();
+        await personMenuItem(page, first.person.name, "Mark absent").click();
         await undoToast(page, `${first.person.name} marked absent`);
 
         await personRow(page, "Judges", first.person.name)
@@ -132,7 +141,7 @@ test.describe("attendance for a group", () => {
                 name: `More actions for ${first.person.name}`,
             })
             .click();
-        await page.getByRole("menuitem", { name: "Mark late" }).click();
+        await personMenuItem(page, first.person.name, "Mark late").click();
         await expect(
             personRow(page, "Judges", first.person.name).getByText("Late")
         ).toBeVisible();
@@ -141,7 +150,7 @@ test.describe("attendance for a group", () => {
                 name: `More actions for ${first.person.name}`,
             })
             .click();
-        await page.getByRole("menuitem", { name: "Left early" }).click();
+        await personMenuItem(page, first.person.name, "Left early").click();
         await expect(
             personRow(page, "Judges", first.person.name).getByText("Left early")
         ).toBeVisible();
@@ -152,7 +161,7 @@ test.describe("attendance for a group", () => {
                 name: `More actions for ${second.person.name}`,
             })
             .click();
-        await page.getByRole("menuitem", { name: "Mark absent" }).click();
+        await personMenuItem(page, second.person.name, "Mark absent").click();
         // The row moves to the absent section when the update lands, which
         // closes a menu opened before that
         await undoToast(page, `${second.person.name} marked absent`);
@@ -161,7 +170,7 @@ test.describe("attendance for a group", () => {
                 name: `More actions for ${second.person.name}`,
             })
             .click();
-        await page.getByRole("menuitem", { name: "Replaced…" }).click();
+        await personMenuItem(page, second.person.name, "Replaced…").click();
         await page.getByRole("button", { name: "They were here" }).click();
         await expect(
             personRow(page, "Judges", second.person.name).getByText("Replaced")
@@ -207,7 +216,7 @@ test.describe("attendance for a group", () => {
         await row
             .getByRole("button", { name: `More actions for ${helper.name}` })
             .click();
-        await page.getByRole("menuitem", { name: "Mark absent" }).click();
+        await personMenuItem(page, helper.name, "Mark absent").click();
         await confirm(page, "Mark absent");
         await expect(row).toHaveCount(0);
     });
@@ -222,7 +231,7 @@ test.describe("attendance for a group", () => {
                 name: `More actions for ${runner.person.name}`,
             })
             .click();
-        await page.getByRole("menuitem", { name: "Comment" }).click();
+        await personMenuItem(page, runner.person.name, "Comment").click();
         const dialog = page.getByRole("dialog", { name: runner.person.name });
         await dialog.getByPlaceholder("Comment").fill("Swapped with a friend");
         await dialog.getByRole("button", { name: "Save" }).click();
