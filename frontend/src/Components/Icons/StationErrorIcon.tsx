@@ -60,7 +60,14 @@ const StationErrorIcon = ({ lastError, className }: StationErrorIconProps) => {
             >
                 <Icon className="size-5" strokeWidth={2.25} aria-hidden />
             </PopoverTrigger>
-            <PopoverContent className="flex flex-col gap-1.5 text-sm">
+            {/* From the icon's left edge: centred, it hangs over the sidebar.
+                Rendered inside the name cell, so it resets the cell's no-wrap
+                and bold text */}
+            <PopoverContent
+                align="start"
+                collisionPadding={12}
+                className="flex flex-col gap-1.5 whitespace-normal text-sm font-normal"
+            >
                 <p className="font-semibold">
                     {lastError.message}
                     {lastError.count > 1 && (
