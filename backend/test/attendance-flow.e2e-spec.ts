@@ -18,7 +18,8 @@ import {
 
 const PREFIX = 'e2e-attendance';
 const REGISTRANT_IDS = [9301, 9302, 9303, 9304];
-// A round with results (so it "took place") and one that never gets any
+// A group where staff get marked present (so it happened) and one nobody
+// starts or attends
 const ROUND_ID = 'minx-r3';
 const GROUP_ID = `${ROUND_ID}-g1`;
 const NOT_HELD_GROUP_ID = 'pyram-r4-g1';
@@ -326,32 +327,54 @@ describe('Attendance flow for a group (e2e)', () => {
       expect(counts).toEqual([...counts].sort((a, b) => b - a));
     });
 
-    it('GET /attendance/statistics only compares against rounds that took place', async () => {
+    it('GET /attendance/statistics only counts groups that happened', async () => {
       const res = await request(server())
         .get('/attendance/statistics')
         .set(auth(users.tokens.STAGE_LEADER))
         .expect(200);
 
-      const forJudge = res.body.find((e: any) => e.personName === judge.name);
-      // judge + scrambler in a held round, runner in a round without results
+      const forJudge = res.body.persons.find(
+        (e: any) => e.personId === judge.id,
+      );
+      // Judge present and scrambler absent in a group someone attended; the
+      // runner slot is in a group nobody started or attended
       expect(forJudge).toEqual({
+        personId: judge.id,
         personName: judge.name,
-        totalAssignedStaffing: 3,
-        totalStaffingComparedToRounds: 2,
-        totalPresentAtStaffingComparedToRounds: 1,
-        presentPercentage: 50,
+        roles: [StaffRole.JUDGE, StaffRole.SCRAMBLER],
+        assigned: 2,
+        present: 1,
+        late: 0,
+        absent: 1,
+        replaced: 0,
+        leftEarly: 0,
+        noShow: 0,
+        extraHelp: 0,
+        attendancePct: 50,
       });
 
-      const forCompetitor = res.body.find(
-        (e: any) => e.personName === competitor.name,
+      const forRunner = res.body.persons.find(
+        (e: any) => e.personId === scrambler.id,
       );
-      expect(forCompetitor).toEqual({
-        personName: competitor.name,
-        totalAssignedStaffing: 0,
-        totalStaffingComparedToRounds: 0,
-        totalPresentAtStaffingComparedToRounds: 0,
-        presentPercentage: 0,
+      expect(forRunner).toMatchObject({
+        assigned: 1,
+        present: 1,
+        late: 1,
+        attendancePct: 100,
       });
+
+      // Competing isn't staffing, so the competitor has no row
+      expect(
+        res.body.persons.some((e: any) => e.personId === competitor.id),
+      ).toBe(false);
+      expect(
+        res.body.rounds.some((round: any) => round.roundId === 'pyram-r4'),
+      ).toBe(false);
+      expect(res.body.byRole.RUNNER.persons).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ personId: scrambler.id, late: 1 }),
+        ]),
+      );
     });
   });
 

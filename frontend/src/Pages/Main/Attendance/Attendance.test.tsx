@@ -9,34 +9,127 @@ import { renderWithQueryClient } from "@/test/queryClient";
 import AttendanceStatistics from "./AttendanceStatistics/AttendanceStatistics";
 import MostMissedAssignments from "./MostMissedAssignments/MostMissedAssignments";
 
-const { activities } = vi.hoisted(() => ({
-    activities: (n: number) =>
-        Array.from({ length: n }, (_, i) => ({
-            id: `x${i}`,
-            groupId: "333-r1-g1",
-            role: "JUDGE",
-        })),
-}));
-
+const { activities, statistics } = vi.hoisted(() => {
+    const person = (
+        personId: string,
+        personName: string,
+        roles: string[],
+        counts: Record<string, number | null>
+    ) => ({
+        personId,
+        personName,
+        roles,
+        assigned: 0,
+        present: 0,
+        late: 0,
+        absent: 0,
+        replaced: 0,
+        leftEarly: 0,
+        noShow: 0,
+        extraHelp: 0,
+        attendancePct: null,
+        ...counts,
+    });
+    const summary = (counts: Record<string, number | null>) => ({
+        attendancePct: null,
+        covered: 0,
+        expected: 0,
+        late: 0,
+        replaced: 0,
+        absent: 0,
+        leftEarly: 0,
+        noShows: 0,
+        extraHelp: 0,
+        ...counts,
+    });
+    const ben = person("p2", "Ben Test", ["JUDGE"], {
+        assigned: 2,
+        present: 1,
+        absent: 1,
+        attendancePct: 50,
+    });
+    const ada = person("p1", "Ada Demo", ["JUDGE", "RUNNER"], {
+        assigned: 3,
+        present: 3,
+        late: 1,
+        attendancePct: 100,
+    });
+    const cy = person("p3", "Cy Helper", ["RUNNER"], { extraHelp: 2 });
+    return {
+        activities: (n: number) =>
+            Array.from({ length: n }, (_, i) => ({
+                id: `x${i}`,
+                groupId: "333-r1-g1",
+                role: "JUDGE",
+            })),
+        statistics: {
+            summary: summary({
+                attendancePct: 80,
+                covered: 4,
+                expected: 5,
+                late: 1,
+                absent: 1,
+                noShows: 1,
+                extraHelp: 2,
+            }),
+            persons: [ada, ben, cy],
+            rounds: [
+                {
+                    roundId: "222-r1",
+                    roundName: "2x2 - R1",
+                    expected: 2,
+                    covered: 2,
+                    attendancePct: 100,
+                },
+                {
+                    roundId: "333-r1",
+                    roundName: "3x3 - R1",
+                    expected: 3,
+                    covered: 2,
+                    attendancePct: 66.7,
+                },
+            ],
+            byRole: {
+                JUDGE: {
+                    summary: summary({
+                        attendancePct: 75,
+                        covered: 3,
+                        expected: 4,
+                        absent: 1,
+                    }),
+                    persons: [
+                        { ...ada, roles: ["JUDGE"], assigned: 2, present: 2 },
+                        ben,
+                    ],
+                    rounds: [],
+                },
+                RUNNER: {
+                    summary: summary({
+                        attendancePct: 100,
+                        covered: 1,
+                        expected: 1,
+                        late: 1,
+                        extraHelp: 2,
+                    }),
+                    persons: [
+                        {
+                            ...ada,
+                            roles: ["RUNNER"],
+                            assigned: 1,
+                            present: 1,
+                        },
+                        cy,
+                    ],
+                    rounds: [],
+                },
+            },
+        },
+    };
+});
 vi.mock("@/lib/attendance", () => ({
     attendanceStatisticsQuery: {
         key: "attendance/statistics",
-        fetch: vi.fn().mockResolvedValue([
-            {
-                personName: "Ben Test",
-                presentPercentage: 50,
-                totalAssignedStaffing: 4,
-                totalPresentAtStaffingComparedToRounds: 1,
-                totalStaffingComparedToRounds: 2,
-            },
-            {
-                personName: "Ada Demo",
-                presentPercentage: 100,
-                totalAssignedStaffing: 3,
-                totalPresentAtStaffingComparedToRounds: 3,
-                totalStaffingComparedToRounds: 3,
-            },
-        ]),
+        fetch: vi.fn().mockResolvedValue(statistics),
     },
     mostMissedAssignmentsQuery: {
         key: "attendance/missed",
@@ -78,28 +171,66 @@ vi.mock("@/lib/attendance", () => ({
 beforeEach(() => clearQueryCache());
 
 describe("AttendanceStatistics", () => {
-    it("summarises attendance and sorts by column", async () => {
+    const renderPage = () =>
         renderWithQueryClient(
             <MemoryRouter>
                 <AttendanceStatistics />
             </MemoryRouter>
         );
+    const tile = (label: string) =>
+        screen.getByText(label, { selector: "dt" }).parentElement!;
+    const names = () =>
+        screen
+            .getAllByRole("row")
+            .slice(1)
+            .map(
+                (row) =>
+                    within(row).getAllByRole("cell")[0].firstChild?.textContent
+            );
+
+    it("shows summary tiles and the per-round breakdown", async () => {
+        renderPage();
         expect(
-            await screen.findByText(
-                "80% staffing attendance · 4 of 5 assignments"
-            )
+            await screen.findByText("4 of 5 assignments covered")
         ).toBeTruthy();
-        const names = () =>
-            screen
-                .getAllByRole("row")
-                .slice(1)
-                .map((row) => within(row).getAllByRole("cell")[0].textContent);
-        // Lowest attendance first by default
-        expect(names()).toEqual(["Ben Test", "Ada Demo"]);
+        expect(within(tile("Attendance")).getByText("80%")).toBeTruthy();
+        expect(within(tile("Extra help")).getByText("2")).toBeTruthy();
+        expect(screen.getByText("1 not coming for the day")).toBeTruthy();
+        const rounds = within(
+            screen.getByRole("region", { name: "By round" })
+        ).getAllByRole("listitem");
+        expect(rounds.map((round) => round.getAttribute("aria-label"))).toEqual(
+            ["2x2 - R1: 100%, 2 of 2 covered", "3x3 - R1: 67%, 2 of 3 covered"]
+        );
+    });
+
+    it("sorts by column, keeps extra-help-only people last, and searches", async () => {
+        renderPage();
+        await screen.findByText("4 of 5 assignments covered");
+        // Lowest attendance first; no percentage goes last
+        expect(names()).toEqual(["Ben Test", "Ada Demo", "Cy Helper"]);
         await userEvent.click(
             screen.getByRole("button", { name: /Attendance/ })
         );
-        expect(names()).toEqual(["Ada Demo", "Ben Test"]);
+        expect(names()).toEqual(["Ada Demo", "Ben Test", "Cy Helper"]);
+        await userEvent.click(
+            screen.getByRole("button", { name: /Extra help/ })
+        );
+        expect(names()[2]).toBe("Cy Helper");
+        await userEvent.type(screen.getByLabelText("Search staff"), "ben");
+        expect(names()).toEqual(["Ben Test"]);
+    });
+
+    it("filters everything by role", async () => {
+        renderPage();
+        await screen.findByText("4 of 5 assignments covered");
+        await userEvent.click(screen.getByRole("radio", { name: "Runner" }));
+        expect(screen.getByText("1 of 1 assignments covered")).toBeTruthy();
+        expect(names()).toEqual(["Ada Demo", "Cy Helper"]);
+        // The per-round breakdown has nothing for this role
+        expect(screen.queryByRole("region", { name: "By round" })).toBeNull();
+        await userEvent.click(screen.getByRole("radio", { name: "All roles" }));
+        expect(names()).toHaveLength(3);
     });
 });
 
