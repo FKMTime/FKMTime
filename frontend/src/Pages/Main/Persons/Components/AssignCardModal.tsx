@@ -1,11 +1,12 @@
 import { useState } from "react";
-import { Label } from "recharts";
 
 import { Modal } from "@/Components/Modal";
 import ModalActions from "@/Components/ModalActions";
 import { Button } from "@/Components/ui/button";
 import { Input } from "@/Components/ui/input";
+import { Label } from "@/Components/ui/label";
 import { useDialogError } from "@/hooks/useDialogError";
+import { useToast } from "@/hooks/useToast";
 import { Person } from "@/lib/interfaces";
 import { isOrganizerOrDelegate } from "@/lib/permissions";
 import { updatePerson } from "@/lib/persons";
@@ -20,12 +21,19 @@ const AssignCardModal = ({ isOpen, onClose, person }: AssignCardModalProps) => {
     const [error, setError] = useDialogError(isOpen);
     const [isLoading, setIsLoading] = useState(false);
     const [editedPerson, setEditedPerson] = useState<Person>(person);
+    const { toast } = useToast();
 
     const saveCard = async (cardId?: string) => {
         setIsLoading(true);
 
         const status = await updatePerson({ ...editedPerson, cardId });
         if (status === 200) {
+            toast({
+                title: cardId
+                    ? `Card assigned to ${person.name}`
+                    : `Card removed from ${person.name}`,
+                variant: "success",
+            });
             onClose();
         } else if (status === 409) {
             setError("This card is already assigned to another person");
@@ -46,8 +54,9 @@ const AssignCardModal = ({ isOpen, onClose, person }: AssignCardModalProps) => {
         >
             <div className="flex flex-col gap-5">
                 <div className="flex flex-col gap-2 mb-3">
-                    <Label>Card</Label>
+                    <Label htmlFor="assign-card-id">Card</Label>
                     <Input
+                        id="assign-card-id"
                         placeholder="Card"
                         readOnly={!isOrganizerOrDelegate()}
                         value={editedPerson.cardId}
