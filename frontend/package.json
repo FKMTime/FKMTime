@@ -57,7 +57,7 @@
     "recharts": "^2.15.0",
     "scramble-display": "^0.6.2",
     "socket.io-client": "^4.8.3",
-    "tailwind-merge": "^3.0.2",
+    "tailwind-merge": "^3.7.0",
     "wcif-helpers": "^0.2.5",
     "zod": "^4.6.7"
   },
