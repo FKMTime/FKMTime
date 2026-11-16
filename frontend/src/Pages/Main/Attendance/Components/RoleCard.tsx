@@ -382,6 +382,7 @@ const RoleCard = ({
                     onClose={closeDialog}
                     role={role}
                     groupId={groupId}
+                    groupAttendance={attendance}
                 />
             )}
             {dialog?.type === "comment" && (

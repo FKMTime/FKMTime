@@ -228,7 +228,7 @@ describe('Attendance flow for a group (e2e)', () => {
         .send({ personId: helper.id, role: StaffRole.JUDGE })
         .expect(409);
       expect(conflict.body.message).toBe(
-        'This person is already marked as present in this group in another role.',
+        'This person is already marked as present in this role in this group.',
       );
 
       await request(server())
