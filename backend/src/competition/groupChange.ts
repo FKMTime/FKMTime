@@ -1,4 +1,4 @@
-import { Attempt, AttemptStatus } from '@prisma/client';
+import { Attempt, AttemptStatus, StaffActivityStatus } from '@prisma/client';
 import {
   getAttemptsWaitingForExtra,
   getCountingAttempts,
@@ -18,7 +18,8 @@ export const GROUP_IDLE_BEFORE_CHANGE_MS = 5 * 60 * 1000;
 
 export interface GroupChangeResult {
   personId: string;
-  person: { registrantId: number };
+  /** Null for someone added locally rather than from the WCIF */
+  person: { registrantId: number | null };
   attempts: Attempt[];
   /** Regulation 9t: such a result counts nowhere */
   removedAt?: Date | null;
@@ -34,6 +35,22 @@ export interface RoundRules {
 }
 
 type ResultState = 'notStarted' | 'pending' | 'done';
+
+/** Scrambled and handed to the competitor, not solved yet */
+const isBeingSolved = (attempt: Attempt) =>
+  attempt.status === AttemptStatus.SCRAMBLED ||
+  (!!attempt.scrambledAt &&
+    !attempt.solvedAt &&
+    attempt.status !== AttemptStatus.VOIDED);
+
+/** The last time anything happened with the attempt: scrambled or solved */
+const lastActivityAt = (attempt: Attempt) =>
+  Math.max(
+    ...[attempt.solvedAt, attempt.scrambledAt]
+      .map((at) => (at ? +new Date(at) : NaN))
+      .filter((at) => !Number.isNaN(at)),
+    -Infinity,
+  );
 
 /** Where one competitor's result stands as far as leaving the group goes */
 export const getResultState = (
@@ -55,7 +72,9 @@ export const getResultState = (
     attempts.some(
       (a) =>
         a.status === AttemptStatus.UNRESOLVED ||
-        (a.status === AttemptStatus.EXTRA_GIVEN && !a.replacedBy),
+        (a.status === AttemptStatus.EXTRA_GIVEN && !a.replacedBy) ||
+        // Someone with a scramble in hand has started, even before a solve
+        isBeingSolved(a),
     )
   ) {
     return 'pending';
@@ -82,46 +101,91 @@ export type GroupState =
 
 export interface GroupStatus {
   state: GroupState;
-  /** When the group's competitors last entered an attempt (ms), if ever */
+  /** When the group's competitors last solved or were handed a scramble (ms) */
   lastAttemptAt: number | null;
 }
 
+/** A COMPETITOR attendance row, for any group of the round */
+export interface CompetitorRow {
+  personId: string;
+  registrantId: number | null;
+  groupId: string;
+  isAssigned: boolean;
+  status: StaffActivityStatus;
+}
+
+const countsInItsGroup = (row: CompetitorRow) =>
+  row.isAssigned ||
+  row.status === StaffActivityStatus.PRESENT ||
+  row.status === StaffActivityStatus.LATE;
+
 /**
- * Where a group stands, from its own competitors only: those assigned to it
- * and those marked present in it (attendance, which includes competitors
- * added by hand). Other groups and rooms of the same round don't hold it
- * back, and neither does anyone whose result in the round was removed
- * (Regulation 9t). The last group of the round in the room also waits for
- * redos of anyone from the room's earlier groups (roomRoundRegistrantIds /
- * roomRoundPersonIds).
+ * Where a group stands, from its own competitors only:
+ * - those the stored WCIF assigns to it,
+ * - those with an assigned attendance row for it, whatever their attendance
+ *   (a move on the competitor page updates the row at once, the stored WCIF
+ *   only at the next sync),
+ * - those marked present in it, competitors added by hand included.
+ * Someone the stored WCIF still assigns here but whose assigned row is now in
+ * another group of the round has moved, and is left out. Other groups and
+ * rooms of the same round don't hold the group back, and neither does anyone
+ * whose result in the round was removed (Regulation 9t). The last group of
+ * the round in the room also waits for redos of anyone from the room's
+ * earlier groups (roomRoundRegistrantIds / roomRoundGroupIds).
  */
 export const getGroupStatus = (input: {
+  groupId: string;
   results: GroupChangeResult[];
   assignedRegistrantIds: number[];
-  presentPersonIds: string[];
+  /** COMPETITOR rows of every group of the round */
+  competitorRows?: CompetitorRow[];
   /** Competitors whose result in the round was removed */
-  removed?: { personId: string; registrantId: number }[];
+  removed?: { personId: string; registrantId: number | null }[];
   roomRoundRegistrantIds?: number[];
-  roomRoundPersonIds?: string[];
+  roomRoundGroupIds?: string[];
   rules: RoundRules;
 }): GroupStatus => {
+  const rows = input.competitorRows ?? [];
   const removed = input.removed ?? [];
-  const removedRegistrantIds = new Set(removed.map((r) => r.registrantId));
   const removedPersonIds = new Set(removed.map((r) => r.personId));
+  // Someone without a registrant id is only known by their person id
+  const removedRegistrantIds = new Set(
+    removed.map((r) => r.registrantId).filter((id) => id !== null),
+  );
   const results = input.results.filter(
-    (r) =>
-      !r.removedAt &&
-      !removedPersonIds.has(r.personId) &&
-      !removedRegistrantIds.has(r.person.registrantId),
+    (r) => !r.removedAt && !removedPersonIds.has(r.personId),
+  );
+
+  const isHere = (row: CompetitorRow) => row.groupId === input.groupId;
+  const personIdsWithRowHere = new Set(
+    rows.filter(isHere).map((r) => r.personId),
+  );
+  const movedAway = new Set(
+    rows
+      .filter(
+        (row) =>
+          !isHere(row) &&
+          row.isAssigned &&
+          row.registrantId !== null &&
+          !personIdsWithRowHere.has(row.personId),
+      )
+      .map((row) => row.registrantId),
   );
   const assigned = new Set(
-    input.assignedRegistrantIds.filter((id) => !removedRegistrantIds.has(id)),
+    input.assignedRegistrantIds.filter(
+      (id) => !removedRegistrantIds.has(id) && !movedAway.has(id),
+    ),
   );
-  const present = new Set(
-    input.presentPersonIds.filter((id) => !removedPersonIds.has(id)),
+  const memberPersonIds = new Set(
+    rows
+      .filter((row) => isHere(row) && countsInItsGroup(row))
+      .map((row) => row.personId)
+      .filter((id) => !removedPersonIds.has(id)),
   );
+  const isAssignedHere = (r: GroupChangeResult) =>
+    r.person.registrantId !== null && assigned.has(r.person.registrantId);
   const members = results.filter(
-    (r) => assigned.has(r.person.registrantId) || present.has(r.personId),
+    (r) => isAssignedHere(r) || memberPersonIds.has(r.personId),
   );
 
   let started = false;
@@ -132,25 +196,33 @@ export const getGroupStatus = (input: {
   for (const result of members) {
     const state = getResultState(result.attempts, input.rules);
     for (const attempt of result.attempts) {
-      const solvedAt = attempt.solvedAt ? +new Date(attempt.solvedAt) : NaN;
-      if (!Number.isNaN(solvedAt) && (lastAttemptAt ?? 0) < solvedAt) {
-        lastAttemptAt = solvedAt;
+      const at = lastActivityAt(attempt);
+      if (at !== -Infinity && (lastAttemptAt ?? -Infinity) < at) {
+        lastAttemptAt = at;
       }
     }
     if (state === 'notStarted') continue;
     started = true;
-    startedRegistrantIds.add(result.person.registrantId);
+    if (result.person.registrantId !== null) {
+      startedRegistrantIds.add(result.person.registrantId);
+    }
     startedPersonIds.add(result.personId);
     if (state === 'pending') pending = true;
   }
 
   if (!input.rules.hasNextGroup) {
     const roomAssigned = new Set(input.roomRoundRegistrantIds ?? []);
-    const roomPresent = new Set(input.roomRoundPersonIds ?? []);
+    const roomGroupIds = new Set(input.roomRoundGroupIds ?? []);
+    const roomPersonIds = new Set(
+      rows
+        .filter((row) => roomGroupIds.has(row.groupId) && countsInItsGroup(row))
+        .map((row) => row.personId),
+    );
     const redoWaiting = results.some(
       (r) =>
-        (roomAssigned.has(r.person.registrantId) ||
-          roomPresent.has(r.personId)) &&
+        ((r.person.registrantId !== null &&
+          roomAssigned.has(r.person.registrantId)) ||
+          roomPersonIds.has(r.personId)) &&
         getAttemptsWaitingForExtra(r.attempts).length > 0,
     );
     if (redoWaiting) pending = true;
@@ -160,7 +232,7 @@ export const getGroupStatus = (input: {
   if (pending) return { state: 'inProgress', lastAttemptAt };
   const someoneNotStarted =
     [...assigned].some((id) => !startedRegistrantIds.has(id)) ||
-    [...present].some((id) => !startedPersonIds.has(id));
+    [...memberPersonIds].some((id) => !startedPersonIds.has(id));
   return {
     state: someoneNotStarted ? 'waitingForCompetitors' : 'finished',
     lastAttemptAt,

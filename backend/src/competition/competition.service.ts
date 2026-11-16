@@ -10,7 +10,6 @@ import { Cron, CronExpression } from '@nestjs/schedule';
 import {
   HardwareVersion,
   SendingResultsFrequency,
-  StaffActivityStatus,
   StaffRole,
 } from '@prisma/client';
 import { AppGateway } from 'src/app.gateway';
@@ -737,23 +736,33 @@ export class CompetitionService implements OnModuleDestroy {
         },
         select: { id: true },
       }),
+      // Every group of the round: a competitor moved on the competitor page
+      // shows up here before the stored WCIF knows
       this.prisma.staffActivity.findMany({
         where: {
-          groupId: { in: [...new Set([groupId, ...roomRoundGroupIds])] },
+          groupId: { startsWith: `${roundId}-g` },
           role: StaffRole.COMPETITOR,
-          status: {
-            in: [StaffActivityStatus.PRESENT, StaffActivityStatus.LATE],
-          },
         },
-        select: { personId: true, groupId: true },
+        select: {
+          personId: true,
+          groupId: true,
+          isAssigned: true,
+          status: true,
+          person: { select: { registrantId: true } },
+        },
       }),
     ]);
     return getGroupStatusFromResults({
+      groupId,
       results: results as unknown as GroupChangeResult[],
       assignedRegistrantIds: getGroupCompetitorIds(wcif, groupId),
-      presentPersonIds: attendance
-        .filter((a) => a.groupId === groupId)
-        .map((a) => a.personId),
+      competitorRows: attendance.map((row) => ({
+        personId: row.personId,
+        registrantId: row.person.registrantId,
+        groupId: row.groupId,
+        isAssigned: row.isAssigned,
+        status: row.status,
+      })),
       removed: removed.map((r) => ({
         personId: r.personId,
         registrantId: r.person.registrantId,
@@ -761,7 +770,7 @@ export class CompetitionService implements OnModuleDestroy {
       roomRoundRegistrantIds: roomRoundGroupIds.flatMap((id) =>
         getGroupCompetitorIds(wcif, id),
       ),
-      roomRoundPersonIds: attendance.map((a) => a.personId),
+      roomRoundGroupIds,
       rules: {
         maxAttempts: getNumberOfAttemptsForRound(roundId, wcif),
         cutoff: getRoundInfoFromWcif(roundId, wcif)?.cutoff,

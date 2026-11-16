@@ -1,4 +1,10 @@
-import { Attempt, AttemptStatus, AttemptType } from '@prisma/client';
+import {
+  Attempt,
+  AttemptStatus,
+  AttemptType,
+  StaffActivityStatus,
+  StaffRole,
+} from '@prisma/client';
 import { AppGateway } from 'src/app.gateway';
 import { DbService } from 'src/db/db.service';
 import { IntegratedLiveRoundsService } from 'src/integrated-live/integratedLiveRounds.service';
@@ -12,6 +18,7 @@ import {
 } from './competition.service';
 import {
   canLeaveGroup,
+  CompetitorRow,
   getFirstGroupOfNextRoundInRoom,
   getGroupStatus,
   getQuietSince,
@@ -116,19 +123,54 @@ const solves = (count: number, solvedAt = new Date(at(12, 10))) =>
 
 interface TestResult {
   roundId: string;
-  registrantId: number;
+  /** Null for someone added locally, who then needs personId */
+  registrantId: number | null;
+  personId?: string;
   attempts: Attempt[];
   removedAt?: Date;
 }
-const toDbResult = (r: TestResult) => ({
-  id: `r-${r.roundId}-${r.registrantId}`,
-  roundId: r.roundId,
-  eventId: r.roundId.split('-')[0],
-  personId: `p${r.registrantId}`,
-  person: { id: `p${r.registrantId}`, registrantId: r.registrantId },
-  attempts: r.attempts,
-  removedAt: r.removedAt ?? null,
-});
+const toDbResult = (r: TestResult) => {
+  const personId = r.personId ?? `p${r.registrantId}`;
+  return {
+    id: `r-${r.roundId}-${personId}`,
+    roundId: r.roundId,
+    eventId: r.roundId.split('-')[0],
+    personId,
+    person: { id: personId, registrantId: r.registrantId },
+    attempts: r.attempts,
+    removedAt: r.removedAt ?? null,
+  };
+};
+
+/** A COMPETITOR attendance row; by default someone marked present */
+interface TestRow {
+  personId: string;
+  groupId: string;
+  role?: StaffRole;
+  isAssigned?: boolean;
+  status?: StaffActivityStatus;
+  registrantId?: number | null;
+}
+type RowWhere = {
+  role?: StaffRole;
+  isAssigned?: boolean;
+  status?: { in: StaffActivityStatus[] };
+  groupId?: { in?: string[]; startsWith?: string };
+};
+/** Applies a staffActivity where clause, refusing filters it doesn't know */
+const matchesRow = (row: Required<TestRow>, where: RowWhere) => {
+  const known = ['role', 'isAssigned', 'status', 'groupId'];
+  const unknown = Object.keys(where).filter((key) => !known.includes(key));
+  if (unknown.length) throw new Error(`Unmocked filter: ${unknown}`);
+  return (
+    (where.role === undefined || row.role === where.role) &&
+    (where.isAssigned === undefined || row.isAssigned === where.isAssigned) &&
+    (!where.status || where.status.in.includes(row.status)) &&
+    (!where.groupId?.in || where.groupId.in.includes(row.groupId)) &&
+    (!where.groupId?.startsWith ||
+      row.groupId.startsWith(where.groupId.startsWith))
+  );
+};
 
 const setup = ({
   wcif,
@@ -141,7 +183,7 @@ const setup = ({
   wcif: Wcif;
   rooms: { id: string; name: string; currentGroupIds: string[] }[];
   results?: TestResult[];
-  attendance?: { personId: string; groupId: string }[];
+  attendance?: TestRow[];
   freshSetGrantIds?: string[];
   competition?: Record<string, unknown>;
 }) => {
@@ -201,8 +243,20 @@ const setup = ({
       findMany: jest.fn(async () => freshSetGrantIds.map((id) => ({ id }))),
     },
     staffActivity: {
-      findMany: jest.fn(async ({ where }) =>
-        attendance.filter((a) => where.groupId.in.includes(a.groupId)),
+      findMany: jest.fn(async ({ where }: { where: RowWhere }) =>
+        attendance
+          .map((row) => ({
+            role: StaffRole.COMPETITOR,
+            isAssigned: false,
+            status: StaffActivityStatus.PRESENT,
+            registrantId: Number(row.personId.slice(1)) || null,
+            ...row,
+          }))
+          .filter((row) => matchesRow(row, where))
+          .map((row) => ({
+            ...row,
+            person: { registrantId: row.registrantId },
+          })),
       ),
     },
     $transaction: jest.fn(async (updates) => {
@@ -684,6 +738,102 @@ describe('automatic group change', () => {
       expect(roomById('main').currentGroupIds).toEqual(['222-r1-g1']);
     });
 
+    it('follows a competitor moved to another group on the competitor page', async () => {
+      // The stored WCIF still has competitor 8 in g1; their row says g2
+      const { service, roomById } = setup({
+        wcif: buildWcif(schedule(), { ...assignments, 8: ['333-r1-g1'] }),
+        rooms: [mainAndSide()[0]],
+        results: [
+          { roundId: '333-r1', registrantId: 1, attempts: solves(3) },
+          { roundId: '333-r1', registrantId: 2, attempts: solves(3) },
+          { roundId: '333-r1', registrantId: 3, attempts: solves(3) },
+        ],
+        attendance: [
+          {
+            personId: 'p8',
+            groupId: '333-r1-g2',
+            isAssigned: true,
+            status: StaffActivityStatus.ABSENT,
+          },
+        ],
+      });
+      // No longer held by g1
+      await service.checkIfGroupCanBeChanged('main', 'event');
+      expect(roomById('main').currentGroupIds).toEqual(['333-r1-g2']);
+
+      // Held by g2, though not marked present yet
+      await service.checkIfGroupCanBeChanged('main', 'event');
+      expect(roomById('main').currentGroupIds).toEqual(['333-r1-g2']);
+    });
+
+    it('is not misled by a removed result of someone without a registrant id', async () => {
+      const { service, roomById } = setup({
+        wcif: buildWcif(schedule(), assignments),
+        rooms: mainAndSide(),
+        results: [
+          { roundId: '333-r1', registrantId: 1, attempts: solves(3) },
+          { roundId: '333-r1', registrantId: 2, attempts: solves(3) },
+          // Added locally, competed in g1 and finished
+          {
+            roundId: '333-r1',
+            registrantId: null,
+            personId: 'local-a',
+            attempts: solves(3),
+          },
+          // Also added locally, removed after one attempt
+          {
+            roundId: '333-r1',
+            registrantId: null,
+            personId: 'local-b',
+            attempts: solves(1),
+            removedAt: new Date(at(12, 12)),
+          },
+        ],
+        attendance: [
+          { personId: 'local-a', groupId: '333-r1-g1', registrantId: null },
+        ],
+      });
+      await service.checkIfGroupCanBeChanged('main', 'event');
+      expect(roomById('main').currentGroupIds).toEqual(['333-r1-g2']);
+    });
+
+    it('counts a competitor with only a scramble in hand as started', async () => {
+      jest.setSystemTime(new Date(at(12, 0)));
+      const { service, roomById, messages } = setup({
+        wcif: buildWcif(schedule(), assignments),
+        rooms: [mainAndSide()[0]],
+        results: [
+          { roundId: '333-r1', registrantId: 1, attempts: solves(3) },
+          {
+            roundId: '333-r1',
+            registrantId: 2,
+            attempts: [
+              attempt(1, {
+                status: AttemptStatus.SCRAMBLED,
+                scrambledAt: new Date(at(12, 14)),
+                solvedAt: null,
+              }),
+            ],
+          },
+        ],
+      });
+      // Scrambled at 12:14: not quiet yet at 12:16, though the last solve
+      // was at 12:10
+      jest.setSystemTime(new Date(at(12, 16)));
+      await service.checkIfGroupCanBeChanged('main', 'event');
+      await service.checkIfGroupShouldBeChanged();
+      expect(roomById('main').currentGroupIds).toEqual(['333-r1-g1']);
+      expect(messages()).toEqual([]);
+
+      // Quiet for a whole spell after the scramble: still not finished
+      jest.setSystemTime(new Date(at(12, 20)));
+      await service.checkIfGroupShouldBeChanged();
+      expect(roomById('main').currentGroupIds).toEqual(['333-r1-g1']);
+      expect(messages()).toEqual([
+        'Group in room Main should be changed, but not all results are entered.',
+      ]);
+    });
+
     it('is not held back by a removed result', async () => {
       const { service, roomById } = setup({
         wcif: buildWcif(schedule(), assignments),
@@ -929,12 +1079,24 @@ describe('group change helpers', () => {
     person: { registrantId },
     attempts,
   });
+  const row = (
+    personId: string,
+    groupId: string,
+    overrides: Partial<CompetitorRow> = {},
+  ): CompetitorRow => ({
+    personId,
+    registrantId: Number(personId.slice(1)) || null,
+    groupId,
+    isAssigned: false,
+    status: StaffActivityStatus.PRESENT,
+    ...overrides,
+  });
 
   it('waits for the attempts left before the cutoff', () => {
     const status = getGroupStatus({
       results: [result(1, solves(1))],
       assignedRegistrantIds: [1],
-      presentPersonIds: [],
+      groupId: '333-r1-g1',
       rules: { ...rules, cutoff: { numberOfAttempts: 2, resultValue: 1000 } },
     });
     expect(status.state).toBe('inProgress');
@@ -944,7 +1106,7 @@ describe('group change helpers', () => {
     const status = getGroupStatus({
       results: [result(1, solves(2))],
       assignedRegistrantIds: [1],
-      presentPersonIds: [],
+      groupId: '333-r1-g1',
       rules: { ...rules, cutoff: { numberOfAttempts: 2, resultValue: 1000 } },
     });
     expect(status.state).toBe('finished');
@@ -957,7 +1119,7 @@ describe('group change helpers', () => {
         result(9, solves(1, new Date(at(12, 30)))),
       ],
       assignedRegistrantIds: [1],
-      presentPersonIds: [],
+      groupId: '333-r1-g1',
       rules,
     });
     expect(status).toEqual({
@@ -1013,8 +1175,69 @@ describe('group change helpers', () => {
         { ...result(2, solves(1)), removedAt: new Date(at(12, 20)) },
       ],
       assignedRegistrantIds: [1, 2],
-      presentPersonIds: ['p2'],
+      groupId: '333-r1-g1',
+      competitorRows: [row('p2', '333-r1-g1')],
       removed: [{ personId: 'p2', registrantId: 2 }],
+      rules,
+    });
+    expect(status.state).toBe('finished');
+  });
+
+  it('takes a scramble as activity and its competitor as started', () => {
+    const status = getGroupStatus({
+      groupId: '333-r1-g1',
+      results: [
+        result(1, solves(5, new Date(at(12, 5)))),
+        result(2, [
+          attempt(1, {
+            status: AttemptStatus.SCRAMBLED,
+            scrambledAt: new Date(at(12, 9)),
+            solvedAt: null,
+          }),
+        ]),
+      ],
+      assignedRegistrantIds: [1, 2],
+      rules,
+    });
+    expect(status).toEqual({
+      state: 'inProgress',
+      lastAttemptAt: +new Date(at(12, 9)),
+    });
+  });
+
+  it('keeps an assigned row whatever its attendance, and drops a stale WCIF assignment', () => {
+    const rows = [
+      row('p8', '333-r1-g2', {
+        isAssigned: true,
+        status: StaffActivityStatus.ABSENT,
+      }),
+    ];
+    const inG1 = getGroupStatus({
+      groupId: '333-r1-g1',
+      results: [result(1, solves(5))],
+      assignedRegistrantIds: [1, 8],
+      competitorRows: rows,
+      rules,
+    });
+    const inG2 = getGroupStatus({
+      groupId: '333-r1-g2',
+      results: [result(3, solves(5))],
+      assignedRegistrantIds: [3],
+      competitorRows: rows,
+      rules,
+    });
+    expect(inG1.state).toBe('finished');
+    expect(inG2.state).toBe('waitingForCompetitors');
+  });
+
+  it('leaves out an absent row nobody assigned', () => {
+    const status = getGroupStatus({
+      groupId: '333-r1-g1',
+      results: [result(1, solves(5))],
+      assignedRegistrantIds: [1],
+      competitorRows: [
+        row('p7', '333-r1-g1', { status: StaffActivityStatus.ABSENT }),
+      ],
       rules,
     });
     expect(status.state).toBe('finished');
@@ -1024,7 +1247,8 @@ describe('group change helpers', () => {
     const status = getGroupStatus({
       results: [result(1, solves(5))],
       assignedRegistrantIds: [1],
-      presentPersonIds: ['p7'],
+      groupId: '333-r1-g1',
+      competitorRows: [row('p7', '333-r1-g1')],
       rules,
     });
     expect(status.state).toBe('waitingForCompetitors');
