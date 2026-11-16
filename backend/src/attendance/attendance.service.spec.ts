@@ -1,4 +1,4 @@
-import { HttpException } from '@nestjs/common';
+import { HttpException, HttpStatus } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { StaffActivityStatus, StaffRole } from '@prisma/client';
 
@@ -159,31 +159,69 @@ describe('AttendanceService', () => {
       ).rejects.toThrow(HttpException);
     });
 
-    it('should throw error if person already marked as present in group', async () => {
-      const groupId = '333-r1-g1';
-      const personData = {
-        personId: 'person1',
-        role: StaffRole.JUDGE,
-      };
-      const mockPerson = { id: 'person1', name: 'John Doe' };
-      const existingAttendance = {
-        id: 'attendance1',
-        groupId,
-        personId: 'person1',
-        role: StaffRole.JUDGE,
-        status: StaffActivityStatus.PRESENT,
-      };
+    it.each([
+      [StaffActivityStatus.PRESENT, 'present'],
+      [StaffActivityStatus.LATE, 'late'],
+      [StaffActivityStatus.REPLACED, 'replaced'],
+    ])(
+      'refuses to overwrite someone already %s in this role',
+      async (status, word) => {
+        const groupId = '333-r1-g1';
+        const personData = { personId: 'person1', role: StaffRole.JUDGE };
+        jest
+          .spyOn(dbService.person, 'findUnique')
+          .mockResolvedValue({ id: 'person1', name: 'John Doe' } as any);
+        jest.spyOn(dbService.staffActivity, 'findFirst').mockResolvedValue({
+          id: 'attendance1',
+          groupId,
+          personId: 'person1',
+          role: StaffRole.JUDGE,
+          status,
+        } as any);
+        const upsert = jest.spyOn(dbService.staffActivity, 'upsert');
 
+        await expect(
+          service.addNotAssignedPerson(groupId, personData),
+        ).rejects.toMatchObject({
+          message: `This person is already marked as ${word} in this role in this group.`,
+          status: HttpStatus.CONFLICT,
+        });
+        expect(upsert).not.toHaveBeenCalled();
+      },
+    );
+
+    it('marks someone absent in this role as present', async () => {
+      const groupId = '333-r1-g1';
+      const personData = { personId: 'person1', role: StaffRole.JUDGE };
       jest
         .spyOn(dbService.person, 'findUnique')
-        .mockResolvedValue(mockPerson as any);
-      jest
+        .mockResolvedValue({ id: 'person1', name: 'John Doe' } as any);
+      const findFirst = jest
         .spyOn(dbService.staffActivity, 'findFirst')
-        .mockResolvedValue(existingAttendance as any);
+        .mockResolvedValue(null);
+      const upsert = jest
+        .spyOn(dbService.staffActivity, 'upsert')
+        .mockResolvedValue({ id: 'attendance1' } as any);
+      jest.spyOn(appGateway, 'handleNewAttendance').mockImplementation();
 
-      await expect(
-        service.addNotAssignedPerson(groupId, personData),
-      ).rejects.toThrow(HttpException);
+      await service.addNotAssignedPerson(groupId, personData);
+
+      // An absent row doesn't block; the upsert flips it to present
+      expect(findFirst).toHaveBeenCalledWith({
+        where: {
+          groupId,
+          personId: 'person1',
+          role: StaffRole.JUDGE,
+          status: { not: StaffActivityStatus.ABSENT },
+        },
+      });
+      expect(upsert).toHaveBeenCalledWith(
+        expect.objectContaining({
+          update: expect.objectContaining({
+            status: StaffActivityStatus.PRESENT,
+          }),
+        }),
+      );
     });
   });
 
