@@ -11,6 +11,7 @@ import { useState } from "react";
 
 import BatteryIcon from "@/Components/Icons/BatteryIcon";
 import SignalIcon from "@/Components/Icons/SignalIcon";
+import StationErrorIcon from "@/Components/Icons/StationErrorIcon";
 import PointedStationBadge from "@/Components/shared/PointedStationBadge";
 import RowActions from "@/Components/shared/RowActions";
 import RunDifferentRoundModal from "@/Components/shared/RunDifferentRoundModal";
@@ -180,6 +181,11 @@ const DeviceItem = ({
         device.type === DeviceType.STATION && !device.retiredAt
             ? device.signal
             : undefined;
+    const lastError =
+        device.type === DeviceType.STATION && !device.retiredAt
+            ? device.lastError
+            : null;
+    const errorIcon = <StationErrorIcon lastError={lastError} />;
 
     if (variant === "row")
         return (
@@ -187,6 +193,7 @@ const DeviceItem = ({
                 <TableCell className="whitespace-nowrap pl-5 font-semibold">
                     <span className="flex items-center gap-2">
                         {device.name}
+                        {errorIcon}
                         {pointedBadge}
                     </span>
                 </TableCell>
@@ -238,8 +245,9 @@ const DeviceItem = ({
                     <TypeIcon className="size-5" aria-hidden />
                 </span>
                 <div className="min-w-0 flex-1">
-                    <p className="truncate text-[15px] font-semibold">
-                        {device.name}
+                    <p className="flex items-center gap-1.5 text-[15px] font-semibold">
+                        <span className="truncate">{device.name}</span>
+                        {errorIcon}
                     </p>
                     <p className="truncate text-xs text-muted-foreground">
                         {[type, device.hwVersion, roomName]

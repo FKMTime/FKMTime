@@ -33,6 +33,7 @@ const CARD = {
   competitor: 7720023,
   delegateCase: 7720017,
   judge: 7720018,
+  unknown: 7720999,
 };
 const GROUP = '333-r1-g2';
 
@@ -316,6 +317,32 @@ describe('socket.io gateways (e2e)', () => {
         rssi: -70,
         link: null,
         reportedRssi: true,
+      });
+      updates.stop();
+      expect(updates.received).toHaveLength(0);
+    });
+
+    it("announces a station's last error to the devices room without a list refetch", async () => {
+      const updates = recordEvents(observer, 'deviceUpdated');
+      const lastError = waitForEvent(
+        observer,
+        'deviceError',
+        (p: any) => p.espId === ESP.station && p.lastError !== null,
+      );
+
+      await station.request('PersonInfo', {
+        cardId: CARD.unknown.toString(),
+        espId: ESP.station,
+        isCompetitor: true,
+      });
+
+      expect(await lastError).toEqual({
+        espId: ESP.station,
+        lastError: expect.objectContaining({
+          key: 'competitorNotFound',
+          kind: 'problem',
+          cardId: CARD.unknown.toString(),
+        }),
       });
       updates.stop();
       expect(updates.received).toHaveLength(0);

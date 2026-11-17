@@ -6,6 +6,7 @@ import { AppGateway } from '../app.gateway';
 import { DbService } from '../db/db.service';
 import { SocketController } from '../socket/socket.controller';
 import { DeviceService } from './device.service';
+import { StationErrorService } from './stationError.service';
 import { StationSignalService } from './stationSignal.service';
 
 describe('DeviceService', () => {
@@ -13,6 +14,7 @@ describe('DeviceService', () => {
   let dbService: DbService;
   let appGateway: AppGateway;
   let socketController: SocketController;
+  let stationErrors: StationErrorService;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -68,10 +70,18 @@ describe('DeviceService', () => {
             }),
           },
         },
+        {
+          provide: StationErrorService,
+          useValue: {
+            getLastError: jest.fn().mockReturnValue(null),
+            forget: jest.fn(),
+          },
+        },
       ],
     }).compile();
 
     service = module.get<DeviceService>(DeviceService);
+    stationErrors = module.get<StationErrorService>(StationErrorService);
     dbService = module.get<DbService>(DbService);
     appGateway = module.get<AppGateway>(AppGateway);
     socketController = module.get<SocketController>(SocketController);
@@ -108,6 +118,7 @@ describe('DeviceService', () => {
           ...mockDevices[0],
           count: 5,
           signal: { level: 'weak', rssi: -66, link: null, reportedRssi: true },
+          lastError: null,
         },
       ]);
       expect(dbService.device.findMany).toHaveBeenCalled();
@@ -126,6 +137,25 @@ describe('DeviceService', () => {
 
       expect(station).toHaveProperty('signal.level', 'weak');
       expect(attendance).not.toHaveProperty('signal');
+    });
+
+    it("adds each station's last error to stations only (SPEC-010)", async () => {
+      jest.spyOn(dbService.device, 'findMany').mockResolvedValue([
+        { id: 'station', espId: 1, type: DeviceType.STATION },
+        { id: 'attendance', espId: 2, type: DeviceType.ATTENDANCE_RUNNER },
+      ] as any);
+      (dbService.attempt.groupBy as jest.Mock) = jest
+        .fn()
+        .mockResolvedValue([]);
+      (stationErrors.getLastError as jest.Mock).mockReturnValue({
+        key: 'competitorNotFound',
+      });
+
+      const [station, attendance] = await service.getAllDevices();
+
+      expect(stationErrors.getLastError).toHaveBeenCalledWith(1);
+      expect(station).toHaveProperty('lastError.key', 'competitorNotFound');
+      expect(attendance).not.toHaveProperty('lastError');
     });
 
     it('should filter by device type', async () => {
@@ -431,6 +461,16 @@ describe('DeviceService', () => {
       });
       expect(appGateway.handleDeviceUpdated).toHaveBeenCalled();
       expect(socketController.sendServerStatus).toHaveBeenCalled();
+    });
+
+    it("forgets the deleted station's last error", async () => {
+      jest
+        .spyOn(dbService.device, 'findUnique')
+        .mockResolvedValue({ espId: 7 } as any);
+
+      await service.deleteDevice('device1');
+
+      expect(stationErrors.forget).toHaveBeenCalledWith(7);
     });
   });
 });

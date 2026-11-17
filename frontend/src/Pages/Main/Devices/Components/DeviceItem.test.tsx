@@ -86,4 +86,30 @@ describe("DeviceItem signal", () => {
             })
         ).toBeNull();
     });
+
+    it.each(["row", "card"] as const)(
+        "shows a station's last error in the %s view (SPEC-010)",
+        (variant) => {
+            renderItem(
+                device({
+                    lastError: {
+                        key: "noGroups",
+                        kind: "problem",
+                        message: "There are no active rounds at the moment",
+                        at: new Date().toISOString(),
+                        count: 1,
+                        cardId: null,
+                        competitorName: null,
+                    },
+                }),
+                variant
+            );
+
+            expect(
+                screen.getByRole("button", {
+                    name: "There are no active rounds at the moment",
+                })
+            ).toBeTruthy();
+        }
+    );
 });

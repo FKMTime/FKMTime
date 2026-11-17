@@ -12,6 +12,7 @@ import { DeviceService } from '../device/device.service';
 import { DeviceConnectedDto } from '../device/dto/deviceConnected.dto';
 import { RequestToConnectDto } from '../device/dto/requestToConnect.dto';
 import { UpdateBatteryPercentageDto } from '../device/dto/updateBatteryPercentage.dto';
+import { StationErrorService } from '../device/stationError.service';
 import {
   StationLinkDto,
   StationSignalService,
@@ -39,10 +40,13 @@ export class SocketService {
     private readonly appGateway: AppGateway,
     @Inject(forwardRef(() => StationSignalService))
     private readonly stationSignal: StationSignalService,
+    @Inject(forwardRef(() => StationErrorService))
+    private readonly stationErrors: StationErrorService,
   ) {}
 
   async enterAttempt(data: EnterAttemptDto) {
-    return await this.resultFromDeviceService.enterAttempt(data);
+    const reply = await this.resultFromDeviceService.enterAttempt(data);
+    return this.stationErrors.handleReply(data.espId, reply);
   }
 
   async requestToConnectDevice(data: RequestToConnectDto) {
@@ -74,15 +78,22 @@ export class SocketService {
   }
 
   async getPersonInfo(cardId: string, espId: number, isCompetitor: boolean) {
-    return await this.personForDevice.getPersonInfo(
+    const reply = await this.personForDevice.getPersonInfo(
       cardId,
       espId,
       isCompetitor,
     );
+    return this.stationErrors.handleReply(espId, reply);
   }
 
   async checkIfAttemptEntered(data: CheckIfAttemptEnteredDto) {
     return await this.resultService.checkIfAttemptEntered(data);
+  }
+
+  /** The backend failed while handling a station's request (SPEC-010) */
+  recordInternalError(espId: unknown, message: string) {
+    if (typeof espId !== 'number') return;
+    this.stationErrors.record(espId, { key: 'internalError' }, message);
   }
 
   handleStationLink(data: StationLinkDto) {

@@ -12,6 +12,7 @@ import { DelegateGuard } from './auth/guards/delegate.guard';
 import { OrganizerGuard } from './auth/guards/organizer.guard';
 import { AUTO_SETUP_DURATION_MS } from './competition/autoSetup';
 import { DeviceRequest } from './device/dto/requestToConnect.dto';
+import type { DeviceErrorEvent } from './device/stationError.service';
 import type { DeviceSignalEvent } from './device/stationSignal.service';
 
 /** The last attempt a station entered, kept to show after it resets */
@@ -154,6 +155,12 @@ export class AppGateway {
   // Devices page instead of refetching the list like deviceUpdated (SPEC-008)
   handleDeviceSignal(signal: DeviceSignalEvent) {
     this.server.to(`device`).emit('deviceSignal', signal);
+  }
+
+  // Server-side only: a station's last error, patched in place on the
+  // Devices page like deviceSignal (SPEC-010)
+  handleDeviceError(event: DeviceErrorEvent) {
+    this.server.to(`device`).emit('deviceError', event);
   }
 
   @SubscribeMessage('deviceRequests')

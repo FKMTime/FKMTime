@@ -525,6 +525,8 @@ export interface Device extends DeviceData {
     customRoundSetAt?: string | null;
     /** Stations only, from the backend's memory (SPEC-008) */
     signal?: StationSignal;
+    /** Stations only, from the backend's memory (SPEC-010) */
+    lastError?: StationLastError | null;
     createdAt: Date;
     updatedAt: Date;
     hwVersion: HardwareVersion;
@@ -546,6 +548,30 @@ export interface StationSignal {
     link: StationLink | null;
     /** Whether the station has sent its own reading since the backend started */
     reportedRssi: boolean;
+}
+
+/** Whether the delegate can fix it, or the rules worked as intended */
+export type StationErrorKind = "problem" | "rule";
+
+/** The last error the backend sent a station (SPEC-010) */
+export interface StationLastError {
+    /** The station text's translation key, e.g. "competitorNotFound" */
+    key: string;
+    kind: StationErrorKind;
+    /** The text the station showed, in its language */
+    message: string;
+    /** When it last happened, ISO */
+    at: string;
+    /** How many times in a row it happened */
+    count: number;
+    cardId: string | null;
+    competitorName: string | null;
+}
+
+/** The deviceError socket event */
+export interface DeviceErrorEvent {
+    espId: number;
+    lastError: StationLastError | null;
 }
 
 /** The deviceSignal socket event */
