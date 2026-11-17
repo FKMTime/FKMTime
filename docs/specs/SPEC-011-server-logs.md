@@ -1,9 +1,9 @@
 # SPEC-011: Server logs for admins, replacing Dozzle
 
-- **Status:** Accepted
+- **Status:** Implemented
 - **Created:** 2026-11-17
-- **Related:** SPEC-009 (live device logs), FKMTime/micro-connector
-  (`log_subscriber.rs`), fim instance templates
+- **Related:** SPEC-009 (live device logs), #710, #711,
+  FKMTime/micro-connector#30 (`log_subscriber.rs`), FKMTime/fim#12
 
 ## Problem
 
