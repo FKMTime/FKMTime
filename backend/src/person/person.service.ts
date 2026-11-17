@@ -580,6 +580,15 @@ export class PersonService {
       competingRows.find((row) => row.isAssigned) ??
       competingRows.find((row) => row.groupId !== data.newGroupId) ??
       targetRow;
+    if (!currentGroup) {
+      // Nothing to move: they were withdrawn from the round, or their walk-in
+      // went with a deleted result, since the page was loaded. Re-creating a
+      // row here would undo that; putting them in a group is addCompetingGroup.
+      throw new HttpException(
+        'They no longer have a group in this round. Refresh the page.',
+        404,
+      );
+    }
     const overlappingAssignments = await this.prisma.staffActivity.findMany({
       where: {
         groupId: data.newGroupId,

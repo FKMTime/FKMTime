@@ -14,15 +14,31 @@ import {
     getCompetitionInfo,
     syncCompetition,
     updateCompetitionSettings,
+    updateDevicesSettings,
 } from "@/lib/competition";
 import { Competition as CompetitionInterface } from "@/lib/interfaces";
 import { QueryError, setQueryData } from "@/lib/queryCache";
 import { getGitCommitValue } from "@/lib/utils";
 import SetupTabs from "@/Pages/Main/Setup/SetupTabs";
 
-import CompetitionForm from "./Components/CompetitionForm";
+import CompetitionForm, { SettingsParts } from "./Components/CompetitionForm";
 
 const TOKEN_MAY_EXPIRE_AFTER_MS = 7 * 24 * 60 * 60 * 1000;
+
+/** Says which part failed, and whether the other one was saved */
+const saveErrorMessage = (changed: SettingsParts, saved: SettingsParts) => {
+    if (!saved.competition && !saved.devices) {
+        return "Settings could not be saved. Try again.";
+    }
+    if (!saved.competition) {
+        return changed.devices
+            ? "Device settings were saved, but the competition settings could not be. Try again."
+            : "Competition settings could not be saved. Try again.";
+    }
+    return changed.competition
+        ? "Competition settings were saved, but the device settings could not be. Try again."
+        : "Device settings could not be saved. Try again.";
+};
 
 const Competition = () => {
     const { toast } = useToast();
@@ -37,6 +53,7 @@ const Competition = () => {
         data: fetchedCompetition,
         version,
         error,
+        refetch,
     } = useLiveQuery(competitionSettingsQuery);
     const setCompetition = (data: CompetitionInterface) =>
         setQueryData(competitionSettingsQuery.key, data);
@@ -73,21 +90,44 @@ const Competition = () => {
         }
     };
 
-    const handleSubmit = async (data: CompetitionInterface) => {
-        if (!competition) return false;
-        const status = await updateCompetitionSettings(competition.id, data);
-        if (status === 200) {
+    /** Saves each changed part with its own endpoint, then one toast */
+    const handleSubmit = async (
+        data: CompetitionInterface,
+        changed: SettingsParts
+    ): Promise<SettingsParts> => {
+        if (!competition) return { competition: false, devices: false };
+        const isSaved = (status: number) => status === 200;
+        const failed = () => 0;
+        const [competitionStatus, devicesStatus] = await Promise.all([
+            changed.competition
+                ? updateCompetitionSettings(competition.id, data).catch(failed)
+                : 200,
+            changed.devices
+                ? updateDevicesSettings(competition.id, data).catch(failed)
+                : 200,
+        ]);
+        const saved = {
+            competition: isSaved(competitionStatus),
+            devices: isSaved(devicesStatus),
+        };
+
+        if (saved.competition && saved.devices) {
+            // Re-seeds the form with what was saved, then with what the
+            // server keeps (HIL testing, unset device fields)
             setCompetition(data);
-            setCompetitionAtom(data);
+            if (changed.competition) setCompetitionAtom(data);
+            void refetch();
             toast({ title: "Settings saved", variant: "success" });
-            return true;
+            return saved;
         }
+        // The form keeps the part that failed as unsaved changes
+        if (changed.competition && saved.competition) setCompetitionAtom(data);
         toast({
             title: "Error",
-            description: "Settings could not be saved. Try again.",
+            description: saveErrorMessage(changed, saved),
             variant: "destructive",
         });
-        return false;
+        return saved;
     };
 
     if (!competition) return <LoadingPage />;
@@ -146,14 +186,12 @@ const Competition = () => {
                         </AlertTitle>
                     </Alert>
                 )}
-            <div className="rounded-mobile-card border bg-card p-4 md:rounded-2xl md:p-6">
-                <CompetitionForm
-                    // Fresh settings from the server re-seed the form
-                    key={version}
-                    competition={competition}
-                    handleSubmit={handleSubmit}
-                />
-            </div>
+            <CompetitionForm
+                // Fresh settings from the server re-seed the form
+                key={version}
+                competition={competition}
+                handleSubmit={handleSubmit}
+            />
         </>
     );
 };

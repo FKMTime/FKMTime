@@ -18,6 +18,7 @@ import {
   AttemptEditLogService,
   AttemptSnapshot,
 } from 'src/attempt-edit-log/attempt-edit-log.service';
+import { CompetitionService } from 'src/competition/competition.service';
 import {
   DNF_VALUE,
   DNS_VALUE,
@@ -65,6 +66,8 @@ export class ResultService {
     private readonly attemptEditLogService: AttemptEditLogService,
     @Inject(forwardRef(() => IntegratedLiveService))
     private readonly integratedLiveService: IntegratedLiveService,
+    @Inject(forwardRef(() => CompetitionService))
+    private readonly competitionService: CompetitionService,
   ) {}
 
   resultsInclude = {
@@ -161,6 +164,8 @@ export class ResultService {
     });
     await this.sendScorecardUnlessNever(id);
     this.appGateway.handleResultEntered(result.roundId);
+    // The removed competitor no longer holds their group back
+    this.competitionService.requestGroupChangeCheck(result.roundId);
     return { message: 'Result removed' };
   }
 
@@ -218,34 +223,30 @@ export class ResultService {
     if (!result) {
       throw new HttpException('Result not found', 404);
     }
-    const personActivities = await this.prisma.staffActivity.findMany({
+    // The exact `${roundId}-g` prefix: "333-r1" alone also matches 333-r10
+    const competingActivities = await this.prisma.staffActivity.findMany({
       where: {
         personId: result.personId,
+        role: StaffRole.COMPETITOR,
+        groupId: { startsWith: `${result.roundId}-g` },
       },
     });
-    if (personActivities) {
-      for (const activity of personActivities) {
-        if (
-          activity.role === StaffRole.COMPETITOR &&
-          activity.groupId.includes(result.roundId)
-        ) {
-          if (activity.isAssigned) {
-            await this.prisma.staffActivity.update({
-              where: {
-                id: activity.id,
-              },
-              data: {
-                status: StaffActivityStatus.ABSENT,
-              },
-            });
-          } else {
-            await this.prisma.staffActivity.delete({
-              where: {
-                id: activity.id,
-              },
-            });
-          }
-        }
+    for (const activity of competingActivities) {
+      if (activity.isAssigned) {
+        await this.prisma.staffActivity.update({
+          where: {
+            id: activity.id,
+          },
+          data: {
+            status: StaffActivityStatus.ABSENT,
+          },
+        });
+      } else {
+        await this.prisma.staffActivity.delete({
+          where: {
+            id: activity.id,
+          },
+        });
       }
     }
     await this.queueIntegratedLiveClears([result]);
@@ -553,6 +554,7 @@ export class ResultService {
       );
     }
     this.appGateway.handleResultEntered(result.roundId);
+    this.competitionService.requestGroupChangeCheck(result.roundId);
     return {
       message: 'DNS added',
       status: 200,

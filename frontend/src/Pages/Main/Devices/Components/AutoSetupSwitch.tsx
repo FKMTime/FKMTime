@@ -1,7 +1,9 @@
 import { WandSparkles } from "lucide-react";
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 import { Button } from "@/Components/ui/button";
+import { ToastAction } from "@/Components/ui/toast";
 import { useIsMobile } from "@/hooks/useMobile";
 import { useToast } from "@/hooks/useToast";
 import { competitionSettingsQuery } from "@/lib/competition";
@@ -32,6 +34,7 @@ export const AutoSetupSwitch = ({
     durationMs,
 }: AutoSetupSwitchProps) => {
     const { toast } = useToast();
+    const navigate = useNavigate();
     const isMobile = useIsMobile();
     const [now, setNow] = useState(() => Date.now());
 
@@ -72,8 +75,16 @@ export const AutoSetupSwitch = ({
             toast({
                 title: "WiFi details are missing",
                 description:
-                    "Set the WiFi SSID and password in the Settings tab before running auto setup",
+                    "Set the WiFi SSID and password in Setup → Competition before running auto setup",
                 variant: "destructive",
+                action: (
+                    <ToastAction
+                        altText="Open Setup → Competition"
+                        onClick={() => navigate("/competition")}
+                    >
+                        Open Setup
+                    </ToastAction>
+                ),
             });
             return;
         }

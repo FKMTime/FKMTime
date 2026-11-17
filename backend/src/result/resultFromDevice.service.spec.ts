@@ -1,10 +1,15 @@
 import { Attempt, AttemptStatus, AttemptType } from '@prisma/client';
 import { AttemptEditLogService } from 'src/attempt-edit-log/attempt-edit-log.service';
+import { CompetitionService } from 'src/competition/competition.service';
 import { DNF_VALUE, DNS_VALUE } from 'src/constants';
 import { DbService, Tx } from 'src/db/db.service';
 
 import { ResultService } from './result.service';
 import { ResultFromDeviceService } from './resultFromDevice.service';
+
+const competitionStub = {
+  requestGroupChangeCheck: jest.fn(),
+} as unknown as CompetitionService;
 
 describe('ResultFromDeviceService cutoff check', () => {
   // WCIF v2 cutoff shape: { numberOfAttempts, resultValue }
@@ -34,6 +39,7 @@ describe('ResultFromDeviceService cutoff check', () => {
       null,
       resultService as unknown as ResultService,
       null,
+      competitionStub,
     );
   });
 
@@ -100,8 +106,10 @@ describe('ResultFromDeviceService with a resolved attempt', () => {
         null,
         null,
         null,
+        competitionStub,
       ),
       null,
+      competitionStub,
     );
   });
 
@@ -217,6 +225,7 @@ describe('ResultFromDeviceService when the time limit runs out on an extra', () 
       null,
       null,
       { log: jest.fn() } as unknown as AttemptEditLogService,
+      competitionStub,
     );
   });
 
