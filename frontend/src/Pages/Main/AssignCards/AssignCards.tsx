@@ -125,6 +125,8 @@ const AssignCards = () => {
                     >
                         <SearchInput
                             ref={searchInputRef}
+                            // Ready to type the first name on arrival
+                            autoFocus
                             value={search}
                             onChange={(e) => setSearch(e.target.value)}
                             onKeyDown={handleSearchKeyDown}

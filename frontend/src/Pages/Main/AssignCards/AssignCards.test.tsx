@@ -46,6 +46,17 @@ vi.mock("@/hooks/useToast", () => ({ useToast: () => ({ toast: vi.fn() }) }));
 describe("AssignCards", () => {
     beforeEach(() => clearQueryCache());
 
+    it("focuses the search on arrival", () => {
+        renderWithQueryClient(
+            <MemoryRouter>
+                <AssignCards />
+            </MemoryRouter>
+        );
+        expect(document.activeElement).toBe(
+            screen.getByLabelText("Search persons without a card")
+        );
+    });
+
     it("goes back to an empty search after assigning a card", async () => {
         renderWithQueryClient(
             <MemoryRouter>
