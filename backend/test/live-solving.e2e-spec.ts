@@ -42,6 +42,7 @@ describe('Live solving (e2e)', () => {
   let station: StationClient;
   let viewer: Socket;
   let roomId: string;
+  let stationAId: string;
   let competitor: Person;
   const sockets: Socket[] = [];
 
@@ -86,7 +87,11 @@ describe('Live solving (e2e)', () => {
       '333bf-r1-g2',
     ]);
     roomId = room.id;
-    await fixtures.createDevice('station-a', ESP.stationA, room.id);
+    ({ id: stationAId } = await fixtures.createDevice(
+      'station-a',
+      ESP.stationA,
+      room.id,
+    ));
     await fixtures.createDevice('station-b', ESP.stationB, room.id);
     competitor = await fixtures.giveCard(10, CARD.competitor);
     await fixtures.giveCard(12, CARD.judge);
@@ -346,6 +351,35 @@ describe('Live solving (e2e)', () => {
       penalty: 2,
       enteredAt: expect.any(Number),
     });
+  });
+
+  it('takes a retired station off live solving, even while it keeps sending', async () => {
+    const removed = waitForEvent<{ espId: number }>(viewer, 'stationRemoved');
+
+    // Station A has entered solves, so deleting it retires it
+    const res = await request(app.getHttpServer())
+      .delete(`/device/${stationAId}`)
+      .set('Authorization', `Bearer ${adminToken}`)
+      .expect(200);
+    expect(res.body).toEqual({ message: 'Device retired' });
+    expect(await removed).toEqual({ espId: ESP.stationA });
+
+    const packets = recordEvents<StationInfo>(viewer, 'currentTimeInfo');
+    const ack = await station.request('CurrentTimeInfo', {
+      espId: ESP.stationA,
+      time: 400,
+    });
+    expect(ack).toMatchObject({ type: 'EmptyResp', data: { error: false } });
+    const late = await connect();
+    const stations = await joinLiveSolving(late);
+
+    expect(stations.map((s) => s.espId)).not.toContain(ESP.stationA);
+    expect(stations.map((s) => s.espId)).toContain(ESP.stationB);
+    // Packets handled in order: one from station B arriving means station
+    // A's was dropped, not still on its way
+    await sendLivePacket({ espId: ESP.stationB, time: 500 });
+    expect(packets.received.map((s) => s.espId)).not.toContain(ESP.stationA);
+    packets.stop();
   });
 
   describe('public competition endpoints used by the live pages', () => {

@@ -4,6 +4,7 @@ import {
     groupStationsByRoom,
     isOnAnotherRound,
     StationInfo,
+    withoutStation,
 } from "@/lib/liveSolving";
 
 const packet = (
@@ -328,5 +329,23 @@ describe("isOnAnotherRound (SPEC-007)", () => {
     it("leaves stations on their room's rounds alone", () => {
         expect(isOnAnotherRound(at("333-r1-g2"), ["333-r1"])).toBe(false);
         expect(isOnAnotherRound(at(null), ["pyram-r1"])).toBe(false);
+    });
+});
+
+describe("withoutStation", () => {
+    const stations = new Map([
+        [1, packet({ espId: 1, serverReceivedAt: 0 })],
+        [2, packet({ espId: 2, serverReceivedAt: 0 })],
+    ]);
+
+    it("drops the retired station and keeps the rest", () => {
+        const next = withoutStation(stations, 1);
+
+        expect([...next.keys()]).toEqual([2]);
+        expect(stations.size).toBe(2);
+    });
+
+    it("keeps the same map for a station not on the board", () => {
+        expect(withoutStation(stations, 3)).toBe(stations);
     });
 });

@@ -106,6 +106,8 @@ export class SocketService {
       this.stationSignal.recordRssi(data.espId, data.rssi);
     }
     const device = await this.deviceService.getStationByEspIdCached(data.espId);
+    // A retired station that's still switched on stays off live solving
+    if (device?.retiredAt) return;
     const deviceName = device?.name ?? `Station ${data.espId}`;
 
     let personName: string | null = null;
