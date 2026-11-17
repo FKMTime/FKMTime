@@ -563,6 +563,113 @@ describe('ResultService removing a result (Regulation 9t)', () => {
   });
 });
 
+describe('ResultService deleting a result', () => {
+  type Row = {
+    id: string;
+    personId: string;
+    groupId: string;
+    role: StaffRole;
+    isAssigned: boolean;
+  };
+  let rows: Row[];
+  let prisma: {
+    result: { findUnique: jest.Mock; delete: jest.Mock };
+    staffActivity: {
+      findMany: jest.Mock;
+      update: jest.Mock;
+      delete: jest.Mock;
+    };
+    competition: { findFirst: jest.Mock };
+  };
+  let service: ResultService;
+
+  const row = (id: string, groupId: string, isAssigned: boolean): Row => ({
+    id,
+    personId: 'person-1',
+    groupId,
+    role: StaffRole.COMPETITOR,
+    isAssigned,
+  });
+
+  beforeEach(() => {
+    rows = [
+      row('r1-assigned', '333-r1-g1', true),
+      row('r1-walk-in', '333-r1-g2', false),
+      row('r10-assigned', '333-r10-g1', true),
+      row('r10-walk-in', '333-r10-g2', false),
+    ];
+    prisma = {
+      result: {
+        findUnique: jest.fn(async () => ({
+          id: 'result-1',
+          personId: 'person-1',
+          roundId: '333-r1',
+          person: { wcaRegistrationId: null },
+        })),
+        delete: jest.fn(),
+      },
+      staffActivity: {
+        // Filters like the database would, so a loose query returns what it
+        // would really return
+        findMany: jest.fn(
+          async ({
+            where,
+          }: {
+            where: {
+              personId?: string;
+              role?: StaffRole;
+              groupId?: { startsWith: string };
+            };
+          }) =>
+            rows.filter(
+              (r) =>
+                (!where.personId || r.personId === where.personId) &&
+                (!where.role || r.role === where.role) &&
+                (!where.groupId ||
+                  r.groupId.startsWith(where.groupId.startsWith)),
+            ),
+        ),
+        update: jest.fn(),
+        delete: jest.fn(),
+      },
+      competition: {
+        findFirst: jest.fn(async () => ({
+          wcaScoretakingSoftware: null,
+          scoretakingToken: null,
+        })),
+      },
+    };
+    service = new ResultService(
+      prisma as unknown as DbService,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      competitionStub,
+    );
+  });
+
+  it('resets their groups in that round and leaves round 10 alone', async () => {
+    await service.deleteResultById('result-1');
+
+    expect(prisma.staffActivity.update).toHaveBeenCalledTimes(1);
+    expect(prisma.staffActivity.update).toHaveBeenCalledWith({
+      where: { id: 'r1-assigned' },
+      data: { status: StaffActivityStatus.ABSENT },
+    });
+    expect(prisma.staffActivity.delete).toHaveBeenCalledTimes(1);
+    expect(prisma.staffActivity.delete).toHaveBeenCalledWith({
+      where: { id: 'r1-walk-in' },
+    });
+    expect(prisma.result.delete).toHaveBeenCalledWith({
+      where: { id: 'result-1' },
+    });
+  });
+});
+
 describe('ResultService assigning DNS to the remaining attempts', () => {
   it('asks for a group change check once the DNS attempts are saved', async () => {
     const request = competitionStub.requestGroupChangeCheck as jest.Mock;
