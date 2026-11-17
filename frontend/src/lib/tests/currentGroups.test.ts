@@ -4,7 +4,7 @@ import { Competition } from "wcif-helpers";
 import {
     canAddGroup,
     getGroupOptions,
-    getRoundsToOpen,
+    getStartedRounds,
     roundLabel,
     shortGroupLabel,
 } from "@/lib/currentGroups";
@@ -77,12 +77,13 @@ describe("current groups", () => {
         expect(canAddGroup(["333-r1-g1"], "333-r1-g2")).toBe(false);
     });
 
-    it("lists official rounds in progress once, skipping unofficial ones", () => {
+    it("lists official rounds that a change starts, once each", () => {
         expect(
-            getRoundsToOpen(
+            getStartedRounds(
+                [{ currentGroupIds: ["222-r1-g1"] }, { currentGroupIds: [] }],
                 [
                     { currentGroupIds: ["333-r1-g1", "fto-r1-g1"] },
-                    { currentGroupIds: ["333-r1-g2"] },
+                    { currentGroupIds: ["333-r1-g2", "222-r1-g2"] },
                 ],
                 (eventId) => eventId === "fto"
             )

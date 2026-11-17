@@ -1,16 +1,11 @@
-import { Info } from "lucide-react";
-
 import LoadingPage from "@/Components/LoadingPage";
 import EmptyState from "@/Components/shared/EmptyState";
-import { Alert } from "@/Components/ui/alert";
 import { useSocketRoom } from "@/hooks/useSocketRoom";
-import { activityCodeToName } from "@/lib/activities";
-import { getRoundsToOpen } from "@/lib/currentGroups";
-import { isUnofficialEvent } from "@/lib/events";
 import SetupTabs from "@/Pages/Main/Setup/SetupTabs";
 
 import AutoChangeSwitch from "./AutoChangeSwitch";
 import RoomRow, { RoomTableHeader } from "./RoomRow";
+import RoundsToOpenDialog from "./RoundsToOpenDialog";
 import { useCurrentGroups } from "./useCurrentGroups";
 
 /** Keeps a round's results room joined while its group runs */
@@ -33,6 +28,8 @@ const CurrentGroups = () => {
         getProgress,
         now,
         setRoomGroups,
+        startedRounds,
+        clearStartedRounds,
         isAutoChange,
         isAutoChangeKnown,
         isAutoChangeSaving,
@@ -41,33 +38,16 @@ const CurrentGroups = () => {
 
     if (isLoading || !competition) return <LoadingPage />;
 
-    const roundsToOpen = getRoundsToOpen(rooms, isUnofficialEvent);
-
     return (
         <>
             <SetupTabs value="groups" />
             {roundIds.map((roundId) => (
                 <ResultsRoom key={roundId} roundId={roundId} />
             ))}
-            {roundsToOpen.length > 0 && (
-                <Alert>
-                    <Info />
-                    <p className="text-pretty">
-                        Remember to open the following rounds in WCA Live:{" "}
-                        {roundsToOpen.map((roundId, index) => (
-                            <span key={roundId}>
-                                <b className="font-semibold">
-                                    {activityCodeToName(roundId).replace(
-                                        ", ",
-                                        " · "
-                                    )}
-                                </b>
-                                {index < roundsToOpen.length - 1 && ", "}
-                            </span>
-                        ))}
-                    </p>
-                </Alert>
-            )}
+            <RoundsToOpenDialog
+                roundIds={startedRounds}
+                onClose={clearStartedRounds}
+            />
             <AutoChangeSwitch
                 isOn={isAutoChange}
                 disabled={!isAutoChangeKnown || isAutoChangeSaving}

@@ -57,3 +57,15 @@ export const useIntegratedLiveRound = (roundId: string | undefined) => {
     );
     return { details, byResultId };
 };
+
+/** Of these rounds, the ones WCA Integrated Live Results hasn't opened */
+export const useIntegratedLiveRoundsToOpen = (roundIds: string[]) => {
+    const { data: rounds } = useLiveQuery(integratedLiveRoundsQuery, {
+        enabled: roundIds.length > 0,
+    });
+    return (rounds ?? []).filter(
+        (round) =>
+            roundIds.includes(round.roundId) &&
+            ["ready", "pending", "blocked"].includes(round.state)
+    );
+};

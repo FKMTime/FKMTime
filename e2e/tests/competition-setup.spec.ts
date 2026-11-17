@@ -183,6 +183,15 @@ test.describe("current groups", () => {
         return picker;
     };
 
+    const closeRoundsToOpen = async (page: Page, roundName: string) => {
+        const dialog = page.getByRole("dialog", {
+            name: "Open these rounds in WCA Live",
+        });
+        await expect(dialog).toContainText(roundName);
+        await dialog.getByRole("button", { name: "Done" }).click();
+        await expect(dialog).toBeHidden();
+    };
+
     test("starts, adds, stops and switches the groups in a room", async ({
         page,
         api,
@@ -198,6 +207,9 @@ test.describe("current groups", () => {
         // An empty room starts the picked group once confirmed
         await pickGroup(page, room.name, ["3x3x3 Cube", /^Round 1/, "Group 1"]);
         await confirm(page, "Start 3x3 R1 G1");
+        // A round that starts has to be opened in WCA Live. The dialog
+        // hides the rest of the page, the toast too, until it closes
+        await closeRoundsToOpen(page, "3x3x3 Cube · Round 1");
         await expectToast(page, `${room.name} updated`);
         await expect.poll(savedGroups).toEqual(["333-r1-g1"]);
 
@@ -214,10 +226,8 @@ test.describe("current groups", () => {
         ).toBeVisible();
         await picker.getByRole("button", { name: "Run both" }).click();
         await expect(picker).toBeHidden();
+        await closeRoundsToOpen(page, "2x2x2 Cube · Round 1");
         await expect.poll(savedGroups).toEqual(["333-r1-g1", "222-r1-g1"]);
-        await expect(
-            page.getByText(/Remember to open the following rounds in WCA Live/)
-        ).toBeVisible();
 
         // Each group of a room running several can stop on its own
         await section.getByRole("button", { name: "Stop 2x2 R1 G1" }).click();

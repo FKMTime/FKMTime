@@ -12,6 +12,8 @@ import {
     nextGroupsQuery,
     updateCompetitionSettings,
 } from "@/lib/competition";
+import { getStartedRounds } from "@/lib/currentGroups";
+import { isUnofficialEvent } from "@/lib/events";
 import { Room } from "@/lib/interfaces";
 import { fetchQuery, toQueryOptions } from "@/lib/queryCache";
 import { queryClient } from "@/lib/queryClient";
@@ -52,6 +54,7 @@ export const useCurrentGroups = () => {
     const { data: settings } = useLiveQuery(competitionSettingsQuery);
     const [now, setNow] = useState(() => new Date());
     const [isAutoChangeSaving, setIsAutoChangeSaving] = useState(false);
+    const [startedRounds, setStartedRounds] = useState<string[]>([]);
 
     useEffect(() => {
         if (!competition)
@@ -107,6 +110,17 @@ export const useCurrentGroups = () => {
     const setRoomGroups = async (room: Room, groupIds: string[]) => {
         const response = await updateRoomGroups(room, groupIds);
         if (response.status === 200) {
+            setStartedRounds(
+                getStartedRounds(
+                    sortedRooms,
+                    sortedRooms.map((r) =>
+                        r.id === room.id
+                            ? { ...r, currentGroupIds: groupIds }
+                            : r
+                    ),
+                    isUnofficialEvent
+                )
+            );
             toast({ title: `${room.name} updated`, variant: "success" });
             refreshRooms();
             return true;
@@ -151,6 +165,9 @@ export const useCurrentGroups = () => {
         getProgress,
         now,
         setRoomGroups,
+        /** Official rounds the last change started, to open in WCA Live */
+        startedRounds,
+        clearStartedRounds: () => setStartedRounds([]),
         isAutoChange: !!settings?.shouldChangeGroupsAutomatically,
         isAutoChangeKnown: !!settings,
         isAutoChangeSaving,
