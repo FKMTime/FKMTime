@@ -61,6 +61,7 @@ export class ResultFromDeviceService {
     @Inject(forwardRef(() => DeviceService))
     private readonly deviceService: DeviceService,
     private readonly personService: PersonService,
+    @Inject(forwardRef(() => ResultService))
     private readonly resultService: ResultService,
     private readonly attemptEditLogService: AttemptEditLogService,
     @Inject(forwardRef(() => CompetitionService))

@@ -29,7 +29,7 @@ import { TutorialFromDeviceService } from './tutorialFromDevice.service';
     AttendanceModule,
     WcaModule,
     ContestsModule,
-    DeviceModule,
+    forwardRef(() => DeviceModule),
     forwardRef(() => PersonModule),
     AttemptEditLogModule,
     forwardRef(() => AppModule),
