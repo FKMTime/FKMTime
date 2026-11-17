@@ -218,34 +218,30 @@ export class ResultService {
     if (!result) {
       throw new HttpException('Result not found', 404);
     }
-    const personActivities = await this.prisma.staffActivity.findMany({
+    // The exact `${roundId}-g` prefix: "333-r1" alone also matches 333-r10
+    const competingActivities = await this.prisma.staffActivity.findMany({
       where: {
         personId: result.personId,
+        role: StaffRole.COMPETITOR,
+        groupId: { startsWith: `${result.roundId}-g` },
       },
     });
-    if (personActivities) {
-      for (const activity of personActivities) {
-        if (
-          activity.role === StaffRole.COMPETITOR &&
-          activity.groupId.includes(result.roundId)
-        ) {
-          if (activity.isAssigned) {
-            await this.prisma.staffActivity.update({
-              where: {
-                id: activity.id,
-              },
-              data: {
-                status: StaffActivityStatus.ABSENT,
-              },
-            });
-          } else {
-            await this.prisma.staffActivity.delete({
-              where: {
-                id: activity.id,
-              },
-            });
-          }
-        }
+    for (const activity of competingActivities) {
+      if (activity.isAssigned) {
+        await this.prisma.staffActivity.update({
+          where: {
+            id: activity.id,
+          },
+          data: {
+            status: StaffActivityStatus.ABSENT,
+          },
+        });
+      } else {
+        await this.prisma.staffActivity.delete({
+          where: {
+            id: activity.id,
+          },
+        });
       }
     }
     await this.queueIntegratedLiveClears([result]);

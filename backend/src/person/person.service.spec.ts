@@ -437,6 +437,23 @@ describe('PersonService', () => {
       });
     });
 
+    it('says they have no group to move when the round has no row for them', async () => {
+      // Only a row in round 10, so nothing in round 1 to move
+      rows = [competitorRow({ id: 'row-r10', groupId: '333-r10-g1' })];
+
+      await expect(moveTo('333-r1-g2')).rejects.toMatchObject({
+        status: 404,
+        response:
+          'They no longer have a group in this round. Refresh the page.',
+      });
+      expect(wcaService.getWcif).not.toHaveBeenCalled();
+      expect(wcaService.patchWcif).not.toHaveBeenCalled();
+      expect(dbService.staffActivity.create).not.toHaveBeenCalled();
+      expect(dbService.staffActivity.update).not.toHaveBeenCalled();
+      expect(dbService.staffActivity.delete).not.toHaveBeenCalled();
+      expect(dbService.staffActivity.deleteMany).not.toHaveBeenCalled();
+    });
+
     it('includes the required WCIF fields when changing assignments', async () => {
       jest.spyOn(wcaService, 'patchWcif').mockResolvedValue({
         statusCode: 200,
