@@ -3,6 +3,7 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 
 import ModalActions from "@/Components/ModalActions";
+import SegmentedControl from "@/Components/shared/SegmentedControl";
 import { Button } from "@/Components/ui/button";
 import {
     Form,
@@ -28,6 +29,9 @@ import {
 } from "@/lib/interfaces";
 import { deviceSchema } from "@/lib/schema/deviceSchema";
 import { idToHex, prettyDeviceType, prettyHardwareVersion } from "@/lib/utils";
+
+/** Up to this many rooms fit side by side, so one click picks a room */
+const MAX_ROOM_BUTTONS = 5;
 
 interface DeviceFormProps {
     defaultValues: DeviceData;
@@ -117,26 +121,39 @@ const DeviceForm = ({
                     render={({ field }) => (
                         <FormItem>
                             <FormLabel>Room</FormLabel>
-                            <FormControl>
-                                <Select
+                            {rooms.length <= MAX_ROOM_BUTTONS ? (
+                                <SegmentedControl
+                                    label="Room"
+                                    value={field.value}
                                     onValueChange={field.onChange}
-                                    defaultValue={field.value}
-                                >
-                                    <SelectTrigger>
-                                        <SelectValue placeholder="Select room" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {rooms.map((room) => (
-                                            <SelectItem
-                                                key={room.id}
-                                                value={room.id}
-                                            >
-                                                {room.name}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                            </FormControl>
+                                    fullWidth
+                                    options={rooms.map((room) => ({
+                                        value: room.id,
+                                        label: room.name,
+                                    }))}
+                                />
+                            ) : (
+                                <FormControl>
+                                    <Select
+                                        onValueChange={field.onChange}
+                                        defaultValue={field.value}
+                                    >
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="Select room" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {rooms.map((room) => (
+                                                <SelectItem
+                                                    key={room.id}
+                                                    value={room.id}
+                                                >
+                                                    {room.name}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                </FormControl>
+                            )}
                             <FormMessage />
                         </FormItem>
                     )}

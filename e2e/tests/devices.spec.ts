@@ -22,12 +22,15 @@ const deviceRow = (page: Page, name: string) =>
 
 const pickOption = async (page: Page, label: string, option: string) => {
     const dialog = page.getByRole("dialog");
-    // The room select's label is not tied to its trigger; it is the first one
-    const select =
-        label === "Room"
-            ? dialog.getByRole("combobox").first()
-            : dialog.getByRole("combobox", { name: label });
-    await select.click();
+    // With only a few rooms, the room is a row of buttons rather than a select
+    if (label === "Room") {
+        await dialog
+            .getByRole("radiogroup", { name: "Room" })
+            .getByRole("radio", { name: option, exact: true })
+            .click();
+        return;
+    }
+    await dialog.getByRole("combobox", { name: label }).click();
     await page.getByRole("option", { name: option, exact: true }).click();
 };
 
@@ -87,6 +90,24 @@ test.describe("devices", () => {
                 "A device with this name or ESP ID already exists, maybe among retired devices"
             )
         ).toBeVisible();
+    });
+
+    test("starts a new device in the room the list is filtered to", async ({
+        page,
+        api,
+    }) => {
+        const rooms = await getRooms(api);
+        await page.goto("/devices");
+        await page.getByRole("combobox", { name: "Room" }).click();
+        await page.getByRole("option", { name: rooms[1].name }).click();
+
+        await page.getByRole("button", { name: "Add device" }).click();
+        const dialog = page.getByRole("dialog", { name: "Create device" });
+        await expect(
+            dialog
+                .getByRole("radiogroup", { name: "Room" })
+                .getByRole("radio", { name: rooms[1].name, exact: true })
+        ).toHaveAttribute("aria-checked", "true");
     });
 
     test("edits and deletes a device", async ({ page, api }) => {

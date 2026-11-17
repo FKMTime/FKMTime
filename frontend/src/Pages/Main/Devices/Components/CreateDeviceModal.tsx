@@ -22,12 +22,15 @@ interface CreateDeviceModalProps {
     isOpen: boolean;
     onClose: (device?: Device) => void;
     deviceToAdd?: AvailableDevice;
+    /** Room to preselect when there is more than one to choose from */
+    preferredRoomId?: string;
 }
 
 const CreateDeviceModal = ({
     isOpen,
     onClose,
     deviceToAdd,
+    preferredRoomId,
 }: CreateDeviceModalProps) => {
     const [error, setError] = useDialogError(isOpen);
     const [isLoading, setIsLoading] = useState(false);
@@ -63,7 +66,10 @@ const CreateDeviceModal = ({
         name: "",
         espId: deviceToAdd ? deviceToAdd.espId : 0,
         signKey: deviceToAdd ? deviceToAdd.signKey : undefined,
-        roomId: rooms.length === 1 ? rooms[0].id : "",
+        roomId:
+            rooms.length === 1
+                ? rooms[0].id
+                : rooms.find((room) => room.id === preferredRoomId)?.id ?? "",
         type: deviceToAdd
             ? deviceToAdd.type === AvailableDeviceType.STAFF_ATTENDANCE
                 ? DeviceType.ATTENDANCE_SCRAMBLER
