@@ -14,6 +14,7 @@ import { AUTO_SETUP_DURATION_MS } from './competition/autoSetup';
 import { DeviceRequest } from './device/dto/requestToConnect.dto';
 import type { DeviceErrorEvent } from './device/stationError.service';
 import type { DeviceSignalEvent } from './device/stationSignal.service';
+import type { TutorialNotice } from './device/tutorial';
 
 /** The last attempt a station entered, kept to show after it resets */
 export interface LastSolve {
@@ -294,15 +295,29 @@ export class AppGateway {
     deviceName: string,
     competitorName: string,
     attemptId: string,
+    isTutorial = false,
   ) {
     this.logger.log(
-      `New incident on station ${deviceName} - ${competitorName}`,
+      `New ${isTutorial ? 'tutorial ' : ''}incident on station ${deviceName} - ${competitorName}`,
     );
     this.server.to(`incidents`).emit('newIncident', {
       id: attemptId,
       deviceName,
       competitorName,
+      isTutorial,
     });
+  }
+
+  // Server-side only: a tutorial incident was resolved, deleted or expired
+  // (SPEC-012); the open lists refetch as after an attempt edit
+  handleIncidentsChanged() {
+    this.server.to(`incidents`).emit('attemptUpdated');
+  }
+
+  // Server-side only: a group started while a station is still in tutorial
+  // mode, or the room's first group of the day ended one (SPEC-012)
+  handleTutorialNotice(notice: TutorialNotice) {
+    this.server.to(`incidents`).emit('tutorialNotice', notice);
   }
 
   @SubscribeMessage('attemptUpdated')
@@ -343,6 +358,15 @@ export class AppGateway {
   /** Drops a retired or deleted station from live solving */
   forgetStation(espId: number) {
     this.lastSolves.delete(espId);
+    if (!this.stations.delete(espId)) return;
+    this.server.to('live-solving').emit('stationRemoved', { espId });
+  }
+
+  /**
+   * Takes a station off live solving while it times a tutorial solve, keeping
+   * its last real solve for when it comes back (SPEC-012)
+   */
+  hideStation(espId: number) {
     if (!this.stations.delete(espId)) return;
     this.server.to('live-solving').emit('stationRemoved', { espId });
   }

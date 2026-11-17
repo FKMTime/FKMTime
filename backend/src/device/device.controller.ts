@@ -23,6 +23,7 @@ import { DeviceService } from './device.service';
 import { DeviceLogService } from './deviceLog.service';
 import { DeviceDto } from './dto/device.dto';
 import { SetCustomRoundDto } from './dto/setCustomRound.dto';
+import { SetTutorialDto } from './dto/setTutorial.dto';
 import { UploadFirmwareDto } from './dto/uploadFirmware.dto';
 
 @Controller('device')
@@ -61,6 +62,17 @@ export class DeviceController {
     @GetUser() user: JwtAuthDto,
   ) {
     return this.deviceService.setCustomRound(data, user.userId);
+  }
+
+  /** Starts or ends tutorial mode on a station (SPEC-012) */
+  @UseGuards(AuthGuard('jwt'), DelegateGuard)
+  @Put(':id/tutorial')
+  async setTutorial(
+    @Param('id') id: string,
+    @Body() data: SetTutorialDto,
+    @GetUser() user: JwtAuthDto,
+  ) {
+    return this.deviceService.setTutorial(id, data.enabled, user.userId);
   }
 
   @UseGuards(OrganizerGuard)

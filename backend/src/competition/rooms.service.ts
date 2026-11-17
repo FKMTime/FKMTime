@@ -1,6 +1,8 @@
-import { forwardRef, HttpException, Inject } from '@nestjs/common';
+import { forwardRef, HttpException, Inject, Logger } from '@nestjs/common';
 import { Attempt } from '@prisma/client';
 import { DbService } from 'src/db/db.service';
+import { DeviceService } from 'src/device/device.service';
+import { isFirstGroupOfDay } from 'src/device/tutorial';
 import { IntegratedLiveRoundsService } from 'src/integrated-live/integratedLiveRounds.service';
 import { SocketController } from 'src/socket/socket.controller';
 import { Competition as Wcif } from 'wcif-helpers';
@@ -16,7 +18,11 @@ export class RoomsService {
     private readonly socketController: SocketController,
     @Inject(forwardRef(() => IntegratedLiveRoundsService))
     private readonly integratedLiveRounds: IntegratedLiveRoundsService,
+    @Inject(forwardRef(() => DeviceService))
+    private readonly deviceService: DeviceService,
   ) {}
+
+  private readonly logger = new Logger('RoomsService');
 
   private readonly startedAt = Date.now();
   // "roomId|groupId" -> when the room started running the group
@@ -87,6 +93,7 @@ export class RoomsService {
     });
     await this.prisma.$transaction(transactions);
     await this.afterGroupsChanged(data.rooms, existing);
+    this.endTutorialsOnGroupStart(data.rooms, existing);
     return {
       message: 'Rooms updated',
     };
@@ -114,10 +121,16 @@ export class RoomsService {
       data: this.groupsData(toGroupIds, room.startedGroupIds),
     });
     if (count === 0) return false;
-    await this.afterGroupsChanged(
-      [{ id: roomId, currentGroupIds: toGroupIds }],
-      [{ id: roomId, currentGroupIds: fromGroupIds }],
-    );
+    const after = [{ id: roomId, currentGroupIds: toGroupIds }];
+    const before = [
+      {
+        id: roomId,
+        currentGroupIds: fromGroupIds,
+        startedGroupIds: room.startedGroupIds,
+      },
+    ];
+    await this.afterGroupsChanged(after, before);
+    this.endTutorialsOnGroupStart(after, before);
     return true;
   }
 
@@ -192,5 +205,49 @@ export class RoomsService {
     for (const roundId of startedRoundIds) {
       this.integratedLiveRounds.onRoundStarted(roundId).catch(() => undefined);
     }
+  }
+
+  /**
+   * A room starting a group: its first group of the day ends tutorial mode on
+   * its stations, a later one reminds delegates of any still on (SPEC-012).
+   * Not awaited, so starting a group doesn't wait for it
+   */
+  private endTutorialsOnGroupStart(
+    rooms: { id: string; currentGroupIds: string[] }[],
+    before: {
+      id: string;
+      currentGroupIds?: string[];
+      startedGroupIds?: string[];
+    }[],
+  ) {
+    const startingRooms = rooms
+      .map((room) => ({
+        room,
+        previous: before.find((r) => r.id === room.id),
+      }))
+      .filter(({ room, previous }) =>
+        room.currentGroupIds.some(
+          (groupId) => !(previous?.currentGroupIds ?? []).includes(groupId),
+        ),
+      );
+    if (startingRooms.length === 0) return;
+    const handle = async () => {
+      const competition = await this.prisma.competition.findFirst({
+        select: { wcif: true },
+      });
+      const wcif = competition?.wcif as unknown as Wcif | undefined;
+      for (const { room, previous } of startingRooms) {
+        const startedBefore = previous?.startedGroupIds ?? [];
+        // Without a schedule, only the room's very first group counts
+        const isFirstOfDay = wcif?.schedule
+          ? isFirstGroupOfDay(wcif, startedBefore)
+          : startedBefore.length === 0;
+        await this.deviceService.handleRoomGroupsStarted(room.id, isFirstOfDay);
+      }
+    };
+    handle().catch((e) => {
+      this.logger.error('Failed to update tutorial stations on group start');
+      this.logger.error(e);
+    });
   }
 }

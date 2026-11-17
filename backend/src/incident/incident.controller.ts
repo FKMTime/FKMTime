@@ -15,16 +15,21 @@ import { AuthGuard } from '@nestjs/passport';
 import { GetUser } from 'src/auth/decorator/getUser.decorator';
 import { JwtAuthDto } from 'src/auth/dto/jwt-auth.dto';
 import { DelegateGuard } from 'src/auth/guards/delegate.guard';
+import { TutorialIncidentService } from 'src/device/tutorialIncident.service';
 
 import { ManualIncidentDto } from './dto/manualIncident.dto';
 import { NoteworthyIncidentDto } from './dto/noteworthyIncident.dto';
+import { ResolveTutorialIncidentDto } from './dto/resolveTutorialIncident.dto';
 import { WarningDto } from './dto/warning.dto';
 import { IncidentService } from './incident.service';
 
 @UseGuards(AuthGuard('jwt'), DelegateGuard)
 @Controller('incident')
 export class IncidentController {
-  constructor(private readonly incidentService: IncidentService) {}
+  constructor(
+    private readonly incidentService: IncidentService,
+    private readonly tutorialIncidents: TutorialIncidentService,
+  ) {}
 
   @Get('unresolved')
   async getUnresolvedAttempts(@Query('roundId') roundId?: string) {
@@ -38,7 +43,28 @@ export class IncidentController {
 
   @Get('unresolved/count')
   async getUnresolvedIncidentsCount() {
-    return this.incidentService.getUnresolvedIncidentsCount();
+    const { count } = await this.incidentService.getUnresolvedIncidentsCount();
+    // Waiting tutorial delegate calls count too (SPEC-012)
+    return { count: count + this.tutorialIncidents.count() };
+  }
+
+  /** Delegate calls made during a tutorial, kept in memory (SPEC-012) */
+  @Get('tutorial')
+  getTutorialIncidents() {
+    return this.tutorialIncidents.getAll();
+  }
+
+  @Put('tutorial/:id')
+  resolveTutorialIncident(
+    @Param('id') id: string,
+    @Body() data: ResolveTutorialIncidentDto,
+  ) {
+    return this.tutorialIncidents.resolve(id, data);
+  }
+
+  @Delete('tutorial/:id')
+  deleteTutorialIncident(@Param('id') id: string) {
+    return this.tutorialIncidents.remove(id);
   }
 
   @Get('person/:id')

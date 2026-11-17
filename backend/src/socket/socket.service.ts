@@ -17,6 +17,7 @@ import {
   StationLinkDto,
   StationSignalService,
 } from '../device/stationSignal.service';
+import { TUTORIAL_GROUP_ID } from '../device/tutorial';
 import { CheckIfAttemptEnteredDto } from '../result/dto/checkIfAttemptEntered.dto';
 import { EnterAttemptDto } from '../result/dto/enterAttempt.dto';
 import { ResultService } from '../result/result.service';
@@ -108,6 +109,11 @@ export class SocketService {
     const device = await this.deviceService.getStationByEspIdCached(data.espId);
     // A retired station that's still switched on stays off live solving
     if (device?.retiredAt) return;
+    // So does a tutorial solve: it isn't a result (SPEC-012)
+    if (data.groupId === TUTORIAL_GROUP_ID) {
+      this.appGateway.hideStation(data.espId);
+      return;
+    }
     const deviceName = device?.name ?? `Station ${data.espId}`;
 
     let personName: string | null = null;

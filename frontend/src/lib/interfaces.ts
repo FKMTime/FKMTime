@@ -577,6 +577,9 @@ export interface Device extends DeviceData {
     /** The round a delegate pointed this station at, instead of its room's (SPEC-007) */
     customRoundId?: string | null;
     customRoundSetAt?: string | null;
+    /** While in the future, the station takes tutorial solves (SPEC-012) */
+    tutorialEndsAt?: string | null;
+    tutorialStartedBy?: { fullName: string } | null;
     /** Stations only, from the backend's memory (SPEC-008) */
     signal?: StationSignal;
     /** Stations only, from the backend's memory (SPEC-010) */

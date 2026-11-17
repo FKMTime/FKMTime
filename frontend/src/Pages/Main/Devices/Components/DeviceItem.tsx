@@ -1,5 +1,6 @@
 import {
     ArchiveRestore,
+    GraduationCap,
     Nfc,
     Pencil,
     Route,
@@ -16,12 +17,15 @@ import StationErrorIcon from "@/Components/Icons/StationErrorIcon";
 import PointedStationBadge from "@/Components/shared/PointedStationBadge";
 import RowActions from "@/Components/shared/RowActions";
 import RunDifferentRoundModal from "@/Components/shared/RunDifferentRoundModal";
+import TutorialStationBadge from "@/Components/shared/TutorialStationBadge";
 import { TableCell, TableRow } from "@/Components/ui/table";
 import { useConfirm } from "@/hooks/useConfirm";
+import { useStationTutorial } from "@/hooks/useStationTutorial";
 import { useToast } from "@/hooks/useToast";
 import { deleteDevice, restoreDevice, setStationsRound } from "@/lib/devices";
 import { Device, DeviceType } from "@/lib/interfaces";
 import { isAdmin, isDelegate } from "@/lib/permissions";
+import { isInTutorial } from "@/lib/tutorial";
 import { cn, idToHex, prettyDeviceType } from "@/lib/utils";
 
 import DeviceLogsSheet from "./DeviceLogsSheet";
@@ -59,6 +63,10 @@ const DeviceItem = ({
     const canViewLogs = isAdmin() && device.espId != null;
     const canPoint =
         isDelegate() && device.type === DeviceType.STATION && !device.retiredAt;
+    // Starting and ending the tutorial is the same delegate action (SPEC-012)
+    const canRunTutorial = canPoint;
+    const { startTutorial, endTutorial } = useStationTutorial(fetchData);
+    const inTutorial = isInTutorial(device);
 
     const handleDelete = () => {
         confirm({
@@ -118,6 +126,18 @@ const DeviceItem = ({
                 onSelect: () => setIsEditOpen(true),
             }}
             items={[
+                {
+                    label: "Start tutorial",
+                    icon: GraduationCap,
+                    onSelect: () => void startTutorial(device),
+                    hidden: !canRunTutorial || inTutorial,
+                },
+                {
+                    label: "End tutorial",
+                    icon: GraduationCap,
+                    onSelect: () => void endTutorial(device),
+                    hidden: !canRunTutorial || !inTutorial,
+                },
                 {
                     label: "Run a different round…",
                     icon: Route,
@@ -189,6 +209,12 @@ const DeviceItem = ({
             since={device.customRoundSetAt}
         />
     );
+    const tutorialBadge = !device.retiredAt && (
+        <TutorialStationBadge
+            device={device}
+            onEnd={canRunTutorial ? () => void endTutorial(device) : undefined}
+        />
+    );
     const battery = device.batteryPercentage;
     const battText = battery != null ? `${battery}%` : "—";
     const tone = batteryTone(battery);
@@ -213,6 +239,7 @@ const DeviceItem = ({
                     <span className="flex items-center gap-2">
                         {device.name}
                         {errorIcon}
+                        {tutorialBadge}
                         {pointedBadge}
                     </span>
                 </TableCell>
@@ -273,7 +300,12 @@ const DeviceItem = ({
                             .filter(Boolean)
                             .join(" · ")}
                     </p>
-                    {pointedBadge && <div className="mt-1">{pointedBadge}</div>}
+                    {(pointedBadge || inTutorial) && (
+                        <div className="mt-1 flex flex-wrap gap-1.5">
+                            {tutorialBadge}
+                            {pointedBadge}
+                        </div>
+                    )}
                 </div>
                 <div className="md:-mr-1 md:-mt-1">{actions}</div>
             </div>

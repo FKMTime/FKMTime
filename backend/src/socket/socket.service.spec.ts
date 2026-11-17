@@ -88,6 +88,7 @@ describe('SocketService', () => {
       appGateway = {
         broadcastCurrentTimeInfo: jest.fn(),
         forgetStation: jest.fn(),
+        hideStation: jest.fn(),
         handleDeviceUpdated: jest.fn(),
         handleDeviceSignal: jest.fn(),
         handleDeviceError: jest.fn(),
@@ -101,6 +102,7 @@ describe('SocketService', () => {
         socketController as never,
         stationSignal,
         stationErrors,
+        { forgetStation: jest.fn() } as never,
       );
       personService = new PersonService(prisma as never, {} as never);
       competitionService = new CompetitionService(
@@ -295,6 +297,17 @@ describe('SocketService', () => {
       await service.handleCurrentTimeInfo(update);
 
       expect(appGateway.forgetStation).toHaveBeenCalledWith(7);
+      expect(appGateway.broadcastCurrentTimeInfo).toHaveBeenCalledTimes(1);
+    });
+
+    it('keeps a tutorial solve off live solving (SPEC-012)', async () => {
+      await service.handleCurrentTimeInfo({ ...update, groupId: 'tutorial' });
+
+      expect(appGateway.hideStation).toHaveBeenCalledWith(7);
+      expect(appGateway.broadcastCurrentTimeInfo).not.toHaveBeenCalled();
+
+      await service.handleCurrentTimeInfo(update);
+
       expect(appGateway.broadcastCurrentTimeInfo).toHaveBeenCalledTimes(1);
     });
 

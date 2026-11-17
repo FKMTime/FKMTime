@@ -9,17 +9,24 @@ import { DeviceLogGateway } from './deviceLog.gateway';
 import { DeviceLogService } from './deviceLog.service';
 import { StationErrorService } from './stationError.service';
 import { StationSignalService } from './stationSignal.service';
+import { TutorialIncidentService } from './tutorialIncident.service';
 
 @Module({
   providers: [
     DeviceService,
     StationSignalService,
     StationErrorService,
+    TutorialIncidentService,
     DeviceLogService,
     DeviceLogGateway,
   ],
   controllers: [DeviceController],
-  exports: [DeviceService, StationSignalService, StationErrorService],
+  exports: [
+    DeviceService,
+    StationSignalService,
+    StationErrorService,
+    TutorialIncidentService,
+  ],
   imports: [
     AuthModule,
     forwardRef(() => SocketModule),

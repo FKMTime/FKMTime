@@ -14,6 +14,8 @@ import { UpdateBatteryPercentageDto } from './dto/updateBatteryPercentage.dto';
 import { UploadFirmwareDto } from './dto/uploadFirmware.dto';
 import { StationErrorService } from './stationError.service';
 import { StationSignalService } from './stationSignal.service';
+import { tutorialEndsAtFrom, TutorialNotice } from './tutorial';
+import { TutorialIncidentService } from './tutorialIncident.service';
 
 @Injectable()
 export class DeviceService {
@@ -24,6 +26,7 @@ export class DeviceService {
     private readonly socketController: SocketController,
     private readonly stationSignal: StationSignalService,
     private readonly stationErrors: StationErrorService,
+    private readonly tutorialIncidents: TutorialIncidentService,
   ) {}
 
   private readonly stationsByEspId = new TtlCache<
@@ -45,6 +48,7 @@ export class DeviceService {
     const devices = await this.prisma.device.findMany({
       include: {
         room: true,
+        tutorialStartedBy: { select: { fullName: true } },
       },
       where: whereParams,
       orderBy: {
@@ -285,6 +289,85 @@ export class DeviceService {
     return { updated: count };
   }
 
+  /** Starts or ends tutorial mode on a station (SPEC-012) */
+  async setTutorial(id: string, enabled: boolean, userId: string) {
+    const device = await this.prisma.device.findUnique({ where: { id } });
+    if (!device) {
+      throw new HttpException({ message: 'Device not found' }, 404);
+    }
+    if (device.type !== DeviceType.STATION || device.retiredAt) {
+      throw new HttpException(
+        { message: 'Only stations in use can run a tutorial' },
+        400,
+      );
+    }
+    await this.prisma.device.update({
+      where: { id },
+      data: enabled
+        ? {
+            tutorialEndsAt: tutorialEndsAtFrom(Date.now()),
+            tutorialStartedById: userId,
+          }
+        : { tutorialEndsAt: null, tutorialStartedById: null },
+    });
+    this.notifyTutorialChanged();
+    return {
+      message: enabled ? 'Tutorial started' : 'Tutorial ended',
+    };
+  }
+
+  /**
+   * A tutorial card scan or solve: the mode lasts another quiet spell, but
+   * only while it is still on, so a solve finished after it ended doesn't
+   * switch it back on
+   */
+  async extendTutorial(deviceId: string) {
+    const now = Date.now();
+    const { count } = await this.prisma.device.updateMany({
+      where: { id: deviceId, tutorialEndsAt: { gt: new Date(now) } },
+      data: { tutorialEndsAt: tutorialEndsAtFrom(now) },
+    });
+    if (count > 0) this.notifyTutorialChanged();
+  }
+
+  /**
+   * A group started in the room: the room's first group of the day ends
+   * tutorial mode on its stations, a later one only reminds delegates that
+   * it is still on
+   */
+  async handleRoomGroupsStarted(roomId: string, isFirstOfDay: boolean) {
+    const inTutorial = await this.prisma.device.findMany({
+      where: {
+        roomId,
+        type: DeviceType.STATION,
+        retiredAt: null,
+        tutorialEndsAt: { gt: new Date() },
+      },
+      select: { id: true, espId: true, name: true },
+    });
+    if (inTutorial.length === 0) return;
+    if (isFirstOfDay) {
+      await this.prisma.device.updateMany({
+        where: { id: { in: inTutorial.map((s) => s.id) } },
+        data: { tutorialEndsAt: null, tutorialStartedById: null },
+      });
+      this.notifyTutorialChanged();
+    }
+    for (const station of inTutorial) {
+      const notice: TutorialNotice = {
+        kind: isFirstOfDay ? 'endedByGroupStart' : 'stillOn',
+        espId: station.espId,
+        deviceName: station.name,
+      };
+      this.appGateway.handleTutorialNotice(notice);
+    }
+  }
+
+  private notifyTutorialChanged() {
+    this.stationsByEspId.clear();
+    this.appGateway.handleDeviceUpdated();
+  }
+
   async updateBatteryPercentage(data: UpdateBatteryPercentageDto) {
     const device = await this.prisma.device.findFirst({
       where: {
@@ -411,11 +494,17 @@ export class DeviceService {
     if (device?.espId != null) {
       this.stationErrors.forget(device.espId);
       this.appGateway.forgetStation(device.espId);
+      this.tutorialIncidents.forgetStation(device.espId);
     }
     if (hasHistory) {
+      // A retired station leaves tutorial mode (SPEC-012)
       await this.prisma.device.update({
         where: { id },
-        data: { retiredAt: new Date() },
+        data: {
+          retiredAt: new Date(),
+          tutorialEndsAt: null,
+          tutorialStartedById: null,
+        },
       });
     } else {
       await this.prisma.device.delete({
