@@ -159,57 +159,91 @@ test.describe("current groups", () => {
         await setGroups(api, {});
     });
 
-    test("adds, removes and saves the groups running in a room", async ({
+    const roomMenu = async (page: Page, roomName: string, item: string) => {
+        await roomSection(page, roomName)
+            .getByRole("button", { name: `More for ${roomName}` })
+            .click();
+        await page.getByRole("menuitem", { name: item }).click();
+    };
+
+    /** The picker is a dialog at Playwright's desktop size */
+    const pickGroup = async (
+        page: Page,
+        roomName: string,
+        chips: (string | RegExp)[]
+    ) => {
+        await roomMenu(page, roomName, "Change group…");
+        const picker = page.getByRole("dialog", {
+            name: `Change group in ${roomName}`,
+        });
+        for (const chip of chips)
+            await picker
+                .getByRole("button", { name: chip, exact: true })
+                .click();
+        return picker;
+    };
+
+    test("starts, adds, stops and switches the groups in a room", async ({
         page,
         api,
     }) => {
         const [room] = await getRooms(api);
+        const savedGroups = async () =>
+            (await getRooms(api)).find((r) => r.id === room.id)!
+                .currentGroupIds;
         await page.goto("/competition/groups");
         const section = roomSection(page, room.name);
-        await expect(section.getByText("No groups in progress")).toBeVisible();
-        await expect(page.getByRole("button", { name: "Save" })).toBeDisabled();
+        await expect(section.getByText("Nothing running")).toBeVisible();
 
-        const picker = page.getByRole("dialog");
-        const pickRound = (name: RegExp) =>
-            picker.getByRole("button", { name }).click();
-        await section.getByRole("button", { name: "Add group" }).click();
-        await pickRound(/^3x3x3 Cube · Round 1/);
-        await picker.getByRole("button", { name: "Group 1" }).click();
-        await section.getByRole("button", { name: "Add group" }).click();
-        await pickRound(/^3x3x3 Cube · Round 1/);
-        // Another group of the same event cannot run in the same room
+        // An empty room starts the picked group once confirmed
+        await pickGroup(page, room.name, ["3x3x3 Cube", /^Round 1/, "Group 1"]);
+        await confirm(page, "Start 3x3 R1 G1");
+        await expectToast(page, `${room.name} updated`);
+        await expect.poll(savedGroups).toEqual(["333-r1-g1"]);
+
+        // A running room can take a second group of another event
+        const picker = await pickGroup(page, room.name, [
+            "2x2x2 Cube",
+            /^Round 1/,
+            "Group 1",
+        ]);
         await expect(
-            picker.getByRole("button", { name: "Group 2" })
-        ).toBeDisabled();
-        await picker.getByRole("button", { name: "Back to rounds" }).click();
-        await pickRound(/^2x2x2 Cube · Round 1/);
-        await picker.getByRole("button", { name: "Group 1" }).click();
-        await expect(section.getByText("2 groups")).toBeVisible();
-
-        const changes = page.getByRole("region", { name: "Changes to save" });
-        await expect(changes).toContainText(`${room.name}: no group →`);
+            picker.getByText(
+                "Stations in this room will accept results for both groups."
+            )
+        ).toBeVisible();
+        await picker.getByRole("button", { name: "Run both" }).click();
+        await expect(picker).toBeHidden();
+        await expect.poll(savedGroups).toEqual(["333-r1-g1", "222-r1-g1"]);
         await expect(
             page.getByText(/Remember to open the following rounds in WCA Live/)
         ).toBeVisible();
 
-        await section
-            .getByRole("button", {
-                name: "Remove 2x2x2 Cube · Round 1 · Group 1",
-            })
-            .click();
+        // Each group of a room running several can stop on its own
+        await section.getByRole("button", { name: "Stop 2x2 R1 G1" }).click();
+        await confirm(page, "Stop 2x2 R1 G1");
+        await expect.poll(savedGroups).toEqual(["333-r1-g1"]);
+
+        // Another group of a running event can only replace it
+        const again = await pickGroup(page, room.name, [
+            "3x3x3 Cube",
+            /^Round 1/,
+            "Group 2",
+        ]);
+        // The group running here can't be picked again
         await expect(
-            section.getByText("1 group", { exact: true })
-        ).toBeVisible();
-
-        await page.getByRole("button", { name: "Save" }).click();
-        await expectToast(page, "Groups saved");
-        await expect(changes).toBeHidden();
-
-        const saved = (await getRooms(api)).find((r) => r.id === room.id)!;
-        expect(saved.currentGroupIds).toEqual(["333-r1-g1"]);
+            again.getByRole("button", { name: "Group 1, running here" })
+        ).toBeDisabled();
+        await expect(
+            again.getByRole("button", { name: "Run both" })
+        ).toBeDisabled();
+        await again
+            .getByRole("button", { name: "Switch to 3x3 R1 G2" })
+            .click();
+        await expect.poll(savedGroups).toEqual(["333-r1-g2"]);
     });
 
-    test("steps through the schedule, clears and discards", async ({
+    test("starts the next group, steps back and stops the room", async ({
         page,
         api,
     }) => {
@@ -218,69 +252,92 @@ test.describe("current groups", () => {
         await page.goto("/competition/groups");
         const section = roomSection(page, room.name);
         await expect(
-            section.getByText("3x3x3 Cube · Round 1 · Group 1")
+            section.getByText(/^Group 1 · 1 of \d+ here/)
         ).toBeVisible();
 
-        // Stepping follows the groups on screen, saved or not
-        await section
-            .getByRole("button", { name: "Next from schedule" })
-            .click();
+        await section.getByRole("button", { name: "Start group 3" }).click();
+        await confirm(page, "Start group 3");
+        await expect
+            .poll(async () => (await stageOne(api)).currentGroupIds)
+            .toEqual(["333-r1-g3"]);
         await expect(
-            section.getByText("3x3x3 Cube · Round 1 · Group 3")
-        ).toBeVisible();
-        await section
-            .getByRole("button", { name: "Previous from schedule" })
-            .click();
-        await expect(
-            section.getByText("3x3x3 Cube · Round 1 · Group 1")
+            section.getByText(/^Group 3 · 2 of \d+ here/)
         ).toBeVisible();
 
-        await section
-            .getByRole("button", { name: "Next from schedule" })
-            .click();
-        await expect(
-            section.getByText("3x3x3 Cube · Round 1 · Group 3")
-        ).toBeVisible();
-        await page.getByRole("button", { name: "Save" }).click();
-        await expectToast(page, "Groups saved");
-        expect((await stageOne(api)).currentGroupIds).toEqual(["333-r1-g3"]);
+        await roomMenu(page, room.name, "Back to the previous group");
+        await confirm(page, "Start 3x3 R1 G1");
+        await expect
+            .poll(async () => (await stageOne(api)).currentGroupIds)
+            .toEqual(["333-r1-g1"]);
 
-        await section
-            .getByRole("button", { name: "Previous from schedule" })
-            .click();
-        await expect(
-            section.getByText("3x3x3 Cube · Round 1 · Group 1")
-        ).toBeVisible();
-        await section.getByRole("button", { name: "Clear" }).click();
-        await expect(section.getByText("No groups in progress")).toBeVisible();
-        await page.getByRole("button", { name: "Discard changes" }).click();
-        await expect(
-            section.getByText("3x3x3 Cube · Round 1 · Group 3")
-        ).toBeVisible();
-        await expect(page.getByRole("button", { name: "Save" })).toBeDisabled();
+        await roomMenu(page, room.name, "Stop the room");
+        await confirm(page, "Stop the room");
+        await expect
+            .poll(async () => (await stageOne(api)).currentGroupIds)
+            .toEqual([]);
+        await expect(section.getByText("Nothing running")).toBeVisible();
     });
 
-    test("suggests a group for a room with none running", async ({
+    test("saves only the changed room, keeping newer groups elsewhere", async ({
+        page,
+        api,
+    }) => {
+        const rooms = await getRooms(api);
+        const main = rooms.find((room) => room.name === MAIN_HALL)!;
+        const other = rooms.find((room) => room.name !== MAIN_HALL)!;
+        await setGroups(api, {
+            [main.id]: ["333-r1-g1"],
+            [other.id]: ["333-r1-g2"],
+        });
+        await page.goto("/competition/groups");
+        await expect(
+            roomSection(page, main.name).getByRole("button", {
+                name: "Start group 3",
+            })
+        ).toBeVisible();
+
+        // The other room moves on while the page still shows its old group,
+        // as an automatic group change would
+        await setGroups(api, {
+            [main.id]: ["333-r1-g1"],
+            [other.id]: ["333-r1-g4"],
+        });
+        await roomSection(page, main.name)
+            .getByRole("button", { name: "Start group 3" })
+            .click();
+        await confirm(page, "Start group 3");
+        await expect
+            .poll(async () =>
+                Object.fromEntries(
+                    (await getRooms(api)).map((room) => [
+                        room.id,
+                        room.currentGroupIds,
+                    ])
+                )
+            )
+            .toEqual({
+                [main.id]: ["333-r1-g3"],
+                [other.id]: ["333-r1-g4"],
+            });
+    });
+
+    test("starts the scheduled group in a room with none running", async ({
         page,
         api,
     }) => {
         const room = await stageOne(api);
         await page.goto("/competition/groups");
         const section = roomSection(page, room.name);
-        await expect(section.getByText("No groups in progress")).toBeVisible();
+        await expect(section.getByText("Nothing running")).toBeVisible();
 
-        await section.getByRole("button", { name: /^Add .+ · Group/ }).click();
-        await expect(
-            section.getByText("1 group", { exact: true })
-        ).toBeVisible();
-        await section.getByRole("button", { name: "Clear" }).click();
-
-        await section
-            .getByRole("button", { name: "Next from schedule" })
+        await section.getByRole("button", { name: /^Start / }).click();
+        await page
+            .getByRole("dialog")
+            .getByRole("button", { name: /^Start / })
             .click();
-        await expect(
-            section.getByText("1 group", { exact: true })
-        ).toBeVisible();
+        await expect
+            .poll(async () => (await stageOne(api)).currentGroupIds)
+            .toHaveLength(1);
     });
 });
 

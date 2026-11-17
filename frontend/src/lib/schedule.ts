@@ -10,8 +10,12 @@ export interface GroupSchedule {
     /** WCIF room the group is scheduled in */
     roomName: string;
     timezone: string;
+    /** The number in the group's code; it runs across rooms */
     groupNumber: number;
+    /** The round's groups in this room */
     groupCount: number;
+    /** 1-based place among the round's groups in this room, by start time */
+    position: number;
     startTime: string;
     endTime: string;
     /** End of the whole round in this room */
@@ -30,7 +34,11 @@ export const findGroupSchedule = (
             if (roomName && room.name !== roomName) continue;
             for (const round of room.activities) {
                 if (round.activityCode !== roundId) continue;
-                const groups = round.childActivities ?? [];
+                const groups = [...(round.childActivities ?? [])].sort(
+                    (a, b) =>
+                        new Date(a.startTime).getTime() -
+                        new Date(b.startTime).getTime()
+                );
                 const index = groups.findIndex(
                     (group) => group.activityCode === groupId
                 );
@@ -42,6 +50,7 @@ export const findGroupSchedule = (
                     timezone: venue.timezone,
                     groupNumber: Number(groupId.split("-g")[1]) || index + 1,
                     groupCount: groups.length,
+                    position: index + 1,
                     startTime: groups[index].startTime,
                     endTime: groups[index].endTime,
                     roundEndTime: round.endTime,
@@ -51,6 +60,19 @@ export const findGroupSchedule = (
     }
     return undefined;
 };
+
+export const isLastGroupInRoom = (schedule: GroupSchedule) =>
+    schedule.position === schedule.groupCount;
+
+/**
+ * "Group 3 · 2 of 4 here". Group numbers run across rooms (one room has
+ * groups 1, 3, 5, the other 2, 4), so the code's number alone can't say how
+ * far the room is through the round.
+ */
+export const getGroupPlaceLabel = (schedule: GroupSchedule) =>
+    schedule.groupCount === 1
+        ? `Group ${schedule.groupNumber} · the only one here`
+        : `Group ${schedule.groupNumber} · ${schedule.position} of ${schedule.groupCount} here`;
 
 /**
  * Minutes behind (positive) or ahead of (negative) schedule. Behind once the
@@ -142,11 +164,13 @@ export const getScheduleStatus = (
     startTime: string,
     endTime: string,
     timezone?: string,
-    now = new Date()
+    now = new Date(),
+    /** A group already running is ahead, never "Starts …" */
+    isRunning = false
 ): ScheduleStatus => {
     const minutesToStart =
         (new Date(startTime).getTime() - now.getTime()) / 60_000;
-    if (minutesToStart > UPCOMING_THRESHOLD_MINUTES) {
+    if (!isRunning && minutesToStart > UPCOMING_THRESHOLD_MINUTES) {
         const start = new Intl.DateTimeFormat("en-GB", {
             hour: "2-digit",
             minute: "2-digit",
@@ -163,6 +187,37 @@ export const getScheduleStatus = (
             tone: "neutral",
         };
     return { label: "On time", tone: "success" };
+};
+
+/**
+ * Where a room stands against the schedule. A room running groups is judged
+ * by the one furthest behind and never shows "Starts …"; an empty room by
+ * the group it starts next. Null when neither is in the schedule.
+ */
+export const getRoomScheduleStatus = (
+    wcif: WCIF,
+    roomName: string,
+    currentGroupIds: string[],
+    nextGroupIds: string[],
+    now = new Date()
+): ScheduleStatus | null => {
+    const isRunning = currentGroupIds.length > 0;
+    const schedules = (isRunning ? currentGroupIds : nextGroupIds.slice(0, 1))
+        .map((groupId) => findGroupSchedule(wcif, groupId, roomName))
+        .filter((schedule) => schedule !== undefined);
+    if (schedules.length === 0) return null;
+    const offset = (schedule: GroupSchedule) =>
+        getScheduleOffsetMinutes(schedule.startTime, schedule.endTime, now);
+    const furthestBehind = schedules.reduce((a, b) =>
+        offset(b) > offset(a) ? b : a
+    );
+    return getScheduleStatus(
+        furthestBehind.startTime,
+        furthestBehind.endTime,
+        furthestBehind.timezone,
+        now,
+        isRunning
+    );
 };
 
 /** "Start group 3", or the next round's name when the round changes */

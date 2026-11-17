@@ -19,6 +19,7 @@ import { GroupProgress } from "@/lib/rooms";
 import {
     findGroupSchedule,
     formatTimeRange,
+    getGroupPlaceLabel,
     getNextActivityInRoom,
     getScheduleStatus,
     getStartLabel,
@@ -138,8 +139,7 @@ const RoomCard = ({
                             </h3>
                             {schedule && (
                                 <p className="mt-0.5 text-sm text-muted-foreground">
-                                    Group {schedule.groupNumber} of{" "}
-                                    {schedule.groupCount} ·{" "}
+                                    {getGroupPlaceLabel(schedule)} ·{" "}
                                     {formatTimeRange(
                                         schedule.startTime,
                                         schedule.endTime,
