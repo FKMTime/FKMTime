@@ -300,11 +300,12 @@ export class AppGateway {
     this.logger.log(
       `New ${isTutorial ? 'tutorial ' : ''}incident on station ${deviceName} - ${competitorName}`,
     );
+    // Only a tutorial call carries the flag, so real incidents are unchanged
     this.server.to(`incidents`).emit('newIncident', {
       id: attemptId,
       deviceName,
       competitorName,
-      isTutorial,
+      ...(isTutorial && { isTutorial: true }),
     });
   }
 

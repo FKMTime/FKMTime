@@ -74,7 +74,7 @@ describe("Home tutorial banners (SPEC-012)", () => {
 
         expect(
             screen.getByText(/Tutorial for new competitors, Main Hall, 09:10/)
-        ).toBeInTheDocument();
+        ).toBeTruthy();
         await userEvent.click(
             screen.getByRole("button", { name: "Start tutorial on Station 3" })
         );
@@ -93,9 +93,7 @@ describe("Home tutorial banners (SPEC-012)", () => {
             />
         );
 
-        expect(
-            screen.queryByText(/Tutorial for new competitors/)
-        ).not.toBeInTheDocument();
+        expect(screen.queryByText(/Tutorial for new competitors/)).toBeNull();
     });
 
     it("stays dismissed", async () => {
@@ -108,15 +106,11 @@ describe("Home tutorial banners (SPEC-012)", () => {
         const { unmount } = render(<TutorialSuggestion {...props} />);
 
         await userEvent.click(screen.getByRole("button", { name: "Dismiss" }));
-        expect(
-            screen.queryByText(/Tutorial for new competitors/)
-        ).not.toBeInTheDocument();
+        expect(screen.queryByText(/Tutorial for new competitors/)).toBeNull();
 
         unmount();
         render(<TutorialSuggestion {...props} />);
-        expect(
-            screen.queryByText(/Tutorial for new competitors/)
-        ).not.toBeInTheDocument();
+        expect(screen.queryByText(/Tutorial for new competitors/)).toBeNull();
     });
 
     it("warns about stations in tutorial mode, with a way to end it", async () => {
@@ -131,10 +125,8 @@ describe("Home tutorial banners (SPEC-012)", () => {
             />
         );
 
-        expect(
-            screen.getByText("Station 3 is in tutorial mode")
-        ).toBeInTheDocument();
-        expect(screen.queryByText("Station 4")).not.toBeInTheDocument();
+        expect(screen.getByText("Station 3 is in tutorial mode")).toBeTruthy();
+        expect(screen.queryByText("Station 4")).toBeNull();
         await userEvent.click(
             screen.getByRole("button", { name: "End tutorial" })
         );
@@ -150,6 +142,6 @@ describe("Home tutorial banners (SPEC-012)", () => {
             />
         );
 
-        expect(container).toBeEmptyDOMElement();
+        expect(container.innerHTML).toBe("");
     });
 });

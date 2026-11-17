@@ -54,9 +54,9 @@ describe("TutorialIncidentPanel (SPEC-012)", () => {
 
         expect(
             screen.getByText(/Tutorial: nothing here is saved/)
-        ).toBeInTheDocument();
-        expect(screen.queryByText(/noteworthy/i)).not.toBeInTheDocument();
-        expect(screen.queryByText("Judge")).not.toBeInTheDocument();
+        ).toBeTruthy();
+        expect(screen.queryByText(/noteworthy/i)).toBeNull();
+        expect(screen.queryByText("Judge")).toBeNull();
     });
 
     it("answers the station with the time as it stands", async () => {
@@ -130,8 +130,8 @@ describe("TutorialIncidentPanel (SPEC-012)", () => {
             </MemoryRouter>
         );
 
-        expect(screen.getByText("Ada Example")).toBeInTheDocument();
-        expect(screen.getByText("Tutorial")).toBeInTheDocument();
-        expect(screen.getByText("12.34")).toBeInTheDocument();
+        expect(screen.getByText("Ada Example")).toBeTruthy();
+        expect(screen.getByText("Tutorial")).toBeTruthy();
+        expect(screen.getByText("12.34")).toBeTruthy();
     });
 });
