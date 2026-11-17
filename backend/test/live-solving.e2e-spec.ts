@@ -357,11 +357,13 @@ describe('Live solving (e2e)', () => {
     const removed = waitForEvent<{ espId: number }>(viewer, 'stationRemoved');
 
     // Station A has entered solves, so deleting it retires it
-    const res = await request(app.getHttpServer())
+    await request(app.getHttpServer())
       .delete(`/device/${stationAId}`)
       .set('Authorization', `Bearer ${adminToken}`)
-      .expect(200);
-    expect(res.body).toEqual({ message: 'Device retired' });
+      .expect(204);
+    expect(
+      await db.device.findUnique({ where: { id: stationAId } }),
+    ).toMatchObject({ retiredAt: expect.any(Date) });
     expect(await removed).toEqual({ espId: ESP.stationA });
 
     const packets = recordEvents<StationInfo>(viewer, 'currentTimeInfo');
