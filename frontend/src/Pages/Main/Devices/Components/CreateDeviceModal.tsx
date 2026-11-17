@@ -62,6 +62,11 @@ const CreateDeviceModal = ({
         setIsLoading(false);
     };
 
+    // A device asking to be added reports its own hardware
+    const availableHwVersions: HardwareVersion[] = deviceToAdd
+        ? [deviceToAdd.hw.toUpperCase() as HardwareVersion]
+        : Object.values(HardwareVersion);
+
     const defaultValues: DeviceData = {
         name: "",
         espId: deviceToAdd ? deviceToAdd.espId : 0,
@@ -75,9 +80,7 @@ const CreateDeviceModal = ({
                 ? DeviceType.ATTENDANCE_SCRAMBLER
                 : DeviceType.STATION
             : DeviceType.STATION,
-        hwVersion: deviceToAdd
-            ? (deviceToAdd.hw.toUpperCase() as HardwareVersion)
-            : HardwareVersion.V3,
+        hwVersion: deviceToAdd ? availableHwVersions[0] : HardwareVersion.V3,
     };
 
     return (
@@ -93,7 +96,8 @@ const CreateDeviceModal = ({
                     handleSubmit={handleSubmit}
                     rooms={rooms}
                     availableTypes={availableTypes}
-                    availableHwVersions={Object.values(HardwareVersion)}
+                    availableHwVersions={availableHwVersions}
+                    espIdLocked={!!deviceToAdd}
                     defaultValues={defaultValues}
                     submitText="Add"
                 />
