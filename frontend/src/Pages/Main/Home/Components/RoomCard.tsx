@@ -21,7 +21,7 @@ import {
     formatTimeRange,
     getGroupPlaceLabel,
     getNextActivityInRoom,
-    getScheduleStatus,
+    getRoomScheduleStatus,
     getStartLabel,
 } from "@/lib/schedule";
 import { cn } from "@/lib/utils";
@@ -88,14 +88,14 @@ const RoomCard = ({
         room.name,
         schedule?.roundEndTime ?? now.toISOString()
     );
-    const scheduleStatus = schedule
-        ? getScheduleStatus(
-              schedule.startTime,
-              schedule.endTime,
-              schedule.timezone,
-              now
-          )
-        : null;
+    // A running room is never "Starts …"; an empty one shows its next group
+    const scheduleStatus = getRoomScheduleStatus(
+        wcif,
+        room.name,
+        room.currentGroupIds,
+        nextGroupIds ?? [],
+        now
+    );
 
     return (
         <section

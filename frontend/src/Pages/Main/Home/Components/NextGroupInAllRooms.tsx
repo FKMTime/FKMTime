@@ -10,7 +10,7 @@ interface NextGroupInAllRoomsProps {
     rooms: Room[];
     /** Next groups from the schedule, by room id */
     nextGroups: Record<string, string[]>;
-    /** Resolves to an error message, or null once every room has switched */
+    /** Saves the rooms that change; an error message, or null once saved */
     onSwitch: (rooms: Room[]) => Promise<string | null>;
 }
 
@@ -41,12 +41,13 @@ const NextGroupInAllRooms = ({
 
     const handleConfirm = async () => {
         setIsSwitching(true);
+        // Only the rooms that change, so one with nothing next isn't saved
+        // with groups that may have changed since Home loaded them
         const message = await onSwitch(
-            rooms.map((room) =>
-                hasNext(room)
-                    ? { ...room, currentGroupIds: nextGroups[room.id] }
-                    : room
-            )
+            rooms.filter(hasNext).map((room) => ({
+                ...room,
+                currentGroupIds: nextGroups[room.id],
+            }))
         );
         setIsSwitching(false);
         if (message === null) close();
