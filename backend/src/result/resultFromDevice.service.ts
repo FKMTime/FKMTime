@@ -14,6 +14,7 @@ import {
   AttemptSnapshot,
 } from 'src/attempt-edit-log/attempt-edit-log.service';
 import { AttendanceService } from 'src/attendance/attendance.service';
+import { CompetitionService } from 'src/competition/competition.service';
 import { DNS_VALUE } from 'src/constants';
 import { DbService, runInTransaction, Tx } from 'src/db/db.service';
 import { DeviceService } from 'src/device/device.service';
@@ -63,6 +64,8 @@ export class ResultFromDeviceService {
     private readonly personService: PersonService,
     private readonly resultService: ResultService,
     private readonly attemptEditLogService: AttemptEditLogService,
+    @Inject(forwardRef(() => CompetitionService))
+    private readonly competitionService: CompetitionService,
   ) {}
 
   private logger = new Logger('ResultFromDeviceService');
@@ -480,6 +483,7 @@ export class ResultFromDeviceService {
     }
     tx.afterCommit(() => {
       this.appGateway.handleResultEntered(result.roundId);
+      this.competitionService.requestGroupChangeCheck(result.roundId);
       this.appGateway.recordLastSolve(data.espId, {
         personName: competitor.name,
         value: finalData.value,

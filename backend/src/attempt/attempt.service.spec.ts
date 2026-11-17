@@ -7,12 +7,17 @@ import {
 import { AppGateway } from 'src/app.gateway';
 import { AttemptEditLogService } from 'src/attempt-edit-log/attempt-edit-log.service';
 import { AttendanceService } from 'src/attendance/attendance.service';
+import { CompetitionService } from 'src/competition/competition.service';
 import { DbService } from 'src/db/db.service';
 import { IncidentService } from 'src/incident/incident.service';
 import { ResultService } from 'src/result/result.service';
 import { SocketController } from 'src/socket/socket.controller';
 
 import { AttemptService } from './attempt.service';
+
+const competitionStub = {
+  requestGroupChangeCheck: jest.fn(),
+} as unknown as CompetitionService;
 
 describe('AttemptService extras for all attempts', () => {
   const stored = (overrides: Partial<Attempt>) =>
@@ -153,6 +158,7 @@ describe('AttemptService extras for all attempts', () => {
       resultService as unknown as ResultService,
       null as SocketController,
       null as IncidentService,
+      competitionStub,
     );
   });
 
@@ -285,6 +291,13 @@ describe('AttemptService extras for all attempts', () => {
           person: { id: 'person-1' },
         }),
       });
+    });
+
+    it('asks for a group change check for the round', async () => {
+      const request = competitionStub.requestGroupChangeCheck as jest.Mock;
+      request.mockClear();
+      await enter(1, AttemptType.STANDARD_ATTEMPT);
+      expect(request).toHaveBeenCalledWith('333-r1');
     });
 
     it('replaces the next attempt waiting for a redo', async () => {
@@ -599,6 +612,13 @@ describe('AttemptService extras for all attempts', () => {
       expect(appGateway.handleResultEntered).toHaveBeenCalledWith('333-r1');
     });
 
+    it('asks for a group change check for the round', async () => {
+      const request = competitionStub.requestGroupChangeCheck as jest.Mock;
+      request.mockClear();
+      await disqualify();
+      expect(request.mock.calls).toEqual([['333-r1']]);
+    });
+
     it('can rule completed attempts DNF as well', async () => {
       await disqualify(['s1']);
 
@@ -826,6 +846,13 @@ describe('AttemptService extras for all attempts', () => {
         expect(resultService.sendResult).toHaveBeenCalledWith('result-2');
       });
 
+      it("asks for a group change check in the removed result's round too", async () => {
+        const request = competitionStub.requestGroupChangeCheck as jest.Mock;
+        request.mockClear();
+        await dnfRemoving(['s1', 's2']);
+        expect(request.mock.calls).toEqual([['333-r1'], ['333-r2']]);
+      });
+
       it('lists them with the ruling', async () => {
         await dnfRemoving(['s1']);
 
@@ -910,6 +937,7 @@ describe('AttemptService penalty cap', () => {
       resultService as unknown as ResultService,
       null as SocketController,
       null as IncidentService,
+      competitionStub,
     );
   });
 
@@ -953,6 +981,61 @@ describe('AttemptService penalty cap', () => {
   });
 });
 
+describe('AttemptService resolving an incident', () => {
+  it('asks for a group change check for the round', async () => {
+    const request = competitionStub.requestGroupChangeCheck as jest.Mock;
+    request.mockClear();
+    const prisma = {
+      attempt: {
+        findUnique: jest.fn().mockResolvedValue({
+          id: 'a1',
+          resultId: 'result-1',
+          penalty: 0,
+          status: AttemptStatus.UNRESOLVED,
+          result: { personId: 'person-1', roundId: '333-r1', removedAt: null },
+        }),
+        findFirst: jest.fn().mockResolvedValue(null),
+        update: jest.fn().mockResolvedValue({
+          id: 'a1',
+          resultId: 'result-1',
+          status: AttemptStatus.RESOLVED,
+          device: null,
+          result: { roundId: '333-r1', person: { id: 'person-1' } },
+        }),
+      },
+    };
+    const service = new AttemptService(
+      { handleAttemptUpdated: jest.fn() } as unknown as AppGateway,
+      prisma as unknown as DbService,
+      null as AttendanceService,
+      { log: jest.fn() } as unknown as AttemptEditLogService,
+      {
+        settleWaitingExtras: jest.fn(),
+        getResultOrCreate: jest.fn().mockResolvedValue({ id: 'result-1' }),
+        sendResult: jest.fn(),
+      } as unknown as ResultService,
+      null as SocketController,
+      null as IncidentService,
+      competitionStub,
+    );
+
+    await service.updateAttempt(
+      'a1',
+      {
+        attemptNumber: 1,
+        type: AttemptType.STANDARD_ATTEMPT,
+        status: AttemptStatus.RESOLVED,
+        value: 1500,
+        penalty: 0,
+        comment: '',
+      } as never,
+      'user-1',
+    );
+
+    expect(request).toHaveBeenCalledWith('333-r1');
+  });
+});
+
 describe('AttemptService deleted attempts', () => {
   let prisma: Record<string, any>;
   let appGateway: { handleAttemptUpdated: jest.Mock };
@@ -979,6 +1062,7 @@ describe('AttemptService deleted attempts', () => {
       } as unknown as ResultService,
       null as SocketController,
       null as IncidentService,
+      competitionStub,
     );
   });
 
@@ -996,11 +1080,32 @@ describe('AttemptService deleted attempts', () => {
       resultId: 'result-1',
       status: AttemptStatus.STANDARD,
       device: null,
+      result: { roundId: '333-r1' },
     });
     prisma.attempt.count.mockResolvedValue(0);
     await expect(service.deleteAttempt('a1')).resolves.toEqual({
       resultDeleted: true,
     });
     expect(appGateway.handleAttemptUpdated).toHaveBeenCalled();
+  });
+
+  it('asks for a group change check once the attempt is deleted', async () => {
+    const request = competitionStub.requestGroupChangeCheck as jest.Mock;
+    request.mockClear();
+    prisma.attempt.findUnique.mockResolvedValue({
+      id: 'a1',
+      resultId: 'result-1',
+      status: AttemptStatus.STANDARD,
+      device: null,
+      result: { roundId: '333-r1' },
+    });
+    prisma.attempt.count.mockResolvedValue(2);
+    prisma.attempt.delete.mockImplementation(async () => {
+      expect(request).not.toHaveBeenCalled();
+    });
+
+    await service.deleteAttempt('a1');
+
+    expect(request).toHaveBeenCalledWith('333-r1');
   });
 });

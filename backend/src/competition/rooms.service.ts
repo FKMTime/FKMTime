@@ -18,6 +18,10 @@ export class RoomsService {
     private readonly integratedLiveRounds: IntegratedLiveRoundsService,
   ) {}
 
+  private readonly startedAt = Date.now();
+  // "roomId|groupId" -> when the room started running the group
+  private groupEnteredAt = new Map<string, number>();
+
   async getAllRooms() {
     return this.prisma.room.findMany();
   }
@@ -66,32 +70,10 @@ export class RoomsService {
   }
 
   async updateRooms(data: UpdateRoomsDto) {
-    for (const room of data.rooms) {
-      //If there are 2 or more groups in the room with same roundId
-      const roundIds = [];
-      const eventIds = [];
-      for (const groupId of room.currentGroupIds) {
-        const eventId = groupId.split('-r')[0];
-        if (eventIds.includes(eventId)) {
-          throw new HttpException(
-            'There are 2 or more groups in the room from the same event',
-            400,
-          );
-        }
-        eventIds.push(eventId);
-        const roundId = groupId.split('-g')[0];
-        if (roundIds.includes(roundId)) {
-          throw new HttpException(
-            'There are 2 or more groups in the room from the same round',
-            400,
-          );
-        }
-        roundIds.push(roundId);
-      }
-    }
+    data.rooms.forEach((room) => this.assertValidGroups(room.currentGroupIds));
     const existing = await this.prisma.room.findMany({
       where: { id: { in: data.rooms.map((room) => room.id) } },
-      select: { id: true, startedGroupIds: true },
+      select: { id: true, startedGroupIds: true, currentGroupIds: true },
     });
     const transactions = data.rooms.map((room) => {
       const startedBefore =
@@ -100,27 +82,115 @@ export class RoomsService {
         where: {
           id: room.id,
         },
-        data: {
-          currentGroupIds: room.currentGroupIds,
-          startedGroupIds: [
-            ...new Set([...startedBefore, ...room.currentGroupIds]),
-          ],
-        },
+        data: this.groupsData(room.currentGroupIds, startedBefore),
       });
     });
     await this.prisma.$transaction(transactions);
+    await this.afterGroupsChanged(data.rooms, existing);
+    return {
+      message: 'Rooms updated',
+    };
+  }
+
+  /**
+   * Moves one room from the groups it had when the caller read it to new
+   * ones, the same way as updateRooms. The write only goes through if the
+   * room still runs exactly those groups, so a change made in the panel
+   * meanwhile is kept; false then.
+   */
+  async switchRoomGroups(
+    roomId: string,
+    fromGroupIds: string[],
+    toGroupIds: string[],
+  ) {
+    this.assertValidGroups(toGroupIds);
+    const room = await this.prisma.room.findUnique({
+      where: { id: roomId },
+      select: { startedGroupIds: true },
+    });
+    if (!room) return false;
+    const { count } = await this.prisma.room.updateMany({
+      where: { id: roomId, currentGroupIds: { equals: fromGroupIds } },
+      data: this.groupsData(toGroupIds, room.startedGroupIds),
+    });
+    if (count === 0) return false;
+    await this.afterGroupsChanged(
+      [{ id: roomId, currentGroupIds: toGroupIds }],
+      [{ id: roomId, currentGroupIds: fromGroupIds }],
+    );
+    return true;
+  }
+
+  /**
+   * When the room started running the group, for telling a group nobody has
+   * solved in for a while from one the room only just reached. Kept in
+   * memory: after a restart it is the time the backend started, so a group
+   * is never treated as quiet sooner than it would have been.
+   */
+  getGroupEnteredAt(roomId: string, groupId: string) {
+    return this.groupEnteredAt.get(`${roomId}|${groupId}`) ?? this.startedAt;
+  }
+
+  private assertValidGroups(groupIds: string[]) {
+    //If there are 2 or more groups in the room with same roundId
+    const roundIds = [];
+    const eventIds = [];
+    for (const groupId of groupIds) {
+      const eventId = groupId.split('-r')[0];
+      if (eventIds.includes(eventId)) {
+        throw new HttpException(
+          'There are 2 or more groups in the room from the same event',
+          400,
+        );
+      }
+      eventIds.push(eventId);
+      const roundId = groupId.split('-g')[0];
+      if (roundIds.includes(roundId)) {
+        throw new HttpException(
+          'There are 2 or more groups in the room from the same round',
+          400,
+        );
+      }
+      roundIds.push(roundId);
+    }
+  }
+
+  private groupsData(currentGroupIds: string[], startedBefore: string[]) {
+    return {
+      currentGroupIds,
+      startedGroupIds: [...new Set([...startedBefore, ...currentGroupIds])],
+    };
+  }
+
+  /** Once the new groups are saved: entry times, stations, live results */
+  private async afterGroupsChanged(
+    rooms: { id: string; currentGroupIds: string[] }[],
+    before: { id: string; currentGroupIds?: string[] }[],
+  ) {
+    const now = Date.now();
+    for (const room of rooms) {
+      const previous =
+        before.find((r) => r.id === room.id)?.currentGroupIds ?? [];
+      for (const groupId of previous) {
+        if (!room.currentGroupIds.includes(groupId)) {
+          this.groupEnteredAt.delete(`${room.id}|${groupId}`);
+        }
+      }
+      for (const groupId of room.currentGroupIds) {
+        if (!previous.includes(groupId)) {
+          this.groupEnteredAt.set(`${room.id}|${groupId}`, now);
+        }
+      }
+    }
     await this.socketController.sendServerStatus();
     // Not awaited: starting a group mustn't wait for the WCA
     const startedRoundIds = new Set(
-      data.rooms.flatMap((room) =>
+      rooms.flatMap((room) =>
         room.currentGroupIds.map((groupId) => groupId.split('-g')[0]),
       ),
     );
     for (const roundId of startedRoundIds) {
       this.integratedLiveRounds.onRoundStarted(roundId).catch(() => undefined);
     }
-    return {
-      message: 'Rooms updated',
-    };
   }
 }

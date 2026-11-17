@@ -12,6 +12,7 @@ import {
   AttemptSnapshot,
 } from 'src/attempt-edit-log/attempt-edit-log.service';
 import { AttendanceService } from 'src/attendance/attendance.service';
+import { CompetitionService } from 'src/competition/competition.service';
 import { DNF_VALUE, DNS_VALUE, publicPersonSelect } from 'src/constants';
 import { getMaxPenalty, isUnofficialEvent } from 'src/events';
 import { IncidentService } from 'src/incident/incident.service';
@@ -72,6 +73,8 @@ export class AttemptService {
     @Inject(forwardRef(() => SocketController))
     private readonly socketController: SocketController,
     private readonly incidentService: IncidentService,
+    @Inject(forwardRef(() => CompetitionService))
+    private readonly competitionService: CompetitionService,
   ) {}
 
   async createAttempt(data: CreateAttemptDto, userId: string) {
@@ -183,6 +186,7 @@ export class AttemptService {
       await this.resultService.sendResult(result.id);
     }
     this.appGateway.handleResultEntered(result.roundId);
+    this.competitionService.requestGroupChangeCheck(result.roundId);
     return {
       message: 'Attempt created successfully',
     };
@@ -604,6 +608,13 @@ export class AttemptService {
       this.appGateway.handleResultEntered(result.roundId);
     }
     this.appGateway.handleAttemptUpdated();
+    // A ruling can finish a competitor, and a removed result leaves its group
+    const roundIds = new Set(
+      [...results, ...laterResults].map((result) => result.roundId),
+    );
+    for (const roundId of roundIds) {
+      this.competitionService.requestGroupChangeCheck(roundId);
+    }
     return {
       updated: updated.length + added.length,
       removedResults: laterResults.length,
@@ -1057,6 +1068,10 @@ export class AttemptService {
     }
     await this.resultService.settleWaitingExtras(attempt.resultId);
     this.appGateway.handleAttemptUpdated();
+    // Resolving an incident is often what the group was waiting for
+    this.competitionService.requestGroupChangeCheck(
+      attemptToUpdate.result.roundId,
+    );
     if (
       attemptToUpdate.status === AttemptStatus.UNRESOLVED &&
       attempt.status !== AttemptStatus.UNRESOLVED
@@ -1103,6 +1118,7 @@ export class AttemptService {
       where: { id },
       include: {
         device: true,
+        result: { select: { roundId: true } },
       },
     });
     if (!attempt) {
@@ -1135,6 +1151,8 @@ export class AttemptService {
       });
     }
     this.appGateway.handleAttemptUpdated();
+    // Deleting an open incident or a stray attempt can finish the group
+    this.competitionService.requestGroupChangeCheck(attempt.result.roundId);
     if (allAttempts === 0) {
       return {
         resultDeleted: true,
