@@ -284,7 +284,6 @@ describe("Home group controls", () => {
         expect(
             (await screen.findAllByText("All in · moving on by itself"))[0]
         ).toBeTruthy();
-        expect(screen.getByText("Automatic group change on")).toBeTruthy();
     });
 
     it("starts the next group after confirming, saving only that room", async () => {
@@ -624,6 +623,11 @@ describe("Home group controls", () => {
     it("stops the whole room after confirming", async () => {
         await renderPage();
         await openMenuItem("Main Hall", "Stop the room");
+        expect(
+            await screen.findByText(
+                "Stations in this room have nothing to time until you start a group."
+            )
+        ).toBeTruthy();
         await confirmDialog("Stop the room");
 
         expect(backend.puts[0].body).toEqual({
@@ -667,27 +671,6 @@ describe("Home group controls", () => {
         ).toBeNull();
     });
 
-    it("turns automatic group change on from Home", async () => {
-        await renderPage();
-        const toggle = await screen.findByRole("switch", {
-            name: "Automatic group change",
-        });
-        await vi.waitFor(() =>
-            expect((toggle as HTMLButtonElement).disabled).toBe(false)
-        );
-        await userEvent.click(toggle);
-        await waitFor(() =>
-            expect(backend.puts).toEqual([
-                {
-                    path: expect.stringContaining("settings"),
-                    body: expect.objectContaining({
-                        shouldChangeGroupsAutomatically: true,
-                    }),
-                },
-            ])
-        );
-    });
-
     it("asks to open the rounds a change started in WCA Live", async () => {
         await renderPage("WCA_LIVE");
         await pickGroup("Main Hall", ["2x2x2 Cube", "Group 1"]);
@@ -709,8 +692,22 @@ describe("Home group controls", () => {
                 name: "More for Main Hall",
             })
         ).toBeNull();
-        expect(
-            screen.queryByRole("switch", { name: "Automatic group change" })
-        ).toBeNull();
+    });
+
+    it("lists rooms in the schedule's order, however they arrive", async () => {
+        backend.rooms = [
+            room("side", "Side Hall", ["333-r1-g2"]),
+            room("main", "Main Hall", ["333-r1-g3"]),
+        ];
+        await renderPage();
+        // The desktop grid; phones get the selected room above it
+        const names = screen
+            .getAllByRole("region")
+            .filter((region) =>
+                region.getAttribute("aria-label")?.endsWith("Hall")
+            )
+            .slice(-2)
+            .map((region) => region.getAttribute("aria-label"));
+        expect(names).toEqual(["Main Hall", "Side Hall"]);
     });
 });

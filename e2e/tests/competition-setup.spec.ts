@@ -398,6 +398,24 @@ test.describe("home", () => {
                 ])
             )
         );
+        // The button shows once rooms are ready: report every result in
+        const groups = Object.fromEntries(
+            (await getRooms(api)).map((room) => [room.id, room.currentGroupIds])
+        );
+        await page.route("**/competition/rooms/progress", (route) =>
+            route.fulfill({
+                json: Object.entries(groups).map(([roomId, groupIds]) => ({
+                    roomId,
+                    groups: groupIds.map((groupId) => ({
+                        groupId,
+                        roundId: groupId.split("-g")[0],
+                        competitors: 1,
+                        entered: 5,
+                        expected: 5,
+                    })),
+                })),
+            })
+        );
         await page.goto("/");
         await page
             .getByRole("button", { name: "Next group in all rooms" })
@@ -406,7 +424,7 @@ test.describe("home", () => {
             name: "Next group in all rooms",
         });
         await expect(dialog.getByRole("listitem")).toHaveCount(rooms.length);
-        await dialog.getByRole("button", { name: "Switch all rooms" }).click();
+        await dialog.getByRole("button", { name: "Start next groups" }).click();
         await expectToast(page, "Next group started in all rooms");
         await expect(dialog).toBeHidden();
         const after = await getRooms(api);

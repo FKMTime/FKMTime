@@ -45,13 +45,15 @@ const RoomGroupMenu = ({
         );
         if (previous.length === 0) return;
         const label = `Start ${previous.map(shortGroupLabel).join(" + ")}`;
-        if (await ask(`${label} in ${room.name}?`, label))
+        const title = `${label} in ${room.name}?`;
+        if (await ask({ title, confirmLabel: label, change: "start" }))
             await onSetGroups(room, previous);
     };
 
     const stopGroup = async (groupId: string) => {
         const label = `Stop ${shortGroupLabel(groupId)}`;
-        if (await ask(`${label} in ${room.name}?`, label, "destructive"))
+        const title = `${label} in ${room.name}?`;
+        if (await ask({ title, confirmLabel: label, change: "stopGroup" }))
             await onSetGroups(
                 room,
                 groups.filter((id) => id !== groupId)
@@ -59,14 +61,12 @@ const RoomGroupMenu = ({
     };
 
     const stopRoom = async () => {
-        if (
-            await ask(
-                `Stop every group in ${room.name}?`,
-                "Stop the room",
-                "destructive"
-            )
-        )
-            await onSetGroups(room, []);
+        const confirmed = await ask({
+            title: `Stop every group in ${room.name}?`,
+            confirmLabel: "Stop the room",
+            change: "stopRoom",
+        });
+        if (confirmed) await onSetGroups(room, []);
     };
 
     return (

@@ -18,6 +18,7 @@ import {
     getScheduleStatus,
     getStartLabel,
     isLastGroupInRoom,
+    sortRoomsBySchedule,
 } from "@/lib/schedule";
 
 const wcif = {
@@ -474,5 +475,34 @@ describe("getScheduleRoundDetails", () => {
 
     it("is null for breaks", () => {
         expect(getScheduleRoundDetails("other-lunch", competition)).toBeNull();
+    });
+});
+
+describe("sortRoomsBySchedule", () => {
+    const venuesWcif = {
+        schedule: {
+            venues: [
+                { rooms: [{ name: "Main Hall" }, { name: "Side Hall" }] },
+                { rooms: [{ name: "Annex" }] },
+            ],
+        },
+    } as unknown as Competition;
+
+    it("follows the schedule's venues and rooms, whatever order comes in", () => {
+        const rooms = [
+            { name: "Annex" },
+            { name: "Side Hall" },
+            { name: "Main Hall" },
+        ];
+        expect(
+            sortRoomsBySchedule(rooms, venuesWcif).map((r) => r.name)
+        ).toEqual(["Main Hall", "Side Hall", "Annex"]);
+    });
+
+    it("puts rooms the schedule doesn't name last, by name", () => {
+        const rooms = [{ name: "Zeta" }, { name: "Alpha" }, { name: "Annex" }];
+        expect(
+            sortRoomsBySchedule(rooms, venuesWcif).map((r) => r.name)
+        ).toEqual(["Annex", "Alpha", "Zeta"]);
     });
 });

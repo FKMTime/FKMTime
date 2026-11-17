@@ -11,11 +11,7 @@ import { useSocketRoom } from "@/hooks/useSocketRoom";
 import { useToast } from "@/hooks/useToast";
 import { competitionAtom, quickEntryAtom } from "@/lib/atoms";
 import { recentAttemptsQuery } from "@/lib/attempt";
-import {
-    competitionSettingsQuery,
-    nextGroupsQuery,
-    updateCompetitionSettings,
-} from "@/lib/competition";
+import { competitionSettingsQuery, nextGroupsQuery } from "@/lib/competition";
 import { getStartedRounds } from "@/lib/currentGroups";
 import {
     getPointedStations,
@@ -30,18 +26,18 @@ import {
     isOrganizerOrDelegate,
     isStageLeaderOrOrganizerOrDelegate,
 } from "@/lib/permissions";
-import { fetchQuery, toQueryOptions } from "@/lib/queryCache";
+import { toQueryOptions } from "@/lib/queryCache";
 import { queryClient } from "@/lib/queryClient";
 import {
+    isGroupDone,
     roomsProgressQuery,
     roomsQuery,
     updateCurrentRound,
     updateRoomGroups,
 } from "@/lib/rooms";
-import { getStartLabel } from "@/lib/schedule";
+import { getStartLabel, sortRoomsBySchedule } from "@/lib/schedule";
 import { invalidateIncidentLists } from "@/Pages/Main/Incidents/incidentsContext";
 
-import AutoChangeSwitch from "./Components/AutoChangeSwitch";
 import IntegratedLiveConnectionAlert from "./Components/IntegratedLiveConnectionAlert";
 import IntegratedLiveProblemsAlert from "./Components/IntegratedLiveProblemsAlert";
 import IntegratedLiveRoundsToOpen from "./Components/IntegratedLiveRoundsToOpen";
@@ -89,9 +85,16 @@ const Home = () => {
     const askToChangeGroups = useAskToChangeGroups();
     const { toast } = useToast();
     const [startedRounds, setStartedRounds] = useState<string[]>([]);
-    const [isAutoChangeSaving, setIsAutoChangeSaving] = useState(false);
 
-    const { data: rooms } = useLiveQuery(roomsQuery);
+    const { data: unorderedRooms } = useLiveQuery(roomsQuery);
+    // In the schedule's order, so rooms keep their places as they change
+    const rooms = useMemo(
+        () =>
+            competition && unorderedRooms
+                ? sortRoomsBySchedule(unorderedRooms, competition.wcif)
+                : unorderedRooms,
+        [competition, unorderedRooms]
+    );
     const { data: progressData } = useLiveQuery(roomsProgressQuery);
     const progress = progressData ?? [];
     const [selectedRoomId, setSelectedRoomId] = useState<string>();
@@ -100,7 +103,8 @@ const Home = () => {
     const canStartGroups = isOrganizerOrDelegate();
     const canResolveIncidents = isDelegate();
 
-    // The panel's competition doesn't carry the setting; the settings do
+    // Whether rooms move on by themselves; it's changed in the settings.
+    // The panel's competition doesn't carry it; the settings do
     const { data: settings } = useLiveQuery(competitionSettingsQuery, {
         enabled: canStartGroups,
     });
@@ -212,7 +216,14 @@ const Home = () => {
     const handleStartNext = async (room: Room, nextGroupIds: string[]) => {
         const label =
             getStartLabel(room.currentGroupIds, nextGroupIds) ?? "Start";
-        if (await askToChangeGroups(`${label} in ${room.name}?`, label))
+        const title = `${label} in ${room.name}?`;
+        if (
+            await askToChangeGroups({
+                title,
+                confirmLabel: label,
+                change: "start",
+            })
+        )
             await setRoomGroups(room, nextGroupIds);
     };
 
@@ -221,35 +232,15 @@ const Home = () => {
         if (response.status !== 200)
             return response.data?.message ?? "Failed to start the next groups";
         noteStartedRounds(updated);
-        toast({ title: "Next group started in all rooms", variant: "success" });
-        refreshRooms();
-        return null;
-    };
-
-    const setAutoChange = async (value: boolean) => {
-        setIsAutoChangeSaving(true);
-        const fresh = await fetchQuery(competitionSettingsQuery);
-        const status = await updateCompetitionSettings(competition.id, {
-            ...fresh,
-            shouldChangeGroupsAutomatically: value,
-        });
-        setIsAutoChangeSaving(false);
-        if (status !== 200) {
-            toast({
-                title: "The setting could not be saved",
-                variant: "destructive",
-            });
-            return;
-        }
-        void queryClient.invalidateQueries({
-            queryKey: [competitionSettingsQuery.key],
-        });
         toast({
-            title: value
-                ? "Groups change automatically"
-                : "Groups change only by hand",
+            title:
+                updated.length === rooms.length
+                    ? "Next group started in all rooms"
+                    : `Next group started in ${updated.length} rooms`,
             variant: "success",
         });
+        refreshRooms();
+        return null;
     };
 
     const handleBackToRoom = async (station: Device) => {
@@ -341,19 +332,16 @@ const Home = () => {
                         roundIds={startedRounds}
                         onClose={() => setStartedRounds([])}
                     />
-                    {/* Rooms first on phones: these act on the whole competition */}
-                    <div className="flex flex-col gap-3 max-md:order-last md:flex-row md:items-center md:justify-between">
-                        <AutoChangeSwitch
-                            isOn={isAutoChange}
-                            disabled={!settings || isAutoChangeSaving}
-                            onChange={setAutoChange}
-                        />
-                        <NextGroupInAllRooms
-                            rooms={rooms}
-                            nextGroups={nextGroups}
-                            onSwitch={handleSwitchAll}
-                        />
-                    </div>
+                    <NextGroupInAllRooms
+                        rooms={rooms}
+                        nextGroups={nextGroups}
+                        isReady={(room) =>
+                            room.currentGroupIds.every((id) =>
+                                isGroupDone(getProgress(room.id, id))
+                            )
+                        }
+                        onSwitch={handleSwitchAll}
+                    />
                 </>
             )}
             {rooms.length > 1 && (

@@ -262,6 +262,27 @@ export const getScheduleRooms = (wcif: WCIF): ScheduleRoom[] => {
     );
 };
 
+/**
+ * Rooms in the order the schedule lists them, so they keep their places
+ * however the backend returns them. Rooms the schedule doesn't name go last,
+ * by name.
+ */
+export const sortRoomsBySchedule = <T extends { name: string }>(
+    rooms: T[],
+    wcif: WCIF
+): T[] => {
+    const order = wcif.schedule.venues.flatMap((venue) =>
+        venue.rooms.map((room) => room.name)
+    );
+    const position = (room: T) => {
+        const index = order.indexOf(room.name);
+        return index === -1 ? order.length : index;
+    };
+    return [...rooms].sort(
+        (a, b) => position(a) - position(b) || a.name.localeCompare(b.name)
+    );
+};
+
 /** Competition days as "YYYY-MM-DD", from the WCIF start date */
 export const getCompetitionDays = (startDate: string, numberOfDays: number) => {
     const [year, month, day] = startDate.split("-").map(Number);

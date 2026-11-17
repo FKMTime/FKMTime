@@ -48,7 +48,9 @@ const ChangeGroup = ({
             return;
         }
         const label = `Start ${shortGroupLabel(groupId)}`;
-        if (await ask(`${label} in ${room.name}?`, label)) apply([groupId]);
+        const title = `${label} in ${room.name}?`;
+        if (await ask({ title, confirmLabel: label, change: "start" }))
+            apply([groupId]);
     };
 
     const canRunAll = picked ? canAddGroup(groups, picked) : false;
