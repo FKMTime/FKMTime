@@ -4,6 +4,12 @@ import { AppGateway } from 'src/app.gateway';
 
 import { DbService, Tx } from '../db/db.service';
 import { getTranslation } from '../translations/translations';
+import {
+  AttendanceStatistics,
+  computeAttendanceStatistics,
+  happenedGroups,
+  ScheduleWcif,
+} from './attendanceStatistics';
 import { AddNotAssignedPersonDto } from './dto/addNotAssignedPerson.dto';
 import { CreateAttendaceDto } from './dto/createAttendance.dto';
 import { MarkReplacedDto } from './dto/markReplaced.dto';
@@ -296,52 +302,35 @@ export class AttendanceService {
     else notify();
   }
 
-  async getAttendanceStatistics() {
-    const persons = await this.prisma.person.findMany({
-      where: {
-        registrantId: {
-          not: null,
+  /** Rules and the "group happened" signal: see attendanceStatistics.ts */
+  async getAttendanceStatistics(): Promise<AttendanceStatistics> {
+    const [activities, rooms, attended, competition] = await Promise.all([
+      this.prisma.staffActivity.findMany({
+        where: { role: { not: StaffRole.COMPETITOR } },
+        include: { person: { select: { name: true } } },
+      }),
+      this.prisma.room.findMany({
+        select: { startedGroupIds: true, currentGroupIds: true },
+      }),
+      this.prisma.staffActivity.findMany({
+        where: {
+          status: {
+            in: [StaffActivityStatus.PRESENT, StaffActivityStatus.LATE],
+          },
         },
-      },
-      include: {
-        StaffActivity: true,
-      },
-    });
-    const roundsThatTookPlace = await this.prisma.result.findMany({
-      distinct: ['roundId'],
-    });
-
-    return persons.map((person) => {
-      const totalPresentAtStaffingComparedToRounds =
-        person.StaffActivity.filter(
-          (activity) =>
-            activity.status === StaffActivityStatus.PRESENT &&
-            activity.role !== 'COMPETITOR' &&
-            roundsThatTookPlace.some(
-              (round) => round.roundId === activity.groupId.split('-g')[0],
-            ),
-        ).length;
-      const totalStaffingComparedToRounds = person.StaffActivity.filter(
-        (activity) =>
-          activity.isAssigned &&
-          activity.role !== 'COMPETITOR' &&
-          roundsThatTookPlace.some(
-            (round) => round.roundId === activity.groupId.split('-g')[0],
-          ),
-      ).length;
-      return {
-        personName: person.name,
-        totalAssignedStaffing: person.StaffActivity.filter(
-          (activity) => activity.isAssigned && activity.role !== 'COMPETITOR',
-        ).length,
-        presentPercentage:
-          (totalPresentAtStaffingComparedToRounds /
-            totalStaffingComparedToRounds) *
-            100 || 0,
-        totalPresentAtStaffingComparedToRounds,
-        totalStaffingComparedToRounds,
-      };
-    });
+        select: { groupId: true },
+        distinct: ['groupId'],
+      }),
+      this.prisma.competition.findFirst({ select: { wcif: true } }),
+    ]);
+    return computeAttendanceStatistics(
+      activities,
+      happenedGroups(
+        rooms,
+        attended.map((activity) => activity.groupId),
+      ),
+      competition?.wcif as ScheduleWcif | undefined,
+    );
   }
 
   async createAttendance(data: CreateAttendaceDto) {

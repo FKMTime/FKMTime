@@ -177,7 +177,7 @@ export const groupDay = (wcif: WCIF, groupId: string) => {
     return schedule && venueDay(schedule.startTime, schedule.timezone);
 };
 
-export const attendanceStatisticsQuery = backendQuery<AttendanceStatistics[]>(
+export const attendanceStatisticsQuery = backendQuery<AttendanceStatistics>(
     "attendance/statistics"
 );
 

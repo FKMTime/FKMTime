@@ -332,12 +332,66 @@ export interface RoundStatistics {
     delayInMinutes: number;
 }
 
-export interface AttendanceStatistics {
+/** Every staff role but competing, which isn't staffing */
+export type StaffingRole =
+    | "JUDGE"
+    | "SCRAMBLER"
+    | "RUNNER"
+    | "DELEGATE"
+    | "STAFF_OTHER";
+
+/** Counts over groups that happened; mirrors backend attendanceStatistics.ts */
+export interface AttendanceSummary {
+    /** covered / expected × 100; null while nothing assigned has happened */
+    attendancePct: number | null;
+    /** Assigned slots done by the person themselves: present or late */
+    covered: number;
+    expected: number;
+    /** Part of covered */
+    late: number;
+    replaced: number;
+    absent: number;
+    leftEarly: number;
+    /** Part of absent */
+    noShows: number;
+    /** Present without an assignment; outside the percentage */
+    extraHelp: number;
+}
+
+export interface PersonAttendance {
+    personId: string;
     personName: string;
-    presentPercentage: number;
-    totalAssignedStaffing: number;
-    totalPresentAtStaffingComparedToRounds: number;
-    totalStaffingComparedToRounds: number;
+    roles: StaffingRole[];
+    assigned: number;
+    /** Present or late, so late is part of it */
+    present: number;
+    late: number;
+    absent: number;
+    replaced: number;
+    leftEarly: number;
+    noShow: number;
+    extraHelp: number;
+    attendancePct: number | null;
+}
+
+export interface RoundAttendance {
+    roundId: string;
+    roundName: string;
+    expected: number;
+    covered: number;
+    attendancePct: number | null;
+}
+
+export interface AttendanceStatisticsView {
+    summary: AttendanceSummary;
+    persons: PersonAttendance[];
+    /** In schedule order */
+    rounds: RoundAttendance[];
+}
+
+export interface AttendanceStatistics extends AttendanceStatisticsView {
+    /** The same, one role at a time, for roles that have any */
+    byRole: Partial<Record<StaffingRole, AttendanceStatisticsView>>;
 }
 
 export interface StaffActivity {
