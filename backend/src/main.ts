@@ -5,8 +5,11 @@ import { json } from 'express';
 import * as passport from 'passport';
 
 import { AppModule } from './app.module';
+import { installBackendLogFile } from './logging/backendLogFile';
 
 dotenv.config();
+// Before anything logs, so admins see the whole log in the panel (SPEC-011)
+installBackendLogFile(process.env.BACKEND_LOGS_DIR);
 
 const { PORT = 5000 } = process.env;
 async function bootstrap() {

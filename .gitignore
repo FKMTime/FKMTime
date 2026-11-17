@@ -1,7 +1,5 @@
 .idea/
 .vscode/
 .env
-dozzle/*
-!dozzle/users.example.yml
 graphify-out
 .docker-adapter/

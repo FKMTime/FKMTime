@@ -25,6 +25,11 @@ class EnvironmentVariables {
   @IsOptional()
   @IsString()
   DEVICE_LOGS_DIR?: string;
+
+  /** Where the backend writes its own log, for admins to read (SPEC-011) */
+  @IsOptional()
+  @IsString()
+  BACKEND_LOGS_DIR?: string;
 }
 
 export function validate(config: Record<string, unknown>) {

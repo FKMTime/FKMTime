@@ -3,14 +3,16 @@ import { tmpdir } from 'os';
 import * as path from 'path';
 
 import {
-  deviceLogFileName,
-  deviceLogsDir,
-  downloadFileName,
   MAX_BATCH_LINES,
   pollFile,
   readTail,
   SNAPSHOT_BYTES,
   SNAPSHOT_LINES,
+} from '../logging/logFile';
+import {
+  deviceLogFileName,
+  deviceLogsDir,
+  downloadFileName,
 } from './deviceLog';
 
 const line = (n: number) =>
