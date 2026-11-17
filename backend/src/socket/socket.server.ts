@@ -72,6 +72,10 @@ export class SocketServer {
               `Failed to handle request of type ${request.type}, tag ${request.tag}`,
               e instanceof Error ? e.stack : e,
             );
+            this.socketService.recordInternalError(
+              request.data?.espId,
+              'Internal server error',
+            );
             this.sendResponseWithTag(socket, {
               type: request.type,
               tag: request.tag,

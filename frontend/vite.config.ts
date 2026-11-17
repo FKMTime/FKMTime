@@ -6,7 +6,6 @@ import { defineConfig } from "vite";
 import checker from "vite-plugin-checker";
 import { VitePWA } from "vite-plugin-pwa";
 import svgrPlugin from "vite-plugin-svgr";
-import viteTsconfigPaths from "vite-tsconfig-paths";
 
 const manifestForPlugIn = {
     registerType: "prompt",
@@ -52,7 +51,6 @@ export default defineConfig({
                     useFlatConfig: true,
                 },
             }),
-        viteTsconfigPaths(),
         svgrPlugin(),
         //eslint-disable-next-line @typescript-eslint/ban-ts-comment
         // @ts-ignore
@@ -60,7 +58,7 @@ export default defineConfig({
     ],
     resolve: {
         alias: {
-            "@": path.resolve(__dirname, "./src"),
+            "@": path.resolve(import.meta.dirname, "./src"),
         },
     },
     server: {

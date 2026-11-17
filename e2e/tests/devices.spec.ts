@@ -1,7 +1,14 @@
 import { Page } from "@playwright/test";
 
 import { expect, freshDatabase, signedInAs, test } from "../fixtures";
-import { createDevice, getDevices, getRoom, getRooms } from "../helpers/api";
+import {
+    assignCard,
+    createDevice,
+    getDevices,
+    getPersonByRegistrantId,
+    getRoom,
+    getRooms,
+} from "../helpers/api";
 import { Station } from "../helpers/station";
 import { confirm, expectToast, socketEventSent } from "../helpers/ui";
 import { storageStatePath } from "../helpers/users";
@@ -209,6 +216,46 @@ test.describe("devices", () => {
             await expect(page.getByRole("tooltip")).not.toContainText(
                 "Router hears it"
             );
+        } finally {
+            station.close();
+        }
+    });
+
+    test("shows a station's last error and how to fix it", async ({
+        page,
+        api,
+    }) => {
+        const room = await getRoom(api);
+        await createDevice(api, {
+            name: "Station Help Desk",
+            espId: 0x7c7c,
+            roomId: room.id,
+        });
+        const person = await getPersonByRegistrantId(api, 3);
+        await assignCard(api, person.id, "7700501");
+        const joined = socketEventSent(page, "joinDevices");
+        await page.goto("/devices");
+        const row = deviceRow(page, "Station Help Desk");
+        await expect(row).toBeVisible();
+        await joined;
+
+        const station = await Station.connect();
+        try {
+            const reply = await station.personInfo(0x7c7c, "7700999");
+            expect(reply.data).not.toHaveProperty("errorDetails");
+
+            // Arrives live, without reloading the page
+            const error = row.getByRole("button", {
+                name: "Competitor not found",
+            });
+            await error.click();
+            await expect(page.getByRole("dialog")).toContainText(
+                "Card 7700999 isn't assigned. Assign it on the Cards page."
+            );
+            await page.keyboard.press("Escape");
+
+            await station.personInfo(0x7c7c, "7700501");
+            await expect(error).toHaveCount(0);
         } finally {
             station.close();
         }

@@ -220,5 +220,8 @@ export const addUnassignedPerson = async (
         true,
         { personId, role }
     );
-    return response.status;
+    const message: string | undefined = response.ok
+        ? undefined
+        : (await response.json()).message;
+    return { status: response.status, message };
 };

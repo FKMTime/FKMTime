@@ -1,18 +1,22 @@
-import { Check } from "lucide-react";
+import { Check, TriangleAlert } from "lucide-react";
 import { useState } from "react";
 
 import { Modal } from "@/Components/Modal";
 import PersonAutocomplete from "@/Components/PersonAutocomplete";
+import { Alert, AlertDescription } from "@/Components/ui/alert";
 import { Button } from "@/Components/ui/button";
 import { useDialogError } from "@/hooks/useDialogError";
+import { prettyActivityName } from "@/lib/activities";
 import { addUnassignedPerson } from "@/lib/attendance";
-import { Person } from "@/lib/interfaces";
+import { Person, StaffActivity } from "@/lib/interfaces";
 
 interface AddNotAssignedPersonModalProps {
     isOpen: boolean;
     onClose: () => void;
     groupId: string;
     role: string;
+    /** Everyone in this group, in every role */
+    groupAttendance: StaffActivity[];
 }
 
 const AddNotAssignedPersonModal = ({
@@ -20,9 +24,19 @@ const AddNotAssignedPersonModal = ({
     onClose,
     groupId,
     role,
+    groupAttendance,
 }: AddNotAssignedPersonModalProps) => {
     const [error, setError] = useDialogError(isOpen);
     const [person, setPerson] = useState<Person | null>(null);
+    const roleName = prettyActivityName(role).toLowerCase();
+    const competesInGroup =
+        !!person &&
+        role !== "COMPETITOR" &&
+        groupAttendance.some(
+            (activity) =>
+                activity.role === "COMPETITOR" &&
+                activity.person.id === person.id
+        );
 
     const handleAddPerson = async () => {
         if (!person || !groupId || !role) {
@@ -30,12 +44,18 @@ const AddNotAssignedPersonModal = ({
             return;
         }
 
-        const status = await addUnassignedPerson(groupId, person.id, role);
+        const { status, message } = await addUnassignedPerson(
+            groupId,
+            person.id,
+            role
+        );
         if (status === 404) {
             setError("Group or person not found");
         } else if (status === 409) {
+            // Says whether they are already present, late or replaced
             setError(
-                "Person is already marked as present in another role during this group"
+                message ??
+                    `${person.name} is already marked in this group as a ${roleName}`
             );
         } else if (status !== 201) {
             setError("Something went wrong");
@@ -54,9 +74,18 @@ const AddNotAssignedPersonModal = ({
                 onSelect={(p) => setPerson(p)}
                 defaultValue={person?.id}
             />
+            {competesInGroup && (
+                <Alert variant="warning">
+                    <TriangleAlert aria-hidden />
+                    <AlertDescription>
+                        {person.name} is competing in this group. Add them as{" "}
+                        {roleName} anyway?
+                    </AlertDescription>
+                </Alert>
+            )}
             <Button onClick={handleAddPerson} disabled={!person}>
                 <Check />
-                Add and mark as present
+                {competesInGroup ? "Add anyway" : "Add and mark as present"}
             </Button>
         </Modal>
     );

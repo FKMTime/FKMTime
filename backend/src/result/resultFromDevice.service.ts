@@ -120,6 +120,7 @@ export class ResultFromDeviceService {
         shouldResetTime: true,
         status: 404,
         error: true,
+        errorDetails: { key: 'competitionNotFound' },
       };
     }
 
@@ -130,6 +131,7 @@ export class ResultFromDeviceService {
         shouldResetTime: false,
         status: 404,
         error: true,
+        errorDetails: { key: 'stationNotFound' },
       };
     }
     const stationRoundIds = getStationRoundIds(device);
@@ -139,6 +141,7 @@ export class ResultFromDeviceService {
         status: 400,
         shouldResetTime: false,
         error: true,
+        errorDetails: { key: 'noGroups' },
       };
     }
     const isPointed = isPointedStation(device);
@@ -169,6 +172,10 @@ export class ResultFromDeviceService {
           shouldResetTime: false,
           status: 409,
           error: true,
+          errorDetails: {
+            key: 'stationRoundChanged',
+            competitorName: competitor?.name ?? null,
+          },
         };
       }
     } else if (stationRoundIds.length === 1) {
@@ -179,6 +186,7 @@ export class ResultFromDeviceService {
         shouldResetTime: false,
         status: 400,
         error: true,
+        errorDetails: { key: 'groupNotFound' },
       };
     }
 
@@ -193,6 +201,7 @@ export class ResultFromDeviceService {
         shouldResetTime: true,
         status: 404,
         error: true,
+        errorDetails: { key: 'competitorNotFound', cardId: data.competitorId },
       };
     }
     const wcif = JSON.parse(JSON.stringify(competition.wcif));
@@ -235,6 +244,10 @@ export class ResultFromDeviceService {
             shouldResetTime: false,
             status: 400,
             error: true,
+            errorDetails: {
+              key: 'judgeCardNotScanned',
+              competitorName: competitor.name,
+            },
           };
         }
       }
@@ -259,6 +272,10 @@ export class ResultFromDeviceService {
         shouldResetTime: sameAttempt,
         status: 409,
         error: true,
+        errorDetails: {
+          key: 'attemptAlreadyEntered',
+          competitorName: competitor.name,
+        },
       };
     }
 
@@ -273,6 +290,7 @@ export class ResultFromDeviceService {
         shouldResetTime: false,
         status: 404,
         error: true,
+        errorDetails: { key: 'judgeNotFound', cardId: data.judgeId ?? null },
       };
     }
     if (judge && judge.id === competitor.id) {
@@ -281,6 +299,10 @@ export class ResultFromDeviceService {
         shouldResetTime: false,
         status: 400,
         error: true,
+        errorDetails: {
+          key: 'judgeIsCompetitor',
+          competitorName: competitor.name,
+        },
       };
     }
 
@@ -317,6 +339,10 @@ export class ResultFromDeviceService {
         shouldResetTime: false,
         status: 400,
         error: true,
+        errorDetails: {
+          key: 'competitorIsNotSignedInForEvent',
+          competitorName: competitor.name,
+        },
       };
     }
     const result = await this.resultService.getResultOrCreateIncludingRemoved(
@@ -330,6 +356,10 @@ export class ResultFromDeviceService {
         shouldResetTime: false,
         status: 409,
         error: true,
+        errorDetails: {
+          key: 'competitorRemovedFromRound',
+          competitorName: competitor.name,
+        },
       };
     }
 
@@ -354,6 +384,10 @@ export class ResultFromDeviceService {
         shouldResetTime: true,
         status: 400,
         error: true,
+        errorDetails: {
+          key: 'cutoffNotPassed',
+          competitorName: competitor.name,
+        },
       };
     }
     const sortedAttempts = getSortedStandardAttempts(attempts);
@@ -406,6 +440,10 @@ export class ResultFromDeviceService {
           shouldResetTime: false,
           status: 400,
           error: true,
+          errorDetails: {
+            key: 'noAttemptsLeft',
+            competitorName: competitor.name,
+          },
         };
       }
       if (lastAttempt) {

@@ -127,13 +127,14 @@ export class AttendanceService {
         groupId: groupId,
         personId: person.id,
         role: data.role,
-        status: StaffActivityStatus.PRESENT,
+        status: { not: StaffActivityStatus.ABSENT },
       },
     });
 
+    // Adding them again would overwrite being late or replaced
     if (activityForGroup) {
       throw new HttpException(
-        'This person is already marked as present in this group in another role.',
+        `This person is already marked as ${activityForGroup.status.toLowerCase()} in this role in this group.`,
         HttpStatus.CONFLICT,
       );
     }

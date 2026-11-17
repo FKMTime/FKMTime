@@ -49,6 +49,13 @@ jobs:
           # every 5 minutes, so the dummy's default (internal) would switch the
           # test competition mid-run whenever a run crosses a 5-minute mark
           GENERATED_SCORETAKING_SOFTWARE: wca_live
+          # The dummy counts every request from this machine against one
+          # limit, the tests' own included (typing results "on the WCA
+          # website", polling round states), which the WCA would never count
+          # against FKMTime. With the limit on, a user action like "Clear"
+          # gets a 429 whenever the tests and the sender have used the
+          # minute up. The sender's own 30-a-minute cap is unit tested.
+          API_RATE_LIMIT_PER_MINUTE: 0
         ports:
           - 3000:3000
       dummy-wca-live:

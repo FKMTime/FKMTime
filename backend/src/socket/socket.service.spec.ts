@@ -2,6 +2,7 @@ import { DeviceType } from '@prisma/client';
 
 import { CompetitionService } from '../competition/competition.service';
 import { DeviceService } from '../device/device.service';
+import { StationErrorService } from '../device/stationError.service';
 import { StationSignalService } from '../device/stationSignal.service';
 import { PersonService } from '../person/person.service';
 import { LIVE_LOOKUP_TTL_MS } from '../ttl-cache';
@@ -55,6 +56,7 @@ describe('SocketService', () => {
     let appGateway: Record<string, jest.Mock>;
     let deviceService: DeviceService;
     let stationSignal: StationSignalService;
+    let stationErrors: StationErrorService;
     let personService: PersonService;
     let competitionService: CompetitionService;
     let service: SocketService;
@@ -64,6 +66,7 @@ describe('SocketService', () => {
       prisma = {
         device: {
           findFirst: jest.fn().mockResolvedValue(station),
+          findUnique: jest.fn().mockResolvedValue(station),
           update: jest.fn().mockResolvedValue({}),
           delete: jest.fn().mockResolvedValue({}),
         },
@@ -86,14 +89,17 @@ describe('SocketService', () => {
         broadcastCurrentTimeInfo: jest.fn(),
         handleDeviceUpdated: jest.fn(),
         handleDeviceSignal: jest.fn(),
+        handleDeviceError: jest.fn(),
       };
       const socketController = { sendServerStatus: jest.fn() };
       stationSignal = new StationSignalService(appGateway as never);
+      stationErrors = new StationErrorService(appGateway as never);
       deviceService = new DeviceService(
         prisma as never,
         appGateway as never,
         socketController as never,
         stationSignal,
+        stationErrors,
       );
       personService = new PersonService(prisma as never, {} as never);
       competitionService = new CompetitionService(
@@ -114,6 +120,7 @@ describe('SocketService', () => {
         personService,
         appGateway as never,
         stationSignal,
+        stationErrors,
       );
     });
 
@@ -300,6 +307,63 @@ describe('SocketService', () => {
           cumulativeLimitCentiseconds: null,
         }),
       );
+    });
+
+    describe("a station's last error (SPEC-010)", () => {
+      const attempt = { espId: 7, competitorId: 123 } as never;
+      const notFound = {
+        message: 'Competitor not found',
+        shouldResetTime: true,
+        status: 404,
+        error: true,
+        errorDetails: { key: 'competitorNotFound', cardId: 123 },
+      };
+
+      it('records an error reply without sending the details to the station', async () => {
+        resultFromDeviceService.enterAttempt.mockResolvedValue(notFound);
+
+        const reply = await service.enterAttempt(attempt);
+
+        expect(reply).not.toHaveProperty('errorDetails');
+        expect(reply).toMatchObject({ error: true, status: 404 });
+        expect(stationErrors.getLastError(7)).toMatchObject({
+          key: 'competitorNotFound',
+          kind: 'problem',
+          message: 'Competitor not found',
+          cardId: '123',
+          count: 1,
+        });
+        expect(appGateway.handleDeviceError).toHaveBeenCalledWith({
+          espId: 7,
+          lastError: expect.objectContaining({ key: 'competitorNotFound' }),
+        });
+      });
+
+      it('clears it on the next successful reply', async () => {
+        resultFromDeviceService.enterAttempt.mockResolvedValue(notFound);
+        await service.enterAttempt(attempt);
+        resultFromDeviceService.enterAttempt.mockResolvedValue({
+          message: 'Attempt entered',
+          status: 200,
+        });
+
+        await service.enterAttempt(attempt);
+
+        expect(stationErrors.getLastError(7)).toBeNull();
+        expect(appGateway.handleDeviceError).toHaveBeenLastCalledWith({
+          espId: 7,
+          lastError: null,
+        });
+      });
+
+      it('records a failure while handling the request', () => {
+        service.recordInternalError(7, 'Internal server error');
+
+        expect(stationErrors.getLastError(7)).toMatchObject({
+          key: 'internalError',
+          kind: 'problem',
+        });
+      });
     });
 
     it('reads the WCIF again after it is synced', async () => {

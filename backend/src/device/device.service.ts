@@ -12,6 +12,7 @@ import { RequestToConnectDto } from './dto/requestToConnect.dto';
 import { SetCustomRoundDto } from './dto/setCustomRound.dto';
 import { UpdateBatteryPercentageDto } from './dto/updateBatteryPercentage.dto';
 import { UploadFirmwareDto } from './dto/uploadFirmware.dto';
+import { StationErrorService } from './stationError.service';
 import { StationSignalService } from './stationSignal.service';
 
 @Injectable()
@@ -22,6 +23,7 @@ export class DeviceService {
     @Inject(forwardRef(() => SocketController))
     private readonly socketController: SocketController,
     private readonly stationSignal: StationSignalService,
+    private readonly stationErrors: StationErrorService,
   ) {}
 
   private readonly stationsByEspId = new TtlCache<
@@ -50,10 +52,15 @@ export class DeviceService {
       },
     });
     const withCounts = await this.withAttemptCounts(devices);
-    // From memory, never stored: it changes every few seconds (SPEC-008)
+    // From memory, never stored: the signal changes every few seconds
+    // (SPEC-008), and the last error matters only for a while (SPEC-010)
     return withCounts.map((device) =>
       device.type === DeviceType.STATION && device.espId !== null
-        ? { ...device, signal: this.stationSignal.getSignal(device.espId) }
+        ? {
+            ...device,
+            signal: this.stationSignal.getSignal(device.espId),
+            lastError: this.stationErrors.getLastError(device.espId),
+          }
         : device,
     );
   }
@@ -388,6 +395,11 @@ export class DeviceService {
       this.prisma.attemptEditLog.count({ where: { deviceId: id } }),
     ]);
     const hasHistory = attempts + staffActivities + editLogs > 0;
+    const device = await this.prisma.device.findUnique({
+      where: { id },
+      select: { espId: true },
+    });
+    if (device?.espId != null) this.stationErrors.forget(device.espId);
     if (hasHistory) {
       await this.prisma.device.update({
         where: { id },

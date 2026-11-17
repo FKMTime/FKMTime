@@ -1,0 +1,202 @@
+name: Preview
+
+# Decides which commits of a pull request may run as a preview environment,
+# and asks for them to be deployed or torn down.
+#
+# Trusted: for both triggers GitHub runs main's copy of this file, never the
+# PR's. So nothing here checks out, downloads or runs anything from the PR.
+#
+# A commit is approved by the commit status `preview/approved`, set here when:
+# - a person with triage access or above adds the `preview` label, or
+# - a person with write access pushes to a labelled PR whose branch is in
+#   this repository.
+# Any other push to a labelled PR (a fork's, a bot's) removes the label, and
+# someone has to look at the new commits and add it again.
+
+on:
+  pull_request_target:
+    types: [labeled, unlabeled, synchronize, closed]
+  workflow_run:
+    workflows: [Preview build]
+    types: [completed]
+
+permissions: {}
+
+concurrency:
+  group: preview-${{ github.event.pull_request.number || github.event.workflow_run.head_sha }}
+  cancel-in-progress: false
+
+jobs:
+  gate:
+    name: Approve or withdraw
+    if: github.event_name == 'pull_request_target'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      pull-requests: write
+      statuses: write
+    outputs:
+      teardown: ${{ steps.decide.outputs.teardown }}
+    steps:
+      - id: decide
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          ACTION: ${{ github.event.action }}
+          LABEL: ${{ github.event.label.name }}
+          HAS_LABEL: ${{ contains(github.event.pull_request.labels.*.name, 'preview') }}
+          PR: ${{ github.event.pull_request.number }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          HEAD_REPO: ${{ github.event.pull_request.head.repo.full_name }}
+          SENDER: ${{ github.event.sender.login }}
+          SENDER_TYPE: ${{ github.event.sender.type }}
+        run: |
+          set -euo pipefail
+          [[ "$PR" =~ ^[0-9]+$ && "$HEAD_SHA" =~ ^[0-9a-f]{40}$ ]] || { echo "Unexpected event payload"; exit 1; }
+
+          role_of() {  # admin, maintain, write, triage, read or none
+            gh api "repos/$REPO/collaborators/$1/permission" --jq .role_name 2>/dev/null || echo none
+          }
+          approve() {
+            gh api -X POST "repos/$REPO/statuses/$HEAD_SHA" -f state=success \
+              -f context=preview/approved -f description="$1" > /dev/null
+            echo "Approved $HEAD_SHA: $1"
+          }
+          withdraw() {
+            # A label removed with this workflow's own token starts no other
+            # workflow, so no `unlabeled` run follows: ask for the teardown here
+            gh api -X DELETE "repos/$REPO/issues/$PR/labels/preview" > /dev/null || true
+            gh api -X POST "repos/$REPO/issues/$PR/comments" -f body="$1" > /dev/null
+            echo "teardown=true" >> "$GITHUB_OUTPUT"
+            echo "Withdrew the label"
+          }
+
+          case "$ACTION" in
+            labeled)
+              if [[ "$LABEL" != preview ]]; then exit 0; fi
+              role=$(role_of "$SENDER")
+              if [[ "$SENDER_TYPE" == User && "$role" =~ ^(admin|maintain|write|triage)$ ]]; then
+                approve "Labelled by $SENDER"
+              else
+                withdraw "The \`preview\` label was removed: only a person with triage access or above can put a commit on a preview."
+              fi
+              ;;
+            synchronize)
+              if [[ "$HAS_LABEL" != true ]]; then exit 0; fi
+              role=$(role_of "$SENDER")
+              if [[ "$HEAD_REPO" == "$REPO" && "$SENDER_TYPE" == User && "$role" =~ ^(admin|maintain|write)$ ]]; then
+                approve "Pushed by $SENDER"
+              else
+                withdraw "The \`preview\` label was removed because new commits arrived from a fork or a bot. Once someone with triage access has looked at them, adding the label again puts the new head commit on the preview."
+              fi
+              ;;
+            unlabeled)
+              if [[ "$LABEL" == preview ]]; then echo "teardown=true" >> "$GITHUB_OUTPUT"; fi
+              ;;
+            closed)
+              if [[ "$HAS_LABEL" == true ]]; then echo "teardown=true" >> "$GITHUB_OUTPUT"; fi
+              ;;
+          esac
+
+  find:
+    name: Find the approved PR
+    if: >-
+      github.event_name == 'workflow_run' &&
+      github.event.workflow_run.event == 'pull_request' &&
+      github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      pull-requests: read
+      statuses: read
+    outputs:
+      pr: ${{ steps.find.outputs.pr }}
+    steps:
+      - id: find
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
+        run: |
+          set -euo pipefail
+          [[ "$HEAD_SHA" =~ ^[0-9a-f]{40}$ ]] || { echo "Unexpected event payload"; exit 1; }
+
+          # workflow_run names no PR for a fork, so match on the head commit
+          pr=$(gh api --paginate "repos/$REPO/pulls?state=open&per_page=100" \
+            --jq '.[] | select(.head.sha == env.HEAD_SHA and any(.labels[]; .name == "preview")) | .number' \
+            | head -n 1)
+          if [[ -z "$pr" ]]; then
+            echo "No open PR with the preview label has this head commit any more"
+            exit 0
+          fi
+
+          # The approval is set within seconds of the label; allow for it to
+          # lag behind a very fast build
+          for _ in 1 2 3 4 5 6; do
+            approved=$(gh api "repos/$REPO/commits/$HEAD_SHA/statuses?per_page=100" \
+              --jq '[.[] | select(.context == "preview/approved" and .state == "success" and .creator.login == "github-actions[bot]")] | length')
+            if [[ "$approved" -gt 0 ]]; then
+              echo "pr=$pr" >> "$GITHUB_OUTPUT"
+              echo "PR #$pr, commit $HEAD_SHA, is approved"
+              exit 0
+            fi
+            sleep 10
+          done
+          echo "PR #$pr's head commit carries no approval; not deploying it"
+
+  request-deploy:
+    name: Request deploy
+    needs: find
+    if: needs.find.outputs.pr != ''
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    environment: preview
+    permissions: {}
+    steps:
+      - id: token
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+        with:
+          client-id: ${{ secrets.PREVIEW_DISPATCHER_CLIENT_ID }}
+          private-key: ${{ secrets.PREVIEW_DISPATCHER_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+          repositories: ${{ secrets.PREVIEW_DEPLOY_REPO }}
+          permission-actions: write
+      - name: Request deploy
+        env:
+          GH_TOKEN: ${{ steps.token.outputs.token }}
+          TARGET: ${{ github.repository_owner }}/${{ secrets.PREVIEW_DEPLOY_REPO }}
+          PR: ${{ needs.find.outputs.pr }}
+          HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
+          RUN_ID: ${{ github.event.workflow_run.id }}
+        run: |
+          gh api -X POST "repos/$TARGET/actions/workflows/preview-deploy.yml/dispatches" \
+            -f ref=main -f 'inputs[action]=deploy' -f "inputs[pr]=$PR" \
+            -f "inputs[sha]=$HEAD_SHA" -f "inputs[run_id]=$RUN_ID" > /dev/null
+          echo "Requested a deploy of PR #$PR"
+
+  request-teardown:
+    name: Request teardown
+    needs: gate
+    if: needs.gate.outputs.teardown == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    environment: preview
+    permissions: {}
+    steps:
+      - id: token
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+        with:
+          client-id: ${{ secrets.PREVIEW_DISPATCHER_CLIENT_ID }}
+          private-key: ${{ secrets.PREVIEW_DISPATCHER_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+          repositories: ${{ secrets.PREVIEW_DEPLOY_REPO }}
+          permission-actions: write
+      - name: Request teardown
+        env:
+          GH_TOKEN: ${{ steps.token.outputs.token }}
+          TARGET: ${{ github.repository_owner }}/${{ secrets.PREVIEW_DEPLOY_REPO }}
+          PR: ${{ github.event.pull_request.number }}
+        run: |
+          gh api -X POST "repos/$TARGET/actions/workflows/preview-deploy.yml/dispatches" \
+            -f ref=main -f 'inputs[action]=teardown' -f "inputs[pr]=$PR" > /dev/null
+          echo "Requested a teardown of PR #$PR"
