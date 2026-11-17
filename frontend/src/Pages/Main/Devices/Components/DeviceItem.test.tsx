@@ -1,4 +1,5 @@
 import { render, screen, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 
 import { Table, TableBody } from "@/Components/ui/table";
@@ -14,6 +15,12 @@ import DeviceItem from "./DeviceItem";
 
 vi.mock("@/hooks/useLiveQuery", () => ({
     useLiveQuery: () => ({ data: [] }),
+}));
+
+const permissions = vi.hoisted(() => ({ admin: false }));
+vi.mock("@/lib/permissions", () => ({
+    isAdmin: () => permissions.admin,
+    isDelegate: () => false,
 }));
 
 const signal: StationSignal = {
@@ -112,4 +119,37 @@ describe("DeviceItem signal", () => {
             ).toBeTruthy();
         }
     );
+
+    describe("View logs", () => {
+        const menuItems = async (value: Device) => {
+            renderItem(value, "card");
+            await userEvent.click(
+                screen.getByRole("button", {
+                    name: "More actions for Station Example",
+                })
+            );
+            const items = await screen.findAllByRole("menuitem");
+            return items.map((item) => item.textContent);
+        };
+
+        it("is offered to admins", async () => {
+            permissions.admin = true;
+
+            expect(await menuItems(device({}))).toContain("View logs");
+        });
+
+        it("is hidden from everyone else", async () => {
+            permissions.admin = false;
+
+            expect(await menuItems(device({}))).not.toContain("View logs");
+        });
+
+        it("is hidden for a device without an esp id", async () => {
+            permissions.admin = true;
+
+            expect(
+                await menuItems(device({ espId: null as unknown as number }))
+            ).not.toContain("View logs");
+        });
+    });
 });

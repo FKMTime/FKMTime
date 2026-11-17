@@ -1,5 +1,5 @@
 import { plainToInstance } from 'class-transformer';
-import { IsString, MinLength, validateSync } from 'class-validator';
+import { IsOptional, IsString, MinLength, validateSync } from 'class-validator';
 
 class EnvironmentVariables {
   @IsString()
@@ -20,6 +20,11 @@ class EnvironmentVariables {
 
   @IsString()
   WCA_CLIENT_SECRET: string;
+
+  /** The connector's device log folder, mounted read-only (SPEC-009) */
+  @IsOptional()
+  @IsString()
+  DEVICE_LOGS_DIR?: string;
 }
 
 export function validate(config: Record<string, unknown>) {

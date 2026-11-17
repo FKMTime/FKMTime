@@ -7,6 +7,7 @@ services:
       - ./backend/src:/app/src
       - ./backend/prisma:/app/prisma
       - sock:/app/sock
+      - /tmp/fkm-logs:/device-logs:ro
     restart: unless-stopped
     dns:
       - 8.8.8.8
@@ -20,6 +21,8 @@ services:
       - WCA_CLIENT_ID=example-application-id
       - WCA_CLIENT_SECRET=example-secret
       - SOCKET_PATH=/app/sock/socket.sock
+      # The connector's device logs, for admins to read (SPEC-009)
+      - DEVICE_LOGS_DIR=/device-logs
       # File events from the bind-mounted source don't reach the container on
       # macOS (Colima, Docker Desktop), so the watchers poll instead: tsc for
       # the code (dynamic polling checks files that haven't changed lately less
