@@ -1,6 +1,6 @@
 # SPEC-009: Live device logs for admins
 
-- **Status:** Accepted
+- **Status:** Implemented
 - **Created:** 2026-11-15
 - **Related:** SPEC-008 (station Wi-Fi signal), FKMTime/micro-connector
   (`log_subscriber.rs`, `on_log_packet`), fim instance templates
@@ -213,36 +213,36 @@ on gateway events the same way `OrganizerGuard` does for `joinDevices`.
 
 ## Acceptance criteria
 
-- [ ] File name from `espId`: upper-case hex, no padding (unit test).
-- [ ] The snapshot returns the last 500 lines of a file bigger than 256 KB,
+- [x] File name from `espId`: upper-case hex, no padding (unit test).
+- [x] The snapshot returns the last 500 lines of a file bigger than 256 KB,
       sets `truncated`, and never starts with a partial line (unit test).
-- [ ] The follower sends only complete new lines, keeps a partial line until
+- [x] The follower sends only complete new lines, keeps a partial line until
       its newline arrives, and caps a batch at 1000 with `skipped` (unit
       test on a temp file).
-- [ ] A file that shrinks causes a fresh snapshot (unit test).
-- [ ] A missing file gives an empty snapshot, then lines once it appears
+- [x] A file that shrinks causes a fresh snapshot (unit test).
+- [x] A missing file gives an empty snapshot, then lines once it appears
       (unit test).
-- [ ] With `DEVICE_LOGS_DIR` unset, the snapshot is `available: false` and
+- [x] With `DEVICE_LOGS_DIR` unset, the snapshot is `available: false` and
       the backend starts normally (unit test).
-- [ ] `joinDeviceLogs` is rejected for an organiser and accepted for an
+- [x] `joinDeviceLogs` is rejected for an organiser and accepted for an
       admin (e2e).
-- [ ] `GET /device/:id/logs` returns the file for an admin with the
+- [x] `GET /device/:id/logs` returns the file for an admin with the
       attachment header and a cleaned-up name, `403` for an organiser, `404`
       for a device without an `espId` or without a file, and `503` without
       `DEVICE_LOGS_DIR` (e2e).
-- [ ] The download stops at the size the file had when the request arrived
+- [x] The download stops at the size the file had when the request arrived
       (unit test on a file appended to mid-stream).
-- [ ] The follower stops when the last subscriber leaves or disconnects
+- [x] The follower stops when the last subscriber leaves or disconnects
       (unit test).
-- [ ] The log view colours ANSI levels, strips other escape sequences, and
+- [x] The log view colours ANSI levels, strips other escape sequences, and
       renders `<b>` as text, not markup (component test).
-- [ ] The view follows new lines at the bottom, stops when scrolled up, and
+- [x] The view follows new lines at the bottom, stops when scrolled up, and
       "Jump to latest" resumes (component test).
-- [ ] The Download button saves the file, and shows an error toast on a
+- [x] The Download button saves the file, and shows an error toast on a
       `404` (component test with a mocked API).
-- [ ] The View logs action is hidden for non-admins and for devices without an
+- [x] The View logs action is hidden for non-admins and for devices without an
       `espId` (component test).
-- [ ] An admin gets the snapshot of a real file, then a line appended to it
+- [x] An admin gets the snapshot of a real file, then a line appended to it
       (backend e2e with a temporary `DEVICE_LOGS_DIR`). The e2e station
       helper talks to the backend without a connector, so it can't write a
       device log for a Playwright test.
