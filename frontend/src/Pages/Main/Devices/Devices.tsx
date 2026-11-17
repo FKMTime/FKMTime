@@ -1,6 +1,6 @@
-import { LayoutGrid, List, Plus, Radio } from "lucide-react";
+import { LayoutGrid, List, Plus, Radio, SlidersHorizontal } from "lucide-react";
 import { useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 
 import LoadingPage from "@/Components/LoadingPage";
 import EmptyState from "@/Components/shared/EmptyState";
@@ -48,14 +48,12 @@ import { socket } from "@/socket";
 import { AutoSetupSwitch } from "./Components/AutoSetupSwitch";
 import CreateDeviceModal from "./Components/CreateDeviceModal";
 import DeviceItem from "./Components/DeviceItem";
-import DevicesSettings from "./Tabs/DeviceSettings/DevicesSettings";
 import UploadFirmware from "./Tabs/UploadFirmware/UploadFirmware";
 
-type DevicesTab = "allDevices" | "settings" | "uploadFirmware";
+type DevicesTab = "allDevices" | "uploadFirmware";
 
 const TABS: { value: DevicesTab; label: string; adminOnly?: boolean }[] = [
     { value: "allDevices", label: "All devices" },
-    { value: "settings", label: "Settings" },
     { value: "uploadFirmware", label: "Upload firmware", adminOnly: true },
 ];
 
@@ -212,13 +210,15 @@ const Devices = () => {
     const roomName = (roomId: string) =>
         rooms.find((room) => room.id === roomId)?.name;
 
-    const tabSwitch = (
+    const visibleTabs = TABS.filter((t) => !t.adminOnly || isAdmin());
+    // Device settings live in Setup → Competition, so most people see one tab
+    const tabSwitch = visibleTabs.length > 1 && (
         <SegmentedControl
             label="Devices section"
             value={tab}
             onValueChange={handleChangeTab}
             fullWidth={isMobile}
-            options={TABS.filter((t) => !t.adminOnly || isAdmin()).map((t) => ({
+            options={visibleTabs.map((t) => ({
                 value: t.value,
                 label: t.label,
             }))}
@@ -265,8 +265,14 @@ const Devices = () => {
         <>
             <div className="flex flex-col gap-3 md:flex-row md:items-center">
                 {tabSwitch}
-                <div className="hidden gap-2 md:ml-auto md:flex">
-                    {deviceButtons}
+                <div className="flex gap-2 md:ml-auto">
+                    <Button variant="outline" asChild>
+                        <Link to="/competition">
+                            <SlidersHorizontal />
+                            Device settings
+                        </Link>
+                    </Button>
+                    <div className="hidden gap-2 md:flex">{deviceButtons}</div>
                 </div>
             </div>
             {tab === "allDevices" && (
@@ -453,7 +459,6 @@ const Devices = () => {
                     )}
                 </>
             )}
-            {tab === "settings" && <DevicesSettings />}
             {tab === "uploadFirmware" && <UploadFirmware />}
             <CreateDeviceModal
                 isOpen={isOpenCreateDeviceModal}
