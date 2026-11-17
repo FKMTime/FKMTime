@@ -5,11 +5,10 @@ import PageTabs, { PageTab } from "@/Components/shared/PageTabs";
 import { competitionAtom } from "@/lib/atoms";
 import { competitionSettingsQuery } from "@/lib/competition";
 import { prefetchQuery } from "@/lib/queryCache";
-import { roomsQuery } from "@/lib/rooms";
 import { unofficialEventsQuery } from "@/lib/unofficialEvents";
 import { usersQuery } from "@/lib/user";
 
-export type SetupTab = "competition" | "groups" | "events" | "users";
+export type SetupTab = "competition" | "events" | "users";
 
 const ignoreFailure = () => undefined;
 
@@ -18,12 +17,6 @@ const PRELOAD_TAB: Record<SetupTab, () => void> = {
     competition: () => {
         import("@/Pages/Main/Competition/Competition").catch(ignoreFailure);
         prefetchQuery(competitionSettingsQuery);
-    },
-    groups: () => {
-        import("@/Pages/Main/Competition/CurrentGroups/CurrentGroups").catch(
-            ignoreFailure
-        );
-        prefetchQuery(roomsQuery);
     },
     events: () => {
         import("@/Pages/Main/UnofficialEvents/UnofficialEvents").catch(
@@ -37,14 +30,13 @@ const PRELOAD_TAB: Record<SetupTab, () => void> = {
     },
 };
 
-/** Competition / Current groups / Unofficial events / Users */
+/** Competition / Unofficial events / Users */
 const SetupTabs = ({ value }: { value: SetupTab }) => {
     const competition = useAtomValue(competitionAtom);
     const useDevices = !!competition?.useFkmTimeDevices;
 
     const tabs: (PageTab<SetupTab> | false)[] = [
         { value: "competition", label: "Competition", to: "/competition" },
-        { value: "groups", label: "Current groups", to: "/competition/groups" },
         useDevices && {
             value: "events",
             label: "Unofficial events",
@@ -54,7 +46,7 @@ const SetupTabs = ({ value }: { value: SetupTab }) => {
     ];
 
     useEffect(() => {
-        const preloaded: SetupTab[] = ["competition", "groups", "users"];
+        const preloaded: SetupTab[] = ["competition", "users"];
         if (useDevices) preloaded.push("events");
         preloaded.forEach((tab) => PRELOAD_TAB[tab]());
     }, [useDevices]);

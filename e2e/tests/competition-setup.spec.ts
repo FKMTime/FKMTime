@@ -139,7 +139,6 @@ test.describe("competition settings", () => {
     test("moves between setup tabs", async ({ page }) => {
         await page.goto("/competition");
         for (const [tab, path] of [
-            ["Current groups", "/competition/groups"],
             ["Unofficial events", "/events"],
             ["Users", "/users"],
             ["Competition", "/competition"],
@@ -154,7 +153,7 @@ test.describe("competition settings", () => {
     });
 });
 
-test.describe("current groups", () => {
+test.describe("room groups on home", () => {
     test.beforeEach(async ({ api }) => {
         await setGroups(api, {});
     });
@@ -200,9 +199,9 @@ test.describe("current groups", () => {
         const savedGroups = async () =>
             (await getRooms(api)).find((r) => r.id === room.id)!
                 .currentGroupIds;
-        await page.goto("/competition/groups");
+        await page.goto("/");
         const section = roomSection(page, room.name);
-        await expect(section.getByText("Nothing running")).toBeVisible();
+        await expect(section.getByText("No group in progress")).toBeVisible();
 
         // An empty room starts the picked group once confirmed
         await pickGroup(page, room.name, ["3x3x3 Cube", /^Round 1/, "Group 1"]);
@@ -230,7 +229,7 @@ test.describe("current groups", () => {
         await expect.poll(savedGroups).toEqual(["333-r1-g1", "222-r1-g1"]);
 
         // Each group of a room running several can stop on its own
-        await section.getByRole("button", { name: "Stop 2x2 R1 G1" }).click();
+        await roomMenu(page, room.name, "Stop 2x2 R1 G1");
         await confirm(page, "Stop 2x2 R1 G1");
         await expect.poll(savedGroups).toEqual(["333-r1-g1"]);
 
@@ -259,7 +258,7 @@ test.describe("current groups", () => {
     }) => {
         const room = await stageOne(api);
         await setGroups(api, { [room.id]: ["333-r1-g1"] });
-        await page.goto("/competition/groups");
+        await page.goto("/");
         const section = roomSection(page, room.name);
         await expect(
             section.getByText(/^Group 1 · 1 of \d+ here/)
@@ -285,7 +284,7 @@ test.describe("current groups", () => {
         await expect
             .poll(async () => (await stageOne(api)).currentGroupIds)
             .toEqual([]);
-        await expect(section.getByText("Nothing running")).toBeVisible();
+        await expect(section.getByText("No group in progress")).toBeVisible();
     });
 
     test("saves only the changed room, keeping newer groups elsewhere", async ({
@@ -299,7 +298,7 @@ test.describe("current groups", () => {
             [main.id]: ["333-r1-g1"],
             [other.id]: ["333-r1-g2"],
         });
-        await page.goto("/competition/groups");
+        await page.goto("/");
         await expect(
             roomSection(page, main.name).getByRole("button", {
                 name: "Start group 3",
@@ -331,14 +330,19 @@ test.describe("current groups", () => {
             });
     });
 
+    test("sends the old Current groups address to Home", async ({ page }) => {
+        await page.goto("/competition/groups");
+        await expect(page).toHaveURL(/\/$/);
+    });
+
     test("starts the scheduled group in a room with none running", async ({
         page,
         api,
     }) => {
         const room = await stageOne(api);
-        await page.goto("/competition/groups");
+        await page.goto("/");
         const section = roomSection(page, room.name);
-        await expect(section.getByText("Nothing running")).toBeVisible();
+        await expect(section.getByText("No group in progress")).toBeVisible();
 
         await section.getByRole("button", { name: /^Start / }).click();
         await page
@@ -373,7 +377,7 @@ test.describe("home", () => {
 
         await card.getByRole("button", { name: "Start group 3" }).click();
         await confirm(page, "Start group 3");
-        await expectToast(page, `${room.name}: group started`);
+        await expectToast(page, `${room.name} updated`);
         await expect(
             card.getByRole("link", { name: "Attendance" })
         ).toHaveAttribute("href", "/attendance/333-r1-g3");

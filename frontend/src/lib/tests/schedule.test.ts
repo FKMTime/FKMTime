@@ -327,6 +327,12 @@ describe("getStartLabel", () => {
     it("returns null when the schedule has nothing next", () => {
         expect(getStartLabel(["333-r1-g2"], [])).toBeNull();
     });
+
+    it("names no single group when the room moves to several", () => {
+        expect(getStartLabel(["333-r1-g2"], ["333-r1-g3", "pyram-r1-g1"])).toBe(
+            "Start next groups"
+        );
+    });
 });
 
 describe("getScheduleRooms", () => {

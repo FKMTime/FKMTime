@@ -1,6 +1,10 @@
 import { QueryClientProvider } from "@tanstack/react-query";
 import { lazy, Suspense } from "react";
-import { createBrowserRouter, RouterProvider } from "react-router-dom";
+import {
+    createBrowserRouter,
+    Navigate,
+    RouterProvider,
+} from "react-router-dom";
 
 import LoadingPage from "@/Components/LoadingPage";
 import PreviewBanner from "@/Components/PreviewBanner";
@@ -35,9 +39,6 @@ const MostMissedAssignments = lazy(
 );
 const CheckIn = lazy(() => import("./Pages/Main/CheckIn/CheckIn"));
 const Competition = lazy(() => import("./Pages/Main/Competition/Competition"));
-const CurrentGroups = lazy(
-    () => import("./Pages/Main/Competition/CurrentGroups/CurrentGroups")
-);
 const Devices = lazy(() => import("./Pages/Main/Devices/Devices"));
 const Home = lazy(() => import("./Pages/Main/Home/Home"));
 const ImportCompetition = lazy(
@@ -156,8 +157,9 @@ const App = () => {
                     element: <WcaLiveConnect />,
                 },
                 {
+                    // Rooms' groups are run from Home now
                     path: "competition/groups",
-                    element: <CurrentGroups />,
+                    element: <Navigate to="/" replace />,
                 },
                 {
                     path: "incidents",

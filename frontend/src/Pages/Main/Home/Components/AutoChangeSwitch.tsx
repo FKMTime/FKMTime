@@ -15,10 +15,10 @@ const AutoChangeSwitch = ({
     disabled,
     onChange,
 }: AutoChangeSwitchProps) => (
-    <label className="flex cursor-pointer items-center gap-3 rounded-xl border bg-card px-4 py-3">
+    <label className="flex cursor-pointer items-center gap-3 rounded-xl border bg-card px-3 py-2 md:max-w-md">
         <span
             className={cn(
-                "flex size-9 shrink-0 items-center justify-center rounded-lg [&>svg]:size-[18px]",
+                "flex size-8 shrink-0 items-center justify-center rounded-lg [&>svg]:size-4",
                 isOn
                     ? "bg-primary-soft text-primary"
                     : "bg-secondary text-muted-foreground"
@@ -30,10 +30,10 @@ const AutoChangeSwitch = ({
             <span className="text-sm font-semibold">
                 Automatic group change {isOn ? "on" : "off"}
             </span>
-            <span className="text-pretty text-[13px] text-muted-foreground">
+            <span className="text-pretty text-xs text-muted-foreground">
                 {isOn
-                    ? "A room moves to its next group a few seconds after the group's last result."
-                    : "Rooms stay on their groups until you start the next one here."}
+                    ? "Rooms move on a few seconds after a group's last result."
+                    : "Rooms wait until you start their next group."}
             </span>
         </span>
         <Switch

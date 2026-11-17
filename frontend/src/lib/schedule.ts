@@ -220,10 +220,14 @@ export const getRoomScheduleStatus = (
     );
 };
 
-/** "Start group 3", or the next round's name when the round changes */
+/**
+ * "Start group 3", the next round's name when the round changes, or "Start
+ * next groups" when the room moves to several at once
+ */
 export const getStartLabel = (currentGroupIds: string[], next: string[]) => {
     const nextGroupId = next[0];
     if (!nextGroupId) return null;
+    if (next.length > 1) return "Start next groups";
     const nextRoundId = nextGroupId.split("-g")[0];
     const groupNumber = nextGroupId.split("-g")[1];
     const isSameRound = currentGroupIds.some((id) =>
