@@ -33,6 +33,9 @@ describe('AttendanceService', () => {
             device: {
               findFirst: jest.fn(),
             },
+            room: {
+              findMany: jest.fn(),
+            },
           },
         },
         {
@@ -282,6 +285,54 @@ describe('AttendanceService', () => {
         '333-r1-g1',
         'person1',
       );
+    });
+  });
+
+  describe('getMostMissedAssignments', () => {
+    const absent = (groupId: string, noShow = false) => ({
+      id: groupId,
+      personId: 'person1',
+      groupId,
+      role: StaffRole.JUDGE,
+      status: StaffActivityStatus.ABSENT,
+      leftEarly: false,
+      noShow,
+      comment: null,
+    });
+
+    it('does not count an assignment as missed before its group happens', async () => {
+      jest
+        .spyOn(dbService.person, 'findMany')
+        .mockResolvedValue([{ id: 'person1', name: 'John Doe' }] as any);
+      jest
+        .spyOn(dbService.staffActivity, 'findMany')
+        .mockImplementation(((args?: { distinct?: string[] }) =>
+          Promise.resolve(
+            args?.distinct
+              ? []
+              : [
+                  absent('333-r1-g1'),
+                  absent('333-r1-g2'),
+                  absent('333-r1-g3', true),
+                ],
+          )) as any);
+      jest
+        .spyOn(dbService.room, 'findMany')
+        .mockResolvedValue([
+          { startedGroupIds: ['333-r1-g1'], currentGroupIds: ['333-r1-g2'] },
+        ] as any);
+
+      const [result] = await service.getMostMissedAssignments();
+
+      expect(result.missedAssignments.map((a) => a.groupId)).toEqual([
+        '333-r1-g1',
+        '333-r1-g2',
+      ]);
+      expect(result.missedAssignmentsCount).toBe(2);
+      // Not coming is known in advance, so it still shows
+      expect(result.noShowAssignments.map((a) => a.groupId)).toEqual([
+        '333-r1-g3',
+      ]);
     });
   });
 
