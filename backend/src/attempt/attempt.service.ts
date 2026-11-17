@@ -156,9 +156,7 @@ export class AttemptService {
     const staffActivity = await this.prisma.staffActivity.findFirst({
       where: {
         personId: data.competitorId,
-        groupId: {
-          contains: data.roundId,
-        },
+        groupId: { startsWith: `${data.roundId}-g` },
         role: StaffRole.COMPETITOR,
       },
     });

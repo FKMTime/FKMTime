@@ -39,6 +39,7 @@ describe('AttemptService extras for all attempts', () => {
     handleAttemptUpdated: jest.Mock;
     handleResultEntered: jest.Mock;
   };
+  let attendanceService: { markCompetitorAsPresent: jest.Mock };
   let service: AttemptService;
 
   const give = (attemptIds: string[], extra = {}) =>
@@ -143,10 +144,11 @@ describe('AttemptService extras for all attempts', () => {
       handleAttemptUpdated: jest.fn(),
       handleResultEntered: jest.fn(),
     };
+    attendanceService = { markCompetitorAsPresent: jest.fn() };
     service = new AttemptService(
       appGateway as unknown as AppGateway,
       prisma as unknown as DbService,
-      { markCompetitorAsPresent: jest.fn() } as unknown as AttendanceService,
+      attendanceService as unknown as AttendanceService,
       { log: jest.fn() } as unknown as AttemptEditLogService,
       resultService as unknown as ResultService,
       null as SocketController,
@@ -325,6 +327,36 @@ describe('AttemptService extras for all attempts', () => {
       await enter(3, AttemptType.STANDARD_ATTEMPT);
 
       expect(attempts[0].replacedBy).toBeNull();
+    });
+
+    it('marks them present in their group of this round, not round 10', async () => {
+      const groups = ['333-r10-g2', '333-r1-g3'];
+      // Filters like the database would, so a loose groupId filter matches
+      // what it would really match
+      prisma.staffActivity.findFirst = jest
+        .fn()
+        .mockImplementation(
+          async ({
+            where,
+          }: {
+            where: { groupId: { contains?: string; startsWith?: string } };
+          }) => {
+            const groupId = groups.find((id) =>
+              where.groupId.contains !== undefined
+                ? id.includes(where.groupId.contains)
+                : id.startsWith(where.groupId.startsWith),
+            );
+            return groupId ? { groupId } : null;
+          },
+        );
+
+      await enter(1, AttemptType.STANDARD_ATTEMPT);
+
+      expect(attendanceService.markCompetitorAsPresent).toHaveBeenCalledWith(
+        'person-1',
+        '333-r1-g3',
+        '',
+      );
     });
   });
 
