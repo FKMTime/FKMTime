@@ -5,7 +5,7 @@ import { useLiveQuery } from "@/hooks/useLiveQuery";
 import { useSocketEvents } from "@/hooks/useSocketEvents";
 import { useSocketRoom } from "@/hooks/useSocketRoom";
 import { publicRoomsQuery } from "@/lib/competition";
-import { StationInfo } from "@/lib/liveSolving";
+import { StationInfo, StationRemoved, withoutStation } from "@/lib/liveSolving";
 
 const PublicLiveSolving = () => {
     const [stations, setStations] = useState<Map<number, StationInfo>>(
@@ -23,6 +23,10 @@ const PublicLiveSolving = () => {
         currentTimeInfo: (data) => {
             const station = data as StationInfo;
             setStations((prev) => new Map(prev).set(station.espId, station));
+        },
+        stationRemoved: (data) => {
+            const { espId } = data as StationRemoved;
+            setStations((prev) => withoutStation(prev, espId));
         },
     });
 

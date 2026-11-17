@@ -49,6 +49,7 @@ describe('DeviceService', () => {
             handleAddDeviceToDb: jest.fn(),
             handleDeviceRequest: jest.fn(),
             handleDeviceUpdated: jest.fn(),
+            forgetStation: jest.fn(),
             getDeviceRequest: jest.fn(),
           },
         },
@@ -471,6 +472,17 @@ describe('DeviceService', () => {
       await service.deleteDevice('device1');
 
       expect(stationErrors.forget).toHaveBeenCalledWith(7);
+    });
+
+    it('takes a retired station off live solving', async () => {
+      (dbService.attempt.count as jest.Mock).mockResolvedValue(3);
+      jest
+        .spyOn(dbService.device, 'findUnique')
+        .mockResolvedValue({ espId: 7 } as any);
+
+      await service.deleteDevice('device1');
+
+      expect(appGateway.forgetStation).toHaveBeenCalledWith(7);
     });
   });
 });

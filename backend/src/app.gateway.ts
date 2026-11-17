@@ -340,6 +340,13 @@ export class AppGateway {
     if (station) this.emitStation({ ...station, lastSolve });
   }
 
+  /** Drops a retired or deleted station from live solving */
+  forgetStation(espId: number) {
+    this.lastSolves.delete(espId);
+    if (!this.stations.delete(espId)) return;
+    this.server.to('live-solving').emit('stationRemoved', { espId });
+  }
+
   private emitStation(info: StationInfo) {
     this.stations.set(info.espId, info);
     this.server.to('live-solving').emit('currentTimeInfo', info);

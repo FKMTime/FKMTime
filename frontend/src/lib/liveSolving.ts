@@ -119,6 +119,22 @@ export const getStationTimer = (
     };
 };
 
+/** Sent when a station is retired or deleted, to take it off the board */
+export interface StationRemoved {
+    espId: number;
+}
+
+/** The stations without the one just retired or deleted */
+export const withoutStation = (
+    stations: Map<number, StationInfo>,
+    espId: number
+) => {
+    if (!stations.has(espId)) return stations;
+    const next = new Map(stations);
+    next.delete(espId);
+    return next;
+};
+
 export interface StationRoom {
     id: string;
     name: string;

@@ -6,7 +6,8 @@ import { useSocketEvents } from "@/hooks/useSocketEvents";
 import { useSocketRoom } from "@/hooks/useSocketRoom";
 import { stationDevicesQuery } from "@/lib/devices";
 import { Device } from "@/lib/interfaces";
-import { StationInfo } from "@/lib/liveSolving";
+import { StationInfo, StationRemoved, withoutStation } from "@/lib/liveSolving";
+import { queryClient } from "@/lib/queryClient";
 import { roomsQuery } from "@/lib/rooms";
 
 interface NewIncidentData {
@@ -113,12 +114,21 @@ const LiveSolving = () => {
         });
     };
 
+    const handleStationRemoved = ({ espId }: StationRemoved) => {
+        setStations((prev) => withoutStation(prev, espId));
+        // Or the device list adds it back as idle
+        void queryClient.invalidateQueries({
+            queryKey: [stationDevicesQuery.key],
+        });
+    };
+
     // Stations stream over the socket; the room is joined again on reconnect
     useSocketRoom("LiveSolving");
     useSocketEvents({
         currentStations: (data) => handleCurrentStations(data as StationInfo[]),
         currentTimeInfo: (data) => handleCurrentTimeInfo(data as StationInfo),
         newIncident: (data) => handleNewIncident(data as NewIncidentData),
+        stationRemoved: (data) => handleStationRemoved(data as StationRemoved),
     });
 
     const stationList = useMemo(() => {

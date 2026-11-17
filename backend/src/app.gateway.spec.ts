@@ -111,4 +111,27 @@ describe('AppGateway last solve', () => {
 
     expect(emit).not.toHaveBeenCalled();
   });
+  it('drops a forgotten station from live solving', () => {
+    gateway.broadcastCurrentTimeInfo(packet(1));
+    gateway.recordLastSolve(1, lastSolve);
+    gateway.forgetStation(1);
+
+    expect(emit).toHaveBeenLastCalledWith('stationRemoved', { espId: 1 });
+    const socket = { join: jest.fn(), emit: jest.fn() };
+    gateway.handleJoinLiveSolving(socket as any);
+    expect(socket.emit).toHaveBeenCalledWith('currentStations', []);
+
+    // Its last solve doesn't come back if the station is restored
+    gateway.broadcastCurrentTimeInfo(packet(1));
+    expect(emit).toHaveBeenLastCalledWith('currentTimeInfo', {
+      ...packet(1),
+      lastSolve: null,
+    });
+  });
+
+  it('sends nothing when forgetting a station never heard from', () => {
+    gateway.forgetStation(2);
+
+    expect(emit).not.toHaveBeenCalled();
+  });
 });

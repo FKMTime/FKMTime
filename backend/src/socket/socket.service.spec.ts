@@ -87,6 +87,7 @@ describe('SocketService', () => {
       };
       appGateway = {
         broadcastCurrentTimeInfo: jest.fn(),
+        forgetStation: jest.fn(),
         handleDeviceUpdated: jest.fn(),
         handleDeviceSignal: jest.fn(),
         handleDeviceError: jest.fn(),
@@ -155,7 +156,8 @@ describe('SocketService', () => {
         serverReceivedAt: now,
       });
       expect(prisma.device.findFirst).toHaveBeenCalledWith({
-        where: { espId: 7, type: DeviceType.STATION, retiredAt: null },
+        where: { espId: 7, type: DeviceType.STATION },
+        orderBy: { retiredAt: { sort: 'asc', nulls: 'first' } },
         include: { room: true },
       });
       expect(
@@ -280,6 +282,20 @@ describe('SocketService', () => {
           ([info]) => info.deviceName,
         ),
       ).toEqual(['Station A', 'Station B']);
+    });
+
+    it('takes a retired station off live solving', async () => {
+      prisma.attempt.count.mockResolvedValue(3);
+      await service.handleCurrentTimeInfo(update);
+      prisma.device.findFirst.mockResolvedValue({
+        ...station,
+        retiredAt: new Date(now),
+      });
+      await deviceService.deleteDevice(station.id);
+      await service.handleCurrentTimeInfo(update);
+
+      expect(appGateway.forgetStation).toHaveBeenCalledWith(7);
+      expect(appGateway.broadcastCurrentTimeInfo).toHaveBeenCalledTimes(1);
     });
 
     it('falls back to the default name once a station is deleted', async () => {

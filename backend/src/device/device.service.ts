@@ -144,10 +144,19 @@ export class DeviceService {
     });
   }
 
-  /** getDeviceByEspId for a station, cached for live solving updates */
+  /**
+   * A station by its ESP id, cached for live solving updates. Unlike
+   * getDeviceByEspId it finds a retired station too, so live solving can tell
+   * it from one never registered.
+   */
   async getStationByEspIdCached(espId: number) {
     return this.stationsByEspId.getOrLoad(espId, () =>
-      this.getDeviceByEspId(espId, DeviceType.STATION),
+      this.prisma.device.findFirst({
+        where: { espId, type: DeviceType.STATION },
+        // An active row wins over a retired one with the same ESP id
+        orderBy: { retiredAt: { sort: 'asc', nulls: 'first' } },
+        include: { room: true },
+      }),
     );
   }
 
@@ -399,7 +408,10 @@ export class DeviceService {
       where: { id },
       select: { espId: true },
     });
-    if (device?.espId != null) this.stationErrors.forget(device.espId);
+    if (device?.espId != null) {
+      this.stationErrors.forget(device.espId);
+      this.appGateway.forgetStation(device.espId);
+    }
     if (hasHistory) {
       await this.prisma.device.update({
         where: { id },
