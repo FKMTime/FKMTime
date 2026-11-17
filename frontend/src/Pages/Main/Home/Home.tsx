@@ -31,6 +31,7 @@ import {
     roomsProgressQuery,
     roomsQuery,
     updateCurrentRound,
+    updateRoomGroups,
 } from "@/lib/rooms";
 import { getStartLabel } from "@/lib/schedule";
 import { invalidateIncidentLists } from "@/Pages/Main/Incidents/incidentsContext";
@@ -170,11 +171,8 @@ const Home = () => {
         } catch {
             return;
         }
-        const response = await updateCurrentRound(
-            rooms.map((r) =>
-                r.id === room.id ? { ...r, currentGroupIds: nextGroupIds } : r
-            )
-        );
+        // Only this room: the others may have moved on since Home loaded them
+        const response = await updateRoomGroups(room, nextGroupIds);
         if (response.status === 200) {
             toast({ title: `${room.name}: group started`, variant: "success" });
             refreshRooms();

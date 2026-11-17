@@ -121,6 +121,22 @@ beforeEach(() => {
 });
 
 describe("RoomCard", () => {
+    it("never says a running room starts later; it is ahead", () => {
+        // Group 2 is scheduled 09:00–10:00 but already running at 08:00
+        renderCard({ now: new Date("2026-04-18T08:00:00Z") });
+        expect(screen.getByText("1 h ahead")).toBeTruthy();
+        expect(screen.queryByText(/^Starts/)).toBeNull();
+    });
+
+    it("shows when an empty room starts its next group", () => {
+        renderCard({
+            room: { ...room, currentGroupIds: [] },
+            nextGroupIds: ["333-r1-g1"],
+            now: new Date("2026-04-18T07:00:00Z"),
+        });
+        expect(screen.getByText("Starts 08:00")).toBeTruthy();
+    });
+
     it("counts the group's place among this room's groups, not its number", () => {
         // Group numbers run across rooms: this room has groups 1 and 3
         const venue = wcif.schedule.venues[0];

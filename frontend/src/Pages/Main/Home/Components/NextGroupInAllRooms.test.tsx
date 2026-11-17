@@ -29,7 +29,7 @@ const renderButton = (
 };
 
 describe("NextGroupInAllRooms", () => {
-    it("lists each room's change and switches only rooms with a next group", async () => {
+    it("lists each room's change and saves only the rooms with a next group", async () => {
         const onSwitch = renderButton();
         await userEvent.click(
             screen.getByRole("button", { name: "Next group in all rooms" })
@@ -43,9 +43,10 @@ describe("NextGroupInAllRooms", () => {
         await userEvent.click(
             within(dialog).getByRole("button", { name: "Switch all rooms" })
         );
+        // The room with nothing next isn't saved at all, so groups it got
+        // meanwhile (e.g. an automatic change) aren't overwritten
         expect(onSwitch).toHaveBeenCalledWith([
             { ...rooms[0], currentGroupIds: ["333-r1-g2"] },
-            rooms[1],
         ]);
         expect(screen.queryByRole("dialog")).toBeNull();
     });
