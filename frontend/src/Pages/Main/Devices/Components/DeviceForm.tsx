@@ -41,6 +41,8 @@ interface DeviceFormProps {
     availableHwVersions: HardwareVersion[];
     submitText: string;
     isLoading: boolean;
+    /** The ESP ID came from the device itself, so it is shown but not editable */
+    espIdLocked?: boolean;
 }
 const DeviceForm = ({
     defaultValues,
@@ -50,6 +52,7 @@ const DeviceForm = ({
     availableHwVersions,
     submitText,
     isLoading,
+    espIdLocked = false,
 }: DeviceFormProps) => {
     const form = useForm<z.infer<typeof deviceSchema>>({
         resolver: zodResolver(deviceSchema),
@@ -59,7 +62,9 @@ const DeviceForm = ({
                 defaultValues.espId !== undefined
                     ? idToHex(defaultValues.espId)
                     : "",
-            roomId: defaultValues.roomId ? defaultValues.roomId : "",
+            // With a single room there is nothing to choose, so it is implied
+            roomId:
+                defaultValues.roomId || (rooms.length === 1 ? rooms[0].id : ""),
             type: defaultValues.type,
             hwVersion: defaultValues.hwVersion,
         },
@@ -104,6 +109,7 @@ const DeviceForm = ({
                                 <Input
                                     placeholder="ESP ID"
                                     {...field}
+                                    disabled={espIdLocked}
                                     onChange={(e) =>
                                         field.onChange(
                                             e.target.value.toUpperCase()
@@ -115,106 +121,112 @@ const DeviceForm = ({
                         </FormItem>
                     )}
                 />
-                <FormField
-                    control={form.control}
-                    name="roomId"
-                    render={({ field }) => (
-                        <FormItem>
-                            <FormLabel>Room</FormLabel>
-                            {rooms.length <= MAX_ROOM_BUTTONS ? (
-                                <SegmentedControl
-                                    label="Room"
-                                    value={field.value}
-                                    onValueChange={field.onChange}
-                                    fullWidth
-                                    options={rooms.map((room) => ({
-                                        value: room.id,
-                                        label: room.name,
-                                    }))}
-                                />
-                            ) : (
-                                <FormControl>
-                                    <Select
+                {rooms.length > 1 && (
+                    <FormField
+                        control={form.control}
+                        name="roomId"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Room</FormLabel>
+                                {rooms.length <= MAX_ROOM_BUTTONS ? (
+                                    <SegmentedControl
+                                        label="Room"
+                                        value={field.value}
                                         onValueChange={field.onChange}
-                                        defaultValue={field.value}
-                                    >
-                                        <SelectTrigger>
-                                            <SelectValue placeholder="Select room" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            {rooms.map((room) => (
-                                                <SelectItem
-                                                    key={room.id}
-                                                    value={room.id}
-                                                >
-                                                    {room.name}
-                                                </SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
-                                </FormControl>
-                            )}
-                            <FormMessage />
-                        </FormItem>
-                    )}
-                />
-                <FormField
-                    control={form.control}
-                    name="type"
-                    render={({ field }) => (
-                        <FormItem>
-                            <FormLabel>Device type</FormLabel>
-                            <Select
-                                onValueChange={field.onChange}
-                                defaultValue={field.value}
-                            >
-                                <FormControl>
-                                    <SelectTrigger>
-                                        <SelectValue placeholder="Select type" />
-                                    </SelectTrigger>
-                                </FormControl>
-                                <SelectContent>
-                                    {availableTypes.map((type) => (
-                                        <SelectItem key={type} value={type}>
-                                            {prettyDeviceType(type)}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                            <FormMessage />
-                        </FormItem>
-                    )}
-                />
-                <FormField
-                    control={form.control}
-                    name="hwVersion"
-                    render={({ field }) => (
-                        <FormItem>
-                            <FormLabel>Hardware version</FormLabel>
-                            <Select
-                                onValueChange={field.onChange}
-                                defaultValue={field.value}
-                            >
-                                <FormControl>
-                                    <SelectTrigger>
-                                        <SelectValue placeholder="Select version" />
-                                    </SelectTrigger>
-                                </FormControl>
-                                <SelectContent>
-                                    {availableHwVersions.map((version) => (
-                                        <SelectItem
-                                            key={version}
-                                            value={version}
+                                        fullWidth
+                                        options={rooms.map((room) => ({
+                                            value: room.id,
+                                            label: room.name,
+                                        }))}
+                                    />
+                                ) : (
+                                    <FormControl>
+                                        <Select
+                                            onValueChange={field.onChange}
+                                            defaultValue={field.value}
                                         >
-                                            {prettyHardwareVersion(version)}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                            <FormMessage />
-                        </FormItem>
-                    )}
-                />
+                                            <SelectTrigger>
+                                                <SelectValue placeholder="Select room" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                {rooms.map((room) => (
+                                                    <SelectItem
+                                                        key={room.id}
+                                                        value={room.id}
+                                                    >
+                                                        {room.name}
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                    </FormControl>
+                                )}
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+                )}
+                {availableTypes.length > 1 && (
+                    <FormField
+                        control={form.control}
+                        name="type"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Device type</FormLabel>
+                                <Select
+                                    onValueChange={field.onChange}
+                                    defaultValue={field.value}
+                                >
+                                    <FormControl>
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="Select type" />
+                                        </SelectTrigger>
+                                    </FormControl>
+                                    <SelectContent>
+                                        {availableTypes.map((type) => (
+                                            <SelectItem key={type} value={type}>
+                                                {prettyDeviceType(type)}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+                )}
+                {availableHwVersions.length > 1 && (
+                    <FormField
+                        control={form.control}
+                        name="hwVersion"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Hardware version</FormLabel>
+                                <Select
+                                    onValueChange={field.onChange}
+                                    defaultValue={field.value}
+                                >
+                                    <FormControl>
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="Select version" />
+                                        </SelectTrigger>
+                                    </FormControl>
+                                    <SelectContent>
+                                        {availableHwVersions.map((version) => (
+                                            <SelectItem
+                                                key={version}
+                                                value={version}
+                                            >
+                                                {prettyHardwareVersion(version)}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+                )}
                 <ModalActions>
                     <Button type="submit" disabled={isLoading}>
                         {submitText}
