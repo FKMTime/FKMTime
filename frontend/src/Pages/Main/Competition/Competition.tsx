@@ -1,5 +1,5 @@
 import { useSetAtom } from "jotai";
-import { RefreshCw, Server, TriangleAlert } from "lucide-react";
+import { RefreshCw, TriangleAlert } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 
@@ -22,6 +22,7 @@ import { getGitCommitValue } from "@/lib/utils";
 import SetupTabs from "@/Pages/Main/Setup/SetupTabs";
 
 import CompetitionForm, { SettingsParts } from "./Components/CompetitionForm";
+import ServerLogsButton from "./Components/ServerLogsButton";
 
 const TOKEN_MAY_EXPIRE_AFTER_MS = 7 * 24 * 60 * 60 * 1000;
 
@@ -163,16 +164,7 @@ const Competition = () => {
                     <RefreshCw className={isSyncing ? "animate-spin" : ""} />
                     Sync with WCA
                 </Button>
-                {import.meta.env.PROD && (
-                    <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => window.open("/logs")}
-                    >
-                        <Server />
-                        Logs
-                    </Button>
-                )}
+                <ServerLogsButton />
             </div>
             {competition.useFkmTimeDevices &&
                 usesWcaLiveToken &&

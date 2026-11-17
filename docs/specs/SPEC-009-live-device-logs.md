@@ -35,8 +35,8 @@ though the backend and the connector share the same host.
 ## Non-goals
 
 - Storing logs in the database, or searching across days or stations.
-- The connector's own log (`unix.log`) and container logs. Dozzle already
-  covers containers at `/logs`.
+- The connector's own log (`unix.log`) and container logs. SPEC-011 adds
+  the backend's and the connector's own logs.
 - Changing what the stations or the connector log, or the log format.
 - Correcting timestamps. Station lines are batched on the station, so their
   timestamp is when the connector received them (see Edge cases).

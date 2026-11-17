@@ -94,7 +94,8 @@ mounts the connector's folder read-only and should keep doing so.
 
 A small change in FKMTime/micro-connector's `log_subscriber.rs`: every line
 it prints to stdout is also appended to `connector.log` in `DEVICE_LOGS`,
-in the same format as the station files. Lines that already go to a named
+byte for byte, so its ANSI level colours stay in. The panel's log view
+already colours those (SPEC-009). Lines that already go to a named
 file (station logs, `unix.log`) aren't copied.
 
 Same cap as the backend: 10 MB, then rotate to `connector.log.1`. The
@@ -112,9 +113,10 @@ A rotation is a replaced file (new inode), so watchers get a fresh snapshot
 of the new, nearly empty file. The lines before the rotation are in
 `<file>.1`, which the panel doesn't offer (open question 1).
 
-`DeviceLogService`'s following code is generalised so followers are keyed by
-a string instead of a device id. Device logs keep their behaviour and their
-events; server logs use keys of the form `server:<source>`.
+The following code moves out of `DeviceLogService` into a shared
+`LogFollowers` class (`backend/src/logging/`), keyed by a string. Device logs
+keep their behaviour and their events, keyed by device id. Server logs have
+their own `LogFollowers` in `ServerLogService`, keyed by source.
 
 ### Download endpoint
 
@@ -145,14 +147,14 @@ Same semantics as the SPEC-009 events. An unknown source is ignored.
 - **Page:** a new **Server logs** page at `/logs`, the URL people already
   use for Dozzle. Only admins can open it. Others get the "not found" page,
   and the backend refuses them anyway.
-- **Entry point:** the existing **Logs** button on the Competition page
-  links to `/logs` in the same tab, and shows only for admins. It no longer
-  depends on `import.meta.env.PROD`.
+- **Entry point:** the **Logs** button on the Competition page becomes
+  **Server logs**, links to `/logs` in the same tab, and shows only for
+  admins. It no longer depends on `import.meta.env.PROD`.
 - **Layout:** tabs for **Backend**, **Connector** and **Connector ↔ backend
   messages**. The open tab joins its room through `useSocketRoom`, and is
   kept in the `?tab=` search param like the Devices page tabs.
 - **The log view** is the one from `DeviceLogsSheet`, moved into a shared
-  component: ANSI colours, follow at the bottom, "Jump to latest", the
+  `LogView` component: ANSI colours, follow at the bottom, "Jump to latest", the
   filter box, the 5000-line limit, the Download button.
 - **Messages:**
   - `available: false`: "This log isn't available on this server."
@@ -175,15 +177,14 @@ In fim, `templates/prod` and `templates/dev`:
 
 - Remove `dozzle-init`, `dozzle`, and the `DOZZLE_*` variables and their docs
   in `.env.template`.
-- Mount the connector's logs into the backend: `./logs:/device-logs:ro` and
-  `DEVICE_LOGS_DIR=/device-logs`. The SPEC-009 rollout planned this, but the
-  templates don't have it yet, so station logs don't work on fim instances
-  today either.
+- The connector's logs were already mounted into the backend
+  (`./logs:/device-logs:ro`, fim #11), so this needs no change.
 - Add `./logs/backend:/backend-logs` (read-write) and
   `BACKEND_LOGS_DIR=/backend-logs` to the backend.
 
-The dev `docker-compose.yml` and `docker-compose-bundled.yml` get the same
-`BACKEND_LOGS_DIR` mount.
+The dev `docker-compose.yml` and `docker-compose-bundled.yml` get
+`BACKEND_LOGS_DIR=/backend-logs` on a `backend-logs` named volume, so each
+dev stack keeps its own.
 
 ### Edge cases
 
@@ -200,27 +201,28 @@ The dev `docker-compose.yml` and `docker-compose-bundled.yml` get the same
 
 ## Acceptance criteria
 
-- [ ] The backend copies stdout and stderr to `backend.log`, and an uncaught
+- [x] The backend copies stdout and stderr to `backend.log`, and an uncaught
       exception's stack lands in it (unit test on a temp folder).
-- [ ] `backend.log` rotates to `backend.log.1` past 10 MB, keeping one older
+- [x] `backend.log` rotates to `backend.log.1` past 10 MB, keeping one older
       file (unit test with a small cap).
-- [ ] An unwritable `BACKEND_LOGS_DIR` logs a warning and the backend still
+- [x] An unwritable `BACKEND_LOGS_DIR` logs a warning and the backend still
       starts (unit test).
-- [ ] The connector copies its stdout lines to `connector.log` and rotates it
+- [x] The connector copies its stdout lines to `connector.log` and rotates it
       past 10 MB (connector unit test).
-- [ ] `joinServerLogs` is rejected for an organiser, accepted for an admin,
+- [x] `joinServerLogs` is rejected for an organiser, accepted for an admin,
       and ignores an unknown source (e2e).
-- [ ] `GET /server-logs/:source` returns the file for an admin, `403` for an
+- [x] `GET /server-logs/:source` returns the file for an admin, `403` for an
       organiser, `400` for an unknown source, `404` for a missing file, and
       `503` without the folder (e2e).
-- [ ] An admin gets the backend log's snapshot, then a new line (backend e2e
+- [x] An admin gets the backend log's snapshot, then a new line (backend e2e
       with a temporary `BACKEND_LOGS_DIR`).
-- [ ] Device logs behave exactly as before after the follower refactor (the
+- [x] Device logs behave exactly as before after the follower refactor (the
       existing SPEC-009 tests pass unchanged).
-- [ ] The Server logs page is reachable only for admins, and the Logs button
-      shows only for admins (component tests).
-- [ ] Each tab shows its empty and unavailable messages (component test).
-- [ ] No `dozzle` left in this repo or the fim templates (grep).
+- [x] The Server logs page is reachable only for admins, and the Server logs
+      button shows only for admins (component tests).
+- [x] Each tab shows its empty and unavailable messages (component test).
+- [x] No `dozzle` left in this repo's code and config, or in the fim
+      templates (grep; the specs still tell the story).
 
 ## Rollout
 
@@ -230,7 +232,7 @@ No migration. Order:
 2. **FKMTime:** backend, frontend, the compose files and the nginx change in
    one PR. Until fim is updated, the Backend tab says "not available", and
    `/logs` shows the new page instead of Dozzle.
-3. **fim templates:** remove Dozzle, add both mounts. Existing instances get
+3. **fim templates:** remove Dozzle, add the backend log mount. Existing instances get
    them when their compose is regenerated or edited by hand. On the live
    instance, `docker compose rm -sf dozzle dozzle-init` removes the old
    containers. That's a prod change, so it's done on its own, with a go.

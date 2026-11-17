@@ -29,12 +29,16 @@ let nextId = 0;
 const lineEntries = (lines: string[]): LogEntry[] =>
     lines.map((text) => ({ id: nextId++, kind: "line", text }));
 
-export const snapshotEntries = (snapshot: DeviceLogSnapshot) =>
-    lineEntries(snapshot.lines.slice(-MAX_LOG_ENTRIES));
+/** Works for any log's snapshot: device (SPEC-009) or server (SPEC-011) */
+export const snapshotEntries = <T extends Pick<DeviceLogSnapshot, "lines">>(
+    snapshot: T
+) => lineEntries(snapshot.lines.slice(-MAX_LOG_ENTRIES));
 
-export const appendEntries = (
+export const appendEntries = <
+    T extends Pick<DeviceLogLines, "lines" | "skipped">,
+>(
     entries: LogEntry[],
-    event: DeviceLogLines
+    event: T
 ): LogEntry[] => {
     const added: LogEntry[] = event.skipped
         ? [
@@ -99,16 +103,9 @@ export const parseAnsi = (line: string): LogSegment[] => {
 const fileNameFrom = (disposition: string | null) =>
     disposition?.match(/filename="([^"]+)"/)?.[1] ?? null;
 
-/** Saves a device's whole log file; returns the response status */
-export const downloadDeviceLogs = async (
-    deviceId: string,
-    fallbackName: string
-) => {
-    const response = await backendRequest(
-        `device/${deviceId}/logs`,
-        "GET",
-        true
-    );
+/** Saves a log file from the backend; returns the response status */
+export const downloadLogFile = async (path: string, fallbackName: string) => {
+    const response = await backendRequest(path, "GET", true);
     if (!response.ok) return response.status;
 
     const url = URL.createObjectURL(await response.blob());
@@ -123,3 +120,7 @@ export const downloadDeviceLogs = async (
     URL.revokeObjectURL(url);
     return response.status;
 };
+
+/** Saves a device's whole log file; returns the response status */
+export const downloadDeviceLogs = (deviceId: string, fallbackName: string) =>
+    downloadLogFile(`device/${deviceId}/logs`, fallbackName);

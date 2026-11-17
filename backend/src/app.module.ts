@@ -17,6 +17,7 @@ import { DeviceModule } from './device/device.module';
 import { validate } from './env.validation';
 import { EventsModule } from './events/events.module';
 import { IncidentModule } from './incident/incident.module';
+import { ServerLogModule } from './logging/serverLog.module';
 import { LoggerMiddleware } from './middleware/logger.middleware';
 import { PersonModule } from './person/person.module';
 import { ResultModule } from './result/result.module';
@@ -54,6 +55,7 @@ import { WcaModule } from './wca/wca.module';
     AttemptModule,
     SettingsModule,
     DeviceModule,
+    ServerLogModule,
     AttendanceModule,
     WcaModule,
     SocketModule,

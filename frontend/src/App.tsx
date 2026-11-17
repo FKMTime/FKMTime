@@ -59,6 +59,7 @@ const NoteworthyIncidents = lazy(
 const Warnings = lazy(() => import("./Pages/Main/Incidents/Warnings/Warnings"));
 const Layout = lazy(() => import("./Pages/Main/Layout/Layout"));
 const NotFound = lazy(() => import("./Pages/Main/NotFound/NotFound"));
+const ServerLogs = lazy(() => import("./Pages/Main/ServerLogs/ServerLogs"));
 const DoubleCheck = lazy(
     () => import("./Pages/Main/Results/DoubleCheck/DoubleCheck")
 );
@@ -240,6 +241,10 @@ const App = () => {
                 {
                     path: "devices",
                     element: <Devices />,
+                },
+                {
+                    path: "logs",
+                    element: <ServerLogs />,
                 },
                 {
                     path: "scrambles",
