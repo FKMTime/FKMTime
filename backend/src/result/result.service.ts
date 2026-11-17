@@ -18,6 +18,7 @@ import {
   AttemptEditLogService,
   AttemptSnapshot,
 } from 'src/attempt-edit-log/attempt-edit-log.service';
+import { CompetitionService } from 'src/competition/competition.service';
 import {
   DNF_VALUE,
   DNS_VALUE,
@@ -65,6 +66,8 @@ export class ResultService {
     private readonly attemptEditLogService: AttemptEditLogService,
     @Inject(forwardRef(() => IntegratedLiveService))
     private readonly integratedLiveService: IntegratedLiveService,
+    @Inject(forwardRef(() => CompetitionService))
+    private readonly competitionService: CompetitionService,
   ) {}
 
   resultsInclude = {
@@ -161,6 +164,8 @@ export class ResultService {
     });
     await this.sendScorecardUnlessNever(id);
     this.appGateway.handleResultEntered(result.roundId);
+    // The removed competitor no longer holds their group back
+    this.competitionService.requestGroupChangeCheck(result.roundId);
     return { message: 'Result removed' };
   }
 
@@ -549,6 +554,7 @@ export class ResultService {
       );
     }
     this.appGateway.handleResultEntered(result.roundId);
+    this.competitionService.requestGroupChangeCheck(result.roundId);
     return {
       message: 'DNS added',
       status: 200,

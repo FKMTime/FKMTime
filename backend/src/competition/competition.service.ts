@@ -4,20 +4,15 @@ import {
   Inject,
   Injectable,
   Logger,
+  OnModuleDestroy,
 } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import {
-  Attempt,
-  AttemptStatus,
   HardwareVersion,
   SendingResultsFrequency,
+  StaffRole,
 } from '@prisma/client';
 import { AppGateway } from 'src/app.gateway';
-import { IntegratedLiveRoundsService } from 'src/integrated-live/integratedLiveRounds.service';
-import {
-  getAttemptsWaitingForExtra,
-  isRedoNotStarted,
-} from 'src/result/helpers';
 import { ResultService } from 'src/result/result.service';
 import { getOfficialResultsDestination } from 'src/results-destination';
 import {
@@ -38,7 +33,6 @@ import {
   Venue,
 } from 'wcif-helpers';
 import {
-  getActivityInfoFromSchedule,
   getActivityInfoFromScheduleWithRoom,
   getNumberOfAttemptsForRound,
   getRoundInfoFromWcif,
@@ -51,7 +45,22 @@ import { WcaService } from '../wca/wca.service';
 import { AUTO_SETUP_DURATION_MS } from './autoSetup';
 import { UpdateCompetitionDto } from './dto/updateCompetition.dto';
 import { UpdateDevicesSettingsDto } from './dto/updateDevicesSettings.dto';
+import {
+  canLeaveGroup,
+  getFirstGroupOfNextRoundInRoom,
+  getGroupStatus as getGroupStatusFromResults,
+  GroupChangeResult,
+  isGroupQuiet,
+  planNextGroups,
+} from './groupChange';
+import { getGroupCompetitorIds } from './groupProgress';
 import { getIntegratedLiveConnectionState } from './integratedLiveConnection.service';
+import { RoomsService } from './rooms.service';
+
+/** How long a room's checks after attempts wait to take in a burst */
+export const GROUP_CHANGE_CHECK_DELAY_MS = 5_000;
+
+type GroupCheckTrigger = 'event' | 'cron';
 
 const autoSetupSettingsSelect = {
   id: true,
@@ -62,19 +71,26 @@ const autoSetupSettingsSelect = {
 };
 
 @Injectable()
-export class CompetitionService {
+export class CompetitionService implements OnModuleDestroy {
   constructor(
     private readonly prisma: DbService,
     private readonly appGateway: AppGateway,
+    @Inject(forwardRef(() => ResultService))
     private readonly resultService: ResultService,
     private readonly wcaService: WcaService,
     @Inject(forwardRef(() => SocketController))
     private readonly socketController: SocketController,
-    @Inject(forwardRef(() => IntegratedLiveRoundsService))
-    private readonly integratedLiveRounds: IntegratedLiveRoundsService,
+    @Inject(forwardRef(() => RoomsService))
+    private readonly roomsService: RoomsService,
   ) {}
 
   private logger = new Logger(CompetitionService.name);
+  // Group change checks after attempts: the pending one per room, and the
+  // one running, which a later check waits for
+  private groupCheckTimers = new Map<string, NodeJS.Timeout>();
+  private groupCheckRuns = new Map<string, Promise<void>>();
+  // Warnings already shown, as "roomId|groupId|kind", until the group changes
+  private groupChangeWarnings = new Set<string>();
   // Switches auto setup off when its time is up; the deadline itself lives in
   // AppGateway, in memory only, so a restart always leaves it off
   private autoSetupTimeout: NodeJS.Timeout | null = null;
@@ -543,6 +559,69 @@ export class CompetitionService {
     );
   }
 
+  /**
+   * Called after anything that can finish a group: an attempt entered on a
+   * station or by hand, or an incident resolved. Checks the rooms running
+   * the round once things settle, instead of waiting for the periodic check.
+   * Never throws: a failed check mustn't fail the attempt.
+   */
+  requestGroupChangeCheck(roundId: string) {
+    this.prisma.room
+      .findMany({ select: { id: true, currentGroupIds: true } })
+      .then((rooms) => {
+        for (const room of rooms) {
+          if (room.currentGroupIds.some((g) => g.split('-g')[0] === roundId)) {
+            this.scheduleRoomCheck(room.id);
+          }
+        }
+      })
+      .catch((e) =>
+        this.logger.error(`Scheduling a group change check failed: ${e}`),
+      );
+  }
+
+  /**
+   * The first request opens a short window and later ones join it, so a burst
+   * of attempts makes one check. A fixed window rather than a restarting one,
+   * so a busy room is still checked.
+   */
+  private scheduleRoomCheck(roomId: string) {
+    if (this.groupCheckTimers.has(roomId)) return;
+    const timer = setTimeout(() => {
+      this.groupCheckTimers.delete(roomId);
+      void this.runRoomCheck(roomId, 'event');
+    }, GROUP_CHANGE_CHECK_DELAY_MS);
+    timer.unref?.();
+    this.groupCheckTimers.set(roomId, timer);
+  }
+
+  /** One check per room at a time; a later one waits for the earlier one */
+  private runRoomCheck(roomId: string, trigger: GroupCheckTrigger) {
+    const previous = this.groupCheckRuns.get(roomId) ?? Promise.resolve();
+    const run = previous
+      .then(() => this.checkIfGroupCanBeChanged(roomId, trigger))
+      .catch((e) =>
+        this.logger.error(`Group change check in room ${roomId} failed: ${e}`),
+      );
+    this.groupCheckRuns.set(roomId, run);
+    void run.then(() => {
+      if (this.groupCheckRuns.get(roomId) === run) {
+        this.groupCheckRuns.delete(roomId);
+      }
+    });
+    return run;
+  }
+
+  onModuleDestroy() {
+    this.groupCheckTimers.forEach((timer) => clearTimeout(timer));
+    this.groupCheckTimers.clear();
+  }
+
+  /**
+   * The fallback for what the checks after each attempt can't see: groups
+   * with no-shows (see canLeaveGroup), results removed or changed some other
+   * way, and attempts entered while the backend was down.
+   */
   @Cron(CronExpression.EVERY_5_MINUTES)
   async checkIfGroupShouldBeChanged() {
     this.logger.log('Checking if group should be changed');
@@ -556,234 +635,215 @@ export class CompetitionService {
     ) {
       this.sendActiveRounds();
     }
-    const wcif = JSON.parse(JSON.stringify(competition.wcif));
-    const rooms = await this.prisma.room.findMany({
-      include: {
-        devices: true,
-      },
-    });
+    const rooms = await this.prisma.room.findMany({ select: { id: true } });
     for (const room of rooms) {
-      let currentGroupIdInSchedule = '';
-      if (room.currentGroupIds.length > 1) {
-        continue;
-      }
-      const currentGroupId = room.currentGroupIds[0];
-      const activity: Activity | null = getActivityInfoFromSchedule(
-        currentGroupId,
-        wcif,
-      );
-      if (!activity) {
-        continue;
-      }
-      const startTime = new Date(activity.startTime).getTime();
-      const endTime = new Date(activity.endTime).getTime();
-      const now = new Date().getTime();
-      if (startTime <= now && now <= endTime) {
-        currentGroupIdInSchedule = activity.activityCode;
-      }
-      const lastAttemptEntered = await this.prisma.attempt.findFirst({
-        where: {
-          result: {
-            roundId: currentGroupId.split('-g')[0],
-          },
-        },
-        orderBy: {
-          solvedAt: 'desc',
-        },
-      });
-      if (!lastAttemptEntered) {
-        continue;
-      }
-      const isLastAttemptMoreThan5MinutesAgo =
-        new Date().getTime() - new Date(lastAttemptEntered.solvedAt).getTime() >
-        300000;
-      if (
-        (currentGroupIdInSchedule !== currentGroupId &&
-          currentGroupIdInSchedule !== '') ||
-        isLastAttemptMoreThan5MinutesAgo
-      ) {
-        if (competition.shouldChangeGroupsAutomatically) {
-          await this.checkIfGroupCanBeChanged(room.id);
-        } else {
-          const message = `Group in room ${room.name} should be changed, but automatic group change is disabled.`;
-          this.appGateway.server
-            .to(`competition`)
-            .emit('groupShouldBeChanged', {
-              message: message,
-            });
-        }
-      }
+      await this.runRoomCheck(room.id, 'cron');
     }
   }
 
-  async checkIfGroupCanBeChanged(roomId: string) {
-    this.logger.log(`Checking if group in room ${roomId} can be changed`);
-    const room = await this.prisma.room.findFirst({
-      where: {
-        id: roomId,
-      },
-    });
-    if (room.currentGroupIds.length > 1) {
+  /**
+   * Moves each of the room's groups that is over on to the room's next one.
+   * Each group is judged on its own competitors, so in a room running
+   * several groups one can move on while the others carry on.
+   */
+  async checkIfGroupCanBeChanged(
+    roomId: string,
+    trigger: GroupCheckTrigger = 'cron',
+  ) {
+    const competition = await this.prisma.competition.findFirst();
+    if (!competition?.useFkmTimeDevices) return;
+    // Right after an attempt there's nothing to do with the setting off; the
+    // periodic check still tells the panel a group looks finished
+    if (trigger === 'event' && !competition.shouldChangeGroupsAutomatically) {
       return;
     }
-    const currentGroupId = room.currentGroupIds[0];
+    const room = await this.prisma.room.findFirst({ where: { id: roomId } });
+    if (!room || room.currentGroupIds.length === 0) return;
+    this.forgetWarningsForOtherGroups(room.id, room.currentGroupIds);
+    this.logger.log(`Checking if group in room ${room.name} can be changed`);
 
-    const roundId = currentGroupId.split('-g')[0];
-
-    const resultsFromDb =
-      await this.resultService.getAllResultsByRound(roundId);
-
-    const competition = await this.prisma.competition.findFirst();
-    const wcif = JSON.parse(JSON.stringify(competition.wcif));
-    const roundInfo = getRoundInfoFromWcif(currentGroupId.split('-g')[0], wcif);
-    const maxAttempts = getNumberOfAttemptsForRound(
-      currentGroupId.split('-g')[0],
-      wcif,
-    );
-    // Stations can't take attempts for an earlier round, so the last group
-    // has to wait for any redo, while earlier ones can leave it to the next
-    const hasNextGroup = !!getNextGroupInRoom(currentGroupId, room.name, wcif);
-    const freshSetGrants = await this.prisma.extraGrant.findMany({
-      where: {
-        useFreshSet: true,
-        restoredAt: null,
-        result: { roundId, removedAt: null },
-      },
-      select: { id: true },
-    });
-    const freshSetGrantIds = freshSetGrants.map((grant) => grant.id);
-    let finished = true;
-    for (const result of resultsFromDb) {
-      const attempts = result.attempts as Attempt[];
-      if (!hasNextGroup && getAttemptsWaitingForExtra(attempts).length > 0) {
-        finished = false;
-        break;
-      }
-      if (hasNextGroup && isRedoNotStarted(attempts, freshSetGrantIds)) {
-        continue;
-      }
-      const { results } = this.wcaService.getAttemptsToEnterToWcaLive(
-        result,
-        competition,
-      );
-      if (results[0].attempts.length === 0) continue;
-      if (results[0].attempts.length !== maxAttempts) {
-        if (roundInfo.cutoff) {
-          if (
-            results[0].attempts.some(
-              (a) => a.result < roundInfo.cutoff.resultValue && a.result > 0,
-            )
-          ) {
-            finished = false;
-          }
-        } else {
-          finished = false;
-        }
-      }
-      if (
-        result.attempts.some((a) => a.status === AttemptStatus.UNRESOLVED) ||
-        result.attempts.some(
-          (a) => a.status === AttemptStatus.EXTRA_GIVEN && !a.replacedBy,
-        )
+    const wcif = competition.wcif as unknown as Competition;
+    const now = Date.now();
+    const leaving: string[] = [];
+    const stuck: string[] = [];
+    for (const groupId of room.currentGroupIds) {
+      const status = await this.getGroupStatus(groupId, room.name, wcif);
+      const enteredAt = this.roomsService.getGroupEnteredAt(room.id, groupId);
+      if (canLeaveGroup(status, trigger, now, enteredAt)) {
+        leaving.push(groupId);
+      } else if (
+        trigger === 'cron' &&
+        status.state !== 'notStarted' &&
+        isGroupQuiet(status, enteredAt, now)
       ) {
-        finished = false;
-      }
-      if (!finished) {
-        break;
+        stuck.push(groupId);
       }
     }
-    if (finished) {
+
+    if (!competition.shouldChangeGroupsAutomatically) {
+      for (const groupId of leaving) {
+        this.warnOnce(
+          room.id,
+          groupId,
+          'disabled',
+          `Group in room ${room.name} should be changed, but automatic group change is disabled.`,
+        );
+      }
+      return;
+    }
+    for (const groupId of stuck) {
+      this.warnOnce(
+        room.id,
+        groupId,
+        'notAllEntered',
+        `Group in room ${room.name} should be changed, but not all results are entered.`,
+      );
+    }
+    if (leaving.length > 0) {
       this.logger.log(`Group in room ${room.name} can be changed`);
-      await this.changeGroup(room.id, currentGroupId);
-    } else {
-      const message = `Group in room ${room.name} should be changed, but not all results are entered.`;
-      this.appGateway.server.to(`competition`).emit('groupShouldBeChanged', {
-        message: message,
-      });
-      this.logger.log(message);
+      await this.changeGroup(room.id, leaving);
     }
   }
 
-  async changeGroup(roomId: string, currentGroupId: string) {
-    const room = await this.prisma.room.findFirst({
-      where: {
-        id: roomId,
+  /** Where one of the room's current groups stands (see getGroupStatus) */
+  private async getGroupStatus(
+    groupId: string,
+    roomName: string,
+    wcif: Competition,
+  ) {
+    const roundId = groupId.split('-g')[0];
+    const hasNextGroup = !!getNextGroupInRoom(groupId, roomName, wcif);
+    const round: Activity | null = getActivityInfoFromScheduleWithRoom(
+      roundId,
+      roomName,
+      wcif,
+    );
+    const roomRoundGroupIds = hasNextGroup
+      ? [groupId]
+      : (round?.childActivities ?? []).map((group) => group.activityCode);
+    const [results, removed, freshSetGrants, attendance] = await Promise.all([
+      this.resultService.getAllResultsByRound(roundId),
+      // Asked for by name, as result queries leave removed results out
+      this.prisma.result.findMany({
+        where: { roundId, removedAt: { not: null } },
+        select: { personId: true, person: { select: { registrantId: true } } },
+      }),
+      this.prisma.extraGrant.findMany({
+        where: {
+          useFreshSet: true,
+          restoredAt: null,
+          result: { roundId, removedAt: null },
+        },
+        select: { id: true },
+      }),
+      // Every group of the round: a competitor moved on the competitor page
+      // shows up here before the stored WCIF knows
+      this.prisma.staffActivity.findMany({
+        where: {
+          groupId: { startsWith: `${roundId}-g` },
+          role: StaffRole.COMPETITOR,
+        },
+        select: {
+          personId: true,
+          groupId: true,
+          isAssigned: true,
+          status: true,
+          person: { select: { registrantId: true } },
+        },
+      }),
+    ]);
+    return getGroupStatusFromResults({
+      groupId,
+      results: results as unknown as GroupChangeResult[],
+      assignedRegistrantIds: getGroupCompetitorIds(wcif, groupId),
+      competitorRows: attendance.map((row) => ({
+        personId: row.personId,
+        registrantId: row.person.registrantId,
+        groupId: row.groupId,
+        isAssigned: row.isAssigned,
+        status: row.status,
+      })),
+      removed: removed.map((r) => ({
+        personId: r.personId,
+        registrantId: r.person.registrantId,
+      })),
+      roomRoundRegistrantIds: roomRoundGroupIds.flatMap((id) =>
+        getGroupCompetitorIds(wcif, id),
+      ),
+      roomRoundGroupIds,
+      rules: {
+        maxAttempts: getNumberOfAttemptsForRound(roundId, wcif),
+        cutoff: getRoundInfoFromWcif(roundId, wcif)?.cutoff,
+        freshSetGrantIds: freshSetGrants.map((grant) => grant.id),
+        hasNextGroup,
       },
     });
+  }
+
+  /** Tells the panel once per group, not on every check */
+  private warnOnce(
+    roomId: string,
+    groupId: string,
+    kind: 'disabled' | 'notAllEntered',
+    message: string,
+  ) {
+    const key = `${roomId}|${groupId}|${kind}`;
+    if (this.groupChangeWarnings.has(key)) return;
+    this.groupChangeWarnings.add(key);
+    this.appGateway.server.to(`competition`).emit('groupShouldBeChanged', {
+      message,
+    });
+    this.logger.log(message);
+  }
+
+  private forgetWarningsForOtherGroups(roomId: string, groupIds: string[]) {
+    for (const key of this.groupChangeWarnings) {
+      const [keyRoomId, keyGroupId] = key.split('|');
+      if (keyRoomId === roomId && !groupIds.includes(keyGroupId)) {
+        this.groupChangeWarnings.delete(key);
+      }
+    }
+  }
+
+  /**
+   * Leaves the given groups for the room's next ones (see planNextGroups),
+   * the same way as starting groups from the panel, so the room records them
+   * as started and the live results hear about it
+   */
+  async changeGroup(roomId: string, finishedGroupIds: string[]) {
+    const room = await this.prisma.room.findFirst({ where: { id: roomId } });
     if (!room) return;
+    // Someone may have changed the groups by hand since the check
+    const leaving = finishedGroupIds.filter((id) =>
+      room.currentGroupIds.includes(id),
+    );
+    if (leaving.length === 0) return;
     const competition = await this.prisma.competition.findFirst();
-    const wcif = JSON.parse(JSON.stringify(competition.wcif));
-    const currentRoundId = currentGroupId.split('-g')[0];
-    const roundInfoFromSchedule: Activity = getActivityInfoFromScheduleWithRoom(
-      currentRoundId,
+    const wcif = competition.wcif as unknown as Competition;
+    const nextGroupIds = planNextGroups(
+      room.currentGroupIds,
+      leaving,
       room.name,
       wcif,
     );
-    if (!roundInfoFromSchedule) return;
-    const nextGroup = getNextGroupInRoom(currentGroupId, room.name, wcif);
-
-    if (nextGroup) {
-      await this.prisma.room.update({
-        where: {
-          id: roomId,
-        },
-        data: {
-          currentGroupIds: [nextGroup.activityCode],
-        },
-      });
-      this.integratedLiveRounds
-        .onRoundStarted(nextGroup.activityCode.split('-g')[0])
-        .catch(() => undefined);
-      const message = `Group in room ${room.name} was changed to ${nextGroup.activityCode}`;
-      this.appGateway.server.to(`competition`).emit('groupShouldBeChanged', {
-        message: message,
-      });
-      this.logger.log(message);
-    } else {
-      const endTime = new Date(roundInfoFromSchedule.endTime);
-      let nextRoundActivity: Activity | null = null;
-      wcif.schedule.venues.forEach((venue: Venue) => {
-        const r = venue.rooms.find((item: WCIFRoom) => item.name === room.name);
-        r.activities.forEach((a: Activity) => {
-          if (
-            isSameDay(new Date(a.startTime), endTime) &&
-            new Date(a.startTime).getTime() >= endTime.getTime() &&
-            !a.activityCode.startsWith('other') &&
-            (!nextRoundActivity ||
-              new Date(a.startTime).getTime() <
-                new Date(nextRoundActivity.startTime).getTime())
-          ) {
-            nextRoundActivity = a;
-          }
-        });
-      });
-      if (nextRoundActivity) {
-        const sortedGroups = nextRoundActivity.childActivities.sort(
-          (a, b) =>
-            new Date(a.startTime).getTime() - new Date(b.startTime).getTime(),
-        );
-        const nextGroupId =
-          sortedGroups.length > 0
-            ? sortedGroups[0].activityCode
-            : nextRoundActivity.activityCode + '-g1';
-        await this.prisma.room.update({
-          where: {
-            id: roomId,
-          },
-          data: {
-            currentGroupIds: [nextGroupId],
-          },
-        });
-        this.integratedLiveRounds
-          .onRoundStarted(nextGroupId.split('-g')[0])
-          .catch(() => undefined);
-        const message = `Group in room ${room.name} was changed to ${nextGroupId}`;
-        this.appGateway.server.to(`competition`).emit('groupShouldBeChanged', {
-          message: message,
-        });
-        this.logger.log(message);
-      }
+    if (!nextGroupIds) return;
+    const switched = await this.roomsService.switchRoomGroups(
+      room.id,
+      room.currentGroupIds,
+      nextGroupIds,
+    );
+    if (!switched) {
+      this.logger.log(
+        `Groups in room ${room.name} were changed by hand meanwhile; left as they are`,
+      );
+      return;
     }
+    this.forgetWarningsForOtherGroups(room.id, nextGroupIds);
+    const message = `Group in room ${room.name} was changed to ${nextGroupIds.join(', ')}`;
+    this.appGateway.server.to(`competition`).emit('groupShouldBeChanged', {
+      message: message,
+    });
+    this.logger.log(message);
   }
 
   /** Steps from the given groups, or the room's saved ones without them */
@@ -800,107 +860,15 @@ export class CompetitionService {
       return firstGroup ? [firstGroup] : [];
     }
     const nextGroups = [];
-    if (currentGroups.length === 1) {
-      const currentRoundId = currentGroups[0].split('-g')[0];
-      const roundInfoFromSchedule: Activity =
-        getActivityInfoFromScheduleWithRoom(currentRoundId, room.name, wcif);
-      if (!roundInfoFromSchedule) return [];
-      const sortedActivities = roundInfoFromSchedule.childActivities.sort(
-        (a, b) =>
-          new Date(a.startTime).getTime() - new Date(b.startTime).getTime(),
-      );
-      const currentIndex = sortedActivities.findIndex(
-        (a) => a.activityCode === currentGroups[0],
-      );
-      const nextGroup =
-        currentIndex !== -1 ? sortedActivities[currentIndex + 1] : null;
-
-      if (nextGroup) {
-        nextGroups.push(nextGroup.activityCode);
-      } else {
-        const endTime = new Date(roundInfoFromSchedule.endTime);
-        let nextRoundActivity: Activity | null = null;
-        wcif.schedule.venues.forEach((venue: Venue) => {
-          const r = venue.rooms.find(
-            (item: WCIFRoom) => item.name === room.name,
-          );
-          r.activities.forEach((a: Activity) => {
-            if (
-              isSameDay(new Date(a.startTime), endTime) &&
-              new Date(a.startTime).getTime() >= endTime.getTime() &&
-              !a.activityCode.startsWith('other') &&
-              (!nextRoundActivity ||
-                new Date(a.startTime).getTime() <
-                  new Date(nextRoundActivity.startTime).getTime())
-            ) {
-              nextRoundActivity = a;
-            }
-          });
-        });
-        if (nextRoundActivity) {
-          const sortedGroups = nextRoundActivity.childActivities.sort(
-            (a, b) =>
-              new Date(a.startTime).getTime() - new Date(b.startTime).getTime(),
-          );
-          const nextGroupId =
-            sortedGroups.length > 0
-              ? sortedGroups[0].activityCode
-              : nextRoundActivity.activityCode + '-g1';
-          nextGroups.push(nextGroupId);
-        }
+    for (const currentGroupId of currentGroups) {
+      const roundId = currentGroupId.split('-g')[0];
+      if (!getActivityInfoFromScheduleWithRoom(roundId, room.name, wcif)) {
+        return [];
       }
-    } else {
-      for (const currentGroupId of currentGroups) {
-        const roundId = currentGroupId.split('-g')[0];
-        const roundInfoFromSchedule: Activity =
-          getActivityInfoFromScheduleWithRoom(roundId, room.name, wcif);
-        if (!roundInfoFromSchedule) return [];
-        const sortedActivities = roundInfoFromSchedule.childActivities.sort(
-          (a, b) =>
-            new Date(a.startTime).getTime() - new Date(b.startTime).getTime(),
-        );
-        const currentIndex = sortedActivities.findIndex(
-          (a) => a.activityCode === currentGroupId,
-        );
-        const nextGroup =
-          currentIndex !== -1 ? sortedActivities[currentIndex + 1] : null;
-
-        if (nextGroup) {
-          nextGroups.push(nextGroup.activityCode);
-        } else {
-          const endTime = new Date(roundInfoFromSchedule.endTime);
-          let nextRoundActivity: Activity | null = null;
-          wcif.schedule.venues.forEach((venue: Venue) => {
-            const r = venue.rooms.find(
-              (item: WCIFRoom) => item.name === room.name,
-            );
-            r.activities.forEach((a: Activity) => {
-              if (
-                isSameDay(new Date(a.startTime), endTime) &&
-                new Date(a.startTime).getTime() >= endTime.getTime() &&
-                !a.activityCode.startsWith('other') &&
-                (!nextRoundActivity ||
-                  new Date(a.startTime).getTime() <
-                    new Date(nextRoundActivity.startTime).getTime())
-              ) {
-                nextRoundActivity = a;
-              }
-            });
-          });
-          if (nextRoundActivity) {
-            const sortedGroups = nextRoundActivity.childActivities.sort(
-              (a, b) =>
-                new Date(a.startTime).getTime() -
-                new Date(b.startTime).getTime(),
-            );
-            const nextGroupId =
-              sortedGroups.length > 0
-                ? sortedGroups[0].activityCode
-                : nextRoundActivity.activityCode + '-g1';
-            nextGroups.push(nextGroupId);
-          }
-        }
-      }
+      const nextGroupId =
+        getNextGroupInRoom(currentGroupId, room.name, wcif)?.activityCode ??
+        getFirstGroupOfNextRoundInRoom(roundId, room.name, wcif);
+      if (nextGroupId) nextGroups.push(nextGroupId);
     }
     return nextGroups;
   }
@@ -942,7 +910,7 @@ export class CompetitionService {
           const r = venue.rooms.find(
             (item: WCIFRoom) => item.name === room.name,
           );
-          r.activities.forEach((a: Activity) => {
+          r?.activities.forEach((a: Activity) => {
             if (
               isSameDay(new Date(a.endTime), startTime) &&
               new Date(a.endTime).getTime() <= startTime.getTime() &&
@@ -992,7 +960,7 @@ export class CompetitionService {
             const r = venue.rooms.find(
               (item: WCIFRoom) => item.name === room.name,
             );
-            r.activities.forEach((a: Activity) => {
+            r?.activities.forEach((a: Activity) => {
               if (
                 isSameDay(new Date(a.endTime), startTime) &&
                 new Date(a.endTime).getTime() <= startTime.getTime() &&

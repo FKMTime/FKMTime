@@ -32,17 +32,24 @@ export const canAddGroup = (groupIds: string[], groupId: string) =>
     !groupIds.includes(groupId) &&
     !groupIds.some((id) => getEventId(id) === getEventId(groupId));
 
-/** Official rounds in progress anywhere, to open in WCA Live */
-export const getRoundsToOpen = (
+const runningRoundIds = (rooms: { currentGroupIds: string[] }[]) =>
+    new Set(rooms.flatMap((room) => room.currentGroupIds.map(getRoundId)));
+
+/**
+ * Official rounds that saving starts: running in some room now, and in none
+ * before. These are the rounds someone may have to open in WCA Live.
+ */
+export const getStartedRounds = (
+    saved: { currentGroupIds: string[] }[],
     rooms: { currentGroupIds: string[] }[],
     isUnofficial: (eventId: string) => boolean | undefined
-) => [
-    ...new Set(
-        rooms
-            .flatMap((room) => room.currentGroupIds.map(getRoundId))
-            .filter((roundId) => !isUnofficial(getEventId(roundId)))
-    ),
-];
+) => {
+    const wasRunning = runningRoundIds(saved);
+    return [...runningRoundIds(rooms)].filter(
+        (roundId) =>
+            !wasRunning.has(roundId) && !isUnofficial(getEventId(roundId))
+    );
+};
 
 /** "3x3 R1 G2" */
 export const shortGroupLabel = (groupId: string) =>

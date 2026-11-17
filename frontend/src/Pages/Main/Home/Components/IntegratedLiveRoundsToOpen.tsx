@@ -3,12 +3,12 @@ import { useState } from "react";
 
 import { Alert, AlertDescription, AlertTitle } from "@/Components/ui/alert";
 import { Button } from "@/Components/ui/button";
+import { useIntegratedLiveRoundsToOpen } from "@/hooks/useIntegratedLiveRound";
 import { useLiveQuery } from "@/hooks/useLiveQuery";
 import { useToast } from "@/hooks/useToast";
 import { activityCodeToName } from "@/lib/activities";
 import {
     integratedLiveBlockersQuery,
-    integratedLiveRoundsQuery,
     invalidateIntegratedLiveRounds,
     openIntegratedLiveRound,
 } from "@/lib/integratedLive";
@@ -25,7 +25,7 @@ const previousRoundId = (roundId: string) => {
     return `${eventId}-r${Number(number) - 1}`;
 };
 
-const RoundToOpen = ({ round }: { round: IntegratedLiveRound }) => {
+export const RoundToOpen = ({ round }: { round: IntegratedLiveRound }) => {
     const { toast } = useToast();
     const [isOpening, setIsOpening] = useState(false);
     const isReady = round.state === "ready";
@@ -100,12 +100,7 @@ const RoundToOpen = ({ round }: { round: IntegratedLiveRound }) => {
 const IntegratedLiveRoundsToOpen = ({
     roundIds,
 }: IntegratedLiveRoundsToOpenProps) => {
-    const { data: rounds } = useLiveQuery(integratedLiveRoundsQuery);
-    const toOpen = (rounds ?? []).filter(
-        (round) =>
-            roundIds.includes(round.roundId) &&
-            ["ready", "pending", "blocked"].includes(round.state)
-    );
+    const toOpen = useIntegratedLiveRoundsToOpen(roundIds);
     if (toOpen.length === 0) return null;
     return (
         <>
