@@ -70,10 +70,16 @@ export class AttendanceService {
     return { hasAssignedRunners: runner !== null };
   }
 
+  /**
+   * Missed counts only groups that happened: everyone is absent until they
+   * scan in, so a group still ahead would count as missed. A no-show is
+   * known in advance, so it shows for groups still ahead too.
+   */
   async getMostMissedAssignments() {
-    const [persons, activities] = await Promise.all([
+    const [persons, activities, happened] = await Promise.all([
       this.prisma.person.findMany(),
       this.prisma.staffActivity.findMany(),
+      this.happenedGroupIds(),
     ]);
     const data = persons.map((person) => {
       const own = activities.filter(
@@ -84,7 +90,9 @@ export class AttendanceService {
       );
       const withStatus = (status: StaffActivityStatus) =>
         staffing.filter((activity) => activity.status === status);
-      const missedAssignments = withStatus(StaffActivityStatus.ABSENT);
+      const missedAssignments = withStatus(StaffActivityStatus.ABSENT).filter(
+        (activity) => happened.has(activity.groupId),
+      );
       const lateAssignments = withStatus(StaffActivityStatus.LATE);
       const presentButReplacedAssignments = withStatus(
         StaffActivityStatus.REPLACED,
@@ -304,11 +312,24 @@ export class AttendanceService {
 
   /** Rules and the "group happened" signal: see attendanceStatistics.ts */
   async getAttendanceStatistics(): Promise<AttendanceStatistics> {
-    const [activities, rooms, attended, competition] = await Promise.all([
+    const [activities, happened, competition] = await Promise.all([
       this.prisma.staffActivity.findMany({
         where: { role: { not: StaffRole.COMPETITOR } },
         include: { person: { select: { name: true } } },
       }),
+      this.happenedGroupIds(),
+      this.prisma.competition.findFirst({ select: { wcif: true } }),
+    ]);
+    return computeAttendanceStatistics(
+      activities,
+      happened,
+      competition?.wcif as ScheduleWcif | undefined,
+    );
+  }
+
+  /** Groups whose assignments count, see happenedGroups */
+  private async happenedGroupIds() {
+    const [rooms, attended] = await Promise.all([
       this.prisma.room.findMany({
         select: { startedGroupIds: true, currentGroupIds: true },
       }),
@@ -321,15 +342,10 @@ export class AttendanceService {
         select: { groupId: true },
         distinct: ['groupId'],
       }),
-      this.prisma.competition.findFirst({ select: { wcif: true } }),
     ]);
-    return computeAttendanceStatistics(
-      activities,
-      happenedGroups(
-        rooms,
-        attended.map((activity) => activity.groupId),
-      ),
-      competition?.wcif as ScheduleWcif | undefined,
+    return happenedGroups(
+      rooms,
+      attended.map((activity) => activity.groupId),
     );
   }
 
