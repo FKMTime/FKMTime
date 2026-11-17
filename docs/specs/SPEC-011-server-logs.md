@@ -1,6 +1,6 @@
 # SPEC-011: Server logs for admins, replacing Dozzle
 
-- **Status:** Draft
+- **Status:** Accepted
 - **Created:** 2026-11-17
 - **Related:** SPEC-009 (live device logs), FKMTime/micro-connector
   (`log_subscriber.rs`), fim instance templates
@@ -156,8 +156,8 @@ Same semantics as the SPEC-009 events. An unknown source is ignored.
   filter box, the 5000-line limit, the Download button.
 - **Messages:**
   - `available: false`: "This log isn't available on this server."
-  - Connector tab with no file: "No connector log yet. Connectors released
-    before <version> don't write one."
+  - Connector tab with no file: "No connector log yet. Older connectors
+    don't write one; update the connector to get it."
   - Other empty logs: "Nothing logged yet."
   - The SPEC-009 `truncated` and `skipped` rows, unchanged.
 
