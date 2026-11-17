@@ -87,7 +87,6 @@ const SUB_PAGES: SubPage[] = [
         to: "/results/checks",
         whenParentTo: "/results",
     },
-    { parent: "setup", label: "Current groups", to: "/competition/groups" },
     {
         parent: "setup",
         label: "Unofficial events",

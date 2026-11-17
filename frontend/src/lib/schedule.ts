@@ -220,10 +220,14 @@ export const getRoomScheduleStatus = (
     );
 };
 
-/** "Start group 3", or the next round's name when the round changes */
+/**
+ * "Start group 3", the next round's name when the round changes, or "Start
+ * next groups" when the room moves to several at once
+ */
 export const getStartLabel = (currentGroupIds: string[], next: string[]) => {
     const nextGroupId = next[0];
     if (!nextGroupId) return null;
+    if (next.length > 1) return "Start next groups";
     const nextRoundId = nextGroupId.split("-g")[0];
     const groupNumber = nextGroupId.split("-g")[1];
     const isSameRound = currentGroupIds.some((id) =>
@@ -255,6 +259,27 @@ export const getScheduleRooms = (wcif: WCIF): ScheduleRoom[] => {
                 venues.length > 1 ? `${venue.name} · ${room.name}` : room.name,
             timezone: venue.timezone,
         }))
+    );
+};
+
+/**
+ * Rooms in the order the schedule lists them, so they keep their places
+ * however the backend returns them. Rooms the schedule doesn't name go last,
+ * by name.
+ */
+export const sortRoomsBySchedule = <T extends { name: string }>(
+    rooms: T[],
+    wcif: WCIF
+): T[] => {
+    const order = wcif.schedule.venues.flatMap((venue) =>
+        venue.rooms.map((room) => room.name)
+    );
+    const position = (room: T) => {
+        const index = order.indexOf(room.name);
+        return index === -1 ? order.length : index;
+    };
+    return [...rooms].sort(
+        (a, b) => position(a) - position(b) || a.name.localeCompare(b.name)
     );
 };
 

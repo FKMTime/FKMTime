@@ -5,19 +5,20 @@ import { useEffect, useMemo, useState } from "react";
 import LoadingPage from "@/Components/LoadingPage";
 import EmptyState from "@/Components/shared/EmptyState";
 import SegmentedControl from "@/Components/shared/SegmentedControl";
-import { useConfirm } from "@/hooks/useConfirm";
 import { useLiveQuery } from "@/hooks/useLiveQuery";
 import { useSocketEvents } from "@/hooks/useSocketEvents";
 import { useSocketRoom } from "@/hooks/useSocketRoom";
 import { useToast } from "@/hooks/useToast";
 import { competitionAtom, quickEntryAtom } from "@/lib/atoms";
 import { recentAttemptsQuery } from "@/lib/attempt";
-import { nextGroupsQuery } from "@/lib/competition";
+import { competitionSettingsQuery, nextGroupsQuery } from "@/lib/competition";
+import { getStartedRounds } from "@/lib/currentGroups";
 import {
     getPointedStations,
     setStationsRound,
     stationDevicesQuery,
 } from "@/lib/devices";
+import { isUnofficialEvent } from "@/lib/events";
 import { unresolvedIncidentsQuery } from "@/lib/incidents";
 import { Device, Room } from "@/lib/interfaces";
 import {
@@ -28,12 +29,13 @@ import {
 import { toQueryOptions } from "@/lib/queryCache";
 import { queryClient } from "@/lib/queryClient";
 import {
+    isGroupDone,
     roomsProgressQuery,
     roomsQuery,
     updateCurrentRound,
     updateRoomGroups,
 } from "@/lib/rooms";
-import { getStartLabel } from "@/lib/schedule";
+import { getStartLabel, sortRoomsBySchedule } from "@/lib/schedule";
 import { invalidateIncidentLists } from "@/Pages/Main/Incidents/incidentsContext";
 
 import IntegratedLiveConnectionAlert from "./Components/IntegratedLiveConnectionAlert";
@@ -42,6 +44,8 @@ import IntegratedLiveRoundsToOpen from "./Components/IntegratedLiveRoundsToOpen"
 import NextGroupInAllRooms from "./Components/NextGroupInAllRooms";
 import NoShowsToRemove from "./Components/NoShowsToRemove";
 import RoomCard from "./Components/RoomCard";
+import RoundsToOpenDialog from "./Components/RoundsToOpenDialog";
+import { useAskToChangeGroups } from "./Components/useAskToChangeGroups";
 
 /** Re-render this often so the schedule offset stays current */
 const CLOCK_TICK_MS = 30_000;
@@ -78,10 +82,19 @@ const ResultsRoom = ({ roundId }: { roundId: string }) => {
 const Home = () => {
     const competition = useAtomValue(competitionAtom);
     const setQuickEntry = useSetAtom(quickEntryAtom);
-    const confirm = useConfirm();
+    const askToChangeGroups = useAskToChangeGroups();
     const { toast } = useToast();
+    const [startedRounds, setStartedRounds] = useState<string[]>([]);
 
-    const { data: rooms } = useLiveQuery(roomsQuery);
+    const { data: unorderedRooms } = useLiveQuery(roomsQuery);
+    // In the schedule's order, so rooms keep their places as they change
+    const rooms = useMemo(
+        () =>
+            competition && unorderedRooms
+                ? sortRoomsBySchedule(unorderedRooms, competition.wcif)
+                : unorderedRooms,
+        [competition, unorderedRooms]
+    );
     const { data: progressData } = useLiveQuery(roomsProgressQuery);
     const progress = progressData ?? [];
     const [selectedRoomId, setSelectedRoomId] = useState<string>();
@@ -89,6 +102,12 @@ const Home = () => {
 
     const canStartGroups = isOrganizerOrDelegate();
     const canResolveIncidents = isDelegate();
+
+    // Whether rooms move on by themselves; it's changed in the settings.
+    // The panel's competition doesn't carry it; the settings do
+    const { data: settings } = useLiveQuery(competitionSettingsQuery, {
+        enabled: canStartGroups,
+    });
 
     // Stations pointed at another round stay listed on their room's card
     // until a delegate sends them back (SPEC-007)
@@ -146,6 +165,8 @@ const Home = () => {
         resultEntered: refreshResults,
         newIncident: () => void invalidateIncidentLists(),
         attemptUpdated: () => void invalidateIncidentLists(),
+        // Sent when the backend changes a room's groups by itself
+        groupShouldBeChanged: refreshRooms,
     });
 
     useEffect(() => {
@@ -158,38 +179,66 @@ const Home = () => {
     const incidentsByRoom = (roomId: string) =>
         incidents.filter((incident) => incident.device?.roomId === roomId);
 
-    const handleStartNext = async (room: Room, nextGroupIds: string[]) => {
-        const label = getStartLabel(room.currentGroupIds, nextGroupIds);
-        try {
-            await confirm({
-                title: `${label} in ${room.name}?`,
-                description:
-                    "Devices in this room will switch to the new group.",
-                confirmLabel: label ?? "Start",
-                variant: "default",
-            });
-        } catch {
-            return;
-        }
-        // Only this room: the others may have moved on since Home loaded them
-        const response = await updateRoomGroups(room, nextGroupIds);
-        if (response.status === 200) {
-            toast({ title: `${room.name}: group started`, variant: "success" });
-            refreshRooms();
-        } else {
+    const getProgress = (roomId: string, groupId: string) =>
+        progress
+            .find((p) => p.roomId === roomId)
+            ?.groups.find((g) => g.groupId === groupId);
+
+    /** Asks to open in WCA Live the official rounds a change started */
+    const noteStartedRounds = (updated: Room[]) =>
+        setStartedRounds(
+            getStartedRounds(
+                rooms,
+                rooms.map(
+                    (room) => updated.find((u) => u.id === room.id) ?? room
+                ),
+                isUnofficialEvent
+            )
+        );
+
+    // Saves only this room: the others may have moved on since Home loaded
+    const setRoomGroups = async (room: Room, groupIds: string[]) => {
+        const response = await updateRoomGroups(room, groupIds);
+        if (response.status !== 200) {
             toast({
-                title: "Failed to start the group",
+                title: `${room.name} wasn't updated`,
                 description: response.data?.message,
                 variant: "destructive",
             });
+            return false;
         }
+        noteStartedRounds([{ ...room, currentGroupIds: groupIds }]);
+        toast({ title: `${room.name} updated`, variant: "success" });
+        refreshRooms();
+        return true;
+    };
+
+    const handleStartNext = async (room: Room, nextGroupIds: string[]) => {
+        const label =
+            getStartLabel(room.currentGroupIds, nextGroupIds) ?? "Start";
+        const title = `${label} in ${room.name}?`;
+        if (
+            await askToChangeGroups({
+                title,
+                confirmLabel: label,
+                change: "start",
+            })
+        )
+            await setRoomGroups(room, nextGroupIds);
     };
 
     const handleSwitchAll = async (updated: Room[]) => {
         const response = await updateCurrentRound(updated);
         if (response.status !== 200)
             return response.data?.message ?? "Failed to start the next groups";
-        toast({ title: "Next group started in all rooms", variant: "success" });
+        noteStartedRounds(updated);
+        toast({
+            title:
+                updated.length === rooms.length
+                    ? "Next group started in all rooms"
+                    : `Next group started in ${updated.length} rooms`,
+            variant: "success",
+        });
         refreshRooms();
         return null;
     };
@@ -211,6 +260,8 @@ const Home = () => {
             });
         }
     };
+
+    const isAutoChange = !!settings?.shouldChangeGroupsAutomatically;
 
     const selectedRoom =
         rooms.find((room) => room.id === selectedRoomId) ?? rooms[0];
@@ -237,6 +288,16 @@ const Home = () => {
                 (station) => station.roomId === room.id
             )}
             onBackToRoom={isDelegate() ? handleBackToRoom : undefined}
+            groupControls={
+                canStartGroups
+                    ? {
+                          rooms,
+                          getProgress,
+                          isAutoChange,
+                          onSetGroups: setRoomGroups,
+                      }
+                    : undefined
+            }
         />
     );
 
@@ -266,11 +327,22 @@ const Home = () => {
                 <ResultsRoom key={roundId} roundId={roundId} />
             ))}
             {canStartGroups && (
-                <NextGroupInAllRooms
-                    rooms={rooms}
-                    nextGroups={nextGroups}
-                    onSwitch={handleSwitchAll}
-                />
+                <>
+                    <RoundsToOpenDialog
+                        roundIds={startedRounds}
+                        onClose={() => setStartedRounds([])}
+                    />
+                    <NextGroupInAllRooms
+                        rooms={rooms}
+                        nextGroups={nextGroups}
+                        isReady={(room) =>
+                            room.currentGroupIds.every((id) =>
+                                isGroupDone(getProgress(room.id, id))
+                            )
+                        }
+                        onSwitch={handleSwitchAll}
+                    />
+                </>
             )}
             {rooms.length > 1 && (
                 <SegmentedControl

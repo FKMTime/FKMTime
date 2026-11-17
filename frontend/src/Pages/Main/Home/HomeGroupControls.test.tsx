@@ -11,7 +11,7 @@ import { GroupProgress } from "@/lib/rooms";
 import { ConfirmProvider } from "@/providers/ConfirmProvider";
 import { renderWithQueryClient } from "@/test/queryClient";
 
-import CurrentGroups from "./CurrentGroups";
+import Home from "./Home";
 
 /** What the fake backend answers, and what the page sent it */
 const backend = vi.hoisted(() => ({
@@ -36,9 +36,18 @@ const fakeRequest = vi.hoisted(
                 }) as unknown as Response;
             if (method === "PUT") {
                 backend.puts.push({ path, body });
+                if (path === "competition/rooms")
+                    for (const sent of (body as { rooms: Room[] }).rooms) {
+                        const saved = (backend.rooms as Room[]).find(
+                            (r) => r.id === sent.id
+                        );
+                        if (saved) saved.currentGroupIds = sent.currentGroupIds;
+                    }
                 return json({});
             }
-            if (path === "competition/rooms") return json(backend.rooms);
+            // Copies, so a PUT doesn't change what the page already loaded
+            if (path === "competition/rooms")
+                return json((backend.rooms as Room[]).map((r) => ({ ...r })));
             if (path === "competition/rooms/progress")
                 return json(backend.progress);
             if (path === "competition/settings")
@@ -47,7 +56,7 @@ const fakeRequest = vi.hoisted(
                 });
             const next = /^competition\/rooms\/(.+)\/next-groups/.exec(path);
             if (next) return json(backend.nextGroups[next[1]] ?? []);
-            return json({}, 404);
+            return json([]);
         }
 );
 
@@ -142,17 +151,21 @@ const progress = (groupId: string, entered: number): GroupProgress => ({
     expected: 35,
 });
 
-const renderPage = async () => {
+const renderPage = async (
+    officialResultsDestination: Competition["officialResultsDestination"] = "NONE"
+) => {
     const store = createStore();
     store.set(competitionAtom, {
         id: "comp",
         wcif,
+        useFkmTimeDevices: true,
+        officialResultsDestination,
     } as unknown as Competition);
     renderWithQueryClient(
         <Provider store={store}>
             <ConfirmProvider>
                 <MemoryRouter>
-                    <CurrentGroups />
+                    <Home />
                 </MemoryRouter>
             </ConfirmProvider>
         </Provider>
@@ -160,7 +173,8 @@ const renderPage = async () => {
     await screen.findAllByRole("region");
 };
 
-const row = (name: string) => screen.getByRole("region", { name });
+/** The desktop card; phones get a copy of the selected room above it */
+const row = (name: string) => screen.getAllByRole("region", { name }).at(-1)!;
 
 /** Confirms in the confirm dialog, even with the picker's dialog open */
 const confirmDialog = async (label: string) => {
@@ -186,7 +200,7 @@ const openMenuItem = async (roomName: string, item: string) => {
     await userEvent.click(await screen.findByRole("menuitem", { name: item }));
 };
 
-/** The picker: a dialog from md up, a panel under the row on phones */
+/** The picker: a dialog from md up, a panel in the room card on phones */
 const openPicker = async (roomName: string) => {
     await openMenuItem(roomName, "Change group…");
     const name = `Change group in ${roomName}`;
@@ -210,7 +224,7 @@ const setViewportWidth = (width: number) => {
     window.dispatchEvent(new Event("resize"));
 };
 
-describe("CurrentGroups", () => {
+describe("Home group controls", () => {
     beforeEach(() => {
         clearQueryCache();
         localStorage.setItem(
@@ -219,6 +233,10 @@ describe("CurrentGroups", () => {
                 { id: "333", name: "3x3x3 Cube", shortName: "3x3" },
                 { id: "222", name: "2x2x2 Cube", shortName: "2x2" },
             ])
+        );
+        localStorage.setItem(
+            "fkmtime-userInfo",
+            JSON.stringify({ roles: ["DELEGATE"] })
         );
         backend.rooms = [
             room("main", "Main Hall", ["333-r1-g3"]),
@@ -231,40 +249,6 @@ describe("CurrentGroups", () => {
         backend.nextGroups = { main: ["333-r1-g5"], side: ["333-r1-g4"] };
         backend.autoChange = false;
         backend.puts = [];
-    });
-
-    it("numbers each room's groups by their place in that room", async () => {
-        await renderPage();
-        expect(
-            within(row("Main Hall")).getByText("Group 3 · 2 of 3 here")
-        ).toBeTruthy();
-        expect(
-            within(row("Side Hall")).getByText(/Group 2 · 1 of 2 here/)
-        ).toBeTruthy();
-    });
-
-    it("shows how far behind or ahead each room is, never 'Starts' while it runs", async () => {
-        await renderPage();
-        expect(
-            within(row("Main Hall")).getByText("11 min behind")
-        ).toBeTruthy();
-        // The Side Hall started its group 41 minutes before its slot
-        expect(within(row("Side Hall")).getByText("41 min ahead")).toBeTruthy();
-        expect(within(row("Side Hall")).queryByText(/^Starts/)).toBeNull();
-    });
-
-    it("says when an empty room starts its next group", async () => {
-        backend.rooms = [room("main", "Main Hall", [])];
-        backend.nextGroups = { main: ["222-r1-g1"] };
-        await renderPage();
-        const start = new Intl.DateTimeFormat("en-GB", {
-            hour: "2-digit",
-            minute: "2-digit",
-            timeZone: "UTC",
-        }).format(new Date(at(120)));
-        expect(
-            await within(row("Main Hall")).findByText(`Starts ${start}`)
-        ).toBeTruthy();
     });
 
     it("keeps starting the next group secondary while results come in", async () => {
@@ -287,7 +271,7 @@ describe("CurrentGroups", () => {
             expect(start.classList.contains("bg-primary")).toBe(true)
         );
         expect(
-            screen.getByText("All in · ready for the next group")
+            screen.getAllByText("All in · ready for the next group")[0]
         ).toBeTruthy();
     });
 
@@ -298,9 +282,8 @@ describe("CurrentGroups", () => {
         ];
         await renderPage();
         expect(
-            await screen.findByText("All in · moving on by itself")
+            (await screen.findAllByText("All in · moving on by itself"))[0]
         ).toBeTruthy();
-        expect(screen.getByText("Automatic group change on")).toBeTruthy();
     });
 
     it("starts the next group after confirming, saving only that room", async () => {
@@ -609,11 +592,7 @@ describe("CurrentGroups", () => {
     it("stops one group of a room running several", async () => {
         backend.rooms = [room("main", "Main Hall", ["333-r1-g3", "222-r1-g1"])];
         await renderPage();
-        await userEvent.click(
-            within(row("Main Hall")).getByRole("button", {
-                name: "Stop 2x2 R1 G1",
-            })
-        );
+        await openMenuItem("Main Hall", "Stop 2x2 R1 G1");
         await confirmDialog("Stop 2x2 R1 G1");
 
         expect(backend.puts[0].body).toEqual({
@@ -628,16 +607,27 @@ describe("CurrentGroups", () => {
 
     it("has no per-group stop for a room running one group", async () => {
         await renderPage();
-        expect(
-            within(row("Main Hall")).queryByRole("button", {
-                name: "Stop 3x3 R1 G3",
+        await userEvent.click(
+            within(row("Main Hall")).getByRole("button", {
+                name: "More for Main Hall",
             })
+        );
+        expect(
+            await screen.findByRole("menuitem", { name: "Stop the room" })
+        ).toBeTruthy();
+        expect(
+            screen.queryByRole("menuitem", { name: "Stop 3x3 R1 G3" })
         ).toBeNull();
     });
 
     it("stops the whole room after confirming", async () => {
         await renderPage();
         await openMenuItem("Main Hall", "Stop the room");
+        expect(
+            await screen.findByText(
+                "Stations in this room have nothing to time until you start a group."
+            )
+        ).toBeTruthy();
         await confirmDialog("Stop the room");
 
         expect(backend.puts[0].body).toEqual({
@@ -645,5 +635,79 @@ describe("CurrentGroups", () => {
                 expect.objectContaining({ id: "main", currentGroupIds: [] }),
             ],
         });
+    });
+
+    it("shows every group a room runs, each with its progress", async () => {
+        backend.rooms = [room("main", "Main Hall", ["333-r1-g3", "222-r1-g1"])];
+        backend.progress = [
+            {
+                roomId: "main",
+                groups: [progress("333-r1-g3", 35), progress("222-r1-g1", 10)],
+            },
+        ];
+        await renderPage();
+        const card = row("Main Hall");
+        expect(
+            within(card).getByRole("heading", { name: "3x3x3 Cube · Round 1" })
+        ).toBeTruthy();
+        expect(
+            within(card).getByRole("heading", { name: "2x2x2 Cube · Round 1" })
+        ).toBeTruthy();
+        expect(
+            within(card).getByRole("progressbar", {
+                name: "Results entered for 2x2 R1 G1 in Main Hall",
+            })
+        ).toBeTruthy();
+        // One group still has results to come, so the room isn't done
+        expect(within(card).queryByText(/^All in/)).toBeNull();
+        // Each group has its own attendance, not just the first one
+        expect(
+            within(card)
+                .getByRole("link", { name: "Attendance for 2x2 R1 G1" })
+                .getAttribute("href")
+        ).toBe("/attendance/222-r1-g1");
+        expect(
+            within(card).queryByRole("link", { name: "Attendance" })
+        ).toBeNull();
+    });
+
+    it("asks to open the rounds a change started in WCA Live", async () => {
+        await renderPage("WCA_LIVE");
+        await pickGroup("Main Hall", ["2x2x2 Cube", "Group 1"]);
+        await userEvent.click(screen.getByRole("button", { name: "Run both" }));
+        const dialog = await screen.findByRole("dialog", {
+            name: "Open these rounds in WCA Live",
+        });
+        expect(within(dialog).getByText("2x2x2 Cube · Round 1")).toBeTruthy();
+    });
+
+    it("gives no group controls to someone who can't change groups", async () => {
+        localStorage.setItem(
+            "fkmtime-userInfo",
+            JSON.stringify({ roles: ["STAGE_LEADER"] })
+        );
+        await renderPage();
+        expect(
+            within(row("Main Hall")).queryByRole("button", {
+                name: "More for Main Hall",
+            })
+        ).toBeNull();
+    });
+
+    it("lists rooms in the schedule's order, however they arrive", async () => {
+        backend.rooms = [
+            room("side", "Side Hall", ["333-r1-g2"]),
+            room("main", "Main Hall", ["333-r1-g3"]),
+        ];
+        await renderPage();
+        // The desktop grid; phones get the selected room above it
+        const names = screen
+            .getAllByRole("region")
+            .filter((region) =>
+                region.getAttribute("aria-label")?.endsWith("Hall")
+            )
+            .slice(-2)
+            .map((region) => region.getAttribute("aria-label"));
+        expect(names).toEqual(["Main Hall", "Side Hall"]);
     });
 });
