@@ -35,8 +35,12 @@ export interface GroupProgress {
     groupId: string;
     roundId: string;
     competitors: number;
+    /** Competitors whose result is complete */
+    finished: number;
     entered: number;
     expected: number;
+    /** Every competitor is past the cutoff, so expected can't change */
+    expectedIsFinal: boolean;
 }
 
 /** Every attempt the group's competitors will do is in */

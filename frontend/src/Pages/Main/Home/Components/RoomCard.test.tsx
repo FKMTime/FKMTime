@@ -94,8 +94,10 @@ const renderCard = (props: Partial<Parameters<typeof RoomCard>[0]> = {}) => {
                         groupId: "333-r1-g2",
                         roundId: "333-r1",
                         competitors: 16,
+                        finished: 11,
                         entered: 62,
                         expected: 80,
+                        expectedIsFinal: false,
                     },
                 ]}
                 incidents={[incident]}
@@ -190,7 +192,7 @@ describe("RoomCard", () => {
                     name: "Results entered in Main room",
                 })
                 .getAttribute("aria-valuenow")
-        ).toBe("62");
+        ).toBe("11");
         expect(screen.getByText("Lunch")).toBeTruthy();
     });
 
@@ -238,8 +240,10 @@ describe("RoomCard", () => {
                     groupId: "333-r1-g2",
                     roundId: "333-r1",
                     competitors: 16,
+                    finished: 16,
                     entered: 80,
                     expected: 80,
+                    expectedIsFinal: true,
                 },
             ],
         });
@@ -248,6 +252,25 @@ describe("RoomCard", () => {
             .map((b) => b.textContent)
             .filter((t) => /Start group|Enter attempt/.test(t ?? ""));
         expect(actions).toEqual(["Start group 3", "Enter attempt"]);
+    });
+
+    it("shows the attempt count only once every total is final", () => {
+        renderCard();
+        expect(screen.queryByText(/attempts$/)).toBeNull();
+        renderCard({
+            progress: [
+                {
+                    groupId: "333-r1-g2",
+                    roundId: "333-r1",
+                    competitors: 16,
+                    finished: 11,
+                    entered: 62,
+                    expected: 74,
+                    expectedIsFinal: true,
+                },
+            ],
+        });
+        expect(screen.getByText("62/74 attempts")).toBeTruthy();
     });
 
     it("hides actions and incidents the user cannot use", () => {

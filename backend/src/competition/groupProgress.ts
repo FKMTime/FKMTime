@@ -12,10 +12,17 @@ export interface GroupProgress {
   roundId: string;
   /** Competitors assigned to the group */
   competitors: number;
+  /** Competitors whose result is complete (every attempt they will do is in) */
+  finished: number;
   /** Counting attempts entered for those competitors */
   entered: number;
   /** Attempts the group will have once everyone is done */
   expected: number;
+  /**
+   * Whether expected is final: in a round with a cutoff, every competitor
+   * has done the cutoff attempts, so nobody's total can still grow
+   */
+  expectedIsFinal: boolean;
 }
 
 interface WcifActivity {
@@ -86,6 +93,8 @@ export const calculateGroupProgress = (
     Cutoff | undefined;
   const competitorIds = getGroupCompetitorIds(wcif, groupId);
 
+  let finished = 0;
+  let expectedIsFinal = true;
   let entered = 0;
   let expected = 0;
   for (const registrantId of competitorIds) {
@@ -97,14 +106,21 @@ export const calculateGroupProgress = (
       maxAttempts,
       cutoff,
     );
+    const competitorEntered = Math.min(counting.length, competitorExpected);
     expected += competitorExpected;
-    entered += Math.min(counting.length, competitorExpected);
+    entered += competitorEntered;
+    if (competitorEntered >= competitorExpected) finished++;
+    if (cutoff && counting.length < cutoff.numberOfAttempts) {
+      expectedIsFinal = false;
+    }
   }
   return {
     groupId,
     roundId,
     competitors: competitorIds.length,
+    finished,
     entered,
     expected,
+    expectedIsFinal,
   };
 };
