@@ -17,41 +17,35 @@ const signal = (overrides: Partial<StationSignal> = {}): StationSignal => ({
 const renderIcon = (value: StationSignal) => {
     render(<SignalIcon signal={value} />);
     const trigger = screen.getByRole("button");
-    const iconName = trigger.querySelector("svg")?.getAttribute("class");
-    return { trigger, iconName };
+    const svg = trigger.querySelector("svg");
+    const bars = Number(svg?.getAttribute("data-bars"));
+    return { trigger, svg, bars };
 };
 
 describe("SignalIcon", () => {
     it.each([
-        [
-            "ok, above -55 dBm",
-            signal({ rssi: -48 }),
-            "lucide-wifi ",
-            "text-foreground",
-        ],
-        [
-            "ok, the rest",
-            signal({ rssi: -58 }),
-            "lucide-wifi-high",
-            "text-foreground",
-        ],
-        [
-            "weak",
-            signal({ level: "weak", rssi: -66 }),
-            "lucide-wifi-low",
-            "text-warning",
-        ],
+        ["ok, above -55 dBm", signal({ rssi: -48 }), 3, "text-foreground"],
+        ["ok, the rest", signal({ rssi: -58 }), 2, "text-foreground"],
+        ["weak", signal({ level: "weak", rssi: -66 }), 1, "text-warning"],
         [
             "unknown",
             signal({ level: "unknown", rssi: null }),
-            "lucide-wifi-zero",
+            0,
             "text-muted-foreground",
         ],
-    ])("shows the icon and tone for %s", (_, value, icon, tone) => {
-        const { trigger, iconName } = renderIcon(value);
+    ])("lights the right bars for %s, in its tone", (_, value, lit, tone) => {
+        const { trigger, svg, bars } = renderIcon(value);
+        const opacities = [...(svg?.querySelectorAll("path") ?? [])].map(
+            (path) => path.getAttribute("stroke-opacity")
+        );
 
-        expect(`${iconName} `).toContain(icon);
-        if (tone) expect(trigger.className).toContain(tone);
+        expect(bars).toBe(lit);
+        // The dot and all three arcs are always drawn, so the size never changes
+        expect(opacities).toHaveLength(4);
+        expect(opacities.filter((opacity) => opacity === "1")).toHaveLength(
+            lit === 0 ? 0 : lit + 1
+        );
+        expect(trigger.className).toContain(tone);
     });
 
     it("says what to do with a weak station, and its reading", () => {

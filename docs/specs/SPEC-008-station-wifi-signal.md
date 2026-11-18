@@ -155,19 +155,24 @@ router running the instance), the connector reads it too:
 ### Frontend (Devices page)
 
 - A Wi-Fi icon next to Battery in the table, and the same in the card view
-  (`DeviceItem.tsx`). A `SignalIcon` component, built like `BatteryIcon`,
-  with lucide icons:
+  (`DeviceItem.tsx`). A `SignalIcon` component, built like `BatteryIcon`.
+  It always draws the dot and all three Wi-Fi arcs (Lucide's `Wifi`
+  geometry) and dims the unlit ones, like a phone's status bar:
 
-  | State | Icon | Tone |
+  | State | Lit | Tone |
   |---|---|---|
-  | `ok`, median above −55 dBm | `Wifi` | text colour |
-  | `ok`, the rest | `WifiHigh` | text colour |
-  | `weak` | `WifiLow` | amber (warning) |
-  | `unknown` | `WifiZero` | muted |
+  | `ok`, median above −55 dBm | dot + 3 arcs | text colour |
+  | `ok`, the rest | dot + 2 arcs | text colour |
+  | `weak` | dot + 1 arc | amber (warning) |
+  | `unknown` | nothing, all dimmed | muted |
+
+  Lucide's `WifiHigh`/`WifiLow`/`WifiZero` leave the missing arcs out, so a
+  weaker signal read as a smaller icon and `unknown` as a lone dot. With the
+  arcs always drawn every row is the same size and only the bright ones
+  change.
 
   The icon is 24 px, a little larger than the battery icon. At the battery's
-  18 px and in muted tones it was hard to spot in the list, and `WifiZero` is
-  little more than a dot.
+  18 px and in muted tones it was hard to spot in the list.
 
   `WifiOff` isn't used. "Unknown" usually means older firmware or no reading
   yet, not a dropped connection, and the station's online state already
