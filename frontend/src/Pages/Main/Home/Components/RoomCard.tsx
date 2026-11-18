@@ -102,10 +102,17 @@ const RoomCard = ({
     const startLabel = nextGroupIds
         ? getStartLabel(room.currentGroupIds, nextGroupIds)
         : null;
+    // After the last of the running groups, so a group already on the floor
+    // never shows as next
+    const runningGroupsEnd = groups
+        .map((id) => findGroupSchedule(wcif, id, room.name)?.endTime)
+        .filter((end): end is string => !!end)
+        .sort()
+        .at(-1);
     const nextActivity = getNextActivityInRoom(
         wcif,
         room.name,
-        schedule?.roundEndTime ?? now.toISOString()
+        runningGroupsEnd ?? now.toISOString()
     );
     // A running room is never "Starts …"; an empty one shows its next group
     const scheduleStatus = getRoomScheduleStatus(
