@@ -1,10 +1,11 @@
 import { Logger } from '@nestjs/common';
+import { EventEmitter } from 'events';
 import * as net from 'net';
 
 import { INIT_DATA_RETRY_BASE_MS, SocketServer } from './socket.server';
 import { SocketService } from './socket.service';
 
-jest.mock('../wasm/hil_processor_wasm.js', () => ({}));
+jest.mock('../wasm/hil_processor_wasm.js', () => ({ init: jest.fn() }));
 
 describe('SocketServer', () => {
   describe('sendInitDataWithRetry', () => {
@@ -103,6 +104,112 @@ describe('SocketServer', () => {
       expect(getServerStatus).toHaveBeenCalledTimes(1);
       expect(socket.write).not.toHaveBeenCalled();
       expect(unhandled).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('toggleHil', () => {
+    let getServerStatus: jest.Mock;
+    let server: SocketServer;
+    let unhandled: jest.Mock;
+
+    beforeEach(() => {
+      jest.spyOn(Logger.prototype, 'log').mockImplementation();
+      jest.spyOn(Logger.prototype, 'error').mockImplementation();
+      unhandled = jest.fn();
+      process.on('unhandledRejection', unhandled);
+
+      getServerStatus = jest.fn();
+      server = new SocketServer('/tmp/unused.sock', {
+        getServerStatus,
+      } as unknown as SocketService);
+    });
+
+    afterEach(() => {
+      process.off('unhandledRejection', unhandled);
+      jest.restoreAllMocks();
+    });
+
+    it('logs and stays off when the database is unreachable', async () => {
+      getServerStatus.mockRejectedValue(
+        new Error("Can't reach database server"),
+      );
+
+      // Called without await, the way the competition settings call it
+      void server.toggleHil(true);
+      await new Promise((resolve) => setImmediate(resolve));
+
+      expect(getServerStatus).toHaveBeenCalledTimes(1);
+      expect(Logger.prototype.error).toHaveBeenCalledWith(
+        expect.stringContaining('Failed to start HIL testing'),
+        expect.stringContaining("Can't reach database server"),
+      );
+      expect(server.hilRunning).toBe(false);
+      expect(unhandled).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('connected sockets', () => {
+    class FakeSocket extends EventEmitter {
+      destroyed = false;
+      write = jest.fn();
+    }
+
+    let server: SocketServer;
+
+    beforeEach(() => {
+      jest.spyOn(Logger.prototype, 'log').mockImplementation();
+      jest.spyOn(Logger.prototype, 'warn').mockImplementation();
+      server = new SocketServer('/tmp/unused.sock', {
+        getServerStatus: jest.fn().mockResolvedValue({ devices: [] }),
+      } as unknown as SocketService);
+    });
+
+    afterEach(() => {
+      jest.restoreAllMocks();
+    });
+
+    const connect = async () => {
+      const socket = new FakeSocket();
+      await server.handleConnection(socket as unknown as net.Socket);
+      socket.write.mockClear();
+      return socket;
+    };
+
+    const broadcast = { type: 'SetDeviceSettings', data: { volume: 7 } };
+
+    it('stops writing to a connector once it closes', async () => {
+      const closed = await connect();
+      const open = await connect();
+
+      closed.destroyed = true;
+      closed.emit('close', false);
+      server.sendToAll(broadcast);
+
+      expect(closed.write).not.toHaveBeenCalled();
+      expect(open.write).toHaveBeenCalledWith(JSON.stringify(broadcast) + '\0');
+    });
+
+    it('forgets a connector that errors, without crashing', async () => {
+      const failed = await connect();
+      const open = await connect();
+
+      // Emitting 'error' with no listener would throw here
+      failed.emit('error', new Error('read ECONNRESET'));
+      server.sendToAll(broadcast);
+
+      expect(failed.write).not.toHaveBeenCalled();
+      expect(open.write).toHaveBeenCalledTimes(1);
+    });
+
+    it('still reaches the other connectors when a write throws', async () => {
+      const broken = await connect();
+      const open = await connect();
+      broken.write.mockImplementation(() => {
+        throw new Error('This socket has been ended by the other party');
+      });
+
+      expect(() => server.sendToAll(broadcast)).not.toThrow();
+      expect(open.write).toHaveBeenCalledTimes(1);
     });
   });
 });
