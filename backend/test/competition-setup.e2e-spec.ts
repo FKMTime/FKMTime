@@ -672,8 +672,10 @@ describe('Competition setup (e2e)', () => {
                 groupId: '333-r1-g1',
                 roundId: '333-r1',
                 competitors: competitorIds.length,
+                finished: 0,
                 entered: 0,
                 expected: competitorIds.length * 5,
+                expectedIsFinal: true,
                 wait: expect.objectContaining({
                   state: 'notStarted',
                   solving: 0,
@@ -719,7 +721,11 @@ describe('Competition setup (e2e)', () => {
       const mainHallProgress = after.body.find(
         (r: { roomId: string }) => r.roomId === mainHall.id,
       );
-      expect(mainHallProgress.groups[0].entered).toBe(2);
+      expect(mainHallProgress.groups[0]).toMatchObject({
+        entered: 2,
+        // Two of five attempts in: not finished yet
+        finished: 0,
+      });
       // Started, with a scramble in hand: the group waits for them and the rest
       expect(mainHallProgress.groups[0].wait).toMatchObject({
         state: 'inProgress',

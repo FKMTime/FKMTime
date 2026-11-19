@@ -68,7 +68,8 @@ describe('AppGateway last solve', () => {
     personName: 'Ada Example',
     value: 1234,
     penalty: 2,
-    enteredAt: 5000,
+    attemptNumber: 3,
+    isExtra: false,
   };
 
   beforeEach(() => {

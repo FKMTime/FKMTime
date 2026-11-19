@@ -3,12 +3,12 @@ import { useEffect, useRef, useState } from "react";
 import useStationTimer from "@/hooks/useStationTimer";
 import { activityCodeToName } from "@/lib/activities";
 import {
+    formatLastSolveAttempt,
     formatLastSolveTime,
     StationInfo,
     StationPhase,
 } from "@/lib/liveSolving";
 import { centisecondsToClockFormat } from "@/lib/resultFormatters";
-import { formatClockTime } from "@/lib/time";
 import { cn } from "@/lib/utils";
 
 import StationCard from "./StationCard";
@@ -98,8 +98,8 @@ const LiveStationCard = ({
                 lastSolve
                     ? {
                           personName: lastSolve.personName,
+                          attempt: formatLastSolveAttempt(lastSolve),
                           time: formatLastSolveTime(lastSolve),
-                          at: formatClockTime(new Date(lastSolve.enteredAt)),
                       }
                     : null
             }

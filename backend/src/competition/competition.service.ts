@@ -530,7 +530,8 @@ export class CompetitionService implements OnModuleDestroy {
   }
 
   async updateDevicesSettings(id: string, data: UpdateDevicesSettingsDto) {
-    this.socketController.toggleHil(data.hilTesting);
+    // Not awaited; toggleHil never rejects, it logs its own failures
+    void this.socketController.toggleHil(data.hilTesting);
     await this.prisma.competition.update({
       where: {
         id: id,
