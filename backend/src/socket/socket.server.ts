@@ -7,6 +7,10 @@ import { RequestDto } from './dto/request.dto';
 import { ResponseDto } from './dto/response.dto';
 import { SocketService } from './socket.service';
 
+/** First wait before sending the init data again, doubled on each failure */
+export const INIT_DATA_RETRY_BASE_MS = 1000;
+export const INIT_DATA_RETRY_MAX_MS = 10000;
+
 export class SocketServer {
   private server: net.Server;
   private logger = new Logger('socket-server');
@@ -42,7 +46,7 @@ export class SocketServer {
 
       this.logger.log('Client connected');
       this.connectedSockets.push(socket);
-      await this.sendInitData(socket);
+      await this.sendInitDataWithRetry(socket);
       socket.on('data', async (data) => {
         buffer = Buffer.concat([buffer, Buffer.from(data)]);
 
@@ -143,6 +147,31 @@ export class SocketServer {
       type: 'ServerStatus',
       data: serverStatus,
     });
+  }
+
+  /**
+   * Sends the init data, trying again while it fails, e.g. while the
+   * database is unreachable. A rejection here would take the whole backend
+   * down, and every station with it. Stops once the connector disconnects.
+   */
+  async sendInitDataWithRetry(socket: net.Socket) {
+    for (let attempt = 0; !socket.destroyed; attempt++) {
+      try {
+        await this.sendInitData(socket);
+        return;
+      } catch (e) {
+        const delayMs = Math.min(
+          INIT_DATA_RETRY_BASE_MS * 2 ** attempt,
+          INIT_DATA_RETRY_MAX_MS,
+        );
+        this.logger.error(
+          `Failed to send init data to socket, retrying in ${delayMs} ms`,
+          e instanceof Error ? e.stack : e,
+        );
+        await new Promise((resolve) => setTimeout(resolve, delayMs));
+      }
+    }
+    this.logger.warn('Client disconnected before init data was sent');
   }
 
   async sendServerStatus() {
