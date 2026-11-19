@@ -19,6 +19,11 @@ interface SegmentedControlProps<T extends string> {
     label: string;
     /** Stretch segments to fill the track (mobile room switcher) */
     fullWidth?: boolean;
+    /**
+     * "filter" raises the selected segment subtly; "choice" fills it with the
+     * primary colour, for form fields where the picked value must stand out
+     */
+    variant?: "filter" | "choice";
     className?: string;
 }
 
@@ -29,6 +34,7 @@ const SegmentedControl = <T extends string>({
     onValueChange,
     label,
     fullWidth,
+    variant = "filter",
     className,
 }: SegmentedControlProps<T>) => {
     const scrollRef = useScrollFade<HTMLDivElement>();
@@ -57,7 +63,9 @@ const SegmentedControl = <T extends string>({
                             "flex h-11 shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-lg px-3 text-sm font-semibold transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring/40 md:h-8 md:text-[13px]",
                             fullWidth && "flex-1",
                             isSelected
-                                ? "bg-card text-foreground shadow-segment"
+                                ? variant === "choice"
+                                    ? "bg-primary text-primary-foreground shadow-segment"
+                                    : "bg-card text-foreground shadow-segment"
                                 : "text-muted-foreground hover:text-foreground"
                         )}
                     >
