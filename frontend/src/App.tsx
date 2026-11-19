@@ -40,6 +40,9 @@ const MostMissedAssignments = lazy(
 const CheckIn = lazy(() => import("./Pages/Main/CheckIn/CheckIn"));
 const Competition = lazy(() => import("./Pages/Main/Competition/Competition"));
 const Devices = lazy(() => import("./Pages/Main/Devices/Devices"));
+const DeviceSolves = lazy(
+    () => import("./Pages/Main/Devices/DeviceSolves/DeviceSolves")
+);
 const Home = lazy(() => import("./Pages/Main/Home/Home"));
 const ImportCompetition = lazy(
     () => import("./Pages/Main/ImportCompetition/ImportCompetition")
@@ -243,6 +246,10 @@ const App = () => {
                 {
                     path: "devices",
                     element: <Devices />,
+                },
+                {
+                    path: "devices/:id/solves",
+                    element: <DeviceSolves />,
                 },
                 {
                     path: "logs",

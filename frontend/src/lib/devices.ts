@@ -1,5 +1,6 @@
 import { activityCodeToName } from "./activities";
-import { Device, DeviceData, DeviceType } from "./interfaces";
+import { Device, DeviceAttempts, DeviceData, DeviceType } from "./interfaces";
+import { queryFamily } from "./queryCache";
 import { backendQuery, backendRequest } from "./request";
 
 export const getAllDevices = async (type?: string, roomId?: string) => {
@@ -21,6 +22,11 @@ export const stationDevicesQuery = backendQuery<Device[]>(
 );
 
 export const retiredDevicesQuery = backendQuery<Device[]>("device/retired");
+
+/** Every solve a device recorded, for its solves page */
+export const deviceAttemptsQuery = queryFamily((id) =>
+    backendQuery<DeviceAttempts>(`device/${id}/attempts`)
+);
 
 export const createDevice = async (
     data: DeviceData
