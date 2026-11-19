@@ -147,8 +147,10 @@ describe("getPickerGroups", () => {
             groupId: "333-r1-g2",
             roundId: "333-r1",
             competitors: 7,
+            finished: 2,
             entered: 12,
             expected: 35,
+            expectedIsFinal: true,
         };
         const groups = getPickerGroups(wcif, "333-r1", main, rooms, (roomId) =>
             roomId === "side" ? progress : undefined

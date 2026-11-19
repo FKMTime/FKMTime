@@ -471,24 +471,29 @@ const RunningGroup = ({
                     )}
                 </div>
             </div>
-            {progress && progress.expected > 0 && (
+            {progress && progress.competitors > 0 && (
                 <div className="flex flex-col gap-2">
                     <div className="flex items-center justify-between text-sm">
                         <span className="text-muted-foreground">
                             Results entered
                         </span>
                         <span>
-                            <b className="font-semibold">{progress.entered}</b>
+                            <b className="font-semibold">{progress.finished}</b>
                             <span className="text-muted-foreground">
-                                /{progress.expected}
+                                /{progress.competitors}
                             </span>
                         </span>
                     </div>
                     <ProgressBar
-                        value={progress.entered}
-                        max={progress.expected}
+                        value={progress.finished}
+                        max={progress.competitors}
                         label={progressLabel}
                     />
+                    {progress.expectedIsFinal && progress.expected > 0 && (
+                        <p className="text-xs text-muted-foreground">
+                            {progress.entered}/{progress.expected} attempts
+                        </p>
+                    )}
                 </div>
             )}
             {actions}

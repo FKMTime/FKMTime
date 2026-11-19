@@ -153,8 +153,10 @@ describe('calculateGroupProgress', () => {
       groupId: '333-r1-g1',
       roundId: '333-r1',
       competitors: 2,
+      finished: 1,
       entered: 8,
       expected: 10,
+      expectedIsFinal: true,
     });
   });
 
@@ -212,5 +214,18 @@ describe('calculateGroupProgress', () => {
     );
     // 5 missed the 1-attempt cutoff (1 expected), 6 made it (3 expected)
     expect(progress).toMatchObject({ entered: 2, expected: 4 });
+    // ...so 5 is finished after one attempt, 6 still has two to go
+    expect(progress.finished).toBe(1);
+    // Both are past the cutoff, so 4 is the final total
+    expect(progress.expectedIsFinal).toBe(true);
+  });
+
+  it('does not call the total final while someone has not reached the cutoff', () => {
+    const progress = calculateGroupProgress(
+      wcif,
+      '666-r1-g1',
+      new Map([[5, standard(1, 20000)]]),
+    );
+    expect(progress.expectedIsFinal).toBe(false);
   });
 });
