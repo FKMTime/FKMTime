@@ -30,6 +30,7 @@ import {
 import { cn } from "@/lib/utils";
 
 import ChangeGroup from "./ChangeGroup";
+import GroupWaitInfo from "./GroupWaitInfo";
 import RoomGroupMenu from "./RoomGroupMenu";
 
 export type { RecentAttempt };
@@ -66,6 +67,11 @@ interface RoomCardProps {
     onBackToRoom?: (station: Device) => void;
     /** Undefined hides the room's "…" menu */
     groupControls?: GroupControls;
+    /** Marks a competitor as not coming to the group; undefined hides it */
+    onMarkNotComing?: (
+        person: { id: string; name: string },
+        groupId: string
+    ) => void;
 }
 
 const RoomCard = ({
@@ -85,6 +91,7 @@ const RoomCard = ({
     pointedStations = [],
     onBackToRoom,
     groupControls,
+    onMarkNotComing,
 }: RoomCardProps) => {
     const [isChangingGroup, setIsChangingGroup] = useState(false);
     const groups = room.currentGroupIds;
@@ -191,6 +198,10 @@ const RoomCard = ({
                         roomName={room.name}
                         wcif={wcif}
                         progress={progressOf(id)}
+                        onMarkNotComing={
+                            onMarkNotComing &&
+                            ((person) => onMarkNotComing(person, id))
+                        }
                         progressLabel={
                             groups.length === 1
                                 ? `Results entered in ${room.name}`
@@ -420,6 +431,7 @@ interface RunningGroupProps {
     progressLabel: string;
     /** The group's own actions, when the room runs several */
     actions?: React.ReactNode;
+    onMarkNotComing?: (person: { id: string; name: string }) => void;
 }
 
 /** A group the room runs: what it is, when, and how many results are in */
@@ -430,6 +442,7 @@ const RunningGroup = ({
     progress,
     progressLabel,
     actions,
+    onMarkNotComing,
 }: RunningGroupProps) => {
     const roundId = groupId.split("-g")[0];
     const schedule = findGroupSchedule(wcif, groupId, roomName);
@@ -490,6 +503,13 @@ const RunningGroup = ({
                         label={progressLabel}
                     />
                 </div>
+            )}
+            {progress?.wait && (
+                <GroupWaitInfo
+                    wait={progress.wait}
+                    timezone={schedule?.timezone}
+                    onMarkNotComing={onMarkNotComing}
+                />
             )}
             {actions}
         </div>

@@ -322,6 +322,28 @@ describe("RoleCard", () => {
         expect(screen.getByText("Change group dialog")).toBeTruthy();
     });
 
+    it("marks an absent competitor as not coming to the group", async () => {
+        const props = handlers();
+        const absent = activity("e", "COMPETITOR", StaffActivityStatus.ABSENT);
+        render(
+            <RoleCard
+                role="COMPETITOR"
+                title="Competitors"
+                icon={Users}
+                attendance={[absent]}
+                groupId="333-r1-g1"
+                {...props}
+            />
+        );
+        await userEvent.click(
+            screen.getByRole("button", { name: "More actions for Person e" })
+        );
+        await userEvent.click(
+            await screen.findByRole("menuitem", { name: "Not coming" })
+        );
+        expect(props.onSetNoShow).toHaveBeenCalledWith(absent, true);
+    });
+
     it("shows every competitor's place in the previous round", () => {
         const competitor = (
             id: string,

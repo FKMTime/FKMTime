@@ -49,7 +49,9 @@ import {
   canLeaveGroup,
   getFirstGroupOfNextRoundInRoom,
   getGroupStatus as getGroupStatusFromResults,
+  getMovesOnAt,
   GroupChangeResult,
+  GroupState,
   isGroupQuiet,
   planNextGroups,
 } from './groupChange';
@@ -59,6 +61,24 @@ import { RoomsService } from './rooms.service';
 
 /** How long a room's checks after attempts wait to take in a burst */
 export const GROUP_CHANGE_CHECK_DELAY_MS = 5_000;
+/** How often the periodic group change check runs (the cron below) */
+const GROUP_CHANGE_CRON_INTERVAL_MS = 5 * 60 * 1000;
+
+/** What a running group still waits for before the room can move on */
+export interface GroupWait {
+  state: GroupState;
+  /** Assigned or present, not started, and not marked as not coming */
+  notStarted: {
+    /** Null when there's no attendance row to mark them on */
+    personId: string | null;
+    name: string;
+  }[];
+  solving: number;
+  incidents: number;
+  extras: number;
+  /** When the room moves on by itself if nobody else solves; null if not */
+  movesOnAt: string | null;
+}
 
 type GroupCheckTrigger = 'event' | 'cron';
 
@@ -705,6 +725,106 @@ export class CompetitionService implements OnModuleDestroy {
     }
   }
 
+  /** Results entered and what each running group waits for, per room */
+  async getRoomsProgress() {
+    const [progress, rooms, competition] = await Promise.all([
+      this.roomsService.getRoomsProgress(),
+      this.prisma.room.findMany({ select: { id: true, name: true } }),
+      this.prisma.competition.findFirst(),
+    ]);
+    if (!competition) return progress;
+    const wcif = competition.wcif as unknown as Competition;
+    const isAutomatic =
+      competition.useFkmTimeDevices &&
+      competition.shouldChangeGroupsAutomatically;
+    return Promise.all(
+      progress.map(async (room) => {
+        const roomName = rooms.find((r) => r.id === room.roomId)?.name;
+        if (!roomName) return room;
+        return {
+          ...room,
+          groups: await Promise.all(
+            room.groups.map(async (group) => ({
+              ...group,
+              wait: await this.getGroupWait(
+                room.roomId,
+                roomName,
+                group.groupId,
+                wcif,
+                isAutomatic,
+              ),
+            })),
+          ),
+        };
+      }),
+    );
+  }
+
+  private async getGroupWait(
+    roomId: string,
+    roomName: string,
+    groupId: string,
+    wcif: Competition,
+    isAutomatic: boolean,
+  ): Promise<GroupWait> {
+    const status = await this.getGroupStatus(groupId, roomName, wcif);
+    const { notStarted, solving, incidents, extras } = status.blockers;
+    const persons = notStarted.length
+      ? await this.prisma.person.findMany({
+          where: {
+            OR: [
+              {
+                id: {
+                  in: notStarted
+                    .map((m) => m.personId)
+                    .filter((id) => id !== null),
+                },
+              },
+              {
+                registrantId: {
+                  in: notStarted
+                    .map((m) => m.registrantId)
+                    .filter((id) => id !== null),
+                },
+              },
+            ],
+          },
+          select: { id: true, name: true, registrantId: true },
+        })
+      : [];
+    const movesOnAt = isAutomatic
+      ? getMovesOnAt(
+          status,
+          this.roomsService.getGroupEnteredAt(roomId, groupId),
+          GROUP_CHANGE_CRON_INTERVAL_MS,
+        )
+      : null;
+    return {
+      state: status.state,
+      notStarted: notStarted.map((missing) => {
+        const person = persons.find(
+          (p) =>
+            p.id === missing.personId ||
+            (missing.registrantId !== null &&
+              p.registrantId === missing.registrantId),
+        );
+        return {
+          // Only someone with an attendance row here can be marked
+          personId: missing.personId,
+          name:
+            person?.name ??
+            wcif.persons.find((p) => p.registrantId === missing.registrantId)
+              ?.name ??
+            'Unknown competitor',
+        };
+      }),
+      solving,
+      incidents,
+      extras,
+      movesOnAt: movesOnAt === null ? null : new Date(movesOnAt).toISOString(),
+    };
+  }
+
   /** Where one of the room's current groups stands (see getGroupStatus) */
   private async getGroupStatus(
     groupId: string,
@@ -748,6 +868,7 @@ export class CompetitionService implements OnModuleDestroy {
           groupId: true,
           isAssigned: true,
           status: true,
+          noShow: true,
           person: { select: { registrantId: true } },
         },
       }),
@@ -762,6 +883,7 @@ export class CompetitionService implements OnModuleDestroy {
         groupId: row.groupId,
         isAssigned: row.isAssigned,
         status: row.status,
+        noShow: row.noShow,
       })),
       removed: removed.map((r) => ({
         personId: r.personId,

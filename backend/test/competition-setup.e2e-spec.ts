@@ -674,6 +674,13 @@ describe('Competition setup (e2e)', () => {
                 competitors: competitorIds.length,
                 entered: 0,
                 expected: competitorIds.length * 5,
+                wait: expect.objectContaining({
+                  state: 'notStarted',
+                  solving: 0,
+                  incidents: 0,
+                  extras: 0,
+                  movesOnAt: null,
+                }),
               },
             ],
           },
@@ -713,6 +720,14 @@ describe('Competition setup (e2e)', () => {
         (r: { roomId: string }) => r.roomId === mainHall.id,
       );
       expect(mainHallProgress.groups[0].entered).toBe(2);
+      // Started, with a scramble in hand: the group waits for them and the rest
+      expect(mainHallProgress.groups[0].wait).toMatchObject({
+        state: 'inProgress',
+        solving: 1,
+      });
+      expect(mainHallProgress.groups[0].wait.notStarted).toHaveLength(
+        competitorIds.length - 1,
+      );
     });
   });
 

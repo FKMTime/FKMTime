@@ -109,16 +109,21 @@ export const setLeftEarly = async (id: string, leftEarly: boolean) => {
     return response.status;
 };
 
-/** Tags the person's absent staffing in these groups as not coming */
+/**
+ * Tags the person as not coming to these groups: their absent staffing, or
+ * with `competitor` their absent competitor rows
+ */
 export const setNoShow = async (
     personId: string,
     groupIds: string[],
-    noShow: boolean
+    noShow: boolean,
+    competitor = false
 ) => {
     const response = await backendRequest("attendance/no-show", "POST", true, {
         personId,
         groupIds,
         noShow,
+        ...(competitor && { role: "COMPETITOR" }),
     });
     return response.status;
 };

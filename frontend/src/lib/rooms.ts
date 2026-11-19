@@ -31,19 +31,43 @@ export const updateCurrentRound = async (rooms: Room[]) => {
 export const updateRoomGroups = (room: Room, currentGroupIds: string[]) =>
     updateCurrentRound([{ ...room, currentGroupIds }]);
 
+/** What a running group waits for before the room can move on */
+export interface GroupWait {
+    state: "notStarted" | "inProgress" | "waitingForCompetitors" | "finished";
+    /** Assigned or present, not started, and not marked as not coming */
+    notStarted: {
+        /** Null when there's no attendance row to mark them on */
+        personId: string | null;
+        name: string;
+    }[];
+    /** Competitors with attempts still to do */
+    solving: number;
+    /** Competitors with an incident to resolve */
+    incidents: number;
+    /** Competitors with an extra attempt still to do */
+    extras: number;
+    /** When the room moves on by itself if nobody else solves */
+    movesOnAt: string | null;
+}
+
 export interface GroupProgress {
     groupId: string;
     roundId: string;
     competitors: number;
     entered: number;
     expected: number;
+    wait?: GroupWait;
 }
 
-/** Every attempt the group's competitors will do is in */
+/**
+ * Nothing left for the group: what the automatic group change goes by, or
+ * without it every attempt in
+ */
 export const isGroupDone = (progress?: GroupProgress) =>
     !!progress &&
-    progress.expected > 0 &&
-    progress.entered >= progress.expected;
+    (progress.wait
+        ? progress.wait.state === "finished"
+        : progress.expected > 0 && progress.entered >= progress.expected);
 
 export interface RoomProgress {
     roomId: string;
