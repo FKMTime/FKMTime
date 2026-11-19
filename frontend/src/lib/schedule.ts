@@ -18,8 +18,6 @@ export interface GroupSchedule {
     position: number;
     startTime: string;
     endTime: string;
-    /** End of the whole round in this room */
-    roundEndTime: string;
 }
 
 /** Where and when a group is scheduled, or undefined if it is not */
@@ -53,7 +51,6 @@ export const findGroupSchedule = (
                     position: index + 1,
                     startTime: groups[index].startTime,
                     endTime: groups[index].endTime,
-                    roundEndTime: round.endTime,
                 };
             }
         }
@@ -98,7 +95,11 @@ export interface NextActivity {
     endTime: string;
 }
 
-/** The first activity in the room that starts once the given round has ended */
+/**
+ * The first group (or break) in the room that starts once the given time has
+ * passed. Rounds count by their groups, so a room halfway through a round
+ * shows its next group rather than the next round.
+ */
 export const getNextActivityInRoom = (
     wcif: WCIF,
     roomName: string,
@@ -109,6 +110,11 @@ export const getNextActivityInRoom = (
         .flatMap((venue) => venue.rooms)
         .filter((room) => room.name === roomName)
         .flatMap((room) => room.activities)
+        .flatMap((activity) =>
+            activity.childActivities?.length
+                ? activity.childActivities
+                : [activity]
+        )
         .filter((activity) => new Date(activity.startTime).getTime() >= after)
         .sort(
             (a, b) =>
@@ -120,7 +126,7 @@ export const getNextActivityInRoom = (
     return {
         name: next.activityCode.startsWith("other-")
             ? next.name
-            : activityCodeToName(next.activityCode).replace(", ", " · "),
+            : activityCodeToName(next.activityCode).replace(/, /g, " · "),
         startTime: next.startTime,
         endTime: next.endTime,
     };

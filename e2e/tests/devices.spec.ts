@@ -391,7 +391,7 @@ test.describe("devices", () => {
     test("only admins can upload firmware", async ({ page, browser }) => {
         await page.goto("/devices");
         await expect(
-            page.getByRole("radio", { name: "Upload firmware" })
+            page.getByRole("tab", { name: "Upload firmware" })
         ).toHaveCount(0);
 
         const context = await browser.newContext({

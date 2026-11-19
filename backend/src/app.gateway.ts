@@ -22,7 +22,9 @@ export interface LastSolve {
   value: number;
   /** Seconds added, as stored on attempts; -1 for DNF */
   penalty: number;
-  enteredAt: number;
+  /** Which solve of the round it was; an extra counts its own */
+  attemptNumber: number;
+  isExtra: boolean;
 }
 
 export interface StationInfo {

@@ -7,10 +7,14 @@ import { RequestDto } from './dto/request.dto';
 import { ResponseDto } from './dto/response.dto';
 import { SocketService } from './socket.service';
 
+/** First wait before sending the init data again, doubled on each failure */
+export const INIT_DATA_RETRY_BASE_MS = 1000;
+export const INIT_DATA_RETRY_MAX_MS = 10000;
+
 export class SocketServer {
   private server: net.Server;
   private logger = new Logger('socket-server');
-  private connectedSockets: net.Socket[] = [];
+  private connectedSockets = new Set<net.Socket>();
 
   hilRunning: boolean = false;
   private hilProcessor: any;
@@ -37,58 +41,72 @@ export class SocketServer {
       callback();
     });
 
-    this.server.on('connection', async (socket) => {
-      let buffer = Buffer.alloc(0);
+    this.server.on('connection', (socket) => this.handleConnection(socket));
+  }
 
-      this.logger.log('Client connected');
-      this.connectedSockets.push(socket);
-      await this.sendInitData(socket);
-      socket.on('data', async (data) => {
-        buffer = Buffer.concat([buffer, Buffer.from(data)]);
+  async handleConnection(socket: net.Socket) {
+    let buffer = Buffer.alloc(0);
 
-        let nullIdx = buffer.indexOf(0x00);
-        while (nullIdx !== -1) {
-          const packet = buffer.subarray(0, nullIdx);
-          // Drop the packet before handling it, so one that fails cannot
-          // block every packet after it on this connection
-          buffer = buffer.subarray(nullIdx + 1);
-          nullIdx = buffer.indexOf(0x00);
+    this.logger.log('Client connected');
+    this.connectedSockets.add(socket);
+    // Registered before the init data, which can wait out a database outage:
+    // a connector that gives up and reconnects meanwhile must not stay behind
+    // as a dead entry that every broadcast writes to. Without an 'error'
+    // listener, a reset connection would also crash the whole backend.
+    socket.on('error', (e) => {
+      this.logger.warn(`Client connection error: ${e.message}`);
+      this.connectedSockets.delete(socket);
+    });
+    socket.on('close', () => {
+      this.logger.log('Client disconnected');
+      this.connectedSockets.delete(socket);
+    });
+    await this.sendInitDataWithRetry(socket);
+    socket.on('data', async (data) => {
+      buffer = Buffer.concat([buffer, Buffer.from(data)]);
 
-          if (this.hilRunning) {
-            this.hilProcessor.feed_packet(packet.toString());
-            continue;
-          }
-          let request: RequestDto<any>;
-          try {
-            request = JSON.parse(packet.toString());
-          } catch {
-            this.logger.warn(`Dropped malformed packet: ${packet.toString()}`);
-            continue;
-          }
-          this.parsePacket(socket, request).catch((e) => {
-            // An unhandled rejection would take the whole backend down, and
-            // the station would wait for an answer that never comes
-            this.logger.error(
-              `Failed to handle request of type ${request.type}, tag ${request.tag}`,
-              e instanceof Error ? e.stack : e,
-            );
-            this.socketService.recordInternalError(
-              request.data?.espId,
-              'Internal server error',
-            );
-            this.sendResponseWithTag(socket, {
-              type: request.type,
-              tag: request.tag,
-              data: {
-                message: 'Internal server error',
-                status: 500,
-                error: true,
-                shouldResetTime: false,
-              },
-            });
-          });
+      let nullIdx = buffer.indexOf(0x00);
+      while (nullIdx !== -1) {
+        const packet = buffer.subarray(0, nullIdx);
+        // Drop the packet before handling it, so one that fails cannot
+        // block every packet after it on this connection
+        buffer = buffer.subarray(nullIdx + 1);
+        nullIdx = buffer.indexOf(0x00);
+
+        if (this.hilRunning) {
+          this.hilProcessor.feed_packet(packet.toString());
+          continue;
         }
-      });
+        let request: RequestDto<any>;
+        try {
+          request = JSON.parse(packet.toString());
+        } catch {
+          this.logger.warn(`Dropped malformed packet: ${packet.toString()}`);
+          continue;
+        }
+        this.parsePacket(socket, request).catch((e) => {
+          // An unhandled rejection would take the whole backend down, and
+          // the station would wait for an answer that never comes
+          this.logger.error(
+            `Failed to handle request of type ${request.type}, tag ${request.tag}`,
+            e instanceof Error ? e.stack : e,
+          );
+          this.socketService.recordInternalError(
+            request.data?.espId,
+            'Internal server error',
+          );
+          this.sendResponseWithTag(socket, {
+            type: request.type,
+            tag: request.tag,
+            data: {
+              message: 'Internal server error',
+              status: 500,
+              error: true,
+              shouldResetTime: false,
+            },
+          });
+        });
+      }
     });
   }
 
@@ -111,7 +129,7 @@ export class SocketServer {
         `Sending response of type ${request.type} to socket, tag ${request.tag}, data ${JSON.stringify(request.data)}`,
       );
     }
-    socket.write(JSON.stringify(this.parseResponse(request)) + '\0');
+    this.write(socket, JSON.stringify(this.parseResponse(request)) + '\0');
   }
 
   private sendResponse<T>(socket: net.Socket, response: ResponseDto<T>) {
@@ -120,7 +138,22 @@ export class SocketServer {
     this.logger.log(
       `Sending response of type ${response.type} to socket, data ${JSON.stringify(response.data)}`,
     );
-    socket.write(JSON.stringify(response) + '\0');
+    this.write(socket, JSON.stringify(response) + '\0');
+  }
+
+  /**
+   * Writes to one connector without ever throwing: a broadcast must reach
+   * the other connectors even when this one has just gone away.
+   */
+  private write(socket: net.Socket, payload: string) {
+    if (socket.destroyed) return;
+    try {
+      socket.write(payload);
+    } catch (e) {
+      this.logger.warn(
+        `Socket write failed: ${e instanceof Error ? e.message : e}`,
+      );
+    }
   }
 
   sendToAll<T>(response: ResponseDto<T>) {
@@ -129,9 +162,8 @@ export class SocketServer {
     this.logger.log(
       `Sending ${response.type} to all connected sockets, data ${JSON.stringify(response.data)}`,
     );
-    this.connectedSockets.forEach((socket) => {
-      socket.write(JSON.stringify(response) + '\0');
-    });
+    const payload = JSON.stringify(response) + '\0';
+    this.connectedSockets.forEach((socket) => this.write(socket, payload));
   }
 
   async sendInitData(socket: net.Socket) {
@@ -143,6 +175,31 @@ export class SocketServer {
       type: 'ServerStatus',
       data: serverStatus,
     });
+  }
+
+  /**
+   * Sends the init data, trying again while it fails, e.g. while the
+   * database is unreachable. A rejection here would take the whole backend
+   * down, and every station with it. Stops once the connector disconnects.
+   */
+  async sendInitDataWithRetry(socket: net.Socket) {
+    for (let attempt = 0; !socket.destroyed; attempt++) {
+      try {
+        await this.sendInitData(socket);
+        return;
+      } catch (e) {
+        const delayMs = Math.min(
+          INIT_DATA_RETRY_BASE_MS * 2 ** attempt,
+          INIT_DATA_RETRY_MAX_MS,
+        );
+        this.logger.error(
+          `Failed to send init data to socket, retrying in ${delayMs} ms`,
+          e instanceof Error ? e.stack : e,
+        );
+        await new Promise((resolve) => setTimeout(resolve, delayMs));
+      }
+    }
+    this.logger.warn('Client disconnected before init data was sent');
   }
 
   async sendServerStatus() {
@@ -188,24 +245,31 @@ export class SocketServer {
   async toggleHil(state: boolean) {
     this.logger.log('HIL testing state change: ' + state);
     if (this.hilInterval != null) clearInterval(this.hilInterval);
+    this.hilInterval = null;
 
     if (state) {
-      const status = await this.socketService.getServerStatus();
-      this.hilProcessor = wasm.init((tag, msg) => {
-        this.logger.log(`[HIL] [${tag}] ${msg}`);
-      }, JSON.stringify(status));
+      try {
+        const status = await this.socketService.getServerStatus();
+        this.hilProcessor = wasm.init((tag, msg) => {
+          this.logger.log(`[HIL] [${tag}] ${msg}`);
+        }, JSON.stringify(status));
+      } catch (e) {
+        // Callers don't wait for this, so a rejection would go unhandled and
+        // take the whole backend down, e.g. while the database is
+        // unreachable. Stations keep being served normally instead.
+        this.logger.error(
+          'Failed to start HIL testing',
+          e instanceof Error ? e.stack : e,
+        );
+        this.hilRunning = false;
+        return;
+      }
 
       this.hilRunning = true;
       this.hilInterval = setInterval(() => {
         const res = this.hilProcessor.generate_output();
         if (res.length > 0) {
-          this.connectedSockets.forEach((cs) => {
-            try {
-              cs.write(res);
-            } catch {
-              this.logger.log(`[HIL] Socket write error`);
-            }
-          });
+          this.connectedSockets.forEach((cs) => this.write(cs, res));
         }
       }, 50);
     } else {

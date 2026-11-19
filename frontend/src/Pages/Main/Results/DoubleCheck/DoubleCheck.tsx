@@ -12,6 +12,8 @@ import { Button } from "@/Components/ui/button";
 import { useConfirm } from "@/hooks/useConfirm";
 import { useLiveQuery } from "@/hooks/useLiveQuery";
 import { useIsMobile } from "@/hooks/useMobile";
+import { useSocketEvents } from "@/hooks/useSocketEvents";
+import { useSocketRoom } from "@/hooks/useSocketRoom";
 import { useSubmissionPlatformName } from "@/hooks/useSubmissionPlatformName";
 import { useToast } from "@/hooks/useToast";
 import { competitionAtom } from "@/lib/atoms";
@@ -88,6 +90,10 @@ const DoubleCheck = () => {
         () => Promise.all([refetchRound(), refetchIncidents()]),
         [refetchRound, refetchIncidents]
     );
+    // Results entered while this page is open must be findable by ID
+    // without a reload
+    useSocketRoom(id ? "Results" : null, { params: { roundId } });
+    useSocketEvents(id ? { resultEntered: () => void fetchData() } : {});
 
     // The selected result's cumulative time limit, from the saved attempts
     const { data: selectedResult } = useLiveQuery(

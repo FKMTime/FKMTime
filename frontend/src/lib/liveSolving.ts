@@ -8,7 +8,9 @@ export interface LastSolve {
     value: number;
     // Seconds added, as stored on attempts; -1 for DNF
     penalty: number;
-    enteredAt: number;
+    /** Which solve of the round it was; an extra counts its own */
+    attemptNumber: number;
+    isExtra: boolean;
 }
 
 export interface StationInfo {
@@ -38,6 +40,10 @@ export const formatLastSolveTime = ({ value, penalty }: LastSolve) => {
     if (penalty === DNS_VALUE) return "DNS";
     return resultToString(value + Math.max(0, penalty) * 100);
 };
+
+/** "Solve 3", or "Extra 1" for an extra attempt */
+export const formatLastSolveAttempt = ({ attemptNumber, isExtra }: LastSolve) =>
+    `${isExtra ? "Extra" : "Solve"} ${attemptNumber}`;
 
 export type StationPhase =
     | "offline"

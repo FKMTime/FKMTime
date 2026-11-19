@@ -39,3 +39,9 @@ only at startup. If the stack is already running, restart the connector with
 Only one dev stack on a machine can run the micro connector. A second stack
 set up with `./scripts/dev-ports.sh` (to run several worktrees at once) leaves
 it out; see "Running the app" in `AGENTS.md`.
+
+## License
+
+Licensed under the [PolyForm Strict License 1.0.0](LICENSE): you may use the
+software for noncommercial purposes, but you may not distribute it, change it,
+or build new works on it.

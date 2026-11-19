@@ -554,6 +554,53 @@ describe('Attendance flow for a group (e2e)', () => {
       expect((await activityOf(later.id)).noShow).toBe(false);
     });
 
+    it('tags a competitor as not coming to the given groups only', async () => {
+      const competing = await assign(
+        competitor.id,
+        StaffRole.COMPETITOR,
+        TAGS_GROUP_ID,
+      );
+      const judging = await assign(
+        competitor.id,
+        StaffRole.JUDGE,
+        TAGS_GROUP_ID,
+      );
+      const competingLater = await assign(
+        competitor.id,
+        StaffRole.COMPETITOR,
+        LATER_GROUP_ID,
+      );
+      const setNoShow = (body: Record<string, unknown>) =>
+        request(server())
+          .post('/attendance/no-show')
+          .set(auth(users.tokens.STAGE_LEADER))
+          .send({
+            personId: competitor.id,
+            groupIds: [TAGS_GROUP_ID],
+            ...body,
+          });
+
+      expect(
+        (
+          await setNoShow({ noShow: true, role: StaffRole.COMPETITOR }).expect(
+            201,
+          )
+        ).body,
+      ).toEqual({ count: 1 });
+      expect((await activityOf(competing.id)).noShow).toBe(true);
+      expect((await activityOf(judging.id)).noShow).toBe(false);
+      expect((await activityOf(competingLater.id)).noShow).toBe(false);
+
+      await setNoShow({ noShow: true, role: StaffRole.JUDGE }).expect(400);
+
+      // Marked present, they came after all
+      await request(server())
+        .post(`/attendance/present/${competing.id}`)
+        .set(auth(adminToken))
+        .expect(201);
+      expect((await activityOf(competing.id)).noShow).toBe(false);
+    });
+
     it("restores a row for undo, dropping tags its status can't have", async () => {
       const activity = await assign(
         scrambler.id,

@@ -14,8 +14,8 @@ interface StationCardProps {
     time?: string | null;
     /** Formatted cumulative time limit, e.g. remaining "3:12.00" of "5:00.00" */
     cumulative?: { remaining: string; limit: string } | null;
-    /** The station's last entered attempt, e.g. "14.34" at "11:02" */
-    lastSolve?: { personName: string; time: string; at: string } | null;
+    /** The station's last entered attempt, e.g. "Solve 3" in "14.34" */
+    lastSolve?: { personName: string; attempt: string; time: string } | null;
     /** Shown when a room runs more than one round */
     roundLabel?: string;
     /** Staff only: red border and badge */
@@ -139,16 +139,16 @@ const StationCard = ({
                         </div>
                     )}
                     {lastSolve && (
-                        <div className="flex items-baseline gap-1.5">
+                        <div className="flex flex-wrap items-baseline gap-x-1.5 gap-y-0.5">
                             <span className="shrink-0">Last solve</span>
-                            <span className="min-w-0 flex-1 truncate font-semibold text-foreground">
+                            <span className="min-w-0 break-words font-semibold text-foreground">
                                 {lastSolve.personName}
                             </span>
-                            <b className="shrink-0 font-semibold tabular-nums text-foreground">
-                                {lastSolve.time}
-                            </b>
-                            <span className="shrink-0 tabular-nums">
-                                {lastSolve.at}
+                            <span className="ml-auto flex shrink-0 items-baseline gap-1.5 whitespace-nowrap">
+                                <span>{lastSolve.attempt}</span>
+                                <b className="font-semibold tabular-nums text-foreground">
+                                    {lastSolve.time}
+                                </b>
                             </span>
                         </div>
                     )}

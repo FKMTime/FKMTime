@@ -22,6 +22,7 @@ import {
   CompetitorRow,
   getFirstGroupOfNextRoundInRoom,
   getGroupStatus,
+  getMovesOnAt,
   getQuietSince,
   GROUP_IDLE_BEFORE_CHANGE_MS,
   planNextGroups,
@@ -151,6 +152,7 @@ interface TestRow {
   isAssigned?: boolean;
   status?: StaffActivityStatus;
   registrantId?: number | null;
+  noShow?: boolean;
 }
 type RowWhere = {
   role?: StaffRole;
@@ -250,6 +252,7 @@ const setup = ({
             role: StaffRole.COMPETITOR,
             isAssigned: false,
             status: StaffActivityStatus.PRESENT,
+            noShow: false,
             registrantId: Number(row.personId.slice(1)) || null,
             ...row,
           }))
@@ -450,6 +453,49 @@ describe('automatic group change', () => {
         wcif: buildWcif(schedule(), assignments),
         rooms: mainAndSide(),
         results: [{ roundId: '333-r1', registrantId: 1, attempts: solves(3) }],
+      });
+      service.requestGroupChangeCheck('333-r1');
+      await jest.advanceTimersByTimeAsync(GROUP_CHANGE_CHECK_DELAY_MS);
+      expect(roomById('main').currentGroupIds).toEqual(['333-r1-g1']);
+    });
+
+    it('does not wait for a competitor marked as not coming', async () => {
+      const { service, roomById } = setup({
+        wcif: buildWcif(schedule(), assignments),
+        rooms: mainAndSide(),
+        results: [{ roundId: '333-r1', registrantId: 1, attempts: solves(3) }],
+        attendance: [
+          {
+            personId: 'p2',
+            groupId: '333-r1-g1',
+            isAssigned: true,
+            status: StaffActivityStatus.ABSENT,
+            noShow: true,
+          },
+        ],
+      });
+      service.requestGroupChangeCheck('333-r1');
+      await jest.advanceTimersByTimeAsync(GROUP_CHANGE_CHECK_DELAY_MS);
+      expect(roomById('main').currentGroupIds).toEqual(['333-r1-g2']);
+    });
+
+    it('waits for someone marked as not coming who started after all', async () => {
+      const { service, roomById } = setup({
+        wcif: buildWcif(schedule(), assignments),
+        rooms: mainAndSide(),
+        results: [
+          { roundId: '333-r1', registrantId: 1, attempts: solves(3) },
+          { roundId: '333-r1', registrantId: 2, attempts: solves(1) },
+        ],
+        attendance: [
+          {
+            personId: 'p2',
+            groupId: '333-r1-g1',
+            isAssigned: true,
+            status: StaffActivityStatus.ABSENT,
+            noShow: true,
+          },
+        ],
       });
       service.requestGroupChangeCheck('333-r1');
       await jest.advanceTimersByTimeAsync(GROUP_CHANGE_CHECK_DELAY_MS);
@@ -880,6 +926,75 @@ describe('automatic group change', () => {
     });
   });
 
+  describe('what the home page shows', () => {
+    const roomsProgress = async (competition: Record<string, unknown> = {}) => {
+      // Running since before the group; competitor 1 finished at 12:11
+      jest.setSystemTime(new Date(at(12, 0)));
+      const { service, prisma, roomsService } = setup({
+        wcif: buildWcif(schedule(), assignments),
+        rooms: mainAndSide(),
+        results: [
+          {
+            roundId: '333-r1',
+            registrantId: 1,
+            attempts: solves(3, new Date(at(12, 11))),
+          },
+        ],
+        attendance: [
+          {
+            personId: 'p2',
+            groupId: '333-r1-g1',
+            isAssigned: true,
+            status: StaffActivityStatus.ABSENT,
+          },
+        ],
+        competition,
+      });
+      (prisma as Record<string, unknown>).person = {
+        findMany: jest.fn(async () => [
+          { id: 'p2', name: 'Competitor Two', registrantId: 2 },
+        ]),
+      };
+      jest.spyOn(roomsService, 'getRoomsProgress').mockResolvedValue([
+        {
+          roomId: 'main',
+          groups: [
+            {
+              groupId: '333-r1-g1',
+              roundId: '333-r1',
+              competitors: 2,
+              finished: 1,
+              entered: 3,
+              expected: 6,
+              expectedIsFinal: true,
+            },
+          ],
+        },
+      ]);
+      jest.setSystemTime(new Date(at(12, 14)));
+      const [main] = await service.getRoomsProgress();
+      return (main.groups[0] as { wait?: unknown }).wait;
+    };
+
+    it('says who the group waits for and when it moves on by itself', async () => {
+      expect(await roomsProgress()).toEqual({
+        state: 'waitingForCompetitors',
+        notStarted: [{ personId: 'p2', name: 'Competitor Two' }],
+        solving: 0,
+        incidents: 0,
+        extras: 0,
+        // Quiet from 12:16, then the next periodic check
+        movesOnAt: at(12, 20),
+      });
+    });
+
+    it('gives no time when the room does not move on by itself', async () => {
+      expect(
+        await roomsProgress({ shouldChangeGroupsAutomatically: false }),
+      ).toMatchObject({ state: 'waitingForCompetitors', movesOnAt: null });
+    });
+  });
+
   describe('a room running several groups', () => {
     const parallel = () => [
       {
@@ -1148,7 +1263,7 @@ describe('group change helpers', () => {
       groupId: '333-r1-g1',
       rules,
     });
-    expect(status).toEqual({
+    expect(status).toMatchObject({
       state: 'finished',
       lastAttemptAt: +new Date(at(12, 5)),
     });
@@ -1192,6 +1307,90 @@ describe('group change helpers', () => {
     expect(getQuietSince({ ...status, lastAttemptAt: 90_000 }, enteredAt)).toBe(
       90_000,
     );
+  });
+
+  it('times the move on to the periodic check after the quiet spell', () => {
+    const minute = 60_000;
+    const waiting = {
+      state: 'waitingForCompetitors' as const,
+      lastAttemptAt: 11 * minute,
+    };
+    // Quiet enough at 16:00, so the check at 20:00
+    expect(getMovesOnAt(waiting, 0, 5 * minute)).toBe(20 * minute);
+    // A check right on the mark takes it
+    expect(
+      getMovesOnAt({ ...waiting, lastAttemptAt: 10 * minute }, 0, 5 * minute),
+    ).toBe(15 * minute);
+    expect(
+      getMovesOnAt({ ...waiting, state: 'inProgress' }, 0, 5 * minute),
+    ).toBe(null);
+  });
+
+  it('does not wait for someone absent and marked as not coming', () => {
+    const status = getGroupStatus({
+      groupId: '333-r1-g1',
+      results: [result(1, solves(5))],
+      assignedRegistrantIds: [1, 2],
+      competitorRows: [
+        row('p2', '333-r1-g1', {
+          isAssigned: true,
+          status: StaffActivityStatus.ABSENT,
+          noShow: true,
+        }),
+      ],
+      rules,
+    });
+    expect(status.state).toBe('finished');
+  });
+
+  it('waits for someone marked as not coming who is here after all', () => {
+    const status = getGroupStatus({
+      groupId: '333-r1-g1',
+      results: [result(1, solves(5))],
+      assignedRegistrantIds: [1, 2],
+      competitorRows: [
+        row('p2', '333-r1-g1', { isAssigned: true, noShow: true }),
+      ],
+      rules,
+    });
+    expect(status.state).toBe('waitingForCompetitors');
+  });
+
+  it('says who the group waits for and what is left to do', () => {
+    const status = getGroupStatus({
+      groupId: '333-r1-g1',
+      results: [
+        result(1, solves(2)),
+        result(3, [attempt(1, { status: AttemptStatus.UNRESOLVED })]),
+        result(4, [
+          attempt(1, { status: AttemptStatus.EXTRA_GIVEN }),
+          ...solves(5).slice(1),
+        ]),
+        result(6, solves(5)),
+      ],
+      // 5 has no attendance row yet
+      assignedRegistrantIds: [1, 2, 3, 4, 5, 6],
+      competitorRows: [
+        row('p2', '333-r1-g1', {
+          isAssigned: true,
+          status: StaffActivityStatus.ABSENT,
+        }),
+        // Marked present, not assigned, not started
+        row('p7', '333-r1-g1'),
+      ],
+      rules,
+    });
+    expect(status.state).toBe('inProgress');
+    expect(status.blockers).toEqual({
+      notStarted: [
+        { personId: 'p2', registrantId: 2 },
+        { personId: null, registrantId: 5 },
+        { personId: 'p7', registrantId: 7 },
+      ],
+      solving: 1,
+      incidents: 1,
+      extras: 1,
+    });
   });
 
   it('leaves out a removed result and its competitor', () => {
@@ -1264,7 +1463,7 @@ describe('group change helpers', () => {
       assignedRegistrantIds: [1, 2],
       rules,
     });
-    expect(status).toEqual({
+    expect(status).toMatchObject({
       state: 'inProgress',
       lastAttemptAt: +new Date(at(12, 9)),
     });

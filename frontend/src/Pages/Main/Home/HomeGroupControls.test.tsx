@@ -147,8 +147,10 @@ const progress = (groupId: string, entered: number): GroupProgress => ({
     groupId,
     roundId: groupId.split("-g")[0],
     competitors: 7,
+    finished: Math.floor(entered / 5),
     entered,
     expected: 35,
+    expectedIsFinal: true,
 });
 
 const renderPage = async (
