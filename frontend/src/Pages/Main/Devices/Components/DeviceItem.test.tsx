@@ -1,5 +1,6 @@
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { MemoryRouter } from "react-router-dom";
 import { describe, expect, it, vi } from "vitest";
 
 import { Table, TableBody } from "@/Components/ui/table";
@@ -46,25 +47,27 @@ describe("DeviceItem signal", () => {
 
     const renderItem = (value: Device, variant: "row" | "card") =>
         render(
-            <ConfirmProvider>
-                {variant === "row" ? (
-                    <Table>
-                        <TableBody>
-                            <DeviceItem
-                                device={value}
-                                fetchData={() => {}}
-                                variant="row"
-                            />
-                        </TableBody>
-                    </Table>
-                ) : (
-                    <DeviceItem
-                        device={value}
-                        fetchData={() => {}}
-                        variant="card"
-                    />
-                )}
-            </ConfirmProvider>
+            <MemoryRouter>
+                <ConfirmProvider>
+                    {variant === "row" ? (
+                        <Table>
+                            <TableBody>
+                                <DeviceItem
+                                    device={value}
+                                    fetchData={() => {}}
+                                    variant="row"
+                                />
+                            </TableBody>
+                        </Table>
+                    ) : (
+                        <DeviceItem
+                            device={value}
+                            fetchData={() => {}}
+                            variant="card"
+                        />
+                    )}
+                </ConfirmProvider>
+            </MemoryRouter>
         );
 
     it.each(["row", "card"] as const)(
@@ -117,6 +120,21 @@ describe("DeviceItem signal", () => {
                     name: "There are no active rounds at the moment",
                 })
             ).toBeTruthy();
+        }
+    );
+
+    it.each(["row", "card"] as const)(
+        "links the solve count to the device's solves in the %s view",
+        (variant) => {
+            renderItem(device({ count: 12 }), variant);
+
+            expect(
+                screen
+                    .getByRole("link", {
+                        name: "12 solves on Station Example",
+                    })
+                    .getAttribute("href")
+            ).toBe("/devices/device-1/solves");
         }
     );
 

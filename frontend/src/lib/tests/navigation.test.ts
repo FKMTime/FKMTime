@@ -123,6 +123,11 @@ describe("getDetailLabel", () => {
         );
         expect(getDetailLabel("/results/abc123")).toBe("Result");
     });
+
+    it("recognises a device's solves page", () => {
+        expect(getDetailLabel("/devices")).toBeNull();
+        expect(getDetailLabel("/devices/abc123/solves")).toBe("Solves");
+    });
 });
 
 describe("getDefaultCrumbs", () => {

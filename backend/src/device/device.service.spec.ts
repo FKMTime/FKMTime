@@ -33,6 +33,7 @@ describe('DeviceService', () => {
             },
             attempt: {
               groupBy: jest.fn(),
+              findMany: jest.fn(),
               count: jest.fn().mockResolvedValue(0),
             },
             staffActivity: {
@@ -432,6 +433,39 @@ describe('DeviceService', () => {
         status: 404,
         error: true,
       });
+    });
+  });
+
+  describe('getDeviceAttempts', () => {
+    it('returns the device with every attempt it recorded, newest first', async () => {
+      const device = { id: 'device1', name: 'Station 1' };
+      const attempts = [{ id: 'attempt2' }, { id: 'attempt1' }];
+      jest
+        .spyOn(dbService.device, 'findUnique')
+        .mockResolvedValue(device as any);
+      (dbService.attempt.findMany as jest.Mock).mockResolvedValue(attempts);
+
+      const result = await service.getDeviceAttempts('device1');
+
+      expect(result).toEqual({ device, attempts });
+      expect(dbService.attempt.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { deviceId: 'device1' },
+          orderBy: [
+            { solvedAt: { sort: 'desc', nulls: 'last' } },
+            { createdAt: 'desc' },
+          ],
+        }),
+      );
+    });
+
+    it('fails with 404 for an unknown device', async () => {
+      jest.spyOn(dbService.device, 'findUnique').mockResolvedValue(null);
+
+      await expect(service.getDeviceAttempts('missing')).rejects.toThrow(
+        HttpException,
+      );
+      expect(dbService.attempt.findMany).not.toHaveBeenCalled();
     });
   });
 
