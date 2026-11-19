@@ -19,7 +19,7 @@ import { AttemptService } from './attempt.service';
   imports: [
     AuthModule,
     WcaModule,
-    AttendanceModule,
+    forwardRef(() => AttendanceModule),
     ContestsModule,
     IncidentModule,
     AttemptEditLogModule,
