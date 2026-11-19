@@ -1,4 +1,12 @@
-import { IsArray, IsBoolean, IsNotEmpty, IsString } from 'class-validator';
+import { StaffRole } from '@prisma/client';
+import {
+  IsArray,
+  IsBoolean,
+  IsIn,
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+} from 'class-validator';
 
 export class SetNoShowDto {
   @IsString()
@@ -11,4 +19,9 @@ export class SetNoShowDto {
 
   @IsBoolean()
   noShow: boolean;
+
+  /** Tags the person's competitor rows; staffing otherwise */
+  @IsOptional()
+  @IsIn([StaffRole.COMPETITOR])
+  role?: typeof StaffRole.COMPETITOR;
 }

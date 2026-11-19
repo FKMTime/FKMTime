@@ -236,6 +236,8 @@ export class AttendanceService {
             }
           : undefined,
         status: StaffActivityStatus.PRESENT,
+        // They came after all
+        noShow: false,
       },
       create: {
         groupId: groupId,
@@ -615,15 +617,19 @@ export class AttendanceService {
   }
 
   /**
-   * Not coming for the rest of the day. Only staffing they haven't turned up
-   * for is tagged; groups they were at keep their attendance.
+   * Not coming: staff for the rest of the day, a competitor for the given
+   * groups only. Only rows they haven't turned up for are tagged; groups
+   * they were at keep their attendance.
    */
   async setNoShow(data: SetNoShowDto) {
+    const isCompetitor = data.role === StaffRole.COMPETITOR;
     const { count } = await this.prisma.staffActivity.updateMany({
       where: {
         personId: data.personId,
         groupId: { in: data.groupIds },
-        role: { not: StaffRole.COMPETITOR },
+        role: isCompetitor
+          ? StaffRole.COMPETITOR
+          : { not: StaffRole.COMPETITOR },
         status: StaffActivityStatus.ABSENT,
       },
       data: { noShow: data.noShow },

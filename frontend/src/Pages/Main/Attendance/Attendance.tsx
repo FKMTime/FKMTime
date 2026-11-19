@@ -105,11 +105,18 @@ const Attendance = () => {
     } = useMarkAttendance(attendance, fetchAttendance);
     const setNoShowFor = useNoShow(fetchAttendance);
 
-    /** Not coming to this group or any later one that day, or coming after all */
+    /**
+     * Not coming, or coming after all: a competitor to this group, staff to
+     * this group and any later one that day
+     */
     const handleSetNoShow = async (
         activity: StaffActivity,
         noShow: boolean
     ) => {
+        if (activity.role === "COMPETITOR") {
+            setNoShowFor(activity.person, [activity.groupId], noShow, true);
+            return;
+        }
         if (!competition) return;
         const day = groupDay(competition.wcif, activity.groupId);
         const personActivities: StaffActivity[] =

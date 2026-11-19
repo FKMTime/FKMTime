@@ -21,7 +21,7 @@ import { ResultFromDeviceService } from './resultFromDevice.service';
   imports: [
     AuthModule,
     forwardRef(() => AttemptModule),
-    AttendanceModule,
+    forwardRef(() => AttendanceModule),
     WcaModule,
     ContestsModule,
     DeviceModule,

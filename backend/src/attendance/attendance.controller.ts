@@ -1,14 +1,18 @@
 import {
   Body,
   Controller,
+  forwardRef,
   Get,
+  Inject,
   Param,
   Post,
   Put,
   UseGuards,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
+import { StaffRole } from '@prisma/client';
 import { StageLeaderGuard } from 'src/auth/guards/stageLeader.guard';
+import { CompetitionService } from 'src/competition/competition.service';
 
 import { AttendanceService } from './attendance.service';
 import { AddNotAssignedPersonDto } from './dto/addNotAssignedPerson.dto';
@@ -21,7 +25,11 @@ import { UpdateCommentDto } from './dto/updateComment.dto';
 @UseGuards(AuthGuard('jwt'))
 @Controller('attendance')
 export class AttendanceController {
-  constructor(private readonly attendanceService: AttendanceService) {}
+  constructor(
+    private readonly attendanceService: AttendanceService,
+    @Inject(forwardRef(() => CompetitionService))
+    private readonly competitionService: CompetitionService,
+  ) {}
 
   @UseGuards(StageLeaderGuard)
   @Get('group/:groupId')
@@ -89,7 +97,14 @@ export class AttendanceController {
   @UseGuards(StageLeaderGuard)
   @Post('no-show')
   async setNoShow(@Body() data: SetNoShowDto) {
-    return this.attendanceService.setNoShow(data);
+    const result = await this.attendanceService.setNoShow(data);
+    // A group may have been waiting only for them
+    if (data.role === StaffRole.COMPETITOR && data.noShow) {
+      new Set(data.groupIds.map((id) => id.split('-g')[0])).forEach((roundId) =>
+        this.competitionService.requestGroupChangeCheck(roundId),
+      );
+    }
+    return result;
   }
 
   @UseGuards(StageLeaderGuard)

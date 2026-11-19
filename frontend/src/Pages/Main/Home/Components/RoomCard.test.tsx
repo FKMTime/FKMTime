@@ -11,6 +11,7 @@ import {
     Incident,
     Room,
 } from "@/lib/interfaces";
+import { ConfirmProvider } from "@/providers/ConfirmProvider";
 
 import RoomCard, { RecentAttempt } from "./RoomCard";
 
@@ -86,30 +87,32 @@ const renderCard = (props: Partial<Parameters<typeof RoomCard>[0]> = {}) => {
     const handlers = { onStartNext: vi.fn(), onEnterAttempt: vi.fn() };
     render(
         <MemoryRouter>
-            <RoomCard
-                room={room}
-                wcif={wcif}
-                progress={[
-                    {
-                        groupId: "333-r1-g2",
-                        roundId: "333-r1",
-                        competitors: 16,
-                        finished: 11,
-                        entered: 62,
-                        expected: 80,
-                        expectedIsFinal: false,
-                    },
-                ]}
-                incidents={[incident]}
-                recentAttempts={recent}
-                nextGroupIds={["333-r1-g3"]}
-                now={new Date("2026-04-18T10:04:00Z")}
-                canEnterAttempts
-                canOpenAttendance
-                canResolveIncidents
-                {...handlers}
-                {...props}
-            />
+            <ConfirmProvider>
+                <RoomCard
+                    room={room}
+                    wcif={wcif}
+                    progress={[
+                        {
+                            groupId: "333-r1-g2",
+                            roundId: "333-r1",
+                            competitors: 16,
+                            finished: 11,
+                            entered: 62,
+                            expected: 80,
+                            expectedIsFinal: false,
+                        },
+                    ]}
+                    incidents={[incident]}
+                    recentAttempts={recent}
+                    nextGroupIds={["333-r1-g3"]}
+                    now={new Date("2026-04-18T10:04:00Z")}
+                    canEnterAttempts
+                    canOpenAttendance
+                    canResolveIncidents
+                    {...handlers}
+                    {...props}
+                />
+            </ConfirmProvider>
         </MemoryRouter>
     );
     return handlers;
@@ -194,6 +197,94 @@ describe("RoomCard", () => {
                 .getAttribute("aria-valuenow")
         ).toBe("11");
         expect(screen.getByText("Lunch")).toBeTruthy();
+    });
+
+    it("says what the group waits for and marks a no-show from there", async () => {
+        const onMarkNotComing = vi.fn();
+        renderCard({
+            onMarkNotComing,
+            progress: [
+                {
+                    groupId: "333-r1-g2",
+                    roundId: "333-r1",
+                    competitors: 16,
+                    finished: 11,
+                    entered: 62,
+                    expected: 80,
+                    expectedIsFinal: false,
+                    wait: {
+                        state: "waitingForCompetitors",
+                        notStarted: [
+                            { personId: "p9", name: "Anna Absent" },
+                            // No attendance row to mark them on
+                            { personId: null, name: "Rowless Person" },
+                        ],
+                        solving: 2,
+                        incidents: 1,
+                        extras: 0,
+                        movesOnAt: "2026-04-18T10:20:00Z",
+                    },
+                },
+            ],
+        });
+        expect(
+            screen.getByText(
+                "Waiting for 2 competitors solving · 1 incident to resolve"
+            )
+        ).toBeTruthy();
+        expect(screen.getByText("2 not started yet:")).toBeTruthy();
+        expect(
+            screen.getByText(
+                "Moves on by itself at 10:20 if nobody else solves"
+            )
+        ).toBeTruthy();
+        expect(
+            screen.queryByRole("button", {
+                name: "Rowless Person is not coming",
+            })
+        ).toBeNull();
+
+        await userEvent.click(
+            screen.getByRole("button", { name: "Anna Absent is not coming" })
+        );
+        expect(onMarkNotComing).toHaveBeenCalledWith(
+            { id: "p9", name: "Anna Absent" },
+            "333-r1-g2"
+        );
+    });
+
+    it("is ready to move on once only those not coming are missing", () => {
+        renderCard({
+            groupControls: {
+                rooms: [room],
+                getProgress: vi.fn(),
+                isAutoChange: true,
+                onSetGroups: vi.fn(),
+            },
+            progress: [
+                {
+                    groupId: "333-r1-g2",
+                    roundId: "333-r1",
+                    competitors: 16,
+                    finished: 11,
+                    entered: 62,
+                    expected: 80,
+                    expectedIsFinal: false,
+                    wait: {
+                        state: "finished",
+                        notStarted: [],
+                        solving: 0,
+                        incidents: 0,
+                        extras: 0,
+                        movesOnAt: null,
+                    },
+                },
+            ],
+        });
+        expect(screen.getByText("All in · moving on by itself")).toBeTruthy();
+        expect(
+            screen.queryByLabelText("What the group is waiting for")
+        ).toBeNull();
     });
 
     it("lists incidents with station and judge, and recent results", () => {
