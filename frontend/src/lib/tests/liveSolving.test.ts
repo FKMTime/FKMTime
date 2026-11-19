@@ -1,4 +1,5 @@
 import {
+    formatLastSolveAttempt,
     formatLastSolveTime,
     getStationTimer,
     groupStationsByRoom,
@@ -305,7 +306,8 @@ describe("formatLastSolveTime", () => {
         personName: "Jane Doe",
         value,
         penalty,
-        enteredAt: 0,
+        attemptNumber: 1,
+        isExtra: false,
     });
 
     it("shows the time with any penalty added", () => {
@@ -315,6 +317,24 @@ describe("formatLastSolveTime", () => {
 
     it("shows a DNF instead of the time", () => {
         expect(formatLastSolveTime(solve(1234, -1))).toBe("DNF");
+    });
+});
+
+describe("formatLastSolveAttempt", () => {
+    const solve = (attemptNumber: number, isExtra: boolean) => ({
+        personName: "Jane Doe",
+        value: 1234,
+        penalty: 0,
+        attemptNumber,
+        isExtra,
+    });
+
+    it("names the solve of the round", () => {
+        expect(formatLastSolveAttempt(solve(3, false))).toBe("Solve 3");
+    });
+
+    it("names an extra by its own number", () => {
+        expect(formatLastSolveAttempt(solve(1, true))).toBe("Extra 1");
     });
 });
 

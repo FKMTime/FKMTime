@@ -211,22 +211,22 @@ describe("StationCard", () => {
         expect(screen.getByText("3:12.00")).toBeTruthy();
     });
 
-    it("shows who did the last solve and when", () => {
+    it("shows who did the last solve and which solve it was", () => {
         render(
             <StationCard
                 deviceName="Station 4"
                 phase="idle"
                 lastSolve={{
                     personName: "Ada Example",
+                    attempt: "Solve 3",
                     time: "14.34",
-                    at: "11:02",
                 }}
             />
         );
         expect(screen.getByText("Last solve")).toBeTruthy();
         expect(screen.getByText("Ada Example")).toBeTruthy();
         expect(screen.getByText("14.34")).toBeTruthy();
-        expect(screen.getByText("11:02")).toBeTruthy();
+        expect(screen.getByText("Solve 3")).toBeTruthy();
     });
 });
 
