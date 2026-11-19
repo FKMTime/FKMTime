@@ -2,8 +2,7 @@ import { useState } from "react";
 import { useSearchParams } from "react-router-dom";
 
 import LogView from "@/Components/LogView/LogView";
-import SegmentedControl from "@/Components/shared/SegmentedControl";
-import { useIsMobile } from "@/hooks/useMobile";
+import PageTabs from "@/Components/shared/PageTabs";
 import { usePageHeader } from "@/hooks/usePageHeader";
 import { useSocketEvents } from "@/hooks/useSocketEvents";
 import { useSocketRoom } from "@/hooks/useSocketRoom";
@@ -88,7 +87,6 @@ const ServerLog = ({ source }: { source: ServerLogSource }) => {
 
 /** The backend's and the connector's own logs, for admins (SPEC-011) */
 const ServerLogs = () => {
-    const isMobile = useIsMobile();
     const [searchParams, setSearchParams] = useSearchParams();
     const source = sourceFrom(searchParams.get("tab"));
     usePageHeader({ crumbs: [{ label: "Server logs" }], title: "Server logs" });
@@ -97,12 +95,12 @@ const ServerLogs = () => {
 
     return (
         <>
-            <SegmentedControl
+            <PageTabs
                 label="Log"
                 value={source}
                 onValueChange={(value) => setSearchParams({ tab: value })}
-                fullWidth={isMobile}
-                options={SERVER_LOG_SOURCES}
+                tabs={SERVER_LOG_SOURCES}
+                className="max-md:-mt-4 max-md:bg-card"
             />
             <ServerLog key={source} source={source} />
         </>

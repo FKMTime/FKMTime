@@ -3,7 +3,7 @@ import { RefreshCw } from "lucide-react";
 import { useMemo, useState } from "react";
 
 import LoadingPage from "@/Components/LoadingPage";
-import SegmentedControl from "@/Components/shared/SegmentedControl";
+import PageTabs from "@/Components/shared/PageTabs";
 import { Button } from "@/Components/ui/button";
 import { Card, CardContent } from "@/Components/ui/card";
 import { useLiveQuery } from "@/hooks/useLiveQuery";
@@ -98,12 +98,13 @@ const StationTester = () => {
 
     return (
         <div className="flex flex-col gap-4">
-            <div className="flex items-center justify-between gap-3">
-                <SegmentedControl
+            <div className="flex items-end justify-between gap-3">
+                <PageTabs
                     label="Message to send"
-                    options={TABS}
+                    tabs={TABS}
                     value={tab}
                     onValueChange={setTab}
+                    className="min-w-0 flex-1 max-md:mx-0 max-md:px-0"
                 />
                 <Button
                     variant="outline"
