@@ -79,7 +79,8 @@ describe("LiveSolvingBoard", () => {
                             personName: "Ada Example",
                             value: 1234,
                             penalty: 2,
-                            enteredAt: 0,
+                            attemptNumber: 3,
+                            isExtra: false,
                         },
                     },
                 ]}
@@ -89,5 +90,6 @@ describe("LiveSolvingBoard", () => {
         const card = screen.getByRole("article", { name: /Station 1/ });
         expect(within(card).getByText("Ada Example")).toBeTruthy();
         expect(within(card).getByText("14.34")).toBeTruthy();
+        expect(within(card).getByText("Solve 3")).toBeTruthy();
     });
 });

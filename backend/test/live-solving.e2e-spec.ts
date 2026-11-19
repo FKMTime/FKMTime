@@ -349,7 +349,8 @@ describe('Live solving (e2e)', () => {
       personName: competitor.name,
       value: 1700,
       penalty: 2,
-      enteredAt: expect.any(Number),
+      attemptNumber: expect.any(Number),
+      isExtra: false,
     });
   });
 
