@@ -4,6 +4,7 @@ import { Link, useSearchParams } from "react-router-dom";
 
 import LoadingPage from "@/Components/LoadingPage";
 import EmptyState from "@/Components/shared/EmptyState";
+import PageTabs from "@/Components/shared/PageTabs";
 import RequestError from "@/Components/shared/RequestError";
 import SegmentedControl from "@/Components/shared/SegmentedControl";
 import { Button } from "@/Components/ui/button";
@@ -213,15 +214,15 @@ const Devices = () => {
     const visibleTabs = TABS.filter((t) => !t.adminOnly || isAdmin());
     // Device settings live in Setup → Competition, so most people see one tab
     const tabSwitch = visibleTabs.length > 1 && (
-        <SegmentedControl
+        <PageTabs
             label="Devices section"
             value={tab}
             onValueChange={handleChangeTab}
-            fullWidth={isMobile}
-            options={visibleTabs.map((t) => ({
+            tabs={visibleTabs.map((t) => ({
                 value: t.value,
                 label: t.label,
             }))}
+            className="max-md:-mt-4 max-md:bg-card"
         />
     );
     const deviceButtons = (
@@ -263,8 +264,8 @@ const Devices = () => {
 
     return (
         <>
+            {tabSwitch}
             <div className="flex flex-col gap-3 md:flex-row md:items-center">
-                {tabSwitch}
                 <div className="flex gap-2 md:ml-auto">
                     <Button variant="outline" asChild>
                         <Link to="/competition">
