@@ -2,7 +2,10 @@ import { HttpException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 
 import { DbService } from '../db/db.service';
-import { ScramblingDeviceService } from './scrambling-device.service';
+import {
+  ONE_TIME_CODE_TTL_MS,
+  ScramblingDeviceService,
+} from './scrambling-device.service';
 
 describe('ScramblingDeviceService', () => {
   let service: ScramblingDeviceService;
@@ -99,6 +102,21 @@ describe('ScramblingDeviceService', () => {
       expect(result.code).toMatch(/^\d{6}$/);
       expect(dbService.scramblingDevice.update).toHaveBeenCalled();
     });
+
+    it('makes the code expire after ten minutes', async () => {
+      jest
+        .spyOn(dbService.scramblingDevice, 'update')
+        .mockResolvedValue({} as any);
+      const before = Date.now();
+
+      await service.generateOneTimeCode('device1');
+
+      const { data } = (dbService.scramblingDevice.update as jest.Mock).mock
+        .calls[0][0];
+      const expiresAt = (data.oneTimeCodeExpiresAt as Date).getTime();
+      expect(expiresAt).toBeGreaterThanOrEqual(before + ONE_TIME_CODE_TTL_MS);
+      expect(expiresAt).toBeLessThanOrEqual(Date.now() + ONE_TIME_CODE_TTL_MS);
+    });
   });
 
   describe('getToken', () => {
@@ -117,6 +135,22 @@ describe('ScramblingDeviceService', () => {
       expect(result).toHaveProperty('token');
       expect(result).toHaveProperty('device');
       expect(result.device).toEqual(mockDevice);
+    });
+
+    it('only accepts a code that has not expired, and returns no secrets', async () => {
+      jest
+        .spyOn(dbService.scramblingDevice, 'findFirst')
+        .mockResolvedValue(null);
+
+      await expect(service.getToken({ code: '123456' })).rejects.toThrow(
+        HttpException,
+      );
+      const query = (dbService.scramblingDevice.findFirst as jest.Mock).mock
+        .calls[0][0];
+      expect(query.where.oneTimeCodeExpiresAt).toEqual({
+        gt: expect.any(Date),
+      });
+      expect(query.select).toEqual({ id: true, name: true, roomId: true });
     });
 
     it('should throw error for invalid one-time code', async () => {
