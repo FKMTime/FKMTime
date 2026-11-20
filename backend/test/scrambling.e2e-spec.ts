@@ -202,12 +202,29 @@ describe('Scrambling device flow (e2e)', () => {
       });
       expect(fromDb.encryptedToken).toBe(sha512(deviceToken));
       expect(fromDb.encryptedOneTimeCode).toBeNull();
+      expect(res.body.device).not.toHaveProperty('encryptedToken');
+      expect(res.body.device).not.toHaveProperty('encryptedOneTimeCode');
     });
 
     it('does not accept the same one-time code twice', async () => {
       await request(server())
         .post('/scrambling-device/token')
         .send({ code: oneTimeCode })
+        .expect(404);
+    });
+
+    it('does not accept a code after it expired', async () => {
+      const res = await asDelegate(
+        request(server()).get(`/scrambling-device/${deviceId}/code`),
+      ).expect(200);
+      await db.scramblingDevice.update({
+        where: { id: deviceId },
+        data: { oneTimeCodeExpiresAt: new Date(Date.now() - 1000) },
+      });
+
+      await request(server())
+        .post('/scrambling-device/token')
+        .send({ code: res.body.code })
         .expect(404);
     });
 

@@ -1,9 +1,10 @@
 # SPEC-012: Tutorial mode for a station
 
-- **Status:** Accepted
+- **Status:** Implemented
 - **Created:** 2026-11-17
-- **Related:** SPEC-007 (stations running a different round, same per-station
-  pattern), SPEC-010 (station last error), SPEC-006 (where results are sent)
+- **Related:** #718, #719, SPEC-007 (stations running a different round,
+  same per-station pattern), SPEC-010 (station last error), SPEC-006 (where
+  results are sent)
 
 ## Problem
 

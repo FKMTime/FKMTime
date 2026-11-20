@@ -1,5 +1,5 @@
 import { Tv } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
 import WordmarkHeader from "@/Components/shared/WordmarkHeader";
@@ -13,6 +13,7 @@ import {
     loginWithWca,
 } from "@/lib/auth";
 import { loginInfoQuery } from "@/lib/competition";
+import { createOAuthState, takeOAuthState } from "@/lib/oauthState";
 import { QueryError } from "@/lib/queryCache";
 import { WCA_CLIENT_ID, WCA_ORIGIN } from "@/lib/request";
 import { getScramblingDeviceTokenFromCode } from "@/lib/scramblingDevicesAuth";
@@ -71,6 +72,7 @@ const Login = () => {
             scope: "public manage_competitions",
             response_type: "code",
             client_id: WCA_CLIENT_ID,
+            state: createOAuthState("login"),
         });
         window.location.href = `${WCA_ORIGIN}/oauth/authorize?${queryParams.toString()}`;
     };
@@ -80,12 +82,29 @@ const Login = () => {
         setError("");
     };
 
-    // Coming back from WCA sign-in: exchange the code once
+    // Coming back from WCA sign-in: exchange the code once, and only for a
+    // sign-in this tab started
+    const sent = useRef(false);
     useEffect(() => {
-        if (!code) return;
-        loginWithWca(code, window.location.href).then((res) =>
-            handleLoginResponse(res.status, res.data.message)
-        );
+        if (!code || sent.current) return;
+        sent.current = true;
+        const callback = new URL(window.location.href);
+        const state = callback.searchParams.get("state");
+        // The redirect URI as before the state parameter was added
+        callback.searchParams.delete("state");
+        const exchange = takeOAuthState("login", state)
+            ? loginWithWca(code, callback.toString())
+            : Promise.resolve(null);
+        exchange.then((res) => {
+            if (!res) {
+                setIsLoading(false);
+                setError(
+                    "This sign-in wasn't started from this browser tab. Sign in with WCA again."
+                );
+                return;
+            }
+            handleLoginResponse(res.status, res.data.message);
+        });
     }, [code, handleLoginResponse]);
 
     useEffect(() => {

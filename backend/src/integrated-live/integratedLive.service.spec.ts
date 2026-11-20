@@ -50,6 +50,7 @@ const createStore = () => {
               cutoff: null,
             },
             { id: '333-r2', format: 'a', timeLimit: null, cutoff: null },
+            { id: '333-r3', format: 'h', timeLimit: null, cutoff: null },
           ],
         },
       ],
@@ -284,6 +285,19 @@ describe('IntegratedLiveService', () => {
       error: 'Attempt 1 is over the time limit',
     });
     expect(calls()).not.toContain('POST /rounds/333-r1/batch');
+  });
+
+  it('sends nothing of a head-to-head round and marks why', async () => {
+    store.addResult('final', 101, [attempt(1, 1234)], '333-r3');
+    await service.markDirty(['final']);
+
+    await service.run();
+
+    expect(store.syncs.get('final')).toMatchObject({
+      status: LiveSyncStatus.REJECTED,
+      error: 'Head-to-head rounds are not sent to live results',
+    });
+    expect(calls()).toEqual([]);
   });
 
   it('empties a result with no attempts left instead of writing it', async () => {

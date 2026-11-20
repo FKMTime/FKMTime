@@ -41,3 +41,15 @@ export const ADMIN_WCA_USER_IDS = [259132, 470248, 244611];
 export const SHOW_SECONDARY_TEXT_HW_VERSIONS: HardwareVersion[] = [
   HardwareVersion.V4,
 ];
+
+/**
+ * Attempt fields only delegates read: their notes on rulings and incidents, who
+ * last changed the attempt, and the raw timer readings. Left out wherever
+ * results are shown to anyone else.
+ */
+export const delegateOnlyAttemptFields = {
+  comment: true,
+  updatedById: true,
+  originalTime: true,
+  inspectionTime: true,
+} as const;

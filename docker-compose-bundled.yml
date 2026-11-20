@@ -1,3 +1,7 @@
+# DEMO STACK. It signs in against the dummy WCA services, which let anyone
+# sign in as any of their accounts, so never use it for a real competition.
+# A real deployment points WCA_ORIGIN / WCA_LIVE_API_ORIGIN at the WCA and
+# sets its own WCA client credentials and SECRET.
 services:
   backend:
     image: "ghcr.io/fkmtime/fkmtime-backend:main"
@@ -73,6 +77,9 @@ services:
       - 8.8.8.8
       - 8.8.4.4
       - 1.1.1.1
+    volumes:
+      # Routes to the dummy WCA services, for this demo stack only
+      - ./nginx/demo:/etc/nginx/demo:ro
     environment:
       - BACKEND_ORIGIN=/api
       - WCA_CLIENT_ID=example-application-id

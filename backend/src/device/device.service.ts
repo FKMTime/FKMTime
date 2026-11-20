@@ -1,6 +1,7 @@
 import { forwardRef, HttpException, Inject, Injectable } from '@nestjs/common';
 import { DeviceType, Prisma } from '@prisma/client';
 import { AppGateway } from 'src/app.gateway';
+import { isH2hRound } from 'src/h2h/h2hRound';
 import { Competition as WCIF, getRoundInfoFromWcif } from 'wcif-helpers';
 
 import { DbService } from '../db/db.service';
@@ -284,7 +285,7 @@ export class DeviceService {
         throw new HttpException({ message: 'Round not found' }, 400);
       }
       // Head-to-head stations pair competitors by stage (SPEC-001)
-      if ((round.format as string) === 'h') {
+      if (isH2hRound(data.roundId, wcif)) {
         throw new HttpException(
           { message: "Head-to-head rounds can't run on a single station" },
           400,

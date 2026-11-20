@@ -18,6 +18,9 @@ describe('UserService', () => {
         {
           provide: DbService,
           useValue: {
+            competition: {
+              findFirst: jest.fn().mockResolvedValue({ id: 'comp1' }),
+            },
             user: {
               findMany: jest.fn(),
               findUnique: jest.fn(),
@@ -255,16 +258,25 @@ describe('UserService', () => {
       const userId = 'user1';
       const newPassword = 'newpassword123';
 
+      jest
+        .spyOn(dbService.user, 'findUnique')
+        .mockResolvedValue({ roles: [Role.ADMIN] } as any);
       jest.spyOn(dbService.user, 'update').mockResolvedValue({} as any);
 
-      await service.updatePassword(userId, newPassword);
+      const result = await service.updatePassword(
+        userId,
+        newPassword,
+        'admin1',
+      );
 
       expect(dbService.user.update).toHaveBeenCalledWith({
         where: { id: userId },
         data: {
           password: expect.any(String),
+          tokenVersion: { increment: 1 },
         },
       });
+      expect(result).toEqual({ message: 'Password updated successfully' });
     });
   });
 
@@ -272,13 +284,116 @@ describe('UserService', () => {
     it('should delete a user', async () => {
       const userId = 'user1';
 
+      jest
+        .spyOn(dbService.user, 'findUnique')
+        .mockResolvedValue({ roles: [Role.ADMIN] } as any);
       jest.spyOn(dbService.user, 'delete').mockResolvedValue({} as any);
 
-      await service.deleteUser(userId);
+      await service.deleteUser(userId, 'admin1');
 
       expect(dbService.user.delete).toHaveBeenCalledWith({
         where: { id: userId },
+        select: { id: true },
       });
+    });
+  });
+
+  describe('changing a user ranked above the caller', () => {
+    // findUnique is called for the target first, then for the caller
+    const asOrganizerTargeting = (targetRoles: Role[]) =>
+      jest
+        .spyOn(dbService.user, 'findUnique')
+        .mockImplementation(
+          (args: any) =>
+            Promise.resolve(
+              args.where.id === 'org1'
+                ? { roles: [Role.ORGANIZER] }
+                : { roles: targetRoles },
+            ) as any,
+        );
+
+    it.each([[Role.ADMIN], [Role.DELEGATE]])(
+      'refuses an organizer resetting the password of a %s',
+      async (targetRole) => {
+        asOrganizerTargeting([targetRole]);
+        await expect(
+          service.updatePassword('target1', 'newpassword123', 'org1'),
+        ).rejects.toMatchObject({ status: 403 });
+        expect(dbService.user.update).not.toHaveBeenCalled();
+      },
+    );
+
+    it('refuses an organizer demoting an admin', async () => {
+      asOrganizerTargeting([Role.ADMIN]);
+      await expect(
+        service.updateUser(
+          'target1',
+          { username: 'someone', fullName: 'Some One', roles: [] },
+          'org1',
+        ),
+      ).rejects.toMatchObject({ status: 403 });
+      expect(dbService.user.update).not.toHaveBeenCalled();
+    });
+
+    it('refuses an organizer deleting a delegate', async () => {
+      asOrganizerTargeting([Role.DELEGATE]);
+      await expect(service.deleteUser('target1', 'org1')).rejects.toMatchObject(
+        { status: 403 },
+      );
+      expect(dbService.user.delete).not.toHaveBeenCalled();
+    });
+
+    it('refuses a delegate resetting the password of an admin', async () => {
+      jest
+        .spyOn(dbService.user, 'findUnique')
+        .mockImplementation(
+          (args: any) =>
+            Promise.resolve(
+              args.where.id === 'del1'
+                ? { roles: [Role.DELEGATE] }
+                : { roles: [Role.ADMIN] },
+            ) as any,
+        );
+      await expect(
+        service.updatePassword('target1', 'newpassword123', 'del1'),
+      ).rejects.toMatchObject({ status: 403 });
+    });
+
+    it('lets an organizer reset the password of staff', async () => {
+      asOrganizerTargeting([Role.STAFF]);
+      jest.spyOn(dbService.user, 'update').mockResolvedValue({} as any);
+      await service.updatePassword('target1', 'newpassword123', 'org1');
+      expect(dbService.user.update).toHaveBeenCalled();
+    });
+
+    it('returns 404 for a user that does not exist', async () => {
+      jest.spyOn(dbService.user, 'findUnique').mockResolvedValue(null);
+      await expect(service.deleteUser('nobody', 'org1')).rejects.toMatchObject({
+        status: 404,
+      });
+    });
+  });
+
+  describe('before a competition is imported', () => {
+    it('refuses to create users', async () => {
+      jest
+        .spyOn(dbService.competition, 'findFirst')
+        .mockResolvedValue(null as any);
+      jest
+        .spyOn(dbService.user, 'findUnique')
+        .mockResolvedValue({ roles: [Role.ORGANIZER] } as any);
+      await expect(
+        service.createUser(
+          {
+            username: 'extra',
+            password: 'password123',
+            fullName: 'Extra Account',
+            roles: [Role.ORGANIZER],
+          } as any,
+          'org1',
+        ),
+      ).rejects.toMatchObject({ status: 409 });
+      expect(dbService.user.create).not.toHaveBeenCalled();
     });
   });
 

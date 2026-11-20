@@ -10,8 +10,10 @@ Documentation is available [here](https://fkmtime.github.io/docs).
 
 **FKMTime is currently in the testing phase. For now, in accordance with WCA regulations, scorecards are still used in parallel with the system.**
 
-## Running bundled (with nginx reverse proxy etc - like prod) version
-This version can be accessed remotely if `TOKEN` env var is passed to docker-compose (modify docker-compose-bundled.yml file to set your own token)
+## Running the bundled demo (nginx reverse proxy, dummy WCA)
+This stack runs the production images behind nginx, but signs in against the dummy WCA services, which let anyone sign in as any of their accounts. Use it to try FKMTime, never for a real competition.
+
+It can be accessed remotely if `TOKEN` env var is passed to docker-compose (modify docker-compose-bundled.yml file to set your own token)
 To get token use `https://panel.fkmtime.com`
 
 ```bash

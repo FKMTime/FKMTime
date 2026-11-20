@@ -77,6 +77,9 @@ jobs:
               role=$(role_of "$SENDER")
               if [[ "$SENDER_TYPE" == User && "$role" =~ ^(admin|maintain|write|triage)$ ]]; then
                 approve "Labelled by $SENDER"
+                # The label approves whatever the head is right now: name it,
+                # so a commit pushed just before the click doesn't go unnoticed
+                gh api -X POST "repos/$REPO/issues/$PR/comments" -f body="Preview approved for commit ${HEAD_SHA:0:7} (https://github.com/$REPO/commit/$HEAD_SHA), labelled by $SENDER. If that isn't the commit you looked at, remove the \`preview\` label." > /dev/null
               else
                 withdraw "The \`preview\` label was removed: only a person with triage access or above can put a commit on a preview."
               fi

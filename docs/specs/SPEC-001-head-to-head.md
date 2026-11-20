@@ -54,8 +54,9 @@ everyone watches.
 
 ## Non-goals
 
-- Pushing H2H rounds to WCA Live. They are skipped there, same as the WCA
-  website skips them in the JSON upload. Revisit once WCA Live supports H2H.
+- Pushing H2H rounds to WCA Live or to WCA Integrated Live Results. They are
+  skipped there, same as the WCA website skips them in the JSON upload.
+  Revisit once live results support H2H.
 - Changes to station firmware or the messages between the backend and the
   stations, beyond new values in existing response fields (text, and
   `useInspection`; see *Inspection*).
@@ -256,10 +257,18 @@ Why it is shaped this way:
   that `Scramble` row.
 - **No new columns on `Result`/`Attempt`.** H2H stays an add-on, the existing
   screens still work, and dropping the bracket tables reverts the feature.
+- **What decided a point can't be deleted.** `H2hPoint.attemptAId`/`attemptBId`
+  and `scrambleId`, and `H2hSet.scrambleSetId`, are relations with
+  `onDelete: Restrict`. Deleting an attempt, a result or a scramble set that a
+  point or a set uses fails instead of leaving the bracket pointing at
+  nothing. Deleting a set that is only in the plan clears its plan row
+  (`SetNull`). The screens that delete attempts, results and scramble sets
+  refuse those cases with a message before they reach the database.
 
 `Person` gets the reverse relation `h2hEntrants`. `ScrambleSet` gets reverse
 relations to `H2hSet` and `H2hScrambleAssignment`, `Scramble` to `H2hPoint`,
-and `H2hMatch` gets `scrambleAssignments`. The seed data in
+`Attempt` to `H2hPoint` (as side A and as side B), and `H2hMatch` gets
+`scrambleAssignments`. The seed data in
 `backend/prisma/seed/` gets an H2H final for one event, so local and e2e
 environments have a bracket.
 
@@ -572,8 +581,10 @@ Once a match is `FINISHED`, its winners are frozen:
 
 ### Final ranking (9f16b)
 
-`rankH2hRound(bracket)`, a pure shared function used by the backend export
-and the frontend:
+`rankH2hRound(matches, entrants)`, a pure backend function. The export uses
+it, and the H2H endpoints return each entrant's position and stage reached,
+so the frontend only shows them. Backend and frontend share no code, and the
+frontend never scores anything itself, because winners are stored:
 
 - **Positions 1–4:** winner and loser of the final, then winner and loser of
   the third-place match.
@@ -839,6 +850,7 @@ All copy uses task language: "Start match", "Extra granted", "Withdraw",
   5. Public bracket, scoreboard and TV.
 
   Until PR 3 lands, the station rejects attempts in format `h` rounds instead
-  of recording them as normal attempts.
+  of recording them as normal attempts, with "Head-to-head round, call the
+  delegate".
 - **Revert:** drop the bracket tables. The round's `Result`/`Attempt` rows
   stay, and are still visible as plain attempts.

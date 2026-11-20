@@ -121,4 +121,72 @@ describe('AuthService', () => {
       });
     });
   });
+
+  describe('ending sessions on a password change', () => {
+    it('refuses a token issued before the password changed', async () => {
+      jest
+        .spyOn(jwtService, 'verifyAsync')
+        .mockResolvedValue({ userId: 'u1', tokenVersion: 0 } as any);
+      jest
+        .spyOn(dbService.user, 'findFirst')
+        .mockResolvedValue({ id: 'u1', roles: [], tokenVersion: 1 } as any);
+
+      await expect(service.validateJwt('old-token')).rejects.toMatchObject({
+        status: 401,
+      });
+    });
+
+    it('treats a token without a version as version 0', async () => {
+      jest
+        .spyOn(jwtService, 'verifyAsync')
+        .mockResolvedValue({ userId: 'u1', exp: 123 } as any);
+      jest
+        .spyOn(dbService.user, 'findFirst')
+        .mockResolvedValue({ id: 'u1', roles: [], tokenVersion: 0 } as any);
+
+      await expect(service.validateJwt('token')).resolves.toEqual({
+        userId: 'u1',
+        roles: [],
+        tokenVersion: 0,
+        exp: 123,
+      });
+    });
+
+    it('bumps the version and hands this session a fresh token', async () => {
+      const bcrypt = await import('bcrypt');
+      jest.spyOn(dbService.user, 'findFirst').mockResolvedValue({
+        id: 'u1',
+        password: await bcrypt.hash('old-password', 4),
+      } as any);
+      jest.spyOn(dbService.user, 'update').mockResolvedValue({
+        id: 'u1',
+        roles: [],
+        tokenVersion: 3,
+      } as any);
+      jest.spyOn(jwtService, 'sign').mockReturnValue('fresh-token');
+
+      const result = await service.changePassword(
+        'u1',
+        'old-password',
+        'new-password',
+      );
+
+      expect(dbService.user.update).toHaveBeenCalledWith({
+        where: { id: 'u1' },
+        data: {
+          password: expect.any(String),
+          tokenVersion: { increment: 1 },
+        },
+      });
+      expect(jwtService.sign).toHaveBeenCalledWith({
+        userId: 'u1',
+        roles: [],
+        tokenVersion: 3,
+      });
+      expect(result).toEqual({
+        message: 'Password changed',
+        token: 'fresh-token',
+      });
+    });
+  });
 });

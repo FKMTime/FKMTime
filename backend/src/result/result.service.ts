@@ -20,6 +20,7 @@ import {
 } from 'src/attempt-edit-log/attempt-edit-log.service';
 import { CompetitionService } from 'src/competition/competition.service';
 import {
+  delegateOnlyAttemptFields,
   DNF_VALUE,
   DNS_VALUE,
   publicPersonSelect,
@@ -28,6 +29,7 @@ import {
 import { ContestsService } from 'src/contests/contests.service';
 import { DbService, INCLUDING_REMOVED, Tx } from 'src/db/db.service';
 import { isUnofficialEvent } from 'src/events';
+import { isH2hRound } from 'src/h2h/h2hRound';
 import { IntegratedLiveService } from 'src/integrated-live/integratedLive.service';
 import { PersonService } from 'src/person/person.service';
 import { getOfficialResultsDestination } from 'src/results-destination';
@@ -70,7 +72,21 @@ export class ResultService {
     private readonly competitionService: CompetitionService,
   ) {}
 
+  /** Results as anyone may read them, the public results page included */
   resultsInclude = {
+    person: publicPersonSelect,
+    attempts: {
+      omit: delegateOnlyAttemptFields,
+      include: {
+        judge: publicPersonSelect,
+        scrambler: publicPersonSelect,
+        device: true,
+      },
+    },
+  };
+
+  /** Results for delegate pages, with their notes and timer details */
+  delegateResultsInclude = {
     person: publicPersonSelect,
     attempts: {
       include: {
@@ -267,6 +283,7 @@ export class ResultService {
       include: {
         person: publicPersonSelect,
         attempts: {
+          omit: delegateOnlyAttemptFields,
           include: {
             judge: publicPersonSelect,
             device: true,
@@ -406,6 +423,11 @@ export class ResultService {
         result,
       );
     }
+    if (
+      isH2hRound(result.roundId, JSON.parse(JSON.stringify(competition.wcif)))
+    ) {
+      return this.h2hNotSentReply();
+    }
     switch (getOfficialResultsDestination(competition)) {
       case 'WCA_LIVE':
         return await this.wcaService.enterWholeScorecardToWcaLive(result);
@@ -427,6 +449,9 @@ export class ResultService {
         throw new HttpException('Cubing Contests token not found', 404);
       }
       return await this.contestsService.enterRoundToCubingContests(results);
+    }
+    if (isH2hRound(roundId, JSON.parse(JSON.stringify(competition.wcif)))) {
+      return this.h2hNotSentReply();
     }
     switch (getOfficialResultsDestination(competition)) {
       case 'WCA_LIVE':
@@ -455,6 +480,17 @@ export class ResultService {
         result.person.wcaRegistrationId,
       );
     }
+  }
+
+  /**
+   * Neither WCA Live nor the WCA's own live results take head-to-head rounds;
+   * the WCA website imports them from a CSV instead (SPEC-001)
+   */
+  private h2hNotSentReply() {
+    return {
+      message: 'Head-to-head rounds are not sent to live results',
+      sent: false,
+    };
   }
 
   private notSentReply() {
@@ -573,7 +609,7 @@ export class ResultService {
         roundId: roundId,
         isDoubleChecked: false,
       },
-      include: this.resultsInclude,
+      include: this.delegateResultsInclude,
     });
 
     const results = allResults.filter((result) => {

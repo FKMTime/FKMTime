@@ -3,6 +3,7 @@ import { Interval } from '@nestjs/schedule';
 import { LiveSyncStatus, Prisma } from '@prisma/client';
 import { IntegratedLiveConnectionService } from 'src/competition/integratedLiveConnection.service';
 import { DbService, INCLUDING_REMOVED } from 'src/db/db.service';
+import { isH2hRound } from 'src/h2h/h2hRound';
 import { getOfficialResultsDestination } from 'src/results-destination';
 import {
   Competition as Wcif,
@@ -220,6 +221,15 @@ export class IntegratedLiveService {
         syncs,
         LiveSyncStatus.REJECTED,
         'Round not in the WCIF',
+      );
+      return true;
+    }
+    // The WCA imports head-to-head rounds from a CSV instead (SPEC-001)
+    if (isH2hRound(roundId, wcif)) {
+      await this.setStatus(
+        syncs,
+        LiveSyncStatus.REJECTED,
+        'Head-to-head rounds are not sent to live results',
       );
       return true;
     }

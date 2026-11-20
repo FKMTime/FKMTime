@@ -1,3 +1,4 @@
+import { setToken } from "./auth";
 import { Settings } from "./interfaces";
 import { backendQuery, backendRequest } from "./request";
 
@@ -16,5 +17,11 @@ export const changePassword = async (
         oldPassword,
         newPassword,
     });
+    // Changing the password ends every session, this one included; the
+    // backend sends a fresh token for this one
+    if (response.status === 200) {
+        const data = await response.json().catch(() => ({}));
+        if (data?.token) setToken(data.token);
+    }
     return response.status;
 };

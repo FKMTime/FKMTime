@@ -42,8 +42,13 @@ export class UserController {
   async updatePassword(
     @Param('id') id: string,
     @Body() data: UpdatePasswordDto,
+    @GetUser() user: JwtAuthDto,
   ) {
-    return await this.userService.updatePassword(id, data.password);
+    return await this.userService.updatePassword(
+      id,
+      data.password,
+      user.userId,
+    );
   }
 
   @UseGuards(OrganizerGuard)
@@ -59,7 +64,7 @@ export class UserController {
   @UseGuards(OrganizerGuard)
   @HttpCode(HttpStatus.NO_CONTENT)
   @Delete(':id')
-  async deleteUser(@Param('id') id: string) {
-    return await this.userService.deleteUser(id);
+  async deleteUser(@Param('id') id: string, @GetUser() user: JwtAuthDto) {
+    return await this.userService.deleteUser(id, user.userId);
   }
 }

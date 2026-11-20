@@ -373,10 +373,15 @@ describe('Auth flows (e2e)', () => {
       const adminBefore = await db.user.findFirst({
         where: { username: 'admin' },
       });
+      // The organizer's reset ended the user's earlier sessions
+      const login = await request(app.getHttpServer())
+        .post('/auth/login')
+        .send({ username: user.username, password: 'first-password' })
+        .expect(200);
 
       await request(app.getHttpServer())
         .put('/auth/password/change')
-        .set('Authorization', `Bearer ${user.token}`)
+        .set('Authorization', `Bearer ${login.body.token}`)
         .send({ oldPassword: 'first-password', newPassword: 'second-password' })
         .expect(200);
 
@@ -386,6 +391,42 @@ describe('Auth flows (e2e)', () => {
         where: { username: 'admin' },
       });
       expect(adminAfter.password).toBe(adminBefore.password);
+    });
+
+    it('ends other sessions and gives this one a fresh token', async () => {
+      const user = await createUserWithRoles(
+        app,
+        db,
+        `revoke-tokens-${SUFFIX}`,
+        [Role.STAFF],
+      );
+      await request(app.getHttpServer())
+        .put(`/user/password/${user.id}`)
+        .set(
+          'Authorization',
+          `Bearer ${(await createUserWithRoles(app, db, `org-revoke-tokens-${SUFFIX}`, [Role.ORGANIZER])).token}`,
+        )
+        .send({ password: 'first-password' })
+        .expect(200);
+      const login = await request(app.getHttpServer())
+        .post('/auth/login')
+        .send({ username: user.username, password: 'first-password' })
+        .expect(200);
+
+      const changed = await request(app.getHttpServer())
+        .put('/auth/password/change')
+        .set('Authorization', `Bearer ${login.body.token}`)
+        .send({ oldPassword: 'first-password', newPassword: 'second-password' })
+        .expect(200);
+
+      await request(app.getHttpServer())
+        .get('/auth/me')
+        .set('Authorization', `Bearer ${login.body.token}`)
+        .expect(401);
+      await request(app.getHttpServer())
+        .get('/auth/me')
+        .set('Authorization', `Bearer ${changed.body.token}`)
+        .expect(200);
     });
 
     it('rejects an empty new password', async () => {

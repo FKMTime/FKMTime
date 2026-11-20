@@ -2,7 +2,7 @@ import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { Strategy } from 'passport-jwt';
 
-import { AuthService } from '../auth.service';
+import { AuthService, isCurrentTokenVersion } from '../auth.service';
 import { JwtAuthDto } from '../dto/jwt-auth.dto';
 
 const { SECRET } = process.env;
@@ -37,6 +37,9 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
 
     if (!user) {
       throw new UnauthorizedException('User not found');
+    }
+    if (!isCurrentTokenVersion(payload, user)) {
+      throw new UnauthorizedException('Session ended');
     }
 
     return { userId, roles: user.roles };
