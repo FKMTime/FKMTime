@@ -29,7 +29,10 @@ import {
 interface SingleResultHeaderProps {
     result: Result;
     fetchData: () => void;
-    onEnterAttempt: () => void;
+    /** Hidden without; a user with delegate access may lack it (SPEC-013) */
+    onEnterAttempt?: () => void;
+    /** Resubmit, assign DNS, delete: delegates only */
+    canManageResult?: boolean;
     standardAttempts: Attempt[];
     maxAttempts: number;
     /** Left out when extras can't be given for this result */
@@ -46,6 +49,7 @@ const SingleResultHeader = ({
     result,
     fetchData,
     onEnterAttempt,
+    canManageResult = true,
     standardAttempts,
     maxAttempts,
     onGiveExtras,
@@ -157,7 +161,7 @@ const SingleResultHeader = ({
                 </div>
             </div>
             <div className="flex items-center gap-1">
-                {!isRemoved && (
+                {!isRemoved && onEnterAttempt && (
                     <Button onClick={onEnterAttempt}>
                         <Plus />
                         Enter attempt
@@ -181,7 +185,7 @@ const SingleResultHeader = ({
                         {
                             label: `Resubmit scorecard to ${platform}`,
                             icon: Send,
-                            hidden: !platform,
+                            hidden: !platform || !canManageResult,
                             onSelect: handleResubmit,
                         },
                         {
@@ -189,6 +193,7 @@ const SingleResultHeader = ({
                             icon: OctagonX,
                             hidden:
                                 isRemoved ||
+                                !canManageResult ||
                                 standardAttempts.length >= maxAttempts,
                             onSelect: handleAssignDns,
                         },
@@ -203,6 +208,7 @@ const SingleResultHeader = ({
                             label: "Delete result",
                             icon: Trash2,
                             destructive: true,
+                            hidden: !canManageResult,
                             onSelect: handleDelete,
                         },
                     ]}

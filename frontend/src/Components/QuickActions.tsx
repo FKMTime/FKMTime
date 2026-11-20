@@ -7,10 +7,15 @@ import { applicationQuickActions, quickActionsQuery } from "@/lib/quickActions";
 
 interface QuickActionsProps {
     handleQuickAction: (action: ApplicationQuickAction) => void;
+    /** Off: leave out the actions that give an extra */
+    canGiveExtra?: boolean;
 }
 
 /** Built-in and shared quick actions: give an extra or resolve with a comment */
-const QuickActions = ({ handleQuickAction }: QuickActionsProps) => {
+const QuickActions = ({
+    handleQuickAction,
+    canGiveExtra = true,
+}: QuickActionsProps) => {
     // The built-in actions first, then the competition's own
     const { data } = useLiveQuery(quickActionsQuery);
     const quickActions: ApplicationQuickAction[] = [
@@ -21,7 +26,7 @@ const QuickActions = ({ handleQuickAction }: QuickActionsProps) => {
             giveExtra: q.giveExtra,
             comment: q.comment,
         })),
-    ];
+    ].filter((action) => canGiveExtra || !action.giveExtra);
 
     return quickActions.map((quickAction) => (
         <Button

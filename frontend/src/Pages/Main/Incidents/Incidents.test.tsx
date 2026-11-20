@@ -11,9 +11,11 @@ import { QueryWrapper } from "@/test/queryClient";
 import IncidentsLayout from "./IncidentsLayout";
 import IncidentListItem from "./OpenIncidents/IncidentListItem";
 
-const { listQuery, lists, socketHandlers } = vi.hoisted(() => {
+const { listQuery, lists, socketHandlers, access } = vi.hoisted(() => {
     const served: Record<string, object[]> = {};
     return {
+        /** Delegates see every tab; a user with access for a group, Open only */
+        access: { isDelegate: true },
         lists: served,
         socketHandlers: new Map<string, () => void>(),
         // Serves whatever `lists` holds when the request is made
@@ -53,6 +55,23 @@ vi.mock("@/lib/incidents", () => ({
 vi.mock("@/lib/warnings", () => ({
     warningsQuery: listQuery("incident/warnings", [{}, {}]),
 }));
+vi.mock("@/lib/delegateGrants", () => ({
+    delegateGrantsQuery: listQuery("delegate-grant", [
+        { endedAt: null, activatedAt: "2026-01-01T10:00:00Z" },
+        { endedAt: "2026-01-01T11:00:00Z", activatedAt: null },
+    ]),
+    grantState: (grant: { endedAt: string | null }) =>
+        grant.endedAt ? "ended" : "active",
+}));
+vi.mock("@/hooks/useDelegateAccess", () => ({
+    useDelegateAccess: () => ({
+        isDelegate: access.isDelegate,
+        grants: [],
+        active: [],
+        canSeeIncidents: true,
+        can: () => access.isDelegate,
+    }),
+}));
 
 const renderLayout = (path: string, useFkmTimeDevices: boolean) => {
     const store = createStore();
@@ -76,6 +95,7 @@ describe("IncidentsLayout", () => {
     beforeEach(() => {
         clearQueryCache();
         socketHandlers.clear();
+        access.isDelegate = true;
     });
 
     it("shows every tab with its count and marks the current one", async () => {
@@ -87,6 +107,10 @@ describe("IncidentsLayout", () => {
         expect(screen.getByRole("tab", { name: "Noteworthy 2" })).toBeTruthy();
         expect(screen.getByRole("tab", { name: "Warnings 2" })).toBeTruthy();
         expect(screen.getByRole("tab", { name: "Manual 1" })).toBeTruthy();
+        // Only access that hasn't ended counts
+        expect(
+            screen.getByRole("tab", { name: "Delegate access 1" })
+        ).toBeTruthy();
         expect(
             screen
                 .getByRole("tab", { name: "Resolved 5" })
@@ -104,6 +128,19 @@ describe("IncidentsLayout", () => {
             "Warnings2",
             "Manual1",
         ]);
+    });
+
+    it("shows a user with delegate access for a group only the open incidents", async () => {
+        access.isDelegate = false;
+        renderLayout("/incidents/resolved", true);
+        expect(await screen.findByRole("tab", { name: "Open 3" })).toBeTruthy();
+        expect(screen.getAllByRole("tab")).toHaveLength(1);
+        // Past incidents stay with delegates: back to the open ones
+        expect(
+            screen
+                .getByRole("tab", { name: "Open 3" })
+                .getAttribute("aria-selected")
+        ).toBe("true");
     });
 
     it("refreshes the lists and their counts on an incident event", async () => {

@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Competition as WCIF } from "wcif-helpers";
 
+import GiveDelegateAccessModal from "@/Components/GiveDelegateAccessModal";
 import ProgressBar from "@/Components/shared/ProgressBar";
 import { StatusBadge, StatusDot } from "@/Components/shared/StatusBadge";
 import { Button } from "@/Components/ui/button";
@@ -16,6 +17,7 @@ import {
     RecentAttempt,
     Room,
 } from "@/lib/interfaces";
+import { isDelegate } from "@/lib/permissions";
 import { attemptWithPenaltyToString } from "@/lib/resultFormatters";
 import { GroupProgress, isGroupDone } from "@/lib/rooms";
 import {
@@ -94,6 +96,11 @@ const RoomCard = ({
     onMarkNotComing,
 }: RoomCardProps) => {
     const [isChangingGroup, setIsChangingGroup] = useState(false);
+    const [isGivingAccess, setIsGivingAccess] = useState(false);
+    // The groups running now first, then the next ones
+    const accessGroupIds = [
+        ...new Set([...room.currentGroupIds, ...(nextGroupIds ?? [])]),
+    ];
     const groups = room.currentGroupIds;
     const groupId = groups[0];
     const schedule = groupId
@@ -169,9 +176,22 @@ const RoomCard = ({
                             room={room}
                             onChangeGroup={() => setIsChangingGroup(true)}
                             onSetGroups={groupControls.onSetGroups}
+                            onGiveDelegateAccess={
+                                isDelegate() && accessGroupIds.length > 0
+                                    ? () => setIsGivingAccess(true)
+                                    : undefined
+                            }
                         />
                     )}
                 </header>
+
+                {isGivingAccess && (
+                    <GiveDelegateAccessModal
+                        isOpen
+                        onClose={() => setIsGivingAccess(false)}
+                        groupIds={accessGroupIds}
+                    />
+                )}
 
                 {groupControls && isChangingGroup && (
                     // A dialog from md up; a panel in the card on phones

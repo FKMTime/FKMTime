@@ -7,6 +7,7 @@ import RowActions from "@/Components/shared/RowActions";
 import { Badge } from "@/Components/ui/badge";
 import { TableCell, TableRow } from "@/Components/ui/table";
 import { useConfirm } from "@/hooks/useConfirm";
+import { useDelegateAccess } from "@/hooks/useDelegateAccess";
 import { useToast } from "@/hooks/useToast";
 import { deleteAttempt } from "@/lib/attempt";
 import { Attempt, AttemptStatus, AttemptType, Result } from "@/lib/interfaces";
@@ -36,6 +37,7 @@ const AttemptRow = ({
     const confirm = useConfirm();
     // A removed result is kept as it was; only its history can be read
     const isRemoved = !!result.removedAt;
+    const access = useDelegateAccess();
     const [isOpenEditAttemptModal, setIsOpenEditAttemptModal] =
         useState<boolean>(false);
     const [isOpenGiveExtraAttemptModal, setIsOpenGiveExtraAttemptModal] =
@@ -138,7 +140,7 @@ const AttemptRow = ({
                         primary={{
                             label: "Edit attempt",
                             icon: Pencil,
-                            hidden: isRemoved,
+                            hidden: isRemoved || !access.can("EDIT_ATTEMPT"),
                             onSelect: () => setIsOpenEditAttemptModal(true),
                         }}
                         items={[
@@ -150,14 +152,15 @@ const AttemptRow = ({
                             {
                                 label: "Give extra attempt",
                                 icon: MessageSquarePlus,
-                                hidden: isRemoved,
+                                hidden: isRemoved || !access.can("GIVE_EXTRA"),
                                 onSelect: () =>
                                     setIsOpenGiveExtraAttemptModal(true),
                             },
                             {
                                 label: "Delete attempt",
                                 icon: Trash2,
-                                hidden: isRemoved,
+                                hidden:
+                                    isRemoved || !access.can("DELETE_ATTEMPT"),
                                 destructive: true,
                                 onSelect: handleDelete,
                             },

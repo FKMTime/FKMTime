@@ -11,6 +11,7 @@ import LoadingPage from "@/Components/LoadingPage";
 import EmptyState from "@/Components/shared/EmptyState";
 import PageTabs from "@/Components/shared/PageTabs";
 import { Button } from "@/Components/ui/button";
+import { useDelegateAccess } from "@/hooks/useDelegateAccess";
 import { useLiveQuery } from "@/hooks/useLiveQuery";
 import { usePageHeader } from "@/hooks/usePageHeader";
 import { useToast } from "@/hooks/useToast";
@@ -56,6 +57,9 @@ const roundNumber = (roundId: string) => +roundId.split("-r")[1];
 
 const SingleResult = () => {
     const { id } = useParams<{ id: string }>();
+    // Users with delegate access for a group get only what it includes
+    // (SPEC-013); the server checks it again for this competitor
+    const access = useDelegateAccess();
     const navigate = useNavigate();
     const { toast } = useToast();
     const [competition, setCompetition] = useAtom(competitionAtom);
@@ -190,14 +194,20 @@ const SingleResult = () => {
 
     const isHeadToHead =
         getRoundInfoFromWcif(result.roundId, competition.wcif)?.format === "h";
-    const canGiveExtras = submittedAttempts.length > 0 && !isHeadToHead;
+    const canGiveExtras =
+        submittedAttempts.length > 0 &&
+        !isHeadToHead &&
+        access.can("EXTRAS_FOR_SEVERAL");
     const isRemoved = !!result.removedAt;
     const canDnfAll =
         (getAttemptsToDnf(result.attempts).length > 0 ||
             hasRemainingAttempts(result.attempts, maxAttempts)) &&
         !isHeadToHead &&
-        !isRemoved;
-    const canRemove = roundNumber(result.roundId) > 1 && !isRemoved;
+        !isRemoved &&
+        access.can("DNF_ALL");
+    const canRemove =
+        roundNumber(result.roundId) > 1 && !isRemoved && access.isDelegate;
+    const canReorder = !isRemoved && access.can("REORDER_ATTEMPTS");
     const eventResults = (personResults ?? [])
         .filter((other) => other.eventId === result.eventId && !other.removedAt)
         .sort((a, b) => roundNumber(a.roundId) - roundNumber(b.roundId));
@@ -249,7 +259,12 @@ const SingleResult = () => {
             <SingleResultHeader
                 result={result}
                 fetchData={fetchData}
-                onEnterAttempt={() => setIsOpenCreateAttemptModal(true)}
+                onEnterAttempt={
+                    access.can("ADD_ATTEMPT")
+                        ? () => setIsOpenCreateAttemptModal(true)
+                        : undefined
+                }
+                canManageResult={access.isDelegate}
                 standardAttempts={standardAttempts}
                 maxAttempts={maxAttempts}
                 onGiveExtras={
@@ -355,7 +370,7 @@ const SingleResult = () => {
                               },
                           ]
                         : []),
-                    ...(isRemoved
+                    ...(!canReorder
                         ? []
                         : [
                               {
@@ -388,7 +403,7 @@ const SingleResult = () => {
                         </EmptyState>
                     ) : (
                         <>
-                            {!isRemoved && (
+                            {canReorder && (
                                 <div className="flex justify-end border-b p-3">
                                     <Button
                                         variant="outline"

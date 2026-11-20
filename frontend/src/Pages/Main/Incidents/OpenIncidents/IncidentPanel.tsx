@@ -8,6 +8,7 @@ import LoadingPage from "@/Components/LoadingPage";
 import QuickActions from "@/Components/QuickActions";
 import { Button } from "@/Components/ui/button";
 import { useConfirm } from "@/hooks/useConfirm";
+import { useDelegateAccess } from "@/hooks/useDelegateAccess";
 import { usePageHeader } from "@/hooks/usePageHeader";
 import { useToast } from "@/hooks/useToast";
 import { activityCodeToName } from "@/lib/activities";
@@ -35,6 +36,8 @@ const IncidentPanel = ({ id, onClose, onDone }: IncidentPanelProps) => {
     const { toast } = useToast();
     const confirm = useConfirm();
     const competition = useAtomValue(competitionAtom);
+    // A user with delegate access for a group gets only what it includes
+    const access = useDelegateAccess();
     const [incident, setIncident] = useState<Incident | null>(null);
     const [previousIncidents, setPreviousIncidents] = useState<Incident[]>([]);
     const [isLoading, setIsLoading] = useState(false);
@@ -203,7 +206,10 @@ const IncidentPanel = ({ id, onClose, onDone }: IncidentPanelProps) => {
                     Quick actions
                 </p>
                 <div className="flex flex-wrap gap-2">
-                    <QuickActions handleQuickAction={handleQuickAction} />
+                    <QuickActions
+                        handleQuickAction={handleQuickAction}
+                        canGiveExtra={access.can("GIVE_EXTRA")}
+                    />
                 </div>
             </div>
 
@@ -221,14 +227,20 @@ const IncidentPanel = ({ id, onClose, onDone }: IncidentPanelProps) => {
                 handleSubmit={handleSubmit}
                 isLoading={isLoading}
                 timeLimit={timeLimit}
-                handleDelete={handleDelete}
+                handleDelete={
+                    access.can("DELETE_ATTEMPT") ? handleDelete : undefined
+                }
+                canGiveExtra={access.can("GIVE_EXTRA")}
+                canMarkNoteworthy={access.isDelegate}
             />
-            <Link
-                to={`/results/${incident.result.id}`}
-                className="text-sm font-semibold text-primary hover:underline"
-            >
-                Several attempts affected? Give extras on the result page
-            </Link>
+            {access.can("EXTRAS_FOR_SEVERAL") && (
+                <Link
+                    to={`/results/${incident.result.id}`}
+                    className="text-sm font-semibold text-primary hover:underline"
+                >
+                    Several attempts affected? Give extras on the result page
+                </Link>
+            )}
         </section>
     );
 };

@@ -1,12 +1,14 @@
 import { useAtom, useAtomValue } from "jotai";
 import { useCallback, useEffect } from "react";
-import { Outlet, useLocation } from "react-router-dom";
+import { Navigate, Outlet, useLocation } from "react-router-dom";
 
 import PageTabs, { PageTab } from "@/Components/shared/PageTabs";
+import { useDelegateAccess } from "@/hooks/useDelegateAccess";
 import { useLiveQuery } from "@/hooks/useLiveQuery";
 import { usePageHeader } from "@/hooks/usePageHeader";
 import { useSocketEvents } from "@/hooks/useSocketEvents";
 import { competitionAtom, unresolvedIncidentsCountAtom } from "@/lib/atoms";
+import { delegateGrantsQuery, grantState } from "@/lib/delegateGrants";
 import {
     getUnresolvedIncidentsCount,
     manualIncidentsQuery,
@@ -23,7 +25,13 @@ import {
     invalidateIncidentLists,
 } from "./incidentsContext";
 
-type IncidentTab = "open" | "resolved" | "noteworthy" | "warnings" | "manual";
+type IncidentTab =
+    | "open"
+    | "resolved"
+    | "noteworthy"
+    | "warnings"
+    | "manual"
+    | "access";
 
 const TAB_LABELS: Record<IncidentTab, string> = {
     open: "Open",
@@ -31,6 +39,7 @@ const TAB_LABELS: Record<IncidentTab, string> = {
     noteworthy: "Noteworthy",
     warnings: "Warnings",
     manual: "Manual",
+    access: "Delegate access",
 };
 
 const getActiveTab = (pathname: string): IncidentTab => {
@@ -39,7 +48,8 @@ const getActiveTab = (pathname: string): IncidentTab => {
         section === "resolved" ||
         section === "noteworthy" ||
         section === "warnings" ||
-        section === "manual"
+        section === "manual" ||
+        section === "access"
     )
         return section;
     return "open";
@@ -50,6 +60,9 @@ const IncidentsLayout = () => {
     const competition = useAtomValue(competitionAtom);
     const [openCount, setOpenCount] = useAtom(unresolvedIncidentsCountAtom);
     const useDevices = !!competition?.useFkmTimeDevices;
+    // Users with delegate access for a group see only the open incidents it
+    // covers; the rest is history, which stays with delegates (SPEC-013)
+    const { isDelegate } = useDelegateAccess();
     const activeTab = getActiveTab(pathname);
     // An open incident takes the whole screen on mobile
     const isIncidentOpen =
@@ -64,19 +77,30 @@ const IncidentsLayout = () => {
     });
     const { data: resolved } = useLiveQuery(resolvedIncidentsQuery(), {
         ...liveOptions,
-        enabled: useDevices,
+        enabled: useDevices && isDelegate,
     });
     const { data: noteworthy } = useLiveQuery(noteworthyIncidentsQuery(), {
         ...liveOptions,
-        enabled: useDevices,
+        enabled: useDevices && isDelegate,
     });
-    const { data: warnings } = useLiveQuery(warningsQuery(), liveOptions);
-    const { data: manual } = useLiveQuery(manualIncidentsQuery(), liveOptions);
+    const { data: warnings } = useLiveQuery(warningsQuery(), {
+        ...liveOptions,
+        enabled: isDelegate,
+    });
+    const { data: manual } = useLiveQuery(manualIncidentsQuery(), {
+        ...liveOptions,
+        enabled: isDelegate,
+    });
+    const { data: grants } = useLiveQuery(delegateGrantsQuery(), {
+        ...liveOptions,
+        enabled: useDevices && isDelegate,
+    });
     const counts = {
         resolved: resolved?.length,
         noteworthy: noteworthy?.length,
         warnings: warnings?.length,
         manual: manual?.length,
+        access: grants?.filter((grant) => grantState(grant) !== "ended").length,
     };
 
     // The open count also feeds the navigation badge
@@ -120,7 +144,7 @@ const IncidentsLayout = () => {
         !isIncidentOpen
     );
 
-    const tabs: PageTab<IncidentTab>[] = [
+    const delegateTabs: PageTab<IncidentTab>[] = [
         ...(useDevices
             ? ([
                   {
@@ -155,7 +179,24 @@ const IncidentsLayout = () => {
             count: counts.manual,
             to: "/incidents/manual",
         },
+        ...(useDevices
+            ? ([
+                  {
+                      value: "access",
+                      label: TAB_LABELS.access,
+                      count: counts.access,
+                      to: "/incidents/access",
+                  },
+              ] as PageTab<IncidentTab>[])
+            : []),
     ];
+    const tabs: PageTab<IncidentTab>[] = isDelegate
+        ? delegateTabs
+        : delegateTabs.filter((tab) => tab.value === "open");
+
+    if (!isDelegate && activeTab !== "open") {
+        return <Navigate to="/incidents" replace />;
+    }
 
     return (
         <div className="flex flex-col gap-5">

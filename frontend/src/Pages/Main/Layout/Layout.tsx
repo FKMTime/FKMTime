@@ -8,6 +8,8 @@ import {
     NewIncidentSocketData,
     useCompetitionSocketEvents,
 } from "@/hooks/useCompetitionSocketEvents";
+import { useDelegateAccess } from "@/hooks/useDelegateAccess";
+import { useDelegateAccessSocket } from "@/hooks/useDelegateAccessSocket";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import { useNavItems } from "@/hooks/useNavItems";
 import { useRefetchOnReconnect } from "@/hooks/useRefetchOnReconnect";
@@ -47,8 +49,10 @@ import {
     isNotificationsSupported,
     officialResultsDestinationName,
 } from "@/lib/utils";
+import { invalidateIncidentLists } from "@/Pages/Main/Incidents/incidentsContext";
 import { socket } from "@/socket";
 
+import DelegateAccessBanner from "./DelegateAccessBanner";
 import DesktopHeader from "./DesktopHeader";
 import DesktopSidebar from "./DesktopSidebar";
 import EnterAttemptFab from "./EnterAttemptFab";
@@ -69,7 +73,7 @@ const Layout = () => {
 
     const fetchUnresolvedIncidentsCount = useCallback(() => {
         getUnresolvedIncidentsCount().then((data) =>
-            setUnresolvedIncidentsCount(data.count)
+            setUnresolvedIncidentsCount(data.count ?? 0)
         );
     }, [setUnresolvedIncidentsCount]);
 
@@ -112,6 +116,13 @@ const Layout = () => {
         }
         Notification.requestPermission();
     }, [userKey]);
+
+    // Delegate access for a group given, started or ended (SPEC-013): what
+    // it shows changes with it
+    useDelegateAccessSocket(socket, userKey, () => {
+        fetchUnresolvedIncidentsCount();
+        void invalidateIncidentLists();
+    });
 
     useCompetitionSocketEvents(socket, userKey, {
         onIntegratedLiveRoundsChanged: () => {
@@ -305,6 +316,7 @@ const AppShell = ({ competition, unresolvedIncidentsCount }: AppShellProps) => {
     const { items, activeItem, pathname } = useNavItems();
     const pageHeader = useAtomValue(pageHeaderAtom);
     const setQuickEntry = useSetAtom(quickEntryAtom);
+    const delegateAccess = useDelegateAccess();
 
     const canAccessSettings = items.some((item) => item.id === "settings");
     const canEnterAttempts = isDelegate() && competition.useFkmTimeDevices;
@@ -364,6 +376,9 @@ const AppShell = ({ competition, unresolvedIncidentsCount }: AppShellProps) => {
                     backTo={backTo}
                     canAccessSettings={canAccessSettings}
                 />
+                {!delegateAccess.isDelegate && (
+                    <DelegateAccessBanner grants={delegateAccess.grants} />
+                )}
                 <main
                     className={cn(
                         "flex flex-1 flex-col gap-5 px-4 pb-[calc(max(env(safe-area-inset-bottom),0.375rem)+5.5rem)] pt-4 md:px-8 md:pb-10 md:pt-6",

@@ -1,6 +1,7 @@
 import {
     ArrowLeftRight,
     MoreHorizontal,
+    ShieldCheck,
     SkipBack,
     Square,
     X,
@@ -24,6 +25,8 @@ interface RoomGroupMenuProps {
     room: Room;
     onChangeGroup: () => void;
     onSetGroups: (room: Room, groupIds: string[]) => Promise<boolean>;
+    /** Delegates only: let someone resolve this room's incidents (SPEC-013) */
+    onGiveDelegateAccess?: () => void;
 }
 
 /**
@@ -34,6 +37,7 @@ const RoomGroupMenu = ({
     room,
     onChangeGroup,
     onSetGroups,
+    onGiveDelegateAccess,
 }: RoomGroupMenuProps) => {
     const ask = useAskToChangeGroups();
     const groups = room.currentGroupIds;
@@ -93,6 +97,12 @@ const RoomGroupMenu = ({
                     <SkipBack />
                     Back to the previous group
                 </DropdownMenuItem>
+                {onGiveDelegateAccess && (
+                    <DropdownMenuItem onSelect={onGiveDelegateAccess}>
+                        <ShieldCheck />
+                        Give delegate access…
+                    </DropdownMenuItem>
+                )}
                 <DropdownMenuSeparator />
                 {groups.length > 1 &&
                     groups.map((groupId) => (

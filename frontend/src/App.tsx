@@ -61,6 +61,9 @@ const NoteworthyIncidents = lazy(
         import("./Pages/Main/Incidents/NoteworthyIncidents/NoteworthyIncidents")
 );
 const Warnings = lazy(() => import("./Pages/Main/Incidents/Warnings/Warnings"));
+const DelegateAccess = lazy(
+    () => import("./Pages/Main/Incidents/DelegateAccess/DelegateAccess")
+);
 const Layout = lazy(() => import("./Pages/Main/Layout/Layout"));
 const NotFound = lazy(() => import("./Pages/Main/NotFound/NotFound"));
 const ServerLogs = lazy(() => import("./Pages/Main/ServerLogs/ServerLogs"));
@@ -178,6 +181,7 @@ const App = () => {
                             element: <NoteworthyIncidents />,
                         },
                         { path: "warnings", element: <Warnings /> },
+                        { path: "access", element: <DelegateAccess /> },
                         { path: "manual", element: <ManualIncidents /> },
                         {
                             path: "manual/create",

@@ -128,10 +128,11 @@ The backend sets `activatedAt` then, or at creation when the group is already
 running; scope uses it as the start of the group.
 
 When the group stops running — a room moves on, or the group is taken off by
-hand — the backend sets `endedAt` on its grants in the same transaction that
-changes `currentGroupIds` (`rooms.service.ts`). An ended grant never comes
-back, even if the group is started again; the delegate gives access again if
-they want it.
+hand — the backend sets `endedAt` on its grants. It syncs grants with the rooms
+right after a room changes groups (`rooms.service.ts`) and again before every
+access check, so a room changed any other way can't leave a grant working. An
+ended grant never comes back, even if the group is started again; the delegate
+gives access again if they want it.
 
 A delegate can end a grant at any time; that sets `endedAt` and `endedById`.
 
@@ -175,12 +176,13 @@ model DelegateGrantAction {
   id        String        @id @default(uuid())
   grantId   String        @map("grant_id")
   grant     DelegateGrant @relation(fields: [grantId], references: [id], onDelete: Cascade)
-  kind      String        // RESOLVE_INCIDENT, GIVE_EXTRA, ADD_ATTEMPT, …
-  resultId  String?       @map("result_id")
-  attemptId String?       @map("attempt_id")
-  // What the action changed, in words the delegate reads: "2nd attempt
-  // 12.34 → 12.84 (+2), resolved"
-  summary   String
+  kind       String        // RESOLVE_INCIDENT, GIVE_EXTRA, ADD_ATTEMPT, …
+  resultId   String?       @map("result_id")
+  attemptId  String?       @map("attempt_id")
+  personName String?       @map("person_name")
+  // What the action changed, in words the delegate reads:
+  // "Resolved attempt 2: 12.34 → 14.34 (+2)"
+  summary    String
   createdAt DateTime      @default(now()) @map("created_at")
 
   @@index([grantId, createdAt])
@@ -189,13 +191,15 @@ model DelegateGrantAction {
 ```
 
 `User` gets the three back-relations. `resultId`/`attemptId` are plain
-columns, not foreign keys: the action stays in the list after the attempt is
-deleted, and `summary` still says what it was.
+columns, not foreign keys: the action stays in the list after the attempt (or
+the whole result) is deleted, and `personName` and `summary` still say what it
+was.
 
 At most one grant that hasn't ended per user and group: giving access again
 for the same pair updates the permissions of the existing grant instead of
-creating a second one (a partial unique index on `(user_id, group_id) WHERE
-ended_at IS NULL`, written by hand in the migration).
+creating a second one. The service enforces it; the schema has no partial
+unique index, because the repo applies the schema with `prisma db push` and
+has no hand-written migrations to put one in.
 
 ### Who can give access, and to whom
 
@@ -212,21 +216,31 @@ effect, and ends, on the next request.
 
 - `DelegateGuard` stays as it is for everything a grant never allows.
 - A new `DelegateOrGrantGuard` lets through delegates, admins, and users with
-  at least one active grant. It goes on the endpoints listed in "What a grant
-  allows", and on the reads they need: `GET /incident/unresolved`,
-  `GET /incident/unresolved/count`, `GET /attempt/:id`,
-  `GET /attempt/:id/edit-log`, `GET /result/:id`, and the extras/DNF context
-  reads when that permission is granted.
-- The guard only answers "might be allowed". The service decides, through one
-  `DelegateAccessService.assertCan(user, permission, { resultId | attemptId })`
-  call at the top of each grantable service method: delegates and admins pass;
-  anyone else needs an active grant whose scope contains the target and whose
-  permissions include the action. Otherwise 403 with a message saying which:
-  "Your delegate access for 3x3 Cube Round 1 Group 2 has ended", "…doesn't
-  include deleting attempts", "…doesn't cover this competitor".
-- For a grantee, the same transaction that writes the change writes a
-  `DelegateGrantAction`. Delegates' own actions write nothing new; the
-  attempt edit log keeps recording everyone as today.
+  a grant that hasn't ended; anyone else gets a 403 saying why ("…has ended",
+  "…starts when the group starts", "Only delegates can do this"). It goes on
+  the endpoints listed in "What a grant allows", and on the reads they need:
+  `GET /incident/unresolved`, `GET /incident/unresolved/count`,
+  `GET /attempt/:id`, `GET /attempt/:id/edit-log`, `GET /result/:id`, and the
+  extras and DNF ruling reads (`GET /attempt/give-extras-for-all/:resultId`,
+  `GET /attempt/dnf/:resultId`), which the result page loads for any covered
+  result.
+- The guard only answers "might be allowed". Each grantable endpoint decides,
+  through one `DelegateGrantService.authorize(user, action, target)` call
+  before it calls the service: delegates and admins pass; anyone else needs an
+  active grant whose scope contains the target and whose permissions include
+  the action. Otherwise 403 with a message saying which: "Your delegate access
+  for 3x3x3 Cube, Round 1, Group 2 has ended", "…doesn't include deleting
+  attempts", "…doesn't cover this competitor". `PUT /attempt/:id` serves the
+  incident form, "Give extra attempt" and the edit form, so the change itself
+  says which action it is (`actionForAttemptUpdate`).
+- After the change goes through, the endpoint writes a `DelegateGrantAction`
+  for a grantee. It isn't in the change's transaction: losing a log line must
+  not undo a ruling a competitor is waiting on, so a failed write is logged and
+  dropped. Delegates' own actions write nothing new; the attempt edit log keeps
+  recording everyone as today.
+- A grantee's `PUT /attempt/:id` never saves the incident as noteworthy, and
+  `GET /attempt/:id` leaves out the competitor's earlier incidents. A DNF
+  ruling that would also remove results in later rounds is refused.
 - `GET /incident/unresolved` (and the count) return only in-scope incidents
   for a grantee, across all their active grants.
 
@@ -242,30 +256,32 @@ effect, and ends, on the next request.
 
 ### Socket.io
 
-- `joinIncidents` accepts delegates and users with an active grant. A grantee
+- `joinIncidents` accepts delegates and users with a grant that hasn't ended;
+  the panel joins again when its access changes. A grantee
   receives the same incident events as delegates; the frontend shows only
   in-scope ones. The payloads hold nothing a signed-in user can't already read
   on the round's results page.
 - New event `delegateGrantChanged` to the grantee's sockets (a
-  `user-${userId}` room joined on connect) when a grant is given, changed,
+  `user-${userId}` room every signed-in panel joins with `joinDelegateAccess`) when a grant is given, changed,
   activated or ended, so their panel updates without a reload.
-- New event `delegateGrantAction` to the `incidents` room when a grantee acts,
-  so the delegate's list of actions updates live.
+- New event `delegateGrantAction` to a `delegate-grants` room, which only
+  delegates join (`joinDelegateGrants`), when a grantee acts, and
+  `delegateGrantsChanged` there when any grant changes, so the delegates' list
+  updates live. Grantees in the `incidents` room don't receive them.
 
 ### Frontend
 
 **Delegate side.**
 
-- Home's room card (which already starts groups per room) gets "Give delegate
-  access" next to the running and the next group. It opens a dialog: pick a
-  user (search, delegates and admins left out), the group (pre-filled), and
-  the permission checkboxes with the defaults ticked. The group's existing
-  grants show in the same dialog with "End" buttons.
-- The Incidents page gets a "Delegate access" tab: active and waiting grants,
-  then ended ones from today. Each row opens the grantee's actions — time,
-  competitor, attempt, summary, link to the result. A badge shows how many
-  actions there are that this delegate hasn't opened yet (kept in
-  `localStorage`, not on the server).
+- Home's room card menu ("…") gets "Give delegate access…". It opens a
+  dialog: pick a user (delegates and admins left out), the group (the room's
+  running and next groups), and the permission checkboxes with the defaults
+  ticked.
+- The Incidents page gets a "Delegate access" tab, counting the grants that
+  haven't ended: active and waiting grants, then ended ones from today, each
+  with "End" while it's open. Each row opens the grantee's actions — time,
+  competitor (linking to the result) and summary. The tab also gives access
+  for any running group.
 
 **Grantee side.**
 
@@ -283,8 +299,9 @@ effect, and ends, on the next request.
   group starts". When it ends the banner says so for a few seconds and the
   Incidents item goes away.
 - On the incident form and the result page, buttons for actions the grant
-  doesn't include are hidden, not disabled. Results of competitors outside
-  scope open read-only, as for any staff user today.
+  doesn't include are hidden, not disabled; so are the result-wide actions a
+  grant never allows (resubmit, assign DNS, delete, remove). A result outside
+  the grant's scope doesn't open (403): the grantee has no reason to be there.
 
 ### Edge cases
 
@@ -335,14 +352,14 @@ effect, and ends, on the next request.
       return 403 for a grantee whatever the permissions.
 - [ ] Giving access to a delegate or admin is refused.
 - [ ] `User.roles` of the grantee is unchanged throughout.
-- [ ] Unit tests for `DelegateAccessService.assertCan` cover: delegate, no
+- [ ] Unit tests for `DelegateGrantService.authorize` cover: delegate, no
       grant, waiting grant, ended grant, out-of-scope result, missing
       permission, allowed.
 
 ## Rollout
 
-- One additive migration: the enum, two tables, and the partial unique index.
-  No data changes; existing users and roles keep their meaning.
+- Additive schema change, applied with `prisma db push`: the enum and two
+  tables. No data changes; existing users and roles keep their meaning.
 - No station, firmware or micro-connector change.
 - Revert: drop the guard from the endpoints (they go back to `DelegateGuard`)
   and hide the UI. The tables can stay until a later migration removes them.
