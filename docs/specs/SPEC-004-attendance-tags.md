@@ -43,8 +43,9 @@ competition can't be recorded today, or only as a comment:
   where someone else did the job. Anything else goes in the comment.
 - Starting the next group from the attendance page. Home already does it per
   room and for all rooms.
-- Competitors. Tags and no-shows are for staff roles only, as are late and
-  replaced today.
+- Tagging competitors as late, left early or replaced. Those are for staff
+  roles only. Competitors can only be marked as not coming, to one group at a
+  time (see "Competitors not coming").
 
 ## Design
 
@@ -94,16 +95,39 @@ groups, like the existing endpoints.
   sets `replacedById`. If a replacement is given and has no `PRESENT` row in
   that group and role, it is added as present and unassigned, exactly like
   "Add unassigned person". `replacedById` equal to the row's own person is 400.
-- `POST attendance/no-show` `{ personId: string, groupIds: string[], noShow: boolean }`.
+- `POST attendance/no-show` `{ personId: string, groupIds: string[], noShow: boolean, role?: "COMPETITOR" }`.
   Sets `noShow` on that person's non-competitor rows in those groups that are
   `ABSENT`; other rows are left alone. The frontend works out which groups fall
-  on the day (below), so the backend needs no schedule logic.
+  on the day (below), so the backend needs no schedule logic. With
+  `role: "COMPETITOR"` it tags their `ABSENT` competitor rows in those groups
+  instead, and then checks whether the rooms running those rounds can move on.
 - Existing endpoints clear the columns per the table above. The card-scan
-  upserts (`createAttendance`, `markJudgeAsPresent`) clear `noShow`.
+  upserts (`createAttendance`, `markJudgeAsPresent`, `markCompetitorAsPresent`)
+  clear `noShow`.
 - `GET attendance/group/:groupId` and `GET attendance/person/:id` include
   `replacedBy` (id and name).
 - `GET attendance/missed` adds `leftEarlyAssignments` and its count, and
   `noShowAssignments` and its count.
+
+### Competitors not coming
+
+A competitor who isn't coming would otherwise hold up the automatic group
+change. Until a group has been quiet for five minutes, the change can't tell
+them from someone queueing for a station. An absent competitor row has "Not
+coming" (and "Coming after all") in its menu, in the attendance view and on
+Home, where the room card lists who the group still waits for. It tags that
+group only: someone skipping one event may still compete in the next.
+
+The automatic group change leaves out anyone `ABSENT` and tagged, so a group
+whose other competitors are done moves on right after the last attempt. Someone
+tagged who competes after all counts as usual. A scan marks them present and
+clears the tag.
+
+`GET competition/rooms/progress` adds `wait` to each running group: its state,
+who hasn't started (with their person id when they have a row to tag), how many
+are still solving, how many have an incident or an extra outstanding, and when
+the room moves on by itself if nobody else solves. Home shows that under the
+progress bar.
 
 ### Which groups are "the day"
 

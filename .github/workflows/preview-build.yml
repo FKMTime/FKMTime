@@ -72,6 +72,9 @@ jobs:
           # Shown in the banner that marks the app as a preview
           VITE_PREVIEW_PR_NUMBER: ${{ github.event.pull_request.number }}
           VITE_PREVIEW_PR_URL: ${{ github.event.pull_request.html_url }}
+          # Puts the station tester in the build; the preview's backend turns
+          # its endpoint on with STATION_TESTER_ENABLED=true
+          VITE_STATION_TESTER: "true"
         run: |
           npm ci --no-audit --no-fund
           VITE_DOCKERBUILD=true VITE_GIT_COMMIT="${HEAD_SHA:0:7}" npm run build

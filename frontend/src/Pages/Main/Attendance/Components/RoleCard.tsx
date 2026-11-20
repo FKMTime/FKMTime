@@ -45,7 +45,10 @@ export interface AttendanceHandlers {
         replacedById?: string
     ) => void;
     onSetLeftEarly: (id: string, leftEarly: boolean) => void;
-    /** Not coming for the rest of the day, or coming after all */
+    /**
+     * Not coming, or coming after all: staff for the rest of the day, a
+     * competitor to this group
+     */
     onSetNoShow: (activity: StaffActivity, noShow: boolean) => void;
 }
 
@@ -169,6 +172,17 @@ const RoleCard = ({
                     onSelect: () => setDialog({ type: "group", activity }),
                 }}
                 items={[
+                    activity.noShow
+                        ? {
+                              label: "Coming after all",
+                              icon: CalendarCheck,
+                              onSelect: () => onSetNoShow(activity, false),
+                          }
+                        : {
+                              label: "Not coming",
+                              icon: CalendarX,
+                              onSelect: () => onSetNoShow(activity, true),
+                          },
                     {
                         label: "Remove from round",
                         icon: UserMinus,

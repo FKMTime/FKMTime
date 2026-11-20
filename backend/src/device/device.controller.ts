@@ -82,6 +82,12 @@ export class DeviceController {
   }
 
   /** The device's whole log file, as the connector wrote it (SPEC-009) */
+  @UseGuards(OrganizerGuard)
+  @Get(':id/attempts')
+  async getDeviceAttempts(@Param('id') id: string) {
+    return this.deviceService.getDeviceAttempts(id);
+  }
+
   @UseGuards(AdminGuard)
   @Get(':id/logs')
   async downloadDeviceLogs(@Param('id') id: string) {

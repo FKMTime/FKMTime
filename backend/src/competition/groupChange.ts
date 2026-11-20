@@ -57,42 +57,63 @@ const lastActivityAt = (attempt: Attempt) =>
     -Infinity,
   );
 
-/** Where one competitor's result stands as far as leaving the group goes */
-export const getResultState = (
+/** What keeps a started result from being done */
+export type PendingReason = 'incident' | 'extra' | 'solving';
+
+interface ResultStanding {
+  state: ResultState;
+  /** Only for a pending result */
+  reason?: PendingReason;
+}
+
+const pending = (reason: PendingReason): ResultStanding => ({
+  state: 'pending',
+  reason,
+});
+
+/** Where one competitor's result stands, and what it is waiting for */
+const getResultStanding = (
   attempts: Attempt[],
   rules: RoundRules,
-): ResultState => {
+): ResultStanding => {
   // Stations can't take attempts for an earlier round, so the last group
   // has to wait for any redo, while earlier ones can leave it to the next
   if (!rules.hasNextGroup && getAttemptsWaitingForExtra(attempts).length > 0) {
-    return 'pending';
+    return pending('extra');
   }
   if (
     rules.hasNextGroup &&
     isRedoNotStarted(attempts, rules.freshSetGrantIds)
   ) {
-    return 'done';
+    return { state: 'done' };
+  }
+  if (attempts.some((a) => a.status === AttemptStatus.UNRESOLVED)) {
+    return pending('incident');
   }
   if (
     attempts.some(
-      (a) =>
-        a.status === AttemptStatus.UNRESOLVED ||
-        (a.status === AttemptStatus.EXTRA_GIVEN && !a.replacedBy) ||
-        // Someone with a scramble in hand has started, even before a solve
-        isBeingSolved(a),
+      (a) => a.status === AttemptStatus.EXTRA_GIVEN && !a.replacedBy,
     )
   ) {
-    return 'pending';
+    return pending('extra');
   }
+  // Someone with a scramble in hand has started, even before a solve
+  if (attempts.some(isBeingSolved)) return pending('solving');
   const counting = getCountingAttempts(attempts);
-  if (counting.length === 0) return 'notStarted';
+  if (counting.length === 0) return { state: 'notStarted' };
   const expected = getExpectedAttempts(
     counting,
     rules.maxAttempts,
     rules.cutoff,
   );
-  return counting.length >= expected ? 'done' : 'pending';
+  return counting.length >= expected ? { state: 'done' } : pending('solving');
 };
+
+/** Where one competitor's result stands as far as leaving the group goes */
+export const getResultState = (
+  attempts: Attempt[],
+  rules: RoundRules,
+): ResultState => getResultStanding(attempts, rules).state;
 
 /**
  * - notStarted: nobody in the group has an attempt yet
@@ -104,10 +125,30 @@ export const getResultState = (
 export type GroupState =
   'notStarted' | 'inProgress' | 'waitingForCompetitors' | 'finished';
 
+/** Someone the group waits for who hasn't started */
+export interface MissingCompetitor {
+  /** Null for someone the stored WCIF assigns who has no row or result yet */
+  personId: string | null;
+  registrantId: number | null;
+}
+
+/** What keeps the group from being finished */
+export interface GroupBlockers {
+  /** Not started and not marked as not coming */
+  notStarted: MissingCompetitor[];
+  /** Competitors with attempts still to do */
+  solving: number;
+  /** Competitors with an incident to resolve */
+  incidents: number;
+  /** Competitors with an extra attempt still to do */
+  extras: number;
+}
+
 export interface GroupStatus {
   state: GroupState;
   /** When the group's competitors last solved or were handed a scramble (ms) */
   lastAttemptAt: number | null;
+  blockers: GroupBlockers;
 }
 
 /** A COMPETITOR attendance row, for any group of the round */
@@ -117,6 +158,8 @@ export interface CompetitorRow {
   groupId: string;
   isAssigned: boolean;
   status: StaffActivityStatus;
+  /** Marked as not coming to the group */
+  noShow?: boolean;
 }
 
 const countsInItsGroup = (row: CompetitorRow) =>
@@ -132,11 +175,12 @@ const countsInItsGroup = (row: CompetitorRow) =>
  *   only at the next sync),
  * - those marked present in it, competitors added by hand included.
  * Someone the stored WCIF still assigns here but whose assigned row is now in
- * another group of the round has moved, and is left out. Other groups and
- * rooms of the same round don't hold the group back, and neither does anyone
- * whose result in the round was removed (Regulation 9t). The last group of
- * the round in the room also waits for redos of anyone from the room's
- * earlier groups (roomRoundRegistrantIds / roomRoundGroupIds).
+ * another group of the round has moved, and is left out. Someone absent and
+ * marked as not coming isn't waited for, unless they start after all. Other
+ * groups and rooms of the same round don't hold the group back, and neither
+ * does anyone whose result in the round was removed (Regulation 9t). The
+ * last group of the round in the room also waits for redos of anyone from
+ * the room's earlier groups (roomRoundRegistrantIds / roomRoundGroupIds).
  */
 export const getGroupStatus = (input: {
   groupId: string;
@@ -194,25 +238,36 @@ export const getGroupStatus = (input: {
   );
 
   let started = false;
-  let pending = false;
+  let isPending = false;
   let lastAttemptAt: number | null = null;
+  const blockers: GroupBlockers = {
+    notStarted: [],
+    solving: 0,
+    incidents: 0,
+    extras: 0,
+  };
   const startedRegistrantIds = new Set<number>();
   const startedPersonIds = new Set<string>();
   for (const result of members) {
-    const state = getResultState(result.attempts, input.rules);
+    const standing = getResultStanding(result.attempts, input.rules);
     for (const attempt of result.attempts) {
       const at = lastActivityAt(attempt);
       if (at !== -Infinity && (lastAttemptAt ?? -Infinity) < at) {
         lastAttemptAt = at;
       }
     }
-    if (state === 'notStarted') continue;
+    if (standing.state === 'notStarted') continue;
     started = true;
     if (result.person.registrantId !== null) {
       startedRegistrantIds.add(result.person.registrantId);
     }
     startedPersonIds.add(result.personId);
-    if (state === 'pending') pending = true;
+    if (standing.state === 'pending') {
+      isPending = true;
+      if (standing.reason === 'incident') blockers.incidents++;
+      else if (standing.reason === 'extra') blockers.extras++;
+      else blockers.solving++;
+    }
   }
 
   if (!input.rules.hasNextGroup) {
@@ -223,26 +278,78 @@ export const getGroupStatus = (input: {
         .filter((row) => roomGroupIds.has(row.groupId) && countsInItsGroup(row))
         .map((row) => row.personId),
     );
-    const redoWaiting = results.some(
-      (r) =>
-        ((r.person.registrantId !== null &&
+    const memberIds = new Set(members.map((r) => r.personId));
+    for (const r of results) {
+      const isInRoom =
+        (r.person.registrantId !== null &&
           roomAssigned.has(r.person.registrantId)) ||
-          roomPersonIds.has(r.personId)) &&
-        getAttemptsWaitingForExtra(r.attempts).length > 0,
-    );
-    if (redoWaiting) pending = true;
+        roomPersonIds.has(r.personId);
+      if (isInRoom && getAttemptsWaitingForExtra(r.attempts).length > 0) {
+        isPending = true;
+        // Members waiting for a redo are already counted above
+        if (!memberIds.has(r.personId)) blockers.extras++;
+      }
+    }
   }
 
-  if (!started) return { state: 'notStarted', lastAttemptAt };
-  if (pending) return { state: 'inProgress', lastAttemptAt };
-  const someoneNotStarted =
-    [...assigned].some((id) => !startedRegistrantIds.has(id)) ||
-    [...memberPersonIds].some((id) => !startedPersonIds.has(id));
-  return {
-    state: someoneNotStarted ? 'waitingForCompetitors' : 'finished',
+  // Absent and not coming: nobody waits for them, unless they start after all
+  const notComingRows = rows.filter(
+    (row) =>
+      isHere(row) && row.noShow && row.status === StaffActivityStatus.ABSENT,
+  );
+  const notComingPersonIds = new Set(notComingRows.map((row) => row.personId));
+  const notComingRegistrantIds = new Set(
+    notComingRows.map((row) => row.registrantId).filter((id) => id !== null),
+  );
+  // Only a row in this group can be marked as not coming
+  const personIdByRegistrantId = new Map(
+    rows
+      .filter((row) => isHere(row) && row.registrantId !== null)
+      .map((row) => [row.registrantId, row.personId]),
+  );
+  for (const id of assigned) {
+    if (startedRegistrantIds.has(id) || notComingRegistrantIds.has(id)) {
+      continue;
+    }
+    blockers.notStarted.push({
+      personId: personIdByRegistrantId.get(id) ?? null,
+      registrantId: id,
+    });
+  }
+  const listedPersonIds = new Set(
+    blockers.notStarted.map((m) => m.personId).filter((id) => id !== null),
+  );
+  const registrantIdByPersonId = new Map(
+    rows.map((row) => [row.personId, row.registrantId]),
+  );
+  for (const id of memberPersonIds) {
+    if (
+      startedPersonIds.has(id) ||
+      notComingPersonIds.has(id) ||
+      listedPersonIds.has(id)
+    ) {
+      continue;
+    }
+    const registrantId = registrantIdByPersonId.get(id) ?? null;
+    // Someone assigned is listed already, under their registrant id
+    if (registrantId !== null && assigned.has(registrantId)) continue;
+    blockers.notStarted.push({ personId: id, registrantId });
+  }
+
+  const status = (state: GroupState): GroupStatus => ({
+    state,
     lastAttemptAt,
-  };
+    blockers,
+  });
+  if (!started) return status('notStarted');
+  if (isPending) return status('inProgress');
+  return status(
+    blockers.notStarted.length > 0 ? 'waitingForCompetitors' : 'finished',
+  );
 };
+
+/** What the timing of a group change goes by */
+type GroupTiming = Pick<GroupStatus, 'state' | 'lastAttemptAt'>;
 
 /**
  * Since when the group has been quiet in the room: the later of the room
@@ -250,15 +357,31 @@ export const getGroupStatus = (input: {
  * room got there (a competitor solving early during an earlier group) don't
  * make a group the room only just reached look quiet.
  */
-export const getQuietSince = (status: GroupStatus, enteredAt: number) =>
+export const getQuietSince = (status: GroupTiming, enteredAt: number) =>
   Math.max(enteredAt, status.lastAttemptAt ?? enteredAt);
 
 /** Whether nobody in the group has entered an attempt for a while */
 export const isGroupQuiet = (
-  status: GroupStatus,
+  status: GroupTiming,
   enteredAt: number,
   now: number,
 ) => now - getQuietSince(status, enteredAt) > GROUP_IDLE_BEFORE_CHANGE_MS;
+
+/**
+ * When the periodic check, run every intervalMs, would let a group that only
+ * waits for competitors who haven't started go, if nobody solves before then
+ */
+export const getMovesOnAt = (
+  status: GroupTiming,
+  enteredAt: number,
+  intervalMs: number,
+) => {
+  if (status.state !== 'waitingForCompetitors') return null;
+  const quietEnough =
+    getQuietSince(status, enteredAt) + GROUP_IDLE_BEFORE_CHANGE_MS;
+  // The first run at or after that moment, as it runs a moment past the mark
+  return Math.ceil(quietEnough / intervalMs) * intervalMs;
+};
 
 /**
  * Whether the room can leave the group. Right after an attempt only a group
@@ -268,7 +391,7 @@ export const isGroupQuiet = (
  * waiting for a station.
  */
 export const canLeaveGroup = (
-  status: GroupStatus,
+  status: GroupTiming,
   trigger: 'event' | 'cron',
   now: number,
   enteredAt: number,

@@ -98,6 +98,42 @@ export class DeviceService {
     }));
   }
 
+  /** A device and every attempt it recorded, newest first */
+  async getDeviceAttempts(id: string) {
+    const device = await this.prisma.device.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        name: true,
+        type: true,
+        retiredAt: true,
+        room: { select: { id: true, name: true } },
+      },
+    });
+    if (!device) {
+      throw new HttpException('Device not found', 404);
+    }
+    const attempts = await this.prisma.attempt.findMany({
+      where: { deviceId: id },
+      // Attempts entered without a solve time sort by when they were saved
+      orderBy: [
+        { solvedAt: { sort: 'desc', nulls: 'last' } },
+        { createdAt: 'desc' },
+      ],
+      include: {
+        judge: { select: { id: true, name: true } },
+        result: {
+          select: {
+            id: true,
+            roundId: true,
+            person: { select: { id: true, name: true, registrantId: true } },
+          },
+        },
+      },
+    });
+    return { device, attempts };
+  }
+
   async createDevice(data: DeviceDto) {
     let device;
     try {

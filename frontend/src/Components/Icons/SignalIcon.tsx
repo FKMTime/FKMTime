@@ -1,5 +1,3 @@
-import { Wifi, WifiHigh, WifiLow, WifiZero } from "lucide-react";
-
 import {
     Tooltip,
     TooltipContent,
@@ -47,18 +45,56 @@ const signalDescription = (signal: StationSignal) =>
         signal.link && routerLine(signal.link),
     ].filter(Boolean) as string[];
 
-const iconFor = (signal: StationSignal) => {
-    if (signal.level === "weak") return { Icon: WifiLow, tone: "text-warning" };
+/** How many of the three arcs are lit, and in which colour */
+const barsFor = (signal: StationSignal) => {
+    if (signal.level === "weak") return { bars: 1, tone: "text-warning" };
     if (signal.level === "ok")
         return {
-            Icon:
-                signal.rssi !== null && signal.rssi > STRONG_ABOVE_DBM
-                    ? Wifi
-                    : WifiHigh,
+            bars:
+                signal.rssi !== null && signal.rssi > STRONG_ABOVE_DBM ? 3 : 2,
             tone: "text-foreground",
         };
-    return { Icon: WifiZero, tone: "text-muted-foreground" };
+    return { bars: 0, tone: "text-muted-foreground" };
 };
+
+/** Arcs from the innermost out, the same geometry as Lucide's Wi-Fi icon */
+const ARCS = [
+    "M8.5 16.429a5 5 0 0 1 7 0",
+    "M5 12.859a10 10 0 0 1 14 0",
+    "M2 8.82a15 15 0 0 1 20 0",
+];
+
+/** Unlit arcs stay drawn, so every state is the same size */
+const UNLIT_OPACITY = 0.25;
+
+/**
+ * Always all three arcs with the unlit ones dimmed, like a phone's status bar:
+ * a weaker signal reads as fewer bright bars, not as a smaller icon. No
+ * reading at all dims everything, dot included.
+ */
+const WifiBars = ({ bars }: { bars: number }) => (
+    <svg
+        xmlns="http://www.w3.org/2000/svg"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth={2.25}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        className="size-6"
+        data-bars={bars}
+        aria-hidden
+    >
+        <path d="M12 20h.01" strokeOpacity={bars > 0 ? 1 : UNLIT_OPACITY} />
+        {ARCS.map((d, index) => (
+            <path
+                key={d}
+                d={d}
+                strokeOpacity={index < bars ? 1 : UNLIT_OPACITY}
+            />
+        ))}
+    </svg>
+);
 
 interface SignalIconProps {
     signal: StationSignal;
@@ -67,7 +103,7 @@ interface SignalIconProps {
 
 /** A station's Wi-Fi signal, with what to do about it in the tooltip (SPEC-008) */
 const SignalIcon = ({ signal, className }: SignalIconProps) => {
-    const { Icon, tone } = iconFor(signal);
+    const { bars, tone } = barsFor(signal);
     const lines = signalDescription(signal);
     return (
         <TooltipProvider delayDuration={200}>
@@ -81,7 +117,7 @@ const SignalIcon = ({ signal, className }: SignalIconProps) => {
                         className
                     )}
                 >
-                    <Icon className="size-6" strokeWidth={2.25} aria-hidden />
+                    <WifiBars bars={bars} />
                 </TooltipTrigger>
                 <TooltipContent>
                     {lines.map((line) => (

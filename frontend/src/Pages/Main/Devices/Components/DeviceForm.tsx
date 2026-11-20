@@ -134,6 +134,7 @@ const DeviceForm = ({
                                         value={field.value}
                                         onValueChange={field.onChange}
                                         fullWidth
+                                        variant="choice"
                                         options={rooms.map((room) => ({
                                             value: room.id,
                                             label: room.name,

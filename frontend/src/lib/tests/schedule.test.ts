@@ -96,7 +96,7 @@ beforeEach(() => {
 });
 
 describe("findGroupSchedule", () => {
-    it("locates the group, its position and the round end in the room", () => {
+    it("locates the group, its position and times in the room", () => {
         expect(findGroupSchedule(wcif, "333-r1-g2", "Main room")).toEqual({
             groupId: "333-r1-g2",
             roundId: "333-r1",
@@ -107,7 +107,6 @@ describe("findGroupSchedule", () => {
             position: 2,
             startTime: "2026-04-18T09:00:00Z",
             endTime: "2026-04-18T10:00:00Z",
-            roundEndTime: "2026-04-18T10:00:00Z",
         });
     });
 
@@ -276,7 +275,17 @@ describe("getScheduleOffsetMinutes", () => {
 });
 
 describe("getNextActivityInRoom", () => {
-    it("returns the first activity after the round, using names for breaks", () => {
+    it("returns the next group while the round still has groups left", () => {
+        expect(
+            getNextActivityInRoom(wcif, "Main room", "2026-04-18T09:00:00Z")
+        ).toEqual({
+            name: "3x3x3 Cube · Round 1 · Group 2",
+            startTime: "2026-04-18T09:00:00Z",
+            endTime: "2026-04-18T10:00:00Z",
+        });
+    });
+
+    it("returns breaks by their name after the last group", () => {
         expect(
             getNextActivityInRoom(wcif, "Main room", "2026-04-18T10:00:00Z")
         ).toEqual({
@@ -286,7 +295,7 @@ describe("getNextActivityInRoom", () => {
         });
     });
 
-    it("names rounds by event and round", () => {
+    it("falls back to the round when it has no groups", () => {
         expect(
             getNextActivityInRoom(wcif, "Main room", "2026-04-18T10:30:00Z")
                 ?.name

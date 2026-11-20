@@ -40,6 +40,9 @@ const MostMissedAssignments = lazy(
 const CheckIn = lazy(() => import("./Pages/Main/CheckIn/CheckIn"));
 const Competition = lazy(() => import("./Pages/Main/Competition/Competition"));
 const Devices = lazy(() => import("./Pages/Main/Devices/Devices"));
+const DeviceSolves = lazy(
+    () => import("./Pages/Main/Devices/DeviceSolves/DeviceSolves")
+);
 const Home = lazy(() => import("./Pages/Main/Home/Home"));
 const ImportCompetition = lazy(
     () => import("./Pages/Main/ImportCompetition/ImportCompetition")
@@ -110,10 +113,13 @@ const PublicResults = lazy(() => import("./Pages/Public/PublicResults"));
 const PublicLiveSolving = lazy(
     () => import("./Pages/Public/PublicLiveSolving")
 );
-// DEV is false at build time, so a production bundle doesn't contain the page
-const StationTester = import.meta.env.DEV
-    ? lazy(() => import("./Pages/Main/StationTester/StationTester"))
-    : null;
+// Decided at build time, so a production bundle doesn't contain the page. The
+// same test as STATION_TESTER_ENABLED, written out: through an import Rollup
+// still emits the page's chunk, unreferenced.
+const StationTester =
+    import.meta.env.DEV || import.meta.env.VITE_STATION_TESTER === "true"
+        ? lazy(() => import("./Pages/Main/StationTester/StationTester"))
+        : null;
 
 const App = () => {
     const router = createBrowserRouter([
@@ -243,6 +249,10 @@ const App = () => {
                 {
                     path: "devices",
                     element: <Devices />,
+                },
+                {
+                    path: "devices/:id/solves",
+                    element: <DeviceSolves />,
                 },
                 {
                     path: "logs",

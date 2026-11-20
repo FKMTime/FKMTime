@@ -37,6 +37,7 @@ import {
     updateRoomGroups,
 } from "@/lib/rooms";
 import { getStartLabel, sortRoomsBySchedule } from "@/lib/schedule";
+import { useNoShow } from "@/Pages/Main/Attendance/useNoShow";
 import { invalidateIncidentLists } from "@/Pages/Main/Incidents/incidentsContext";
 
 import IntegratedLiveConnectionAlert from "./Components/IntegratedLiveConnectionAlert";
@@ -104,6 +105,9 @@ const Home = () => {
     const [now, setNow] = useState(() => new Date());
 
     const canStartGroups = isOrganizerOrDelegate();
+    const canOpenAttendance = isStageLeaderOrOrganizerOrDelegate();
+    // A competitor not coming no longer holds their group back
+    const setNoShow = useNoShow(refreshResults);
     const canResolveIncidents = isDelegate();
 
     // Whether rooms move on by themselves; it's changed in the settings.
@@ -286,7 +290,7 @@ const Home = () => {
             now={now}
             isRoomNamedElsewhere={rooms.length > 1}
             canEnterAttempts={isDelegate() && competition.useFkmTimeDevices}
-            canOpenAttendance={isStageLeaderOrOrganizerOrDelegate()}
+            canOpenAttendance={canOpenAttendance}
             canResolveIncidents={canResolveIncidents}
             onStartNext={handleStartNext}
             onEnterAttempt={(roundId) =>
@@ -296,6 +300,12 @@ const Home = () => {
                 (station) => station.roomId === room.id
             )}
             onBackToRoom={isDelegate() ? handleBackToRoom : undefined}
+            onMarkNotComing={
+                canOpenAttendance
+                    ? (person, groupId) =>
+                          setNoShow(person, [groupId], true, true)
+                    : undefined
+            }
             groupControls={
                 canStartGroups
                     ? {

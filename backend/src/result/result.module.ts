@@ -26,7 +26,7 @@ import { TutorialFromDeviceService } from './tutorialFromDevice.service';
   imports: [
     AuthModule,
     forwardRef(() => AttemptModule),
-    AttendanceModule,
+    forwardRef(() => AttendanceModule),
     WcaModule,
     ContestsModule,
     forwardRef(() => DeviceModule),

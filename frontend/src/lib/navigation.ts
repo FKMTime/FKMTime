@@ -51,7 +51,7 @@ export interface NavContext {
     isOrganizerOrDelegate: boolean;
     isStageLeaderOrAbove: boolean;
     canAccessSettings: boolean;
-    /** Only the dev build has the station tester */
+    /** Only the dev build and PR previews have the station tester */
     showStationTester?: boolean;
 }
 
@@ -247,6 +247,7 @@ export const getDetailLabel = (pathname: string): string | null => {
         matchPath("/results/public/:id", pathname)
     )
         return "Public view";
+    if (matchPath("/devices/:id/solves", pathname)) return "Solves";
     const result = matchPath("/results/:id", pathname);
     if (result && !RESULTS_SECTIONS.includes(result.params.id!))
         return "Result";

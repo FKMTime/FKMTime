@@ -129,7 +129,7 @@ export class CompetitionController {
   @UseGuards(AuthGuard('jwt'))
   @Get('rooms/progress')
   async getRoomsProgress() {
-    return this.roomsService.getRoomsProgress();
+    return this.competitionService.getRoomsProgress();
   }
 
   @UseGuards(OrganizerGuard)

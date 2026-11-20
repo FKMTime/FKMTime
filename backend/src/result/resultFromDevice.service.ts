@@ -375,8 +375,10 @@ export class ResultFromDeviceService {
     const sortedAttempts = getSortedStandardAttempts(attempts);
 
     let extraEntered = false;
+    let enteredAttemptNumber = 1;
     const [attemptToReplace] = getAttemptsWaitingForExtra(attempts);
     if (attemptToReplace) {
+      enteredAttemptNumber = getNextExtraNumber(attempts);
       const extraAttempt =
         await this.createAnExtraAttemptAnReplaceTheOriginalOne(
           {
@@ -385,7 +387,7 @@ export class ResultFromDeviceService {
             judge,
             competitor,
             result,
-            attemptNumber: getNextExtraNumber(attempts),
+            attemptNumber: enteredAttemptNumber,
           },
           attemptToReplace.id,
           tx,
@@ -431,6 +433,7 @@ export class ResultFromDeviceService {
       if (lastAttempt) {
         attemptNumber = lastAttempt.attemptNumber + 1;
       }
+      enteredAttemptNumber = attemptNumber;
       const attempt = await this.createOrUpdateScrambledAttempt(
         data,
         AttemptType.STANDARD_ATTEMPT,
@@ -467,7 +470,8 @@ export class ResultFromDeviceService {
         personName: competitor.name,
         value: finalData.value,
         penalty: finalData.penalty,
-        enteredAt: Date.now(),
+        attemptNumber: enteredAttemptNumber,
+        isExtra: extraEntered,
       });
     });
     const enteredMessage = finalData.limitPassed

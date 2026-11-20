@@ -491,6 +491,29 @@ export interface RecentAttempt extends Attempt {
     };
 }
 
+/** An attempt as a device's solve list shows it, with its competitor and round */
+export interface DeviceAttempt extends Attempt {
+    /** Shown instead of solvedAt for attempts entered without a solve time */
+    createdAt: string;
+    result: {
+        id: string;
+        roundId: string;
+        person: { id: string; name: string; registrantId?: number };
+    };
+}
+
+/** Every attempt a device recorded, newest first */
+export interface DeviceAttempts {
+    device: {
+        id: string;
+        name: string;
+        type: DeviceType;
+        retiredAt?: string | null;
+        room?: { id: string; name: string } | null;
+    };
+    attempts: DeviceAttempt[];
+}
+
 export interface AttemptToEnterWithScorecard extends Attempt {
     isNew?: boolean;
 }

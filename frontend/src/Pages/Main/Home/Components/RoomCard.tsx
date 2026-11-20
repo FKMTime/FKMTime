@@ -30,6 +30,7 @@ import {
 import { cn } from "@/lib/utils";
 
 import ChangeGroup from "./ChangeGroup";
+import GroupWaitInfo from "./GroupWaitInfo";
 import RoomGroupMenu from "./RoomGroupMenu";
 
 export type { RecentAttempt };
@@ -66,6 +67,11 @@ interface RoomCardProps {
     onBackToRoom?: (station: Device) => void;
     /** Undefined hides the room's "…" menu */
     groupControls?: GroupControls;
+    /** Marks a competitor as not coming to the group; undefined hides it */
+    onMarkNotComing?: (
+        person: { id: string; name: string },
+        groupId: string
+    ) => void;
 }
 
 const RoomCard = ({
@@ -85,6 +91,7 @@ const RoomCard = ({
     pointedStations = [],
     onBackToRoom,
     groupControls,
+    onMarkNotComing,
 }: RoomCardProps) => {
     const [isChangingGroup, setIsChangingGroup] = useState(false);
     const groups = room.currentGroupIds;
@@ -102,10 +109,17 @@ const RoomCard = ({
     const startLabel = nextGroupIds
         ? getStartLabel(room.currentGroupIds, nextGroupIds)
         : null;
+    // After the last of the running groups, so a group already on the floor
+    // never shows as next
+    const runningGroupsEnd = groups
+        .map((id) => findGroupSchedule(wcif, id, room.name)?.endTime)
+        .filter((end): end is string => !!end)
+        .sort()
+        .at(-1);
     const nextActivity = getNextActivityInRoom(
         wcif,
         room.name,
-        schedule?.roundEndTime ?? now.toISOString()
+        runningGroupsEnd ?? now.toISOString()
     );
     // A running room is never "Starts …"; an empty one shows its next group
     const scheduleStatus = getRoomScheduleStatus(
@@ -184,6 +198,10 @@ const RoomCard = ({
                         roomName={room.name}
                         wcif={wcif}
                         progress={progressOf(id)}
+                        onMarkNotComing={
+                            onMarkNotComing &&
+                            ((person) => onMarkNotComing(person, id))
+                        }
                         progressLabel={
                             groups.length === 1
                                 ? `Results entered in ${room.name}`
@@ -413,6 +431,7 @@ interface RunningGroupProps {
     progressLabel: string;
     /** The group's own actions, when the room runs several */
     actions?: React.ReactNode;
+    onMarkNotComing?: (person: { id: string; name: string }) => void;
 }
 
 /** A group the room runs: what it is, when, and how many results are in */
@@ -423,6 +442,7 @@ const RunningGroup = ({
     progress,
     progressLabel,
     actions,
+    onMarkNotComing,
 }: RunningGroupProps) => {
     const roundId = groupId.split("-g")[0];
     const schedule = findGroupSchedule(wcif, groupId, roomName);
@@ -464,25 +484,37 @@ const RunningGroup = ({
                     )}
                 </div>
             </div>
-            {progress && progress.expected > 0 && (
+            {progress && progress.competitors > 0 && (
                 <div className="flex flex-col gap-2">
                     <div className="flex items-center justify-between text-sm">
                         <span className="text-muted-foreground">
                             Results entered
                         </span>
                         <span>
-                            <b className="font-semibold">{progress.entered}</b>
+                            <b className="font-semibold">{progress.finished}</b>
                             <span className="text-muted-foreground">
-                                /{progress.expected}
+                                /{progress.competitors}
                             </span>
                         </span>
                     </div>
                     <ProgressBar
-                        value={progress.entered}
-                        max={progress.expected}
+                        value={progress.finished}
+                        max={progress.competitors}
                         label={progressLabel}
                     />
+                    {progress.expectedIsFinal && progress.expected > 0 && (
+                        <p className="text-xs text-muted-foreground">
+                            {progress.entered}/{progress.expected} attempts
+                        </p>
+                    )}
                 </div>
+            )}
+            {progress?.wait && (
+                <GroupWaitInfo
+                    wait={progress.wait}
+                    timezone={schedule?.timezone}
+                    onMarkNotComing={onMarkNotComing}
+                />
             )}
             {actions}
         </div>

@@ -10,6 +10,7 @@ import {
     Undo2,
 } from "lucide-react";
 import { useState } from "react";
+import { Link } from "react-router-dom";
 
 import BatteryIcon from "@/Components/Icons/BatteryIcon";
 import SignalIcon from "@/Components/Icons/SignalIcon";
@@ -231,6 +232,8 @@ const DeviceItem = ({
             ? device.lastError
             : null;
     const errorIcon = <StationErrorIcon lastError={lastError} />;
+    const solvesPath = `/devices/${device.id}/solves`;
+    const solvesLabel = `${device.count ?? 0} solves on ${device.name}`;
 
     if (variant === "row")
         return (
@@ -269,7 +272,15 @@ const DeviceItem = ({
                 <TableCell className="whitespace-nowrap font-mono text-[13px] text-muted-foreground">
                     {firmware}
                 </TableCell>
-                <TableCell>{device.count}</TableCell>
+                <TableCell>
+                    <Link
+                        to={solvesPath}
+                        aria-label={solvesLabel}
+                        className="font-medium underline-offset-4 hover:underline"
+                    >
+                        {device.count ?? 0}
+                    </Link>
+                </TableCell>
                 <TableCell className="text-muted-foreground">
                     {updatedAt}
                 </TableCell>
@@ -330,12 +341,16 @@ const DeviceItem = ({
                 </div>
             </div>
             <div className="flex justify-between gap-2 border-t pr-2.5 pt-2.5 text-xs text-muted-foreground md:pr-0">
-                <span>
+                <Link
+                    to={solvesPath}
+                    aria-label={solvesLabel}
+                    className="underline-offset-4 hover:underline"
+                >
                     <b className="font-semibold text-foreground">
                         {device.count ?? 0}
                     </b>{" "}
                     solves
-                </span>
+                </Link>
                 <span>{updatedAt}</span>
             </div>
             <span className="font-mono text-[11px] text-faint">

@@ -433,6 +433,71 @@ describe('AttendanceService', () => {
     });
   });
 
+  describe('competitor not coming', () => {
+    it('takes back "not coming" from a competitor who turned up', async () => {
+      jest
+        .spyOn(dbService.staffActivity, 'upsert')
+        .mockResolvedValue({} as any);
+
+      await service.markCompetitorAsPresent('competitor1', '333-r1-g1');
+
+      expect(dbService.staffActivity.upsert).toHaveBeenCalledWith(
+        expect.objectContaining({
+          update: expect.objectContaining({ noShow: false }),
+        }),
+      );
+    });
+  });
+
+  describe('setNoShow', () => {
+    beforeEach(() => {
+      jest
+        .spyOn(dbService.staffActivity, 'updateMany')
+        .mockResolvedValue({ count: 1 });
+    });
+
+    it("tags only staffing by default, never a competitor's row", async () => {
+      await service.setNoShow({
+        personId: 'person1',
+        groupIds: ['333-r1-g1', '333-r1-g2'],
+        noShow: true,
+      });
+
+      expect(dbService.staffActivity.updateMany).toHaveBeenCalledWith({
+        where: {
+          personId: 'person1',
+          groupId: { in: ['333-r1-g1', '333-r1-g2'] },
+          role: { not: StaffRole.COMPETITOR },
+          status: StaffActivityStatus.ABSENT,
+        },
+        data: { noShow: true },
+      });
+    });
+
+    it("tags only the competitor's absent rows when asked for them", async () => {
+      await service.setNoShow({
+        personId: 'person1',
+        groupIds: ['333-r1-g1'],
+        noShow: true,
+        role: StaffRole.COMPETITOR,
+      });
+
+      expect(dbService.staffActivity.updateMany).toHaveBeenCalledWith({
+        where: {
+          personId: 'person1',
+          groupId: { in: ['333-r1-g1'] },
+          role: StaffRole.COMPETITOR,
+          status: StaffActivityStatus.ABSENT,
+        },
+        data: { noShow: true },
+      });
+      expect(appGateway.handleNewAttendance).toHaveBeenCalledWith(
+        '333-r1-g1',
+        'person1',
+      );
+    });
+  });
+
   describe('markJudgeAsPresent', () => {
     it('should mark judge as present', async () => {
       jest
