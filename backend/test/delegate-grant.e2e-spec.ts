@@ -432,6 +432,21 @@ describe('Delegate access for one group (e2e)', () => {
       expect(res.body.message).toMatch(/has ended/);
     });
 
+    it('covers incidents raised in the group before access was given', async () => {
+      const before = await incident(walkIn, station, 8);
+      await request(server())
+        .post('/delegate-grant')
+        .set(auth(delegate.token))
+        .send({ userId: helper.id, groupId: GROUP, permissions: [] })
+        .expect(201);
+      const res = await request(server())
+        .get('/incident/unresolved')
+        .set(auth(helper.token))
+        .expect(200);
+      expect(res.body.map((a: { id: string }) => a.id)).toContain(before.id);
+      await db.attempt.delete({ where: { id: before.id } });
+    });
+
     it('ends a new access early when a delegate says so', async () => {
       const given = await request(server())
         .post('/delegate-grant')

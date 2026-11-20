@@ -52,6 +52,8 @@ export interface RecordedAction {
   result?: { id: string; person: { name: string } } | null;
 }
 
+export type GroupEnteredAt = (roomId: string, groupId: string) => number;
+
 const isDelegate = (user: Pick<JwtAuthDto, 'roles'>) =>
   user.roles.includes(Role.DELEGATE) || user.roles.includes(Role.ADMIN);
 
@@ -64,6 +66,33 @@ export class DelegateGrantService {
     @Inject(forwardRef(() => AppGateway))
     private readonly appGateway: AppGateway,
   ) {}
+
+  /** When a room started a group, in ms; RoomsService provides it */
+  private groupEnteredAt: GroupEnteredAt = () => Date.now();
+
+  /**
+   * RoomsService hands this over when the app starts: it knows when each
+   * room started each group, and it depends on this service, so this one
+   * can't depend on it back.
+   */
+  useGroupEnteredAt(source: GroupEnteredAt) {
+    this.groupEnteredAt = source;
+  }
+
+  /**
+   * When the group started in the rooms running it, which is where a grant's
+   * scope starts: incidents already raised in the group count too, however
+   * late the access was given.
+   */
+  private groupStartedAt(
+    groupId: string,
+    rooms: { id: string; currentGroupIds: string[] }[],
+  ) {
+    const times = rooms
+      .filter((room) => room.currentGroupIds.includes(groupId))
+      .map((room) => this.groupEnteredAt(room.id, groupId));
+    return times.length ? new Date(Math.min(...times)) : new Date();
+  }
 
   /* ===== Giving and ending ===== */
 
@@ -171,7 +200,9 @@ export class DelegateGrantService {
   async syncWithRooms() {
     const [grants, rooms] = await Promise.all([
       this.prisma.delegateGrant.findMany({ where: { endedAt: null } }),
-      this.prisma.room.findMany({ select: { currentGroupIds: true } }),
+      this.prisma.room.findMany({
+        select: { id: true, currentGroupIds: true },
+      }),
     ]);
     const now = new Date();
     const changedUserIds = new Set<string>();
@@ -180,7 +211,7 @@ export class DelegateGrantService {
       if (running && !grant.activatedAt) {
         await this.prisma.delegateGrant.update({
           where: { id: grant.id },
-          data: { activatedAt: now },
+          data: { activatedAt: this.groupStartedAt(grant.groupId, rooms) },
         });
         changedUserIds.add(grant.userId);
       } else if (!running && grant.activatedAt) {

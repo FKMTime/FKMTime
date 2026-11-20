@@ -1,4 +1,10 @@
-import { forwardRef, HttpException, Inject, Logger } from '@nestjs/common';
+import {
+  forwardRef,
+  HttpException,
+  Inject,
+  Logger,
+  OnModuleInit,
+} from '@nestjs/common';
 import { Attempt } from '@prisma/client';
 import { DbService } from 'src/db/db.service';
 import { DeviceService } from 'src/device/device.service';
@@ -11,7 +17,7 @@ import { Competition as Wcif } from 'wcif-helpers';
 import { UpdateRoomsDto } from './dto/updateCurrentRound.dto';
 import { calculateGroupProgress, getGroupCompetitorIds } from './groupProgress';
 
-export class RoomsService {
+export class RoomsService implements OnModuleInit {
   constructor(
     @Inject(forwardRef(() => DbService))
     private readonly prisma: DbService,
@@ -28,6 +34,13 @@ export class RoomsService {
   private readonly logger = new Logger('RoomsService');
 
   private readonly startedAt = Date.now();
+
+  onModuleInit() {
+    // Delegate access for a group covers it from when the room started it
+    this.delegateGrants.useGroupEnteredAt((roomId, groupId) =>
+      this.getGroupEnteredAt(roomId, groupId),
+    );
+  }
   // "roomId|groupId" -> when the room started running the group
   private groupEnteredAt = new Map<string, number>();
 

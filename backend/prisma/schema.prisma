@@ -699,8 +699,8 @@ model DelegateGrant {
   createdById String?                   @map("created_by_id")
   createdBy   User?                     @relation("delegate_grant_created_by", fields: [createdById], references: [id], onDelete: SetNull)
   createdAt   DateTime                  @default(now()) @map("created_at")
-  /// When the group started running with this grant in place; null while
-  /// waiting. Attempts made in the room from then on are in scope.
+  /// Set when the grant became active: when the group started in its room
+  /// (or rooms); null while waiting. Attempts made there since are in scope.
   activatedAt DateTime?                 @map("activated_at")
   endedAt     DateTime?                 @map("ended_at")
   endedById   String?                   @map("ended_by_id")

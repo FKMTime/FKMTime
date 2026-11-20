@@ -6,6 +6,7 @@ import { DbService } from 'src/db/db.service';
 import { DelegateGrantService } from './delegateGrant.service';
 
 const GROUP = '333-r1-g2';
+const GROUP_STARTED_AT = new Date('2026-01-01T10:00:00Z');
 const ROUND = '333-r1';
 
 interface State {
@@ -100,6 +101,8 @@ const setup = (overrides: Partial<State> = {}) => {
     fakeDb(state) as unknown as DbService,
     gateway as unknown as AppGateway,
   );
+  // The room started the group at GROUP_STARTED_AT
+  service.useGroupEnteredAt(() => GROUP_STARTED_AT.getTime());
   return { service, state, gateway };
 };
 
@@ -154,7 +157,9 @@ describe('DelegateGrantService.authorize', () => {
     await service.authorize(helper, 'RESOLVE_INCIDENT', {
       resultId: 'r-assigned',
     });
-    expect(state.grants[0].activatedAt).not.toBeNull();
+    // Scope starts with the group, not with the access: incidents raised
+    // before the delegate gave it count too
+    expect(state.grants[0].activatedAt).toEqual(GROUP_STARTED_AT);
 
     state.rooms[0].currentGroupIds = ['333-r1-g3'];
     const { message } = await refusal(

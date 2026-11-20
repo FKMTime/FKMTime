@@ -52,7 +52,10 @@ describe('RoomsService', () => {
         },
         {
           provide: DelegateGrantService,
-          useValue: { syncWithRooms: jest.fn().mockResolvedValue(undefined) },
+          useValue: {
+            syncWithRooms: jest.fn().mockResolvedValue(undefined),
+            useGroupEnteredAt: jest.fn(),
+          },
         },
       ],
     }).compile();

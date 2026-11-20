@@ -99,7 +99,7 @@ result in the group's round (`groupIdToRoundId(groupId)`) when **either**:
 
 - **the competitor solved in this group**: the result has an attempt made on
   a station in a room running the group (`Attempt.device.roomId`), created
-  after the grant became active (`activatedAt`, below), or
+  since the room started the group (`activatedAt`, below), or
 - **the competitor is assigned to the group** in the WCIF, so the grantee can
   add an attempt for a competitor whose station didn't record one.
 
@@ -108,7 +108,8 @@ solved in the same room. Stations running a custom round (SPEC-007) still
 count: the round must match the grant's round anyway.
 
 An incident always comes from a station, so every incident raised in the room
-during the group is in scope, whoever's assignment it is. A competitor moved
+during the group is in scope, whoever's assignment it is — including those
+raised before the delegate gave access. A competitor moved
 to another group stays in scope if they already solved in this one.
 
 Every action is checked against scope on the server, by the target result.
@@ -124,8 +125,10 @@ A grant is **active** when all of these hold:
 
 A delegate can give access before the group starts (e.g. while the previous
 group runs); the grant waits and becomes active when a room starts the group.
-The backend sets `activatedAt` then, or at creation when the group is already
-running; scope uses it as the start of the group.
+The backend then sets `activatedAt` to when the room started the group (the
+earliest, if several rooms run it), also when access is given for a group
+already running. Rooms keep that time in memory; after a backend restart it is
+the time the backend started, so scope never reaches into an earlier group.
 
 When the group stops running — a room moves on, or the group is taken off by
 hand — the backend sets `endedAt` on its grants. It syncs grants with the rooms
@@ -161,7 +164,7 @@ model DelegateGrant {
   createdById String?                   @map("created_by_id")
   createdBy   User?                     @relation("delegate_grant_created_by", fields: [createdById], references: [id], onDelete: SetNull)
   createdAt   DateTime                  @default(now()) @map("created_at")
-  // When the group started running with this grant in place; null while waiting
+  // When the room started the group, set once the grant is active; null while waiting
   activatedAt DateTime?                 @map("activated_at")
   endedAt     DateTime?                 @map("ended_at")
   endedById   String?                   @map("ended_by_id")
@@ -334,8 +337,10 @@ effect, and ends, on the next request.
       in-scope result, and nothing else changes.
 - [ ] An incident raised in the room during the group by a competitor
       assigned to another group is in the grantee's list and can be resolved.
-- [ ] An incident from another room, from the same room before the grant became
-      active, or from another round, is not in the grantee's list and returns
+- [ ] An incident raised in the group before the delegate gave access is in the
+      grantee's list.
+- [ ] An incident from another room, from the same room before the group
+      started, or from another round, is not in the grantee's list and returns
       403 when acted on directly.
 - [ ] The grantee can add an attempt for a competitor assigned to the group who
       has no attempt yet.
