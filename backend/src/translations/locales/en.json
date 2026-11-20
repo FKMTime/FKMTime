@@ -247,6 +247,14 @@
     {
       "key": "resetTimerFooter",
       "translation": "first"
+    },
+    {
+      "key": "tutorial",
+      "translation": "Tutorial"
+    },
+    {
+      "key": "tutorialAttemptEntered",
+      "translation": "Tutorial solve, not saved"
     }
   ]
 }

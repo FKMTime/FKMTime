@@ -18,10 +18,10 @@ vi.mock("@/hooks/useLiveQuery", () => ({
     useLiveQuery: () => ({ data: [] }),
 }));
 
-const permissions = vi.hoisted(() => ({ admin: false }));
+const permissions = vi.hoisted(() => ({ admin: false, delegate: false }));
 vi.mock("@/lib/permissions", () => ({
     isAdmin: () => permissions.admin,
-    isDelegate: () => false,
+    isDelegate: () => permissions.delegate,
 }));
 
 const signal: StationSignal = {
@@ -122,6 +122,59 @@ describe("DeviceItem signal", () => {
             ).toBeTruthy();
         }
     );
+
+    describe("tutorial mode (SPEC-012)", () => {
+        const inMinutes = (minutes: number) =>
+            new Date(Date.now() + minutes * 60_000).toISOString();
+        const menuItems = async (value: Device) => {
+            renderItem(value, "card");
+            await userEvent.click(
+                screen.getByRole("button", {
+                    name: "More actions for Station Example",
+                })
+            );
+            const items = await screen.findAllByRole("menuitem");
+            return items.map((item) => item.textContent);
+        };
+
+        it.each(["row", "card"] as const)(
+            "marks a station in tutorial mode in the %s view",
+            (variant) => {
+                renderItem(device({ tutorialEndsAt: inMinutes(10) }), variant);
+
+                expect(
+                    screen.getByRole("button", { name: "Tutorial" })
+                ).toBeTruthy();
+            }
+        );
+
+        it("drops the mark once the tutorial has ended", () => {
+            renderItem(device({ tutorialEndsAt: inMinutes(-1) }), "card");
+
+            expect(
+                screen.queryByRole("button", { name: "Tutorial" })
+            ).toBeNull();
+        });
+
+        it("lets delegates start and end it", async () => {
+            permissions.delegate = true;
+
+            expect(await menuItems(device({}))).toContain("Start tutorial");
+            permissions.delegate = false;
+        });
+
+        it("offers to end a running one", async () => {
+            permissions.delegate = true;
+
+            const items = await menuItems(
+                device({ tutorialEndsAt: inMinutes(10) })
+            );
+            permissions.delegate = false;
+
+            expect(items).toContain("End tutorial");
+            expect(items).not.toContain("Start tutorial");
+        });
+    });
 
     it.each(["row", "card"] as const)(
         "links the solve count to the device's solves in the %s view",

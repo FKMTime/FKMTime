@@ -28,6 +28,7 @@ model User {
   extraGrants                ExtraGrant[]
   removedResults             Result[]             @relation("result_removed_by")
   devicesPointedAtRound      Device[]             @relation("device_custom_round_set_by")
+  devicesInTutorial          Device[]             @relation("device_tutorial_started_by")
 
   @@map("users")
 }
@@ -303,29 +304,34 @@ model ManualIncident {
 }
 
 model Device {
-  id                 String           @id @default(uuid())
-  name               String           @unique
-  espId              Int?             @unique @map("esp_id")
-  signKey            Int?             @unique @map("sign_key")
-  type               DeviceType
-  batteryPercentage  Int?             @map("battery_percentage")
-  hwVersion          HardwareVersion? @map("hw_version")
-  firmwareVersion    String?          @map("firmware_version")
+  id                  String           @id @default(uuid())
+  name                String           @unique
+  espId               Int?             @unique @map("esp_id")
+  signKey             Int?             @unique @map("sign_key")
+  type                DeviceType
+  batteryPercentage   Int?             @map("battery_percentage")
+  hwVersion           HardwareVersion? @map("hw_version")
+  firmwareVersion     String?          @map("firmware_version")
   // Set instead of deleting a device that has history, so its attempts keep their station
-  retiredAt          DateTime?        @map("retired_at")
+  retiredAt           DateTime?        @map("retired_at")
   /// The round this station takes attempts for instead of its room's groups,
   /// e.g. "333-r1" (SPEC-007). Null while it follows its room.
-  customRoundId      String?          @map("custom_round_id")
-  customRoundSetAt   DateTime?        @map("custom_round_set_at")
-  customRoundSetById String?          @map("custom_round_set_by_id")
-  customRoundSetBy   User?            @relation("device_custom_round_set_by", fields: [customRoundSetById], references: [id], onDelete: SetNull)
-  roomId             String           @map("room_id")
-  room               Room             @relation(fields: [roomId], references: [id])
-  createdAt          DateTime         @default(now()) @map("created_at")
-  updatedAt          DateTime         @updatedAt @map("updated_at")
-  Attempt            Attempt[]
-  StaffActivity      StaffActivity[]
-  AttemptEditLog     AttemptEditLog[]
+  customRoundId       String?          @map("custom_round_id")
+  customRoundSetAt    DateTime?        @map("custom_round_set_at")
+  customRoundSetById  String?          @map("custom_round_set_by_id")
+  customRoundSetBy    User?            @relation("device_custom_round_set_by", fields: [customRoundSetById], references: [id], onDelete: SetNull)
+  /// While in the future, the station takes tutorial solves, which are never
+  /// saved (SPEC-012). Null or in the past: off
+  tutorialEndsAt      DateTime?        @map("tutorial_ends_at")
+  tutorialStartedById String?          @map("tutorial_started_by_id")
+  tutorialStartedBy   User?            @relation("device_tutorial_started_by", fields: [tutorialStartedById], references: [id], onDelete: SetNull)
+  roomId              String           @map("room_id")
+  room                Room             @relation(fields: [roomId], references: [id])
+  createdAt           DateTime         @default(now()) @map("created_at")
+  updatedAt           DateTime         @updatedAt @map("updated_at")
+  Attempt             Attempt[]
+  StaffActivity       StaffActivity[]
+  AttemptEditLog      AttemptEditLog[]
 
   @@map("device")
 }

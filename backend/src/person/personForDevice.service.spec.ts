@@ -51,6 +51,7 @@ describe('PersonForDeviceService finished rounds', () => {
       null,
       new WcaService(null),
       null,
+      null,
     );
     return service['getFinishedRoundIds'](
       'person-1',
@@ -89,5 +90,100 @@ describe('PersonForDeviceService finished rounds', () => {
     ]);
 
     expect(finished).toEqual([]);
+  });
+});
+
+describe('PersonForDeviceService on a station in tutorial mode (SPEC-012)', () => {
+  const person = {
+    id: 'p-1',
+    name: 'Ada Example',
+    countryIso2: 'PL',
+    registrantId: 1,
+    cardId: '100',
+  };
+  const setup = (tutorialEndsAt: Date | null) => {
+    const prisma = {
+      competition: {
+        // A room with nothing running, and nobody registered for anything
+        findFirst: jest.fn().mockResolvedValue({
+          defaultLocale: 'en',
+          wcif: {
+            events: [],
+            persons: [
+              {
+                registrantId: 1,
+                assignments: [],
+                registration: { eventIds: [] },
+              },
+            ],
+            schedule: { venues: [] },
+          },
+        }),
+      },
+      result: { findMany: jest.fn().mockResolvedValue([]) },
+      device: {
+        findFirst: jest.fn().mockResolvedValue({
+          id: 'device-1',
+          tutorialEndsAt,
+          customRoundId: null,
+          room: { currentGroupIds: [] },
+        }),
+      },
+    };
+    const personService = {
+      getPersonByCardId: jest.fn(async (cardId: string) =>
+        cardId === '100' ? person : null,
+      ),
+    };
+    const deviceService = { extendTutorial: jest.fn() };
+    const service = new PersonForDeviceService(
+      prisma as unknown as DbService,
+      personService as never,
+      null,
+      null,
+      deviceService as never,
+    );
+    return { service, deviceService };
+  };
+
+  it("offers only the tutorial, named in the competitor's language", async () => {
+    const { service, deviceService } = setup(new Date(Date.now() + 60_000));
+
+    const reply = await service.getPersonInfo('100', 7, true);
+
+    expect(reply).toMatchObject({
+      name: 'Ada Example',
+      possibleGroups: [
+        {
+          groupId: 'tutorial',
+          name: 'Szkolenie',
+          secondaryText: 'Szkolenie',
+          useInspection: true,
+          limit: null,
+        },
+      ],
+    });
+    expect(deviceService.extendTutorial).toHaveBeenCalledWith('device-1');
+  });
+
+  it("still says when the card isn't assigned", async () => {
+    const { service, deviceService } = setup(new Date(Date.now() + 60_000));
+
+    const reply = await service.getPersonInfo('999', 7, true);
+
+    expect(reply).toMatchObject({
+      error: true,
+      errorDetails: { key: 'competitorNotFound' },
+    });
+    expect(deviceService.extendTutorial).not.toHaveBeenCalled();
+  });
+
+  it('goes back to rounds once the mode has ended', async () => {
+    const { service, deviceService } = setup(new Date(Date.now() - 1));
+
+    const reply = await service.getPersonInfo('100', 7, false);
+
+    expect(reply).toMatchObject({ possibleGroups: [] });
+    expect(deviceService.extendTutorial).not.toHaveBeenCalled();
   });
 });

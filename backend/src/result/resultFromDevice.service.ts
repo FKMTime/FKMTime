@@ -27,10 +27,7 @@ import {
 import { isUnofficialEvent } from 'src/events';
 import { PersonService } from 'src/person/person.service';
 import { CreateScrambledAttemptDto } from 'src/scrambling/dto/createScrambledAttempt.dto';
-import {
-  getTranslation,
-  isLocaleAvailable,
-} from 'src/translations/translations';
+import { getTranslation } from 'src/translations/translations';
 import { getMaxAttempts } from 'src/wcif-helpers';
 import { getPersonFromWcif, getRoundInfoFromWcif } from 'wcif-helpers';
 
@@ -41,12 +38,14 @@ import {
   getAttemptsWaitingForExtra,
   getCountingAttempts,
   getNextExtraNumber,
+  getReaderLocale,
   getRoundResultText,
   getSortedStandardAttempts,
   isCompetitorSignedInForEvent,
   isSameAttemptResent,
 } from './helpers';
 import { ResultService } from './result.service';
+import { TutorialFromDeviceService } from './tutorialFromDevice.service';
 
 /**
  * Waiting for a free connection, and for the whole entry. The connector gives
@@ -62,35 +61,15 @@ export class ResultFromDeviceService {
     @Inject(forwardRef(() => DeviceService))
     private readonly deviceService: DeviceService,
     private readonly personService: PersonService,
+    @Inject(forwardRef(() => ResultService))
     private readonly resultService: ResultService,
     private readonly attemptEditLogService: AttemptEditLogService,
     @Inject(forwardRef(() => CompetitionService))
     private readonly competitionService: CompetitionService,
+    private readonly tutorialFromDevice: TutorialFromDeviceService,
   ) {}
 
   private logger = new Logger('ResultFromDeviceService');
-
-  /**
-   * The language a station reply is shown in: the judge's when the judge and
-   * the competitor share a country and it is available, otherwise the
-   * competition's
-   */
-  private getReaderLocale(
-    competitor: Pick<Person, 'countryIso2'> | null,
-    judge: Pick<Person, 'countryIso2'> | null,
-    defaultLocale: string,
-  ) {
-    const country = judge?.countryIso2?.toLowerCase();
-    if (
-      competitor &&
-      country &&
-      judge.countryIso2 === competitor.countryIso2 &&
-      isLocaleAvailable(country)
-    ) {
-      return country;
-    }
-    return defaultLocale;
-  }
 
   async getStationByEspId(espId: number) {
     return await this.deviceService.getDeviceByEspId(espId, DeviceType.STATION);
@@ -103,6 +82,10 @@ export class ResultFromDeviceService {
    * seconds during a competition.
    */
   async enterAttempt(data: EnterAttemptDto) {
+    // Nothing from a tutorial solve is saved (SPEC-012)
+    if (await this.tutorialFromDevice.isTutorialAttempt(data)) {
+      return this.tutorialFromDevice.enterAttempt(data);
+    }
     return runInTransaction(
       this.prisma,
       (tx) => this.enterAttemptInTransaction(data, tx),
@@ -170,7 +153,7 @@ export class ResultFromDeviceService {
         return {
           message: getTranslation(
             'stationRoundChanged',
-            this.getReaderLocale(competitor, judge, competition.defaultLocale),
+            getReaderLocale(competitor, judge, competition.defaultLocale),
           ),
           shouldResetTime: false,
           status: 409,
@@ -319,11 +302,7 @@ export class ResultFromDeviceService {
           tx,
         );
       }
-      locale = this.getReaderLocale(
-        competitor,
-        judge,
-        competition.defaultLocale,
-      );
+      locale = getReaderLocale(competitor, judge, competition.defaultLocale);
     }
 
     const currentRoundId = roundId;

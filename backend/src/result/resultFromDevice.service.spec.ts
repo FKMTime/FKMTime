@@ -6,10 +6,16 @@ import { DbService, Tx } from 'src/db/db.service';
 
 import { ResultService } from './result.service';
 import { ResultFromDeviceService } from './resultFromDevice.service';
+import { TutorialFromDeviceService } from './tutorialFromDevice.service';
 
 const competitionStub = {
   requestGroupChangeCheck: jest.fn(),
 } as unknown as CompetitionService;
+
+// Real solves only: tutorial ones are covered in tutorialFromDevice.service.spec
+const notTutorial = {
+  isTutorialAttempt: jest.fn().mockResolvedValue(false),
+} as unknown as TutorialFromDeviceService;
 
 describe('ResultFromDeviceService cutoff check', () => {
   // WCIF v2 cutoff shape: { numberOfAttempts, resultValue }
@@ -40,6 +46,7 @@ describe('ResultFromDeviceService cutoff check', () => {
       resultService as unknown as ResultService,
       null,
       competitionStub,
+      notTutorial,
     );
   });
 
@@ -110,6 +117,7 @@ describe('ResultFromDeviceService with a resolved attempt', () => {
       ),
       null,
       competitionStub,
+      notTutorial,
     );
   });
 
@@ -226,6 +234,7 @@ describe('ResultFromDeviceService when the time limit runs out on an extra', () 
       null,
       { log: jest.fn() } as unknown as AttemptEditLogService,
       competitionStub,
+      notTutorial,
     );
   });
 
@@ -247,5 +256,31 @@ describe('ResultFromDeviceService when the time limit runs out on an extra', () 
       (a) => a.type === AttemptType.STANDARD_ATTEMPT && a.penalty === DNS_VALUE,
     );
     expect(standard.map((a) => a.attemptNumber)).toEqual([4, 5]);
+  });
+});
+
+describe('ResultFromDeviceService tutorial solves (SPEC-012)', () => {
+  it('hands a tutorial solve over without touching the database', async () => {
+    const reply = { message: 'Tutorial solve, not saved', error: false };
+    const tutorialFromDevice = {
+      isTutorialAttempt: jest.fn().mockResolvedValue(true),
+      enterAttempt: jest.fn().mockResolvedValue(reply),
+    };
+    // No database at all: any write would throw
+    const service = new ResultFromDeviceService(
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      competitionStub,
+      tutorialFromDevice as unknown as TutorialFromDeviceService,
+    );
+    const data = { espId: 7, groupId: 'tutorial' } as never;
+
+    await expect(service.enterAttempt(data)).resolves.toBe(reply);
+    expect(tutorialFromDevice.enterAttempt).toHaveBeenCalledWith(data);
   });
 });

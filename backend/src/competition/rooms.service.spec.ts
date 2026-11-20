@@ -2,6 +2,7 @@ import { HttpException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 
 import { DbService } from '../db/db.service';
+import { DeviceService } from '../device/device.service';
 import { IntegratedLiveRoundsService } from '../integrated-live/integratedLiveRounds.service';
 import { SocketController } from '../socket/socket.controller';
 import { RoomsService } from './rooms.service';
@@ -11,6 +12,7 @@ describe('RoomsService', () => {
   let dbService: DbService;
   let socketController: SocketController;
   const onRoundStarted = jest.fn().mockResolvedValue(undefined);
+  const handleRoomGroupsStarted = jest.fn().mockResolvedValue(undefined);
 
   beforeEach(async () => {
     onRoundStarted.mockClear();
@@ -42,6 +44,10 @@ describe('RoomsService', () => {
         {
           provide: IntegratedLiveRoundsService,
           useValue: { onRoundStarted },
+        },
+        {
+          provide: DeviceService,
+          useValue: { handleRoomGroupsStarted },
         },
       ],
     }).compile();
@@ -95,6 +101,89 @@ describe('RoomsService', () => {
       expect(socketController.sendServerStatus).toHaveBeenCalled();
       // Each started round may need opening in WCA Integrated Live Results
       expect(onRoundStarted.mock.calls).toEqual([['333-r1'], ['222-r1']]);
+    });
+
+    describe('tutorial stations (SPEC-012)', () => {
+      const today = new Date().toISOString();
+      const wcif = {
+        schedule: {
+          venues: [
+            {
+              timezone: 'UTC',
+              rooms: [
+                {
+                  activities: [
+                    {
+                      activityCode: '333-r1',
+                      childActivities: [
+                        { activityCode: '333-r1-g1', startTime: today },
+                      ],
+                    },
+                  ],
+                },
+              ],
+            },
+          ],
+        },
+      };
+      const flush = () => new Promise((resolve) => setImmediate(resolve));
+
+      beforeEach(() => {
+        handleRoomGroupsStarted.mockClear();
+        jest.spyOn(dbService, '$transaction').mockResolvedValue([]);
+        (dbService.competition.findFirst as jest.Mock).mockResolvedValue({
+          wcif,
+        });
+      });
+
+      it("ends tutorial mode on the room's first group of the day", async () => {
+        jest
+          .spyOn(dbService.room, 'findMany')
+          .mockResolvedValue([
+            { id: 'room1', startedGroupIds: [], currentGroupIds: [] },
+          ] as any);
+
+        await service.updateRooms({
+          rooms: [{ id: 'room1', currentGroupIds: ['333-r1-g1'] }],
+        });
+        await flush();
+
+        expect(handleRoomGroupsStarted).toHaveBeenCalledWith('room1', true);
+      });
+
+      it('only reminds about it on a later group that day', async () => {
+        jest.spyOn(dbService.room, 'findMany').mockResolvedValue([
+          {
+            id: 'room1',
+            startedGroupIds: ['333-r1-g1'],
+            currentGroupIds: ['333-r1-g1'],
+          },
+        ] as any);
+
+        await service.updateRooms({
+          rooms: [{ id: 'room1', currentGroupIds: ['333-r1-g2'] }],
+        });
+        await flush();
+
+        expect(handleRoomGroupsStarted).toHaveBeenCalledWith('room1', false);
+      });
+
+      it('does nothing when no group starts', async () => {
+        jest.spyOn(dbService.room, 'findMany').mockResolvedValue([
+          {
+            id: 'room1',
+            startedGroupIds: ['333-r1-g1'],
+            currentGroupIds: ['333-r1-g1'],
+          },
+        ] as any);
+
+        await service.updateRooms({
+          rooms: [{ id: 'room1', currentGroupIds: [] }],
+        });
+        await flush();
+
+        expect(handleRoomGroupsStarted).not.toHaveBeenCalled();
+      });
     });
 
     it('remembers every group a room has started', async () => {

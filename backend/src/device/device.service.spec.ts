@@ -8,6 +8,7 @@ import { SocketController } from '../socket/socket.controller';
 import { DeviceService } from './device.service';
 import { StationErrorService } from './stationError.service';
 import { StationSignalService } from './stationSignal.service';
+import { TutorialIncidentService } from './tutorialIncident.service';
 
 describe('DeviceService', () => {
   let service: DeviceService;
@@ -29,6 +30,7 @@ describe('DeviceService', () => {
               findUnique: jest.fn(),
               create: jest.fn(),
               update: jest.fn(),
+              updateMany: jest.fn().mockResolvedValue({ count: 0 }),
               delete: jest.fn(),
             },
             attempt: {
@@ -52,6 +54,7 @@ describe('DeviceService', () => {
             handleDeviceUpdated: jest.fn(),
             forgetStation: jest.fn(),
             getDeviceRequest: jest.fn(),
+            handleTutorialNotice: jest.fn(),
           },
         },
         {
@@ -78,6 +81,10 @@ describe('DeviceService', () => {
             getLastError: jest.fn().mockReturnValue(null),
             forget: jest.fn(),
           },
+        },
+        {
+          provide: TutorialIncidentService,
+          useValue: { forgetStation: jest.fn() },
         },
       ],
     }).compile();
@@ -174,7 +181,10 @@ describe('DeviceService', () => {
       await service.getAllDevices(DeviceType.STATION);
 
       expect(dbService.device.findMany).toHaveBeenCalledWith({
-        include: { room: true },
+        include: {
+          room: true,
+          tutorialStartedBy: { select: { fullName: true } },
+        },
         where: { retiredAt: null, type: DeviceType.STATION },
         orderBy: { name: 'asc' },
       });
@@ -479,7 +489,12 @@ describe('DeviceService', () => {
       expect(dbService.device.delete).not.toHaveBeenCalled();
       expect(dbService.device.update).toHaveBeenCalledWith({
         where: { id: 'device1' },
-        data: { retiredAt: expect.any(Date) },
+        // Retiring ends tutorial mode (SPEC-012)
+        data: {
+          retiredAt: expect.any(Date),
+          tutorialEndsAt: null,
+          tutorialStartedById: null,
+        },
       });
     });
 
@@ -517,6 +532,110 @@ describe('DeviceService', () => {
       await service.deleteDevice('device1');
 
       expect(appGateway.forgetStation).toHaveBeenCalledWith(7);
+    });
+  });
+
+  describe('tutorial mode (SPEC-012)', () => {
+    const station = {
+      id: 'device1',
+      type: DeviceType.STATION,
+      retiredAt: null,
+    };
+
+    beforeEach(() => {
+      jest.useFakeTimers({ now: Date.parse('2026-11-17T10:00:00Z') });
+    });
+
+    afterEach(() => {
+      jest.useRealTimers();
+    });
+
+    it('starts it for 15 minutes, remembering who started it', async () => {
+      (dbService.device.findUnique as jest.Mock).mockResolvedValue(station);
+
+      await service.setTutorial('device1', true, 'user-1');
+
+      expect(dbService.device.update).toHaveBeenCalledWith({
+        where: { id: 'device1' },
+        data: {
+          tutorialEndsAt: new Date('2026-11-17T10:15:00Z'),
+          tutorialStartedById: 'user-1',
+        },
+      });
+      expect(appGateway.handleDeviceUpdated).toHaveBeenCalled();
+    });
+
+    it('ends it by hand', async () => {
+      (dbService.device.findUnique as jest.Mock).mockResolvedValue(station);
+
+      await service.setTutorial('device1', false, 'user-1');
+
+      expect(dbService.device.update).toHaveBeenCalledWith({
+        where: { id: 'device1' },
+        data: { tutorialEndsAt: null, tutorialStartedById: null },
+      });
+    });
+
+    it.each([
+      [
+        'an attendance device',
+        { ...station, type: DeviceType.ATTENDANCE_SCRAMBLER },
+      ],
+      ['a retired station', { ...station, retiredAt: new Date() }],
+    ])("can't start it on %s", async (_, device) => {
+      (dbService.device.findUnique as jest.Mock).mockResolvedValue(device);
+
+      await expect(
+        service.setTutorial('device1', true, 'user-1'),
+      ).rejects.toThrow(HttpException);
+      expect(dbService.device.update).not.toHaveBeenCalled();
+    });
+
+    it('extends it only while it is still on', async () => {
+      await service.extendTutorial('device1');
+
+      expect(dbService.device.updateMany).toHaveBeenCalledWith({
+        where: {
+          id: 'device1',
+          tutorialEndsAt: { gt: new Date('2026-11-17T10:00:00Z') },
+        },
+        data: { tutorialEndsAt: new Date('2026-11-17T10:15:00Z') },
+      });
+      // Nothing matched: it had already ended, so nobody is told
+      expect(appGateway.handleDeviceUpdated).not.toHaveBeenCalled();
+    });
+
+    it("ends it on the room's first group of the day, and says so", async () => {
+      (dbService.device.findMany as jest.Mock).mockResolvedValue([
+        { id: 'device1', espId: 7, name: 'Station 7' },
+      ]);
+
+      await service.handleRoomGroupsStarted('room1', true);
+
+      expect(dbService.device.updateMany).toHaveBeenCalledWith({
+        where: { id: { in: ['device1'] } },
+        data: { tutorialEndsAt: null, tutorialStartedById: null },
+      });
+      expect(appGateway.handleTutorialNotice).toHaveBeenCalledWith({
+        kind: 'endedByGroupStart',
+        espId: 7,
+        deviceName: 'Station 7',
+      });
+    });
+
+    it('only reminds delegates on a later group', async () => {
+      (dbService.device.findMany as jest.Mock).mockResolvedValue([
+        { id: 'device1', espId: 7, name: 'Station 7' },
+      ]);
+
+      await service.handleRoomGroupsStarted('room1', false);
+
+      expect(dbService.device.updateMany).not.toHaveBeenCalled();
+      expect(appGateway.handleTutorialNotice).toHaveBeenCalledWith({
+        kind: 'stillOn',
+        espId: 7,
+        deviceName: 'Station 7',
+      });
     });
   });
 });

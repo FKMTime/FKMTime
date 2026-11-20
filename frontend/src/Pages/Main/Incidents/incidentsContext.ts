@@ -16,6 +16,7 @@ export const useIncidentsContext = () =>
 
 const LIST_PATHS = [
     "incident/unresolved",
+    "incident/tutorial",
     "incident/resolved",
     "incident/noteworthy",
     "incident/manual",
