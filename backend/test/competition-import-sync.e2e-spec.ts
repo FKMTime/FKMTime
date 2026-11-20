@@ -10,6 +10,7 @@ import {
   UnofficialEvent,
   User,
 } from '@prisma/client';
+import { AuthService } from 'src/auth/auth.service';
 import { DbService } from 'src/db/db.service';
 import * as request from 'supertest';
 
@@ -357,6 +358,49 @@ describe('Competition import & sync from WCA (e2e)', () => {
       );
       expect(await db.competition.count()).toBe(0);
       expect(await db.person.count()).toBe(0);
+    });
+
+    it('refuses to let the bootstrap organizer add accounts before the import', async () => {
+      await request(server())
+        .post('/user')
+        .set('Authorization', `Bearer ${outsiderToken}`)
+        .send({
+          username: 'e2e-setup-bootstrap-extra',
+          password: 'extra-password',
+          fullName: 'Extra Account',
+          roles: [Role.ORGANIZER],
+        })
+        .expect(409);
+      expect(
+        await db.user.findFirst({
+          where: { username: 'e2e-setup-bootstrap-extra' },
+        }),
+      ).toBeNull();
+    });
+
+    it('refuses an import by a local account that is not an admin', async () => {
+      const local = await db.user.create({
+        data: {
+          username: 'e2e-setup-local-organizer',
+          fullName: 'Local Organizer',
+          roles: [Role.ORGANIZER],
+        },
+      });
+      try {
+        const token = await app
+          .get(AuthService)
+          .generateAuthJwt({ userId: local.id, roles: local.roles });
+        const res = await request(server())
+          .get(`/competition/import/${IMPORTED_WCA_ID}`)
+          .set('Authorization', `Bearer ${token}`)
+          .expect(403);
+        expect(res.body.message).toBe(
+          'Sign in with the WCA to import a competition',
+        );
+        expect(await db.competition.count()).toBe(0);
+      } finally {
+        await db.user.delete({ where: { id: local.id } });
+      }
     });
 
     it('keeps other users when the import is refused', async () => {
