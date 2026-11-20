@@ -1,0 +1,123 @@
+name: Dependabot auto-merge
+
+# Merges a Dependabot PR once every check on it has passed, if the update is a
+# minor or patch bump. Majors, and anything we can't classify, wait for a human.
+#
+# The ruleset only requires "Unique spec ids", because the test workflows are
+# path-filtered and a required check that never starts would block every PR.
+# So GitHub's own auto-merge would not wait for Backend/Frontend/E2E. This job
+# waits for them itself, then approves and merges.
+#
+# Merging with GITHUB_TOKEN does not fire `push` workflows on main, so the
+# image publish workflows are dispatched by hand after the merge.
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions: {}
+
+# A rebase pushes a new head; the old wait is worthless after that
+concurrency:
+  group: dependabot-auto-merge-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  auto_merge:
+    name: Auto-merge
+    # github.actor, not only the PR author: if a person pushes to a Dependabot
+    # branch, their commit must not ride through on Dependabot's approval
+    if: github.event.pull_request.user.login == 'dependabot[bot]' && github.actor == 'dependabot[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    permissions:
+      contents: write
+      pull-requests: write
+      checks: read
+      statuses: read
+      actions: write
+    steps:
+      - name: Read update metadata
+        id: meta
+        uses: dependabot/fetch-metadata@25dd0e34f4fe68f24cc83900b1fe3fe149efef98 # v3.1.0
+
+      - name: Skip majors
+        if: steps.meta.outputs.update-type != 'version-update:semver-minor' && steps.meta.outputs.update-type != 'version-update:semver-patch'
+        env:
+          UPDATE_TYPE: ${{ steps.meta.outputs.update-type }}
+        run: echo "::notice::Update type '${UPDATE_TYPE:-unknown}' needs a human review, not auto-merging"
+
+      - name: Wait for checks, approve and merge
+        if: steps.meta.outputs.update-type == 'version-update:semver-minor' || steps.meta.outputs.update-type == 'version-update:semver-patch'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          PR: ${{ github.event.pull_request.number }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          SELF: ${{ github.workflow }}
+        run: |
+          set -euo pipefail
+
+          # Let the other workflows for this push register their checks
+          sleep 30
+
+          # Every check except this workflow's own, as pending / ok / failed
+          summarize() {
+            gh pr view "$PR" --json headRefOid,statusCheckRollup | jq -r --arg self "$SELF" '
+              if .headRefOid != env.HEAD_SHA then "moved" else
+              [.statusCheckRollup[]
+                | select((.workflowName // "") != $self)
+                | if .__typename == "CheckRun" then
+                    if .status != "COMPLETED" then "pending"
+                    elif (.conclusion | IN("SUCCESS", "SKIPPED", "NEUTRAL")) then "ok"
+                    else "failed: \(.workflowName) / \(.name) (\(.conclusion))" end
+                  else
+                    if (.state | IN("PENDING", "EXPECTED")) then "pending"
+                    elif .state == "SUCCESS" then "ok"
+                    else "failed: \(.context) (\(.state))" end
+                  end
+              ]
+              | if any(startswith("failed")) then map(select(startswith("failed"))) | join("\n")
+                elif any(. == "pending") then "pending"
+                else "ok" end
+              end'
+          }
+
+          while :; do
+            result=$(summarize)
+            case "$result" in
+              ok) break ;;
+              pending) sleep 30 ;;
+              moved) echo "::notice::Head moved on, a newer run takes over"; exit 0 ;;
+              *) echo "::notice::Not auto-merging, a check failed:"; echo "$result"; exit 0 ;;
+            esac
+          done
+
+          gh pr review "$PR" --approve --body "Minor/patch update and every check passed, auto-merging."
+
+          # GitHub computes the merge state lazily, give it a moment
+          for _ in $(seq 1 12); do
+            state=$(gh pr view "$PR" --json mergeStateStatus --jq .mergeStateStatus)
+            [ "$state" != "UNKNOWN" ] && break
+            sleep 5
+          done
+
+          # The ruleset wants branches up to date. A rebase is a new push from
+          # Dependabot, which starts this workflow again.
+          if [ "$state" = "BEHIND" ]; then
+            gh pr comment "$PR" --body "@dependabot rebase"
+            echo "::notice::Branch is behind main, asked Dependabot to rebase"
+            exit 0
+          fi
+
+          gh pr merge "$PR" --squash --match-head-commit "$HEAD_SHA"
+
+          # GITHUB_TOKEN merges don't trigger push workflows; start the image
+          # builds the push would have started
+          files=$(gh pr view "$PR" --json files --jq '.files[].path')
+          if grep -q '^backend/' <<<"$files"; then
+            gh workflow run publish-backend-image.yml --ref main
+          fi
+          if grep -q '^frontend/' <<<"$files"; then
+            gh workflow run publish-nginx-image.yml --ref main
+          fi
