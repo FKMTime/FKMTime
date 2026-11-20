@@ -373,10 +373,15 @@ describe('Auth flows (e2e)', () => {
       const adminBefore = await db.user.findFirst({
         where: { username: 'admin' },
       });
+      // The organizer's reset ended the user's earlier sessions
+      const login = await request(app.getHttpServer())
+        .post('/auth/login')
+        .send({ username: user.username, password: 'first-password' })
+        .expect(200);
 
       await request(app.getHttpServer())
         .put('/auth/password/change')
-        .set('Authorization', `Bearer ${user.token}`)
+        .set('Authorization', `Bearer ${login.body.token}`)
         .send({ oldPassword: 'first-password', newPassword: 'second-password' })
         .expect(200);
 
