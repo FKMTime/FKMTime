@@ -1,9 +1,14 @@
 import { INestApplication } from '@nestjs/common';
+import { Role } from '@prisma/client';
 import { DbService } from 'src/db/db.service';
 import * as request from 'supertest';
 
 import { createTestApp } from './helpers/app.helper';
 import { seededPersonPicker, WcifLike } from './helpers/seed.helper';
+import {
+  createUserWithRoles,
+  deleteSetupUsers,
+} from './helpers/setup-roles.helper';
 import { StationFixtures } from './helpers/station-fixtures.helper';
 import { startStationSocketServer } from './helpers/station-socket.helper';
 
@@ -25,15 +30,25 @@ describe('Station tester (e2e)', () => {
     return req.send(body);
   };
 
-  const inDevelopment = async <T>(run: () => Promise<T>) => {
-    const previousEnv = process.env.NODE_ENV;
-    process.env.NODE_ENV = 'development';
+  const withEnv = async <T>(
+    vars: Record<string, string>,
+    run: () => Promise<T>,
+  ) => {
+    const previous = Object.fromEntries(
+      Object.keys(vars).map((key) => [key, process.env[key]]),
+    );
+    Object.assign(process.env, vars);
     try {
       return await run();
     } finally {
-      process.env.NODE_ENV = previousEnv;
+      for (const [key, value] of Object.entries(previous)) {
+        if (value === undefined) delete process.env[key];
+        else process.env[key] = value;
+      }
     }
   };
+  const inDevelopment = <T>(run: () => Promise<T>) =>
+    withEnv({ NODE_ENV: 'development' }, run);
 
   beforeAll(async () => {
     ({ app, db, adminToken } = await createTestApp());
@@ -55,6 +70,7 @@ describe('Station tester (e2e)', () => {
   }, 30000);
 
   afterAll(async () => {
+    await deleteSetupUsers(db, 'station-tester-staff');
     await fixtures.cleanup();
     stationServer.destroyConnections();
     await new Promise((resolve) =>
@@ -76,6 +92,35 @@ describe('Station tester (e2e)', () => {
       }
     },
   );
+
+  it.each(['false', 'yes'])(
+    'does not exist when STATION_TESTER_ENABLED is %s',
+    async (flag) => {
+      await withEnv(
+        { NODE_ENV: 'production', STATION_TESTER_ENABLED: flag },
+        () => send({ type: 'ServerStatus', data: {} }).expect(404),
+      );
+    },
+  );
+
+  it('exists outside the dev stack when STATION_TESTER_ENABLED is true', async () => {
+    const { body } = await withEnv(
+      { NODE_ENV: 'production', STATION_TESTER_ENABLED: 'true' },
+      () => send({ type: 'ServerStatus', data: {} }).expect(200),
+    );
+
+    expect(body.reply).toMatchObject({ tag: body.sent.tag });
+  });
+
+  it('is only for admins', async () => {
+    const staff = await createUserWithRoles(app, db, 'station-tester-staff', [
+      Role.STAFF,
+    ]);
+
+    await inDevelopment(() =>
+      send({ type: 'ServerStatus', data: {} }, staff.token).expect(403),
+    );
+  });
 
   it('requires signing in', async () => {
     await inDevelopment(() =>

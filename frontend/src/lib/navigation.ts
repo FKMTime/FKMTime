@@ -51,7 +51,7 @@ export interface NavContext {
     isOrganizerOrDelegate: boolean;
     isStageLeaderOrAbove: boolean;
     canAccessSettings: boolean;
-    /** Only the dev build has the station tester */
+    /** Only the dev build and PR previews have the station tester */
     showStationTester?: boolean;
 }
 

@@ -1,5 +1,11 @@
 import { plainToInstance } from 'class-transformer';
-import { IsOptional, IsString, MinLength, validateSync } from 'class-validator';
+import {
+  IsIn,
+  IsOptional,
+  IsString,
+  MinLength,
+  validateSync,
+} from 'class-validator';
 
 class EnvironmentVariables {
   @IsString()
@@ -30,6 +36,15 @@ class EnvironmentVariables {
   @IsOptional()
   @IsString()
   BACKEND_LOGS_DIR?: string;
+
+  /**
+   * Turns the station tester on outside the dev stack; PR previews set it.
+   * Only "true" turns it on, so anything but "true" or "false" is refused
+   * rather than read as off.
+   */
+  @IsOptional()
+  @IsIn(['true', 'false'])
+  STATION_TESTER_ENABLED?: string;
 }
 
 export function validate(config: Record<string, unknown>) {
