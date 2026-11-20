@@ -2,8 +2,8 @@ import { CanActivate, Injectable, NotFoundException } from '@nestjs/common';
 
 /**
  * On in the dev stack, and wherever STATION_TESTER_ENABLED=true, which only
- * PR previews set. Anywhere else the tester must stay off: it lets an admin
- * send any packet as any station, results included.
+ * PR previews set. Anywhere else the tester must stay off: it lets anyone
+ * signed in send any packet as any station, results included.
  */
 export const isStationTesterEnabled = () =>
   process.env.NODE_ENV === 'development' ||
