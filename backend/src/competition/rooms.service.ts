@@ -7,9 +7,9 @@ import {
 } from '@nestjs/common';
 import { Attempt } from '@prisma/client';
 import { DbService } from 'src/db/db.service';
+import { DelegateGrantService } from 'src/delegate-grant/delegateGrant.service';
 import { DeviceService } from 'src/device/device.service';
 import { isFirstGroupOfDay } from 'src/device/tutorial';
-import { DelegateGrantService } from 'src/delegate-grant/delegateGrant.service';
 import { IntegratedLiveRoundsService } from 'src/integrated-live/integratedLiveRounds.service';
 import { SocketController } from 'src/socket/socket.controller';
 import { Competition as Wcif } from 'wcif-helpers';
