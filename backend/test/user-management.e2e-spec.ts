@@ -285,6 +285,30 @@ describe('User management (e2e)', () => {
         .expect(401);
     });
 
+    it('does not return the stored password hash', async () => {
+      const res = await as(
+        organizer,
+        request(server()).put(`/user/password/${staffUserId}`),
+      )
+        .send({ password: 'brand-new-password' })
+        .expect(200);
+      expect(res.body).not.toHaveProperty('password');
+      expect(res.body).not.toHaveProperty('wcaAccessToken');
+    });
+
+    it("refuses an organizer resetting a delegate's password", async () => {
+      await as(
+        organizer,
+        request(server()).put(`/user/password/${delegate.id}`),
+      )
+        .send({ password: 'taken-over-password' })
+        .expect(403);
+      await request(server())
+        .post('/auth/login')
+        .send({ username: delegate.username, password: 'taken-over-password' })
+        .expect(401);
+    });
+
     it('rejects an empty password', async () => {
       await as(
         organizer,
@@ -305,6 +329,19 @@ describe('User management (e2e)', () => {
       expect(
         await db.user.findUnique({ where: { id: staffUserId } }),
       ).toBeNull();
+    });
+
+    it('refuses an organizer demoting or deleting a delegate', async () => {
+      await as(organizer, request(server()).put(`/user/${delegate.id}`))
+        .send({ username: delegate.username, fullName: 'Demoted', roles: [] })
+        .expect(403);
+      await as(
+        organizer,
+        request(server()).delete(`/user/${delegate.id}`),
+      ).expect(403);
+      expect(
+        (await db.user.findUnique({ where: { id: delegate.id } }))?.roles,
+      ).toEqual([Role.DELEGATE]);
     });
 
     it('returns 404 for an unknown user', async () => {
