@@ -355,6 +355,8 @@ model ScramblingDevice {
   name                 String
   encryptedToken       String?  @map("encrypted_token")
   encryptedOneTimeCode String?  @map("encrypted_one_time_code")
+  /// A pairing code stops working after this
+  oneTimeCodeExpiresAt DateTime? @map("one_time_code_expires_at")
   roomId               String   @map("room_id")
   room                 Room     @relation(fields: [roomId], references: [id])
   createdAt            DateTime @default(now()) @map("created_at")
