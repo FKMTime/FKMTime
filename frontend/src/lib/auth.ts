@@ -53,6 +53,11 @@ export const updateUserInfo = async () => {
     localStorage.setItem(USER_INFO_NAME, JSON.stringify(userInfo));
 };
 
+/** Replaces the stored token, e.g. with the fresh one after a password change */
+export const setToken = (token: string) => {
+    localStorage.setItem(TOKEN_NAME, token);
+};
+
 export const getToken = () => {
     return localStorage.getItem(TOKEN_NAME);
 };

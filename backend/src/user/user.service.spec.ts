@@ -263,6 +263,7 @@ describe('UserService', () => {
         where: { id: userId },
         data: {
           password: expect.any(String),
+          tokenVersion: { increment: 1 },
         },
       });
     });

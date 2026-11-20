@@ -59,6 +59,7 @@ export class AuthService {
     const jwt = await this.generateAuthJwt({
       userId: user.id,
       roles: user.roles,
+      tokenVersion: user.tokenVersion,
     });
 
     return {
@@ -145,6 +146,7 @@ export class AuthService {
       const jwt = await this.generateAuthJwt({
         userId: existingUser.id,
         roles: newRoles,
+        tokenVersion: existingUser.tokenVersion,
       });
       return {
         token: jwt,
@@ -218,6 +220,7 @@ export class AuthService {
     const jwt = await this.generateAuthJwt({
       userId: user.id,
       roles: user.roles,
+      tokenVersion: user.tokenVersion,
     });
     return {
       token: jwt,
@@ -236,7 +239,7 @@ export class AuthService {
   }
 
   async validateJwt(token: string): Promise<JwtAuthDto> {
-    let verifiedUser: { userId: string };
+    let verifiedUser: { userId: string; tokenVersion?: number; exp?: number };
     try {
       verifiedUser = await this.jwtService.verifyAsync(token);
     } catch {
@@ -247,13 +250,15 @@ export class AuthService {
         id: verifiedUser.userId,
       },
     });
-    // The token outlived its user
-    if (!userFromDb) {
+    // The token outlived its user, or a password change revoked it
+    if (!userFromDb || !isCurrentTokenVersion(verifiedUser, userFromDb)) {
       throw new UnauthorizedException();
     }
     return {
       userId: userFromDb.id,
       roles: userFromDb.roles,
+      tokenVersion: userFromDb.tokenVersion,
+      exp: verifiedUser.exp,
     };
   }
 
@@ -299,10 +304,27 @@ export class AuthService {
     if (!oldValid) {
       throw new HttpException('Wrong password', HttpStatus.FORBIDDEN);
     }
-    await this.prisma.user.update({
+    // Signs out every other session; this one gets a fresh token
+    const updated = await this.prisma.user.update({
       where: { id: userId },
-      data: { password: await bcrypt.hash(newPassword, 12) },
+      data: {
+        password: await bcrypt.hash(newPassword, 12),
+        tokenVersion: { increment: 1 },
+      },
     });
-    return 'Password changed';
+    return {
+      message: 'Password changed',
+      token: await this.generateAuthJwt({
+        userId: updated.id,
+        roles: updated.roles,
+        tokenVersion: updated.tokenVersion,
+      }),
+    };
   }
 }
+
+/** A token is current when it carries the user's present token version */
+export const isCurrentTokenVersion = (
+  payload: { tokenVersion?: number },
+  user: { tokenVersion: number },
+) => (payload.tokenVersion ?? 0) === user.tokenVersion;

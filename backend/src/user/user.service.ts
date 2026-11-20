@@ -127,7 +127,11 @@ export class UserService {
   async updatePassword(id: string, password: string) {
     return this.prisma.user.update({
       where: { id: id },
-      data: { password: await bcrypt.hash(password, 12) },
+      // Signs the user out everywhere
+      data: {
+        password: await bcrypt.hash(password, 12),
+        tokenVersion: { increment: 1 },
+      },
     });
   }
 
