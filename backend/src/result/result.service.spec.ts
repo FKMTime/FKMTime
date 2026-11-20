@@ -737,17 +737,30 @@ describe('ResultService sending where the WCA setting says', () => {
           wcaScoretakingSoftware,
           scoretakingToken,
           cubingContestsToken: 'cc-token',
+          wcif: {
+            events: [
+              {
+                id: '333',
+                rounds: [
+                  { id: '333-r1', format: 'a' },
+                  { id: '333-r2', format: 'h' },
+                ],
+              },
+            ],
+          },
         }),
       },
     };
     const wcaService = {
       enterWholeScorecardToWcaLive: jest.fn().mockResolvedValue({}),
+      enterRoundToWcaLive: jest.fn().mockResolvedValue({}),
     };
     const contestsService = {
       enterWholeScorecardToCubingContests: jest.fn().mockResolvedValue({}),
     };
     const integratedLiveService = {
       markDirty: jest.fn().mockResolvedValue(undefined),
+      sendRoundNow: jest.fn().mockResolvedValue({}),
     };
     const service = new ResultService(
       prisma as unknown as DbService,
@@ -760,11 +773,39 @@ describe('ResultService sending where the WCA setting says', () => {
       integratedLiveService as never,
       competitionStub,
     );
-    service.getResultById = jest
-      .fn()
-      .mockResolvedValue({ id: 'result-1', eventId, attempts: [] });
+    service.getResultById = jest.fn().mockResolvedValue({
+      id: 'result-1',
+      eventId,
+      roundId: `${eventId}-r1`,
+      attempts: [],
+    });
+    service.getAllResultsByRound = jest.fn().mockResolvedValue([]);
     return { service, wcaService, contestsService, integratedLiveService };
   };
+
+  it('sends a head-to-head result nowhere, whatever the WCA says', async () => {
+    const { service, wcaService } = setup('wca_live');
+    (service.getResultById as jest.Mock).mockResolvedValue({
+      id: 'result-1',
+      eventId: '333',
+      roundId: '333-r2',
+      attempts: [],
+    });
+
+    const reply = await service.sendResult('result-1');
+
+    expect(wcaService.enterWholeScorecardToWcaLive).not.toHaveBeenCalled();
+    expect(reply).toMatchObject({ sent: false });
+  });
+
+  it('sends a head-to-head round nowhere, whatever the WCA says', async () => {
+    const { service, integratedLiveService } = setup('internal');
+
+    const reply = await service.sendRound('333-r2');
+
+    expect(integratedLiveService.sendRoundNow).not.toHaveBeenCalled();
+    expect(reply).toMatchObject({ sent: false });
+  });
 
   it('sends to WCA Live when the WCA says wca_live', async () => {
     const { service, wcaService } = setup('wca_live');

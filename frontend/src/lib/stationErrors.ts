@@ -15,6 +15,8 @@ const HINTS: Record<string, string> = {
         "Ask the competitor to scan their card again and choose the round.",
     stationRoundChanged:
         "The solve was not saved. Enter it by hand in Results, or give an extra.",
+    h2hRoundNotOnStations:
+        "The solve was not saved: stations can't run head-to-head rounds yet. Keep score on paper.",
     competitorNotFound: ASSIGN_CARD,
     judgeNotFound: ASSIGN_CARD,
     judgeIsCompetitor: "Another person has to scan their card as the judge.",
