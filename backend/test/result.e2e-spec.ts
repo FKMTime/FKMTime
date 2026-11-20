@@ -44,6 +44,9 @@ describe('ResultController (e2e)', () => {
             {
               attemptNumber: 2,
               value: 1600,
+              comment: 'Extra granted: dummy delegate note',
+              originalTime: 1590,
+              inspectionTime: 9000,
               penalty: 0,
               status: AttemptStatus.STANDARD,
               type: AttemptType.STANDARD_ATTEMPT,
@@ -111,6 +114,56 @@ describe('ResultController (e2e)', () => {
       await request(app.getHttpServer())
         .get(`/result/round/${ROUND_ID}/person/${personId}`)
         .expect(401);
+    });
+  });
+
+  describe('attempt fields outside delegate pages', () => {
+    const delegateOnly = [
+      'comment',
+      'updatedById',
+      'originalTime',
+      'inspectionTime',
+    ];
+    const attemptsOf = (body: any[]) =>
+      body.find((r) => r.id === resultId).attempts as Record<string, unknown>[];
+
+    it('leaves delegate notes and timer details out of public results', async () => {
+      const res = await request(app.getHttpServer())
+        .get(`/result/public/round/${ROUND_ID}`)
+        .expect(200);
+      for (const attempt of attemptsOf(res.body)) {
+        for (const field of delegateOnly)
+          expect(attempt).not.toHaveProperty(field);
+      }
+    });
+
+    it('leaves them out of round and person results too', async () => {
+      for (const path of [
+        `/result/round/${ROUND_ID}`,
+        `/result/person/${personId}`,
+      ]) {
+        const res = await request(app.getHttpServer())
+          .get(path)
+          .set('Authorization', `Bearer ${adminToken}`)
+          .expect(200);
+        for (const attempt of attemptsOf(res.body)) {
+          for (const field of delegateOnly)
+            expect(attempt).not.toHaveProperty(field);
+        }
+      }
+    });
+
+    it('keeps them on the single result delegates open', async () => {
+      const res = await request(app.getHttpServer())
+        .get(`/result/${resultId}`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .expect(200);
+      expect(
+        res.body.attempts.find((a: any) => a.attemptNumber === 2),
+      ).toMatchObject({
+        comment: 'Extra granted: dummy delegate note',
+        inspectionTime: 9000,
+      });
     });
   });
 
