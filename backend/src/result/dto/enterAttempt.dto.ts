@@ -7,6 +7,7 @@ import {
   Matches,
 } from 'class-validator';
 import { groupIdRegex } from 'src/constants';
+import { TUTORIAL_GROUP_ID } from 'src/device/tutorial';
 
 export class EnterAttemptDto {
   @IsInt()
@@ -44,8 +45,9 @@ export class EnterAttemptDto {
   @IsString()
   sessionId: string;
 
+  /** A round's group, or the tutorial's (SPEC-012) */
   @IsString()
-  @Matches(groupIdRegex)
+  @Matches(new RegExp(`^(${groupIdRegex}|${TUTORIAL_GROUP_ID})$`))
   @IsOptional()
   groupId: string;
 }

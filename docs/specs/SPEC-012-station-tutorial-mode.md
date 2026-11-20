@@ -183,12 +183,15 @@ For a tutorial solve sent as a delegate call, the backend:
 3. Emits `newIncident` with `isTutorial: true`, so delegates get the usual
    notification, titled "Tutorial incident".
 
-**On the panel.** Open incidents list tutorial incidents with the real ones,
+**On the panel.** Open incidents list tutorial incidents above the real ones,
 marked with a "Tutorial" badge, and count them in the unresolved count. The
-delegate opens one in the same incident panel and form as a real incident,
-with what doesn't exist for a tutorial left out: the competitor's previous
-attempts and extras, warnings, and "save as noteworthy". A line at the top
-says "Tutorial: nothing here is saved."
+delegate opens one in its own panel (`TutorialIncidentPanel`), built from the
+same parts as a real incident's: quick actions, time, penalty, "Do not
+require cards", and Mark as resolved, Give extra and Delete. What doesn't
+exist for a tutorial is left out: attempt number, judge, comment, the
+competitor's previous extras and "save as noteworthy". A line at the top
+says "Tutorial: nothing here is saved." The real incident form edits a saved
+attempt throughout, so a separate panel kept it free of tutorial cases.
 
 **Resolving.** The form's outcomes map onto what the station gets, as for a
 real incident (`AttemptService.updateAttempt` and `deleteAttempt`):
@@ -204,8 +207,9 @@ given". Nothing else happens: no extra is granted, no edit is logged.
 
 **API**, for delegates like the rest of `/incident`:
 
-- `GET /incident/unresolved` and `/unresolved/count` include tutorial
-  incidents, each with `isTutorial: true`.
+- `GET /incident/tutorial` lists them. They stay out of
+  `GET /incident/unresolved`, whose callers (Results, Home's room cards)
+  expect saved attempts; `GET /incident/unresolved/count` counts them.
 - `PUT /incident/tutorial/:id` with `{ value, penalty, status, doNotRequireCards }`
   sends `IncidentResolved` and drops the entry.
 - `DELETE /incident/tutorial/:id` sends `IncidentResolved` with
@@ -328,24 +332,26 @@ Decided (2026-11-17). Rejected: a message inside the panel only, which adds
 little over the Home banner; and the Home banner alone, which leaves a
 tutorial forgotten mid-day unnoticed.
 
-Organisers and delegates get a notification, the same kind as "New
+Delegates get a notification, the same kind as "New
 incident" (`Layout.tsx`): a browser notification, which on a phone the
 service worker shows. Like incident notifications, it reaches only a device
 with the panel open. FKMTime has no server push.
 
 - **A group starts in a room where a station is still in tutorial mode**
   (any group change after the first of the day, which ends the mode itself):
-  "Station 3 is still in tutorial mode: its solves aren't saved." Tapping it
-  opens Devices.
+  "Station 3 is still in tutorial mode. A group started. Its solves aren't
+  saved until the tutorial ends." Tapping it opens Devices.
 - **The first group of the day ends a tutorial on its own:** "Tutorial on
-  Station 3 ended: the first group started." Nobody is then surprised that
+  Station 3 ended. The first group of the day started, so its solves are
+  saved again." Nobody is then surprised that
   the station is back to normal.
 
-The backend sends both on a new `tutorialNotice` event to organisers and
-delegates (`{ kind: 'stillOn' | 'endedByGroupStart', espId, deviceName }`),
-from the same `afterGroupsChanged` hook that ends the mode. Each notification
-is tagged with the station and the group start, so a second open tab doesn't
-show it twice.
+The backend sends both on a new `tutorialNotice` event
+(`{ kind: 'stillOn' | 'endedByGroupStart', espId, deviceName }`) to the
+`incidents` room, which only delegates can join, like `newIncident`. It comes
+from the same step that ends the mode, right after a room's groups change.
+Each notification is tagged with the station and the kind, so a second open
+tab doesn't show it twice.
 
 ### Suggesting the tutorial on Home
 
@@ -362,8 +368,7 @@ Home shows organisers and delegates a banner for it:
 > [Start tutorial]
 
 - The time is in the venue's timezone, like the rest of Home
-  (`formatTimeRange`). The activity's own name is shown when it isn't the
-  default one.
+  (`formatTimeRange`), with the activity's own name from the schedule.
 - **Start tutorial** lists the active stations in the activity's room (rooms
   are matched by name, as `getNextActivityInRoom` does) and starts tutorial
   mode on the one picked. With one station in that room it starts there
@@ -395,48 +400,48 @@ Home shows organisers and delegates a banner for it:
 
 ## Acceptance criteria
 
-- [ ] A card scan on a station in tutorial mode returns the person with only
+- [x] A card scan on a station in tutorial mode returns the person with only
       the `tutorial` group, named in the competitor's language, even when the
       room has no group running and the person isn't registered for anything
       (unit tests on `PersonForDeviceService`).
-- [ ] An unknown card on a tutorial station still gets `competitorNotFound`
+- [x] An unknown card on a tutorial station still gets `competitorNotFound`
       (unit test).
-- [ ] An attempt with group `tutorial` writes no row in any table and calls
+- [x] An attempt with group `tutorial` writes no row in any table and calls
       no results sender, whatever the station's mode, and replies
       `tutorialAttemptEntered` (unit tests, including a station whose mode
       ended before the attempt arrived).
-- [ ] An attempt with a real group on a station in tutorial mode is saved as
+- [x] An attempt with a real group on a station in tutorial mode is saved as
       normal (unit test).
-- [ ] A tutorial delegate call replies `delegateWasNotified`, writes nothing
+- [x] A tutorial delegate call replies `delegateWasNotified`, writes nothing
       to the database, keeps one in-memory tutorial incident per station and
       session, and emits `newIncident` with `isTutorial: true` (unit tests).
-- [ ] Resolving, giving an extra and deleting a tutorial incident send
+- [x] Resolving, giving an extra and deleting a tutorial incident send
       `IncidentResolved` as in the table, and drop the entry; an entry older
       than 5 minutes is gone and resolving it answers 404 (unit tests with
       fake timers).
-- [ ] Open incidents show a tutorial incident with its badge and without
+- [x] Open incidents show a tutorial incident with its badge and without
       previous attempts, warnings or "save as noteworthy" (component test).
-- [ ] Each tutorial scan and solve moves `tutorialEndsAt` to now + 15 min; after
+- [x] Each tutorial scan and solve moves `tutorialEndsAt` to now + 15 min; after
       it passes, a scan gets the room's round again (unit test with fake
       timers).
-- [ ] Starting the first group of the day in a room, from the panel or by
+- [x] Starting the first group of the day in a room, from the panel or by
       the automatic group change, ends tutorial mode on that room's stations;
       a later group change that day doesn't (unit tests on `RoomsService`).
-- [ ] `PUT /device/:id/tutorial` needs a delegate, rejects non-stations and
+- [x] `PUT /device/:id/tutorial` needs a delegate, rejects non-stations and
       retired stations, and `GET /device` returns `tutorialEndsAt` and who
       started it (e2e).
-- [ ] A station in tutorial mode is off live solving while its group is
+- [x] A station in tutorial mode is off live solving while its group is
       `tutorial`, and back on with a real group (unit test on `SocketService`).
 - [ ] A group start in a room with a station still in tutorial mode sends
       `tutorialNotice` `stillOn`, and the first group of the day sends
       `endedByGroupStart` (unit tests); the panel shows them as notifications
-      for organisers and delegates only (component test).
-- [ ] Home shows the "Tutorial for new competitors" banner from 15 minutes
+      for delegates (component test).
+- [x] Home shows the "Tutorial for new competitors" banner from 15 minutes
       before an `other-tutorial` activity until it ends, hides it once a
       station in its room is in tutorial mode or it is dismissed, and "Start
       tutorial" starts the mode on the picked station (component tests with
       a fake clock).
-- [ ] Devices shows the badge and "Start/End tutorial"; Home shows the banner;
+- [x] Devices shows the badge and "Start/End tutorial"; Home shows the banner;
       both disappear at `tutorialEndsAt` (component tests).
 - [ ] Through the station tester: start tutorial, scan, solve, call the
       delegate, confirm; Results stays empty and the station returns to the

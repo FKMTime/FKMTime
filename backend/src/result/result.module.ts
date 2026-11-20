@@ -14,9 +14,14 @@ import { ResultController } from './result.controller';
 import { PublicResultController } from './result.public.controller';
 import { ResultService } from './result.service';
 import { ResultFromDeviceService } from './resultFromDevice.service';
+import { TutorialFromDeviceService } from './tutorialFromDevice.service';
 
 @Module({
-  providers: [ResultService, ResultFromDeviceService],
+  providers: [
+    ResultService,
+    ResultFromDeviceService,
+    TutorialFromDeviceService,
+  ],
   controllers: [ResultController, PublicResultController],
   imports: [
     AuthModule,
@@ -24,7 +29,7 @@ import { ResultFromDeviceService } from './resultFromDevice.service';
     forwardRef(() => AttendanceModule),
     WcaModule,
     ContestsModule,
-    DeviceModule,
+    forwardRef(() => DeviceModule),
     forwardRef(() => PersonModule),
     AttemptEditLogModule,
     forwardRef(() => AppModule),

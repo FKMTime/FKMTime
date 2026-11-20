@@ -6,7 +6,9 @@ import {
   SHOW_SECONDARY_TEXT_HW_VERSIONS,
 } from 'src/constants';
 import { DbService } from 'src/db/db.service';
+import { DeviceService } from 'src/device/device.service';
 import { getStationGroupIds } from 'src/device/stationRounds';
+import { isInTutorial, TUTORIAL_GROUP_ID } from 'src/device/tutorial';
 import { eventsData, getMaxPenalty } from 'src/events';
 import {
   attemptTimeWithPenalty,
@@ -14,7 +16,11 @@ import {
   getCountingAttempts,
 } from 'src/result/helpers';
 import { ResultService } from 'src/result/result.service';
-import { convertToLatin, getTranslation } from 'src/translations/translations';
+import {
+  convertToLatin,
+  getTranslation,
+  isLocaleAvailable,
+} from 'src/translations/translations';
 import { WcaService } from 'src/wca/wca.service';
 import { getMaxAttempts } from 'src/wcif-helpers';
 import { Competition as WCIF } from 'wcif-helpers';
@@ -34,6 +40,8 @@ export class PersonForDeviceService {
     private readonly wcaService: WcaService,
     @Inject(forwardRef(() => ResultService))
     private readonly resultService: ResultService,
+    @Inject(forwardRef(() => DeviceService))
+    private readonly deviceService: DeviceService,
   ) {}
 
   async getPersonInfo(
@@ -73,6 +81,12 @@ export class PersonForDeviceService {
         room: true,
       },
     });
+    // A station in tutorial mode offers only the tutorial, to anyone with a
+    // card: rounds, registration and attempts left don't apply (SPEC-012)
+    if (device && isInTutorial(device)) {
+      await this.deviceService.extendTutorial(device.id);
+      return this.getTutorialPersonInfo(person, competition.defaultLocale);
+    }
     const wcif = JSON.parse(JSON.stringify(competition.wcif));
     // A station pointed at a round offers only that round (SPEC-007)
     const possibleGroups = device
@@ -186,6 +200,35 @@ export class PersonForDeviceService {
       ...person,
       name: convertToLatin(person.name),
       possibleGroups: await Promise.all(finalGroups),
+    };
+  }
+
+  /** The person with the one tutorial group, labelled in their language */
+  private getTutorialPersonInfo(
+    person: NonNullable<
+      Awaited<ReturnType<PersonService['getPersonByCardId']>>
+    >,
+    defaultLocale: string,
+  ) {
+    const country = person.countryIso2?.toLowerCase();
+    const label: string = getTranslation(
+      'tutorial',
+      country && isLocaleAvailable(country) ? country : defaultLocale,
+    );
+    return {
+      ...person,
+      name: convertToLatin(person.name),
+      possibleGroups: [
+        {
+          groupId: TUTORIAL_GROUP_ID,
+          // Older stations show the name, V4 ones the secondary text
+          name: label,
+          secondaryText: label,
+          useInspection: true,
+          maxPenalty: getMaxPenalty('333'),
+          limit: null as number | null,
+        },
+      ],
     };
   }
 

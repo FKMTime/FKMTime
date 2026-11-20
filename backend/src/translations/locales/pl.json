@@ -247,6 +247,14 @@
     {
       "key": "resetTimerFooter",
       "translation": "przed inspekcja"
+    },
+    {
+      "key": "tutorial",
+      "translation": "Szkolenie"
+    },
+    {
+      "key": "tutorialAttemptEntered",
+      "translation": "Proba ze szkolenia, nie zapisano"
     }
   ]
 }

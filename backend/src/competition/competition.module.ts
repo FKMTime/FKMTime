@@ -2,6 +2,7 @@ import { forwardRef, Module } from '@nestjs/common';
 import { AppModule } from 'src/app.module';
 import { AuthModule } from 'src/auth/auth.module';
 import { DbModule } from 'src/db/db.module';
+import { DeviceModule } from 'src/device/device.module';
 import { PersonModule } from 'src/person/person.module';
 import { ResultModule } from 'src/result/result.module';
 
@@ -42,6 +43,7 @@ import { SyncService } from './sync.service';
     forwardRef(() => ResultModule),
     forwardRef(() => PersonModule),
     forwardRef(() => AppModule),
+    forwardRef(() => DeviceModule),
   ],
   exports: [
     CompetitionService,
