@@ -854,3 +854,42 @@ All copy uses task language: "Start match", "Extra granted", "Withdraw",
   delegate".
 - **Revert:** drop the bracket tables. The round's `Result`/`Attempt` rows
   stay, and are still visible as plain attempts.
+
+## Decisions (2026-11-20)
+
+Agreed before the work was split into PRs. Where they differ from the text
+above, they win; each PR that builds a part updates its section.
+
+1. **The CSV export is built on the server.**
+   `POST /h2h/:roundId/export { password }` returns the file. The reason given
+   in *WCA CSV export* for decrypting in the browser doesn't hold:
+   `ScramblingService.unlockScrambleSet` already receives the password. The
+   password is used for that request only, and never stored or logged.
+2. **The ranking is computed in the backend only.** The H2H API responses
+   return each entrant's position and stage reached, and the frontend only
+   shows them. There is no shared package (as *Final ranking* says).
+3. **The dummy WCA's generated competition makes `333oh-r2` head-to-head**, on
+   by default. It is the final of 333oh, a bracket of about 12. Not `333-r3`:
+   `backend/test/round-flow.e2e-spec.ts` runs that one as a normal Ao5 round.
+   FKMTime's seed and tests find the H2H round in the WCIF (`format === 'h'`)
+   and never hard-code it.
+4. **No CI fallback for the dummy WCA.** CI pulls `maxidragon/dummy-wca:main`,
+   which gets the H2H final and the `results/:eventId` endpoint once the
+   dummy-wca change is merged. Until then, CI checks that fail only because of
+   that are accepted, and each PR names them. Everything else stays green.
+5. **Seeding comes from the WCIF.** It uses the previous round's
+   `results[].ranking`, limited to the people who advanced. If that ranking is
+   missing, the bracket is created unseeded with a clear message, and the
+   delegate orders it by hand. Ties are broken randomly on the server and
+   flagged (`seedTieBroken`).
+6. **Station reply text after an H2H solve** (16×2 LCD, ASCII only; the first
+   two words go on the top line):
+   - "Point won" / "Point lost" / "No point", then "Set 2-1 Sets 1-0".
+   - "Waiting for opponent" while the opponent's attempt for that point isn't
+     in.
+   - "Match won" / "Match lost", then the set score, when the match ends.
+   - "No match in progress" when the competitor has no playing match.
+   - Polish texts without diacritics, like the existing ones in
+     `backend/src/translations/locales/pl.json`.
+7. **Every PR is reviewed locally** until a review round finds nothing new,
+   before it is pushed.
