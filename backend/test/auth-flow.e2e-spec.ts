@@ -404,7 +404,7 @@ describe('Auth flows (e2e)', () => {
         .put(`/user/password/${user.id}`)
         .set(
           'Authorization',
-          `Bearer ${(await createUserWithRoles(app, db, `org-revoke-${SUFFIX}`, [Role.ORGANIZER])).token}`,
+          `Bearer ${(await createUserWithRoles(app, db, `org-revoke-tokens-${SUFFIX}`, [Role.ORGANIZER])).token}`,
         )
         .send({ password: 'first-password' })
         .expect(200);

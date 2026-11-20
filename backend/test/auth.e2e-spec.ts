@@ -85,11 +85,13 @@ describe('AuthController (e2e)', () => {
       });
 
       // Restore via API so password stays properly bcrypt-hashed
-      await request(app.getHttpServer())
+      const restored = await request(app.getHttpServer())
         .put('/auth/password/change')
         .set('Authorization', `Bearer ${newLogin.token}`)
         .send({ oldPassword: 'newPassword', newPassword: 'admin' })
         .expect(200);
+      // Each change ends the earlier sessions; this one gets a fresh token
+      adminToken = restored.body.token;
     });
 
     it('should return 403 when wrong old password', async () => {
