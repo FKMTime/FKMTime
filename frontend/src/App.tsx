@@ -113,10 +113,13 @@ const PublicResults = lazy(() => import("./Pages/Public/PublicResults"));
 const PublicLiveSolving = lazy(
     () => import("./Pages/Public/PublicLiveSolving")
 );
-// DEV is false at build time, so a production bundle doesn't contain the page
-const StationTester = import.meta.env.DEV
-    ? lazy(() => import("./Pages/Main/StationTester/StationTester"))
-    : null;
+// Decided at build time, so a production bundle doesn't contain the page. The
+// same test as STATION_TESTER_ENABLED, written out: through an import Rollup
+// still emits the page's chunk, unreferenced.
+const StationTester =
+    import.meta.env.DEV || import.meta.env.VITE_STATION_TESTER === "true"
+        ? lazy(() => import("./Pages/Main/StationTester/StationTester"))
+        : null;
 
 const App = () => {
     const router = createBrowserRouter([
