@@ -17,6 +17,7 @@ import { GetUser } from 'src/auth/decorator/getUser.decorator';
 import { JwtAuthDto } from 'src/auth/dto/jwt-auth.dto';
 import { OrganizerGuard } from 'src/auth/guards/organizer.guard';
 import { PersonService } from 'src/person/person.service';
+import { ParseRoundIdPipe } from 'src/roundId.pipe';
 
 import { AddCompetitorToRoundDto } from './dto/addCompetitorToRound.dto';
 import {
@@ -61,7 +62,7 @@ export class IntegratedLiveController {
   @HttpCode(HttpStatus.OK)
   @Post(':roundId/no-shows')
   async removeNoShows(
-    @Param('roundId') roundId: string,
+    @Param('roundId', ParseRoundIdPipe) roundId: string,
     @Body() dto: RemoveNoShowsDto,
   ) {
     return await this.rounds.removeNoShows(roundId, dto.registrationIds);
@@ -69,13 +70,13 @@ export class IntegratedLiveController {
 
   @HttpCode(HttpStatus.OK)
   @Post(':roundId/clear')
-  async clearRound(@Param('roundId') roundId: string) {
+  async clearRound(@Param('roundId', ParseRoundIdPipe) roundId: string) {
     return await this.rounds.clearRound(roundId);
   }
 
   @Get(':roundId/withdrawal/:personId')
   async previewWithdrawal(
-    @Param('roundId') roundId: string,
+    @Param('roundId', ParseRoundIdPipe) roundId: string,
     @Param('personId') personId: string,
   ) {
     return await this.rounds.previewWithdrawal(roundId, personId);
@@ -84,7 +85,7 @@ export class IntegratedLiveController {
   @HttpCode(HttpStatus.OK)
   @Post(':roundId/withdrawal/:personId')
   async withdraw(
-    @Param('roundId') roundId: string,
+    @Param('roundId', ParseRoundIdPipe) roundId: string,
     @Param('personId') personId: string,
     @Body() dto: WithdrawDto,
   ) {
@@ -108,7 +109,7 @@ export class IntegratedLiveController {
 
   /** The round's WCA state, sync status and the WCA's copy of each result */
   @Get(':roundId/details')
-  async getRoundDetails(@Param('roundId') roundId: string) {
+  async getRoundDetails(@Param('roundId', ParseRoundIdPipe) roundId: string) {
     return await this.rounds.getRoundDetails(roundId);
   }
 
@@ -116,37 +117,41 @@ export class IntegratedLiveController {
   @HttpCode(HttpStatus.OK)
   @Post(':roundId/results/:registrationId/clear')
   async clearResult(
-    @Param('roundId') roundId: string,
+    @Param('roundId', ParseRoundIdPipe) roundId: string,
     @Param('registrationId', ParseIntPipe) registrationId: number,
   ) {
     return await this.rounds.clearResult(roundId, registrationId);
   }
 
   @Get(':roundId/blockers')
-  async getOpeningBlockers(@Param('roundId') roundId: string) {
+  async getOpeningBlockers(
+    @Param('roundId', ParseRoundIdPipe) roundId: string,
+  ) {
     return await this.rounds.getOpeningBlockers(roundId);
   }
 
   @HttpCode(HttpStatus.OK)
   @Post(':roundId/open')
-  async openRound(@Param('roundId') roundId: string) {
+  async openRound(@Param('roundId', ParseRoundIdPipe) roundId: string) {
     return await this.rounds.openRound(roundId);
   }
 
   @Delete(':roundId/close')
-  async closeRound(@Param('roundId') roundId: string) {
+  async closeRound(@Param('roundId', ParseRoundIdPipe) roundId: string) {
     return await this.rounds.closeRound(roundId);
   }
 
   @Get(':roundId/addable')
-  async getAddableCompetitors(@Param('roundId') roundId: string) {
+  async getAddableCompetitors(
+    @Param('roundId', ParseRoundIdPipe) roundId: string,
+  ) {
     return await this.rounds.getAddableCompetitors(roundId);
   }
 
   @HttpCode(HttpStatus.OK)
   @Post(':roundId/competitors')
   async addCompetitor(
-    @Param('roundId') roundId: string,
+    @Param('roundId', ParseRoundIdPipe) roundId: string,
     @Body() dto: AddCompetitorToRoundDto,
   ) {
     return await this.rounds.addCompetitor(roundId, dto.registrationId);

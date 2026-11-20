@@ -161,14 +161,28 @@ export class IntegratedLiveConnectionService {
       return null;
     }
     const tokens = await this.wcaService.refreshTokens(refreshToken);
+    // Write only if the connection is still the one this refresh started
+    // from: a disconnect or reconnect during the round trip must win
+    const unchanged = {
+      id: competition.id,
+      wcaLiveRefreshToken: competition.wcaLiveRefreshToken,
+    };
     if (!tokens) {
-      await this.markBroken(competition);
+      const { count } = await this.prisma.competition.updateMany({
+        where: { ...unchanged, wcaLiveConnectionBrokenAt: null },
+        data: { wcaLiveConnectionBrokenAt: new Date() },
+      });
+      if (count > 0) {
+        this.logger.warn('The WCA live results connection broke: reconnect it');
+        this.appGateway.handleIntegratedLiveConnectionChanged();
+      }
       return null;
     }
-    await this.prisma.competition.update({
-      where: { id: competition.id },
+    const { count } = await this.prisma.competition.updateMany({
+      where: unchanged,
       data: this.storedTokens(tokens),
     });
+    if (count === 0) return null;
     return tokens.accessToken;
   }
 

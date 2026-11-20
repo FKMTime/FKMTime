@@ -23,7 +23,8 @@ export const publicUserSelect = {
   },
 };
 
-export const roundIdRegex = '.*-r\\d+';
+// A WCIF round id such as 333-r1. Anchored: it ends up in URL paths sent to the WCA
+export const roundIdRegex = '^[a-zA-Z0-9_]+-r\\d+$';
 export const groupIdRegex = '.*-r\\d+-g\\d+';
 
 export const roundFormatMap = {

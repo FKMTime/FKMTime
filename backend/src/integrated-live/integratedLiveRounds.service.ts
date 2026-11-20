@@ -249,7 +249,7 @@ export class IntegratedLiveRoundsService {
     if (!base) return null;
     const [rounds, live, results, competition] = await Promise.all([
       this.getRounds(),
-      this.getJson(`${base}/rounds/${roundId}`),
+      this.getJson(`${base}/rounds/${encodeURIComponent(roundId)}`),
       this.prisma.result.findMany({
         where: { roundId },
         include: { attempts: true, liveSync: true, person: true },
@@ -358,9 +358,12 @@ export class IntegratedLiveRoundsService {
       };
     }
     const response = await this.connection
-      .authorizedFetch(`${base}/rounds/${roundId}/${registrationId}/clear`, {
-        method: 'PUT',
-      })
+      .authorizedFetch(
+        `${base}/rounds/${encodeURIComponent(roundId)}/${registrationId}/clear`,
+        {
+          method: 'PUT',
+        },
+      )
       .catch(() => null);
     if (!response?.ok) {
       return { ok: false, message: await this.reason(response) };
@@ -480,8 +483,10 @@ export class IntegratedLiveRoundsService {
     const base = await this.base();
     if (!base || roundNumber(roundId) !== 1) return [];
     const [addable, round] = await Promise.all([
-      this.getJson(`${base}/rounds/${roundId}/addable_competitors`),
-      this.getJson(`${base}/rounds/${roundId}`),
+      this.getJson(
+        `${base}/rounds/${encodeURIComponent(roundId)}/addable_competitors`,
+      ),
+      this.getJson(`${base}/rounds/${encodeURIComponent(roundId)}`),
     ]);
     const inRound = new Set<number>(
       (round?.results ?? []).map(
@@ -511,9 +516,12 @@ export class IntegratedLiveRoundsService {
       };
     }
     const response = await this.connection
-      .authorizedFetch(`${base}/rounds/${roundId}/${registrationId}`, {
-        method: 'PUT',
-      })
+      .authorizedFetch(
+        `${base}/rounds/${encodeURIComponent(roundId)}/${registrationId}`,
+        {
+          method: 'PUT',
+        },
+      )
       .catch(() => null);
     if (!response?.ok) {
       return { ok: false, message: await this.reason(response) };
@@ -574,7 +582,9 @@ export class IntegratedLiveRoundsService {
     for (const round of openRounds) {
       const absent = await this.findAbsentCompetitors(round.roundId, started);
       if (absent.length === 0) continue;
-      const live = await this.getJson(`${base}/rounds/${round.roundId}`);
+      const live = await this.getJson(
+        `${base}/rounds/${encodeURIComponent(round.roundId)}`,
+      );
       const emptyInWca = new Set<number>(
         (live?.results ?? [])
           .filter(
@@ -621,11 +631,14 @@ export class IntegratedLiveRoundsService {
       };
     }
     const response = await this.connection
-      .authorizedFetch(`${base}/rounds/${roundId}/bulk_quit`, {
-        method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ registration_ids: registrationIds }),
-      })
+      .authorizedFetch(
+        `${base}/rounds/${encodeURIComponent(roundId)}/bulk_quit`,
+        {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ registration_ids: registrationIds }),
+        },
+      )
       .catch(() => null);
     if (!response?.ok) {
       return { ok: false, message: await this.reason(response) };
@@ -665,7 +678,7 @@ export class IntegratedLiveRoundsService {
       };
     }
     const preview = await this.getJson(
-      `${base}/rounds/${roundId}/next_if_quit?registration_id=${person.wcaRegistrationId}`,
+      `${base}/rounds/${encodeURIComponent(roundId)}/next_if_quit?registration_id=${person.wcaRegistrationId}`,
     );
     if (!preview) {
       return {
@@ -698,7 +711,7 @@ export class IntegratedLiveRoundsService {
     }
     const response = await this.connection
       .authorizedFetch(
-        `${base}/rounds/${roundId}/${person.wcaRegistrationId}`,
+        `${base}/rounds/${encodeURIComponent(roundId)}/${person.wcaRegistrationId}`,
         {
           method: 'DELETE',
           headers: { 'Content-Type': 'application/json' },
@@ -846,7 +859,10 @@ export class IntegratedLiveRoundsService {
       };
     }
     const response = await this.connection
-      .authorizedFetch(`${base}/rounds/${roundId}/${action}`, { method })
+      .authorizedFetch(
+        `${base}/rounds/${encodeURIComponent(roundId)}/${action}`,
+        { method },
+      )
       .catch(() => null);
     if (!response?.ok) {
       const message = await this.reason(response);

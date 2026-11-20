@@ -15,6 +15,7 @@ import { AuthGuard } from '@nestjs/passport';
 import { GetUser } from 'src/auth/decorator/getUser.decorator';
 import { JwtAuthDto } from 'src/auth/dto/jwt-auth.dto';
 import { DelegateGuard } from 'src/auth/guards/delegate.guard';
+import { ParseRoundIdPipe } from 'src/roundId.pipe';
 
 import { ManualIncidentDto } from './dto/manualIncident.dto';
 import { NoteworthyIncidentDto } from './dto/noteworthyIncident.dto';
@@ -32,7 +33,9 @@ export class IncidentController {
   }
 
   @Get('round/:roundId')
-  async getIncidentsByRoundId(@Param('roundId') roundId: string) {
+  async getIncidentsByRoundId(
+    @Param('roundId', ParseRoundIdPipe) roundId: string,
+  ) {
     return this.incidentService.getIncidentsByRoundId(roundId);
   }
 

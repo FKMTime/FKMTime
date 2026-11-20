@@ -14,6 +14,7 @@ import { AuthGuard } from '@nestjs/passport';
 import { GetUser } from 'src/auth/decorator/getUser.decorator';
 import { JwtAuthDto } from 'src/auth/dto/jwt-auth.dto';
 import { DelegateGuard } from 'src/auth/guards/delegate.guard';
+import { ParseRoundIdPipe } from 'src/roundId.pipe';
 
 import { AttemptService } from './attempt.service';
 import { CreateAttemptDto } from './dto/createAttempt.dto';
@@ -145,7 +146,9 @@ export class AttemptController {
   }
 
   @Get('round/:roundId/recent')
-  async getRecentAttemptsByRoundId(@Param('roundId') roundId: string) {
+  async getRecentAttemptsByRoundId(
+    @Param('roundId', ParseRoundIdPipe) roundId: string,
+  ) {
     return await this.attemptService.getRecentAttemptsByRoundId(roundId);
   }
 

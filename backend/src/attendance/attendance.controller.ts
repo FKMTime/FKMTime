@@ -13,6 +13,7 @@ import { AuthGuard } from '@nestjs/passport';
 import { StaffRole } from '@prisma/client';
 import { StageLeaderGuard } from 'src/auth/guards/stageLeader.guard';
 import { CompetitionService } from 'src/competition/competition.service';
+import { ParseRoundIdPipe } from 'src/roundId.pipe';
 
 import { AttendanceService } from './attendance.service';
 import { AddNotAssignedPersonDto } from './dto/addNotAssignedPerson.dto';
@@ -39,7 +40,7 @@ export class AttendanceController {
 
   @UseGuards(StageLeaderGuard)
   @Get('round/:roundId/staffing')
-  async getRoundStaffing(@Param('roundId') roundId: string) {
+  async getRoundStaffing(@Param('roundId', ParseRoundIdPipe) roundId: string) {
     return this.attendanceService.getRoundStaffing(roundId);
   }
 

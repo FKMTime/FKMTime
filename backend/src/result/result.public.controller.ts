@@ -1,4 +1,5 @@
 import { Controller, Get, Param, Query } from '@nestjs/common';
+import { ParseRoundIdPipe } from 'src/roundId.pipe';
 
 import { ResultService } from './result.service';
 
@@ -8,7 +9,7 @@ export class PublicResultController {
 
   @Get('round/:roundId')
   async getAllResultsByRoundId(
-    @Param('roundId') roundId: string,
+    @Param('roundId', ParseRoundIdPipe) roundId: string,
     @Query('search') search: string,
   ) {
     return this.resultService.getAllResultsByRound(roundId, search);

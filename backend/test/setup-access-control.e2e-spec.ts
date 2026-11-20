@@ -45,6 +45,7 @@ const protectedEndpoints: [Method, string, Level][] = [
   ['get', `/competition/rooms/${FAKE_ID}/next-groups`, 'organizer'],
   ['get', `/competition/rooms/${FAKE_ID}/previous-groups`, 'organizer'],
   // scramble sets
+  ['get', `/result/round/333-r1/person/${FAKE_ID}`, 'delegate'],
   ['get', '/scramble-set/counts', 'delegate'],
   ['get', '/scramble-set/333-r1', 'delegate'],
   ['post', '/scramble-set/import', 'delegate'],
