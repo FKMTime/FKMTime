@@ -1,6 +1,6 @@
 # SPEC-013: Delegate access for one group
 
-- **Status:** Draft
+- **Status:** Accepted
 - **Created:** 2026-11-19
 - **Related:** SPEC-002 (extras for all attempts), SPEC-005 (DNF ruling)
 
