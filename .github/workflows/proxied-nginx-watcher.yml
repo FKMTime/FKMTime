@@ -5,10 +5,8 @@ on:
     - cron: "0 */6 * * *"
   workflow_dispatch:
 
-permissions:
-  contents: write
-  actions: write
-  repository-projects: write
+# Each job asks for what it needs
+permissions: {}
 
 concurrency:
   group: watch-external-ghcr
@@ -25,14 +23,14 @@ env:
 jobs:
   check:
     runs-on: ubuntu-latest
+    permissions:
+      # Reading this workflow's own earlier runs and their artifacts
+      actions: read
     outputs:
       digest: ${{ steps.get.outputs.digest }}
       changed: ${{ steps.diff.outputs.changed }}
       previous: ${{ steps.diff.outputs.previous }}
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v7
-
       - name: Set up Docker
         uses: docker/setup-buildx-action@v4
 
@@ -41,37 +39,48 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          REPO="${{ env.IMAGE_REPO }}"
-          TAG="${{ env.IMAGE_TAG }}"
-          MANIFEST=$(docker manifest inspect ghcr.io/${REPO}:${TAG})
+          MANIFEST=$(docker manifest inspect "ghcr.io/${IMAGE_REPO}:${IMAGE_TAG}")
           DIGEST=$(echo "${MANIFEST}" | jq -r '.manifests[] | select(.platform.architecture == "amd64" and .platform.os == "linux") | .digest')
-          if [ -z "${DIGEST}" ]; then
-            echo "Failed to resolve digest for ${REPO}:${TAG}" >&2
+          if [[ ! "${DIGEST}" =~ ^sha256:[0-9a-f]{64}$ ]]; then
+            echo "Failed to resolve digest for ${IMAGE_REPO}:${IMAGE_TAG}" >&2
             exit 1
           fi
           echo "digest=${DIGEST}" >> "${GITHUB_OUTPUT}"
           echo "Current digest: ${DIGEST}"
 
-      - name: Get previous digest from artifact
+      - name: Get previous digest from this workflow's last saved state
         id: get-previous
-        continue-on-error: true
-        run: |
-          # Try to download previous digest
-          if gh run download --name digest-state --dir ./state 2>/dev/null; then
-            PREV=$(cat ./state/digest.txt 2>/dev/null || echo "")
-            echo "previous found ${PREV}"
-            echo "previous=${PREV}" >> "${GITHUB_OUTPUT}"
-          else
-            echo "previous=" >> "${GITHUB_OUTPUT}"
-          fi
+        shell: bash
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          WORKFLOW_FILE: proxied-nginx-watcher.yml
+        run: |
+          set -uo pipefail
+          # Only artifacts from runs of this workflow: an artifact name alone
+          # would match one uploaded by any other run in the repository
+          PREV=""
+          for RUN_ID in $(gh run list --workflow "$WORKFLOW_FILE" --limit 50 --json databaseId --jq '.[].databaseId'); do
+            rm -rf ./state
+            if gh run download "$RUN_ID" --name digest-state --dir ./state 2>/dev/null; then
+              PREV=$(head -n 1 ./state/digest.txt 2>/dev/null | tr -d '[:space:]')
+              break
+            fi
+          done
+          if [[ ! "${PREV}" =~ ^sha256:[0-9a-f]{64}$ ]]; then
+            echo "No usable previous digest"
+            PREV=""
+          fi
+          echo "previous=${PREV}" >> "${GITHUB_OUTPUT}"
 
       - name: Compare digests
         id: diff
+        shell: bash
+        env:
+          CUR: ${{ steps.get.outputs.digest }}
+          PREV: ${{ steps.get-previous.outputs.previous }}
         run: |
-          CUR='${{ steps.get.outputs.digest }}'
-          PREV='${{ steps.get-previous.outputs.previous }}'
+          set -euo pipefail
           echo "CUR: ${CUR} PREV: ${PREV}"
           echo "previous=${PREV}" >> "${GITHUB_OUTPUT}"
           if [ "${CUR}" != "${PREV}" ]; then
@@ -84,34 +93,44 @@ jobs:
     needs: check
     if: needs.check.outputs.changed == 'true'
     runs-on: ubuntu-latest
+    permissions:
+      # repository_dispatch
+      contents: write
     steps:
       - name: repository_dispatch in this repo
         uses: actions/github-script@v9
+        env:
+          DIGEST: ${{ needs.check.outputs.digest }}
+          PREVIOUS: ${{ needs.check.outputs.previous }}
         with:
           script: |
+            const { EVENT_TYPE, IMAGE_REPO, IMAGE_TAG, DIGEST, PREVIOUS } = process.env;
             await github.rest.repos.createDispatchEvent({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              event_type: '${{ env.EVENT_TYPE }}',
+              event_type: EVENT_TYPE,
               client_payload: {
-                image: 'ghcr.io/${{ env.IMAGE_REPO }}:${{ env.IMAGE_TAG }}',
-                tag: '${{ env.IMAGE_TAG }}',
-                digest: '${{ needs.check.outputs.digest }}',
-                previous: '${{ needs.check.outputs.previous }}'
-              }
+                image: `ghcr.io/${IMAGE_REPO}:${IMAGE_TAG}`,
+                tag: IMAGE_TAG,
+                digest: DIGEST,
+                previous: PREVIOUS,
+              },
             });
-            console.log('Dispatched ${{ env.EVENT_TYPE }} to ${{ github.repository }}');
+            console.log(`Dispatched ${EVENT_TYPE} to ${context.repo.owner}/${context.repo.repo}`);
 
   persist_state:
     needs: check
     if: needs.check.outputs.changed == 'true'
     runs-on: ubuntu-latest
+    permissions: {}
     steps:
       - name: Save digest as artifact
+        env:
+          DIGEST: ${{ needs.check.outputs.digest }}
         run: |
           mkdir -p ./state
-          echo "${{ needs.check.outputs.digest }}" > ./state/digest.txt
-          
+          echo "${DIGEST}" > ./state/digest.txt
+
       - name: Upload digest state
         uses: actions/upload-artifact@v7
         with:
