@@ -59,3 +59,4 @@ Update `Status` as the spec moves:
 | [SPEC-011](SPEC-011-server-logs.md) | Server logs for admins, replacing Dozzle | Implemented |
 | [SPEC-012](SPEC-012-station-tutorial-mode.md) | Tutorial mode for a station | Accepted |
 | [SPEC-013](SPEC-013-group-delegate-access.md) | Delegate access for one group | Draft |
+| [SPEC-014](SPEC-014-micro-connector-into-this-repo.md) | Moving the micro connector into this repository | Draft |
