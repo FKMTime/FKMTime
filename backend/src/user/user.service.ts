@@ -33,6 +33,18 @@ export class UserService {
   }
 
   async createUser(data: CreateUserDto, userId: string) {
+    // Until a competition is imported, anyone who signs in with the WCA gets
+    // a role (see AuthService.loginWithWca), so accounts made then could
+    // outlive the import. Accounts can only be added once the instance is set up.
+    const competition = await this.prisma.competition.findFirst({
+      select: { id: true },
+    });
+    if (!competition) {
+      throw new HttpException(
+        'Import the competition before adding users',
+        409,
+      );
+    }
     const filteredRoles = await this.getFilteredRoles(userId, data.roles);
     if (filteredRoles.length !== data.roles.length) {
       throw new HttpException(
@@ -82,6 +94,7 @@ export class UserService {
   }
 
   async updateUser(id: string, data: UpdateUserDto, userId: string) {
+    await this.assertCanManage(userId, id);
     const filteredRoles = await this.getFilteredRoles(userId, data.roles);
     const user = await this.prisma.user.findUnique({
       where: { id: id },
@@ -124,8 +137,9 @@ export class UserService {
     };
   }
 
-  async updatePassword(id: string, password: string) {
-    return this.prisma.user.update({
+  async updatePassword(id: string, password: string, userId: string) {
+    await this.assertCanManage(userId, id);
+    await this.prisma.user.update({
       where: { id: id },
       // Signs the user out everywhere
       data: {
@@ -133,12 +147,39 @@ export class UserService {
         tokenVersion: { increment: 1 },
       },
     });
+    return {
+      message: 'Password updated successfully',
+    };
   }
 
-  async deleteUser(id: string) {
+  async deleteUser(id: string, userId: string) {
+    await this.assertCanManage(userId, id);
     return this.prisma.user.delete({
       where: { id: id },
+      select: { id: true },
     });
+  }
+
+  /**
+   * Refuses to act on a user who holds a role the caller could not grant,
+   * so an organizer cannot reset, rename, demote or delete a delegate or an
+   * admin, and a delegate cannot do it to an admin.
+   */
+  private async assertCanManage(userId: string, targetId: string) {
+    const target = await this.prisma.user.findUnique({
+      where: { id: targetId },
+      select: { roles: true },
+    });
+    if (!target) {
+      throw new HttpException('User not found', 404);
+    }
+    const allowed = await this.getFilteredRoles(userId, target.roles);
+    if (allowed.length !== target.roles.length) {
+      throw new HttpException(
+        'You cannot change a user with roles higher than your own',
+        403,
+      );
+    }
   }
 
   async getFilteredRoles(userId: string, roles: Role[]) {

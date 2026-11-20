@@ -8,6 +8,7 @@ import SegmentedControl from "@/Components/shared/SegmentedControl";
 import { useLiveQuery } from "@/hooks/useLiveQuery";
 import { useSocketEvents } from "@/hooks/useSocketEvents";
 import { useSocketRoom } from "@/hooks/useSocketRoom";
+import { useStationTutorial } from "@/hooks/useStationTutorial";
 import { useToast } from "@/hooks/useToast";
 import { competitionAtom, quickEntryAtom } from "@/lib/atoms";
 import { recentAttemptsQuery } from "@/lib/attempt";
@@ -46,6 +47,8 @@ import NextGroupInAllRooms from "./Components/NextGroupInAllRooms";
 import NoShowsToRemove from "./Components/NoShowsToRemove";
 import RoomCard from "./Components/RoomCard";
 import RoundsToOpenDialog from "./Components/RoundsToOpenDialog";
+import TutorialStationsAlert from "./Components/TutorialStationsAlert";
+import TutorialSuggestion from "./Components/TutorialSuggestion";
 import { useAskToChangeGroups } from "./Components/useAskToChangeGroups";
 
 /** Re-render this often so the schedule offset stays current */
@@ -119,6 +122,11 @@ const Home = () => {
         enabled: canStartGroups,
     });
     const pointedStations = getPointedStations(stations ?? []);
+    const refreshStations = () =>
+        void queryClient.invalidateQueries({
+            queryKey: [stationDevicesQuery.key],
+        });
+    const { startTutorial, endTutorial } = useStationTutorial(refreshStations);
     useSocketRoom(canStartGroups ? "Devices" : null, {
         invalidateOn: { deviceUpdated: [stationDevicesQuery.key] },
     });
@@ -333,6 +341,20 @@ const Home = () => {
                         <NoShowsToRemove />
                     </>
                 )}
+            {canStartGroups && stations && (
+                <>
+                    <TutorialStationsAlert
+                        stations={stations}
+                        onEnd={isDelegate() ? endTutorial : undefined}
+                    />
+                    <TutorialSuggestion
+                        wcif={competition.wcif}
+                        rooms={rooms}
+                        stations={stations}
+                        onStart={isDelegate() ? startTutorial : undefined}
+                    />
+                </>
+            )}
             {currentRoundIds.map((roundId) => (
                 <ResultsRoom key={roundId} roundId={roundId} />
             ))}

@@ -1,6 +1,7 @@
 import { Attempt, AttemptStatus, AttemptType, Result } from '@prisma/client';
 import { formatCentiseconds } from '@wca/helpers';
 import { DNF_VALUE, DNS_VALUE } from 'src/constants';
+import { isLocaleAvailable } from 'src/translations/translations';
 import { Person } from 'wcif-helpers';
 
 export const isCompetitorSignedInForEvent = (
@@ -294,4 +295,26 @@ export const getRoundResultText = (
     return `Mo3: ${formatAttemptResult(getMeanOf3(results))}`;
   }
   return `Best: ${formatAttemptResult(getBest(results))}`;
+};
+
+/**
+ * The language a station reply is shown in: the judge's when the judge and
+ * the competitor share a country and it is available, otherwise the
+ * competition's
+ */
+export const getReaderLocale = (
+  competitor: { countryIso2?: string | null } | null,
+  judge: { countryIso2?: string | null } | null,
+  defaultLocale: string,
+) => {
+  const country = judge?.countryIso2?.toLowerCase();
+  if (
+    competitor &&
+    country &&
+    judge.countryIso2 === competitor.countryIso2 &&
+    isLocaleAvailable(country)
+  ) {
+    return country;
+  }
+  return defaultLocale;
 };

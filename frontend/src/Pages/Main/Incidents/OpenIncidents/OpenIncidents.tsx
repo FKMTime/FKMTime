@@ -8,11 +8,14 @@ import { useLiveQuery } from "@/hooks/useLiveQuery";
 import { unresolvedIncidentsQuery } from "@/lib/incidents";
 import { LIVE_MAX_AGE } from "@/lib/queryCache";
 import { roomsQuery } from "@/lib/rooms";
+import { tutorialIncidentsQuery } from "@/lib/tutorial";
 import { cn } from "@/lib/utils";
 
 import { useIncidentsContext } from "../incidentsContext";
 import IncidentListItem from "./IncidentListItem";
 import IncidentPanel from "./IncidentPanel";
+import TutorialIncidentListItem from "./TutorialIncidentListItem";
+import TutorialIncidentPanel from "./TutorialIncidentPanel";
 
 /** Open incidents; /incidents/:id opens the resolve panel next to the list */
 const OpenIncidents = () => {
@@ -26,6 +29,11 @@ const OpenIncidents = () => {
         isError,
         refetch,
     } = useLiveQuery(unresolvedIncidentsQuery, { maxAge: LIVE_MAX_AGE });
+    // Delegate calls made during a tutorial, kept in memory (SPEC-012)
+    const { data: tutorialData } = useLiveQuery(tutorialIncidentsQuery, {
+        maxAge: LIVE_MAX_AGE,
+    });
+    const tutorialIncidents = tutorialData ?? [];
     const { data: rooms = [] } = useLiveQuery(roomsQuery);
     // Elapsed times count from when the list was loaded
     const now = useMemo(() => new Date(dataUpdatedAt), [dataUpdatedAt]);
@@ -40,6 +48,13 @@ const OpenIncidents = () => {
         return isError ? <RequestError onRetry={retry} /> : <LoadingPage />;
     }
 
+    const roomName = (roomId?: string) =>
+        rooms.find((room) => room.id === roomId)?.name;
+    const tutorialIncident = id?.startsWith("tutorial-")
+        ? tutorialIncidents.find((incident) => incident.id === id)
+        : undefined;
+    const isEmpty = incidents.length === 0 && tutorialIncidents.length === 0;
+
     return (
         <>
             {isError && <RequestError hasData onRetry={retry} />}
@@ -47,26 +62,43 @@ const OpenIncidents = () => {
                 <div
                     className={cn("flex flex-col gap-3", id && "max-lg:hidden")}
                 >
-                    {incidents.length === 0 ? (
-                        <EmptyState>No open incidents.</EmptyState>
-                    ) : (
-                        incidents.map((incident) => (
-                            <IncidentListItem
-                                key={incident.id}
-                                incident={incident}
-                                roomName={
-                                    rooms.find(
-                                        (room) =>
-                                            room.id === incident.device?.roomId
-                                    )?.name
-                                }
-                                isSelected={incident.id === id}
-                                now={now}
-                            />
-                        ))
-                    )}
+                    {isEmpty && <EmptyState>No open incidents.</EmptyState>}
+                    {tutorialIncidents.map((incident) => (
+                        <TutorialIncidentListItem
+                            key={incident.id}
+                            incident={incident}
+                            roomName={roomName(incident.roomId)}
+                            isSelected={incident.id === id}
+                            now={now}
+                        />
+                    ))}
+                    {incidents.map((incident) => (
+                        <IncidentListItem
+                            key={incident.id}
+                            incident={incident}
+                            roomName={roomName(incident.device?.roomId)}
+                            isSelected={incident.id === id}
+                            now={now}
+                        />
+                    ))}
                 </div>
-                {id ? (
+                {tutorialIncident ? (
+                    <TutorialIncidentPanel
+                        key={tutorialIncident.id}
+                        incident={tutorialIncident}
+                        onClose={() => navigate("/incidents")}
+                        onDone={handleDone}
+                    />
+                ) : id?.startsWith("tutorial-") ? (
+                    !tutorialData ? (
+                        <LoadingPage />
+                    ) : (
+                        <EmptyState>
+                            The station stopped waiting for this tutorial
+                            incident.
+                        </EmptyState>
+                    )
+                ) : id ? (
                     <IncidentPanel
                         key={id}
                         id={id}
@@ -74,7 +106,7 @@ const OpenIncidents = () => {
                         onDone={handleDone}
                     />
                 ) : (
-                    incidents.length > 0 && (
+                    !isEmpty && (
                         <EmptyState className="hidden lg:flex">
                             Select an incident to review it.
                         </EmptyState>

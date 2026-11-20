@@ -39,6 +39,15 @@ export class ImportService {
     // Work out the importer's roles before touching any data, so a refused
     // or failed import leaves the existing users in place
     let roles: Role[] | null = null;
+    // Before the import anyone who signs in with the WCA gets a role, so only
+    // the WCA's own check (or an admin account made by whoever runs the
+    // instance) may decide which competition this instance belongs to
+    if (!user.wcaAccessToken && !user.roles.includes(Role.ADMIN)) {
+      throw new HttpException(
+        'Sign in with the WCA to import a competition',
+        403,
+      );
+    }
     if (user.wcaAccessToken) {
       if (ADMIN_WCA_USER_IDS.includes(user.wcaUserId)) {
         roles = [...user.roles, Role.ADMIN];

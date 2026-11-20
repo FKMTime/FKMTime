@@ -7,6 +7,9 @@ import { CheckTokenDto } from './dto/checkToken.dto';
 import { GetTokenDto } from './dto/getToken.dto';
 import { ScramblingDeviceDto } from './dto/scramblingDevice.dto';
 
+/** How long a pairing code shown to a delegate can be typed in */
+export const ONE_TIME_CODE_TTL_MS = 10 * 60 * 1000;
+
 @Injectable()
 export class ScramblingDeviceService {
   constructor(private readonly prisma: DbService) {}
@@ -30,7 +33,7 @@ export class ScramblingDeviceService {
   }
 
   async generateOneTimeCode(scramblingDeviceId: string) {
-    const code = Math.floor(100000 + Math.random() * 900000).toString();
+    const code = crypto.randomInt(100000, 1000000).toString();
     const encryptedCode = sha512(code);
     await this.prisma.scramblingDevice.update({
       where: {
@@ -38,6 +41,7 @@ export class ScramblingDeviceService {
       },
       data: {
         encryptedOneTimeCode: encryptedCode,
+        oneTimeCodeExpiresAt: new Date(Date.now() + ONE_TIME_CODE_TTL_MS),
       },
     });
     return {
@@ -49,7 +53,9 @@ export class ScramblingDeviceService {
     const scramblingDevice = await this.prisma.scramblingDevice.findFirst({
       where: {
         encryptedOneTimeCode: sha512(data.code),
+        oneTimeCodeExpiresAt: { gt: new Date() },
       },
+      select: { id: true, name: true, roomId: true },
     });
     if (!scramblingDevice) {
       throw new HttpException('Not found', 404);
@@ -63,6 +69,7 @@ export class ScramblingDeviceService {
       data: {
         encryptedToken: sha512(token),
         encryptedOneTimeCode: null,
+        oneTimeCodeExpiresAt: null,
       },
     });
     return {

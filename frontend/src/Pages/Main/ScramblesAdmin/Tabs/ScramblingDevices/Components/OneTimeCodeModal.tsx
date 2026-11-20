@@ -30,6 +30,9 @@ const OneTimeCodeModal: React.FC<OneTimeCodeModalProps> = ({
             title="Enter this code to log in"
         >
             <h2 className="text-lg">{oneTimeCode}</h2>
+            <p className="text-sm text-muted-foreground">
+                The code works for 10 minutes. Open this again for a new one.
+            </p>
         </Modal>
     );
 };

@@ -2,6 +2,7 @@ import { useEffect, useRef } from "react";
 import type { io } from "socket.io-client";
 
 import { OfficialResultsDestination } from "@/lib/interfaces";
+import type { TutorialNoticeSocketData } from "@/lib/tutorial";
 
 type AppSocket = ReturnType<typeof io>;
 
@@ -9,6 +10,8 @@ export interface NewIncidentSocketData {
     id: string;
     competitorName: string;
     deviceName: string;
+    /** A delegate call made during a tutorial (SPEC-012) */
+    isTutorial?: boolean;
 }
 
 interface CompetitionSocketHandlers {
@@ -27,6 +30,8 @@ interface CompetitionSocketHandlers {
     }) => void;
     /** A round was opened or closed there, or someone added to one */
     onIntegratedLiveRoundsChanged?: () => void;
+    /** A group started while a station is in tutorial mode (SPEC-012) */
+    onTutorialNotice?: (data: TutorialNoticeSocketData) => void;
 }
 
 /**
@@ -68,6 +73,9 @@ export const useCompetitionSocketEvents = (
         }) => handlersRef.current.onRoundShouldBeOpened?.(data);
         const handleIntegratedLiveRoundsChanged = () =>
             handlersRef.current.onIntegratedLiveRoundsChanged?.();
+        const handleTutorialNotice = (data: TutorialNoticeSocketData) =>
+            handlersRef.current.onTutorialNotice?.(data);
+        socket.on("tutorialNotice", handleTutorialNotice);
         socket.on("roundShouldBeOpened", handleRoundShouldBeOpened);
         socket.on(
             "integratedLiveRoundsChanged",
@@ -84,6 +92,7 @@ export const useCompetitionSocketEvents = (
             handleScoretakingSoftwareChanged
         );
         return () => {
+            socket.off("tutorialNotice", handleTutorialNotice);
             socket.off("newIncident", handleNewIncident);
             socket.off("roundShouldBeOpened", handleRoundShouldBeOpened);
             socket.off(

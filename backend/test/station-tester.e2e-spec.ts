@@ -112,13 +112,13 @@ describe('Station tester (e2e)', () => {
     expect(body.reply).toMatchObject({ tag: body.sent.tag });
   });
 
-  it('is only for admins', async () => {
+  it('is open to any signed-in account, not only admins', async () => {
     const staff = await createUserWithRoles(app, db, 'station-tester-staff', [
       Role.STAFF,
     ]);
 
     await inDevelopment(() =>
-      send({ type: 'ServerStatus', data: {} }, staff.token).expect(403),
+      send({ type: 'ServerStatus', data: {} }, staff.token).expect(200),
     );
   });
 

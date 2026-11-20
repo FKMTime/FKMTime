@@ -40,6 +40,7 @@ import {
 } from "@/lib/navigation";
 import { isDelegate, isOrganizerOrDelegate } from "@/lib/permissions";
 import { queryClient } from "@/lib/queryClient";
+import { showTutorialNotice, TutorialNoticeSocketData } from "@/lib/tutorial";
 import {
     cn,
     isMobile,
@@ -173,6 +174,10 @@ const Layout = () => {
             fetchUnresolvedIncidentsCount();
             if (!isNotificationsSupported()) return;
             const message = `Competitor ${data.competitorName} on station ${data.deviceName}`;
+            // A delegate call made during a tutorial (SPEC-012)
+            const title = data.isTutorial
+                ? "Tutorial incident"
+                : "New incident";
             Notification.requestPermission().then((permission) => {
                 if (permission === "granted") {
                     if (isMobile()) {
@@ -185,18 +190,15 @@ const Layout = () => {
                                         })
                                         .then((n) => n.length === 0)
                                 ) {
-                                    await registration.showNotification(
-                                        "New incident",
-                                        {
-                                            body: message,
-                                            tag: `newIncident-${data.id}`,
-                                        }
-                                    );
+                                    await registration.showNotification(title, {
+                                        body: message,
+                                        tag: `newIncident-${data.id}`,
+                                    });
                                 }
                             }
                         );
                     } else {
-                        const notification = new Notification("New incident", {
+                        const notification = new Notification(title, {
                             body: message,
                             tag: `newIncident-${data.id}`,
                         });
@@ -207,6 +209,14 @@ const Layout = () => {
                     }
                 }
             });
+        },
+        onTutorialNotice: (notice: TutorialNoticeSocketData) => {
+            fetchUnresolvedIncidentsCount();
+            void queryClient.invalidateQueries({
+                predicate: ({ queryKey: [path] }) =>
+                    typeof path === "string" && path.startsWith("device"),
+            });
+            showTutorialNotice(notice, () => navigate("/devices"));
         },
         onGroupShouldBeChanged: (data: { message: string }) => {
             if (!isNotificationsSupported()) return;

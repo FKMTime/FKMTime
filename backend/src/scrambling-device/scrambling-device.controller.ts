@@ -10,6 +10,7 @@ import {
   Put,
   UseGuards,
 } from '@nestjs/common';
+import { Throttle, ThrottlerGuard } from '@nestjs/throttler';
 import { DelegateGuard } from 'src/auth/guards/delegate.guard';
 
 import { CheckTokenDto } from './dto/checkToken.dto';
@@ -41,6 +42,9 @@ export class ScramblingDeviceController {
     return this.scramblingDeviceService.generateOneTimeCode(scramblingDeviceId);
   }
 
+  // A pairing code is six digits: limit guessing
+  @UseGuards(ThrottlerGuard)
+  @Throttle({ default: { ttl: 60000, limit: 5 } })
   @Post('token')
   async getToken(@Body() data: GetTokenDto) {
     return this.scramblingDeviceService.getToken(data);
