@@ -9,6 +9,7 @@ import { AppGateway } from './app.gateway';
 import { AttemptModule } from './attempt/attempt.module';
 import { AttendanceModule } from './attendance/attendance.module';
 import { AuthModule } from './auth/auth.module';
+import { SocketSessionSweepService } from './auth/socketSessionSweep.service';
 import { CompetitionModule } from './competition/competition.module';
 import { ContestsModule } from './contests/contests.module';
 import { DbModule } from './db/db.module';
@@ -33,6 +34,7 @@ import { WcaModule } from './wca/wca.module';
 @Module({
   providers: [
     AppGateway,
+    SocketSessionSweepService,
     { provide: APP_FILTER, useClass: PrismaNotFoundFilter },
   ],
   controllers: [AppController],

@@ -7,6 +7,7 @@ import {
 import { Role } from '@prisma/client';
 
 import { AuthService } from '../auth.service';
+import { rememberSocketSession } from '../socketSession';
 
 @Injectable()
 export class OrganizerGuard implements CanActivate {
@@ -22,6 +23,7 @@ export class OrganizerGuard implements CanActivate {
     }
     if (!token) throw new UnauthorizedException();
     const user = await this.authService.validateJwt(token);
+    rememberSocketSession(req, user);
     return !(
       !user ||
       ![Role.DELEGATE, Role.ORGANIZER].some(

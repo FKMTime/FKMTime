@@ -141,7 +141,11 @@ export class UserService {
     await this.assertCanManage(userId, id);
     await this.prisma.user.update({
       where: { id: id },
-      data: { password: await bcrypt.hash(password, 12) },
+      // Signs the user out everywhere
+      data: {
+        password: await bcrypt.hash(password, 12),
+        tokenVersion: { increment: 1 },
+      },
     });
     return {
       message: 'Password updated successfully',

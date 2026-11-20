@@ -22,7 +22,8 @@ export class AuthController {
     @Body() dto: ChangePasswordDto,
     @GetUser() user: JwtAuthDto,
   ) {
-    await this.authService.changePassword(
+    // Returns a fresh token for this session: the change ends all others
+    return await this.authService.changePassword(
       user.userId,
       dto.oldPassword,
       dto.newPassword,
