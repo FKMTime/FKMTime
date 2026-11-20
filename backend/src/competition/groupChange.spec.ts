@@ -9,6 +9,7 @@ import { AppGateway } from 'src/app.gateway';
 import { DNF_VALUE } from 'src/constants';
 import { DbService } from 'src/db/db.service';
 import { DeviceService } from 'src/device/device.service';
+import { DelegateGrantService } from 'src/delegate-grant/delegateGrant.service';
 import { IntegratedLiveRoundsService } from 'src/integrated-live/integratedLiveRounds.service';
 import { ResultService } from 'src/result/result.service';
 import { SocketController } from 'src/socket/socket.controller';
@@ -285,6 +286,9 @@ const setup = ({
     socketController as unknown as SocketController,
     { onRoundStarted } as unknown as IntegratedLiveRoundsService,
     { handleRoomGroupsStarted: jest.fn() } as unknown as DeviceService,
+    {
+      syncWithRooms: jest.fn().mockResolvedValue(undefined),
+    } as unknown as DelegateGrantService,
   );
   const service = new CompetitionService(
     prisma as unknown as DbService,

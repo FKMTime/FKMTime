@@ -9,7 +9,9 @@ import {
 import { Server, Socket } from 'socket.io';
 
 import { DelegateGuard } from './auth/guards/delegate.guard';
+import { DelegateOrGrantGuard } from './auth/guards/delegateOrGrant.guard';
 import { OrganizerGuard } from './auth/guards/organizer.guard';
+import { SignedInGuard } from './auth/guards/signedIn.guard';
 import { AUTO_SETUP_DURATION_MS } from './competition/autoSetup';
 import { DeviceRequest } from './device/dto/requestToConnect.dto';
 import type { DeviceErrorEvent } from './device/stationError.service';
@@ -280,16 +282,56 @@ export class AppGateway {
   /* ====================== */
   /* ====== Incidents ===== */
   /* ====================== */
+  // Users with delegate access for a group too (SPEC-013); their panel shows
+  // only the incidents their access covers
   @SubscribeMessage('joinIncidents')
-  @UseGuards(DelegateGuard)
+  @UseGuards(DelegateOrGrantGuard)
   async handleJoinIncidents(@ConnectedSocket() socket: Socket) {
     socket.join(`incidents`);
   }
 
   @SubscribeMessage('leaveIncidents')
-  @UseGuards(DelegateGuard)
+  @UseGuards(DelegateOrGrantGuard)
   async handleLeaveIncidents(@ConnectedSocket() socket: Socket) {
     socket.leave(`incidents`);
+  }
+
+  /* ====================== */
+  /* === Delegate access == */
+  /* ====================== */
+
+  /** Every signed-in panel: told when a delegate gives or ends its access */
+  @SubscribeMessage('joinDelegateAccess')
+  @UseGuards(SignedInGuard)
+  async handleJoinDelegateAccess(@ConnectedSocket() socket: Socket) {
+    socket.join(`user-${socket.data.userId}`);
+  }
+
+  /** Delegates watching what users with access for a group do */
+  @SubscribeMessage('joinDelegateGrants')
+  @UseGuards(DelegateGuard)
+  async handleJoinDelegateGrants(@ConnectedSocket() socket: Socket) {
+    socket.join(`delegate-grants`);
+  }
+
+  @SubscribeMessage('leaveDelegateGrants')
+  @UseGuards(DelegateGuard)
+  async handleLeaveDelegateGrants(@ConnectedSocket() socket: Socket) {
+    socket.leave(`delegate-grants`);
+  }
+
+  // Server-side only: a grant was given, changed, started or ended
+  handleDelegateGrantChanged(userId: string) {
+    this.server.to(`user-${userId}`).emit('delegateGrantChanged');
+    this.server.to(`delegate-grants`).emit('delegateGrantsChanged');
+  }
+
+  // Server-side only: a user with delegate access did something
+  handleDelegateGrantAction(action: { grantId: string; id: string }) {
+    this.server.to(`delegate-grants`).emit('delegateGrantAction', {
+      id: action.id,
+      grantId: action.grantId,
+    });
   }
 
   // Server-side only: called when a station calls a delegate

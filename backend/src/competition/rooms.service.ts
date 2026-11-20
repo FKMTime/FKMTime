@@ -3,6 +3,7 @@ import { Attempt } from '@prisma/client';
 import { DbService } from 'src/db/db.service';
 import { DeviceService } from 'src/device/device.service';
 import { isFirstGroupOfDay } from 'src/device/tutorial';
+import { DelegateGrantService } from 'src/delegate-grant/delegateGrant.service';
 import { IntegratedLiveRoundsService } from 'src/integrated-live/integratedLiveRounds.service';
 import { SocketController } from 'src/socket/socket.controller';
 import { Competition as Wcif } from 'wcif-helpers';
@@ -20,6 +21,8 @@ export class RoomsService {
     private readonly integratedLiveRounds: IntegratedLiveRoundsService,
     @Inject(forwardRef(() => DeviceService))
     private readonly deviceService: DeviceService,
+    @Inject(forwardRef(() => DelegateGrantService))
+    private readonly delegateGrants: DelegateGrantService,
   ) {}
 
   private readonly logger = new Logger('RoomsService');
@@ -196,6 +199,9 @@ export class RoomsService {
       }
     }
     await this.socketController.sendServerStatus();
+    // Delegate access for a group starts and ends with it (SPEC-013); a
+    // failure here mustn't fail the group change, access checks sync again
+    await this.delegateGrants.syncWithRooms().catch(() => undefined);
     // Not awaited: starting a group mustn't wait for the WCA
     const startedRoundIds = new Set(
       rooms.flatMap((room) =>

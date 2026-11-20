@@ -15,7 +15,9 @@ import { Role } from '@prisma/client';
 import { GetUser } from 'src/auth/decorator/getUser.decorator';
 import { JwtAuthDto } from 'src/auth/dto/jwt-auth.dto';
 import { DelegateGuard } from 'src/auth/guards/delegate.guard';
+import { DelegateOrGrantGuard } from 'src/auth/guards/delegateOrGrant.guard';
 import { OrganizerGuard } from 'src/auth/guards/organizer.guard';
+import { DelegateGrantService } from 'src/delegate-grant/delegateGrant.service';
 import { ParseRoundIdPipe } from 'src/roundId.pipe';
 
 import { DoubleCheckDto } from './dto/doubleCheck.dto';
@@ -25,7 +27,10 @@ import { ResultService } from './result.service';
 @UseGuards(AuthGuard('jwt'))
 @Controller('result')
 export class ResultController {
-  constructor(private readonly resultService: ResultService) {}
+  constructor(
+    private readonly resultService: ResultService,
+    private readonly delegateGrants: DelegateGrantService,
+  ) {}
 
   @Get('round/:roundId')
   async getAllResultsByRoundId(
@@ -115,9 +120,11 @@ export class ResultController {
     return await this.resultService.getResultsChecks(roundId);
   }
 
-  @UseGuards(DelegateGuard)
+  // Also for users with delegate access for a group, for results it covers
+  @UseGuards(DelegateOrGrantGuard)
   @Get(':id')
-  async getResultById(@Param('id') id: string) {
+  async getResultById(@Param('id') id: string, @GetUser() user: JwtAuthDto) {
+    await this.delegateGrants.authorizeRead(user, { resultId: id });
     return await this.resultService.getResultById(id);
   }
 

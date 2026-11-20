@@ -14,6 +14,7 @@ import { CompetitionModule } from './competition/competition.module';
 import { ContestsModule } from './contests/contests.module';
 import { DbModule } from './db/db.module';
 import { PrismaNotFoundFilter } from './db/prisma-not-found.filter';
+import { DelegateGrantModule } from './delegate-grant/delegateGrant.module';
 import { DeviceModule } from './device/device.module';
 import { validate } from './env.validation';
 import { EventsModule } from './events/events.module';
@@ -68,6 +69,7 @@ import { WcaModule } from './wca/wca.module';
     ScrambleSetModule,
     ScramblingModule,
     IncidentModule,
+    DelegateGrantModule,
   ],
   exports: [AppGateway],
 })

@@ -3,6 +3,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 
 import { DbService } from '../db/db.service';
 import { DeviceService } from '../device/device.service';
+import { DelegateGrantService } from '../delegate-grant/delegateGrant.service';
 import { IntegratedLiveRoundsService } from '../integrated-live/integratedLiveRounds.service';
 import { SocketController } from '../socket/socket.controller';
 import { RoomsService } from './rooms.service';
@@ -48,6 +49,10 @@ describe('RoomsService', () => {
         {
           provide: DeviceService,
           useValue: { handleRoomGroupsStarted },
+        },
+        {
+          provide: DelegateGrantService,
+          useValue: { syncWithRooms: jest.fn().mockResolvedValue(undefined) },
         },
       ],
     }).compile();

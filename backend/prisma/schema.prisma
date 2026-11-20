@@ -31,6 +31,9 @@ model User {
   removedResults             Result[]             @relation("result_removed_by")
   devicesPointedAtRound      Device[]             @relation("device_custom_round_set_by")
   devicesInTutorial          Device[]             @relation("device_tutorial_started_by")
+  delegateGrants             DelegateGrant[]      @relation("delegate_grant_user")
+  givenDelegateGrants        DelegateGrant[]      @relation("delegate_grant_created_by")
+  endedDelegateGrants        DelegateGrant[]      @relation("delegate_grant_ended_by")
 
   @@map("users")
 }
@@ -605,6 +608,18 @@ enum Role {
   STAFF
 }
 
+/// What a user given delegate access for one group may do besides
+/// resolving incidents (SPEC-013)
+enum DelegateGrantPermission {
+  GIVE_EXTRA
+  ADD_ATTEMPT
+  REORDER_ATTEMPTS
+  EDIT_ATTEMPT
+  DELETE_ATTEMPT
+  EXTRAS_FOR_SEVERAL
+  DNF_ALL
+}
+
 enum StaffRole {
   COMPETITOR
   JUDGE
@@ -671,4 +686,45 @@ model LiveClear {
 
   @@unique([roundId, wcaRegistrationId])
   @@map("live_clear")
+}
+
+/// Delegate access for one group, given to a user who isn't a delegate
+/// (SPEC-013). Active while the group runs; never again once ended.
+model DelegateGrant {
+  id          String                    @id @default(uuid())
+  userId      String                    @map("user_id")
+  user        User                      @relation("delegate_grant_user", fields: [userId], references: [id], onDelete: Cascade)
+  groupId     String                    @map("group_id")
+  permissions DelegateGrantPermission[] @default([])
+  createdById String?                   @map("created_by_id")
+  createdBy   User?                     @relation("delegate_grant_created_by", fields: [createdById], references: [id], onDelete: SetNull)
+  createdAt   DateTime                  @default(now()) @map("created_at")
+  /// When the group started running with this grant in place; null while
+  /// waiting. Attempts made in the room from then on are in scope.
+  activatedAt DateTime?                 @map("activated_at")
+  endedAt     DateTime?                 @map("ended_at")
+  endedById   String?                   @map("ended_by_id")
+  endedBy     User?                     @relation("delegate_grant_ended_by", fields: [endedById], references: [id], onDelete: SetNull)
+  actions     DelegateGrantAction[]
+
+  @@index([userId, endedAt])
+  @@index([groupId])
+  @@map("delegate_grant")
+}
+
+/// What a user did under a delegate grant, for delegates to look over
+model DelegateGrantAction {
+  id         String        @id @default(uuid())
+  grantId    String        @map("grant_id")
+  grant      DelegateGrant @relation(fields: [grantId], references: [id], onDelete: Cascade)
+  kind       String
+  /// Plain ids, not relations: the action stays after the attempt is deleted
+  resultId   String?       @map("result_id")
+  attemptId  String?       @map("attempt_id")
+  personName String?       @map("person_name")
+  summary    String
+  createdAt  DateTime      @default(now()) @map("created_at")
+
+  @@index([grantId, createdAt])
+  @@map("delegate_grant_action")
 }
