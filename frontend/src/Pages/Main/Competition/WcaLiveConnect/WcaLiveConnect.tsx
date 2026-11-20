@@ -9,12 +9,14 @@ import {
     connectIntegratedLive,
     integratedLiveConnectionQuery,
 } from "@/lib/integratedLive";
+import { takeOAuthState } from "@/lib/oauthState";
 import { queryClient } from "@/lib/queryClient";
 
 /** The WCA sends the user back here after they connect live results */
 const WcaLiveConnect = () => {
     const [searchParams] = useSearchParams();
     const code = searchParams.get("code");
+    const state = searchParams.get("state");
     const navigate = useNavigate();
     const { toast } = useToast();
     const [error, setError] = useState<string | null>(
@@ -26,7 +28,17 @@ const WcaLiveConnect = () => {
     useEffect(() => {
         if (!code || sent.current) return;
         sent.current = true;
-        connectIntegratedLive(code)
+        // Only a code from a connection this tab started (OAuth state)
+        const request = takeOAuthState("integrated-live", state)
+            ? connectIntegratedLive(code)
+            : Promise.resolve({
+                  status: 0,
+                  data: {
+                      message:
+                          "This sign-in wasn't started from this browser tab. Start it again from the competition settings.",
+                  },
+              });
+        request
             .then(({ status, data }) => {
                 if (status !== 200) {
                     setError(data?.message ?? "The connection failed.");
@@ -42,7 +54,7 @@ const WcaLiveConnect = () => {
                 navigate("/competition", { replace: true });
             })
             .catch(() => setError("The connection failed."));
-    }, [code, navigate, toast]);
+    }, [code, state, navigate, toast]);
 
     if (!error) return <LoadingPage />;
 
