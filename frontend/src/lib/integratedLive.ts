@@ -1,3 +1,5 @@
+import { createOAuthState } from "@/lib/oauthState";
+
 import {
     IntegratedLiveAddableCompetitor,
     IntegratedLiveConnectionStatus,
@@ -39,6 +41,7 @@ export const startIntegratedLiveConnect = () => {
         scope: "public manage_competitions",
         response_type: "code",
         client_id: WCA_CLIENT_ID,
+        state: createOAuthState("integrated-live"),
     });
     window.location.href = `${WCA_ORIGIN}/oauth/authorize?${queryParams.toString()}`;
 };

@@ -29,15 +29,22 @@ const renderAt = (path: string) =>
         </StrictMode>
     );
 
+const STATE_KEY = "fkmtime-oauth-state-integrated-live";
+
 describe("WcaLiveConnect", () => {
-    beforeEach(() => connect.mockReset());
+    beforeEach(() => {
+        connect.mockReset();
+        sessionStorage.clear();
+        // This tab started the connection
+        sessionStorage.setItem(STATE_KEY, "state-1");
+    });
 
     it("sends the code once, even when effects run twice, then goes to settings", async () => {
         connect.mockResolvedValue({
             status: 200,
             data: { state: "CONNECTED", connectedAs: "Ada Example" },
         });
-        renderAt("/competition/wca-live-connect?code=code-1");
+        renderAt("/competition/wca-live-connect?code=code-1&state=state-1");
 
         expect(await screen.findByText("Settings")).toBeTruthy();
         expect(connect).toHaveBeenCalledTimes(1);
@@ -49,7 +56,7 @@ describe("WcaLiveConnect", () => {
             status: 400,
             data: { message: "The WCA did not accept the sign-in" },
         });
-        renderAt("/competition/wca-live-connect?code=used-code");
+        renderAt("/competition/wca-live-connect?code=used-code&state=state-1");
 
         await waitFor(() =>
             expect(
@@ -59,6 +66,26 @@ describe("WcaLiveConnect", () => {
         expect(
             screen.getByRole("link", { name: "Back to settings" })
         ).toBeTruthy();
+    });
+
+    it("refuses a code from a sign-in this tab did not start", async () => {
+        sessionStorage.clear();
+        renderAt("/competition/wca-live-connect?code=planted-code");
+
+        expect(
+            await screen.findByText(/wasn't started from this browser tab/)
+        ).toBeTruthy();
+        expect(connect).not.toHaveBeenCalled();
+    });
+
+    it("refuses a code whose state does not match", async () => {
+        renderAt("/competition/wca-live-connect?code=planted-code&state=other");
+
+        expect(
+            await screen.findByText(/wasn't started from this browser tab/)
+        ).toBeTruthy();
+        expect(connect).not.toHaveBeenCalled();
+        expect(sessionStorage.getItem(STATE_KEY)).toBeNull();
     });
 
     it("says so when the WCA sent no code", () => {
