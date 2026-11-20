@@ -16,6 +16,7 @@ const PROBLEM_KEYS = new Set([
   'noGroups',
   'groupNotFound',
   'stationRoundChanged',
+  'h2hRoundNotOnStations',
   'competitorNotFound',
   'judgeNotFound',
   'judgeIsCompetitor',

@@ -25,6 +25,7 @@ import {
   isPointedStation,
 } from 'src/device/stationRounds';
 import { isUnofficialEvent } from 'src/events';
+import { isH2hRound } from 'src/h2h/h2hRound';
 import { PersonService } from 'src/person/person.service';
 import { CreateScrambledAttemptDto } from 'src/scrambling/dto/createScrambledAttempt.dto';
 import {
@@ -327,6 +328,20 @@ export class ResultFromDeviceService {
     }
 
     const currentRoundId = roundId;
+    // Stations can't run a head-to-head round's matches yet (SPEC-001), and
+    // a plain attempt in it would land outside any match
+    if (isH2hRound(currentRoundId, wcif)) {
+      return {
+        message: getTranslation('h2hRoundNotOnStations', locale),
+        shouldResetTime: false,
+        status: 400,
+        error: true,
+        errorDetails: {
+          key: 'h2hRoundNotOnStations',
+          competitorName: competitor.name,
+        },
+      };
+    }
     const roundInfo = getRoundInfoFromWcif(currentRoundId, wcif);
     const competitorWcifInfo = getPersonFromWcif(competitor.registrantId, wcif);
     const competitorSignedInForEvent = isCompetitorSignedInForEvent(

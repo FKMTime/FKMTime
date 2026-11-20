@@ -15,6 +15,7 @@ import { AttendanceService } from 'src/attendance/attendance.service';
 import { CompetitionService } from 'src/competition/competition.service';
 import { DNF_VALUE, DNS_VALUE, publicPersonSelect } from 'src/constants';
 import { getMaxPenalty, isUnofficialEvent } from 'src/events';
+import { isH2hRound } from 'src/h2h/h2hRound';
 import { IncidentService } from 'src/incident/incident.service';
 import {
   checkCutoff,
@@ -335,7 +336,7 @@ export class AttemptService {
     const result = await this.getResultForExtras(data.resultId);
     const competition = await this.prisma.competition.findFirst();
     const wcif = JSON.parse(JSON.stringify(competition.wcif));
-    if (getRoundInfoFromWcif(result.roundId, wcif)?.format === 'h') {
+    if (isH2hRound(result.roundId, wcif)) {
       throw new HttpException(
         'Extras for all attempts are not available in head-to-head rounds',
         400,
@@ -503,11 +504,7 @@ export class AttemptService {
     );
     const competition = await this.prisma.competition.findFirst();
     const wcif = JSON.parse(JSON.stringify(competition.wcif));
-    if (
-      results.some(
-        (result) => getRoundInfoFromWcif(result.roundId, wcif)?.format === 'h',
-      )
-    ) {
+    if (results.some((result) => isH2hRound(result.roundId, wcif))) {
       throw new HttpException(
         'DNF all attempts is not available in head-to-head rounds',
         400,
