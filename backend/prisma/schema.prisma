@@ -55,6 +55,7 @@ model Person {
   manualIncidents   ManualIncident[]
   judgedEditLogs    AttemptEditLog[] @relation(name: "edit_log_judge")
   scrambledEditLogs AttemptEditLog[] @relation(name: "edit_log_scrambler")
+  h2hEntrants       H2hEntrant[]
 
   @@map("person")
 }
@@ -215,6 +216,8 @@ model Attempt {
   statusBeforeGrant  AttemptStatus?       @map("status_before_grant")
   statusInGrant      AttemptStatus?       @map("status_in_grant")
   replacedByInGrant  Int?                 @map("replaced_by_in_grant")
+  h2hPointAsA        H2hPoint?            @relation("h2h_point_attempt_a")
+  h2hPointAsB        H2hPoint?            @relation("h2h_point_attempt_b")
 
   @@map("attempt")
 }
@@ -358,12 +361,14 @@ model ScramblingDevice {
 }
 
 model ScrambleSet {
-  id        String     @id @default(uuid())
-  roundId   String     @map("round_id")
+  id        String                 @id @default(uuid())
+  roundId   String                 @map("round_id")
   set       String
-  createdAt DateTime   @default(now()) @map("created_at")
-  updatedAt DateTime   @updatedAt @map("updated_at")
+  createdAt DateTime               @default(now()) @map("created_at")
+  updatedAt DateTime               @updatedAt @map("updated_at")
   scrambles Scramble[]
+  h2hSet    H2hSet?
+  h2hPlan   H2hScrambleAssignment?
 
   @@unique([roundId, set])
   @@map("scramble_set")
@@ -378,8 +383,188 @@ model Scramble {
   encryptedScramble String      @map("encrypted_scramble")
   createdAt         DateTime    @default(now()) @map("created_at")
   updatedAt         DateTime    @updatedAt @map("updated_at")
+  h2hPoint          H2hPoint?
 
   @@map("scramble")
+}
+
+/// A head-to-head round's bracket (SPEC-001). The round's Result and Attempt
+/// rows stay as in any round; these tables add the matches on top
+model H2hBracket {
+  id         String           @id @default(uuid())
+  /// WCIF id, e.g. "333-r3"
+  roundId    String           @unique @map("round_id")
+  eventId    String           @map("event_id")
+  /// 4, 8, 12 or 16 (Regulation I1a)
+  size       Int
+  status     H2hBracketStatus @default(DRAFT)
+  /// The WCA website's numeric rounds.id, which its H2H CSV import needs
+  wcaRoundId Int?             @map("wca_round_id")
+  entrants   H2hEntrant[]
+  matches    H2hMatch[]
+  createdAt  DateTime         @default(now()) @map("created_at")
+  updatedAt  DateTime         @updatedAt @map("updated_at")
+
+  @@map("h2h_bracket")
+}
+
+model H2hEntrant {
+  id            String     @id @default(uuid())
+  bracketId     String     @map("bracket_id")
+  bracket       H2hBracket @relation(fields: [bracketId], references: [id], onDelete: Cascade)
+  personId      String     @map("person_id")
+  person        Person     @relation(fields: [personId], references: [id], onDelete: Cascade)
+  /// 1 is the highest seed
+  seed          Int
+  /// Tied with another competitor in the previous round and ordered randomly
+  /// (Regulation I1d)
+  seedTieBroken Boolean    @default(false) @map("seed_tie_broken")
+  withdrawnAt   DateTime?  @map("withdrawn_at")
+  matchesAsA    H2hMatch[] @relation("h2h_match_entrant_a")
+  matchesAsB    H2hMatch[] @relation("h2h_match_entrant_b")
+
+  @@unique([bracketId, seed])
+  @@unique([bracketId, personId])
+  @@map("h2h_entrant")
+}
+
+/// Each side is either an entrant seeded straight into the match, or the
+/// winner or loser of an earlier match
+model H2hMatch {
+  id                  String                  @id @default(uuid())
+  bracketId           String                  @map("bracket_id")
+  bracket             H2hBracket              @relation(fields: [bracketId], references: [id], onDelete: Cascade)
+  stage               H2hStage
+  /// 1..N across the round, the WCA CSV's match_number
+  matchNumber         Int                     @map("match_number")
+  /// X in Regulation I3a: the first to win X sets wins the match
+  setsToWin           Int                     @map("sets_to_win")
+  status              H2hMatchStatus          @default(WAITING)
+  entrantAId          String?                 @map("entrant_a_id")
+  entrantA            H2hEntrant?             @relation("h2h_match_entrant_a", fields: [entrantAId], references: [id], onDelete: SetNull)
+  entrantBId          String?                 @map("entrant_b_id")
+  entrantB            H2hEntrant?             @relation("h2h_match_entrant_b", fields: [entrantBId], references: [id], onDelete: SetNull)
+  sourceAMatchId      String?                 @map("source_a_match_id")
+  sourceAMatch        H2hMatch?               @relation("h2h_match_source_a", fields: [sourceAMatchId], references: [id], onDelete: Restrict)
+  sourceAOutcome      H2hOutcome?             @map("source_a_outcome")
+  sourceBMatchId      String?                 @map("source_b_match_id")
+  sourceBMatch        H2hMatch?               @relation("h2h_match_source_b", fields: [sourceBMatchId], references: [id], onDelete: Restrict)
+  sourceBOutcome      H2hOutcome?             @map("source_b_outcome")
+  feedsAsA            H2hMatch[]              @relation("h2h_match_source_a")
+  feedsAsB            H2hMatch[]              @relation("h2h_match_source_b")
+  winnerSide          H2hSide?                @map("winner_side")
+  endedBy             H2hMatchEnd?            @map("ended_by")
+  startedAt           DateTime?               @map("started_at")
+  /// Freezes the match's outcomes (Regulation 11l)
+  finishedAt          DateTime?               @map("finished_at")
+  sets                H2hSet[]
+  scrambleAssignments H2hScrambleAssignment[]
+
+  @@unique([bracketId, matchNumber])
+  @@map("h2h_match")
+}
+
+model H2hSet {
+  id            String          @id @default(uuid())
+  matchId       String          @map("match_id")
+  match         H2hMatch        @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  setNumber     Int             @map("set_number")
+  /// The TNoodle set this set is raced on; a raced set can't be deleted
+  scrambleSetId String?         @unique @map("scramble_set_id")
+  scrambleSet   ScrambleSet?    @relation(fields: [scrambleSetId], references: [id], onDelete: Restrict)
+  winnerSide    H2hSide?        @map("winner_side")
+  decidedBy     H2hSetDecision? @map("decided_by")
+  points        H2hPoint[]
+
+  @@unique([matchId, setNumber])
+  @@map("h2h_set")
+}
+
+/// One race: the two attempts solved on the same scramble. An attempt on a
+/// point can't be deleted, so the bracket never loses what decided it
+model H2hPoint {
+  id          String    @id @default(uuid())
+  setId       String    @map("set_id")
+  set         H2hSet    @relation(fields: [setId], references: [id], onDelete: Cascade)
+  pointNumber Int       @map("point_number")
+  attemptAId  String?   @unique @map("attempt_a_id")
+  attemptA    Attempt?  @relation("h2h_point_attempt_a", fields: [attemptAId], references: [id], onDelete: Restrict)
+  attemptBId  String?   @unique @map("attempt_b_id")
+  attemptB    Attempt?  @relation("h2h_point_attempt_b", fields: [attemptBId], references: [id], onDelete: Restrict)
+  /// Unique, so no scramble is raced twice in the round (Regulation I4b1)
+  scrambleId  String?   @unique @map("scramble_id")
+  scramble    Scramble? @relation(fields: [scrambleId], references: [id], onDelete: Restrict)
+  /// Null once both attempts are in means the point had no winner (I3d)
+  winnerSide  H2hSide?  @map("winner_side")
+  decidedAt   DateTime? @map("decided_at")
+
+  @@unique([setId, pointNumber])
+  @@map("h2h_point")
+}
+
+/// The scramble plan: which TNoodle set each set a match could need will use,
+/// fixed before the round so the scramble team can prepare in advance
+model H2hScrambleAssignment {
+  id            String       @id @default(uuid())
+  matchId       String       @map("match_id")
+  match         H2hMatch     @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  setNumber     Int          @map("set_number")
+  scrambleSetId String?      @unique @map("scramble_set_id")
+  scrambleSet   ScrambleSet? @relation(fields: [scrambleSetId], references: [id], onDelete: SetNull)
+
+  @@unique([matchId, setNumber])
+  @@map("h2h_scramble_assignment")
+}
+
+enum H2hBracketStatus {
+  DRAFT
+  SEEDED
+  IN_PROGRESS
+  FINISHED
+}
+
+enum H2hStage {
+  STAGE_OF_16
+  STAGE_OF_12
+  QUARTERFINAL
+  SEMIFINAL
+  FINAL
+  THIRD_PLACE
+}
+
+enum H2hMatchStatus {
+  WAITING
+  READY
+  IN_PROGRESS
+  FINISHED
+}
+
+enum H2hSide {
+  A
+  B
+}
+
+enum H2hOutcome {
+  WINNER
+  LOSER
+}
+
+/// WALKOVER: a competitor withdrew before the match, so it has no results
+/// (Regulation I2h); RETIRED: a competitor stopped during the match
+enum H2hMatchEnd {
+  PLAYED
+  WALKOVER
+  RETIRED
+}
+
+/// How a set's winner was found (Regulations I3b, I3e)
+enum H2hSetDecision {
+  POINTS
+  MOST_POINTS
+  BEST_IN_SET
+  BEST_IN_MATCH
+  BEST_IN_ROUND
+  SEED
 }
 
 enum DeviceType {
