@@ -95,21 +95,8 @@ jobs:
 
           gh pr review "$PR" --approve --body "Minor/patch update and every check passed, auto-merging."
 
-          # GitHub computes the merge state lazily, give it a moment
-          for _ in $(seq 1 12); do
-            state=$(gh pr view "$PR" --json mergeStateStatus --jq .mergeStateStatus)
-            [ "$state" != "UNKNOWN" ] && break
-            sleep 5
-          done
-
-          # The ruleset wants branches up to date. A rebase is a new push from
-          # Dependabot, which starts this workflow again.
-          if [ "$state" = "BEHIND" ]; then
-            gh pr comment "$PR" --body "@dependabot rebase"
-            echo "::notice::Branch is behind main, asked Dependabot to rebase"
-            exit 0
-          fi
-
+          # The ruleset doesn't require branches to be up to date, so a PR that
+          # fell behind main merges as is; Dependabot rebases it on conflicts
           gh pr merge "$PR" --squash --match-head-commit "$HEAD_SHA"
 
           # GITHUB_TOKEN merges don't trigger push workflows; start the image
