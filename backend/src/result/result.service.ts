@@ -20,6 +20,7 @@ import {
 } from 'src/attempt-edit-log/attempt-edit-log.service';
 import { CompetitionService } from 'src/competition/competition.service';
 import {
+  delegateOnlyAttemptFields,
   DNF_VALUE,
   DNS_VALUE,
   publicPersonSelect,
@@ -70,7 +71,21 @@ export class ResultService {
     private readonly competitionService: CompetitionService,
   ) {}
 
+  /** Results as anyone may read them, the public results page included */
   resultsInclude = {
+    person: publicPersonSelect,
+    attempts: {
+      omit: delegateOnlyAttemptFields,
+      include: {
+        judge: publicPersonSelect,
+        scrambler: publicPersonSelect,
+        device: true,
+      },
+    },
+  };
+
+  /** Results for delegate pages, with their notes and timer details */
+  delegateResultsInclude = {
     person: publicPersonSelect,
     attempts: {
       include: {
@@ -267,6 +282,7 @@ export class ResultService {
       include: {
         person: publicPersonSelect,
         attempts: {
+          omit: delegateOnlyAttemptFields,
           include: {
             judge: publicPersonSelect,
             device: true,
@@ -573,7 +589,7 @@ export class ResultService {
         roundId: roundId,
         isDoubleChecked: false,
       },
-      include: this.resultsInclude,
+      include: this.delegateResultsInclude,
     });
 
     const results = allResults.filter((result) => {
