@@ -8,6 +8,8 @@ on:
       - 'backend/src/**'
       - 'backend/prisma/**'
       - 'backend/prisma.config.ts'
+      - 'backend/scripts/**'
+      - 'backend/entrypoint.sh'
       - 'backend/Dockerfile'
       - 'backend/.dockerignore'
       - 'backend/package.json'
@@ -16,6 +18,8 @@ on:
   # builds both platforms without pushing, so image changes are checked before merge
   pull_request:
     paths:
+      - 'backend/scripts/**'
+      - 'backend/entrypoint.sh'
       - 'backend/Dockerfile'
       - 'backend/.dockerignore'
       - 'backend/package.json'
@@ -48,6 +52,20 @@ jobs:
             runner: ubuntu-24.04-arm
     steps:
       - uses: actions/checkout@v7
+        with:
+          # schema-sql.mjs reads every earlier schema.prisma from the history
+          fetch-depth: 0
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24.x
+      # The scripts an instance pulling this image mid-competition upgrades its
+      # database with; they need the git history, which the Docker build doesn't
+      # have. The build stage adds create.sql itself.
+      - name: Generate the schema upgrade scripts
+        working-directory: backend
+        run: |
+          npm ci --no-audit --no-fund
+          node scripts/schema-sql.mjs upgrades
       - name: Prepare
         run: echo "PLATFORM_PAIR=${PLATFORM//\//-}" >> "$GITHUB_ENV"
         env:

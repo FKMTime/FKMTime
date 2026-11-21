@@ -163,7 +163,15 @@ iterating; leave the full run to CI.
 - **WCA regulations win.** Don't change how attempts, penalties, cutoffs or time
   limits are recorded without checking the regulations and the spec.
 - **Schema changes** go in `backend/prisma/schema.prisma`, and the seed data in
-  `backend/prisma/seed/` must still work afterwards.
+  `backend/prisma/seed/` must still work afterwards. Dev and tests apply it
+  with `prisma db push`. The image has no Prisma CLI: it applies SQL generated
+  from the schema (`backend/scripts/schema-sql.mjs`) at boot
+  (`src/db/apply-schema.ts`), and upgrades in place a database an instance
+  pulled a new image onto mid-competition. So keep changes additive: new
+  tables, optional columns, columns with a default, new enum values. CI
+  (`schema.yml`) fails a change that drops data or can fail on existing rows
+  unless the PR has the `schema-data-loss` label. A rename loses the column's
+  data: add the new column instead and copy across in code.
 - **UI copy uses the user's task language**, not internal names — "Extra
   granted", not a status enum.
 - **The brand is "FKMTime"** — one word, exactly that capitalisation — in UI

@@ -1,0 +1,97 @@
+name: Schema
+
+# A competition instance can pull a new image mid-competition, and the image
+# then upgrades its live database with SQL generated from schema.prisma
+# (backend/scripts/schema-sql.mjs, backend/src/db/apply-schema.ts). These jobs
+# check that upgrade before it can reach one.
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, labeled, unlabeled]
+    paths:
+      - 'backend/prisma/schema.prisma'
+      - 'backend/scripts/**'
+      - 'backend/src/db/apply-schema.ts'
+      - '.github/workflows/schema.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  safe_on_live_data:
+    name: Safe on a live database
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24.x
+      - name: Install dependencies
+        working-directory: backend
+        run: npm ci --no-audit --no-fund
+      # The checkout is the merge commit, so HEAD^1 is the base branch as the
+      # merge sees it: the diff is this PR's change and nothing else
+      - name: Check the change for data loss
+        working-directory: backend
+        env:
+          ACCEPTED: ${{ contains(github.event.pull_request.labels.*.name, 'schema-data-loss') }}
+        run: |
+          status=0
+          node scripts/schema-sql.mjs unsafe HEAD^1 || status=$?
+          if [ "$status" = 2 ]; then
+            if [ "$ACCEPTED" = true ]; then
+              echo "::warning::Accepted with the schema-data-loss label: an instance that pulls this image mid-competition loses that data or fails to start"
+              exit 0
+            fi
+            echo "::error::Make the change additive (a new optional column, a default), or add the schema-data-loss label to accept it"
+          fi
+          exit "$status"
+
+  upgrade:
+    name: Upgrade from the base branch
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:18-alpine
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_USER: postgres
+          POSTGRES_DB: fkm_time_upgrade
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+    env:
+      DATABASE_URL: postgres://postgres:postgres@localhost:5432/fkm_time_upgrade
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24.x
+      - name: Build the backend
+        working-directory: backend
+        run: |
+          npm ci --no-audit --no-fund
+          npx prisma generate
+          npm run build
+      - name: Create the base branch's schema
+        working-directory: backend
+        run: |
+          node scripts/schema-sql.mjs create HEAD^1 "$RUNNER_TEMP/base-sql"
+          SCHEMA_SQL_DIR="$RUNNER_TEMP/base-sql" node dist/src/db/apply-schema.js
+      - name: Upgrade it the way the image would
+        working-directory: backend
+        run: |
+          node scripts/schema-sql.mjs create
+          node scripts/schema-sql.mjs upgrades
+          node dist/src/db/apply-schema.js
+      - name: Check nothing is left to change
+        working-directory: backend
+        run: npx prisma migrate diff --from-config-datasource --to-schema prisma/schema.prisma --exit-code
