@@ -11,7 +11,9 @@ import {
     TableHeader,
     TableRow,
 } from "@/Components/ui/table";
+import { useDelegateAccessGroupIds } from "@/hooks/useDelegateAccessGroupIds";
 import { useIsMobile } from "@/hooks/useMobile";
+import { isDelegate } from "@/lib/permissions";
 import { toQueryOptions } from "@/lib/queryCache";
 import { usersQuery } from "@/lib/user";
 import SetupTabs from "@/Pages/Main/Setup/SetupTabs";
@@ -24,6 +26,9 @@ const Users = () => {
     const queryClient = useQueryClient();
     const { data, isError, refetch } = useQuery(toQueryOptions(usersQuery));
     const users = data ?? [];
+    // Delegates can give a user delegate access for a group from here too
+    // (SPEC-013); organizers manage users but can't give it
+    const accessGroupIds = useDelegateAccessGroupIds(isDelegate());
     const [isOpenCreateUserModal, setIsOpenCreateUserModal] =
         useState<boolean>(false);
 
@@ -59,6 +64,7 @@ const Users = () => {
                             user={user}
                             fetchData={fetchData}
                             variant="list"
+                            accessGroupIds={accessGroupIds}
                         />
                     ))}
                 </ul>
@@ -83,6 +89,7 @@ const Users = () => {
                                     key={user.id}
                                     user={user}
                                     fetchData={fetchData}
+                                    accessGroupIds={accessGroupIds}
                                 />
                             ))}
                         </TableBody>

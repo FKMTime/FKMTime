@@ -1,10 +1,12 @@
-import { KeyRound, Pencil, Trash2 } from "lucide-react";
+import { KeyRound, Pencil, ShieldCheck, Trash2 } from "lucide-react";
 import { useState } from "react";
 
+import GiveDelegateAccessModal from "@/Components/GiveDelegateAccessModal";
 import RowActions from "@/Components/shared/RowActions";
 import { TableCell, TableRow } from "@/Components/ui/table";
 import { useConfirm } from "@/hooks/useConfirm";
 import { useToast } from "@/hooks/useToast";
+import { grantableUsers } from "@/lib/delegateGrants";
 import { User } from "@/lib/interfaces";
 import { deleteUser } from "@/lib/user";
 import { prettyUserRoleName } from "@/lib/utils";
@@ -17,16 +19,27 @@ interface UserRowProps {
     fetchData: () => void;
     /** Desktop table row, or a mobile list item */
     variant?: "table" | "list";
+    /** Groups delegate access can be given for; empty hides the action */
+    accessGroupIds?: string[];
 }
 
-const UserRow = ({ user, fetchData, variant = "table" }: UserRowProps) => {
+const UserRow = ({
+    user,
+    fetchData,
+    variant = "table",
+    accessGroupIds = [],
+}: UserRowProps) => {
     const { toast } = useToast();
     const confirm = useConfirm();
     const [isOpenEditUserModal, setIsOpenEditUserModal] =
         useState<boolean>(false);
     const [isOpenChangePasswordModal, setIsOpenChangePasswordModal] =
         useState<boolean>(false);
+    const [isGivingAccess, setIsGivingAccess] = useState(false);
     const isWcaAccount = user.wcaUserId !== null;
+    // Delegates and admins can do it all already
+    const canGiveAccess =
+        accessGroupIds.length > 0 && grantableUsers([user]).length > 0;
 
     const handleCloseEditUserModal = async () => {
         await fetchData();
@@ -71,6 +84,12 @@ const UserRow = ({ user, fetchData, variant = "table" }: UserRowProps) => {
             }}
             items={[
                 {
+                    label: "Give delegate access…",
+                    icon: ShieldCheck,
+                    hidden: !canGiveAccess,
+                    onSelect: () => setIsGivingAccess(true),
+                },
+                {
                     label: "Change password",
                     icon: KeyRound,
                     hidden: isWcaAccount,
@@ -105,6 +124,14 @@ const UserRow = ({ user, fetchData, variant = "table" }: UserRowProps) => {
                 onClose={() => setIsOpenChangePasswordModal(false)}
                 user={user}
             />
+            {isGivingAccess && (
+                <GiveDelegateAccessModal
+                    isOpen
+                    onClose={() => setIsGivingAccess(false)}
+                    groupIds={accessGroupIds}
+                    user={user}
+                />
+            )}
         </>
     );
 

@@ -280,11 +280,15 @@ effect, and ends, on the next request.
   dialog: pick a user (delegates and admins left out), the group (the room's
   running and next groups), and the permission checkboxes with the defaults
   ticked.
+- The Users page (Setup → Users) gets "Give delegate access…" in each user's
+  row menu, for users who aren't delegates or admins. It opens the same dialog
+  with that user already chosen; the groups are those running now and each
+  room's next one. Organizers see the Users page but not this action.
 - The Incidents page gets a "Delegate access" tab, counting the grants that
   haven't ended: active and waiting grants, then ended ones from today, each
   with "End" while it's open. Each row opens the grantee's actions — time,
-  competitor (linking to the result) and summary. The tab also gives access
-  for any running group.
+  competitor (linking to the result) and summary. The tab also gives access,
+  for the groups running now and each room's next one.
 
 **Grantee side.**
 

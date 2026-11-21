@@ -69,6 +69,35 @@ describe("GiveDelegateAccessModal", () => {
         expect(screen.getByText("3x3x3 Cube, Round 1, Group 2")).toBeTruthy();
     });
 
+    it("gives access to the user it was opened for, without asking who", async () => {
+        giveDelegateGrant.mockResolvedValue({ status: 201 });
+        render(
+            <GiveDelegateAccessModal
+                isOpen
+                onClose={vi.fn()}
+                groupIds={["333-r1-g2"]}
+                user={
+                    {
+                        id: "staff",
+                        fullName: "Invented Helper",
+                        roles: ["STAFF"],
+                    } as never
+                }
+            />,
+            { wrapper: QueryWrapper }
+        );
+        expect(screen.getByText("Invented Helper")).toBeTruthy();
+        expect(screen.queryByRole("combobox", { name: "User" })).toBeNull();
+        fireEvent.click(screen.getByRole("button", { name: "Give access" }));
+        await vi.waitFor(() =>
+            expect(giveDelegateGrant).toHaveBeenCalledWith({
+                userId: "staff",
+                groupId: "333-r1-g2",
+                permissions: ["GIVE_EXTRA", "ADD_ATTEMPT", "REORDER_ATTEMPTS"],
+            })
+        );
+    });
+
     it("leaves delegates out of the users to choose from", async () => {
         const { grantableUsers } = await vi.importActual<
             typeof import("@/lib/delegateGrants")

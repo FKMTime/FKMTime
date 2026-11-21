@@ -9,6 +9,7 @@ import SectionLoading from "@/Components/shared/SectionLoading";
 import { StatusBadge } from "@/Components/shared/StatusBadge";
 import { Button } from "@/Components/ui/button";
 import { useConfirm } from "@/hooks/useConfirm";
+import { useDelegateAccessGroupIds } from "@/hooks/useDelegateAccessGroupIds";
 import { useLiveQuery } from "@/hooks/useLiveQuery";
 import { useToast } from "@/hooks/useToast";
 import {
@@ -22,7 +23,6 @@ import {
     PERMISSION_OPTIONS,
 } from "@/lib/delegateGrants";
 import { LIVE_MAX_AGE } from "@/lib/queryCache";
-import { roomsQuery } from "@/lib/rooms";
 
 const STATE_BADGE = {
     active: { tone: "primary", label: "Active" },
@@ -167,11 +167,8 @@ const DelegateAccess = () => {
         isError,
         refetch,
     } = useLiveQuery(delegateGrantsQuery(), { maxAge: LIVE_MAX_AGE });
-    const { data: rooms } = useLiveQuery(roomsQuery);
     const [isGiving, setIsGiving] = useState(false);
-    const runningGroupIds = [
-        ...new Set((rooms ?? []).flatMap((room) => room.currentGroupIds)),
-    ];
+    const groupIds = useDelegateAccessGroupIds();
 
     const current = (grants ?? []).filter(
         (grant) => grantState(grant) !== "ended"
@@ -194,11 +191,11 @@ const DelegateAccess = () => {
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <p className="text-sm text-muted-foreground">
                     Let someone resolve the incidents of one group while it
-                    runs. Give it from a room on Home for the next group too.
+                    runs, from a running group or a room's next one.
                 </p>
                 <Button
                     onClick={() => setIsGiving(true)}
-                    disabled={runningGroupIds.length === 0}
+                    disabled={groupIds.length === 0}
                 >
                     <Plus />
                     Give delegate access
@@ -243,7 +240,7 @@ const DelegateAccess = () => {
                 <GiveDelegateAccessModal
                     isOpen
                     onClose={() => setIsGiving(false)}
-                    groupIds={runningGroupIds}
+                    groupIds={groupIds}
                 />
             )}
         </div>

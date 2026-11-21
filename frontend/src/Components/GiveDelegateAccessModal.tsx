@@ -33,6 +33,8 @@ interface GiveDelegateAccessModalProps {
     groupIds: string[];
     /** Picked when the dialog opens */
     defaultGroupId?: string;
+    /** Opened for one user (the Users page): no user to choose */
+    user?: User;
 }
 
 const userLabel = (user: User) =>
@@ -47,19 +49,22 @@ const GiveDelegateAccessModal = ({
     onClose,
     groupIds,
     defaultGroupId,
+    user: fixedUser,
 }: GiveDelegateAccessModalProps) => {
     const { toast } = useToast();
-    const { data: users } = useLiveQuery(usersQuery, { enabled: isOpen });
-    const [userId, setUserId] = useState("");
+    const { data: users } = useLiveQuery(usersQuery, {
+        enabled: isOpen && !fixedUser,
+    });
+    const [userId, setUserId] = useState(fixedUser?.id ?? "");
     const [groupId, setGroupId] = useState(defaultGroupId ?? groupIds[0] ?? "");
     const [permissions, setPermissions] =
         useState<DelegateGrantPermission[]>(DEFAULT_PERMISSIONS);
     const [error, setError] = useState("");
     const [isSaving, setIsSaving] = useState(false);
 
-    const candidates = grantableUsers(users ?? []).sort((a, b) =>
-        userLabel(a).localeCompare(userLabel(b))
-    );
+    const candidates = grantableUsers(
+        fixedUser ? [fixedUser] : users ?? []
+    ).sort((a, b) => userLabel(a).localeCompare(userLabel(b)));
 
     const toggle = (permission: DelegateGrantPermission, on: boolean) =>
         setPermissions((current) =>
@@ -103,21 +108,30 @@ const GiveDelegateAccessModal = ({
                 They can resolve incidents of competitors in the group while it
                 runs. Access ends by itself when the group ends.
             </p>
-            <div className="flex flex-col gap-1.5">
-                <Label htmlFor="delegate-access-user">User</Label>
-                <Select value={userId} onValueChange={setUserId}>
-                    <SelectTrigger id="delegate-access-user">
-                        <SelectValue placeholder="Choose a user" />
-                    </SelectTrigger>
-                    <SelectContent>
-                        {candidates.map((user) => (
-                            <SelectItem key={user.id} value={user.id}>
-                                {userLabel(user)}
-                            </SelectItem>
-                        ))}
-                    </SelectContent>
-                </Select>
-            </div>
+            {fixedUser ? (
+                <p className="text-sm">
+                    User:{" "}
+                    <span className="font-semibold">
+                        {userLabel(fixedUser)}
+                    </span>
+                </p>
+            ) : (
+                <div className="flex flex-col gap-1.5">
+                    <Label htmlFor="delegate-access-user">User</Label>
+                    <Select value={userId} onValueChange={setUserId}>
+                        <SelectTrigger id="delegate-access-user">
+                            <SelectValue placeholder="Choose a user" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {candidates.map((user) => (
+                                <SelectItem key={user.id} value={user.id}>
+                                    {userLabel(user)}
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                </div>
+            )}
             {groupIds.length > 1 && (
                 <div className="flex flex-col gap-1.5">
                     <Label htmlFor="delegate-access-group">Group</Label>
