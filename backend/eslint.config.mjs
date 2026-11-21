@@ -4,7 +4,8 @@ import globals from 'globals';
 import tseslint from 'typescript-eslint';
 
 export default [
-  { ignores: ['dist', 'eslint.config.mjs'] },
+  // src/generated is Prisma Client, written by `prisma generate`
+  { ignores: ['dist', 'eslint.config.mjs', 'src/generated'] },
   ...tseslint.configs.recommended,
   prettierRecommended,
   {

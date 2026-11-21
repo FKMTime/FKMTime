@@ -13,13 +13,13 @@ import { DbService } from 'src/db/db.service';
 import { groupIdToRoundId } from 'src/device/stationRounds';
 import { Competition as Wcif } from 'wcif-helpers';
 
-import { findUncoveredGroups, UncoveredGroup } from './delegateCoverage';
 import {
   DelegateGrant,
   DelegateGrantPermission,
   Role,
   StaffRole,
 } from '../generated/prisma/client';
+import { findUncoveredGroups, UncoveredGroup } from './delegateCoverage';
 import {
   ACTION_LABELS,
   GrantAction,
