@@ -58,4 +58,4 @@ Update `Status` as the spec moves:
 | [SPEC-010](SPEC-010-station-last-error.md) | A station's last error, and how to fix it, on the Devices page | Implemented |
 | [SPEC-011](SPEC-011-server-logs.md) | Server logs for admins, replacing Dozzle | Implemented |
 | [SPEC-012](SPEC-012-station-tutorial-mode.md) | Tutorial mode for a station | Implemented |
-| [SPEC-013](SPEC-013-group-delegate-access.md) | Delegate access for one group | Accepted |
+| [SPEC-013](SPEC-013-group-delegate-access.md) | Delegate access for one group | Implemented |
