@@ -1,8 +1,8 @@
 import { HttpException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
-import { Prisma, Role } from '@prisma/client';
 
 import { DbService } from '../db/db.service';
+import { Prisma, Role } from '../generated/prisma/client';
 import { WcaService } from '../wca/wca.service';
 import { UserService } from './user.service';
 

@@ -1,10 +1,10 @@
 import { HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common';
-import { Attempt, Competition } from '@prisma/client';
 import { DNF_VALUE, DNS_VALUE } from 'src/constants';
 import { getCountingAttempts, getFinalExtraAttempt } from 'src/result/helpers';
 import { Competition as Wcif, Person } from 'wcif-helpers';
 
 import { DbService } from '../db/db.service';
+import { Attempt, Competition } from '../generated/prisma/client';
 
 const WCA_LIVE_API_ORIGIN = process.env.WCA_LIVE_API_ORIGIN;
 const WCA_ORIGIN = process.env.WCA_ORIGIN;

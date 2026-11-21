@@ -1,5 +1,6 @@
-import { Role } from '@prisma/client';
 import { IsNotEmpty, IsString } from 'class-validator';
+
+import { Role } from '../../generated/prisma/client';
 
 export class JwtAuthDto {
   @IsNotEmpty()

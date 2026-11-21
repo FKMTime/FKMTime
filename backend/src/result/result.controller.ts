@@ -11,7 +11,6 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
-import { Role } from '@prisma/client';
 import { GetUser } from 'src/auth/decorator/getUser.decorator';
 import { JwtAuthDto } from 'src/auth/dto/jwt-auth.dto';
 import { DelegateGuard } from 'src/auth/guards/delegate.guard';
@@ -20,6 +19,7 @@ import { OrganizerGuard } from 'src/auth/guards/organizer.guard';
 import { DelegateGrantService } from 'src/delegate-grant/delegateGrant.service';
 import { ParseRoundIdPipe } from 'src/roundId.pipe';
 
+import { Role } from '../generated/prisma/client';
 import { DoubleCheckDto } from './dto/doubleCheck.dto';
 import { RemoveResultDto } from './dto/removeResult.dto';
 import { ResultService } from './result.service';

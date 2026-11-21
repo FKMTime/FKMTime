@@ -1,10 +1,10 @@
 import { forwardRef, HttpException, Inject, Injectable } from '@nestjs/common';
-import { DeviceType, Prisma } from '@prisma/client';
 import { AppGateway } from 'src/app.gateway';
 import { isH2hRound } from 'src/h2h/h2hRound';
 import { Competition as WCIF, getRoundInfoFromWcif } from 'wcif-helpers';
 
 import { DbService } from '../db/db.service';
+import { DeviceType, Prisma } from '../generated/prisma/client';
 import { SocketController } from '../socket/socket.controller';
 import { LIVE_LOOKUP_TTL_MS, TtlCache } from '../ttl-cache';
 import { DeviceDto } from './dto/device.dto';

@@ -1,4 +1,3 @@
-import { DeviceType, HardwareVersion } from '@prisma/client';
 import {
   IsEnum,
   IsInt,
@@ -6,6 +5,8 @@ import {
   IsOptional,
   IsString,
 } from 'class-validator';
+
+import { DeviceType, HardwareVersion } from '../../generated/prisma/client';
 
 export class DeviceDto {
   @IsString()

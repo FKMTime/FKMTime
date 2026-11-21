@@ -1,5 +1,8 @@
-import { Attempt, AttemptStatus, AttemptType } from '@prisma/client';
-
+import {
+  Attempt,
+  AttemptStatus,
+  AttemptType,
+} from '../generated/prisma/client';
 import {
   breaksRoundRules,
   liveAttemptsHash,

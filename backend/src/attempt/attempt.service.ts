@@ -1,11 +1,4 @@
 import { forwardRef, HttpException, Inject, Injectable } from '@nestjs/common';
-import {
-  Attempt,
-  AttemptStatus,
-  AttemptType,
-  SendingResultsFrequency,
-  StaffRole,
-} from '@prisma/client';
 import { AppGateway } from 'src/app.gateway';
 import {
   AttemptEditLogService,
@@ -32,6 +25,13 @@ import {
 } from 'wcif-helpers';
 
 import { DbService, INCLUDING_REMOVED } from '../db/db.service';
+import {
+  Attempt,
+  AttemptStatus,
+  AttemptType,
+  SendingResultsFrequency,
+  StaffRole,
+} from '../generated/prisma/client';
 import { ResultService } from '../result/result.service';
 import { SocketController } from '../socket/socket.controller';
 import {

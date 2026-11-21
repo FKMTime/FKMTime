@@ -1,8 +1,12 @@
 import { INestApplication } from '@nestjs/common';
-import { AttemptStatus, AttemptType, Person } from '@prisma/client';
 import { DbService } from 'src/db/db.service';
 import * as request from 'supertest';
 
+import {
+  AttemptStatus,
+  AttemptType,
+  Person,
+} from '../src/generated/prisma/client';
 import { createTestApp } from './helpers/app.helper';
 import {
   createRoleUsers,

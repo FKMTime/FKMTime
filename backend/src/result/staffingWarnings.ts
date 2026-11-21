@@ -1,3 +1,5 @@
+import { DNS_VALUE } from 'src/constants';
+
 import {
   Attempt,
   AttemptStatus,
@@ -5,8 +7,7 @@ import {
   StaffActivity,
   StaffActivityStatus,
   StaffRole,
-} from '@prisma/client';
-import { DNS_VALUE } from 'src/constants';
+} from '../generated/prisma/client';
 
 type AttemptWithPerson = Attempt & {
   result: { personId: string; roundId: string; person: { name: string } };

@@ -1,14 +1,14 @@
 import { INestApplication } from '@nestjs/common';
+import { sha512 } from 'js-sha512';
+import { DbService } from 'src/db/db.service';
+
 import {
   DeviceType,
   HardwareVersion,
   Person,
   Role,
   SendingResultsFrequency,
-} from '@prisma/client';
-import { sha512 } from 'js-sha512';
-import { DbService } from 'src/db/db.service';
-
+} from '../../src/generated/prisma/client';
 import { loginWithFKMTimeAccount } from './auth.helper';
 
 /**

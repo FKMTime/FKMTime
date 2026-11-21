@@ -1,8 +1,8 @@
 import { INestApplication } from '@nestjs/common';
-import { Prisma, Role } from '@prisma/client';
 import { DbService } from 'src/db/db.service';
 import * as request from 'supertest';
 
+import { Prisma, Role } from '../src/generated/prisma/client';
 import { createTestApp } from './helpers/app.helper';
 import { listenOnLoopback } from './helpers/loopback.helper';
 import {

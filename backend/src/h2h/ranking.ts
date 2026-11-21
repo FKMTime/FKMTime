@@ -1,4 +1,4 @@
-import { H2hMatchStatus, H2hSide, H2hStage } from '@prisma/client';
+import { H2hMatchStatus, H2hSide, H2hStage } from '../generated/prisma/client';
 
 export interface RankingMatch {
   matchNumber: number;

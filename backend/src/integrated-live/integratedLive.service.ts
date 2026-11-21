@@ -1,6 +1,5 @@
 import { forwardRef, Inject, Injectable, Logger } from '@nestjs/common';
 import { Interval } from '@nestjs/schedule';
-import { LiveSyncStatus, Prisma } from '@prisma/client';
 import { IntegratedLiveConnectionService } from 'src/competition/integratedLiveConnection.service';
 import { DbService, INCLUDING_REMOVED } from 'src/db/db.service';
 import { isH2hRound } from 'src/h2h/h2hRound';
@@ -11,6 +10,7 @@ import {
   getRoundInfoFromWcif,
 } from 'wcif-helpers';
 
+import { LiveSyncStatus, Prisma } from '../generated/prisma/client';
 import {
   breaksRoundRules,
   LiveAttempt,

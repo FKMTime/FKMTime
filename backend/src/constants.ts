@@ -1,4 +1,4 @@
-import { HardwareVersion } from '@prisma/client';
+import { HardwareVersion } from './generated/prisma/client';
 
 export const SKIPPED_VALUE = 0;
 export const DNF_VALUE = -1;

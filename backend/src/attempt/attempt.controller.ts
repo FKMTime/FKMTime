@@ -12,7 +12,6 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
-import { AttemptStatus, DelegateGrantPermission } from '@prisma/client';
 import { GetUser } from 'src/auth/decorator/getUser.decorator';
 import { JwtAuthDto } from 'src/auth/dto/jwt-auth.dto';
 import { DelegateGuard } from 'src/auth/guards/delegate.guard';
@@ -27,6 +26,10 @@ import {
 } from 'src/delegate-grant/delegateGrantRules';
 import { ParseRoundIdPipe } from 'src/roundId.pipe';
 
+import {
+  AttemptStatus,
+  DelegateGrantPermission,
+} from '../generated/prisma/client';
 import { AttemptService } from './attempt.service';
 import { CreateAttemptDto } from './dto/createAttempt.dto';
 import { DnfAttemptsDto } from './dto/dnfAttempts.dto';

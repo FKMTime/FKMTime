@@ -1,13 +1,13 @@
 import { INestApplication } from '@nestjs/common';
+import { DbService } from 'src/db/db.service';
+import * as request from 'supertest';
+
 import {
   Person,
   StaffActivity,
   StaffActivityStatus,
   StaffRole,
-} from '@prisma/client';
-import { DbService } from 'src/db/db.service';
-import * as request from 'supertest';
-
+} from '../src/generated/prisma/client';
 import { createTestApp } from './helpers/app.helper';
 import {
   createRoleUsers,

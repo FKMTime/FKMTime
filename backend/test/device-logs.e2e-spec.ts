@@ -1,5 +1,4 @@
 import { INestApplication } from '@nestjs/common';
-import { Role } from '@prisma/client';
 import { mkdtempSync, promises as fs, rmSync } from 'fs';
 import { tmpdir } from 'os';
 import * as path from 'path';
@@ -11,6 +10,7 @@ import { deviceLogsRoom } from 'src/device/deviceLog.gateway';
 import { DeviceLogService } from 'src/device/deviceLog.service';
 import * as request from 'supertest';
 
+import { Role } from '../src/generated/prisma/client';
 import { createTestApp } from './helpers/app.helper';
 import {
   connectSocketIo,

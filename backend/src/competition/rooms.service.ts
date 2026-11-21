@@ -5,7 +5,6 @@ import {
   Logger,
   OnModuleInit,
 } from '@nestjs/common';
-import { Attempt } from '@prisma/client';
 import { DbService } from 'src/db/db.service';
 import { DelegateGrantService } from 'src/delegate-grant/delegateGrant.service';
 import { DeviceService } from 'src/device/device.service';
@@ -14,6 +13,7 @@ import { IntegratedLiveRoundsService } from 'src/integrated-live/integratedLiveR
 import { SocketController } from 'src/socket/socket.controller';
 import { Competition as Wcif } from 'wcif-helpers';
 
+import { Attempt } from '../generated/prisma/client';
 import { UpdateRoomsDto } from './dto/updateCurrentRound.dto';
 import { calculateGroupProgress, getGroupCompetitorIds } from './groupProgress';
 

@@ -1,5 +1,4 @@
-import { AttemptStatus } from '@prisma/client';
-
+import { AttemptStatus } from '../generated/prisma/client';
 import {
   DNF_RULING_UNDONE,
   getStateBeforeRuling,

@@ -1,5 +1,6 @@
-import { AttemptStatus } from '@prisma/client';
 import { IsBoolean, IsIn, IsInt, IsOptional } from 'class-validator';
+
+import { AttemptStatus } from '../../generated/prisma/client';
 
 /** The delegate's answer to a tutorial delegate call (SPEC-012) */
 export class ResolveTutorialIncidentDto {

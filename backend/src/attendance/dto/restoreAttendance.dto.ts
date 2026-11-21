@@ -1,5 +1,6 @@
-import { StaffActivityStatus } from '@prisma/client';
 import { IsBoolean, IsEnum, IsOptional, IsString } from 'class-validator';
+
+import { StaffActivityStatus } from '../../generated/prisma/client';
 
 export class RestoreAttendanceDto {
   @IsEnum(StaffActivityStatus)

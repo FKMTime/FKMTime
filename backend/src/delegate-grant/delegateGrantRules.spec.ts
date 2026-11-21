@@ -1,5 +1,4 @@
-import { AttemptStatus, AttemptType } from '@prisma/client';
-
+import { AttemptStatus, AttemptType } from '../generated/prisma/client';
 import {
   actionForAttemptUpdate,
   describeAttemptUpdate,

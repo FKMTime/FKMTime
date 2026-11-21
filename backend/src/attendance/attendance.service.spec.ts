@@ -1,9 +1,9 @@
 import { HttpException, HttpStatus } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
-import { StaffActivityStatus, StaffRole } from '@prisma/client';
 
 import { AppGateway } from '../app.gateway';
 import { DbService } from '../db/db.service';
+import { StaffActivityStatus, StaffRole } from '../generated/prisma/client';
 import { AttendanceService, tagsClearedBy } from './attendance.service';
 
 describe('AttendanceService', () => {

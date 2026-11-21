@@ -7,11 +7,6 @@ import {
   OnModuleDestroy,
 } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
-import {
-  HardwareVersion,
-  SendingResultsFrequency,
-  StaffRole,
-} from '@prisma/client';
 import { AppGateway } from 'src/app.gateway';
 import { ResultService } from 'src/result/result.service';
 import { getOfficialResultsDestination } from 'src/results-destination';
@@ -36,6 +31,11 @@ import {
 
 import { DbService } from '../db/db.service';
 import { eventsData, isUnofficialEvent } from '../events';
+import {
+  HardwareVersion,
+  SendingResultsFrequency,
+  StaffRole,
+} from '../generated/prisma/client';
 import { SocketController } from '../socket/socket.controller';
 import { WcaService } from '../wca/wca.service';
 import { AUTO_SETUP_DURATION_MS } from './autoSetup';

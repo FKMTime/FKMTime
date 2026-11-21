@@ -1,10 +1,4 @@
 import { forwardRef, Inject, Injectable, Logger } from '@nestjs/common';
-import {
-  Attempt,
-  LiveSyncStatus,
-  StaffActivityStatus,
-  StaffRole,
-} from '@prisma/client';
 import { AppGateway } from 'src/app.gateway';
 import { IntegratedLiveConnectionService } from 'src/competition/integratedLiveConnection.service';
 import { DbService } from 'src/db/db.service';
@@ -13,6 +7,12 @@ import { getOfficialResultsDestination } from 'src/results-destination';
 import { WcaService } from 'src/wca/wca.service';
 import { Competition as Wcif, getRoundInfoFromWcif } from 'wcif-helpers';
 
+import {
+  Attempt,
+  LiveSyncStatus,
+  StaffActivityStatus,
+  StaffRole,
+} from '../generated/prisma/client';
 import { IntegratedLiveService } from './integratedLive.service';
 import { LiveAttempt, toLiveAttempts } from './liveAttempts';
 import {

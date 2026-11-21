@@ -5,12 +5,6 @@ import {
   Injectable,
   Logger,
 } from '@nestjs/common';
-import {
-  DelegateGrant,
-  DelegateGrantPermission,
-  Role,
-  StaffRole,
-} from '@prisma/client';
 import { AppGateway } from 'src/app.gateway';
 import { JwtAuthDto } from 'src/auth/dto/jwt-auth.dto';
 import { getNextGroupsInRoom } from 'src/competition/groupChange';
@@ -20,6 +14,12 @@ import { groupIdToRoundId } from 'src/device/stationRounds';
 import { Competition as Wcif } from 'wcif-helpers';
 
 import { findUncoveredGroups, UncoveredGroup } from './delegateCoverage';
+import {
+  DelegateGrant,
+  DelegateGrantPermission,
+  Role,
+  StaffRole,
+} from '../generated/prisma/client';
 import {
   ACTION_LABELS,
   GrantAction,

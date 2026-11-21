@@ -1,5 +1,6 @@
-import { AttemptStatus, AttemptType } from '@prisma/client';
 import { DNF_VALUE, DNS_VALUE } from 'src/constants';
+
+import { AttemptStatus, AttemptType } from '../generated/prisma/client';
 
 export interface StatsAttempt {
   status: AttemptStatus;

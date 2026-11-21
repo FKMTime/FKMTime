@@ -1,7 +1,8 @@
 import { Injectable, OnModuleDestroy } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PrismaPg } from '@prisma/adapter-pg';
-import { Prisma, PrismaClient } from '@prisma/client';
+
+import { Prisma, PrismaClient } from '../generated/prisma/client';
 
 /**
  * A transaction in progress: the client to query it with, and a place for

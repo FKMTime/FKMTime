@@ -1,8 +1,8 @@
 import { INestApplication } from '@nestjs/common';
-import { DeviceType, StaffRole } from '@prisma/client';
 import { DbService } from 'src/db/db.service';
 
 import { disconnectSeedDb, seedDb } from '../prisma/seed/seed-test';
+import { DeviceType, StaffRole } from '../src/generated/prisma/client';
 import { createTestApp } from './helpers/app.helper';
 
 describe('Test seed (e2e)', () => {

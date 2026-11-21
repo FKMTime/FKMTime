@@ -12,13 +12,13 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
-import { DeviceType } from '@prisma/client';
 import { GetUser } from 'src/auth/decorator/getUser.decorator';
 import { JwtAuthDto } from 'src/auth/dto/jwt-auth.dto';
 import { DelegateGuard } from 'src/auth/guards/delegate.guard';
 import { OrganizerGuard } from 'src/auth/guards/organizer.guard';
 
 import { AdminGuard } from '../auth/guards/admin.guard';
+import { DeviceType } from '../generated/prisma/client';
 import { DeviceService } from './device.service';
 import { DeviceLogService } from './deviceLog.service';
 import { DeviceDto } from './dto/device.dto';

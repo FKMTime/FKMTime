@@ -1,6 +1,6 @@
 import { HttpException } from '@nestjs/common';
-import { AttemptStatus } from '@prisma/client';
 
+import { AttemptStatus } from '../generated/prisma/client';
 import {
   TUTORIAL_INCIDENT_TTL_MS,
   TutorialIncidentCall,

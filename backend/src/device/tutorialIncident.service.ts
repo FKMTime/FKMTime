@@ -1,8 +1,8 @@
 import { forwardRef, HttpException, Inject, Injectable } from '@nestjs/common';
-import { AttemptStatus } from '@prisma/client';
 import { randomUUID } from 'crypto';
 import { AppGateway } from 'src/app.gateway';
 
+import { AttemptStatus } from '../generated/prisma/client';
 import { SocketController } from '../socket/socket.controller';
 
 /** The station stops waiting for the delegate's answer after this long */

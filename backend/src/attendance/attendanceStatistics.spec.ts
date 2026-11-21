@@ -1,7 +1,6 @@
-import { StaffActivityStatus, StaffRole } from '@prisma/client';
-
 import { AppGateway } from '../app.gateway';
 import { DbService } from '../db/db.service';
+import { StaffActivityStatus, StaffRole } from '../generated/prisma/client';
 import { AttendanceService } from './attendance.service';
 import {
   computeAttendanceStatistics,

@@ -1,5 +1,4 @@
-import { AttemptStatus, AttemptType } from '@prisma/client';
-
+import { AttemptStatus, AttemptType } from '../generated/prisma/client';
 import { getRoundAttemptStats, StatsAttempt } from './roundAttemptStats';
 
 const attempt = (overrides: Partial<StatsAttempt>): StatsAttempt => ({

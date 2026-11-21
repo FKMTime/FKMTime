@@ -1,10 +1,14 @@
 import { INestApplication } from '@nestjs/common';
-import { AttemptStatus, AttemptType, Role } from '@prisma/client';
 import * as CryptoJS from 'crypto-js';
 import { sha512 } from 'js-sha512';
 import { DbService } from 'src/db/db.service';
 import * as request from 'supertest';
 
+import {
+  AttemptStatus,
+  AttemptType,
+  Role,
+} from '../src/generated/prisma/client';
 import { createTestApp } from './helpers/app.helper';
 import { listenOnLoopback } from './helpers/loopback.helper';
 import {

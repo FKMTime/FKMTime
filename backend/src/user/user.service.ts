@@ -1,9 +1,9 @@
 import { HttpException, Injectable } from '@nestjs/common';
-import { Prisma, Role } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 import { WcaService } from 'src/wca/wca.service';
 
 import { DbService } from '../db/db.service';
+import { Prisma, Role } from '../generated/prisma/client';
 import { CreateUserDto } from './dto/createUser.dto';
 import { UpdateUserDto } from './dto/updateUser.dto';
 

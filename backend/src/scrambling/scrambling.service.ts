@@ -1,5 +1,4 @@
 import { HttpException, Injectable } from '@nestjs/common';
-import { DeviceType } from '@prisma/client';
 import * as CryptoJS from 'crypto-js';
 import { sha512 } from 'js-sha512';
 import { DbService } from 'src/db/db.service';
@@ -7,6 +6,7 @@ import { PersonService } from 'src/person/person.service';
 import { ResultService } from 'src/result/result.service';
 import { ResultFromDeviceService } from 'src/result/resultFromDevice.service';
 
+import { DeviceType } from '../generated/prisma/client';
 import { CreateScrambledAttemptDto } from './dto/createScrambledAttempt.dto';
 import { UnlockScrambleSetDto } from './dto/unlockScrambleSet.dto';
 @Injectable()

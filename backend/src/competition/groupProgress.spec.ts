@@ -1,6 +1,10 @@
-import { Attempt, AttemptStatus, AttemptType } from '@prisma/client';
 import { Competition as Wcif } from 'wcif-helpers';
 
+import {
+  Attempt,
+  AttemptStatus,
+  AttemptType,
+} from '../generated/prisma/client';
 import {
   calculateGroupProgress,
   getExpectedAttempts,

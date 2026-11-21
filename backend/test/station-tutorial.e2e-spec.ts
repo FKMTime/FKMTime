@@ -1,8 +1,8 @@
 import { INestApplication } from '@nestjs/common';
-import { DeviceType, Person, Role } from '@prisma/client';
 import { DbService } from 'src/db/db.service';
 import * as request from 'supertest';
 
+import { DeviceType, Person, Role } from '../src/generated/prisma/client';
 import { createTestApp } from './helpers/app.helper';
 import { seededPersonPicker, WcifLike } from './helpers/seed.helper';
 import { StationFixtures } from './helpers/station-fixtures.helper';

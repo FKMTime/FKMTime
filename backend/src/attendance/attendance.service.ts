@@ -1,8 +1,12 @@
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
-import { Prisma, StaffActivityStatus, StaffRole } from '@prisma/client';
 import { AppGateway } from 'src/app.gateway';
 
 import { DbService, Tx } from '../db/db.service';
+import {
+  Prisma,
+  StaffActivityStatus,
+  StaffRole,
+} from '../generated/prisma/client';
 import { getTranslation } from '../translations/translations';
 import {
   AttendanceStatistics,

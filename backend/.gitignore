@@ -36,3 +36,6 @@ lerna-debug.log*
 
 .env
 prisma/sql/
+
+# Prisma Client, from `prisma generate`
+/src/generated/

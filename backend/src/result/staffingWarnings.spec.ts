@@ -1,12 +1,12 @@
+import { DNF_VALUE, DNS_VALUE } from 'src/constants';
+
 import {
   Attempt,
   AttemptStatus,
   AttemptType,
   StaffActivityStatus,
   StaffRole,
-} from '@prisma/client';
-import { DNF_VALUE, DNS_VALUE } from 'src/constants';
-
+} from '../generated/prisma/client';
 import { getStaffingWarnings } from './staffingWarnings';
 
 const at = (minute: number) => new Date(Date.UTC(2026, 8, 30, 12, minute));

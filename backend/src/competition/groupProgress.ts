@@ -1,4 +1,3 @@
-import { Attempt } from '@prisma/client';
 import { DNF_VALUE, DNS_VALUE } from 'src/constants';
 import { getCountingAttempts } from 'src/result/helpers';
 import {
@@ -6,6 +5,8 @@ import {
   getNumberOfAttemptsForRound,
   getRoundInfoFromWcif,
 } from 'wcif-helpers';
+
+import { Attempt } from '../generated/prisma/client';
 
 export interface GroupProgress {
   groupId: string;

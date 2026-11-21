@@ -1,13 +1,4 @@
 import { INestApplication } from '@nestjs/common';
-import {
-  AttemptStatus,
-  AttemptType,
-  DeviceType,
-  HardwareVersion,
-  Person,
-  StaffActivityStatus,
-  StaffRole,
-} from '@prisma/client';
 import { AppGateway } from 'src/app.gateway';
 import { DbService } from 'src/db/db.service';
 import {
@@ -16,6 +7,15 @@ import {
 } from 'src/translations/translations';
 import * as request from 'supertest';
 
+import {
+  AttemptStatus,
+  AttemptType,
+  DeviceType,
+  HardwareVersion,
+  Person,
+  StaffActivityStatus,
+  StaffRole,
+} from '../src/generated/prisma/client';
 import { createTestApp } from './helpers/app.helper';
 import {
   seededPersonPicker,

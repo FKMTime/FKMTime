@@ -1,5 +1,6 @@
-import { StaffRole } from '@prisma/client';
 import { IsEnum, IsNotEmpty, IsString } from 'class-validator';
+
+import { StaffRole } from '../../generated/prisma/client';
 
 export class AddNotAssignedPersonDto {
   @IsString()

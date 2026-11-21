@@ -1,10 +1,15 @@
 import { INestApplication } from '@nestjs/common';
-import { DeviceType, HardwareVersion, Role, Room } from '@prisma/client';
 import { AppGateway } from 'src/app.gateway';
 import { DbService } from 'src/db/db.service';
 import { DeviceService } from 'src/device/device.service';
 import * as request from 'supertest';
 
+import {
+  DeviceType,
+  HardwareVersion,
+  Role,
+  Room,
+} from '../src/generated/prisma/client';
 import { createTestApp } from './helpers/app.helper';
 import { listenOnLoopback } from './helpers/loopback.helper';
 import {

@@ -1,6 +1,10 @@
-import { Attempt, AttemptStatus, AttemptType } from '@prisma/client';
 import { DNF_VALUE, DNS_VALUE } from 'src/constants';
 
+import {
+  Attempt,
+  AttemptStatus,
+  AttemptType,
+} from '../generated/prisma/client';
 import {
   attemptTimeWithPenalty,
   checkCutoff,

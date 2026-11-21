@@ -1,5 +1,6 @@
-import { Role } from '@prisma/client';
 import { IsArray, IsOptional, IsString } from 'class-validator';
+
+import { Role } from '../../generated/prisma/client';
 
 export class CreateUserDto {
   @IsString()
