@@ -81,8 +81,9 @@ groups "Start next" would start (`getNextGroupsInRoom`, the same as
   grants change, when this panel changes groups, and when a warning arrives.
 - On `noFreeDelegate` the panel shows a browser notification per group (through
   the service worker on phones): "No delegate free for 3x3x3 Cube, Round 1,
-  Group 2" / "All delegates compete in it: Invented One and Invented Two. Give
-  someone delegate access before it starts." Clicking it opens Home.
+  Group 2" / "All delegates compete in it: Invented One and Invented Two.
+  Consider granting delegate rights to someone before it starts." Clicking it
+  opens Home.
 
 ### Edge cases
 

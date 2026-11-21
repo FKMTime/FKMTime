@@ -187,8 +187,8 @@ export const describeUncoveredGroup = (group: UncoveredGroup) => {
     return {
         title: `No delegate free for ${group.groupName}`,
         body: group.running
-            ? `${who} Give someone delegate access so incidents don't wait.`
-            : `${who} Give someone delegate access before it starts.`,
+            ? `${who} Consider granting delegate rights to someone so incidents don't wait.`
+            : `${who} Consider granting delegate rights to someone before it starts.`,
     };
 };
 

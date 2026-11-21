@@ -39,7 +39,7 @@ describe("NoFreeDelegateAlert", () => {
         ).toBeTruthy();
         expect(
             screen.getByText(
-                "All delegates compete in it: Invented One and Invented Two. Give someone delegate access before it starts."
+                "All delegates compete in it: Invented One and Invented Two. Consider granting delegate rights to someone before it starts."
             )
         ).toBeTruthy();
     });
@@ -58,7 +58,7 @@ describe("NoFreeDelegateAlert", () => {
         expect(screen.getByText("No delegate free for 2 groups")).toBeTruthy();
         expect(
             screen.getByText(
-                "Running in Main. The only delegate, Invented One, competes in it. Give someone delegate access so incidents don't wait."
+                "Running in Main. The only delegate, Invented One, competes in it. Consider granting delegate rights to someone so incidents don't wait."
             )
         ).toBeTruthy();
         expect(screen.getByText(/^Next in Side\./)).toBeTruthy();
