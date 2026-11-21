@@ -36,6 +36,7 @@ const ESP = {
   runnerAttendance: 771004,
   scramblerAttendance: 771005,
   stationAttendance: 771006,
+  stationMissingRound: 771007,
   unknown: 771099,
   requested: 771098,
 };
@@ -116,6 +117,10 @@ describe('Station socket protocol (e2e)', () => {
       '333bf-r1-g1',
     ]);
     const emptyRoom = await fixtures.createRoom('room-empty', []);
+    // A group of a round the WCIF doesn't have, as after a round is removed
+    const missingRoundRoom = await fixtures.createRoom('room-missing-round', [
+      '333-r9-g1',
+    ]);
     roomAId = roomA.id;
     roomBId = roomB.id;
 
@@ -128,6 +133,11 @@ describe('Station socket protocol (e2e)', () => {
       HardwareVersion.V3,
     );
     await fixtures.createDevice('empty', ESP.stationEmpty, emptyRoom.id);
+    await fixtures.createDevice(
+      'missing-round',
+      ESP.stationMissingRound,
+      missingRoundRoom.id,
+    );
     await fixtures.createDevice(
       'runner-att',
       ESP.runnerAttendance,
@@ -764,6 +774,25 @@ describe('Station socket protocol (e2e)', () => {
         expect(res).toEqual(
           errorResponse(getTranslation('groupNotFound', defaultLocale), 400),
         );
+        await expectNoAttemptFor(c4.id);
+      });
+
+      it('refuses a round the WCIF no longer has and keeps the time', async () => {
+        const res = await station.request(
+          'EnterAttempt',
+          attempt({ espId: ESP.stationMissingRound, competitorId: CARD.c4 }),
+        );
+
+        // In the judge's language when they share the competitor's country
+        const locale =
+          c4.countryIso2 === judge.countryIso2 &&
+          isLocaleAvailable(judge.countryIso2.toLowerCase())
+            ? judge.countryIso2.toLowerCase()
+            : defaultLocale;
+        expect(res).toEqual(
+          errorResponse(getTranslation('groupNotFound', locale), 400),
+        );
+        expect(res.data.shouldResetTime).toBe(false);
         await expectNoAttemptFor(c4.id);
       });
 

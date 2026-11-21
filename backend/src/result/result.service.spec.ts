@@ -11,6 +11,7 @@ import {
   StaffActivityStatus,
   StaffRole,
 } from '../generated/prisma/client';
+import { unusedDependency } from '../test-utils/unused-dependency';
 import { getFinalExtraAttempt } from './helpers';
 import { ResultService } from './result.service';
 
@@ -41,7 +42,7 @@ describe('ResultService staffing checks', () => {
   let prisma: {
     attempt: { findMany: jest.Mock };
     result: { findUnique: jest.Mock };
-    competition: { findFirst: jest.Mock };
+    competition: { findFirstOrThrow: jest.Mock };
     staffActivity: { findMany: jest.Mock };
   };
 
@@ -55,7 +56,9 @@ describe('ResultService staffing checks', () => {
           attempts: [competed],
         }),
       },
-      competition: { findFirst: jest.fn().mockResolvedValue({ wcif: {} }) },
+      competition: {
+        findFirstOrThrow: jest.fn().mockResolvedValue({ wcif: {} }),
+      },
       staffActivity: {
         findMany: jest.fn().mockResolvedValue(
           ['alice', 'bob'].map((personId) => ({
@@ -69,13 +72,13 @@ describe('ResultService staffing checks', () => {
     };
     service = new ResultService(
       prisma as unknown as DbService,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
+      unusedDependency(),
+      unusedDependency(),
+      unusedDependency(),
+      unusedDependency(),
+      unusedDependency(),
+      unusedDependency(),
+      unusedDependency(),
       competitionStub,
     );
   });
@@ -122,7 +125,7 @@ describe('ResultService staffing checks', () => {
   it('adds the same warning to the competitor result page', async () => {
     jest
       .spyOn(service, 'getRemainingAndUsedCumulativeLimit')
-      .mockResolvedValue(null);
+      .mockResolvedValue({ remaining: null, used: null });
     const result = await service.getResultById('alice-result');
     expect(result.attempts[0].staffingWarnings).toEqual([
       expect.objectContaining({ role: 'JUDGE', staffedAttemptId: 'staffed' }),
@@ -163,13 +166,13 @@ describe('ResultService submitted attempts', () => {
     findMany = jest.fn();
     service = new ResultService(
       { attempt: { findMany } } as unknown as DbService,
-      null,
-      null,
+      unusedDependency(),
+      unusedDependency(),
       { getExtra: getFinalExtraAttempt } as unknown as WcaService,
-      null,
-      null,
-      null,
-      null,
+      unusedDependency(),
+      unusedDependency(),
+      unusedDependency(),
+      unusedDependency(),
       competitionStub,
     );
   });
@@ -234,6 +237,51 @@ describe('ResultService submitted attempts', () => {
   });
 });
 
+describe('ResultService cumulative time limit of a result', () => {
+  const serviceFor = (rounds: object[]) =>
+    new ResultService(
+      {
+        result: {
+          findUnique: jest.fn().mockResolvedValue({
+            id: 'result-1',
+            personId: 'person-1',
+            roundId: '333mbf-r1',
+          }),
+        },
+        competition: {
+          findFirst: jest.fn().mockResolvedValue({
+            wcif: { events: [{ id: '333mbf', rounds }] },
+          }),
+        },
+      } as unknown as DbService,
+      unusedDependency(),
+      unusedDependency(),
+      unusedDependency(),
+      unusedDependency(),
+      unusedDependency(),
+      unusedDependency(),
+      unusedDependency(),
+      competitionStub,
+    );
+
+  // Multi-blind has no time limit in the WCIF: its timeLimit is null
+  it('has none in a round without a time limit', async () => {
+    const service = serviceFor([{ id: '333mbf-r1', timeLimit: null }]);
+
+    await expect(
+      service.getRemainingAndUsedCumulativeLimit('result-1'),
+    ).resolves.toEqual({ remaining: null, used: null });
+  });
+
+  it('has none in a round the WCIF no longer has', async () => {
+    const service = serviceFor([]);
+
+    await expect(
+      service.getRemainingAndUsedCumulativeLimit('result-1'),
+    ).resolves.toEqual({ remaining: null, used: null });
+  });
+});
+
 describe('ResultService settling waiting extras', () => {
   const attempt = (overrides: object) => ({
     replacedBy: null,
@@ -285,13 +333,13 @@ describe('ResultService settling waiting extras', () => {
     };
     const service = new ResultService(
       prisma as unknown as DbService,
-      null,
-      null,
-      null,
-      null,
-      null,
+      unusedDependency(),
+      unusedDependency(),
+      unusedDependency(),
+      unusedDependency(),
+      unusedDependency(),
       { log } as unknown as AttemptEditLogService,
-      null,
+      unusedDependency(),
       competitionStub,
     );
     return {
@@ -348,15 +396,15 @@ describe('ResultService next attempt during a redo', () => {
       {
         attempt: { findMany: jest.fn().mockResolvedValue(attempts) },
       } as unknown as DbService,
-      null,
-      null,
-      null,
-      null,
+      unusedDependency(),
+      unusedDependency(),
+      unusedDependency(),
+      unusedDependency(),
       {
         getPersonByCardId: jest.fn().mockResolvedValue({ id: 'person-1' }),
       } as unknown as PersonService,
-      null,
-      null,
+      unusedDependency(),
+      unusedDependency(),
       competitionStub,
     );
     jest
@@ -420,7 +468,7 @@ describe('ResultService results to double check', () => {
     const service = new ResultService(
       {
         competition: {
-          findFirst: jest.fn().mockResolvedValue({
+          findFirstOrThrow: jest.fn().mockResolvedValue({
             wcif: {
               events: [
                 {
@@ -433,13 +481,13 @@ describe('ResultService results to double check', () => {
         },
         result: { findMany },
       } as unknown as DbService,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
+      unusedDependency(),
+      unusedDependency(),
+      unusedDependency(),
+      unusedDependency(),
+      unusedDependency(),
+      unusedDependency(),
+      unusedDependency(),
       competitionStub,
     );
 
@@ -479,7 +527,7 @@ describe('ResultService removing a result (Regulation 9t)', () => {
         }),
       },
       competition: {
-        findFirst: jest.fn(async () => ({
+        findFirstOrThrow: jest.fn(async () => ({
           sendingResultsFrequency: 'AFTER_SOLVE',
         })),
       },
@@ -488,12 +536,12 @@ describe('ResultService removing a result (Regulation 9t)', () => {
     service = new ResultService(
       prisma as unknown as DbService,
       appGateway as unknown as AppGateway,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
+      unusedDependency(),
+      unusedDependency(),
+      unusedDependency(),
+      unusedDependency(),
+      unusedDependency(),
+      unusedDependency(),
       competitionStub,
     );
     sent = jest.fn();
@@ -579,7 +627,7 @@ describe('ResultService deleting a result', () => {
       update: jest.Mock;
       delete: jest.Mock;
     };
-    competition: { findFirst: jest.Mock };
+    competition: { findFirstOrThrow: jest.Mock };
   };
   let service: ResultService;
 
@@ -633,7 +681,7 @@ describe('ResultService deleting a result', () => {
         delete: jest.fn(),
       },
       competition: {
-        findFirst: jest.fn(async () => ({
+        findFirstOrThrow: jest.fn(async () => ({
           wcaScoretakingSoftware: null,
           scoretakingToken: null,
         })),
@@ -641,13 +689,13 @@ describe('ResultService deleting a result', () => {
     };
     service = new ResultService(
       prisma as unknown as DbService,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
+      unusedDependency(),
+      unusedDependency(),
+      unusedDependency(),
+      unusedDependency(),
+      unusedDependency(),
+      unusedDependency(),
+      unusedDependency(),
       competitionStub,
     );
   });
@@ -694,7 +742,7 @@ describe('ResultService assigning DNS to the remaining attempts', () => {
         }),
       },
       competition: {
-        findFirst: jest.fn().mockResolvedValue({
+        findFirstOrThrow: jest.fn().mockResolvedValue({
           wcif: {
             events: [{ id: '333', rounds: [{ id: '333-r1', format: 'a' }] }],
           },
@@ -704,12 +752,12 @@ describe('ResultService assigning DNS to the remaining attempts', () => {
     const service = new ResultService(
       prisma as unknown as DbService,
       { handleResultEntered: jest.fn() } as unknown as AppGateway,
-      null,
-      null,
-      null,
-      null,
+      unusedDependency(),
+      unusedDependency(),
+      unusedDependency(),
+      unusedDependency(),
       { log: jest.fn() } as unknown as AttemptEditLogService,
-      null,
+      unusedDependency(),
       competitionStub,
     );
     jest.spyOn(service, 'getResultById').mockResolvedValue({
@@ -733,7 +781,7 @@ describe('ResultService sending where the WCA setting says', () => {
   ) => {
     const prisma = {
       competition: {
-        findFirst: jest.fn().mockResolvedValue({
+        findFirstOrThrow: jest.fn().mockResolvedValue({
           wcaScoretakingSoftware,
           scoretakingToken,
           cubingContestsToken: 'cc-token',
@@ -764,12 +812,12 @@ describe('ResultService sending where the WCA setting says', () => {
     };
     const service = new ResultService(
       prisma as unknown as DbService,
-      null,
-      null,
+      unusedDependency(),
+      unusedDependency(),
       wcaService as unknown as WcaService,
       contestsService as never,
-      null,
-      null,
+      unusedDependency(),
+      unusedDependency(),
       integratedLiveService as never,
       competitionStub,
     );

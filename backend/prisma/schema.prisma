@@ -196,7 +196,7 @@ model Attempt {
   id                 String               @id @default(uuid())
   sessionId          String?              @map("session_id")
   resultId           String               @map("result_id")
-  result             Result?              @relation(fields: [resultId], references: [id], onDelete: Cascade)
+  result             Result               @relation(fields: [resultId], references: [id], onDelete: Cascade)
   attemptNumber      Int                  @map("attempt_number")
   replacedBy         Int?                 @map("replaced_by")
   comment            String?

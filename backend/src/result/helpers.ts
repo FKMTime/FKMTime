@@ -11,7 +11,7 @@ import {
 } from '../generated/prisma/client';
 
 export const isCompetitorSignedInForEvent = (
-  competitorWcif: Person,
+  competitorWcif: Person | undefined,
   eventId: string,
 ) => {
   if (!competitorWcif || !competitorWcif.registration) return false;
@@ -25,7 +25,10 @@ export const isCompetitorSignedInForEvent = (
  */
 export const attemptTimeWithPenalty = (
   attempt: Pick<Attempt, 'value' | 'penalty'>,
-) => attempt.value + (attempt.penalty > 0 ? attempt.penalty * 100 : 0);
+) => {
+  const penalty = attempt.penalty ?? 0;
+  return attempt.value + (penalty > 0 ? penalty * 100 : 0);
+};
 
 /**
  * A station sends an attempt again when the reply to its first send was lost.
@@ -140,7 +143,7 @@ export const getNextExtraNumber = (attempts: Attempt[]) =>
 /** The standard attempt and each extra that replaced it in turn */
 const getChain = (standard: Attempt, attempts: Attempt[]) => {
   const chain = [standard];
-  let extra = standard;
+  let extra: Attempt | undefined = standard;
   while (extra?.replacedBy) {
     const { replacedBy } = extra;
     extra = attempts.find(
@@ -316,6 +319,7 @@ export const getReaderLocale = (
   const country = judge?.countryIso2?.toLowerCase();
   if (
     competitor &&
+    judge &&
     country &&
     judge.countryIso2 === competitor.countryIso2 &&
     isLocaleAvailable(country)

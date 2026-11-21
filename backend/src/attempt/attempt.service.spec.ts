@@ -3,9 +3,7 @@ import { AttemptEditLogService } from 'src/attempt-edit-log/attempt-edit-log.ser
 import { AttendanceService } from 'src/attendance/attendance.service';
 import { CompetitionService } from 'src/competition/competition.service';
 import { DbService } from 'src/db/db.service';
-import { IncidentService } from 'src/incident/incident.service';
 import { ResultService } from 'src/result/result.service';
-import { SocketController } from 'src/socket/socket.controller';
 
 import {
   Attempt,
@@ -13,6 +11,8 @@ import {
   AttemptType,
   SendingResultsFrequency,
 } from '../generated/prisma/client';
+import { found } from '../test-utils/found';
+import { unusedDependency } from '../test-utils/unused-dependency';
 import { AttemptService } from './attempt.service';
 
 const competitionStub = {
@@ -75,7 +75,7 @@ describe('AttemptService extras for all attempts', () => {
     sendingResultsFrequency = SendingResultsFrequency.AFTER_SOLVE;
     prisma = {
       competition: {
-        findFirst: jest.fn().mockImplementation(async () => ({
+        findFirstOrThrow: jest.fn().mockImplementation(async () => ({
           sendingResultsFrequency,
           wcif: {
             events: [{ id: '333', rounds: [{ id: '333-r1', format, cutoff }] }],
@@ -94,7 +94,7 @@ describe('AttemptService extras for all attempts', () => {
       },
       attempt: {
         update: jest.fn().mockImplementation(async ({ where, data }) => {
-          const attempt = attempts.find((a) => a.id === where.id);
+          const attempt = found(attempts.find((a) => a.id === where.id));
           const { extraGrant, ...scalars } = data;
           delete scalars.updatedBy;
           Object.assign(attempt, scalars);
@@ -133,10 +133,7 @@ describe('AttemptService extras for all attempts', () => {
           return grant ? { ...grant, attempts: [] } : null;
         }),
         update: jest.fn().mockImplementation(async ({ where, data }) => {
-          Object.assign(
-            grants.find((g) => g.id === where.id),
-            data,
-          );
+          Object.assign(found(grants.find((g) => g.id === where.id)), data);
         }),
       },
     };
@@ -156,8 +153,8 @@ describe('AttemptService extras for all attempts', () => {
       attendanceService as unknown as AttendanceService,
       { log: jest.fn() } as unknown as AttemptEditLogService,
       resultService as unknown as ResultService,
-      null as SocketController,
-      null as IncidentService,
+      unusedDependency(),
+      unusedDependency(),
       competitionStub,
     );
   });
@@ -357,7 +354,7 @@ describe('AttemptService extras for all attempts', () => {
             const groupId = groups.find((id) =>
               where.groupId.contains !== undefined
                 ? id.includes(where.groupId.contains)
-                : id.startsWith(where.groupId.startsWith),
+                : id.startsWith(where.groupId.startsWith ?? ''),
             );
             return groupId ? { groupId } : null;
           },
@@ -531,7 +528,7 @@ describe('AttemptService extras for all attempts', () => {
       prisma.result.update = jest
         .fn()
         .mockImplementation(async ({ where, data }) => {
-          const result = results.find((r) => r.id === where.id);
+          const result = found(results.find((r) => r.id === where.id));
           if ('removedAt' in data) result.removedAt = data.removedAt;
           if (data.removedByRulingOf?.connect) {
             result.removedByRulingOfId = data.removedByRulingOf.connect.id;
@@ -930,13 +927,13 @@ describe('AttemptService penalty cap', () => {
       getResultOrCreate: jest.fn().mockRejectedValue(new Error('saved')),
     };
     service = new AttemptService(
-      null as AppGateway,
+      unusedDependency(),
       prisma as unknown as DbService,
-      null as AttendanceService,
-      null as AttemptEditLogService,
+      unusedDependency(),
+      unusedDependency(),
       resultService as unknown as ResultService,
-      null as SocketController,
-      null as IncidentService,
+      unusedDependency(),
+      unusedDependency(),
       competitionStub,
     );
   });
@@ -1007,15 +1004,15 @@ describe('AttemptService resolving an incident', () => {
     const service = new AttemptService(
       { handleAttemptUpdated: jest.fn() } as unknown as AppGateway,
       prisma as unknown as DbService,
-      null as AttendanceService,
+      unusedDependency(),
       { log: jest.fn() } as unknown as AttemptEditLogService,
       {
         settleWaitingExtras: jest.fn(),
         getResultOrCreate: jest.fn().mockResolvedValue({ id: 'result-1' }),
         sendResult: jest.fn(),
       } as unknown as ResultService,
-      null as SocketController,
-      null as IncidentService,
+      unusedDependency(),
+      unusedDependency(),
       competitionStub,
     );
 
@@ -1055,13 +1052,13 @@ describe('AttemptService deleted attempts', () => {
     service = new AttemptService(
       appGateway as unknown as AppGateway,
       prisma as unknown as DbService,
-      null as AttendanceService,
-      null as AttemptEditLogService,
+      unusedDependency(),
+      unusedDependency(),
       {
         sendResult: jest.fn(),
       } as unknown as ResultService,
-      null as SocketController,
-      null as IncidentService,
+      unusedDependency(),
+      unusedDependency(),
       competitionStub,
     );
   });
