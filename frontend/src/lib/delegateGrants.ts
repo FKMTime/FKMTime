@@ -2,6 +2,7 @@ import { PublicUser, User } from "./interfaces";
 import { queryFamily } from "./queryCache";
 import { queryClient } from "./queryClient";
 import { backendQuery, backendRequest } from "./request";
+import { isMobile, isNotificationsSupported } from "./utils";
 
 /**
  * Delegate access for one group (SPEC-013): a delegate lets a user resolve
@@ -152,3 +153,69 @@ export const describeGrant = (grant: MyDelegateGrant) =>
     grant.active
         ? `Delegate access for ${grant.groupName}, given by ${giverName(grant)}. Ends when the group ends.`
         : `Delegate access for ${grant.groupName}, given by ${giverName(grant)}. Starts when the group starts.`;
+
+/**
+ * A running or next group every delegate competes in, which nobody has
+ * delegate access for yet (SPEC-015)
+ */
+export interface UncoveredGroup {
+    groupId: string;
+    /** "3x3x3 Cube, Round 1, Group 2" */
+    groupName: string;
+    /** A room runs it now; otherwise it is a room's next group */
+    running: boolean;
+    roomNames: string[];
+    /** Every delegate in the competition's WCIF: all of them compete in it */
+    competingDelegates: string[];
+}
+
+export const uncoveredGroupsQuery = backendQuery<UncoveredGroup[]>(
+    "delegate-grant/uncovered-groups"
+);
+
+const listNames = (names: string[]) =>
+    names.length <= 1
+        ? names.join("")
+        : `${names.slice(0, -1).join(", ")} and ${names[names.length - 1]}`;
+
+/** What the Home alert and the notification say about the group */
+export const describeUncoveredGroup = (group: UncoveredGroup) => {
+    const who =
+        group.competingDelegates.length === 1
+            ? `The only delegate, ${group.competingDelegates[0]}, competes in it.`
+            : `All delegates compete in it: ${listNames(group.competingDelegates)}.`;
+    return {
+        title: `No delegate free for ${group.groupName}`,
+        body: group.running
+            ? `${who} Consider granting delegate rights to someone so incidents don't wait.`
+            : `${who} Consider granting delegate rights to someone before it starts.`,
+    };
+};
+
+/**
+ * A browser notification, shown by the service worker on phones, like the
+ * one for a new incident. Tagged per group, so a second open tab doesn't
+ * show it twice
+ */
+export const showNoFreeDelegateNotice = (
+    group: UncoveredGroup,
+    onClick: () => void
+) => {
+    if (!isNotificationsSupported()) return;
+    const { title, body } = describeUncoveredGroup(group);
+    const tag = `noFreeDelegate-${group.groupId}`;
+    void Notification.requestPermission().then((permission) => {
+        if (permission !== "granted") return;
+        if (isMobile()) {
+            void navigator.serviceWorker.ready.then((registration) =>
+                registration.showNotification(title, { body, tag })
+            );
+        } else {
+            const notification = new Notification(title, { body, tag });
+            notification.onclick = () => {
+                window.focus();
+                onClick();
+            };
+        }
+    });
+};

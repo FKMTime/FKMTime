@@ -13,10 +13,13 @@ import {
 } from '@prisma/client';
 import { AppGateway } from 'src/app.gateway';
 import { JwtAuthDto } from 'src/auth/dto/jwt-auth.dto';
+import { getNextGroupsInRoom } from 'src/competition/groupChange';
 import { publicUserSelect } from 'src/constants';
 import { DbService } from 'src/db/db.service';
 import { groupIdToRoundId } from 'src/device/stationRounds';
+import { Competition as Wcif } from 'wcif-helpers';
 
+import { findUncoveredGroups, UncoveredGroup } from './delegateCoverage';
 import {
   ACTION_LABELS,
   GrantAction,
@@ -224,6 +227,59 @@ export class DelegateGrantService {
       }
     }
     for (const userId of changedUserIds) this.notifyChanged(userId);
+  }
+
+  /* ===== Groups with no free delegate (SPEC-015) ===== */
+
+  // Groups delegates were told about, so a group is announced only once
+  private announcedUncoveredGroupIds = new Set<string>();
+
+  /**
+   * Running and next groups every WCIF delegate competes in, which nobody
+   * has delegate access for yet
+   */
+  async getUncoveredGroups(): Promise<UncoveredGroup[]> {
+    const [competition, rooms, openGrants] = await Promise.all([
+      this.prisma.competition.findFirst({ select: { wcif: true } }),
+      this.prisma.room.findMany({
+        select: { name: true, currentGroupIds: true },
+      }),
+      this.prisma.delegateGrant.findMany({
+        where: { endedAt: null },
+        select: { groupId: true },
+      }),
+    ]);
+    const wcif = competition?.wcif as unknown as Wcif | undefined;
+    if (!wcif?.schedule || !wcif.persons) return [];
+    return findUncoveredGroups(
+      wcif,
+      rooms.map((room) => ({
+        ...room,
+        nextGroupIds: getNextGroupsInRoom(
+          room.currentGroupIds,
+          room.name,
+          wcif,
+        ),
+      })),
+      new Set(openGrants.map((grant) => grant.groupId)),
+    );
+  }
+
+  /**
+   * After rooms change groups: tells delegates about groups that just
+   * became next (or started) with no delegate free, so someone can be
+   * given access before the group starts. Each group once.
+   */
+  async announceUncoveredGroups() {
+    const groups = await this.getUncoveredGroups();
+    const fresh = groups.filter(
+      (group) => !this.announcedUncoveredGroupIds.has(group.groupId),
+    );
+    if (fresh.length === 0) return;
+    fresh.forEach((group) =>
+      this.announcedUncoveredGroupIds.add(group.groupId),
+    );
+    this.appGateway.handleNoFreeDelegate(fresh);
   }
 
   /* ===== Access checks ===== */
