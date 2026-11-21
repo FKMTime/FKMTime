@@ -8,10 +8,12 @@ import {
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 
+import { AttendanceGroupGuard } from './attendance/attendanceGroup.guard';
 import { DelegateGuard } from './auth/guards/delegate.guard';
 import { DelegateOrGrantGuard } from './auth/guards/delegateOrGrant.guard';
 import { OrganizerGuard } from './auth/guards/organizer.guard';
 import { SignedInGuard } from './auth/guards/signedIn.guard';
+import { StageLeaderGuard } from './auth/guards/stageLeader.guard';
 import { AUTO_SETUP_DURATION_MS } from './competition/autoSetup';
 import type { UncoveredGroup } from './delegate-grant/delegateCoverage';
 import { DeviceRequest } from './device/dto/requestToConnect.dto';
@@ -256,7 +258,7 @@ export class AppGateway {
   /* ===== Attendance ===== */
   /* ====================== */
   @SubscribeMessage('joinAttendance')
-  @UseGuards(OrganizerGuard)
+  @UseGuards(AttendanceGroupGuard)
   async handleJoinAttendance(
     @ConnectedSocket() socket: Socket,
     @MessageBody('groupId') groupId: string,
@@ -265,7 +267,7 @@ export class AppGateway {
   }
 
   @SubscribeMessage('leaveAttendance')
-  @UseGuards(OrganizerGuard)
+  @UseGuards(StageLeaderGuard)
   async handleLeaveAttentance(
     @ConnectedSocket() socket: Socket,
     @MessageBody('groupId') groupId: string,
@@ -273,7 +275,6 @@ export class AppGateway {
     socket.leave(`attendance-${groupId}`);
   }
 
-  @UseGuards(OrganizerGuard)
   handleNewAttendance(groupId: string, competitorId: string) {
     this.server.to(`attendance-${groupId}`).emit('newAttendance', {
       competitorId,

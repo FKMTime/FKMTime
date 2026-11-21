@@ -15,14 +15,22 @@ interface GroupPickerProps {
     rooms: Room[];
     value: string;
     onValueChange: (groupId: string) => void;
+    /** Groups the user takes attendance for; every group when left out */
+    hasGroup?: (groupId: string) => boolean;
 }
 
 const groupNumber = (groupId: string) => Number(groupId.split("-g")[1]);
 
-const sortedGroupIds = (roundId: string, wcif: WCIF) =>
+const everyGroup = () => true;
+
+const sortedGroupIds = (
+    roundId: string,
+    wcif: WCIF,
+    hasGroup: (groupId: string) => boolean
+) =>
     getGroupsByRoundId(roundId, wcif)
         .map((group) => group.activityCode)
-        .filter((code, i, all) => all.indexOf(code) === i)
+        .filter((code, i, all) => all.indexOf(code) === i && hasGroup(code))
         .sort((a, b) => groupNumber(a) - groupNumber(b));
 
 /** Event, then round, then group; previous/next steps across rounds */
@@ -31,39 +39,61 @@ const GroupPicker = ({
     rooms,
     value,
     onValueChange,
+    hasGroup = everyGroup,
 }: GroupPickerProps) => {
     const roundId = value ? value.split("-g")[0] : "";
     const liveGroupIds = rooms.flatMap((room) => room.currentGroupIds);
     const liveRoundIds = useMemo(() => getLiveRoundIds(rooms), [rooms]);
 
+    // A stage lead picks among their rooms' rounds only (SPEC-016)
+    const pickableWcif = useMemo(
+        () =>
+            hasGroup === everyGroup
+                ? wcif
+                : {
+                      ...wcif,
+                      events: wcif.events
+                          .map((event) => ({
+                              ...event,
+                              rounds: event.rounds.filter(
+                                  (round) =>
+                                      sortedGroupIds(round.id, wcif, hasGroup)
+                                          .length > 0
+                              ),
+                          }))
+                          .filter((event) => event.rounds.length > 0),
+                  },
+        [wcif, hasGroup]
+    );
+
     const groups = useMemo(
-        () => (roundId ? sortedGroupIds(roundId, wcif) : []),
-        [roundId, wcif]
+        () => (roundId ? sortedGroupIds(roundId, wcif, hasGroup) : []),
+        [roundId, wcif, hasGroup]
     );
 
     // Every group in schedule order, for previous/next across rounds
     const sequence = useMemo(
         () =>
             getRoundsInScheduleOrder(wcif).flatMap((id) =>
-                sortedGroupIds(id, wcif)
+                sortedGroupIds(id, wcif, hasGroup)
             ),
-        [wcif]
+        [wcif, hasGroup]
     );
     const index = sequence.indexOf(value);
 
     // A new round opens on its group in progress, or its first group
     const selectRound = (id: string) => {
-        const live = liveGroupIds.find((groupId) =>
-            groupId.startsWith(`${id}-g`)
+        const live = liveGroupIds.find(
+            (groupId) => groupId.startsWith(`${id}-g`) && hasGroup(groupId)
         );
-        const target = live ?? sortedGroupIds(id, wcif)[0];
+        const target = live ?? sortedGroupIds(id, wcif, hasGroup)[0];
         if (target) onValueChange(target);
     };
 
     return (
         <div className="flex flex-col gap-3">
             <RoundPicker
-                wcif={wcif}
+                wcif={pickableWcif}
                 timeline
                 liveRoundIds={liveRoundIds}
                 value={roundId}

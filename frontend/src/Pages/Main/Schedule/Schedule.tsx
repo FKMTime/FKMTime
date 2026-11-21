@@ -11,6 +11,7 @@ import SectionLoading from "@/Components/shared/SectionLoading";
 import SegmentedControl from "@/Components/shared/SegmentedControl";
 import { StatusBadge } from "@/Components/shared/StatusBadge";
 import { Button } from "@/Components/ui/button";
+import { useAttendanceScope } from "@/hooks/useAttendanceScope";
 import { useLiveQuery } from "@/hooks/useLiveQuery";
 import { getActivityName } from "@/lib/activities";
 import { competitionAtom } from "@/lib/atoms";
@@ -74,14 +75,20 @@ interface ActivityLinksProps {
     activity: Activity;
     showResults: boolean;
     showAttendance: boolean;
+    /** Whether the user takes attendance for a group */
+    hasGroup: (groupId: string) => boolean;
 }
 
 const ActivityLinks = ({
     activity,
     showResults,
     showAttendance,
+    hasGroup,
 }: ActivityLinksProps) => {
-    const firstGroup = activity.childActivities[0]?.activityCode;
+    // This room's first group of the round that the user takes attendance for
+    const firstGroup = activity.childActivities
+        .map((group) => group.activityCode)
+        .find(hasGroup);
     return (
         <span className="flex gap-1">
             {showResults && (
@@ -145,6 +152,9 @@ const Schedule = () => {
           : activitiesResult.error
             ? { key: requestKey, error: activitiesResult.error.message }
             : undefined;
+
+    // A stage lead opens attendance for their rooms' groups only (SPEC-016)
+    const attendanceScope = useAttendanceScope();
 
     if (!competition || !wcif) return <LoadingPage />;
 
@@ -247,6 +257,7 @@ const Schedule = () => {
                                             activity={activity}
                                             showResults={showResults}
                                             showAttendance={showAttendance}
+                                            hasGroup={attendanceScope.hasGroup}
                                         />
                                     </div>
                                 )}
@@ -325,6 +336,9 @@ const Schedule = () => {
                                                 activity={activity}
                                                 showResults={showResults}
                                                 showAttendance={showAttendance}
+                                                hasGroup={
+                                                    attendanceScope.hasGroup
+                                                }
                                             />
                                         )}
                                     </span>

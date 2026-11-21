@@ -7,7 +7,8 @@ import { TableCell, TableRow } from "@/Components/ui/table";
 import { useConfirm } from "@/hooks/useConfirm";
 import { useToast } from "@/hooks/useToast";
 import { grantableUsers } from "@/lib/delegateGrants";
-import { User } from "@/lib/interfaces";
+import { Room, User } from "@/lib/interfaces";
+import { stageLeadRoomsLabel } from "@/lib/stageLeadRooms";
 import { deleteUser } from "@/lib/user";
 import { prettyUserRoleName } from "@/lib/utils";
 
@@ -21,6 +22,8 @@ interface UserRowProps {
     variant?: "table" | "list";
     /** Groups delegate access can be given for; empty hides the action */
     accessGroupIds?: string[];
+    /** The competition's rooms, in schedule order */
+    rooms?: Room[];
 }
 
 const UserRow = ({
@@ -28,6 +31,7 @@ const UserRow = ({
     fetchData,
     variant = "table",
     accessGroupIds = [],
+    rooms = [],
 }: UserRowProps) => {
     const { toast } = useToast();
     const confirm = useConfirm();
@@ -104,12 +108,15 @@ const UserRow = ({
             ]}
         />
     );
+    // "Stage leader · Main Hall": where they take attendance (SPEC-016)
+    const roomsLabel = stageLeadRoomsLabel(user, rooms);
     const roles = user.roles.map((role) => (
         <span
             key={role}
             className="whitespace-nowrap rounded-full bg-secondary px-2.5 py-0.5 text-xs font-semibold text-foreground"
         >
             {prettyUserRoleName(role)}
+            {role === "STAGE_LEADER" && roomsLabel && ` · ${roomsLabel}`}
         </span>
     ));
     const modals = (
@@ -118,6 +125,7 @@ const UserRow = ({
                 isOpen={isOpenEditUserModal}
                 onClose={handleCloseEditUserModal}
                 user={user}
+                rooms={rooms}
             />
             <EditUserPasswordModal
                 isOpen={isOpenChangePasswordModal}

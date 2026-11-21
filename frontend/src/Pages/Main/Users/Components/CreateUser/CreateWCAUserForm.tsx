@@ -13,21 +13,31 @@ import {
     FormMessage,
 } from "@/Components/ui/form";
 import { MultiSelect } from "@/Components/ui/multi-select";
-import { NewUserData, WCAPerson } from "@/lib/interfaces";
+import { NewUserData, Room, WCAPerson } from "@/lib/interfaces";
 import { createWCAUserSchema } from "@/lib/schema/userSchema";
+import {
+    initialStageLeadRooms,
+    needsRoomChoice,
+    stageLeadRoomsPayload,
+} from "@/lib/stageLeadRooms";
 import { getAvailableRoles } from "@/lib/utils";
 
+import StageLeadRoomsField from "../StageLeadRoomsField";
 import WCAPersonsAutocomplete from "../WCAPersonsAutocomplete";
 
 interface CreateWCAUserFormProps {
     handleSubmit: (data: NewUserData) => void;
     isLoading?: boolean;
+    /** The competition's rooms, in schedule order */
+    rooms?: Room[];
 }
 
 const CreateWCAUserForm = ({
     handleSubmit,
     isLoading,
+    rooms = [],
 }: CreateWCAUserFormProps) => {
+    const [stageLeadRooms, setStageLeadRooms] = useState(initialStageLeadRooms);
     const [selectedPerson, setSelectedPerson] = useState<WCAPerson | null>(
         null
     );
@@ -38,6 +48,7 @@ const CreateWCAUserForm = ({
     >({
         resolver: zodResolver(createWCAUserSchema),
     });
+    const roles = form.watch("roles") ?? [];
 
     const onSubmit = (values: z.infer<typeof createWCAUserSchema>) => {
         handleSubmit({
@@ -45,6 +56,11 @@ const CreateWCAUserForm = ({
             wcaId: selectedPerson?.wcaId ?? values.wcaId,
             fullName: selectedPerson?.name ?? "",
             roles: values.roles,
+            ...stageLeadRoomsPayload(
+                values.roles,
+                rooms.length,
+                stageLeadRooms
+            ),
         });
     };
 
@@ -87,8 +103,20 @@ const CreateWCAUserForm = ({
                         </FormItem>
                     )}
                 />
+                <StageLeadRoomsField
+                    roles={roles}
+                    rooms={rooms}
+                    value={stageLeadRooms}
+                    onChange={setStageLeadRooms}
+                />
                 <ModalActions>
-                    <Button type="submit" disabled={isLoading}>
+                    <Button
+                        type="submit"
+                        disabled={
+                            isLoading ||
+                            needsRoomChoice(roles, rooms.length, stageLeadRooms)
+                        }
+                    >
                         Create
                     </Button>
                 </ModalActions>

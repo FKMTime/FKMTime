@@ -8,7 +8,10 @@ import { AppController } from './app.controller';
 import { AppGateway } from './app.gateway';
 import { AttemptModule } from './attempt/attempt.module';
 import { AttendanceModule } from './attendance/attendance.module';
+import { AttendanceGroupGuard } from './attendance/attendanceGroup.guard';
+import { AttendanceScopeModule } from './attendance/attendanceScope.module';
 import { AuthModule } from './auth/auth.module';
+import { StageLeaderGuard } from './auth/guards/stageLeader.guard';
 import { SocketSessionSweepService } from './auth/socketSessionSweep.service';
 import { CompetitionModule } from './competition/competition.module';
 import { ContestsModule } from './contests/contests.module';
@@ -35,6 +38,8 @@ import { WcaModule } from './wca/wca.module';
 @Module({
   providers: [
     AppGateway,
+    StageLeaderGuard,
+    AttendanceGroupGuard,
     SocketSessionSweepService,
     { provide: APP_FILTER, useClass: PrismaNotFoundFilter },
   ],
@@ -60,6 +65,7 @@ import { WcaModule } from './wca/wca.module';
     DeviceModule,
     ServerLogModule,
     AttendanceModule,
+    AttendanceScopeModule,
     WcaModule,
     SocketModule,
     StationTesterModule,

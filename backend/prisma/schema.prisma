@@ -37,6 +37,8 @@ model User {
   delegateGrants             DelegateGrant[]      @relation("delegate_grant_user")
   givenDelegateGrants        DelegateGrant[]      @relation("delegate_grant_created_by")
   endedDelegateGrants        DelegateGrant[]      @relation("delegate_grant_ended_by")
+  /// Rooms a stage lead takes attendance in; none means all rooms (SPEC-016)
+  stageLeadRooms             StageLeadRoom[]
 
   @@map("users")
 }
@@ -159,8 +161,21 @@ model Room {
   updatedAt         DateTime           @updatedAt @map("updated_at")
   devices           Device[]
   scramblingDevices ScramblingDevice[]
+  stageLeads        StageLeadRoom[]
 
   @@map("room")
+}
+
+/// A room a stage lead takes attendance in (SPEC-016). A stage lead with no
+/// rows covers all rooms
+model StageLeadRoom {
+  userId String @map("user_id")
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  roomId String @map("room_id")
+  room   Room   @relation(fields: [roomId], references: [id], onDelete: Cascade)
+
+  @@id([userId, roomId])
+  @@map("stage_lead_room")
 }
 
 model Result {

@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import LoadingPage from "@/Components/LoadingPage";
 import EmptyState from "@/Components/shared/EmptyState";
 import SegmentedControl from "@/Components/shared/SegmentedControl";
+import { useAttendanceScope } from "@/hooks/useAttendanceScope";
 import { useLiveQuery } from "@/hooks/useLiveQuery";
 import { useSocketEvents } from "@/hooks/useSocketEvents";
 import { useSocketRoom } from "@/hooks/useSocketRoom";
@@ -109,6 +110,10 @@ const Home = () => {
 
     const canStartGroups = isOrganizerOrDelegate();
     const canOpenAttendance = isStageLeaderOrOrganizerOrDelegate();
+    // A stage lead takes attendance in their rooms only (SPEC-016)
+    const attendanceScope = useAttendanceScope();
+    const canOpenRoomAttendance = (roomId: string) =>
+        canOpenAttendance && attendanceScope.hasRoom(roomId);
     // A competitor not coming no longer holds their group back
     const setNoShow = useNoShow(refreshResults);
     const canResolveIncidents = isDelegate();
@@ -299,7 +304,7 @@ const Home = () => {
             now={now}
             isRoomNamedElsewhere={rooms.length > 1}
             canEnterAttempts={isDelegate() && competition.useFkmTimeDevices}
-            canOpenAttendance={canOpenAttendance}
+            canOpenAttendance={canOpenRoomAttendance(room.id)}
             canResolveIncidents={canResolveIncidents}
             onStartNext={handleStartNext}
             onEnterAttempt={(roundId) =>
@@ -310,7 +315,7 @@ const Home = () => {
             )}
             onBackToRoom={isDelegate() ? handleBackToRoom : undefined}
             onMarkNotComing={
-                canOpenAttendance
+                canOpenRoomAttendance(room.id)
                     ? (person, groupId) =>
                           setNoShow(person, [groupId], true, true)
                     : undefined

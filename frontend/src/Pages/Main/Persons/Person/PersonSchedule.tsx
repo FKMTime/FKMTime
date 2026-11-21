@@ -21,8 +21,11 @@ const ATTENDANCE_TONE: Record<StaffActivityStatus, StatusTone> = {
 
 interface PersonScheduleProps {
     entries: PersonScheduleEntry[];
-    /** Links each group to its attendance page */
-    canOpenAttendance: boolean;
+    /**
+     * Links each group to its attendance page; a function links only the
+     * groups it accepts, e.g. a stage lead's rooms (SPEC-016)
+     */
+    canOpenAttendance: boolean | ((groupId: string) => boolean);
     /** Offers "Not coming" for a day with staffing still to come */
     onSetNoShow?: (day: string, noShow: boolean) => void;
     now?: Date;
@@ -50,6 +53,12 @@ const PersonSchedule = ({
 }: PersonScheduleProps) => {
     if (entries.length === 0)
         return <EmptyState>No assignments in the schedule.</EmptyState>;
+    const opensAttendance = (entry: PersonScheduleEntry) =>
+        entry.activityCode.includes("-g") &&
+        !entry.activityCode.startsWith("other") &&
+        (typeof canOpenAttendance === "function"
+            ? canOpenAttendance(entry.activityCode)
+            : canOpenAttendance);
 
     return (
         <div className="flex flex-col gap-5">
@@ -59,7 +68,10 @@ const PersonSchedule = ({
                         <h3 className="text-sm font-semibold text-muted-foreground">
                             {formatCompetitionDay(day)}
                         </h3>
+                        {/* A stage lead tags a day with a group of theirs */}
                         {onSetNoShow &&
+                            (typeof canOpenAttendance !== "function" ||
+                                dayEntries.some(opensAttendance)) &&
                             dayNoShowAction(dayEntries, now, (noShow) =>
                                 onSetNoShow(day, noShow)
                             )}
@@ -68,7 +80,6 @@ const PersonSchedule = ({
                         {dayEntries.map((entry) => {
                             const isOther =
                                 entry.activityCode.startsWith("other");
-                            const isGroup = entry.activityCode.includes("-g");
                             const ongoing = isOngoing(entry, now);
                             const details = [
                                 entry.roomName,
@@ -76,17 +87,16 @@ const PersonSchedule = ({
                                     `Station ${entry.stationNumber}`,
                                 !entry.isAssigned && "Not assigned",
                             ].filter(Boolean);
-                            const name =
-                                canOpenAttendance && isGroup && !isOther ? (
-                                    <Link
-                                        to={`/attendance/${entry.activityCode}`}
-                                        className="hover:underline"
-                                    >
-                                        {entry.name}
-                                    </Link>
-                                ) : (
-                                    entry.name
-                                );
+                            const name = opensAttendance(entry) ? (
+                                <Link
+                                    to={`/attendance/${entry.activityCode}`}
+                                    className="hover:underline"
+                                >
+                                    {entry.name}
+                                </Link>
+                            ) : (
+                                entry.name
+                            );
                             return (
                                 <li
                                     key={entry.key}
