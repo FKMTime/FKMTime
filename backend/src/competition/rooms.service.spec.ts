@@ -14,6 +14,7 @@ describe('RoomsService', () => {
   let socketController: SocketController;
   const onRoundStarted = jest.fn().mockResolvedValue(undefined);
   const handleRoomGroupsStarted = jest.fn().mockResolvedValue(undefined);
+  const announceUncoveredGroups = jest.fn().mockResolvedValue(undefined);
 
   beforeEach(async () => {
     onRoundStarted.mockClear();
@@ -54,6 +55,7 @@ describe('RoomsService', () => {
           provide: DelegateGrantService,
           useValue: {
             syncWithRooms: jest.fn().mockResolvedValue(undefined),
+            announceUncoveredGroups,
             useGroupEnteredAt: jest.fn(),
           },
         },
@@ -109,6 +111,8 @@ describe('RoomsService', () => {
       expect(socketController.sendServerStatus).toHaveBeenCalled();
       // Each started round may need opening in WCA Integrated Live Results
       expect(onRoundStarted.mock.calls).toEqual([['333-r1'], ['222-r1']]);
+      // Delegates hear about a next group none of them is free for (SPEC-015)
+      expect(announceUncoveredGroups).toHaveBeenCalled();
     });
 
     describe('tutorial stations (SPEC-012)', () => {

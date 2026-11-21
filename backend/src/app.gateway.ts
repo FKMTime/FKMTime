@@ -13,6 +13,7 @@ import { DelegateOrGrantGuard } from './auth/guards/delegateOrGrant.guard';
 import { OrganizerGuard } from './auth/guards/organizer.guard';
 import { SignedInGuard } from './auth/guards/signedIn.guard';
 import { AUTO_SETUP_DURATION_MS } from './competition/autoSetup';
+import type { UncoveredGroup } from './delegate-grant/delegateCoverage';
 import { DeviceRequest } from './device/dto/requestToConnect.dto';
 import type { DeviceErrorEvent } from './device/stationError.service';
 import type { DeviceSignalEvent } from './device/stationSignal.service';
@@ -324,6 +325,12 @@ export class AppGateway {
   handleDelegateGrantChanged(userId: string) {
     this.server.to(`user-${userId}`).emit('delegateGrantChanged');
     this.server.to(`delegate-grants`).emit('delegateGrantsChanged');
+  }
+
+  // Server-side only: groups every delegate competes in, which nobody has
+  // delegate access for (SPEC-015)
+  handleNoFreeDelegate(groups: UncoveredGroup[]) {
+    this.server.to(`delegate-grants`).emit('noFreeDelegate', { groups });
   }
 
   // Server-side only: a user with delegate access did something

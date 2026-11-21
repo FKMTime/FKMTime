@@ -4,7 +4,11 @@ import {
   getCountingAttempts,
   isRedoNotStarted,
 } from 'src/result/helpers';
-import { getNextGroupInRoom, isSameDay } from 'src/wcif-helpers';
+import {
+  getFirstGroupInRoom,
+  getNextGroupInRoom,
+  isSameDay,
+} from 'src/wcif-helpers';
 import {
   Activity,
   Competition as Wcif,
@@ -495,4 +499,34 @@ export const planNextGroups = (
     next.length === currentGroupIds.length &&
     next.every((id, i) => id === currentGroupIds[i]);
   return unchanged ? null : next;
+};
+
+/**
+ * What "Start next" in a room starts: each group's next group in the room,
+ * or the first group of the round after it. A room with nothing running
+ * starts its first group of the day. Empty when a group's round isn't in
+ * the room's schedule.
+ */
+export const getNextGroupsInRoom = (
+  currentGroupIds: string[],
+  roomName: string,
+  wcif: Wcif,
+  now = new Date(),
+): string[] => {
+  if (currentGroupIds.length === 0) {
+    const firstGroup = getFirstGroupInRoom(roomName, wcif, now);
+    return firstGroup ? [firstGroup] : [];
+  }
+  const nextGroups: string[] = [];
+  for (const currentGroupId of currentGroupIds) {
+    const roundId = currentGroupId.split('-g')[0];
+    if (!getActivityInfoFromScheduleWithRoom(roundId, roomName, wcif)) {
+      return [];
+    }
+    const nextGroupId =
+      getNextGroupInRoom(currentGroupId, roomName, wcif)?.activityCode ??
+      getFirstGroupOfNextRoundInRoom(roundId, roomName, wcif);
+    if (nextGroupId) nextGroups.push(nextGroupId);
+  }
+  return nextGroups;
 };

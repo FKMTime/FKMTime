@@ -215,6 +215,11 @@ export class RoomsService implements OnModuleInit {
     // Delegate access for a group starts and ends with it (SPEC-013); a
     // failure here mustn't fail the group change, access checks sync again
     await this.delegateGrants.syncWithRooms().catch(() => undefined);
+    // Not awaited: a group every delegate competes in (SPEC-015)
+    this.delegateGrants.announceUncoveredGroups().catch((e) => {
+      this.logger.error('Failed to check delegates for the next groups');
+      this.logger.error(e);
+    });
     // Not awaited: starting a group mustn't wait for the WCA
     const startedRoundIds = new Set(
       rooms.flatMap((room) =>

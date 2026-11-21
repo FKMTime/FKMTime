@@ -26,6 +26,7 @@ import {
     competitionSettingsQuery,
     getCompetitionInfo,
 } from "@/lib/competition";
+import { showNoFreeDelegateNotice } from "@/lib/delegateGrants";
 import { getEvents } from "@/lib/events";
 import { getUnresolvedIncidentsCount } from "@/lib/incidents";
 import {
@@ -119,10 +120,19 @@ const Layout = () => {
 
     // Delegate access for a group given, started or ended (SPEC-013): what
     // it shows changes with it
-    useDelegateAccessSocket(socket, userKey, () => {
-        fetchUnresolvedIncidentsCount();
-        void invalidateIncidentLists();
-    });
+    useDelegateAccessSocket(
+        socket,
+        userKey,
+        () => {
+            fetchUnresolvedIncidentsCount();
+            void invalidateIncidentLists();
+        },
+        // Every delegate competes in a group about to start (SPEC-015)
+        (groups) =>
+            groups.forEach((group) =>
+                showNoFreeDelegateNotice(group, () => navigate("/"))
+            )
+    );
 
     useCompetitionSocketEvents(socket, userKey, {
         onIntegratedLiveRoundsChanged: () => {

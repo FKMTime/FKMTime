@@ -82,6 +82,8 @@ const protectedEndpoints: [Method, string, Level][] = [
   ['post', '/settings/quick-actions', 'delegate'],
   ['put', `/settings/quick-actions/${FAKE_ID}`, 'delegate'],
   ['delete', `/settings/quick-actions/${FAKE_ID}`, 'delegate'],
+  // delegate access (SPEC-013, SPEC-015)
+  ['get', '/delegate-grant/uncovered-groups', 'delegate'],
   // auth
   ['get', '/auth/me', 'jwt'],
   ['put', '/auth/password/change', 'jwt'],

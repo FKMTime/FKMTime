@@ -288,6 +288,7 @@ const setup = ({
     { handleRoomGroupsStarted: jest.fn() } as unknown as DeviceService,
     {
       syncWithRooms: jest.fn().mockResolvedValue(undefined),
+      announceUncoveredGroups: jest.fn().mockResolvedValue(undefined),
       useGroupEnteredAt: jest.fn(),
     } as unknown as DelegateGrantService,
   );

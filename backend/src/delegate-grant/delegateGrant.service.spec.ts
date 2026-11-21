@@ -266,3 +266,97 @@ describe('DelegateGrantService.filterVisible', () => {
     ).toBe(all);
   });
 });
+
+describe('DelegateGrantService.announceUncoveredGroups (SPEC-015)', () => {
+  // Both delegates compete in group 2; group 1 has a free one
+  const wcif = {
+    persons: [
+      {
+        name: 'Delegate One',
+        roles: ['delegate'],
+        assignments: [{ activityId: 12, assignmentCode: 'competitor' }],
+      },
+      {
+        name: 'Delegate Two',
+        roles: ['delegate'],
+        assignments: [{ activityId: 12, assignmentCode: 'competitor' }],
+      },
+    ],
+    schedule: {
+      venues: [
+        {
+          rooms: [
+            {
+              name: 'Main',
+              activities: [
+                {
+                  id: 1,
+                  activityCode: '333-r1',
+                  startTime: '2026-01-01T10:00:00Z',
+                  endTime: '2026-01-01T11:00:00Z',
+                  childActivities: [
+                    {
+                      id: 11,
+                      activityCode: '333-r1-g1',
+                      startTime: '2026-01-01T10:00:00Z',
+                      childActivities: [],
+                    },
+                    {
+                      id: 12,
+                      activityCode: '333-r1-g2',
+                      startTime: '2026-01-01T10:30:00Z',
+                      childActivities: [],
+                    },
+                  ],
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    },
+  };
+
+  const announcer = (openGrantGroupIds: string[] = []) => {
+    const gateway = { handleNoFreeDelegate: jest.fn() };
+    const db = {
+      competition: { findFirst: jest.fn(async () => ({ wcif })) },
+      room: {
+        findMany: jest.fn(async () => [
+          { name: 'Main', currentGroupIds: ['333-r1-g1'] },
+        ]),
+      },
+      delegateGrant: {
+        findMany: jest.fn(async () =>
+          openGrantGroupIds.map((groupId) => ({ groupId })),
+        ),
+      },
+    };
+    const service = new DelegateGrantService(
+      db as unknown as DbService,
+      gateway as unknown as AppGateway,
+    );
+    return { service, gateway };
+  };
+
+  it("tells delegates once about the room's next group none of them is free for", async () => {
+    const { service, gateway } = announcer();
+    await service.announceUncoveredGroups();
+    await service.announceUncoveredGroups();
+    expect(gateway.handleNoFreeDelegate).toHaveBeenCalledTimes(1);
+    expect(gateway.handleNoFreeDelegate).toHaveBeenCalledWith([
+      expect.objectContaining({
+        groupId: '333-r1-g2',
+        running: false,
+        roomNames: ['Main'],
+        competingDelegates: ['Delegate One', 'Delegate Two'],
+      }),
+    ]);
+  });
+
+  it('stays quiet when someone already has delegate access for it', async () => {
+    const { service, gateway } = announcer(['333-r1-g2']);
+    await service.announceUncoveredGroups();
+    expect(gateway.handleNoFreeDelegate).not.toHaveBeenCalled();
+  });
+});

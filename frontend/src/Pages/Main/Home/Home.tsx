@@ -14,6 +14,7 @@ import { competitionAtom, quickEntryAtom } from "@/lib/atoms";
 import { recentAttemptsQuery } from "@/lib/attempt";
 import { competitionSettingsQuery, nextGroupsQuery } from "@/lib/competition";
 import { getStartedRounds } from "@/lib/currentGroups";
+import { uncoveredGroupsQuery } from "@/lib/delegateGrants";
 import {
     getPointedStations,
     setStationsRound,
@@ -44,6 +45,7 @@ import IntegratedLiveConnectionAlert from "./Components/IntegratedLiveConnection
 import IntegratedLiveProblemsAlert from "./Components/IntegratedLiveProblemsAlert";
 import IntegratedLiveRoundsToOpen from "./Components/IntegratedLiveRoundsToOpen";
 import NextGroupInAllRooms from "./Components/NextGroupInAllRooms";
+import NoFreeDelegateAlert from "./Components/NoFreeDelegateAlert";
 import NoShowsToRemove from "./Components/NoShowsToRemove";
 import RoomCard from "./Components/RoomCard";
 import RoundsToOpenDialog from "./Components/RoundsToOpenDialog";
@@ -73,6 +75,7 @@ const refreshRooms = () =>
         (path) =>
             path === roomsQuery.key ||
             path === roomsProgressQuery.key ||
+            path === uncoveredGroupsQuery.key ||
             (path.startsWith("competition/rooms/") &&
                 path.endsWith("/next-groups"))
     );
@@ -109,6 +112,12 @@ const Home = () => {
     // A competitor not coming no longer holds their group back
     const setNoShow = useNoShow(refreshResults);
     const canResolveIncidents = isDelegate();
+
+    // Groups every delegate competes in (SPEC-015); refreshed when grants
+    // change and when the rooms do
+    const { data: uncoveredGroups } = useLiveQuery(uncoveredGroupsQuery, {
+        enabled: canResolveIncidents,
+    });
 
     // Whether rooms move on by themselves; it's changed in the settings.
     // The panel's competition doesn't carry it; the settings do
@@ -341,6 +350,12 @@ const Home = () => {
                         <NoShowsToRemove />
                     </>
                 )}
+            {canResolveIncidents && uncoveredGroups && (
+                <NoFreeDelegateAlert
+                    groups={uncoveredGroups}
+                    showRooms={rooms.length > 1}
+                />
+            )}
             {canStartGroups && stations && (
                 <>
                     <TutorialStationsAlert

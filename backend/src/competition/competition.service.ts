@@ -20,11 +20,7 @@ import {
   getStationTranslations,
 } from 'src/translations/translations';
 import { LIVE_LOOKUP_TTL_MS, TtlCache } from 'src/ttl-cache';
-import {
-  getFirstGroupInRoom,
-  getNextGroupInRoom,
-  isSameDay,
-} from 'src/wcif-helpers';
+import { getNextGroupInRoom, isSameDay } from 'src/wcif-helpers';
 import {
   Activity,
   Competition,
@@ -47,9 +43,9 @@ import { UpdateCompetitionDto } from './dto/updateCompetition.dto';
 import { UpdateDevicesSettingsDto } from './dto/updateDevicesSettings.dto';
 import {
   canLeaveGroup,
-  getFirstGroupOfNextRoundInRoom,
   getGroupStatus as getGroupStatusFromResults,
   getMovesOnAt,
+  getNextGroupsInRoom,
   GroupChangeResult,
   GroupState,
   isGroupQuiet,
@@ -975,25 +971,13 @@ export class CompetitionService implements OnModuleDestroy {
     if (!room) {
       throw new HttpException('Room not found', 404);
     }
-    const currentGroups = groupIds ?? room.currentGroupIds;
     const competition = await this.prisma.competition.findFirst();
     const wcif = JSON.parse(JSON.stringify(competition.wcif));
-    if (currentGroups.length === 0) {
-      const firstGroup = getFirstGroupInRoom(room.name, wcif);
-      return firstGroup ? [firstGroup] : [];
-    }
-    const nextGroups = [];
-    for (const currentGroupId of currentGroups) {
-      const roundId = currentGroupId.split('-g')[0];
-      if (!getActivityInfoFromScheduleWithRoom(roundId, room.name, wcif)) {
-        return [];
-      }
-      const nextGroupId =
-        getNextGroupInRoom(currentGroupId, room.name, wcif)?.activityCode ??
-        getFirstGroupOfNextRoundInRoom(roundId, room.name, wcif);
-      if (nextGroupId) nextGroups.push(nextGroupId);
-    }
-    return nextGroups;
+    return getNextGroupsInRoom(
+      groupIds ?? room.currentGroupIds,
+      room.name,
+      wcif,
+    );
   }
 
   /** Steps from the given groups, or the room's saved ones without them */

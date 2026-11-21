@@ -28,6 +28,13 @@ export class DelegateGrantController {
     return this.delegateGrantService.getMine(user.userId);
   }
 
+  /** Running and next groups every delegate competes in (SPEC-015) */
+  @UseGuards(DelegateGuard)
+  @Get('uncovered-groups')
+  async getUncoveredGroups() {
+    return this.delegateGrantService.getUncoveredGroups();
+  }
+
   @UseGuards(DelegateGuard)
   @Get()
   async getGrants(@Query('groupId') groupId?: string) {
