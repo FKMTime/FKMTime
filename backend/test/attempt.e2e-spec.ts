@@ -1,8 +1,8 @@
 import { INestApplication } from '@nestjs/common';
-import { AttemptStatus, AttemptType } from '@prisma/client';
 import { DbService } from 'src/db/db.service';
 import * as request from 'supertest';
 
+import { AttemptStatus, AttemptType } from '../src/generated/prisma/client';
 import { createTestApp } from './helpers/app.helper';
 
 const ROUND_ID = '333-r1';

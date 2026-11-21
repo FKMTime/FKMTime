@@ -1,4 +1,8 @@
 import { INestApplication } from '@nestjs/common';
+import { AuthService } from 'src/auth/auth.service';
+import { DbService } from 'src/db/db.service';
+import * as request from 'supertest';
+
 import {
   Competition,
   Person,
@@ -9,11 +13,7 @@ import {
   StaffActivity,
   UnofficialEvent,
   User,
-} from '@prisma/client';
-import { AuthService } from 'src/auth/auth.service';
-import { DbService } from 'src/db/db.service';
-import * as request from 'supertest';
-
+} from '../src/generated/prisma/client';
 import { createTestApp } from './helpers/app.helper';
 import { getGeneratedCompetition } from './helpers/dummy-wca.helper';
 import { listenOnLoopback } from './helpers/loopback.helper';

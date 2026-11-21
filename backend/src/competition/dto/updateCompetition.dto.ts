@@ -1,4 +1,3 @@
-import { SendingResultsFrequency } from '@prisma/client';
 import {
   IsBoolean,
   IsEnum,
@@ -6,6 +5,8 @@ import {
   IsOptional,
   IsString,
 } from 'class-validator';
+
+import { SendingResultsFrequency } from '../../generated/prisma/client';
 
 export class UpdateCompetitionDto {
   @IsString()

@@ -1,4 +1,3 @@
-import { Attempt, AttemptStatus, StaffActivityStatus } from '@prisma/client';
 import {
   getAttemptsWaitingForExtra,
   getCountingAttempts,
@@ -11,6 +10,11 @@ import {
   getActivityInfoFromScheduleWithRoom,
 } from 'wcif-helpers';
 
+import {
+  Attempt,
+  AttemptStatus,
+  StaffActivityStatus,
+} from '../generated/prisma/client';
 import { getExpectedAttempts } from './groupProgress';
 
 /** Quiet time after an attempt before a group's no-shows are given up on */

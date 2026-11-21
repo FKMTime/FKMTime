@@ -4,8 +4,8 @@ import {
   Injectable,
   UnauthorizedException,
 } from '@nestjs/common';
-import { Role } from '@prisma/client';
 
+import { Role } from '../../generated/prisma/client';
 import { AuthService } from '../auth.service';
 import { rememberSocketSession } from '../socketSession';
 

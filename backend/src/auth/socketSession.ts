@@ -1,5 +1,4 @@
-import { Role } from '@prisma/client';
-
+import { Role } from '../generated/prisma/client';
 import { JwtAuthDto } from './dto/jwt-auth.dto';
 
 /** Who a socket.io connection belongs to, recorded when a guard admits it */

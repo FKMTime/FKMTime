@@ -1,6 +1,7 @@
 import { ArgumentsHost, Catch, NotFoundException } from '@nestjs/common';
 import { BaseExceptionFilter } from '@nestjs/core';
-import { Prisma } from '@prisma/client';
+
+import { Prisma } from '../generated/prisma/client';
 
 const RECORD_NOT_FOUND = 'P2025';
 

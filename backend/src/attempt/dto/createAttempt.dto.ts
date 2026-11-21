@@ -1,4 +1,3 @@
-import { AttemptStatus, AttemptType } from '@prisma/client';
 import {
   IsEnum,
   IsInt,
@@ -8,6 +7,8 @@ import {
   Matches,
 } from 'class-validator';
 import { roundIdRegex } from 'src/constants';
+
+import { AttemptStatus, AttemptType } from '../../generated/prisma/client';
 
 export class CreateAttemptDto {
   @IsInt()

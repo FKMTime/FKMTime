@@ -1,5 +1,4 @@
 import { forwardRef, Inject, Injectable } from '@nestjs/common';
-import { DeviceType } from '@prisma/client';
 import { DbService } from 'src/db/db.service';
 import { DeviceService } from 'src/device/device.service';
 import { isInTutorial, TUTORIAL_GROUP_ID } from 'src/device/tutorial';
@@ -7,6 +6,7 @@ import { TutorialIncidentService } from 'src/device/tutorialIncident.service';
 import { PersonService } from 'src/person/person.service';
 import { getTranslation } from 'src/translations/translations';
 
+import { DeviceType } from '../generated/prisma/client';
 import { EnterAttemptDto } from './dto/enterAttempt.dto';
 import { getReaderLocale } from './helpers';
 

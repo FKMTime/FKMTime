@@ -1,7 +1,8 @@
 import { INestApplication } from '@nestjs/common';
-import { Role } from '@prisma/client';
 import { AuthService } from 'src/auth/auth.service';
 import { DbService } from 'src/db/db.service';
+
+import { Role } from '../../src/generated/prisma/client';
 
 /** Prefix for usernames of throwaway users created by the setup/scrambling specs */
 export const SETUP_USER_PREFIX = 'e2e-setup-';

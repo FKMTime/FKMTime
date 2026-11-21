@@ -1,5 +1,4 @@
 import { INestApplication } from '@nestjs/common';
-import { DeviceType, Person, Role, StaffRole } from '@prisma/client';
 import { sha512 } from 'js-sha512';
 import { DbService } from 'src/db/db.service';
 import { getCompetitorGroupInRound } from 'src/device/stationRounds';
@@ -7,6 +6,12 @@ import { getTranslation } from 'src/translations/translations';
 import * as request from 'supertest';
 import { Competition as WCIF } from 'wcif-helpers';
 
+import {
+  DeviceType,
+  Person,
+  Role,
+  StaffRole,
+} from '../src/generated/prisma/client';
 import { createTestApp } from './helpers/app.helper';
 import {
   seededPersonPicker,

@@ -1,5 +1,4 @@
-import { H2hSetDecision, H2hSide } from '@prisma/client';
-
+import { H2hSetDecision, H2hSide } from '../generated/prisma/client';
 import {
   decideMatch,
   decidePoint,

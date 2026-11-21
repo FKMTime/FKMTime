@@ -1,5 +1,4 @@
-import { H2hMatchStatus, H2hSide, H2hStage } from '@prisma/client';
-
+import { H2hMatchStatus, H2hSide, H2hStage } from '../generated/prisma/client';
 import { rankH2hRound, RankingEntrant, RankingMatch } from './ranking';
 
 const DNF = -1;

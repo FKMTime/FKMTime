@@ -1,10 +1,14 @@
 import { INestApplication } from '@nestjs/common';
-import { AttemptStatus, AttemptType, Person } from '@prisma/client';
 import { Socket } from 'socket.io-client';
 import { AppGateway, StationInfo } from 'src/app.gateway';
 import { DbService } from 'src/db/db.service';
 import * as request from 'supertest';
 
+import {
+  AttemptStatus,
+  AttemptType,
+  Person,
+} from '../src/generated/prisma/client';
 import { createTestApp } from './helpers/app.helper';
 import {
   connectSocketIo,

@@ -1,9 +1,9 @@
 import { HttpException, Injectable } from '@nestjs/common';
-import { AttemptStatus, Prisma } from '@prisma/client';
 import { activityCodeToName } from '@wca/helpers';
 import { publicPersonSelect } from 'src/constants';
 import { DbService } from 'src/db/db.service';
 
+import { AttemptStatus, Prisma } from '../generated/prisma/client';
 import { ManualIncidentDto } from './dto/manualIncident.dto';
 import { NoteworthyIncidentDto } from './dto/noteworthyIncident.dto';
 import { WarningDto } from './dto/warning.dto';

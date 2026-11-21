@@ -5,18 +5,18 @@ import {
   Injectable,
   Logger,
 } from '@nestjs/common';
-import {
-  DelegateGrant,
-  DelegateGrantPermission,
-  Role,
-  StaffRole,
-} from '@prisma/client';
 import { AppGateway } from 'src/app.gateway';
 import { JwtAuthDto } from 'src/auth/dto/jwt-auth.dto';
 import { publicUserSelect } from 'src/constants';
 import { DbService } from 'src/db/db.service';
 import { groupIdToRoundId } from 'src/device/stationRounds';
 
+import {
+  DelegateGrant,
+  DelegateGrantPermission,
+  Role,
+  StaffRole,
+} from '../generated/prisma/client';
 import {
   ACTION_LABELS,
   GrantAction,

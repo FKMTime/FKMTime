@@ -1,4 +1,4 @@
-import { H2hOutcome, H2hStage } from '@prisma/client';
+import { H2hOutcome, H2hStage } from '../generated/prisma/client';
 
 /** The bracket sizes Article I allows (I1a) */
 export const BRACKET_SIZES = [4, 8, 12, 16] as const;

@@ -1,5 +1,6 @@
-import { AttemptEditLog, AttemptStatus } from '@prisma/client';
 import { DNF_VALUE } from 'src/constants';
+
+import { AttemptEditLog, AttemptStatus } from '../generated/prisma/client';
 
 export const RULED_DNF = 'Ruled DNF';
 /** A remaining attempt recorded as DNF after a disqualification */

@@ -1,15 +1,15 @@
 import 'dotenv/config';
 
 import { PrismaPg } from '@prisma/adapter-pg';
+import { sha512 } from 'js-sha512';
+import { Activity, Assignment, Competition, Person } from 'wcif-helpers';
+
 import {
   Prisma,
   PrismaClient,
   Role,
   SendingResultsFrequency,
-} from '@prisma/client';
-import { sha512 } from 'js-sha512';
-import { Activity, Assignment, Competition, Person } from 'wcif-helpers';
-
+} from '../../src/generated/prisma/client';
 import { wcifRoleToAttendanceRole } from '../../src/wcif-helpers';
 
 const prisma = new PrismaClient({

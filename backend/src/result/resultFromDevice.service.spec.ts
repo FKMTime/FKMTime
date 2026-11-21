@@ -1,9 +1,13 @@
-import { Attempt, AttemptStatus, AttemptType } from '@prisma/client';
 import { AttemptEditLogService } from 'src/attempt-edit-log/attempt-edit-log.service';
 import { CompetitionService } from 'src/competition/competition.service';
 import { DNF_VALUE, DNS_VALUE } from 'src/constants';
 import { DbService, Tx } from 'src/db/db.service';
 
+import {
+  Attempt,
+  AttemptStatus,
+  AttemptType,
+} from '../generated/prisma/client';
 import { ResultService } from './result.service';
 import { ResultFromDeviceService } from './resultFromDevice.service';
 import { TutorialFromDeviceService } from './tutorialFromDevice.service';

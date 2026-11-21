@@ -1,8 +1,8 @@
 import { HttpException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
-import { AttemptStatus, Prisma } from '@prisma/client';
 
 import { DbService } from '../db/db.service';
+import { AttemptStatus, Prisma } from '../generated/prisma/client';
 import { IncidentService } from './incident.service';
 
 describe('IncidentService', () => {

@@ -1,8 +1,8 @@
 import { HttpException } from '@nestjs/common';
-import { DelegateGrant, Role } from '@prisma/client';
 import { AppGateway } from 'src/app.gateway';
 import { DbService } from 'src/db/db.service';
 
+import { DelegateGrant, Role } from '../generated/prisma/client';
 import { DelegateGrantService } from './delegateGrant.service';
 
 const GROUP = '333-r1-g2';

@@ -1,13 +1,4 @@
 import { forwardRef, Inject, Logger } from '@nestjs/common';
-import {
-  AttemptStatus,
-  AttemptType,
-  Device,
-  DeviceType,
-  Person,
-  Result,
-  SendingResultsFrequency,
-} from '@prisma/client';
 import { AppGateway } from 'src/app.gateway';
 import {
   AttemptEditLogService,
@@ -32,6 +23,15 @@ import { getTranslation } from 'src/translations/translations';
 import { getMaxAttempts } from 'src/wcif-helpers';
 import { getPersonFromWcif, getRoundInfoFromWcif } from 'wcif-helpers';
 
+import {
+  AttemptStatus,
+  AttemptType,
+  Device,
+  DeviceType,
+  Person,
+  Result,
+  SendingResultsFrequency,
+} from '../generated/prisma/client';
 import { EnterAttemptDto } from './dto/enterAttempt.dto';
 import {
   checkAttemptLimit,

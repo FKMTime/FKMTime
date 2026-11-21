@@ -1,8 +1,13 @@
 import { INestApplication } from '@nestjs/common';
-import { AttemptStatus, Competition, Role, Room } from '@prisma/client';
 import { DbService } from 'src/db/db.service';
 import * as request from 'supertest';
 
+import {
+  AttemptStatus,
+  Competition,
+  Role,
+  Room,
+} from '../src/generated/prisma/client';
 import { createTestApp } from './helpers/app.helper';
 import { listenOnLoopback } from './helpers/loopback.helper';
 import {

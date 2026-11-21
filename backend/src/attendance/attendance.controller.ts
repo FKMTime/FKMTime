@@ -10,11 +10,11 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
-import { StaffRole } from '@prisma/client';
 import { StageLeaderGuard } from 'src/auth/guards/stageLeader.guard';
 import { CompetitionService } from 'src/competition/competition.service';
 import { ParseRoundIdPipe } from 'src/roundId.pipe';
 
+import { StaffRole } from '../generated/prisma/client';
 import { AttendanceService } from './attendance.service';
 import { AddNotAssignedPersonDto } from './dto/addNotAssignedPerson.dto';
 import { MarkReplacedDto } from './dto/markReplaced.dto';

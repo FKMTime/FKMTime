@@ -1,5 +1,4 @@
 import { forwardRef, Inject, Injectable } from '@nestjs/common';
-import { Competition, HardwareVersion } from '@prisma/client';
 import { formatCentiseconds } from '@wca/helpers';
 import {
   publicPersonSelect,
@@ -30,6 +29,7 @@ import {
   getRoundInfoFromWcif,
 } from 'wcif-helpers';
 
+import { Competition, HardwareVersion } from '../generated/prisma/client';
 import { PersonService } from './person.service';
 
 @Injectable()

@@ -1,5 +1,4 @@
 import { forwardRef, Inject } from '@nestjs/common';
-import { AttemptStatus, DeviceType } from '@prisma/client';
 import { DNS_VALUE } from 'src/constants';
 import { DbService } from 'src/db/db.service';
 import { getEventShortName } from 'src/events';
@@ -7,6 +6,7 @@ import { isSameDay } from 'src/wcif-helpers';
 import { Activity, Room as WCIFRoom, Venue } from 'wcif-helpers';
 import { getActivityInfoFromSchedule, getCompetitionDates } from 'wcif-helpers';
 
+import { AttemptStatus, DeviceType } from '../generated/prisma/client';
 import { getRoundAttemptStats } from './roundAttemptStats';
 
 const NOT_SOLVES = [AttemptStatus.SCRAMBLED, AttemptStatus.VOIDED];

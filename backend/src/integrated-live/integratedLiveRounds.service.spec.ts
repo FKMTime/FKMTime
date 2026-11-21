@@ -1,5 +1,8 @@
-import { AttemptStatus, AttemptType, LiveSyncStatus } from '@prisma/client';
-
+import {
+  AttemptStatus,
+  AttemptType,
+  LiveSyncStatus,
+} from '../generated/prisma/client';
 import { IntegratedLiveRoundsService } from './integratedLiveRounds.service';
 
 const WCA = 'https://wca.example';

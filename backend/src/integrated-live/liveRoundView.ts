@@ -1,5 +1,4 @@
-import { LiveSyncStatus } from '@prisma/client';
-
+import { LiveSyncStatus } from '../generated/prisma/client';
 import { LiveAttempt } from './liveAttempts';
 
 /** One round as the WCA lists it (`GET /live/rounds`) */

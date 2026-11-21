@@ -1,9 +1,3 @@
-import {
-  Attempt,
-  AttemptStatus,
-  AttemptType,
-  SendingResultsFrequency,
-} from '@prisma/client';
 import { AppGateway } from 'src/app.gateway';
 import { AttemptEditLogService } from 'src/attempt-edit-log/attempt-edit-log.service';
 import { AttendanceService } from 'src/attendance/attendance.service';
@@ -13,6 +7,12 @@ import { IncidentService } from 'src/incident/incident.service';
 import { ResultService } from 'src/result/result.service';
 import { SocketController } from 'src/socket/socket.controller';
 
+import {
+  Attempt,
+  AttemptStatus,
+  AttemptType,
+  SendingResultsFrequency,
+} from '../generated/prisma/client';
 import { AttemptService } from './attempt.service';
 
 const competitionStub = {

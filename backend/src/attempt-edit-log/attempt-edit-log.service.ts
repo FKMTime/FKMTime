@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
-import { AttemptStatus, AttemptType } from '@prisma/client';
 import { DbService, Tx } from 'src/db/db.service';
+
+import { AttemptStatus, AttemptType } from '../generated/prisma/client';
 
 export interface AttemptSnapshot {
   id: string;

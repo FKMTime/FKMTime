@@ -5,12 +5,12 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import { Role } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 import { sha512 } from 'js-sha512';
 import { ADMIN_WCA_USER_IDS } from 'src/constants';
 
 import { DbService } from '../db/db.service';
+import { Role } from '../generated/prisma/client';
 import { WcaService } from '../wca/wca.service';
 import { JwtAuthDto } from './dto/jwt-auth.dto';
 import { LoginDto } from './dto/login.dto';

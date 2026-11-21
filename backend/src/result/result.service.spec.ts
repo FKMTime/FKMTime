@@ -1,9 +1,3 @@
-import {
-  AttemptStatus,
-  AttemptType,
-  StaffActivityStatus,
-  StaffRole,
-} from '@prisma/client';
 import { AppGateway } from 'src/app.gateway';
 import { AttemptEditLogService } from 'src/attempt-edit-log/attempt-edit-log.service';
 import { CompetitionService } from 'src/competition/competition.service';
@@ -11,6 +5,12 @@ import { DbService } from 'src/db/db.service';
 import { PersonService } from 'src/person/person.service';
 import { WcaService } from 'src/wca/wca.service';
 
+import {
+  AttemptStatus,
+  AttemptType,
+  StaffActivityStatus,
+  StaffRole,
+} from '../generated/prisma/client';
 import { getFinalExtraAttempt } from './helpers';
 import { ResultService } from './result.service';
 

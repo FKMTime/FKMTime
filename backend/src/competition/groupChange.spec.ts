@@ -1,10 +1,3 @@
-import {
-  Attempt,
-  AttemptStatus,
-  AttemptType,
-  StaffActivityStatus,
-  StaffRole,
-} from '@prisma/client';
 import { AppGateway } from 'src/app.gateway';
 import { DNF_VALUE } from 'src/constants';
 import { DbService } from 'src/db/db.service';
@@ -15,6 +8,13 @@ import { ResultService } from 'src/result/result.service';
 import { SocketController } from 'src/socket/socket.controller';
 import { Competition as Wcif } from 'wcif-helpers';
 
+import {
+  Attempt,
+  AttemptStatus,
+  AttemptType,
+  StaffActivityStatus,
+  StaffRole,
+} from '../generated/prisma/client';
 import {
   CompetitionService,
   GROUP_CHANGE_CHECK_DELAY_MS,

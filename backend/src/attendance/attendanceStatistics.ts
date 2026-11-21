@@ -1,5 +1,6 @@
-import { StaffActivityStatus, StaffRole } from '@prisma/client';
 import { getEventShortName } from 'src/events';
+
+import { StaffActivityStatus, StaffRole } from '../generated/prisma/client';
 
 export type StaffingRole = Exclude<StaffRole, 'COMPETITOR'>;
 

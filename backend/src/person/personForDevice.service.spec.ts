@@ -1,7 +1,11 @@
-import { Attempt, AttemptStatus, AttemptType } from '@prisma/client';
 import { DbService } from 'src/db/db.service';
 import { WcaService } from 'src/wca/wca.service';
 
+import {
+  Attempt,
+  AttemptStatus,
+  AttemptType,
+} from '../generated/prisma/client';
 import { PersonForDeviceService } from './personForDevice.service';
 
 describe('PersonForDeviceService finished rounds', () => {

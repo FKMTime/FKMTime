@@ -1,9 +1,8 @@
-import { DeviceType } from '@prisma/client';
-
 import { CompetitionService } from '../competition/competition.service';
 import { DeviceService } from '../device/device.service';
 import { StationErrorService } from '../device/stationError.service';
 import { StationSignalService } from '../device/stationSignal.service';
+import { DeviceType } from '../generated/prisma/client';
 import { PersonService } from '../person/person.service';
 import { LIVE_LOOKUP_TTL_MS } from '../ttl-cache';
 import { SocketService } from './socket.service';

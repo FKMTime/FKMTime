@@ -1,10 +1,11 @@
+import { activityCodeToName } from '@wca/helpers';
+import { DNF_VALUE, DNS_VALUE } from 'src/constants';
+
 import {
   AttemptStatus,
   AttemptType,
   DelegateGrantPermission,
-} from '@prisma/client';
-import { activityCodeToName } from '@wca/helpers';
-import { DNF_VALUE, DNS_VALUE } from 'src/constants';
+} from '../generated/prisma/client';
 
 /**
  * Resolving an incident is part of every grant (SPEC-013); it isn't one of

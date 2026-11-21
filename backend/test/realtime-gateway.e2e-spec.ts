@@ -1,5 +1,4 @@
 import { INestApplication } from '@nestjs/common';
-import { AttemptStatus, AttemptType, Person, Role } from '@prisma/client';
 import { Socket } from 'socket.io-client';
 import { AppGateway } from 'src/app.gateway';
 import { AUTO_SETUP_DURATION_MS } from 'src/competition/autoSetup';
@@ -7,6 +6,12 @@ import { CompetitionService } from 'src/competition/competition.service';
 import { DbService } from 'src/db/db.service';
 import * as request from 'supertest';
 
+import {
+  AttemptStatus,
+  AttemptType,
+  Person,
+  Role,
+} from '../src/generated/prisma/client';
 import { createTestApp } from './helpers/app.helper';
 import {
   connectSocketIo,

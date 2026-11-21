@@ -1,10 +1,10 @@
 import { INestApplication } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import { Role } from '@prisma/client';
 import { sha512 } from 'js-sha512';
 import { DbService } from 'src/db/db.service';
 import * as request from 'supertest';
 
+import { Role } from '../src/generated/prisma/client';
 import { createTestApp } from './helpers/app.helper';
 import {
   DummyWcaAccount,

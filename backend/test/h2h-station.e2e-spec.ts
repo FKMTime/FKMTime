@@ -1,8 +1,8 @@
 import { INestApplication } from '@nestjs/common';
-import { Person, Prisma } from '@prisma/client';
 import { DbService } from 'src/db/db.service';
 import { getAllTranslations } from 'src/translations/translations';
 
+import { Person, Prisma } from '../src/generated/prisma/client';
 import { createTestApp } from './helpers/app.helper';
 import {
   seededPersonPicker,

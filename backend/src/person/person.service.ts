@@ -1,10 +1,10 @@
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
-import { Prisma, StaffRole } from '@prisma/client';
 import { WcaService } from 'src/wca/wca.service';
 import { Activity, Assignment, Competition } from 'wcif-helpers';
 import { getActivityInfoFromSchedule, getPersonFromWcif } from 'wcif-helpers';
 
 import { DbService } from '../db/db.service';
+import { Prisma, StaffRole } from '../generated/prisma/client';
 import { LIVE_LOOKUP_TTL_MS, TtlCache } from '../ttl-cache';
 import { AddPersonDto } from './dto/addPerson.dto';
 import { ChangeCompetingGroupDto } from './dto/changeCompetingGroup.dto';

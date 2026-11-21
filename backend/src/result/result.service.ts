@@ -5,14 +5,6 @@ import {
   Inject,
   Injectable,
 } from '@nestjs/common';
-import {
-  Attempt,
-  AttemptStatus,
-  AttemptType,
-  SendingResultsFrequency,
-  StaffActivityStatus,
-  StaffRole,
-} from '@prisma/client';
 import { AppGateway } from 'src/app.gateway';
 import {
   AttemptEditLogService,
@@ -41,6 +33,14 @@ import {
 } from 'wcif-helpers';
 
 import { AttendanceService } from '../attendance/attendance.service';
+import {
+  Attempt,
+  AttemptStatus,
+  AttemptType,
+  SendingResultsFrequency,
+  StaffActivityStatus,
+  StaffRole,
+} from '../generated/prisma/client';
 import { WcaService } from '../wca/wca.service';
 import { CheckIfAttemptEnteredDto } from './dto/checkIfAttemptEntered.dto';
 import { DoubleCheckDto } from './dto/doubleCheck.dto';

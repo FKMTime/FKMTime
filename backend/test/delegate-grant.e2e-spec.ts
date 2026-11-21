@@ -1,4 +1,9 @@
 import { INestApplication } from '@nestjs/common';
+import { Socket } from 'socket.io-client';
+import { AppGateway } from 'src/app.gateway';
+import { DbService } from 'src/db/db.service';
+import * as request from 'supertest';
+
 import {
   AttemptStatus,
   AttemptType,
@@ -7,12 +12,7 @@ import {
   Role,
   Room,
   StaffRole,
-} from '@prisma/client';
-import { Socket } from 'socket.io-client';
-import { AppGateway } from 'src/app.gateway';
-import { DbService } from 'src/db/db.service';
-import * as request from 'supertest';
-
+} from '../src/generated/prisma/client';
 import { createTestApp } from './helpers/app.helper';
 import {
   createTestPersons,

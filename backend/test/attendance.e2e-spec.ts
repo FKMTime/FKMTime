@@ -1,8 +1,8 @@
 import { INestApplication } from '@nestjs/common';
-import { StaffRole } from '@prisma/client';
 import { DbService } from 'src/db/db.service';
 import * as request from 'supertest';
 
+import { StaffRole } from '../src/generated/prisma/client';
 import { createTestApp } from './helpers/app.helper';
 
 describe('AttendanceController (e2e)', () => {

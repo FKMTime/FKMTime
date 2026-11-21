@@ -1,4 +1,4 @@
-import { H2hSetDecision, H2hSide } from '@prisma/client';
+import { H2hSetDecision, H2hSide } from '../generated/prisma/client';
 
 /**
  * Attempt results in these functions are WCA-encoded, as toAttemptResult in

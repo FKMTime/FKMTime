@@ -1,8 +1,14 @@
-import { Attempt, AttemptStatus, AttemptType, Result } from '@prisma/client';
 import { formatCentiseconds } from '@wca/helpers';
 import { DNF_VALUE, DNS_VALUE } from 'src/constants';
 import { isLocaleAvailable } from 'src/translations/translations';
 import { Person } from 'wcif-helpers';
+
+import {
+  Attempt,
+  AttemptStatus,
+  AttemptType,
+  Result,
+} from '../generated/prisma/client';
 
 export const isCompetitorSignedInForEvent = (
   competitorWcif: Person,

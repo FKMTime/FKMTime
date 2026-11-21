@@ -1,7 +1,8 @@
 import { INestApplication } from '@nestjs/common';
-import { Person, Role } from '@prisma/client';
 import { AuthService } from 'src/auth/auth.service';
 import { DbService } from 'src/db/db.service';
+
+import { Person, Role } from '../../src/generated/prisma/client';
 
 /**
  * Helpers for the competition-day e2e specs (persons, attendance, attempts,

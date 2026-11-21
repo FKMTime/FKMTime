@@ -1,5 +1,8 @@
-import { AttemptStatus, AttemptType, LiveSyncStatus } from '@prisma/client';
-
+import {
+  AttemptStatus,
+  AttemptType,
+  LiveSyncStatus,
+} from '../generated/prisma/client';
 import { IntegratedLiveService } from './integratedLive.service';
 import { liveAttemptsHash } from './liveAttempts';
 

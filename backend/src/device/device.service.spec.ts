@@ -1,9 +1,13 @@
 import { HttpException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
-import { DeviceType, HardwareVersion, Prisma } from '@prisma/client';
 
 import { AppGateway } from '../app.gateway';
 import { DbService } from '../db/db.service';
+import {
+  DeviceType,
+  HardwareVersion,
+  Prisma,
+} from '../generated/prisma/client';
 import { SocketController } from '../socket/socket.controller';
 import { DeviceService } from './device.service';
 import { StationErrorService } from './stationError.service';

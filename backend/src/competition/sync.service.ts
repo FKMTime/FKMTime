@@ -1,5 +1,4 @@
 import { forwardRef, HttpException, Inject } from '@nestjs/common';
-import { StaffActivityStatus, StaffRole } from '@prisma/client';
 import { DbService } from 'src/db/db.service';
 import { isUnofficialEvent } from 'src/events';
 import { PersonService } from 'src/person/person.service';
@@ -8,6 +7,7 @@ import { wcifRoleToAttendanceRole } from 'src/wcif-helpers';
 import { Assignment, Person } from 'wcif-helpers';
 import { getGroupInfoByActivityId } from 'wcif-helpers';
 
+import { StaffActivityStatus, StaffRole } from '../generated/prisma/client';
 import { CompetitionService } from './competition.service';
 
 type PersonSyncData = {
