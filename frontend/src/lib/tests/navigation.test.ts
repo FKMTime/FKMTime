@@ -68,6 +68,15 @@ describe("getNavItems", () => {
         ]);
     });
 
+    it("shows incidents to staff holding delegate access for a group", () => {
+        expect(ids(staff)).not.toContain("incidents");
+        const item = getNavItems({
+            ...staff,
+            hasDelegateAccess: true,
+        }).find((navItem) => navItem.id === "incidents");
+        expect(item?.to).toBe("/incidents");
+    });
+
     it("sends non-delegates to the public results view", () => {
         const results = getNavItems(staff).find((i) => i.id === "results");
         expect(results?.to).toBe("/results/public");

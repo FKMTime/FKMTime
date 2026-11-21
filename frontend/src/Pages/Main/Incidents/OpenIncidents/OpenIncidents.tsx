@@ -4,6 +4,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import LoadingPage from "@/Components/LoadingPage";
 import EmptyState from "@/Components/shared/EmptyState";
 import RequestError from "@/Components/shared/RequestError";
+import { useDelegateAccess } from "@/hooks/useDelegateAccess";
 import { useLiveQuery } from "@/hooks/useLiveQuery";
 import { unresolvedIncidentsQuery } from "@/lib/incidents";
 import { LIVE_MAX_AGE } from "@/lib/queryCache";
@@ -29,9 +30,12 @@ const OpenIncidents = () => {
         isError,
         refetch,
     } = useLiveQuery(unresolvedIncidentsQuery, { maxAge: LIVE_MAX_AGE });
-    // Delegate calls made during a tutorial, kept in memory (SPEC-012)
+    // Delegate calls made during a tutorial, kept in memory (SPEC-012); for
+    // delegates only, delegate access for a group doesn't cover them
+    const { isDelegate } = useDelegateAccess();
     const { data: tutorialData } = useLiveQuery(tutorialIncidentsQuery, {
         maxAge: LIVE_MAX_AGE,
+        enabled: isDelegate,
     });
     const tutorialIncidents = tutorialData ?? [];
     const { data: rooms = [] } = useLiveQuery(roomsQuery);

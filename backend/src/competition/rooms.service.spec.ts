@@ -2,6 +2,7 @@ import { HttpException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 
 import { DbService } from '../db/db.service';
+import { DelegateGrantService } from '../delegate-grant/delegateGrant.service';
 import { DeviceService } from '../device/device.service';
 import { IntegratedLiveRoundsService } from '../integrated-live/integratedLiveRounds.service';
 import { SocketController } from '../socket/socket.controller';
@@ -48,6 +49,13 @@ describe('RoomsService', () => {
         {
           provide: DeviceService,
           useValue: { handleRoomGroupsStarted },
+        },
+        {
+          provide: DelegateGrantService,
+          useValue: {
+            syncWithRooms: jest.fn().mockResolvedValue(undefined),
+            useGroupEnteredAt: jest.fn(),
+          },
         },
       ],
     }).compile();

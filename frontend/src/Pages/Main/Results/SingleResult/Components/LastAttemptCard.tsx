@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 
 import { Button } from "@/Components/ui/button";
 import { useConfirm } from "@/hooks/useConfirm";
+import { useDelegateAccess } from "@/hooks/useDelegateAccess";
 import { useToast } from "@/hooks/useToast";
 import { deleteAttempt, updateAttempt } from "@/lib/attempt";
 import { DNF_VALUE, DNS_VALUE, SKIPPED_VALUE } from "@/lib/constants";
@@ -51,6 +52,8 @@ const LastAttemptCard = ({ result, fetchData }: LastAttemptCardProps) => {
     const navigate = useNavigate();
     const { toast } = useToast();
     const confirm = useConfirm();
+    const access = useDelegateAccess();
+    const canEdit = access.can("EDIT_ATTEMPT");
     const [isOpenEditAttemptModal, setIsOpenEditAttemptModal] = useState(false);
     const [isOpenGiveExtraAttemptModal, setIsOpenGiveExtraAttemptModal] =
         useState(false);
@@ -140,33 +143,41 @@ const LastAttemptCard = ({ result, fetchData }: LastAttemptCardProps) => {
                         Last attempt
                     </h3>
                     <div className="-mr-2 flex">
-                        <Button
-                            variant="ghost"
-                            size="icon-sm"
-                            aria-label="Edit last attempt"
-                            title="Edit"
-                            onClick={() => setIsOpenEditAttemptModal(true)}
-                        >
-                            <Pencil />
-                        </Button>
-                        <Button
-                            variant="ghost"
-                            size="icon-sm"
-                            aria-label="Give extra attempt"
-                            title="Give extra attempt"
-                            onClick={() => setIsOpenGiveExtraAttemptModal(true)}
-                        >
-                            <MessageSquarePlus />
-                        </Button>
-                        <Button
-                            variant="destructive-ghost"
-                            size="icon-sm"
-                            aria-label="Delete last attempt"
-                            title="Delete"
-                            onClick={handleDelete}
-                        >
-                            <Trash2 />
-                        </Button>
+                        {canEdit && (
+                            <Button
+                                variant="ghost"
+                                size="icon-sm"
+                                aria-label="Edit last attempt"
+                                title="Edit"
+                                onClick={() => setIsOpenEditAttemptModal(true)}
+                            >
+                                <Pencil />
+                            </Button>
+                        )}
+                        {access.can("GIVE_EXTRA") && (
+                            <Button
+                                variant="ghost"
+                                size="icon-sm"
+                                aria-label="Give extra attempt"
+                                title="Give extra attempt"
+                                onClick={() =>
+                                    setIsOpenGiveExtraAttemptModal(true)
+                                }
+                            >
+                                <MessageSquarePlus />
+                            </Button>
+                        )}
+                        {access.can("DELETE_ATTEMPT") && (
+                            <Button
+                                variant="destructive-ghost"
+                                size="icon-sm"
+                                aria-label="Delete last attempt"
+                                title="Delete"
+                                onClick={handleDelete}
+                            >
+                                <Trash2 />
+                            </Button>
+                        )}
                     </div>
                 </div>
                 <p
@@ -183,7 +194,7 @@ const LastAttemptCard = ({ result, fetchData }: LastAttemptCardProps) => {
                         Judge {getPersonNameAndRegistrantId(lastAttempt.judge)}
                     </p>
                 )}
-                <div className="mt-2 flex gap-2">
+                <div className={cn("mt-2 flex gap-2", !canEdit && "hidden")}>
                     <Button
                         size="sm"
                         variant={isPlusTwoPenalty ? "default" : "outline"}

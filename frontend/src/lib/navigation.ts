@@ -48,6 +48,8 @@ export interface NavItem {
 export interface NavContext {
     useFkmTimeDevices: boolean;
     isDelegate: boolean;
+    /** Holds delegate access for a group, active or waiting (SPEC-013) */
+    hasDelegateAccess?: boolean;
     isOrganizerOrDelegate: boolean;
     isStageLeaderOrAbove: boolean;
     canAccessSettings: boolean;
@@ -96,11 +98,14 @@ export const getNavItems = (ctx: NavContext): NavItem[] => {
             group: "Competition day",
             paths: ["/schedule"],
         },
-        ctx.isDelegate && {
+        (ctx.isDelegate || !!ctx.hasDelegateAccess) && {
             id: "incidents",
             label: "Incidents",
             icon: TriangleAlert,
-            to: ctx.useFkmTimeDevices ? "/incidents" : "/incidents/manual",
+            to:
+                ctx.useFkmTimeDevices || !ctx.isDelegate
+                    ? "/incidents"
+                    : "/incidents/manual",
             group: "Competition day",
             paths: ["/incidents"],
         },

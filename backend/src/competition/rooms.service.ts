@@ -1,6 +1,13 @@
-import { forwardRef, HttpException, Inject, Logger } from '@nestjs/common';
+import {
+  forwardRef,
+  HttpException,
+  Inject,
+  Logger,
+  OnModuleInit,
+} from '@nestjs/common';
 import { Attempt } from '@prisma/client';
 import { DbService } from 'src/db/db.service';
+import { DelegateGrantService } from 'src/delegate-grant/delegateGrant.service';
 import { DeviceService } from 'src/device/device.service';
 import { isFirstGroupOfDay } from 'src/device/tutorial';
 import { IntegratedLiveRoundsService } from 'src/integrated-live/integratedLiveRounds.service';
@@ -10,7 +17,7 @@ import { Competition as Wcif } from 'wcif-helpers';
 import { UpdateRoomsDto } from './dto/updateCurrentRound.dto';
 import { calculateGroupProgress, getGroupCompetitorIds } from './groupProgress';
 
-export class RoomsService {
+export class RoomsService implements OnModuleInit {
   constructor(
     @Inject(forwardRef(() => DbService))
     private readonly prisma: DbService,
@@ -20,11 +27,20 @@ export class RoomsService {
     private readonly integratedLiveRounds: IntegratedLiveRoundsService,
     @Inject(forwardRef(() => DeviceService))
     private readonly deviceService: DeviceService,
+    @Inject(forwardRef(() => DelegateGrantService))
+    private readonly delegateGrants: DelegateGrantService,
   ) {}
 
   private readonly logger = new Logger('RoomsService');
 
   private readonly startedAt = Date.now();
+
+  onModuleInit() {
+    // Delegate access for a group covers it from when the room started it
+    this.delegateGrants.useGroupEnteredAt((roomId, groupId) =>
+      this.getGroupEnteredAt(roomId, groupId),
+    );
+  }
   // "roomId|groupId" -> when the room started running the group
   private groupEnteredAt = new Map<string, number>();
 
@@ -196,6 +212,9 @@ export class RoomsService {
       }
     }
     await this.socketController.sendServerStatus();
+    // Delegate access for a group starts and ends with it (SPEC-013); a
+    // failure here mustn't fail the group change, access checks sync again
+    await this.delegateGrants.syncWithRooms().catch(() => undefined);
     // Not awaited: starting a group mustn't wait for the WCA
     const startedRoundIds = new Set(
       rooms.flatMap((room) =>

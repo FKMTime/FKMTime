@@ -39,8 +39,12 @@ interface IncidentFormProps {
         isNoteworthy?: boolean,
         doNotRequireCards?: boolean
     ) => void;
-    handleDelete: () => void;
+    /** Hidden without; delegate access for a group may not include it */
+    handleDelete?: () => void;
     timeLimit?: TimeLimit;
+    canGiveExtra?: boolean;
+    /** Noteworthy incidents stay with delegates (SPEC-013) */
+    canMarkNoteworthy?: boolean;
 }
 
 const IncidentForm = ({
@@ -49,6 +53,8 @@ const IncidentForm = ({
     handleSubmit,
     handleDelete,
     timeLimit,
+    canGiveExtra = true,
+    canMarkNoteworthy = true,
 }: IncidentFormProps) => {
     const { toast } = useToast();
     const [action, setAction] = useState<IncidentAction | null>(null);
@@ -221,13 +227,17 @@ const IncidentForm = ({
                         </FormItem>
                     )}
                 />
-                <Label className="flex min-h-11 cursor-pointer items-center gap-3 font-normal md:min-h-0">
-                    <Checkbox
-                        checked={isNoteworthy}
-                        onCheckedChange={(value) => setIsNoteworthy(!!value)}
-                    />
-                    Mark as noteworthy incident
-                </Label>
+                {canMarkNoteworthy && (
+                    <Label className="flex min-h-11 cursor-pointer items-center gap-3 font-normal md:min-h-0">
+                        <Checkbox
+                            checked={isNoteworthy}
+                            onCheckedChange={(value) =>
+                                setIsNoteworthy(!!value)
+                            }
+                        />
+                        Mark as noteworthy incident
+                    </Label>
+                )}
                 <Label className="flex min-h-11 cursor-pointer items-center gap-3 font-normal md:min-h-0">
                     <Checkbox
                         checked={doNotRequireCards}
@@ -249,23 +259,29 @@ const IncidentForm = ({
                     >
                         Mark as resolved
                     </Button>
-                    <Button
-                        variant="outline"
-                        type="submit"
-                        disabled={isLoading}
-                        onClick={() => setAction(IncidentAction.EXTRA_GIVEN)}
-                    >
-                        Save and give extra
-                    </Button>
-                    <Button
-                        variant="destructive-ghost"
-                        onClick={handleDelete}
-                        type="button"
-                        disabled={isLoading}
-                        className="sm:ml-auto"
-                    >
-                        Delete attempt
-                    </Button>
+                    {canGiveExtra && (
+                        <Button
+                            variant="outline"
+                            type="submit"
+                            disabled={isLoading}
+                            onClick={() =>
+                                setAction(IncidentAction.EXTRA_GIVEN)
+                            }
+                        >
+                            Save and give extra
+                        </Button>
+                    )}
+                    {handleDelete && (
+                        <Button
+                            variant="destructive-ghost"
+                            onClick={handleDelete}
+                            type="button"
+                            disabled={isLoading}
+                            className="sm:ml-auto"
+                        >
+                            Delete attempt
+                        </Button>
+                    )}
                 </div>
             </form>
         </Form>
