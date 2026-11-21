@@ -34,10 +34,12 @@ refreshes after their own changes.
 ## Goals
 
 - An organizer assigns a stage lead to one or more rooms.
+- An organizer can't make someone a stage lead without saying which rooms
+  they cover: some rooms, or all of them in one tick.
 - A stage lead reads and changes attendance only for groups in their rooms.
-  The competition-wide reports (statistics, most missed assignments) stay
-  open to them: they change nothing.
-  The server enforces it; the panel shows only those groups.
+  The server enforces it; the panel shows only those groups. The
+  competition-wide reports (statistics, most missed assignments) stay open to
+  them: they change nothing.
 - A stage lead's Attendance page updates live, like an organizer's.
 - Organizers, delegates and admins keep attendance for the whole competition,
   whether or not they also hold `STAGE_LEADER`.
@@ -60,7 +62,8 @@ refreshes after their own changes.
 - **Stage lead** — a user with `STAGE_LEADER` and none of `ADMIN`, `ORGANIZER`,
   `DELEGATE`. Users holding one of those as well have full access; this spec
   doesn't touch them.
-- **Their rooms** — the rooms an organizer assigned to the stage lead.
+- **Their rooms** — the rooms an organizer assigned to the stage lead, or
+  every room when they cover all rooms.
 - **A room's groups** — the groups the WCIF schedule puts in the room, plus any
   group the room has started (`Room.startedGroupIds`) or is running now
   (`Room.currentGroupIds`). The second part covers a group moved to another
@@ -71,12 +74,15 @@ the sync and `sortRoomsBySchedule` already do.
 
 ### Scope
 
-A stage lead with rooms may read and change attendance for a group only when
-it is one of their rooms' groups.
+A stage lead may read and change attendance for a group only when it is one
+of their rooms' groups.
 
-A stage lead with **no rooms** has the whole competition, as today. That is
-what every existing stage lead is after the upgrade, so nothing breaks, and the
-Users page says "All rooms" for them so an organizer sees the difference.
+Every stage lead covers either **some rooms** or **all rooms**. There is no
+third state: the API refuses a stage lead with neither (below).
+
+All rooms is stored as no `StageLeadRoom` rows. That makes every existing stage
+lead an all-rooms stage lead after the upgrade without a data migration, so
+nothing breaks. It also means all rooms includes a room the sync adds later.
 
 ### Data model
 
@@ -134,19 +140,36 @@ server-side emitter, not a handler) goes.
 ### Assigning rooms
 
 - Organizers (and admins) assign rooms, the same people who edit roles today.
-- `CreateUserDto` and `UpdateUserDto` get an optional `stageLeadRoomIds:
-  string[]`. Saved only when the roles include `STAGE_LEADER`; otherwise the
-  user's rows are cleared.
+- `CreateUserDto` and `UpdateUserDto` get `stageLeadAllRooms?: boolean` and
+  `stageLeadRoomIds?: string[]`.
+- When the roles include `STAGE_LEADER` and none of `ADMIN`, `ORGANIZER`,
+  `DELEGATE`, the request must say which rooms: `stageLeadAllRooms: true`, or
+  at least one existing room id in `stageLeadRoomIds`, not both. Otherwise 400
+  "Choose the rooms this stage lead takes attendance in". All rooms saves no
+  rows; some rooms replaces the rows with those ids.
+- Without `STAGE_LEADER`, or with one of the full-access roles, both fields
+  are ignored and the user's rows are cleared.
 - `GET /user` returns each user's rooms.
 
 ### Frontend
 
 **Users page (Setup → Users).** In the create and edit dialogs, ticking
-"Stage leader" shows a "Rooms" multi-select of the competition's rooms, in
-schedule order, empty meaning all rooms. The user's row shows "Stage leader ·
-Main Hall" or "Stage leader · All rooms".
+"Stage leader" shows a required "Rooms" field: an "All rooms" checkbox, then a
+checkbox per room in schedule order. Ticking "All rooms" ticks and locks the
+room checkboxes; ticking every room by hand is the same as "All rooms". Save
+stays disabled until something is ticked, with "Choose at least one room"
+under the field. The field doesn't show for users who are also organizers,
+delegates or admins.
 
-**For a stage lead with rooms**, everything filters by `GET /attendance/scope`:
+With **only one room** in the competition the field is hidden and the stage
+lead is saved as all rooms; there is nothing to choose.
+
+The user's row shows "Stage leader · Main Hall" or "Stage leader · All rooms",
+without the suffix when there is one room. An existing stage lead opens in the
+edit dialog with "All rooms" ticked.
+
+**For a stage lead with some rooms**, everything filters by
+`GET /attendance/scope`:
 
 - **Attendance page.** The group picker offers only rounds and groups in scope;
   the page opens on their room's running group. Previous/next step through
@@ -158,7 +181,7 @@ Main Hall" or "Stage leader · All rooms".
 - **Reports.** "Attendance statistics" and "Most missed assignments" stay
   as they are, covering the whole competition.
 
-A stage lead with no rooms sees everything, as today.
+A stage lead with all rooms sees everything, as today.
 
 ### Edge cases
 
@@ -180,6 +203,9 @@ A stage lead with no rooms sees everything, as today.
   room's stage lead would otherwise wait for someone who isn't there. This is
   the one change a stage lead makes outside their rooms; a person with no
   group in their rooms that day is refused.
+- **A second room appears.** A stage lead saved while there was one room
+  covers all rooms, so they get the new one too. The rooms field shows on
+  their next edit.
 - **Station check-in.** Stations marking competitors present are unaffected:
   they don't act as a user.
 
@@ -194,8 +220,14 @@ A stage lead with no rooms sees everything, as today.
       with the "Main Hall only" message for a Side Hall group, called directly.
 - [ ] A group scheduled in Side Hall but started in Main Hall is in the Main
       Hall stage lead's scope.
-- [ ] A stage lead with no rooms can read and change attendance for every
-      group, as before the change.
+- [ ] Creating or editing a stage lead with no rooms and without "All rooms"
+      returns 400; in the dialog, Save stays disabled.
+- [ ] "All rooms" ticks every room; the stage lead can read and change
+      attendance for every group.
+- [ ] With one room in the competition, the rooms field doesn't show and the
+      stage lead is saved as all rooms.
+- [ ] A stage lead created before the upgrade has all rooms and opens in the
+      edit dialog with "All rooms" ticked.
 - [ ] A user with `STAGE_LEADER` and `ORGANIZER` has the whole competition
       whatever rooms are assigned.
 - [ ] A stage lead's Attendance page updates live when another user marks
@@ -208,15 +240,15 @@ A stage lead with no rooms sees everything, as today.
       missed assignments for the whole competition.
 - [ ] Removing `STAGE_LEADER` from a user clears their rooms.
 - [ ] Unit tests for `AttendanceScopeService` cover: admin, organizer,
-      delegate, stage lead with no rooms, stage lead with rooms (scheduled
+      delegate, stage lead with all rooms, stage lead with some rooms (scheduled
       group, started group, running group, other room's group), stage lead
       also organizer.
 
 ## Rollout
 
 - Additive schema change applied with `prisma db push`: one table. No data
-  migration: existing stage leads have no rooms and keep the whole
-  competition.
+  migration: existing stage leads have no rows, which means all rooms, and
+  keep the whole competition.
 - No station, firmware or micro-connector change.
 - Revert: drop the scope checks from the attendance endpoints and hide the
   rooms field. The table can stay until a later change removes it.
