@@ -140,6 +140,19 @@ describe('CompetitionController (e2e)', () => {
       });
     });
 
+    it('returns 404 for a competition that does not exist', async () => {
+      await request(app.getHttpServer())
+        .put('/competition/settings/00000000-0000-0000-0000-000000000000')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({
+          scoretakingToken: 'token',
+          sendingResultsFrequency: 'AFTER_SOLVE',
+          shouldChangeGroupsAutomatically: false,
+          useFkmTimeDevices: true,
+        })
+        .expect(404);
+    });
+
     it('returns 401 when not authenticated', async () => {
       await request(app.getHttpServer())
         .put(`/competition/settings/${competitionId}`)

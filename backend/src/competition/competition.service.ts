@@ -15,16 +15,20 @@ import {
   getStationTranslations,
 } from 'src/translations/translations';
 import { LIVE_LOOKUP_TTL_MS, TtlCache } from 'src/ttl-cache';
-import { getNextGroupInRoom, isSameDay } from 'src/wcif-helpers';
+import {
+  getNextGroupInRoom,
+  getRoundActivityInRoom,
+  isSameDay,
+} from 'src/wcif-helpers';
 import {
   Activity,
   Competition,
   Event,
   Room as WCIFRoom,
+  Round,
   Venue,
 } from 'wcif-helpers';
 import {
-  getActivityInfoFromScheduleWithRoom,
   getNumberOfAttemptsForRound,
   getRoundInfoFromWcif,
 } from 'wcif-helpers';
@@ -231,69 +235,47 @@ export class CompetitionService implements OnModuleDestroy {
     if (!activities) {
       return [];
     }
-    const activitiesToReturn = [];
-    const startTimeTransactions = [];
-    const endTimeTransactions = [];
-    activities.forEach((activity: Activity) => {
-      startTimeTransactions.push(
-        this.prisma.attempt.findFirst({
-          where: {
-            result: {
-              roundId: activity.activityCode,
-            },
-            NOT: {
-              sessionId: null,
-            },
+    // A round's first and last solve from a station: when it really ran
+    const attemptOfRound = (activity: Activity, solvedAt: 'asc' | 'desc') =>
+      this.prisma.attempt.findFirst({
+        where: {
+          result: {
+            roundId: activity.activityCode,
           },
-          orderBy: {
-            solvedAt: 'asc',
+          NOT: {
+            sessionId: null,
           },
-          include: {
-            result: true,
-          },
-        }),
-      );
-    });
-    activities.forEach((activity: Activity) => {
-      endTimeTransactions.push(
-        this.prisma.attempt.findFirst({
-          where: {
-            result: {
-              roundId: activity.activityCode,
-            },
-            NOT: {
-              sessionId: null,
-            },
-          },
-          orderBy: {
-            solvedAt: 'desc',
-          },
-          include: {
-            result: true,
-          },
-        }),
-      );
-    });
+        },
+        orderBy: {
+          solvedAt,
+        },
+        include: {
+          result: true,
+        },
+      });
     const firstRoundAttempts = await this.prisma.$transaction(
-      startTimeTransactions,
+      activities.map((activity: Activity) => attemptOfRound(activity, 'asc')),
     );
-    const lastRoundAttempts =
-      await this.prisma.$transaction(endTimeTransactions);
-    activities.forEach((activity: Activity) => {
+    const lastRoundAttempts = await this.prisma.$transaction(
+      activities.map((activity: Activity) => attemptOfRound(activity, 'desc')),
+    );
+    const activitiesToReturn = activities.map((activity: Activity) => {
       const firstAttempt = firstRoundAttempts.find(
         (a) => a?.result.roundId === activity.activityCode,
       );
       const lastAttempt = lastRoundAttempts.find(
         (a) => a?.result.roundId === activity.activityCode,
       );
-      activitiesToReturn.push({
+      return {
         ...activity,
-        realStartTime: firstAttempt ? new Date(firstAttempt.solvedAt) : null,
+        realStartTime: firstAttempt?.solvedAt
+          ? new Date(firstAttempt.solvedAt)
+          : null,
         realEndTime:
-          lastAttempt && lastAttempt.id !== firstAttempt.id
+          lastAttempt?.solvedAt && lastAttempt.id !== firstAttempt?.id
             ? new Date(lastAttempt.solvedAt)
             : null,
-      });
+      };
     });
     return activitiesToReturn;
   }
@@ -321,7 +303,7 @@ export class CompetitionService implements OnModuleDestroy {
   /** The panel's competition data, with where official results go */
   async getCompetitionForPanel() {
     const info = await this.getCompetitionInfo();
-    const destinationInput = await this.prisma.competition.findFirst({
+    const destinationInput = await this.prisma.competition.findFirstOrThrow({
       select: {
         wcaScoretakingSoftware: true,
         scoretakingToken: true,
@@ -424,10 +406,21 @@ export class CompetitionService implements OnModuleDestroy {
     }
     const wcif = JSON.parse(JSON.stringify(competition.wcif));
 
-    const rounds = [];
+    const rounds: {
+      id: string;
+      number: string;
+      name: string;
+      eventId: string;
+      format: Round['format'];
+      timeLimit: Round['timeLimit'];
+      cutoff: Round['cutoff'];
+      linkedRounds?: Round['linkedRounds'];
+      nextRoundParticipationRuleset?: Round['participationRuleset'];
+    }[] = [];
     wcif.events.forEach((event: Event) => {
       event.rounds.forEach((round) => {
-        const eventName = eventsData.find((e) => e.id === event.id).name;
+        const eventName =
+          eventsData.find((e) => e.id === event.id)?.name ?? event.id;
         const nextRound = event.rounds.find(
           (r) => r.id === `${event.id}-r${+round.id.split('-r')[1] + 1}`,
         );
@@ -476,7 +469,7 @@ export class CompetitionService implements OnModuleDestroy {
   }
 
   async updateCompetition(id: string, dto: UpdateCompetitionDto) {
-    const competition = await this.prisma.competition.findFirst({
+    const competition = await this.prisma.competition.findFirstOrThrow({
       where: {
         id: id,
       },
@@ -512,7 +505,7 @@ export class CompetitionService implements OnModuleDestroy {
   }
 
   async getAutoSetupSettings() {
-    const competition = await this.prisma.competition.findFirst({
+    const competition = await this.prisma.competition.findFirstOrThrow({
       select: autoSetupSettingsSelect,
     });
     return {
@@ -571,7 +564,8 @@ export class CompetitionService implements OnModuleDestroy {
     if (devices.length === 0) return;
 
     this.socketController.sendDeviceSettings(
-      devices.map((d) => d.espId),
+      // Only stations with an espId were selected
+      devices.flatMap((d) => d.espId ?? []),
       competition.buzzerVolume,
     );
   }
@@ -830,11 +824,7 @@ export class CompetitionService implements OnModuleDestroy {
   ) {
     const roundId = groupId.split('-g')[0];
     const hasNextGroup = !!getNextGroupInRoom(groupId, roomName, wcif);
-    const round: Activity | null = getActivityInfoFromScheduleWithRoom(
-      roundId,
-      roomName,
-      wcif,
-    );
+    const round = getRoundActivityInRoom(roundId, roomName, wcif);
     const roomRoundGroupIds = hasNextGroup
       ? [groupId]
       : (round?.childActivities ?? []).map((group) => group.activityCode);
@@ -937,7 +927,7 @@ export class CompetitionService implements OnModuleDestroy {
       room.currentGroupIds.includes(id),
     );
     if (leaving.length === 0) return;
-    const competition = await this.prisma.competition.findFirst();
+    const competition = await this.prisma.competition.findFirstOrThrow();
     const wcif = competition.wcif as unknown as Competition;
     const nextGroupIds = planNextGroups(
       room.currentGroupIds,
@@ -971,7 +961,7 @@ export class CompetitionService implements OnModuleDestroy {
     if (!room) {
       throw new HttpException('Room not found', 404);
     }
-    const competition = await this.prisma.competition.findFirst();
+    const competition = await this.prisma.competition.findFirstOrThrow();
     const wcif = JSON.parse(JSON.stringify(competition.wcif));
     return getNextGroupsInRoom(
       groupIds ?? room.currentGroupIds,
@@ -990,13 +980,16 @@ export class CompetitionService implements OnModuleDestroy {
       throw new HttpException('Room not found', 404);
     }
     const currentGroups = groupIds ?? room.currentGroupIds;
-    const competition = await this.prisma.competition.findFirst();
+    const competition = await this.prisma.competition.findFirstOrThrow();
     const wcif = JSON.parse(JSON.stringify(competition.wcif));
-    const previousGroups = [];
+    const previousGroups: string[] = [];
     if (currentGroups.length === 1) {
       const currentRoundId = currentGroups[0].split('-g')[0];
-      const roundInfoFromSchedule: Activity =
-        getActivityInfoFromScheduleWithRoom(currentRoundId, room.name, wcif);
+      const roundInfoFromSchedule = getRoundActivityInRoom(
+        currentRoundId,
+        room.name,
+        wcif,
+      );
       if (!roundInfoFromSchedule) return [];
       const sortedActivities = roundInfoFromSchedule.childActivities.sort(
         (a, b) =>
@@ -1012,7 +1005,8 @@ export class CompetitionService implements OnModuleDestroy {
         previousGroups.push(previousGroup.activityCode);
       } else {
         const startTime = new Date(roundInfoFromSchedule.startTime);
-        let previousRoundActivity: Activity | null = null;
+        // Assigned in the callbacks below, which narrowing doesn't follow
+        let previousRoundActivity = null as Activity | null;
         wcif.schedule.venues.forEach((venue: Venue) => {
           const r = venue.rooms.find(
             (item: WCIFRoom) => item.name === room.name,
@@ -1045,8 +1039,11 @@ export class CompetitionService implements OnModuleDestroy {
     } else {
       for (const currentGroupId of currentGroups) {
         const roundId = currentGroupId.split('-g')[0];
-        const roundInfoFromSchedule: Activity =
-          getActivityInfoFromScheduleWithRoom(roundId, room.name, wcif);
+        const roundInfoFromSchedule = getRoundActivityInRoom(
+          roundId,
+          room.name,
+          wcif,
+        );
         if (!roundInfoFromSchedule) return [];
         const sortedActivities = roundInfoFromSchedule.childActivities.sort(
           (a, b) =>
@@ -1062,7 +1059,8 @@ export class CompetitionService implements OnModuleDestroy {
           previousGroups.push(previousGroup.activityCode);
         } else {
           const startTime = new Date(roundInfoFromSchedule.startTime);
-          let previousRoundActivity: Activity | null = null;
+          // Assigned in the callbacks below, which narrowing doesn't follow
+          let previousRoundActivity = null as Activity | null;
           wcif.schedule.venues.forEach((venue: Venue) => {
             const r = venue.rooms.find(
               (item: WCIFRoom) => item.name === room.name,

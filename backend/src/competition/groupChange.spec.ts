@@ -15,6 +15,8 @@ import {
   StaffActivityStatus,
   StaffRole,
 } from '../generated/prisma/client';
+import { found } from '../test-utils/found';
+import { unusedDependency } from '../test-utils/unused-dependency';
 import {
   CompetitionService,
   GROUP_CHANGE_CHECK_DELAY_MS,
@@ -93,7 +95,10 @@ const buildWcif = (
       registrantId: +registrantId,
       assignments: groupIds.map((groupId) => ({
         assignmentCode: 'competitor',
-        activityId: activities.find((a) => a.activityCode === groupId).id,
+        activityId: found(
+          activities.find((a) => a.activityCode === groupId),
+          `activity ${groupId}`,
+        ).id,
       })),
     })),
     schedule: {
@@ -199,34 +204,41 @@ const setup = ({
     })),
     results: results.map(toDbResult),
   };
-  const roomById = (id: string) => state.rooms.find((r) => r.id === id);
+  const findRoom = (id: string) => state.rooms.find((r) => r.id === id);
+  // For a room the test set up, so it's there
+  const roomById = (id: string) => found(findRoom(id), `room ${id}`);
   // A read is a snapshot, as from the database
   const readRoom = async ({ where }) => {
-    const room = roomById(where.id);
+    const room = findRoom(where.id);
     return room ? structuredClone(room) : null;
   };
+  const readCompetition = jest.fn(async () => ({
+    wcif,
+    useFkmTimeDevices: true,
+    shouldChangeGroupsAutomatically: true,
+    sendingResultsFrequency: 'NEVER',
+    ...competition,
+  }));
   const prisma = {
     competition: {
-      findFirst: jest.fn(async () => ({
-        wcif,
-        useFkmTimeDevices: true,
-        shouldChangeGroupsAutomatically: true,
-        sendingResultsFrequency: 'NEVER',
-        ...competition,
-      })),
+      findFirst: readCompetition,
+      findFirstOrThrow: readCompetition,
     },
     room: {
-      findMany: jest.fn(async (args?: { where?: { id?: { in: string[] } } }) =>
-        args?.where?.id
-          ? state.rooms.filter((r) => args.where.id.in.includes(r.id))
-          : state.rooms,
+      findMany: jest.fn(
+        async (args?: { where?: { id?: { in: string[] } } }) => {
+          const ids = args?.where?.id?.in;
+          return ids
+            ? state.rooms.filter((r) => ids.includes(r.id))
+            : state.rooms;
+        },
       ),
       findFirst: jest.fn(readRoom),
       findUnique: jest.fn(readRoom),
       update: jest.fn((args) => args),
       // Only writes while the room still runs the groups the caller read
       updateMany: jest.fn(async ({ where, data }) => {
-        const room = roomById(where.id);
+        const room = findRoom(where.id);
         const unchanged =
           room &&
           (!where.currentGroupIds ||
@@ -296,7 +308,7 @@ const setup = ({
     prisma as unknown as DbService,
     appGateway as unknown as AppGateway,
     resultService as unknown as ResultService,
-    null,
+    unusedDependency(),
     socketController as unknown as SocketController,
     roomsService,
   );
@@ -1142,7 +1154,10 @@ describe('automatic group change', () => {
           { roundId: '333-r1', registrantId: 2, attempts: solves(3) },
         ],
       });
-      const write = prisma.room.updateMany.getMockImplementation();
+      const write = found(
+        prisma.room.updateMany.getMockImplementation(),
+        'the updateMany mock',
+      );
       prisma.room.updateMany.mockImplementationOnce(async (args) => {
         // A delegate's change lands between the read and the write
         roomById('main').currentGroupIds = ['222-r1-g1'];

@@ -267,7 +267,7 @@ describe('IntegratedLiveConnectionService', () => {
 
       const response = await service.authorizedFetch('https://wca.example/x');
 
-      expect(response.status).toBe(202);
+      expect(response?.status).toBe(202);
       expect(fetchMock).toHaveBeenCalledTimes(2);
       expect(fetchMock.mock.calls[1][1].headers.get('Authorization')).toBe(
         'Bearer access-2',

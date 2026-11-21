@@ -74,11 +74,13 @@ export class RoomsService implements OnModuleInit {
                 person: { select: { registrantId: true } },
               },
             });
+            // Someone added on site has no registrant id, so no assignment
             const attemptsByRegistrantId = new Map<number, Attempt[]>(
-              results.map((result) => [
-                result.person.registrantId,
-                result.attempts,
-              ]),
+              results.flatMap(({ person, attempts }) =>
+                person.registrantId === null
+                  ? []
+                  : [[person.registrantId, attempts]],
+              ),
             );
             return calculateGroupProgress(
               wcif,
@@ -162,8 +164,8 @@ export class RoomsService implements OnModuleInit {
 
   private assertValidGroups(groupIds: string[]) {
     //If there are 2 or more groups in the room with same roundId
-    const roundIds = [];
-    const eventIds = [];
+    const roundIds: string[] = [];
+    const eventIds: string[] = [];
     for (const groupId of groupIds) {
       const eventId = groupId.split('-r')[0];
       if (eventIds.includes(eventId)) {

@@ -41,7 +41,7 @@ describe('ScoretakersService', () => {
     };
     const prisma = {
       competition: {
-        findFirst: jest.fn(async () => ({ wcaId: 'ExampleOpen2026' })),
+        findFirstOrThrow: jest.fn(async () => ({ wcaId: 'ExampleOpen2026' })),
       },
       user: {
         findUnique: jest.fn(async () => ({ wcaAccessToken: userToken })),

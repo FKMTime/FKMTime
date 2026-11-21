@@ -54,6 +54,8 @@ export class SyncService {
         id: userId,
       },
     });
+    // The signed-in account was removed since its token was issued
+    if (!user) throw new HttpException('User not found', 404);
     const wcifPublic = await this.wcaService.getWcif(wcaId, undefined, true);
     assertWcaCompetitionFound(wcifPublic.statusCode);
     // The private WCIF has birthdates and registration status, the public one
@@ -61,7 +63,10 @@ export class SyncService {
     let personsData: PersonSyncData[];
     let removedRegistrantIds: number[] = [];
     if (user.wcaUserId) {
-      const wcif = await this.wcaService.getWcif(wcaId, user.wcaAccessToken);
+      const wcif = await this.wcaService.getWcif(
+        wcaId,
+        user.wcaAccessToken ?? undefined,
+      );
       if (wcif.statusCode === 403) {
         throw new HttpException("You don't have access to that WCIF", 403);
       } else if (wcif.statusCode === 401) {
@@ -70,7 +75,7 @@ export class SyncService {
       personsData = wcif.persons
         .filter(
           (person: Person) =>
-            person.registrantId && person.registration.status === 'accepted',
+            person.registrantId && person.registration?.status === 'accepted',
         )
         .map((person: Person) => ({
           registrantId: person.registrantId,
@@ -107,7 +112,7 @@ export class SyncService {
     }
 
     const currentRooms = await this.prisma.room.findMany();
-    const rooms = [];
+    const rooms: { name: string; color: string }[] = [];
 
     for (const venue of wcifPublic.schedule.venues) {
       for (const room of venue.rooms) {
@@ -181,6 +186,8 @@ export class SyncService {
           assignment.activityId,
           wcifPublic,
         );
+        // An assignment to an activity the schedule doesn't have
+        if (!group) return;
         assignments.push({
           personId,
           groupId: group.activityCode,
@@ -214,10 +221,10 @@ export class SyncService {
     const activitiesToCreate = assignments
       .filter((assignment) => !existingActivities.has(activityKey(assignment)))
       .map((assignment) => ({ ...assignment, isAssigned: true }));
-    const activityIdsToAssign = assignments
-      .map((assignment) => existingActivities.get(activityKey(assignment)))
-      .filter((activity) => activity && !activity.isAssigned)
-      .map((activity) => activity.id);
+    const activityIdsToAssign = assignments.flatMap((assignment) => {
+      const activity = existingActivities.get(activityKey(assignment));
+      return activity && !activity.isAssigned ? [activity.id] : [];
+    });
     // Assignments removed from the WCIF. One nobody showed up for is dropped;
     // one with recorded attendance stays as an unassigned row, like a walk-in
     const wcifActivityKeys = new Set(assignments.map(activityKey));

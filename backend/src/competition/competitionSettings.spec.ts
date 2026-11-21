@@ -1,3 +1,4 @@
+import { unusedDependency } from '../test-utils/unused-dependency';
 import { CompetitionService } from './competition.service';
 
 describe('CompetitionService settings', () => {
@@ -22,13 +23,13 @@ describe('CompetitionService settings', () => {
     };
     const service = new CompetitionService(
       prisma as never,
-      null,
-      null,
-      null,
+      unusedDependency(),
+      unusedDependency(),
+      unusedDependency(),
       {
         hilRunning: () => false,
       } as never,
-      null,
+      unusedDependency(),
     );
 
     const settings = await service.getCompetitionSettings();

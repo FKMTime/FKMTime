@@ -1,5 +1,8 @@
 import { DNF_VALUE, DNS_VALUE } from 'src/constants';
-import { getCountingAttempts } from 'src/result/helpers';
+import {
+  attemptTimeWithPenalty,
+  getCountingAttempts,
+} from 'src/result/helpers';
 import {
   Competition as Wcif,
   getNumberOfAttemptsForRound,
@@ -63,8 +66,7 @@ interface Cutoff {
 const beatsCutoff = (attempt: Attempt, cutoffValue: number) =>
   attempt.penalty !== DNF_VALUE &&
   attempt.penalty !== DNS_VALUE &&
-  attempt.value + (attempt.penalty > 0 ? attempt.penalty * 100 : 0) <
-    cutoffValue;
+  attemptTimeWithPenalty(attempt) < cutoffValue;
 
 /**
  * How many attempts a competitor will end up with: the full format, unless
