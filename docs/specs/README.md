@@ -42,6 +42,10 @@ Update `Status` as the spec moves:
 | `Implemented` | Shipped; the spec now describes how it works   |
 | `Superseded`  | Replaced — link the spec that replaces it      |
 
+The PR that implements a spec sets it to `Implemented`, in the spec and in
+the index below, rather than a follow-up PR. If the work ships across several
+PRs, the last one does.
+
 ## Index
 
 | Id | Title | Status |
@@ -60,4 +64,4 @@ Update `Status` as the spec moves:
 | [SPEC-012](SPEC-012-station-tutorial-mode.md) | Tutorial mode for a station | Implemented |
 | [SPEC-013](SPEC-013-group-delegate-access.md) | Delegate access for one group | Implemented |
 | [SPEC-015](SPEC-015-no-free-delegate-alert.md) | Warning when no delegate is free for a group | Implemented |
-| [SPEC-016](SPEC-016-stage-lead-rooms.md) | Stage leads for one room | Accepted |
+| [SPEC-016](SPEC-016-stage-lead-rooms.md) | Stage leads for one room | Implemented |

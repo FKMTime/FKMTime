@@ -1,6 +1,6 @@
 # SPEC-016: Stage leads for one room
 
-- **Status:** Accepted
+- **Status:** Implemented
 - **Created:** 2026-11-21
 - **Related:** #278, SPEC-004 (attendance tags), SPEC-013 (delegate access for one group)
 
