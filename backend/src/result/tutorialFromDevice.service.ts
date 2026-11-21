@@ -48,7 +48,8 @@ export class TutorialFromDeviceService {
         errorDetails: { key: 'competitionNotFound' },
       };
     }
-    let locale = competition.defaultLocale;
+    const defaultLocale = competition.defaultLocale ?? 'en';
+    let locale = defaultLocale;
     const device = await this.deviceService.getDeviceByEspId(
       data.espId,
       DeviceType.STATION,
@@ -86,7 +87,7 @@ export class TutorialFromDeviceService {
         errorDetails: { key: 'judgeNotFound', cardId: data.judgeId ?? null },
       };
     }
-    locale = getReaderLocale(competitor, judge, competition.defaultLocale);
+    locale = getReaderLocale(competitor, judge, defaultLocale);
     if (judge && judge.id === competitor.id) {
       return {
         message: getTranslation('judgeIsCompetitor', locale),

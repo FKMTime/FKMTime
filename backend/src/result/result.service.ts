@@ -54,7 +54,7 @@ import {
   getSortedExtraAttempts,
   getSortedStandardAttempts,
 } from './helpers';
-import { getStaffingWarnings } from './staffingWarnings';
+import { getStaffingWarnings, StaffingWarning } from './staffingWarnings';
 
 @Injectable()
 export class ResultService {
@@ -218,7 +218,7 @@ export class ResultService {
 
   /** A failed send is logged; the change itself already happened */
   async sendScorecardUnlessNever(resultId: string) {
-    const competition = await this.prisma.competition.findFirst();
+    const competition = await this.prisma.competition.findFirstOrThrow();
     if (competition.sendingResultsFrequency === SendingResultsFrequency.NEVER) {
       return;
     }
@@ -410,7 +410,7 @@ export class ResultService {
     const found = await this.getResultById(resultId);
     // A removed result's times come off the public results
     const result = found.removedAt ? { ...found, attempts: [] } : found;
-    const competition = await this.prisma.competition.findFirst();
+    const competition = await this.prisma.competition.findFirstOrThrow();
     if (isUnofficialEvent(result.eventId)) {
       if (!competition.cubingContestsToken) {
         return {
@@ -442,7 +442,7 @@ export class ResultService {
 
   /** Sends a whole round, the same way as sendResult */
   async sendRound(roundId: string) {
-    const competition = await this.prisma.competition.findFirst();
+    const competition = await this.prisma.competition.findFirstOrThrow();
     const results = await this.getAllResultsByRound(roundId);
     if (isUnofficialEvent(roundId.split('-')[0])) {
       if (!competition.cubingContestsToken) {
@@ -470,7 +470,7 @@ export class ResultService {
       person: { wcaRegistrationId: number | null };
     }[],
   ) {
-    const competition = await this.prisma.competition.findFirst();
+    const competition = await this.prisma.competition.findFirstOrThrow();
     if (getOfficialResultsDestination(competition) !== 'WCA_INTEGRATED_LIVE') {
       return;
     }
@@ -547,7 +547,7 @@ export class ResultService {
         resultId: result.id,
       },
     });
-    const wcif = await this.prisma.competition.findFirst().then((c) => {
+    const wcif = await this.prisma.competition.findFirstOrThrow().then((c) => {
       return JSON.parse(JSON.stringify(c.wcif));
     });
     const eventInfo = wcif.events.find(
@@ -599,7 +599,7 @@ export class ResultService {
   }
 
   async getResultsToDoubleCheckByRoundId(roundId: string) {
-    const competition = await this.prisma.competition.findFirst();
+    const competition = await this.prisma.competition.findFirstOrThrow();
     const wcif = JSON.parse(JSON.stringify(competition.wcif));
     const roundInfo = getRoundInfoFromWcif(roundId, wcif);
     const maxAttempts = getNumberOfAttemptsForRound(roundId, wcif);
@@ -623,15 +623,16 @@ export class ResultService {
         )
       )
         return false;
+      const cutoff = roundInfo?.cutoff;
       const expectedAttempts =
-        roundInfo?.cutoff &&
+        cutoff &&
         !submitted.some(
           (a) =>
             a.penalty !== DNF_VALUE &&
             a.penalty !== DNS_VALUE &&
-            attemptTimeWithPenalty(a) < roundInfo.cutoff.resultValue,
+            attemptTimeWithPenalty(a) < cutoff.resultValue,
         )
-          ? roundInfo.cutoff.numberOfAttempts
+          ? cutoff.numberOfAttempts
           : maxAttempts;
       return submitted.length >= expectedAttempts;
     });
@@ -783,7 +784,7 @@ export class ResultService {
         roundId: roundId,
       };
     }
-    const competition = await this.prisma.competition.findFirst();
+    const competition = await this.prisma.competition.findFirstOrThrow();
     const wcif = JSON.parse(JSON.stringify(competition.wcif));
     const exceededInspection = await this.prisma.attempt.findMany({
       where: {
@@ -813,7 +814,10 @@ export class ResultService {
       },
       include: this.attemptsInclude,
     });
-    const attempts = [];
+    const attempts: ((typeof penalties)[number] & {
+      fastAttemptRatio?: number;
+      staffingWarnings?: StaffingWarning[];
+    })[] = [];
     for (const attempt of exceededInspection) {
       const alreadyChecked = attempts.some((a) => a.id === attempt.id);
       if (!alreadyChecked) {
@@ -854,8 +858,9 @@ export class ResultService {
     >();
     for (const attempt of allValidAttempts) {
       const t = attemptTimeWithPenalty(attempt);
-      if (!byResult.has(attempt.resultId)) byResult.set(attempt.resultId, []);
-      byResult.get(attempt.resultId).push({ attempt, effectiveTime: t });
+      const forResult = byResult.get(attempt.resultId) ?? [];
+      forResult.push({ attempt, effectiveTime: t });
+      byResult.set(attempt.resultId, forResult);
     }
 
     for (const resultAttempts of byResult.values()) {
@@ -929,7 +934,7 @@ export class ResultService {
     const isDone = (attempt: Attempt) =>
       attempt.status === AttemptStatus.STANDARD ||
       attempt.status === AttemptStatus.RESOLVED;
-    const submittedAttempts = [];
+    const submittedAttempts: Attempt[] = [];
     attempts.forEach((attempt) => {
       if (
         attempt.replacedBy === null &&
@@ -1020,8 +1025,9 @@ export class ResultService {
       throw new Error('Competition not found');
     }
     const wcif = JSON.parse(JSON.stringify(competition.wcif));
-    const roundInfo = getRoundInfoFromWcif(result.roundId, wcif);
-    if (!roundInfo.timeLimit.cumulativeRoundIds.length) {
+    // A round with no time limit (multi-blind's is null) or no cumulative one
+    const timeLimit = getRoundInfoFromWcif(result.roundId, wcif)?.timeLimit;
+    if (!timeLimit?.cumulativeRoundIds.length) {
       return {
         remaining: null,
         used: null,
@@ -1029,14 +1035,14 @@ export class ResultService {
     }
     const { personId, roundId } = result;
     const roundsIds =
-      roundInfo.timeLimit.cumulativeRoundIds.length > 1
-        ? roundInfo.timeLimit.cumulativeRoundIds
+      timeLimit.cumulativeRoundIds.length > 1
+        ? timeLimit.cumulativeRoundIds
         : [roundId];
     const used = await this.getCumulativeSumForMultipleRounds(
       personId,
       roundsIds,
     );
-    const limit = roundInfo.timeLimit.centiseconds;
+    const limit = timeLimit.centiseconds;
     return {
       used,
       remaining: Math.max(0, limit - used),
@@ -1139,6 +1145,9 @@ export class ResultService {
     const wcif = JSON.parse(JSON.stringify(competition.wcif));
     const currentRoundId = roundId.split('-g')[0];
     const roundInfo = getRoundInfoFromWcif(currentRoundId, wcif);
+    if (!roundInfo) {
+      throw new HttpException('Round not found', 404);
+    }
 
     let attemptNumber = 1;
     const maxAttempts = getMaxAttempts(roundInfo.format);

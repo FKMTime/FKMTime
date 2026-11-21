@@ -91,7 +91,9 @@ export function getStaffingWarnings(
       if (!personId || !time || personId === staffed.result.personId) continue;
       for (const competed of competingAttempts.get(key(personId, groupId)) ??
         []) {
-        if (time.getTime() >= competed.solvedAt.getTime()) continue;
+        // Only solved attempts were collected above
+        if (!competed.solvedAt || time.getTime() >= competed.solvedAt.getTime())
+          continue;
         const existing = warnings.get(competed.id) ?? [];
         existing.push({
           role,

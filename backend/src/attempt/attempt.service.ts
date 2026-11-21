@@ -220,7 +220,7 @@ export class AttemptService {
       updated,
     );
     const extraNumbers = replaced
-      .map((attempt) => attempt.replacedBy)
+      .flatMap((attempt) => attempt.replacedBy ?? [])
       .sort((a, b) => a - b);
     for (const [index, attempt] of replaced.entries()) {
       if (attempt.replacedBy !== extraNumbers[index]) {
@@ -324,17 +324,14 @@ export class AttemptService {
     );
     await this.resultService.settleWaitingExtras(attempt.resultId);
 
-    const result = await this.prisma.result.findUnique({
-      where: { id: attempt.resultId },
-    });
-    await this.resultService.sendResult(result.id);
+    await this.resultService.sendResult(attempt.resultId);
     this.appGateway.handleAttemptUpdated();
     return { message: 'Replacement updated successfully' };
   }
 
   async giveExtras(data: GiveExtrasDto, userId: string) {
     const result = await this.getResultForExtras(data.resultId);
-    const competition = await this.prisma.competition.findFirst();
+    const competition = await this.prisma.competition.findFirstOrThrow();
     const wcif = JSON.parse(JSON.stringify(competition.wcif));
     if (isH2hRound(result.roundId, wcif)) {
       throw new HttpException(
@@ -399,6 +396,16 @@ export class AttemptService {
       throw new HttpException('Only the latest grant can be restored', 409);
     }
 
+    // Giving the extras recorded what each attempt was before
+    const toRestore = grant.attempts.map((attempt) => {
+      if (!attempt.statusBeforeGrant) {
+        throw new HttpException(
+          `Attempt ${attempt.id} has no status from before the grant`,
+          500,
+        );
+      }
+      return { ...attempt, statusBeforeGrant: attempt.statusBeforeGrant };
+    });
     const restored = await this.prisma.$transaction(async (tx) => {
       await tx.extraGrant.update({
         where: { id: grant.id },
@@ -409,7 +416,7 @@ export class AttemptService {
         data: this.doubleCheckCleared,
       });
       return Promise.all(
-        grant.attempts.map((attempt) =>
+        toRestore.map((attempt) =>
           tx.attempt.update({
             where: { id: attempt.id },
             data: {
@@ -426,7 +433,7 @@ export class AttemptService {
     });
     await this.logAll(restored, userId, 'Original attempt restored');
 
-    const competition = await this.prisma.competition.findFirst();
+    const competition = await this.prisma.competition.findFirstOrThrow();
     await this.sendScorecardUnlessNever(grant.resultId, competition);
     this.appGateway.handleAttemptUpdated();
     return { restored: restored.length };
@@ -444,6 +451,16 @@ export class AttemptService {
       throw new HttpException('These extras are already in use', 409);
     }
 
+    // Restoring the grant recorded what each attempt was in it
+    const toReapply = grant.attempts.map((attempt) => {
+      if (!attempt.statusInGrant) {
+        throw new HttpException(
+          `Attempt ${attempt.id} has no status from the grant`,
+          500,
+        );
+      }
+      return { ...attempt, statusInGrant: attempt.statusInGrant };
+    });
     const reapplied = await this.prisma.$transaction(async (tx) => {
       await tx.extraGrant.update({
         where: { id: grant.id },
@@ -454,7 +471,7 @@ export class AttemptService {
         data: this.doubleCheckCleared,
       });
       return Promise.all(
-        grant.attempts.map((attempt) =>
+        toReapply.map((attempt) =>
           tx.attempt.update({
             where: { id: attempt.id },
             data: {
@@ -471,7 +488,7 @@ export class AttemptService {
     await this.logAll(reapplied, userId, 'Extras in use again');
     await this.resultService.settleWaitingExtras(grant.resultId);
 
-    const competition = await this.prisma.competition.findFirst();
+    const competition = await this.prisma.competition.findFirstOrThrow();
     await this.sendScorecardUnlessNever(grant.resultId, competition);
     this.appGateway.handleAttemptUpdated();
     return { reapplied: reapplied.length };
@@ -502,7 +519,7 @@ export class AttemptService {
     const results = await Promise.all(
       resultIds.map((id) => this.getResultForExtras(id)),
     );
-    const competition = await this.prisma.competition.findFirst();
+    const competition = await this.prisma.competition.findFirstOrThrow();
     const wcif = JSON.parse(JSON.stringify(competition.wcif));
     if (results.some((result) => isH2hRound(result.roundId, wcif))) {
       throw new HttpException(
@@ -564,33 +581,38 @@ export class AttemptService {
         ),
       );
       const solvedAt = new Date();
-      const created = await Promise.all(
-        remaining.numbers.map((attemptNumber) =>
-          tx.attempt.create({
+      const created = remainingResult
+        ? await Promise.all(
+            remaining.numbers.map((attemptNumber) =>
+              tx.attempt.create({
+                data: {
+                  attemptNumber,
+                  type: AttemptType.STANDARD_ATTEMPT,
+                  status: AttemptStatus.STANDARD,
+                  penalty: DNF_VALUE,
+                  value: 0,
+                  solvedAt,
+                  comment: data.comment,
+                  result: { connect: { id: remainingResult.id } },
+                  updatedBy: { connect: { id: userId } },
+                },
+              }),
+            ),
+          )
+        : [];
+      // Later rounds are found from a trigger, so there are none without one
+      if (trigger) {
+        for (const later of laterResults) {
+          await tx.result.update({
+            where: { id: later.id },
             data: {
-              attemptNumber,
-              type: AttemptType.STANDARD_ATTEMPT,
-              status: AttemptStatus.STANDARD,
-              penalty: DNF_VALUE,
-              value: 0,
-              solvedAt,
-              comment: data.comment,
-              result: { connect: { id: remainingResult.id } },
-              updatedBy: { connect: { id: userId } },
+              removedAt: new Date(),
+              removedBy: { connect: { id: userId } },
+              removedReason: data.comment,
+              removedByRulingOf: { connect: { id: trigger.id } },
             },
-          }),
-        ),
-      );
-      for (const later of laterResults) {
-        await tx.result.update({
-          where: { id: later.id },
-          data: {
-            removedAt: new Date(),
-            removedBy: { connect: { id: userId } },
-            removedReason: data.comment,
-            removedByRulingOf: { connect: { id: trigger.id } },
-          },
-        });
+          });
+        }
       }
       return { updated: changed, added: created };
     });
@@ -601,7 +623,9 @@ export class AttemptService {
     for (const resultId of [...resultIds, ...laterResults.map((r) => r.id)]) {
       await this.sendScorecardUnlessNever(resultId, competition);
     }
-    for (const result of [remainingResult, ...laterResults].filter(Boolean)) {
+    for (const result of [remainingResult, ...laterResults].filter(
+      (found) => found !== undefined,
+    )) {
       this.appGateway.handleResultEntered(result.roundId);
     }
     this.appGateway.handleAttemptUpdated();
@@ -809,7 +833,7 @@ export class AttemptService {
     });
     await this.logAll(restored, userId, DNF_RULING_UNDONE);
 
-    const competition = await this.prisma.competition.findFirst();
+    const competition = await this.prisma.competition.findFirstOrThrow();
     for (const id of [resultId, ...removedResults.map((r) => r.id)]) {
       await this.sendScorecardUnlessNever(id, competition);
     }
@@ -831,7 +855,7 @@ export class AttemptService {
       where: { id: resultId },
     });
     if (!result) throw new HttpException('Result not found', 404);
-    const competition = await this.prisma.competition.findFirst();
+    const competition = await this.prisma.competition.findFirstOrThrow();
     const wcif = JSON.parse(JSON.stringify(competition.wcif));
     const rooms = await this.prisma.room.findMany();
     const hasNextGroup = rooms.some((room) =>
@@ -934,6 +958,9 @@ export class AttemptService {
     const secondAttempt = await this.prisma.attempt.findUnique({
       where: { id: secondAttemptId },
     });
+    if (!firstAttempt || !secondAttempt) {
+      throw new HttpException('Attempt not found', 404);
+    }
 
     const updatedFirst = await this.prisma.attempt.update({
       where: { id: attemptId },
@@ -1007,12 +1034,13 @@ export class AttemptService {
       );
     }
 
-    if (data.status !== AttemptStatus.EXTRA_GIVEN || data.replacedBy === 0) {
-      data.replacedBy = null;
-    }
+    const replacedBy =
+      data.status !== AttemptStatus.EXTRA_GIVEN || data.replacedBy === 0
+        ? null
+        : data.replacedBy;
     const dataToUpdate = {
       attemptNumber: data.attemptNumber,
-      replacedBy: data.replacedBy,
+      replacedBy,
       penalty: data.penalty,
       status: data.status,
       type: data.type,

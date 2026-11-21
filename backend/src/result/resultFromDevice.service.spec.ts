@@ -8,6 +8,8 @@ import {
   AttemptStatus,
   AttemptType,
 } from '../generated/prisma/client';
+import { found } from '../test-utils/found';
+import { unusedDependency } from '../test-utils/unused-dependency';
 import { ResultService } from './result.service';
 import { ResultFromDeviceService } from './resultFromDevice.service';
 import { TutorialFromDeviceService } from './tutorialFromDevice.service';
@@ -42,13 +44,13 @@ describe('ResultFromDeviceService cutoff check', () => {
   beforeEach(() => {
     resultService = { getSubmittedAttempts: jest.fn() };
     service = new ResultFromDeviceService(
-      null,
-      null,
-      null,
-      null,
-      null,
+      unusedDependency(),
+      unusedDependency(),
+      unusedDependency(),
+      unusedDependency(),
+      unusedDependency(),
       resultService as unknown as ResultService,
-      null,
+      unusedDependency(),
       competitionStub,
       notTutorial,
     );
@@ -103,23 +105,23 @@ describe('ResultFromDeviceService with a resolved attempt', () => {
         { ...resolved('s3', 3, 9000), status: AttemptStatus.UNRESOLVED },
       ]);
     service = new ResultFromDeviceService(
-      null,
-      null,
-      null,
-      null,
-      null,
+      unusedDependency(),
+      unusedDependency(),
+      unusedDependency(),
+      unusedDependency(),
+      unusedDependency(),
       new ResultService(
         { attempt: { findMany } } as unknown as DbService,
-        null,
-        null,
-        null,
-        null,
-        null,
-        null,
-        null,
+        unusedDependency(),
+        unusedDependency(),
+        unusedDependency(),
+        unusedDependency(),
+        unusedDependency(),
+        unusedDependency(),
+        unusedDependency(),
         competitionStub,
       ),
-      null,
+      unusedDependency(),
       competitionStub,
       notTutorial,
     );
@@ -222,7 +224,7 @@ describe('ResultFromDeviceService when the time limit runs out on an extra', () 
           return created;
         }),
         update: jest.fn().mockImplementation(async ({ where, data }) => {
-          const updated = attempts.find((a) => a.id === where.id);
+          const updated = found(attempts.find((a) => a.id === where.id));
           Object.assign(updated, data);
           return updated;
         }),
@@ -231,11 +233,11 @@ describe('ResultFromDeviceService when the time limit runs out on an extra', () 
     tx = { db: prisma, afterCommit: (effect) => effect() } as unknown as Tx;
     service = new ResultFromDeviceService(
       prisma as unknown as DbService,
-      null,
-      null,
-      null,
-      null,
-      null,
+      unusedDependency(),
+      unusedDependency(),
+      unusedDependency(),
+      unusedDependency(),
+      unusedDependency(),
       { log: jest.fn() } as unknown as AttemptEditLogService,
       competitionStub,
       notTutorial,
@@ -249,8 +251,8 @@ describe('ResultFromDeviceService when the time limit runs out on an extra', () 
       (a) => a.type === AttemptType.EXTRA_ATTEMPT && a.penalty === DNS_VALUE,
     );
     expect(extras.map((a) => a.attemptNumber)).toEqual([2, 3]);
-    expect(attempts.find((a) => a.id === 's2').replacedBy).toBe(2);
-    expect(attempts.find((a) => a.id === 's3').replacedBy).toBe(3);
+    expect(found(attempts.find((a) => a.id === 's2')).replacedBy).toBe(2);
+    expect(found(attempts.find((a) => a.id === 's3')).replacedBy).toBe(3);
   });
 
   it('then fills the remaining standard attempts with DNS', async () => {
@@ -272,13 +274,13 @@ describe('ResultFromDeviceService tutorial solves (SPEC-012)', () => {
     };
     // No database at all: any write would throw
     const service = new ResultFromDeviceService(
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
+      unusedDependency(),
+      unusedDependency(),
+      unusedDependency(),
+      unusedDependency(),
+      unusedDependency(),
+      unusedDependency(),
+      unusedDependency(),
       competitionStub,
       tutorialFromDevice as unknown as TutorialFromDeviceService,
     );

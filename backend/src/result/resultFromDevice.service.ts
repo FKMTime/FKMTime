@@ -110,11 +110,13 @@ export class ResultFromDeviceService {
         errorDetails: { key: 'competitionNotFound' },
       };
     }
+    // Translations fall back to English for a missing locale, too
+    const defaultLocale = competition.defaultLocale ?? 'en';
 
     const device = await this.getStationByEspId(data.espId);
     if (!device) {
       return {
-        message: getTranslation('stationNotFound', competition.defaultLocale),
+        message: getTranslation('stationNotFound', defaultLocale),
         shouldResetTime: false,
         status: 404,
         error: true,
@@ -124,7 +126,7 @@ export class ResultFromDeviceService {
     const stationRoundIds = getStationRoundIds(device);
     if (stationRoundIds.length === 0) {
       return {
-        message: getTranslation('noGroups', competition.defaultLocale),
+        message: getTranslation('noGroups', defaultLocale),
         status: 400,
         shouldResetTime: false,
         error: true,
@@ -154,7 +156,7 @@ export class ResultFromDeviceService {
         return {
           message: getTranslation(
             'stationRoundChanged',
-            getReaderLocale(competitor, judge, competition.defaultLocale),
+            getReaderLocale(competitor, judge, defaultLocale),
           ),
           shouldResetTime: false,
           status: 409,
@@ -169,7 +171,7 @@ export class ResultFromDeviceService {
       roundId = stationRoundIds[0];
     } else {
       return {
-        message: getTranslation('groupNotFound', competition.defaultLocale),
+        message: getTranslation('groupNotFound', defaultLocale),
         shouldResetTime: false,
         status: 400,
         error: true,
@@ -181,7 +183,7 @@ export class ResultFromDeviceService {
       data.competitorId.toString(),
     );
     // The competition language until a judge card tells us who is reading
-    let locale = competition.defaultLocale;
+    let locale = defaultLocale;
     if (!competitor) {
       return {
         message: getTranslation('competitorNotFound', locale),
@@ -303,7 +305,7 @@ export class ResultFromDeviceService {
           tx,
         );
       }
-      locale = getReaderLocale(competitor, judge, competition.defaultLocale);
+      locale = getReaderLocale(competitor, judge, defaultLocale);
     }
 
     const currentRoundId = roundId;
@@ -322,7 +324,21 @@ export class ResultFromDeviceService {
       };
     }
     const roundInfo = getRoundInfoFromWcif(currentRoundId, wcif);
-    const competitorWcifInfo = getPersonFromWcif(competitor.registrantId, wcif);
+    // The station's round was taken out of the WCIF since it was assigned
+    if (!roundInfo) {
+      return {
+        message: getTranslation('groupNotFound', locale),
+        shouldResetTime: false,
+        status: 400,
+        error: true,
+        errorDetails: { key: 'groupNotFound' },
+      };
+    }
+    // Someone added on site has no registrant id, so no WCIF entry either
+    const competitorWcifInfo =
+      competitor.registrantId === null
+        ? undefined
+        : getPersonFromWcif(competitor.registrantId, wcif);
     const competitorSignedInForEvent = isCompetitorSignedInForEvent(
       competitorWcifInfo,
       currentRoundId.split('-')[0],

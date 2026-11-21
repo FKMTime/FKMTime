@@ -1,6 +1,4 @@
 prisma/seed/seed-test.ts
-src/attempt/attempt.service.spec.ts
-src/attempt/attempt.service.ts
 src/attendance/attendance.service.ts
 src/auth/auth.service.ts
 src/competition/competition.service.ts
@@ -22,8 +20,6 @@ src/device/device.service.ts
 src/h2h/bracket.ts
 src/h2h/ranking.ts
 src/h2h/scramblePlan.ts
-src/incident/incident.controller.ts
-src/incident/incident.service.ts
 src/integrated-live/integratedLive.service.spec.ts
 src/integrated-live/integratedLive.service.ts
 src/integrated-live/integratedLiveRounds.service.spec.ts
@@ -34,14 +30,6 @@ src/person/person.service.spec.ts
 src/person/person.service.ts
 src/person/personForDevice.service.spec.ts
 src/person/personForDevice.service.ts
-src/result/helpers.spec.ts
-src/result/helpers.ts
-src/result/result.service.spec.ts
-src/result/result.service.ts
-src/result/resultFromDevice.service.spec.ts
-src/result/resultFromDevice.service.ts
-src/result/staffingWarnings.ts
-src/result/tutorialFromDevice.service.ts
 src/scrambling/scrambling.service.ts
 src/secret-box.ts
 src/socket/socket.service.spec.ts

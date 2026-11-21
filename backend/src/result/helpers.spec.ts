@@ -350,7 +350,11 @@ describe('getAttemptPosition', () => {
 });
 
 describe('isRedoNotStarted', () => {
-  const granted = (id: string, attemptNumber: number, replacedBy = null) =>
+  const granted = (
+    id: string,
+    attemptNumber: number,
+    replacedBy: number | null = null,
+  ) =>
     attempt({
       id,
       attemptNumber,
