@@ -1,6 +1,6 @@
 # SPEC-016: Stage leads for one room
 
-- **Status:** Draft
+- **Status:** Accepted
 - **Created:** 2026-11-21
 - **Related:** #278, SPEC-004 (attendance tags), SPEC-013 (delegate access for one group)
 
@@ -222,8 +222,3 @@ A stage lead with no rooms sees everything, as today.
   rooms field. The table can stay until a later change removes it.
 - User docs: a line on the Users page doc and the Attendance doc.
 
-## Open questions
-
-- **No rooms means all rooms.** Proposed, for a painless upgrade. Alternative:
-  no rooms means no attendance, forcing organizers to assign rooms before the
-  next competition.
