@@ -1,3 +1,4 @@
+import { unusedDependency } from '../test-utils/unused-dependency';
 import { CompetitionService } from './competition.service';
 
 describe('CompetitionService following the WCA scoretaking software', () => {
@@ -42,7 +43,7 @@ describe('CompetitionService following the WCA scoretaking software', () => {
       resultService as never,
       wcaService as never,
       {} as never,
-      null,
+      unusedDependency(),
     );
     return { service, prisma, appGateway, resultService };
   };

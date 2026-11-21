@@ -7,7 +7,11 @@ import { wcifRoleToAttendanceRole } from 'src/wcif-helpers';
 import { Assignment, Person } from 'wcif-helpers';
 import { getGroupInfoByActivityId } from 'wcif-helpers';
 
-import { Role, SendingResultsFrequency } from '../generated/prisma/client';
+import {
+  Prisma,
+  Role,
+  SendingResultsFrequency,
+} from '../generated/prisma/client';
 
 export class ImportService {
   constructor(
@@ -28,6 +32,8 @@ export class ImportService {
         id: userId,
       },
     });
+    // The signed-in account was removed since its token was issued
+    if (!user) throw new HttpException('User not found', 404);
     const wcifPublic = await this.wcaService.getWcif(wcaId, undefined, true);
     assertWcaCompetitionFound(wcifPublic.statusCode);
     // The private WCIF needs a WCA token; an FKMTime account without one
@@ -50,7 +56,10 @@ export class ImportService {
       );
     }
     if (user.wcaAccessToken) {
-      if (ADMIN_WCA_USER_IDS.includes(user.wcaUserId)) {
+      if (
+        user.wcaUserId !== null &&
+        ADMIN_WCA_USER_IDS.includes(user.wcaUserId)
+      ) {
         roles = [...user.roles, Role.ADMIN];
       } else {
         roles = [];
@@ -118,7 +127,8 @@ export class ImportService {
     await this.prisma.person.createMany({
       data: wcif.persons
         .filter(
-          (p: Person) => p.registrantId && p.registration.status === 'accepted',
+          (p: Person) =>
+            p.registrantId && p.registration?.status === 'accepted',
         )
         .map((person: Person) => ({
           wcaId: person.wcaId,
@@ -133,7 +143,7 @@ export class ImportService {
             : person.birthdate && new Date(person.birthdate),
         })),
     });
-    const rooms = [];
+    const rooms: { name: string; color: string }[] = [];
 
     for (const venue of wcifPublic.schedule.venues) {
       for (const room of venue.rooms) {
@@ -144,18 +154,22 @@ export class ImportService {
       }
     }
     const persons = await this.prisma.person.findMany();
-    const staffActivities = [];
+    const staffActivities: Prisma.StaffActivityCreateManyInput[] = [];
     wcifPublic.persons
       .filter((p) => p.registration && p.registration.status === 'accepted')
       .forEach((person: Person) => {
         const personFromDb = persons.find(
           (p) => p.registrantId === person.registrantId,
         );
+        // Not imported above (no registrant id), so nobody to assign
+        if (!personFromDb) return;
         person.assignments.forEach((assignment: Assignment) => {
           const group = getGroupInfoByActivityId(
             assignment.activityId,
             wcifPublic,
           );
+          // An assignment to an activity the schedule doesn't have
+          if (!group) return;
           staffActivities.push({
             personId: personFromDb.id,
             role: wcifRoleToAttendanceRole(assignment.assignmentCode),

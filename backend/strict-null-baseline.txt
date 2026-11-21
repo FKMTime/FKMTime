@@ -1,18 +1,6 @@
 prisma/seed/seed-test.ts
 src/attendance/attendance.service.ts
 src/auth/auth.service.ts
-src/competition/competition.service.ts
-src/competition/competitionSettings.spec.ts
-src/competition/groupChange.spec.ts
-src/competition/groupChange.ts
-src/competition/groupProgress.ts
-src/competition/import.service.ts
-src/competition/integratedLiveConnection.service.spec.ts
-src/competition/rooms.service.ts
-src/competition/scoretakers.service.ts
-src/competition/scoretakingSoftware.spec.ts
-src/competition/statistics.service.ts
-src/competition/sync.service.ts
 src/contests/contests.service.ts
 src/delegate-grant/delegateGrant.service.spec.ts
 src/delegate-grant/delegateGrant.service.ts
@@ -37,7 +25,6 @@ src/socket/socket.service.ts
 src/translations/translations.spec.ts
 src/user/user.service.spec.ts
 src/wca/wca.service.ts
-src/wcif-helpers.ts
 test/apply-schema.e2e-spec.ts
 test/attempt-lifecycle.e2e-spec.ts
 test/attempt.e2e-spec.ts

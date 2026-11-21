@@ -1,36 +1,62 @@
 import {
   Activity,
   Competition,
-  Event,
+  getActivityInfoFromSchedule,
   getActivityInfoFromScheduleWithRoom,
   getEventInfoFromWcif,
-  Round,
 } from 'wcif-helpers';
 
 import { roundFormatMap } from './constants';
+import { StaffRole } from './generated/prisma/client';
 
-export const wcifRoleToAttendanceRole = (role: string) => {
+/**
+ * An activity of the schedule by its code, in any room, or null.
+ * wcif-helpers declares getActivityInfoFromSchedule as returning only null;
+ * it returns the activity.
+ */
+export const getScheduleActivity = getActivityInfoFromSchedule as (
+  activityCode: string,
+  wcif: Competition,
+) => Activity | null;
+
+/**
+ * A round's activity in one room of the schedule, or null. wcif-helpers
+ * declares getActivityInfoFromScheduleWithRoom as returning only null; it
+ * returns the activity.
+ */
+export const getRoundActivityInRoom = getActivityInfoFromScheduleWithRoom as (
+  roundId: string,
+  roomName: string,
+  wcif: Competition,
+) => Activity | null;
+
+export const wcifRoleToAttendanceRole = (role: string): StaffRole => {
   switch (role) {
     case 'staff-judge':
-      return 'JUDGE';
+      return StaffRole.JUDGE;
     case 'staff-runner':
-      return 'RUNNER';
+      return StaffRole.RUNNER;
     case 'staff-scrambler':
-      return 'SCRAMBLER';
+      return StaffRole.SCRAMBLER;
     case 'staff-delegate':
-      return 'DELEGATE';
+      return StaffRole.DELEGATE;
     case 'competitor':
-      return 'COMPETITOR';
+      return StaffRole.COMPETITOR;
     default:
-      return 'STAFF_OTHER';
+      return StaffRole.STAFF_OTHER;
   }
 };
 
+/**
+ * Whether the round's time limit is cumulative. A round without a time limit
+ * (multi-blind's is null) or missing from the WCIF has none.
+ */
 export const isCumulativeLimit = (roundId: string, wcif: Competition) => {
   const eventId = roundId.split('-')[0];
-  const event: Event = getEventInfoFromWcif(eventId, wcif);
-  const round: Round = event.rounds.find((r) => r.id === roundId);
-  return round.timeLimit.cumulativeRoundIds.length > 0;
+  const round = getEventInfoFromWcif(eventId, wcif)?.rounds.find(
+    (r) => r.id === roundId,
+  );
+  return (round?.timeLimit?.cumulativeRoundIds.length ?? 0) > 0;
 };
 
 /** The group after this one in the round, in this room, if there is one */
@@ -39,11 +65,7 @@ export const getNextGroupInRoom = (
   roomName: string,
   wcif: Competition,
 ): Activity | null => {
-  const round: Activity = getActivityInfoFromScheduleWithRoom(
-    groupId.split('-g')[0],
-    roomName,
-    wcif,
-  );
+  const round = getRoundActivityInRoom(groupId.split('-g')[0], roomName, wcif);
   if (!round) return null;
   const groups = [...round.childActivities].sort(
     (a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime(),

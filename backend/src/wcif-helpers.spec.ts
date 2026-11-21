@@ -1,6 +1,6 @@
 import { Competition } from 'wcif-helpers';
 
-import { getFirstGroupInRoom } from './wcif-helpers';
+import { getFirstGroupInRoom, isCumulativeLimit } from './wcif-helpers';
 
 describe('getFirstGroupInRoom', () => {
   const group = (activityCode: string, startTime: string) => ({
@@ -85,5 +85,46 @@ describe('getFirstGroupInRoom', () => {
   it('finds nothing in a room without rounds', () => {
     expect(getFirstGroupInRoom('Only breaks', wcif)).toBeNull();
     expect(getFirstGroupInRoom('Unknown', wcif)).toBeNull();
+  });
+});
+
+describe('isCumulativeLimit', () => {
+  const wcif = (rounds: object[]) =>
+    ({ events: [{ id: '333mbf', rounds }] }) as unknown as Competition;
+  const timeLimit = (cumulativeRoundIds: string[]) => ({
+    centiseconds: 360000,
+    cumulativeRoundIds,
+  });
+
+  it('is cumulative when the limit is shared with rounds', () => {
+    expect(
+      isCumulativeLimit(
+        '333mbf-r1',
+        wcif([{ id: '333mbf-r1', timeLimit: timeLimit(['333mbf-r1']) }]),
+      ),
+    ).toBe(true);
+  });
+
+  it('is not when the limit is per attempt', () => {
+    expect(
+      isCumulativeLimit(
+        '333mbf-r1',
+        wcif([{ id: '333mbf-r1', timeLimit: timeLimit([]) }]),
+      ),
+    ).toBe(false);
+  });
+
+  // Multi-blind has no time limit in the WCIF: its timeLimit is null
+  it('is not for a round without a time limit', () => {
+    expect(
+      isCumulativeLimit(
+        '333mbf-r1',
+        wcif([{ id: '333mbf-r1', timeLimit: null }]),
+      ),
+    ).toBe(false);
+  });
+
+  it('is not for a round the WCIF does not have', () => {
+    expect(isCumulativeLimit('333mbf-r2', wcif([]))).toBe(false);
   });
 });

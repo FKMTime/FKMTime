@@ -143,7 +143,7 @@ export class ScoretakersService {
    * the connected person manages it, otherwise the user's own WCA sign-in
    */
   private async managingToken(userId: string): Promise<string | null> {
-    const competition = await this.prisma.competition.findFirst();
+    const competition = await this.prisma.competition.findFirstOrThrow();
     const connectionToken = await this.connection.getAccessToken();
     if (
       connectionToken &&
@@ -168,7 +168,7 @@ export class ScoretakersService {
     method: 'GET' | 'POST' | 'DELETE',
     body?: unknown,
   ): Promise<Response | null> {
-    const competition = await this.prisma.competition.findFirst();
+    const competition = await this.prisma.competition.findFirstOrThrow();
     return fetch(
       `${process.env.WCA_ORIGIN}/api/v1/competitions/${competition.wcaId}/scoretakers${path}`,
       {

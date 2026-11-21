@@ -2,9 +2,9 @@ import { forwardRef, Inject } from '@nestjs/common';
 import { DNS_VALUE } from 'src/constants';
 import { DbService } from 'src/db/db.service';
 import { getEventShortName } from 'src/events';
-import { isSameDay } from 'src/wcif-helpers';
+import { getScheduleActivity, isSameDay } from 'src/wcif-helpers';
 import { Activity, Room as WCIFRoom, Venue } from 'wcif-helpers';
-import { getActivityInfoFromSchedule, getCompetitionDates } from 'wcif-helpers';
+import { getCompetitionDates } from 'wcif-helpers';
 
 import { AttemptStatus, DeviceType } from '../generated/prisma/client';
 import { getRoundAttemptStats } from './roundAttemptStats';
@@ -18,7 +18,7 @@ export class StatisticsService {
   ) {}
 
   async getCompetitionStatistics() {
-    const competition = await this.prisma.competition.findFirst();
+    const competition = await this.prisma.competition.findFirstOrThrow();
     const wcif = JSON.parse(JSON.stringify(competition.wcif));
     const allAttempts = await this.prisma.attempt.count({
       where: {
@@ -52,10 +52,13 @@ export class StatisticsService {
     });
     const scramblerRanking = await Promise.all(
       scramblerGroups.map(async (g) => {
-        const person = await this.prisma.person.findUnique({
-          where: { id: g.scramblerId },
-          select: { name: true },
-        });
+        // Grouped only where there is a scrambler
+        const person = g.scramblerId
+          ? await this.prisma.person.findUnique({
+              where: { id: g.scramblerId },
+              select: { name: true },
+            })
+          : null;
         return { personName: person?.name ?? 'Unknown', count: g._count._all };
       }),
     );
@@ -67,10 +70,13 @@ export class StatisticsService {
     });
     const judgeRanking = await Promise.all(
       judgeGroups.map(async (g) => {
-        const person = await this.prisma.person.findUnique({
-          where: { id: g.judgeId },
-          select: { name: true },
-        });
+        // Grouped only where there is a judge
+        const person = g.judgeId
+          ? await this.prisma.person.findUnique({
+              where: { id: g.judgeId },
+              select: { name: true },
+            })
+          : null;
         const judgedAttempts = await this.prisma.attempt.findMany({
           where: { judgeId: g.judgeId },
           select: {
@@ -149,8 +155,23 @@ export class StatisticsService {
         _all: true,
       },
     });
-    const byEventStats = [];
-    const byRoundStats = [];
+    const byEventStats: {
+      eventId: string;
+      eventName: string | undefined;
+      dnf: number;
+      attempts: number;
+      incidents: number;
+    }[] = [];
+    type RoundDelay = {
+      roundId: string;
+      roundName: string;
+      delayInMinutes: string;
+    };
+    const byRoundStats: {
+      id: number;
+      date: Date;
+      roundsStatistics: RoundDelay[];
+    }[] = [];
     for (const eventId of eventIds) {
       const dnf = await this.prisma.attempt.count({
         where: {
@@ -193,7 +214,7 @@ export class StatisticsService {
       });
     }
     for (const day of days) {
-      const activities = [];
+      const activities: Activity[] = [];
       wcif.schedule.venues.forEach((venue: Venue) => {
         venue.rooms.forEach((room: WCIFRoom) => {
           room.activities.forEach((activity: Activity) => {
@@ -208,7 +229,7 @@ export class StatisticsService {
           new Date(a.startTime).getTime() - new Date(b.startTime).getTime()
         );
       });
-      const roundsForDay = [];
+      const roundsForDay: RoundDelay[] = [];
       for (const round of activities) {
         const firstResult = await this.prisma.attempt.findFirst({
           where: {
@@ -220,11 +241,12 @@ export class StatisticsService {
             solvedAt: 'asc',
           },
         });
-        const activityFromSchedule: Activity = getActivityInfoFromSchedule(
+        const activityFromSchedule = getScheduleActivity(
           round.activityCode,
           wcif,
         );
-        if (!firstResult || !activityFromSchedule) {
+        // An attempt entered by hand has no solve time to measure from
+        if (!firstResult?.solvedAt || !activityFromSchedule) {
           continue;
         }
         const startTime = new Date(activityFromSchedule.startTime);
@@ -255,7 +277,7 @@ export class StatisticsService {
             solvedAt: 'desc',
           },
         });
-        if (lastResult) {
+        if (lastResult?.solvedAt) {
           const endTime = new Date(activityFromSchedule.endTime);
           const delayEnd =
             new Date(lastResult.solvedAt).getTime() - endTime.getTime();
