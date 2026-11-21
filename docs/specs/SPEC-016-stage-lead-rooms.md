@@ -35,6 +35,8 @@ refreshes after their own changes.
 
 - An organizer assigns a stage lead to one or more rooms.
 - A stage lead reads and changes attendance only for groups in their rooms.
+  The competition-wide reports (statistics, most missed assignments) stay
+  open to them: they change nothing.
   The server enforces it; the panel shows only those groups.
 - A stage lead's Attendance page updates live, like an organizer's.
 - Organizers, delegates and admins keep attendance for the whole competition,
@@ -112,10 +114,10 @@ endpoint. Each endpoint then checks scope:
 | `GET /attendance/group/:groupId` | `groupId` in scope |
 | `POST /attendance/unassigned/:groupId` | `groupId` in scope |
 | `POST present/:id`, `absent/:id`, `late/:id`, `replaced/:id`, `PUT left-early/:id`, `restore/:id`, `comment/:id` | the activity's `groupId` in scope, looked up before the change |
-| `POST /attendance/no-show` | every id in `groupIds` in scope, otherwise 403 (see Open questions) |
+| `POST /attendance/no-show` | at least one id in `groupIds` in scope; then applies to all of them (below) |
 | `GET /attendance/round/:roundId/staffing` | at least one group of the round in scope |
 | `GET /attendance/person/:id` | stage leads get only the activities in scope |
-| `GET /attendance/statistics`, `GET /attendance/missed` | competition-wide reports; stage leads with rooms get 403 (see Open questions) |
+| `GET /attendance/statistics`, `GET /attendance/missed` | none: competition-wide reports, read-only, open to every stage lead as today |
 
 New endpoint `GET /attendance/scope` returns the caller's scope with room ids
 and names, for the panel to filter by. It is a separate call rather than a
@@ -153,8 +155,8 @@ Main Hall" or "Stage leader · All rooms".
 - **Home.** "Attendance" shows only on their rooms' cards.
 - **Schedule.** The attendance link shows only on groups in scope.
 - **Person page.** Attendance rows show only groups in scope.
-- **Nav.** "Attendance statistics" and "Most missed assignments" tabs are
-  hidden (they return 403).
+- **Reports.** "Attendance statistics" and "Most missed assignments" stay
+  as they are, covering the whole competition.
 
 A stage lead with no rooms sees everything, as today.
 
@@ -171,6 +173,13 @@ A stage lead with no rooms sees everything, as today.
 - **Rooms changed while the page is open.** The next request uses the new
   scope; a refused change shows the 403 message and the panel refetches the
   scope.
+- **No-show for the day across rooms.** "No-show for the day" (SPEC-004)
+  tags the person in every group of the day, and those can be in other rooms.
+  A stage lead may set or clear it for the whole day as long as one of the
+  groups is theirs: not coming is a fact about the person, and the other
+  room's stage lead would otherwise wait for someone who isn't there. This is
+  the one change a stage lead makes outside their rooms; a person with no
+  group in their rooms that day is refused.
 - **Station check-in.** Stations marking competitors present are unaffected:
   they don't act as a user.
 
@@ -192,6 +201,11 @@ A stage lead with no rooms sees everything, as today.
 - [ ] A stage lead's Attendance page updates live when another user marks
       someone in the same group.
 - [ ] `joinAttendance` for an out-of-scope group is refused.
+- [ ] A Main Hall stage lead sets "no-show for the day" for a person with
+      groups in Main Hall and Side Hall; both are tagged. For a person with no
+      Main Hall group that day it returns 403.
+- [ ] A stage lead with rooms still opens attendance statistics and most
+      missed assignments for the whole competition.
 - [ ] Removing `STAGE_LEADER` from a user clears their rooms.
 - [ ] Unit tests for `AttendanceScopeService` cover: admin, organizer,
       delegate, stage lead with no rooms, stage lead with rooms (scheduled
@@ -210,14 +224,6 @@ A stage lead with no rooms sees everything, as today.
 
 ## Open questions
 
-- **No-show for the day.** "No-show for the day" tags the person in every
-  group of the day (SPEC-004), which spans rooms. Proposed: refuse when any
-  group is out of scope, so a stage lead can't tag another room. Alternative:
-  apply it to the in-scope groups only, or to all of them since not coming is
-  a fact about the person.
-- **Statistics and most missed assignments.** Proposed: organizers and
-  delegates only once a stage lead has rooms. Alternative: filter both reports
-  to the stage lead's groups.
 - **No rooms means all rooms.** Proposed, for a painless upgrade. Alternative:
   no rooms means no attendance, forcing organizers to assign rooms before the
   next competition.
