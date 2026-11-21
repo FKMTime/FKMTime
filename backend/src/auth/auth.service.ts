@@ -119,13 +119,15 @@ export class AuthService {
           } else {
             newRoles.push(Role.ORGANIZER);
           }
+        } else if (existingUser) {
+          // Not a manager on the WCA website: access for this account is set
+          // on the Users page, so keep the roles it already has
+          newRoles.push(...new Set(existingUser.roles));
         } else {
-          if (!existingUser) {
-            throw new HttpException(
-              'You are not allowed to manage this competition',
-              403,
-            );
-          }
+          throw new HttpException(
+            'You are not allowed to manage this competition',
+            403,
+          );
         }
       }
     }

@@ -254,6 +254,64 @@ describe('Auth flows (e2e)', () => {
     });
   });
 
+  describe('WCA login of an account added on the Users page', () => {
+    let app: INestApplication;
+    let db: DbService;
+    const suffix = `${SUFFIX}-added-wca`;
+
+    const cleanUp = async () => {
+      await db.user.deleteMany({ where: { wcaUserId: outsider.wcaUserId } });
+      await deleteSetupUsers(db, suffix);
+    };
+
+    beforeAll(async () => {
+      ({ app, db } = await createTestApp());
+      await listenOnLoopback(app);
+      await cleanUp();
+    }, 30000);
+
+    afterAll(async () => {
+      await cleanUp();
+      await app.close();
+    }, 30000);
+
+    it('keeps the roles it was given when the person does not manage the competition', async () => {
+      const addedBy = await createUserWithRoles(
+        app,
+        db,
+        `organizer-${suffix}`,
+        [Role.ORGANIZER],
+      );
+      await request(app.getHttpServer())
+        .post('/user')
+        .set('Authorization', `Bearer ${addedBy.token}`)
+        .send({
+          wcaId: outsider.wcaId,
+          fullName: outsider.name,
+          roles: [Role.STAFF],
+        })
+        .expect(201);
+
+      const res = await request(app.getHttpServer())
+        .post('/auth/wca/login')
+        .send({ code: outsider.code, redirectUri: REDIRECT_URI })
+        .expect(200);
+
+      expect(res.body.userInfo.roles).toEqual([Role.STAFF]);
+      const fromDb = await db.user.findMany({
+        where: { wcaUserId: outsider.wcaUserId },
+      });
+      expect(fromDb).toHaveLength(1);
+      expect(fromDb[0].roles).toEqual([Role.STAFF]);
+
+      const me = await request(app.getHttpServer())
+        .get('/auth/me')
+        .set('Authorization', `Bearer ${res.body.token}`)
+        .expect(200);
+      expect(me.body.roles).toEqual([Role.STAFF]);
+    });
+  });
+
   describe('WCA login the WCA refuses', () => {
     let app: INestApplication;
 
