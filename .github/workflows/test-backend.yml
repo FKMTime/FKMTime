@@ -71,9 +71,13 @@ jobs:
         - name: Build backend
           working-directory: 'backend'
           run: npm run build
-        - name: Push schema to database
+        # What the image does at boot, so the suite runs on the schema
+        # production gets rather than on `prisma db push`
+        - name: Create the schema
           working-directory: 'backend'
-          run: npx prisma db push
+          run: |
+            node scripts/schema-sql.mjs create
+            node dist/src/db/apply-schema.js
         - name: Seed test database
           working-directory: 'backend'
           run: npm run prisma:seed-test
@@ -83,3 +87,6 @@ jobs:
         - name: Run unit tests
           working-directory: 'backend'
           run: npm run test:no-watch
+        - name: Run script tests
+          working-directory: 'backend'
+          run: npm run test:scripts

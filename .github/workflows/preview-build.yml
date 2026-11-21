@@ -32,6 +32,8 @@ jobs:
         with:
           ref: ${{ github.event.pull_request.head.sha }}
           persist-credentials: false
+          # schema-sql.mjs reads every earlier schema.prisma from the history
+          fetch-depth: 0
 
       # No cache of any kind: a PR has nothing to gain from one, and caches
       # are the one thing a run can leave behind for other runs
@@ -42,27 +44,25 @@ jobs:
 
       - name: Build the backend
         working-directory: backend
-        env:
-          # Prisma's CLI runs on the preview host, which has OpenSSL 1.1, and its
-          # sandbox can't download the engine it would want. Name every target:
-          # with `native` in the list Prisma ignores the list.
-          PRISMA_CLI_BINARY_TARGETS: debian-openssl-3.0.x,debian-openssl-1.1.x
         run: |
           npm ci --no-audit --no-fund
-          test -x node_modules/@prisma/engines/schema-engine-debian-openssl-1.1.x \
-            || { echo "::error::Prisma did not fetch the schema engine the preview host needs"; exit 1; }
           npx prisma generate
+          # The SQL the preview's migrate unit applies with db/apply-schema.js,
+          # so the Prisma CLI and its engine never run on the preview host
+          node scripts/schema-sql.mjs create
+          node scripts/schema-sql.mjs upgrades
           npm run build
           # The test seed runs under ts-node, a dev dependency; bundle it so the
           # pruned artifact can run it with plain node
           npx --yes esbuild@0.28.2 prisma/seed/seed-test.ts --bundle --platform=node \
             --target=node24 --format=cjs --packages=external --outfile=seed-test.js
-          npm prune --omit=dev --no-audit --no-fund
+          npm prune --omit=dev --omit=optional --no-audit --no-fund
           # The same layout backend/Dockerfile copies into the image
           stage="$RUNNER_TEMP/backend"
-          mkdir -p "$stage"
+          mkdir -p "$stage/prisma"
           cp -r dist/src/. "$stage/"
-          cp -r node_modules prisma prisma.config.ts package.json seed-test.js "$stage/"
+          cp -r prisma/sql "$stage/prisma/"
+          cp -r node_modules package.json seed-test.js "$stage/"
           tar -C "$stage" -czf "$RUNNER_TEMP/preview-backend.tar.gz" .
 
       - name: Build the web app
