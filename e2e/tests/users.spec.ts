@@ -49,13 +49,20 @@ test.describe("users", () => {
         await dialog.getByLabel("Full name").fill("Rory Runner");
         await dialog.getByLabel("Password").fill("runner-pass-1");
         await pickRoles(page, ["Staff", "Stage leader"]);
-        await dialog.getByRole("button", { name: "Create" }).click();
+        // A stage lead needs rooms before the account can be created
+        const create = dialog.getByRole("button", { name: "Create" });
+        await expect(
+            dialog.getByText("Choose at least one room")
+        ).toBeVisible();
+        await expect(create).toBeDisabled();
+        await dialog.getByLabel("Side Hall").click();
+        await create.click();
 
         await expect(dialog).toBeHidden();
         const row = userRow(page, "Rory Runner");
         await expect(row).toContainText("FKMTime");
         await expect(row).toContainText("Staff");
-        await expect(row).toContainText("Stage leader");
+        await expect(row).toContainText("Stage leader · Side Hall");
     });
 
     test("refuses a username that is taken", async ({ page }) => {

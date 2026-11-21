@@ -30,6 +30,16 @@ export const roundStaffingQuery = queryFamily((roundId) =>
 );
 
 /** Everyone assigned to a group, with their attendance */
+/** Which groups the user takes attendance for (SPEC-016) */
+export interface AttendanceScope {
+    allRooms: boolean;
+    rooms: { id: string; name: string }[];
+    groupIds: string[];
+}
+
+export const attendanceScopeQuery =
+    backendQuery<AttendanceScope>("attendance/scope");
+
 export const groupAttendanceQuery = queryFamily((groupId) =>
     backendQuery<StaffActivity[]>(`attendance/group/${groupId}`)
 );

@@ -6,6 +6,7 @@ import { DbService } from '../db/db.service';
 import { Prisma, Role } from '../generated/prisma/client';
 import { CreateUserDto } from './dto/createUser.dto';
 import { UpdateUserDto } from './dto/updateUser.dto';
+import { resolveStageLeadRooms, StageLeadRoomsInput } from './stageLeadRooms';
 
 @Injectable()
 export class UserService {
@@ -15,7 +16,7 @@ export class UserService {
   ) {}
 
   async getAllUsers() {
-    return this.prisma.user.findMany({
+    const users = await this.prisma.user.findMany({
       select: {
         id: true,
         username: true,
@@ -25,11 +26,27 @@ export class UserService {
         createdAt: true,
         updatedAt: true,
         avatarUrl: true,
+        stageLeadRooms: { select: { roomId: true } },
       },
       orderBy: {
         username: 'asc',
       },
     });
+    // No rooms is all rooms (SPEC-016)
+    return users.map(({ stageLeadRooms, ...user }) => ({
+      ...user,
+      stageLeadRoomIds: stageLeadRooms.map(({ roomId }) => roomId),
+    }));
+  }
+
+  /** The rooms to save for a stage lead; refuses one without a choice */
+  private async stageLeadRoomIds(roles: Role[], input: StageLeadRoomsInput) {
+    const rooms = await this.prisma.room.findMany({ select: { id: true } });
+    return resolveStageLeadRooms(
+      roles,
+      input,
+      rooms.map(({ id }) => id),
+    );
   }
 
   async createUser(data: CreateUserDto, userId: string) {
@@ -52,6 +69,10 @@ export class UserService {
         403,
       );
     }
+    const roomIds = await this.stageLeadRoomIds(data.roles, data);
+    const stageLeadRooms = {
+      create: roomIds.map((roomId) => ({ roomId })),
+    };
     if (data.wcaId) {
       const userInfo = await this.wcaService.getUserInfoByWcaId(data.wcaId);
       if (!userInfo?.user) {
@@ -62,6 +83,7 @@ export class UserService {
           fullName: data.fullName,
           wcaUserId: userInfo.user.id,
           roles: data.roles,
+          stageLeadRooms,
         },
       });
       return {
@@ -78,6 +100,7 @@ export class UserService {
           fullName: data.fullName,
           password: await bcrypt.hash(data.password, 12),
           roles: data.roles,
+          stageLeadRooms,
         },
       });
     } catch (e) {
@@ -115,6 +138,7 @@ export class UserService {
         403,
       );
     }
+    const roomIds = await this.stageLeadRoomIds(data.roles, data);
     try {
       await this.prisma.user.update({
         where: { id: id },
@@ -122,6 +146,11 @@ export class UserService {
           username: data.username,
           fullName: data.fullName,
           roles: data.roles,
+          // Replaced, and cleared for anyone who is no longer a stage lead
+          stageLeadRooms: {
+            deleteMany: {},
+            create: roomIds.map((roomId) => ({ roomId })),
+          },
         },
       });
     } catch (e) {

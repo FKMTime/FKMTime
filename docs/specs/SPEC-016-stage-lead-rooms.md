@@ -1,6 +1,6 @@
 # SPEC-016: Stage leads for one room
 
-- **Status:** Accepted
+- **Status:** Implemented
 - **Created:** 2026-11-21
 - **Related:** #278, SPEC-004 (attendance tags), SPEC-013 (delegate access for one group)
 
@@ -122,7 +122,7 @@ endpoint. Each endpoint then checks scope:
 | `POST present/:id`, `absent/:id`, `late/:id`, `replaced/:id`, `PUT left-early/:id`, `restore/:id`, `comment/:id` | the activity's `groupId` in scope, looked up before the change |
 | `POST /attendance/no-show` | at least one id in `groupIds` in scope; then applies to all of them (below) |
 | `GET /attendance/round/:roundId/staffing` | at least one group of the round in scope |
-| `GET /attendance/person/:id` | stage leads get only the activities in scope |
+| `GET /attendance/person/:id` | none: read-only, and "no-show for the day" builds the day from it; the person page shows only rows in scope |
 | `GET /attendance/statistics`, `GET /attendance/missed` | none: competition-wide reports, read-only, open to every stage lead as today |
 
 New endpoint `GET /attendance/scope` returns the caller's scope with room ids
@@ -177,7 +177,8 @@ edit dialog with "All rooms" ticked.
   attendance for Main Hall only" instead of the page.
 - **Home.** "Attendance" shows only on their rooms' cards.
 - **Schedule.** The attendance link shows only on groups in scope.
-- **Person page.** Attendance rows show only groups in scope.
+- **Person page.** Groups link to attendance only when in scope, and "Not
+  coming" shows only for a day with a group in scope.
 - **Reports.** "Attendance statistics" and "Most missed assignments" stay
   as they are, covering the whole competition.
 

@@ -17,6 +17,9 @@ don't need one — the PR description is enough.
 
 - Before building a big feature, look for its spec. If you're implementing one,
   follow it, and cite its id (`SPEC-NNN`) in the PR description.
+- The PR that implements a spec also sets its status to `Implemented`, in the
+  spec and in the index in `docs/specs/README.md`; the last PR does it when
+  the work spans several.
 - If the code has to differ from the spec, update the spec in the same PR
   instead of letting them drift apart.
 - If a big feature has no spec yet, write it first (copy

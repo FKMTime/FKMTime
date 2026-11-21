@@ -1,4 +1,5 @@
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 
@@ -14,19 +15,30 @@ import {
 } from "@/Components/ui/form";
 import { Input } from "@/Components/ui/input";
 import { MultiSelect } from "@/Components/ui/multi-select";
-import { NewUserData } from "@/lib/interfaces";
+import { NewUserData, Room } from "@/lib/interfaces";
 import { createFKMTimeUserSchema } from "@/lib/schema/userSchema";
+import {
+    initialStageLeadRooms,
+    needsRoomChoice,
+    stageLeadRoomsPayload,
+} from "@/lib/stageLeadRooms";
 import { getAvailableRoles } from "@/lib/utils";
+
+import StageLeadRoomsField from "../StageLeadRoomsField";
 
 interface CreateFKMTimeAccountFormProps {
     handleSubmit: (data: NewUserData) => void;
     isLoading?: boolean;
+    /** The competition's rooms, in schedule order */
+    rooms?: Room[];
 }
 
 const CreateFKMTimeAccountForm = ({
     handleSubmit,
     isLoading,
+    rooms = [],
 }: CreateFKMTimeAccountFormProps) => {
+    const [stageLeadRooms, setStageLeadRooms] = useState(initialStageLeadRooms);
     const form = useForm<
         z.input<typeof createFKMTimeUserSchema>,
         unknown,
@@ -34,9 +46,17 @@ const CreateFKMTimeAccountForm = ({
     >({
         resolver: zodResolver(createFKMTimeUserSchema),
     });
+    const roles = form.watch("roles") ?? [];
 
     const onSubmit = (values: z.infer<typeof createFKMTimeUserSchema>) => {
-        handleSubmit(values);
+        handleSubmit({
+            ...values,
+            ...stageLeadRoomsPayload(
+                values.roles,
+                rooms.length,
+                stageLeadRooms
+            ),
+        });
     };
 
     return (
@@ -105,8 +125,20 @@ const CreateFKMTimeAccountForm = ({
                         </FormItem>
                     )}
                 />
+                <StageLeadRoomsField
+                    roles={roles}
+                    rooms={rooms}
+                    value={stageLeadRooms}
+                    onChange={setStageLeadRooms}
+                />
                 <ModalActions>
-                    <Button type="submit" disabled={isLoading}>
+                    <Button
+                        type="submit"
+                        disabled={
+                            isLoading ||
+                            needsRoomChoice(roles, rooms.length, stageLeadRooms)
+                        }
+                    >
                         Create
                     </Button>
                 </ModalActions>

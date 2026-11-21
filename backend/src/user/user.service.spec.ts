@@ -21,6 +21,9 @@ describe('UserService', () => {
             competition: {
               findFirst: jest.fn().mockResolvedValue({ id: 'comp1' }),
             },
+            room: {
+              findMany: jest.fn().mockResolvedValue([{ id: 'room1' }]),
+            },
             user: {
               findMany: jest.fn(),
               findUnique: jest.fn(),
@@ -62,13 +65,18 @@ describe('UserService', () => {
           avatarUrl: null,
         },
       ];
-      jest
-        .spyOn(dbService.user, 'findMany')
-        .mockResolvedValue(mockUsers as any);
+      jest.spyOn(dbService.user, 'findMany').mockResolvedValue(
+        mockUsers.map((user) => ({
+          ...user,
+          stageLeadRooms: [{ roomId: 'room1' }],
+        })) as any,
+      );
 
       const result = await service.getAllUsers();
 
-      expect(result).toEqual(mockUsers);
+      expect(result).toEqual(
+        mockUsers.map((user) => ({ ...user, stageLeadRoomIds: ['room1'] })),
+      );
       expect(dbService.user.findMany).toHaveBeenCalledWith({
         select: {
           id: true,
@@ -79,6 +87,7 @@ describe('UserService', () => {
           createdAt: true,
           updatedAt: true,
           avatarUrl: true,
+          stageLeadRooms: { select: { roomId: true } },
         },
         orderBy: {
           username: 'asc',
@@ -230,8 +239,53 @@ describe('UserService', () => {
           username: updateData.username,
           fullName: updateData.fullName,
           roles: updateData.roles,
+          stageLeadRooms: { deleteMany: {}, create: [] },
         },
       });
+    });
+
+    it("replaces a stage lead's rooms", async () => {
+      jest
+        .spyOn(dbService.room, 'findMany')
+        .mockResolvedValue([{ id: 'room1' }, { id: 'room2' }] as any);
+      jest
+        .spyOn(dbService.user, 'findUnique')
+        .mockResolvedValue({ roles: [Role.ADMIN] } as any);
+      jest.spyOn(dbService.user, 'update').mockResolvedValue({} as any);
+
+      await service.updateUser(
+        'user1',
+        {
+          username: 'lead',
+          fullName: 'Lead',
+          roles: [Role.STAGE_LEADER],
+          stageLeadRoomIds: ['room2'],
+        },
+        'admin1',
+      );
+
+      expect(dbService.user.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            stageLeadRooms: { deleteMany: {}, create: [{ roomId: 'room2' }] },
+          }),
+        }),
+      );
+    });
+
+    it('refuses a stage lead without rooms', async () => {
+      jest
+        .spyOn(dbService.user, 'findUnique')
+        .mockResolvedValue({ roles: [Role.ADMIN] } as any);
+
+      await expect(
+        service.updateUser(
+          'user1',
+          { username: 'lead', fullName: 'Lead', roles: [Role.STAGE_LEADER] },
+          'admin1',
+        ),
+      ).rejects.toThrow('Choose the rooms this stage lead takes attendance in');
+      expect(dbService.user.update).not.toHaveBeenCalled();
     });
 
     it('should throw error if trying to assign higher roles', async () => {

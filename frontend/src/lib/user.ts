@@ -1,5 +1,6 @@
 import { NewUserData, User } from "./interfaces";
 import { backendQuery, backendRequest } from "./request";
+import { StageLeadRoomsPayload } from "./stageLeadRooms";
 
 export const usersQuery = backendQuery<User[]>("user");
 
@@ -12,7 +13,7 @@ export const createUser = async (body: NewUserData) => {
     };
 };
 
-export const updateUser = async (user: User) => {
+export const updateUser = async (user: User & StageLeadRoomsPayload) => {
     const response = await backendRequest(`user/${user.id}`, "PUT", true, user);
     return {
         status: response.status,

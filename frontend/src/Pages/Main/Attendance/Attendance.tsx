@@ -8,6 +8,7 @@ import EmptyState from "@/Components/shared/EmptyState";
 import RefreshingRegion from "@/Components/shared/RefreshingRegion";
 import RequestError from "@/Components/shared/RequestError";
 import ToggleChip from "@/Components/shared/ToggleChip";
+import { useAttendanceScope } from "@/hooks/useAttendanceScope";
 import { useConfirm } from "@/hooks/useConfirm";
 import { useLiveQuery } from "@/hooks/useLiveQuery";
 import { useSocketRoom } from "@/hooks/useSocketRoom";
@@ -39,6 +40,14 @@ const ROLES = [
 ] as const;
 const ROLE_KEYS = ROLES.map(({ role }) => role);
 
+/** "Main Hall", "Main Hall and Side Hall" */
+const listRoomNames = (rooms: { name: string }[]) => {
+    const names = rooms.map((room) => room.name);
+    return names.length <= 1
+        ? names[0] ?? ""
+        : `${names.slice(0, -1).join(", ")} and ${names[names.length - 1]}`;
+};
+
 import { useMarkAttendance } from "./useMarkAttendance";
 import { useNoShow } from "./useNoShow";
 import { useShownRoles } from "./useShownRoles";
@@ -50,13 +59,17 @@ const Attendance = () => {
     const competition = useAtomValue(competitionAtom);
     const roundId = selectedGroup.split("-g")[0];
     const { data: roomsData } = useLiveQuery(roomsQuery);
-    const rooms = roomsData ?? [];
+    // A stage lead takes attendance in their rooms only (SPEC-016)
+    const scope = useAttendanceScope();
+    const rooms = (roomsData ?? []).filter((room) => scope.hasRoom(room.id));
+    const isOutOfScope = !!selectedGroup && !scope.hasGroup(selectedGroup);
+    const openGroup = isOutOfScope ? "" : selectedGroup;
     const { data: staffing } = useLiveQuery(roundStaffingQuery(roundId), {
-        enabled: !!roundId,
+        enabled: !!openGroup,
     });
     const hasAssignedRunners = staffing?.hasAssignedRunners ?? false;
     // The last group's attendance stays while the next group loads
-    const attendanceQuery = groupAttendanceQuery(selectedGroup);
+    const attendanceQuery = groupAttendanceQuery(openGroup);
     const {
         data: attendanceData,
         isError,
@@ -64,15 +77,15 @@ const Attendance = () => {
         refetch,
     } = useLiveQuery(attendanceQuery, {
         keepPreviousData: true,
-        enabled: !!selectedGroup,
+        enabled: !!openGroup,
     });
     const attendance: StaffActivity[] = attendanceData ?? [];
     const fetchAttendance = () =>
         void queryClient.invalidateQueries({
             queryKey: toQueryOptions(attendanceQuery).queryKey,
         });
-    useSocketRoom(selectedGroup ? "Attendance" : null, {
-        params: { groupId: selectedGroup },
+    useSocketRoom(openGroup ? "Attendance" : null, {
+        params: { groupId: openGroup },
         invalidateOn: {
             newAttendance: toQueryOptions(attendanceQuery).queryKey,
         },
@@ -86,11 +99,11 @@ const Attendance = () => {
     // Open the only running group straight away
     useEffect(() => {
         if (selectedGroup || !roomsData) return;
-        const running = roomsData.filter(
+        const running = rooms.filter(
             (room) => room.currentGroupIds.length === 1
         );
         if (running.length === 1) selectGroup(running[0].currentGroupIds[0]);
-    }, [roomsData, selectGroup, selectedGroup]);
+    }, [roomsData, rooms, selectGroup, selectedGroup]);
 
     const { shown: shownRoles, toggle: toggleRole } = useShownRoles(
         ROLE_KEYS,
@@ -163,11 +176,16 @@ const Attendance = () => {
             <GroupPicker
                 wcif={competition.wcif}
                 rooms={rooms}
-                value={selectedGroup}
+                value={openGroup}
                 onValueChange={selectGroup}
+                hasGroup={scope.groupIds ? scope.hasGroup : undefined}
             />
 
-            {selectedGroup ? (
+            {isOutOfScope && scope.rooms ? (
+                <EmptyState>
+                    {`You take attendance for ${listRoomNames(scope.rooms)} only.`}
+                </EmptyState>
+            ) : selectedGroup ? (
                 <>
                     <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
                         <h2 className="text-lg font-bold">

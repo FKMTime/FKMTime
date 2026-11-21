@@ -76,4 +76,26 @@ describe("PersonSchedule", () => {
         );
         expect(onSetNoShow).toHaveBeenCalledWith("2026-04-19", false);
     });
+
+    it("links and offers Not coming only for a stage lead's groups", () => {
+        render(
+            <MemoryRouter>
+                <PersonSchedule
+                    entries={[
+                        entry("1", "2026-04-19T08:00:00Z"),
+                        entry("2", "2026-04-20T08:00:00Z"),
+                    ]}
+                    canOpenAttendance={(groupId) => groupId === "333-r1-g2"}
+                    onSetNoShow={vi.fn()}
+                    now={now}
+                />
+            </MemoryRouter>
+        );
+        expect(screen.queryByRole("link", { name: "Group 1" })).toBeNull();
+        expect(screen.getByRole("link", { name: "Group 2" })).toBeTruthy();
+        // Only the second day has a group of theirs
+        expect(
+            screen.getAllByRole("button", { name: "Not coming" })
+        ).toHaveLength(1);
+    });
 });

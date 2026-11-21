@@ -64,6 +64,7 @@ describe('User management (e2e)', () => {
           fullName: 'Staff Member',
           password: 'staff-password',
           roles: [Role.STAFF, Role.STAGE_LEADER],
+          stageLeadAllRooms: true,
         })
         .expect(201);
 
@@ -191,6 +192,8 @@ describe('User management (e2e)', () => {
         roles: [Role.STAFF, Role.STAGE_LEADER],
         wcaUserId: null,
         avatarUrl: null,
+        // All rooms (SPEC-016)
+        stageLeadRoomIds: [],
         createdAt: expect.any(String),
         updatedAt: expect.any(String),
       });

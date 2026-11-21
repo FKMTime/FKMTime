@@ -17,21 +17,38 @@ import {
 import { Input } from "@/Components/ui/input";
 import { MultiSelect } from "@/Components/ui/multi-select";
 import { useDialogError } from "@/hooks/useDialogError";
-import { User } from "@/lib/interfaces";
+import { Room, User } from "@/lib/interfaces";
 import { editUserSchema } from "@/lib/schema/userSchema";
+import {
+    initialStageLeadRooms,
+    needsRoomChoice,
+    stageLeadRoomsPayload,
+} from "@/lib/stageLeadRooms";
 import { updateUser } from "@/lib/user";
 import { getAvailableRoles } from "@/lib/utils";
+
+import StageLeadRoomsField from "./StageLeadRoomsField";
 
 interface EditUserModalProps {
     isOpen: boolean;
     onClose: () => void;
     user: User;
+    /** The competition's rooms, in schedule order */
+    rooms: Room[];
 }
 
-const EditUserModal = ({ isOpen, onClose, user }: EditUserModalProps) => {
+const EditUserModal = ({
+    isOpen,
+    onClose,
+    user,
+    rooms,
+}: EditUserModalProps) => {
     const [error, setError] = useDialogError(isOpen);
     const [isLoading, setIsLoading] = useState(false);
     const isWcaAccount = user.wcaUserId !== null;
+    const [stageLeadRooms, setStageLeadRooms] = useState(() =>
+        initialStageLeadRooms(user)
+    );
 
     const form = useForm<
         z.input<typeof editUserSchema>,
@@ -45,6 +62,7 @@ const EditUserModal = ({ isOpen, onClose, user }: EditUserModalProps) => {
             roles: user.roles,
         },
     });
+    const roles = form.watch("roles") ?? [];
 
     const onSubmit = async (values: z.infer<typeof editUserSchema>) => {
         setIsLoading(true);
@@ -52,6 +70,13 @@ const EditUserModal = ({ isOpen, onClose, user }: EditUserModalProps) => {
         const response = await updateUser({
             ...user,
             ...values,
+            // Replaced by what the dialog says now
+            stageLeadRoomIds: undefined,
+            ...stageLeadRoomsPayload(
+                values.roles,
+                rooms.length,
+                stageLeadRooms
+            ),
         });
         if (response.status === 200) {
             onClose();
@@ -133,8 +158,24 @@ const EditUserModal = ({ isOpen, onClose, user }: EditUserModalProps) => {
                                 </FormItem>
                             )}
                         />
+                        <StageLeadRoomsField
+                            roles={roles}
+                            rooms={rooms}
+                            value={stageLeadRooms}
+                            onChange={setStageLeadRooms}
+                        />
                         <ModalActions>
-                            <Button type="submit" disabled={isLoading}>
+                            <Button
+                                type="submit"
+                                disabled={
+                                    isLoading ||
+                                    needsRoomChoice(
+                                        roles,
+                                        rooms.length,
+                                        stageLeadRooms
+                                    )
+                                }
+                            >
                                 Edit
                             </Button>
                         </ModalActions>

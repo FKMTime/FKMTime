@@ -24,6 +24,8 @@ export interface User extends PublicUser {
     username?: string;
     wcaUserId?: number;
     roles: string[];
+    /** A stage lead's rooms; none means all rooms (SPEC-016) */
+    stageLeadRoomIds?: string[];
     createdAt: Date;
     updatedAt: Date;
 }
@@ -766,6 +768,8 @@ export interface NewUserData {
     fullName: string;
     roles: string[];
     wcaId?: string;
+    stageLeadAllRooms?: boolean;
+    stageLeadRoomIds?: string[];
 }
 
 export interface WCAPerson {

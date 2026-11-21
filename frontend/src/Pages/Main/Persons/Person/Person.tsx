@@ -7,6 +7,7 @@ import Avatar from "@/Components/Avatar/Avatar";
 import LoadingPage from "@/Components/LoadingPage";
 import PageTabs, { PageTab } from "@/Components/shared/PageTabs";
 import SectionLoading from "@/Components/shared/SectionLoading";
+import { useAttendanceScope } from "@/hooks/useAttendanceScope";
 import { useLiveQuery } from "@/hooks/useLiveQuery";
 import { usePageHeader } from "@/hooks/usePageHeader";
 import { competitionAtom } from "@/lib/atoms";
@@ -58,6 +59,8 @@ const Person = () => {
 
     const showResults = !!competition?.useFkmTimeDevices;
     const showAttendance = isStageLeaderOrOrganizerOrDelegate();
+    // A stage lead opens attendance for their rooms only (SPEC-016)
+    const attendanceScope = useAttendanceScope();
     const showIncidents = isDelegate();
 
     const personId = id ?? "";
@@ -171,7 +174,9 @@ const Person = () => {
                 ) : (
                     <PersonSchedule
                         entries={schedule}
-                        canOpenAttendance={showAttendance}
+                        canOpenAttendance={
+                            showAttendance && attendanceScope.hasGroup
+                        }
                         onSetNoShow={
                             showAttendance
                                 ? (day, noShow) =>
