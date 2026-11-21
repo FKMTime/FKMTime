@@ -15,7 +15,7 @@ const { listQuery, lists, socketHandlers, access } = vi.hoisted(() => {
     const served: Record<string, object[]> = {};
     return {
         /** Delegates see every tab; a user with access for a group, Open only */
-        access: { isDelegate: true },
+        access: { isDelegate: true, canSeeIncidents: true },
         lists: served,
         socketHandlers: new Map<string, () => void>(),
         // Serves whatever `lists` holds when the request is made
@@ -68,7 +68,8 @@ vi.mock("@/hooks/useDelegateAccess", () => ({
         isDelegate: access.isDelegate,
         grants: [],
         active: [],
-        canSeeIncidents: true,
+        canSeeIncidents: access.canSeeIncidents,
+        isLoaded: true,
         can: () => access.isDelegate,
     }),
 }));
@@ -96,6 +97,7 @@ describe("IncidentsLayout", () => {
         clearQueryCache();
         socketHandlers.clear();
         access.isDelegate = true;
+        access.canSeeIncidents = true;
     });
 
     it("shows every tab with its count and marks the current one", async () => {
@@ -141,6 +143,26 @@ describe("IncidentsLayout", () => {
                 .getByRole("tab", { name: "Open 3" })
                 .getAttribute("aria-selected")
         ).toBe("true");
+    });
+
+    it("sends a user whose delegate access ended back home", async () => {
+        access.isDelegate = false;
+        access.canSeeIncidents = false;
+        render(
+            <Provider store={createStore()}>
+                <MemoryRouter initialEntries={["/incidents"]}>
+                    <Routes>
+                        <Route path="/" element={<p>Home page</p>} />
+                        <Route
+                            path="/incidents"
+                            element={<IncidentsLayout />}
+                        />
+                    </Routes>
+                </MemoryRouter>
+            </Provider>,
+            { wrapper: QueryWrapper }
+        );
+        expect(await screen.findByText("Home page")).toBeTruthy();
     });
 
     it("refreshes the lists and their counts on an incident event", async () => {

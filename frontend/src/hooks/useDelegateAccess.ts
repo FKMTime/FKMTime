@@ -16,6 +16,8 @@ export interface DelegateAccess {
     active: MyDelegateGrant[];
     /** Can open the incidents page: a delegate, or holding a grant */
     canSeeIncidents: boolean;
+    /** The user's grants have loaded (always, for a delegate) */
+    isLoaded: boolean;
     /** Whether any active grant includes the action; the server checks the competitor */
     can: (permission: DelegateGrantPermission) => boolean;
 }
@@ -36,6 +38,7 @@ export const useDelegateAccess = (): DelegateAccess => {
         grants,
         active,
         canSeeIncidents: delegate || grants.length > 0,
+        isLoaded: delegate || data !== undefined,
         can: (permission) =>
             delegate ||
             active.some((grant) => grant.permissions.includes(permission)),

@@ -62,7 +62,7 @@ const IncidentsLayout = () => {
     const useDevices = !!competition?.useFkmTimeDevices;
     // Users with delegate access for a group see only the open incidents it
     // covers; the rest is history, which stays with delegates (SPEC-013)
-    const { isDelegate } = useDelegateAccess();
+    const { isDelegate, canSeeIncidents, isLoaded } = useDelegateAccess();
     const activeTab = getActiveTab(pathname);
     // An open incident takes the whole screen on mobile
     const isIncidentOpen =
@@ -194,6 +194,10 @@ const IncidentsLayout = () => {
         ? delegateTabs
         : delegateTabs.filter((tab) => tab.value === "open");
 
+    // Access that ended leaves nothing here to act on; the banner says why
+    if (isLoaded && !canSeeIncidents) {
+        return <Navigate to="/" replace />;
+    }
     if (!isDelegate && activeTab !== "open") {
         return <Navigate to="/incidents" replace />;
     }

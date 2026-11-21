@@ -190,6 +190,16 @@ const SingleResult = () => {
         backTo: result ? `/results/round/${result.roundId}` : "/results",
     });
 
+    // Delegate access for a group covers only that group's competitors
+    // (SPEC-013); anyone else gets a refusal, not an endless loading page
+    if (error instanceof QueryError && error.status === 403) {
+        return (
+            <EmptyState>
+                This result isn't covered by your access. Delegate access for a
+                group covers only the competitors solving in that group.
+            </EmptyState>
+        );
+    }
     if (!result || !competition) return <LoadingPage />;
 
     const isHeadToHead =
