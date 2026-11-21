@@ -15,6 +15,7 @@
     "start:prod": "node dist/src/main",
     "lint": "eslint \"{src,apps,libs,test}/**/*.ts\"",
     "lint:fix": "eslint --fix \"{src,apps,libs,test}/**/*.ts\"",
+    "check:strict-null": "node scripts/check-strict-null.mjs",
     "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js",
     "test:watch": "node --experimental-vm-modules node_modules/jest/bin/jest.js --watch",
     "test:no-watch": "node --experimental-vm-modules node_modules/jest/bin/jest.js --watchAll=false",

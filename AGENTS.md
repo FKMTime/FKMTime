@@ -120,6 +120,7 @@ Run the checks for the part you touched — the same ones CI runs.
 ```bash
 # backend
 cd backend && npm run lint && npm run format:check && npm run build
+npm run check:strict-null        # after `npx prisma generate`; see below
 npm run test:no-watch            # unit tests
 npm run test:e2e                 # e2e; needs the test stack below
 
@@ -180,6 +181,12 @@ iterating; leave the full run to CI.
   `FKMTimeLogo`). Existing lowercase names that other things depend on stay as
   they are: `fkmToken` / `fkm_token` (devices read it), `fkmtime-*` storage
   keys, container and database names, repo names.
+- **strictNullChecks is on per file.** `npm run check:strict-null` fails when
+  a file outside `backend/strict-null-baseline.txt` has a strictNullChecks
+  error, or when a file on the list has none left: take it off the list.
+  Fix a possible `null` by deciding whether it can happen (handle it: 404,
+  an error reply to the socket) or can't (throw a clear error, or use
+  `findUniqueOrThrow`/`findFirstOrThrow`). Don't silence it with `!`.
 - **Tests come with the change.** Bug fixes get a test that fails without the
   fix; new endpoints and socket events get e2e coverage in `backend/test/`.
 - **No real data** in code, tests, fixtures, commits or PRs — no real
