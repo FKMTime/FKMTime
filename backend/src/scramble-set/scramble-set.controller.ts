@@ -10,6 +10,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { DelegateGuard } from 'src/auth/guards/delegate.guard';
+import { ParseRoundIdPipe } from 'src/roundId.pipe';
 
 import { ImportScramblesDto } from './dto/import-scrambles.dto';
 import { ScrambleSetService } from './scramble-set.service';
@@ -25,7 +26,7 @@ export class ScrambleSetController {
   }
 
   @Get(':roundId')
-  async getScrambleSets(@Param('roundId') roundId: string) {
+  async getScrambleSets(@Param('roundId', ParseRoundIdPipe) roundId: string) {
     return this.scrambleSetService.getScrambleSets(roundId);
   }
 
@@ -42,7 +43,9 @@ export class ScrambleSetController {
 
   @HttpCode(HttpStatus.NO_CONTENT)
   @Delete('round/:roundId')
-  async deleteScrambleSetsByRoundId(@Param('roundId') roundId: string) {
+  async deleteScrambleSetsByRoundId(
+    @Param('roundId', ParseRoundIdPipe) roundId: string,
+  ) {
     return this.scrambleSetService.deleteScrambleSetsByRoundId(roundId);
   }
 

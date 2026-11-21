@@ -16,6 +16,7 @@ import { GetUser } from 'src/auth/decorator/getUser.decorator';
 import { JwtAuthDto } from 'src/auth/dto/jwt-auth.dto';
 import { DelegateGuard } from 'src/auth/guards/delegate.guard';
 import { OrganizerGuard } from 'src/auth/guards/organizer.guard';
+import { ParseRoundIdPipe } from 'src/roundId.pipe';
 
 import { DoubleCheckDto } from './dto/doubleCheck.dto';
 import { RemoveResultDto } from './dto/removeResult.dto';
@@ -28,15 +29,17 @@ export class ResultController {
 
   @Get('round/:roundId')
   async getAllResultsByRoundId(
-    @Param('roundId') roundId: string,
+    @Param('roundId', ParseRoundIdPipe) roundId: string,
     @Query('search') search: string,
   ) {
     return this.resultService.getAllResultsByRound(roundId, search);
   }
 
+  // Creates the result when it is missing, so it is a delegate's action
+  @UseGuards(DelegateGuard)
   @Get('round/:roundId/person/:personId')
   async getResultByRoundIdAndPersonId(
-    @Param('roundId') roundId: string,
+    @Param('roundId', ParseRoundIdPipe) roundId: string,
     @Param('personId') personId: string,
   ) {
     return this.resultService.getResultOrCreate(personId, roundId);
@@ -44,13 +47,17 @@ export class ResultController {
 
   @UseGuards(DelegateGuard)
   @Get('round/:roundId/double-check')
-  async getResultsToDoubleCheckByRoundId(@Param('roundId') roundId: string) {
+  async getResultsToDoubleCheckByRoundId(
+    @Param('roundId', ParseRoundIdPipe) roundId: string,
+  ) {
     return this.resultService.getResultsToDoubleCheckByRoundId(roundId);
   }
 
   @UseGuards(DelegateGuard)
   @Get('round/:roundId/missing-persons')
-  async getPersonsWithNoResultsByRoundId(@Param('roundId') roundId: string) {
+  async getPersonsWithNoResultsByRoundId(
+    @Param('roundId', ParseRoundIdPipe) roundId: string,
+  ) {
     return this.resultService.getPersonsWithNoResultsByRoundId(roundId);
   }
 
@@ -67,7 +74,9 @@ export class ResultController {
   @HttpCode(HttpStatus.NO_CONTENT)
   @UseGuards(DelegateGuard)
   @Delete('round/:roundId/double-check')
-  async undoDoubleCheckResultsByRoundId(@Param('roundId') roundId: string) {
+  async undoDoubleCheckResultsByRoundId(
+    @Param('roundId', ParseRoundIdPipe) roundId: string,
+  ) {
     return this.resultService.undoDoubleCheckResultsByRoundId(roundId);
   }
 
@@ -129,7 +138,7 @@ export class ResultController {
   @HttpCode(HttpStatus.OK)
   @UseGuards(DelegateGuard)
   @Post('round/:roundId/enter')
-  async sendRound(@Param('roundId') roundId: string) {
+  async sendRound(@Param('roundId', ParseRoundIdPipe) roundId: string) {
     return await this.resultService.sendRound(roundId);
   }
 

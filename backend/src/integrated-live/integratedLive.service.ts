@@ -158,20 +158,26 @@ export class IntegratedLiveService {
     });
     const base = `${process.env.WCA_ORIGIN}/api/v1/competitions/${competition.wcaId}/live`;
     const wcif = competition.wcif as unknown as Wcif;
-    if (!(await this.sendClears(base))) return;
+    if (!(await this.sendClears(base, wcif))) return;
     if (!(await this.sendDirty(base, wcif))) return;
     await this.readBack(base);
   }
 
   /** False when the run has to stop: out of requests, backing off, or offline */
-  private async sendClears(base: string) {
+  private async sendClears(base: string, wcif: Wcif) {
     const clears = await this.prisma.liveClear.findMany({
       orderBy: { createdAt: 'asc' },
       take: 20,
     });
     for (const clear of clears) {
+      // Only rounds of this competition: the round id comes from stored
+      // results and ends up in a URL sent with the connection's WCA token
+      if (!getRoundInfoFromWcif(clear.roundId, wcif)) {
+        await this.prisma.liveClear.delete({ where: { id: clear.id } });
+        continue;
+      }
       const response = await this.request(
-        `${base}/rounds/${clear.roundId}/${clear.wcaRegistrationId}/clear`,
+        `${base}/rounds/${encodeURIComponent(clear.roundId)}/${clear.wcaRegistrationId}/clear`,
         { method: 'PUT' },
       );
       if (!response) return false;
@@ -233,9 +239,12 @@ export class IntegratedLiveService {
     // A first round touches no other round when it opens, so the first
     // result to send opens it if the group start didn't
     if ((liveRound.results ?? []).length === 0 && isFirstRound) {
-      const opened = await this.request(`${base}/rounds/${roundId}/open`, {
-        method: 'PUT',
-      });
+      const opened = await this.request(
+        `${base}/rounds/${encodeURIComponent(roundId)}/open`,
+        {
+          method: 'PUT',
+        },
+      );
       if (!opened) return false;
       if (opened.ok) {
         liveRound = await this.getLiveRound(base, roundId);
@@ -250,7 +259,7 @@ export class IntegratedLiveService {
     const getAddable = async () => {
       if (addable === null) {
         const found = await this.request(
-          `${base}/rounds/${roundId}/addable_competitors`,
+          `${base}/rounds/${encodeURIComponent(roundId)}/addable_competitors`,
         );
         if (!found) return null;
         addable = found.ok ? ((await found.json()).registrations ?? []) : [];
@@ -321,7 +330,7 @@ export class IntegratedLiveService {
       if (attempts.length === 0) {
         // The write endpoint can't express "no attempts"
         const cleared = await this.request(
-          `${base}/rounds/${roundId}/${registrationId}/clear`,
+          `${base}/rounds/${encodeURIComponent(roundId)}/${registrationId}/clear`,
           { method: 'PUT' },
         );
         if (!cleared) return false;
@@ -329,7 +338,7 @@ export class IntegratedLiveService {
           // Regulation 9t: they wouldn't have advanced, so they leave the
           // round, with nobody moving up in their place
           const quit = await this.request(
-            `${base}/rounds/${roundId}/${registrationId}`,
+            `${base}/rounds/${encodeURIComponent(roundId)}/${registrationId}`,
             { method: 'DELETE' },
           );
           if (!quit) return false;
@@ -362,16 +371,19 @@ export class IntegratedLiveService {
 
     for (let i = 0; i < batch.length; i += BATCH_SIZE) {
       const chunk = batch.slice(i, i + BATCH_SIZE);
-      const sent = await this.request(`${base}/rounds/${roundId}/batch`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          results: chunk.map(({ sync, attempts }) => ({
-            registration_id: sync.result.person.wcaRegistrationId,
-            attempts,
-          })),
-        }),
-      });
+      const sent = await this.request(
+        `${base}/rounds/${encodeURIComponent(roundId)}/batch`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            results: chunk.map(({ sync, attempts }) => ({
+              registration_id: sync.result.person.wcaRegistrationId,
+              attempts,
+            })),
+          }),
+        },
+      );
       if (!sent) return false;
       if (!(await this.afterWrite(chunk, sent))) return false;
     }
@@ -407,7 +419,7 @@ export class IntegratedLiveService {
       }
     }
     const added = await this.request(
-      `${base}/rounds/${roundId}/${registrationId}`,
+      `${base}/rounds/${encodeURIComponent(roundId)}/${registrationId}`,
       { method: 'PUT' },
     );
     if (!added) return null;
@@ -428,7 +440,9 @@ export class IntegratedLiveService {
     base: string,
     roundId: string,
   ): Promise<LiveRound | null> {
-    const response = await this.request(`${base}/rounds/${roundId}`);
+    const response = await this.request(
+      `${base}/rounds/${encodeURIComponent(roundId)}`,
+    );
     if (!response) return null;
     return response.ok ? await response.json() : {};
   }
@@ -499,7 +513,9 @@ export class IntegratedLiveService {
     });
     const roundIds = [...new Set(sent.map((sync) => sync.result.roundId))];
     for (const roundId of roundIds) {
-      const response = await this.request(`${base}/rounds/${roundId}`);
+      const response = await this.request(
+        `${base}/rounds/${encodeURIComponent(roundId)}`,
+      );
       if (!response) return;
       if (!response.ok) continue;
       const liveRound: LiveRound = await response.json();

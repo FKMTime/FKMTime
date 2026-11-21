@@ -117,6 +117,18 @@ describe('ResultController (e2e)', () => {
     });
   });
 
+  describe('round id path parameters', () => {
+    it.each([
+      '..%2F..%2F..%2FOtherComp2026%2Flive%2Frounds%2F333-r1',
+      '333-r1%3Fx%3D',
+      'not-a-round',
+    ])('rejects %s with 400', async (roundId) => {
+      await request(app.getHttpServer())
+        .get(`/result/public/round/${roundId}`)
+        .expect(400);
+    });
+  });
+
   describe('attempt fields outside delegate pages', () => {
     const delegateOnly = [
       'comment',

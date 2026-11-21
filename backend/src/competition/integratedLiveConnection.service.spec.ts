@@ -41,6 +41,13 @@ describe('IntegratedLiveConnectionService', () => {
       competition: {
         findFirst: jest.fn(async () => ({ ...competition })),
         update: jest.fn(async ({ data }) => Object.assign(competition, data)),
+        updateMany: jest.fn(async ({ where, data }) => {
+          const matches = Object.entries(where).every(
+            ([key, value]) => competition[key] === value,
+          );
+          if (matches) Object.assign(competition, data);
+          return { count: matches ? 1 : 0 };
+        }),
       },
     };
     wcaService = {
@@ -187,6 +194,46 @@ describe('IntegratedLiveConnectionService', () => {
         appGateway.handleIntegratedLiveConnectionChanged,
       ).toHaveBeenCalled();
       expect((await service.getStatus()).state).toBe('BROKEN');
+    });
+
+    it('keeps a disconnect that lands while a refresh is in flight', async () => {
+      connectedWith(1, 60 * 1000);
+      let finishRefresh: (value: unknown) => void = () => {};
+      wcaService.refreshTokens.mockReturnValue(
+        new Promise((resolve) => (finishRefresh = resolve)),
+      );
+
+      const pending = service.getAccessToken();
+      await new Promise((resolve) => setImmediate(resolve));
+      await service.disconnect();
+      finishRefresh(tokens(2));
+
+      await expect(pending).resolves.toBeNull();
+      expect(competition.wcaLiveAccessToken).toBeNull();
+      expect((await service.getStatus()).state).toBe('NOT_CONNECTED');
+    });
+
+    it('keeps a reconnect that lands while a refresh is in flight', async () => {
+      connectedWith(1, 60 * 1000);
+      let finishRefresh: (value: unknown) => void = () => {};
+      wcaService.refreshTokens.mockReturnValue(
+        new Promise((resolve) => (finishRefresh = resolve)),
+      );
+      wcaService.exchangeCodeForTokens.mockResolvedValue(tokens(3));
+
+      const pending = service.getAccessToken();
+      await new Promise((resolve) => setImmediate(resolve));
+      await service.connect(
+        'user-2',
+        'code-3',
+        'https://panel.example/competition/wca-live-connect',
+      );
+      finishRefresh(tokens(2));
+      await pending;
+
+      expect(decryptSecret(competition.wcaLiveAccessToken as string)).toBe(
+        'access-3',
+      );
     });
 
     it('stops using a broken connection until someone reconnects', async () => {

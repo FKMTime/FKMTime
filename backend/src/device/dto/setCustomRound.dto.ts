@@ -16,6 +16,6 @@ export class SetCustomRoundDto {
   /** The round to point the stations at, or null to send them back to their room */
   @ValidateIf((dto: SetCustomRoundDto) => dto.roundId !== null)
   @IsString()
-  @Matches(new RegExp(`^${roundIdRegex}$`))
+  @Matches(roundIdRegex)
   roundId: string | null;
 }

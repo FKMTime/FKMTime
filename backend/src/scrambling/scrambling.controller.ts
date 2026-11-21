@@ -10,6 +10,7 @@ import {
 } from '@nestjs/common';
 import { GetScramblingDeviceToken } from 'src/auth/decorator/getScramblingDeviceToken.decorator';
 import { ScramblingDeviceGuard } from 'src/auth/guards/scramblingDevice.guard';
+import { ParseRoundIdPipe } from 'src/roundId.pipe';
 import { ScrambleSetService } from 'src/scramble-set/scramble-set.service';
 
 import { CreateScrambledAttemptDto } from './dto/createScrambledAttempt.dto';
@@ -30,7 +31,7 @@ export class ScramblingController {
   }
 
   @Get('sets/round/:roundId')
-  async getScrambleSets(@Param('roundId') roundId: string) {
+  async getScrambleSets(@Param('roundId', ParseRoundIdPipe) roundId: string) {
     return this.scrambleSetService.getScrambleSets(roundId);
   }
 
@@ -52,7 +53,7 @@ export class ScramblingController {
   async getScrambleData(
     @GetScramblingDeviceToken() token: string,
     @Param('cardId') cardId: string,
-    @Param('roundId') roundId: string,
+    @Param('roundId', ParseRoundIdPipe) roundId: string,
   ) {
     return this.scramblingService.getScrambleData(token, cardId, roundId);
   }

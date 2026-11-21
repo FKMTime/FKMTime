@@ -319,6 +319,15 @@ describe('IntegratedLiveService', () => {
     expect(store.clears).toHaveLength(0);
   });
 
+  it('drops a clear for a round that is not in the competition', async () => {
+    await service.queueClear('333-r1/../../../../users/me#', 101);
+
+    await service.run();
+
+    expect(calls()).toEqual([]);
+    expect(store.clears).toHaveLength(0);
+  });
+
   it('marks the entry the WCA refused and sends the rest again later', async () => {
     store.addResult('r1', 101, [attempt(1, 1234)]);
     store.addResult('r2', 102, [attempt(1, 2000)]);
