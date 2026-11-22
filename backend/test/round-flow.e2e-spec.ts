@@ -11,6 +11,7 @@ import {
   StaffActivityStatus,
   StaffRole,
 } from '../src/generated/prisma/client';
+import { found } from '../src/test-utils/found';
 import { createTestApp } from './helpers/app.helper';
 import {
   createRoleUsers,
@@ -70,6 +71,7 @@ describe('Round flow: from check-in to submitted results (e2e)', () => {
     Authorization: `Bearer ${users.tokens[role]}`,
   });
   const cardOf = (p: Person) => `E2E-FLOW-CARD-${p.registrantId}`;
+  const registrantIdOf = (p: Person) => found(p.registrantId, 'registrant id');
 
   const newAttempt = (
     person: Person,
@@ -97,7 +99,7 @@ describe('Round flow: from check-in to submitted results (e2e)', () => {
       .get(`/result/round/${ROUND_ID}/person/${person.id}`)
       .set(auth('DELEGATE'))
       .expect(200);
-    resultIds[person.registrantId] = opened.body.id;
+    resultIds[registrantIdOf(person)] = opened.body.id;
     await request(server())
       .post('/attempt/scorecard')
       .set(auth('DELEGATE'))
@@ -120,7 +122,7 @@ describe('Round flow: from check-in to submitted results (e2e)', () => {
       canCompete: false,
     } as Partial<Person>);
     await db.device.deleteMany({ where: { name: DEVICE_NAME } });
-    const room = await db.room.findFirst();
+    const room = found(await db.room.findFirst(), 'room');
     device = await db.device.create({
       data: {
         name: DEVICE_NAME,
@@ -262,7 +264,7 @@ describe('Round flow: from check-in to submitted results (e2e)', () => {
     // The station reports a solve the judge flagged
     const incident = await db.attempt.create({
       data: {
-        resultId: resultIds[c.registrantId],
+        resultId: resultIds[registrantIdOf(c)],
         attemptNumber: 5,
         value: 2500,
         penalty: 0,
@@ -299,7 +301,7 @@ describe('Round flow: from check-in to submitted results (e2e)', () => {
       .set(auth('DELEGATE'))
       .expect(200);
     expect(doubleCheck.body.results.map((r: any) => r.id)).not.toContain(
-      resultIds[c.registrantId],
+      resultIds[registrantIdOf(c)],
     );
 
     await request(server())
@@ -363,7 +365,10 @@ describe('Round flow: from check-in to submitted results (e2e)', () => {
   it('WCA Live receives the counting attempts of every competitor', () => {
     const [a, b, c, d, e] = competitors;
     const submitted = (p: Person) =>
-      stub.lastAttemptsFor(p.registrantId, ROUND_ID);
+      found(
+        stub.lastAttemptsFor(registrantIdOf(p), ROUND_ID),
+        'submitted attempts',
+      );
 
     expect(submitted(a)).toEqual([1000, 1100, 1200, 1300, 1400]);
     // +2 adds two seconds, DNF is -1
@@ -401,7 +406,7 @@ describe('Round flow: from check-in to submitted results (e2e)', () => {
       .expect(200);
 
     expect(list.body.results.map((r: any) => r.id)).toContain(
-      resultIds[competitors[2].registrantId],
+      resultIds[registrantIdOf(competitors[2])],
     );
   });
 
@@ -417,13 +422,15 @@ describe('Round flow: from check-in to submitted results (e2e)', () => {
     );
     const ids = mine.map((r: any) => r.id);
     expect(ids).toEqual(
-      expect.arrayContaining([a, b, d].map((p) => resultIds[p.registrantId])),
+      expect.arrayContaining(
+        [a, b, d].map((p) => resultIds[registrantIdOf(p)]),
+      ),
     );
-    expect(ids).not.toContain(resultIds[e.registrantId]);
+    expect(ids).not.toContain(resultIds[registrantIdOf(e)]);
     // C is confirmed from the scorecard itself (see the skipped bug above)
-    if (!ids.includes(resultIds[c.registrantId])) {
+    if (!ids.includes(resultIds[registrantIdOf(c)])) {
       const scorecard = await request(server())
-        .get(`/result/${resultIds[c.registrantId]}`)
+        .get(`/result/${resultIds[registrantIdOf(c)]}`)
         .set(auth('DELEGATE'))
         .expect(200);
       mine.push(scorecard.body);
@@ -472,7 +479,7 @@ describe('Round flow: from check-in to submitted results (e2e)', () => {
         .sort(),
     ).toEqual([a, b, c, d].map((p) => p.id).sort());
     // Double checking resubmits the same, unchanged attempts
-    expect(stub.lastAttemptsFor(b.registrantId, ROUND_ID)).toEqual([
+    expect(stub.lastAttemptsFor(registrantIdOf(b), ROUND_ID)).toEqual([
       900,
       1400,
       DNF,
@@ -501,7 +508,7 @@ describe('Round flow: from check-in to submitted results (e2e)', () => {
   it('the organizer gives DNS for the solves E never did', async () => {
     const e = competitors[4];
     await request(server())
-      .post(`/result/${resultIds[e.registrantId]}/assign-dns`)
+      .post(`/result/${resultIds[registrantIdOf(e)]}/assign-dns`)
       .set(auth('ORGANIZER'))
       .expect(200);
 
@@ -513,7 +520,7 @@ describe('Round flow: from check-in to submitted results (e2e)', () => {
       list.body.results
         .filter((r: any) => competitors.some((p) => p.id === r.personId))
         .map((r: any) => r.id),
-    ).toEqual([resultIds[e.registrantId]]);
+    ).toEqual([resultIds[registrantIdOf(e)]]);
     const checks = await request(server())
       .get(`/result/checks?roundId=${ROUND_ID}`)
       .set(auth('DELEGATE'))
@@ -546,7 +553,7 @@ describe('Round flow: from check-in to submitted results (e2e)', () => {
       await db.attempt.count({
         where: {
           resultId: {
-            in: [resultIds[d.registrantId], resultIds[e.registrantId]],
+            in: [resultIds[registrantIdOf(d)], resultIds[registrantIdOf(e)]],
           },
         },
       }),
@@ -590,12 +597,12 @@ describe('Round flow: from check-in to submitted results (e2e)', () => {
     expect(list.body.doubleCheckedCount).toBe(0);
     const [a, b, c] = competitors;
     expect(list.body.results.map((r: any) => r.id)).toEqual(
-      expect.arrayContaining([a, b].map((p) => resultIds[p.registrantId])),
+      expect.arrayContaining([a, b].map((p) => resultIds[registrantIdOf(p)])),
     );
     expect(
       await db.result.count({
         where: {
-          id: { in: [a, b, c].map((p) => resultIds[p.registrantId]) },
+          id: { in: [a, b, c].map((p) => resultIds[registrantIdOf(p)]) },
           isDoubleChecked: false,
         },
       }),

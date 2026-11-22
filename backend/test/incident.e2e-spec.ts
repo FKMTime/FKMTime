@@ -2,6 +2,7 @@ import { INestApplication } from '@nestjs/common';
 import { DbService } from 'src/db/db.service';
 import * as request from 'supertest';
 
+import { found } from '../src/test-utils/found';
 import { createTestApp } from './helpers/app.helper';
 
 const ROUND_ID = '333-r1';
@@ -17,7 +18,10 @@ describe('IncidentController (e2e)', () => {
 
   beforeAll(async () => {
     ({ app, db, adminToken } = await createTestApp());
-    const person = await db.person.findFirst({ where: { registrantId: 5 } });
+    const person = found(
+      await db.person.findFirst({ where: { registrantId: 5 } }),
+      'person 5',
+    );
     personId = person.id;
   }, 30000);
 
@@ -140,7 +144,6 @@ describe('IncidentController (e2e)', () => {
         where: { id: noteworthyId },
       });
       expect(gone).toBeNull();
-      noteworthyId = null;
     });
 
     it('returns 401 when not authenticated', async () => {
@@ -190,7 +193,6 @@ describe('IncidentController (e2e)', () => {
 
       const gone = await db.warning.findUnique({ where: { id: warningId } });
       expect(gone).toBeNull();
-      warningId = null;
     });
 
     it('returns 401 when not authenticated', async () => {
@@ -248,7 +250,6 @@ describe('IncidentController (e2e)', () => {
         where: { id: manualIncidentId },
       });
       expect(gone).toBeNull();
-      manualIncidentId = null;
     });
 
     it('returns 400 when personId is not a UUID', async () => {

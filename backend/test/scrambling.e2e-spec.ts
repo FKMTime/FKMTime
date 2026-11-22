@@ -9,6 +9,7 @@ import {
   AttemptType,
   Role,
 } from '../src/generated/prisma/client';
+import { found } from '../src/test-utils/found';
 import { createTestApp } from './helpers/app.helper';
 import { listenOnLoopback } from './helpers/loopback.helper';
 import {
@@ -74,14 +75,20 @@ describe('Scrambling device flow (e2e)', () => {
     const rooms = await db.room.findMany({ orderBy: { name: 'asc' } });
     roomId = rooms[0].id;
     otherRoomId = rooms[1].id;
-    competitor = await db.person.findFirst({
-      where: { registrantId: 3 },
-      select: { id: true, name: true, cardId: true },
-    });
-    scrambler = await db.person.findFirst({
-      where: { registrantId: 4 },
-      select: { id: true, name: true },
-    });
+    competitor = found(
+      await db.person.findFirst({
+        where: { registrantId: 3 },
+        select: { id: true, name: true, cardId: true },
+      }),
+      'competitor',
+    );
+    scrambler = found(
+      await db.person.findFirst({
+        where: { registrantId: 4 },
+        select: { id: true, name: true },
+      }),
+      'scrambler',
+    );
     await db.person.update({
       where: { id: competitor.id },
       data: { cardId: CARD_ID },
@@ -138,9 +145,10 @@ describe('Scrambling device flow (e2e)', () => {
         .expect(200);
 
       expect(res.body).toMatchObject({ id: deviceId, roomId });
-      const fromDb = await db.scramblingDevice.findUnique({
-        where: { id: deviceId },
-      });
+      const fromDb = found(
+        await db.scramblingDevice.findUnique({ where: { id: deviceId } }),
+        'scrambling device',
+      );
       expect(fromDb.roomId).toBe(roomId);
     });
 
@@ -168,9 +176,10 @@ describe('Scrambling device flow (e2e)', () => {
 
       expect(res.body).toEqual({ code: expect.stringMatching(/^\d{6}$/) });
       oneTimeCode = res.body.code;
-      const fromDb = await db.scramblingDevice.findUnique({
-        where: { id: deviceId },
-      });
+      const fromDb = found(
+        await db.scramblingDevice.findUnique({ where: { id: deviceId } }),
+        'scrambling device',
+      );
       expect(fromDb.encryptedOneTimeCode).toBe(sha512(oneTimeCode));
     });
 
@@ -201,9 +210,10 @@ describe('Scrambling device flow (e2e)', () => {
       });
       deviceToken = res.body.token;
 
-      const fromDb = await db.scramblingDevice.findUnique({
-        where: { id: deviceId },
-      });
+      const fromDb = found(
+        await db.scramblingDevice.findUnique({ where: { id: deviceId } }),
+        'scrambling device',
+      );
       expect(fromDb.encryptedToken).toBe(sha512(deviceToken));
       expect(fromDb.encryptedOneTimeCode).toBeNull();
       expect(res.body.device).not.toHaveProperty('encryptedToken');
@@ -266,7 +276,10 @@ describe('Scrambling device flow (e2e)', () => {
         request(server()).get('/scrambling/room'),
       ).expect(200);
 
-      const room = await db.room.findUnique({ where: { id: roomId } });
+      const room = found(
+        await db.room.findUnique({ where: { id: roomId } }),
+        'room',
+      );
       expect(res.body).toMatchObject({ id: roomId, name: room.name });
     });
 
@@ -275,7 +288,10 @@ describe('Scrambling device flow (e2e)', () => {
         request(server()).get('/competition/for/scrambling-device'),
       ).expect(200);
 
-      const competition = await db.competition.findFirst();
+      const competition = found(
+        await db.competition.findFirst(),
+        'competition',
+      );
       expect(res.body).toMatchObject({
         id: competition.id,
         name: competition.name,
@@ -481,10 +497,13 @@ describe('Scrambling device flow (e2e)', () => {
         value: 0,
         scrambledAt: expect.any(String),
       });
-      const attempt = await db.attempt.findUnique({
-        where: { id: res.body.id },
-        include: { result: true },
-      });
+      const attempt = found(
+        await db.attempt.findUnique({
+          where: { id: res.body.id },
+          include: { result: true },
+        }),
+        'scrambled attempt',
+      );
       expect(attempt.result).toMatchObject({
         personId: competitor.id,
         roundId: ROUND_ID,
@@ -514,9 +533,12 @@ describe('Scrambling device flow (e2e)', () => {
     });
 
     it('moves on to the next scramble once the attempt is solved', async () => {
-      const result = await db.result.findFirst({
-        where: { personId: competitor.id, roundId: ROUND_ID },
-      });
+      const result = found(
+        await db.result.findFirst({
+          where: { personId: competitor.id, roundId: ROUND_ID },
+        }),
+        'competitor result',
+      );
       await db.attempt.updateMany({
         where: { resultId: result.id, attemptNumber: 1 },
         data: { status: AttemptStatus.STANDARD, value: 950 },
@@ -530,9 +552,12 @@ describe('Scrambling device flow (e2e)', () => {
     });
 
     it('offers an extra scramble when an extra was granted', async () => {
-      const result = await db.result.findFirst({
-        where: { personId: competitor.id, roundId: ROUND_ID },
-      });
+      const result = found(
+        await db.result.findFirst({
+          where: { personId: competitor.id, roundId: ROUND_ID },
+        }),
+        'competitor result',
+      );
       await db.attempt.updateMany({
         where: { resultId: result.id, attemptNumber: 1 },
         data: { status: AttemptStatus.EXTRA_GIVEN },
@@ -546,9 +571,12 @@ describe('Scrambling device flow (e2e)', () => {
     });
 
     it('signals that no attempts are left after the last one', async () => {
-      const result = await db.result.findFirst({
-        where: { personId: competitor.id, roundId: ROUND_ID },
-      });
+      const result = found(
+        await db.result.findFirst({
+          where: { personId: competitor.id, roundId: ROUND_ID },
+        }),
+        'competitor result',
+      );
       await db.attempt.deleteMany({ where: { resultId: result.id } });
       await db.attempt.createMany({
         data: [1, 2, 3, 4, 5].map((attemptNumber) => ({

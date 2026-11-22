@@ -3,6 +3,7 @@ import { DbService } from 'src/db/db.service';
 import * as request from 'supertest';
 
 import { Role } from '../src/generated/prisma/client';
+import { found } from '../src/test-utils/found';
 import { createTestApp } from './helpers/app.helper';
 import { listenOnLoopback } from './helpers/loopback.helper';
 import {
@@ -77,7 +78,8 @@ describe('Account settings & quick actions (e2e)', () => {
         roles: [Role.STAFF],
       });
       expect(
-        (await db.user.findUnique({ where: { id: staff.id } })).username,
+        found(await db.user.findUnique({ where: { id: staff.id } }), 'staff')
+          .username,
       ).toBe(newUsername);
     });
 
@@ -96,7 +98,8 @@ describe('Account settings & quick actions (e2e)', () => {
         .expect(200);
 
       expect(
-        (await db.user.findUnique({ where: { id: staff.id } })).roles,
+        found(await db.user.findUnique({ where: { id: staff.id } }), 'staff')
+          .roles,
       ).toEqual([Role.STAFF]);
     });
   });
@@ -165,8 +168,10 @@ describe('Account settings & quick actions (e2e)', () => {
         .expect(200);
 
       expect(
-        (await db.quickAction.findUnique({ where: { id: sharedActionId } }))
-          .comment,
+        found(
+          await db.quickAction.findUnique({ where: { id: sharedActionId } }),
+          'shared quick action',
+        ).comment,
       ).toBe('edited by bob');
     });
 

@@ -9,6 +9,7 @@ import {
   DeviceType,
   Person,
 } from '../src/generated/prisma/client';
+import { found } from '../src/test-utils/found';
 import { createTestApp } from './helpers/app.helper';
 import {
   createRoleUsers,
@@ -76,7 +77,7 @@ describe('Incident review (e2e)', () => {
       REGISTRANT_IDS,
     );
     await db.device.deleteMany({ where: { name: DEVICE_NAME } });
-    const room = await db.room.findFirst();
+    const room = found(await db.room.findFirst(), 'room');
     device = await db.device.create({
       data: {
         name: DEVICE_NAME,

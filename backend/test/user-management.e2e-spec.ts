@@ -3,6 +3,7 @@ import { DbService } from 'src/db/db.service';
 import * as request from 'supertest';
 
 import { Role } from '../src/generated/prisma/client';
+import { found } from '../src/test-utils/found';
 import { createTestApp } from './helpers/app.helper';
 import {
   DummyWcaAccount,
@@ -69,9 +70,10 @@ describe('User management (e2e)', () => {
         .expect(201);
 
       expect(res.body).toEqual({ message: 'User created successfully' });
-      const fromDb = await db.user.findUnique({
-        where: { username: username('staff') },
-      });
+      const fromDb = found(
+        await db.user.findUnique({ where: { username: username('staff') } }),
+        'staff user',
+      );
       expect(fromDb).toMatchObject({
         fullName: 'Staff Member',
         roles: [Role.STAFF, Role.STAGE_LEADER],
@@ -236,7 +238,8 @@ describe('User management (e2e)', () => {
         })
         .expect(403);
       expect(
-        (await db.user.findUnique({ where: { id: staffUserId } })).roles,
+        found(await db.user.findUnique({ where: { id: staffUserId } }), 'staff')
+          .roles,
       ).toEqual([Role.STAFF]);
     });
 
