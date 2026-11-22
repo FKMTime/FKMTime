@@ -1,3 +1,4 @@
+import { found } from '../test-utils/found';
 import {
   getAllTranslations,
   getStationTranslations,
@@ -25,8 +26,14 @@ describe('station translations', () => {
   });
 
   it('keeps reply messages for the backend, like the round-changed one', () => {
-    const en = getAllTranslations().find((l) => l.locale === 'en');
-    const station = getStationTranslations().find((l) => l.locale === 'en');
+    const en = found(
+      getAllTranslations().find((l) => l.locale === 'en'),
+      'English translations',
+    );
+    const station = found(
+      getStationTranslations().find((l) => l.locale === 'en'),
+      'English station translations',
+    );
 
     expect(en.translations.map((t) => t.key)).toContain('stationRoundChanged');
     expect(station.translations.map((t) => t.key)).not.toContain(

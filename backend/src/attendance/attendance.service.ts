@@ -433,7 +433,10 @@ export class AttendanceService {
         this.appGateway.handleNewAttendance(groupId, person.id);
       } catch {
         return {
-          message: getTranslation('attendanceConfirmed', person.countryIso2),
+          message: getTranslation(
+            'attendanceConfirmed',
+            person.countryIso2 ?? 'en',
+          ),
         };
         // if (e instanceof PrismaClientKnownRequestError) {
         //   if (e.code === 'P2002') {
@@ -448,7 +451,10 @@ export class AttendanceService {
       }
     }
     return {
-      message: getTranslation('attendanceConfirmed', person.countryIso2),
+      message: getTranslation(
+        'attendanceConfirmed',
+        person.countryIso2 ?? 'en',
+      ),
     };
   }
 

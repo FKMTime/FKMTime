@@ -30,4 +30,12 @@ describe('secret box', () => {
   it('returns null for a damaged value', () => {
     expect(decryptSecret('not-a-stored-secret')).toBeNull();
   });
+
+  it('refuses to encrypt without a SECRET, saying so', () => {
+    delete process.env.SECRET;
+
+    expect(() => encryptSecret('access-token-123')).toThrow(
+      'SECRET is not set',
+    );
+  });
 });

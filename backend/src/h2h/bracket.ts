@@ -139,10 +139,14 @@ export const buildBracket = (
       first.expectedSeed < second.expectedSeed
         ? [first, second]
         : [second, first];
+    const stageSetsToWin = setsToWin[stage];
+    if (stageSetsToWin === undefined) {
+      throw new Error(`No sets to win for the ${STAGE_LABELS[stage]}`);
+    }
     const match: BracketMatch = {
       matchNumber: matches.length + 1,
       stage,
-      setsToWin: setsToWin[stage],
+      setsToWin: stageSetsToWin,
       a: a.slot,
       b: b.slot,
     };
@@ -171,7 +175,10 @@ export const buildBracket = (
     for (let i = 0; i < entries.length; i += 2) {
       const [first, second] = [entries[i], entries[i + 1]];
       if (first === null || second === null) {
-        next.push(first ?? second);
+        // At most half the bracket are byes, so a bye never meets a bye
+        const advancing = first ?? second;
+        if (advancing === null) throw new Error('Two byes met in the bracket');
+        next.push(advancing);
         continue;
       }
       const { winner, loser } = addMatch(stage, first, second);
@@ -183,6 +190,10 @@ export const buildBracket = (
   }
   const [firstLoser, secondLoser] = semifinalLosers;
   addMatch(H2hStage.THIRD_PLACE, firstLoser, secondLoser);
-  addMatch(H2hStage.FINAL, entries[0], entries[1]);
+  const [firstFinalist, secondFinalist] = entries;
+  if (firstFinalist === null || secondFinalist === null) {
+    throw new Error('The final has a bye');
+  }
+  addMatch(H2hStage.FINAL, firstFinalist, secondFinalist);
   return matches;
 };

@@ -57,6 +57,15 @@ export const matchScrambleSets = (
   scrambleSets: RoundScrambleSet[],
 ): PlanRow[] => {
   const matchNumbers = new Map(matches.map((m) => [m.matchId, m.matchNumber]));
+  const matchNumberOf = (row: PlanRow) => {
+    const matchNumber = matchNumbers.get(row.matchId);
+    if (matchNumber === undefined) {
+      throw new Error(
+        `Plan row for match ${row.matchId}, which is not in the round`,
+      );
+    }
+    return matchNumber;
+  };
   const taken = new Set(
     rows.map((row) => row.scrambleSetId).filter((id) => id !== null),
   );
@@ -66,12 +75,10 @@ export const matchScrambleSets = (
   return [...rows]
     .sort(
       (x, y) =>
-        matchNumbers.get(x.matchId) - matchNumbers.get(y.matchId) ||
-        x.setNumber - y.setNumber,
+        matchNumberOf(x) - matchNumberOf(y) || x.setNumber - y.setNumber,
     )
-    .map((row) =>
-      row.scrambleSetId !== null || free.length === 0
-        ? row
-        : { ...row, scrambleSetId: free.shift().id },
-    );
+    .map((row) => {
+      const set = row.scrambleSetId === null ? free.shift() : undefined;
+      return set ? { ...row, scrambleSetId: set.id } : row;
+    });
 };

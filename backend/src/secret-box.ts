@@ -7,7 +7,11 @@ import {
 
 // Secrets FKMTime has to send back later (unlike the hashed device tokens),
 // so they are encrypted, with a key derived from the server's SECRET
-const key = () => createHash('sha256').update(process.env.SECRET).digest();
+const key = () => {
+  const secret = process.env.SECRET;
+  if (secret === undefined) throw new Error('SECRET is not set');
+  return createHash('sha256').update(secret).digest();
+};
 
 /** AES-256-GCM; the result holds the IV, the auth tag and the ciphertext */
 export const encryptSecret = (plain: string) => {

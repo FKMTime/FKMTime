@@ -502,7 +502,7 @@ export class DeviceService {
       }
       throw e;
     }
-    this.appGateway.handleAddDeviceToDb(device.espId);
+    this.appGateway.handleAddDeviceToDb(request.espId);
     await this.notifyDevicesChanged();
     return { message: 'Device reconnected' };
   }

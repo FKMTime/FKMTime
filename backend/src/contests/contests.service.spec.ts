@@ -15,7 +15,7 @@ describe('ContestsService', () => {
           provide: DbService,
           useValue: {
             competition: {
-              findFirst: jest.fn(),
+              findFirstOrThrow: jest.fn(),
             },
           },
         },

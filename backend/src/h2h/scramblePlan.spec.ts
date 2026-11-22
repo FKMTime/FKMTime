@@ -116,4 +116,16 @@ describe('matchScrambleSets', () => {
 
     expect(plan.map((row) => row.scrambleSetId)).toEqual(['set-Z', 'set-AA']);
   });
+
+  it('refuses a row whose match is not in the round instead of ordering it anywhere', () => {
+    const matches = planMatches(4, everyStage(4, 1));
+    const rows = [
+      ...buildPlanRows(matches),
+      { matchId: 'm-other', setNumber: 1, scrambleSetId: null },
+    ];
+
+    expect(() => matchScrambleSets(matches, rows, sets(letters(5)))).toThrow(
+      'Plan row for match m-other, which is not in the round',
+    );
+  });
 });

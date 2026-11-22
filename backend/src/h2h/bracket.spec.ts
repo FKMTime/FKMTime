@@ -95,6 +95,12 @@ describe('buildBracket', () => {
 
     expect(matches.map((m) => m.setsToWin)).toEqual([1, 1, 1, 1, 2, 2, 2, 3]);
   });
+
+  it('refuses a stage with no sets to win instead of building a match without', () => {
+    expect(() => buildBracket(4, { SEMIFINAL: 1, THIRD_PLACE: 1 })).toThrow(
+      'No sets to win for the Final',
+    );
+  });
 });
 
 describe('validateSetsToWin', () => {

@@ -13,7 +13,7 @@ export class ContestsService {
   private cubingContestLogger = new Logger(`CubingContests`);
 
   async enterWholeScorecardToCubingContests(result: any) {
-    const competition = await this.prisma.competition.findFirst();
+    const competition = await this.prisma.competition.findFirstOrThrow();
     const { competitionId, eventId, roundNumber, apiToken, results } =
       await this.wcaService.getAttemptsToEnterToWcaLive(result, competition);
     try {
@@ -51,11 +51,13 @@ export class ContestsService {
   }
 
   async enterRoundToCubingContests(resultsToEnter: any) {
-    const competition = await this.prisma.competition.findFirst();
+    const competition = await this.prisma.competition.findFirstOrThrow();
     const eventIdToSubmit = resultsToEnter[0].eventId;
     const roundNumberToSubmit = +resultsToEnter[0].roundId.split('-r')[1];
 
-    const resultsToSubmit = [];
+    const resultsToSubmit: ReturnType<
+      WcaService['getAttemptsToEnterToWcaLive']
+    >['results'] = [];
     for (const result of resultsToEnter) {
       const { results } = await this.wcaService.getAttemptsToEnterToWcaLive(
         result,
