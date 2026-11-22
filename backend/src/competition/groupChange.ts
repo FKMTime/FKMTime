@@ -6,10 +6,13 @@ import {
 import {
   getFirstGroupInRoom,
   getNextGroupInRoom,
-  getRoundActivityInRoom,
   isSameDay,
 } from 'src/wcif-helpers';
-import { Activity, Competition as Wcif } from 'wcif-helpers';
+import {
+  Activity,
+  Competition as Wcif,
+  getActivityInfoFromScheduleWithRoom,
+} from 'wcif-helpers';
 
 import {
   Attempt,
@@ -421,7 +424,7 @@ export const getFirstGroupOfNextRoundInRoom = (
   roomName: string,
   wcif: Wcif,
 ): string | null => {
-  const round = getRoundActivityInRoom(roundId, roomName, wcif);
+  const round = getActivityInfoFromScheduleWithRoom(roundId, roomName, wcif);
   if (!round) return null;
   const endTime = new Date(round.endTime);
   let nextRound: Activity | null = null;
@@ -474,7 +477,11 @@ export const planNextGroups = (
   }
   if (next.length === 0 && endedRoundIds.length > 0) {
     const endOf = (roundId: string) => {
-      const round = getRoundActivityInRoom(roundId, roomName, wcif);
+      const round = getActivityInfoFromScheduleWithRoom(
+        roundId,
+        roomName,
+        wcif,
+      );
       return round ? new Date(round.endTime).getTime() : -Infinity;
     };
     const lastRoundId = endedRoundIds.reduce((a, b) =>
@@ -513,7 +520,7 @@ export const getNextGroupsInRoom = (
   const nextGroups: string[] = [];
   for (const currentGroupId of currentGroupIds) {
     const roundId = currentGroupId.split('-g')[0];
-    if (!getRoundActivityInRoom(roundId, roomName, wcif)) {
+    if (!getActivityInfoFromScheduleWithRoom(roundId, roomName, wcif)) {
       return [];
     }
     const nextGroupId =

@@ -2,9 +2,14 @@ import { forwardRef, Inject } from '@nestjs/common';
 import { DNS_VALUE } from 'src/constants';
 import { DbService } from 'src/db/db.service';
 import { getEventShortName } from 'src/events';
-import { getScheduleActivity, isSameDay } from 'src/wcif-helpers';
-import { Activity, Room as WCIFRoom, Venue } from 'wcif-helpers';
-import { getCompetitionDates } from 'wcif-helpers';
+import { isSameDay } from 'src/wcif-helpers';
+import {
+  Activity,
+  getActivityInfoFromSchedule,
+  getCompetitionDates,
+  Room as WCIFRoom,
+  Venue,
+} from 'wcif-helpers';
 
 import { AttemptStatus, DeviceType } from '../generated/prisma/client';
 import { getRoundAttemptStats } from './roundAttemptStats';
@@ -241,7 +246,7 @@ export class StatisticsService {
             solvedAt: 'asc',
           },
         });
-        const activityFromSchedule = getScheduleActivity(
+        const activityFromSchedule = getActivityInfoFromSchedule(
           round.activityCode,
           wcif,
         );

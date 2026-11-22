@@ -1,34 +1,12 @@
 import {
   Activity,
   Competition,
-  getActivityInfoFromSchedule,
   getActivityInfoFromScheduleWithRoom,
   getEventInfoFromWcif,
 } from 'wcif-helpers';
 
 import { roundFormatMap } from './constants';
 import { StaffRole } from './generated/prisma/client';
-
-/**
- * An activity of the schedule by its code, in any room, or null.
- * wcif-helpers declares getActivityInfoFromSchedule as returning only null;
- * it returns the activity.
- */
-export const getScheduleActivity = getActivityInfoFromSchedule as (
-  activityCode: string,
-  wcif: Competition,
-) => Activity | null;
-
-/**
- * A round's activity in one room of the schedule, or null. wcif-helpers
- * declares getActivityInfoFromScheduleWithRoom as returning only null; it
- * returns the activity.
- */
-export const getRoundActivityInRoom = getActivityInfoFromScheduleWithRoom as (
-  roundId: string,
-  roomName: string,
-  wcif: Competition,
-) => Activity | null;
 
 export const wcifRoleToAttendanceRole = (role: string): StaffRole => {
   switch (role) {
@@ -65,7 +43,11 @@ export const getNextGroupInRoom = (
   roomName: string,
   wcif: Competition,
 ): Activity | null => {
-  const round = getRoundActivityInRoom(groupId.split('-g')[0], roomName, wcif);
+  const round = getActivityInfoFromScheduleWithRoom(
+    groupId.split('-g')[0],
+    roomName,
+    wcif,
+  );
   if (!round) return null;
   const groups = [...round.childActivities].sort(
     (a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime(),
