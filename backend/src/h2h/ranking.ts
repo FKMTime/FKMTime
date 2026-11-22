@@ -56,35 +56,35 @@ export const rankH2hRound = (
   ] as const) {
     const match = matches.find((m) => m.stage === stage);
     const winner = match ? finishedWinner(match) : null;
-    if (winner === null) continue;
+    if (!match || winner === null) continue;
     const [winnerId, loserId] =
       winner === H2hSide.A
         ? [match.entrantAId, match.entrantBId]
         : [match.entrantBId, match.entrantAId];
-    ranked.set(winnerId, first);
-    ranked.set(loserId, first + 1);
+    if (winnerId !== null) ranked.set(winnerId, first);
+    if (loserId !== null) ranked.set(loserId, first + 1);
   }
 
-  const bestSingles = new Map(entrants.map((e) => [e.id, e.bestSingle]));
+  // Competitors with no attempt in the round get no position (9f5b)
+  const singleRanks = new Map(
+    entrants.flatMap((e) =>
+      e.bestSingle === null ? [] : [[e.id, singleRank(e.bestSingle)] as const],
+    ),
+  );
   for (const [stage, firstPosition] of Object.entries(
     FIRST_POSITION_OF_LOSERS,
   )) {
     const losers = matches
       .filter((m) => m.stage === stage && finishedWinner(m) !== null)
-      .map((m) =>
-        finishedWinner(m) === H2hSide.A ? m.entrantBId : m.entrantAId,
-      )
-      .filter((id) => bestSingles.get(id) != null)
-      .sort(
-        (x, y) =>
-          singleRank(bestSingles.get(x)) - singleRank(bestSingles.get(y)),
-      );
-    losers.forEach((id) => {
-      const firstEqual = losers.findIndex(
-        (other) =>
-          singleRank(bestSingles.get(other)) ===
-          singleRank(bestSingles.get(id)),
-      );
+      .flatMap((m) => {
+        const id =
+          finishedWinner(m) === H2hSide.A ? m.entrantBId : m.entrantAId;
+        const rank = id === null ? undefined : singleRanks.get(id);
+        return id === null || rank === undefined ? [] : [{ id, rank }];
+      })
+      .sort((x, y) => x.rank - y.rank);
+    losers.forEach(({ id, rank }) => {
+      const firstEqual = losers.findIndex((other) => other.rank === rank);
       ranked.set(id, firstPosition + firstEqual);
     });
   }

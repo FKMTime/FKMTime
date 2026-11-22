@@ -309,8 +309,12 @@ export class DelegateGrantService {
         select: { id: true, currentGroupIds: true },
       }),
     ]);
+    // The query only returns activated grants
+    const activatedGrants = grants.flatMap(({ activatedAt, ...grant }) =>
+      activatedAt === null ? [] : [{ ...grant, activatedAt }],
+    );
     return Promise.all(
-      grants.map(async (grant) => {
+      activatedGrants.map(async (grant) => {
         const roundId = groupIdToRoundId(grant.groupId);
         const roomIds = rooms
           .filter((room) => room.currentGroupIds.includes(grant.groupId))
@@ -341,7 +345,6 @@ export class DelegateGrantService {
         ]);
         return {
           ...grant,
-          activatedAt: grant.activatedAt as Date,
           roundId,
           roomIds,
           personIds: new Set(

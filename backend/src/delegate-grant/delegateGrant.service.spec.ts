@@ -3,6 +3,7 @@ import { AppGateway } from 'src/app.gateway';
 import { DbService } from 'src/db/db.service';
 
 import { DelegateGrant, Role } from '../generated/prisma/client';
+import { found } from '../test-utils/found';
 import { DelegateGrantService } from './delegateGrant.service';
 
 const GROUP = '333-r1-g2';
@@ -54,9 +55,12 @@ const fakeDb = (state: State) => {
           state.grants.filter((g) => matches(g, where)).length,
       ),
       update: jest.fn(async ({ where, data }) => {
-        const found = state.grants.find((g) => g.id === where.id);
-        Object.assign(found, data);
-        return found;
+        const updated = found(
+          state.grants.find((g) => g.id === where.id),
+          'grant',
+        );
+        Object.assign(updated, data);
+        return updated;
       }),
     },
     room: { findMany: jest.fn(async () => state.rooms) },

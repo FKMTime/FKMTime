@@ -59,15 +59,15 @@ export class ScramblingService {
       orderBy: { name: 'asc' },
     });
     const stationRounds: { roundId: string; stationNames: string[] }[] = [];
-    for (const station of pointedStations) {
-      const entry = stationRounds.find(
-        (r) => r.roundId === station.customRoundId,
-      );
-      if (entry) entry.stationNames.push(station.name);
+    for (const { name, customRoundId } of pointedStations) {
+      // The query only returns stations pointed at a round
+      if (customRoundId === null) continue;
+      const entry = stationRounds.find((r) => r.roundId === customRoundId);
+      if (entry) entry.stationNames.push(name);
       else
         stationRounds.push({
-          roundId: station.customRoundId,
-          stationNames: [station.name],
+          roundId: customRoundId,
+          stationNames: [name],
         });
     }
     return { ...device.room, stationRounds };
