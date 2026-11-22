@@ -1,11 +1,1 @@
-prisma/seed/seed-test.ts
-src/auth/auth.service.ts
-src/integrated-live/integratedLive.service.spec.ts
-src/integrated-live/integratedLive.service.ts
-src/integrated-live/integratedLiveRounds.service.spec.ts
-src/integrated-live/integratedLiveRounds.service.ts
-src/integrated-live/liveAttempts.ts
-src/socket/socket.service.spec.ts
-src/socket/socket.service.ts
-src/user/user.service.spec.ts
-src/wca/wca.service.ts
+

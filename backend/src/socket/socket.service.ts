@@ -139,19 +139,20 @@ export class SocketService {
       const wcif = await this.competitionService.getWcifCached();
       const roundInfo = getRoundInfoFromWcif(roundId, wcif);
 
-      if (roundInfo?.timeLimit?.cumulativeRoundIds?.length > 0) {
+      const timeLimit = roundInfo?.timeLimit;
+      const cumulativeRoundIds = timeLimit?.cumulativeRoundIds ?? [];
+
+      if (timeLimit && cumulativeRoundIds.length > 0) {
         const roundsIds =
-          roundInfo.timeLimit.cumulativeRoundIds.length > 1
-            ? roundInfo.timeLimit.cumulativeRoundIds
-            : [roundId];
+          cumulativeRoundIds.length > 1 ? cumulativeRoundIds : [roundId];
         const used = await this.resultService.getCumulativeSumForMultipleRounds(
           personId,
           roundsIds,
         );
-        cumulativeLimitCentiseconds = roundInfo.timeLimit.centiseconds;
+        cumulativeLimitCentiseconds = timeLimit.centiseconds;
         cumulativeRemainingCentiseconds = Math.max(
           0,
-          roundInfo.timeLimit.centiseconds - used,
+          timeLimit.centiseconds - used,
         );
       }
     }

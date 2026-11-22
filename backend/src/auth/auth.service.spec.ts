@@ -152,6 +152,15 @@ describe('AuthService', () => {
       });
     });
 
+    it('refuses a password change for a user deleted meanwhile', async () => {
+      jest.spyOn(dbService.user, 'findFirst').mockResolvedValue(null);
+
+      await expect(
+        service.changePassword('u1', 'old-password', 'new-password'),
+      ).rejects.toMatchObject({ status: 401 });
+      expect(dbService.user.update).not.toHaveBeenCalled();
+    });
+
     it('bumps the version and hands this session a fresh token', async () => {
       const bcrypt = await import('bcrypt');
       jest.spyOn(dbService.user, 'findFirst').mockResolvedValue({

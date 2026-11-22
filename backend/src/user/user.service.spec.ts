@@ -4,7 +4,14 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { DbService } from '../db/db.service';
 import { Prisma, Role } from '../generated/prisma/client';
 import { WcaService } from '../wca/wca.service';
+import { CreateUserDto } from './dto/createUser.dto';
 import { UserService } from './user.service';
+
+/**
+ * The body as validation hands it over: a field left out is undefined, which
+ * the DTO's types don't admit even though it marks them @IsOptional
+ */
+const createUserBody = (body: Partial<CreateUserDto>) => body as CreateUserDto;
 
 describe('UserService', () => {
   let service: UserService;
@@ -98,13 +105,13 @@ describe('UserService', () => {
 
   describe('createUser', () => {
     it('should create a user with WCA ID', async () => {
-      const userData = {
+      const userData = createUserBody({
         fullName: 'WCA User',
         wcaId: '123',
         username: undefined,
         password: undefined,
         roles: [Role.ORGANIZER],
-      };
+      });
       const currentUserId = 'admin1';
       const mockWcaUser = { user: { id: 123, name: 'WCA User' } };
 
@@ -124,13 +131,13 @@ describe('UserService', () => {
     });
 
     it('should create a user with username and password', async () => {
-      const userData = {
+      const userData = createUserBody({
         fullName: 'Local User',
         username: 'localuser',
         password: 'password123',
         wcaId: undefined,
         roles: [Role.ORGANIZER],
-      };
+      });
       const currentUserId = 'admin1';
 
       jest
@@ -145,13 +152,13 @@ describe('UserService', () => {
     });
 
     it('should throw error if username is provided without password', async () => {
-      const userData = {
+      const userData = createUserBody({
         fullName: 'Local User',
         username: 'localuser',
         wcaId: undefined,
         password: undefined,
         roles: [Role.ORGANIZER],
-      };
+      });
       const currentUserId = 'admin1';
 
       jest
@@ -164,13 +171,13 @@ describe('UserService', () => {
     });
 
     it('should throw error if trying to assign higher roles', async () => {
-      const userData = {
+      const userData = createUserBody({
         fullName: 'User',
         username: 'user',
         password: 'password',
         wcaId: undefined,
         roles: [Role.ADMIN],
-      };
+      });
       const currentUserId = 'organizer1';
 
       jest
@@ -183,13 +190,13 @@ describe('UserService', () => {
     });
 
     it('should throw error if username is already taken', async () => {
-      const userData = {
+      const userData = createUserBody({
         fullName: 'User',
         username: 'existinguser',
         password: 'password',
         wcaId: undefined,
         roles: [Role.ORGANIZER],
-      };
+      });
       const currentUserId = 'admin1';
 
       const prismaError = new Prisma.PrismaClientKnownRequestError(

@@ -527,7 +527,9 @@ export class IntegratedLiveService {
       );
       for (const sync of sent.filter((s) => s.result.roundId === roundId)) {
         const registrationId = sync.result.person.wcaRegistrationId;
-        if (held.get(registrationId) === sync.sentHash) {
+        const heldHash =
+          registrationId === null ? undefined : held.get(registrationId);
+        if (heldHash === sync.sentHash) {
           await this.prisma.liveSync.update({
             where: { resultId: sync.resultId },
             data: { status: LiveSyncStatus.CONFIRMED },

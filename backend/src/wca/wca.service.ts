@@ -40,7 +40,7 @@ export class WcaService {
   private wcaLiveLogger = new Logger(`WCA-Live`);
 
   async enterWholeScorecardToWcaLive(result: any) {
-    const competition = await this.prisma.competition.findFirst();
+    const competition = await this.prisma.competition.findFirstOrThrow();
     const { competitionId, eventId, roundNumber, scoretakingToken, results } =
       await this.getAttemptsToEnterToWcaLive(result, competition);
     try {
@@ -72,10 +72,12 @@ export class WcaService {
   }
 
   async enterRoundToWcaLive(roundId: string, resultsFromDb: any) {
-    const competition = await this.prisma.competition.findFirst();
+    const competition = await this.prisma.competition.findFirstOrThrow();
     const eventIdToSubmit = roundId.split('-')[0];
     const roundNumberToSubmit = +roundId.split('-r')[1];
-    const resultsToSubmit = [];
+    const resultsToSubmit: ReturnType<
+      WcaService['getAttemptsToEnterToWcaLive']
+    >['results'] = [];
     for (const result of resultsFromDb) {
       const { results } = await this.getAttemptsToEnterToWcaLive(
         result,
@@ -121,7 +123,7 @@ export class WcaService {
             ? DNS_VALUE
             : attempt.penalty === DNF_VALUE
               ? DNF_VALUE
-              : attempt.penalty * 100 + attempt.value,
+              : (attempt.penalty ?? 0) * 100 + attempt.value,
       };
     });
     return {
@@ -152,9 +154,7 @@ export class WcaService {
     const response = await fetch(
       `${WCA_ORIGIN}/api/v0/competitions/${competitionId}/wcif/version/2`,
       {
-        headers: {
-          Authorization: isPublic ? undefined : `Bearer ${token}`,
-        },
+        headers: isPublic ? {} : { Authorization: `Bearer ${token}` },
       },
     );
     this.wcaLogger.log(

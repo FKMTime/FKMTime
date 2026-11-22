@@ -257,7 +257,8 @@ export class IntegratedLiveRoundsService {
       this.prisma.competition.findFirst(),
     ]);
     const round = rounds.find((r) => r.roundId === roundId);
-    if (!round) return null;
+    // The competition can be removed after base() found it
+    if (!round || !competition) return null;
     const previousRoundId = this.previousRoundId(
       roundId,
       competition.wcif as unknown as Wcif,
@@ -790,31 +791,33 @@ export class IntegratedLiveRoundsService {
       list.push(activity);
       byPerson.set(activity.personId, list);
     }
-    return [...byPerson.values()]
-      .filter(
-        (list) =>
-          list.every((a) => a.status === StaffActivityStatus.ABSENT) &&
-          !competed.has(list[0].personId) &&
-          list[0].person.wcaRegistrationId !== null,
-      )
-      .map((list) => ({
-        personId: list[0].personId,
-        name: list[0].person.name,
-        registrationId: list[0].person.wcaRegistrationId,
-      }));
+    return [...byPerson.values()].flatMap((list) => {
+      const { personId, person } = list[0];
+      const registrationId = person.wcaRegistrationId;
+      return list.every((a) => a.status === StaffActivityStatus.ABSENT) &&
+        !competed.has(personId) &&
+        registrationId !== null
+        ? [{ personId, name: person.name, registrationId }]
+        : [];
+    });
   }
 
   /** The WCA's next in line, with their FKMTime person where there is one */
   private async toNextInLine(
     entries: { id?: number; registration_id?: number; name?: string }[],
   ): Promise<NextInLine[]> {
-    const ids = entries.map((e) => e.registration_id ?? e.id);
+    // An entry without an id can't be chosen to advance, so it is left out
+    const withIds = entries.flatMap((entry) => {
+      const registrationId = entry.registration_id ?? entry.id;
+      return registrationId === undefined ? [] : [{ entry, registrationId }];
+    });
     const persons = await this.prisma.person.findMany({
-      where: { wcaRegistrationId: { in: ids } },
+      where: {
+        wcaRegistrationId: { in: withIds.map((e) => e.registrationId) },
+      },
       select: { id: true, name: true, wcaRegistrationId: true },
     });
-    return entries.map((entry) => {
-      const registrationId = entry.registration_id ?? entry.id;
+    return withIds.map(({ entry, registrationId }) => {
       const person = persons.find(
         (p) => p.wcaRegistrationId === registrationId,
       );

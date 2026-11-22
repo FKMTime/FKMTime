@@ -3,6 +3,7 @@ import {
   AttemptType,
   LiveSyncStatus,
 } from '../generated/prisma/client';
+import { found } from '../test-utils/found';
 import { IntegratedLiveService } from './integratedLive.service';
 import { liveAttemptsHash } from './liveAttempts';
 
@@ -90,7 +91,7 @@ const createStore = () => {
     return true;
   };
   const write = (resultId: string, data: Partial<Sync>) => {
-    const sync = syncs.get(resultId);
+    const sync = found(syncs.get(resultId), `sync for ${resultId}`);
     Object.assign(sync, data, { updatedAt: new Date() });
     return sync;
   };
@@ -156,7 +157,10 @@ const createStore = () => {
     results.set(id, result);
     return result;
   };
-  return { prisma, syncs, clears, competition, addResult };
+  /** The sync row a test knows the worker made */
+  const sync = (resultId: string) =>
+    found(syncs.get(resultId), `sync for ${resultId}`);
+  return { prisma, syncs, sync, clears, competition, addResult };
 };
 
 describe('IntegratedLiveService', () => {
@@ -255,7 +259,7 @@ describe('IntegratedLiveService', () => {
     await service.run();
 
     expect(connection.authorizedFetch).not.toHaveBeenCalled();
-    expect(store.syncs.get('r1').status).toBe(LiveSyncStatus.DIRTY);
+    expect(store.sync('r1').status).toBe(LiveSyncStatus.DIRTY);
   });
 
   it('does nothing when results go somewhere else', async () => {
@@ -280,9 +284,7 @@ describe('IntegratedLiveService', () => {
       status: LiveSyncStatus.NOT_SENDABLE,
       error: 'No WCA registration',
     });
-    expect(store.syncs.get('not-in-round').status).toBe(
-      LiveSyncStatus.NOT_IN_ROUND,
-    );
+    expect(store.sync('not-in-round').status).toBe(LiveSyncStatus.NOT_IN_ROUND);
     expect(store.syncs.get('over-limit')).toMatchObject({
       status: LiveSyncStatus.REJECTED,
       error: 'Attempt 1 is over the time limit',
@@ -310,7 +312,7 @@ describe('IntegratedLiveService', () => {
     await service.run();
 
     expect(calls()).toContain('PUT /rounds/333-r1/101/clear');
-    expect(store.syncs.get('r1').status).toBe(LiveSyncStatus.SENT);
+    expect(store.sync('r1').status).toBe(LiveSyncStatus.SENT);
   });
 
   it('clears the WCA copy of a deleted result', async () => {
@@ -349,7 +351,7 @@ describe('IntegratedLiveService', () => {
       status: LiveSyncStatus.NOT_IN_ROUND,
       error: 'user is not part of this round',
     });
-    expect(store.syncs.get('r1').status).toBe(LiveSyncStatus.DIRTY);
+    expect(store.sync('r1').status).toBe(LiveSyncStatus.DIRTY);
   });
 
   it('backs off after a 429 and sends nothing more for a while', async () => {
@@ -362,7 +364,7 @@ describe('IntegratedLiveService', () => {
     await service.run();
 
     expect(connection.authorizedFetch).not.toHaveBeenCalled();
-    expect(store.syncs.get('r1').status).toBe(LiveSyncStatus.DIRTY);
+    expect(store.sync('r1').status).toBe(LiveSyncStatus.DIRTY);
   });
 
   it('never makes more than 30 requests a minute', async () => {
@@ -379,7 +381,7 @@ describe('IntegratedLiveService', () => {
     const sentLongAgo = async (hash: string) => {
       store.addResult('r1', 101, [attempt(1, 1234)]);
       await service.markDirty(['r1']);
-      Object.assign(store.syncs.get('r1'), {
+      Object.assign(store.sync('r1'), {
         status: LiveSyncStatus.SENT,
         sentHash: hash,
         sentAt: new Date(Date.now() - 60_000),
@@ -393,7 +395,7 @@ describe('IntegratedLiveService', () => {
 
       await service.run();
 
-      expect(store.syncs.get('r1').status).toBe(LiveSyncStatus.CONFIRMED);
+      expect(store.sync('r1').status).toBe(LiveSyncStatus.CONFIRMED);
     });
 
     it('sends again after three read-backs that do not match', async () => {
@@ -407,7 +409,7 @@ describe('IntegratedLiveService', () => {
       });
       await service.run();
 
-      expect(store.syncs.get('r1').status).toBe(LiveSyncStatus.DIRTY);
+      expect(store.sync('r1').status).toBe(LiveSyncStatus.DIRTY);
     });
   });
 
@@ -441,7 +443,7 @@ describe('IntegratedLiveService', () => {
         'GET /rounds/333-r1',
         'POST /rounds/333-r1/batch',
       ]);
-      expect(store.syncs.get('r1').status).toBe(LiveSyncStatus.SENT);
+      expect(store.sync('r1').status).toBe(LiveSyncStatus.SENT);
     });
 
     it('adds a competitor registered for the event to a first round', async () => {
@@ -463,7 +465,7 @@ describe('IntegratedLiveService', () => {
       await service.run();
 
       expect(calls()).toContain('PUT /rounds/333-r1/105');
-      expect(store.syncs.get('late').status).toBe(LiveSyncStatus.SENT);
+      expect(store.sync('late').status).toBe(LiveSyncStatus.SENT);
     });
 
     it('does not add someone who is not registered for the event', async () => {
@@ -524,7 +526,7 @@ describe('IntegratedLiveService', () => {
     it('adds them back when the ruling is restored', async () => {
       store.addResult('r2', 101, [attempt(1, 1234)], '333-r2');
       await service.markDirty(['r2']);
-      store.syncs.get('r2').removedFromRound = true;
+      store.sync('r2').removedFromRound = true;
       respond = (url, init) => {
         const method = init.method ?? 'GET';
         if (method === 'GET' && url.endsWith('/rounds/333-r2')) {

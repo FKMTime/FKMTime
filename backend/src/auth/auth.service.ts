@@ -40,10 +40,14 @@ export class AuthService {
     await this.removeDuplicatedRoles(user.id);
 
     // Verify password; migrate legacy sha512 hashes to bcrypt on first successful login.
-    const isBcrypt = user.password?.startsWith('$2');
-    const passwordValid = isBcrypt
-      ? await bcrypt.compare(dto.password, user.password)
-      : sha512(dto.password) === user.password;
+    // An account made through WCA sign-in has no password to match
+    const { password } = user;
+    const isBcrypt = password?.startsWith('$2');
+    const passwordValid =
+      password !== null &&
+      (isBcrypt
+        ? await bcrypt.compare(dto.password, password)
+        : sha512(dto.password) === password);
 
     if (!passwordValid) {
       throw new HttpException('Wrong credentials!', HttpStatus.UNAUTHORIZED);
@@ -95,7 +99,7 @@ export class AuthService {
 
     const competition = await this.prisma.competition.findFirst();
     const isGlobalAdmin = ADMIN_WCA_USER_IDS.includes(userInfo.me.id);
-    const newRoles = [];
+    const newRoles: Role[] = [];
     if (!competition) {
       if (isGlobalAdmin) {
         newRoles.push(Role.ADMIN);
@@ -298,10 +302,17 @@ export class AuthService {
         id: userId,
       },
     });
-    const isBcrypt = user.password?.startsWith('$2');
-    const oldValid = isBcrypt
-      ? await bcrypt.compare(oldPassword, user.password)
-      : sha512(oldPassword) === user.password;
+    // Deleted since the guard let the request through
+    if (!user) {
+      throw new UnauthorizedException();
+    }
+    const { password } = user;
+    const isBcrypt = password?.startsWith('$2');
+    const oldValid =
+      password !== null &&
+      (isBcrypt
+        ? await bcrypt.compare(oldPassword, password)
+        : sha512(oldPassword) === password);
 
     if (!oldValid) {
       throw new HttpException('Wrong password', HttpStatus.FORBIDDEN);
