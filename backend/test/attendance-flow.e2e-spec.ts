@@ -8,6 +8,7 @@ import {
   StaffActivityStatus,
   StaffRole,
 } from '../src/generated/prisma/client';
+import { found } from '../src/test-utils/found';
 import { createTestApp } from './helpers/app.helper';
 import {
   createRoleUsers,
@@ -186,9 +187,12 @@ describe('Attendance flow for a group (e2e)', () => {
         .expect(200);
       expect(res.body.comment).toBe('E2E came after the group started');
 
-      const updated = await db.staffActivity.findUnique({
-        where: { id: scramblerActivity.id },
-      });
+      const updated = found(
+        await db.staffActivity.findUnique({
+          where: { id: scramblerActivity.id },
+        }),
+        'activity',
+      );
       expect(updated.comment).toBe('E2E came after the group started');
     });
 
@@ -387,8 +391,8 @@ describe('Attendance flow for a group (e2e)', () => {
       db.staffActivity.create({
         data: { personId, role, groupId, isAssigned: true },
       });
-    const activityOf = (id: string) =>
-      db.staffActivity.findUnique({ where: { id } });
+    const activityOf = async (id: string) =>
+      found(await db.staffActivity.findUnique({ where: { id } }), 'activity');
 
     it('marks someone who did the job as left early, alongside late', async () => {
       const activity = await assign(helper.id, StaffRole.JUDGE, TAGS_GROUP_ID);
@@ -693,9 +697,12 @@ describe('Attendance flow for a group (e2e)', () => {
     );
 
     it('leaves the data untouched after rejected requests', async () => {
-      const activity = await db.staffActivity.findUnique({
-        where: { id: judgeActivity.id },
-      });
+      const activity = found(
+        await db.staffActivity.findUnique({
+          where: { id: judgeActivity.id },
+        }),
+        'activity',
+      );
       expect(activity.status).toBe(StaffActivityStatus.PRESENT);
       expect(activity.comment).toBeNull();
     });

@@ -11,6 +11,7 @@ import {
   StaffActivityStatus,
   StaffRole,
 } from '../src/generated/prisma/client';
+import { found } from '../src/test-utils/found';
 import { createTestApp } from './helpers/app.helper';
 import {
   createRoleUsers,
@@ -41,6 +42,8 @@ describe('Attempt lifecycle and edit log (e2e)', () => {
   let device: Device;
 
   const server = () => app.getHttpServer();
+  const competitorRegistrantId = () =>
+    found(competitor.registrantId, 'competitor registrant id');
   const auth = (token: string) => ({ Authorization: `Bearer ${token}` });
 
   const attemptBody = (overrides: Record<string, unknown> = {}) => ({
@@ -61,13 +64,16 @@ describe('Attempt lifecycle and edit log (e2e)', () => {
       .set(auth(delegate))
       .send(body)
       .expect(201);
-    return db.attempt.findFirst({
-      where: {
-        result: { personId: body.competitorId as string, roundId: ROUND_ID },
-        attemptNumber: body.attemptNumber,
-        type: body.type,
-      },
-    });
+    return found(
+      await db.attempt.findFirst({
+        where: {
+          result: { personId: body.competitorId as string, roundId: ROUND_ID },
+          attemptNumber: body.attemptNumber,
+          type: body.type,
+        },
+      }),
+      'created attempt',
+    );
   };
 
   const editLog = async (attemptId: string) =>
@@ -120,7 +126,7 @@ describe('Attempt lifecycle and edit log (e2e)', () => {
       },
     });
     await db.device.deleteMany({ where: { name: DEVICE_NAME } });
-    const room = await db.room.findFirst();
+    const room = found(await db.room.findFirst(), 'room');
     device = await db.device.create({
       data: {
         name: DEVICE_NAME,
@@ -182,21 +188,24 @@ describe('Attempt lifecycle and edit log (e2e)', () => {
       });
 
       // +2 is sent to WCA Live as time + 2 seconds
-      expect(stub.lastAttemptsFor(competitor.registrantId, ROUND_ID)).toEqual([
+      expect(stub.lastAttemptsFor(competitorRegistrantId(), ROUND_ID)).toEqual([
         1434,
       ]);
     });
 
     it('marks the competitor present in their assigned group', async () => {
-      const activity = await db.staffActivity.findUnique({
-        where: {
-          personId_groupId_role: {
-            personId: competitor.id,
-            groupId: ASSIGNED_GROUP,
-            role: StaffRole.COMPETITOR,
+      const activity = found(
+        await db.staffActivity.findUnique({
+          where: {
+            personId_groupId_role: {
+              personId: competitor.id,
+              groupId: ASSIGNED_GROUP,
+              role: StaffRole.COMPETITOR,
+            },
           },
-        },
-      });
+        }),
+        'staff activity',
+      );
       expect(activity.status).toBe(StaffActivityStatus.PRESENT);
       expect(activity.deviceId).toBe(device.id);
     });
@@ -313,7 +322,7 @@ describe('Attempt lifecycle and edit log (e2e)', () => {
         judge: { id: judge.id },
         editedBy: { id: users.userIds.DELEGATE },
       });
-      expect(stub.lastAttemptsFor(competitor.registrantId, ROUND_ID)).toEqual([
+      expect(stub.lastAttemptsFor(competitorRegistrantId(), ROUND_ID)).toEqual([
         -1, 1200, 1300,
       ]);
     });
@@ -330,9 +339,10 @@ describe('Attempt lifecycle and edit log (e2e)', () => {
           type: AttemptType.STANDARD_ATTEMPT,
         })
         .expect(409);
-      const unchanged = await db.attempt.findUnique({
-        where: { id: first.id },
-      });
+      const unchanged = found(
+        await db.attempt.findUnique({ where: { id: first.id } }),
+        'attempt',
+      );
       expect(unchanged.attemptNumber).toBe(1);
     });
 
@@ -387,9 +397,12 @@ describe('Attempt lifecycle and edit log (e2e)', () => {
 
     it('PUT /attempt/reorder renumbers, logs and resubmits in the new order', async () => {
       stub.reset();
-      const result = await db.result.findFirst({
-        where: { personId: competitor.id, roundId: ROUND_ID },
-      });
+      const result = found(
+        await db.result.findFirst({
+          where: { personId: competitor.id, roundId: ROUND_ID },
+        }),
+        'result',
+      );
       await clearUpdatedBy([first.id, second.id, third.id]);
 
       await request(server())
@@ -421,7 +434,7 @@ describe('Attempt lifecycle and edit log (e2e)', () => {
         attemptNumber: 3,
         editedBy: { id: users.userIds.DELEGATE },
       });
-      expect(stub.lastAttemptsFor(competitor.registrantId, ROUND_ID)).toEqual([
+      expect(stub.lastAttemptsFor(competitorRegistrantId(), ROUND_ID)).toEqual([
         1200, 1300, -1,
       ]);
     });
@@ -448,10 +461,11 @@ describe('Attempt lifecycle and edit log (e2e)', () => {
 
     beforeAll(async () => {
       await createAttempt({ attemptNumber: 1, value: 1000 });
-      resultId = (
+      resultId = found(
         await db.result.findFirst({
           where: { personId: competitor.id, roundId: ROUND_ID },
-        })
+        }),
+        'result',
       ).id;
     });
 
@@ -474,9 +488,10 @@ describe('Attempt lifecycle and edit log (e2e)', () => {
         })
         .expect(200);
 
-      const resolved = await db.attempt.findUnique({
-        where: { id: incident.id },
-      });
+      const resolved = found(
+        await db.attempt.findUnique({ where: { id: incident.id } }),
+        'attempt',
+      );
       expect(resolved.status).toBe(AttemptStatus.RESOLVED);
       const noteworthy = await db.noteworthyIncident.findFirst({
         where: { attemptId: incident.id },
@@ -487,7 +502,7 @@ describe('Attempt lifecycle and edit log (e2e)', () => {
         createdById: users.userIds.DELEGATE,
       });
       // A resolved incident counts as a normal attempt
-      expect(stub.lastAttemptsFor(competitor.registrantId, ROUND_ID)).toEqual([
+      expect(stub.lastAttemptsFor(competitorRegistrantId(), ROUND_ID)).toEqual([
         1000, 1700,
       ]);
     });
@@ -544,7 +559,7 @@ describe('Attempt lifecycle and edit log (e2e)', () => {
         replacedBy: 1,
         editedBy: { id: users.userIds.DELEGATE },
       });
-      expect(stub.lastAttemptsFor(competitor.registrantId, ROUND_ID)).toEqual([
+      expect(stub.lastAttemptsFor(competitorRegistrantId(), ROUND_ID)).toEqual([
         1000, 1700, 1111,
       ]);
 
@@ -619,9 +634,10 @@ describe('Attempt lifecycle and edit log (e2e)', () => {
         })
         .expect(200);
 
-      const untouched = await db.attempt.findUnique({
-        where: { id: otherWaiting.id },
-      });
+      const untouched = found(
+        await db.attempt.findUnique({ where: { id: otherWaiting.id } }),
+        'attempt',
+      );
       expect(untouched.replacedBy).toBeNull();
     });
 

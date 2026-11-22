@@ -5,6 +5,7 @@ import { DbService } from 'src/db/db.service';
 import * as request from 'supertest';
 
 import { Prisma, Role, Room } from '../src/generated/prisma/client';
+import { found } from '../src/test-utils/found';
 import { createTestApp } from './helpers/app.helper';
 import {
   createUserWithRoles,
@@ -79,7 +80,7 @@ describe('Groups with no free delegate (e2e)', () => {
 
     // A room of this spec's own in the schedule, and two delegates, both
     // competing in its second group. Nobody else is a delegate.
-    const competition = await db.competition.findFirst();
+    const competition = found(await db.competition.findFirst(), 'competition');
     originalWcif = competition.wcif;
     const wcif = competition.wcif as unknown as {
       persons: { roles?: string[] }[];
@@ -166,7 +167,10 @@ describe('Groups with no free delegate (e2e)', () => {
       await db.delegateGrant.deleteMany({
         where: { groupId: { in: [GROUP_1, GROUP_2] } },
       });
-      const competition = await db.competition.findFirst();
+      const competition = found(
+        await db.competition.findFirst(),
+        'competition',
+      );
       await db.competition.update({
         where: { id: competition.id },
         data: { wcif: originalWcif as Prisma.InputJsonValue },

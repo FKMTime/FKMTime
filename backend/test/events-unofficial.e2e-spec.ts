@@ -3,6 +3,7 @@ import { DbService } from 'src/db/db.service';
 import * as request from 'supertest';
 
 import { Prisma, Role } from '../src/generated/prisma/client';
+import { found } from '../src/test-utils/found';
 import { createTestApp } from './helpers/app.helper';
 import { listenOnLoopback } from './helpers/loopback.helper';
 import {
@@ -32,13 +33,13 @@ describe('Unofficial events (e2e)', () => {
   let originalWcif: Prisma.JsonValue;
   let competitionId: string;
   let mirrorId: string;
-  let resultId: string;
+  let resultId: string | undefined;
 
   const server = () => app.getHttpServer();
   const asOrganizer = (req: request.Test) =>
     req.set('Authorization', `Bearer ${organizer.token}`);
   const competitionEvents = async () => {
-    const competition = await db.competition.findFirst();
+    const competition = found(await db.competition.findFirst(), 'competition');
     return (
       competition.wcif as unknown as {
         events: { id: string; rounds: { id: string; format: string }[] }[];
@@ -56,7 +57,7 @@ describe('Unofficial events (e2e)', () => {
     organizer = await createUserWithRoles(app, db, `organizer-${SUFFIX}`, [
       Role.ORGANIZER,
     ]);
-    const competition = await db.competition.findFirst();
+    const competition = found(await db.competition.findFirst(), 'competition');
     competitionId = competition.id;
     originalWcif = competition.wcif;
   }, 30000);
@@ -95,9 +96,10 @@ describe('Unofficial events (e2e)', () => {
     expect(res.body).toEqual({
       message: 'Unofficial event created successfully.',
     });
-    const fromDb = await db.unofficialEvent.findUnique({
-      where: { eventId: 'mirror' },
-    });
+    const fromDb = found(
+      await db.unofficialEvent.findUnique({ where: { eventId: 'mirror' } }),
+      'mirror event',
+    );
     expect(fromDb.wcif).toEqual({
       id: 'mirror',
       rounds: [round('mirror-r1')],
@@ -108,9 +110,12 @@ describe('Unofficial events (e2e)', () => {
 
     const events = await competitionEvents();
     expect(events.map((e) => e.id)).toContain('mirror');
-    expect(events.find((e) => e.id === 'mirror').rounds).toEqual([
-      round('mirror-r1'),
-    ]);
+    expect(
+      found(
+        events.find((e) => e.id === 'mirror'),
+        'mirror in the WCIF',
+      ).rounds,
+    ).toEqual([round('mirror-r1')]);
   });
 
   it('makes the new event show up in the rounds list', async () => {
@@ -170,9 +175,15 @@ describe('Unofficial events (e2e)', () => {
       .expect(200);
 
     expect(
-      (await db.unofficialEvent.findUnique({ where: { id: mirrorId } })).wcif,
+      found(
+        await db.unofficialEvent.findUnique({ where: { id: mirrorId } }),
+        'mirror event',
+      ).wcif,
     ).toEqual(wcif);
-    const mirror = (await competitionEvents()).find((e) => e.id === 'mirror');
+    const mirror = found(
+      (await competitionEvents()).find((e) => e.id === 'mirror'),
+      'mirror in the WCIF',
+    );
     expect(mirror.rounds.map((r) => [r.id, r.format])).toEqual([
       ['mirror-r1', '3'],
       ['mirror-r2', '3'],
@@ -186,7 +197,10 @@ describe('Unofficial events (e2e)', () => {
   });
 
   it('refuses to delete an event that already has results', async () => {
-    const person = await db.person.findFirst({ where: { registrantId: 8 } });
+    const person = found(
+      await db.person.findFirst({ where: { registrantId: 8 } }),
+      'person 8',
+    );
     const result = await db.result.create({
       data: { personId: person.id, eventId: 'mirror', roundId: 'mirror-r1' },
     });
@@ -205,7 +219,7 @@ describe('Unofficial events (e2e)', () => {
   });
 
   it('deletes the event and removes it from the competition WCIF', async () => {
-    await db.result.delete({ where: { id: resultId } });
+    await db.result.delete({ where: { id: found(resultId, 'result id') } });
     resultId = undefined;
 
     await asOrganizer(request(server()).delete(`/events/${mirrorId}`)).expect(

@@ -2,6 +2,7 @@ import { INestApplication } from '@nestjs/common';
 import { DbService } from 'src/db/db.service';
 import * as request from 'supertest';
 
+import { found } from '../src/test-utils/found';
 import { createTestApp } from './helpers/app.helper';
 
 describe('CompetitionController (e2e)', () => {
@@ -12,7 +13,7 @@ describe('CompetitionController (e2e)', () => {
 
   beforeAll(async () => {
     ({ app, db, adminToken } = await createTestApp());
-    const competition = await db.competition.findFirst();
+    const competition = found(await db.competition.findFirst(), 'competition');
     competitionId = competition.id;
   }, 30000);
 
@@ -121,7 +122,10 @@ describe('CompetitionController (e2e)', () => {
 
   describe('PUT /competition/settings/:id', () => {
     it('updates competition settings', async () => {
-      const competition = await db.competition.findFirst();
+      const competition = found(
+        await db.competition.findFirst(),
+        'competition',
+      );
       await request(app.getHttpServer())
         .put(`/competition/settings/${competition.id}`)
         .set('Authorization', `Bearer ${adminToken}`)

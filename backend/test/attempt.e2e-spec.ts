@@ -3,6 +3,7 @@ import { DbService } from 'src/db/db.service';
 import * as request from 'supertest';
 
 import { AttemptStatus, AttemptType } from '../src/generated/prisma/client';
+import { found } from '../src/test-utils/found';
 import { createTestApp } from './helpers/app.helper';
 
 const ROUND_ID = '333-r1';
@@ -14,13 +15,14 @@ describe('AttemptController (e2e)', () => {
   let competitorId: string;
   let attemptId: string;
   let secondAttemptId: string;
-  let resultId: string;
+  let resultId: string | null;
 
   beforeAll(async () => {
     ({ app, db, adminToken } = await createTestApp());
-    const person = await db.person.findFirst({
-      orderBy: { registrantId: 'asc' },
-    });
+    const person = found(
+      await db.person.findFirst({ orderBy: { registrantId: 'asc' } }),
+      'seeded person',
+    );
     competitorId = person.id;
   }, 30000);
 
@@ -67,8 +69,9 @@ describe('AttemptController (e2e)', () => {
         include: { attempts: true },
       });
       expect(result).toBeTruthy();
-      resultId = result.id;
-      attemptId = result.attempts[0].id;
+      const { id, attempts } = found(result, 'result');
+      resultId = id;
+      attemptId = attempts[0].id;
     });
 
     it('creates a second attempt', async () => {
@@ -90,7 +93,7 @@ describe('AttemptController (e2e)', () => {
         where: { personId: competitorId, roundId: ROUND_ID },
         include: { attempts: { orderBy: { attemptNumber: 'asc' } } },
       });
-      secondAttemptId = result.attempts[1].id;
+      secondAttemptId = found(result, 'result').attempts[1].id;
     });
 
     it('returns 409 for duplicate attempt number + type', async () => {
@@ -186,7 +189,10 @@ describe('AttemptController (e2e)', () => {
         })
         .expect(200);
 
-      const updated = await db.attempt.findUnique({ where: { id: attemptId } });
+      const updated = found(
+        await db.attempt.findUnique({ where: { id: attemptId } }),
+        'attempt',
+      );
       expect(updated.value).toBe(1100);
       expect(updated.penalty).toBe(2);
     });
@@ -231,10 +237,14 @@ describe('AttemptController (e2e)', () => {
         })
         .expect(200);
 
-      const first = await db.attempt.findUnique({ where: { id: attemptId } });
-      const second = await db.attempt.findUnique({
-        where: { id: secondAttemptId },
-      });
+      const first = found(
+        await db.attempt.findUnique({ where: { id: attemptId } }),
+        'first attempt',
+      );
+      const second = found(
+        await db.attempt.findUnique({ where: { id: secondAttemptId } }),
+        'second attempt',
+      );
       expect(first.attemptNumber).toBe(2);
       expect(second.attemptNumber).toBe(1);
 
@@ -268,10 +278,14 @@ describe('AttemptController (e2e)', () => {
         })
         .expect(200);
 
-      const first = await db.attempt.findUnique({
-        where: { id: secondAttemptId },
-      });
-      const second = await db.attempt.findUnique({ where: { id: attemptId } });
+      const first = found(
+        await db.attempt.findUnique({ where: { id: secondAttemptId } }),
+        'second attempt',
+      );
+      const second = found(
+        await db.attempt.findUnique({ where: { id: attemptId } }),
+        'first attempt',
+      );
       expect(first.attemptNumber).toBe(1);
       expect(second.attemptNumber).toBe(2);
 
@@ -301,7 +315,10 @@ describe('AttemptController (e2e)', () => {
         .send({ replacedByExtraNumber: 1 })
         .expect(200);
 
-      const updated = await db.attempt.findUnique({ where: { id: attemptId } });
+      const updated = found(
+        await db.attempt.findUnique({ where: { id: attemptId } }),
+        'attempt',
+      );
       expect(updated.replacedBy).toBe(1);
     });
 
@@ -312,7 +329,10 @@ describe('AttemptController (e2e)', () => {
         .send({ replacedByExtraNumber: null })
         .expect(200);
 
-      const updated = await db.attempt.findUnique({ where: { id: attemptId } });
+      const updated = found(
+        await db.attempt.findUnique({ where: { id: attemptId } }),
+        'attempt',
+      );
       expect(updated.replacedBy).toBeNull();
 
       // Restore status
@@ -356,9 +376,10 @@ describe('AttemptController (e2e)', () => {
 
       expect(res.body).toEqual({ message: 'Scorecard entered successfully' });
 
-      const attempt1 = await db.attempt.findUnique({
-        where: { id: attemptId },
-      });
+      const attempt1 = found(
+        await db.attempt.findUnique({ where: { id: attemptId } }),
+        'attempt',
+      );
       expect(attempt1.value).toBe(950);
     });
   });
@@ -366,7 +387,7 @@ describe('AttemptController (e2e)', () => {
   describe('DELETE /attempt/:id', () => {
     it('deletes an attempt', async () => {
       const attempt3 = await db.attempt.findFirst({
-        where: { resultId, attemptNumber: 3 },
+        where: { resultId: found(resultId, 'result id'), attemptNumber: 3 },
       });
       if (!attempt3) return;
 
@@ -380,7 +401,9 @@ describe('AttemptController (e2e)', () => {
 
     it('deletes result when last attempt is deleted', async () => {
       // Delete remaining attempts one by one until result is gone
-      const attempts = await db.attempt.findMany({ where: { resultId } });
+      const attempts = await db.attempt.findMany({
+        where: { resultId: found(resultId, 'result id') },
+      });
       let lastBody: any;
       for (const a of attempts) {
         const res = await request(app.getHttpServer())

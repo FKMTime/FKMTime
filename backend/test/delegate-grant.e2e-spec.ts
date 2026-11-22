@@ -13,6 +13,7 @@ import {
   Room,
   StaffRole,
 } from '../src/generated/prisma/client';
+import { found } from '../src/test-utils/found';
 import { createTestApp } from './helpers/app.helper';
 import {
   createTestPersons,
@@ -272,9 +273,10 @@ describe('Delegate access for one group (e2e)', () => {
 
     it('resolves an incident of a competitor assigned to another group', async () => {
       await resolve(helper.token, walkInIncident).expect(200);
-      const attempt = await db.attempt.findUnique({
-        where: { id: walkInIncident.id },
-      });
+      const attempt = found(
+        await db.attempt.findUnique({ where: { id: walkInIncident.id } }),
+        'attempt',
+      );
       expect(attempt.status).toBe(AttemptStatus.RESOLVED);
 
       const actions = await request(server())
@@ -416,9 +418,10 @@ describe('Delegate access for one group (e2e)', () => {
     it('ends the access', async () => {
       const res = await resolve(helper.token, later).expect(403);
       expect(res.body.message).toMatch(/has ended/);
-      const grant = await db.delegateGrant.findUnique({
-        where: { id: grantId },
-      });
+      const grant = found(
+        await db.delegateGrant.findUnique({ where: { id: grantId } }),
+        'delegate grant',
+      );
       expect(grant.endedAt).not.toBeNull();
       await request(server())
         .get('/incident/unresolved')
@@ -464,7 +467,10 @@ describe('Delegate access for one group (e2e)', () => {
     });
 
     it('never changed the user roles', async () => {
-      const user = await db.user.findUnique({ where: { id: helper.id } });
+      const user = found(
+        await db.user.findUnique({ where: { id: helper.id } }),
+        'user',
+      );
       expect(user.roles).toEqual([Role.STAFF]);
     });
   });

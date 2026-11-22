@@ -3,6 +3,7 @@ import { DbService } from 'src/db/db.service';
 import * as request from 'supertest';
 
 import { StaffRole } from '../src/generated/prisma/client';
+import { found } from '../src/test-utils/found';
 import { createTestApp } from './helpers/app.helper';
 
 describe('AttendanceController (e2e)', () => {
@@ -18,20 +19,24 @@ describe('AttendanceController (e2e)', () => {
     ({ app, db, adminToken } = await createTestApp());
 
     // Get a staff activity from seed data
-    const activity = await db.staffActivity.findFirst({
-      include: { person: true },
-    });
+    const activity = found(
+      await db.staffActivity.findFirst({ include: { person: true } }),
+      'seeded staff activity',
+    );
     staffActivityId = activity.id;
     personId = activity.personId;
     groupId = activity.groupId;
 
-    const unassignedPerson = await db.person.findFirst({
-      where: {
-        StaffActivity: {
-          none: { groupId, role: StaffRole.STAFF_OTHER },
+    const unassignedPerson = found(
+      await db.person.findFirst({
+        where: {
+          StaffActivity: {
+            none: { groupId, role: StaffRole.STAFF_OTHER },
+          },
         },
-      },
-    });
+      }),
+      'person without a STAFF_OTHER activity',
+    );
     unassignedPersonId = unassignedPerson.id;
   }, 30000);
 

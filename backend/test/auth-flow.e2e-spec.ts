@@ -5,6 +5,7 @@ import { DbService } from 'src/db/db.service';
 import * as request from 'supertest';
 
 import { Role } from '../src/generated/prisma/client';
+import { found } from '../src/test-utils/found';
 import { createTestApp } from './helpers/app.helper';
 import {
   DummyWcaAccount,
@@ -81,7 +82,10 @@ describe('Auth flows (e2e)', () => {
           roles: [Role.STAFF, Role.STAFF],
         },
       });
-      const fromDb = await db.user.findUnique({ where: { id: user.id } });
+      const fromDb = found(
+        await db.user.findUnique({ where: { id: user.id } }),
+        'user',
+      );
       expect(fromDb.password).toMatch(/^\$2[aby]\$12\$/);
       expect(fromDb.roles).toEqual([Role.STAFF]);
     });
@@ -203,9 +207,12 @@ describe('Auth flows (e2e)', () => {
         roles: [Role.ORGANIZER],
         wcaAccessToken: expect.any(String),
       });
-      const fromDb = await db.user.findUnique({
-        where: { id: res.body.userInfo.id },
-      });
+      const fromDb = found(
+        await db.user.findUnique({
+          where: { id: res.body.userInfo.id },
+        }),
+        'user',
+      );
       expect(fromDb).toMatchObject({
         wcaUserId: organizer.wcaUserId,
         roles: [Role.ORGANIZER],
@@ -428,9 +435,10 @@ describe('Auth flows (e2e)', () => {
         )
         .send({ password: 'first-password' })
         .expect(200);
-      const adminBefore = await db.user.findFirst({
-        where: { username: 'admin' },
-      });
+      const adminBefore = found(
+        await db.user.findFirst({ where: { username: 'admin' } }),
+        'admin user',
+      );
       // The organizer's reset ended the user's earlier sessions
       const login = await request(app.getHttpServer())
         .post('/auth/login')
@@ -443,11 +451,15 @@ describe('Auth flows (e2e)', () => {
         .send({ oldPassword: 'first-password', newPassword: 'second-password' })
         .expect(200);
 
-      const fromDb = await db.user.findUnique({ where: { id: user.id } });
+      const fromDb = found(
+        await db.user.findUnique({ where: { id: user.id } }),
+        'user',
+      );
       expect(fromDb.password).toMatch(/^\$2[aby]\$12\$/);
-      const adminAfter = await db.user.findFirst({
-        where: { username: 'admin' },
-      });
+      const adminAfter = found(
+        await db.user.findFirst({ where: { username: 'admin' } }),
+        'admin user',
+      );
       expect(adminAfter.password).toBe(adminBefore.password);
     });
 
