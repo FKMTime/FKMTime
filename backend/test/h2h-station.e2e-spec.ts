@@ -3,6 +3,7 @@ import { DbService } from 'src/db/db.service';
 import { getAllTranslations } from 'src/translations/translations';
 
 import { Person, Prisma } from '../src/generated/prisma/client';
+import { found } from '../src/test-utils/found';
 import { createTestApp } from './helpers/app.helper';
 import {
   seededPersonPicker,
@@ -38,7 +39,10 @@ describe('Stations in a head-to-head round (e2e)', () => {
     await fixtures.purgeLeftovers(Object.values(CARD));
     await fixtures.disableResultSubmission();
 
-    const competition = await db.competition.findFirst();
+    const competition = found(
+      await db.competition.findFirst(),
+      'seeded competition',
+    );
     originalWcif = competition.wcif;
     const wcif = competition.wcif as unknown as WcifLike & {
       events: { id: string; rounds: { id: string; format: string }[] }[];
@@ -74,7 +78,10 @@ describe('Stations in a head-to-head round (e2e)', () => {
   afterAll(async () => {
     station?.close();
     stationServer?.destroyConnections();
-    const competition = await db.competition.findFirst();
+    const competition = found(
+      await db.competition.findFirst(),
+      'seeded competition',
+    );
     await db.competition.update({
       where: { id: competition.id },
       data: { wcif: originalWcif as Prisma.InputJsonValue },

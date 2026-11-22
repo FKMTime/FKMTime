@@ -12,6 +12,7 @@ import {
   Role,
   StaffRole,
 } from '../src/generated/prisma/client';
+import { found } from '../src/test-utils/found';
 import { createTestApp } from './helpers/app.helper';
 import {
   seededPersonPicker,
@@ -119,8 +120,14 @@ describe('Stations running a different round (e2e)', () => {
       where: { name: { startsWith: `${PREFIX}-` } },
     });
     await fixtures.disableResultSubmission();
-    const competition = await db.competition.findFirst();
-    defaultLocale = competition.defaultLocale;
+    const competition = found(
+      await db.competition.findFirst(),
+      'seeded competition',
+    );
+    defaultLocale = found(
+      competition.defaultLocale,
+      'competition default locale',
+    );
     wcif = competition.wcif as unknown as WCIF;
 
     const room = await fixtures.createRoom('room', [ROOM_GROUP]);
@@ -180,7 +187,10 @@ describe('Stations running a different round (e2e)', () => {
       pick('from the host country', fromHost),
       CARD.judge,
     );
-    readerLocale = competition.countryIso2.toLowerCase();
+    readerLocale = found(
+      competition.countryIso2,
+      'competition country',
+    ).toLowerCase();
 
     delegateToken = await fixtures.createUserToken(app, 'delegate', [
       Role.DELEGATE,
@@ -215,7 +225,10 @@ describe('Stations running a different round (e2e)', () => {
       await setRound([pointedId, attendanceId], POINTED_ROUND).expect(400);
       await setRound([pointedId, retiredId], POINTED_ROUND).expect(400);
 
-      const pointed = await db.device.findUnique({ where: { id: pointedId } });
+      const pointed = found(
+        await db.device.findUnique({ where: { id: pointedId } }),
+        'pointed station',
+      );
       expect(pointed.customRoundId).toBeNull();
     });
 
@@ -270,10 +283,9 @@ describe('Stations running a different round (e2e)', () => {
     });
 
     it("marks the competitor in their own group, and doesn't mark the judge", async () => {
-      const groupId = getCompetitorGroupInRound(
-        POINTED_ROUND,
-        competitor.registrantId,
-        wcif,
+      const groupId = found(
+        getCompetitorGroupInRound(POINTED_ROUND, competitor.registrantId, wcif),
+        'competitor group in the pointed round',
       );
       const competitorPresence = await db.staffActivity.findUnique({
         where: {

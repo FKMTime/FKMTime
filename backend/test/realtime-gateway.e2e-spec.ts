@@ -12,6 +12,7 @@ import {
   Person,
   Role,
 } from '../src/generated/prisma/client';
+import { found } from '../src/test-utils/found';
 import { createTestApp } from './helpers/app.helper';
 import {
   connectSocketIo,
@@ -376,9 +377,12 @@ describe('socket.io gateways (e2e)', () => {
       });
 
       expect(res.data.status).toBe(200);
-      const created = await db.attempt.findFirst({
-        where: { result: { personId: delegateCase.id, roundId: '333-r1' } },
-      });
+      const created = found(
+        await db.attempt.findFirst({
+          where: { result: { personId: delegateCase.id, roundId: '333-r1' } },
+        }),
+        'attempt entered as a delegate case',
+      );
       expect(await incident).toEqual({
         id: created.id,
         deviceName: 'e2e-rt-gateway-station',
@@ -392,12 +396,15 @@ describe('socket.io gateways (e2e)', () => {
 
       await enterAttempt(data);
 
-      const unresolved = await db.attempt.findFirst({
-        where: {
-          result: { personId: competitor.id, roundId: '333-r1' },
-          status: AttemptStatus.UNRESOLVED,
-        },
-      });
+      const unresolved = found(
+        await db.attempt.findFirst({
+          where: {
+            result: { personId: competitor.id, roundId: '333-r1' },
+            status: AttemptStatus.UNRESOLVED,
+          },
+        }),
+        'unresolved attempt',
+      );
       try {
         expect((await incident).id).toBe(unresolved.id);
       } finally {
@@ -495,9 +502,12 @@ describe('socket.io gateways (e2e)', () => {
     it('announces an updated attempt to incidents and statistics viewers', async () => {
       const attemptUpdated = waitForEvent(observer, 'attemptUpdated');
       const statistics = waitForEvent(observer, 'statisticsUpdated');
-      const unresolved = await db.attempt.findFirst({
-        where: { result: { personId: delegateCase.id } },
-      });
+      const unresolved = found(
+        await db.attempt.findFirst({
+          where: { result: { personId: delegateCase.id } },
+        }),
+        'unresolved attempt',
+      );
 
       await request(app.getHttpServer())
         .put(`/attempt/${unresolved.id}`)
@@ -718,7 +728,10 @@ describe('socket.io gateways (e2e)', () => {
     it.each(['wifiSsid', 'wifiPassword'] as const)(
       'refuses to start without %s',
       async (field) => {
-        const competition = await db.competition.findFirst();
+        const competition = found(
+          await db.competition.findFirst(),
+          'seeded competition',
+        );
         await db.competition.update({
           where: { id: competition.id },
           data: { [field]: '' },
