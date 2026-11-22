@@ -37,7 +37,7 @@ describe('PersonService', () => {
               findUnique: jest.fn(),
             },
             competition: {
-              findFirst: jest.fn(),
+              findFirstOrThrow: jest.fn(),
             },
           },
         },
@@ -183,7 +183,7 @@ describe('PersonService', () => {
         wcaUserId: '1',
         wcaAccessToken: 'token',
       } as never);
-      jest.spyOn(dbService.competition, 'findFirst').mockResolvedValue({
+      jest.spyOn(dbService.competition, 'findFirstOrThrow').mockResolvedValue({
         wcaId: 'ExampleOpen2026',
       } as never);
       jest.spyOn(wcaService, 'getWcif').mockResolvedValue(wcif as never);
@@ -305,7 +305,7 @@ describe('PersonService', () => {
       if (filter.contains !== undefined) {
         return groupId.includes(filter.contains);
       }
-      return groupId.startsWith(filter.startsWith);
+      return groupId.startsWith(filter.startsWith ?? '');
     };
     const competitorRow = (overrides: Partial<Row>): Row => ({
       id: 'row-assigned',
@@ -351,7 +351,7 @@ describe('PersonService', () => {
         wcaUserId: '1',
         wcaAccessToken: 'token',
       } as never);
-      jest.spyOn(dbService.competition, 'findFirst').mockResolvedValue({
+      jest.spyOn(dbService.competition, 'findFirstOrThrow').mockResolvedValue({
         wcaId: 'ExampleOpen2026',
       } as never);
       jest.spyOn(wcaService, 'getWcif').mockResolvedValue(wcif as never);
@@ -452,6 +452,17 @@ describe('PersonService', () => {
       expect(dbService.staffActivity.update).not.toHaveBeenCalled();
       expect(dbService.staffActivity.delete).not.toHaveBeenCalled();
       expect(dbService.staffActivity.deleteMany).not.toHaveBeenCalled();
+    });
+
+    it('refuses a group the WCIF schedule does not have', async () => {
+      rows = [competitorRow({ id: 'row-assigned', groupId: '333-r1-g1' })];
+
+      await expect(moveTo('333-r1-g9')).rejects.toMatchObject({
+        status: 404,
+        response: 'Group or competitor not in the WCIF',
+      });
+      expect(wcaService.patchWcif).not.toHaveBeenCalled();
+      expect(dbService.staffActivity.update).not.toHaveBeenCalled();
     });
 
     it('includes the required WCIF fields when changing assignments', async () => {

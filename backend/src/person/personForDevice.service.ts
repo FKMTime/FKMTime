@@ -60,12 +60,11 @@ export class PersonForDeviceService {
       };
     }
     const person = await this.personService.getPersonByCardId(cardId);
+    // Translations fall back to English for a missing locale, too
+    const defaultLocale = competition.defaultLocale ?? 'en';
     if (!person) {
       return {
-        message: getTranslation(
-          'competitorNotFound',
-          competition.defaultLocale,
-        ),
+        message: getTranslation('competitorNotFound', defaultLocale),
         shouldResetTime: false,
         status: 404,
         error: true,
@@ -85,25 +84,35 @@ export class PersonForDeviceService {
     // card: rounds, registration and attempts left don't apply (SPEC-012)
     if (device && isInTutorial(device)) {
       await this.deviceService.extendTutorial(device.id);
-      return this.getTutorialPersonInfo(person, competition.defaultLocale);
+      return this.getTutorialPersonInfo(person, defaultLocale);
+    }
+    // An unregistered station offers no groups
+    if (!device) {
+      return {
+        ...person,
+        name: convertToLatin(person.name),
+        possibleGroups: [],
+      };
     }
     const wcif = JSON.parse(JSON.stringify(competition.wcif));
     // A station pointed at a round offers only that round (SPEC-007)
-    const possibleGroups = device
-      ? getStationGroupIds(device, person.registrantId, wcif)
-      : [];
-    const competitorWcifInfo = getPersonFromWcif(person.registrantId, wcif);
-    const competingAssignments = competitorWcifInfo.assignments.filter(
-      (a) => a.assignmentCode === 'competitor',
+    const possibleGroups = getStationGroupIds(
+      device,
+      person.registrantId,
+      wcif,
     );
-    const competitorGroups = [];
-    for (const assignment of competingAssignments) {
-      const activityFromSchedule = getGroupInfoByActivityId(
-        assignment.activityId,
-        wcif,
+    // Someone added on site has no registrant id, so no WCIF entry or
+    // assignments: they can compete in what they're registered for here
+    const competitorWcifInfo =
+      person.registrantId === null
+        ? undefined
+        : getPersonFromWcif(person.registrantId, wcif);
+    const competitorGroups = (competitorWcifInfo?.assignments ?? [])
+      .filter((a) => a.assignmentCode === 'competitor')
+      // An assignment to an activity the schedule doesn't have counts for none
+      .flatMap(
+        (a) => getGroupInfoByActivityId(a.activityId, wcif)?.activityCode ?? [],
       );
-      competitorGroups.push(activityFromSchedule.activityCode);
-    }
     const registeredEventIds: string[] =
       competitorWcifInfo?.registration?.eventIds ?? [];
     const finishedRoundsIds = await this.getFinishedRoundIds(
@@ -133,7 +142,10 @@ export class PersonForDeviceService {
 
           if (hasNoAttemptsLeft) {
             return {
-              message: getTranslation('noAttemptsLeft', person.countryIso2),
+              message: getTranslation(
+                'noAttemptsLeft',
+                person.countryIso2 ?? defaultLocale,
+              ),
               shouldResetTime: true,
               status: 400,
               error: true,
@@ -150,14 +162,15 @@ export class PersonForDeviceService {
           possibleGroups: await Promise.all(
             possibleGroups.map(async (g) => ({
               groupId: g,
-              useInspection: eventsData.find((e) => e.id === g.split('-')[0])
-                .useInspection,
+              useInspection:
+                eventsData.find((e) => e.id === g.split('-')[0])
+                  ?.useInspection ?? true,
               maxPenalty: getMaxPenalty(g.split('-')[0]),
               ...(await this.computeSecondaryText(
                 g,
                 wcif,
                 person.id,
-                competition.defaultLocale,
+                defaultLocale,
                 device.hwVersion,
                 cardId,
               )),
@@ -175,7 +188,7 @@ export class PersonForDeviceService {
             (group) =>
               group.split('-g')[0] === possibleGroups[0].split('-g')[0],
           ) ||
-          eventsData.find((e) => e.id === eventId).isUnofficial ||
+          eventsData.find((e) => e.id === eventId)?.isUnofficial ||
           registeredEventIds.includes(eventId)
         );
       })
@@ -184,13 +197,14 @@ export class PersonForDeviceService {
         const eventId = g.split('-')[0];
         return {
           groupId: g,
-          useInspection: eventsData.find((e) => e.id === eventId).useInspection,
+          useInspection:
+            eventsData.find((e) => e.id === eventId)?.useInspection ?? true,
           maxPenalty: getMaxPenalty(eventId),
           ...(await this.computeSecondaryText(
             g,
             wcif,
             person.id,
-            competition.defaultLocale,
+            defaultLocale,
             device.hwVersion,
             cardId,
           )),
@@ -259,12 +273,14 @@ export class PersonForDeviceService {
         person: publicPersonSelect,
       },
     });
-    const finishedRoundsIds = [];
+    const finishedRoundsIds: string[] = [];
     for (const result of results) {
       if (result.attempts.length === 0) {
         continue;
       }
       const roundInfo = getRoundInfoFromWcif(result.roundId, wcif);
+      // A round the WCIF no longer has can't be finished in it
+      if (!roundInfo) continue;
       let maxAttempts = getMaxAttempts(roundInfo.format);
       if (roundInfo.cutoff) {
         const cutoffPassed = checkCutoff(
@@ -290,15 +306,18 @@ export class PersonForDeviceService {
     wcif: WCIF,
     personId: string,
     locale: string,
-    hwVersion?: HardwareVersion,
-    cardId?: string,
+    hwVersion: HardwareVersion | null,
+    cardId: string,
   ) {
     if (!groupId) return { name: '', secondaryText: '' };
+    // Newer stations show a second line; one with no version shows the name
+    const showsSecondaryText =
+      hwVersion !== null && SHOW_SECONDARY_TEXT_HW_VERSIONS.includes(hwVersion);
     const roundId = groupId.split('-g')[0];
     const eventId = roundId.split('-r')[0];
     const roundNumber = roundId.split('-r')[1];
     const eventData = eventsData.find((e) => e.id === eventId);
-    const eventName = eventData.shortName ?? eventData.name;
+    const eventName = eventData?.shortName ?? eventData?.name ?? eventId;
     const eventText = `${eventName} - R${roundNumber}`;
     const shortEventText = `${eventName} R${roundNumber}`;
     let limitToReturn: number | null = null;
@@ -315,7 +334,7 @@ export class PersonForDeviceService {
     const attemptText = `${getTranslation('attempt', locale)} ${shownAttempt.isExtra ? 'E' : ''}${shownAttempt.num}`;
 
     if (
-      SHOW_SECONDARY_TEXT_HW_VERSIONS.includes(hwVersion) &&
+      showsSecondaryText &&
       roundInfo?.timeLimit &&
       roundInfo.timeLimit.cumulativeRoundIds.length > 0
     ) {
@@ -338,15 +357,13 @@ export class PersonForDeviceService {
       cumulativeText = `Remaining: ${formatCentiseconds(remaining)}`;
       limitToReturn = remaining * 10;
     }
-    if (
-      SHOW_SECONDARY_TEXT_HW_VERSIONS.includes(hwVersion) &&
-      roundInfo?.cutoff
-    ) {
+    if (showsSecondaryText && roundInfo?.cutoff) {
       cutoffText = `Cutoff: ${formatCentiseconds(roundInfo.cutoff.resultValue)}`;
     }
 
+    // Multi-blind has no time limit in the WCIF: its timeLimit is null
     if (limitToReturn === null) {
-      limitToReturn = roundInfo.timeLimit.centiseconds
+      limitToReturn = roundInfo?.timeLimit?.centiseconds
         ? roundInfo.timeLimit.centiseconds * 10
         : null;
     }
@@ -365,7 +382,7 @@ export class PersonForDeviceService {
     } else {
       secondaryText = attemptText;
     }
-    if (SHOW_SECONDARY_TEXT_HW_VERSIONS.includes(hwVersion)) {
+    if (showsSecondaryText) {
       return {
         name: shortEventText,
         secondaryText,

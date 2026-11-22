@@ -41,7 +41,7 @@ export class PersonController {
       +page,
       +pageSize,
       search,
-      +registrantId,
+      registrantId === undefined ? undefined : +registrantId,
       withoutCardAssigned,
       cardId,
       onlyNewcomers,

@@ -5,7 +5,9 @@ import {
   Attempt,
   AttemptStatus,
   AttemptType,
+  HardwareVersion,
 } from '../generated/prisma/client';
+import { unusedDependency } from '../test-utils/unused-dependency';
 import { PersonForDeviceService } from './personForDevice.service';
 
 describe('PersonForDeviceService finished rounds', () => {
@@ -52,10 +54,10 @@ describe('PersonForDeviceService finished rounds', () => {
     };
     const service = new PersonForDeviceService(
       prisma as unknown as DbService,
-      null,
-      new WcaService(null),
-      null,
-      null,
+      unusedDependency(),
+      new WcaService(unusedDependency()),
+      unusedDependency(),
+      unusedDependency(),
     );
     return service['getFinishedRoundIds'](
       'person-1',
@@ -143,8 +145,8 @@ describe('PersonForDeviceService on a station in tutorial mode (SPEC-012)', () =
     const service = new PersonForDeviceService(
       prisma as unknown as DbService,
       personService as never,
-      null,
-      null,
+      unusedDependency(),
+      unusedDependency(),
       deviceService as never,
     );
     return { service, deviceService };
@@ -189,5 +191,98 @@ describe('PersonForDeviceService on a station in tutorial mode (SPEC-012)', () =
 
     expect(reply).toMatchObject({ possibleGroups: [] });
     expect(deviceService.extendTutorial).not.toHaveBeenCalled();
+  });
+});
+
+describe('PersonForDeviceService with data the WCIF does not have', () => {
+  const wcif = {
+    events: [
+      {
+        id: '333mbf',
+        // Multi-blind has no time limit in the WCIF
+        rounds: [{ id: '333mbf-r1', format: '1', timeLimit: null }],
+      },
+    ],
+    persons: [],
+    schedule: { venues: [] },
+  };
+  const service = (
+    prisma: object,
+    personService: object = {},
+    resultService: object = {},
+  ) =>
+    new PersonForDeviceService(
+      prisma as unknown as DbService,
+      personService as never,
+      new WcaService(unusedDependency()),
+      resultService as never,
+      { extendTutorial: jest.fn() } as never,
+    );
+
+  it('answers a card of someone added on site, who has no WCIF entry', async () => {
+    const person = {
+      id: 'p-onsite',
+      name: 'Added On Site',
+      countryIso2: 'PL',
+      registrantId: null,
+      cardId: '200',
+    };
+    const reply = await service(
+      {
+        competition: {
+          findFirst: jest.fn().mockResolvedValue({ defaultLocale: 'en', wcif }),
+        },
+        result: { findMany: jest.fn().mockResolvedValue([]) },
+        device: {
+          findFirst: jest.fn().mockResolvedValue({
+            id: 'device-1',
+            tutorialEndsAt: null,
+            customRoundId: null,
+            room: { currentGroupIds: ['333mbf-r1-g1'] },
+          }),
+        },
+      },
+      { getPersonByCardId: jest.fn().mockResolvedValue(person) },
+    ).getPersonInfo('200', 7, true);
+
+    expect(reply).toMatchObject({ id: 'p-onsite', possibleGroups: [] });
+  });
+
+  it('counts no round as finished that the WCIF no longer has', async () => {
+    const finished = await service({
+      result: {
+        findMany: jest.fn().mockResolvedValue([
+          {
+            roundId: '333-r1',
+            attempts: [{ id: 'a1' }],
+            eventId: '333',
+            person: { registrantId: 1, wcaId: null },
+          },
+        ]),
+      },
+    })['getFinishedRoundIds']('person-1', {} as never, wcif as never);
+
+    expect(finished).toEqual([]);
+  });
+
+  it('gives a group of a round without a time limit no limit', async () => {
+    const text = await service(
+      {},
+      {},
+      {
+        getNextAttemptData: jest
+          .fn()
+          .mockResolvedValue({ scrambleData: { num: 1, isExtra: false } }),
+      },
+    ).computeSecondaryText(
+      '333mbf-r1-g1',
+      wcif as never,
+      'person-1',
+      'en',
+      HardwareVersion.V4,
+      '200',
+    );
+
+    expect(text).toMatchObject({ limit: null });
   });
 });
