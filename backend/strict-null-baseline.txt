@@ -13,11 +13,6 @@ src/integrated-live/integratedLive.service.ts
 src/integrated-live/integratedLiveRounds.service.spec.ts
 src/integrated-live/integratedLiveRounds.service.ts
 src/integrated-live/liveAttempts.ts
-src/person/person.controller.ts
-src/person/person.service.spec.ts
-src/person/person.service.ts
-src/person/personForDevice.service.spec.ts
-src/person/personForDevice.service.ts
 src/scrambling/scrambling.service.ts
 src/secret-box.ts
 src/socket/socket.service.spec.ts

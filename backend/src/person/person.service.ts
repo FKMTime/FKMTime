@@ -1,6 +1,6 @@
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { WcaService } from 'src/wca/wca.service';
-import { Activity, Assignment, Competition } from 'wcif-helpers';
+import { Assignment, Competition } from 'wcif-helpers';
 import { getActivityInfoFromSchedule, getPersonFromWcif } from 'wcif-helpers';
 
 import { DbService } from '../db/db.service';
@@ -499,16 +499,16 @@ export class PersonService {
       throw new HttpException('Competitor not found in the WCIF', 404);
     }
     const user = await this.prisma.user.findUnique({ where: { id: userId } });
-    if (!user?.wcaUserId) {
+    if (!user?.wcaUserId || !user.wcaAccessToken) {
       throw new HttpException('Sign in with WCA to change groups', 403);
     }
-    const competition = await this.prisma.competition.findFirst();
+    const competition = await this.prisma.competition.findFirstOrThrow();
     const wcif: Competition = await this.wcaService.getWcif(
       competition.wcaId,
       user.wcaAccessToken,
     );
     const personInfo = getPersonFromWcif(person.registrantId, wcif);
-    const activity: Activity = getActivityInfoFromSchedule(groupId, wcif);
+    const activity = getActivityInfoFromSchedule(groupId, wcif);
     if (!personInfo || !activity) {
       throw new HttpException('Group or competitor not in the WCIF', 404);
     }
@@ -600,108 +600,106 @@ export class PersonService {
         id: userId,
       },
     });
-    if (!user.wcaUserId) {
+    if (!user?.wcaUserId || !user.wcaAccessToken) {
       throw new HttpException('You are not allowed to access WCIF', 403);
     }
-    const competition = await this.prisma.competition.findFirst();
+    const competition = await this.prisma.competition.findFirstOrThrow();
     const wcif: Competition = await this.wcaService.getWcif(
       competition.wcaId,
       user.wcaAccessToken,
     );
-    const personInfo = getPersonFromWcif(
-      currentGroup.person.registrantId,
-      wcif,
-    );
-    const currentActivity: Activity = getActivityInfoFromSchedule(
+    const { registrantId } = currentGroup.person;
+    const personInfo =
+      registrantId === null ? undefined : getPersonFromWcif(registrantId, wcif);
+    const currentActivity = getActivityInfoFromSchedule(
       currentGroup.groupId,
       wcif,
     );
-    const newActivity: Activity = getActivityInfoFromSchedule(
-      data.newGroupId,
-      wcif,
-    );
+    const newActivity = getActivityInfoFromSchedule(data.newGroupId, wcif);
+    // Moving them means rewriting their WCIF assignments, which needs all three
+    if (!personInfo || !currentActivity || !newActivity) {
+      throw new HttpException('Group or competitor not in the WCIF', 404);
+    }
     const overlappingAssignmentsActivityIds: number[] = [];
     overlappingAssignments.map((oa) => {
-      const activity: Activity = getActivityInfoFromSchedule(oa.groupId, wcif);
+      const activity = getActivityInfoFromSchedule(oa.groupId, wcif);
       if (activity) {
         overlappingAssignmentsActivityIds.push(activity.id);
       }
     });
-    if (currentActivity && newActivity) {
-      const filteredAssignments = personInfo.assignments.filter(
-        (a: Assignment) =>
-          a.activityId !== currentActivity.id &&
-          !overlappingAssignmentsActivityIds.some((oa) => oa === a.activityId),
-      );
-      const newAssignments = [
-        ...filteredAssignments,
-        {
-          activityId: newActivity.id,
-          stationNumber: null,
-          assignmentCode: 'competitor',
+    const filteredAssignments = personInfo.assignments.filter(
+      (a: Assignment) =>
+        a.activityId !== currentActivity.id &&
+        !overlappingAssignmentsActivityIds.some((oa) => oa === a.activityId),
+    );
+    const newAssignments = [
+      ...filteredAssignments,
+      {
+        activityId: newActivity.id,
+        stationNumber: null,
+        assignmentCode: 'competitor',
+      },
+    ];
+    const newPerson = {
+      ...personInfo,
+      assignments: newAssignments,
+    };
+    const newPersons = wcif.persons.filter(
+      (p) => p.registrantId !== newPerson.registrantId,
+    );
+    newPersons.push(newPerson);
+    const newWcif = {
+      id: wcif.id,
+      formatVersion: wcif.formatVersion,
+      persons: newPersons,
+    };
+    const response = await this.wcaService.patchWcif(
+      competition.wcaId,
+      newWcif,
+      user.wcaAccessToken,
+    );
+    if (response.statusCode === 200) {
+      await this.prisma.staffActivity.deleteMany({
+        where: {
+          personId: currentGroup.personId,
+          groupId: data.newGroupId,
+          role: { not: StaffRole.COMPETITOR },
         },
-      ];
-      const newPerson = {
-        ...personInfo,
-        assignments: newAssignments,
-      };
-      const newPersons = wcif.persons.filter(
-        (p) => p.registrantId !== newPerson.registrantId,
-      );
-      newPersons.push(newPerson);
-      const newWcif = {
-        id: wcif.id,
-        formatVersion: wcif.formatVersion,
-        persons: newPersons,
-      };
-      const response = await this.wcaService.patchWcif(
-        competition.wcaId,
-        newWcif,
-        user.wcaAccessToken,
-      );
-      if (response.statusCode === 200) {
-        await this.prisma.staffActivity.deleteMany({
+      });
+      if (targetRow && targetRow.id !== currentGroup.id) {
+        // They already have a row in the new group (a walk-in). Keep that
+        // one, since it holds the attendance taken in that group, mark it
+        // assigned, and drop the moved row: (person, group, role) is unique.
+        await this.prisma.staffActivity.update({
+          where: { id: targetRow.id },
+          data: { isAssigned: true },
+        });
+        await this.prisma.staffActivity.delete({
+          where: { id: currentGroup.id },
+        });
+      } else {
+        await this.prisma.staffActivity.update({
           where: {
-            personId: currentGroup.personId,
+            id: currentGroup.id,
+          },
+          data: {
             groupId: data.newGroupId,
-            role: { not: StaffRole.COMPETITOR },
+            isAssigned: true,
           },
         });
-        if (targetRow && targetRow.id !== currentGroup.id) {
-          // They already have a row in the new group (a walk-in). Keep that
-          // one, since it holds the attendance taken in that group, mark it
-          // assigned, and drop the moved row: (person, group, role) is unique.
-          await this.prisma.staffActivity.update({
-            where: { id: targetRow.id },
-            data: { isAssigned: true },
-          });
-          await this.prisma.staffActivity.delete({
-            where: { id: currentGroup.id },
-          });
-        } else {
-          await this.prisma.staffActivity.update({
-            where: {
-              id: currentGroup.id,
-            },
-            data: {
-              groupId: data.newGroupId,
-              isAssigned: true,
-            },
-          });
-        }
-        return {
-          message: 'Successfully moved the competitor to another group',
-        };
-      } else {
-        const error = response.error ?? response.message ?? 'Unknown WCA error';
-        throw new HttpException(
-          {
-            message: 'The WCA rejected the WCIF update',
-            error: typeof error === 'string' ? error : JSON.stringify(error),
-          },
-          response.statusCode || 500,
-        );
       }
+      return {
+        message: 'Successfully moved the competitor to another group',
+      };
+    } else {
+      const error = response.error ?? response.message ?? 'Unknown WCA error';
+      throw new HttpException(
+        {
+          message: 'The WCA rejected the WCIF update',
+          error: typeof error === 'string' ? error : JSON.stringify(error),
+        },
+        response.statusCode || 500,
+      );
     }
   }
 }
