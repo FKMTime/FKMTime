@@ -15,15 +15,12 @@ import {
   getStationTranslations,
 } from 'src/translations/translations';
 import { LIVE_LOOKUP_TTL_MS, TtlCache } from 'src/ttl-cache';
-import {
-  getNextGroupInRoom,
-  getRoundActivityInRoom,
-  isSameDay,
-} from 'src/wcif-helpers';
+import { getNextGroupInRoom, isSameDay } from 'src/wcif-helpers';
 import {
   Activity,
   Competition,
   Event,
+  getActivityInfoFromScheduleWithRoom,
   Room as WCIFRoom,
   Round,
   Venue,
@@ -824,7 +821,7 @@ export class CompetitionService implements OnModuleDestroy {
   ) {
     const roundId = groupId.split('-g')[0];
     const hasNextGroup = !!getNextGroupInRoom(groupId, roomName, wcif);
-    const round = getRoundActivityInRoom(roundId, roomName, wcif);
+    const round = getActivityInfoFromScheduleWithRoom(roundId, roomName, wcif);
     const roomRoundGroupIds = hasNextGroup
       ? [groupId]
       : (round?.childActivities ?? []).map((group) => group.activityCode);
@@ -985,7 +982,7 @@ export class CompetitionService implements OnModuleDestroy {
     const previousGroups: string[] = [];
     if (currentGroups.length === 1) {
       const currentRoundId = currentGroups[0].split('-g')[0];
-      const roundInfoFromSchedule = getRoundActivityInRoom(
+      const roundInfoFromSchedule = getActivityInfoFromScheduleWithRoom(
         currentRoundId,
         room.name,
         wcif,
@@ -1039,7 +1036,7 @@ export class CompetitionService implements OnModuleDestroy {
     } else {
       for (const currentGroupId of currentGroups) {
         const roundId = currentGroupId.split('-g')[0];
-        const roundInfoFromSchedule = getRoundActivityInRoom(
+        const roundInfoFromSchedule = getActivityInfoFromScheduleWithRoom(
           roundId,
           room.name,
           wcif,
