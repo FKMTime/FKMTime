@@ -14,6 +14,7 @@ import {
   UnofficialEvent,
   User,
 } from '../src/generated/prisma/client';
+import { found } from '../src/test-utils/found';
 import { createTestApp } from './helpers/app.helper';
 import { getGeneratedCompetition } from './helpers/dummy-wca.helper';
 import { listenOnLoopback } from './helpers/loopback.helper';
@@ -226,9 +227,12 @@ describe('Competition import & sync from WCA (e2e)', () => {
         where: { registrantId: sample.registrantId },
         data: { name: 'Renamed Locally' },
       });
-      const person = await db.person.findUnique({
-        where: { registrantId: sample.registrantId },
-      });
+      const person = found(
+        await db.person.findUnique({
+          where: { registrantId: sample.registrantId },
+        }),
+        'person',
+      );
       const deletedAssignments = await db.staffActivity.deleteMany({
         where: { personId: person.id },
       });
@@ -253,7 +257,10 @@ describe('Competition import & sync from WCA (e2e)', () => {
       expect(await db.staffActivity.count()).toBe(
         staffActivitiesBefore + deletedAssignments.count,
       );
-      const competition = await db.competition.findFirst();
+      const competition = found(
+        await db.competition.findFirst(),
+        'competition',
+      );
       const events = (competition.wcif as unknown as Wcif).events.map(
         (e) => e.id,
       );
@@ -261,11 +268,14 @@ describe('Competition import & sync from WCA (e2e)', () => {
     });
 
     it('recreates a competitor that is missing locally, with their assignments', async () => {
-      const sample = wcif.persons.find(
-        (p) =>
-          p.registrantId &&
-          p.registration?.status === 'accepted' &&
-          p.assignments.length > 0,
+      const sample = found(
+        wcif.persons.find(
+          (p) =>
+            p.registrantId &&
+            p.registration?.status === 'accepted' &&
+            p.assignments.length > 0,
+        ),
+        'accepted competitor with assignments',
       );
       // Deleting the person cascades to their staff activities
       await db.person.delete({
@@ -277,10 +287,13 @@ describe('Competition import & sync from WCA (e2e)', () => {
         .set('Authorization', `Bearer ${adminToken}`)
         .expect(200);
 
-      const recreated = await db.person.findUnique({
-        where: { registrantId: sample.registrantId },
-        include: { StaffActivity: true },
-      });
+      const recreated = found(
+        await db.person.findUnique({
+          where: { registrantId: sample.registrantId },
+          include: { StaffActivity: true },
+        }),
+        'recreated person',
+      );
       expect(recreated).toMatchObject({ name: sample.name });
       expect(recreated.StaffActivity).toHaveLength(sample.assignments.length);
       expect(recreated.StaffActivity.every((a) => a.isAssigned)).toBe(true);

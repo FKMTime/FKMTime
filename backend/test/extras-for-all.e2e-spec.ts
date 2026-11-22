@@ -7,6 +7,7 @@ import {
   AttemptType,
   Person,
 } from '../src/generated/prisma/client';
+import { found } from '../src/test-utils/found';
 import { createTestApp } from './helpers/app.helper';
 import {
   createRoleUsers,
@@ -47,10 +48,13 @@ describe('Extras for all attempts (e2e)', () => {
         })
         .expect(201);
     }
-    return db.result.findFirst({
-      where: { personId: competitor.id, roundId: ROUND_ID },
-      include: { attempts: { orderBy: { attemptNumber: 'asc' } } },
-    });
+    return found(
+      await db.result.findFirst({
+        where: { personId: competitor.id, roundId: ROUND_ID },
+        include: { attempts: { orderBy: { attemptNumber: 'asc' } } },
+      }),
+      'result',
+    );
   };
 
   const give = (body: Record<string, unknown>) =>

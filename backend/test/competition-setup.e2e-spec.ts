@@ -8,6 +8,7 @@ import {
   Role,
   Room,
 } from '../src/generated/prisma/client';
+import { found } from '../src/test-utils/found';
 import { createTestApp } from './helpers/app.helper';
 import { listenOnLoopback } from './helpers/loopback.helper';
 import {
@@ -67,10 +68,13 @@ const competitionDay = (wcif: WcifLike, day: number) => {
 };
 
 const findActivity = (wcif: WcifLike, activityCode: string) =>
-  wcif.schedule.venues
-    .flatMap((v) => v.rooms)
-    .flatMap((r) => r.activities)
-    .find((a) => a.activityCode === activityCode);
+  found(
+    wcif.schedule.venues
+      .flatMap((v) => v.rooms)
+      .flatMap((r) => r.activities)
+      .find((a) => a.activityCode === activityCode),
+    `activity ${activityCode}`,
+  );
 
 const minutesAfter = (time: string, minutes: number) =>
   new Date(new Date(time).getTime() + minutes * 60_000);
@@ -96,9 +100,15 @@ describe('Competition setup (e2e)', () => {
     organizer = await createUserWithRoles(app, db, `organizer-${SUFFIX}`, [
       Role.ORGANIZER,
     ]);
-    competition = await db.competition.findFirst();
-    mainHall = await db.room.findFirst({ where: { name: 'Main Hall' } });
-    sideHall = await db.room.findFirst({ where: { name: 'Side Hall' } });
+    competition = found(await db.competition.findFirst(), 'competition');
+    mainHall = found(
+      await db.room.findFirst({ where: { name: 'Main Hall' } }),
+      'Main Hall',
+    );
+    sideHall = found(
+      await db.room.findFirst({ where: { name: 'Side Hall' } }),
+      'Side Hall',
+    );
   }, 30000);
 
   afterAll(async () => {
@@ -195,9 +205,10 @@ describe('Competition setup (e2e)', () => {
       expect(res.body.map((r: { id: string }) => r.id)).toEqual(
         wcif.events.flatMap((e) => e.rounds.map((r) => r.id)),
       );
-      const r2 = wcif.events
-        .find((e) => e.id === '333')
-        .rounds.find((r) => r.id === '333-r2') as {
+      const r2 = found(
+        wcif.events.find((e) => e.id === '333'),
+        'event 333',
+      ).rounds.find((r) => r.id === '333-r2') as {
         participationRuleset?: unknown;
       };
       expect(res.body[0]).toEqual({
@@ -237,7 +248,7 @@ describe('Competition setup (e2e)', () => {
     });
 
     it('PUT /competition/settings/:id updates settings and stamps a new scoretaking token', async () => {
-      const before = await db.competition.findFirst();
+      const before = found(await db.competition.findFirst(), 'competition');
 
       const res = await asOrganizer(
         request(server()).put(`/competition/settings/${competition.id}`),
@@ -256,7 +267,7 @@ describe('Competition setup (e2e)', () => {
         scoretakingToken: 'e2e-new-scoretaking-token',
         sendingResultsFrequency: 'NEVER',
       });
-      const after = await db.competition.findFirst();
+      const after = found(await db.competition.findFirst(), 'competition');
       expect(after).toMatchObject({
         scoretakingToken: 'e2e-new-scoretaking-token',
         cubingContestsToken: 'e2e-contests-token',
@@ -264,13 +275,18 @@ describe('Competition setup (e2e)', () => {
         shouldChangeGroupsAutomatically: true,
         useFkmTimeDevices: false,
       });
-      expect(after.scoretakingTokenUpdatedAt.getTime()).toBeGreaterThan(
-        before.scoretakingTokenUpdatedAt.getTime(),
+      expect(
+        found(after.scoretakingTokenUpdatedAt, 'new token timestamp').getTime(),
+      ).toBeGreaterThan(
+        found(
+          before.scoretakingTokenUpdatedAt,
+          'old token timestamp',
+        ).getTime(),
       );
     });
 
     it('keeps the token timestamp when the token does not change', async () => {
-      const before = await db.competition.findFirst();
+      const before = found(await db.competition.findFirst(), 'competition');
 
       await asOrganizer(
         request(server()).put(`/competition/settings/${competition.id}`),
@@ -283,7 +299,7 @@ describe('Competition setup (e2e)', () => {
         })
         .expect(200);
 
-      const after = await db.competition.findFirst();
+      const after = found(await db.competition.findFirst(), 'competition');
       expect(after.scoretakingTokenUpdatedAt).toEqual(
         before.scoretakingTokenUpdatedAt,
       );
@@ -433,7 +449,10 @@ describe('Competition setup (e2e)', () => {
       expect(res.body.message).toBe(
         'There are 2 or more groups in the room from the same event',
       );
-      const room2 = await db.room.findUnique({ where: { id: sideHall.id } });
+      const room2 = found(
+        await db.room.findUnique({ where: { id: sideHall.id } }),
+        'Side Hall',
+      );
       expect(room2.currentGroupIds).toEqual(['333-r1-g2']);
     });
 
@@ -589,7 +608,10 @@ describe('Competition setup (e2e)', () => {
     });
 
     it('reports the real start and end time from device attempts', async () => {
-      const person = await db.person.findFirst({ where: { registrantId: 6 } });
+      const person = found(
+        await db.person.findFirst({ where: { registrantId: 6 } }),
+        'person 6',
+      );
       await db.result.deleteMany({
         where: { personId: person.id, roundId: '222-r1' },
       });
@@ -695,9 +717,12 @@ describe('Competition setup (e2e)', () => {
         ]),
       );
 
-      const person = await db.person.findFirst({
-        where: { registrantId: competitorIds[0] },
-      });
+      const person = found(
+        await db.person.findFirst({
+          where: { registrantId: competitorIds[0] },
+        }),
+        'competitor',
+      );
       await db.result.deleteMany({
         where: { personId: person.id, roundId: '333-r1' },
       });
