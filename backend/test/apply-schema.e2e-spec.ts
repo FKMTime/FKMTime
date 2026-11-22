@@ -2,6 +2,8 @@ import { randomBytes } from 'crypto';
 import { Client } from 'pg';
 import { applySchema, SchemaRefused, SchemaSql } from 'src/db/apply-schema';
 
+import { found } from '../src/test-utils/found';
+
 const V1 = '1'.repeat(64);
 const V2 = '2'.repeat(64);
 
@@ -42,7 +44,7 @@ describe('applying the schema at boot', () => {
   beforeEach(async () => {
     name = `fkmtime_apply_schema_${randomBytes(4).toString('hex')}`;
     await admin.query(`CREATE DATABASE ${name}`);
-    const url = new URL(process.env.DATABASE_URL);
+    const url = new URL(found(process.env.DATABASE_URL, 'DATABASE_URL'));
     url.pathname = `/${name}`;
     db = new Client({ connectionString: url.toString() });
     await db.connect();

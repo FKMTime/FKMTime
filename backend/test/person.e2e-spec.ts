@@ -2,6 +2,7 @@ import { INestApplication } from '@nestjs/common';
 import { DbService } from 'src/db/db.service';
 import * as request from 'supertest';
 
+import { found } from '../src/test-utils/found';
 import { createTestApp } from './helpers/app.helper';
 
 describe('PersonController (e2e)', () => {
@@ -12,9 +13,10 @@ describe('PersonController (e2e)', () => {
 
   beforeAll(async () => {
     ({ app, db, adminToken } = await createTestApp());
-    const person = await db.person.findFirst({
-      orderBy: { registrantId: 'asc' },
-    });
+    const person = found(
+      await db.person.findFirst({ orderBy: { registrantId: 'asc' } }),
+      'first person',
+    );
     personId = person.id;
   }, 30000);
 
@@ -110,7 +112,10 @@ describe('PersonController (e2e)', () => {
 
   describe('PUT /person/:id', () => {
     it('updates a person', async () => {
-      const person = await db.person.findUnique({ where: { id: personId } });
+      const person = found(
+        await db.person.findUnique({ where: { id: personId } }),
+        'person',
+      );
 
       const res = await request(app.getHttpServer())
         .put(`/person/${personId}`)
@@ -145,7 +150,10 @@ describe('PersonController (e2e)', () => {
         .send({})
         .expect(200);
 
-      const updated = await db.person.findUnique({ where: { id: personId } });
+      const updated = found(
+        await db.person.findUnique({ where: { id: personId } }),
+        'person',
+      );
       expect(updated.checkedInAt).not.toBeNull();
 
       // Restore

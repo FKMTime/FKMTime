@@ -3,12 +3,14 @@ import { DbService } from 'src/db/db.service';
 import * as request from 'supertest';
 
 import {
+  Attempt,
   AttemptStatus,
   AttemptType,
   Person,
   StaffActivityStatus,
   StaffRole,
 } from '../src/generated/prisma/client';
+import { found } from '../src/test-utils/found';
 import { createTestApp } from './helpers/app.helper';
 import {
   createRoleUsers,
@@ -59,7 +61,7 @@ describe('Result checks, double check and submission (e2e)', () => {
     });
     let standardNumber = 0;
     let extraNumber = 0;
-    const created = [];
+    const created: Attempt[] = [];
     for (const a of attempts) {
       const type = a.type ?? AttemptType.STANDARD_ATTEMPT;
       const attemptNumber =
@@ -205,9 +207,10 @@ describe('Result checks, double check and submission (e2e)', () => {
         })
         .expect(200);
 
-      const result = await db.result.findUnique({
-        where: { id: complete.result.id },
-      });
+      const result = found(
+        await db.result.findUnique({ where: { id: complete.result.id } }),
+        'double-checked result',
+      );
       expect(result.isDoubleChecked).toBe(true);
       expect(result.doubleCheckedById).toBe(users.userIds.DELEGATE);
       expect(result.doubleCheckedAt).not.toBeNull();
@@ -223,9 +226,12 @@ describe('Result checks, double check and submission (e2e)', () => {
         penalty: 2,
         editedById: users.userIds.DELEGATE,
       });
-      expect(stub.lastAttemptsFor(persons[2].registrantId, ROUND_ID)).toEqual([
-        15000, 16300, 17000,
-      ]);
+      expect(
+        stub.lastAttemptsFor(
+          found(persons[2].registrantId, 'registrant id'),
+          ROUND_ID,
+        ),
+      ).toEqual([15000, 16300, 17000]);
 
       const after = await request(server())
         .get(`/result/round/${ROUND_ID}/double-check`)
@@ -276,7 +282,7 @@ describe('Result checks, double check and submission (e2e)', () => {
     let seedPerson: Person;
 
     beforeAll(async () => {
-      wcif = (await db.competition.findFirst()).wcif;
+      wcif = found(await db.competition.findFirst(), 'competition').wcif;
     });
 
     afterEach(async () => {
@@ -291,9 +297,10 @@ describe('Result checks, double check and submission (e2e)', () => {
       const registered = wcif.persons
         .filter((p: any) => p.registration?.eventIds.includes('666'))
         .map((p: any) => p.registrantId);
-      seedPerson = await db.person.findFirst({
-        where: { registrantId: registered[0] },
-      });
+      seedPerson = found(
+        await db.person.findFirst({ where: { registrantId: registered[0] } }),
+        'registered person',
+      );
       const before = await request(server())
         .get('/result/round/666-r1/missing-persons')
         .set(auth(delegate))
@@ -613,17 +620,22 @@ describe('Result checks, double check and submission (e2e)', () => {
         }),
       ).toBe(0);
 
-      const after = await db.staffActivity.findUnique({
-        where: { id: assignedActivity.id },
-      });
+      const after = found(
+        await db.staffActivity.findUnique({
+          where: { id: assignedActivity.id },
+        }),
+        'assigned staff activity',
+      );
       expect(after.status).toBe(StaffActivityStatus.ABSENT);
       expect(
         await db.staffActivity.findUnique({ where: { id: walkInActivity.id } }),
       ).toBeNull();
       // Staffing is not touched
       expect(
-        (await db.staffActivity.findUnique({ where: { id: judging.id } }))
-          .status,
+        found(
+          await db.staffActivity.findUnique({ where: { id: judging.id } }),
+          'judging staff activity',
+        ).status,
       ).toBe(StaffActivityStatus.PRESENT);
     });
 
@@ -659,7 +671,8 @@ describe('Result checks, double check and submission (e2e)', () => {
       expect(res.body).toEqual({ message: 'Scorecard submitted' });
       expect(stub.submissions).toHaveLength(1);
       expect(stub.submissions[0]).toEqual({
-        competitionWcaId: (await db.competition.findFirst()).wcaId,
+        competitionWcaId: found(await db.competition.findFirst(), 'competition')
+          .wcaId,
         eventId: '222',
         roundNumber: 1,
         results: [
@@ -695,8 +708,11 @@ describe('Result checks, double check and submission (e2e)', () => {
       const submitted = stub.submissions[0];
       expect(submitted).toMatchObject({ eventId: '222', roundNumber: 1 });
       expect(
-        submitted.results.find(
-          (r) => r.registrantId === persons[1].registrantId,
+        found(
+          submitted.results.find(
+            (r) => r.registrantId === persons[1].registrantId,
+          ),
+          'resubmitted result',
         ).attempts,
       ).toEqual([{ result: 900 }, { result: 950 }]);
       expect(
@@ -723,7 +739,10 @@ describe('Result checks, double check and submission (e2e)', () => {
     });
 
     it('needs a Cubing Contests token for an unofficial event', async () => {
-      const competition = await db.competition.findFirst();
+      const competition = found(
+        await db.competition.findFirst(),
+        'competition',
+      );
       await db.competition.update({
         where: { id: competition.id },
         data: { cubingContestsToken: null },

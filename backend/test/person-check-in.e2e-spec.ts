@@ -3,6 +3,7 @@ import { DbService } from 'src/db/db.service';
 import * as request from 'supertest';
 
 import { Person, StaffRole } from '../src/generated/prisma/client';
+import { found } from '../src/test-utils/found';
 import { createTestApp } from './helpers/app.helper';
 import {
   createRoleUsers,
@@ -313,9 +314,10 @@ describe('Person check-in and card assignment (e2e)', () => {
         .set(auth(adminToken))
         .send({ cardId: '' })
         .expect(200);
-      const unassigned = await db.person.findUnique({
-        where: { id: persons[1].id },
-      });
+      const unassigned = found(
+        await db.person.findUnique({ where: { id: persons[1].id } }),
+        'person',
+      );
       expect(unassigned.cardId).toBeNull();
     });
 
@@ -340,9 +342,10 @@ describe('Person check-in and card assignment (e2e)', () => {
         .expect(200);
 
       expect(res.body).toEqual({ message: 'Person updated' });
-      const updated = await db.person.findUnique({
-        where: { id: persons[0].id },
-      });
+      const updated = found(
+        await db.person.findUnique({ where: { id: persons[0].id } }),
+        'person',
+      );
       expect(updated.cardId).toBe(CARD_A);
     });
 
@@ -361,9 +364,10 @@ describe('Person check-in and card assignment (e2e)', () => {
       expect(res.body.message).toBe(
         'This card is already assigned to someone else',
       );
-      const other = await db.person.findUnique({
-        where: { id: persons[1].id },
-      });
+      const other = found(
+        await db.person.findUnique({ where: { id: persons[1].id } }),
+        'person',
+      );
       expect(other.cardId).toBeNull();
     });
 
@@ -463,9 +467,10 @@ describe('Person check-in and card assignment (e2e)', () => {
         checkedInPersonsCount: before.body.checkedInPersonsCount + 1,
         totalPersonsCount: before.body.totalPersonsCount,
       });
-      const updated = await db.person.findUnique({
-        where: { id: persons[0].id },
-      });
+      const updated = found(
+        await db.person.findUnique({ where: { id: persons[0].id } }),
+        'person',
+      );
       expect(updated.cardId).toBe(CARD_A);
       expect(updated.checkedInAt).not.toBeNull();
 
@@ -494,9 +499,10 @@ describe('Person check-in and card assignment (e2e)', () => {
         .expect(409);
 
       expect(res.body.message).toBe('Card already assigned');
-      const second = await db.person.findUnique({
-        where: { id: persons[1].id },
-      });
+      const second = found(
+        await db.person.findUnique({ where: { id: persons[1].id } }),
+        'person',
+      );
       expect(second.checkedInAt).toBeNull();
       expect(second.cardId).toBeNull();
     });
@@ -513,9 +519,10 @@ describe('Person check-in and card assignment (e2e)', () => {
         .set(auth(adminToken))
         .expect(204);
 
-      const updated = await db.person.findUnique({
-        where: { id: persons[1].id },
-      });
+      const updated = found(
+        await db.person.findUnique({ where: { id: persons[1].id } }),
+        'person',
+      );
       expect(updated.checkedInAt).toBeNull();
       expect(updated.cardId).toBe(CARD_B);
     });
@@ -532,9 +539,10 @@ describe('Person check-in and card assignment (e2e)', () => {
         .set(auth(adminToken))
         .expect(204);
 
-      const updated = await db.person.findUnique({
-        where: { id: persons[1].id },
-      });
+      const updated = found(
+        await db.person.findUnique({ where: { id: persons[1].id } }),
+        'person',
+      );
       expect(updated.checkedInAt).toBeNull();
       expect(updated.cardId).toBeNull();
     });
@@ -580,13 +588,17 @@ describe('Person check-in and card assignment (e2e)', () => {
     let stub: ReturnType<typeof stubExternalApis>;
 
     beforeAll(async () => {
-      wcif = (await db.competition.findFirst()).wcif as unknown as typeof wcif;
+      wcif = found(await db.competition.findFirst(), 'competition')
+        .wcif as unknown as typeof wcif;
       const groupActivityId = (groupId: string) =>
-        wcif.schedule.venues
-          .flatMap((v) => v.rooms)
-          .flatMap((r) => r.activities)
-          .flatMap((a) => a.childActivities)
-          .find((g) => g.activityCode === groupId).id;
+        found(
+          wcif.schedule.venues
+            .flatMap((v) => v.rooms)
+            .flatMap((r) => r.activities)
+            .flatMap((a) => a.childActivities)
+            .find((g) => g.activityCode === groupId),
+          `group ${groupId}`,
+        ).id;
       fromActivityId = groupActivityId(FROM_GROUP);
       toActivityId = groupActivityId(TO_GROUP);
       const candidates = await db.staffActivity.findMany({
@@ -594,10 +606,13 @@ describe('Person check-in and card assignment (e2e)', () => {
         include: { person: { include: { StaffActivity: true } } },
         orderBy: { person: { registrantId: 'desc' } },
       });
-      const chosen = candidates.find(
-        (c) =>
-          !REGISTRANT_IDS.includes(c.person.registrantId) &&
-          !c.person.StaffActivity.some((a) => a.groupId === TO_GROUP),
+      const chosen = found(
+        candidates.find(
+          (c) =>
+            !REGISTRANT_IDS.some((id) => id === c.person.registrantId) &&
+            !c.person.StaffActivity.some((a) => a.groupId === TO_GROUP),
+        ),
+        'competitor to move',
       );
       movedPerson = chosen.person;
       activityId = chosen.id;
@@ -640,12 +655,16 @@ describe('Person check-in and card assignment (e2e)', () => {
       expect(res.body).toEqual({
         message: 'Successfully moved the competitor to another group',
       });
-      const activity = await db.staffActivity.findUnique({
-        where: { id: activityId },
-      });
+      const activity = found(
+        await db.staffActivity.findUnique({ where: { id: activityId } }),
+        'staff activity',
+      );
       expect(activity.groupId).toBe(TO_GROUP);
 
-      const patch = stub.calls.find((c) => c.method === 'PATCH');
+      const patch = found(
+        stub.calls.find((c) => c.method === 'PATCH'),
+        'WCIF patch',
+      );
       expect(patch.url).toContain(`/competitions/${wcif.id}/wcif`);
       const patchedPerson = patch.body.persons.find(
         (p: any) => p.registrantId === movedPerson.registrantId,
@@ -689,9 +708,10 @@ describe('Person check-in and card assignment (e2e)', () => {
           message: 'The WCA rejected the WCIF update',
           error: 'E2E rejected',
         });
-        const activity = await db.staffActivity.findUnique({
-          where: { id: activityId },
-        });
+        const activity = found(
+          await db.staffActivity.findUnique({ where: { id: activityId } }),
+          'staff activity',
+        );
         expect(activity.groupId).toBe(FROM_GROUP);
       } finally {
         patchStatus = 200;

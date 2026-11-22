@@ -3,6 +3,7 @@ import { DbService } from 'src/db/db.service';
 import * as request from 'supertest';
 
 import { AttemptStatus, AttemptType } from '../src/generated/prisma/client';
+import { found } from '../src/test-utils/found';
 import { createTestApp } from './helpers/app.helper';
 
 const ROUND_ID = '333-r2';
@@ -18,13 +19,17 @@ describe('ResultController (e2e)', () => {
     ({ app, db, adminToken } = await createTestApp());
 
     // Use second person to avoid conflicts with attempt tests
-    const person = await db.person.findFirst({
-      where: { registrantId: 2 },
-    });
+    const person = found(
+      await db.person.findFirst({ where: { registrantId: 2 } }),
+      'person 2',
+    );
     personId = person.id;
 
     // Seed a result with two attempts
-    const adminUser = await db.user.findFirst({ where: { username: 'admin' } });
+    const adminUser = found(
+      await db.user.findFirst({ where: { username: 'admin' } }),
+      'admin user',
+    );
     const result = await db.result.create({
       data: {
         person: { connect: { id: personId } },
@@ -81,7 +86,10 @@ describe('ResultController (e2e)', () => {
     });
 
     it('filters by search', async () => {
-      const person = await db.person.findUnique({ where: { id: personId } });
+      const person = found(
+        await db.person.findUnique({ where: { id: personId } }),
+        'person',
+      );
       const namePart = person.name.split(' ')[0];
 
       const res = await request(app.getHttpServer())
@@ -260,7 +268,10 @@ describe('ResultController (e2e)', () => {
   describe('DELETE /result/:id', () => {
     it('deletes a result', async () => {
       // Create a separate result to delete
-      const person3 = await db.person.findFirst({ where: { registrantId: 3 } });
+      const person3 = found(
+        await db.person.findFirst({ where: { registrantId: 3 } }),
+        'person 3',
+      );
       const tempResult = await db.result.create({
         data: {
           person: { connect: { id: person3.id } },

@@ -3,6 +3,7 @@ import { DbService } from 'src/db/db.service';
 import * as request from 'supertest';
 
 import { Role } from '../src/generated/prisma/client';
+import { found } from '../src/test-utils/found';
 import { createTestApp } from './helpers/app.helper';
 import { listenOnLoopback } from './helpers/loopback.helper';
 import {
@@ -79,7 +80,10 @@ describe('ScrambleSetController (e2e)', () => {
         ['333-r1', 'B', 7],
         ['666-r1', 'A', 4],
       ]);
-      const extra = sets[0].scrambles.find((s) => s.isExtra && s.num === 2);
+      const extra = found(
+        sets[0].scrambles.find((s) => s.isExtra && s.num === 2),
+        'extra scramble 2',
+      );
       expect(extra.encryptedScramble).toBe('encrypted-333-r1-A-extra-2');
     });
 
@@ -193,9 +197,12 @@ describe('ScrambleSetController (e2e)', () => {
 
   describe('DELETE /scramble-set/:id', () => {
     it('deletes one set together with its scrambles', async () => {
-      const set = await db.scrambleSet.findFirst({
-        where: { roundId: '333-r1', set: 'B' },
-      });
+      const set = found(
+        await db.scrambleSet.findFirst({
+          where: { roundId: '333-r1', set: 'B' },
+        }),
+        'set B',
+      );
 
       await asDelegate(
         request(server()).delete(`/scramble-set/${set.id}`),

@@ -2,6 +2,7 @@ import { INestApplication } from '@nestjs/common';
 import { DbService } from 'src/db/db.service';
 import * as request from 'supertest';
 
+import { found } from '../src/test-utils/found';
 import { createTestApp } from './helpers/app.helper';
 
 describe('UserController (e2e)', () => {
@@ -55,9 +56,10 @@ describe('UserController (e2e)', () => {
       })
       .expect(201);
 
-    const userFromDb = await db.user.findFirst({
-      where: { username: 'newuser' },
-    });
+    const userFromDb = found(
+      await db.user.findFirst({ where: { username: 'newuser' } }),
+      'new user',
+    );
 
     userId = userFromDb.id;
   });
