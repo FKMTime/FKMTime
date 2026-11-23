@@ -583,17 +583,6 @@ describe('Scrambling device flow (e2e)', () => {
       ).toBeGreaterThan(found(before.scrambledAt, 'scrambledAt').getTime());
     });
 
-    it('keeps one scrambled attempt when two signs arrive at once', async () => {
-      await Promise.all([sign(1, false), sign(1, false)]);
-
-      const attempts = await scrambledAttempts(AttemptType.STANDARD_ATTEMPT);
-      expect(attempts).toHaveLength(1);
-      expect(attempts[0]).toMatchObject({
-        attemptNumber: 1,
-        scramblerId: scrambler.id,
-      });
-    });
-
     it('moves on to the next scramble once the attempt is solved', async () => {
       const result = found(
         await db.result.findFirst({
@@ -611,6 +600,21 @@ describe('Scrambling device flow (e2e)', () => {
       ).expect(200);
 
       expect(res.body.scrambleData).toEqual({ num: 2, isExtra: false });
+    });
+
+    it('keeps one scrambled attempt when two devices sign the next scramble at once', async () => {
+      await Promise.all([
+        sign(2, false, scrambler.id),
+        sign(2, false, otherScrambler.id),
+      ]);
+
+      const attempts = (
+        await scrambledAttempts(AttemptType.STANDARD_ATTEMPT)
+      ).filter((attempt) => attempt.attemptNumber === 2);
+      expect(attempts).toHaveLength(1);
+      expect([scrambler.id, otherScrambler.id]).toContain(
+        attempts[0].scramblerId,
+      );
     });
 
     it('offers an extra scramble when an extra was granted', async () => {
