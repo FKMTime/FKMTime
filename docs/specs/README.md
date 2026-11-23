@@ -57,7 +57,7 @@ PRs, the last one does.
 | [SPEC-005](SPEC-005-later-rounds-after-dnf-ruling.md) | Removing later-round results after a DNF ruling | Implemented |
 | [SPEC-006](SPEC-006-results-destinations.md) | Sending results where the WCA says, and running rounds in WCA integrated live results | Implemented |
 | [SPEC-007](SPEC-007-station-custom-round.md) | Stations running a different round from their room | Implemented |
-| [SPEC-008](SPEC-008-station-wifi-signal.md) | Station Wi-Fi signal on the Devices page | Accepted |
+| [SPEC-008](SPEC-008-station-wifi-signal.md) | Station Wi-Fi signal on the Devices page | Implemented |
 | [SPEC-009](SPEC-009-live-device-logs.md) | Live device logs for admins | Implemented |
 | [SPEC-010](SPEC-010-station-last-error.md) | A station's last error, and how to fix it, on the Devices page | Implemented |
 | [SPEC-011](SPEC-011-server-logs.md) | Server logs for admins, replacing Dozzle | Implemented |
