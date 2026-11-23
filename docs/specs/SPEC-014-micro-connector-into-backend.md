@@ -15,13 +15,13 @@ The micro connector is a separate Rust service. Stations connect to it, and it t
 backend over a unix socket. This spec looks at rewriting it in TypeScript as a NestJS module,
 so stations connect to the backend directly and the connector and the unix socket go away.
 
-**Verdict: feasible, worth doing, but only after a week of spikes on a real router.** Most of
-the connector is plain protocol work that ports to TypeScript easily: the station websocket,
-the handshake, OTA updates and log parsing. Four things decide whether it works on
-competition day, and each can be tested before anyone commits to the port:
+**Verdict: feasible and worth doing, but only after spikes on a test instance with real
+stations.** Most of the connector is plain protocol work that ports to TypeScript easily: the
+station websocket, the handshake, OTA updates and log parsing. Four things decide whether it
+works on competition day, and each can be tested before anyone commits to the port:
 
 1. **mDNS.** Stations find the server only through mDNS, one advertisement per local address.
-   `@homebridge/ciao` can do that, but it has to be proven on the router.
+   `@homebridge/ciao` can do that, but it has to be proven on a Pi with real stations.
 2. **Event-loop stalls.** A station whose reply is 2 s late sends a ping and drops the
    connection if no pong arrives within 3 s. So station connections run on their own worker
    thread, which answers pings however busy the rest of the backend is.
@@ -30,8 +30,8 @@ competition day, and each can be tested before anyone commits to the port:
 4. **The backend joins the router's host network.** So do nginx and Postgres, or they have
    to be reached differently.
 
-The decision this spec asks for: **approve phase 0** (the spikes, about a week), and decide
-on the rest once its go/no-go results are in.
+The decision this spec asks for: **approve phase 0** (the spikes), and decide on the rest once its
+go/no-go results are in.
 
 ## Problem
 
@@ -83,7 +83,8 @@ connector's CI builds the image but never runs its tests.
 - The station protocol is tested in this repository, end to end, from the websocket to the
   database.
 - During a round, a station is never dropped because the backend was busy.
-- A router can go back to the connector until the new path has run a real competition.
+- Each competition chooses the path when its instance is created, and can stay on the
+  connector until the new path has run a real competition.
 
 ## Non-goals
 
@@ -248,15 +249,17 @@ The firmware simulator (`sim/` in FKMTime/firmware) runs the connector with its 
 - [ ] With the main thread blocked on purpose for 10 s, every station stays connected and gets
       an `ApiError` for a request it made meanwhile.
 - [ ] After a backend restart, 40 stations are back within 15 s of the backend being healthy.
-- [ ] `STATION_GATEWAY=0` plus the old template puts a router back on the connector.
+- [ ] An instance created from the current fim template runs on the connector, unchanged.
 - [ ] One real competition runs on the gateway.
 - [ ] The unix socket server, its DTOs and `SOCKET_PATH` are removed; FKMTime/micro-connector
       is archived.
 
 ## Rollout
 
-**Phase 0: spikes on a Pi 4 router (about a week).** Each is a throwaway prototype with a
-go/no-go:
+**Phase 0: spikes on a test instance.** There is no standing router to test on: fim creates an
+instance per competition, from a template. Phase 0 adds a throwaway `gateway-spike` template
+and runs it as a test instance on a Pi 4 with a few real stations and simulated ones for
+load, in sessions between competitions. Each spike is a prototype with a go/no-go:
 
 | Spike | Go if |
 |---|---|
@@ -276,8 +279,11 @@ set by hand.
 
 **Phase 2: mDNS, Bluetooth, station link.**
 
-**Phase 3: the router.** A new fim template (host networking, no connector) next to the
-current one. A mock competition on it first, then a real one with the old template ready.
+**Phase 3: per-competition opt-in.** A new fim template (host networking, no connector) next
+to the current one. The organizer picks it when creating the competition's instance. First a
+mock competition on a test instance, then one real competition whose organizer opts in, with
+the current template as the fallback for the next instance. Once a few competitions have run
+on it, it becomes the default template.
 
 **Phase 4: cleanup.** Remove the unix socket server and `SOCKET_PATH`, archive
 micro-connector (its `old-fw-update` branch, used for V2 → V3 updates, stays clonable), update
@@ -308,4 +314,5 @@ micro-connector (its `old-fw-update` branch, used for V2 → V3 updates, stays c
    late but drops no station, and an organizer can't act on it mid-round. The Devices page
    gets a warning only if phase 0 shows long stalls happen.
 3. **`node-ble` or our own thin BlueZ D-Bus client** over `dbus-next`? Proposed: decide in
-   phase 0. We use four BlueZ calls, so a thin client may be less risk than a stale library.
+   the phase 0 Bluetooth spike on the test instance. We use four BlueZ calls, so a thin client
+   may be less risk than a stale library.
