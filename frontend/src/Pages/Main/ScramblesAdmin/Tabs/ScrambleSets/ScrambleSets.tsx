@@ -82,11 +82,9 @@ const ScrambleSets = () => {
         [refetchSets, refetchCounts]
     );
 
-    const lastSetNumber = letterToNumber(
-        scrambleSets.reduce(
-            (last, set) => (last < set.set ? set.set : last),
-            "A"
-        )
+    const lastSetNumber = scrambleSets.reduce(
+        (last, set) => Math.max(last, letterToNumber(set.set)),
+        0
     );
 
     const selectRound = (id: string) =>
