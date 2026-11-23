@@ -271,8 +271,12 @@ micro-connector (its `old-fw-update` branch, used for V2 → V3 updates, stays c
 
 ## Open questions
 
-1. **Port 8081 or the backend's own HTTPS port for stations?** A separate port keeps station
-   traffic away from nginx and the panel. Proposed: keep 8081, which the router already uses.
+1. **Port 8081 or the backend's own HTTPS port for stations?** **Decided (2026-11-23): a
+   separate port, 8081.** The backend runs a second TLS server only for stations, so station
+   traffic stays out of nginx and the panel's HTTP stack, an nginx restart doesn't touch
+   stations, and routers keep the port they use today. Going through nginx was rejected: it
+   would have to pass the `RandomSigned` handshake through untouched and would become a hop
+   every station depends on.
 2. **Should a busy-loop warning reach the panel,** or only the server log (SPEC-011)?
    Proposed: the log in phase 1; the Devices page if phase 0 shows it's needed.
 3. **`node-ble` or our own thin BlueZ D-Bus client** over `dbus-next`? Proposed: decide in
