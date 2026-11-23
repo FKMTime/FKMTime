@@ -5,19 +5,19 @@ import { Role } from '../../generated/prisma/client';
 export class CreateUserDto {
   @IsString()
   @IsOptional()
-  username: string;
+  username?: string;
 
   @IsString()
   @IsOptional()
-  fullName: string;
+  fullName?: string;
 
   @IsString()
   @IsOptional()
-  wcaId: string;
+  wcaId?: string;
 
   @IsString()
   @IsOptional()
-  password: string;
+  password?: string;
 
   @IsArray()
   roles: Role[];

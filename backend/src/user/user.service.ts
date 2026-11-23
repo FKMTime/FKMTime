@@ -90,7 +90,8 @@ export class UserService {
         message: 'User created successfully',
       };
     }
-    if (data.username && !data.password) {
+    // An account without a WCA ID signs in with a password
+    if (!data.password) {
       throw new HttpException('Password is required', 400);
     }
     try {
