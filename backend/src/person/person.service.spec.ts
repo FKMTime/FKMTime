@@ -123,6 +123,81 @@ describe('PersonService', () => {
     });
   });
 
+  describe('getPersons', () => {
+    const whereOf = (method: 'findMany' | 'count') =>
+      (dbService.person[method] as jest.Mock).mock.calls[0][0].where;
+    const searchCondition = {
+      OR: [
+        { name: { contains: 'Example', mode: 'insensitive' } },
+        { wcaId: { contains: 'Example', mode: 'insensitive' } },
+      ],
+    };
+
+    it('keeps the not checked in filter when searching', async () => {
+      await service.getPersons(
+        1,
+        10,
+        'Example',
+        undefined,
+        false,
+        undefined,
+        false,
+        true,
+      );
+
+      expect(whereOf('findMany')).toEqual({
+        AND: [searchCondition, { checkedInAt: null }],
+      });
+      expect(whereOf('count')).toEqual(whereOf('findMany'));
+    });
+
+    it('requires newcomers to be able to compete when searching', async () => {
+      await service.getPersons(
+        1,
+        10,
+        'Example',
+        undefined,
+        false,
+        undefined,
+        true,
+        false,
+      );
+
+      expect(whereOf('findMany')).toEqual({
+        AND: [searchCondition, { wcaId: null, canCompete: true }],
+      });
+    });
+
+    it('filters persons without a card when there is no search term', async () => {
+      await service.getPersons(1, 10, undefined, undefined, true);
+
+      expect(whereOf('findMany')).toEqual({
+        AND: [{ OR: [{ cardId: null }, { cardId: '' }, { cardId: '0' }] }],
+      });
+    });
+
+    it('combines every filter', async () => {
+      await service.getPersons(1, 10, 'Example', 7, true, 'CARD', true, true);
+
+      expect(whereOf('findMany')).toEqual({
+        AND: [
+          searchCondition,
+          { registrantId: 7 },
+          { cardId: 'CARD' },
+          { OR: [{ cardId: null }, { cardId: '' }, { cardId: '0' }] },
+          { wcaId: null, canCompete: true },
+          { checkedInAt: null },
+        ],
+      });
+    });
+
+    it('lists everyone when no filter is set', async () => {
+      await service.getPersons(1, 10);
+
+      expect(whereOf('findMany')).toEqual({ AND: [] });
+    });
+  });
+
   describe('checkedInCount', () => {
     it('should return checked in count and persons who did not check in', async () => {
       const mockPersonsWhoDidNotCheckIn = [

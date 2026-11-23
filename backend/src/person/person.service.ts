@@ -32,86 +32,35 @@ export class PersonService {
     onlyNewcomers?: boolean,
     onlyNotCheckedIn?: boolean,
   ) {
-    const whereParams = {};
-    const searchParams = {
-      OR: [
-        {
-          name: {
-            contains: search,
-            mode: 'insensitive',
-          },
-        },
-        {
-          wcaId: {
-            contains: search,
-            mode: 'insensitive',
-          },
-        },
-      ],
-    };
+    // Each filter narrows the list on its own, so they combine the same way
+    // with or without a search term
+    const conditions: Prisma.PersonWhereInput[] = [];
+    if (search) {
+      conditions.push({
+        OR: [
+          { name: { contains: search, mode: 'insensitive' } },
+          { wcaId: { contains: search, mode: 'insensitive' } },
+        ],
+      });
+    }
     if (registrantId) {
-      whereParams['registrantId'] = registrantId;
+      conditions.push({ registrantId });
     }
     if (cardId) {
-      whereParams['cardId'] = cardId;
+      conditions.push({ cardId });
     }
-    if (withoutCardAssigned && search) {
-      whereParams['AND'] = [
-        {
-          OR: [
-            {
-              cardId: {
-                equals: null,
-              },
-            },
-            {
-              cardId: {
-                equals: '',
-              },
-            },
-            {
-              cardId: {
-                equals: '0',
-              },
-            },
-          ],
-        },
-        searchParams,
-      ];
-    } else if (!withoutCardAssigned && search) {
-      if (onlyNewcomers) {
-        whereParams['AND'] = [
-          searchParams,
-          {
-            wcaId: {
-              equals: null,
-            },
-          },
-        ];
-      } else {
-        whereParams['OR'] = searchParams.OR;
-      }
-    } else {
-      if (onlyNewcomers) {
-        whereParams['AND'] = [
-          {
-            wcaId: {
-              equals: null,
-            },
-          },
-          {
-            canCompete: {
-              equals: true,
-            },
-          },
-        ];
-      }
-      if (onlyNotCheckedIn) {
-        whereParams['checkedInAt'] = {
-          equals: null,
-        };
-      }
+    if (withoutCardAssigned) {
+      conditions.push({
+        OR: [{ cardId: null }, { cardId: '' }, { cardId: '0' }],
+      });
     }
+    if (onlyNewcomers) {
+      conditions.push({ wcaId: null, canCompete: true });
+    }
+    if (onlyNotCheckedIn) {
+      conditions.push({ checkedInAt: null });
+    }
+    const whereParams: Prisma.PersonWhereInput = { AND: conditions };
 
     const persons = await this.prisma.person.findMany({
       skip: (page - 1) * pageSize,

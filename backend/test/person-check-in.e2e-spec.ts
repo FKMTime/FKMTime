@@ -173,6 +173,84 @@ describe('Person check-in and card assignment (e2e)', () => {
         });
       }
     });
+
+    it('keeps the not checked in filter when searching', async () => {
+      await db.person.update({
+        where: { id: persons[0].id },
+        data: { checkedInAt: new Date() },
+      });
+      try {
+        const res = await request(server())
+          .get('/person?search=Checkin Competitor&onlyNotCheckedIn=true')
+          .set(auth(adminToken))
+          .expect(200);
+
+        const ids = res.body.data.map((p: any) => p.id);
+        expect(ids).toEqual(
+          expect.arrayContaining([persons[1].id, persons[2].id]),
+        );
+        expect(ids).not.toContain(persons[0].id);
+        expect(res.body.count).toBe(2);
+      } finally {
+        await db.person.update({
+          where: { id: persons[0].id },
+          data: { checkedInAt: null },
+        });
+      }
+    });
+
+    it('keeps the can compete rule for newcomers when searching', async () => {
+      await db.person.update({
+        where: { id: persons[2].id },
+        data: { canCompete: false },
+      });
+      try {
+        const res = await request(server())
+          .get('/person?search=Checkin Competitor&onlyNewcomers=true')
+          .set(auth(adminToken))
+          .expect(200);
+
+        const ids = res.body.data.map((p: any) => p.id);
+        expect(ids).toEqual(
+          expect.arrayContaining([persons[0].id, persons[1].id]),
+        );
+        expect(ids).not.toContain(persons[2].id);
+        expect(res.body.count).toBe(2);
+      } finally {
+        await db.person.update({
+          where: { id: persons[2].id },
+          data: { canCompete: true },
+        });
+      }
+    });
+
+    it('lists only persons without a card when there is no search term', async () => {
+      await db.person.update({
+        where: { id: persons[0].id },
+        data: { cardId: CARD_A },
+      });
+      try {
+        const res = await request(server())
+          .get('/person?withoutCardAssigned=true&pageSize=1000')
+          .set(auth(adminToken))
+          .expect(200);
+
+        const ids = res.body.data.map((p: any) => p.id);
+        expect(ids).not.toContain(persons[0].id);
+        expect(ids).toEqual(
+          expect.arrayContaining([persons[1].id, persons[2].id]),
+        );
+        res.body.data.forEach((p: any) =>
+          expect([null, '', '0']).toContain(p.cardId),
+        );
+        expect(res.body.count).toBe(res.body.data.length);
+      } finally {
+        await db.person.update({
+          where: { id: persons[0].id },
+          data: { cardId: null },
+        });
+      }
+    });
   });
 
   describe('POST /person', () => {
