@@ -74,7 +74,12 @@ export const recordEvents = <T = any>(socket: Socket, event: string) => {
   };
 };
 
-const isInRoom = async (gateway: AppGateway, room: string, id: string) => {
+// A disconnected socket has no id, and so is in no room
+const isInRoom = async (
+  gateway: AppGateway,
+  room: string,
+  id: string | undefined,
+) => {
   const sockets = await gateway.server.in(room).fetchSockets();
   return sockets.some((s) => s.id === id);
 };

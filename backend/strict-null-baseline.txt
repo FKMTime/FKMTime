@@ -9,13 +9,3 @@ src/socket/socket.service.spec.ts
 src/socket/socket.service.ts
 src/user/user.service.spec.ts
 src/wca/wca.service.ts
-test/device-management.e2e-spec.ts
-test/device.e2e-spec.ts
-test/h2h-station.e2e-spec.ts
-test/helpers/socketio.helper.ts
-test/helpers/station-fixtures.helper.ts
-test/realtime-gateway.e2e-spec.ts
-test/station-custom-round.e2e-spec.ts
-test/station-socket.e2e-spec.ts
-test/station-tester.e2e-spec.ts
-test/station-tutorial.e2e-spec.ts

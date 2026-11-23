@@ -16,6 +16,7 @@ import {
   StaffActivityStatus,
   StaffRole,
 } from '../src/generated/prisma/client';
+import { found } from '../src/test-utils/found';
 import { createTestApp } from './helpers/app.helper';
 import {
   seededPersonPicker,
@@ -108,7 +109,11 @@ describe('Station socket protocol (e2e)', () => {
     fixtures = new StationFixtures(db, 'e2e-rt-station');
     await fixtures.purgeLeftovers(Object.values(CARD));
     await fixtures.disableResultSubmission();
-    defaultLocale = (await db.competition.findFirst()).defaultLocale;
+    defaultLocale = found(
+      found(await db.competition.findFirst(), 'seeded competition')
+        .defaultLocale,
+      'competition default locale',
+    );
 
     const roomA = await fixtures.createRoom('room-a', ['333-r1-g1']);
     const roomB = await fixtures.createRoom('room-b', [
@@ -153,7 +158,10 @@ describe('Station socket protocol (e2e)', () => {
     await fixtures.createDevice('station-att', ESP.stationAttendance, roomB.id);
 
     // Pick seeded people by what each test needs from them
-    const competition = await db.competition.findFirst();
+    const competition = found(
+      await db.competition.findFirst(),
+      'seeded competition',
+    );
     const pick = seededPersonPicker(competition.wcif as unknown as WcifLike);
     const registeredFor =
       (...eventIds: string[]) =>
@@ -232,7 +240,10 @@ describe('Station socket protocol (e2e)', () => {
     });
 
     it('answers AutoSetupSettings with the Wi-Fi settings', async () => {
-      const competition = await db.competition.findFirst();
+      const competition = found(
+        await db.competition.findFirst(),
+        'seeded competition',
+      );
       const res = await station.request('AutoSetupSettings', {});
 
       expect(res.type).toBe('AutoSetupSettingsResp');
@@ -347,7 +358,10 @@ describe('Station socket protocol (e2e)', () => {
         type: 'UpdateBatteryPercentageResp',
         data: { status: 200, error: false },
       });
-      const device = await db.device.findUnique({ where: { id: stationAId } });
+      const device = found(
+        await db.device.findUnique({ where: { id: stationAId } }),
+        'station A device',
+      );
       expect(device.batteryPercentage).toBe(42);
     });
 
@@ -372,7 +386,10 @@ describe('Station socket protocol (e2e)', () => {
         type: 'DeviceConnectedResp',
         data: { status: 200, error: false },
       });
-      const device = await db.device.findUnique({ where: { id: stationAId } });
+      const device = found(
+        await db.device.findUnique({ where: { id: stationAId } }),
+        'station A device',
+      );
       expect(device.firmwareVersion).toBe('v9.8.7');
     });
 
@@ -495,9 +512,12 @@ describe('Station socket protocol (e2e)', () => {
           judgeId: judge.id,
           deviceId: stationAId,
         });
-        const log = await db.attemptEditLog.findFirst({
-          where: { attemptId: attempts[0].id },
-        });
+        const log = found(
+          await db.attemptEditLog.findFirst({
+            where: { attemptId: attempts[0].id },
+          }),
+          'attempt edit log',
+        );
         expect(log.comment).toBe('Original entry');
 
         const competitorActivity = await db.staffActivity.findUnique({
@@ -606,7 +626,7 @@ describe('Station socket protocol (e2e)', () => {
 
       it('keeps the attempt on the station once someone edited it', async () => {
         const [entered] = await attemptsOf(c1.id, '333-r1');
-        const user = await db.user.findFirst();
+        const user = found(await db.user.findFirst(), 'seeded user');
         await db.attempt.update({
           where: { id: entered.id },
           data: { updatedById: user.id },
@@ -630,7 +650,10 @@ describe('Station socket protocol (e2e)', () => {
       });
 
       it('answers in the competition language before the judge card is checked', async () => {
-        const competition = await db.competition.findFirst();
+        const competition = found(
+          await db.competition.findFirst(),
+          'seeded competition',
+        );
         await db.competition.update({
           where: { id: competition.id },
           data: { defaultLocale: 'pl' },
@@ -784,10 +807,11 @@ describe('Station socket protocol (e2e)', () => {
         );
 
         // In the judge's language when they share the competitor's country
+        const judgeCountry = found(judge.countryIso2, 'judge country');
         const locale =
-          c4.countryIso2 === judge.countryIso2 &&
-          isLocaleAvailable(judge.countryIso2.toLowerCase())
-            ? judge.countryIso2.toLowerCase()
+          c4.countryIso2 === judgeCountry &&
+          isLocaleAvailable(judgeCountry.toLowerCase())
+            ? judgeCountry.toLowerCase()
             : defaultLocale;
         expect(res).toEqual(
           errorResponse(getTranslation('groupNotFound', locale), 400),
@@ -807,10 +831,11 @@ describe('Station socket protocol (e2e)', () => {
         );
 
         // In the judge's language when they share the competitor's country
+        const judgeCountry = found(judge.countryIso2, 'judge country');
         const locale =
-          c4.countryIso2 === judge.countryIso2 &&
-          isLocaleAvailable(judge.countryIso2.toLowerCase())
-            ? judge.countryIso2.toLowerCase()
+          c4.countryIso2 === judgeCountry &&
+          isLocaleAvailable(judgeCountry.toLowerCase())
+            ? judgeCountry.toLowerCase()
             : defaultLocale;
         expect(res).toEqual(
           errorResponse(getTranslation('stationRoundChanged', locale), 409),
@@ -820,9 +845,12 @@ describe('Station socket protocol (e2e)', () => {
       });
 
       it('rejects a competitor not registered for the event', async () => {
-        const notRegistered = await db.person.findFirst({
-          where: { cardId: CARD.notRegistered.toString() },
-        });
+        const notRegistered = found(
+          await db.person.findFirst({
+            where: { cardId: CARD.notRegistered.toString() },
+          }),
+          'person holding the not registered card',
+        );
         const res = await station.request(
           'EnterAttempt',
           attempt({
@@ -1005,7 +1033,12 @@ describe('Station socket protocol (e2e)', () => {
         value: 888,
         status: AttemptStatus.STANDARD,
       });
-      expect(attempts.find((a) => a.id === original.id).replacedBy).toBe(1);
+      expect(
+        found(
+          attempts.find((a) => a.id === original.id),
+          'original attempt',
+        ).replacedBy,
+      ).toBe(1);
     });
 
     it('refuses a sixth attempt in an average of 5 and tells the card scan there is nothing left', async () => {
@@ -1064,9 +1097,12 @@ describe('Station socket protocol (e2e)', () => {
           error: false,
         },
       });
-      const unresolved = await db.attempt.findFirst({
-        where: { sessionId: incidentSession, deviceId: stationAId },
-      });
+      const unresolved = found(
+        await db.attempt.findFirst({
+          where: { sessionId: incidentSession, deviceId: stationAId },
+        }),
+        'unresolved attempt',
+      );
       expect(unresolved).toMatchObject({
         status: AttemptStatus.UNRESOLVED,
         attemptNumber: 2,
@@ -1075,9 +1111,12 @@ describe('Station socket protocol (e2e)', () => {
     });
 
     it('tells the station when the delegate resolves the incident', async () => {
-      const unresolved = await db.attempt.findUnique({
-        where: { id: incidentAttemptId },
-      });
+      const unresolved = found(
+        await db.attempt.findUnique({
+          where: { id: incidentAttemptId },
+        }),
+        'unresolved attempt',
+      );
       await request(app.getHttpServer())
         .put(`/attempt/${incidentAttemptId}`)
         .set('Authorization', `Bearer ${adminToken}`)
@@ -1137,9 +1176,12 @@ describe('Station socket protocol (e2e)', () => {
           error: false,
         },
       });
-      const confirmed = await db.attempt.findUnique({
-        where: { id: incidentAttemptId },
-      });
+      const confirmed = found(
+        await db.attempt.findUnique({
+          where: { id: incidentAttemptId },
+        }),
+        'resolved attempt',
+      );
       expect(confirmed.judgeId).toBe(foreignJudge.id);
       expect(confirmed.status).toBe(AttemptStatus.RESOLVED);
     });
@@ -1147,9 +1189,12 @@ describe('Station socket protocol (e2e)', () => {
     it('tells the station not to scan cards when the delegate deletes the attempt', async () => {
       const data = attempt({ competitorId: CARD.c2, isDelegate: true });
       await station.request('EnterAttempt', data);
-      const unresolved = await db.attempt.findFirst({
-        where: { sessionId: data.sessionId },
-      });
+      const unresolved = found(
+        await db.attempt.findFirst({
+          where: { sessionId: data.sessionId },
+        }),
+        'unresolved attempt',
+      );
 
       await request(app.getHttpServer())
         .delete(`/attempt/${unresolved.id}`)
@@ -1167,9 +1212,12 @@ describe('Station socket protocol (e2e)', () => {
     it('lets the delegate skip the card scan when resolving', async () => {
       const data = attempt({ competitorId: CARD.c2, isDelegate: true });
       await station.request('EnterAttempt', data);
-      const unresolved = await db.attempt.findFirst({
-        where: { sessionId: data.sessionId },
-      });
+      const unresolved = found(
+        await db.attempt.findFirst({
+          where: { sessionId: data.sessionId },
+        }),
+        'unresolved attempt',
+      );
 
       await request(app.getHttpServer())
         .put(`/attempt/${unresolved.id}`)
@@ -1210,10 +1258,16 @@ describe('Station socket protocol (e2e)', () => {
 
         expect(res.type).toBe('CreateAttendanceResp');
         expect(res.data.message).toBe(
-          getTranslation('attendanceConfirmed', judge.countryIso2),
+          getTranslation(
+            'attendanceConfirmed',
+            found(judge.countryIso2, 'judge country'),
+          ),
         );
         for (const groupId of ['skewb-r1-g1', 'clock-r1-g1', '333bf-r1-g1']) {
-          const row = await activity(judge.id, groupId, role);
+          const row = found(
+            await activity(judge.id, groupId, role),
+            'staff activity',
+          );
           expect(row.status).toBe(StaffActivityStatus.PRESENT);
           expect(row.deviceId).toEqual(expect.any(String));
         }
@@ -1428,7 +1482,8 @@ describe('Station socket protocol (e2e)', () => {
       const status = await station.waitForType('ServerStatus');
       expect(status.data.devices).toEqual(expect.any(Array));
       expect(
-        (await db.room.findUnique({ where: { id: roomBId } })).currentGroupIds,
+        found(await db.room.findUnique({ where: { id: roomBId } }), 'room B')
+          .currentGroupIds,
       ).toEqual(['skewb-r1-g1']);
     });
 
@@ -1456,7 +1511,10 @@ describe('Station socket protocol (e2e)', () => {
     });
 
     it('broadcasts the server status when the devices settings change', async () => {
-      const competition = await db.competition.findFirst();
+      const competition = found(
+        await db.competition.findFirst(),
+        'seeded competition',
+      );
       const original = {
         shouldUpdateDevices: competition.shouldUpdateDevices,
         wifiSsid: competition.wifiSsid,
@@ -1505,7 +1563,10 @@ describe('Station socket protocol (e2e)', () => {
           .send({ ...settings, buzzerVolume });
 
       beforeAll(async () => {
-        const competition = await db.competition.findFirst();
+        const competition = found(
+          await db.competition.findFirst(),
+          'seeded competition',
+        );
         competitionId = competition.id;
         settings = {
           shouldUpdateDevices: competition.shouldUpdateDevices,
@@ -1533,8 +1594,10 @@ describe('Station socket protocol (e2e)', () => {
         expect(packet.data.devices).toContain(ESP.stationA);
         expect(packet.data.devices).not.toContain(ESP.stationB);
         expect(
-          (await db.competition.findUnique({ where: { id: competitionId } }))
-            .buzzerVolume,
+          found(
+            await db.competition.findUnique({ where: { id: competitionId } }),
+            'seeded competition',
+          ).buzzerVolume,
         ).toBe(12);
       });
 
@@ -1597,7 +1660,10 @@ describe('Station socket protocol (e2e)', () => {
     };
 
     beforeAll(async () => {
-      const competition = await db.competition.findFirst();
+      const competition = found(
+        await db.competition.findFirst(),
+        'seeded competition',
+      );
       competitionId = competition.id;
       settings = {
         shouldUpdateDevices: competition.shouldUpdateDevices,

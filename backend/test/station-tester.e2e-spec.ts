@@ -3,6 +3,7 @@ import { DbService } from 'src/db/db.service';
 import * as request from 'supertest';
 
 import { Role } from '../src/generated/prisma/client';
+import { found } from '../src/test-utils/found';
 import { createTestApp } from './helpers/app.helper';
 import { seededPersonPicker, WcifLike } from './helpers/seed.helper';
 import {
@@ -59,7 +60,10 @@ describe('Station tester (e2e)', () => {
 
     const room = await fixtures.createRoom('room', ['333-r1-g1']);
     await fixtures.createDevice('station', ESP.station, room.id);
-    const competition = await db.competition.findFirst();
+    const competition = found(
+      await db.competition.findFirst(),
+      'seeded competition',
+    );
     const pick = seededPersonPicker(competition.wcif as unknown as WcifLike);
     const in333 = (p: WcifLike['persons'][number]) =>
       p.registration.eventIds.includes('333');

@@ -3,6 +3,7 @@ import { DbService } from 'src/db/db.service';
 import * as request from 'supertest';
 
 import { DeviceType, Person, Role } from '../src/generated/prisma/client';
+import { found } from '../src/test-utils/found';
 import { createTestApp } from './helpers/app.helper';
 import { seededPersonPicker, WcifLike } from './helpers/seed.helper';
 import { StationFixtures } from './helpers/station-fixtures.helper';
@@ -87,7 +88,10 @@ describe('Station tutorial mode (e2e)', () => {
     fixtures = new StationFixtures(db, PREFIX);
     await fixtures.purgeLeftovers(Object.values(CARD));
     await fixtures.disableResultSubmission();
-    const competition = await db.competition.findFirst();
+    const competition = found(
+      await db.competition.findFirst(),
+      'seeded competition',
+    );
 
     const room = await fixtures.createRoom('room', [ROOM_GROUP]);
     tutorialId = (
@@ -231,7 +235,10 @@ describe('Station tutorial mode (e2e)', () => {
 
       expect(res.data).toMatchObject({ status: 200, error: false });
       expect(await savedAttempts()).toBe(0);
-      const device = await db.device.findUnique({ where: { id: tutorialId } });
+      const device = found(
+        await db.device.findUnique({ where: { id: tutorialId } }),
+        'tutorial station',
+      );
       expect(device.tutorialEndsAt).toBeNull();
     });
 

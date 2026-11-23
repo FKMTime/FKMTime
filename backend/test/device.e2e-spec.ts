@@ -3,6 +3,7 @@ import { DbService } from 'src/db/db.service';
 import * as request from 'supertest';
 
 import { HardwareVersion } from '../src/generated/prisma/client';
+import { found } from '../src/test-utils/found';
 import { createTestApp } from './helpers/app.helper';
 
 describe('DeviceController (e2e)', () => {
@@ -14,7 +15,7 @@ describe('DeviceController (e2e)', () => {
 
   beforeAll(async () => {
     ({ app, db, adminToken } = await createTestApp());
-    const room = await db.room.findFirst();
+    const room = found(await db.room.findFirst(), 'seeded room');
     roomId = room.id;
   }, 30000);
 
@@ -139,7 +140,6 @@ describe('DeviceController (e2e)', () => {
 
       const gone = await db.device.findUnique({ where: { id: deviceId } });
       expect(gone).toBeNull();
-      deviceId = null;
     });
 
     it('returns 401 when not authenticated', async () => {

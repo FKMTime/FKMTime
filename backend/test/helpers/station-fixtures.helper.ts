@@ -9,6 +9,7 @@ import {
   Role,
   SendingResultsFrequency,
 } from '../../src/generated/prisma/client';
+import { found } from '../../src/test-utils/found';
 import { loginWithFKMTimeAccount } from './auth.helper';
 
 /**
@@ -67,7 +68,10 @@ export class StationFixtures {
 
   /** Results are not pushed to WCA Live while the spec runs */
   async disableResultSubmission() {
-    const competition = await this.db.competition.findFirst();
+    const competition = found(
+      await this.db.competition.findFirst(),
+      'seeded competition',
+    );
     this.originalFrequency = competition.sendingResultsFrequency;
     await this.db.competition.update({
       where: { id: competition.id },
@@ -110,7 +114,10 @@ export class StationFixtures {
 
   /** Gives a seeded person (by registrant id) an RFID card number */
   async giveCard(registrantId: number, cardId: number): Promise<Person> {
-    const person = await this.db.person.findFirst({ where: { registrantId } });
+    const person = found(
+      await this.db.person.findFirst({ where: { registrantId } }),
+      `seeded person with registrant id ${registrantId}`,
+    );
     if (!this.originalCards.has(person.id)) {
       this.originalCards.set(person.id, person.cardId);
       const activities = await this.db.staffActivity.findMany({

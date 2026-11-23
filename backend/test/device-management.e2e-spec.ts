@@ -10,6 +10,7 @@ import {
   Role,
   Room,
 } from '../src/generated/prisma/client';
+import { found } from '../src/test-utils/found';
 import { createTestApp } from './helpers/app.helper';
 import { listenOnLoopback } from './helpers/loopback.helper';
 import {
@@ -53,8 +54,14 @@ describe('Device management (e2e)', () => {
     organizer = await createUserWithRoles(app, db, `organizer-${SUFFIX}`, [
       Role.ORGANIZER,
     ]);
-    mainHall = await db.room.findFirst({ where: { name: 'Main Hall' } });
-    sideHall = await db.room.findFirst({ where: { name: 'Side Hall' } });
+    mainHall = found(
+      await db.room.findFirst({ where: { name: 'Main Hall' } }),
+      'seeded Main Hall room',
+    );
+    sideHall = found(
+      await db.room.findFirst({ where: { name: 'Side Hall' } }),
+      'seeded Side Hall room',
+    );
   }, 30000);
 
   afterAll(async () => {
@@ -167,7 +174,10 @@ describe('Device management (e2e)', () => {
     });
 
     it('counts the attempts entered on each device', async () => {
-      const person = await db.person.findFirst({ where: { registrantId: 7 } });
+      const person = found(
+        await db.person.findFirst({ where: { registrantId: 7 } }),
+        'seeded person with registrant id 7',
+      );
       await db.result.deleteMany({
         where: { personId: person.id, roundId: 'minx-r1' },
       });
@@ -222,7 +232,10 @@ describe('Device management (e2e)', () => {
         .send(device({ espId: 98002 }))
         .expect(409);
       expect(
-        (await db.device.findUnique({ where: { id: stationId } })).espId,
+        found(
+          await db.device.findUnique({ where: { id: stationId } }),
+          'station device',
+        ).espId,
       ).toBe(98001);
     });
 
