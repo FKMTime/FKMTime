@@ -386,17 +386,24 @@ describe('AttemptController (e2e)', () => {
 
   describe('DELETE /attempt/:id', () => {
     it('deletes an attempt', async () => {
-      const attempt3 = await db.attempt.findFirst({
-        where: { resultId: found(resultId, 'result id'), attemptNumber: 3 },
-      });
-      if (!attempt3) return;
+      // Entered by the scorecard test above
+      const attempt3 = found(
+        await db.attempt.findFirst({
+          where: { resultId: found(resultId, 'result id'), attemptNumber: 3 },
+        }),
+        'attempt 3 from the scorecard test',
+      );
 
       const res = await request(app.getHttpServer())
         .delete(`/attempt/${attempt3.id}`)
         .set('Authorization', `Bearer ${adminToken}`)
         .expect(200);
 
-      expect(res.body).toHaveProperty('resultDeleted');
+      // Attempts 1 and 2 are left, so the result stays
+      expect(res.body.resultDeleted).toBe(false);
+      expect(
+        await db.attempt.findUnique({ where: { id: attempt3.id } }),
+      ).toBeNull();
     });
 
     it('deletes result when last attempt is deleted', async () => {
