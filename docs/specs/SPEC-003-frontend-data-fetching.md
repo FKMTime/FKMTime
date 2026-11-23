@@ -98,7 +98,7 @@ One `QueryClient`, provided in `App.tsx`, with these defaults:
 |---|---|---|
 | `networkMode` | `"always"` | The default pauses requests when the browser thinks it's offline. Venue networks are unusual, so always attempt the request and let it fail |
 | `staleTime` | `0` (default) | Pages fetch on mount today; keep that |
-| `retry` | `2` | Rides out short network drops. Today there are no retries |
+| `retry` | `2`, none for 4xx except 408 and 429 | Rides out short network drops. A refused request (403, 404…) gets the same answer on every try, so it fails straight away. Today there are no retries |
 | `refetchOnWindowFocus` | `false` | Avoids a jump in requests from every panel open at a venue. Can be revisited |
 | `refetchOnReconnect` | `false` | Off in `"always"` mode. Socket reconnects drive this instead |
 

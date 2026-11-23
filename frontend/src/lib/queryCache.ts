@@ -13,11 +13,7 @@ export interface Query<T> {
     fetch: () => Promise<T>;
 }
 
-export class QueryError extends Error {
-    constructor(public status: number) {
-        super(`Request failed with status ${status}`);
-    }
-}
+export { QueryError } from "./queryError";
 
 /** Options for `useQuery` and friends that share this cache */
 export const toQueryOptions = <T>(query: Query<T>) =>
