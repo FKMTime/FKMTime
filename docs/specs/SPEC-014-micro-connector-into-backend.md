@@ -23,8 +23,8 @@ competition day, and each can be tested before anyone commits to the port:
 1. **mDNS.** Stations find the server only through mDNS, one advertisement per local address.
    `@homebridge/ciao` can do that, but it has to be proven on the router.
 2. **Event-loop stalls.** A station whose reply is 2 s late sends a ping and drops the
-   connection if no pong arrives within 3 s. The backend must never block its event loop for
-   that long.
+   connection if no pong arrives within 3 s. So station connections run on their own worker
+   thread, which answers pings however busy the rest of the backend is.
 3. **Bluetooth auto-setup.** It goes through BlueZ over D-Bus, using `node-ble`, a library
    with little recent activity.
 4. **The backend joins the router's host network.** So do nginx and Postgres, or they have
@@ -116,11 +116,14 @@ including hardware testing. Phase 0 below narrows that estimate.
 
 ### Module
 
-A new `backend/src/station-gateway/` module:
+A new `backend/src/station-gateway/` module, split across two threads (see
+[Keeping stations connected](#keeping-stations-connected-while-the-backend-is-busy)): the
+**station thread** owns everything that talks to stations or the network, and the **main
+thread** owns the data.
 
-- **`StationServer`** starts its own HTTPS server on `STATION_PORT` (8081 on the router, as
-  now), separate from the Nest HTTP app, so nginx never sees station traffic. `NO_TLS` keeps
-  plain `ws` for development and the simulator.
+- **`StationServer`** (station thread) starts its own HTTPS server on `STATION_PORT` (8081 on
+  the router, as now), separate from the Nest HTTP app, so nginx never sees station traffic.
+  `NO_TLS` keeps plain `ws` for development and the simulator.
 - **The handshake** reads `id`, `ver`, `firmware`, `hw`, `random` from the query, signs
   `random` when the station has a sign key, and records the connection with its address for
   the station link. There is no "wait for `ServerStatus`" anymore. The gateway reads
@@ -145,18 +148,39 @@ connector is retired. That's what makes rollback a config change.
 ### Keeping stations connected while the backend is busy
 
 A station sends a probe ping when a reply is 2 s late (`WS_REPLY_LATE_MS`). It drops the link
-if nothing comes back within 3 s (`WS_PROBE_TIMEOUT_MS`). `ws` answers pings on the main event
-loop, so **any synchronous stall over ~3 s drops every station waiting on a reply**. Today the
-connector answers pings on its own threads (FKMTime/micro-connector#27), and a busy backend
-only makes replies slow.
+if nothing comes back within 3 s (`WS_PROBE_TIMEOUT_MS`). If `ws` ran on the main event loop,
+**any synchronous stall over ~3 s would drop every station waiting on a reply**: a WCIF
+import, a results calculation, the HIL processor, or anything heavy added later. Waiting on
+the database doesn't count; Prisma queries don't block the loop.
 
-- The gateway measures the loop with `perf_hooks.monitorEventLoopDelay` and logs the maximum
-  delay each minute. Over 500 ms is a warning, and the Devices page can show it.
-- Phase 0 measures the worst cases on a Pi 4 with 40 simulated stations: a WCIF import, a
-  results sync to the WCA and WCA Live, and the HIL processor running.
-- If any of them stall past 1 s, the fix goes there: move that work to a worker thread or
-  break it up. Only if that fails does the gateway itself move to a worker thread. That would
-  bring back a process-like boundary, but it would be in-process and typed.
+**Decided (2026-11-23): station connections run on their own worker thread by default.**
+This keeps what the connector does today (FKMTime/micro-connector#27): pings are always
+answered, and a busy backend only makes replies slow. It holds whatever heavy work someone
+adds to the backend later, which fixing stalls one by one would not.
+
+- **The station thread** is a `worker_threads` worker, plain TypeScript, not a second Nest
+  app. It runs `StationServer`, the handshake, packet framing, OTA transfers, live header
+  parsing and device log files, `MdnsService`, `BluetoothSetupService` and
+  `StationLinkService`. It answers pings and mDNS queries on its own loop.
+- **The main thread** runs `StationGateway` (the packet handlers that need the database),
+  `StationRegistry`, `FirmwareService`'s watchers and the panel.
+- **Between them**, typed messages over a `MessagePort`, defined once in
+  `station-gateway/messages.ts` and imported by both sides: station packets with their `espId`
+  and `tag` one way, replies and broadcasts the other. The main thread sends a settings
+  snapshot (sign keys, FKMTime token, locales, auto-setup Wi-Fi details) at start and on every
+  change, so the station thread can sign handshakes and run auto-setup without asking.
+- **A reply the main thread doesn't send within 7.5 s** gets an `ApiError` from the station
+  thread, as the connector's unix socket timeout does today.
+- **If the station thread crashes**, the main thread logs it and starts a new one, and
+  stations reconnect. If the main thread crashes, the process restarts as it does today.
+- The handlers in `StationGateway` are plain functions of a packet and the services, so unit
+  tests call them without starting a worker.
+
+Both loops are measured with `perf_hooks.monitorEventLoopDelay`, and the maximum delay of each
+is logged every minute. Phase 0 measures the main thread's worst case on a Pi 4 with 40
+simulated stations: a WCIF import, a results sync to the WCA and WCA Live, and the HIL
+processor running. A stall there no longer drops stations, but it makes replies late. Any
+stall past 1 s is worth moving off the main thread too, for speed.
 
 ### Restarts
 
@@ -219,8 +243,10 @@ The firmware simulator (`sim/` in FKMTime/firmware) runs the connector with its 
 - [ ] Station link data (SPEC-008) appears on the Devices page on the router, and is absent,
       without errors, elsewhere.
 - [ ] Device logs (SPEC-009) stream live and download as before.
-- [ ] With 40 simulated stations, a WCIF import and a results sync on a Pi 4 drop no station,
-      and the event loop's max delay stays under 1 s.
+- [ ] With 40 simulated stations, a WCIF import, a results sync and the HIL processor on a Pi 4
+      drop no station, and the station thread's max loop delay stays under 100 ms.
+- [ ] With the main thread blocked on purpose for 10 s, every station stays connected and gets
+      an `ApiError` for a request it made meanwhile.
 - [ ] After a backend restart, 40 stations are back within 15 s of the backend being healthy.
 - [ ] `STATION_GATEWAY=0` plus the old template puts a router back on the connector.
 - [ ] One real competition runs on the gateway.
@@ -235,13 +261,13 @@ go/no-go:
 | Spike | Go if |
 |---|---|
 | ciao: one service per address, link brought up after start, router reboot | Real stations find it in every case, as fast as with the connector |
-| Event loop: 40 simulated stations during WCIF import, results sync, HIL | Max delay under 1 s, or the stall is in one place we can fix |
+| Station thread: 40 simulated stations during WCIF import, results sync, HIL, and with the main thread blocked for 10 s | No station drops; the station thread's max delay stays under 100 ms. The main thread's worst stall is recorded |
 | Restart: 40 stations, backend restarted | Back within 15 s of healthy |
 | `node-ble`: auto-setup of a station in setup mode, then a station that never answers | Configured, and the stuck one times out without blocking the next |
 | `iw` station dump from the container on the host network | Same numbers as the connector's SPEC-008 readings |
 | Host networking: nginx, backend and Postgres on the router | Panel and API work; port 5000 is unreachable from the venue network |
 
-If ciao or the event loop fails with no fix in sight, stop: the rewrite isn't worth it, and
+If ciao or the station thread fails with no fix in sight, stop: the rewrite isn't worth it, and
 moving the connector's Rust code into this repository (below) is the fallback.
 
 **Phase 1: gateway core**, behind `STATION_GATEWAY`: websocket, handshake, packets, OTA,
@@ -277,7 +303,8 @@ micro-connector (its `old-fw-update` branch, used for V2 → V3 updates, stays c
    stations, and routers keep the port they use today. Going through nginx was rejected: it
    would have to pass the `RandomSigned` handshake through untouched and would become a hop
    every station depends on.
-2. **Should a busy-loop warning reach the panel,** or only the server log (SPEC-011)?
-   Proposed: the log in phase 1; the Devices page if phase 0 shows it's needed.
+2. **Should a stall warning reach the panel,** or only the server log (SPEC-011)? With the
+   station thread, a main-thread stall makes replies late but drops no station. Proposed: the
+   log in phase 1; the Devices page if phase 0 shows long stalls happen.
 3. **`node-ble` or our own thin BlueZ D-Bus client** over `dbus-next`? Proposed: decide in
    phase 0. We use four BlueZ calls, so a thin client may be less risk than a stale library.
