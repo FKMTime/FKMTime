@@ -2,17 +2,11 @@ import { forwardRef, Inject } from '@nestjs/common';
 import { DNS_VALUE } from 'src/constants';
 import { DbService } from 'src/db/db.service';
 import { getEventShortName } from 'src/events';
-import { isSameDay } from 'src/wcif-helpers';
-import {
-  Activity,
-  getActivityInfoFromSchedule,
-  getCompetitionDates,
-  Room as WCIFRoom,
-  Venue,
-} from 'wcif-helpers';
+import { getCompetitionDates } from 'wcif-helpers';
 
 import { AttemptStatus, DeviceType } from '../generated/prisma/client';
 import { getRoundAttemptStats } from './roundAttemptStats';
+import { getRoundSlotsForDay } from './roundSlots';
 
 const NOT_SOLVES = [AttemptStatus.SCRAMBLED, AttemptStatus.VOIDED];
 
@@ -219,23 +213,8 @@ export class StatisticsService {
       });
     }
     for (const day of days) {
-      const activities: Activity[] = [];
-      wcif.schedule.venues.forEach((venue: Venue) => {
-        venue.rooms.forEach((room: WCIFRoom) => {
-          room.activities.forEach((activity: Activity) => {
-            if (isSameDay(new Date(activity.startTime), day)) {
-              activities.push(activity);
-            }
-          });
-        });
-      });
-      activities.sort((a, b) => {
-        return (
-          new Date(a.startTime).getTime() - new Date(b.startTime).getTime()
-        );
-      });
       const roundsForDay: RoundDelay[] = [];
-      for (const round of activities) {
+      for (const round of getRoundSlotsForDay(wcif, day)) {
         const firstResult = await this.prisma.attempt.findFirst({
           where: {
             result: {
@@ -246,17 +225,12 @@ export class StatisticsService {
             solvedAt: 'asc',
           },
         });
-        const activityFromSchedule = getActivityInfoFromSchedule(
-          round.activityCode,
-          wcif,
-        );
         // An attempt entered by hand has no solve time to measure from
-        if (!firstResult?.solvedAt || !activityFromSchedule) {
+        if (!firstResult?.solvedAt) {
           continue;
         }
-        const startTime = new Date(activityFromSchedule.startTime);
         const delay =
-          new Date(firstResult.solvedAt).getTime() - startTime.getTime();
+          new Date(firstResult.solvedAt).getTime() - round.startTime.getTime();
         roundsForDay.push({
           roundId: round.activityCode,
           roundName: `${getEventShortName(round.activityCode.split('-r')[0])} - R${round.activityCode.split('-r')[1]}`,
@@ -283,9 +257,8 @@ export class StatisticsService {
           },
         });
         if (lastResult?.solvedAt) {
-          const endTime = new Date(activityFromSchedule.endTime);
           const delayEnd =
-            new Date(lastResult.solvedAt).getTime() - endTime.getTime();
+            new Date(lastResult.solvedAt).getTime() - round.endTime.getTime();
           roundsForDay.push({
             roundId: round.activityCode,
             roundName: `${getEventShortName(round.activityCode.split('-r')[0])} - R${round.activityCode.split('-r')[1]} (end)`,
