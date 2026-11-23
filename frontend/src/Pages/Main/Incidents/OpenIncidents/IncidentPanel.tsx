@@ -1,7 +1,6 @@
 import { useAtomValue } from "jotai";
 import { X } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Link } from "react-router-dom";
 import { getLimitByRoundId } from "wcif-helpers";
 
 import LoadingPage from "@/Components/LoadingPage";
@@ -24,6 +23,7 @@ import { socket } from "@/socket";
 
 import IncidentForm from "./IncidentForm";
 import PreviousExtras from "./PreviousExtras";
+import ResultPageLink from "./ResultPageLink";
 
 interface IncidentPanelProps {
     id: string;
@@ -233,14 +233,10 @@ const IncidentPanel = ({ id, onClose, onDone }: IncidentPanelProps) => {
                 canGiveExtra={access.can("GIVE_EXTRA")}
                 canMarkNoteworthy={access.isDelegate}
             />
-            {access.can("EXTRAS_FOR_SEVERAL") && (
-                <Link
-                    to={`/results/${incident.result.id}`}
-                    className="text-sm font-semibold text-primary hover:underline"
-                >
-                    Several attempts affected? Give extras on the result page
-                </Link>
-            )}
+            <ResultPageLink
+                resultId={incident.result.id}
+                canGiveExtrasForSeveral={access.can("EXTRAS_FOR_SEVERAL")}
+            />
         </section>
     );
 };
