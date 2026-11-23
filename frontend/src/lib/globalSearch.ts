@@ -171,10 +171,15 @@ export const getRoundItems = (
     );
 };
 
-/** Every group in the schedule, opening its attendance */
+/**
+ * Every group in the schedule the user takes attendance for, opening its
+ * attendance. A stage lead with some rooms gets only their rooms' groups
+ * (SPEC-016); the server refuses the rest.
+ */
 export const getGroupItems = (
     wcif: WCIF,
-    navItems: NavItem[]
+    navItems: NavItem[],
+    hasGroup: (groupId: string) => boolean
 ): SearchItem[] => {
     if (!navItems.some((item) => item.id === "attendance")) return [];
     const codes = new Set<string>();
@@ -182,7 +187,10 @@ export const getGroupItems = (
         venue.rooms.forEach((room) =>
             room.activities.forEach((activity) =>
                 activity.childActivities.forEach((child) => {
-                    if (child.activityCode.includes("-g"))
+                    if (
+                        child.activityCode.includes("-g") &&
+                        hasGroup(child.activityCode)
+                    )
                         codes.add(child.activityCode);
                 })
             )
