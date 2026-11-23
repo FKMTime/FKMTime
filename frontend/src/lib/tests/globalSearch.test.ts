@@ -21,6 +21,8 @@ const navFor = (overrides: Partial<NavContext> = {}) =>
         ...overrides,
     });
 
+const allGroups = () => true;
+
 const wcif = {
     events: [{ id: "333", rounds: [{ id: "333-r1" }, { id: "333-r2" }] }],
     schedule: {
@@ -101,14 +103,27 @@ describe("rounds and groups", () => {
     });
 
     it("opens a group's attendance, matching words in any order", () => {
-        const items = getGroupItems(wcif, navFor());
+        const items = getGroupItems(wcif, navFor(), allGroups);
         const [groups] = searchItems(items, "g2 333");
         expect(groups.items.map((item) => item.to)).toEqual([
             "/attendance/333-r1-g2",
         ]);
         expect(
-            getGroupItems(wcif, navFor({ isStageLeaderOrAbove: false }))
+            getGroupItems(
+                wcif,
+                navFor({ isStageLeaderOrAbove: false }),
+                allGroups
+            )
         ).toEqual([]);
+    });
+
+    it("lists only the groups in a stage lead's rooms", () => {
+        const items = getGroupItems(
+            wcif,
+            navFor({ isOrganizerOrDelegate: false, isDelegate: false }),
+            (groupId) => groupId === "333-r1-g1"
+        );
+        expect(items.map((item) => item.to)).toEqual(["/attendance/333-r1-g1"]);
     });
 });
 

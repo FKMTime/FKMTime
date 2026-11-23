@@ -8,6 +8,7 @@ import {
     PopoverAnchor,
     PopoverContent,
 } from "@/Components/ui/popover";
+import { useAttendanceScope } from "@/hooks/useAttendanceScope";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import { useLiveQuery } from "@/hooks/useLiveQuery";
 import { useNavItems } from "@/hooks/useNavItems";
@@ -40,6 +41,7 @@ const GlobalSearch = () => {
     const navigate = useNavigate();
     const competition = useAtomValue(competitionAtom);
     const { items: navItems } = useNavItems();
+    const attendanceScope = useAttendanceScope();
     const [query, setQuery] = useState("");
     // Closed after blur, Escape or picking a result; typing reopens it
     const [isDismissed, setIsDismissed] = useState(false);
@@ -66,10 +68,14 @@ const GlobalSearch = () => {
                           useFkmTimeDevices: useDevices,
                       }),
                       ...getRoundItems(competition.wcif, navItems),
-                      ...getGroupItems(competition.wcif, navItems),
+                      ...getGroupItems(
+                          competition.wcif,
+                          navItems,
+                          attendanceScope.hasGroup
+                      ),
                   ]
                 : [],
-        [competition, navItems, useDevices]
+        [competition, navItems, useDevices, attendanceScope.hasGroup]
     );
 
     // Loaded on the first search, and only when the user can open them
