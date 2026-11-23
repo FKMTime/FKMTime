@@ -29,7 +29,7 @@ const insufficientRoles: Record<Level, Exclude<Role, 'ADMIN'>[]> = {
 const protectedEndpoints: [Method, string, Level][] = [
   // competition
   ['get', '/competition', 'jwt'],
-  ['get', '/competition/statistics', 'jwt'],
+  ['get', '/competition/statistics', 'organizer'],
   ['get', '/competition/rounds', 'jwt'],
   ['get', '/competition/activities?venueId=1&roomId=1&date=2024-05-24', 'jwt'],
   ['get', '/competition/rooms', 'jwt'],
