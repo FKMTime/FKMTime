@@ -313,6 +313,7 @@ micro-connector (its `old-fw-update` branch, used for V2 → V3 updates, stays c
    (2026-11-23): the server log.** With the station thread, a main-thread stall makes replies
    late but drops no station, and an organizer can't act on it mid-round. The Devices page
    gets a warning only if phase 0 shows long stalls happen.
-3. **`node-ble` or our own thin BlueZ D-Bus client** over `dbus-next`? Proposed: decide in
-   the phase 0 Bluetooth spike on the test instance. We use four BlueZ calls, so a thin client
-   may be less risk than a stale library.
+3. **`node-ble` or our own thin BlueZ D-Bus client** over `dbus-next`? **Decided (2026-11-23):
+   in the phase 0 Bluetooth spike on the test instance.** Try `node-ble` first. If it can't put
+   a time limit on each step (scan, connect, write, disconnect), or a station that never
+   answers holds up the next one, write our own client: we use four BlueZ calls.
