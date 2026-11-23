@@ -340,7 +340,7 @@ const DoubleCheck = () => {
                         {incidents.length > 0 && (
                             <div className="flex flex-col gap-1.5 border-t pt-3">
                                 <span className="text-xs font-semibold text-faint">
-                                    Open incidents in this round
+                                    Incidents in this round
                                 </span>
                                 {incidents.map((incident) => (
                                     <div
