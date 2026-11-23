@@ -269,21 +269,48 @@ the retry timer sets the time, not TLS. This excludes the backend's own start ti
 **Cost of the thread hop** (steady state, 40 stations): p50 5.9 → 6.2 ms, p99 9.3–10.5 →
 10.6 ms, and about 16 MB more memory (78 → 94 MB RSS).
 
+### Today's backend on the Pi
+
+The production backend image on the Pi, instrumented with `monitorEventLoopDelay` and a 5 ms
+ticker, against a seeded large competition: 447 competitors, 4 rooms, 3 days, 14 events,
+33 rounds, a 1.25 MB WCIF, every first round filled. Three runs with a fresh backend each.
+
+**Longest single stall of the main thread:**
+
+| Operation | Pi | Mac (M5) |
+|---|---|---|
+| Backend start | 4.7–5.4 s | 0.7 s |
+| WCIF import | 3.2–3.6 s | 0.4–0.8 s |
+| Result checks | 1.1–1.4 s | 0.3 s |
+| `rooms/progress` | 0.8–1.1 s | 0.1 s |
+| 8 stations entering attempts at once | 0.4–1.4 s | 0.2 s |
+| Sync, statistics, a round's results, sending a round, HIL | 0.1–0.4 s each | under 0.2 s |
+
+- **No operation measured during a round blocks the loop for 5 s,** so stations would not drop
+  even with their connections on the main thread. Only the import and the backend's start come
+  near that limit, and neither runs mid-round. The station thread is a cheap margin (about
+  0.3 ms per reply and 16 MB), and it holds against heavy work added later. It stays the
+  design.
+- **The Pi spends 5–10× the Mac's CPU on the same work,** but its longest stalls are only 2–10×
+  longer, because awaits split the work into slices of 0.1–1 s.
+
 ### What the station thread doesn't fix
 
-On the Mac, with a seeded large competition (447 competitors, 33 rounds, a 1.25 MB WCIF):
+Replies can only be as fast as the main thread, which today's backend keeps busy:
 
-- **Entering one attempt costs about 50 ms of main-thread CPU,** much of it parsing the
-  competition's WCIF again. `competition.findFirst()` parses the whole JSON column on each call,
-  and `enterAttemptInTransaction` and `getRemainingAndUsedCumulativeLimit` deep-copy it. Today's
-  backend does the same work, so this isn't a regression, but replies are only as fast as the
-  main thread.
-- **Heavy panel operations block the main thread** for 50–720 ms at a time on the Mac: the WCIF
-  import (worst 723 ms), result checks (291 ms) and `rooms/progress`, which keeps the thread
-  busy for 1.8–3.3 s. Pi numbers are being measured.
+- **Attempt replies are slow under load.** One station alone: p50 231 ms, p99 1.1 s, max
+  1.9 s. Eight stations at once: p50 1.7 s, p99 3.2 s. A reply after 2 s already makes the
+  station send a probe ping. Each attempt re-parses the 1.25 MB WCIF: `competition.findFirst()`
+  parses the JSON column on every call, and `enterAttemptInTransaction` and
+  `getRemainingAndUsedCumulativeLimit` deep-copy it.
+- **`rooms/progress` keeps the main thread busy for about 23 s per call on the Pi** (2.3 s on
+  the Mac), in slices under 1.1 s. Home refetches it whenever a result comes in, so during a
+  round every open Home page adds one of these per attempt.
 - **10 or more simultaneous attempts deadlock the database pool,** and all of them fail after
   7.5 s. `enterAttemptInTransaction` runs queries outside its transaction, which need a second
-  connection from pg's pool of 10. This is a bug in today's backend, independent of this spec.
+  connection from pg's pool of 10.
+
+All three hit competitions today, with or without the rewrite, and belong in their own fixes.
 
 ## Acceptance criteria
 
@@ -312,6 +339,10 @@ On the Mac, with a seeded large competition (447 competitors, 33 rounds, a 1.25 
 instance per competition, from a template. Phase 0 adds a throwaway `gateway-spike` template
 and runs it as a test instance on a Pi 4 with a few real stations and simulated ones for
 load, in sessions between competitions. Each spike is a prototype with a go/no-go:
+
+Done on 2026-11-23, see [Measurements](#measurements): the station thread (go) and the restart
+with simulated stations (go, 0.9 s). Still to run: ciao, Bluetooth, `iw` and host networking,
+which need real stations and the instance on the Pi stopped.
 
 | Spike | Go if |
 |---|---|
