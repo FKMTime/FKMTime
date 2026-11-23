@@ -233,7 +233,10 @@ const IncidentPanel = ({ id, onClose, onDone }: IncidentPanelProps) => {
                 canGiveExtra={access.can("GIVE_EXTRA")}
                 canMarkNoteworthy={access.isDelegate}
             />
-            <ResultPageLink resultId={incident.result.id} can={access.can} />
+            <ResultPageLink
+                resultId={incident.result.id}
+                canGiveExtrasForSeveral={access.can("EXTRAS_FOR_SEVERAL")}
+            />
         </section>
     );
 };
