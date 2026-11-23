@@ -35,7 +35,9 @@ import {
 } from "@/lib/schedule";
 import { cn } from "@/lib/utils";
 
-// Literal class strings, so Tailwind sees both; the second adds the links column
+// Literal class strings, so Tailwind sees both; the second adds the links column.
+// Every flexible column has a fixed minimum, so rows sized with min-w-min all get
+// the same tracks whatever their content, and the columns line up across rows.
 const ROW_GRID =
     "grid grid-cols-[110px_110px_minmax(180px,1.6fr)_minmax(110px,1fr)_minmax(110px,1fr)_minmax(110px,1fr)_minmax(100px,1fr)_60px] gap-4 px-5";
 const ROW_GRID_WITH_LINKS =
@@ -51,7 +53,14 @@ interface Loaded {
 const isOngoing = (activity: Activity, now: Date) =>
     new Date(activity.startTime) <= now && now < new Date(activity.endTime);
 
-const ActivityName = ({ activity }: { activity: Activity }) => {
+const ActivityName = ({
+    activity,
+    wrap = false,
+}: {
+    activity: Activity;
+    /** Wrap a long name onto more lines instead of cutting it off */
+    wrap?: boolean;
+}) => {
     const isOther = activity.activityCode.startsWith("other");
     return (
         <span className="flex min-w-0 items-center gap-2 font-semibold">
@@ -64,7 +73,7 @@ const ActivityName = ({ activity }: { activity: Activity }) => {
                     )}
                 />
             )}
-            <span className="truncate">
+            <span className={wrap ? undefined : "truncate"}>
                 {getActivityName(activity).replace(", ", " · ")}
             </span>
         </span>
@@ -269,7 +278,7 @@ const Schedule = () => {
                     <div
                         className={cn(
                             rowGrid,
-                            "min-w-max py-2.5 text-xs font-semibold text-muted-foreground"
+                            "min-w-min py-2.5 text-xs font-semibold text-muted-foreground"
                         )}
                     >
                         <span>Scheduled</span>
@@ -297,7 +306,7 @@ const Schedule = () => {
                                 key={activity.id}
                                 className={cn(
                                     rowGrid,
-                                    "min-h-11 min-w-max items-center border-t text-sm",
+                                    "min-h-11 min-w-min items-center border-t text-sm",
                                     ongoing && "bg-primary-soft"
                                 )}
                             >
@@ -307,20 +316,14 @@ const Schedule = () => {
                                 <span className="text-muted-foreground tabular-nums">
                                     {real}
                                 </span>
-                                <ActivityName activity={activity} />
+                                <ActivityName activity={activity} wrap />
                                 <span className="text-muted-foreground">
                                     {details?.format}
                                 </span>
-                                <span
-                                    className="truncate text-muted-foreground"
-                                    title={details?.timeLimit}
-                                >
+                                <span className="text-muted-foreground">
                                     {details?.timeLimit}
                                 </span>
-                                <span
-                                    className="truncate text-muted-foreground"
-                                    title={details?.cutoff}
-                                >
+                                <span className="text-muted-foreground">
                                     {details?.cutoff}
                                 </span>
                                 <span className="text-muted-foreground">
