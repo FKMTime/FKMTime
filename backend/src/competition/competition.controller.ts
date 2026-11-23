@@ -73,7 +73,7 @@ export class CompetitionController {
     return await this.competitionService.getCompetitionInfo();
   }
 
-  @UseGuards(AuthGuard('jwt'))
+  @UseGuards(OrganizerGuard)
   @Get('statistics')
   async getCompetitionStatistics() {
     return await this.statisticsService.getCompetitionStatistics();
