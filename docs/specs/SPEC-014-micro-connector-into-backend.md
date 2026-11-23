@@ -150,9 +150,10 @@ connector is retired. That's what makes rollback a config change.
 
 A station sends a probe ping when a reply is 2 s late (`WS_REPLY_LATE_MS`). It drops the link
 if nothing comes back within 3 s (`WS_PROBE_TIMEOUT_MS`). If `ws` ran on the main event loop,
-**any synchronous stall over ~3 s would drop every station waiting on a reply**: a WCIF
-import, a results calculation, the HIL processor, or anything heavy added later. Waiting on
-the database doesn't count; Prisma queries don't block the loop.
+**any synchronous stall over ~5 s (2 s late plus the 3 s probe) would drop every station
+waiting on a reply**: a WCIF import, a results calculation, the HIL processor, or anything
+heavy added later. Waiting on the database doesn't count; Prisma queries don't block the
+loop.
 
 **Decided (2026-11-23): station connections run on their own worker thread by default.**
 This keeps what the connector does today (FKMTime/micro-connector#27): pings are always
@@ -232,6 +233,57 @@ The firmware simulator (`sim/` in FKMTime/firmware) runs the connector with its 
   handshake, card info, an attempt, a delegate call and an OTA. Today nothing in this
   repository can test those paths.
 - The station tester calls the gateway's handlers instead of building unix socket requests.
+
+## Measurements
+
+Phase 0 measurements so far, taken 2026-11-23 on a Raspberry Pi 4 (4 GB, OpenWrt 25.12) and
+on a Mac for comparison. All data is seeded or simulated.
+
+### Station thread prototype
+
+A throwaway Node prototype (`ws` over TLS 1.3 with a self-signed P-256 certificate, the
+`RandomSigned` handshake, request handling simulated as a 5 ms async call) and 40 simulated
+stations that follow the firmware's rules exactly: the 2 s late reply, the 3 s probe, re-sending
+an unanswered request with the same tag after reconnecting, a 1 s reconnect timer, and a
+status packet every 5 s. Server and stations ran in one container on the Pi, two runs each.
+
+**Main thread blocked on purpose, 40 stations:**
+
+| Block | Stations dropped, connections on the main thread | Stations dropped, connections on the station thread | Error replies, station thread |
+|---|---|---|---|
+| 3 s | 0, 0 | 0, 0 | 0 |
+| 5 s | 1, 0 | 0, 0 | 0 |
+| 7 s | 40, 40 | 0, 0 | 0 |
+| 10 s | 40, 40 | 0, 0 | 40 (the 7.5 s timeout) |
+
+- A station drops only when a block outlasts 2 s + 3 s from its own last send, so the real
+  limit is about 5 s, not 3 s. Past it, the whole fleet drops and reconnects at once.
+- On the station thread, `ws` answered every probe ping while the main thread busy-looped. A
+  block longer than 7.5 s becomes an error reply on the station, as with the connector today.
+
+**Restart, 40 stations:** the server listens again 0.56–0.65 s after starting, and all 40
+stations are back 0.84–0.92 s after that, each with one request answered. 40 TLS handshakes at
+once take about 270 ms on the Pi (150–220 ms each), well inside the stations' 1 s retry, so
+the retry timer sets the time, not TLS. This excludes the backend's own start time.
+
+**Cost of the thread hop** (steady state, 40 stations): p50 5.9 → 6.2 ms, p99 9.3–10.5 →
+10.6 ms, and about 16 MB more memory (78 → 94 MB RSS).
+
+### What the station thread doesn't fix
+
+On the Mac, with a seeded large competition (447 competitors, 33 rounds, a 1.25 MB WCIF):
+
+- **Entering one attempt costs about 50 ms of main-thread CPU,** much of it parsing the
+  competition's WCIF again. `competition.findFirst()` parses the whole JSON column on each call,
+  and `enterAttemptInTransaction` and `getRemainingAndUsedCumulativeLimit` deep-copy it. Today's
+  backend does the same work, so this isn't a regression, but replies are only as fast as the
+  main thread.
+- **Heavy panel operations block the main thread** for 50–720 ms at a time on the Mac: the WCIF
+  import (worst 723 ms), result checks (291 ms) and `rooms/progress`, which keeps the thread
+  busy for 1.8–3.3 s. Pi numbers are being measured.
+- **10 or more simultaneous attempts deadlock the database pool,** and all of them fail after
+  7.5 s. `enterAttemptInTransaction` runs queries outside its transaction, which need a second
+  connection from pg's pool of 10. This is a bug in today's backend, independent of this spec.
 
 ## Acceptance criteria
 
