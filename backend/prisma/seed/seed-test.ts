@@ -115,24 +115,27 @@ export async function seedDb() {
     },
   });
   await prisma.person.createMany({
-    data: wcif.persons
-      .filter(
-        (person: Person) =>
-          person.registrantId && person.registration?.status === 'accepted',
-      )
-      .map((person: Person) => ({
-        wcaId: person.wcaId,
-        name: person.name,
-        registrantId: person.registrantId,
-        gender: person.gender,
-        countryIso2: person.countryIso2,
-        canCompete: person.registration.isCompeting,
-        birthdate: person.wcaId
-          ? null
-          : person.birthdate && new Date(person.birthdate),
-      })),
+    data: wcif.persons.flatMap((person: Person) => {
+      const { registration } = person;
+      if (!person.registrantId || registration?.status !== 'accepted') {
+        return [];
+      }
+      return [
+        {
+          wcaId: person.wcaId,
+          name: person.name,
+          registrantId: person.registrantId,
+          gender: person.gender,
+          countryIso2: person.countryIso2,
+          canCompete: registration.isCompeting,
+          birthdate: person.wcaId
+            ? null
+            : person.birthdate && new Date(person.birthdate),
+        },
+      ];
+    }),
   });
-  const rooms = [];
+  const rooms: Prisma.RoomCreateManyInput[] = [];
 
   for (const venue of wcifPublic.schedule.venues) {
     for (const room of venue.rooms) {
@@ -145,23 +148,25 @@ export async function seedDb() {
   const personIds = new Map(
     (await prisma.person.findMany()).map((p) => [p.registrantId, p.id]),
   );
-  const staffActivities = [];
-  wcifPublic.persons
-    .filter((person: Person) => personIds.has(person.registrantId))
-    .forEach((person: Person) => {
-      person.assignments.forEach((assignment: Assignment) => {
-        const group = getGroupInfoByActivityId(
-          assignment.activityId,
-          wcifPublic,
+  const staffActivities: Prisma.StaffActivityCreateManyInput[] = [];
+  wcifPublic.persons.forEach((person: Person) => {
+    const personId = personIds.get(person.registrantId);
+    if (!personId) return;
+    person.assignments.forEach((assignment: Assignment) => {
+      const group = getGroupInfoByActivityId(assignment.activityId, wcifPublic);
+      if (!group) {
+        throw new Error(
+          `Activity ${assignment.activityId} is not in the WCIF schedule`,
         );
-        staffActivities.push({
-          personId: personIds.get(person.registrantId),
-          role: wcifRoleToAttendanceRole(assignment.assignmentCode),
-          groupId: group.activityCode,
-          isAssigned: true,
-        });
+      }
+      staffActivities.push({
+        personId,
+        role: wcifRoleToAttendanceRole(assignment.assignmentCode),
+        groupId: group.activityCode,
+        isAssigned: true,
       });
     });
+  });
   await prisma.staffActivity.createMany({ data: staffActivities });
   await prisma.room.createMany({
     data: rooms,

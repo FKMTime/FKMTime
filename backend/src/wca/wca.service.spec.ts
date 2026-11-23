@@ -65,6 +65,34 @@ describe('WcaService', () => {
     });
   });
 
+  describe('getWcif', () => {
+    const answer = () =>
+      fetchMock.mockResolvedValue({
+        status: 200,
+        json: jest.fn().mockResolvedValue({ id: 'ExampleOpen2026' }),
+      });
+
+    it('signs a private read with the token', async () => {
+      answer();
+
+      await service.getWcif('ExampleOpen2026', 'token');
+
+      const [, init] = fetchMock.mock.calls[0];
+      expect(init.headers).toEqual({ Authorization: 'Bearer token' });
+    });
+
+    it('sends no Authorization header for a public read', async () => {
+      answer();
+
+      await expect(
+        service.getWcif('ExampleOpen2026', undefined, true),
+      ).resolves.toMatchObject({ id: 'ExampleOpen2026', public: true });
+
+      const [, init] = fetchMock.mock.calls[0];
+      expect(new Headers(init.headers).has('Authorization')).toBe(false);
+    });
+  });
+
   describe('getScoretakingSoftware', () => {
     it('returns how the WCA says results are entered', async () => {
       fetchMock.mockResolvedValue({

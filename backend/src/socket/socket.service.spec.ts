@@ -4,6 +4,7 @@ import { StationErrorService } from '../device/stationError.service';
 import { StationSignalService } from '../device/stationSignal.service';
 import { DeviceType } from '../generated/prisma/client';
 import { PersonService } from '../person/person.service';
+import { unusedDependency } from '../test-utils/unused-dependency';
 import { LIVE_LOOKUP_TTL_MS } from '../ttl-cache';
 import { SocketService } from './socket.service';
 
@@ -110,7 +111,7 @@ describe('SocketService', () => {
         resultService as never,
         {} as never,
         socketController as never,
-        null,
+        unusedDependency(),
       );
       service = new SocketService(
         resultService as never,

@@ -25,7 +25,7 @@ export const toLiveAttempts = (attempts: Attempt[]): LiveAttempt[] =>
           ? DNS_VALUE
           : attempt.penalty === DNF_VALUE
             ? DNF_VALUE
-            : attempt.penalty * 100 + attempt.value,
+            : (attempt.penalty ?? 0) * 100 + attempt.value,
     }))
     .filter((attempt) => attempt.value !== 0);
 

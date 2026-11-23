@@ -3,6 +3,7 @@ import {
   AttemptType,
   LiveSyncStatus,
 } from '../generated/prisma/client';
+import { found } from '../test-utils/found';
 import { IntegratedLiveRoundsService } from './integratedLiveRounds.service';
 
 const WCA = 'https://wca.example';
@@ -10,6 +11,7 @@ const WCA = 'https://wca.example';
 describe('IntegratedLiveRoundsService', () => {
   const origin = process.env.WCA_ORIGIN;
   let competition: Record<string, unknown>;
+  let findCompetition: jest.Mock;
   let previousResults: unknown[];
   let rooms: { currentGroupIds: string[]; startedGroupIds: string[] }[];
   let activities: Record<string, unknown>[];
@@ -93,8 +95,9 @@ describe('IntegratedLiveRoundsService', () => {
       (!where.personId || a.personId === where.personId) &&
       (!where.groupId?.startsWith ||
         String(a.groupId).startsWith(where.groupId.startsWith));
+    findCompetition = jest.fn(async () => competition);
     const prisma = {
-      competition: { findFirst: jest.fn(async () => competition) },
+      competition: { findFirst: findCompetition },
       result: {
         findMany: jest.fn(async () => previousResults),
         findFirst: jest.fn(
@@ -501,7 +504,10 @@ describe('IntegratedLiveRoundsService', () => {
     });
 
     it('puts the WCA copy, flags and differences next to each result', async () => {
-      const details = await service.getRoundDetails('333-r2');
+      const details = found(
+        await service.getRoundDetails('333-r2'),
+        'round details',
+      );
 
       expect(details).toMatchObject({
         state: 'open',
@@ -534,7 +540,10 @@ describe('IntegratedLiveRoundsService', () => {
     });
 
     it('lists results only the WCA has, but not empty ones', async () => {
-      const details = await service.getRoundDetails('333-r2');
+      const details = found(
+        await service.getRoundDetails('333-r2'),
+        'round details',
+      );
 
       expect(details.onlyInWca).toEqual([
         {
@@ -567,6 +576,16 @@ describe('IntegratedLiveRoundsService', () => {
 
       await expect(service.getRoundDetails('333-r2')).resolves.toBeNull();
       await expect(service.getRoundSummaries()).resolves.toEqual([]);
+    });
+
+    it('is empty when the competition is removed while the round is read', async () => {
+      // Found to build the WCA's address, twice, then gone
+      findCompetition
+        .mockResolvedValueOnce(competition)
+        .mockResolvedValueOnce(competition)
+        .mockResolvedValue(null);
+
+      await expect(service.getRoundDetails('333-r2')).resolves.toBeNull();
     });
 
     it('marks rounds with results to look at in the strip', async () => {
@@ -699,6 +718,24 @@ describe('IntegratedLiveRoundsService', () => {
         roundOpen: true,
         next: [{ registrationId: 301, name: 'Jan Example', personId: 'p-jan' }],
         nobodyReason: null,
+      });
+    });
+
+    it('leaves out a next in line the WCA gives no id for', async () => {
+      responses['GET /rounds/333-r2/next_if_quit?registration_id=201'] = {
+        status: 200,
+        body: {
+          next_advancing: [
+            { name: 'Nameless Example' },
+            { id: 301, name: 'Jan Example' },
+          ],
+        },
+      };
+
+      await expect(
+        service.previewWithdrawal('333-r2', 'p-anna'),
+      ).resolves.toMatchObject({
+        next: [{ registrationId: 301, name: 'Jan Example', personId: 'p-jan' }],
       });
     });
 
