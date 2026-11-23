@@ -531,27 +531,46 @@ export class ResultFromDeviceService {
       data.roundId,
     );
 
-    return await this.prisma.attempt.create({
-      data: {
-        attemptNumber: data.attemptNumber,
-        value: 0,
-        penalty: 0,
-        status: AttemptStatus.SCRAMBLED,
-        scrambler: {
-          connect: {
-            id: data.scramblerId,
-          },
+    const type = data.isExtra
+      ? AttemptType.EXTRA_ATTEMPT
+      : AttemptType.STANDARD_ATTEMPT;
+
+    return runInTransaction(this.prisma, async (tx) => {
+      // The device offers the same scramble until it is solved, so it can be
+      // signed again, even from two devices at once. Each sign waits for the
+      // previous one and updates its attempt: the last sign is who handed the
+      // cube over, and when
+      await tx.db
+        .$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`scramble:${result.id}:${type}:${data.attemptNumber}`}))`;
+      const scrambled = await tx.db.attempt.findFirst({
+        where: {
+          resultId: result.id,
+          attemptNumber: data.attemptNumber,
+          type,
+          status: AttemptStatus.SCRAMBLED,
         },
+      });
+      const signed = {
+        scrambler: { connect: { id: data.scramblerId } },
         scrambledAt: new Date(),
-        type: data.isExtra
-          ? AttemptType.EXTRA_ATTEMPT
-          : AttemptType.STANDARD_ATTEMPT,
-        result: {
-          connect: {
-            id: result.id,
-          },
+      };
+      if (scrambled) {
+        return tx.db.attempt.update({
+          where: { id: scrambled.id },
+          data: signed,
+        });
+      }
+      return tx.db.attempt.create({
+        data: {
+          ...signed,
+          attemptNumber: data.attemptNumber,
+          value: 0,
+          penalty: 0,
+          status: AttemptStatus.SCRAMBLED,
+          type,
+          result: { connect: { id: result.id } },
         },
-      },
+      });
     });
   }
 
