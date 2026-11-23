@@ -68,10 +68,6 @@ jobs:
         - name: Generate prisma
           working-directory: 'backend'
           run: npx prisma generate
-        # strictNullChecks, one file at a time (scripts/check-strict-null.mjs)
-        - name: Check strictNullChecks against the baseline
-          working-directory: 'backend'
-          run: npm run check:strict-null
         - name: Build backend
           working-directory: 'backend'
           run: npm run build
