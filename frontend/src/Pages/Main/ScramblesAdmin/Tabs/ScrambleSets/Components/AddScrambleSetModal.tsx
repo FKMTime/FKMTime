@@ -11,7 +11,11 @@ import { useDialogError } from "@/hooks/useDialogError";
 import { activityCodeToName } from "@/lib/activities";
 import { competitionAtom } from "@/lib/atoms";
 import { getEventName } from "@/lib/events";
-import { addScrambles, validateScrambles } from "@/lib/scramblesImport";
+import {
+    addScrambles,
+    getScrambleSetsToAdd,
+    validateScrambles,
+} from "@/lib/scramblesImport";
 import { numberToLetter } from "@/lib/utils";
 
 import ScrambleSetsValidators from "../../ImportScrambles/Components/ScrambleSetsValidators";
@@ -37,6 +41,7 @@ const AddScrambleSetModal = ({
     const [warningsList, setWarningsList] = useState<string[]>([]);
     const [errorsList, setErrorsList] = useState<string[]>([]);
     const inputRef = useRef<HTMLInputElement>(null);
+    const eventId = roundId.split("-")[0];
 
     const handleFileUpload = () => {
         clearUploadedScrambles(false);
@@ -52,6 +57,14 @@ const AddScrambleSetModal = ({
                     competition?.wcif,
                     true
                 );
+                if (
+                    getScrambleSetsToAdd(roundId, parsedWCIF, lastSet + 1)
+                        .length === 0
+                ) {
+                    errors.push(
+                        `This file has no scramble sets for ${getEventName(eventId)} Round 1`
+                    );
+                }
                 setWarningsList(warnings);
                 setErrorsList(errors);
                 if (errors.length > 0) {
@@ -65,7 +78,9 @@ const AddScrambleSetModal = ({
 
     const handleAdd = async () => {
         if (!wcif || !competition) return;
-        const response = await addScrambles(roundId, wcif, lastSet + 1);
+        const response = await addScrambles(
+            getScrambleSetsToAdd(roundId, wcif, lastSet + 1)
+        );
         if (response.status === 201) {
             clearUploadedScrambles();
             onClose();
@@ -90,8 +105,8 @@ const AddScrambleSetModal = ({
         >
             <div className="flex flex-col gap-3">
                 <p>
-                    Sets generated for {getEventName(roundId.split("-")[0])}{" "}
-                    Round 1 will be added to this round, starting from set{" "}
+                    Sets generated for {getEventName(eventId)} Round 1 will be
+                    added to this round, starting from set{" "}
                     {numberToLetter(lastSet + 1)}.
                 </p>
                 <ScrambleSetsValidators
