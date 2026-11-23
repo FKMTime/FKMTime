@@ -1,5 +1,5 @@
 import { useAtomValue } from "jotai";
-import { useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { Competition as WCIF } from "wcif-helpers";
 
 import { Modal } from "@/Components/Modal";
@@ -42,6 +42,17 @@ const AddScrambleSetModal = ({
     const [errorsList, setErrorsList] = useState<string[]>([]);
     const inputRef = useRef<HTMLInputElement>(null);
     const eventId = roundId.split("-")[0];
+    const setsToAdd = useMemo(
+        () => (wcif ? getScrambleSetsToAdd(roundId, wcif, lastSet + 1) : []),
+        [wcif, roundId, lastSet]
+    );
+    const displayedErrors =
+        wcif && setsToAdd.length === 0
+            ? [
+                  ...errorsList,
+                  `This file has no scramble sets for ${getEventName(eventId)} Round 1`,
+              ]
+            : errorsList;
 
     const handleFileUpload = () => {
         clearUploadedScrambles(false);
@@ -57,14 +68,6 @@ const AddScrambleSetModal = ({
                     competition?.wcif,
                     true
                 );
-                if (
-                    getScrambleSetsToAdd(roundId, parsedWCIF, lastSet + 1)
-                        .length === 0
-                ) {
-                    errors.push(
-                        `This file has no scramble sets for ${getEventName(eventId)} Round 1`
-                    );
-                }
                 setWarningsList(warnings);
                 setErrorsList(errors);
                 if (errors.length > 0) {
@@ -77,13 +80,10 @@ const AddScrambleSetModal = ({
     };
 
     const handleAdd = async () => {
-        if (!wcif || !competition) return;
-        const response = await addScrambles(
-            getScrambleSetsToAdd(roundId, wcif, lastSet + 1)
-        );
+        if (setsToAdd.length === 0) return;
+        const response = await addScrambles(setsToAdd);
         if (response.status === 201) {
-            clearUploadedScrambles();
-            onClose();
+            handleClose();
         } else {
             setError("Something went wrong");
             setError(response.data.message);
@@ -94,13 +94,22 @@ const AddScrambleSetModal = ({
         setWcif(undefined);
         if (clearInput) setFileInputKey((prev) => prev + 1);
         setPreventFromImporting(false);
+        setWarningsList([]);
+        setErrorsList([]);
+    };
+
+    // The modal stays mounted while the round changes, so a file uploaded for
+    // one round must not survive into the next opening.
+    const handleClose = () => {
+        clearUploadedScrambles();
+        onClose();
     };
 
     return (
         <Modal
             error={error}
             isOpen={isOpen}
-            onClose={onClose}
+            onClose={handleClose}
             title={`Add scramble set for ${activityCodeToName(roundId)}`}
         >
             <div className="flex flex-col gap-3">
@@ -111,7 +120,7 @@ const AddScrambleSetModal = ({
                 </p>
                 <ScrambleSetsValidators
                     warnings={warningsList}
-                    errors={errorsList}
+                    errors={displayedErrors}
                 />
                 <div className="flex flex-col gap-3 w-fit">
                     <Label htmlFor="add-scramble-set">Upload scrambles</Label>
@@ -125,7 +134,12 @@ const AddScrambleSetModal = ({
                     />
                 </div>
                 <ModalActions>
-                    <Button onClick={handleAdd} disabled={preventFromImporting}>
+                    <Button
+                        onClick={handleAdd}
+                        disabled={
+                            preventFromImporting || setsToAdd.length === 0
+                        }
+                    >
                         Add
                     </Button>
                 </ModalActions>
