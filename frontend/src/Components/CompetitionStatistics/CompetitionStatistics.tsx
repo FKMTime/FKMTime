@@ -3,12 +3,15 @@ import {
     ChartNoAxesColumn,
     Keyboard,
     Layers,
+    Lock,
     LucideIcon,
     RefreshCw,
     User,
 } from "lucide-react";
 
 import LoadingPage from "@/Components/LoadingPage";
+import EmptyState from "@/Components/shared/EmptyState";
+import RequestError from "@/Components/shared/RequestError";
 import { useLiveQuery } from "@/hooks/useLiveQuery";
 import { useSocketRoom } from "@/hooks/useSocketRoom";
 import { activityCodeToName } from "@/lib/activities";
@@ -19,6 +22,7 @@ import {
     CompetitionStatistics as ICompetitionStatistics,
     RoundAttemptStatistics,
 } from "@/lib/interfaces";
+import { QueryError } from "@/lib/queryCache";
 import { cn } from "@/lib/utils";
 
 import Charts from "./Charts";
@@ -52,13 +56,24 @@ const Bar = ({ value, max }: { value: number; max: number }) => (
 
 const CompetitionStatistics = () => {
     const competition = useAtomValue(competitionAtom);
-    const { data } = useLiveQuery(competitionStatisticsQuery);
+    const { data, error, isError, refetch } = useLiveQuery(
+        competitionStatisticsQuery
+    );
     const statistics: ICompetitionStatistics | null = data ?? null;
     useSocketRoom("Statistics", {
         invalidateOn: { statisticsUpdated: [competitionStatisticsQuery.key] },
     });
 
-    if (!statistics) return <LoadingPage />;
+    if (error instanceof QueryError && error.status === 403)
+        return (
+            <EmptyState icon={<Lock />}>
+                Only organizers and delegates can see statistics.
+            </EmptyState>
+        );
+    if (!statistics) {
+        if (isError) return <RequestError onRetry={() => void refetch()} />;
+        return <LoadingPage />;
+    }
 
     const tiles: { label: string; value: number; icon: LucideIcon }[] = [
         {
