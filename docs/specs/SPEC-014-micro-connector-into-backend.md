@@ -303,8 +303,9 @@ micro-connector (its `old-fw-update` branch, used for V2 → V3 updates, stays c
    stations, and routers keep the port they use today. Going through nginx was rejected: it
    would have to pass the `RandomSigned` handshake through untouched and would become a hop
    every station depends on.
-2. **Should a stall warning reach the panel,** or only the server log (SPEC-011)? With the
-   station thread, a main-thread stall makes replies late but drops no station. Proposed: the
-   log in phase 1; the Devices page if phase 0 shows long stalls happen.
+2. **Should a stall warning reach the panel,** or only the server log (SPEC-011)? **Decided
+   (2026-11-23): the server log.** With the station thread, a main-thread stall makes replies
+   late but drops no station, and an organizer can't act on it mid-round. The Devices page
+   gets a warning only if phase 0 shows long stalls happen.
 3. **`node-ble` or our own thin BlueZ D-Bus client** over `dbus-next`? Proposed: decide in
    phase 0. We use four BlueZ calls, so a thin client may be less risk than a stale library.
