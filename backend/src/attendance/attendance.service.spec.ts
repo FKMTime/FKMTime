@@ -36,6 +36,9 @@ describe('AttendanceService', () => {
             room: {
               findMany: jest.fn(),
             },
+            competition: {
+              findFirst: jest.fn().mockResolvedValue({ defaultLocale: 'en' }),
+            },
           },
         },
         {
@@ -410,6 +413,73 @@ describe('AttendanceService', () => {
       );
     });
 
+    it('replies with an error for a device it does not know', async () => {
+      jest.spyOn(dbService.device, 'findFirst').mockResolvedValue(null);
+
+      const reply = await service.createAttendance({
+        espId: 1,
+        cardId: 123,
+      } as any);
+
+      expect(reply).toEqual(
+        expect.objectContaining({
+          error: true,
+          status: 404,
+          message: 'Station not found',
+          errorDetails: { key: 'stationNotFound' },
+        }),
+      );
+      expect(dbService.staffActivity.upsert).not.toHaveBeenCalled();
+    });
+
+    it('replies with an error, in the default language, for an unassigned card', async () => {
+      jest.spyOn(dbService.device, 'findFirst').mockResolvedValue({
+        id: 'device1',
+        type: 'ATTENDANCE_JUDGE',
+        room: { currentGroupIds: ['333-r1-g1'] },
+      } as any);
+      jest.spyOn(dbService.person, 'findFirst').mockResolvedValue(null);
+
+      const reply = await service.createAttendance({
+        espId: 1,
+        cardId: 123,
+      } as any);
+
+      expect(reply).toEqual(
+        expect.objectContaining({
+          error: true,
+          status: 404,
+          message: 'Competitor not found',
+          errorDetails: { key: 'competitorNotFound', cardId: 123 },
+        }),
+      );
+      expect(dbService.staffActivity.upsert).not.toHaveBeenCalled();
+    });
+
+    it('replies with an error when the room has no group running', async () => {
+      jest.spyOn(dbService.device, 'findFirst').mockResolvedValue({
+        id: 'device1',
+        type: 'ATTENDANCE_JUDGE',
+        room: { currentGroupIds: [] },
+      } as any);
+      jest.spyOn(dbService.person, 'findFirst').mockResolvedValue({
+        id: 'person1',
+        countryIso2: 'PL',
+      } as any);
+
+      const reply = await service.createAttendance({
+        espId: 1,
+        cardId: 123,
+      } as any);
+
+      expect(reply).toEqual(
+        expect.objectContaining({
+          error: true,
+          errorDetails: { key: 'noGroups', cardId: 123 },
+        }),
+      );
+    });
+
     it('does not announce a scan that failed to save', async () => {
       jest.spyOn(dbService.device, 'findFirst').mockResolvedValue({
         id: 'device1',
@@ -427,7 +497,9 @@ describe('AttendanceService', () => {
         .spyOn(appGateway, 'handleNewAttendance')
         .mockImplementation();
 
-      await service.createAttendance({ espId: 1, cardId: 123 } as any);
+      await expect(
+        service.createAttendance({ espId: 1, cardId: 123 } as any),
+      ).rejects.toThrow('database down');
 
       expect(announce).not.toHaveBeenCalled();
     });

@@ -55,10 +55,13 @@ to show.
 ### Which errors
 
 Every reply that the backend sends to a station with `error: true`, from
-`EnterAttempt` (`result/resultFromDevice.service.ts`) and `PersonInfo`
-(`person/personForDevice.service.ts`), plus the catch-all in
-`socket/socket.server.ts`. `CreateAttendance` never replies with an error, so
-it has nothing to record.
+`EnterAttempt` (`result/resultFromDevice.service.ts`), `PersonInfo`
+(`person/personForDevice.service.ts`) and `CreateAttendance`
+(`attendance/attendance.service.ts`), plus the catch-all in
+`socket/socket.server.ts`. The connector never passes a `CreateAttendance`
+reply on to the attendance device, so those errors are only in the logs and
+the backend's record; the Devices page shows the last error for stations
+only.
 
 Each error has a **kind**:
 

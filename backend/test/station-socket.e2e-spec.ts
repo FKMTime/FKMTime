@@ -38,6 +38,7 @@ const ESP = {
   scramblerAttendance: 771005,
   stationAttendance: 771006,
   stationMissingRound: 771007,
+  emptyAttendance: 771008,
   unknown: 771099,
   requested: 771098,
 };
@@ -156,6 +157,12 @@ describe('Station socket protocol (e2e)', () => {
       DeviceType.ATTENDANCE_SCRAMBLER,
     );
     await fixtures.createDevice('station-att', ESP.stationAttendance, roomB.id);
+    await fixtures.createDevice(
+      'empty-att',
+      ESP.emptyAttendance,
+      emptyRoom.id,
+      DeviceType.ATTENDANCE_RUNNER,
+    );
 
     // Pick seeded people by what each test needs from them
     const competition = found(
@@ -1274,20 +1281,49 @@ describe('Station socket protocol (e2e)', () => {
       },
     );
 
-    it('confirms without recording anything for an unknown device or card', async () => {
+    it('replies with an error, recording nothing, for an unknown device', async () => {
       const before = await db.staffActivity.count();
 
-      const unknownDevice = await station.request('CreateAttendance', {
+      const res = await station.request('CreateAttendance', {
         cardId: CARD.judge,
         espId: ESP.unknown,
       });
-      const unknownCard = await station.request('CreateAttendance', {
+
+      expect(res).toEqual(
+        errorResponse(getTranslation('stationNotFound', defaultLocale), 404),
+      );
+      expect(await db.staffActivity.count()).toBe(before);
+    });
+
+    it('replies with an error, recording nothing, for an unassigned card', async () => {
+      const before = await db.staffActivity.count();
+
+      const res = await station.request('CreateAttendance', {
         cardId: CARD.unknown,
         espId: ESP.runnerAttendance,
       });
 
-      expect(unknownDevice.type).toBe('CreateAttendanceResp');
-      expect(unknownCard.type).toBe('CreateAttendanceResp');
+      expect(res).toEqual(
+        errorResponse(getTranslation('competitorNotFound', defaultLocale), 404),
+      );
+      expect(res.data).not.toHaveProperty('errorDetails');
+      expect(await db.staffActivity.count()).toBe(before);
+    });
+
+    it('replies with an error when the room has no current group', async () => {
+      const before = await db.staffActivity.count();
+
+      const res = await station.request('CreateAttendance', {
+        cardId: CARD.judge,
+        espId: ESP.emptyAttendance,
+      });
+
+      expect(res).toEqual(
+        errorResponse(
+          getTranslation('noGroups', found(judge.countryIso2, 'judge country')),
+          400,
+        ),
+      );
       expect(await db.staffActivity.count()).toBe(before);
     });
   });
