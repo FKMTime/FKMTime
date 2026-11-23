@@ -249,15 +249,53 @@ export class AttemptService {
     );
   }
 
+  /** Creates the result with the first new attempt, so a blank scorecard saves nothing */
   async enterScorecard(data: EnterScorecardDto, userId: string) {
+    if (data.attempts.length === 0 && data.newAttempts.length === 0) {
+      throw new HttpException('Enter at least one time to save', 400);
+    }
+    const isThisScorecard = (a: { roundId: string; competitorId: string }) =>
+      a.roundId === data.roundId && a.competitorId === data.personId;
+    if (!data.newAttempts.every(isThisScorecard)) {
+      throw new HttpException(
+        'Every attempt must be for this competitor and round',
+        400,
+      );
+    }
+    const updated = await this.prisma.attempt.findMany({
+      where: { id: { in: data.attempts.map((a) => a.id) } },
+      select: { result: { select: { personId: true, roundId: true } } },
+    });
+    if (
+      updated.length !== data.attempts.length ||
+      !updated.every((a) =>
+        isThisScorecard({
+          roundId: a.result.roundId,
+          competitorId: a.result.personId,
+        }),
+      )
+    ) {
+      throw new HttpException(
+        'Every attempt must be for this competitor and round',
+        400,
+      );
+    }
+
     for (const attempt of data.attempts) {
       await this.updateAttempt(attempt.id, attempt, userId);
     }
     for (const attempt of data.newAttempts) {
       await this.createAttempt(attempt, userId);
     }
+    const result = await this.prisma.result.findUniqueOrThrow({
+      where: {
+        personId_roundId: { personId: data.personId, roundId: data.roundId },
+      },
+      select: { id: true },
+    });
     return {
       message: 'Scorecard entered successfully',
+      resultId: result.id,
     };
   }
 

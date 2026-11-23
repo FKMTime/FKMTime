@@ -68,6 +68,13 @@ const typeId = async (value: string) => {
     return idInput;
 };
 
+// A time is committed when its field loses focus
+const enterFirstTime = () => {
+    const firstTime = screen.getByLabelText("Attempt 1 time");
+    fireEvent.change(firstTime, { target: { value: "1234" } });
+    fireEvent.blur(firstTime);
+};
+
 const renderPage = () => {
     const store = createStore();
     store.set(competitionAtom, competition);
@@ -101,9 +108,10 @@ describe("EnterScorecard", () => {
                 attempts: [],
             },
         } as never);
+        vi.mocked(enterScorecard).mockReset();
         vi.mocked(enterScorecard).mockResolvedValue({
             status: 200,
-            data: {},
+            data: { resultId: "res3" },
         } as never);
     });
 
@@ -148,6 +156,7 @@ describe("EnterScorecard", () => {
         renderPage();
         const idInput = await typeId("3");
         await screen.findByRole("heading", { name: /Casey Tester/ });
+        enterFirstTime();
 
         fireEvent.click(screen.getByRole("button", { name: "Save scorecard" }));
 
@@ -174,6 +183,7 @@ describe("EnterScorecard", () => {
         renderPage();
         await typeId("3");
         await screen.findByRole("heading", { name: /Casey Tester/ });
+        enterFirstTime();
         fireEvent.click(screen.getByRole("button", { name: "Save scorecard" }));
         expect((await screen.findByRole("alert")).textContent).toBe(
             "Time limit exceeded"
@@ -181,6 +191,30 @@ describe("EnterScorecard", () => {
         expect(
             screen.getByRole("heading", { name: /Casey Tester/ })
         ).toBeTruthy();
+    });
+
+    // Saving is what creates the result, so a blank one must not reach it (#779)
+    it("saves nothing from a blank scorecard", async () => {
+        vi.mocked(getResultByRoundIdAndPersonId).mockResolvedValue({
+            status: 200,
+            data: {
+                id: null,
+                roundId: "333-r1",
+                person: persons[0],
+                attempts: [],
+            },
+        } as never);
+        renderPage();
+        await typeId("3");
+        await screen.findByRole("heading", { name: /Casey Tester/ });
+        expect(screen.queryByRole("link", { name: "Details" })).toBeNull();
+
+        fireEvent.click(screen.getByRole("button", { name: "Save scorecard" }));
+
+        expect((await screen.findByRole("alert")).textContent).toBe(
+            "Enter at least one time to save."
+        );
+        expect(enterScorecard).not.toHaveBeenCalled();
     });
 
     it("sets DNF with D and DNS with S in a time field", async () => {

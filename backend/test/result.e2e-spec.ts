@@ -108,14 +108,43 @@ describe('ResultController (e2e)', () => {
   });
 
   describe('GET /result/round/:roundId/person/:personId', () => {
-    it('returns or creates result for person in round', async () => {
+    it('returns the result for person in round', async () => {
       const res = await request(app.getHttpServer())
         .get(`/result/round/${ROUND_ID}/person/${personId}`)
         .set('Authorization', `Bearer ${adminToken}`)
         .expect(200);
 
-      expect(res.body).toHaveProperty('id');
+      expect(res.body).toHaveProperty('id', resultId);
       expect(res.body).toHaveProperty('roundId', ROUND_ID);
+    });
+
+    // Enter scorecard reads on every keystroke that matches an ID (#779)
+    it('returns an unsaved result without creating one', async () => {
+      const person = found(
+        await db.person.findFirst({
+          where: { canCompete: true, results: { none: { roundId: ROUND_ID } } },
+        }),
+        'person with no result in the round',
+      );
+
+      const res = await request(app.getHttpServer())
+        .get(`/result/round/${ROUND_ID}/person/${person.id}`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .expect(200);
+
+      expect(res.body).toMatchObject({
+        id: null,
+        roundId: ROUND_ID,
+        person: { id: person.id },
+        attempts: [],
+      });
+      expect(
+        await db.result.findUnique({
+          where: {
+            personId_roundId: { personId: person.id, roundId: ROUND_ID },
+          },
+        }),
+      ).toBeNull();
     });
 
     it('returns 401 when not authenticated', async () => {

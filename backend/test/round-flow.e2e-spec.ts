@@ -95,22 +95,19 @@ describe('Round flow: from check-in to submitted results (e2e)', () => {
     person: Person,
     attempts: [number, number?][],
   ) => {
-    const opened = await request(server())
-      .get(`/result/round/${ROUND_ID}/person/${person.id}`)
-      .set(auth('DELEGATE'))
-      .expect(200);
-    resultIds[registrantIdOf(person)] = opened.body.id;
-    await request(server())
+    const saved = await request(server())
       .post('/attempt/scorecard')
       .set(auth('DELEGATE'))
       .send({
-        resultId: opened.body.id,
+        roundId: ROUND_ID,
+        personId: person.id,
         attempts: [],
         newAttempts: attempts.map(([value, penalty], i) =>
           newAttempt(person, i + 1, value, penalty ?? 0),
         ),
       })
       .expect(200);
+    resultIds[registrantIdOf(person)] = saved.body.resultId;
   };
 
   beforeAll(async () => {

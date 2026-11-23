@@ -40,14 +40,14 @@ export class ResultController {
     return this.resultService.getAllResultsByRound(roundId, search);
   }
 
-  // Creates the result when it is missing, so it is a delegate's action
+  // Read-only: the result is created when the scorecard is saved
   @UseGuards(DelegateGuard)
   @Get('round/:roundId/person/:personId')
   async getResultByRoundIdAndPersonId(
     @Param('roundId', ParseRoundIdPipe) roundId: string,
     @Param('personId') personId: string,
   ) {
-    return this.resultService.getResultOrCreate(personId, roundId);
+    return this.resultService.getResultForScorecard(personId, roundId);
   }
 
   @UseGuards(DelegateGuard)

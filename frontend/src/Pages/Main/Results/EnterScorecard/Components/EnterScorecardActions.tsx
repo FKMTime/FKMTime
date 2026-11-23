@@ -1,11 +1,11 @@
 import { Link } from "react-router-dom";
 
 import { Button } from "@/Components/ui/button";
-import { Result } from "@/lib/interfaces";
+import { ScorecardResult } from "@/lib/interfaces";
 
 interface EnterScorecardActionsProps {
     handleSubmit: () => void;
-    result: Result;
+    result: ScorecardResult;
     isSaving: boolean;
 }
 
@@ -18,9 +18,11 @@ const EnterScorecardActions = ({
         <Button onClick={handleSubmit} disabled={isSaving}>
             Save scorecard
         </Button>
-        <Button variant="outline" asChild>
-            <Link to={`/results/${result.id}`}>Details</Link>
-        </Button>
+        {result.id && (
+            <Button variant="outline" asChild>
+                <Link to={`/results/${result.id}`}>Details</Link>
+            </Button>
+        )}
     </div>
 );
 
