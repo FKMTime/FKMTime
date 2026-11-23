@@ -16,6 +16,8 @@ import {
 } from "@/Components/ui/chart";
 import { RoundStatisticsByDay } from "@/lib/interfaces";
 
+import { delayAxisTicks } from "./delayAxisTicks";
+
 const chartConfig = {
     delayInMinutes: {
         label: "Delay",
@@ -43,20 +45,11 @@ const DelayChart = ({ data }: DelayChartData) => {
         return longestTick.length * charWidth;
     };
 
-    const maxDelay = useMemo(() => {
-        return Math.max(
-            ...data.roundsStatistics.map((r) => r.delayInMinutes || 0)
-        );
-    }, [data]);
-
-    const yTicks = useMemo(() => {
-        const roundedMax = Math.ceil(maxDelay / 5) * 5;
-        const ticks = [];
-        for (let i = 0; i <= roundedMax; i += 5) {
-            ticks.push(i);
-        }
-        return ticks;
-    }, [maxDelay]);
+    const yTicks = useMemo(
+        () =>
+            delayAxisTicks(data.roundsStatistics.map((r) => r.delayInMinutes)),
+        [data]
+    );
 
     return (
         <Card>
@@ -87,7 +80,7 @@ const DelayChart = ({ data }: DelayChartData) => {
                             axisLine={false}
                             tickLine={false}
                             tickMargin={8}
-                            domain={[0, "auto"]}
+                            domain={[yTicks[0], yTicks[yTicks.length - 1]]}
                             tickFormatter={tickFormatter}
                             width={getYAxisTickLen()}
                             ticks={yTicks}
