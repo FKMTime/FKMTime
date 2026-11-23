@@ -7,12 +7,6 @@ import { WcaService } from '../wca/wca.service';
 import { CreateUserDto } from './dto/createUser.dto';
 import { UserService } from './user.service';
 
-/**
- * The body as validation hands it over: a field left out is undefined, which
- * the DTO's types don't admit even though it marks them @IsOptional
- */
-const createUserBody = (body: Partial<CreateUserDto>) => body as CreateUserDto;
-
 describe('UserService', () => {
   let service: UserService;
   let dbService: DbService;
@@ -105,13 +99,13 @@ describe('UserService', () => {
 
   describe('createUser', () => {
     it('should create a user with WCA ID', async () => {
-      const userData = createUserBody({
+      const userData: CreateUserDto = {
         fullName: 'WCA User',
         wcaId: '123',
         username: undefined,
         password: undefined,
         roles: [Role.ORGANIZER],
-      });
+      };
       const currentUserId = 'admin1';
       const mockWcaUser = { user: { id: 123, name: 'WCA User' } };
 
@@ -131,13 +125,13 @@ describe('UserService', () => {
     });
 
     it('should create a user with username and password', async () => {
-      const userData = createUserBody({
+      const userData: CreateUserDto = {
         fullName: 'Local User',
         username: 'localuser',
         password: 'password123',
         wcaId: undefined,
         roles: [Role.ORGANIZER],
-      });
+      };
       const currentUserId = 'admin1';
 
       jest
@@ -152,13 +146,13 @@ describe('UserService', () => {
     });
 
     it('should throw error if username is provided without password', async () => {
-      const userData = createUserBody({
+      const userData: CreateUserDto = {
         fullName: 'Local User',
         username: 'localuser',
         wcaId: undefined,
         password: undefined,
         roles: [Role.ORGANIZER],
-      });
+      };
       const currentUserId = 'admin1';
 
       jest
@@ -170,14 +164,32 @@ describe('UserService', () => {
       );
     });
 
+    it('refuses an account with neither a WCA ID nor a password', async () => {
+      const userData: CreateUserDto = {
+        fullName: 'Nameless User',
+        roles: [Role.ORGANIZER],
+      };
+      jest
+        .spyOn(dbService.user, 'findUnique')
+        .mockResolvedValue({ roles: [Role.ADMIN] } as any);
+
+      await expect(
+        service.createUser(userData, 'admin1'),
+      ).rejects.toMatchObject({
+        status: 400,
+        response: 'Password is required',
+      });
+      expect(dbService.user.create).not.toHaveBeenCalled();
+    });
+
     it('should throw error if trying to assign higher roles', async () => {
-      const userData = createUserBody({
+      const userData: CreateUserDto = {
         fullName: 'User',
         username: 'user',
         password: 'password',
         wcaId: undefined,
         roles: [Role.ADMIN],
-      });
+      };
       const currentUserId = 'organizer1';
 
       jest
@@ -190,13 +202,13 @@ describe('UserService', () => {
     });
 
     it('should throw error if username is already taken', async () => {
-      const userData = createUserBody({
+      const userData: CreateUserDto = {
         fullName: 'User',
         username: 'existinguser',
         password: 'password',
         wcaId: undefined,
         roles: [Role.ORGANIZER],
-      });
+      };
       const currentUserId = 'admin1';
 
       const prismaError = new Prisma.PrismaClientKnownRequestError(
