@@ -21,6 +21,7 @@ interface WcaExportPanelProps {
 const WcaExportPanel = ({ roundId }: WcaExportPanelProps) => {
     const {
         data: checks,
+        dataUpdatedAt,
         isError,
         refetch,
     } = useLiveQuery(h2hExportChecksQuery(roundId));
@@ -28,8 +29,12 @@ const WcaExportPanel = ({ roundId }: WcaExportPanelProps) => {
     const [isAsking, setIsAsking] = useState(false);
     const [isDownloading, setIsDownloading] = useState(false);
     const [error, setError] = useState("");
-    // Blockers the download itself found, until the checks catch up
-    const [refused, setRefused] = useState<string[] | null>(null);
+    // Blockers the download itself found, shown until the checks are
+    // fetched again: from then on the checks say what is left
+    const [refused, setRefused] = useState<{
+        blockers: string[];
+        checkedAt: number;
+    } | null>(null);
 
     if (!checks) {
         return isError ? (
@@ -38,7 +43,10 @@ const WcaExportPanel = ({ roundId }: WcaExportPanelProps) => {
             <SectionLoading label="Checking the results for the WCA" />
         );
     }
-    const blockers = refused ?? checks.blockers;
+    const blockers =
+        refused && refused.checkedAt === dataUpdatedAt
+            ? refused.blockers
+            : checks.blockers;
 
     const handleDownload = async (password: string) => {
         setIsDownloading(true);
@@ -50,7 +58,10 @@ const WcaExportPanel = ({ roundId }: WcaExportPanelProps) => {
             return;
         }
         if (result.blockers) {
-            setRefused(result.blockers);
+            setRefused({
+                blockers: result.blockers,
+                checkedAt: dataUpdatedAt,
+            });
             setIsAsking(false);
             void refetch();
             return;

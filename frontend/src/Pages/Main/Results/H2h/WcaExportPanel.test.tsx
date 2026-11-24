@@ -7,6 +7,7 @@ import WcaExportPanel from "./WcaExportPanel";
 
 const state = vi.hoisted(() => ({
     checks: undefined as H2hExportChecks | undefined,
+    updatedAt: 1,
 }));
 const { downloadH2hCsv, refetch, toast } = vi.hoisted(() => ({
     downloadH2hCsv: vi.fn(),
@@ -15,7 +16,12 @@ const { downloadH2hCsv, refetch, toast } = vi.hoisted(() => ({
 }));
 
 vi.mock("@/hooks/useLiveQuery", () => ({
-    useLiveQuery: () => ({ data: state.checks, isError: false, refetch }),
+    useLiveQuery: () => ({
+        data: state.checks,
+        dataUpdatedAt: state.updatedAt,
+        isError: false,
+        refetch,
+    }),
 }));
 vi.mock("@/hooks/useToast", () => ({ useToast: () => ({ toast }) }));
 vi.mock("@/lib/h2h", async (importOriginal) => ({
@@ -43,6 +49,7 @@ describe("WcaExportPanel", () => {
     beforeEach(() => {
         vi.clearAllMocks();
         state.checks = ready;
+        state.updatedAt = 1;
     });
 
     it("lists what blocks the file instead of asking for the password", () => {
@@ -117,5 +124,27 @@ describe("WcaExportPanel", () => {
             "Final isn't finished"
         );
         expect(refetch).toHaveBeenCalled();
+    });
+
+    it("drops what the download found once the checks come back clean", async () => {
+        downloadH2hCsv.mockResolvedValue({
+            ok: false,
+            blockers: ["Final isn't finished"],
+            message: "Fix these first, then download again.",
+        });
+        const { rerender } = render(<WcaExportPanel roundId="333oh-r2" />);
+        askForPassword();
+        await screen.findByRole("alert");
+
+        // The refetch brings checks with nothing left to fix
+        state.updatedAt = 2;
+        rerender(<WcaExportPanel roundId="333oh-r2" />);
+
+        expect(screen.queryByRole("alert")).toBeNull();
+        expect(
+            screen.getByRole("button", {
+                name: "Download results for WCA (CSV)",
+            })
+        ).toBeTruthy();
     });
 });
