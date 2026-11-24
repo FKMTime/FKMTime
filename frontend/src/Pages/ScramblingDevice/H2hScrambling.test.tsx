@@ -288,7 +288,7 @@ describe("ScrambleSet page", () => {
         extraScramblesCount: 2,
     };
 
-    const renderPage = (search: string) => {
+    const renderPage = (search: string, failed = false) => {
         unlockable.state = {
             scrambleSet: setC,
             scrambles,
@@ -297,8 +297,8 @@ describe("ScrambleSet page", () => {
             clearUnlockError: vi.fn(),
             isUnlocking: false,
         };
-        live.data = { "scrambling/h2h/333oh-r2": [playing()] };
-        live.isError = false;
+        live.data = failed ? {} : { "scrambling/h2h/333oh-r2": [playing()] };
+        live.isError = failed;
         render(
             withRoom(
                 "/scrambling-device/set/:id",
@@ -316,6 +316,14 @@ describe("ScrambleSet page", () => {
         expect(screen.queryByText("Scan the scrambler's card")).toBeNull();
     });
 
+    it("says the server can't be reached when the first read fails", () => {
+        renderPage("?match=match-1", true);
+
+        expect(screen.getByRole("alert").textContent).toMatch(
+            /Can't reach the server to find the match's scramble/
+        );
+    });
+
     it("scans cards as before otherwise", () => {
         renderPage("");
 
@@ -325,7 +333,7 @@ describe("ScrambleSet page", () => {
 });
 
 describe("ScramblingDeviceHome in a head-to-head round", () => {
-    it("scrambles through the matches, not the sets", () => {
+    const renderHome = (failed = false) => {
         const store = createStore();
         store.set(competitionAtom, {
             wcif: {
@@ -352,7 +360,7 @@ describe("ScramblingDeviceHome in a head-to-head round", () => {
             ],
             "scrambling/h2h/333oh-r2": [playing()],
         };
-        live.isError = false;
+        live.isError = failed;
         render(
             <Provider store={store}>
                 {withRoom(
@@ -362,6 +370,10 @@ describe("ScramblingDeviceHome in a head-to-head round", () => {
                 )}
             </Provider>
         );
+    };
+
+    it("scrambles through the matches, not the sets", () => {
+        renderHome();
 
         expect(
             screen.getByRole("button", { name: "Scramble for Semifinal 1" })
@@ -371,5 +383,13 @@ describe("ScramblingDeviceHome in a head-to-head round", () => {
             screen.getByRole("button", { name: "All scrambles" })
         ).toBeTruthy();
         expect(screen.queryByRole("button", { name: "Scramble" })).toBeNull();
+    });
+
+    it("warns when the matches can't be read again", () => {
+        renderHome(true);
+
+        expect(screen.getByRole("alert").textContent).toMatch(
+            /The matches shown may be out of date/
+        );
     });
 });
