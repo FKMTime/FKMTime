@@ -66,9 +66,9 @@ export class PersonService {
       skip: (page - 1) * pageSize,
       take: pageSize,
       where: whereParams,
-      orderBy: {
-        registrantId: 'asc',
-      },
+      // People added on site have no registrant id, so id breaks the tie;
+      // without it Postgres may order them differently on each page
+      orderBy: [{ registrantId: 'asc' }, { id: 'asc' }],
     });
     const totalPersons = await this.prisma.person.count({
       where: whereParams,
