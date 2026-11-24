@@ -290,7 +290,11 @@ environments have a bracket.
   competition." Revisit if the Regulations allow it.
 - The station check that answers "no attempts left"
   (`personForDevice.service.ts`) asks the bracket too: a competitor with no
-  playing match is told so when they scan their card, before they solve.
+  playing match is told "No match in progress" when they scan their card,
+  before they solve. On a station offering several rounds, an H2H round
+  they have no playing match in is left out of the list. The second line
+  the station shows under the round names the next point ("Set 1 Point
+  4") instead of an attempt number.
 - Everything that read the fixed 5 attempts branches on the format instead:
   the scrambling device's next attempt, "Assign DNS on remaining attempts"
   (refused: there are none), double-check (a result with attempts can be
@@ -426,6 +430,22 @@ today, and applies the scramble to both cubes (I4b1). The "scan card to mark
 scrambled" placeholder (`createScrambledAttempt`) is off for H2H rounds,
 because the point already knows its scramble.
 
+How the scrambling device does it:
+
+- **Home.** For an H2H round, the round's card lists the playing matches
+  (`GET /scrambling/h2h/:roundId`, read every 3 seconds) with a Scramble
+  button each, above the round's sets. The sets keep "All scrambles" but
+  lose their own Scramble button: scrambling goes through a match.
+- **Scrambling.** Scramble opens the match's set and asks for its password
+  as today. Once unlocked, the page shows the next point's scramble (and
+  its picture), and moves on by itself once both results are in. When the
+  next point races another set (the next H2H set, or a spare once the set
+  is used up), the page says so and opens that set, which asks for its own
+  password. A warning shows while an incident on the point is open, since
+  the point may be raced again on another scramble.
+- **The open point.** Until both competitors have raced it, the point keeps
+  its scramble; a point given an extra shows the extra scramble it takes.
+
 ### Creating and seeding the bracket
 
 The delegate opens the round in the panel and picks:
@@ -509,15 +529,15 @@ round's group. The station protocol does not change. In
 `ResultFromDeviceService.enterAttempt`, when the round is H2H:
 
 1. Find the competitor's `IN_PROGRESS` match. If there is none, reply with the
-   existing error path and a text like "No match in progress". Nothing is
+   existing error path and "No match in progress". Nothing is
    saved, so the judge sees it at once and calls the stage leader.
 2. Take the current set (the last one without a winner) and put the attempt in
    the competitor's first empty slot in that set. A new `H2hPoint` is created
    if the opponent hasn't reached this point yet.
 3. A competitor may be **at most one point ahead** of their opponent. A
-   submission two points ahead is rejected with "Waiting for opponent's
-   result". That means a missing attempt that a person has to look at, not a
-   race.
+   submission two points ahead is rejected with "Waiting for opponent"
+   ("Waiting for opponent's result" on the staff screen). That means a
+   missing attempt that a person has to look at, not a race.
 4. When both slots of a point are filled, decide the point:
    - The faster valid time wins.
    - DNF and DNS are equally worst, so two DNF/DNS results, or equal times,
@@ -526,17 +546,49 @@ round's group. The station protocol does not change. In
      match, finish the match and advance the winner and loser through the graph.
    - Otherwise, if the match continues, open the next set with its planned
      scramble set.
-5. Reply to the station with the usual round result text, replaced by match
-   status text, e.g. `Point: you · Set 2–1 · Sets 1–0`. Keep it short enough for
-   the station's text field.
+5. Reply to the station with the match's state instead of the round result
+   text (decision 6): "Point won", "Point lost" or "No point", then "Set 2-1
+   Sets 1-0" from the competitor's side; "Waiting for opponent" while the
+   opponent's attempt for that point isn't in; "Match won" or "Match lost",
+   then the same score, when the match ends. The station shows the first
+   two words on the top line of its 16×2 screen and the rest below, so each
+   line fits 16 ASCII characters in every language.
 
 All of step 2–4 runs in one transaction that locks the match row, so two
 stations submitting at the same instant can't both create point 3, or both
 miss that the set is over.
 
 Idempotency is unchanged. A station that reconnects and resends an attempt
-with the same `sessionId` gets the stored response and doesn't fill a second
-slot.
+with the same `sessionId` gets the stored response ("This attempt has
+already been entered") and doesn't fill a second slot.
+
+How the station flow is built (`ResultFromDeviceService.enterAttempt`):
+
+- **The same transaction and locks.** The solve goes through the point
+  engine (`H2hMatchService.recordAttempt`) inside the transaction that
+  already holds the station's resend lock: round lock, then match lock, as
+  manual entry takes them. It reads and writes through the transaction
+  only, and nothing slow runs inside it (no WCA Live, no cumulative limit
+  lookup), so it stays well inside the connector's 7.5 s.
+- **Refusals save nothing.** "No match in progress", "Waiting for
+  opponent", "Waiting for delegate" (below) and "No scramble left" roll
+  the whole transaction back, the result row and the attendance marks
+  included. The reply keeps the time on the station (`shouldResetTime:
+  false`), so the judge can send the same solve again once the stage leader
+  has started the match or the missing result is in. Each refusal shows on
+  the Devices page with what to do.
+- **Time limit only.** Format `h` has no cutoff, and a bracket can't be
+  created for a cumulative limit, so only the per-attempt limit applies: a
+  time over it is entered as a DNF, as today.
+- **Edit log.** A station attempt writes its "Original entry" log line as
+  any station attempt does, which "Amended after the match" compares with.
+  The line is dated at the station's solve time, but never later than the
+  server's clock: a station clock running ahead would otherwise date it
+  after the match it finished, and a later edit would go unmarked.
+- **Incidents.** A solve sent as an incident (the judge calls the delegate)
+  is stored as an open incident in its point's slot, as today. It decides
+  nothing until the delegate resolves it: see *The point with an open
+  incident* under *How the exceptions are built*.
 
 If a station drops mid-match, the judge writes the result on paper. A
 delegate enters it on the staff screen (Enter in the Matches tab, or the
@@ -544,8 +596,7 @@ existing manual attempt entry), and it goes through the same point logic. The sc
 result" for that side until then.
 
 How the point engine is built (`H2hMatchService`, with its pure parts in
-`matchEngine.ts`). Manual entry uses it first; the station flow will call
-the same code:
+`matchEngine.ts`). Manual entry and the station flow call the same code:
 
 - **One transaction per attempt.** `POST /attempt` for an H2H round takes
   the round's lock (`h2h-bracket:<roundId>`, the one bracket setup and
@@ -584,9 +635,11 @@ the same code:
   they have no match left to play, and double check refuses to change a
   time in a match still playing (that goes through manual entry, which
   re-decides the match).
-- **The scrambling device** refuses H2H rounds until it can show the
-  point's scramble: it would otherwise hand out the competitor's attempt
-  count as the scramble number. The Matches tab shows the scramble in use.
+- **The scrambling device** shows each playing match's next scramble
+  (*Scrambles*, *On the day*), as the Matches tab does. Scanning a
+  competitor's card to get their scramble, and to mark it scrambled, is
+  refused for H2H rounds: it would hand out the competitor's attempt count
+  as the scramble number.
 - **Deleting.** An attempt, a result or a scramble set that a point or a set
   used can't be deleted, and neither can a group with such attempts be
   restarted; each refusal names the match. The one exception is the lone
@@ -703,15 +756,28 @@ Each takes the round's lock, then the match's, like recording an attempt.
   both results are in: the opponent solved the same scramble, so racing it
   again without them would mix scrambles. When the opponent has started the
   next point since, the refusal says to delete that lone attempt first.
-- **The point that finished a match.** Recording its second attempt
-  finishes the match, even while that attempt has an open incident, so an
-  extra on it is allowed on a match played to the end (`endedBy = PLAYED`)
-  while none of the matches it fed has started. The match plays again, and
-  those matches take back its result, as Reopen match does. Chosen over
-  keeping a point with an unresolved attempt undecided: scoring and the
-  incident flow stay as they are, and a finished match already goes back
-  into play this way for Reopen match. Once a match it fed has started,
-  the point keeps its result (11l). The point takes the set's next
+- **The point with an open incident.** An attempt whose incident is open
+  (`UNRESOLVED`, sent by a station calling the delegate) decides nothing
+  until the delegate resolves it: its point has no winner yet, and a point
+  that would end the set or the match doesn't end it. The opponent's
+  station, filling the other slot, shows "Waiting for delegate". No new
+  point opens in the match until then, from a station or by hand
+  ("Waiting for delegate"; the staff screen names the point). Resolving it
+  ("No extra", or a corrected time) decides the match again like any edit,
+  so the point, the set and the match get their winners then; "Extra
+  granted (both competitors)" races the point again. Chosen over letting
+  the open incident count (what manual entry's first version did) because
+  an extra may still replace the attempt, and a point that finished a
+  match before the delegate looked would have to take the match back and
+  every match it fed (11k, 11l). The Matches tab says "Incident open: the
+  point waits for the delegate", and the scrambling device warns before
+  the next scramble.
+- **The point that finished a match.** An extra on it is still allowed on
+  a match played to the end (`endedBy = PLAYED`) while none of the matches
+  it fed has started, for an incident the delegate hears of only after
+  the match. The match plays again, and those matches take back its
+  result, as Reopen match does. Once a match it fed has started, the point
+  keeps its result (11l). The point takes the set's next
   unused **extra** scramble (4b3), and the normal order (*Scrambles*) once
   those run out. The two attempts that race it again are extra attempts:
   each replaced attempt's `replacedBy` is set to the new one's number when
@@ -906,6 +972,7 @@ such as `10.20`.
 | `POST /h2h/match/:id/reopen` | delegate | Reopen a finished match (comment required) |
 | `GET /h2h/:roundId/export` | delegate/organiser | Export rows and checks |
 | `GET /h2h/public/:roundId` | public | Bracket for spectators: names, countries, seeds, set and point scores, times. No card ids |
+| `GET /scrambling/h2h/:roundId` | scrambling device | Each playing match with its set and next point's scramble (*On the day*) |
 
 socket.io:
 
@@ -1087,9 +1154,9 @@ All copy uses task language: "Start match", "Extra granted", "Withdraw",
   4. CSV export.
   5. Public bracket, scoreboard and TV.
 
-  Until PR 3 lands, the station rejects attempts in format `h` rounds instead
-  of recording them as normal attempts, with "Head-to-head round, call the
-  delegate".
+  Until the station flow lands, the station rejects attempts in format `h`
+  rounds instead of recording them as normal attempts, with "Head-to-head
+  round, call the delegate". With it, stations record them into matches.
 - **Revert:** drop the bracket tables. The round's `Result`/`Attempt` rows
   stay, and are still visible as plain attempts.
 
