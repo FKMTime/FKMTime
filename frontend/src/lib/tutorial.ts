@@ -1,8 +1,9 @@
 import { Activity, Competition as WCIF } from "wcif-helpers";
 
 import { Device, DeviceType } from "./interfaces";
+import { showBrowserNotification } from "./notifications";
 import { backendQuery, backendRequest } from "./request";
-import { isMobile, isNotificationsSupported } from "./utils";
+import { isNotificationsSupported } from "./utils";
 
 /** Tutorial mode ends this long after a station was last used for it */
 export const TUTORIAL_QUIET_MINUTES = 15;
@@ -150,16 +151,6 @@ export const showTutorialNotice = (
     const tag = `tutorialNotice-${notice.kind}-${notice.espId}`;
     void Notification.requestPermission().then((permission) => {
         if (permission !== "granted") return;
-        if (isMobile()) {
-            void navigator.serviceWorker.ready.then((registration) =>
-                registration.showNotification(title, { body, tag })
-            );
-        } else {
-            const notification = new Notification(title, { body, tag });
-            notification.onclick = () => {
-                window.focus();
-                onClick();
-            };
-        }
+        showBrowserNotification({ title, body, tag, onClick });
     });
 };
