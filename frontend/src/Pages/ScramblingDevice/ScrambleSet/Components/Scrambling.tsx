@@ -90,13 +90,19 @@ const Scrambling = ({ roundId, groupId, scrambles }: ScramblingProps) => {
             competitor.scrambleData.isExtra
         );
         setIsSigning(false);
+        const { num, isExtra } =
+            competitor.scrambleData.scramble ?? competitor.scrambleData;
+        const scrambleName = `${isExtra ? "Extra" : "Scramble"} ${num}`;
         if (response.status === 201) {
-            const { num, isExtra } =
-                competitor.scrambleData.scramble ?? competitor.scrambleData;
-            setLastSigned(
-                `${competitor.person.name} · ${isExtra ? "Extra" : "Scramble"} ${num}`
-            );
+            setLastSigned(`${competitor.person.name} · ${scrambleName}`);
             setCompetitor(null);
+        } else if (response.status === 409) {
+            // The station entered this solve after the card was scanned
+            playScanSound("error");
+            setCompetitor(null);
+            setScanError(
+                `${scrambleName} was already solved. Scan the competitor's card again.`
+            );
         } else {
             toast({
                 title: "Something went wrong",
