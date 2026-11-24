@@ -562,6 +562,37 @@ describe("MatchesTab", () => {
             ).toBeTruthy();
         });
 
+        it("offers no extra on a point raced after the set was over", () => {
+            state.view = view([
+                {
+                    ...playedOut,
+                    sets: [
+                        {
+                            ...playedOut.sets[0],
+                            points: [
+                                point(1, 1012, 1150, "A"),
+                                point(2, 1200, 1100, "A"),
+                                point(3, 1000, 1100, "A"),
+                                {
+                                    ...point(4, 1000, 1100, null, false),
+                                    afterEnd: true,
+                                },
+                            ],
+                        },
+                    ],
+                },
+            ]);
+            render(<MatchesTab roundId="333oh-r2" />);
+
+            fireEvent.click(screen.getByText("Points"));
+            expect(
+                screen.getByText(/Doesn't count: raced after the set was over/)
+            ).toBeTruthy();
+            expect(
+                screen.queryByRole("button", { name: /^Extra granted/ })
+            ).toBeNull();
+        });
+
         it("says why a finished match can't be reopened, and who did what when", () => {
             state.view = view([
                 {

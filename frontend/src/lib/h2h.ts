@@ -104,6 +104,11 @@ export interface H2hPoint {
     extras?: { attemptA: H2hPointAttempt; attemptB: H2hPointAttempt }[];
     /** A time changed after the match, which kept its winner (11l1) */
     amendedAfterMatch?: boolean;
+    /**
+     * Raced after its set or the match was over, found when the match was
+     * reopened on amended times: it doesn't count
+     */
+    afterEnd?: boolean;
     scramble: { set: string; num: number; isExtra: boolean } | null;
 }
 

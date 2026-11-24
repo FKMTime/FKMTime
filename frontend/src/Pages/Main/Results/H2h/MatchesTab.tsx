@@ -131,7 +131,6 @@ const SetLog = ({
     isCurrent,
     onEnter,
     extraPointId,
-    isMatchOver = false,
     onExtra,
 }: {
     set: H2hSet;
@@ -142,8 +141,7 @@ const SetLog = ({
     onEnter: (competitor: Competitor) => void;
     /** The point that can get an extra: the last one raced, both results in */
     extraPointId?: string | null;
-    /** The match is over: a point with no winner was raced after its end */
-    isMatchOver?: boolean;
+
     onExtra?: (point: H2hPoint) => void;
 }) => {
     const won = pointsWon(set);
@@ -220,19 +218,15 @@ const SetLog = ({
                                               ? names[point.winnerSide]
                                               : "No winner"}
                                     </span>
-                                    {!point.decided &&
-                                        point.attemptA &&
-                                        point.attemptB &&
-                                        (set.winnerSide !== null ||
-                                            isMatchOver) && (
-                                            <span className="text-xs text-muted-foreground">
-                                                Doesn't count: raced after the{" "}
-                                                {set.winnerSide !== null
-                                                    ? "set"
-                                                    : "match"}{" "}
-                                                was over
-                                            </span>
-                                        )}
+                                    {point.afterEnd && (
+                                        <span className="text-xs text-muted-foreground">
+                                            Doesn't count: raced after the{" "}
+                                            {set.winnerSide !== null
+                                                ? "set"
+                                                : "match"}{" "}
+                                            was over
+                                        </span>
+                                    )}
                                     {point.amendedAfterMatch && (
                                         <span className="text-xs text-warning">
                                             Time amended after the match, winner
@@ -310,7 +304,10 @@ const extraPointOf = (match: H2hMatch) => {
     if (match.status !== "IN_PROGRESS" && !playedOut) return null;
     const raced = match.sets.filter((set) => set.points.length > 0);
     const last = raced[raced.length - 1]?.points.at(-1);
-    return last && last.attemptA && last.attemptB ? last : null;
+    // A point raced after the end doesn't count, so it can't be raced again
+    return last && last.attemptA && last.attemptB && !last.afterEnd
+        ? last
+        : null;
 };
 
 const MatchCard = ({
@@ -409,7 +406,6 @@ const MatchCard = ({
                     isCurrent={isPlaying && canManage && set === current}
                     onEnter={onEnter}
                     extraPointId={extraPoint?.id ?? null}
-                    isMatchOver={isFinished}
                     onExtra={
                         canManage && (isPlaying || extraPoint !== null)
                             ? (point) =>
