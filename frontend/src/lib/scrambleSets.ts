@@ -1,6 +1,11 @@
 import { ScrambleSet } from "./interfaces";
 import { queryFamily } from "./queryCache";
 import { backendQuery, backendRequest } from "./request";
+import { letterToNumber } from "./utils";
+
+/** The number of a round's last scramble set (A = 1), or 0 when it has none */
+export const getLastSetNumber = (sets: Pick<ScrambleSet, "set">[]) =>
+    sets.reduce((last, set) => Math.max(last, letterToNumber(set.set)), 0);
 
 /** A round's scramble sets */
 export const scrambleSetsQuery = queryFamily((roundId) =>

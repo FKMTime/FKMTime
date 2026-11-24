@@ -23,10 +23,11 @@ import { ScrambleSet } from "@/lib/interfaces";
 import {
     deleteAllScrambleSets,
     deleteScrambleSetsByRoundId,
+    getLastSetNumber,
     scrambleSetCountsQuery,
     scrambleSetsQuery,
 } from "@/lib/scrambleSets";
-import { cn, letterToNumber } from "@/lib/utils";
+import { cn } from "@/lib/utils";
 
 import AddScrambleSetModal from "./Components/AddScrambleSetModal";
 import ScrambleSetRow from "./Components/ScrambleSetRow";
@@ -82,10 +83,7 @@ const ScrambleSets = () => {
         [refetchSets, refetchCounts]
     );
 
-    const lastSetNumber = scrambleSets.reduce(
-        (last, set) => Math.max(last, letterToNumber(set.set)),
-        0
-    );
+    const lastSetNumber = getLastSetNumber(scrambleSets);
 
     const selectRound = (id: string) =>
         setSearchParams({ tab: "scrambleSets", roundId: id });
