@@ -1,13 +1,14 @@
 import { useAtomValue } from "jotai";
 import { Eraser, UserMinus } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { getLimitByRoundId, getNumberOfAttemptsForRound } from "wcif-helpers";
 
 import { LiveRoundDot } from "@/Components/IntegratedLive/LiveResultBadges";
 import WithdrawFromRoundModal from "@/Components/IntegratedLive/WithdrawFromRoundModal";
 import LoadingPage from "@/Components/LoadingPage";
 import EmptyState from "@/Components/shared/EmptyState";
+import PageTabs from "@/Components/shared/PageTabs";
 import RefreshingRegion from "@/Components/shared/RefreshingRegion";
 import RequestError from "@/Components/shared/RequestError";
 import RoundPicker from "@/Components/shared/RoundPicker";
@@ -47,12 +48,26 @@ import ResultsTable, { ResultsTableLive } from "./Components/ResultsTable";
 import ResultsTabs from "./Components/ResultsTabs";
 import RoundHeader from "./Components/RoundHeader";
 import RoundMetaLine from "./Components/RoundMetaLine";
+import BracketTab from "./H2h/BracketTab";
+import ScramblePlanTab from "./H2h/ScramblePlanTab";
 
 type Order = "ranking" | "latest";
+
+/**
+ * A head-to-head round's tabs (SPEC-001). The staff Matches tab comes with
+ * the station flow for these rounds.
+ */
+type H2hTab = "bracket" | "scrambles" | "results";
+const H2H_TABS: { value: H2hTab; label: string }[] = [
+    { value: "bracket", label: "Bracket" },
+    { value: "scrambles", label: "Scrambles" },
+    { value: "results", label: "Results" },
+];
 
 const Results = () => {
     const { id: roundId = "" } = useParams<{ id: string }>();
     const navigate = useNavigate();
+    const [searchParams, setSearchParams] = useSearchParams();
     const competition = useAtomValue(competitionAtom);
     const { data: rooms } = useLiveQuery(roomsQuery, {
         maxAge: LIVE_MAX_AGE,
@@ -190,6 +205,11 @@ const Results = () => {
             .flatMap((event) => event.rounds)
             .find((round) => round.id === roundId)?.format ?? "a";
     const event = wcif.events.find((e) => e.id === roundId.split("-")[0]);
+    const isH2h = format === "h";
+    const h2hTab =
+        H2H_TABS.find((t) => t.value === searchParams.get("tab"))?.value ??
+        "bracket";
+    const showResults = !isH2h || h2hTab === "results";
     const ranked = rankResults(results, maxAttempts, format);
     const rows =
         order === "latest"
@@ -238,71 +258,90 @@ const Results = () => {
                 )}
             </div>
 
+            {roundId && isH2h && (
+                <PageTabs
+                    label="Head-to-head round"
+                    value={h2hTab}
+                    onValueChange={(tab) => setSearchParams({ tab })}
+                    tabs={H2H_TABS}
+                />
+            )}
+            {roundId && isH2h && h2hTab === "bracket" && (
+                <BracketTab roundId={roundId} />
+            )}
+            {roundId && isH2h && h2hTab === "scrambles" && (
+                <ScramblePlanTab roundId={roundId} />
+            )}
+
             {roundId && (
                 <>
-                    <section className="overflow-hidden rounded-mobile-card border bg-card md:rounded-2xl">
-                        <div className="flex flex-wrap items-center gap-3 border-b p-3 md:px-5">
-                            <SearchInput
-                                value={search}
-                                onChange={(e) => setSearch(e.target.value)}
-                                label="Search results"
-                                placeholder="Search by name, WCA ID or ID"
-                                className="md:max-w-xs"
-                            />
-                            <SegmentedControl
-                                label="Order"
-                                value={order}
-                                onValueChange={setOrder}
-                                options={[
-                                    { value: "ranking", label: "Ranking" },
-                                    { value: "latest", label: "Latest" },
-                                ]}
-                            />
-                            {!isMobile && (
-                                <RoundMetaLine
-                                    meta={getRoundMeta(roundId, wcif)}
-                                    advancement={getAdvancementText(
-                                        roundId,
-                                        event
-                                    )}
-                                    live={live}
-                                    className="ml-auto"
+                    {showResults && (
+                        <section className="overflow-hidden rounded-mobile-card border bg-card md:rounded-2xl">
+                            <div className="flex flex-wrap items-center gap-3 border-b p-3 md:px-5">
+                                <SearchInput
+                                    value={search}
+                                    onChange={(e) => setSearch(e.target.value)}
+                                    label="Search results"
+                                    placeholder="Search by name, WCA ID or ID"
+                                    className="md:max-w-xs"
                                 />
-                            )}
-                            <span
-                                className={cn(
-                                    "text-sm text-muted-foreground",
-                                    isMobile ? "ml-auto" : "border-l pl-4"
+                                <SegmentedControl
+                                    label="Order"
+                                    value={order}
+                                    onValueChange={setOrder}
+                                    options={[
+                                        { value: "ranking", label: "Ranking" },
+                                        { value: "latest", label: "Latest" },
+                                    ]}
+                                />
+                                {!isMobile && (
+                                    <RoundMetaLine
+                                        meta={getRoundMeta(roundId, wcif)}
+                                        advancement={getAdvancementText(
+                                            roundId,
+                                            event
+                                        )}
+                                        live={live}
+                                        className="ml-auto"
+                                    />
                                 )}
-                            >
-                                {results.length}{" "}
-                                {results.length === 1 ? "result" : "results"}
-                            </span>
-                        </div>
-                        {isError && (
-                            <RequestError
-                                hasData={!!data}
-                                onRetry={() => void refetch()}
-                            />
-                        )}
-                        <RefreshingRegion isRefreshing={isPreviousData}>
-                            {rows.length === 0 &&
-                            !liveTable?.onlyInWca.length ? (
-                                <p className="p-8 text-center text-sm text-muted-foreground">
-                                    {search
-                                        ? "No results match."
-                                        : "No results yet."}
-                                </p>
-                            ) : (
-                                <ResultsTable
-                                    rows={rows}
-                                    maxAttempts={maxAttempts}
-                                    onDeleted={refreshResults}
-                                    live={liveTable}
+                                <span
+                                    className={cn(
+                                        "text-sm text-muted-foreground",
+                                        isMobile ? "ml-auto" : "border-l pl-4"
+                                    )}
+                                >
+                                    {results.length}{" "}
+                                    {results.length === 1
+                                        ? "result"
+                                        : "results"}
+                                </span>
+                            </div>
+                            {isError && (
+                                <RequestError
+                                    hasData={!!data}
+                                    onRetry={() => void refetch()}
                                 />
                             )}
-                        </RefreshingRegion>
-                    </section>
+                            <RefreshingRegion isRefreshing={isPreviousData}>
+                                {rows.length === 0 &&
+                                !liveTable?.onlyInWca.length ? (
+                                    <p className="p-8 text-center text-sm text-muted-foreground">
+                                        {search
+                                            ? "No results match."
+                                            : "No results yet."}
+                                    </p>
+                                ) : (
+                                    <ResultsTable
+                                        rows={rows}
+                                        maxAttempts={maxAttempts}
+                                        onDeleted={refreshResults}
+                                        live={liveTable}
+                                    />
+                                )}
+                            </RefreshingRegion>
+                        </section>
+                    )}
 
                     <CreateAttemptModal
                         isOpen={isCreateOpen}

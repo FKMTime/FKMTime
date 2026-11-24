@@ -1,6 +1,7 @@
+import { useQueries } from "@tanstack/react-query";
 import { useAtomValue } from "jotai";
 import { Download } from "lucide-react";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { Competition as WCIF } from "wcif-helpers";
 
@@ -8,7 +9,10 @@ import FileDropzone from "@/Components/shared/FileDropzone";
 import { Button } from "@/Components/ui/button";
 import { useToast } from "@/hooks/useToast";
 import { competitionAtom } from "@/lib/atoms";
+import { h2hRoundQuery } from "@/lib/h2h";
+import { toQueryOptions } from "@/lib/queryCache";
 import {
+    H2hPlans,
     importScrambles,
     removeUnusedScramblesFromWcif,
     validateScrambles,
@@ -22,10 +26,32 @@ const ImportScrambles = () => {
     const [wcif, setWcif] = useState<WCIF>();
     // Remounts the dropzone so Clear also resets the picked file
     const [dropzoneKey, setDropzoneKey] = useState(0);
-    const [preventFromImporting, setPreventFromImporting] = useState(false);
     const competition = useAtomValue(competitionAtom);
-    const [warningsList, setWarningsList] = useState<string[]>([]);
-    const [errorsList, setErrorsList] = useState<string[]>([]);
+    // Head-to-head rounds are checked against their bracket's scramble plan
+    const h2hRoundIds = useMemo(
+        () =>
+            (competition?.wcif.events ?? [])
+                .flatMap((event) => event.rounds)
+                .filter((round) => round.format === "h")
+                .map((round) => round.id),
+        [competition]
+    );
+    const h2hViews = useQueries({
+        queries: h2hRoundIds.map((roundId) =>
+            toQueryOptions(h2hRoundQuery(roundId))
+        ),
+    });
+    const h2hPlans: H2hPlans = Object.fromEntries(
+        h2hRoundIds.map((roundId, i) => [
+            roundId,
+            h2hViews[i]?.data?.scramblePlan?.rows,
+        ])
+    );
+    const { warnings: warningsList, errors: errorsList } =
+        wcif && competition
+            ? validateScrambles(wcif, competition.wcif, false, h2hPlans)
+            : { warnings: [], errors: [] };
+    const preventFromImporting = errorsList.length > 0;
 
     const handleFileChange = (file: File | null) => {
         if (!competition) return;
@@ -40,15 +66,6 @@ const ImportScrambles = () => {
                 );
 
                 if (!parsedWCIF || !competition) return;
-                const { warnings, errors } = validateScrambles(
-                    parsedWCIF,
-                    competition?.wcif
-                );
-                setWarningsList(warnings);
-                setErrorsList(errors);
-                if (errors.length > 0) {
-                    setPreventFromImporting(true);
-                }
                 setWcif(parsedWCIF);
             };
             reader.readAsText(file);
@@ -81,7 +98,6 @@ const ImportScrambles = () => {
     const clearUploadedScrambles = (clearInput = true) => {
         setWcif(undefined);
         if (clearInput) setDropzoneKey((prev) => prev + 1);
-        setPreventFromImporting(false);
     };
 
     return (
