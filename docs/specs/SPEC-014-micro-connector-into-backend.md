@@ -200,7 +200,11 @@ namespace, so the backend runs with `network_mode: host`. Bluetooth only needs `
 mounted as today. Proposed fim template:
 
 - **backend:** `network_mode: host`, listening on `127.0.0.1:5000` for HTTP and `0.0.0.0:8081`
-  for stations. Mounts `/run/dbus:ro`, the firmware directory and the logs.
+  for stations. Today `main.ts` calls `app.listen(PORT)` with no host, so the backend
+  listens on every address, and OpenWrt's `lan` zone accepts input: under host networking
+  port 5000 would answer on the station Wi-Fi. Phase 1 adds a listen-host setting (`HOST`,
+  default `0.0.0.0` so nothing changes on the bridge network) before any template uses host
+  networking. Mounts `/run/dbus:ro`, the firmware directory and the logs.
 - **nginx:** `network_mode: host` as well, proxying `/api` to `127.0.0.1:5000`. The backend's
   HTTP port is never exposed to the venue network. The login rate limit, which trusts nginx's
   forwarded address (#732), only works if nginx is the only way in.
