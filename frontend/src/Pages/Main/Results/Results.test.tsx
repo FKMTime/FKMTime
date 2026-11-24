@@ -16,6 +16,7 @@ const fake = vi.hoisted(() => ({
     emitted: [] as string[],
     handlers: new Map<string, () => void>(),
     searches: [] as string[],
+    isDelegate: true,
 }));
 
 vi.mock("@/socket", () => ({
@@ -29,7 +30,20 @@ vi.mock("@/socket", () => ({
 }));
 vi.mock("@/lib/permissions", async (importOriginal) => ({
     ...(await importOriginal<object>()),
-    isDelegate: () => true,
+    isDelegate: () => fake.isDelegate,
+    isStageLeaderOrOrganizerOrDelegate: () => true,
+}));
+vi.mock("@/lib/h2h", async (importOriginal) => ({
+    ...(await importOriginal<object>()),
+    h2hRoundQuery: (roundId: string) => ({
+        key: `h2h/${roundId}`,
+        fetch: () => Promise.resolve({ bracket: null }),
+    }),
+}));
+vi.mock("./H2h/MatchesTab", () => ({
+    default: ({ canManage }: { canManage: boolean }) => (
+        <div>{canManage ? "Matches to manage" : "Matches to start"}</div>
+    ),
 }));
 vi.mock("@/lib/rooms", () => ({
     roomsQuery: {
@@ -60,23 +74,30 @@ vi.mock("./Components/ResultsTabs", () => ({ default: () => null }));
 
 const competition = {
     wcif: {
-        events: [{ id: "333", rounds: [{ id: "333-r1", format: "a" }] }],
+        events: [
+            { id: "333", rounds: [{ id: "333-r1", format: "a" }] },
+            { id: "333oh", rounds: [{ id: "333oh-r2", format: "h" }] },
+        ],
         persons: [],
         schedule: { venues: [{ id: 1, rooms: [] }] },
     },
 } as unknown as Competition;
 
-const renderResults = () => {
+const renderResults = (roundId = "333-r1") => {
     const store = createStore();
     store.set(competitionAtom, competition);
     renderWithQueryClient(
         <Provider store={store}>
             <ConfirmProvider>
-                <MemoryRouter initialEntries={["/results/round/333-r1"]}>
+                <MemoryRouter initialEntries={[`/results/round/${roundId}`]}>
                     <Routes>
                         <Route
                             path="/results/round/:id"
                             element={<Results />}
+                        />
+                        <Route
+                            path="/results/public/:id"
+                            element={<p>Public view</p>}
                         />
                     </Routes>
                 </MemoryRouter>
@@ -91,6 +112,7 @@ describe("Results", () => {
         fake.emitted = [];
         fake.handlers.clear();
         fake.searches = [];
+        fake.isDelegate = true;
     });
 
     it("stays in the round's room while searching", async () => {
@@ -104,5 +126,22 @@ describe("Results", () => {
         expect(fake.searches).toEqual(["", "anna"]);
         expect(fake.emitted).toEqual(["joinResults"]);
         expect(fake.handlers.has("resultEntered")).toBe(true);
+    });
+
+    it("shows a stage leader only the matches of a head-to-head round", async () => {
+        fake.isDelegate = false;
+        renderResults("333oh-r2");
+
+        expect(await screen.findByText("Matches to start")).toBeTruthy();
+        expect(screen.queryByRole("tab", { name: "Bracket" })).toBeNull();
+        expect(screen.queryByText("Public view")).toBeNull();
+        expect(screen.queryByLabelText("Search results")).toBeNull();
+    });
+
+    it("sends a stage leader to the public view of other rounds", async () => {
+        fake.isDelegate = false;
+        renderResults();
+
+        expect(await screen.findByText("Public view")).toBeTruthy();
     });
 });

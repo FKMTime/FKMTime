@@ -14,6 +14,7 @@ import { activityCodeToName } from "@/lib/activities";
 import { competitionAtom } from "@/lib/atoms";
 import { deleteAttempt, getIncidentById, updateAttempt } from "@/lib/attempt";
 import { grantExtra } from "@/lib/h2h";
+import { saveAttemptAsNoteworthyIncident } from "@/lib/incidents";
 import {
     ApplicationQuickAction,
     AttemptStatus,
@@ -125,10 +126,17 @@ const IncidentPanel = ({ id, onClose, onDone }: IncidentPanelProps) => {
                       data.result.roundId,
                       pointId,
                       data.comment ?? ""
-                  ).then((granted) => ({
-                      status: granted.ok ? 200 : 409,
-                      message: granted.message,
-                  }))
+                  ).then(async (granted) => {
+                      // The point's extra takes only the comment, so the
+                      // noteworthy mark is saved on its own
+                      if (granted.ok && isNoteworthy) {
+                          await saveAttemptAsNoteworthyIncident(data.id);
+                      }
+                      return {
+                          status: granted.ok ? 200 : 409,
+                          message: granted.message,
+                      };
+                  })
                 : await updateAttempt(data, isNoteworthy, doNotRequireCards);
         setIsLoading(false);
         if (status === 200) {

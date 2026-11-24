@@ -155,6 +155,7 @@ const LastAttemptCard = ({ result, fetchData }: LastAttemptCardProps) => {
                             </Button>
                         )}
                         {access.can("GIVE_EXTRA") &&
+                            !lastAttempt.h2hReplaced &&
                             (!lastAttempt.h2hPointId || access.isDelegate) && (
                                 <Button
                                     variant="ghost"

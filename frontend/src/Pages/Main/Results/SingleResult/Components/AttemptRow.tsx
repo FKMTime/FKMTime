@@ -157,6 +157,7 @@ const AttemptRow = ({
                                 hidden:
                                     isRemoved ||
                                     !access.can("GIVE_EXTRA") ||
+                                    !!attempt.h2hReplaced ||
                                     (!!attempt.h2hPointId &&
                                         !access.isDelegate),
                                 onSelect: () =>

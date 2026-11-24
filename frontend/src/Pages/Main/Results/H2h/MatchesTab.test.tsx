@@ -512,7 +512,7 @@ describe("MatchesTab", () => {
 
             expect(screen.getByText("Retired")).toBeTruthy();
             expect(
-                screen.getByText("Retired: Ada Example · Puzzle broke")
+                screen.getByText(/^Retired: Ada Example · Puzzle broke · /)
             ).toBeTruthy();
             // In the summary and on the point itself
             expect(
@@ -520,6 +520,154 @@ describe("MatchesTab", () => {
                     "Time amended after the match, winner unchanged"
                 )
             ).toHaveLength(2);
+        });
+
+        const playedOut: H2hMatch = {
+            ...raced,
+            status: "FINISHED",
+            winnerSide: "A",
+            endedBy: "PLAYED",
+            reopenRefusal: null,
+            score: { a: 1, b: 0 },
+            sets: [
+                {
+                    ...raced.sets[0],
+                    winnerSide: "A",
+                    decidedBy: "POINTS",
+                    points: [
+                        point(1, 1012, 1150, "A"),
+                        point(2, 1200, 1100, "B"),
+                        point(3, 1000, 1100, "A"),
+                        point(4, 1000, 1100, "A"),
+                    ],
+                },
+            ],
+        };
+
+        it("offers Extra granted on the point that finished a played match", async () => {
+            state.view = view([playedOut]);
+            render(<MatchesTab roundId="333oh-r2" />);
+
+            fireEvent.click(screen.getByText("Points"));
+            fireEvent.click(
+                screen.getByRole("button", {
+                    name: "Extra granted on point 4",
+                })
+            );
+            const dialog = screen.getByRole("dialog", {
+                name: "Extra granted on point 4",
+            });
+            expect(
+                within(dialog).getByText(/Semifinal 1 plays again/)
+            ).toBeTruthy();
+        });
+
+        it("says why a finished match can't be reopened, and who did what when", () => {
+            state.view = view([
+                {
+                    ...playedOut,
+                    reopenRefusal: "Final, which follows from it, has started",
+                    log: [
+                        {
+                            action: "REOPEN",
+                            side: null,
+                            comment: "Times were typed wrong",
+                            createdAt: "2026-01-01T10:00:00Z",
+                            createdBy: "Eve Delegate",
+                        },
+                    ],
+                },
+            ]);
+            render(<MatchesTab roundId="333oh-r2" />);
+
+            const reopen = screen.getByRole("button", {
+                name: "Reopen match",
+            }) as HTMLButtonElement;
+            expect(reopen.disabled).toBe(true);
+            expect(
+                screen.getByText(
+                    /Can't reopen: Final, which follows from it, has started/
+                )
+            ).toBeTruthy();
+            // Nor can its last point get an extra
+            expect(
+                screen.queryByRole("button", { name: /^Extra granted/ })
+            ).toBeNull();
+            expect(
+                screen.getByText(
+                    /^Match reopened · Times were typed wrong · by Eve Delegate, /
+                )
+            ).toBeTruthy();
+        });
+
+        it("labels someone who retired as retired, not withdrawn", () => {
+            state.view = {
+                ...view([
+                    {
+                        ...raced,
+                        status: "FINISHED",
+                        winnerSide: "B",
+                        endedBy: "RETIRED",
+                        log: [
+                            {
+                                action: "RETIRE",
+                                side: "A",
+                                comment: "Puzzle broke",
+                                createdAt: "2026-01-01T10:00:00Z",
+                                createdBy: null,
+                            },
+                        ],
+                    },
+                ]),
+            };
+            const withdrawn = state.view as H2hRoundView;
+            if (withdrawn.bracket) {
+                withdrawn.bracket.entrants = entrants.map((e) =>
+                    e.id === "entrant-1"
+                        ? {
+                              ...e,
+                              withdrawnAt: "2026-01-01T10:00:00Z",
+                              withdrawnInMatchId: "semi-1",
+                          }
+                        : e
+                );
+            }
+            render(<MatchesTab roundId="333oh-r2" />);
+
+            expect(screen.getByText("(retired)")).toBeTruthy();
+            expect(screen.queryByText("(withdrew)")).toBeNull();
+        });
+
+        it("asks why before reopening, and keeps the dialog open while it runs", async () => {
+            reopenMatch.mockReturnValue(new Promise(() => {}));
+            state.view = view([playedOut]);
+            render(<MatchesTab roundId="333oh-r2" />);
+
+            fireEvent.click(
+                screen.getByRole("button", { name: "Reopen match" })
+            );
+            const dialog = screen.getByRole("dialog", {
+                name: "Reopen Semifinal 1?",
+            });
+            fireEvent.click(
+                within(dialog).getByRole("button", { name: "Reopen match" })
+            );
+            expect(
+                await within(dialog).findByText("Say why in the comment.")
+            ).toBeTruthy();
+            expect(reopenMatch).not.toHaveBeenCalled();
+
+            fireEvent.change(within(dialog).getByLabelText("Comment"), {
+                target: { value: "Fraud" },
+            });
+            fireEvent.click(
+                within(dialog).getByRole("button", { name: "Reopen match" })
+            );
+            await waitFor(() => expect(reopenMatch).toHaveBeenCalled());
+            fireEvent.keyDown(dialog, { key: "Escape" });
+            expect(
+                screen.getByRole("dialog", { name: "Reopen Semifinal 1?" })
+            ).toBeTruthy();
         });
 
         it("lets a stage leader start matches and nothing else", () => {

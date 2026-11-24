@@ -50,6 +50,7 @@ import {
     withdrawFromMatch,
 } from "@/lib/h2h";
 import { resultToString } from "@/lib/resultFormatters";
+import { formatDayTime } from "@/lib/time";
 import { cn } from "@/lib/utils";
 
 import CreateAttemptModal from "../Components/CreateAttemptModal";
@@ -130,6 +131,7 @@ const SetLog = ({
     isCurrent,
     onEnter,
     extraPointId,
+    isMatchOver = false,
     onExtra,
 }: {
     set: H2hSet;
@@ -140,6 +142,8 @@ const SetLog = ({
     onEnter: (competitor: Competitor) => void;
     /** The point that can get an extra: the last one raced, both results in */
     extraPointId?: string | null;
+    /** The match is over: a point with no winner was raced after its end */
+    isMatchOver?: boolean;
     onExtra?: (point: H2hPoint) => void;
 }) => {
     const won = pointsWon(set);
@@ -216,6 +220,19 @@ const SetLog = ({
                                               ? names[point.winnerSide]
                                               : "No winner"}
                                     </span>
+                                    {!point.decided &&
+                                        point.attemptA &&
+                                        point.attemptB &&
+                                        (set.winnerSide !== null ||
+                                            isMatchOver) && (
+                                            <span className="text-xs text-muted-foreground">
+                                                Doesn't count: raced after the{" "}
+                                                {set.winnerSide !== null
+                                                    ? "set"
+                                                    : "match"}{" "}
+                                                was over
+                                            </span>
+                                        )}
                                     {point.amendedAfterMatch && (
                                         <span className="text-xs text-warning">
                                             Time amended after the match, winner
@@ -280,11 +297,17 @@ const SetLog = ({
 };
 
 /**
- * The point an extra can be granted on: the last one raced in the playing
- * match, with both results in. Earlier points have been followed by others.
+ * The point an extra can be granted on: the last one raced, with both
+ * results in. Earlier points have been followed by others. In a match
+ * played to the end, the point that finished it, while nothing the match
+ * led to has started.
  */
 const extraPointOf = (match: H2hMatch) => {
-    if (match.status !== "IN_PROGRESS") return null;
+    const playedOut =
+        match.status === "FINISHED" &&
+        match.endedBy === "PLAYED" &&
+        !match.reopenRefusal;
+    if (match.status !== "IN_PROGRESS" && !playedOut) return null;
     const raced = match.sets.filter((set) => set.points.length > 0);
     const last = raced[raced.length - 1]?.points.at(-1);
     return last && last.attemptA && last.attemptB ? last : null;
@@ -330,6 +353,29 @@ const MatchCard = ({
         A: !!entrantOf(match.sideA.entrantId)?.withdrawnAt,
         B: !!entrantOf(match.sideB.entrantId)?.withdrawnAt,
     };
+    /** "retired" when they stopped during a match, else "withdrew" */
+    const leftAs = (side: H2hSideName) => {
+        const entrant = entrantOf(
+            side === "A" ? match.sideA.entrantId : match.sideB.entrantId
+        );
+        const leftIn = bracket.matches.find(
+            (m) => m.id === entrant?.withdrawnInMatchId
+        );
+        return leftIn?.log?.some(
+            (entry) =>
+                entry.action === "RETIRE" &&
+                entrantOf(
+                    entry.side === "A"
+                        ? leftIn.sideA.entrantId
+                        : leftIn.sideB.entrantId
+                )?.id === entrant?.id
+        )
+            ? "retired"
+            : "withdrew";
+    };
+    const other = (side: H2hSideName) => names[side === "A" ? "B" : "A"];
+    /** The final and the third-place match lead nowhere */
+    const isLast = match.stage === "FINAL" || match.stage === "THIRD_PLACE";
     const isPlaying = match.status === "IN_PROGRESS";
     const isFinished = match.status === "FINISHED";
     const notStarted = match.status === "WAITING" || match.status === "READY";
@@ -363,8 +409,9 @@ const MatchCard = ({
                     isCurrent={isPlaying && canManage && set === current}
                     onEnter={onEnter}
                     extraPointId={extraPoint?.id ?? null}
+                    isMatchOver={isFinished}
                     onExtra={
-                        isPlaying && canManage
+                        canManage && (isPlaying || extraPoint !== null)
                             ? (point) =>
                                   onAction({
                                       title: `Extra granted on point ${point.pointNumber}`,
@@ -376,6 +423,8 @@ const MatchCard = ({
                                                   again, on a fresh scramble.
                                                   Their times on it no longer
                                                   count.
+                                                  {isFinished &&
+                                                      ` ${match.label} plays again, and the matches it led to wait for its new result.`}
                                               </p>
                                               <p className="mt-2 font-medium text-foreground">
                                                   {EXTRA_REMINDER}
@@ -442,7 +491,7 @@ const MatchCard = ({
                             </span>
                             {withdrawn[side] && (
                                 <span className="ml-1 text-xs text-muted-foreground">
-                                    (withdrew)
+                                    ({leftAs(side)})
                                 </span>
                             )}
                         </span>
@@ -481,7 +530,9 @@ const MatchCard = ({
                                     onClick={() =>
                                         onAction({
                                             title: `Withdraw ${names[side]}?`,
-                                            description: `${names[side]} won't play ${match.label}: it's a walkover for ${names[side === "A" ? "B" : "A"]}, who goes through. Any later match ${names[side]} would play is a walkover too.`,
+                                            description: isLast
+                                                ? `${names[side]} won't play ${match.label}: it's a walkover for ${other(side)}, who wins it.`
+                                                : `${names[side]} won't play ${match.label}: it's a walkover for ${other(side)}, who goes through. Any later match ${names[side]} would play is a walkover too.`,
                                             confirmLabel: "Withdraw",
                                             destructive: true,
                                             onConfirm: (comment) =>
@@ -507,7 +558,7 @@ const MatchCard = ({
                                 onClick={() =>
                                     onAction({
                                         title: `Retire ${names[side]}?`,
-                                        description: `${names[side]} can't go on, so ${names[side === "A" ? "B" : "A"]} wins ${match.label} and goes through. Points and sets already decided keep their winners, and every time stays. Any later match ${names[side]} would play is a walkover.`,
+                                        description: `${names[side]} can't go on, so ${other(side)} wins ${match.label}${isLast ? "" : " and goes through"}. Points and sets already decided keep their winners, and every time stays.${isLast ? "" : ` Any later match ${names[side]} would play is a walkover.`}`,
                                         confirmLabel: "Retire",
                                         commentRequired: true,
                                         destructive: true,
@@ -525,7 +576,16 @@ const MatchCard = ({
                                 Retire {names[side]}
                             </Button>
                         ))}
-                    {isFinished && (
+                    {isFinished && match.reopenRefusal && (
+                        <span className="flex items-center gap-2 text-xs text-muted-foreground">
+                            <Button size="sm" variant="outline" disabled>
+                                <Undo2 className="size-4" />
+                                Reopen match
+                            </Button>
+                            Can't reopen: {match.reopenRefusal}
+                        </span>
+                    )}
+                    {isFinished && !match.reopenRefusal && (
                         <Button
                             size="sm"
                             variant="outline"
@@ -556,6 +616,9 @@ const MatchCard = ({
                             {LOG_TEXT[entry.action]}
                             {entry.side && `: ${names[entry.side]}`}
                             {entry.comment && ` · ${entry.comment}`}
+                            {" · "}
+                            {entry.createdBy ? `by ${entry.createdBy}, ` : ""}
+                            {formatDayTime(entry.createdAt)}
                         </li>
                     ))}
                 </ul>

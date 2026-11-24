@@ -54,6 +54,8 @@ export interface H2hEntrant {
     seed: number;
     seedTieBroken: boolean;
     withdrawnAt: string | null;
+    /** The match they withdrew or retired from */
+    withdrawnInMatchId?: string | null;
     person: H2hPerson;
     /** WCA-encoded best single of the round; null with no attempt yet */
     bestSingle: number | null;
@@ -142,6 +144,8 @@ export interface H2hMatch {
     winnerSide: H2hSideName | null;
     endedBy?: H2hMatchEnd | null;
     log?: H2hMatchLogEntry[];
+    /** Why Reopen match would be refused; null when it can be reopened */
+    reopenRefusal?: string | null;
     sideA: H2hSide;
     sideB: H2hSide;
     /** Sets won by each side */

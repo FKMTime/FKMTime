@@ -51,7 +51,15 @@ const MatchActionDialog = ({
     };
 
     return (
-        <Modal isOpen title={title} onClose={onClose} error={error}>
+        <Modal
+            isOpen
+            title={title}
+            // Kept open while the action runs, so a refusal is seen
+            onClose={() => {
+                if (!isBusy) onClose();
+            }}
+            error={error}
+        >
             <div className="flex flex-col gap-4">
                 <div className="text-sm text-muted-foreground">
                     {description}

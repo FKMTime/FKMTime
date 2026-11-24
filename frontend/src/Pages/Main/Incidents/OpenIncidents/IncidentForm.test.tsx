@@ -59,12 +59,12 @@ describe("IncidentForm", () => {
 
     it("offers an extra for both competitors or none on a head-to-head point", () => {
         renderForm({ isH2hPoint: true });
-        expect(screen.getByRole("button", { name: "No extra" }));
+        expect(screen.getByRole("button", { name: "No extra" })).toBeTruthy();
         expect(
             screen.getByRole("button", {
                 name: "Extra granted (both competitors)",
             })
-        );
+        ).toBeTruthy();
         expect(
             screen.queryByRole("button", { name: "Save and give extra" })
         ).toBeNull();
