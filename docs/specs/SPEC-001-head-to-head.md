@@ -892,7 +892,8 @@ Each takes the round's lock, then the match's, like recording an attempt.
   3-2 again). Any other point after a set's end is still refused with
   "Check the times". Marked points are left out of every tie-break, the
   match's own and other matches' best in the round (I3e), so reopening
-  and later decisions agree; the ranking's best single still counts them.
+  and later decisions agree, and out of the ranking's best single and the
+  WCA CSV (*WCA CSV export*).
   A point after the end can't get an extra, and an extra a retirement
   called off on one stays called off. A set that would no longer be over
   while a later one has been played is still refused.
@@ -905,7 +906,9 @@ Each takes the round's lock, then the match's, like recording an attempt.
   finishes the match again, so the marker goes.
 - **Ranking.** Attempts in a walkover don't count for the best single
   (9f5b), so a competitor whose only attempts were in one has no row. Nor
-  do they count for the round-level tie-break of a set (I3e).
+  do they count for the round-level tie-break of a set (I3e). Attempts on
+  points marked `afterEnd` don't count for the best single either, so it
+  matches the `best` the WCA works out from the CSV.
 
 ### Final ranking (9f16b)
 
@@ -925,6 +928,9 @@ frontend never scores anything itself, because winners are stored:
 - **No attempts at all:** a competitor whose only match was a walkover has no
   attempts and gets no row (9f5b). Attempts in a walkover (a retirement
   before the competitor's first attempt) don't count either.
+- **Points after the end:** attempts on points marked `afterEnd` (raced
+  after their set or the match was over, found by Reopen match) don't count
+  for the best single, as they aren't in the WCA CSV (*WCA CSV export*).
 - **Walkovers and retirements** are lost matches like any other: the
   withdrawn competitor is knocked out at that stage, and in the final stage
   ranks below their opponent whatever their singles.
@@ -993,16 +999,25 @@ point number, then side A before side B. Left out:
   point counts, as in the WCA Live sync. An extra a retirement called off
   leaves its point empty;
 - empty points;
+- points marked `afterEnd`, and so the sets raced after a match was over;
 - attempts not counting (`EXTRA_GIVEN`, `VOIDED`).
 
-Points marked `afterEnd`, and the sets raced after a match was over, **are**
-exported. They decide nothing, but their attempts are real solves on real
-scrambles (9i4), and the ranking's best single counts them (*Final
-ranking*). The WCA takes each competitor's `best` from these rows and their
-`pos` from the file as it is, so leaving them out would rank a competitor on
-a single the WCA never sees, and could lose a record. The WCA stores only
-attempts per set, not who won a point or a set, so a set with more than
-its deciding points imports like any other.
+**Why points after the end stay out.** The WCA stores no point, set or match
+winners: its results pages work them out from the attempts
+(`computeMatchScores` in the WCA website's `headToHead.ts`). The importer
+numbers each competitor's attempts in a set by count, the pages pair the
+competitors' attempts with the same number into a race, give a set to
+whoever won the most races, and the match to whoever won the most sets.
+Points that don't count would change those scores. For example, A, A, no
+winner, B, B, B, then A's point 3 amended to a win and the match reopened:
+FKMTime has A winning 3-0 at point 3, but with points 4 to 6 in the file the
+WCA would count 3-3 and show no winner. A lone attempt on such a point
+would also pair the wrong races. So these points stay out of the file, and
+out of the ranking's best single, since the WCA takes `best` from the rows
+while keeping `pos` as given. The cost: those solves are real (9i4), on
+real scrambles, but don't reach the WCA results, so a record set on one
+would be lost. That needs a set to be reopened on amended times, which is
+rare.
 
 A retired match keeps its decided points and every submitted attempt of both
 competitors, including the opponent's attempt on the open point. Each column:
@@ -1030,8 +1045,7 @@ never do.
 list the checks give), when:
 
 - a match isn't finished, or a point has only one attempt (except the open
-  point of a retired match, the last point it raced, and a point after the
-  end, whose missing result decides nothing);
+  point of a retired match: the last point it raced);
 - an attempt on an exported point still has an unresolved incident;
 - a competitor with rows has no `wcaRegistrationId`, or, once every match is
   finished, no final position;
@@ -1049,13 +1063,15 @@ tab, which only delegates open; an organiser can still fetch the file
 through the API.
 
 The code: `wcaCsv.ts` (rows, checks, the file; pure), `H2hExportService`
-(loading, the round id, the password) and `WcaService.getLastRoundId`. A
+(loading, the round id, the password) and `WcaService.getWcaRoundId`. A
 unit test parses the generated CSV with the same rules as the WCA rake task
 (columns by name, `round_id.to_i`, `time_seconds.sub(".", "").to_i`,
 attempt numbers from row order, `pos` from a competitor's first row, `best`
 from their rows) and checks the stored values come out
 right. That includes times of 60 s and over, and times with a trailing zero
-such as `10.20`.
+such as `10.20`. Another works out the match winner the way the WCA results
+pages do (`computeMatchScores`) and checks it is FKMTime's, for a match
+reopened with points after the end.
 
 ### API and real-time updates
 
