@@ -302,7 +302,9 @@ Replies can only be as fast as the main thread, which today's backend keeps busy
   1.9 s. Eight stations at once: p50 1.7 s, p99 3.2 s. A reply after 2 s already makes the
   station send a probe ping. Each attempt re-parses the 1.25 MB WCIF: `competition.findFirst()`
   parses the JSON column on every call, and `enterAttemptInTransaction` and
-  `getRemainingAndUsedCumulativeLimit` deep-copy it.
+  `getRemainingAndUsedCumulativeLimit` deep-copy it. **Decided (2026-11-24): fixed now, scoped
+  to the attempt path, measured before and after on the Pi** (branch
+  `perf/enter-attempt-without-wcif-reparse`, stacked on the deadlock fix).
 - **`rooms/progress` keeps the main thread busy for about 23 s per call on the Pi** (2.3 s on
   the Mac), in slices under 1.1 s. Home refetches it whenever a result comes in, so during a
   round every open Home page adds one of these per attempt.
