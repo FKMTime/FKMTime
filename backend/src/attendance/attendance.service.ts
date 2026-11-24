@@ -355,6 +355,21 @@ export class AttendanceService {
     );
   }
 
+  /** For texts that no person's country decides */
+  private async defaultLocale() {
+    const competition = await this.prisma.competition.findFirst({
+      select: { defaultLocale: true },
+    });
+    // Translations fall back to English for a missing locale, too
+    return competition?.defaultLocale ?? 'en';
+  }
+
+  /**
+   * A scan on an attendance device. The reply never reaches the device: the
+   * connector ignores it and always tells the device the scan was marked.
+   * Errors are still real errors, so they show up in the logs and as the
+   * device's last error, instead of a "confirmed" that recorded nothing.
+   */
   async createAttendance(data: CreateAttendaceDto) {
     const device = await this.prisma.device.findFirst({
       where: {
@@ -366,10 +381,13 @@ export class AttendanceService {
       },
     });
 
-    //QUICK FIX
     if (!device) {
       return {
-        message: getTranslation('attendanceConfirmed', 'PL'),
+        message: getTranslation('stationNotFound', await this.defaultLocale()),
+        shouldResetTime: false,
+        status: 404,
+        error: true,
+        errorDetails: { key: 'stationNotFound' },
       };
     }
 
@@ -381,7 +399,24 @@ export class AttendanceService {
 
     if (!person) {
       return {
-        message: getTranslation('attendanceConfirmed', 'PL'),
+        message: getTranslation(
+          'competitorNotFound',
+          await this.defaultLocale(),
+        ),
+        shouldResetTime: false,
+        status: 404,
+        error: true,
+        errorDetails: { key: 'competitorNotFound', cardId: data.cardId },
+      };
+    }
+
+    if (device.room.currentGroupIds.length === 0) {
+      return {
+        message: getTranslation('noGroups', person.countryIso2 ?? 'en'),
+        shouldResetTime: false,
+        status: 400,
+        error: true,
+        errorDetails: { key: 'noGroups', cardId: data.cardId },
       };
     }
 
@@ -391,64 +426,47 @@ export class AttendanceService {
         : device.type === 'ATTENDANCE_RUNNER'
           ? 'RUNNER'
           : 'JUDGE';
+    // A failed save throws: the socket server logs it, records an internal
+    // error for the device and replies with an error
     for (const groupId of device.room.currentGroupIds) {
-      try {
-        await this.prisma.staffActivity.upsert({
-          where: {
-            personId_groupId_role: {
-              groupId: groupId,
-              personId: person.id,
-              role: role,
-            },
-          },
-          create: {
+      await this.prisma.staffActivity.upsert({
+        where: {
+          personId_groupId_role: {
             groupId: groupId,
+            personId: person.id,
             role: role,
-            person: {
-              connect: {
-                id: person.id,
-              },
-            },
-            device: {
-              connect: {
-                id: device.id,
-              },
-            },
-            isAssigned: false,
-            status: StaffActivityStatus.PRESENT,
           },
-          update: {
-            device: {
-              connect: {
-                id: device.id,
-              },
+        },
+        create: {
+          groupId: groupId,
+          role: role,
+          person: {
+            connect: {
+              id: person.id,
             },
-            status: StaffActivityStatus.PRESENT,
-            noShow: false,
-            replacedBy: { disconnect: true },
           },
-        });
-        // Only after the scan is saved: an open attendance page refetches
-        // as soon as it hears this, and would otherwise miss the scan
-        this.appGateway.handleNewAttendance(groupId, person.id);
-      } catch {
-        return {
-          message: getTranslation(
-            'attendanceConfirmed',
-            person.countryIso2 ?? 'en',
-          ),
-        };
-        // if (e instanceof PrismaClientKnownRequestError) {
-        //   if (e.code === 'P2002') {
-        //     throw new HttpException(
-        //       {
-        //         message: getTranslation('alreadyCheckedIn', person.countryIso2),
-        //       },
-        //       409,
-        //     );
-        //   }
-        // }
-      }
+          device: {
+            connect: {
+              id: device.id,
+            },
+          },
+          isAssigned: false,
+          status: StaffActivityStatus.PRESENT,
+        },
+        update: {
+          device: {
+            connect: {
+              id: device.id,
+            },
+          },
+          status: StaffActivityStatus.PRESENT,
+          noShow: false,
+          replacedBy: { disconnect: true },
+        },
+      });
+      // Only after the scan is saved: an open attendance page refetches
+      // as soon as it hears this, and would otherwise miss the scan
+      this.appGateway.handleNewAttendance(groupId, person.id);
     }
     return {
       message: getTranslation(

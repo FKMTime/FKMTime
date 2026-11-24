@@ -67,7 +67,8 @@ export class SocketService {
   }
 
   async createAttendance(data: CreateAttendaceDto) {
-    return await this.attendanceService.createAttendance(data);
+    const reply = await this.attendanceService.createAttendance(data);
+    return this.stationErrors.handleReply(data.espId, reply);
   }
 
   async getServerStatus() {
