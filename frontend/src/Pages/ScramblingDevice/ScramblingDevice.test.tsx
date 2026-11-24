@@ -319,6 +319,37 @@ describe("Scrambling", () => {
         expect(screen.queryByText(/was already solved/)).toBeNull();
     });
 
+    it("lets the scrambler sign again after the request fails", async () => {
+        vi.mocked(getPersonByCardId).mockResolvedValue(scrambler);
+        vi.mocked(getScrambleData).mockResolvedValue({
+            status: 200,
+            data: {
+                person: competitor,
+                scrambleData: { num: 1, isExtra: false },
+            },
+        });
+        vi.mocked(createScrambledAttempt)
+            .mockRejectedValueOnce(new TypeError("Failed to fetch"))
+            .mockResolvedValueOnce({ status: 201, data: {} });
+        renderScrambling();
+        scan("Scan the scrambler's card", "100");
+        await screen.findByText("Sam Scrambler");
+        scan("Scan the competitor's card", "200");
+        const signButton = await screen.findByRole("button", { name: "Sign" });
+
+        fireEvent.click(signButton);
+        await waitFor(() =>
+            expect((signButton as HTMLButtonElement).disabled).toBe(false)
+        );
+        expect(screen.getByText("Casey Competitor")).toBeTruthy();
+
+        fireEvent.click(signButton);
+        expect((await screen.findByRole("status")).textContent).toBe(
+            "Last signed: Casey Competitor · Scramble 1"
+        );
+        expect(createScrambledAttempt).toHaveBeenCalledTimes(2);
+    });
+
     it("scans for the set's round even when no group runs in this room", async () => {
         vi.mocked(getPersonByCardId).mockResolvedValue(scrambler);
         vi.mocked(getScrambleData).mockResolvedValue({
