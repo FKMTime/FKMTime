@@ -1,12 +1,17 @@
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { Gavel, Users } from "lucide-react";
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { StaffActivity, StaffActivityStatus } from "@/lib/interfaces";
+import { isOrganizerOrDelegate } from "@/lib/permissions";
 
 import RoleCard from "./RoleCard";
 
+vi.mock("@/lib/permissions", () => ({
+    isDelegate: vi.fn(() => false),
+    isOrganizerOrDelegate: vi.fn(() => true),
+}));
 vi.mock("./AddNotAssignedPersonModal", () => ({ default: () => null }));
 vi.mock("./DetailsModal", () => ({ default: () => null }));
 vi.mock("./AbsentCompetitors/ChangeCompetingGroupModal", () => ({
@@ -69,6 +74,10 @@ const judges = [
 ];
 
 describe("RoleCard", () => {
+    beforeEach(() => {
+        vi.mocked(isOrganizerOrDelegate).mockReturnValue(true);
+    });
+
     it("splits the role into absent and present with a present count", () => {
         render(
             <RoleCard
@@ -340,6 +349,29 @@ describe("RoleCard", () => {
         );
         await userEvent.click(
             await screen.findByRole("menuitem", { name: "Not coming" })
+        );
+        expect(props.onSetNoShow).toHaveBeenCalledWith(absent, true);
+    });
+
+    it("gives a stage lead no Change group, and Not coming in one tap", async () => {
+        vi.mocked(isOrganizerOrDelegate).mockReturnValue(false);
+        const props = handlers();
+        const absent = activity("e", "COMPETITOR", StaffActivityStatus.ABSENT);
+        render(
+            <RoleCard
+                role="COMPETITOR"
+                title="Competitors"
+                icon={Users}
+                attendance={[absent]}
+                groupId="333-r1-g1"
+                {...props}
+            />
+        );
+        expect(
+            screen.queryByRole("button", { name: "Change group" })
+        ).toBeNull();
+        await userEvent.click(
+            screen.getByRole("button", { name: "Not coming" })
         );
         expect(props.onSetNoShow).toHaveBeenCalledWith(absent, true);
     });

@@ -162,27 +162,39 @@ const RoleCard = ({
         },
     ];
 
+    // Moving a competitor rewrites the WCIF on the WCA website with the
+    // user's own WCA token, which only organizers and delegates hold
+    const canChangeGroup = isOrganizerOrDelegate();
+
+    const noShowAction = (activity: StaffActivity): RowAction =>
+        activity.noShow
+            ? {
+                  label: "Coming after all",
+                  icon: CalendarCheck,
+                  onSelect: () => onSetNoShow(activity, false),
+              }
+            : {
+                  label: "Not coming",
+                  icon: CalendarX,
+                  onSelect: () => onSetNoShow(activity, true),
+              };
+
     const absentActions = (activity: StaffActivity) =>
         isCompetitor ? (
             <RowActions
                 subject={activity.person.name}
-                primary={{
-                    label: "Change group",
-                    icon: ArrowLeftRight,
-                    onSelect: () => setDialog({ type: "group", activity }),
-                }}
-                items={[
-                    activity.noShow
+                primary={
+                    canChangeGroup
                         ? {
-                              label: "Coming after all",
-                              icon: CalendarCheck,
-                              onSelect: () => onSetNoShow(activity, false),
+                              label: "Change group",
+                              icon: ArrowLeftRight,
+                              onSelect: () =>
+                                  setDialog({ type: "group", activity }),
                           }
-                        : {
-                              label: "Not coming",
-                              icon: CalendarX,
-                              onSelect: () => onSetNoShow(activity, true),
-                          },
+                        : noShowAction(activity)
+                }
+                items={[
+                    ...(canChangeGroup ? [noShowAction(activity)] : []),
                     {
                         label: "Remove from round",
                         icon: UserMinus,
