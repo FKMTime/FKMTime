@@ -41,6 +41,10 @@ import {
     getMobileBackTarget,
     MORE_PATH,
 } from "@/lib/navigation";
+import {
+    registerServiceWorker,
+    showBrowserNotification,
+} from "@/lib/notifications";
 import { isDelegate, isOrganizerOrDelegate } from "@/lib/permissions";
 import { queryClient } from "@/lib/queryClient";
 import { showTutorialNotice, TutorialNoticeSocketData } from "@/lib/tutorial";
@@ -112,9 +116,7 @@ const Layout = () => {
 
     useEffect(() => {
         if (!userKey || !isNotificationsSupported()) return;
-        if (import.meta.env.PROD && isMobile()) {
-            navigator.serviceWorker.register("sw.js");
-        }
+        if (import.meta.env.PROD && isMobile()) registerServiceWorker();
         Notification.requestPermission();
     }, [userKey]);
 
@@ -150,23 +152,12 @@ const Layout = () => {
                     : "Its first group started. Open it from Home.";
             Notification.requestPermission().then((permission) => {
                 if (permission !== "granted") return;
-                if (isMobile()) {
-                    navigator.serviceWorker.ready.then((registration) =>
-                        registration.showNotification(title, {
-                            body,
-                            tag: `roundShouldBeOpened-${roundId}`,
-                        })
-                    );
-                } else {
-                    const notification = new Notification(title, {
-                        body,
-                        tag: `roundShouldBeOpened-${roundId}`,
-                    });
-                    notification.onclick = () => {
-                        window.focus();
-                        navigate("/");
-                    };
-                }
+                showBrowserNotification({
+                    title,
+                    body,
+                    tag: `roundShouldBeOpened-${roundId}`,
+                    onClick: () => navigate("/"),
+                });
             });
         },
         onIntegratedLiveConnectionChanged: () => {
@@ -200,35 +191,14 @@ const Layout = () => {
                 ? "Tutorial incident"
                 : "New incident";
             Notification.requestPermission().then((permission) => {
-                if (permission === "granted") {
-                    if (isMobile()) {
-                        navigator.serviceWorker.ready.then(
-                            async (registration) => {
-                                if (
-                                    await registration
-                                        .getNotifications({
-                                            tag: `newIncident-${data.id}`,
-                                        })
-                                        .then((n) => n.length === 0)
-                                ) {
-                                    await registration.showNotification(title, {
-                                        body: message,
-                                        tag: `newIncident-${data.id}`,
-                                    });
-                                }
-                            }
-                        );
-                    } else {
-                        const notification = new Notification(title, {
-                            body: message,
-                            tag: `newIncident-${data.id}`,
-                        });
-                        notification.onclick = () => {
-                            window.focus();
-                            navigate("/incidents");
-                        };
-                    }
-                }
+                if (permission !== "granted") return;
+                showBrowserNotification({
+                    title,
+                    body: message,
+                    tag: `newIncident-${data.id}`,
+                    onClick: () => navigate("/incidents"),
+                    skipIfShown: true,
+                });
             });
         },
         onTutorialNotice: (notice: TutorialNoticeSocketData) => {
@@ -242,33 +212,14 @@ const Layout = () => {
         onGroupShouldBeChanged: (data: { message: string }) => {
             if (!isNotificationsSupported()) return;
             Notification.requestPermission().then((permission) => {
-                if (permission === "granted") {
-                    if (isMobile()) {
-                        navigator.serviceWorker.ready.then(
-                            async (registration) => {
-                                if (
-                                    await registration
-                                        .getNotifications({
-                                            tag: `groupShouldBeChanged`,
-                                        })
-                                        .then((n) => n.length === 0)
-                                ) {
-                                    await registration.showNotification(
-                                        "Group should be changed",
-                                        {
-                                            body: data.message,
-                                            tag: "groupShouldBeChanged",
-                                        }
-                                    );
-                                }
-                            }
-                        );
-                    } else {
-                        new Notification("Group should be changed", {
-                            body: data.message,
-                        });
-                    }
-                }
+                if (permission !== "granted") return;
+                showBrowserNotification({
+                    title: "Group should be changed",
+                    body: data.message,
+                    // Phones only: a desktop shows each one
+                    tag: isMobile() ? "groupShouldBeChanged" : undefined,
+                    skipIfShown: true,
+                });
             });
         },
     });

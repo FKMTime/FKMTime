@@ -1,8 +1,9 @@
 import { PublicUser, User } from "./interfaces";
+import { showBrowserNotification } from "./notifications";
 import { queryFamily } from "./queryCache";
 import { queryClient } from "./queryClient";
 import { backendQuery, backendRequest } from "./request";
-import { isMobile, isNotificationsSupported } from "./utils";
+import { isNotificationsSupported } from "./utils";
 
 /**
  * Delegate access for one group (SPEC-013): a delegate lets a user resolve
@@ -206,16 +207,6 @@ export const showNoFreeDelegateNotice = (
     const tag = `noFreeDelegate-${group.groupId}`;
     void Notification.requestPermission().then((permission) => {
         if (permission !== "granted") return;
-        if (isMobile()) {
-            void navigator.serviceWorker.ready.then((registration) =>
-                registration.showNotification(title, { body, tag })
-            );
-        } else {
-            const notification = new Notification(title, { body, tag });
-            notification.onclick = () => {
-                window.focus();
-                onClick();
-            };
-        }
+        showBrowserNotification({ title, body, tag, onClick });
     });
 };
