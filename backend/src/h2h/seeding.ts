@@ -81,10 +81,19 @@ const advances = (
   result: Ranked,
   condition: ResultCondition | null,
   ranked: Ranked[],
+) => meetsCondition(result, condition, ranked) && within9p1(result, ranked);
+
+/** At most 75% of a round advances; a tie crossing that line drops whole */
+const within9p1 = (result: Ranked, ranked: Ranked[]) =>
+  ranked.filter((r) => r.ranking <= result.ranking).length <=
+  Math.floor(ranked.length * 0.75);
+
+const meetsCondition = (
+  result: Ranked,
+  condition: ResultCondition | null,
+  ranked: Ranked[],
 ) => {
   if (!isSuccess(result.best)) return false;
-  const atOrAbove = ranked.filter((r) => r.ranking <= result.ranking).length;
-  if (atOrAbove > Math.floor(ranked.length * 0.75)) return false;
   if (condition === null) return true;
   const rankedCount = ranked.length;
   switch (condition.type) {
@@ -167,9 +176,20 @@ export const seedFromPreviousRound = (
     .slice(0, size);
 
   const notices: string[] = [];
-  if (advancing.length < size) {
+  const cutBy9p1 = ranked.some(
+    (result) =>
+      meetsCondition(result, source.condition, ranked) &&
+      !within9p1(result, ranked),
+  );
+  if (cutBy9p1) {
     notices.push(
-      `Only ${advancing.length} competitors advanced from ${previousName}, and the bracket has ${size} places. Add the rest in seed order.`,
+      `At most 75% of ${previousName} may advance (Regulation 9p1), so ${advancing.length} of its ${ranked.length} competitors did.`,
+    );
+  }
+  if (advancing.length < size) {
+    // Filling the places with people who didn't advance would break 9p
+    notices.push(
+      `Only ${advancing.length} competitors advanced from ${previousName}, fewer than the bracket's ${size} places. Choose a smaller bracket, or fill the empty seeds by hand only where the regulations allow it, such as reserved places.`,
     );
   } else if (advancing.length > size) {
     notices.push(

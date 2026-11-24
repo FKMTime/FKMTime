@@ -451,14 +451,17 @@ How the seeding reads the WCIF:
 - **Who advanced** follows the same source's `resultCondition`: a ranking
   of N takes ranking ≤ N, a percentage takes ranking ≤ ⌊count × P / 100⌋,
   and a result condition compares the best or the average with its value.
-  Only people with a successful single advance. The bracket takes the
-  top `size` of them after the tie-break.
+  Only people with a successful single advance, and at most ⌊count × 0.75⌋
+  of the round (9p1); a tie that would cross that line drops out whole. The
+  bracket takes the top `size` of them after the tie-break.
 - **The size** defaults to N when the condition is a ranking of 4, 8, 12 or
   16. Otherwise the delegate picks it.
 - **What the delegate is told.** Creating the bracket returns a notice when
   the seeds need a person: no previous round or no ranking yet (the bracket
-  is created with no seeds), fewer people advanced than the bracket has
-  places, more did (the top ones are taken), the round reserves places, or
+  is created with no seeds), 9p1 cut the round short, fewer people advanced
+  than the bracket has places (pick a smaller bracket, or fill seeds by
+  hand only where the regulations allow, such as reserved places), more did
+  (the top ones are taken), the round reserves places, or
   someone in the ranking isn't in FKMTime.
 - **Statuses.** The bracket is `DRAFT` until every seed has a competitor,
   then `SEEDED`. A match is `READY` once both its sides are known, otherwise

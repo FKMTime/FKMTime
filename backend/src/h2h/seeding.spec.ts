@@ -131,7 +131,7 @@ describe('seedFromPreviousRound', () => {
 
     expect(ids(seeding)).toEqual([1, 2, 4]);
     expect(seeding.notice).toBe(
-      'Only 3 competitors advanced from 3x3x3 One-Handed, Round 1, and the bracket has 4 places. Add the rest in seed order.',
+      "Only 3 competitors advanced from 3x3x3 One-Handed, Round 1, fewer than the bracket's 4 places. Choose a smaller bracket, or fill the empty seeds by hand only where the regulations allow it, such as reserved places.",
     );
   });
 
@@ -183,7 +183,10 @@ describe('seedFromPreviousRound', () => {
     const seeding = seedFromPreviousRound('333oh-r2', wcif, 8);
 
     expect(ids(seeding)).toEqual([1, 2, 3, 4, 5, 6, 7]);
-    expect(seeding.notice).toContain('Only 7 competitors advanced');
+    expect(seeding.notice).toContain(
+      'At most 75% of 3x3x3 One-Handed, Round 1 may advance (Regulation 9p1), so 7 of its 10 competitors did.',
+    );
+    expect(seeding.notice).toContain('Choose a smaller bracket');
   });
 
   it('drops a tie that would take more than 75% of the round through', () => {
