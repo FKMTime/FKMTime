@@ -1,4 +1,10 @@
-import { forwardRef, Inject, Logger } from '@nestjs/common';
+import {
+  forwardRef,
+  HttpException,
+  HttpStatus,
+  Inject,
+  Logger,
+} from '@nestjs/common';
 import { AppGateway } from 'src/app.gateway';
 import {
   AttemptEditLogService,
@@ -554,33 +560,49 @@ export class ResultFromDeviceService {
       // cube over, and when
       await tx.db
         .$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`scramble:${result.id}:${type}:${data.attemptNumber}`}))`;
-      const scrambled = await tx.db.attempt.findFirst({
+      const existing = await tx.db.attempt.findMany({
         where: {
           resultId: result.id,
           attemptNumber: data.attemptNumber,
           type,
-          status: AttemptStatus.SCRAMBLED,
         },
       });
+      // A device still showing a scramble whose solve the station has since
+      // entered. Numbers are never reused, so a new scrambled attempt would
+      // sit next to the solved one for good
+      const alreadyEntered = new HttpException(
+        `${data.isExtra ? 'Extra' : 'Attempt'} ${data.attemptNumber} was already entered`,
+        HttpStatus.CONFLICT,
+      );
+      if (existing.some((a) => a.status !== AttemptStatus.SCRAMBLED)) {
+        throw alreadyEntered;
+      }
       const signed = {
-        scrambler: { connect: { id: data.scramblerId } },
+        scramblerId: data.scramblerId,
         scrambledAt: new Date(),
       };
+      const scrambled = existing[0];
       if (scrambled) {
-        return tx.db.attempt.update({
-          where: { id: scrambled.id },
+        // The station may enter the solve while this sign waits for the row,
+        // so update it only while it is still scrambled
+        const { count } = await tx.db.attempt.updateMany({
+          where: { id: scrambled.id, status: AttemptStatus.SCRAMBLED },
           data: signed,
         });
+        if (count === 0) {
+          throw alreadyEntered;
+        }
+        return tx.db.attempt.findUniqueOrThrow({ where: { id: scrambled.id } });
       }
       return tx.db.attempt.create({
         data: {
           ...signed,
+          resultId: result.id,
           attemptNumber: data.attemptNumber,
           value: 0,
           penalty: 0,
           status: AttemptStatus.SCRAMBLED,
           type,
-          result: { connect: { id: result.id } },
         },
       });
     });

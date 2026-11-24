@@ -617,6 +617,38 @@ describe('Scrambling device flow (e2e)', () => {
       );
     });
 
+    it('refuses a sign for a scramble whose attempt was already solved', async () => {
+      // A device still showing Scramble 1 after the station entered attempt 1
+      const res = await asDevice(request(server()).post('/scrambling/scramble'))
+        .send({
+          personId: competitor.id,
+          scramblerId: scrambler.id,
+          roundId: ROUND_ID,
+          attemptNumber: 1,
+          isExtra: false,
+        })
+        .expect(409);
+
+      expect(res.body.message).toBe('Attempt 1 was already entered');
+      const attempts = await db.attempt.findMany({
+        where: {
+          result: { personId: competitor.id, roundId: ROUND_ID },
+          attemptNumber: 1,
+          type: AttemptType.STANDARD_ATTEMPT,
+        },
+      });
+      expect(attempts).toHaveLength(1);
+      expect(attempts[0]).toMatchObject({
+        status: AttemptStatus.STANDARD,
+        // Still credited to whoever signed it before the solve
+        scramblerId: otherScrambler.id,
+      });
+      const next = await asDevice(
+        request(server()).get(`/scrambling/scramble/${CARD_ID}/${ROUND_ID}`),
+      ).expect(200);
+      expect(next.body.scrambleData).toEqual({ num: 2, isExtra: false });
+    });
+
     it('offers an extra scramble when an extra was granted', async () => {
       const result = found(
         await db.result.findFirst({
@@ -646,6 +678,29 @@ describe('Scrambling device flow (e2e)', () => {
         attemptNumber: 1,
         scramblerId: otherScrambler.id,
       });
+    });
+
+    it('refuses a sign for an extra that was already solved', async () => {
+      const [extra] = await scrambledAttempts(AttemptType.EXTRA_ATTEMPT);
+      await db.attempt.update({
+        where: { id: extra.id },
+        data: { status: AttemptStatus.STANDARD, value: 1010 },
+      });
+
+      const res = await asDevice(request(server()).post('/scrambling/scramble'))
+        .send({
+          personId: competitor.id,
+          scramblerId: scrambler.id,
+          roundId: ROUND_ID,
+          attemptNumber: 1,
+          isExtra: true,
+        })
+        .expect(409);
+
+      expect(res.body.message).toBe('Extra 1 was already entered');
+      expect(await scrambledAttempts(AttemptType.EXTRA_ATTEMPT)).toHaveLength(
+        0,
+      );
     });
 
     it('signals that no attempts are left after the last one', async () => {
