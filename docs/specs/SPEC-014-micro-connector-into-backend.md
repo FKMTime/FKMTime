@@ -308,7 +308,8 @@ Replies can only be as fast as the main thread, which today's backend keeps busy
   round every open Home page adds one of these per attempt.
 - **10 or more simultaneous attempts deadlock the database pool,** and all of them fail after
   7.5 s. `enterAttemptInTransaction` runs queries outside its transaction, which need a second
-  connection from pg's pool of 10.
+  connection from pg's pool of 10. **Decided (2026-11-24): fixed now, on its own**
+  (branch `fix/enter-attempt-pool-deadlock`).
 
 All three hit competitions today, with or without the rewrite, and belong in their own fixes.
 
