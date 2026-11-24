@@ -459,9 +459,10 @@ How the seeding reads the WCIF:
 - **What the delegate is told.** Creating the bracket returns a notice when
   the seeds need a person: no previous round or no ranking yet (the bracket
   is created with no seeds), 9p1 cut the round short, fewer people advanced
-  than the bracket has places (pick a smaller bracket, or fill seeds by
-  hand only where the regulations allow, such as reserved places), more did
-  (the top ones are taken), the round reserves places, or
+  than the bracket has places (create a smaller bracket instead: the empty
+  seeds can't go to people who didn't advance, and reserved places only
+  swap people within the advancing count), more did (the top ones are
+  taken), the round reserves places, or
   someone in the ranking isn't in FKMTime.
 - **Statuses.** The bracket is `DRAFT` until every seed has a competitor,
   then `SEEDED`. A match is `READY` once both its sides are known, otherwise

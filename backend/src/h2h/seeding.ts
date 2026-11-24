@@ -187,9 +187,9 @@ export const seedFromPreviousRound = (
     );
   }
   if (advancing.length < size) {
-    // Filling the places with people who didn't advance would break 9p
+    // Reserved places only swap people within the advancing count (9p2b)
     notices.push(
-      `Only ${advancing.length} competitors advanced from ${previousName}, fewer than the bracket's ${size} places. Choose a smaller bracket, or fill the empty seeds by hand only where the regulations allow it, such as reserved places.`,
+      `Only ${advancing.length} competitors advanced from ${previousName}, fewer than the bracket's ${size} places. Delete the bracket and create a smaller one: the empty seeds can't go to people who didn't advance.`,
     );
   } else if (advancing.length > size) {
     notices.push(

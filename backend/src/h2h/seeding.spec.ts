@@ -131,7 +131,7 @@ describe('seedFromPreviousRound', () => {
 
     expect(ids(seeding)).toEqual([1, 2, 4]);
     expect(seeding.notice).toBe(
-      "Only 3 competitors advanced from 3x3x3 One-Handed, Round 1, fewer than the bracket's 4 places. Choose a smaller bracket, or fill the empty seeds by hand only where the regulations allow it, such as reserved places.",
+      "Only 3 competitors advanced from 3x3x3 One-Handed, Round 1, fewer than the bracket's 4 places. Delete the bracket and create a smaller one: the empty seeds can't go to people who didn't advance.",
     );
   });
 
@@ -186,7 +186,7 @@ describe('seedFromPreviousRound', () => {
     expect(seeding.notice).toContain(
       'At most 75% of 3x3x3 One-Handed, Round 1 may advance (Regulation 9p1), so 7 of its 10 competitors did.',
     );
-    expect(seeding.notice).toContain('Choose a smaller bracket');
+    expect(seeding.notice).toContain('create a smaller one');
   });
 
   it('drops a tie that would take more than 75% of the round through', () => {
