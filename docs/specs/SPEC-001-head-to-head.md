@@ -356,10 +356,21 @@ model H2hScrambleAssignment {
 - **Editing the plan.** The **Scrambles** tab of the bracket setup shows the
   plan as a table (Match · Set · Scramble set), and each row can be changed
   to any set not used elsewhere. Rows already raced are locked.
+  - A row is raced once its match has opened that set (`H2hSet` exists).
+    A set raced anywhere, in the plan or as a spare, can't go to another
+    row.
+  - `PUT /h2h/:roundId/scrambles` takes only the changed rows, and checks
+    the plan as a whole after the change, so two rows can swap sets in one
+    request. A row can also be left without a set. The screen sends a swap
+    when a row picks a set another row has.
 - **Using the plan.** When an H2H set opens, it copies its row's set into
   `H2hSet.scrambleSetId`. Each new point takes the next unused scramble of
   that set (`H2hPoint.scrambleId`). The `@unique` constraints keep one TNoodle
   set in one H2H set, and one scramble in one point.
+
+- **Matching again.** Creating the bracket, importing scrambles for the
+  round and deleting any of its sets all match the plan again. Rows with a
+  set keep it, so a row emptied by deleting its set takes the first spare.
 
 **When a set runs out.** Points with no winner (I3d) can push a set to 7
 points, and an extra (11k1) adds more. Once the set's normal and extra
@@ -376,7 +387,8 @@ scrambles are used up:
 Σ (2X − 1) over the matches. Bracket setup shows the number with the
 instruction "Set the scramble set count for 333-r3 to N on the WCA website,
 then generate scrambles in TNoodle". A couple of spares on top are
-recommended. Unused sets never reach the CSV.
+recommended. The screen names the round as people read it ("3x3x3
+One-Handed, Round 2") rather than by its WCIF id. Unused sets never reach the CSV.
 
 | Bracket | Sets to win | Sets in the plan |
 |---|---|---|
@@ -392,6 +404,13 @@ recommended. Unused sets never reach the CSV.
 - **Warning:** a set with fewer than 5 normal scrambles. A 3–2 set would
   start using its extras.
 - **Error:** no sets at all.
+
+The plan check needs the bracket, so it applies once the bracket exists;
+before that only the other two run. "No sets at all" means the round is in
+the file with no sets. A file without the round at all keeps the usual
+"There are no scrambles for …" warning, so a file for the other events can
+still be imported. When sets are added to a round later, only the
+scrambles-per-set check runs.
 
 **On the day.** The staff Matches screen and the scrambling device show, for
 each playing match, which set is in use and which point's scramble is next
@@ -424,6 +443,31 @@ Seeding:
    the seed list by hand (drag to reorder, swap a competitor).
 
 Seeds can be edited until the first match starts. After that they are locked.
+
+How the seeding reads the WCIF:
+
+- **The previous round** is the H2H round's `participationRuleset` source
+  round, the last of its linked rounds for a dual round, or `<event>-r<n-1>`
+  in an older WCIF without a ruleset.
+- **Who advanced** follows the same source's `resultCondition`: a ranking
+  of N takes ranking ≤ N, a percentage takes ranking ≤ ⌊count × P / 100⌋,
+  and a result condition compares the best or the average with its value.
+  Only people with a successful single advance. The bracket takes the
+  top `size` of them after the tie-break.
+- **The size** defaults to N when the condition is a ranking of 4, 8, 12 or
+  16. Otherwise the delegate picks it.
+- **What the delegate is told.** Creating the bracket returns a notice when
+  the seeds need a person: no previous round or no ranking yet (the bracket
+  is created with no seeds), fewer people advanced than the bracket has
+  places, more did (the top ones are taken), the round reserves places, or
+  someone in the ranking isn't in FKMTime.
+- **Statuses.** The bracket is `DRAFT` until every seed has a competitor,
+  then `SEEDED`. A match is `READY` once both its sides are known, otherwise
+  `WAITING`.
+- **Editing by hand.** `PUT /h2h/:roundId/seeds` takes the people in seed
+  order, at most `size` of them. "Tie broken randomly" stays only on people
+  who keep the seed the draw gave them. Anyone in FKMTime can be put in, for
+  reserved places; the screen offers the people registered for the event.
 
 Building the graph (I2c, I2f):
 
@@ -693,7 +737,12 @@ socket.io:
 
 ### Screens
 
-**Staff: round page for an H2H round.** It sits under the existing Results
+**Staff: round page for an H2H round.** Until the Matches and Ranking tabs
+are built, its tabs are Bracket, Scrambles (the plan table from
+*Scrambles*) and Results (the existing results table). The Matches tab comes
+with the station flow (rollout step 3).
+
+It sits under the existing Results
 tabs and has three tabs:
 
 - **Bracket:** the same bracket as the public view, plus setup (size, sets to
@@ -877,6 +926,8 @@ above, they win; each PR that builds a part updates its section.
    which gets the H2H final and the `results/:eventId` endpoint once the
    dummy-wca change is merged. Until then, CI checks that fail only because of
    that are accepted, and each PR names them. Everything else stays green.
+   (That change, maxidragon/dummy-wca#19, was merged on 2026-11-21, so CI has
+   the H2H final.)
 5. **Seeding comes from the WCIF.** It uses the previous round's
    `results[].ranking`, limited to the people who advanced. If that ranking is
    missing, the bracket is created unseeded with a clear message, and the
