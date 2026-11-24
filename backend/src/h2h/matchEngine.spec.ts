@@ -285,6 +285,51 @@ describe('scoreMatch', () => {
       ),
     ).toThrow(MatchConflict);
   });
+
+  describe('ignoring what was raced after the end (reopening)', () => {
+    it('leaves points after the set was over without a winner', () => {
+      const score = scoreMatch({
+        ...input([
+          {
+            setNumber: 1,
+            points: [won(A, 1), won(A, 2), won(A, 3), won(B, 4)],
+          },
+        ]),
+        ignoreSurplus: true,
+      });
+      expect(score.winner).toBe(A);
+      expect([...score.sets[0].pointWinners.keys()]).toEqual([1, 2, 3]);
+    });
+
+    it('leaves sets after the match was over without winners', () => {
+      const score = scoreMatch({
+        ...input([
+          { setNumber: 1, points: [won(A, 1), won(A, 2), won(A, 3)] },
+          { setNumber: 2, points: [won(B, 1), won(B, 2), won(B, 3)] },
+        ]),
+        ignoreSurplus: true,
+      });
+      expect(score.winner).toBe(A);
+      expect(score.nextSetNumber).toBeNull();
+      expect(score.sets[1]).toMatchObject({ outcome: null });
+      expect(score.sets[1].pointWinners.size).toBe(0);
+    });
+
+    it('still refuses a set started while the one before would be going on', () => {
+      expect(() =>
+        scoreMatch({
+          ...input(
+            [
+              { setNumber: 1, points: [won(A, 1), won(A, 2), won(B, 3)] },
+              { setNumber: 2, points: [won(B, 1)] },
+            ],
+            2,
+          ),
+          ignoreSurplus: true,
+        }),
+      ).toThrow(MatchConflict);
+    });
+  });
 });
 
 describe('walkoverWinner', () => {

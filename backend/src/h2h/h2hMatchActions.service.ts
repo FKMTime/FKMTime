@@ -11,6 +11,7 @@ import {
   AttemptEditLogService,
   AttemptSnapshot,
 } from 'src/attempt-edit-log/attempt-edit-log.service';
+import { CompetitionService } from 'src/competition/competition.service';
 import { DbService, runInTransaction } from 'src/db/db.service';
 import { SocketController } from 'src/socket/socket.controller';
 
@@ -25,8 +26,8 @@ import {
 } from '../generated/prisma/client';
 import { labelOfMatch, lockBracket } from './bracketStore';
 import { H2hMatchService, lockMatch } from './h2hMatch.service';
-import { matchesFedBy, otherSide } from './matchEngine';
-import { finishMatch, resolveWalkovers } from './matchStore';
+import { matchesFedBy, otherSide, whyNoReopen } from './matchEngine';
+import { finishMatch, resolveWalkovers, unfinishMatch } from './matchStore';
 
 type Db = Prisma.TransactionClient;
 
@@ -58,7 +59,42 @@ export class H2hMatchActionsService {
     private readonly attemptEditLogService: AttemptEditLogService,
     @Inject(forwardRef(() => SocketController))
     private readonly socketController: SocketController,
+    @Inject(forwardRef(() => CompetitionService))
+    private readonly competitionService: CompetitionService,
   ) {}
+
+  /**
+   * After an action commits: the Matches tab, the round's results and
+   * double check, and the group change, which waits on who still plays
+   */
+  private announce(roundId: string, matchId: string) {
+    this.appGateway.handleH2hUpdated(roundId, matchId);
+    this.appGateway.handleAttemptUpdated();
+    this.appGateway.handleResultEntered(roundId);
+    this.competitionService.requestGroupChangeCheck(roundId);
+  }
+
+  /**
+   * The matches an extra on a finished match's last point takes back,
+   * refused when one of them has started on its result
+   */
+  private async fedMatches(
+    db: Db,
+    match: { id: string; bracketId: string },
+    label: string,
+  ) {
+    const matches = await db.h2hMatch.findMany({
+      where: { bracketId: match.bracketId },
+    });
+    const { reset, started } = matchesFedBy(matches, match.id);
+    if (started) {
+      const startedLabel = await labelOfMatch(db, match.bracketId, started.id);
+      throw new ConflictException(
+        `${label} has finished and ${startedLabel}, which follows from it, has started, so its points can't get an extra any more (Regulation 11l)`,
+      );
+    }
+    return reset;
+  }
 
   /**
    * The match with its round, after taking the round's lock and then the
@@ -87,9 +123,11 @@ export class H2hMatchActionsService {
   /**
    * Extra granted on a point (11k1): both attempts become Extra granted,
    * and the point is cleared to be raced again on the set's next extra
-   * scramble (or the next scramble nobody has raced, once those run out). Only the last point raced, while the match plays, once
-   * both results are in: the opponent's attempt must be on the old
-   * scramble too.
+   * scramble (or the next scramble nobody has raced, once those run out).
+   * Only the last point raced, once both results are in: the opponent's
+   * attempt must be on the old scramble too. That may be the point that
+   * finished the match: the match plays again, as long as none of the
+   * matches it fed has started.
    */
   async grantExtra(pointId: string, userId: string, comment?: string) {
     const { roundId, matchId, incidents } = await runInTransaction(
@@ -111,7 +149,10 @@ export class H2hMatchActionsService {
           },
         });
         const where = `${label}, set ${point.set.setNumber}, point ${point.pointNumber}`;
-        if (match.status !== H2hMatchStatus.IN_PROGRESS) {
+        const playedOut =
+          match.status === H2hMatchStatus.FINISHED &&
+          match.endedBy === H2hMatchEnd.PLAYED;
+        if (match.status !== H2hMatchStatus.IN_PROGRESS && !playedOut) {
           throw new ConflictException(
             `${label} isn't playing, so its points can't get an extra. A finished match keeps its points (Regulation 11l).`,
           );
@@ -122,7 +163,13 @@ export class H2hMatchActionsService {
             `Both results of ${where} must be in before an extra: both competitors race it again. Enter the missing one first.`,
           );
         }
-        const later = await db.h2hPoint.count({
+        const later = await db.h2hPoint.findMany({
+          select: {
+            pointNumber: true,
+            attemptAId: true,
+            attemptBId: true,
+            set: { select: { setNumber: true } },
+          },
           where: {
             OR: [
               { setId: point.setId, pointNumber: { gt: point.pointNumber } },
@@ -135,10 +182,23 @@ export class H2hMatchActionsService {
             ],
           },
         });
-        if (later > 0) {
+        const [next] = later;
+        if (later.length === 1 && (!next.attemptAId || !next.attemptBId)) {
+          const name = (next.attemptAId ? match.entrantA : match.entrantB)
+            ?.person.name;
+          throw new ConflictException(
+            `Only the last point raced can get an extra, and ${name ?? 'one competitor'} has started set ${next.set.setNumber}, point ${next.pointNumber} since. Delete that attempt first, then grant the extra; it is raced again after.`,
+          );
+        }
+        if (later.length > 0) {
           throw new ConflictException(
             `Only the last point raced can get an extra, and ${where} has been followed by another.`,
           );
+        }
+        if (playedOut) {
+          // The point that finished the match: it plays again
+          const reset = await this.fedMatches(db, match, label);
+          await unfinishMatch(db, match, reset);
         }
 
         await db.h2hPoint.update({
@@ -171,13 +231,17 @@ export class H2hMatchActionsService {
           data: { scrambleId },
         });
         const now = new Date();
+        const why = comment?.trim() ?? '';
         for (const attempt of [attemptA, attemptB]) {
           const updated = await db.attempt.update({
             where: { id: attempt.id },
             data: {
               status: AttemptStatus.EXTRA_GIVEN,
               replacedBy: null,
-              ...(comment?.trim() && { comment: comment.trim() }),
+              // Added to what the judge or delegate wrote already
+              ...(why !== '' && {
+                comment: attempt.comment ? `${attempt.comment}\n${why}` : why,
+              }),
               updatedBy: { connect: { id: userId } },
             },
           });
@@ -214,9 +278,7 @@ export class H2hMatchActionsService {
         },
       });
     }
-    this.appGateway.handleH2hUpdated(roundId, matchId);
-    this.appGateway.handleAttemptUpdated();
-    this.appGateway.handleResultEntered(roundId);
+    this.announce(roundId, matchId);
     return { roundId };
   }
 
@@ -260,7 +322,7 @@ export class H2hMatchActionsService {
       }
       await db.h2hEntrant.update({
         where: { id: entrant.id },
-        data: { withdrawnAt: new Date() },
+        data: { withdrawnAt: new Date(), withdrawnInMatchId: matchId },
       });
       await db.h2hMatchLog.create({
         data: {
@@ -272,11 +334,9 @@ export class H2hMatchActionsService {
         },
       });
       await resolveWalkovers(db, match.bracketId);
-      tx.afterCommit(() =>
-        this.appGateway.handleH2hUpdated(match.bracket.roundId, matchId),
-      );
       return match.bracket.roundId;
     });
+    this.announce(roundId, matchId);
     return { roundId };
   }
 
@@ -321,6 +381,36 @@ export class H2hMatchActionsService {
         })) > 0;
       // A set opened but never raced was never played
       await db.h2hSet.deleteMany({ where: { matchId, points: { none: {} } } });
+      // An extra granted but not raced yet won't be: the attempts it
+      // replaced stop waiting for it, so double check and the group
+      // change don't wait on them
+      const waiting = await db.attempt.findMany({
+        where: {
+          status: AttemptStatus.EXTRA_GIVEN,
+          replacedBy: null,
+          OR: [
+            { h2hExtraAsA: { point: { set: { matchId } } } },
+            { h2hExtraAsB: { point: { set: { matchId } } } },
+          ],
+        },
+      });
+      const now = new Date();
+      for (const attempt of waiting) {
+        const voided = await db.attempt.update({
+          where: { id: attempt.id },
+          data: {
+            status: AttemptStatus.VOIDED,
+            updatedBy: { connect: { id: userId } },
+          },
+        });
+        await this.attemptEditLogService.log(
+          voided as AttemptSnapshot,
+          now,
+          userId,
+          `No longer needed: ${label} ended when a competitor retired before the extra was raced`,
+          tx,
+        );
+      }
       await finishMatch(
         db,
         match,
@@ -329,7 +419,7 @@ export class H2hMatchActionsService {
       );
       await db.h2hEntrant.update({
         where: { id: entrant.id },
-        data: { withdrawnAt: new Date() },
+        data: { withdrawnAt: new Date(), withdrawnInMatchId: matchId },
       });
       await db.h2hMatchLog.create({
         data: {
@@ -341,11 +431,9 @@ export class H2hMatchActionsService {
         },
       });
       await resolveWalkovers(db, match.bracketId);
-      tx.afterCommit(() =>
-        this.appGateway.handleH2hUpdated(match.bracket.roundId, matchId),
-      );
       return match.bracket.roundId;
     });
+    this.announce(roundId, matchId);
     return { roundId };
   }
 
@@ -365,74 +453,69 @@ export class H2hMatchActionsService {
       const matches = await db.h2hMatch.findMany({
         where: { bracketId: match.bracketId },
       });
-      const { reset, started } = matchesFedBy(matches, match.id);
-      if (started) {
+      const refusal = whyNoReopen(
+        match,
+        { a: match.entrantA, b: match.entrantB },
+        matches,
+      );
+      if (refusal?.kind === 'fedStarted') {
         const startedLabel = await labelOfMatch(
           db,
           match.bracketId,
-          started.id,
+          refusal.matchId,
         );
         throw new ConflictException(
           `${label} can't be reopened: ${startedLabel}, which follows from it, has started`,
         );
       }
-
-      const loserSide = otherSide(match.winnerSide);
-      const loser = loserSide === H2hSide.A ? match.entrantA : match.entrantB;
-      if (loser?.withdrawnAt) {
-        // Undo the withdrawal only where it happened: a walkover that
-        // follows from an earlier one is reopened there
-        const left = await db.h2hMatchLog.findFirst({
-          where: { matchId, side: loserSide },
-          orderBy: { createdAt: 'desc' },
-        });
-        if (
-          !left ||
-          (left.action !== H2hMatchAction.WITHDRAW &&
-            left.action !== H2hMatchAction.RETIRE)
-        ) {
-          throw new ConflictException(
-            `${loser.person.name} withdrew before ${label}, so its walkover follows from that. Reopen the match they withdrew or retired from instead.`,
-          );
-        }
+      const loser =
+        match.winnerSide === H2hSide.A ? match.entrantB : match.entrantA;
+      if (refusal?.kind === 'withdrewElsewhere') {
+        const there = refusal.matchId
+          ? await labelOfMatch(db, match.bracketId, refusal.matchId)
+          : null;
+        throw new ConflictException(
+          `${loser?.person.name ?? 'The competitor'} withdrew ${there ? `in ${there}` : 'earlier'}, and this walkover follows from that. Reopen ${there ?? 'the match they withdrew or retired from'} instead.`,
+        );
+      }
+      // A walkover or retirement in this match: the competitor is back
+      if (match.endedBy !== H2hMatchEnd.PLAYED && loser?.withdrawnAt) {
         await db.h2hEntrant.update({
           where: { id: loser.id },
-          data: { withdrawnAt: null },
+          data: { withdrawnAt: null, withdrawnInMatchId: null },
         });
       }
 
-      await db.h2hMatch.update({
-        where: { id: match.id },
-        data: {
-          status:
-            match.startedAt === null
-              ? H2hMatchStatus.READY
-              : H2hMatchStatus.IN_PROGRESS,
-          winnerSide: null,
-          endedBy: null,
-          finishedAt: null,
+      const { reset } = matchesFedBy(matches, match.id);
+      await unfinishMatch(db, match, reset);
+      // Attempts whose extra a retirement called off wait for it again
+      const voided = await db.attempt.findMany({
+        where: {
+          status: AttemptStatus.VOIDED,
+          replacedBy: null,
+          OR: [
+            { h2hExtraAsA: { point: { set: { matchId } } } },
+            { h2hExtraAsB: { point: { set: { matchId } } } },
+          ],
         },
       });
-      const taken = new Set([match.id, ...reset.map((m) => m.id)]);
-      for (const fed of reset) {
-        await db.h2hMatch.update({
-          where: { id: fed.id },
+      const now = new Date();
+      for (const attempt of voided) {
+        const waiting = await db.attempt.update({
+          where: { id: attempt.id },
           data: {
-            ...(fed.sourceAMatchId !== null &&
-              taken.has(fed.sourceAMatchId) && { entrantAId: null }),
-            ...(fed.sourceBMatchId !== null &&
-              taken.has(fed.sourceBMatchId) && { entrantBId: null }),
-            status: H2hMatchStatus.WAITING,
-            winnerSide: null,
-            endedBy: null,
-            finishedAt: null,
+            status: AttemptStatus.EXTRA_GIVEN,
+            updatedBy: { connect: { id: userId } },
           },
         });
+        await this.attemptEditLogService.log(
+          waiting as AttemptSnapshot,
+          now,
+          userId,
+          `Waiting for its extra again: ${label} was reopened`,
+          tx,
+        );
       }
-      await db.h2hBracket.update({
-        where: { id: match.bracketId },
-        data: { status: H2hBracketStatus.IN_PROGRESS },
-      });
       await db.h2hMatchLog.create({
         data: {
           matchId,
@@ -444,11 +527,9 @@ export class H2hMatchActionsService {
       // Decides it again: it may finish straight away, on amended times
       await this.h2hMatchService.settle(db, match.id);
       await resolveWalkovers(db, match.bracketId);
-      tx.afterCommit(() =>
-        this.appGateway.handleH2hUpdated(match.bracket.roundId, matchId),
-      );
       return match.bracket.roundId;
     });
+    this.announce(roundId, matchId);
     return { roundId };
   }
 }

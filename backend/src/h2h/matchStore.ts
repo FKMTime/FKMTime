@@ -118,3 +118,51 @@ export const resolveWalkovers = async (db: Db, bracketId: string) => {
     await finishMatch(db, next.match, next.winner, H2hMatchEnd.WALKOVER);
   }
 };
+
+/**
+ * Puts a finished match back into play (Ready, for a walkover that never
+ * started) and takes back the matches it fed, `reset` (see matchesFedBy):
+ * their sides that came from these matches empty again
+ */
+export const unfinishMatch = async (
+  db: Db,
+  match: { id: string; bracketId: string; startedAt: Date | null },
+  reset: {
+    id: string;
+    sourceAMatchId: string | null;
+    sourceBMatchId: string | null;
+  }[],
+) => {
+  await db.h2hMatch.update({
+    where: { id: match.id },
+    data: {
+      status:
+        match.startedAt === null
+          ? H2hMatchStatus.READY
+          : H2hMatchStatus.IN_PROGRESS,
+      winnerSide: null,
+      endedBy: null,
+      finishedAt: null,
+    },
+  });
+  const taken = new Set([match.id, ...reset.map((m) => m.id)]);
+  for (const fed of reset) {
+    await db.h2hMatch.update({
+      where: { id: fed.id },
+      data: {
+        ...(fed.sourceAMatchId !== null &&
+          taken.has(fed.sourceAMatchId) && { entrantAId: null }),
+        ...(fed.sourceBMatchId !== null &&
+          taken.has(fed.sourceBMatchId) && { entrantBId: null }),
+        status: H2hMatchStatus.WAITING,
+        winnerSide: null,
+        endedBy: null,
+        finishedAt: null,
+      },
+    });
+  }
+  await db.h2hBracket.update({
+    where: { id: match.bracketId },
+    data: { status: H2hBracketStatus.IN_PROGRESS },
+  });
+};

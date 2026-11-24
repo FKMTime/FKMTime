@@ -380,16 +380,16 @@ model QuickAction {
 }
 
 model ScramblingDevice {
-  id                   String   @id @default(uuid())
+  id                   String    @id @default(uuid())
   name                 String
-  encryptedToken       String?  @map("encrypted_token")
-  encryptedOneTimeCode String?  @map("encrypted_one_time_code")
+  encryptedToken       String?   @map("encrypted_token")
+  encryptedOneTimeCode String?   @map("encrypted_one_time_code")
   /// A pairing code stops working after this
   oneTimeCodeExpiresAt DateTime? @map("one_time_code_expires_at")
-  roomId               String   @map("room_id")
-  room                 Room     @relation(fields: [roomId], references: [id])
-  createdAt            DateTime @default(now()) @map("created_at")
-  updatedAt            DateTime @updatedAt @map("updated_at")
+  roomId               String    @map("room_id")
+  room                 Room      @relation(fields: [roomId], references: [id])
+  createdAt            DateTime  @default(now()) @map("created_at")
+  updatedAt            DateTime  @updatedAt @map("updated_at")
 
   @@map("scrambling_device")
 }
@@ -444,19 +444,23 @@ model H2hBracket {
 }
 
 model H2hEntrant {
-  id            String     @id @default(uuid())
-  bracketId     String     @map("bracket_id")
-  bracket       H2hBracket @relation(fields: [bracketId], references: [id], onDelete: Cascade)
-  personId      String     @map("person_id")
-  person        Person     @relation(fields: [personId], references: [id], onDelete: Cascade)
+  id                 String     @id @default(uuid())
+  bracketId          String     @map("bracket_id")
+  bracket            H2hBracket @relation(fields: [bracketId], references: [id], onDelete: Cascade)
+  personId           String     @map("person_id")
+  person             Person     @relation(fields: [personId], references: [id], onDelete: Cascade)
   /// 1 is the highest seed
-  seed          Int
+  seed               Int
   /// Tied with another competitor in the previous round and ordered randomly
   /// (Regulation I1d)
-  seedTieBroken Boolean    @default(false) @map("seed_tie_broken")
-  withdrawnAt   DateTime?  @map("withdrawn_at")
-  matchesAsA    H2hMatch[] @relation("h2h_match_entrant_a")
-  matchesAsB    H2hMatch[] @relation("h2h_match_entrant_b")
+  seedTieBroken      Boolean    @default(false) @map("seed_tie_broken")
+  withdrawnAt        DateTime?  @map("withdrawn_at")
+  /// The match they withdrew or retired from: only reopening that one
+  /// undoes it
+  withdrawnInMatchId String?    @map("withdrawn_in_match_id")
+  withdrawnInMatch   H2hMatch?  @relation("h2h_entrant_withdrawn_in", fields: [withdrawnInMatchId], references: [id], onDelete: SetNull)
+  matchesAsA         H2hMatch[] @relation("h2h_match_entrant_a")
+  matchesAsB         H2hMatch[] @relation("h2h_match_entrant_b")
 
   @@unique([bracketId, seed])
   @@unique([bracketId, personId])
@@ -495,6 +499,7 @@ model H2hMatch {
   sets                H2hSet[]
   scrambleAssignments H2hScrambleAssignment[]
   logs                H2hMatchLog[]
+  withdrawals         H2hEntrant[]            @relation("h2h_entrant_withdrawn_in")
 
   @@unique([bracketId, matchNumber])
   @@map("h2h_match")

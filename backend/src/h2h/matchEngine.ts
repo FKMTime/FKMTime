@@ -5,6 +5,7 @@
  * rows around them.
  */
 import {
+  H2hMatchEnd,
   H2hMatchStatus,
   H2hSetDecision,
   H2hSide,
@@ -147,6 +148,12 @@ export interface MatchInput {
   sets: ScoredSetInput[];
   /** Each side's results in the round's other matches */
   otherMatchResults: { a: number[]; b: number[] };
+  /**
+   * Points raced after their set was over, and sets raced after the match
+   * was, don't count instead of being refused: reopening a match whose
+   * times were amended (the 11l exception) can end a set earlier
+   */
+  ignoreSurplus?: boolean;
 }
 
 export interface SetScore {
@@ -173,13 +180,26 @@ const resultsOf = (sets: ScoredSetInput[], side: 'a' | 'b') =>
  * set's (I3b, I3e) and the match's (I3a). Re-run after any attempt in an
  * unfinished match changes, so a typo fixed mid-match re-decides it.
  * Throws a MatchConflict when the points no longer fit the sets played:
- * points after a set would have ended, or a set started after one that
- * would still be going on.
+ * points after a set would have ended (unless `ignoreSurplus`), or a set
+ * started after one that would still be going on.
  */
 export const scoreMatch = (input: MatchInput): MatchScore => {
   const sets: SetScore[] = [];
   input.sets.forEach((set, index) => {
     const isLast = index === input.sets.length - 1;
+    const over = decideMatch(
+      sets.map((s) => s.outcome?.winner ?? null),
+      input.setsToWin,
+    );
+    if (over !== null && input.ignoreSurplus) {
+      // Raced after the match was over: the set doesn't count
+      sets.push({
+        setNumber: set.setNumber,
+        pointWinners: new Map(),
+        outcome: null,
+      });
+      return;
+    }
     const sorted = [...set.points].sort(
       (x, y) => x.pointNumber - y.pointNumber,
     );
@@ -192,6 +212,8 @@ export const scoreMatch = (input: MatchInput): MatchScore => {
     };
     let outcome: SetScore['outcome'] = null;
     for (const [i, point] of sorted.entries()) {
+      // Raced after the set was over: no winner, it doesn't count
+      if (outcome && input.ignoreSurplus) break;
       if (point.a === null || point.b === null) continue;
       const winner = decidePoint(point.a, point.b);
       pointWinners.set(point.pointNumber, winner);
@@ -206,7 +228,7 @@ export const scoreMatch = (input: MatchInput): MatchScore => {
         },
         seeds: input.seeds,
       });
-      if (outcome && i < sorted.length - 1) {
+      if (outcome && i < sorted.length - 1 && !input.ignoreSurplus) {
         throw new MatchConflict(
           `Set ${set.setNumber} would be over after point ${point.pointNumber}, but point ${sorted[i + 1].pointNumber} has a result too. Check the times.`,
         );
@@ -226,6 +248,10 @@ export const scoreMatch = (input: MatchInput): MatchScore => {
       sets.slice(0, index + 1).map((s) => s.outcome?.winner ?? null),
       input.setsToWin,
     );
+    // Sets raced after the match was over were left out above
+    if (winner && input.ignoreSurplus) {
+      return { sets, winner, nextSetNumber: null };
+    }
     if (winner && index < sets.length - 1) {
       throw new MatchConflict(
         `The match would be over after set ${set.setNumber}, but set ${sets[index + 1].setNumber} has been played. Check the times.`,
@@ -298,6 +324,52 @@ export const matchesFedBy = <T extends FedMatch>(
     }
   }
   return { reset, started: null };
+};
+
+/** Why a finished match can't be reopened */
+export type ReopenRefusal =
+  /** A match it fed has started on its result */
+  | { kind: 'fedStarted'; matchId: string }
+  /**
+   * A walkover that follows from a withdrawal in another match (or a
+   * retirement there): that match is the one to reopen
+   */
+  | { kind: 'withdrewElsewhere'; entrantId: string; matchId: string | null };
+
+/** A side of a finished match, as reopening reads it */
+export interface WithdrawnSide {
+  id: string;
+  withdrawnAt: Date | null;
+  withdrawnInMatchId: string | null;
+}
+
+/**
+ * Why reopening a finished match is refused, or null when it can be. A
+ * walkover or retirement is undone only in the match where it happened; a
+ * played match leaves any later withdrawal of its loser alone.
+ */
+export const whyNoReopen = (
+  match: FedMatch & {
+    winnerSide: H2hSide | null;
+    endedBy: H2hMatchEnd | null;
+  },
+  sides: { a: WithdrawnSide | null; b: WithdrawnSide | null },
+  matches: FedMatch[],
+): ReopenRefusal | null => {
+  const { started } = matchesFedBy(matches, match.id);
+  if (started) return { kind: 'fedStarted', matchId: started.id };
+  if (match.endedBy === H2hMatchEnd.PLAYED || match.winnerSide === null) {
+    return null;
+  }
+  const loser = match.winnerSide === H2hSide.A ? sides.b : sides.a;
+  if (loser?.withdrawnAt && loser.withdrawnInMatchId !== match.id) {
+    return {
+      kind: 'withdrewElsewhere',
+      entrantId: loser.id,
+      matchId: loser.withdrawnInMatchId,
+    };
+  }
+  return null;
 };
 
 /** An attempt's time as an edit log entry saved it */

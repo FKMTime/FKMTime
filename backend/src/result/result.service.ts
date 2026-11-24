@@ -328,6 +328,8 @@ export class ResultService {
             device: true,
             h2hPointAsA: { select: { id: true } },
             h2hPointAsB: { select: { id: true } },
+            h2hExtraAsA: { select: { id: true } },
+            h2hExtraAsB: { select: { id: true } },
           },
         },
       },
@@ -347,11 +349,19 @@ export class ResultService {
     return {
       ...result,
       attempts: result.attempts.map(
-        ({ h2hPointAsA, h2hPointAsB, ...attempt }) => ({
+        ({
+          h2hPointAsA,
+          h2hPointAsB,
+          h2hExtraAsA,
+          h2hExtraAsB,
+          ...attempt
+        }) => ({
           ...attempt,
           staffingWarnings: warningsByAttempt.get(attempt.id) ?? [],
           // An attempt on a head-to-head point gets its extra on the point
           h2hPointId: (h2hPointAsA ?? h2hPointAsB)?.id ?? null,
+          // Replaced by an extra on a point: it can't get another
+          h2hReplaced: (h2hExtraAsA ?? h2hExtraAsB) !== null,
         }),
       ),
       remainingAndUsedCumulativeLimit,

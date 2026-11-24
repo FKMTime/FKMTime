@@ -1,6 +1,7 @@
 import { forwardRef, Module } from '@nestjs/common';
 import { AppModule } from 'src/app.module';
 import { AttemptEditLogModule } from 'src/attempt-edit-log/attempt-edit-log.module';
+import { CompetitionModule } from 'src/competition/competition.module';
 import { SocketModule } from 'src/socket/socket.module';
 
 import { H2hController } from './h2h.controller';
@@ -15,6 +16,7 @@ import { H2hMatchActionsService } from './h2hMatchActions.service';
     forwardRef(() => AppModule),
     AttemptEditLogModule,
     forwardRef(() => SocketModule),
+    forwardRef(() => CompetitionModule),
   ],
   exports: [H2hMatchService],
 })

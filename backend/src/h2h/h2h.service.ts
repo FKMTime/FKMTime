@@ -12,6 +12,7 @@ import { DbService, runInTransaction } from 'src/db/db.service';
 import { bySetLetter } from 'src/scramble-set/setLetters';
 import { Competition, getRoundInfoFromWcif } from 'wcif-helpers';
 
+import { H2hMatchStatus } from '../generated/prisma/client';
 import {
   getStages,
   isBracketSize,
@@ -35,7 +36,7 @@ import { UpdateScramblePlanDto } from './dto/updateScramblePlan.dto';
 import { UpdateSeedsDto } from './dto/updateSeeds.dto';
 import { H2hMatchService } from './h2hMatch.service';
 import { whyNoBracket } from './h2hRound';
-import { amendedAfter, nextScramble } from './matchEngine';
+import { amendedAfter, nextScramble, whyNoReopen } from './matchEngine';
 import { rankH2hRound } from './ranking';
 import { countPlannedSets } from './scramblePlan';
 import { seedFromPreviousRound, suggestBracketSize } from './seeding';
@@ -223,6 +224,28 @@ export class H2hService {
       bracket.entrants.map((entrant) => entrant.person.id),
     );
     const amended = await this.amendedAttemptIds(bracket.matches);
+    const entrantById = new Map(bracket.entrants.map((e) => [e.id, e]));
+    const labelOf = (matchId: string) => labels.get(matchId) ?? 'another match';
+    /** Why Reopen match would be refused, so the tab says so up front */
+    const reopenRefusal = (match: (typeof bracket.matches)[number]) => {
+      if (match.status !== H2hMatchStatus.FINISHED) return null;
+      const refusal = whyNoReopen(
+        match,
+        {
+          a: (match.entrantAId && entrantById.get(match.entrantAId)) || null,
+          b: (match.entrantBId && entrantById.get(match.entrantBId)) || null,
+        },
+        bracket.matches,
+      );
+      if (!refusal) return null;
+      if (refusal.kind === 'fedStarted') {
+        return `${labelOf(refusal.matchId)}, which follows from it, has started`;
+      }
+      const name = entrantById.get(refusal.entrantId)?.person.name;
+      return refusal.matchId
+        ? `${name} withdrew in ${labelOf(refusal.matchId)}: reopen that match instead`
+        : `${name} withdrew earlier: reopen the match they withdrew from instead`;
+    };
     const ranking = rankH2hRound(
       bracket.matches,
       bracket.entrants.map((entrant) => ({
@@ -264,6 +287,7 @@ export class H2hService {
             seed: entrant.seed,
             seedTieBroken: entrant.seedTieBroken,
             withdrawnAt: entrant.withdrawnAt,
+            withdrawnInMatchId: entrant.withdrawnInMatchId,
             person: entrant.person,
             bestSingle: bestSingles.get(entrant.person.id) ?? null,
             position: ranked?.position ?? null,
@@ -281,6 +305,7 @@ export class H2hService {
           endedBy: match.endedBy,
           startedAt: match.startedAt,
           finishedAt: match.finishedAt,
+          reopenRefusal: reopenRefusal(match),
           score: {
             a: match.sets.filter((set) => set.winnerSide === 'A').length,
             b: match.sets.filter((set) => set.winnerSide === 'B').length,
@@ -401,13 +426,15 @@ export class H2hService {
       where: { attemptId: { in: [...finishedAtOf.keys()] } },
       select: { attemptId: true, editedAt: true, value: true, penalty: true },
     });
+    const logsOf = new Map<string, typeof logs>();
+    for (const log of logs) {
+      const list = logsOf.get(log.attemptId);
+      if (list) list.push(log);
+      else logsOf.set(log.attemptId, [log]);
+    }
     return new Set(
       [...finishedAtOf].flatMap(([id, attempt]) =>
-        amendedAfter(
-          attempt.finishedAt,
-          logs.filter((log) => log.attemptId === id),
-          attempt,
-        )
+        amendedAfter(attempt.finishedAt, logsOf.get(id) ?? [], attempt)
           ? [id]
           : [],
       ),
@@ -577,11 +604,21 @@ export class H2hService {
       }
       if (
         bracket.matches.some(
-          (m) => !NOT_STARTED.includes(m.status) || m.startedAt !== null,
+          (m) =>
+            m.startedAt !== null || m.status === H2hMatchStatus.IN_PROGRESS,
         )
       ) {
         throw new ConflictException(
           "The seeds can't change once a match has started",
+        );
+      }
+      // New seeds would drop the withdrawal, and the walkovers it gave
+      if (
+        bracket.entrants.some((e) => e.withdrawnAt !== null) ||
+        bracket.matches.some((m) => m.status === H2hMatchStatus.FINISHED)
+      ) {
+        throw new ConflictException(
+          "The seeds can't change once a competitor has withdrawn. To start over, delete the bracket and create it again.",
         );
       }
       if (dto.personIds.length > bracket.size) {

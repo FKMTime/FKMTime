@@ -14,6 +14,7 @@ import {
   Attempt,
   AttemptType,
   H2hBracketStatus,
+  H2hMatchAction,
   H2hMatchEnd,
   H2hMatchStatus,
   H2hSide,
@@ -381,6 +382,9 @@ export class H2hMatchService {
    * set's and the match's. Opens the next set when one ends, finishes the
    * match and fills the matches it feeds. A finished match is frozen
    * (11l1): nothing here changes it.
+   * Once a match has been reopened, points raced after their set was over
+   * (on times amended after the match) don't count rather than being
+   * refused: they were raced, and the delegate can't take them back.
    */
   async settle(db: Db, matchId: string) {
     const match = await db.h2hMatch.findUniqueOrThrow({
@@ -388,6 +392,10 @@ export class H2hMatchService {
       include: matchInclude,
     });
     if (match.status !== H2hMatchStatus.IN_PROGRESS) return;
+    const reopened =
+      (await db.h2hMatchLog.count({
+        where: { matchId, action: H2hMatchAction.REOPEN },
+      })) > 0;
     const { entrantA, entrantB } = match;
     if (!entrantA || !entrantB) {
       throw new Error(`Match ${matchId} is playing without both competitors`);
@@ -409,6 +417,7 @@ export class H2hMatchService {
           })),
         })),
         otherMatchResults: await this.otherMatchResults(db, match),
+        ignoreSurplus: reopened,
       });
     } catch (e) {
       if (e instanceof MatchConflict) throw new ConflictException(e.message);
@@ -499,7 +508,14 @@ export class H2hMatchService {
   private async otherMatchResults(db: Db, match: LoadedMatch) {
     const points = await db.h2hPoint.findMany({
       where: {
-        set: { match: { bracketId: match.bracket.id, id: { not: match.id } } },
+        set: {
+          match: {
+            bracketId: match.bracket.id,
+            id: { not: match.id },
+            // A walkover has no results (9f5b), as in bestSingles
+            OR: [{ endedBy: null }, { endedBy: { not: H2hMatchEnd.WALKOVER } }],
+          },
+        },
       },
       include: {
         set: {
@@ -563,13 +579,17 @@ export class H2hMatchService {
   }
 
   /**
-   * Whether an attempt on a point may be deleted. Only the lone attempt of a
-   * playing match's open point may: nothing was decided with it, so the
-   * point goes with it (a result typed for the wrong competitor). Anything
-   * else decided a point, and deleting it is refused.
-   * Returns the point to delete first, or null for an attempt on no point.
+   * Takes an attempt off its point before it is deleted. Only the lone
+   * attempt of a playing match's open point may go: nothing was decided
+   * with it (a result typed for the wrong competitor). Anything else
+   * decided a point, and deleting it is refused.
+   * The point goes with it, unless it was given an extra: then it keeps its
+   * extras and its scramble, and only the attempt's slot empties, so the
+   * scrambles raced on it are never raced again (I4b1).
+   * Returns the point, to settle its match once the attempt is gone, or
+   * null for an attempt on no point.
    */
-  async pointToDeleteWith(db: Db, attemptId: string) {
+  async releaseFromPoint(db: Db, attemptId: string) {
     const point = await this.lockPointOf(db, attemptId);
     if (!point) return null;
     const { match } = point.set;
@@ -602,6 +622,20 @@ export class H2hMatchService {
         },
         data: { replacedBy: null },
       });
+      const extras = await db.h2hPointExtra.count({
+        where: { pointId: point.id },
+      });
+      if (extras > 0) {
+        await db.h2hPoint.update({
+          where: { id: point.id },
+          data:
+            point.attemptAId === attemptId
+              ? { attemptAId: null }
+              : { attemptBId: null },
+        });
+      } else {
+        await db.h2hPoint.delete({ where: { id: point.id } });
+      }
       return point;
     }
     throw new ConflictException(
