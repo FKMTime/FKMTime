@@ -115,6 +115,7 @@ const CompetitionStatistics = () => {
 
     return (
         <>
+            {isError && <RequestError hasData onRetry={() => void refetch()} />}
             <div className="grid grid-cols-2 gap-2.5 md:grid-cols-[repeat(auto-fit,minmax(170px,1fr))] md:gap-3">
                 {tiles.map((tile) => (
                     <div

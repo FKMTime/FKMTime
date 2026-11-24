@@ -1,5 +1,25 @@
 import { QueryClient } from "@tanstack/react-query";
 
+import { QueryError } from "./queryError";
+
+/**
+ * Retries a failed query up to twice, to ride out short network drops,
+ * but not when the server refused it: a 403 or 404 gives the same answer
+ * on every try. Timeouts and rate limits (408, 429) are still retried.
+ */
+export const shouldRetryQuery = (failureCount: number, error: Error) => {
+    if (
+        error instanceof QueryError &&
+        error.status >= 400 &&
+        error.status < 500 &&
+        error.status !== 408 &&
+        error.status !== 429
+    ) {
+        return false;
+    }
+    return failureCount < 2;
+};
+
 /** The one cache for server data, configured as SPEC-003 describes */
 export const queryClient = new QueryClient({
     defaultOptions: {
@@ -7,7 +27,7 @@ export const queryClient = new QueryClient({
             // Venue networks can fool the browser's online check, so always
             // send the request and let it fail if the server is unreachable
             networkMode: "always",
-            retry: 2,
+            retry: shouldRetryQuery,
             refetchOnWindowFocus: false,
             // Socket reconnects drive refetching instead (useRefetchOnReconnect)
             refetchOnReconnect: false,
