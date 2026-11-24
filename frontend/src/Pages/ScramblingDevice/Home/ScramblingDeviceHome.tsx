@@ -58,7 +58,7 @@ const ScramblingDeviceHome = () => {
         { enabled: !!roundId }
     );
     const scrambleSets: ScrambleSet[] | null = scrambleSetsData ?? null;
-    const { data: h2hMatches } = useLiveQuery(
+    const { data: h2hMatches, isError: h2hFailed } = useLiveQuery(
         scramblingDeviceH2hQuery(roundId),
         { enabled: isH2h, refetchInterval: H2H_REFRESH_MS }
     );
@@ -135,6 +135,7 @@ const ScramblingDeviceHome = () => {
                         <H2hMatchesList
                             matches={h2hMatches ?? null}
                             canScramble={isRunningHere}
+                            isStale={h2hFailed}
                         />
                     )}
                     <ScrambleSetsList

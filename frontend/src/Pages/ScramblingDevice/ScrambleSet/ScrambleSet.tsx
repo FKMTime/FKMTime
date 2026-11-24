@@ -36,11 +36,24 @@ const H2hScrambling = ({
     scrambles: DecryptedScramble[];
 }) => {
     const navigate = useNavigate();
-    const { data: matches } = useLiveQuery(
+    const { data: matches, isError } = useLiveQuery(
         scramblingDeviceH2hQuery(scrambleSet.roundId),
         { refetchInterval: H2H_REFRESH_MS }
     );
-    if (!matches) return <LoadingPage />;
+    if (!matches) {
+        return isError ? (
+            <p
+                role="alert"
+                className="flex items-start gap-2.5 rounded-xl bg-warning-soft px-4 py-3 text-sm font-semibold text-warning"
+            >
+                <TriangleAlert className="mt-px size-[18px] shrink-0" />
+                Can&apos;t reach the server to find the match&apos;s scramble.
+                Trying again…
+            </p>
+        ) : (
+            <LoadingPage />
+        );
+    }
     return (
         <H2hScrambleCard
             match={matches.find((m) => m.matchId === matchId) ?? null}
@@ -49,6 +62,7 @@ const H2hScrambling = ({
             eventId={scrambleSet.roundId.split("-")[0]}
             onOpenSet={(id) => navigate(h2hScramblePath(matchId, id))}
             onBack={() => navigate("/scrambling-device")}
+            isStale={isError}
         />
     );
 };

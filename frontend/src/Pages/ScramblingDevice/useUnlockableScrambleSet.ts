@@ -32,18 +32,22 @@ export const useUnlockableScrambleSet = (id?: string) => {
         getScrambleSetById(id).then(setScrambleSet);
     }, [id, navigate]);
 
+    // The previous set stays loaded until the new one arrives: never show it,
+    // or post this set's password to it
+    const current = scrambleSet?.id === id ? scrambleSet : null;
+
     const unlock = async (password: string) => {
-        if (!scrambleSet) return;
+        if (!current) return;
         if (!password) {
             setUnlockError("Enter the password");
             return;
         }
         setIsUnlocking(true);
-        const response = await unlockScrambleSet(scrambleSet.id, password);
+        const response = await unlockScrambleSet(current.id, password);
         setIsUnlocking(false);
         if (response.status === 200) {
             setUnlocked({
-                setId: scrambleSet.id,
+                setId: current.id,
                 scrambles: decryptScrambles(response.data.scrambles, password),
             });
         } else {
@@ -52,12 +56,11 @@ export const useUnlockableScrambleSet = (id?: string) => {
     };
 
     return {
-        scrambleSet,
+        /** null while the set in the route loads */
+        scrambleSet: current,
         /** null until the set is unlocked */
         scrambles:
-            unlocked &&
-            unlocked.setId === scrambleSet?.id &&
-            unlocked.setId === id
+            unlocked && unlocked.setId === current?.id
                 ? unlocked.scrambles
                 : null,
         unlock,

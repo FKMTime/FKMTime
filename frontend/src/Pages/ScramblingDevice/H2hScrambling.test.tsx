@@ -1,11 +1,44 @@
 import { fireEvent, render, screen } from "@testing-library/react";
-import { MemoryRouter, Route, Routes, useLocation } from "react-router-dom";
+import { createStore, Provider } from "jotai";
+import { ReactElement } from "react";
+import {
+    MemoryRouter,
+    Outlet,
+    Route,
+    Routes,
+    useLocation,
+} from "react-router-dom";
 import { describe, expect, it, vi } from "vitest";
 
-import { DecryptedScramble, H2hMatchScramble } from "@/lib/interfaces";
+import { competitionAtom } from "@/lib/atoms";
+import {
+    Competition,
+    DecryptedScramble,
+    H2hMatchScramble,
+    ScrambleSet as ScrambleSetData,
+    ScramblingDeviceRoom,
+} from "@/lib/interfaces";
 
 import H2hMatchesList from "./Home/Components/H2hMatchesList";
+import ScramblingDeviceHome from "./Home/ScramblingDeviceHome";
 import H2hScrambleCard from "./ScrambleSet/Components/H2hScrambleCard";
+import ScrambleSet from "./ScrambleSet/ScrambleSet";
+
+/** What each live query answers, by its key */
+const live = vi.hoisted(() => ({
+    data: {} as Record<string, unknown>,
+    isError: false,
+}));
+vi.mock("@/hooks/useLiveQuery", () => ({
+    useLiveQuery: (query: { key: string }) => ({
+        data: live.data[query.key],
+        isError: live.isError,
+    }),
+}));
+const unlockable = vi.hoisted(() => ({ state: {} as Record<string, unknown> }));
+vi.mock("./useUnlockableScrambleSet", () => ({
+    useUnlockableScrambleSet: () => unlockable.state,
+}));
 
 const playing = (
     overrides: Partial<H2hMatchScramble> = {}
@@ -192,5 +225,151 @@ describe("H2hScrambleCard", () => {
             screen.getByRole("button", { name: "Back to the matches" })
         );
         expect(onBack).toHaveBeenCalled();
+    });
+});
+
+describe("H2H views on failed reads", () => {
+    it("warns that the matches may be out of date", () => {
+        render(
+            <MemoryRouter>
+                <H2hMatchesList matches={[playing()]} canScramble isStale />
+            </MemoryRouter>
+        );
+
+        expect(screen.getByRole("alert").textContent).toMatch(
+            /Can't reach the server/
+        );
+    });
+
+    it("warns that the scramble may be out of date", () => {
+        render(
+            <H2hScrambleCard
+                match={playing()}
+                scrambleSetId="set-c"
+                scrambles={scrambles}
+                eventId="333oh"
+                onOpenSet={vi.fn()}
+                onBack={vi.fn()}
+                isStale
+            />
+        );
+
+        expect(screen.getAllByRole("alert")[0].textContent).toMatch(
+            /may be out of date/
+        );
+        expect(screen.getByText("F2 L' D B2")).toBeTruthy();
+    });
+});
+
+const room: ScramblingDeviceRoom = {
+    id: "room-1",
+    name: "Stage",
+    color: "#000000",
+    currentGroupIds: ["333oh-r2-g1"],
+};
+
+const withRoom = (path: string, element: ReactElement, initial: string) => (
+    <MemoryRouter initialEntries={[initial]}>
+        <Routes>
+            <Route element={<Outlet context={{ room }} />}>
+                <Route path={path} element={element} />
+            </Route>
+            <Route path="*" element={<Location />} />
+        </Routes>
+    </MemoryRouter>
+);
+
+describe("ScrambleSet page", () => {
+    const setC: ScrambleSetData = {
+        id: "set-c",
+        roundId: "333oh-r2",
+        set: "C",
+        scramblesCount: 5,
+        extraScramblesCount: 2,
+    };
+
+    const renderPage = (search: string) => {
+        unlockable.state = {
+            scrambleSet: setC,
+            scrambles,
+            unlock: vi.fn(),
+            unlockError: "",
+            clearUnlockError: vi.fn(),
+            isUnlocking: false,
+        };
+        live.data = { "scrambling/h2h/333oh-r2": [playing()] };
+        live.isError = false;
+        render(
+            withRoom(
+                "/scrambling-device/set/:id",
+                <ScrambleSet />,
+                `/scrambling-device/set/set-c${search}`
+            )
+        );
+    };
+
+    it("shows the match's next scramble when opened for a match", () => {
+        renderPage("?match=match-1");
+
+        expect(screen.getByText("Set 1 · point 4")).toBeTruthy();
+        expect(screen.getByText("F2 L' D B2")).toBeTruthy();
+        expect(screen.queryByText("Scan the scrambler's card")).toBeNull();
+    });
+
+    it("scans cards as before otherwise", () => {
+        renderPage("");
+
+        expect(screen.getByText("Scan the scrambler's card")).toBeTruthy();
+        expect(screen.queryByText("F2 L' D B2")).toBeNull();
+    });
+});
+
+describe("ScramblingDeviceHome in a head-to-head round", () => {
+    it("scrambles through the matches, not the sets", () => {
+        const store = createStore();
+        store.set(competitionAtom, {
+            wcif: {
+                events: [
+                    {
+                        id: "333oh",
+                        rounds: [
+                            { id: "333oh-r1", format: "a" },
+                            { id: "333oh-r2", format: "h" },
+                        ],
+                    },
+                ],
+            },
+        } as unknown as Competition);
+        live.data = {
+            "scrambling/sets/round/333oh-r2": [
+                {
+                    id: "set-c",
+                    roundId: "333oh-r2",
+                    set: "C",
+                    scramblesCount: 5,
+                    extraScramblesCount: 2,
+                },
+            ],
+            "scrambling/h2h/333oh-r2": [playing()],
+        };
+        live.isError = false;
+        render(
+            <Provider store={store}>
+                {withRoom(
+                    "/scrambling-device",
+                    <ScramblingDeviceHome />,
+                    "/scrambling-device"
+                )}
+            </Provider>
+        );
+
+        expect(
+            screen.getByRole("button", { name: "Scramble for Semifinal 1" })
+        ).toBeTruthy();
+        // The set keeps All scrambles, without its own Scramble
+        expect(
+            screen.getByRole("button", { name: "All scrambles" })
+        ).toBeTruthy();
+        expect(screen.queryByRole("button", { name: "Scramble" })).toBeNull();
     });
 });

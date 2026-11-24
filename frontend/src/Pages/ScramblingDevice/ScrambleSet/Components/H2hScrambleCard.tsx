@@ -1,4 +1,5 @@
 import { ArrowRight, TriangleAlert } from "lucide-react";
+import { ReactNode } from "react";
 
 import { Button } from "@/Components/ui/button";
 import { DecryptedScramble, H2hMatchScramble } from "@/lib/interfaces";
@@ -13,9 +14,11 @@ interface H2hScrambleCardProps {
     /** Opens another set of the round for the same match */
     onOpenSet: (scrambleSetId: string) => void;
     onBack: () => void;
+    /** The last read failed: the scramble may have moved on since */
+    isStale?: boolean;
 }
 
-const Warning = ({ children }: { children: string }) => (
+const Warning = ({ children }: { children: ReactNode }) => (
     <p
         role="alert"
         className="flex items-start gap-2.5 rounded-xl bg-warning-soft px-4 py-3 text-sm font-semibold text-warning"
@@ -36,7 +39,26 @@ const H2hScrambleCard = ({
     eventId,
     onOpenSet,
     onBack,
+    isStale = false,
 }: H2hScrambleCardProps) => {
+    if (isStale) {
+        return (
+            <>
+                <Warning>
+                    Can&apos;t reach the server. This scramble may be out of
+                    date: check the Matches tab before scrambling.
+                </Warning>
+                <H2hScrambleCard
+                    match={match}
+                    scrambleSetId={scrambleSetId}
+                    scrambles={scrambles}
+                    eventId={eventId}
+                    onOpenSet={onOpenSet}
+                    onBack={onBack}
+                />
+            </>
+        );
+    }
     if (!match) {
         return (
             <section className="flex flex-col items-start gap-3 rounded-2xl border bg-card px-5 py-6">
