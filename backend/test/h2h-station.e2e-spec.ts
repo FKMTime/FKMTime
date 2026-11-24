@@ -608,4 +608,67 @@ describe('Stations in a head-to-head round (e2e)', () => {
     });
     expect(points[0].amendedAfterMatch).toBe(false);
   });
+
+  describe('the scrambling device', () => {
+    const asDevice = (req: request.Test) =>
+      req.set('Authorization', `Token ${SCRAMBLING_TOKEN}`);
+    const scrambles = async () =>
+      (
+        await asDevice(
+          request(server()).get(`/scrambling/h2h/${roundId}`),
+        ).expect(200)
+      ).body as {
+        matchId: string;
+        label: string;
+        setNumber: number;
+        pointNumber: number;
+        scramble: {
+          scrambleSetId: string;
+          set: string;
+          num: number;
+          isExtra: boolean;
+        } | null;
+        text: string;
+      }[];
+
+    it("lists every playing match with its set and the next point's scramble", async () => {
+      const [seed1, , , seed4] = seeds;
+      expect(await scrambles()).toEqual([]);
+      await start(1);
+      await start(2);
+
+      const both = await scrambles();
+      expect(both.map((m) => m.text)).toEqual([
+        'Semifinal 1 · set 1 · Set A, scramble 1',
+        'Semifinal 2 · set 1 · Set B, scramble 1',
+      ]);
+      const setA = found(
+        await db.scrambleSet.findFirst({ where: { roundId, set: 'A' } }),
+        'set A',
+      );
+      expect(both[0]).toMatchObject({
+        label: 'Semifinal 1',
+        setNumber: 1,
+        pointNumber: 1,
+        scramble: { scrambleSetId: setA.id, set: 'A', num: 1, isExtra: false },
+      });
+
+      // The open point keeps its scramble until both have raced it
+      await solve(seed1, 1000);
+      expect((await scrambles())[0].text).toBe(
+        'Semifinal 1 · set 1 · Set A, scramble 1',
+      );
+      await solve(seed4, 1100, { espId: ESP.b });
+      expect((await scrambles())[0]).toMatchObject({
+        pointNumber: 2,
+        text: 'Semifinal 1 · set 1 · Set A, scramble 2',
+      });
+    });
+
+    it('refuses a round that is not head-to-head', async () => {
+      await asDevice(
+        request(server()).get(`/scrambling/h2h/${roundId.split('-r')[0]}-r1`),
+      ).expect(400);
+    });
+  });
 });

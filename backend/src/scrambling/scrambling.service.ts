@@ -2,6 +2,7 @@ import { HttpException, Injectable } from '@nestjs/common';
 import * as CryptoJS from 'crypto-js';
 import { sha512 } from 'js-sha512';
 import { DbService } from 'src/db/db.service';
+import { H2hService } from 'src/h2h/h2h.service';
 import { isH2hRound } from 'src/h2h/h2hRound';
 import { PersonService } from 'src/person/person.service';
 import { ResultService } from 'src/result/result.service';
@@ -18,6 +19,7 @@ export class ScramblingService {
     private readonly personService: PersonService,
     private readonly resultFromDeviceService: ResultFromDeviceService,
     private readonly resultService: ResultService,
+    private readonly h2hService: H2hService,
   ) {}
 
   async unlockScrambleSet(id: string, data: UnlockScrambleSetDto) {
@@ -97,25 +99,43 @@ export class ScramblingService {
   }
 
   /**
+   * Each playing match of a head-to-head round with the set in use and its
+   * next point's scramble (SPEC-001, On the day): the scrambler picks a
+   * match, unlocks that set and scrambles both cubes the same
+   */
+  async getH2hScrambles(token: string, roundId: string) {
+    await this.verifyToken(token);
+    if (!(await this.isH2hRound(roundId))) {
+      throw new HttpException('This round is not head-to-head', 400);
+    }
+    return this.h2hService.getPlayingScrambles(roundId);
+  }
+
+  /**
    * A head-to-head point's scramble comes from its match, not from the
-   * competitor's attempt count, so the device can't pick it yet (SPEC-001)
+   * competitor's attempt count, and the point already knows it: no scan
+   * per competitor (SPEC-001)
    */
   private async refuseH2hRound(roundId: string) {
+    if (await this.isH2hRound(roundId)) {
+      throw new HttpException(
+        "In a head-to-head round, pick the match on the device's home screen: each point's scramble comes from its match, for both competitors.",
+        400,
+      );
+    }
+  }
+
+  private async isH2hRound(roundId: string) {
     const competition = await this.prisma.competition.findFirst({
       select: { wcif: true },
     });
-    if (
-      competition &&
+    return (
+      competition !== null &&
       isH2hRound(
         roundId.split('-g')[0],
         competition.wcif as unknown as Competition,
       )
-    ) {
-      throw new HttpException(
-        "Head-to-head rounds aren't scrambled from this device yet. The Matches tab shows each point's scramble.",
-        400,
-      );
-    }
+    );
   }
 
   private async verifyToken(token: string) {

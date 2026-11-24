@@ -13,7 +13,10 @@ import {
     getEventShortName,
 } from "@/lib/events";
 import { ScrambleSet } from "@/lib/interfaces";
-import { scramblingDeviceSetsQuery } from "@/lib/scrambling";
+import {
+    scramblingDeviceH2hQuery,
+    scramblingDeviceSetsQuery,
+} from "@/lib/scrambling";
 import { cn } from "@/lib/utils";
 
 import DevicePage from "../Components/DevicePage";
@@ -24,7 +27,11 @@ import {
     stationNamesForRound,
     useScramblingDeviceRoom,
 } from "../scramblingDeviceContext";
+import H2hMatchesList from "./Components/H2hMatchesList";
 import ScrambleSetsList from "./Components/ScrambleSetsList";
+
+/** How often a head-to-head round's matches are read again */
+const H2H_REFRESH_MS = 3_000;
 
 const ScramblingDeviceHome = () => {
     const competition = useAtomValue(competitionAtom);
@@ -42,6 +49,8 @@ const ScramblingDeviceHome = () => {
     const currentGroupId = currentGroupIdForRound(room, roundId);
     const pointedStationNames = stationNamesForRound(room, roundId);
     const isRunningHere = !!currentGroupId || pointedStationNames.length > 0;
+    // A head-to-head point's scramble comes from its match (SPEC-001)
+    const isH2h = event?.rounds.find((r) => r.id === roundId)?.format === "h";
 
     // null while the selected round's sets load
     const { data: scrambleSetsData } = useLiveQuery(
@@ -49,6 +58,10 @@ const ScramblingDeviceHome = () => {
         { enabled: !!roundId }
     );
     const scrambleSets: ScrambleSet[] | null = scrambleSetsData ?? null;
+    const { data: h2hMatches } = useLiveQuery(
+        scramblingDeviceH2hQuery(roundId),
+        { enabled: isH2h, refetchInterval: H2H_REFRESH_MS }
+    );
 
     const pickEvent = (id: string) => {
         const rounds = events.find((e) => e.id === id)?.rounds ?? [];
@@ -118,9 +131,15 @@ const ScramblingDeviceHome = () => {
                             />
                         )}
                     </div>
+                    {isH2h && (
+                        <H2hMatchesList
+                            matches={h2hMatches ?? null}
+                            canScramble={isRunningHere}
+                        />
+                    )}
                     <ScrambleSetsList
                         scrambleSets={scrambleSets}
-                        canScramble={isRunningHere}
+                        canScramble={isRunningHere && !isH2h}
                     />
                 </section>
             )}

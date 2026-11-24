@@ -15,9 +15,12 @@ const unlockErrorMessage = (status: number) =>
 export const useUnlockableScrambleSet = (id?: string) => {
     const navigate = useNavigate();
     const [scrambleSet, setScrambleSet] = useState<ScrambleSet | null>(null);
-    const [scrambles, setScrambles] = useState<DecryptedScramble[] | null>(
-        null
-    );
+    // Kept with the set they belong to: a head-to-head match moving on to
+    // another set opens it on this page, locked until its password
+    const [unlocked, setUnlocked] = useState<{
+        setId: string;
+        scrambles: DecryptedScramble[];
+    } | null>(null);
     const [unlockError, setUnlockError] = useState("");
     const [isUnlocking, setIsUnlocking] = useState(false);
 
@@ -39,7 +42,10 @@ export const useUnlockableScrambleSet = (id?: string) => {
         const response = await unlockScrambleSet(scrambleSet.id, password);
         setIsUnlocking(false);
         if (response.status === 200) {
-            setScrambles(decryptScrambles(response.data.scrambles, password));
+            setUnlocked({
+                setId: scrambleSet.id,
+                scrambles: decryptScrambles(response.data.scrambles, password),
+            });
         } else {
             setUnlockError(unlockErrorMessage(response.status));
         }
@@ -48,7 +54,12 @@ export const useUnlockableScrambleSet = (id?: string) => {
     return {
         scrambleSet,
         /** null until the set is unlocked */
-        scrambles,
+        scrambles:
+            unlocked &&
+            unlocked.setId === scrambleSet?.id &&
+            unlocked.setId === id
+                ? unlocked.scrambles
+                : null,
         unlock,
         unlockError,
         clearUnlockError: () => setUnlockError(""),

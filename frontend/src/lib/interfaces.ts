@@ -822,6 +822,29 @@ export interface DecryptedScramble {
     scramble: string;
 }
 
+/**
+ * A playing head-to-head match as the scrambling device shows it: the set
+ * in use and the scramble its next point races (SPEC-001)
+ */
+export interface H2hMatchScramble {
+    matchId: string;
+    /** "Semifinal 1" */
+    label: string;
+    setNumber: number;
+    pointNumber: number;
+    /** Null when no scramble is left for the point */
+    scramble: {
+        scrambleSetId: string;
+        /** The set's letter */
+        set: string;
+        num: number;
+        isExtra: boolean;
+    } | null;
+    /** "Semifinal 1 · set 1 · Set C, scramble 4" */
+    text: string;
+    warning: string | null;
+}
+
 export interface ScrambleData {
     num: number;
     isExtra: boolean;

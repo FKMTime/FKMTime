@@ -58,6 +58,15 @@ export class ScramblingController {
     return this.scramblingService.getScrambleData(token, cardId, roundId);
   }
 
+  /** A head-to-head round's playing matches and their next scrambles */
+  @Get('h2h/:roundId')
+  async getH2hScrambles(
+    @GetScramblingDeviceToken() token: string,
+    @Param('roundId', ParseRoundIdPipe) roundId: string,
+  ) {
+    return this.scramblingService.getH2hScrambles(token, roundId);
+  }
+
   @Post('scramble')
   async createScrambledAttempt(
     @GetScramblingDeviceToken() token: string,
