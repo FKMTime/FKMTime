@@ -415,3 +415,57 @@ export const amendedAfter = (
     atFinish.value !== current.value || atFinish.penalty !== current.penalty
   );
 };
+
+/** A playing match's next scramble, as the scramble team is shown it */
+export interface ScrambleInUse {
+  label: string;
+  scramble: {
+    scrambleSetId: string;
+    set: string;
+    num: number;
+    isExtra: boolean;
+  } | null;
+  /**
+   * Worked out, not yet raced: the next point takes it when its first
+   * result lands. False for the open point's own scramble.
+   */
+  predicted: boolean;
+  warning: string | null;
+}
+
+/**
+ * Two playing matches past their own sets both take the next spare
+ * scramble, and whichever records first gets it: showing it to both would
+ * race it twice. The first in match order keeps it; the others are held
+ * until a result of that match is in, when theirs moves on to the next
+ * one. `entries` are in match order.
+ */
+export const holdSharedScrambles = <T extends ScrambleInUse>(
+  entries: T[],
+): T[] => {
+  const keyOf = (entry: T) =>
+    entry.predicted && entry.scramble
+      ? `${entry.scramble.scrambleSetId}:${entry.scramble.isExtra}:${entry.scramble.num}`
+      : null;
+  return entries.map((entry) => {
+    const key = keyOf(entry);
+    if (key === null || entry.scramble === null) return entry;
+    const sharing = entries.filter((other) => keyOf(other) === key);
+    if (sharing.length < 2) return entry;
+    const [first] = sharing;
+    const { set, num, isExtra } = entry.scramble;
+    const what = `Set ${set}, ${isExtra ? 'extra' : 'scramble'} ${num}`;
+    if (first === entry) {
+      const others = sharing.slice(1).map((other) => other.label);
+      return {
+        ...entry,
+        warning: `${others.join(' and ')} would take ${what} from the spares too. Scramble it for ${entry.label} only: ${others.length > 1 ? 'theirs move' : 'theirs moves'} on once a result of ${entry.label} is in.`,
+      };
+    }
+    return {
+      ...entry,
+      scramble: null,
+      warning: `${first.label} takes ${what} from the spares first. Wait for a result of ${first.label}: this match's scramble shows then.`,
+    };
+  });
+};

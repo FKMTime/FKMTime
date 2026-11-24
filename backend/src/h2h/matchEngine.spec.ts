@@ -6,6 +6,7 @@ import {
 import {
   amendedAfter,
   FedMatch,
+  holdSharedScrambles,
   MatchConflict,
   matchesFedBy,
   MatchInput,
@@ -562,5 +563,42 @@ describe('amendedAfter', () => {
         penalty: 0,
       }),
     ).toBe(false);
+  });
+});
+
+describe('holdSharedScrambles', () => {
+  const spareF1 = { scrambleSetId: 'set-f', set: 'F', num: 1, isExtra: false };
+  const entry = (
+    label: string,
+    scramble: typeof spareF1 | null,
+    predicted = true,
+  ) => ({ label, scramble, predicted, warning: null });
+
+  it('keeps a spare scramble for the first match that would take it, and holds the others', () => {
+    const [first, second] = holdSharedScrambles([
+      entry('Semifinal 1', spareF1),
+      entry('Semifinal 2', spareF1),
+    ]);
+
+    expect(first.scramble).toEqual(spareF1);
+    expect(first.warning).toBe(
+      'Semifinal 2 would take Set F, scramble 1 from the spares too. Scramble it for Semifinal 1 only: theirs moves on once a result of Semifinal 1 is in.',
+    );
+    expect(second.scramble).toBeNull();
+    expect(second.warning).toBe(
+      "Semifinal 1 takes Set F, scramble 1 from the spares first. Wait for a result of Semifinal 1: this match's scramble shows then.",
+    );
+  });
+
+  it("leaves an open point's own scramble and different scrambles alone", () => {
+    const spareF2 = { ...spareF1, num: 2 };
+    const entries = [
+      // Raced already: the point holds it, so no other match can take it
+      entry('Semifinal 1', spareF1, false),
+      entry('Semifinal 2', spareF2),
+      entry('Final', null),
+    ];
+
+    expect(holdSharedScrambles(entries)).toEqual(entries);
   });
 });
