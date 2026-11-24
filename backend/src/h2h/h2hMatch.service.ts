@@ -14,7 +14,6 @@ import {
   Attempt,
   AttemptType,
   H2hBracketStatus,
-  H2hMatchAction,
   H2hMatchEnd,
   H2hMatchStatus,
   H2hSide,
@@ -382,20 +381,22 @@ export class H2hMatchService {
    * set's and the match's. Opens the next set when one ends, finishes the
    * match and fills the matches it feeds. A finished match is frozen
    * (11l1): nothing here changes it.
-   * Once a match has been reopened, points raced after their set was over
-   * (on times amended after the match) don't count rather than being
-   * refused: they were raced, and the delegate can't take them back.
+   * When `reopening` a match on times amended after it, points raced after
+   * their set or the match was over don't count rather than being refused:
+   * they were raced, and the delegate can't take them back. They are marked
+   * `afterEnd`, and left out of every later decision, which refuses a new
+   * point after a set's end as before.
    */
-  async settle(db: Db, matchId: string) {
+  async settle(db: Db, matchId: string, options: { reopening?: boolean } = {}) {
+    const reopening = options.reopening ?? false;
     const match = await db.h2hMatch.findUniqueOrThrow({
       where: { id: matchId },
       include: matchInclude,
     });
     if (match.status !== H2hMatchStatus.IN_PROGRESS) return;
-    const reopened =
-      (await db.h2hMatchLog.count({
-        where: { matchId, action: H2hMatchAction.REOPEN },
-      })) > 0;
+    // Reopening decides every point again, those found after the end before
+    const counts = (point: { afterEnd: boolean }) =>
+      reopening || !point.afterEnd;
     const { entrantA, entrantB } = match;
     if (!entrantA || !entrantB) {
       throw new Error(`Match ${matchId} is playing without both competitors`);
@@ -410,14 +411,14 @@ export class H2hMatchService {
         seeds: { a: entrantA.seed, b: entrantB.seed },
         sets: raced.map((set) => ({
           setNumber: set.setNumber,
-          points: set.points.map((point) => ({
+          points: set.points.filter(counts).map((point) => ({
             pointNumber: point.pointNumber,
             a: resultOf(point.attemptA),
             b: resultOf(point.attemptB),
           })),
         })),
         otherMatchResults: await this.otherMatchResults(db, match),
-        ignoreSurplus: reopened,
+        ignoreSurplus: reopening,
       });
     } catch (e) {
       if (e instanceof MatchConflict) throw new ConflictException(e.message);
@@ -427,18 +428,20 @@ export class H2hMatchService {
     const now = new Date();
     for (const set of raced) {
       const scored = score.sets.find((s) => s.setNumber === set.setNumber);
-      for (const point of set.points) {
+      for (const point of set.points.filter(counts)) {
         const decided = scored?.pointWinners.has(point.pointNumber) ?? false;
         const winnerSide = scored?.pointWinners.get(point.pointNumber) ?? null;
+        const afterEnd = scored?.afterEnd.has(point.pointNumber) ?? false;
         if (
           point.winnerSide === winnerSide &&
-          (point.decidedAt !== null) === decided
+          (point.decidedAt !== null) === decided &&
+          point.afterEnd === afterEnd
         ) {
           continue;
         }
         await db.h2hPoint.update({
           where: { id: point.id },
-          data: { winnerSide, decidedAt: decided ? now : null },
+          data: { winnerSide, decidedAt: decided ? now : null, afterEnd },
         });
       }
       const outcome = scored?.outcome ?? null;

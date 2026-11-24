@@ -12,7 +12,7 @@ import {
   AttemptSnapshot,
 } from 'src/attempt-edit-log/attempt-edit-log.service';
 import { CompetitionService } from 'src/competition/competition.service';
-import { DbService, runInTransaction } from 'src/db/db.service';
+import { DbService, runInTransaction, Tx } from 'src/db/db.service';
 import { SocketController } from 'src/socket/socket.controller';
 
 import {
@@ -72,6 +72,46 @@ export class H2hMatchActionsService {
     this.appGateway.handleAttemptUpdated();
     this.appGateway.handleResultEntered(roundId);
     this.competitionService.requestGroupChangeCheck(roundId);
+  }
+
+  /**
+   * Moves the attempts replaced by an extra not raced yet, on the points
+   * given, between waiting for it (Extra granted) and called off (Voided),
+   * with an edit log line saying why: called off when the match ends
+   * before the re-race or the point no longer counts, waiting again when
+   * a reopened match plays it after all
+   */
+  private async moveWaitingExtras(
+    tx: Tx,
+    points: Prisma.H2hPointWhereInput,
+    change: { from: AttemptStatus; to: AttemptStatus },
+    userId: string,
+    why: string,
+  ) {
+    const attempts = await tx.db.attempt.findMany({
+      where: {
+        status: change.from,
+        replacedBy: null,
+        OR: [
+          { h2hExtraAsA: { point: points } },
+          { h2hExtraAsB: { point: points } },
+        ],
+      },
+    });
+    const now = new Date();
+    for (const attempt of attempts) {
+      const updated = await tx.db.attempt.update({
+        where: { id: attempt.id },
+        data: { status: change.to, updatedBy: { connect: { id: userId } } },
+      });
+      await this.attemptEditLogService.log(
+        updated as AttemptSnapshot,
+        now,
+        userId,
+        why,
+        tx,
+      );
+    }
   }
 
   /**
@@ -155,6 +195,11 @@ export class H2hMatchActionsService {
         if (match.status !== H2hMatchStatus.IN_PROGRESS && !playedOut) {
           throw new ConflictException(
             `${label} isn't playing, so its points can't get an extra. A finished match keeps its points (Regulation 11l).`,
+          );
+        }
+        if (point.afterEnd) {
+          throw new ConflictException(
+            `${where} was raced after its set or the match was over, so it doesn't count and can't get an extra`,
           );
         }
         const { attemptA, attemptB } = point;
@@ -384,33 +429,13 @@ export class H2hMatchActionsService {
       // An extra granted but not raced yet won't be: the attempts it
       // replaced stop waiting for it, so double check and the group
       // change don't wait on them
-      const waiting = await db.attempt.findMany({
-        where: {
-          status: AttemptStatus.EXTRA_GIVEN,
-          replacedBy: null,
-          OR: [
-            { h2hExtraAsA: { point: { set: { matchId } } } },
-            { h2hExtraAsB: { point: { set: { matchId } } } },
-          ],
-        },
-      });
-      const now = new Date();
-      for (const attempt of waiting) {
-        const voided = await db.attempt.update({
-          where: { id: attempt.id },
-          data: {
-            status: AttemptStatus.VOIDED,
-            updatedBy: { connect: { id: userId } },
-          },
-        });
-        await this.attemptEditLogService.log(
-          voided as AttemptSnapshot,
-          now,
-          userId,
-          `No longer needed: ${label} ended when a competitor retired before the extra was raced`,
-          tx,
-        );
-      }
+      await this.moveWaitingExtras(
+        tx,
+        { set: { matchId } },
+        { from: AttemptStatus.EXTRA_GIVEN, to: AttemptStatus.VOIDED },
+        userId,
+        `No longer needed: ${label} ended when a competitor retired before the extra was raced`,
+      );
       await finishMatch(
         db,
         match,
@@ -488,34 +513,6 @@ export class H2hMatchActionsService {
 
       const { reset } = matchesFedBy(matches, match.id);
       await unfinishMatch(db, match, reset);
-      // Attempts whose extra a retirement called off wait for it again
-      const voided = await db.attempt.findMany({
-        where: {
-          status: AttemptStatus.VOIDED,
-          replacedBy: null,
-          OR: [
-            { h2hExtraAsA: { point: { set: { matchId } } } },
-            { h2hExtraAsB: { point: { set: { matchId } } } },
-          ],
-        },
-      });
-      const now = new Date();
-      for (const attempt of voided) {
-        const waiting = await db.attempt.update({
-          where: { id: attempt.id },
-          data: {
-            status: AttemptStatus.EXTRA_GIVEN,
-            updatedBy: { connect: { id: userId } },
-          },
-        });
-        await this.attemptEditLogService.log(
-          waiting as AttemptSnapshot,
-          now,
-          userId,
-          `Waiting for its extra again: ${label} was reopened`,
-          tx,
-        );
-      }
       await db.h2hMatchLog.create({
         data: {
           matchId,
@@ -525,7 +522,17 @@ export class H2hMatchActionsService {
         },
       });
       // Decides it again: it may finish straight away, on amended times
-      await this.h2hMatchService.settle(db, match.id);
+      await this.h2hMatchService.settle(db, match.id, { reopening: true });
+      // An extra a retirement called off is raced after all, unless its
+      // point turned out to come after the end: then it stays called off.
+      // (Only a retirement leaves a finished match with an extra not raced.)
+      await this.moveWaitingExtras(
+        tx,
+        { set: { matchId }, afterEnd: false },
+        { from: AttemptStatus.VOIDED, to: AttemptStatus.EXTRA_GIVEN },
+        userId,
+        `Waiting for its extra again: ${label} was reopened`,
+      );
       await resolveWalkovers(db, match.bracketId);
       return match.bracket.roundId;
     });

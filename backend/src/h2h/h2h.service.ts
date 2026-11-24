@@ -87,6 +87,7 @@ const setViewSelect = {
       pointNumber: true,
       winnerSide: true,
       decidedAt: true,
+      afterEnd: true,
       attemptAId: true,
       attemptBId: true,
       attemptA: { select: attemptViewSelect },
@@ -260,7 +261,10 @@ export class H2hService {
         size: bracket.size,
         status: bracket.status,
         wcaRoundId: bracket.wcaRoundId,
-        seedsLocked: bracket.matches.some(hasStarted),
+        // A withdrawal locks them too: new seeds would drop it
+        seedsLocked:
+          bracket.matches.some(hasStarted) ||
+          bracket.entrants.some((entrant) => entrant.withdrawnAt !== null),
         attemptsLinked: bracket.matches.some((match) =>
           match.sets.some((set) =>
             set.points.some(
@@ -320,6 +324,7 @@ export class H2hService {
               pointNumber: point.pointNumber,
               winnerSide: point.winnerSide,
               decided: point.decidedAt !== null,
+              afterEnd: point.afterEnd,
               attemptA: point.attemptA,
               attemptB: point.attemptB,
               extras: point.extras,

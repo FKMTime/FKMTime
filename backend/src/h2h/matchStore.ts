@@ -100,8 +100,8 @@ export const resolveWalkovers = async (db: Db, bracketId: string) => {
       where: { bracketId, status: { in: NOT_STARTED }, startedAt: null },
       orderBy: { matchNumber: 'asc' },
       include: {
-        entrantA: { select: { seed: true, withdrawnAt: true } },
-        entrantB: { select: { seed: true, withdrawnAt: true } },
+        entrantA: { select: withdrawalSelect },
+        entrantB: { select: withdrawalSelect },
       },
     });
     let next: { match: (typeof waiting)[number]; winner: H2hSide } | null =
@@ -116,7 +116,47 @@ export const resolveWalkovers = async (db: Db, bracketId: string) => {
     }
     if (!next) return;
     await finishMatch(db, next.match, next.winner, H2hMatchEnd.WALKOVER);
+    const loser =
+      next.winner === H2hSide.A ? next.match.entrantB : next.match.entrantA;
+    if (loser) await moveStrandedWithdrawal(db, loser, next.match.id);
   }
+};
+
+const withdrawalSelect = {
+  id: true,
+  seed: true,
+  withdrawnAt: true,
+  withdrawnInMatchId: true,
+} as const;
+
+/**
+ * A withdrawal is undone by reopening the match it was made in. When a
+ * reopened earlier match has taken the competitor out of that match since
+ * (they now lose the semifinal and withdrew from the final), this walkover
+ * is where it applies: it becomes the match to reopen.
+ */
+const moveStrandedWithdrawal = async (
+  db: Db,
+  loser: { id: string; withdrawnInMatchId: string | null },
+  walkoverId: string,
+) => {
+  const madeIn =
+    loser.withdrawnInMatchId === null
+      ? null
+      : await db.h2hMatch.findUnique({
+          where: { id: loser.withdrawnInMatchId },
+          select: { entrantAId: true, entrantBId: true },
+        });
+  if (
+    madeIn &&
+    (madeIn.entrantAId === loser.id || madeIn.entrantBId === loser.id)
+  ) {
+    return;
+  }
+  await db.h2hEntrant.update({
+    where: { id: loser.id },
+    data: { withdrawnInMatchId: walkoverId },
+  });
 };
 
 /**

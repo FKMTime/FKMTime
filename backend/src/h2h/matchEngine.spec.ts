@@ -299,6 +299,7 @@ describe('scoreMatch', () => {
       });
       expect(score.winner).toBe(A);
       expect([...score.sets[0].pointWinners.keys()]).toEqual([1, 2, 3]);
+      expect([...score.sets[0].afterEnd]).toEqual([4]);
     });
 
     it('leaves sets after the match was over without winners', () => {
@@ -313,6 +314,8 @@ describe('scoreMatch', () => {
       expect(score.nextSetNumber).toBeNull();
       expect(score.sets[1]).toMatchObject({ outcome: null });
       expect(score.sets[1].pointWinners.size).toBe(0);
+      expect([...score.sets[1].afterEnd]).toEqual([1, 2, 3]);
+      expect(score.sets[0].afterEnd.size).toBe(0);
     });
 
     it('still refuses a set started while the one before would be going on', () => {

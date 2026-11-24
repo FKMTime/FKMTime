@@ -33,6 +33,7 @@ interface PointView {
   attemptB: AttemptView | null;
   extras: { attemptA: AttemptView; attemptB: AttemptView }[];
   amendedAfterMatch: boolean;
+  afterEnd: boolean;
   scramble: { set: string; num: number; isExtra: boolean } | null;
 }
 
@@ -57,6 +58,7 @@ interface MatchView {
 interface View {
   bracket: {
     status: string;
+    seedsLocked: boolean;
     entrants: {
       id: string;
       person: { id: string };
@@ -99,6 +101,8 @@ describe('Head-to-head match exceptions (e2e)', () => {
   let roundId: string;
   /** Four people registered for the event: seeds 1 to 4 */
   let seeds: Person[];
+  /** Everyone registered for the event, for a bigger bracket */
+  let registered: Person[];
 
   const server = () => app.getHttpServer();
   const as = (user: TestUser) => ({
@@ -278,12 +282,11 @@ describe('Head-to-head match exceptions (e2e)', () => {
           p.registration.eventIds.includes(eventId as never),
       )
       .map((p) => p.registrantId);
-    seeds = (
-      await db.person.findMany({
-        where: { registrantId: { in: registrantIds } },
-        orderBy: { registrantId: 'asc' },
-      })
-    ).slice(0, 4);
+    registered = await db.person.findMany({
+      where: { registrantId: { in: registrantIds } },
+      orderBy: { registrantId: 'asc' },
+    });
+    seeds = registered.slice(0, 4);
     expect(seeds).toHaveLength(4);
   }, 30000);
 
@@ -693,6 +696,45 @@ describe('Head-to-head match exceptions (e2e)', () => {
       expect(refused.body.message).toContain('once a competitor has withdrawn');
     });
 
+    it('keeps the seeds once someone has withdrawn before any walkover', async () => {
+      const twelve = registered.slice(0, 12);
+      expect(twelve).toHaveLength(12);
+      await request(server())
+        .post(`/h2h/${roundId}`)
+        .set(as(users.DELEGATE))
+        .send({ size: 12, setsToWin: {} })
+        .expect(201);
+      await request(server())
+        .put(`/h2h/${roundId}/seeds`)
+        .set(as(users.DELEGATE))
+        .send({ personIds: twelve.map((p) => p.id) })
+        .expect(200);
+      // Seed 1 waits in the quarterfinal for an opponent not known yet
+      const view = await getView();
+      const topSeed = entrantOf(view, twelve[0].id);
+      const waiting = found(
+        view.bracket.matches.find(
+          (m) =>
+            m.sideA.entrantId === topSeed.id ||
+            m.sideB.entrantId === topSeed.id,
+        ),
+        'the top seed’s match',
+      );
+      expect(waiting.status).toBe('WAITING');
+      const side = waiting.sideA.entrantId === topSeed.id ? 'A' : 'B';
+      await withdraw(waiting.id, side).expect(200);
+      const after = await getView();
+      expect(matchOf(after, waiting.matchNumber).status).toBe('WAITING');
+      expect(after.bracket.seedsLocked).toBe(true);
+
+      const refused = await request(server())
+        .put(`/h2h/${roundId}/seeds`)
+        .set(as(users.DELEGATE))
+        .send({ personIds: [...twelve].reverse().map((p) => p.id) })
+        .expect(409);
+      expect(refused.body.message).toContain('once a competitor has withdrawn');
+    });
+
     it('refuses a match that has started: that is Retire', async () => {
       await setUpBracket();
       const semi = await sides(1);
@@ -924,6 +966,81 @@ describe('Head-to-head match exceptions (e2e)', () => {
         ['A', true],
         [null, false],
       ]);
+      // Point 4 doesn't count, so it can't be raced again
+      const surplus = pointsOf(reopened)[3];
+      expect(surplus.afterEnd).toBe(true);
+      const refused = await extra(surplus.id).expect(409);
+      expect(refused.body.message).toContain("doesn't count");
+      expect(await waitingForExtra(semi.a)).toHaveLength(0);
+    });
+
+    it('calls off an extra on a point that turns out to come after the end', async () => {
+      await setUpBracket();
+      const semi = await sides(1);
+      await start(semi.id);
+      await point(semi.a, semi.b, 1000, 1100);
+      await point(semi.a, semi.b, 1000, 1100);
+      await point(semi.a, semi.b, 1200, 1100);
+      await point(semi.a, semi.b, 1200, 1100);
+      const fourth = pointsOf(matchOf(await getView(), 1))[3];
+      await extra(fourth.id).expect(200);
+      await retire(semi.id, 'B', 'Left the venue').expect(200);
+      // B's point-3 solve turns out to be a DNF: A had the set at point 3
+      const third = pointsOf(matchOf(await getView(), 1))[2];
+      await edit(found(third.attemptB, 'attempt'), { penalty: -1 }).expect(200);
+
+      await reopen(semi.id, 'Point 3 was a DNF').expect(200);
+
+      const reopened = matchOf(await getView(), 1);
+      expect(reopened).toMatchObject({
+        status: 'FINISHED',
+        winnerSide: 'A',
+        endedBy: 'PLAYED',
+      });
+      expect(pointsOf(reopened)[3].afterEnd).toBe(true);
+      // Nothing waits for an extra that will never be raced
+      expect(await waitingForExtra(semi.a)).toHaveLength(0);
+      expect(await waitingForExtra(semi.b)).toHaveLength(0);
+    });
+
+    it('still refuses a mid-match edit that ends a set early once reopened', async () => {
+      await setUpBracket();
+      const semi = await sides(1);
+      await start(semi.id);
+      await point(semi.a, semi.b, 1000, 1100);
+      await point(semi.a, semi.b, 1000, 1100);
+      await retire(semi.id, 'B').expect(200);
+      await reopen(semi.id, 'Retired by mistake').expect(200);
+      await point(semi.a, semi.b, 1200, 1100);
+      await point(semi.a, semi.b, 1200, 1100);
+      const third = pointsOf(matchOf(await getView(), 1))[2];
+
+      const refused = await edit(found(third.attemptB, 'attempt'), {
+        penalty: -1,
+      }).expect(409);
+      expect(refused.body.message).toContain('Check the times');
+    });
+
+    it('reopens a walkover a withdrawal moved to, once its match no longer has the competitor', async () => {
+      await setUpBracket();
+      const semi1 = await winForA(1);
+      // The winner withdraws from the final before its other side is known
+      await withdraw(matchOf(await getView(), 4).id, 'A').expect(200);
+      // Then semifinal 1 is reopened on amended times, and its loser wins
+      for (const p of pointsOf(matchOf(await getView(), 1))) {
+        await edit(found(p.attemptB, 'attempt'), { value: 900 }).expect(200);
+      }
+      await reopen(semi1.id).expect(200);
+      await winForA(2);
+      const view = await getView();
+      const third = matchOf(view, 3);
+      expect(third.endedBy).toBe('WALKOVER');
+      expect(personOf(view, third.sideB.entrantId)).toBe(semi1.a);
+      expect(third.reopenRefusal).toBeNull();
+
+      await reopen(third.id, 'Withdrew by mistake').expect(200);
+
+      expect(entrantOf(await getView(), semi1.a).withdrawnAt).toBeNull();
     });
 
     it('undoes a mistaken Retire', async () => {

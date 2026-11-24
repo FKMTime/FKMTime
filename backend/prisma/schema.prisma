@@ -538,6 +538,9 @@ model H2hPoint {
   /// Null once both attempts are in means the point had no winner (I3d)
   winnerSide  H2hSide?        @map("winner_side")
   decidedAt   DateTime?       @map("decided_at")
+  /// Raced after its set or match was over, found when a match is reopened
+  /// on amended times: no winner, and it doesn't count from then on
+  afterEnd    Boolean         @default(false) @map("after_end")
   extras      H2hPointExtra[]
 
   @@unique([setId, pointNumber])

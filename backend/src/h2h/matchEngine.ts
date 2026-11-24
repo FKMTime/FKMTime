@@ -161,6 +161,11 @@ export interface SetScore {
   /** Winners of the points with both attempts in, by point number */
   pointWinners: Map<number, H2hSide | null>;
   outcome: { winner: H2hSide; decidedBy: H2hSetDecision } | null;
+  /**
+   * With `ignoreSurplus`: the points raced after the set or the match was
+   * over, which don't count. Empty otherwise.
+   */
+  afterEnd: Set<number>;
 }
 
 export interface MatchScore {
@@ -197,6 +202,7 @@ export const scoreMatch = (input: MatchInput): MatchScore => {
         setNumber: set.setNumber,
         pointWinners: new Map(),
         outcome: null,
+        afterEnd: new Set(set.points.map((point) => point.pointNumber)),
       });
       return;
     }
@@ -211,9 +217,13 @@ export const scoreMatch = (input: MatchInput): MatchScore => {
       b: resultsOf(matchSoFar, 'b'),
     };
     let outcome: SetScore['outcome'] = null;
+    const afterEnd = new Set<number>();
     for (const [i, point] of sorted.entries()) {
       // Raced after the set was over: no winner, it doesn't count
-      if (outcome && input.ignoreSurplus) break;
+      if (outcome && input.ignoreSurplus) {
+        afterEnd.add(point.pointNumber);
+        continue;
+      }
       if (point.a === null || point.b === null) continue;
       const winner = decidePoint(point.a, point.b);
       pointWinners.set(point.pointNumber, winner);
@@ -239,7 +249,7 @@ export const scoreMatch = (input: MatchInput): MatchScore => {
         `Set ${set.setNumber} would not be over yet, but set ${input.sets[index + 1].setNumber} has started. Check the times.`,
       );
     }
-    sets.push({ setNumber: set.setNumber, pointWinners, outcome });
+    sets.push({ setNumber: set.setNumber, pointWinners, outcome, afterEnd });
   });
 
   let winner: H2hSide | null = null;
