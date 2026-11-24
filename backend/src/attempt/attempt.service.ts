@@ -8,6 +8,7 @@ import { AttendanceService } from 'src/attendance/attendance.service';
 import { CompetitionService } from 'src/competition/competition.service';
 import { DNF_VALUE, DNS_VALUE, publicPersonSelect } from 'src/constants';
 import { getMaxPenalty, isUnofficialEvent } from 'src/events';
+import { H2hMatchService } from 'src/h2h/h2hMatch.service';
 import { isH2hRound } from 'src/h2h/h2hRound';
 import { IncidentService } from 'src/incident/incident.service';
 import {
@@ -24,7 +25,12 @@ import {
   getRoundInfoFromWcif,
 } from 'wcif-helpers';
 
-import { DbService, INCLUDING_REMOVED } from '../db/db.service';
+import {
+  DbService,
+  INCLUDING_REMOVED,
+  runInTransaction,
+  Tx,
+} from '../db/db.service';
 import {
   Attempt,
   AttemptStatus,
@@ -76,7 +82,13 @@ export class AttemptService {
     private readonly incidentService: IncidentService,
     @Inject(forwardRef(() => CompetitionService))
     private readonly competitionService: CompetitionService,
+    private readonly h2hMatchService: H2hMatchService,
   ) {}
+
+  private async getWcif(): Promise<Competition> {
+    const competition = await this.prisma.competition.findFirstOrThrow();
+    return JSON.parse(JSON.stringify(competition.wcif));
+  }
 
   async createAttempt(data: CreateAttemptDto, userId: string) {
     // Validate before getResultOrCreate, so a rejected attempt leaves no empty result behind
@@ -87,6 +99,9 @@ export class AttemptService {
       );
     }
     assertPenaltyAllowed(data.penalty, data.roundId);
+    if (isH2hRound(data.roundId, await this.getWcif())) {
+      return this.createH2hAttempt(data, userId);
+    }
 
     const result = await this.resultService.getResultOrCreate(
       data.competitorId,
@@ -109,45 +124,8 @@ export class AttemptService {
 
     const createdAttempt = await this.prisma.attempt.create({
       data: {
-        attemptNumber: data.attemptNumber,
-        value: data.value,
-        penalty: data.penalty,
-        solvedAt: new Date(),
-        device: data.deviceId
-          ? {
-              connect: {
-                id: data.deviceId,
-              },
-            }
-          : undefined,
-        judge: data.judgeId
-          ? {
-              connect: {
-                id: data.judgeId,
-              },
-            }
-          : undefined,
-        scrambler: data.scramblerId
-          ? {
-              connect: {
-                id: data.scramblerId,
-              },
-            }
-          : undefined,
+        ...this.attemptCreateData(data, userId, result.id, data.attemptNumber),
         replacedBy: data.replacedBy ? data.replacedBy : null,
-        updatedBy: {
-          connect: {
-            id: userId,
-          },
-        },
-        status: data.status,
-        type: data.type,
-        comment: data.comment,
-        result: {
-          connect: {
-            id: result.id,
-          },
-        },
       },
     });
     await this.attemptEditLogService.log(
@@ -157,22 +135,9 @@ export class AttemptService {
       'Manually entered',
     );
 
-    const staffActivity = await this.prisma.staffActivity.findFirst({
-      where: {
-        personId: data.competitorId,
-        groupId: { startsWith: `${data.roundId}-g` },
-        role: StaffRole.COMPETITOR,
-      },
-    });
-    const groupId = isUnofficialEvent(data.roundId.split('-')[0])
-      ? `${data.roundId}-g1`
-      : staffActivity
-        ? staffActivity.groupId
-        : `${data.roundId}-g1`;
-
     await this.attendanceService.markCompetitorAsPresent(
       result.person.id,
-      groupId,
+      await this.competingGroupId(data),
       data.deviceId ? data.deviceId : '',
     );
 
@@ -191,6 +156,114 @@ export class AttemptService {
     return {
       message: 'Attempt created successfully',
     };
+  }
+
+  /** The group the competitor is in for the round, for their attendance */
+  private async competingGroupId(data: CreateAttemptDto) {
+    const staffActivity = await this.prisma.staffActivity.findFirst({
+      where: {
+        personId: data.competitorId,
+        groupId: { startsWith: `${data.roundId}-g` },
+        role: StaffRole.COMPETITOR,
+      },
+    });
+    return isUnofficialEvent(data.roundId.split('-')[0])
+      ? `${data.roundId}-g1`
+      : staffActivity
+        ? staffActivity.groupId
+        : `${data.roundId}-g1`;
+  }
+
+  /** The new attempt's row, numbered as the caller says */
+  private attemptCreateData(
+    data: CreateAttemptDto,
+    userId: string,
+    resultId: string,
+    attemptNumber: number,
+  ) {
+    return {
+      attemptNumber,
+      value: data.value,
+      penalty: data.penalty,
+      solvedAt: new Date(),
+      device: data.deviceId ? { connect: { id: data.deviceId } } : undefined,
+      judge: data.judgeId ? { connect: { id: data.judgeId } } : undefined,
+      scrambler: data.scramblerId
+        ? { connect: { id: data.scramblerId } }
+        : undefined,
+      updatedBy: { connect: { id: userId } },
+      status: data.status,
+      type: data.type,
+      comment: data.comment,
+      result: { connect: { id: resultId } },
+    };
+  }
+
+  /**
+   * An attempt typed in for a head-to-head round goes into the competitor's
+   * playing match, like a station's will (SPEC-001). Its number is the
+   * competitor's next in the round, whatever the form said, and nothing is
+   * saved when it has no point to go to.
+   */
+  private async createH2hAttempt(data: CreateAttemptDto, userId: string) {
+    if (
+      data.type !== AttemptType.STANDARD_ATTEMPT ||
+      data.status !== AttemptStatus.STANDARD
+    ) {
+      throw new HttpException(
+        "In a head-to-head round, enter the point's result as a standard attempt. Extras are granted on the point, for both competitors.",
+        400,
+      );
+    }
+    const groupId = await this.competingGroupId(data);
+    const { roundId, matchId } = await runInTransaction(
+      this.prisma,
+      async (tx) => {
+        const result =
+          await this.resultService.getResultOrCreateIncludingRemoved(
+            data.competitorId,
+            data.roundId,
+            tx,
+          );
+        if (result.removedAt) {
+          throw new HttpException(
+            'Removed from this round (Regulation 9t)',
+            409,
+          );
+        }
+        const recorded = await this.h2hMatchService.recordAttempt(tx, {
+          roundId: data.roundId,
+          personId: data.competitorId,
+          resultId: result.id,
+          create: (attemptNumber) =>
+            tx.db.attempt.create({
+              data: this.attemptCreateData(
+                data,
+                userId,
+                result.id,
+                attemptNumber,
+              ),
+            }),
+        });
+        await this.attemptEditLogService.log(
+          recorded.attempt as AttemptSnapshot,
+          recorded.attempt.solvedAt ?? new Date(),
+          userId,
+          'Manually entered',
+          tx,
+        );
+        await this.attendanceService.markCompetitorAsPresent(
+          data.competitorId,
+          groupId,
+          data.deviceId ?? '',
+          tx,
+        );
+        return { roundId: result.roundId, matchId: recorded.matchId };
+      },
+    );
+    this.appGateway.handleResultEntered(roundId);
+    this.competitionService.requestGroupChangeCheck(roundId);
+    return { message: 'Attempt created successfully', matchId };
   }
 
   /** An extra entered by hand replaces what a station's extra would */
@@ -1057,6 +1130,26 @@ export class AttemptService {
       );
     }
 
+    // An attempt raced on a head-to-head point (SPEC-001)
+    const point = await this.h2hMatchService.pointOf(this.prisma, id);
+    if (point) {
+      if (
+        data.attemptNumber !== attemptToUpdate.attemptNumber ||
+        data.type !== attemptToUpdate.type
+      ) {
+        throw new HttpException(
+          "Attempts in a head-to-head round are numbered by their matches, so the number and type can't change",
+          400,
+        );
+      }
+      if (data.status === AttemptStatus.EXTRA_GIVEN) {
+        throw new HttpException(
+          'Extras in head-to-head rounds are granted on the point, for both competitors',
+          400,
+        );
+      }
+    }
+
     const duplicate = await this.prisma.attempt.findFirst({
       where: {
         resultId: attemptToUpdate.resultId,
@@ -1086,29 +1179,51 @@ export class AttemptService {
       comment: data.comment,
     };
 
-    const attempt = await this.prisma.attempt.update({
-      where: { id: id },
-      data: {
-        ...dataToUpdate,
-        judge: data.judgeId ? { connect: { id: data.judgeId } } : undefined,
-        device: data.deviceId ? { connect: { id: data.deviceId } } : undefined,
-        updatedBy: { connect: { id: userId } },
-      },
-      include: {
-        device: true,
-        result: {
-          include: {
-            person: true,
+    const write = async (tx?: Tx) => {
+      const updated = await (tx?.db ?? this.prisma).attempt.update({
+        where: { id: id },
+        data: {
+          ...dataToUpdate,
+          judge: data.judgeId ? { connect: { id: data.judgeId } } : undefined,
+          device: data.deviceId
+            ? { connect: { id: data.deviceId } }
+            : undefined,
+          updatedBy: { connect: { id: userId } },
+        },
+        include: {
+          device: true,
+          result: {
+            include: {
+              person: true,
+            },
           },
         },
-      },
-    });
-    await this.attemptEditLogService.log(
-      attempt as AttemptSnapshot,
-      new Date(),
-      userId,
-      'Updated',
-    );
+      });
+      await this.attemptEditLogService.log(
+        updated as AttemptSnapshot,
+        new Date(),
+        userId,
+        'Updated',
+        tx,
+      );
+      return updated;
+    };
+    // In a match still playing, the point, set and match are decided again;
+    // a finished match keeps its winners (11l1), only the time changes
+    const attempt = point
+      ? await runInTransaction(this.prisma, async (tx) => {
+          const locked = await this.h2hMatchService.lockPointOf(tx.db, id);
+          const updated = await write(tx);
+          if (locked) {
+            const { match } = locked.set;
+            await this.h2hMatchService.settle(tx.db, match.id);
+            tx.afterCommit(() =>
+              this.appGateway.handleH2hUpdated(match.bracket.roundId, match.id),
+            );
+          }
+          return updated;
+        })
+      : await write();
     if (data.updateReplacedBy) {
       const attemptToReplace = await this.prisma.attempt.findFirst({
         where: {
@@ -1188,6 +1303,26 @@ export class AttemptService {
       throw new HttpException('Attempt not found', 404);
     }
 
+    // An attempt raced on a head-to-head point decided it, so only the lone
+    // attempt of a playing match's open point can go, and its point with it
+    if (await this.h2hMatchService.pointOf(this.prisma, id)) {
+      await runInTransaction(this.prisma, async (tx) => {
+        const point = await this.h2hMatchService.pointToDeleteWith(tx.db, id);
+        if (point) await tx.db.h2hPoint.delete({ where: { id: point.id } });
+        await tx.db.attempt.delete({ where: { id } });
+        if (point) {
+          const { match } = point.set;
+          await this.h2hMatchService.settle(tx.db, match.id);
+          tx.afterCommit(() =>
+            this.appGateway.handleH2hUpdated(match.bracket.roundId, match.id),
+          );
+        }
+      });
+    } else {
+      await this.prisma.attempt.delete({
+        where: { id: id },
+      });
+    }
     if (attempt.status === AttemptStatus.UNRESOLVED && attempt.device) {
       this.socketController.sendResponseToAllSockets({
         type: 'IncidentResolved',
@@ -1198,9 +1333,6 @@ export class AttemptService {
         },
       });
     }
-    await this.prisma.attempt.delete({
-      where: { id: id },
-    });
     await this.resultService.sendResult(attempt.resultId);
 
     const allAttempts = await this.prisma.attempt.count({

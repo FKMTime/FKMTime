@@ -1,5 +1,9 @@
+import { Result } from "./interfaces";
 import { queryFamily, setQueryData } from "./queryCache";
+import { queryClient } from "./queryClient";
+import { attemptValue, RankedResult } from "./ranking";
 import { backendQuery, backendRequest } from "./request";
+import { getSubmittedAttempts } from "./utils";
 
 /**
  * Head-to-head rounds (SPEC-001): a bracket of matches the backend builds,
@@ -51,6 +55,58 @@ export interface H2hEntrant {
     seedTieBroken: boolean;
     withdrawnAt: string | null;
     person: H2hPerson;
+    /** WCA-encoded best single of the round; null with no attempt yet */
+    bestSingle: number | null;
+    /** Final position (9f16b); null while still in play or with no attempt */
+    position: number | null;
+    /** The stage of the last match they are in */
+    stageReached: H2hStage | null;
+}
+
+export type H2hSideName = "A" | "B";
+
+export type H2hSetDecision =
+    | "POINTS"
+    | "MOST_POINTS"
+    | "BEST_IN_SET"
+    | "BEST_IN_MATCH"
+    | "BEST_IN_ROUND"
+    | "SEED";
+
+/** How a set was decided, in plain words (I3b, I3e) */
+export const SET_DECISION_TEXT: Record<H2hSetDecision, string> = {
+    POINTS: "Won on points",
+    MOST_POINTS: "Won on more points after 7",
+    BEST_IN_SET: "Won on the better single in the set",
+    BEST_IN_MATCH: "Won on the better single in the match",
+    BEST_IN_ROUND: "Won on the better singles in the round",
+    SEED: "Won on the higher seed",
+};
+
+export interface H2hPointAttempt {
+    id: string;
+    attemptNumber: number;
+    value: number;
+    penalty: number;
+}
+
+export interface H2hPoint {
+    id: string;
+    pointNumber: number;
+    /** Null when decided with no winner (I3d), or while not decided */
+    winnerSide: H2hSideName | null;
+    decided: boolean;
+    attemptA: H2hPointAttempt | null;
+    attemptB: H2hPointAttempt | null;
+    scramble: { set: string; num: number; isExtra: boolean } | null;
+}
+
+export interface H2hSet {
+    setNumber: number;
+    winnerSide: H2hSideName | null;
+    decidedBy: H2hSetDecision | null;
+    scrambleSet: { id: string; set: string } | null;
+    points: H2hPoint[];
 }
 
 export interface H2hSide {
@@ -67,8 +123,22 @@ export interface H2hMatch {
     stage: H2hStage;
     setsToWin: number;
     status: H2hMatchStatus;
+    winnerSide: H2hSideName | null;
     sideA: H2hSide;
     sideB: H2hSide;
+    /** Sets won by each side */
+    score: { a: number; b: number };
+    sets: H2hSet[];
+    /**
+     * For the playing match: the scramble its next point races, e.g.
+     * "Quarterfinal 3 · set 1 · Set C, scramble 4", and what the scramble
+     * team must know (a spare set in use, none left)
+     */
+    scrambleInUse: {
+        pointNumber: number;
+        text: string;
+        warning: string | null;
+    } | null;
 }
 
 export interface H2hStageSetup {
@@ -136,6 +206,10 @@ export interface H2hRoundView {
 export const h2hRoundQuery = queryFamily((roundId) =>
     backendQuery<H2hRoundView>(`h2h/${roundId}`)
 );
+
+/** Refetches the round's bracket, e.g. after an attempt was entered */
+export const invalidateH2hRound = (roundId: string) =>
+    queryClient.invalidateQueries({ queryKey: [h2hRoundQuery(roundId).key] });
 
 /** The stages a bracket of this size plays, in order */
 export const getStages = (size: number): H2hStage[] => {
@@ -270,6 +344,15 @@ export const updateBracket = (
     }
 ) => send(roundId, `h2h/${roundId}`, "PUT", body);
 
+export const startMatch = (roundId: string, matchId: string) =>
+    send(roundId, `h2h/match/${matchId}/start`, "POST");
+
+/** Points each side has won in a set */
+export const pointsWon = (set: Pick<H2hSet, "points">) => ({
+    a: set.points.filter((point) => point.winnerSide === "A").length,
+    b: set.points.filter((point) => point.winnerSide === "B").length,
+});
+
 export const deleteBracket = (roundId: string) =>
     send(roundId, `h2h/${roundId}`, "DELETE");
 
@@ -299,4 +382,40 @@ export const planRowChanges = (
             ? [{ id: holder.id, scrambleSetId: row.scrambleSetId }]
             : []),
     ];
+};
+
+export interface H2hRankedResult extends RankedResult {
+    stageReached: H2hStage | null;
+}
+
+/**
+ * The round's results in the order of the bracket's final ranking (9f16b),
+ * which the backend works out: positions first, then everyone still in
+ * play by best single. No average: head-to-head rounds have none.
+ */
+export const rankH2hResults = (
+    results: Result[],
+    entrants: H2hEntrant[]
+): H2hRankedResult[] => {
+    const best = (row: RankedResult) =>
+        Math.min(Infinity, ...row.submitted.map(attemptValue));
+    return results
+        .map((result) => {
+            const entrant = entrants.find(
+                (e) => e.person.id === result.person.id
+            );
+            return {
+                result,
+                position: entrant?.position ?? null,
+                submitted: getSubmittedAttempts(result.attempts),
+                average: null,
+                stageReached: entrant?.stageReached ?? null,
+            };
+        })
+        .sort(
+            (x, y) =>
+                (x.position ?? Infinity) - (y.position ?? Infinity) ||
+                best(x) - best(y) ||
+                x.result.person.name.localeCompare(y.result.person.name)
+        );
 };

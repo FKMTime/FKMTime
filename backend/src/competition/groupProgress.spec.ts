@@ -233,3 +233,35 @@ describe('calculateGroupProgress', () => {
     expect(progress.expectedIsFinal).toBe(false);
   });
 });
+
+describe('calculateGroupProgress in a head-to-head round', () => {
+  const h2hWcif = {
+    ...wcif,
+    events: wcif.events.map((event) =>
+      event.id === '333'
+        ? {
+            ...event,
+            rounds: [{ id: '333-r1', format: 'h', cutoff: null }],
+          }
+        : event,
+    ),
+  } as unknown as Wcif;
+
+  it('counts every attempt and calls nobody finished by count', () => {
+    // Points go on past 5 attempts; the bracket says who is done
+    const progress = calculateGroupProgress(
+      h2hWcif,
+      '333-r1-g1',
+      new Map([
+        [1, standard(7)],
+        [2, standard(5)],
+      ]),
+    );
+    expect(progress).toMatchObject({
+      finished: 0,
+      entered: 12,
+      expected: 12,
+      expectedIsFinal: false,
+    });
+  });
+});

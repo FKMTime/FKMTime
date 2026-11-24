@@ -291,6 +291,12 @@ environments have a bracket.
 - The station check that answers "no attempts left"
   (`personForDevice.service.ts`) asks the bracket too: a competitor with no
   playing match is told so when they scan their card, before they solve.
+- Everything that read the fixed 5 attempts branches on the format instead:
+  the scrambling device's next attempt, "Assign DNS on remaining attempts"
+  (refused: there are none), double-check (a result with attempts can be
+  checked), group progress (attempts entered count, nobody is finished by
+  count) and the automatic group change (an H2H group never finishes by
+  count, so the delegate moves the room on).
 
 ### Inspection (I4c)
 
@@ -536,6 +542,42 @@ leader enters it on the staff screen with the existing manual attempt entry,
 and it goes through the same point logic. The scoreboard shows "waiting for
 result" for that side until then.
 
+How the point engine is built (`H2hMatchService`, with its pure parts in
+`matchEngine.ts`). Manual entry uses it first; the station flow will call
+the same code:
+
+- **One transaction per attempt.** `POST /attempt` for an H2H round finds
+  the competitor's playing match, takes
+  `pg_advisory_xact_lock(hashtext('h2h-match:' || matchId))`, places the
+  attempt, creates it and decides what it completes, all in one
+  transaction. A refusal saves nothing, not even an empty result. The
+  attempt number the caller sends is ignored: attempts are numbered 1..N
+  per competitor across the round.
+- **What manual entry takes.** Only a counting standard attempt (no
+  "Extra granted" or incident status): extras are granted on the point, for
+  both competitors (*Extra attempts*).
+- **When a point takes its scramble.** When its first attempt lands. The
+  Matches screen shows the next point's scramble before that, worked out
+  the same way.
+- **Deciding again.** Every new or edited attempt in a playing match
+  re-decides the whole match from its points, so a typo fixed mid-match
+  changes the point, the set and the match. A set opened but not raced yet
+  closes again if an edit means the set before isn't over after all. An
+  edit that no longer fits the sets played (points after a set would have
+  ended, or a set started while the one before would still be going on) is
+  refused with "Check the times", and nothing changes.
+- **An empty plan row.** Starting a match refuses when set 1 has no
+  scramble set in the plan. A later set whose row is empty still opens, and
+  its points take scrambles from spare sets.
+- **Deleting.** An attempt, a result or a scramble set that a point or a set
+  used can't be deleted, and neither can a group with such attempts be
+  restarted; each refusal names the match. The one exception is the lone
+  attempt of a playing match's open point (a result typed for the wrong
+  competitor): it can be deleted, and the point goes with it.
+- **Re-matching the plan** skips the empty rows of finished matches: they
+  need no more sets. Sets a finished match planned but never raced stay in
+  its rows, so they don't become spares.
+
 #### Deciding a set (I3b, I3e)
 
 - **Normal case:** the first to 3 points wins the set (`decidedBy = POINTS`).
@@ -741,12 +783,15 @@ socket.io:
 
 ### Screens
 
-**Staff: round page for an H2H round.** Until the Matches and Ranking tabs
-are built, its tabs are Bracket, Scrambles (the plan table from
-*Scrambles*) and Results (the existing results table). The Matches tab comes
-with the station flow (rollout step 3).
+**Staff: round page for an H2H round.** Its tabs are Bracket, Matches,
+Ranking, Scrambles (the plan table from *Scrambles*) and Results (the
+existing results table, with #, Name, Best and Stage reached). Matches
+starts with the list, Start match, the point-by-point log, the scramble in
+use and manual entry; Extra granted, Withdraw, Retire and the "amended
+after the match" marker come with the step that builds them. The tabs join
+`joinH2h` and refetch on `h2hUpdated`.
 
-Once those are built, it sits under the existing Results
+As designed, it sits under the existing Results
 tabs and has three tabs:
 
 - **Bracket:** the same bracket as the public view, plus setup (size, sets to
@@ -899,7 +944,9 @@ All copy uses task language: "Start match", "Extra granted", "Withdraw",
   1. Schema, `buildBracket`, scoring and ranking functions with unit tests.
   2. Bracket setup: seeds, sets to win and the scramble plan. The staff
      Matches screen moved to step 3, with the station flow.
-  3. Station flow for H2H rounds.
+  3. Running matches: Start match, the point engine with manual entry, the
+     Matches and Ranking tabs, and live updates. The station flow follows
+     as its own step.
   4. CSV export.
   5. Public bracket, scoreboard and TV.
 

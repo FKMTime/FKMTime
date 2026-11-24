@@ -1,10 +1,13 @@
 import {
   BadRequestException,
   ConflictException,
+  forwardRef,
+  Inject,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
 import { activityCodeToName } from '@wca/helpers';
+import { AppGateway } from 'src/app.gateway';
 import { DbService, runInTransaction } from 'src/db/db.service';
 import { bySetLetter } from 'src/scramble-set/setLetters';
 import { Competition, getRoundInfoFromWcif } from 'wcif-helpers';
@@ -30,7 +33,10 @@ import { CreateBracketDto } from './dto/createBracket.dto';
 import { UpdateBracketDto } from './dto/updateBracket.dto';
 import { UpdateScramblePlanDto } from './dto/updateScramblePlan.dto';
 import { UpdateSeedsDto } from './dto/updateSeeds.dto';
+import { H2hMatchService } from './h2hMatch.service';
 import { whyNoBracket } from './h2hRound';
+import { nextScramble } from './matchEngine';
+import { rankH2hRound } from './ranking';
 import { countPlannedSets } from './scramblePlan';
 import { seedFromPreviousRound, suggestBracketSize } from './seeding';
 
@@ -47,14 +53,67 @@ const scrambleSetSelect = {
   id: true,
   set: true,
   h2hSet: { select: { id: true } },
+  h2hPlan: { select: { id: true } },
   scrambles: {
-    select: { isExtra: true, h2hPoint: { select: { id: true } } },
+    select: {
+      id: true,
+      num: true,
+      isExtra: true,
+      h2hPoint: { select: { id: true } },
+    },
   },
 } as const;
 
+const attemptViewSelect = {
+  id: true,
+  attemptNumber: true,
+  value: true,
+  penalty: true,
+} as const;
+
+/** A set of a match with its points, as the Matches tab shows them */
+const setViewSelect = {
+  id: true,
+  setNumber: true,
+  winnerSide: true,
+  decidedBy: true,
+  scrambleSet: { select: { id: true, set: true } },
+  points: {
+    orderBy: { pointNumber: 'asc' },
+    select: {
+      id: true,
+      pointNumber: true,
+      winnerSide: true,
+      decidedAt: true,
+      attemptAId: true,
+      attemptBId: true,
+      attemptA: { select: attemptViewSelect },
+      attemptB: { select: attemptViewSelect },
+      scramble: {
+        select: {
+          num: true,
+          isExtra: true,
+          scrambleSet: { select: { set: true } },
+        },
+      },
+    },
+  },
+} as const;
+
+type ScrambleText = { set: string; num: number; isExtra: boolean };
+
+/** "Set C, scramble 4", or "Set C, extra 1" */
+const scrambleText = (scramble: ScrambleText) =>
+  `Set ${scramble.set}, ${scramble.isExtra ? 'extra' : 'scramble'} ${scramble.num}`;
+
 @Injectable()
 export class H2hService {
-  constructor(private readonly prisma: DbService) {}
+  constructor(
+    private readonly prisma: DbService,
+    @Inject(forwardRef(() => AppGateway))
+    private readonly appGateway: AppGateway,
+    private readonly h2hMatchService: H2hMatchService,
+  ) {}
 
   private async getWcif(): Promise<Competition> {
     const competition = await this.prisma.competition.findFirst({
@@ -98,14 +157,7 @@ export class H2hService {
               sourceAMatch: { select: { matchNumber: true } },
               sourceBMatch: { select: { matchNumber: true } },
               scrambleAssignments: { orderBy: { setNumber: 'asc' } },
-              sets: {
-                select: {
-                  setNumber: true,
-                  points: {
-                    select: { attemptAId: true, attemptBId: true },
-                  },
-                },
-              },
+              sets: { orderBy: { setNumber: 'asc' }, select: setViewSelect },
             },
           },
         },
@@ -146,6 +198,18 @@ export class H2hService {
       })),
     );
     const plannedSets = countPlannedSets(bracket.matches);
+    const bestSingles = await this.h2hMatchService.bestSingles(
+      this.prisma,
+      roundId,
+      bracket.entrants.map((entrant) => entrant.person.id),
+    );
+    const ranking = rankH2hRound(
+      bracket.matches,
+      bracket.entrants.map((entrant) => ({
+        id: entrant.id,
+        bestSingle: bestSingles.get(entrant.person.id) ?? null,
+      })),
+    );
     return {
       ...base,
       bracket: {
@@ -170,13 +234,19 @@ export class H2hService {
             started: inStage.some(hasStarted),
           };
         }),
-        entrants: bracket.entrants.map((entrant) => ({
-          id: entrant.id,
-          seed: entrant.seed,
-          seedTieBroken: entrant.seedTieBroken,
-          withdrawnAt: entrant.withdrawnAt,
-          person: entrant.person,
-        })),
+        entrants: bracket.entrants.map((entrant) => {
+          const ranked = ranking.find((r) => r.entrantId === entrant.id);
+          return {
+            id: entrant.id,
+            seed: entrant.seed,
+            seedTieBroken: entrant.seedTieBroken,
+            withdrawnAt: entrant.withdrawnAt,
+            person: entrant.person,
+            bestSingle: bestSingles.get(entrant.person.id) ?? null,
+            position: ranked?.position ?? null,
+            stageReached: ranked?.stageReached ?? null,
+          };
+        }),
         matches: bracket.matches.map((match) => ({
           id: match.id,
           matchNumber: match.matchNumber,
@@ -188,6 +258,37 @@ export class H2hService {
           endedBy: match.endedBy,
           startedAt: match.startedAt,
           finishedAt: match.finishedAt,
+          score: {
+            a: match.sets.filter((set) => set.winnerSide === 'A').length,
+            b: match.sets.filter((set) => set.winnerSide === 'B').length,
+          },
+          sets: match.sets.map((set) => ({
+            setNumber: set.setNumber,
+            winnerSide: set.winnerSide,
+            decidedBy: set.decidedBy,
+            scrambleSet: set.scrambleSet,
+            points: set.points.map((point) => ({
+              id: point.id,
+              pointNumber: point.pointNumber,
+              winnerSide: point.winnerSide,
+              decided: point.decidedAt !== null,
+              attemptA: point.attemptA,
+              attemptB: point.attemptB,
+              scramble: point.scramble && {
+                set: point.scramble.scrambleSet.set,
+                num: point.scramble.num,
+                isExtra: point.scramble.isExtra,
+              },
+            })),
+          })),
+          scrambleInUse:
+            match.status === 'IN_PROGRESS'
+              ? this.scrambleInUse(
+                  match,
+                  labels.get(match.id) ?? `Match ${match.matchNumber}`,
+                  scrambleSets,
+                )
+              : null,
           sideA: {
             entrantId: match.entrantAId,
             source: match.sourceAMatch && {
@@ -218,6 +319,94 @@ export class H2hService {
             set.scrambles.some((s) => s.h2hPoint !== null),
         })),
       },
+    };
+  }
+
+  /**
+   * The scramble the playing match's next point races, as the scramble team
+   * reads it: "Quarterfinal 3 · set 1 · Set C, scramble 4". The open point's
+   * own when one competitor is in already, otherwise the one the next
+   * point will take. A warning instead when none is left.
+   */
+  private scrambleInUse(
+    match: {
+      sets: {
+        setNumber: number;
+        winnerSide: string | null;
+        scrambleSet: { id: string } | null;
+        points: {
+          pointNumber: number;
+          attemptAId: string | null;
+          attemptBId: string | null;
+          scramble: {
+            num: number;
+            isExtra: boolean;
+            scrambleSet: { set: string };
+          } | null;
+        }[];
+      }[];
+    },
+    label: string,
+    scrambleSets: {
+      id: string;
+      set: string;
+      h2hSet: { id: string } | null;
+      h2hPlan: { id: string } | null;
+      scrambles: {
+        id: string;
+        num: number;
+        isExtra: boolean;
+        h2hPoint: { id: string } | null;
+      }[];
+    }[],
+  ) {
+    const set = match.sets.find((s) => s.winnerSide === null);
+    if (!set) return null;
+    const where = `${label} · set ${set.setNumber}`;
+    const open = set.points.find(
+      (point) => point.attemptAId === null || point.attemptBId === null,
+    );
+    if (open) {
+      return {
+        pointNumber: open.pointNumber,
+        text: open.scramble
+          ? `${where} · ${scrambleText({ ...open.scramble, set: open.scramble.scrambleSet.set })}`
+          : where,
+        warning: null,
+      };
+    }
+    const toOption = (s: (typeof scrambleSets)[number]) => ({
+      id: s.id,
+      set: s.set,
+      scrambles: s.scrambles.map((scramble) => ({
+        id: scramble.id,
+        num: scramble.num,
+        isExtra: scramble.isExtra,
+        used: scramble.h2hPoint !== null,
+      })),
+    });
+    const own = scrambleSets.find((s) => s.id === set.scrambleSet?.id);
+    const next = nextScramble(
+      own ? toOption(own) : null,
+      scrambleSets
+        .filter((s) => s.h2hPlan === null && s.h2hSet === null)
+        .map(toOption),
+    );
+    const pointNumber =
+      (set.points[set.points.length - 1]?.pointNumber ?? 0) + 1;
+    if (!next) {
+      return {
+        pointNumber,
+        text: where,
+        warning: `No scramble is left for point ${pointNumber}. Import more scramble sets for this round.`,
+      };
+    }
+    return {
+      pointNumber,
+      text: `${where} · ${scrambleText(next)}`,
+      warning: next.fromSpare
+        ? `${own ? `Set ${own.set}` : 'This set'} is used up, so the next point takes Set ${next.set} from the spares. Hand it to the scramblers.`
+        : null,
     };
   }
 
@@ -263,6 +452,7 @@ export class H2hService {
     await runInTransaction(this.prisma, async (tx) => {
       // Before the check, so a second request at the same moment gets a 409
       await lockBracket(tx.db, roundId);
+      tx.afterCommit(() => this.appGateway.handleH2hUpdated(roundId));
       if (await tx.db.h2hBracket.findUnique({ where: { roundId } })) {
         throw new ConflictException('This round already has a bracket');
       }
@@ -284,6 +474,7 @@ export class H2hService {
   async updateSeeds(roundId: string, dto: UpdateSeedsDto) {
     await runInTransaction(this.prisma, async (tx) => {
       await lockBracket(tx.db, roundId);
+      tx.afterCommit(() => this.appGateway.handleH2hUpdated(roundId));
       const bracket = await tx.db.h2hBracket.findUnique({
         where: { roundId },
         include: { matches: true, entrants: true },
@@ -333,6 +524,7 @@ export class H2hService {
   async updateBracket(roundId: string, dto: UpdateBracketDto) {
     await runInTransaction(this.prisma, async (tx) => {
       await lockBracket(tx.db, roundId);
+      tx.afterCommit(() => this.appGateway.handleH2hUpdated(roundId));
       const bracket = await tx.db.h2hBracket.findUnique({
         where: { roundId },
         include: { matches: true },
@@ -389,6 +581,7 @@ export class H2hService {
   async deleteBracket(roundId: string) {
     await runInTransaction(this.prisma, async (tx) => {
       await lockBracket(tx.db, roundId);
+      tx.afterCommit(() => this.appGateway.handleH2hUpdated(roundId));
       const bracket = await tx.db.h2hBracket.findUnique({
         where: { roundId },
       });
@@ -418,6 +611,7 @@ export class H2hService {
   async updateScramblePlan(roundId: string, dto: UpdateScramblePlanDto) {
     await runInTransaction(this.prisma, async (tx) => {
       await lockBracket(tx.db, roundId);
+      tx.afterCommit(() => this.appGateway.handleH2hUpdated(roundId));
       const bracket = await tx.db.h2hBracket.findUnique({
         where: { roundId },
         include: {

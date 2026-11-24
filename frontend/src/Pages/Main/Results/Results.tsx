@@ -28,6 +28,7 @@ import { useSocketRoom } from "@/hooks/useSocketRoom";
 import { useToast } from "@/hooks/useToast";
 import { activityCodeToName } from "@/lib/activities";
 import { competitionAtom } from "@/lib/atoms";
+import { h2hRoundQuery, rankH2hResults } from "@/lib/h2h";
 import {
     clearIntegratedLiveResult,
     invalidateIntegratedLiveRounds,
@@ -49,17 +50,18 @@ import ResultsTabs from "./Components/ResultsTabs";
 import RoundHeader from "./Components/RoundHeader";
 import RoundMetaLine from "./Components/RoundMetaLine";
 import BracketTab from "./H2h/BracketTab";
+import MatchesTab from "./H2h/MatchesTab";
+import RankingTab from "./H2h/RankingTab";
 import ScramblePlanTab from "./H2h/ScramblePlanTab";
 
 type Order = "ranking" | "latest";
 
-/**
- * A head-to-head round's tabs (SPEC-001). The staff Matches tab comes with
- * the station flow for these rounds.
- */
-type H2hTab = "bracket" | "scrambles" | "results";
+/** A head-to-head round's tabs (SPEC-001) */
+type H2hTab = "bracket" | "matches" | "ranking" | "scrambles" | "results";
 const H2H_TABS: { value: H2hTab; label: string }[] = [
     { value: "bracket", label: "Bracket" },
+    { value: "matches", label: "Matches" },
+    { value: "ranking", label: "Ranking" },
     { value: "scrambles", label: "Scrambles" },
     { value: "results", label: "Results" },
 ];
@@ -89,6 +91,21 @@ const Results = () => {
     // Joined per round, not per search, so typing doesn't leave the room
     useSocketRoom(roundId ? "Results" : null, { params: { roundId } });
     useSocketEvents(roundId ? { resultEntered: refreshResults } : {});
+    // A head-to-head round's tabs follow its bracket live (SPEC-001)
+    const isH2h =
+        !!roundId &&
+        competition?.wcif.events
+            .flatMap((event) => event.rounds)
+            .find((round) => round.id === roundId)?.format === "h";
+    const h2hQuery = h2hRoundQuery(roundId);
+    useSocketRoom(isH2h ? "H2h" : null, {
+        params: { roundId },
+        invalidateOn: { h2hUpdated: [h2hQuery.key] },
+    });
+    const { data: h2hView } = useLiveQuery(h2hQuery, {
+        maxAge: LIVE_MAX_AGE,
+        enabled: isH2h,
+    });
     const [order, setOrder] = useState<Order>("ranking");
     const [isRestartOpen, setIsRestartOpen] = useState(false);
     const [isCreateOpen, setIsCreateOpen] = useState(false);
@@ -205,12 +222,14 @@ const Results = () => {
             .flatMap((event) => event.rounds)
             .find((round) => round.id === roundId)?.format ?? "a";
     const event = wcif.events.find((e) => e.id === roundId.split("-")[0]);
-    const isH2h = format === "h";
     const h2hTab =
         H2H_TABS.find((t) => t.value === searchParams.get("tab"))?.value ??
         "bracket";
     const showResults = !isH2h || h2hTab === "results";
-    const ranked = rankResults(results, maxAttempts, format);
+    const h2hRanked = isH2h
+        ? rankH2hResults(results, h2hView?.bracket?.entrants ?? [])
+        : null;
+    const ranked = h2hRanked ?? rankResults(results, maxAttempts, format);
     const rows =
         order === "latest"
             ? [...ranked].sort(
@@ -268,6 +287,12 @@ const Results = () => {
             )}
             {roundId && isH2h && h2hTab === "bracket" && (
                 <BracketTab roundId={roundId} />
+            )}
+            {roundId && isH2h && h2hTab === "matches" && (
+                <MatchesTab roundId={roundId} />
+            )}
+            {roundId && isH2h && h2hTab === "ranking" && (
+                <RankingTab roundId={roundId} />
             )}
             {roundId && isH2h && h2hTab === "scrambles" && (
                 <ScramblePlanTab roundId={roundId} />
@@ -337,6 +362,16 @@ const Results = () => {
                                         maxAttempts={maxAttempts}
                                         onDeleted={refreshResults}
                                         live={liveTable}
+                                        stageReached={
+                                            h2hRanked
+                                                ? (result) =>
+                                                      h2hRanked.find(
+                                                          (row) =>
+                                                              row.result.id ===
+                                                              result.id
+                                                      )?.stageReached ?? null
+                                                : undefined
+                                        }
                                     />
                                 )}
                             </RefreshingRegion>

@@ -87,6 +87,32 @@ export class AppGateway {
     socket.leave(`results-${roundId}`);
   }
 
+  /* ====================== */
+  /* ===== Head to head === */
+  /* ====================== */
+  // Open to anyone, like joinResults: the event only says what to refetch
+  @SubscribeMessage('joinH2h')
+  async handleJoinH2h(
+    @ConnectedSocket() socket: Socket,
+    @MessageBody('roundId') roundId: string,
+  ) {
+    socket.join(`h2h-${roundId}`);
+  }
+
+  @SubscribeMessage('leaveH2h')
+  async handleLeaveH2h(
+    @ConnectedSocket() socket: Socket,
+    @MessageBody('roundId') roundId: string,
+  ) {
+    socket.leave(`h2h-${roundId}`);
+  }
+
+  // Server-side only: a head-to-head round's bracket, plan or a match changed
+  // (SPEC-001); matchId is null when the change isn't one match's
+  handleH2hUpdated(roundId: string, matchId: string | null = null) {
+    this.server.to(`h2h-${roundId}`).emit('h2hUpdated', { roundId, matchId });
+  }
+
   // Server-side only: a round started but isn't open in WCA Integrated Live
   // Results; blockers say what argues against opening it yet
   handleRoundShouldBeOpened(roundId: string, blockers: string[]) {

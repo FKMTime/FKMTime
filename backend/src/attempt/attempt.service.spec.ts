@@ -3,6 +3,7 @@ import { AttemptEditLogService } from 'src/attempt-edit-log/attempt-edit-log.ser
 import { AttendanceService } from 'src/attendance/attendance.service';
 import { CompetitionService } from 'src/competition/competition.service';
 import { DbService } from 'src/db/db.service';
+import { H2hMatchService } from 'src/h2h/h2hMatch.service';
 import { ResultService } from 'src/result/result.service';
 
 import {
@@ -18,6 +19,12 @@ import { AttemptService } from './attempt.service';
 const competitionStub = {
   requestGroupChangeCheck: jest.fn(),
 } as unknown as CompetitionService;
+
+/** No attempt here was raced on a head-to-head point */
+const noH2hPoints = () =>
+  ({
+    pointOf: jest.fn().mockResolvedValue(null),
+  }) as unknown as H2hMatchService;
 
 describe('AttemptService extras for all attempts', () => {
   const stored = (overrides: Partial<Attempt>) =>
@@ -156,6 +163,7 @@ describe('AttemptService extras for all attempts', () => {
       unusedDependency(),
       unusedDependency(),
       competitionStub,
+      noH2hPoints(),
     );
   });
 
@@ -922,6 +930,10 @@ describe('AttemptService penalty cap', () => {
         findFirst: jest.fn().mockResolvedValue(null),
         update: jest.fn().mockRejectedValue(new Error('saved')),
       },
+      // No head-to-head round
+      competition: {
+        findFirstOrThrow: jest.fn().mockResolvedValue({ wcif: { events: [] } }),
+      },
     };
     resultService = {
       getResultOrCreate: jest.fn().mockRejectedValue(new Error('saved')),
@@ -935,6 +947,7 @@ describe('AttemptService penalty cap', () => {
       unusedDependency(),
       unusedDependency(),
       competitionStub,
+      noH2hPoints(),
     );
   });
 
@@ -1014,6 +1027,7 @@ describe('AttemptService resolving an incident', () => {
       unusedDependency(),
       unusedDependency(),
       competitionStub,
+      noH2hPoints(),
     );
 
     await service.updateAttempt(
@@ -1060,6 +1074,7 @@ describe('AttemptService deleted attempts', () => {
       unusedDependency(),
       unusedDependency(),
       competitionStub,
+      noH2hPoints(),
     );
   });
 

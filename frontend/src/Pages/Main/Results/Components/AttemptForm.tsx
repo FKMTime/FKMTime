@@ -84,6 +84,12 @@ const AttemptForm = ({
     const formRef = useRef<HTMLFormElement>(null);
     const { toast } = useToast();
     const competition = useAtomValue(competitionAtom);
+    // A head-to-head attempt goes into the competitor's playing match: the
+    // server numbers it, and extras are granted on the point (SPEC-001)
+    const isH2h =
+        competition?.wcif.events
+            .flatMap((event) => event.rounds)
+            .find((round) => round.id === roundId)?.format === "h";
     const attemptOptions = useMemo(
         () =>
             getAttemptOptions(getNumberOfAttempts(roundId, competition?.wcif), [
@@ -125,7 +131,7 @@ const AttemptForm = ({
     // Incident states are kept, never offered for a new attempt
     const outcomeOptions: AttemptOutcome[] = [
         "counts",
-        "extra",
+        ...(isH2h ? [] : (["extra"] as const)),
         ...(attempt && outcomeFromStatus(attempt.status) === "open"
             ? (["open"] as const)
             : []),
@@ -155,9 +161,13 @@ const AttemptForm = ({
         if (!isTimeOptional && !value)
             return setError("Enter the time, or choose DNF or DNS.");
 
-        const option =
-            attemptOptions.find((o) => o.value === attemptValue) ??
-            attemptOptions[0];
+        const option = isH2h
+            ? {
+                  type: attempt?.type ?? AttemptType.STANDARD_ATTEMPT,
+                  attemptNumber: attempt?.attemptNumber ?? 1,
+              }
+            : attemptOptions.find((o) => o.value === attemptValue) ??
+              attemptOptions[0];
         const data: AttemptData = {
             roundId,
             competitorId,
@@ -200,21 +210,34 @@ const AttemptForm = ({
                 </div>
             )}
 
-            <div className="grid grid-cols-1 items-end gap-4 sm:grid-cols-[auto_minmax(0,1fr)]">
-                <div className="flex flex-col gap-2">
-                    <span className={LABEL}>Attempt</span>
-                    <SegmentedControl
-                        label="Attempt"
-                        value={attemptValue}
-                        onValueChange={setAttemptValue}
-                        className="[&>button]:min-w-8 [&>button]:px-1.5 [&>button]:font-bold"
-                        options={attemptOptions.map((option) => ({
-                            value: option.value,
-                            label: option.value,
-                            ariaLabel: option.title,
-                        }))}
-                    />
-                </div>
+            <div
+                className={cn(
+                    "grid grid-cols-1 items-end gap-4",
+                    !isH2h && "sm:grid-cols-[auto_minmax(0,1fr)]"
+                )}
+            >
+                {isH2h ? (
+                    <p className="text-[13px] text-muted-foreground">
+                        {attempt
+                            ? `Attempt ${attempt.attemptNumber} of the round`
+                            : "Goes into the competitor's next point in their playing match."}
+                    </p>
+                ) : (
+                    <div className="flex flex-col gap-2">
+                        <span className={LABEL}>Attempt</span>
+                        <SegmentedControl
+                            label="Attempt"
+                            value={attemptValue}
+                            onValueChange={setAttemptValue}
+                            className="[&>button]:min-w-8 [&>button]:px-1.5 [&>button]:font-bold"
+                            options={attemptOptions.map((option) => ({
+                                value: option.value,
+                                label: option.value,
+                                ariaLabel: option.title,
+                            }))}
+                        />
+                    </div>
+                )}
                 <div className="flex flex-col gap-2">
                     <label htmlFor="attempt-form-time" className={LABEL}>
                         Time
@@ -289,7 +312,12 @@ const AttemptForm = ({
                 </div>
             </div>
 
-            <div className="flex flex-col gap-2">
+            <div
+                className={cn(
+                    "flex flex-col gap-2",
+                    outcomeOptions.length === 1 && "hidden"
+                )}
+            >
                 <span className={LABEL}>Outcome</span>
                 <SegmentedControl
                     label="Outcome"

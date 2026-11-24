@@ -17,6 +17,7 @@ import {
 import { useConfirm } from "@/hooks/useConfirm";
 import { useToast } from "@/hooks/useToast";
 import { formattedBest } from "@/lib/average";
+import { H2hStage, STAGE_LABELS } from "@/lib/h2h";
 import {
     IntegratedLiveOnlyInWca,
     IntegratedLiveResultView,
@@ -44,6 +45,12 @@ interface ResultsTableProps {
     maxAttempts: number;
     onDeleted: () => void;
     live?: ResultsTableLive;
+    /**
+     * A head-to-head round (SPEC-001): the stage each result's competitor
+     * reached. The table then has #, Competitor, Best and Stage reached,
+     * and no attempts or average.
+     */
+    stageReached?: (result: Result) => H2hStage | null;
 }
 
 const averageText = (row: RankedResult) =>
@@ -51,10 +58,17 @@ const averageText = (row: RankedResult) =>
 
 const ResultsTable = ({
     rows,
-    maxAttempts,
+    maxAttempts: roundAttempts,
     onDeleted,
     live,
+    stageReached,
 }: ResultsTableProps) => {
+    const isH2h = stageReached !== undefined;
+    const maxAttempts = isH2h ? 0 : roundAttempts;
+    const stageText = (result: Result) => {
+        const stage = stageReached?.(result);
+        return stage ? STAGE_LABELS[stage] : "";
+    };
     const navigate = useNavigate();
     const confirm = useConfirm();
     const { toast } = useToast();
@@ -153,10 +167,13 @@ const ResultsTable = ({
                                     {i + 1}
                                 </TableHead>
                             ))}
-                            <TableHead className="text-right">
-                                Average
-                            </TableHead>
+                            {!isH2h && (
+                                <TableHead className="text-right">
+                                    Average
+                                </TableHead>
+                            )}
                             <TableHead className="text-right">Best</TableHead>
+                            {isH2h && <TableHead>Stage reached</TableHead>}
                             <TableHead>
                                 <span className="sr-only">Actions</span>
                             </TableHead>
@@ -189,12 +206,25 @@ const ResultsTable = ({
                                             : ""}
                                     </TableCell>
                                 ))}
-                                <TableCell className="text-right font-bold">
-                                    {averageText(row)}
-                                </TableCell>
-                                <TableCell className="text-right text-muted-foreground">
+                                {!isH2h && (
+                                    <TableCell className="text-right font-bold">
+                                        {averageText(row)}
+                                    </TableCell>
+                                )}
+                                <TableCell
+                                    className={
+                                        isH2h
+                                            ? "text-right font-bold"
+                                            : "text-right text-muted-foreground"
+                                    }
+                                >
                                     {formattedBest(row.submitted)}
                                 </TableCell>
+                                {isH2h && (
+                                    <TableCell className="text-muted-foreground">
+                                        {stageText(row.result)}
+                                    </TableCell>
+                                )}
                                 <TableCell className="pr-3">
                                     {actions(row.result)}
                                 </TableCell>
@@ -253,16 +283,28 @@ const ResultsTable = ({
                                 {badges(row.result)}
                             </p>
                             <p className="truncate text-xs text-muted-foreground">
-                                {row.submitted
-                                    .map(attemptWithPenaltyToString)
-                                    .join("  ")}
+                                {isH2h
+                                    ? stageText(row.result)
+                                    : row.submitted
+                                          .map(attemptWithPenaltyToString)
+                                          .join("  ")}
                             </p>
                         </Link>
                         <div className="text-right text-sm">
-                            <p className="font-bold">{averageText(row)}</p>
-                            <p className="text-xs text-muted-foreground">
-                                {formattedBest(row.submitted)}
-                            </p>
+                            {isH2h ? (
+                                <p className="font-bold">
+                                    {formattedBest(row.submitted)}
+                                </p>
+                            ) : (
+                                <>
+                                    <p className="font-bold">
+                                        {averageText(row)}
+                                    </p>
+                                    <p className="text-xs text-muted-foreground">
+                                        {formattedBest(row.submitted)}
+                                    </p>
+                                </>
+                            )}
                         </div>
                         {actions(row.result)}
                     </li>

@@ -17,6 +17,7 @@ interface CreateAttemptModalProps {
     /** The competitor's attempts so far, to start at their next one */
     existingAttempts?: Attempt[];
     timeLimit?: TimeLimit;
+    title?: string;
 }
 
 const CreateAttemptModal = ({
@@ -26,6 +27,7 @@ const CreateAttemptModal = ({
     competitorId,
     existingAttempts,
     timeLimit,
+    title = "Enter attempt",
 }: CreateAttemptModalProps) => {
     const { toast } = useToast();
     const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -57,7 +59,7 @@ const CreateAttemptModal = ({
         <Modal
             isOpen={isOpen}
             onClose={onClose}
-            title="Enter attempt"
+            title={title}
             className="max-h-[90dvh] overflow-y-auto sm:max-w-[560px]"
         >
             <AttemptForm

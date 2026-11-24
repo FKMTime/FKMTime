@@ -129,8 +129,9 @@ export const applySeeds = async (
 
 /**
  * Fills the scramble plan's empty rows with the round's sets nobody races
- * yet, in letter order. Rows that have a set keep it (SPEC-001, Scrambles).
- * Does nothing for a round without a bracket.
+ * yet, in letter order. Rows that have a set keep it (SPEC-001, Scrambles),
+ * and rows of finished matches are skipped. Does nothing for a round
+ * without a bracket.
  */
 export const rematchScramblePlan = async (db: Db, roundId: string) => {
   await lockBracket(db, roundId);
@@ -148,7 +149,16 @@ export const rematchScramblePlan = async (db: Db, roundId: string) => {
     },
     select: { id: true, set: true },
   });
-  const rows = bracket.matches.flatMap((match) => match.scrambleAssignments);
+  const finished = new Set(
+    bracket.matches
+      .filter((match) => match.status === H2hMatchStatus.FINISHED)
+      .map((match) => match.id),
+  );
+  // A finished match needs no more sets: its empty rows stay empty, while
+  // the sets its rows hold stay taken
+  const rows = bracket.matches
+    .flatMap((match) => match.scrambleAssignments)
+    .filter((row) => row.scrambleSetId !== null || !finished.has(row.matchId));
   const matched = matchScrambleSets(
     bracket.matches.map((match) => ({
       matchId: match.id,

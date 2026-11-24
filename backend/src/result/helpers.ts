@@ -252,7 +252,7 @@ export const getAttemptsToVoid = (
 };
 
 /** An attempt as WCA encodes it: centiseconds with +2s added, or DNF/DNS */
-const toAttemptResult = (attempt: Pick<Attempt, 'value' | 'penalty'>) =>
+export const toAttemptResult = (attempt: Pick<Attempt, 'value' | 'penalty'>) =>
   attempt.penalty === DNF_VALUE || attempt.penalty === DNS_VALUE
     ? attempt.penalty
     : attemptTimeWithPenalty(attempt);

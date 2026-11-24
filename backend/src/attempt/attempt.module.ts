@@ -4,6 +4,7 @@ import { AttemptEditLogModule } from 'src/attempt-edit-log/attempt-edit-log.modu
 import { AttendanceModule } from 'src/attendance/attendance.module';
 import { CompetitionModule } from 'src/competition/competition.module';
 import { ContestsModule } from 'src/contests/contests.module';
+import { H2hModule } from 'src/h2h/h2h.module';
 import { IncidentModule } from 'src/incident/incident.module';
 
 import { AuthModule } from '../auth/auth.module';
@@ -27,6 +28,7 @@ import { AttemptService } from './attempt.service';
     forwardRef(() => SocketModule),
     forwardRef(() => AppModule),
     forwardRef(() => CompetitionModule),
+    H2hModule,
   ],
   exports: [],
 })
