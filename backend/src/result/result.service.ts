@@ -20,6 +20,7 @@ import {
 } from 'src/constants';
 import { ContestsService } from 'src/contests/contests.service';
 import { DbService, INCLUDING_REMOVED, Tx } from 'src/db/db.service';
+import { StoredWcifService } from 'src/db/storedWcif.service';
 import { isUnofficialEvent } from 'src/events';
 import { isH2hRound } from 'src/h2h/h2hRound';
 import { IntegratedLiveService } from 'src/integrated-live/integratedLive.service';
@@ -70,6 +71,7 @@ export class ResultService {
     private readonly integratedLiveService: IntegratedLiveService,
     @Inject(forwardRef(() => CompetitionService))
     private readonly competitionService: CompetitionService,
+    private readonly storedWcif: StoredWcifService,
   ) {}
 
   /** Results as anyone may read them, the public results page included */
@@ -453,7 +455,9 @@ export class ResultService {
     const found = await this.getResultById(resultId);
     // A removed result's times come off the public results
     const result = found.removedAt ? { ...found, attempts: [] } : found;
-    const competition = await this.prisma.competition.findFirstOrThrow();
+    const competition = await this.prisma.competition.findFirstOrThrow({
+      omit: { wcif: true },
+    });
     if (isUnofficialEvent(result.eventId)) {
       if (!competition.cubingContestsToken) {
         return {
@@ -466,9 +470,7 @@ export class ResultService {
         result,
       );
     }
-    if (
-      isH2hRound(result.roundId, JSON.parse(JSON.stringify(competition.wcif)))
-    ) {
+    if (isH2hRound(result.roundId, await this.storedWcif.getOrThrow())) {
       return this.h2hNotSentReply();
     }
     switch (getOfficialResultsDestination(competition)) {
@@ -1069,11 +1071,7 @@ export class ResultService {
     if (!result) {
       throw new Error('Result not found');
     }
-    const competition = await this.prisma.competition.findFirst();
-    if (!competition) {
-      throw new Error('Competition not found');
-    }
-    const wcif = JSON.parse(JSON.stringify(competition.wcif));
+    const wcif = await this.storedWcif.getOrThrow();
     // A round with no time limit (multi-blind's is null) or no cumulative one
     const timeLimit = getRoundInfoFromWcif(result.roundId, wcif)?.timeLimit;
     if (!timeLimit?.cumulativeRoundIds.length) {
@@ -1101,13 +1099,12 @@ export class ResultService {
   /** Closes attempts a missed cutoff made unnecessary. Returns how many */
   async settleWaitingExtras(resultId: string, tx?: Tx) {
     const db = tx?.db ?? this.prisma;
-    const competition = await db.competition.findFirst();
+    const wcif = await this.storedWcif.get(db);
     const result = await db.result.findUnique({
       where: { id: resultId },
       include: { attempts: true },
     });
-    if (!competition || !result) return 0;
-    const wcif = JSON.parse(JSON.stringify(competition.wcif));
+    if (!wcif || !result) return 0;
     const roundInfo = getRoundInfoFromWcif(result.roundId, wcif);
     const attemptsToVoid = getAttemptsToVoid(
       result.attempts,
@@ -1187,11 +1184,7 @@ export class ResultService {
         person: competitor,
       };
     }
-    const competition = await this.prisma.competition.findFirst();
-    if (!competition) {
-      throw new Error('Competition not found');
-    }
-    const wcif = JSON.parse(JSON.stringify(competition.wcif));
+    const wcif = await this.storedWcif.getOrThrow();
     const currentRoundId = roundId.split('-g')[0];
     const roundInfo = getRoundInfoFromWcif(currentRoundId, wcif);
     if (!roundInfo) {

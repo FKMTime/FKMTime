@@ -9,6 +9,7 @@ import {
   AttemptType,
 } from '../generated/prisma/client';
 import { found } from '../test-utils/found';
+import { storedWcifFrom } from '../test-utils/stored-wcif';
 import { unusedDependency } from '../test-utils/unused-dependency';
 import { ResultService } from './result.service';
 import { ResultFromDeviceService } from './resultFromDevice.service';
@@ -54,6 +55,7 @@ describe('ResultFromDeviceService cutoff check', () => {
       unusedDependency(),
       competitionStub,
       notTutorial,
+      unusedDependency(),
     );
   });
 
@@ -128,10 +130,12 @@ describe('ResultFromDeviceService with a resolved attempt', () => {
         unusedDependency(),
         unusedDependency(),
         competitionStub,
+        unusedDependency(),
       ),
       unusedDependency(),
       competitionStub,
       notTutorial,
+      unusedDependency(),
     );
   });
 
@@ -252,6 +256,7 @@ describe('ResultFromDeviceService when the time limit runs out on an extra', () 
       { log: jest.fn() } as unknown as AttemptEditLogService,
       competitionStub,
       notTutorial,
+      storedWcifFrom(prisma),
     );
   });
 
@@ -294,6 +299,7 @@ describe('ResultFromDeviceService tutorial solves (SPEC-012)', () => {
       unusedDependency(),
       competitionStub,
       tutorialFromDevice as unknown as TutorialFromDeviceService,
+      unusedDependency(),
     );
     const data = { espId: 7, groupId: 'tutorial' } as never;
 

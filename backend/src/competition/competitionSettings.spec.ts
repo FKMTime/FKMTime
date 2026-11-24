@@ -1,3 +1,4 @@
+import { storedWcifFrom } from '../test-utils/stored-wcif';
 import { unusedDependency } from '../test-utils/unused-dependency';
 import { CompetitionService } from './competition.service';
 
@@ -30,6 +31,7 @@ describe('CompetitionService settings', () => {
         hilRunning: () => false,
       } as never,
       unusedDependency(),
+      storedWcifFrom(prisma),
     );
 
     const settings = await service.getCompetitionSettings();

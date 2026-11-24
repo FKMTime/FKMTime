@@ -5,6 +5,7 @@ import {
   SHOW_SECONDARY_TEXT_HW_VERSIONS,
 } from 'src/constants';
 import { DbService } from 'src/db/db.service';
+import { StoredWcifService } from 'src/db/storedWcif.service';
 import { DeviceService } from 'src/device/device.service';
 import { getStationGroupIds } from 'src/device/stationRounds';
 import { isInTutorial, TUTORIAL_GROUP_ID } from 'src/device/tutorial';
@@ -42,6 +43,7 @@ export class PersonForDeviceService {
     private readonly resultService: ResultService,
     @Inject(forwardRef(() => DeviceService))
     private readonly deviceService: DeviceService,
+    private readonly storedWcif: StoredWcifService,
   ) {}
 
   async getPersonInfo(
@@ -49,7 +51,10 @@ export class PersonForDeviceService {
     espId: number,
     isCompetitor: boolean = false,
   ) {
-    const competition = await this.prisma.competition.findFirst();
+    // The WCIF comes parsed from StoredWcifService, not with the row
+    const competition = await this.prisma.competition.findFirst({
+      omit: { wcif: true },
+    });
     if (!competition) {
       return {
         message: getTranslation('competitionNotFound', 'en'),
@@ -94,7 +99,7 @@ export class PersonForDeviceService {
         possibleGroups: [],
       };
     }
-    const wcif = JSON.parse(JSON.stringify(competition.wcif));
+    const wcif = await this.storedWcif.getOrThrow();
     // A station pointed at a round offers only that round (SPEC-007)
     const possibleGroups = getStationGroupIds(
       device,
@@ -260,7 +265,7 @@ export class PersonForDeviceService {
 
   private async getFinishedRoundIds(
     personId: string,
-    competition: Competition,
+    competition: Omit<Competition, 'wcif'>,
     wcif: WCIF,
   ) {
     const results = await this.prisma.result.findMany({
