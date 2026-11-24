@@ -35,7 +35,7 @@ import { UpdateScramblePlanDto } from './dto/updateScramblePlan.dto';
 import { UpdateSeedsDto } from './dto/updateSeeds.dto';
 import { H2hMatchService } from './h2hMatch.service';
 import { whyNoBracket } from './h2hRound';
-import { nextScramble } from './matchEngine';
+import { amendedAfter, nextScramble } from './matchEngine';
 import { rankH2hRound } from './ranking';
 import { countPlannedSets } from './scramblePlan';
 import { seedFromPreviousRound, suggestBracketSize } from './seeding';
@@ -60,6 +60,7 @@ const scrambleSetSelect = {
       num: true,
       isExtra: true,
       h2hPoint: { select: { id: true } },
+      h2hPointExtra: { select: { id: true } },
     },
   },
 } as const;
@@ -94,6 +95,14 @@ const setViewSelect = {
           num: true,
           isExtra: true,
           scrambleSet: { select: { set: true } },
+        },
+      },
+      // Races replaced by an extra, oldest first
+      extras: {
+        orderBy: { createdAt: 'asc' },
+        select: {
+          attemptA: { select: attemptViewSelect },
+          attemptB: { select: attemptViewSelect },
         },
       },
     },
@@ -158,6 +167,16 @@ export class H2hService {
               sourceBMatch: { select: { matchNumber: true } },
               scrambleAssignments: { orderBy: { setNumber: 'asc' } },
               sets: { orderBy: { setNumber: 'asc' }, select: setViewSelect },
+              logs: {
+                orderBy: { createdAt: 'asc' },
+                select: {
+                  action: true,
+                  side: true,
+                  comment: true,
+                  createdAt: true,
+                  createdBy: { select: { fullName: true } },
+                },
+              },
             },
           },
         },
@@ -203,6 +222,7 @@ export class H2hService {
       roundId,
       bracket.entrants.map((entrant) => entrant.person.id),
     );
+    const amended = await this.amendedAttemptIds(bracket.matches);
     const ranking = rankH2hRound(
       bracket.matches,
       bracket.entrants.map((entrant) => ({
@@ -221,7 +241,10 @@ export class H2hService {
         attemptsLinked: bracket.matches.some((match) =>
           match.sets.some((set) =>
             set.points.some(
-              (point) => point.attemptAId !== null || point.attemptBId !== null,
+              (point) =>
+                point.attemptAId !== null ||
+                point.attemptBId !== null ||
+                point.extras.length > 0,
             ),
           ),
         ),
@@ -274,6 +297,11 @@ export class H2hService {
               decided: point.decidedAt !== null,
               attemptA: point.attemptA,
               attemptB: point.attemptB,
+              extras: point.extras,
+              // A time changed after the match, which kept its winner (11l1)
+              amendedAfterMatch: [point.attemptAId, point.attemptBId].some(
+                (id) => id !== null && amended.has(id),
+              ),
               scramble: point.scramble && {
                 set: point.scramble.scrambleSet.set,
                 num: point.scramble.num,
@@ -289,6 +317,13 @@ export class H2hService {
                   scrambleSets,
                 )
               : null,
+          log: match.logs.map((entry) => ({
+            action: entry.action,
+            side: entry.side,
+            comment: entry.comment,
+            createdAt: entry.createdAt,
+            createdBy: entry.createdBy?.fullName ?? null,
+          })),
           sideA: {
             entrantId: match.entrantAId,
             source: match.sourceAMatch && {
@@ -316,10 +351,67 @@ export class H2hService {
           extraScramblesCount: set.scrambles.filter((s) => s.isExtra).length,
           raced:
             set.h2hSet !== null ||
-            set.scrambles.some((s) => s.h2hPoint !== null),
+            set.scrambles.some(
+              (s) => s.h2hPoint !== null || s.h2hPointExtra !== null,
+            ),
         })),
       },
     };
+  }
+
+  /**
+   * Attempts on points of finished matches whose time changed after the
+   * match finished: the match kept its winners (11l1), and the staff screen
+   * says so. Worked out from the attempts' edit logs rather than stored.
+   */
+  private async amendedAttemptIds(
+    matches: {
+      finishedAt: Date | null;
+      sets: {
+        points: {
+          attemptA: {
+            id: string;
+            value: number;
+            penalty: number | null;
+          } | null;
+          attemptB: {
+            id: string;
+            value: number;
+            penalty: number | null;
+          } | null;
+        }[];
+      }[];
+    }[],
+  ) {
+    const finishedAtOf = new Map<
+      string,
+      { finishedAt: Date; value: number; penalty: number | null }
+    >();
+    for (const match of matches) {
+      const { finishedAt } = match;
+      if (finishedAt === null) continue;
+      for (const point of match.sets.flatMap((set) => set.points)) {
+        for (const attempt of [point.attemptA, point.attemptB]) {
+          if (attempt) finishedAtOf.set(attempt.id, { ...attempt, finishedAt });
+        }
+      }
+    }
+    if (finishedAtOf.size === 0) return new Set<string>();
+    const logs = await this.prisma.attemptEditLog.findMany({
+      where: { attemptId: { in: [...finishedAtOf.keys()] } },
+      select: { attemptId: true, editedAt: true, value: true, penalty: true },
+    });
+    return new Set(
+      [...finishedAtOf].flatMap(([id, attempt]) =>
+        amendedAfter(
+          attempt.finishedAt,
+          logs.filter((log) => log.attemptId === id),
+          attempt,
+        )
+          ? [id]
+          : [],
+      ),
+    );
   }
 
   /**
@@ -357,6 +449,7 @@ export class H2hService {
         num: number;
         isExtra: boolean;
         h2hPoint: { id: string } | null;
+        h2hPointExtra: { id: string } | null;
       }[];
     }[],
   ) {
@@ -382,7 +475,7 @@ export class H2hService {
         id: scramble.id,
         num: scramble.num,
         isExtra: scramble.isExtra,
-        used: scramble.h2hPoint !== null,
+        used: scramble.h2hPoint !== null || scramble.h2hPointExtra !== null,
       })),
     });
     const own = scrambleSets.find((s) => s.id === set.scrambleSet?.id);
@@ -591,7 +684,11 @@ export class H2hService {
       const linked = await tx.db.h2hPoint.count({
         where: {
           set: { match: { bracketId: bracket.id } },
-          OR: [{ attemptAId: { not: null } }, { attemptBId: { not: null } }],
+          OR: [
+            { attemptAId: { not: null } },
+            { attemptBId: { not: null } },
+            { extras: { some: {} } },
+          ],
         },
       });
       if (linked > 0) {

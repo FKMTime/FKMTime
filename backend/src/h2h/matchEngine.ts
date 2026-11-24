@@ -4,7 +4,11 @@
  * and what the points so far decide. H2hMatchService reads and writes the
  * rows around them.
  */
-import { H2hSetDecision, H2hSide } from '../generated/prisma/client';
+import {
+  H2hMatchStatus,
+  H2hSetDecision,
+  H2hSide,
+} from '../generated/prisma/client';
 import { decideMatch, decidePoint, decideSet, PlayedPoint } from './scoring';
 
 export const WAITING_FOR_OPPONENT = "Waiting for opponent's result";
@@ -88,11 +92,14 @@ const byLetter = (x: ScrambleSetOption, y: ScrambleSetOption) =>
 /**
  * The scramble a new point races: the next unused one of the H2H set's own
  * scramble set (normal scrambles, then extras), then of the first spare set
- * (one not in the plan). Null when none is left anywhere.
+ * (one not in the plan). A point raced again after an extra takes the own
+ * set's next extra first (Regulation 4b3: extra attempts use extra
+ * scrambles). Null when none is left anywhere.
  */
 export const nextScramble = (
   own: ScrambleSetOption | null,
   spares: ScrambleSetOption[],
+  options: { extra?: boolean } = {},
 ): ChosenScramble | null => {
   const pick = (set: ScrambleSetOption, fromSpare: boolean) => {
     const scramble = inRaceOrder(set.scrambles).find((s) => !s.used);
@@ -107,6 +114,11 @@ export const nextScramble = (
         }
       : null;
   };
+  if (own && options.extra) {
+    const extras = own.scrambles.filter((scramble) => scramble.isExtra);
+    const fromExtras = pick({ ...own, scrambles: extras }, false);
+    if (fromExtras) return fromExtras;
+  }
   const fromOwn = own ? pick(own, false) : null;
   if (fromOwn) return fromOwn;
   for (const spare of [...spares].sort(byLetter)) {
@@ -226,4 +238,90 @@ export const scoreMatch = (input: MatchInput): MatchScore => {
     winner,
     nextSetNumber: winner === null && last?.outcome ? last.setNumber + 1 : null,
   };
+};
+
+/** A side of a match no one has started, as a withdrawal reads it */
+export interface WalkoverSide {
+  seed: number;
+  withdrawnAt: Date | null;
+}
+
+/**
+ * Who wins a match that hasn't started when a competitor in it has
+ * withdrawn (I2h): the one still in. When both have, the one who left later
+ * went further, so they win, and the higher seed when that is a tie too.
+ * Null while neither has withdrawn.
+ */
+export const walkoverWinner = (
+  a: WalkoverSide,
+  b: WalkoverSide,
+): H2hSide | null => {
+  if (a.withdrawnAt === null && b.withdrawnAt === null) return null;
+  if (a.withdrawnAt === null) return H2hSide.A;
+  if (b.withdrawnAt === null) return H2hSide.B;
+  const later = a.withdrawnAt.getTime() - b.withdrawnAt.getTime();
+  if (later !== 0) return later > 0 ? H2hSide.A : H2hSide.B;
+  return a.seed < b.seed ? H2hSide.A : H2hSide.B;
+};
+
+/** A match as reopening another one reads the graph */
+export interface FedMatch {
+  id: string;
+  status: H2hMatchStatus;
+  startedAt: Date | null;
+  sourceAMatchId: string | null;
+  sourceBMatchId: string | null;
+}
+
+/**
+ * What reopening a match takes back: the matches it fed, and on through
+ * the ones of those that finished as walkovers without starting. `started`
+ * is one of them that has started, which makes reopening impossible: its
+ * competitors are already playing on the old result.
+ */
+export const matchesFedBy = <T extends FedMatch>(
+  matches: T[],
+  matchId: string,
+): { reset: T[]; started: T | null } => {
+  const reset: T[] = [];
+  const queue = [matchId];
+  for (let id = queue.shift(); id !== undefined; id = queue.shift()) {
+    const source = id;
+    for (const fed of matches) {
+      if (fed.sourceAMatchId !== source && fed.sourceBMatchId !== source) {
+        continue;
+      }
+      if (fed.startedAt !== null) return { reset, started: fed };
+      if (reset.includes(fed)) continue;
+      reset.push(fed);
+      if (fed.status === H2hMatchStatus.FINISHED) queue.push(fed.id);
+    }
+  }
+  return { reset, started: null };
+};
+
+/** An attempt's time as an edit log entry saved it */
+export interface LoggedTime {
+  editedAt: Date;
+  value: number;
+  penalty: number | null;
+}
+
+/**
+ * Whether an attempt's time is no longer what it was when its match
+ * finished: amended after the match, which keeps its winners (11l1)
+ */
+export const amendedAfter = (
+  finishedAt: Date,
+  logs: LoggedTime[],
+  current: { value: number; penalty: number | null },
+): boolean => {
+  const atFinish = logs
+    .filter((log) => log.editedAt.getTime() <= finishedAt.getTime())
+    .sort((x, y) => x.editedAt.getTime() - y.editedAt.getTime())
+    .at(-1);
+  if (!atFinish) return false;
+  return (
+    atFinish.value !== current.value || atFinish.penalty !== current.penalty
+  );
 };

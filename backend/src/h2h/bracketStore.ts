@@ -62,6 +62,19 @@ export const matchLabels = (
   return labels;
 };
 
+/** One match's label, read from the bracket it is in */
+export const labelOfMatch = async (
+  db: Db,
+  bracketId: string,
+  matchId: string,
+) => {
+  const matches = await db.h2hMatch.findMany({
+    where: { bracketId },
+    select: { id: true, stage: true, matchNumber: true },
+  });
+  return matchLabels(matches).get(matchId) ?? 'This match';
+};
+
 /**
  * Puts these competitors in the bracket as seeds 1, 2, …, and fills the
  * matches they play straight away. A match whose two sides are both known
@@ -145,7 +158,14 @@ export const rematchScramblePlan = async (db: Db, roundId: string) => {
       roundId,
       // A set already raced, as a planned set or as a spare, is not free
       h2hSet: { is: null },
-      scrambles: { none: { h2hPoint: { isNot: null } } },
+      scrambles: {
+        none: {
+          OR: [
+            { h2hPoint: { isNot: null } },
+            { h2hPointExtra: { isNot: null } },
+          ],
+        },
+      },
     },
     select: { id: true, set: true },
   });
