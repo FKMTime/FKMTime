@@ -419,6 +419,7 @@ export const amendedAfter = (
 /** A playing match's next scramble, as the scramble team is shown it */
 export interface ScrambleInUse {
   label: string;
+  matchNumber: number;
   scramble: {
     scrambleSetId: string;
     set: string;
@@ -430,33 +431,56 @@ export interface ScrambleInUse {
    * result lands. False for the open point's own scramble.
    */
   predicted: boolean;
+  /** "Semifinal 1 · set 2 · Set F, scramble 1" */
+  text: string;
+  /** The text without the scramble: "Semifinal 1 · set 2" */
+  where: string;
   warning: string | null;
+  /**
+   * Since when the match has waited for its next point: when its last
+   * point was decided. Null before any.
+   */
+  waitingSince: Date | null;
 }
+
+/** Whoever has waited longest first, then match order */
+const byWaiting = (x: ScrambleInUse, y: ScrambleInUse) =>
+  (x.waitingSince?.getTime() ?? 0) - (y.waitingSince?.getTime() ?? 0) ||
+  x.matchNumber - y.matchNumber;
 
 /**
  * Two playing matches past their own sets both take the next spare
  * scramble, and whichever records first gets it: showing it to both would
- * race it twice. The first in match order keeps it; the others are held
- * until a result of that match is in, when theirs moves on to the next
- * one. `entries` are in match order.
+ * race it twice. The match that has waited longest for its next point
+ * keeps it, as it was shown it first; the others are held until a result
+ * of that match is in, when theirs moves on to the next one. A scramble an
+ * open point already races (read alongside a prediction made before it
+ * was taken) is that point's, and every prediction of it is held.
  */
 export const holdSharedScrambles = <T extends ScrambleInUse>(
   entries: T[],
 ): T[] => {
   const keyOf = (entry: T) =>
-    entry.predicted && entry.scramble
+    entry.scramble
       ? `${entry.scramble.scrambleSetId}:${entry.scramble.isExtra}:${entry.scramble.num}`
       : null;
   return entries.map((entry) => {
     const key = keyOf(entry);
-    if (key === null || entry.scramble === null) return entry;
+    if (key === null || entry.scramble === null || !entry.predicted) {
+      return entry;
+    }
     const sharing = entries.filter((other) => keyOf(other) === key);
     if (sharing.length < 2) return entry;
-    const [first] = sharing;
+    const first =
+      sharing.find((other) => !other.predicted) ??
+      [...sharing].sort(byWaiting)[0];
     const { set, num, isExtra } = entry.scramble;
     const what = `Set ${set}, ${isExtra ? 'extra' : 'scramble'} ${num}`;
     if (first === entry) {
-      const others = sharing.slice(1).map((other) => other.label);
+      const others = sharing
+        .filter((other) => other !== entry)
+        .sort(byWaiting)
+        .map((other) => other.label);
       return {
         ...entry,
         warning: `${others.join(' and ')} would take ${what} from the spares too. Scramble it for ${entry.label} only: ${others.length > 1 ? 'theirs move' : 'theirs moves'} on once a result of ${entry.label} is in.`,
@@ -465,7 +489,10 @@ export const holdSharedScrambles = <T extends ScrambleInUse>(
     return {
       ...entry,
       scramble: null,
-      warning: `${first.label} takes ${what} from the spares first. Wait for a result of ${first.label}: this match's scramble shows then.`,
+      text: entry.where,
+      warning: first.predicted
+        ? `${first.label} takes ${what} from the spares first. Wait for a result of ${first.label}: this match's scramble shows then.`
+        : `${first.label} races ${what} already. This match's scramble shows in a moment.`,
     };
   });
 };

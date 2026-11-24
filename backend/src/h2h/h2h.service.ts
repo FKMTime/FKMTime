@@ -461,6 +461,7 @@ export class H2hService {
         scrambleSet: { id: string } | null;
         points: {
           pointNumber: number;
+          decidedAt: Date | null;
           attemptA: { status: AttemptStatus } | null;
           attemptB: { status: AttemptStatus } | null;
           scramble: {
@@ -511,6 +512,7 @@ export class H2hService {
         scramble,
         predicted: false,
         text: scramble ? `${where} · ${scrambleText(scramble)}` : where,
+        where,
         warning:
           isIncident(open.attemptA) || isIncident(open.attemptB)
             ? `An incident on point ${open.pointNumber} is open. Wait for the delegate: the point may be raced again.`
@@ -543,6 +545,7 @@ export class H2hService {
         scramble: null,
         predicted: false,
         text: where,
+        where,
         warning: `No scramble is left for point ${pointNumber}. Import more scramble sets for this round.`,
       };
     }
@@ -557,6 +560,7 @@ export class H2hService {
       },
       predicted: true,
       text: `${where} · ${scrambleText(next)}`,
+      where,
       warning: next.fromSpare
         ? `${own ? `Set ${own.set}` : 'This set'} is used up, so the next point takes Set ${next.set} from the spares. Hand it to the scramblers.`
         : null,
@@ -627,7 +631,24 @@ export class H2hService {
       .flatMap((match) => {
         const label = labels.get(match.id) ?? `Match ${match.matchNumber}`;
         const inUse = this.scrambleInUse(match, label, scrambleSets);
-        return inUse ? [{ ...inUse, label, matchId: match.id }] : [];
+        const decided = match.sets
+          .flatMap((set) => set.points)
+          .flatMap((point) => (point.decidedAt ? [point.decidedAt] : []));
+        const waitingSince =
+          decided.length > 0
+            ? new Date(Math.max(...decided.map((d) => d.getTime())))
+            : null;
+        return inUse
+          ? [
+              {
+                ...inUse,
+                label,
+                matchId: match.id,
+                matchNumber: match.matchNumber,
+                waitingSince,
+              },
+            ]
+          : [];
       });
     return new Map(
       holdSharedScrambles(playing).map((entry) => [
