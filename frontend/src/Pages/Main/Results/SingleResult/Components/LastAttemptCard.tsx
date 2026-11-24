@@ -154,19 +154,20 @@ const LastAttemptCard = ({ result, fetchData }: LastAttemptCardProps) => {
                                 <Pencil />
                             </Button>
                         )}
-                        {access.can("GIVE_EXTRA") && (
-                            <Button
-                                variant="ghost"
-                                size="icon-sm"
-                                aria-label="Give extra attempt"
-                                title="Give extra attempt"
-                                onClick={() =>
-                                    setIsOpenGiveExtraAttemptModal(true)
-                                }
-                            >
-                                <MessageSquarePlus />
-                            </Button>
-                        )}
+                        {access.can("GIVE_EXTRA") &&
+                            (!lastAttempt.h2hPointId || access.isDelegate) && (
+                                <Button
+                                    variant="ghost"
+                                    size="icon-sm"
+                                    aria-label="Give extra attempt"
+                                    title="Give extra attempt"
+                                    onClick={() =>
+                                        setIsOpenGiveExtraAttemptModal(true)
+                                    }
+                                >
+                                    <MessageSquarePlus />
+                                </Button>
+                            )}
                         {access.can("DELETE_ATTEMPT") && (
                             <Button
                                 variant="destructive-ghost"
@@ -223,6 +224,7 @@ const LastAttemptCard = ({ result, fetchData }: LastAttemptCardProps) => {
                 isOpen={isOpenGiveExtraAttemptModal}
                 onClose={handleCloseModal}
                 attempt={lastAttempt}
+                roundId={result.roundId}
             />
         </>
     );

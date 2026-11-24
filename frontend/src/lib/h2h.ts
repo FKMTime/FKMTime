@@ -98,6 +98,10 @@ export interface H2hPoint {
     decided: boolean;
     attemptA: H2hPointAttempt | null;
     attemptB: H2hPointAttempt | null;
+    /** Races replaced by Extra granted, oldest first (11k1) */
+    extras?: { attemptA: H2hPointAttempt; attemptB: H2hPointAttempt }[];
+    /** A time changed after the match, which kept its winner (11l1) */
+    amendedAfterMatch?: boolean;
     scramble: { set: string; num: number; isExtra: boolean } | null;
 }
 
@@ -115,6 +119,18 @@ export interface H2hSide {
     source: { matchNumber: number; outcome: "WINNER" | "LOSER" } | null;
 }
 
+/** How a finished match ended */
+export type H2hMatchEnd = "PLAYED" | "WALKOVER" | "RETIRED";
+
+/** What a delegate did to a match besides its points, and why */
+export interface H2hMatchLogEntry {
+    action: "WITHDRAW" | "RETIRE" | "REOPEN";
+    side: H2hSideName | null;
+    comment: string | null;
+    createdAt: string;
+    createdBy: string | null;
+}
+
 export interface H2hMatch {
     id: string;
     matchNumber: number;
@@ -124,6 +140,8 @@ export interface H2hMatch {
     setsToWin: number;
     status: H2hMatchStatus;
     winnerSide: H2hSideName | null;
+    endedBy?: H2hMatchEnd | null;
+    log?: H2hMatchLogEntry[];
     sideA: H2hSide;
     sideB: H2hSide;
     /** Sets won by each side */
@@ -346,6 +364,37 @@ export const updateBracket = (
 
 export const startMatch = (roundId: string, matchId: string) =>
     send(roundId, `h2h/match/${matchId}/start`, "POST");
+
+/** Extra granted on a point: both competitors race it again (11k1) */
+export const grantExtra = (roundId: string, pointId: string, comment = "") =>
+    send(roundId, `h2h/point/${pointId}/extra`, "POST", { comment });
+
+/** A competitor withdraws before their match: a walkover (I2h) */
+export const withdrawFromMatch = (
+    roundId: string,
+    matchId: string,
+    side: H2hSideName,
+    comment = ""
+) => send(roundId, `h2h/match/${matchId}/withdraw`, "POST", { side, comment });
+
+/** A competitor can't go on during their match: the opponent wins it */
+export const retireFromMatch = (
+    roundId: string,
+    matchId: string,
+    side: H2hSideName,
+    comment: string
+) => send(roundId, `h2h/match/${matchId}/retire`, "POST", { side, comment });
+
+/** Decides a finished match again from its times as they are now */
+export const reopenMatch = (
+    roundId: string,
+    matchId: string,
+    comment: string
+) => send(roundId, `h2h/match/${matchId}/reopen`, "POST", { comment });
+
+/** Regulation 11k2, for whoever grants an extra on a point */
+export const EXTRA_REMINDER =
+    "Both competitors get an extra (Regulation 11k1). If the incident couldn't have changed who won the point, don't grant one (Regulation 11k2).";
 
 /** Points each side has won in a set */
 export const pointsWon = (set: Pick<H2hSet, "points">) => ({

@@ -34,7 +34,10 @@ import {
     invalidateIntegratedLiveRounds,
 } from "@/lib/integratedLive";
 import { Result } from "@/lib/interfaces";
-import { isDelegate } from "@/lib/permissions";
+import {
+    isDelegate,
+    isStageLeaderOrOrganizerOrDelegate,
+} from "@/lib/permissions";
 import { LIVE_MAX_AGE } from "@/lib/queryCache";
 import { rankResults } from "@/lib/ranking";
 import { invalidateRoundResults, roundResultsSearchQuery } from "@/lib/results";
@@ -132,10 +135,15 @@ const Results = () => {
             : [{ label: "Results" }],
     });
 
+    // Stage leaders run a head-to-head round's matches, and see nothing
+    // else here; everyone else but delegates gets the public view
+    const canManage = isDelegate();
+    const onlyMatches =
+        !canManage && isH2h && isStageLeaderOrOrganizerOrDelegate();
     useEffect(() => {
-        if (!isDelegate())
-            navigate(`/results/public/${roundId}`, { replace: true });
-    }, [navigate, roundId]);
+        if (!competition || canManage || onlyMatches) return;
+        navigate(`/results/public/${roundId}`, { replace: true });
+    }, [navigate, roundId, competition, canManage, onlyMatches]);
 
     const liveRoundIds = useMemo(() => getLiveRoundIds(rooms ?? []), [rooms]);
 
@@ -222,9 +230,13 @@ const Results = () => {
             .flatMap((event) => event.rounds)
             .find((round) => round.id === roundId)?.format ?? "a";
     const event = wcif.events.find((e) => e.id === roundId.split("-")[0]);
-    const h2hTab =
-        H2H_TABS.find((t) => t.value === searchParams.get("tab"))?.value ??
-        "bracket";
+    const h2hTabs = onlyMatches
+        ? H2H_TABS.filter((t) => t.value === "matches")
+        : H2H_TABS;
+    const h2hTab: H2hTab = onlyMatches
+        ? "matches"
+        : H2H_TABS.find((t) => t.value === searchParams.get("tab"))?.value ??
+          "bracket";
     const showResults = !isH2h || h2hTab === "results";
     const h2hRanked = isH2h
         ? rankH2hResults(results, h2hView?.bracket?.entrants ?? [])
@@ -264,7 +276,7 @@ const Results = () => {
                             : undefined
                     }
                 />
-                {roundId && (
+                {roundId && canManage && (
                     <RoundHeader
                         roundId={roundId}
                         meta={getRoundMeta(roundId, wcif)}
@@ -282,14 +294,14 @@ const Results = () => {
                     label="Head-to-head round"
                     value={h2hTab}
                     onValueChange={(tab) => setSearchParams({ tab })}
-                    tabs={H2H_TABS}
+                    tabs={h2hTabs}
                 />
             )}
             {roundId && isH2h && h2hTab === "bracket" && (
                 <BracketTab roundId={roundId} />
             )}
             {roundId && isH2h && h2hTab === "matches" && (
-                <MatchesTab roundId={roundId} />
+                <MatchesTab roundId={roundId} canManage={canManage} />
             )}
             {roundId && isH2h && h2hTab === "ranking" && (
                 <RankingTab roundId={roundId} />
@@ -298,7 +310,7 @@ const Results = () => {
                 <ScramblePlanTab roundId={roundId} />
             )}
 
-            {roundId && (
+            {roundId && canManage && (
                 <>
                     {showResults && (
                         <section className="overflow-hidden rounded-mobile-card border bg-card md:rounded-2xl">

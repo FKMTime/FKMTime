@@ -489,6 +489,8 @@ export interface Attempt {
     updatedBy?: User;
     fastAttemptRatio?: number;
     staffingWarnings?: StaffingWarning[];
+    /** The head-to-head point it was raced on, whose extra covers both */
+    h2hPointId?: string | null;
 }
 
 /** An attempt as the home page lists it, with its competitor */
