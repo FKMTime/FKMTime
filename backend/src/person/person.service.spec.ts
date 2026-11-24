@@ -191,6 +191,18 @@ describe('PersonService', () => {
       });
     });
 
+    it('pages in a stable order when registrant ids are missing', async () => {
+      await service.getPersons(2, 10);
+
+      expect(
+        (dbService.person.findMany as jest.Mock).mock.calls[0][0],
+      ).toMatchObject({
+        skip: 10,
+        take: 10,
+        orderBy: [{ registrantId: 'asc' }, { id: 'asc' }],
+      });
+    });
+
     it('lists everyone when no filter is set', async () => {
       await service.getPersons(1, 10);
 
