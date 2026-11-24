@@ -1,15 +1,19 @@
+import { Trophy } from "lucide-react";
+import { Link } from "react-router-dom";
 import { Competition as WCIF, getNumberOfAttemptsForRound } from "wcif-helpers";
 
 import FlagIcon from "@/Components/Icons/FlagIcon";
 import EventChips from "@/Components/shared/EventChips";
 import SegmentedControl from "@/Components/shared/SegmentedControl";
 import { StatusDot } from "@/Components/shared/StatusBadge";
+import { Button } from "@/Components/ui/button";
 import { formattedBest } from "@/lib/average";
 import {
     getEventIconClass,
     getEventName,
     getEventShortName,
 } from "@/lib/events";
+import { PublicH2hView } from "@/lib/h2hPublic";
 import { Result } from "@/lib/interfaces";
 import { rankResults } from "@/lib/ranking";
 import {
@@ -19,6 +23,8 @@ import {
 import { getRoundMeta } from "@/lib/roundInfo";
 import { cn, getAdvancementText, regionNameByIso2 } from "@/lib/utils";
 
+import H2hResultsTable from "./H2hResultsTable";
+
 interface PublicResultsBoardProps {
     wcif: WCIF;
     roundId: string;
@@ -26,6 +32,13 @@ interface PublicResultsBoardProps {
     /** Rounds with a group in progress, marked with a dot */
     liveRoundIds: string[];
     onRoundChange: (roundId: string) => void;
+    /**
+     * A head-to-head round's bracket, whose positions and stage reached
+     * replace the usual ranking; null while it loads or has none
+     */
+    h2h?: PublicH2hView | null;
+    /** Where the bracket of a head-to-head round opens */
+    bracketHref?: string;
 }
 
 /**
@@ -38,6 +51,8 @@ const PublicResultsBoard = ({
     results,
     liveRoundIds,
     onRoundChange,
+    h2h = null,
+    bracketHref,
 }: PublicResultsBoardProps) => {
     const eventId = roundId.split("-")[0];
     const event = wcif.events.find((e) => e.id === eventId);
@@ -45,13 +60,17 @@ const PublicResultsBoard = ({
     const maxAttempts = roundId
         ? getNumberOfAttemptsForRound(roundId, wcif)
         : 0;
-    const rows = rankResults(results, maxAttempts, round?.format ?? "a");
+    const isH2h = round?.format === "h";
+    const rows = isH2h
+        ? []
+        : rankResults(results, maxAttempts, round?.format ?? "a");
+    const competitorCount = isH2h ? h2h?.entrants.length ?? 0 : rows.length;
     const meta = roundId ? getRoundMeta(roundId, wcif) : null;
     const advancement = event ? getAdvancementText(roundId, event) : null;
     const status = liveRoundIds.includes(roundId)
         ? "In progress"
-        : rows.length
-          ? `${rows.length} ${rows.length === 1 ? "competitor" : "competitors"}`
+        : competitorCount
+          ? `${competitorCount} ${competitorCount === 1 ? "competitor" : "competitors"}`
           : "Not started";
 
     const pickEvent = (id: string) => {
@@ -99,6 +118,14 @@ const PublicResultsBoard = ({
                                     .join(" · ")}
                             </p>
                         </div>
+                        {isH2h && bracketHref && (
+                            <Button asChild variant="outline" size="sm">
+                                <Link to={bracketHref}>
+                                    <Trophy />
+                                    Bracket
+                                </Link>
+                            </Button>
+                        )}
                         {event && event.rounds.length > 1 && (
                             <SegmentedControl
                                 label="Round"
@@ -120,7 +147,15 @@ const PublicResultsBoard = ({
                         )}
                     </div>
 
-                    {rows.length === 0 ? (
+                    {isH2h ? (
+                        h2h && h2h.entrants.length > 0 ? (
+                            <H2hResultsTable entrants={h2h.entrants} />
+                        ) : (
+                            <p className="p-8 text-center text-sm text-muted-foreground">
+                                No results yet.
+                            </p>
+                        )
+                    ) : rows.length === 0 ? (
                         <p className="p-8 text-center text-sm text-muted-foreground">
                             No results yet.
                         </p>

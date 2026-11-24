@@ -9,6 +9,7 @@ import { useLiveQuery } from "@/hooks/useLiveQuery";
 import { usePageHeader } from "@/hooks/usePageHeader";
 import { useSocketRoom } from "@/hooks/useSocketRoom";
 import { competitionAtom } from "@/lib/atoms";
+import { publicH2hPath, publicH2hQuery } from "@/lib/h2hPublic";
 import { Result } from "@/lib/interfaces";
 import { isStageLeaderOrOrganizerOrDelegate } from "@/lib/permissions";
 import { roundResultsQuery } from "@/lib/results";
@@ -47,6 +48,17 @@ const PublicView = () => {
         params: { roundId },
         invalidateOn: { resultEntered: [resultsQuery.key] },
     });
+    // A head-to-head round ranks by its bracket
+    const isH2h =
+        competition?.wcif.events
+            .flatMap((event) => event.rounds)
+            .find((round) => round.id === roundId)?.format === "h";
+    const h2hQuery = publicH2hQuery(roundId);
+    const { data: h2h } = useLiveQuery(h2hQuery, { enabled: isH2h });
+    useSocketRoom(isH2h ? "H2h" : null, {
+        params: { roundId },
+        invalidateOn: { h2hUpdated: [h2hQuery.key] },
+    });
 
     usePageHeader({
         crumbs: roundId
@@ -70,14 +82,10 @@ const PublicView = () => {
     }, [roundId, competition, liveRoundIds, navigate]);
 
     if (!competition) return <LoadingPage />;
-    // Stage leaders start a head-to-head round's matches from its page
-    const isH2h =
-        competition.wcif.events
-            .flatMap((event) => event.rounds)
-            .find((round) => round.id === roundId)?.format === "h";
 
     return (
         <>
+            {/* Stage leaders start a head-to-head round's matches from its page */}
             {isH2h && isStageLeaderOrOrganizerOrDelegate() && (
                 <Button asChild variant="outline" className="self-start">
                     <Link to={`/results/round/${roundId}?tab=matches`}>
@@ -91,6 +99,8 @@ const PublicView = () => {
                 results={results}
                 liveRoundIds={liveRoundIds ?? []}
                 onRoundChange={(id) => navigate(`/results/public/${id}`)}
+                h2h={isH2h ? h2h : null}
+                bracketHref={publicH2hPath(roundId)}
             />
         </>
     );

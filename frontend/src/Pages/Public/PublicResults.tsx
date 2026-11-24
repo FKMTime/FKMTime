@@ -7,10 +7,11 @@ import PublicResultsBoard from "@/Components/results/PublicResultsBoard";
 import { useLiveQuery } from "@/hooks/useLiveQuery";
 import { useSocketRoom } from "@/hooks/useSocketRoom";
 import { competitionAtom } from "@/lib/atoms";
+import { publicH2hPath, publicH2hQuery } from "@/lib/h2hPublic";
 import { Result } from "@/lib/interfaces";
 import { publicRoundResultsQuery } from "@/lib/results";
 
-import { PublicOutletContext } from "./publicNavigation";
+import { getH2hRoundIds, PublicOutletContext } from "./publicNavigation";
 
 const PublicResults = () => {
     const { id: roundId = "" } = useParams<{ id: string }>();
@@ -27,6 +28,14 @@ const PublicResults = () => {
     useSocketRoom(roundId ? "Results" : null, {
         params: { roundId },
         invalidateOn: { resultEntered: [resultsQuery.key] },
+    });
+    // A head-to-head round ranks by its bracket
+    const isH2h = getH2hRoundIds(competition?.wcif).includes(roundId);
+    const h2hQuery = publicH2hQuery(roundId);
+    const { data: h2h } = useLiveQuery(h2hQuery, { enabled: isH2h });
+    useSocketRoom(isH2h ? "H2h" : null, {
+        params: { roundId },
+        invalidateOn: { h2hUpdated: [h2hQuery.key] },
     });
 
     // Without a round, open the one in progress or the first one
@@ -46,6 +55,8 @@ const PublicResults = () => {
             results={results}
             liveRoundIds={liveRoundIds ?? []}
             onRoundChange={(id) => navigate(`/public/results/${id}`)}
+            h2h={isH2h ? h2h : null}
+            bracketHref={publicH2hPath(roundId)}
         />
     );
 };
