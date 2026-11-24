@@ -249,6 +249,12 @@ export const h2hExportChecksQuery = queryFamily((roundId) =>
     backendQuery<H2hExportChecks>(`h2h/${roundId}/export/checks`)
 );
 
+/** Refetches the export checks, which follow every change to the bracket */
+export const invalidateH2hExportChecks = (roundId: string) =>
+    queryClient.invalidateQueries({
+        queryKey: [h2hExportChecksQuery(roundId).key],
+    });
+
 export type H2hCsvDownload =
     | { ok: true }
     | {

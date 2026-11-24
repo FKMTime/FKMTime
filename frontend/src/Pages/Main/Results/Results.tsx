@@ -28,7 +28,11 @@ import { useSocketRoom } from "@/hooks/useSocketRoom";
 import { useToast } from "@/hooks/useToast";
 import { activityCodeToName } from "@/lib/activities";
 import { competitionAtom } from "@/lib/atoms";
-import { h2hExportChecksQuery, h2hRoundQuery, rankH2hResults } from "@/lib/h2h";
+import {
+    h2hRoundQuery,
+    invalidateH2hExportChecks,
+    rankH2hResults,
+} from "@/lib/h2h";
 import {
     clearIntegratedLiveResult,
     invalidateIntegratedLiveRounds,
@@ -103,10 +107,14 @@ const Results = () => {
     const h2hQuery = h2hRoundQuery(roundId);
     useSocketRoom(isH2h ? "H2h" : null, {
         params: { roundId },
-        invalidateOn: {
-            h2hUpdated: [h2hQuery.key, h2hExportChecksQuery(roundId).key],
-        },
+        invalidateOn: { h2hUpdated: [h2hQuery.key] },
     });
+    // A query key is one array, so the export checks get their own listener
+    useSocketEvents(
+        isH2h
+            ? { h2hUpdated: () => void invalidateH2hExportChecks(roundId) }
+            : {}
+    );
     const { data: h2hView } = useLiveQuery(h2hQuery, {
         maxAge: LIVE_MAX_AGE,
         enabled: isH2h,

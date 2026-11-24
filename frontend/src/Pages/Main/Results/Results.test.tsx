@@ -1,3 +1,4 @@
+import { QueryClient } from "@tanstack/react-query";
 import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { createStore, Provider } from "jotai";
@@ -14,7 +15,8 @@ import Results from "./Results";
 
 const fake = vi.hoisted(() => ({
     emitted: [] as string[],
-    handlers: new Map<string, () => void>(),
+    // Every listener of an event, as socket.io keeps them
+    handlers: new Map<string, (() => void)[]>(),
     searches: [] as string[],
     isDelegate: true,
 }));
@@ -24,8 +26,17 @@ vi.mock("@/socket", () => ({
         connected: true,
         emit: (event: string) => fake.emitted.push(event),
         on: (event: string, handler: () => void) =>
-            fake.handlers.set(event, handler),
-        off: (event: string) => fake.handlers.delete(event),
+            fake.handlers.set(event, [
+                ...(fake.handlers.get(event) ?? []),
+                handler,
+            ]),
+        off: (event: string, handler: () => void) => {
+            const left = (fake.handlers.get(event) ?? []).filter(
+                (h) => h !== handler
+            );
+            if (left.length > 0) fake.handlers.set(event, left);
+            else fake.handlers.delete(event);
+        },
     },
 }));
 vi.mock("@/lib/permissions", async (importOriginal) => ({
@@ -126,6 +137,22 @@ describe("Results", () => {
         expect(fake.searches).toEqual(["", "anna"]);
         expect(fake.emitted).toEqual(["joinResults"]);
         expect(fake.handlers.has("resultEntered")).toBe(true);
+    });
+
+    it("refetches the bracket and the WCA export checks on h2hUpdated", async () => {
+        const invalidate = vi.spyOn(QueryClient.prototype, "invalidateQueries");
+        renderResults("333oh-r2");
+        await waitFor(() => expect(fake.handlers.has("h2hUpdated")).toBe(true));
+        invalidate.mockClear();
+
+        fake.handlers.get("h2hUpdated")?.forEach((handler) => handler());
+
+        const keys = invalidate.mock.calls.map(
+            ([filters]) => filters?.queryKey
+        );
+        expect(keys).toContainEqual(["h2h/333oh-r2"]);
+        expect(keys).toContainEqual(["h2h/333oh-r2/export/checks"]);
+        invalidate.mockRestore();
     });
 
     it("shows a stage leader only the matches of a head-to-head round", async () => {
