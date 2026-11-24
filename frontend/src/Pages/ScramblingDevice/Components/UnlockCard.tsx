@@ -12,6 +12,9 @@ interface UnlockCardProps {
     isUnlocking: boolean;
     onUnlock: (password: string) => void;
     onChange: () => void;
+    /** What the password is for, under the title */
+    description?: string;
+    submitLabel?: string;
 }
 
 const UnlockCard = ({
@@ -20,6 +23,8 @@ const UnlockCard = ({
     isUnlocking,
     onUnlock,
     onChange,
+    description = "Enter the password to unlock the scrambles",
+    submitLabel = "Unlock",
 }: UnlockCardProps) => {
     const [password, setPassword] = useState("");
 
@@ -41,7 +46,7 @@ const UnlockCard = ({
                     <div className="flex flex-col gap-0.5">
                         <span className="text-base font-bold">{setName}</span>
                         <span className="text-[13px] text-muted-foreground">
-                            Enter the password to unlock the scrambles
+                            {description}
                         </span>
                     </div>
                 </div>
@@ -68,7 +73,7 @@ const UnlockCard = ({
                     disabled={isUnlocking}
                     className="h-12 text-[15px] md:h-12"
                 >
-                    Unlock
+                    {submitLabel}
                 </Button>
             </form>
         </div>

@@ -1,3 +1,4 @@
+import { saveAttachment } from "./download";
 import { AttemptStatus, Result } from "./interfaces";
 import { queryFamily, setQueryData } from "./queryCache";
 import { queryClient } from "./queryClient";
@@ -235,6 +236,78 @@ export interface H2hRoundView {
 export const h2hRoundQuery = queryFamily((roundId) =>
     backendQuery<H2hRoundView>(`h2h/${roundId}`)
 );
+
+/** What still blocks the WCA CSV of a round, and the file's name */
+export interface H2hExportChecks {
+    fileName: string;
+    wcaRoundId: number | null;
+    /** What to fix first, in the delegate's words; empty when ready */
+    blockers: string[];
+}
+
+export const h2hExportChecksQuery = queryFamily((roundId) =>
+    backendQuery<H2hExportChecks>(`h2h/${roundId}/export/checks`)
+);
+
+export type H2hCsvDownload =
+    | { ok: true }
+    | {
+          ok: false;
+          wrongPassword?: boolean;
+          blockers?: string[];
+          message: string;
+      };
+
+/**
+ * Downloads the round's results for the WCA website (SPEC-001). The
+ * scramble password goes to the backend, which builds the file with the
+ * scrambles in it; it isn't kept anywhere.
+ */
+export const downloadH2hCsv = async (
+    roundId: string,
+    password: string
+): Promise<H2hCsvDownload> => {
+    const response = await backendRequest(
+        `h2h/${roundId}/export`,
+        "POST",
+        true,
+        { password }
+    ).catch(() => null);
+    if (!response) {
+        return {
+            ok: false,
+            message:
+                "Couldn't reach FKMTime. Check the connection and try again.",
+        };
+    }
+    if (response.ok) {
+        await saveAttachment(response, `${roundId}-h2h.csv`);
+        return { ok: true };
+    }
+    const data = await response.json().catch(() => null);
+    // A 403 is also what someone without the delegate role gets
+    if (response.status === 403 && data?.message === "Invalid password") {
+        return {
+            ok: false,
+            wrongPassword: true,
+            message: "Wrong password. Use the password of the scramble sets.",
+        };
+    }
+    if (Array.isArray(data?.blockers)) {
+        return {
+            ok: false,
+            blockers: data.blockers,
+            message: "Fix these first, then download again.",
+        };
+    }
+    const message = data?.message;
+    return {
+        ok: false,
+        message: Array.isArray(message)
+            ? message.join(". ")
+            : message ?? "Something went wrong",
+    };
+};
 
 /** Refetches the round's bracket, e.g. after an attempt was entered */
 export const invalidateH2hRound = (roundId: string) =>
