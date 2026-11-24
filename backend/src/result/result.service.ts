@@ -961,8 +961,8 @@ export class ResultService {
       }));
   }
 
-  async getSubmittedAttempts(roundId: string, personId: string) {
-    const attempts = await this.prisma.attempt.findMany({
+  async getSubmittedAttempts(roundId: string, personId: string, tx?: Tx) {
+    const attempts = await (tx?.db ?? this.prisma).attempt.findMany({
       where: {
         result: {
           personId,
@@ -1007,6 +1007,7 @@ export class ResultService {
     personId: string,
     limit: TimeLimit,
     submittedAttempts: any[],
+    tx?: Tx,
   ) {
     if (limit.cumulativeRoundIds.length === 0) return true;
     if (limit.cumulativeRoundIds.length === 1) {
@@ -1021,6 +1022,7 @@ export class ResultService {
         personId,
         limit.cumulativeRoundIds,
         limit.centiseconds,
+        tx,
       );
     }
   }
@@ -1028,12 +1030,14 @@ export class ResultService {
   async getCumulativeSumForMultipleRounds(
     personId: string,
     roundsIds: string[],
+    tx?: Tx,
   ) {
     let used = 0;
     for (const roundId of roundsIds) {
       const submittedAttempts = await this.getSubmittedAttempts(
         roundId,
         personId,
+        tx,
       );
       submittedAttempts.forEach((attempt) => {
         used += attemptTimeWithPenalty(attempt);
@@ -1046,10 +1050,12 @@ export class ResultService {
     personId: string,
     roundsIds: string[],
     limit: number,
+    tx?: Tx,
   ) {
     const used = await this.getCumulativeSumForMultipleRounds(
       personId,
       roundsIds,
+      tx,
     );
     return used < limit;
   }
