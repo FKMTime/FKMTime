@@ -1,5 +1,4 @@
 import { HttpException, Injectable } from '@nestjs/common';
-import * as CryptoJS from 'crypto-js';
 import { sha512 } from 'js-sha512';
 import { DbService } from 'src/db/db.service';
 import { H2hService } from 'src/h2h/h2h.service';
@@ -12,6 +11,7 @@ import { Competition } from 'wcif-helpers';
 import { DeviceType } from '../generated/prisma/client';
 import { CreateScrambledAttemptDto } from './dto/createScrambledAttempt.dto';
 import { UnlockScrambleSetDto } from './dto/unlockScrambleSet.dto';
+import { decryptScramble } from './scrambleCrypto';
 @Injectable()
 export class ScramblingService {
   constructor(
@@ -31,18 +31,9 @@ export class ScramblingService {
       throw new HttpException('Scramble set not found', 404);
     }
     const exampleScramble = set.scrambles[0];
-    let str: string;
-    try {
-      // A wrong password often decrypts to bytes that are not valid UTF-8,
-      // which makes toString throw instead of returning garbage
-      str = CryptoJS.AES.decrypt(
-        exampleScramble.encryptedScramble,
-        data.password,
-      ).toString(CryptoJS.enc.Utf8);
-    } catch {
-      throw new HttpException('Invalid password', 403);
-    }
-    if (!str || !str.includes(' ')) {
+    if (
+      decryptScramble(exampleScramble.encryptedScramble, data.password) === null
+    ) {
       throw new HttpException('Invalid password', 403);
     }
     return set;
