@@ -572,7 +572,7 @@ the same code:
   ended, or a set started while the one before would still be going on) is
   refused with "Check the times", and nothing changes. Only Reopen match
   accepts them: the points it finds after a set's or the match's end don't
-  count from then on (*How the exceptions are built*).
+  count while they stay after the end (*How the exceptions are built*).
 - **Starting.** A match starts only once every seed has a competitor (the
   bracket is `SEEDED`): seeds lock with the first start, so an empty seed
   would stay empty and its match could never be played.
@@ -776,12 +776,18 @@ Each takes the round's lock, then the match's, like recording an attempt.
   point 3 turned into a DNF). Reopen match decides every point again and
   marks those after a set's end, or in a set after the match's end,
   `H2hPoint.afterEnd`: they keep their attempts, which are real solves,
-  but get no winner, and the Matches tab says they don't count. Every
-  later decision leaves them out, so an edit or attempt afterwards that
-  ends a set early is still refused with "Check the times". A point after
-  the end can't get an extra, and an extra a retirement called off on one
-  stays called off. A set that would no longer be over while a later one
-  has been played is still refused.
+  but get no winner, and the Matches tab says they don't count. The engine
+  is told which points may come after an end (any point while reopening,
+  later only the marked ones), not given fewer points: a marked point
+  still after its set's end stays marked, and one an edit makes its set
+  reach again counts and loses the mark (B's point 3 put back, B wins
+  3-2 again). Any other point after a set's end is still refused with
+  "Check the times". Marked points are left out of every tie-break, the
+  match's own and other matches' best in the round (I3e), so reopening
+  and later decisions agree; the ranking's best single still counts them.
+  A point after the end can't get an extra, and an extra a retirement
+  called off on one stays called off. A set that would no longer be over
+  while a later one has been played is still refused.
 - **After each action** the round's `resultEntered` and the group change
   check run as well as `h2hUpdated`, since double check and the group
   change depend on who still plays.
