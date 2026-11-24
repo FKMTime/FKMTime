@@ -11,6 +11,7 @@ import {
   StaffActivityStatus,
   StaffRole,
 } from '../generated/prisma/client';
+import { storedWcifFrom, storedWcifOf } from '../test-utils/stored-wcif';
 import { unusedDependency } from '../test-utils/unused-dependency';
 import { getFinalExtraAttempt } from './helpers';
 import { ResultService } from './result.service';
@@ -80,6 +81,7 @@ describe('ResultService staffing checks', () => {
       unusedDependency(),
       unusedDependency(),
       competitionStub,
+      storedWcifFrom(prisma),
     );
   });
 
@@ -174,6 +176,7 @@ describe('ResultService submitted attempts', () => {
       unusedDependency(),
       unusedDependency(),
       competitionStub,
+      unusedDependency(),
     );
   });
 
@@ -248,11 +251,6 @@ describe('ResultService cumulative time limit of a result', () => {
             roundId: '333mbf-r1',
           }),
         },
-        competition: {
-          findFirst: jest.fn().mockResolvedValue({
-            wcif: { events: [{ id: '333mbf', rounds }] },
-          }),
-        },
       } as unknown as DbService,
       unusedDependency(),
       unusedDependency(),
@@ -262,6 +260,7 @@ describe('ResultService cumulative time limit of a result', () => {
       unusedDependency(),
       unusedDependency(),
       competitionStub,
+      storedWcifOf({ events: [{ id: '333mbf', rounds }] }),
     );
 
   // Multi-blind has no time limit in the WCIF: its timeLimit is null
@@ -341,6 +340,7 @@ describe('ResultService settling waiting extras', () => {
       { log } as unknown as AttemptEditLogService,
       unusedDependency(),
       competitionStub,
+      storedWcifFrom(prisma),
     );
     return {
       voided: await service.settleWaitingExtras('result-1'),
@@ -406,6 +406,7 @@ describe('ResultService next attempt during a redo', () => {
       unusedDependency(),
       unusedDependency(),
       competitionStub,
+      unusedDependency(),
     );
     jest
       .spyOn(service, 'getResultOrCreate')
@@ -489,6 +490,7 @@ describe('ResultService results to double check', () => {
       unusedDependency(),
       unusedDependency(),
       competitionStub,
+      unusedDependency(),
     );
 
     const data = await service.getResultsToDoubleCheckByRoundId('333-r1');
@@ -543,6 +545,7 @@ describe('ResultService removing a result (Regulation 9t)', () => {
       unusedDependency(),
       unusedDependency(),
       competitionStub,
+      storedWcifFrom(prisma),
     );
     sent = jest.fn();
     service.sendResult = sent;
@@ -697,6 +700,7 @@ describe('ResultService deleting a result', () => {
       unusedDependency(),
       unusedDependency(),
       competitionStub,
+      storedWcifFrom(prisma),
     );
   });
 
@@ -759,6 +763,7 @@ describe('ResultService assigning DNS to the remaining attempts', () => {
       { log: jest.fn() } as unknown as AttemptEditLogService,
       unusedDependency(),
       competitionStub,
+      storedWcifFrom(prisma),
     );
     jest.spyOn(service, 'getResultById').mockResolvedValue({
       id: 'result-1',
@@ -820,6 +825,7 @@ describe('ResultService sending where the WCA setting says', () => {
       unusedDependency(),
       integratedLiveService as never,
       competitionStub,
+      storedWcifFrom(prisma),
     );
     service.getResultById = jest.fn().mockResolvedValue({
       id: 'result-1',

@@ -31,6 +31,7 @@ import {
 } from 'wcif-helpers';
 
 import { DbService } from '../db/db.service';
+import { StoredWcifService } from '../db/storedWcif.service';
 import { eventsData, isUnofficialEvent } from '../events';
 import {
   HardwareVersion,
@@ -99,6 +100,7 @@ export class CompetitionService implements OnModuleDestroy {
     private readonly socketController: SocketController,
     @Inject(forwardRef(() => RoomsService))
     private readonly roomsService: RoomsService,
+    private readonly storedWcif: StoredWcifService,
   ) {}
 
   private logger = new Logger(CompetitionService.name);
@@ -633,7 +635,9 @@ export class CompetitionService implements OnModuleDestroy {
   @Cron(CronExpression.EVERY_5_MINUTES)
   async checkIfGroupShouldBeChanged() {
     this.logger.log('Checking if group should be changed');
-    const competition = await this.prisma.competition.findFirst();
+    const competition = await this.prisma.competition.findFirst({
+      omit: { wcif: true },
+    });
     if (!competition || !competition.useFkmTimeDevices) {
       return;
     }
@@ -658,7 +662,10 @@ export class CompetitionService implements OnModuleDestroy {
     roomId: string,
     trigger: GroupCheckTrigger = 'cron',
   ) {
-    const competition = await this.prisma.competition.findFirst();
+    // Runs after attempts: the WCIF comes parsed from StoredWcifService
+    const competition = await this.prisma.competition.findFirst({
+      omit: { wcif: true },
+    });
     if (!competition?.useFkmTimeDevices) return;
     // Right after an attempt there's nothing to do with the setting off; the
     // periodic check still tells the panel a group looks finished
@@ -670,7 +677,7 @@ export class CompetitionService implements OnModuleDestroy {
     this.forgetWarningsForOtherGroups(room.id, room.currentGroupIds);
     this.logger.log(`Checking if group in room ${room.name} can be changed`);
 
-    const wcif = competition.wcif as unknown as Competition;
+    const wcif = await this.storedWcif.getOrThrow();
     const now = Date.now();
     const leaving: string[] = [];
     const stuck: string[] = [];

@@ -40,7 +40,9 @@ export class WcaService {
   private wcaLiveLogger = new Logger(`WCA-Live`);
 
   async enterWholeScorecardToWcaLive(result: any) {
-    const competition = await this.prisma.competition.findFirstOrThrow();
+    const competition = await this.prisma.competition.findFirstOrThrow({
+      omit: { wcif: true },
+    });
     const { competitionId, eventId, roundNumber, scoretakingToken, results } =
       await this.getAttemptsToEnterToWcaLive(result, competition);
     try {
@@ -72,7 +74,9 @@ export class WcaService {
   }
 
   async enterRoundToWcaLive(roundId: string, resultsFromDb: any) {
-    const competition = await this.prisma.competition.findFirstOrThrow();
+    const competition = await this.prisma.competition.findFirstOrThrow({
+      omit: { wcif: true },
+    });
     const eventIdToSubmit = roundId.split('-')[0];
     const roundNumberToSubmit = +roundId.split('-r')[1];
     const resultsToSubmit: ReturnType<
@@ -111,7 +115,13 @@ export class WcaService {
     }
   }
 
-  getAttemptsToEnterToWcaLive(result: any, competition: Competition) {
+  getAttemptsToEnterToWcaLive(
+    result: any,
+    competition: Pick<
+      Competition,
+      'wcaId' | 'scoretakingToken' | 'cubingContestsToken'
+    >,
+  ) {
     const attemptsToReturn = getCountingAttempts(result.attempts).map(
       (attempt, index) => ({ ...attempt, number: index + 1 }),
     );

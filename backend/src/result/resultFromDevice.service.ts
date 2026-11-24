@@ -14,6 +14,7 @@ import { AttendanceService } from 'src/attendance/attendance.service';
 import { CompetitionService } from 'src/competition/competition.service';
 import { DNS_VALUE } from 'src/constants';
 import { DbService, runInTransaction, Tx } from 'src/db/db.service';
+import { StoredWcifService } from 'src/db/storedWcif.service';
 import { DeviceService } from 'src/device/device.service';
 import {
   getCompetitorGroupInRound,
@@ -74,6 +75,7 @@ export class ResultFromDeviceService {
     @Inject(forwardRef(() => CompetitionService))
     private readonly competitionService: CompetitionService,
     private readonly tutorialFromDevice: TutorialFromDeviceService,
+    private readonly storedWcif: StoredWcifService,
   ) {}
 
   private logger = new Logger('ResultFromDeviceService');
@@ -110,7 +112,10 @@ export class ResultFromDeviceService {
     // then answered as already entered, instead of entering it twice
     await tx.db
       .$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`enter-attempt:${data.espId}:${data.sessionId}`}))`;
-    const competition = await tx.db.competition.findFirst();
+    // The WCIF comes parsed from StoredWcifService, not with the row
+    const competition = await tx.db.competition.findFirst({
+      omit: { wcif: true },
+    });
     if (!competition) {
       return {
         message: getTranslation('competitionNotFound', 'en'),
@@ -207,7 +212,16 @@ export class ResultFromDeviceService {
         errorDetails: { key: 'competitorNotFound', cardId: data.competitorId },
       };
     }
-    const wcif = JSON.parse(JSON.stringify(competition.wcif));
+    const wcif = await this.storedWcif.get(tx.db);
+    if (!wcif) {
+      return {
+        message: getTranslation('competitionNotFound', locale),
+        shouldResetTime: true,
+        status: 404,
+        error: true,
+        errorDetails: { key: 'competitionNotFound' },
+      };
+    }
     // A pointed station times a round whose groups are over: the competitor
     // counts only in their own group, and nobody new is added to it
     const groupId = isPointed

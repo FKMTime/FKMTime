@@ -16,6 +16,7 @@ import {
   StaffRole,
 } from '../generated/prisma/client';
 import { found } from '../test-utils/found';
+import { storedWcifFrom } from '../test-utils/stored-wcif';
 import { unusedDependency } from '../test-utils/unused-dependency';
 import {
   CompetitionService,
@@ -311,6 +312,7 @@ const setup = ({
     unusedDependency(),
     socketController as unknown as SocketController,
     roomsService,
+    storedWcifFrom(prisma),
   );
   const messages = () => emit.mock.calls.map(([, payload]) => payload.message);
   return {

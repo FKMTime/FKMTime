@@ -7,6 +7,7 @@ import {
   AttemptType,
   HardwareVersion,
 } from '../generated/prisma/client';
+import { storedWcifFrom } from '../test-utils/stored-wcif';
 import { unusedDependency } from '../test-utils/unused-dependency';
 import { PersonForDeviceService } from './personForDevice.service';
 
@@ -58,6 +59,7 @@ describe('PersonForDeviceService finished rounds', () => {
       new WcaService(unusedDependency()),
       unusedDependency(),
       unusedDependency(),
+      storedWcifFrom(prisma),
     );
     return service['getFinishedRoundIds'](
       'person-1',
@@ -148,6 +150,7 @@ describe('PersonForDeviceService on a station in tutorial mode (SPEC-012)', () =
       unusedDependency(),
       unusedDependency(),
       deviceService as never,
+      storedWcifFrom(prisma),
     );
     return { service, deviceService };
   };
@@ -217,6 +220,7 @@ describe('PersonForDeviceService with data the WCIF does not have', () => {
       new WcaService(unusedDependency()),
       resultService as never,
       { extendTutorial: jest.fn() } as never,
+      storedWcifFrom(prisma),
     );
 
   it('answers a card of someone added on site, who has no WCIF entry', async () => {
