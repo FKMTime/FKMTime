@@ -36,9 +36,10 @@ describe('ResultFromDeviceService cutoff check', () => {
   let resultService: { getSubmittedAttempts: jest.Mock };
   let service: ResultFromDeviceService;
 
+  const tx = { db: {}, afterCommit: jest.fn() } as unknown as Tx;
   const validate = (submitted: Attempt[]) => {
     resultService.getSubmittedAttempts.mockResolvedValue(submitted);
-    return service['getValidatedData']('person-1', round, { value: 1500 });
+    return service['getValidatedData']('person-1', round, { value: 1500 }, tx);
   };
 
   beforeEach(() => {
@@ -95,6 +96,7 @@ describe('ResultFromDeviceService with a resolved attempt', () => {
   };
 
   let service: ResultFromDeviceService;
+  let tx: Tx;
 
   beforeEach(() => {
     const findMany = jest
@@ -104,6 +106,12 @@ describe('ResultFromDeviceService with a resolved attempt', () => {
         resolved('s2', 2, 4500),
         { ...resolved('s3', 3, 9000), status: AttemptStatus.UNRESOLVED },
       ]);
+    // Read in the attempt's transaction: a query on the global client would
+    // wait for a second pool connection while holding the first
+    tx = {
+      db: { attempt: { findMany } },
+      afterCommit: jest.fn(),
+    } as unknown as Tx;
     service = new ResultFromDeviceService(
       unusedDependency(),
       unusedDependency(),
@@ -111,7 +119,7 @@ describe('ResultFromDeviceService with a resolved attempt', () => {
       unusedDependency(),
       unusedDependency(),
       new ResultService(
-        { attempt: { findMany } } as unknown as DbService,
+        unusedDependency(),
         unusedDependency(),
         unusedDependency(),
         unusedDependency(),
@@ -135,6 +143,7 @@ describe('ResultFromDeviceService with a resolved attempt', () => {
         timeLimit: { centiseconds: 10000, cumulativeRoundIds: ['333bf-r1'] },
       },
       { value: 2000 },
+      tx,
     );
 
     expect(data.limitPassed).toBe(false);
@@ -146,6 +155,7 @@ describe('ResultFromDeviceService with a resolved attempt', () => {
       'person-1',
       { ...round, cutoff: { numberOfAttempts: 2, resultValue: 3000 } },
       { value: 2000 },
+      tx,
     );
 
     expect(data.cutoffPassed).toBe(false);
@@ -156,6 +166,7 @@ describe('ResultFromDeviceService with a resolved attempt', () => {
       'person-1',
       { ...round, cutoff: { numberOfAttempts: 3, resultValue: 3000 } },
       { value: 2000 },
+      tx,
     );
 
     expect(data.cutoffPassed).toBe(true);

@@ -3,7 +3,7 @@ import { WcaService } from 'src/wca/wca.service';
 import { Assignment, Competition } from 'wcif-helpers';
 import { getActivityInfoFromSchedule, getPersonFromWcif } from 'wcif-helpers';
 
-import { DbService } from '../db/db.service';
+import { DbService, Tx } from '../db/db.service';
 import { Prisma, StaffRole } from '../generated/prisma/client';
 import { LIVE_LOOKUP_TTL_MS, TtlCache } from '../ttl-cache';
 import { AddPersonDto } from './dto/addPerson.dto';
@@ -393,8 +393,8 @@ export class PersonService {
     });
   }
 
-  async getPersonByCardId(cardId: string) {
-    return this.prisma.person.findFirst({
+  async getPersonByCardId(cardId: string, tx?: Tx) {
+    return (tx?.db ?? this.prisma).person.findFirst({
       where: {
         cardId: cardId.toString(),
       },

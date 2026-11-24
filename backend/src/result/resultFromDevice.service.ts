@@ -72,8 +72,12 @@ export class ResultFromDeviceService {
 
   private logger = new Logger('ResultFromDeviceService');
 
-  async getStationByEspId(espId: number) {
-    return await this.deviceService.getDeviceByEspId(espId, DeviceType.STATION);
+  async getStationByEspId(espId: number, tx?: Tx) {
+    return await this.deviceService.getDeviceByEspId(
+      espId,
+      DeviceType.STATION,
+      tx,
+    );
   }
 
   /**
@@ -113,7 +117,7 @@ export class ResultFromDeviceService {
     // Translations fall back to English for a missing locale, too
     const defaultLocale = competition.defaultLocale ?? 'en';
 
-    const device = await this.getStationByEspId(data.espId);
+    const device = await this.getStationByEspId(data.espId, tx);
     if (!device) {
       return {
         message: getTranslation('stationNotFound', defaultLocale),
@@ -148,9 +152,12 @@ export class ResultFromDeviceService {
       if (!stationRoundIds.includes(roundId) && !isResent) {
         // In the language the judge and competitor read, like every other reply
         const [competitor, judge] = await Promise.all([
-          this.personService.getPersonByCardId(data.competitorId.toString()),
+          this.personService.getPersonByCardId(
+            data.competitorId.toString(),
+            tx,
+          ),
           data.judgeId
-            ? this.personService.getPersonByCardId(data.judgeId.toString())
+            ? this.personService.getPersonByCardId(data.judgeId.toString(), tx)
             : null,
         ]);
         return {
@@ -181,6 +188,7 @@ export class ResultFromDeviceService {
 
     const competitor = await this.personService.getPersonByCardId(
       data.competitorId.toString(),
+      tx,
     );
     // The competition language until a judge card tells us who is reading
     let locale = defaultLocale;
@@ -243,7 +251,10 @@ export class ResultFromDeviceService {
       // The reply to the first send was lost: the station may drop its copy,
       // but only if it is the attempt we have, unchanged
       const judge = data.judgeId
-        ? await this.personService.getPersonByCardId(data.judgeId.toString())
+        ? await this.personService.getPersonByCardId(
+            data.judgeId.toString(),
+            tx,
+          )
         : null;
       const sameAttempt = isSameAttemptResent(
         previousAttemptWithSameSessionId,
@@ -270,7 +281,7 @@ export class ResultFromDeviceService {
 
     // judgeId is optional: a delegate call can come without a judge card
     const judge = data.judgeId
-      ? await this.personService.getPersonByCardId(data.judgeId.toString())
+      ? await this.personService.getPersonByCardId(data.judgeId.toString(), tx)
       : null;
 
     if (!judge && !data.isDelegate) {
@@ -389,6 +400,7 @@ export class ResultFromDeviceService {
       competitor.id,
       roundInfo,
       data,
+      tx,
     );
 
     if (!finalData.cutoffPassed) {
@@ -815,10 +827,12 @@ export class ResultFromDeviceService {
     personId: string,
     wcifRoundInfo: any,
     newAttemptData: any,
+    tx: Tx,
   ) {
     const submittedAttempts = await this.resultService.getSubmittedAttempts(
       wcifRoundInfo.id,
       personId,
+      tx,
     );
     const dataToReturn: any = newAttemptData;
     let limitPassed = true;
@@ -830,6 +844,7 @@ export class ResultFromDeviceService {
           personId,
           wcifRoundInfo.timeLimit,
           [...submittedAttempts, newAttemptData],
+          tx,
         ))
       ) {
         limitPassed = false;
