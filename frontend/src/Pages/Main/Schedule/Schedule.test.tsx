@@ -184,6 +184,25 @@ describe("Schedule", () => {
         );
     });
 
+    it("sizes every desktop table row to the column minimums so columns line up", async () => {
+        vi.mocked(isDelegate).mockReturnValue(true);
+        renderPage();
+        await screen.findAllByText("Lunch");
+
+        // A row sized to its own content (min-w-max) stretches its flexible
+        // columns and drifts out of line with the header (#788)
+        const header = screen.getByText("Scheduled").parentElement!;
+        const rows = Array.from(header.parentElement!.children);
+        expect(rows).toHaveLength(3);
+        for (const row of rows) {
+            expect(row.className).toContain("min-w-min");
+            expect(row.className).not.toContain("min-w-max");
+        }
+        // Long time limits wrap rather than being cut off
+        const timeLimit = within(rows[1] as HTMLElement).getByText("10:00.00");
+        expect(timeLimit.className).not.toContain("truncate");
+    });
+
     it("links rounds to their results for delegates only", async () => {
         vi.mocked(isDelegate).mockReturnValue(true);
         renderPage();
