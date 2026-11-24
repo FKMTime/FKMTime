@@ -377,6 +377,7 @@ model H2hScrambleAssignment {
 - **Matching again.** Creating the bracket, importing scrambles for the
   round and deleting any of its sets all match the plan again. Rows with a
   set keep it, so a row emptied by deleting its set takes the first spare.
+  A set already open without a scramble set takes the one its row gets.
 
 **When a set runs out.** Points with no winner (I3d) can push a set to 7
 points, and an extra (11k1) adds more. Once the set's normal and extra
