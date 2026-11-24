@@ -143,6 +143,21 @@ export class H2hMatchService {
         },
       });
       const label = await this.labelOf(tx.db, bracketId, matchId);
+      // Seeds lock with the first start, so an empty seed then stays empty
+      // and the match it belongs to can never be played
+      const bracket = await tx.db.h2hBracket.findUniqueOrThrow({
+        where: { id: bracketId },
+        select: {
+          status: true,
+          size: true,
+          _count: { select: { entrants: true } },
+        },
+      });
+      if (bracket.status === H2hBracketStatus.DRAFT) {
+        throw new ConflictException(
+          `Fill every seed before the first match starts: ${bracket._count.entrants} of ${bracket.size} have a competitor`,
+        );
+      }
       if (match.status === H2hMatchStatus.WAITING) {
         throw new ConflictException(
           `${label} can't start until both competitors are known`,
@@ -215,6 +230,11 @@ export class H2hMatchService {
     },
   ): Promise<{ attempt: T; matchId: string }> {
     const db = tx.db;
+    // The whole round, before the match: finishing a match writes the
+    // matches it feeds and the bracket, and new points draw on the round's
+    // spare sets, so two matches recording at once must not interleave.
+    // Same order as startMatch, so the two can't deadlock.
+    await lockBracket(db, input.roundId);
     const playing = await db.h2hMatch.findFirst({
       where: {
         bracket: { roundId: input.roundId },
@@ -278,6 +298,30 @@ export class H2hMatchService {
     return { attempt, matchId: match.id };
   }
 
+  /**
+   * A set opened while its plan row was empty takes the set the row has
+   * been given since (scrambles imported mid-match), so importing more
+   * sets is what unblocks it. Null while the row is still empty.
+   */
+  private async adoptPlannedSet(
+    db: Db,
+    matchId: string,
+    set: { id: string; setNumber: number },
+  ) {
+    const row = await db.h2hScrambleAssignment.findUnique({
+      where: { matchId_setNumber: { matchId, setNumber: set.setNumber } },
+    });
+    const planned = row?.scrambleSetId ?? null;
+    if (planned === null) return null;
+    const taken = await db.h2hSet.count({ where: { scrambleSetId: planned } });
+    if (taken > 0) return null;
+    await db.h2hSet.update({
+      where: { id: set.id },
+      data: { scrambleSetId: planned },
+    });
+    return planned;
+  }
+
   /** A new point of the set, on the next scramble nobody has raced */
   private async openPoint(
     db: Db,
@@ -286,9 +330,11 @@ export class H2hMatchService {
     pointNumber: number,
   ) {
     const roundId = match.bracket.roundId;
-    const own = set.scrambleSetId
+    const scrambleSetId =
+      set.scrambleSetId ?? (await this.adoptPlannedSet(db, match.id, set));
+    const own = scrambleSetId
       ? await db.scrambleSet.findUnique({
-          where: { id: set.scrambleSetId },
+          where: { id: scrambleSetId },
           select: scrambleOptionSelect,
         })
       : null;
@@ -515,8 +561,12 @@ export class H2hMatchService {
    */
   async lockPointOf(db: Db, attemptId: string) {
     const point = await this.pointOf(db, attemptId);
-    if (point) await lockMatch(db, point.set.match.id);
-    return point;
+    if (!point) return null;
+    // Round, then match: the order recordAttempt and startMatch take
+    await lockBracket(db, point.set.match.bracket.roundId);
+    await lockMatch(db, point.set.match.id);
+    // Read again: it may have changed while this waited for the locks
+    return this.pointOf(db, attemptId);
   }
 
   /** The point an attempt was raced on, with its set, match and round */
@@ -619,6 +669,27 @@ export class H2hMatchService {
         `Set ${set.set} has been raced in a head-to-head match, so it can't be deleted`,
       );
     }
+  }
+
+  /** People in the round's bracket with a match still to play or playing */
+  async personsStillPlaying(db: Db, roundId: string) {
+    const matches = await db.h2hMatch.findMany({
+      where: {
+        bracket: { roundId },
+        status: { not: H2hMatchStatus.FINISHED },
+      },
+      select: {
+        entrantA: { select: { personId: true } },
+        entrantB: { select: { personId: true } },
+      },
+    });
+    return new Set(
+      matches.flatMap((m) =>
+        [m.entrantA?.personId, m.entrantB?.personId].filter(
+          (id): id is string => id !== undefined,
+        ),
+      ),
+    );
   }
 
   /** Each competitor's best single from their counting attempts, WCA-encoded */

@@ -307,6 +307,23 @@ describe('Head-to-head matches (e2e)', () => {
       );
     });
 
+    it('refuses to start while a seed is still empty', async () => {
+      // Three of four seeds: seeds lock with the first start, so seed 4
+      // could never be filled
+      await request(server())
+        .put(`/h2h/${roundId}/seeds`)
+        .set(as(users.DELEGATE))
+        .send({ personIds: seeds.slice(0, 3).map((p) => p.id) })
+        .expect(200);
+      const semi2 = matchOf(await getView(), 2);
+      expect(semi2.status).toBe('READY');
+
+      const res = await start(semi2.id).expect(409);
+      expect(res.body.message).toBe(
+        'Fill every seed before the first match starts: 3 of 4 have a competitor',
+      );
+    });
+
     it('refuses a match whose competitor is playing another one', async () => {
       const view = await getView();
       const semi1 = matchOf(view, 1);
@@ -445,6 +462,79 @@ describe('Head-to-head matches (e2e)', () => {
       expect(await attemptsOf(semi.a)).toHaveLength(1);
     });
 
+    it('fills the final with both winners when the semifinals end at the same moment', async () => {
+      const semi1 = await sides(1);
+      const semi2 = await sides(2);
+      await start(semi1.id).expect(200);
+      await start(semi2.id).expect(200);
+      for (let i = 0; i < 2; i++) {
+        await pointToA(semi1.a, semi1.b);
+        await pointToA(semi2.a, semi2.b);
+      }
+      await enter(semi1.b, 1100).expect(201);
+      await enter(semi2.b, 1100).expect(201);
+
+      // Each deciding attempt finishes its semifinal and writes the final
+      await Promise.all([
+        enter(semi1.a, 1000).expect(201),
+        enter(semi2.a, 1000).expect(201),
+      ]);
+
+      const view = await getView();
+      const final = matchOf(view, 4);
+      const third = matchOf(view, 3);
+      expect(final.status).toBe('READY');
+      expect(third.status).toBe('READY');
+      expect(
+        [final.sideA, final.sideB]
+          .map((side) => personOf(view, side.entrantId))
+          .sort(),
+      ).toEqual([semi1.a, semi2.a].sort());
+    });
+
+    it('offers a result for double check only once the competitor has no match left', async () => {
+      await winForA(1);
+      const semi2 = await sides(2);
+      await start(semi2.id).expect(200);
+      await pointToA(semi2.a, semi2.b);
+      const listed = async () =>
+        (
+          (
+            await request(server())
+              .get(`/result/round/${roundId}/double-check`)
+              .set(as(users.DELEGATE))
+              .expect(200)
+          ).body.results as { personId: string }[]
+        ).map((r) => r.personId);
+
+      // The loser of semifinal 1 still has the third-place match
+      expect(await listed()).toEqual([]);
+
+      const [playingAttempt] = await attemptsOf(semi2.a);
+      const result = found(
+        await db.result.findFirst({ where: { roundId, personId: semi2.a } }),
+        'result',
+      );
+      const res = await request(server())
+        .post('/result/double-check')
+        .set(as(users.DELEGATE))
+        .send({
+          resultId: result.id,
+          attempts: [
+            {
+              id: playingAttempt.id,
+              attemptNumber: playingAttempt.attemptNumber,
+              value: 1500,
+              penalty: 0,
+              status: 'STANDARD',
+              type: 'STANDARD_ATTEMPT',
+            },
+          ],
+        })
+        .expect(409);
+      expect(res.body.message).toMatch(/match still playing/);
+    });
+
     it('re-decides a point when an attempt is edited during the match', async () => {
       const semi = await sides(1);
       await start(semi.id).expect(200);
@@ -518,6 +608,31 @@ describe('Head-to-head matches (e2e)', () => {
       expect(await attemptsOf(semi.a)).toHaveLength(1);
       const match = matchOf(await getView(), 1);
       expect(match.scrambleInUse?.warning).toMatch(/No scramble is left/);
+    });
+
+    it('takes newly imported sets for a set that opened without one', async () => {
+      await setUpBracket({ SEMIFINAL: 2, THIRD_PLACE: 2, FINAL: 2 });
+      await importSets(['A', 'B']);
+      const semi = await sides(1);
+      await start(semi.id).expect(200);
+      // 1-1 in sets: set 3 opens, and the plan has no set for it
+      for (let i = 0; i < 3; i++) await pointToA(semi.a, semi.b);
+      for (let i = 0; i < 3; i++) {
+        await enter(semi.a, 1200).expect(201);
+        await enter(semi.b, 1100).expect(201);
+      }
+      await enter(semi.a, 1000).expect(409);
+
+      await importSets(['C']);
+      await enter(semi.a, 1000).expect(201);
+
+      const set3 = matchOf(await getView(), 1).sets[2];
+      expect(set3.scrambleSet?.set).toBe('C');
+      expect(set3.points[0].scramble).toEqual({
+        set: 'C',
+        num: 1,
+        isExtra: false,
+      });
     });
 
     it('opens the next set on its planned set, and doesn’t plan sets for finished matches', async () => {

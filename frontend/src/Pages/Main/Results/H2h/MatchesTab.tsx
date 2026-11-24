@@ -291,12 +291,18 @@ const MatchCard = ({
                         Sets {setScores}
                     </span>
                 )}
-                {match.status === "READY" && (
-                    <Button size="sm" onClick={onStart} disabled={starting}>
-                        <Play className="size-4" />
-                        Start match
-                    </Button>
-                )}
+                {match.status === "READY" &&
+                    // Seeds lock with the first start, so they come first
+                    (bracket.status === "DRAFT" ? (
+                        <span className="text-xs text-muted-foreground">
+                            Fill every seed in the Bracket tab to start
+                        </span>
+                    ) : (
+                        <Button size="sm" onClick={onStart} disabled={starting}>
+                            <Play className="size-4" />
+                            Start match
+                        </Button>
+                    ))}
             </div>
 
             {isPlaying && (

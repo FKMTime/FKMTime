@@ -191,6 +191,30 @@ describe("MatchesTab", () => {
         expect(startMatch).toHaveBeenCalledWith("333oh-r2", "semi-2");
     });
 
+    it("offers no start while seeds are still empty", () => {
+        state.view = view([
+            match({
+                id: "semi-2",
+                status: "READY",
+                sideA: { entrantId: "entrant-2", source: null },
+                sideB: { entrantId: "entrant-3", source: null },
+            }),
+        ]);
+        const draft = state.view as H2hRoundView;
+        state.view = {
+            ...draft,
+            bracket: { ...draft.bracket, status: "DRAFT" },
+        };
+        render(<MatchesTab roundId="333oh-r2" />);
+
+        expect(
+            screen.queryByRole("button", { name: /Start match/ })
+        ).toBeNull();
+        expect(
+            screen.getByText("Fill every seed in the Bracket tab to start")
+        ).toBeTruthy();
+    });
+
     it("logs the playing match point by point, with the scramble in use", () => {
         state.view = view([playing]);
         render(<MatchesTab roundId="333oh-r2" />);

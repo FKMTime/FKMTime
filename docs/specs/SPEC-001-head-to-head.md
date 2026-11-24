@@ -546,11 +546,15 @@ How the point engine is built (`H2hMatchService`, with its pure parts in
 `matchEngine.ts`). Manual entry uses it first; the station flow will call
 the same code:
 
-- **One transaction per attempt.** `POST /attempt` for an H2H round finds
-  the competitor's playing match, takes
+- **One transaction per attempt.** `POST /attempt` for an H2H round takes
+  the round's lock (`h2h-bracket:<roundId>`, the one bracket setup and
+  scramble imports take), finds the competitor's playing match, takes
   `pg_advisory_xact_lock(hashtext('h2h-match:' || matchId))`, places the
   attempt, creates it and decides what it completes, all in one
-  transaction. A refusal saves nothing, not even an empty result. The
+  transaction. A refusal saves nothing, not even an empty result. The round
+  lock is there because finishing a match writes the matches it feeds and
+  the bracket, and new points draw on the round's spare sets: two matches
+  ending at the same moment must not overwrite each other. The
   attempt number the caller sends is ignored: attempts are numbered 1..N
   per competitor across the round.
 - **What manual entry takes.** Only a counting standard attempt (no
@@ -566,9 +570,20 @@ the same code:
   edit that no longer fits the sets played (points after a set would have
   ended, or a set started while the one before would still be going on) is
   refused with "Check the times", and nothing changes.
+- **Starting.** A match starts only once every seed has a competitor (the
+  bracket is `SEEDED`): seeds lock with the first start, so an empty seed
+  would stay empty and its match could never be played.
 - **An empty plan row.** Starting a match refuses when set 1 has no
-  scramble set in the plan. A later set whose row is empty still opens, and
-  its points take scrambles from spare sets.
+  scramble set in the plan. A later set whose row is empty still opens. Its
+  next point takes the set the row has been given since (scrambles
+  imported mid-match), otherwise a spare set.
+- **Double check.** A competitor's result is offered for double check once
+  they have no match left to play, and double check refuses to change a
+  time in a match still playing (that goes through manual entry, which
+  re-decides the match).
+- **The scrambling device** refuses H2H rounds until it can show the
+  point's scramble: it would otherwise hand out the competitor's attempt
+  count as the scramble number. The Matches tab shows the scramble in use.
 - **Deleting.** An attempt, a result or a scramble set that a point or a set
   used can't be deleted, and neither can a group with such attempts be
   restarted; each refusal names the match. The one exception is the lone

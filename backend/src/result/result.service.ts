@@ -672,10 +672,14 @@ export class ResultService {
     const competition = await this.prisma.competition.findFirstOrThrow();
     const wcif = JSON.parse(JSON.stringify(competition.wcif));
     const roundInfo = getRoundInfoFromWcif(roundId, wcif);
-    // A head-to-head competitor has as many attempts as their matches took
-    const maxAttempts = isH2hRound(roundId, wcif)
-      ? 0
-      : getNumberOfAttemptsForRound(roundId, wcif);
+    // A head-to-head competitor has as many attempts as their matches took,
+    // and is done once they have no match left to play: until then their
+    // result still grows, and a playing match's times are edited there
+    const isH2h = isH2hRound(roundId, wcif);
+    const maxAttempts = isH2h ? 0 : getNumberOfAttemptsForRound(roundId, wcif);
+    const stillPlaying = isH2h
+      ? await this.h2hMatchService.personsStillPlaying(this.prisma, roundId)
+      : new Set<string>();
 
     const allResults = await this.prisma.result.findMany({
       where: {
@@ -686,6 +690,7 @@ export class ResultService {
     });
 
     const results = allResults.filter((result) => {
+      if (stillPlaying.has(result.personId)) return false;
       const submitted = getCountingAttempts(result.attempts);
       if (submitted.length === 0) return false;
       if (result.attempts.some((a) => a.status === AttemptStatus.UNRESOLVED))
@@ -727,6 +732,16 @@ export class ResultService {
   }
 
   async doubleCheckResult(data: DoubleCheckDto, userId: string) {
+    // A time in a match still playing would change without re-deciding it
+    for (const attempt of data.attempts) {
+      const point = await this.h2hMatchService.pointOf(this.prisma, attempt.id);
+      if (point && point.set.match.status !== 'FINISHED') {
+        throw new HttpException(
+          'This result has attempts in a match still playing. Double check it once the competitor has no match left.',
+          HttpStatus.CONFLICT,
+        );
+      }
+    }
     const result = await this.prisma.result.update({
       where: {
         id: data.resultId,
