@@ -1,5 +1,5 @@
 import { useAtomValue } from "jotai";
-import { useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { Competition as WCIF } from "wcif-helpers";
 
 import { Modal } from "@/Components/Modal";
@@ -11,7 +11,11 @@ import { useDialogError } from "@/hooks/useDialogError";
 import { activityCodeToName } from "@/lib/activities";
 import { competitionAtom } from "@/lib/atoms";
 import { getEventName } from "@/lib/events";
-import { addScrambles, validateScrambles } from "@/lib/scramblesImport";
+import {
+    addScrambles,
+    getScrambleSetsToAdd,
+    validateScrambles,
+} from "@/lib/scramblesImport";
 import { numberToLetter } from "@/lib/utils";
 
 import ScrambleSetsValidators from "../../ImportScrambles/Components/ScrambleSetsValidators";
@@ -37,6 +41,18 @@ const AddScrambleSetModal = ({
     const [warningsList, setWarningsList] = useState<string[]>([]);
     const [errorsList, setErrorsList] = useState<string[]>([]);
     const inputRef = useRef<HTMLInputElement>(null);
+    const eventId = roundId.split("-")[0];
+    const setsToAdd = useMemo(
+        () => (wcif ? getScrambleSetsToAdd(roundId, wcif, lastSet + 1) : []),
+        [wcif, roundId, lastSet]
+    );
+    const displayedErrors =
+        wcif && setsToAdd.length === 0
+            ? [
+                  ...errorsList,
+                  `This file has no scramble sets for ${getEventName(eventId)} Round 1`,
+              ]
+            : errorsList;
 
     const handleFileUpload = () => {
         clearUploadedScrambles(false);
@@ -64,11 +80,10 @@ const AddScrambleSetModal = ({
     };
 
     const handleAdd = async () => {
-        if (!wcif || !competition) return;
-        const response = await addScrambles(roundId, wcif, lastSet + 1);
+        if (setsToAdd.length === 0) return;
+        const response = await addScrambles(setsToAdd);
         if (response.status === 201) {
-            clearUploadedScrambles();
-            onClose();
+            handleClose();
         } else {
             setError("Something went wrong");
             setError(response.data.message);
@@ -79,24 +94,33 @@ const AddScrambleSetModal = ({
         setWcif(undefined);
         if (clearInput) setFileInputKey((prev) => prev + 1);
         setPreventFromImporting(false);
+        setWarningsList([]);
+        setErrorsList([]);
+    };
+
+    // The modal stays mounted while the round changes, so a file uploaded for
+    // one round must not survive into the next opening.
+    const handleClose = () => {
+        clearUploadedScrambles();
+        onClose();
     };
 
     return (
         <Modal
             error={error}
             isOpen={isOpen}
-            onClose={onClose}
+            onClose={handleClose}
             title={`Add scramble set for ${activityCodeToName(roundId)}`}
         >
             <div className="flex flex-col gap-3">
                 <p>
-                    Sets generated for {getEventName(roundId.split("-")[0])}{" "}
-                    Round 1 will be added to this round, starting from set{" "}
+                    Sets generated for {getEventName(eventId)} Round 1 will be
+                    added to this round, starting from set{" "}
                     {numberToLetter(lastSet + 1)}.
                 </p>
                 <ScrambleSetsValidators
                     warnings={warningsList}
-                    errors={errorsList}
+                    errors={displayedErrors}
                 />
                 <div className="flex flex-col gap-3 w-fit">
                     <Label htmlFor="add-scramble-set">Upload scrambles</Label>
@@ -110,7 +134,12 @@ const AddScrambleSetModal = ({
                     />
                 </div>
                 <ModalActions>
-                    <Button onClick={handleAdd} disabled={preventFromImporting}>
+                    <Button
+                        onClick={handleAdd}
+                        disabled={
+                            preventFromImporting || setsToAdd.length === 0
+                        }
+                    >
                         Add
                     </Button>
                 </ModalActions>

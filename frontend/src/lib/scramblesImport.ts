@@ -110,14 +110,9 @@ export const importScrambles = async (wcif: WCIF) => {
     };
 };
 
-export const addScrambles = async (
-    roundId: string,
-    wcif: WCIF,
-    startFrom: number
-) => {
-    const transformedData = addToSet(roundId, wcif, startFrom);
+export const addScrambles = async (scrambleSets: ImportedScrambleSet[]) => {
     const response = await backendRequest(`scramble-set/import`, "POST", true, {
-        scrambleSets: transformedData,
+        scrambleSets,
     });
     return {
         status: response.status,
@@ -125,21 +120,23 @@ export const addScrambles = async (
     };
 };
 
-const addToSet = (roundId: string, wcif: WCIF, startFrom: number) => {
-    const transformedData = transformScramblesData(wcif);
-    const filteredData = transformedData.filter(
-        (set) => set.roundId.split("-")[0] === roundId.split("-")[0]
-    );
-    const dataToReturn = [];
-    let i = startFrom;
-    for (const set of filteredData) {
-        dataToReturn.push({
+/**
+ * Sets to add to `roundId` from a scramble file: the file's Round 1 sets of
+ * the same event, moved to `roundId` and lettered from `startFrom`.
+ */
+export const getScrambleSetsToAdd = (
+    roundId: string,
+    wcif: WCIF,
+    startFrom: number
+): ImportedScrambleSet[] => {
+    const sourceRoundId = `${roundId.split("-")[0]}-r1`;
+    return transformScramblesData(wcif)
+        .filter((set) => set.roundId === sourceRoundId)
+        .map((set, i) => ({
             ...set,
-            set: numberToLetter(i),
-        });
-        i++;
-    }
-    return dataToReturn;
+            roundId,
+            set: numberToLetter(startFrom + i),
+        }));
 };
 
 const transformScramblesData = (wcif: WCIF) => {
