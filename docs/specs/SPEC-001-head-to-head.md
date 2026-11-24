@@ -570,10 +570,9 @@ the same code:
   closes again if an edit means the set before isn't over after all. An
   edit that no longer fits the sets played (points after a set would have
   ended, or a set started while the one before would still be going on) is
-  refused with "Check the times", and nothing changes. Once the match has
-  been reopened, points after a set would have ended, and sets after the
-  match would have ended, don't count instead (*How the exceptions are
-  built*).
+  refused with "Check the times", and nothing changes. Only Reopen match
+  accepts them: the points it finds after a set's or the match's end don't
+  count from then on (*How the exceptions are built*).
 - **Starting.** A match starts only once every seed has a competitor (the
   bracket is `SEEDED`): seeds lock with the first start, so an empty seed
   would stay empty and its match could never be played.
@@ -748,9 +747,12 @@ Each takes the round's lock, then the match's, like recording an attempt.
   then the higher seed. `H2hEntrant.withdrawnInMatchId` keeps the match
   they withdrew or retired from. The seeds can't change once someone has
   withdrawn (new seeds would drop the withdrawal); deleting and recreating
-  the bracket starts over. A mistaken Withdraw on a match whose opponent
-  isn't known yet can be undone only once its walkover has happened, with
-  Reopen match.
+  the bracket starts over, and the seed list shows them locked. A mistaken
+  Withdraw on a match whose opponent isn't known yet can be undone only
+  once its walkover has happened, with Reopen match. When reopening an
+  earlier match takes the competitor out of the match they withdrew from
+  (they now lose the semifinal and withdrew from the final), the walkover
+  their withdrawal then gives becomes the match it is undone in.
 - **Retire** removes a set opened but not raced (it was never played),
   and counts as a walkover when the retiring competitor has no attempt in
   the match, including one replaced by an extra. An extra granted but not
@@ -771,11 +773,15 @@ Each takes the round's lock, then the match's, like recording an attempt.
   before it is clicked.
 - **Surplus points after Reopen match.** Times amended for cheating or a
   DNF can end a set before all its played points (A, A, B, A with B's
-  point 3 turned into a DNF). Once a match has been reopened, its points
-  after a set's end and its sets after the match's end don't count: they
-  keep their attempts, which are real solves, but get no winner, and the
-  Matches tab says so. A set that would no longer be over while a later
-  one has been played is still refused.
+  point 3 turned into a DNF). Reopen match decides every point again and
+  marks those after a set's end, or in a set after the match's end,
+  `H2hPoint.afterEnd`: they keep their attempts, which are real solves,
+  but get no winner, and the Matches tab says they don't count. Every
+  later decision leaves them out, so an edit or attempt afterwards that
+  ends a set early is still refused with "Check the times". A point after
+  the end can't get an extra, and an extra a retirement called off on one
+  stays called off. A set that would no longer be over while a later one
+  has been played is still refused.
 - **After each action** the round's `resultEntered` and the group change
   check run as well as `h2hUpdated`, since double check and the group
   change depend on who still plays.
