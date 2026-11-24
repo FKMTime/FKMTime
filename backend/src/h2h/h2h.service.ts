@@ -720,10 +720,11 @@ export class H2hService {
         seeds,
       });
     });
-    // Fetched now, so the delegate sees it on the Bracket tab long before
-    // the export needs it. The bracket is created either way: the export
-    // tries again
-    await this.h2hExport.fillWcaRoundId(roundId).catch(() => null);
+    // Fetched in the background, so the delegate sees it on the Bracket tab
+    // long before the export needs it (h2hUpdated says when), without
+    // waiting on the WCA at a venue without internet. The export tries
+    // again if this fails.
+    void this.h2hExport.fillWcaRoundId(roundId).catch(() => null);
     return {
       ...(await this.getBracketView(roundId)),
       notice: notices.filter((n) => n !== null).join(' ') || null,

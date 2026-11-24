@@ -32,7 +32,12 @@ interface View {
   bracket: {
     wcaRoundId: number | null;
     status: string;
-    entrants: { id: string; person: { id: string }; position: number | null }[];
+    entrants: {
+      id: string;
+      person: { id: string };
+      position: number | null;
+      bestSingle: number | null;
+    }[];
     matches: {
       id: string;
       matchNumber: number;
@@ -176,6 +181,19 @@ describe('Head-to-head WCA CSV export (e2e)', () => {
       .send({ wcaRoundId: null })
       .expect(200);
 
+  /**
+   * Creating a bracket fetches its WCA round id in the background: waits
+   * for it, so it can't land in the middle of a test
+   */
+  const waitForWcaRoundId = async () => {
+    for (let i = 0; i < 50; i++) {
+      const { wcaRoundId } = (await getView()).bracket;
+      if (wcaRoundId !== null) return wcaRoundId;
+      await new Promise((resolve) => setTimeout(resolve, 100));
+    }
+    return null;
+  };
+
   /** A fresh 4-competitor bracket, one set to win, sets A to E to race on */
   const setUpBracket = async () => {
     await request(server())
@@ -183,6 +201,7 @@ describe('Head-to-head WCA CSV export (e2e)', () => {
       .set(as(users.DELEGATE))
       .send({ size: 4 })
       .expect(201);
+    expect(await waitForWcaRoundId()).not.toBeNull();
     await request(server())
       .put(`/h2h/${roundId}/seeds`)
       .set(as(users.DELEGATE))
@@ -286,8 +305,8 @@ describe('Head-to-head WCA CSV export (e2e)', () => {
 
   it('fetches the WCA round id from the WCA website when it is empty', async () => {
     const expected = await dummyRoundId();
-    // Creating the bracket fetched it already
-    expect((await getView()).bracket.wcaRoundId).toBe(expected);
+    // Creating the bracket fetched it already, in the background
+    expect(await waitForWcaRoundId()).toBe(expected);
     await clearWcaRoundId();
     expect((await getView()).bracket.wcaRoundId).toBeNull();
 
@@ -297,6 +316,23 @@ describe('Head-to-head WCA CSV export (e2e)', () => {
     expect((await getView()).bracket.wcaRoundId).toBe(expected);
     expect(checks.fileName).toBe(`${wcaId}-${roundId}-h2h.csv`);
   });
+
+  it('creates the bracket without waiting for the WCA, which may be out of reach', async () => {
+    await clean();
+    // The WCA answers only after the test's time is up, as an unreachable
+    // one does after its timeout: creating must not wait for it
+    jest
+      .spyOn(app.get(WcaService), 'getWcaRoundId')
+      .mockReturnValue(
+        new Promise((resolve) => setTimeout(() => resolve(null), 8000)),
+      );
+
+    await request(server())
+      .post(`/h2h/${roundId}`)
+      .set(as(users.DELEGATE))
+      .send({ size: 4 })
+      .expect(201);
+  }, 5000);
 
   it('keeps a WCA round id the delegate entered', async () => {
     await request(server())
@@ -368,7 +404,7 @@ describe('Head-to-head WCA CSV export (e2e)', () => {
       data: { wcaRegistrationId: null },
     });
     await clearWcaRoundId();
-    jest.spyOn(app.get(WcaService), 'getLastRoundId').mockResolvedValue(null);
+    jest.spyOn(app.get(WcaService), 'getWcaRoundId').mockResolvedValue(null);
 
     const checks = await getChecks();
 
@@ -502,6 +538,75 @@ describe('Head-to-head WCA CSV export (e2e)', () => {
       expect(new Set(rows.map((row) => row.final_position))).toEqual(
         new Set(['1', '2', '3', '4']),
       );
+    });
+
+    it("exports points raced after a set's end, which the best single counts", async () => {
+      // A, A, B, A: then B's point 3 becomes a DNF, so reopening ends the
+      // set at point 3, and point 4, A's best single, comes after the end
+      const semi1 = await sides(1);
+      await start(semi1.id);
+      await point(semi1.a, semi1.b, 900, 1000);
+      await point(semi1.a, semi1.b, 900, 1000);
+      await point(semi1.a, semi1.b, 1100, 1000);
+      await point(semi1.a, semi1.b, 500, 1000);
+      const third = found(
+        matchOf(await getView(), 1).sets[0].points[2].attemptB,
+        'attempt',
+      );
+      await request(server())
+        .put(`/attempt/${third.id}`)
+        .set(as(users.DELEGATE))
+        .send({
+          attemptNumber: third.attemptNumber,
+          value: third.value,
+          penalty: -1,
+          status: 'STANDARD',
+          type: 'STANDARD_ATTEMPT',
+        })
+        .expect(200);
+      await request(server())
+        .post(`/h2h/match/${semi1.id}/reopen`)
+        .set(as(users.DELEGATE))
+        .send({ comment: 'The time was typed wrong' })
+        .expect(200);
+      expect(
+        await db.h2hPoint.count({
+          where: { set: { matchId: semi1.id }, afterEnd: true },
+        }),
+      ).toBe(1);
+      await winForA(2);
+      await winForA(3);
+      await winForA(4);
+
+      const rows = parseCsv((await exportCsv().expect(200)).text);
+
+      expect(
+        rows
+          .filter((row) => row.match_number === '1')
+          .map((row) => [row.set_attempt_number, row.time_seconds]),
+      ).toEqual([
+        ['1', '9.00'],
+        ['1', '10.00'],
+        ['2', '9.00'],
+        ['2', '10.00'],
+        ['3', '11.00'],
+        ['3', '-1'],
+        ['4', '5.00'],
+        ['4', '10.00'],
+      ]);
+      // The WCA takes best from the rows and pos as given: the ranking's
+      // best single must be the best of the rows
+      const view = await getView();
+      for (const entrant of view.bracket.entrants) {
+        const person = found(seeds.find((p) => p.id === entrant.person.id));
+        const solved = rows
+          .filter(
+            (row) => row.registration_id === String(person.wcaRegistrationId),
+          )
+          .map((row) => Number(row.time_seconds.replace('.', '')))
+          .filter((value) => value > 0);
+        expect(Math.min(...solved)).toBe(entrant.bestSingle);
+      }
     });
 
     it('refuses a wrong password', async () => {

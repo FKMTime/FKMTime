@@ -21,6 +21,13 @@ import { buildCsvRows, CsvInput, exportBlockers, toCsv } from './wcaCsv';
 const attemptSelect = { value: true, penalty: true, status: true } as const;
 
 /**
+ * After the WCA failed to give a round's id, it isn't asked again for this
+ * long: at a venue without internet every check would otherwise wait for
+ * the timeout
+ */
+export const WCA_RETRY_AFTER_MS = 60_000;
+
+/**
  * The WCA CSV of a head-to-head round (SPEC-001, WCA CSV export). Built on
  * the server: the scramble password comes with the request, decrypts the
  * scrambles for that request only, and is never stored or logged.
@@ -35,15 +42,19 @@ export class H2hExportService {
     private readonly wcaService: WcaService,
   ) {}
 
+  /** When the WCA last failed to give each bracket's round id */
+  private readonly failedAt = new Map<string, number>();
+
   /**
    * Fills the bracket's WCA round id from the WCA website when it is still
    * empty. A value already there, fetched or typed in by the delegate, is
-   * kept. Null when there is none and the WCA can't give one.
+   * kept. Null when there is none and the WCA can't give one, or failed to
+   * less than a minute ago.
    */
   async fillWcaRoundId(roundId: string): Promise<number | null> {
     const bracket = await this.prisma.h2hBracket.findUnique({
       where: { roundId },
-      select: { id: true, eventId: true, wcaRoundId: true },
+      select: { id: true, wcaRoundId: true },
     });
     if (!bracket) return null;
     if (bracket.wcaRoundId !== null) return bracket.wcaRoundId;
@@ -51,11 +62,20 @@ export class H2hExportService {
       select: { wcaId: true },
     });
     if (!competition) return null;
-    const wcaRoundId = await this.wcaService.getLastRoundId(
+    // By bracket: a bracket created again gets a fresh try
+    const failed = this.failedAt.get(bracket.id);
+    if (failed !== undefined && Date.now() - failed < WCA_RETRY_AFTER_MS) {
+      return null;
+    }
+    const wcaRoundId = await this.wcaService.getWcaRoundId(
       competition.wcaId,
-      bracket.eventId,
+      roundId,
     );
-    if (wcaRoundId === null) return null;
+    if (wcaRoundId === null) {
+      this.failedAt.set(bracket.id, Date.now());
+      return null;
+    }
+    this.failedAt.delete(bracket.id);
     // Only while still empty: a value the delegate typed in meanwhile wins
     const { count } = await this.prisma.h2hBracket.updateMany({
       where: { id: bracket.id, wcaRoundId: null },
