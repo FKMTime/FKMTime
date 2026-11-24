@@ -12,6 +12,7 @@ import {
 } from '../generated/prisma/client';
 import { NOT_STARTED } from './bracketStore';
 import { walkoverWinner } from './matchEngine';
+import { nextPointNumber } from './stationText';
 
 type Db = Prisma.TransactionClient;
 
@@ -205,4 +206,58 @@ export const unfinishMatch = async (
     where: { id: match.bracketId },
     data: { status: H2hBracketStatus.IN_PROGRESS },
   });
+};
+
+/** The competitor's playing match in the round, if they have one */
+export const playingMatchOf = (db: Db, roundId: string, personId: string) =>
+  db.h2hMatch.findFirst({
+    where: {
+      bracket: { roundId },
+      status: H2hMatchStatus.IN_PROGRESS,
+      OR: [{ entrantA: { personId } }, { entrantB: { personId } }],
+    },
+    select: { id: true },
+  });
+
+/**
+ * The set and point the competitor plays next in their playing match, as
+ * the station shows it at the card scan. Null without a playing match.
+ */
+export const nextPointOf = async (
+  db: Db,
+  roundId: string,
+  personId: string,
+) => {
+  const playing = await playingMatchOf(db, roundId, personId);
+  if (!playing) return null;
+  const match = await db.h2hMatch.findUniqueOrThrow({
+    where: { id: playing.id },
+    select: {
+      entrantA: { select: { personId: true } },
+      sets: {
+        orderBy: { setNumber: 'asc' },
+        select: {
+          setNumber: true,
+          winnerSide: true,
+          points: {
+            select: { pointNumber: true, attemptAId: true, attemptBId: true },
+          },
+        },
+      },
+    },
+  });
+  const set = match.sets.find((s) => s.winnerSide === null);
+  if (!set) return null;
+  const side = match.entrantA?.personId === personId ? H2hSide.A : H2hSide.B;
+  return {
+    setNumber: set.setNumber,
+    pointNumber: nextPointNumber(
+      set.points.map((point) => ({
+        pointNumber: point.pointNumber,
+        a: point.attemptAId !== null,
+        b: point.attemptBId !== null,
+      })),
+      side,
+    ),
+  };
 };

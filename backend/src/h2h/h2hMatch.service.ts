@@ -12,6 +12,7 @@ import { getCountingAttempts, toAttemptResult } from 'src/result/helpers';
 
 import {
   Attempt,
+  AttemptStatus,
   AttemptType,
   H2hBracketStatus,
   H2hMatchEnd,
@@ -28,11 +29,32 @@ import {
   ScrambleSetOption,
   WAITING_FOR_OPPONENT,
 } from './matchEngine';
-import { finishMatch, resolveWalkovers } from './matchStore';
+import { finishMatch, playingMatchOf, resolveWalkovers } from './matchStore';
+import { SlotState, stationOutcome } from './stationText';
 
 type Db = Prisma.TransactionClient;
 
 export const NO_MATCH_IN_PROGRESS = 'No match in progress';
+
+/**
+ * Why an attempt has nowhere to go in its match, as the station shows it:
+ * `key` is the reply text's translation key, the message what manual entry
+ * shows
+ */
+export type H2hRefusalKey =
+  | 'h2hNoMatchInProgress'
+  | 'h2hWaitingForOpponent'
+  | 'h2hWaitingForDelegate'
+  | 'h2hNoScrambleLeft';
+
+export class H2hRefusal extends ConflictException {
+  constructor(
+    readonly key: H2hRefusalKey,
+    message: string,
+  ) {
+    super(message);
+  }
+}
 
 /**
  * Serialises everything that records into one match, so two attempts at the
@@ -75,6 +97,7 @@ const attemptResultSelect = {
   id: true,
   value: true,
   penalty: true,
+  status: true,
 } as const;
 
 /** A match with everything scoring it needs */
@@ -98,13 +121,28 @@ const matchInclude = {
 
 type LoadedMatch = Prisma.H2hMatchGetPayload<{ include: typeof matchInclude }>;
 
-const resultOf = (attempt: Pick<Attempt, 'value' | 'penalty'> | null) =>
-  attempt === null ? null : toAttemptResult(attempt);
+/**
+ * An attempt's result as scoring reads it. One with an open incident
+ * decides nothing until the delegate resolves it: it may still get an extra.
+ */
+const resultOf = (
+  attempt: Pick<Attempt, 'value' | 'penalty' | 'status'> | null,
+) =>
+  attempt === null || attempt.status === AttemptStatus.UNRESOLVED
+    ? null
+    : toAttemptResult(attempt);
+
+const slotState = (attempt: Pick<Attempt, 'status'> | null): SlotState =>
+  attempt === null
+    ? 'empty'
+    : attempt.status === AttemptStatus.UNRESOLVED
+      ? 'incident'
+      : 'in';
 
 /**
  * Runs head-to-head matches (SPEC-001): starting one, recording attempts
  * into its points, and deciding points, sets and the match as they come in.
- * Manual entry calls in here now; stations will too.
+ * Manual entry and stations record through here.
  */
 @Injectable()
 export class H2hMatchService {
@@ -229,25 +267,23 @@ export class H2hMatchService {
       resultId: string;
       create: (attemptNumber: number, type: AttemptType) => Promise<T>;
     },
-  ): Promise<{ attempt: T; matchId: string; replaced: Attempt | null }> {
+  ): Promise<{
+    attempt: T;
+    matchId: string;
+    pointId: string;
+    side: H2hSide;
+    replaced: Attempt | null;
+  }> {
     const db = tx.db;
     // The whole round, before the match: finishing a match writes the
     // matches it feeds and the bracket, and new points draw on the round's
     // spare sets, so two matches recording at once must not interleave.
     // Same order as startMatch, so the two can't deadlock.
     await lockBracket(db, input.roundId);
-    const playing = await db.h2hMatch.findFirst({
-      where: {
-        bracket: { roundId: input.roundId },
-        status: H2hMatchStatus.IN_PROGRESS,
-        OR: [
-          { entrantA: { personId: input.personId } },
-          { entrantB: { personId: input.personId } },
-        ],
-      },
-      select: { id: true },
-    });
-    if (!playing) throw new ConflictException(NO_MATCH_IN_PROGRESS);
+    const playing = await playingMatchOf(db, input.roundId, input.personId);
+    if (!playing) {
+      throw new H2hRefusal('h2hNoMatchInProgress', NO_MATCH_IN_PROGRESS);
+    }
     await lockMatch(db, playing.id);
     const match = await db.h2hMatch.findUniqueOrThrow({
       where: { id: playing.id },
@@ -255,7 +291,7 @@ export class H2hMatchService {
     });
     // Finished while this request waited for the lock
     if (match.status !== H2hMatchStatus.IN_PROGRESS) {
-      throw new ConflictException(NO_MATCH_IN_PROGRESS);
+      throw new H2hRefusal('h2hNoMatchInProgress', NO_MATCH_IN_PROGRESS);
     }
     const side =
       match.entrantA?.personId === input.personId ? H2hSide.A : H2hSide.B;
@@ -272,7 +308,25 @@ export class H2hMatchService {
       side,
     );
     if (placement.kind === 'ahead') {
-      throw new ConflictException(WAITING_FOR_OPPONENT);
+      throw new H2hRefusal('h2hWaitingForOpponent', WAITING_FOR_OPPONENT);
+    }
+    if (placement.kind === 'new') {
+      // A point with an open incident may still be raced again (an extra
+      // for both), so the match waits for the delegate before moving on
+      const incident = match.sets
+        .flatMap((s) => s.points.map((point) => ({ s, point })))
+        .find(({ point }) =>
+          [point.attemptA, point.attemptB].some(
+            (attempt) => attempt?.status === AttemptStatus.UNRESOLVED,
+          ),
+        );
+      if (incident) {
+        const label = await this.labelOf(db, match.bracket.id, match.id);
+        throw new H2hRefusal(
+          'h2hWaitingForDelegate',
+          `${label}, set ${incident.s.setNumber}, point ${incident.point.pointNumber} has an open incident. Resolve it before the next point is raced.`,
+        );
+      }
     }
     const pointId =
       placement.kind === 'fill'
@@ -320,7 +374,62 @@ export class H2hMatchService {
     tx.afterCommit(() =>
       this.appGateway.handleH2hUpdated(match.bracket.roundId, match.id),
     );
-    return { attempt, matchId: match.id, replaced };
+    return { attempt, matchId: match.id, pointId, side, replaced };
+  }
+
+  /**
+   * Where the match stands for the competitor on `side` after their attempt
+   * landed on point `pointId`, for the station's reply
+   */
+  async stationOutcome(
+    db: Db,
+    matchId: string,
+    pointId: string,
+    side: H2hSide,
+  ) {
+    const match = await db.h2hMatch.findUniqueOrThrow({
+      where: { id: matchId },
+      select: {
+        status: true,
+        winnerSide: true,
+        sets: {
+          orderBy: { setNumber: 'asc' },
+          select: {
+            winnerSide: true,
+            points: {
+              orderBy: { pointNumber: 'asc' },
+              select: {
+                id: true,
+                winnerSide: true,
+                decidedAt: true,
+                afterEnd: true,
+                attemptA: { select: { status: true } },
+                attemptB: { select: { status: true } },
+              },
+            },
+          },
+        },
+      },
+    });
+    return stationOutcome(
+      {
+        status: match.status,
+        winnerSide: match.winnerSide,
+        sets: match.sets.map((set) => ({
+          winnerSide: set.winnerSide,
+          points: set.points.map((point) => ({
+            id: point.id,
+            winnerSide: point.winnerSide,
+            decided: point.decidedAt !== null,
+            afterEnd: point.afterEnd,
+            a: slotState(point.attemptA),
+            b: slotState(point.attemptB),
+          })),
+        })),
+      },
+      pointId,
+      side,
+    );
   }
 
   /** A new point of the set, on the next scramble nobody has raced */
@@ -369,7 +478,8 @@ export class H2hMatchService {
     if (!scramble) {
       const label = await this.labelOf(db, match.bracket.id, match.id);
       const ownText = own ? `Set ${own.set} is used up and t` : 'T';
-      throw new ConflictException(
+      throw new H2hRefusal(
+        'h2hNoScrambleLeft',
         `${label}, set ${set.setNumber} has no scramble left for point ${pointNumber}. ${ownText}here is no spare set. Import more scramble sets for ${activityCodeToName(roundId)}.`,
       );
     }

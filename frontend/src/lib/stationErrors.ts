@@ -15,8 +15,14 @@ const HINTS: Record<string, string> = {
         "Ask the competitor to scan their card again and choose the round.",
     stationRoundChanged:
         "The solve was not saved. Enter it by hand in Results, or give an extra.",
-    h2hRoundNotOnStations:
-        "The solve was not saved: stations can't run head-to-head rounds yet. Keep score on paper.",
+    h2hNoMatchInProgress:
+        "The solve was not saved. Start the competitor's match in the Matches tab, or check that they are at the right station.",
+    h2hWaitingForOpponent:
+        "The solve was not saved: the competitor is a point ahead. Enter the opponent's missing result in the Matches tab, then send the solve again.",
+    h2hWaitingForDelegate:
+        "The solve was not saved: an incident on the last point is open. Resolve it, then send the solve again.",
+    h2hNoScrambleLeft:
+        "The solve was not saved: the set has no scramble left. Import more scramble sets for the round, then send the solve again.",
     competitorNotFound: ASSIGN_CARD,
     judgeNotFound: ASSIGN_CARD,
     judgeIsCompetitor: "Another person has to scan their card as the judge.",

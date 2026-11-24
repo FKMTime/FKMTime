@@ -23,7 +23,9 @@ import {
   isPointedStation,
 } from 'src/device/stationRounds';
 import { isUnofficialEvent } from 'src/events';
+import { H2hMatchService, H2hRefusal } from 'src/h2h/h2hMatch.service';
 import { isH2hRound } from 'src/h2h/h2hRound';
+import { h2hStationText } from 'src/h2h/stationText';
 import { PersonService } from 'src/person/person.service';
 import { CreateScrambledAttemptDto } from 'src/scrambling/dto/createScrambledAttempt.dto';
 import { getTranslation } from 'src/translations/translations';
@@ -61,6 +63,26 @@ import { TutorialFromDeviceService } from './tutorialFromDevice.service';
  */
 const ENTER_ATTEMPT_TRANSACTION = { maxWait: 5_000, timeout: 7_500 };
 
+/** A station reply, as `enterAttempt` returns it */
+interface StationReply {
+  message: string;
+  shouldResetTime?: boolean;
+  status: number;
+  error: boolean;
+  errorDetails?: { key: string; competitorName?: string | null };
+}
+
+/**
+ * Refuses a solve from inside the transaction, so nothing it wrote so far
+ * is saved: `enterAttempt` answers the station with the reply after the
+ * rollback
+ */
+class RefusedSolve extends Error {
+  constructor(readonly reply: StationReply) {
+    super(reply.message);
+  }
+}
+
 export class ResultFromDeviceService {
   constructor(
     private readonly prisma: DbService,
@@ -76,6 +98,7 @@ export class ResultFromDeviceService {
     private readonly competitionService: CompetitionService,
     private readonly tutorialFromDevice: TutorialFromDeviceService,
     private readonly storedWcif: StoredWcifService,
+    private readonly h2hMatchService: H2hMatchService,
   ) {}
 
   private logger = new Logger('ResultFromDeviceService');
@@ -99,11 +122,16 @@ export class ResultFromDeviceService {
     if (await this.tutorialFromDevice.isTutorialAttempt(data)) {
       return this.tutorialFromDevice.enterAttempt(data);
     }
-    return runInTransaction(
-      this.prisma,
-      (tx) => this.enterAttemptInTransaction(data, tx),
-      ENTER_ATTEMPT_TRANSACTION,
-    );
+    try {
+      return await runInTransaction(
+        this.prisma,
+        (tx) => this.enterAttemptInTransaction(data, tx),
+        ENTER_ATTEMPT_TRANSACTION,
+      );
+    } catch (e) {
+      if (e instanceof RefusedSolve) return e.reply;
+      throw e;
+    }
   }
 
   private async enterAttemptInTransaction(data: EnterAttemptDto, tx: Tx) {
@@ -340,20 +368,6 @@ export class ResultFromDeviceService {
     }
 
     const currentRoundId = roundId;
-    // Stations can't run a head-to-head round's matches yet (SPEC-001), and
-    // a plain attempt in it would land outside any match
-    if (isH2hRound(currentRoundId, wcif)) {
-      return {
-        message: getTranslation('h2hRoundNotOnStations', locale),
-        shouldResetTime: false,
-        status: 400,
-        error: true,
-        errorDetails: {
-          key: 'h2hRoundNotOnStations',
-          competitorName: competitor.name,
-        },
-      };
-    }
     const roundInfo = getRoundInfoFromWcif(currentRoundId, wcif);
     // The station's round was taken out of the WCIF since it was assigned
     if (!roundInfo) {
@@ -405,6 +419,19 @@ export class ResultFromDeviceService {
           competitorName: competitor.name,
         },
       };
+    }
+
+    // A head-to-head round has no attempt count: the solve races a point
+    // of the competitor's playing match (SPEC-001)
+    if (isH2hRound(currentRoundId, wcif)) {
+      return this.enterH2hAttempt(data, tx, {
+        device,
+        competitor,
+        judge,
+        result,
+        timeLimit: roundInfo.timeLimit?.centiseconds ?? 0,
+        locale,
+      });
     }
 
     const attempts = await tx.db.attempt.findMany({
@@ -557,6 +584,109 @@ export class ResultFromDeviceService {
     };
   }
 
+  /**
+   * A solve in a head-to-head round goes into the competitor's playing
+   * match through the point engine, in this transaction and under its
+   * locks: the first empty slot of the current set, or a new point. The
+   * reply says where the match stands. A solve with nowhere to go is
+   * refused and nothing is saved; the station keeps the time, so the judge
+   * can send it again once the match can take it.
+   */
+  private async enterH2hAttempt(
+    data: EnterAttemptDto,
+    tx: Tx,
+    context: {
+      device: Device;
+      competitor: Pick<Person, 'id' | 'name'>;
+      judge: Pick<Person, 'id'> | null;
+      result: Result;
+      /** Per attempt, in centiseconds; 0 for none */
+      timeLimit: number;
+      locale: string;
+    },
+  ): Promise<StationReply> {
+    const { device, competitor, judge, result, timeLimit, locale } = context;
+    // Format h has no cutoff, and a bracket can't be made for a round with
+    // a cumulative limit: only the per-attempt limit applies (A1a)
+    const limitPassed =
+      timeLimit <= 0 || checkAttemptLimit(data.value, timeLimit);
+    const finalData = { ...data, penalty: limitPassed ? data.penalty : -1 };
+    let recorded;
+    try {
+      recorded = await this.h2hMatchService.recordAttempt(tx, {
+        roundId: result.roundId,
+        personId: competitor.id,
+        resultId: result.id,
+        create: (attemptNumber, type) =>
+          this.createOrUpdateScrambledAttempt(
+            data,
+            type,
+            attemptNumber,
+            finalData,
+            device,
+            result,
+            judge ?? undefined,
+            tx,
+          ),
+      });
+    } catch (e) {
+      if (!(e instanceof H2hRefusal)) throw e;
+      throw new RefusedSolve({
+        message: getTranslation(e.key, locale),
+        shouldResetTime: false,
+        status: 409,
+        error: true,
+        errorDetails: { key: e.key, competitorName: competitor.name },
+      });
+    }
+    const { attempt, replaced } = recorded;
+    if (replaced) {
+      await this.attemptEditLogService.log(
+        replaced,
+        new Date(),
+        null,
+        `Replaced by extra ${attempt.attemptNumber}`,
+        tx,
+      );
+    }
+    if (data.isDelegate) {
+      return this.notifyDelegate(
+        device.name,
+        competitor.name,
+        locale,
+        attempt.id,
+        tx,
+      );
+    }
+    tx.afterCommit(() => {
+      this.appGateway.handleResultEntered(result.roundId);
+      this.competitionService.requestGroupChangeCheck(result.roundId);
+      this.appGateway.recordLastSolve(data.espId, {
+        personName: competitor.name,
+        value: attempt.value,
+        penalty: attempt.penalty,
+        attemptNumber: attempt.attemptNumber,
+        isExtra: attempt.type === AttemptType.EXTRA_ATTEMPT,
+      });
+    });
+    const outcome = await this.h2hMatchService.stationOutcome(
+      tx.db,
+      recorded.matchId,
+      recorded.pointId,
+      recorded.side,
+    );
+    return {
+      message: h2hStationText(
+        outcome,
+        (key) => getTranslation(key, locale),
+        getTranslation('h2hScore', locale),
+      ),
+      shouldResetTime: true,
+      status: 200,
+      error: false,
+    };
+  }
+
   async createScrambledAttempt(data: CreateScrambledAttemptDto) {
     const result = await this.resultService.getResultOrCreate(
       data.personId,
@@ -636,7 +766,7 @@ export class ResultFromDeviceService {
     finalData: any,
     device: Device,
     result: Result,
-    judge?: Person,
+    judge?: Pick<Person, 'id'>,
     tx?: Tx,
   ) {
     const db = tx?.db ?? this.prisma;
@@ -687,9 +817,13 @@ export class ResultFromDeviceService {
     } else {
       attempt = await db.attempt.create({ data: newData });
     }
+    // At the station's solve time, but never later than now: a station
+    // clock running ahead would date the entry after a head-to-head match
+    // it finished, and an edit after the match would then go unmarked
+    const now = new Date();
     await this.attemptEditLogService.log(
-      attempt as AttemptSnapshot,
-      attempt.solvedAt ?? new Date(),
+      attempt,
+      attempt.solvedAt && attempt.solvedAt < now ? attempt.solvedAt : now,
       null,
       'Original entry',
       tx,

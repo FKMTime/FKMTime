@@ -258,6 +258,7 @@ describe('ResultFromDeviceService when the time limit runs out on an extra', () 
       competitionStub,
       notTutorial,
       storedWcifFrom(prisma),
+      unusedDependency(),
     );
   });
 

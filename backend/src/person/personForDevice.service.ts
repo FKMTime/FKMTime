@@ -11,6 +11,7 @@ import { getStationGroupIds } from 'src/device/stationRounds';
 import { isInTutorial, TUTORIAL_GROUP_ID } from 'src/device/tutorial';
 import { eventsData, getMaxPenalty } from 'src/events';
 import { isH2hRound } from 'src/h2h/h2hRound';
+import { nextPointOf, playingMatchOf } from 'src/h2h/matchStore';
 import {
   attemptTimeWithPenalty,
   checkCutoff,
@@ -33,6 +34,16 @@ import {
 
 import { Competition, HardwareVersion } from '../generated/prisma/client';
 import { PersonService } from './person.service';
+
+/**
+ * Whether the station runs its own inspection for a group: the event's
+ * setting, but never in a head-to-head round, where the announcer times
+ * inspection for both competitors (I4c)
+ */
+const useInspectionFor = (groupId: string, wcif: WCIF) =>
+  !isH2hRound(groupId.split('-g')[0], wcif) &&
+  (eventsData.find((e) => e.id === groupId.split('-')[0])?.useInspection ??
+    true);
 
 @Injectable()
 export class PersonForDeviceService {
@@ -127,6 +138,25 @@ export class PersonForDeviceService {
       wcif,
     );
 
+    // A head-to-head round takes a solve only into the competitor's playing
+    // match (SPEC-001): told at the scan, before they solve
+    const noMatchInProgress = {
+      message: getTranslation(
+        'h2hNoMatchInProgress',
+        person.countryIso2 ?? defaultLocale,
+      ),
+      shouldResetTime: true,
+      status: 400,
+      error: true,
+      errorDetails: {
+        key: 'h2hNoMatchInProgress',
+        competitorName: person.name,
+      },
+    };
+    const notPlayingRoundIds = isCompetitor
+      ? await this.h2hRoundsNotPlaying(possibleGroups, wcif, person.id)
+      : [];
+
     if (possibleGroups.length === 1) {
       const currentRoundId = possibleGroups[0].split('-g')[0];
       const currentEventId = currentRoundId.split('-r')[0];
@@ -146,6 +176,9 @@ export class PersonForDeviceService {
               )
             : finishedRoundsIds.includes(currentRoundId);
 
+          if (notPlayingRoundIds.includes(currentRoundId)) {
+            return noMatchInProgress;
+          }
           if (hasNoAttemptsLeft) {
             return {
               message: getTranslation(
@@ -168,9 +201,7 @@ export class PersonForDeviceService {
           possibleGroups: await Promise.all(
             possibleGroups.map(async (g) => ({
               groupId: g,
-              useInspection:
-                eventsData.find((e) => e.id === g.split('-')[0])
-                  ?.useInspection ?? true,
+              useInspection: useInspectionFor(g, wcif),
               maxPenalty: getMaxPenalty(g.split('-')[0]),
               ...(await this.computeSecondaryText(
                 g,
@@ -198,29 +229,52 @@ export class PersonForDeviceService {
           registeredEventIds.includes(eventId)
         );
       })
-      .filter((g) => !finishedRoundsIds.includes(g.split('-g')[0]))
-      .map(async (g) => {
-        const eventId = g.split('-')[0];
-        return {
-          groupId: g,
-          useInspection:
-            eventsData.find((e) => e.id === eventId)?.useInspection ?? true,
-          maxPenalty: getMaxPenalty(eventId),
-          ...(await this.computeSecondaryText(
-            g,
-            wcif,
-            person.id,
-            defaultLocale,
-            device.hwVersion,
-            cardId,
-          )),
-        };
-      });
+      .filter((g) => !finishedRoundsIds.includes(g.split('-g')[0]));
+    const offeredGroups = finalGroups.filter(
+      (g) => !notPlayingRoundIds.includes(g.split('-g')[0]),
+    );
+    // Only head-to-head rounds were left, and no match of theirs is playing
+    if (offeredGroups.length === 0 && finalGroups.length > 0) {
+      return noMatchInProgress;
+    }
+    const groups = offeredGroups.map(async (g) => {
+      const eventId = g.split('-')[0];
+      return {
+        groupId: g,
+        useInspection: useInspectionFor(g, wcif),
+        maxPenalty: getMaxPenalty(eventId),
+        ...(await this.computeSecondaryText(
+          g,
+          wcif,
+          person.id,
+          defaultLocale,
+          device.hwVersion,
+          cardId,
+        )),
+      };
+    });
     return {
       ...person,
       name: convertToLatin(person.name),
-      possibleGroups: await Promise.all(finalGroups),
+      possibleGroups: await Promise.all(groups),
     };
+  }
+
+  /** The head-to-head rounds among these groups with no playing match */
+  private async h2hRoundsNotPlaying(
+    groupIds: string[],
+    wcif: WCIF,
+    personId: string,
+  ) {
+    const roundIds = [...new Set(groupIds.map((g) => g.split('-g')[0]))];
+    const notPlaying: string[] = [];
+    for (const roundId of roundIds) {
+      if (!isH2hRound(roundId, wcif)) continue;
+      if (!(await playingMatchOf(this.prisma, roundId, personId))) {
+        notPlaying.push(roundId);
+      }
+    }
+    return notPlaying;
   }
 
   /** The person with the one tutorial group, labelled in their language */
@@ -332,6 +386,26 @@ export class PersonForDeviceService {
     let limitToReturn: number | null = null;
 
     const roundInfo = getRoundInfoFromWcif(roundId, wcif);
+    // A head-to-head solve races the next point of the competitor's match,
+    // not a numbered attempt: "Set 1 Point 4"
+    if (isH2hRound(roundId, wcif)) {
+      const next = await nextPointOf(this.prisma, roundId, personId);
+      const limit = roundInfo?.timeLimit?.centiseconds
+        ? roundInfo.timeLimit.centiseconds * 10
+        : null;
+      if (!showsSecondaryText) {
+        return { name: eventText, secondaryText: eventText, limit };
+      }
+      return {
+        name: shortEventText,
+        secondaryText: next
+          ? getTranslation('h2hNextPoint', locale)
+              .replace('{0}', `${next.setNumber}`)
+              .replace('{1}', `${next.pointNumber}`)
+          : '',
+        limit,
+      };
+    }
     let cumulativeText = '';
     let cutoffText = '';
     const nextAttemptData = await this.resultService.getNextAttemptData(
