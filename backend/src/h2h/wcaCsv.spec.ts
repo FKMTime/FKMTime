@@ -151,6 +151,27 @@ const importLikeWca = (csv: string) => {
   });
 };
 
+/**
+ * The Results row the importer makes of a competitor's rows: `pos` from
+ * their first row only, never recomputed, and `best` their best single,
+ * DNF when nothing was solved
+ */
+const resultsLikeWca = (rows: ReturnType<typeof importLikeWca>) => {
+  const results = new Map<number, { pos: number; best: number }>();
+  for (const row of rows) {
+    const result = results.get(row.registrationId);
+    if (!result) {
+      results.set(row.registrationId, { pos: row.position, best: row.value });
+      continue;
+    }
+    const better =
+      row.value > 0 && (result.best <= 0 || row.value < result.best);
+    const dnfOverDns = result.best === DNS && row.value === DNF;
+    if (better || dnfOverDns) result.best = row.value;
+  }
+  return results;
+};
+
 describe('formatTimeSeconds', () => {
   it.each([
     [6532, '65.32'],
@@ -201,6 +222,12 @@ describe('WCA CSV', () => {
       [1001, 905],
       [1003, 100000],
     ]);
+    expect(resultsLikeWca(rows)).toEqual(
+      new Map([
+        [1001, { pos: 1, best: 905 }],
+        [1003, { pos: 2, best: 1020 }],
+      ]),
+    );
     expect(rows.every((row) => row.roundId === 98765)).toBe(true);
     expect(rows.every((row) => row.matchNumber === 1)).toBe(true);
     expect(rows.every((row) => row.setNumber === 1)).toBe(true);
@@ -396,7 +423,7 @@ describe('buildCsvRows', () => {
     expect(rows.map((row) => row.pointNumber)).toEqual([1, 1]);
   });
 
-  it('leaves out points after the end and sets that do not count', () => {
+  it('keeps points after the end and sets after the match: they are real solves', () => {
     const reopened = match(
       1,
       ['e1', 'e2'],
@@ -407,12 +434,13 @@ describe('buildCsvRows', () => {
             point(1, solve(900), solve(1000)),
             point(2, solve(900), solve(1000)),
             point(3, solve(900), solve(1000)),
-            point(4, solve(1000), solve(900), {}, true),
+            // Raced before an amended time ended the set at point 3
+            point(4, solve(1000), solve(700), {}, true),
           ],
         },
         {
           setNumber: 2,
-          points: [point(1, solve(900), solve(1000), { set: 'B' }, true)],
+          points: [point(1, solve(650), solve(1000), { set: 'B' }, true)],
         },
       ],
     );
@@ -426,7 +454,38 @@ describe('buildCsvRows', () => {
       [1, 2],
       [1, 3],
       [1, 3],
+      [1, 4],
+      [1, 4],
+      [2, 1],
+      [2, 1],
     ]);
+    // The ranking's best singles count these points (9f16b, 9i4), and the
+    // WCA takes best from the rows: they agree only if the rows have them
+    const results = resultsLikeWca(importLikeWca(toCsv(rows)));
+    expect(results.get(1001)).toEqual({ pos: 1, best: 650 });
+    expect(results.get(1002)).toEqual({ pos: 3, best: 700 });
+  });
+
+  it('takes a lone attempt on a point after the end without asking for the other', () => {
+    const reopened = match(
+      1,
+      ['e1', 'e2'],
+      [
+        {
+          setNumber: 1,
+          points: [
+            point(1, solve(900), solve(1000)),
+            point(2, solve(900), solve(1000)),
+            point(3, solve(900), solve(1000)),
+            point(4, solve(1000), null, {}, true),
+            point(5, solve(1000), solve(1100), {}, true),
+          ],
+        },
+      ],
+    );
+
+    expect(exportBlockers(input([reopened]))).toEqual([]);
+    expect(buildCsvRows(input([reopened]))).toHaveLength(9);
   });
 
   it('leaves out empty points', () => {

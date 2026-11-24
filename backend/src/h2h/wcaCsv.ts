@@ -31,7 +31,10 @@ export type CsvAttempt = Pick<Attempt, 'value' | 'penalty' | 'status'>;
 
 export interface CsvPoint {
   pointNumber: number;
-  /** Raced after its set or the match was over: it doesn't count */
+  /**
+   * Raced after its set or the match was over: it decides nothing, but its
+   * attempts are real solves and go in the file
+   */
   afterEnd: boolean;
   /** The race that counts; races replaced by an extra aren't here */
   attemptA: CsvAttempt | null;
@@ -108,8 +111,10 @@ interface ExportedPoint {
 
 /**
  * The points that go in the file, in file order: every point with a
- * counting attempt, except in walkovers (9f5b: no results) and after a set's
- * or the match's end. Points with no attempt (an extra not raced yet, a
+ * counting attempt, except in walkovers (9f5b: no results). Points raced
+ * after a set's or the match's end (`afterEnd`) go in too: they are real
+ * solves (9i4), the ranking's best singles count them, and the WCA takes
+ * `best` from these rows. Points with no attempt (an extra not raced yet, a
  * set opened but not raced) are left out.
  */
 const exportedPoints = (matches: CsvMatch[]): ExportedPoint[] =>
@@ -125,7 +130,7 @@ const exportedPoints = (matches: CsvMatch[]): ExportedPoint[] =>
             .flatMap((point) => {
               const a = counting(point.attemptA);
               const b = counting(point.attemptB);
-              return point.afterEnd || (a === null && b === null)
+              return a === null && b === null
                 ? []
                 : [{ match, set, point, a, b }];
             }),
@@ -165,10 +170,16 @@ export const exportBlockers = (input: CsvInput): string[] => {
     }
     setsChecked.add(set);
     const at = `${where}, point ${point.pointNumber}`;
-    // A retirement leaves its open point with the opponent's attempt only
+    // A retirement leaves its open point with the opponent's attempt only.
+    // A point after the end decides nothing, so its missing result can't
+    // be entered and isn't needed.
     const isOpenPointOfRetired =
       match.endedBy === H2hMatchEnd.RETIRED && lastPointOf.get(match) === point;
-    if ((a === null || b === null) && !isOpenPointOfRetired) {
+    if (
+      (a === null || b === null) &&
+      !isOpenPointOfRetired &&
+      !point.afterEnd
+    ) {
       blockers.push(`${at} has only one result. Enter the missing one.`);
     }
     if (
