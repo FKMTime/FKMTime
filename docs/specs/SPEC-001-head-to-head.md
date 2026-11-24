@@ -291,10 +291,17 @@ environments have a bracket.
 - The station check that answers "no attempts left"
   (`personForDevice.service.ts`) asks the bracket too: a competitor with no
   playing match is told "No match in progress" when they scan their card,
-  before they solve. On a station offering several rounds, an H2H round
-  they have no playing match in is left out of the list. The second line
-  the station shows under the round names the next point ("Set 1 Point
-  4") instead of an attempt number.
+  before they solve, and one whose next point waits for an open incident
+  in their match is told "Waiting for delegate". On a station offering
+  several rounds, an H2H round that can't take their solve now is left out
+  of the list. The second line the station shows under the round names the
+  next point ("Set 1 Point 4") instead of an attempt number.
+- A station may let the competitor solve before the card is scanned, and
+  a scan refusal can drop that time (`shouldResetTime`). It is kept only
+  when the competitor's match is ready and the stage leader hasn't started
+  it yet: once started, the judge scans again and the solve goes in. Any
+  other scan refusal drops it: the match is over, the competitor has none,
+  or the point waits for the delegate.
 - Everything that read the fixed 5 attempts branches on the format instead:
   the scrambling device's next attempt, "Assign DNS on remaining attempts"
   (refused: there are none), double-check (a result with attempts can be
@@ -445,6 +452,15 @@ How the scrambling device does it:
   the point may be raced again on another scramble.
 - **The open point.** Until both competitors have raced it, the point keeps
   its scramble; a point given an extra shows the extra scramble it takes.
+- **Two matches on the spares.** A next point's scramble is only worked
+  out: the point takes it when its first result lands. Two playing matches
+  past their own sets would both be shown the next spare scramble, and
+  whichever records first takes it. So the first in match order keeps it,
+  with a warning, and the others show no scramble until a result of that
+  match is in, when theirs moves on to the next one. The Matches tab and
+  the scrambling device show the same.
+- **Out of date.** When the device can't reach the server, the match list
+  and the scramble page say the scramble may be out of date.
 
 ### Creating and seeding the bracket
 
@@ -552,7 +568,10 @@ round's group. The station protocol does not change. In
    opponent's attempt for that point isn't in; "Match won" or "Match lost",
    then the same score, when the match ends. The station shows the first
    two words on the top line of its 16×2 screen and the rest below, so each
-   line fits 16 ASCII characters in every language.
+   line fits 16 ASCII characters in every language. A refusal is an error:
+   the station shows "Error" on the top line and the whole text below,
+   scrolling when it is longer than 16 characters, as the existing error
+   texts do ("No match in progress" is 20).
 
 All of step 2–4 runs in one transaction that locks the match row, so two
 stations submitting at the same instant can't both create point 3, or both
@@ -573,10 +592,24 @@ How the station flow is built (`ResultFromDeviceService.enterAttempt`):
 - **Refusals save nothing.** "No match in progress", "Waiting for
   opponent", "Waiting for delegate" (below) and "No scramble left" roll
   the whole transaction back, the result row and the attendance marks
-  included. The reply keeps the time on the station (`shouldResetTime:
-  false`), so the judge can send the same solve again once the stage leader
-  has started the match or the missing result is in. Each refusal shows on
-  the Devices page with what to do.
+  included. Each refusal shows on the Devices page with what to do.
+- **Which refused times the station keeps.** Nothing records which point a
+  refused solve was raced on, so a solve sent again is placed by the match
+  as it is then. Only "Waiting for opponent" keeps the time
+  (`shouldResetTime: false`): the solve was raced on the next point, which
+  waits for the opponent, and goes there once they catch up. The others
+  drop it. At the solve, "No match in progress" means the match ended
+  since the scan, and the time would land in the next match; "Waiting for
+  delegate" means it was raced on no scramble the match gave it, and would
+  become the re-race of an extra or the next point; after "No scramble
+  left", it would take a scramble it wasn't raced on once more sets are
+  imported.
+- **A solve typed in meanwhile.** A station that lost its connection keeps
+  the solve and sends it on reconnecting, while the delegate may have
+  entered the judge's paper by hand already. A station solve whose time
+  and penalty equal the competitor's last attempt in the match, entered by
+  hand, is refused as "This attempt has already been entered" and the
+  station drops it, instead of opening a point with it.
 - **Time limit only.** Format `h` has no cutoff, and a bracket can't be
   created for a cumulative limit, so only the per-attempt limit applies: a
   time over it is entered as a DNF, as today.
@@ -1142,8 +1175,10 @@ All copy uses task language: "Start match", "Extra granted", "Withdraw",
   non-H2H rounds are untouched. Seed data gains an H2H final; `prisma db push`
   and `prisma:seed-test` must pass.
 - **Stations:** no firmware or protocol change. Older firmware works,
-  because only existing response fields change: the text, and
-  `useInspection` for H2H groups.
+  because only existing response fields change: the text (the reply
+  messages, the card scan's `secondaryText` and its error messages,
+  among them the new "No match in progress" and "Waiting for delegate"),
+  `shouldResetTime`, and `useInspection` for H2H groups.
 - **Delivery:** in PRs, each usable alone:
   1. Schema, `buildBracket`, scoring and ranking functions with unit tests.
   2. Bracket setup: seeds, sets to win and the scramble plan. The staff
@@ -1198,5 +1233,9 @@ above, they win; each PR that builds a part updates its section.
    - "No match in progress" when the competitor has no playing match.
    - Polish texts without diacritics, like the existing ones in
      `backend/src/translations/locales/pl.json`.
+
+   The station flow adds "Waiting for delegate" (an open incident holds
+   the point) and "No scramble left", and shows refusals on one scrolling
+   error line: see *How the station flow is built*.
 7. **Every PR is reviewed locally** until a review round finds nothing new,
    before it is pushed.
