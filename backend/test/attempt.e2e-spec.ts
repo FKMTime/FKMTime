@@ -349,7 +349,8 @@ describe('AttemptController (e2e)', () => {
         .post('/attempt/scorecard')
         .set('Authorization', `Bearer ${adminToken}`)
         .send({
-          resultId,
+          roundId: ROUND_ID,
+          personId: competitorId,
           attempts: [
             {
               id: attemptId,
@@ -374,13 +375,66 @@ describe('AttemptController (e2e)', () => {
         })
         .expect(200);
 
-      expect(res.body).toEqual({ message: 'Scorecard entered successfully' });
+      expect(res.body).toEqual({
+        message: 'Scorecard entered successfully',
+        resultId,
+      });
 
       const attempt1 = found(
         await db.attempt.findUnique({ where: { id: attemptId } }),
         'attempt',
       );
       expect(attempt1.value).toBe(950);
+    });
+
+    it('saves nothing from a blank scorecard', async () => {
+      const person = found(
+        await db.person.findFirst({
+          where: { canCompete: true, results: { none: { roundId: ROUND_ID } } },
+        }),
+        'person with no result in the round',
+      );
+
+      await request(app.getHttpServer())
+        .post('/attempt/scorecard')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({
+          roundId: ROUND_ID,
+          personId: person.id,
+          attempts: [],
+          newAttempts: [],
+        })
+        .expect(400);
+
+      expect(
+        await db.result.findUnique({
+          where: {
+            personId_roundId: { personId: person.id, roundId: ROUND_ID },
+          },
+        }),
+      ).toBeNull();
+    });
+
+    it('refuses an attempt of another competitor', async () => {
+      await request(app.getHttpServer())
+        .post('/attempt/scorecard')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({
+          roundId: ROUND_ID,
+          personId: 'someone-else',
+          attempts: [
+            {
+              id: attemptId,
+              attemptNumber: 1,
+              value: 950,
+              penalty: 0,
+              status: AttemptStatus.STANDARD,
+              type: AttemptType.STANDARD_ATTEMPT,
+            },
+          ],
+          newAttempts: [],
+        })
+        .expect(400);
     });
   });
 

@@ -443,6 +443,12 @@ export interface Result {
     removedByRulingOf?: { id: string; roundId: string } | null;
 }
 
+/** Enter scorecard's view of a result: id is null until the scorecard is saved */
+export type ScorecardResult = Pick<
+    Result,
+    "eventId" | "roundId" | "person" | "attempts"
+> & { id: string | null };
+
 export interface ResultToDoubleCheck extends Result {
     combinedName: string;
 }

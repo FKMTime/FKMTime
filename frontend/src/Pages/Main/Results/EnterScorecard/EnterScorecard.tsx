@@ -14,7 +14,7 @@ import {
     AttemptToEnterWithScorecard,
     AttemptType,
     Person,
-    Result,
+    ScorecardResult,
 } from "@/lib/interfaces";
 import { allPersonsQuery } from "@/lib/persons";
 import { enterScorecard, getResultByRoundIdAndPersonId } from "@/lib/results";
@@ -27,7 +27,7 @@ import EnterScorecardActions from "./Components/EnterScorecardActions";
 
 const EnterScorecard = () => {
     const { id } = useParams<{ id: string }>();
-    const [result, setResult] = useState<Result | null>(null);
+    const [result, setResult] = useState<ScorecardResult | null>(null);
     const [attempts, setAttempts] = useState<AttemptToEnterWithScorecard[]>([]);
     const { data: personsData } = useLiveQuery(allPersonsQuery);
     const persons: Person[] = personsData ?? [];
@@ -74,7 +74,7 @@ const EnterScorecard = () => {
                         value: 0,
                         penalty: 0,
                         status: AttemptStatus.STANDARD,
-                        resultId: response.data.id,
+                        resultId: response.data.id ?? "",
                         replacedBy: null,
                         solvedAt: new Date(),
                         isNew: true,
@@ -127,10 +127,16 @@ const EnterScorecard = () => {
             (a) => a.isNew && (a.value !== 0 || a.penalty !== 0)
         );
         const attemptsToUpdate = toSave.filter((a) => !a.isNew);
+        // Saving is what creates the result, so a blank scorecard saves nothing
+        if (attemptsToCreate.length === 0 && attemptsToUpdate.length === 0) {
+            setSaveError("Enter at least one time to save.");
+            return;
+        }
         setIsSaving(true);
         setSaveError("");
         const response = await enterScorecard({
-            resultId: result.id,
+            roundId: result.roundId,
+            personId: result.person.id,
             attempts: attemptsToUpdate,
             newAttempts: attemptsToCreate.map((a) => ({
                 roundId: result.roundId,
@@ -150,7 +156,10 @@ const EnterScorecard = () => {
             );
             return;
         }
-        setLastSaved({ name: result.person.name, resultId: result.id });
+        setLastSaved({
+            name: result.person.name,
+            resultId: response.data.resultId,
+        });
         setResult(null);
         setAttempts([]);
         setInputValue("");

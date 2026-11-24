@@ -340,6 +340,49 @@ export class ResultService {
     };
   }
 
+  /**
+   * What the Enter scorecard page shows for a competitor. Only reads: with no
+   * result yet it returns an unsaved one (id null), so picking or typing a
+   * competitor leaves no empty result in Double check or Missing competitors.
+   * Saving the scorecard creates the result.
+   */
+  async getResultForScorecard(personId: string, roundId: string) {
+    const result = await this.prisma.result.findUnique({
+      where: { personId_roundId: { personId, roundId } },
+      include: {
+        person: publicPersonSelect,
+        attempts: {
+          include: {
+            judge: publicPersonSelect,
+            device: true,
+          },
+        },
+      },
+    });
+    if (result?.removedAt) {
+      throw new HttpException(
+        'Removed from this round (Regulation 9t)',
+        HttpStatus.CONFLICT,
+      );
+    }
+    if (result) return result;
+
+    const person = await this.prisma.person.findUnique({
+      where: { id: personId },
+      ...publicPersonSelect,
+    });
+    if (!person) {
+      throw new HttpException('Competitor not found', HttpStatus.NOT_FOUND);
+    }
+    return {
+      id: null,
+      eventId: roundId.split('-')[0],
+      roundId,
+      person,
+      attempts: [],
+    };
+  }
+
   /** Whoever enters an attempt: a removed result takes no more (Regulation 9t) */
   async getResultOrCreate(personId: string, roundId: string) {
     const result = await this.getResultOrCreateIncludingRemoved(

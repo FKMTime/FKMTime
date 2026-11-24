@@ -268,7 +268,8 @@ export const getResultByRoundIdAndPersonId = async (
 };
 
 export const enterScorecard = async (data: {
-    resultId: string;
+    roundId: string;
+    personId: string;
     attempts: Attempt[];
     newAttempts: AttemptData[];
 }) => {
