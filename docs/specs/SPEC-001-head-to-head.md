@@ -1090,7 +1090,7 @@ reopened with points after the end.
 | `POST /h2h/match/:id/reopen` | delegate | Reopen a finished match (comment required) |
 | `GET /h2h/:roundId/export/checks` | delegate/organiser | What blocks the CSV, the file name and `wcaRoundId` (fetched first while empty) |
 | `POST /h2h/:roundId/export` | delegate/organiser | The WCA CSV; body `{ password }`, used for this request only. 409 with `blockers`, 403 on a wrong password |
-| `GET /h2h/public/:roundId` | public | Bracket for spectators: names, countries, seeds, set and point scores, times. No card ids |
+| `GET /h2h/public/:roundId` | public | Bracket for spectators: names, countries, seeds, positions, set and point scores, times. No card ids, WCA registration ids, attempt ids, comments, scrambles or incidents. 404 without a bracket |
 | `GET /scrambling/h2h/:roundId` | scrambling device | Each playing match with its set and next point's scramble (*On the day*) |
 
 socket.io:
@@ -1167,6 +1167,50 @@ meant for the projector):
 **TV** (`/public/tv`): while an H2H match is in progress, the slide rotation
 is replaced by the match scoreboard. Between matches it shows the bracket
 slide.
+
+**How the public views are built.**
+
+- **The endpoint is a whitelist.** `GET /h2h/public/:roundId` reads every
+  field through an explicit Prisma `select`.
+  - Per entrant: id, seed, name, country, position, stage reached, best
+    single and `registrantId`.
+  - Per match: its sources, sets and points.
+  - Per point: each side's time (value and penalty), whether it's decided,
+    and whether an extra was granted.
+  - Person ids are read to work out best singles, and aren't returned.
+  - `registrantId` is the number stations report in `currentTimeInfo`,
+    which is already public. The scoreboard needs it to find each
+    competitor's station.
+  - Points marked `afterEnd` are left out, as they count nowhere.
+- **Live updates** come from the public `joinH2h` room. `h2hUpdated`
+  carries only `{ roundId, matchId }`, and the pages refetch.
+- **Bracket layout.** The first stage's matches are one slot apart. Every
+  later match is level with the middle of the matches whose winners it
+  takes. In a bracket of 12, each quarterfinal is level with the one
+  Stage of 12 match that feeds it. Lines run only along winners; the
+  third-place match sits a slot and a half under the final, with no lines.
+  - Empty slots name the match they wait for: "QF 2" and "SF 1" in short,
+    the Stage of 16 and Stage of 12 by their full labels ("Winner of Stage
+    of 12 3").
+- **Navigation.** Each H2H round of the competition gets a "Bracket" item
+  after Results in the public sidebar, and a tab on phones, whether or not
+  the round is in progress. With more than one H2H round, each is named
+  after its round.
+- **Point markers.** In a set still being played, the scoreboard shows the
+  points it could still take if every point had a winner, never past the
+  7 before the tie-break. A decided set shows only the points played.
+- **After a point** the scoreboard lights the winner's side for 5 seconds.
+  Points decided before the page opened don't light up.
+- **TV.** The TV follows the first H2H round among the rounds in progress,
+  from the rooms' current groups, like its results slides. It doesn't
+  follow an H2H round that no room is running. Between matches the
+  bracket slide comes first in the rotation, so it's what shows when a
+  match ends. With two matches playing at once, their scoreboards take
+  turns.
+- **Results.** The public results board, and the staff copy of it, rank an
+  H2H round by the positions and stage reached from the public endpoint.
+  Columns: #, Name, Representing, Stage reached, Best. Competitors without a
+  position follow, by best single.
 
 All copy uses task language: "Start match", "Extra granted", "Withdraw",
 "Retire",
