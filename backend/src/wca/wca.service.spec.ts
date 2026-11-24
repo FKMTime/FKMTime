@@ -1,3 +1,5 @@
+import { Logger } from '@nestjs/common';
+
 import { WcaService } from './wca.service';
 
 describe('WcaService', () => {
@@ -134,6 +136,69 @@ describe('WcaService', () => {
 
       await expect(
         service.getScoretakingSoftware('ExampleOpen2026'),
+      ).resolves.toBeNull();
+    });
+  });
+
+  describe('getLastRoundId', () => {
+    it("returns the first round's id: the WCA lists the last round first", async () => {
+      fetchMock.mockResolvedValue({
+        ok: true,
+        status: 200,
+        json: jest.fn().mockResolvedValue({
+          id: '333oh',
+          rounds: [
+            { id: 98765, roundTypeId: 'f' },
+            { id: 98764, roundTypeId: '1' },
+          ],
+        }),
+      });
+
+      await expect(
+        service.getLastRoundId('ExampleOpen2026', '333oh'),
+      ).resolves.toBe(98765);
+      expect(fetchMock).toHaveBeenCalledWith(
+        expect.stringMatching(
+          /\/api\/v0\/competitions\/ExampleOpen2026\/results\/333oh$/,
+        ),
+        expect.anything(),
+      );
+    });
+
+    it.each([
+      ['an error', { ok: false, status: 404 }],
+      [
+        'no rounds',
+        {
+          ok: true,
+          status: 200,
+          json: jest.fn().mockResolvedValue({ id: '333oh', rounds: [] }),
+        },
+      ],
+      [
+        'an id that is not a number',
+        {
+          ok: true,
+          status: 200,
+          json: jest
+            .fn()
+            .mockResolvedValue({ id: '333oh', rounds: [{ id: '333oh-r2' }] }),
+        },
+      ],
+    ])('returns null when the WCA answers %s', async (_, response) => {
+      fetchMock.mockResolvedValue(response);
+
+      await expect(
+        service.getLastRoundId('ExampleOpen2026', '333oh'),
+      ).resolves.toBeNull();
+    });
+
+    it('returns null when the WCA cannot be reached', async () => {
+      fetchMock.mockRejectedValue(new Error('offline'));
+      jest.spyOn(Logger.prototype, 'error').mockImplementation(() => undefined);
+
+      await expect(
+        service.getLastRoundId('ExampleOpen2026', '333oh'),
       ).resolves.toBeNull();
     });
   });

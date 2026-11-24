@@ -34,6 +34,7 @@ import { CreateBracketDto } from './dto/createBracket.dto';
 import { UpdateBracketDto } from './dto/updateBracket.dto';
 import { UpdateScramblePlanDto } from './dto/updateScramblePlan.dto';
 import { UpdateSeedsDto } from './dto/updateSeeds.dto';
+import { H2hExportService } from './h2hExport.service';
 import { H2hMatchService } from './h2hMatch.service';
 import { whyNoBracket } from './h2hRound';
 import {
@@ -130,6 +131,7 @@ export class H2hService {
     @Inject(forwardRef(() => AppGateway))
     private readonly appGateway: AppGateway,
     private readonly h2hMatchService: H2hMatchService,
+    private readonly h2hExport: H2hExportService,
   ) {}
 
   private async getWcif(): Promise<Competition> {
@@ -718,6 +720,10 @@ export class H2hService {
         seeds,
       });
     });
+    // Fetched now, so the delegate sees it on the Bracket tab long before
+    // the export needs it. The bracket is created either way: the export
+    // tries again
+    await this.h2hExport.fillWcaRoundId(roundId).catch(() => null);
     return {
       ...(await this.getBracketView(roundId)),
       notice: notices.filter((n) => n !== null).join(' ') || null,

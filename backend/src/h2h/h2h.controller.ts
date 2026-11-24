@@ -19,6 +19,7 @@ import { StageLeaderGuard } from 'src/auth/guards/stageLeader.guard';
 import { ParseRoundIdPipe } from 'src/roundId.pipe';
 
 import { CreateBracketDto } from './dto/createBracket.dto';
+import { ExportCsvDto } from './dto/exportCsv.dto';
 import { GrantExtraDto } from './dto/grantExtra.dto';
 import { ReopenMatchDto } from './dto/reopenMatch.dto';
 import { RetireDto } from './dto/retire.dto';
@@ -27,6 +28,7 @@ import { UpdateScramblePlanDto } from './dto/updateScramblePlan.dto';
 import { UpdateSeedsDto } from './dto/updateSeeds.dto';
 import { WithdrawDto } from './dto/withdraw.dto';
 import { H2hService } from './h2h.service';
+import { H2hExportService } from './h2hExport.service';
 import { H2hMatchService } from './h2hMatch.service';
 import { H2hMatchActionsService } from './h2hMatchActions.service';
 
@@ -38,6 +40,7 @@ export class H2hController {
     private readonly h2hService: H2hService,
     private readonly h2hMatchService: H2hMatchService,
     private readonly h2hMatchActions: H2hMatchActionsService,
+    private readonly h2hExport: H2hExportService,
   ) {}
 
   /** Starts a ready match; its competitors' attempts then go into it */
@@ -117,6 +120,27 @@ export class H2hController {
       dto.comment,
     );
     return this.h2hService.getBracketView(roundId);
+  }
+
+  /** What still blocks the WCA CSV, listed before the password is asked */
+  @UseGuards(OrganizerGuard)
+  @Get(':roundId/export/checks')
+  async getExportChecks(@Param('roundId', ParseRoundIdPipe) roundId: string) {
+    return this.h2hExport.getChecks(roundId);
+  }
+
+  /**
+   * The WCA CSV of the round. The password decrypts the scrambles for this
+   * request only: it is never stored or logged.
+   */
+  @UseGuards(OrganizerGuard)
+  @HttpCode(HttpStatus.OK)
+  @Post(':roundId/export')
+  async exportCsv(
+    @Param('roundId', ParseRoundIdPipe) roundId: string,
+    @Body() dto: ExportCsvDto,
+  ) {
+    return this.h2hExport.exportCsv(roundId, dto.password);
   }
 
   @Get(':roundId')

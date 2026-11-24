@@ -213,6 +213,32 @@ export class WcaService {
   }
 
   /**
+   * The WCA website's numeric id (`rounds.id`) of the event's last round,
+   * which the head-to-head CSV import needs and the WCIF doesn't carry.
+   * The public results endpoint lists the rounds last round first. Null
+   * when the WCA can't be reached or doesn't know the event.
+   */
+  async getLastRoundId(
+    competitionId: string,
+    eventId: string,
+  ): Promise<number | null> {
+    try {
+      const response = await fetch(
+        `${WCA_ORIGIN}/api/v0/competitions/${encodeURIComponent(competitionId)}/results/${encodeURIComponent(eventId)}`,
+        { signal: AbortSignal.timeout(10_000) },
+      );
+      this.wcaLogger.log(`Fetching ${eventId} round ids ${response.status}`);
+      if (!response.ok) return null;
+      const data = await response.json();
+      const id = Array.isArray(data?.rounds) ? data.rounds[0]?.id : undefined;
+      return Number.isInteger(id) && id > 0 ? id : null;
+    } catch (e) {
+      this.wcaLogger.error(`Fetching ${eventId} round ids failed: ${e}`);
+      return null;
+    }
+  }
+
+  /**
    * How the competition's results are entered, per the WCA website
    * (`external`, `wca_live` or `internal`); null when the WCA can't be reached
    */
