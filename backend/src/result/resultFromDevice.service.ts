@@ -617,7 +617,11 @@ export class ResultFromDeviceService {
         roundId: result.roundId,
         personId: competitor.id,
         resultId: result.id,
-        fromStation: { value: finalData.value, penalty: finalData.penalty },
+        fromStation: {
+          value: finalData.value,
+          penalty: finalData.penalty,
+          solvedAt: new Date(data.solvedAt),
+        },
         create: (attemptNumber, type) =>
           this.createOrUpdateScrambledAttempt(
             data,

@@ -36,6 +36,9 @@ type Db = Prisma.TransactionClient;
 
 export const NO_MATCH_IN_PROGRESS = 'No match in progress';
 
+/** How far ahead a station's clock may run of the server's */
+const STATION_CLOCK_TOLERANCE_MS = 60_000;
+
 /**
  * Why an attempt has nowhere to go in its match, as the station shows it:
  * `key` is the reply text's translation key, the message what manual entry
@@ -101,7 +104,8 @@ const attemptResultSelect = {
   value: true,
   penalty: true,
   status: true,
-  deviceId: true,
+  sessionId: true,
+  solvedAt: true,
 } as const;
 
 /** A match with everything scoring it needs */
@@ -272,10 +276,11 @@ export class H2hMatchService {
       create: (attemptNumber: number, type: AttemptType) => Promise<T>;
       /**
        * A station's solve: refused when the competitor's last attempt in
-       * the match was typed in by hand with this time. The station queued
-       * it while offline, and a delegate entered it from the judge's paper.
+       * the match was typed in by hand, after this solve, with the same
+       * result. The station queued it while offline, and a delegate
+       * entered it from the judge's paper.
        */
-      fromStation?: { value: number; penalty: number };
+      fromStation?: { value: number; penalty: number; solvedAt: Date };
     },
   ): Promise<{
     attempt: T;
@@ -313,11 +318,17 @@ export class H2hMatchService {
           return attempt ? [attempt] : [];
         })
         .sort((x, y) => y.attemptNumber - x.attemptNumber)[0];
+      // Typed in: only a station sends a session id. The hand entry is
+      // stamped when it is typed, so the solve it copies came before it,
+      // give or take a station clock running ahead
       if (
         last &&
-        last.deviceId === null &&
-        last.value === input.fromStation.value &&
-        last.penalty === input.fromStation.penalty
+        last.sessionId === null &&
+        last.solvedAt !== null &&
+        input.fromStation.solvedAt.getTime() <=
+          last.solvedAt.getTime() + STATION_CLOCK_TOLERANCE_MS &&
+        // A DNF typed in has no time, a station's keeps the timer's
+        toAttemptResult(last) === toAttemptResult(input.fromStation)
       ) {
         throw new H2hRefusal(
           'attemptAlreadyEntered',

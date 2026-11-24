@@ -115,6 +115,7 @@ describe('Stations in a head-to-head round (e2e)', () => {
   /** Seeds 1 to 4: semifinal 1 is seed 1 (A) against seed 4 (B) */
   let seeds: Person[];
   let judge: Person;
+  let stationAId: string;
   let session = 0;
 
   const server = () => app.getHttpServer();
@@ -274,7 +275,7 @@ describe('Stations in a head-to-head round (e2e)', () => {
     judge = await fixtures.giveCard(registrantIds[4], CARD.judge);
 
     const room = await fixtures.createRoom('room', [groupId]);
-    await fixtures.createDevice('station-a', ESP.a, room.id);
+    stationAId = (await fixtures.createDevice('station-a', ESP.a, room.id)).id;
     await fixtures.createDevice('station-b', ESP.b, room.id);
     // The event's earlier round, running in another room
     const otherRoom = await fixtures.createRoom('other-room', [
@@ -480,6 +481,44 @@ describe('Stations in a head-to-head round (e2e)', () => {
     expect(await solve(seed1, 1200)).toEqual(
       ok(textsFor(seed1).t('h2hWaitingForOpponent')),
     );
+  });
+
+  it('refuses a queued station DNF typed in by hand as a DNF, but not a later one', async () => {
+    const [seed1, , , seed4] = seeds;
+    await start(1);
+    const beforeTyping = new Date(Date.now() - 120_000).toISOString();
+    // A DNF typed in has no time; naming the station doesn't make it the
+    // station's solve
+    await request(server())
+      .post('/attempt')
+      .set(as(users.DELEGATE))
+      .send({
+        attemptNumber: 1,
+        value: 0,
+        penalty: -1,
+        roundId,
+        competitorId: seed1.id,
+        deviceId: stationAId,
+        status: 'STANDARD',
+        type: 'STANDARD_ATTEMPT',
+      })
+      .expect(201);
+    await solve(seed4, 1100, { espId: ESP.b });
+
+    // The station's copy, timed before the delegate typed it in
+    expect(
+      await solve(seed1, 6234, { penalty: -1, solvedAt: beforeTyping }),
+    ).toEqual(refused(textsFor(seed1).t('attemptAlreadyEntered')));
+    expect(matchOf(await getView(), 1).sets[0].points).toHaveLength(1);
+
+    // A DNF solved after it is the next point's
+    const later = new Date(Date.now() + 300_000).toISOString();
+    expect(await solve(seed1, 6234, { penalty: -1, solvedAt: later })).toEqual(
+      ok(textsFor(seed1).t('h2hWaitingForOpponent')),
+    );
+    const points = matchOf(await getView(), 1).sets[0].points;
+    expect(points).toHaveLength(2);
+    expect(points[1].attemptA?.penalty).toBe(-1);
   });
 
   it('refuses a competitor with no playing match at the card scan and at the solve, saving nothing', async () => {
@@ -777,6 +816,48 @@ describe('Stations in a head-to-head round (e2e)', () => {
       expect((await scrambles())[0]).toMatchObject({
         pointNumber: 2,
         text: 'Semifinal 1 · set 1 · Set A, scramble 2',
+      });
+    });
+
+    it('gives a spare scramble two matches would take to the one that waited longest', async () => {
+      const [seed1, seed2, seed3, seed4] = seeds;
+      // Sets A and B keep one scramble each; Set E is a spare
+      await db.scramble.deleteMany({
+        where: {
+          scrambleSet: { roundId, set: { in: ['A', 'B'] } },
+          NOT: { num: 1, isExtra: false },
+        },
+      });
+      await request(server())
+        .post('/scramble-set/import')
+        .set(as(users.DELEGATE))
+        .send({ scrambleSets: [scrambleSet(roundId, 'E')] })
+        .expect(201);
+      await start(1);
+      await start(2);
+      // Semifinal 2 races its point first, so it is shown Set E first
+      await solve(seed2, 1000);
+      await solve(seed3, 1100, { espId: ESP.b });
+      await solve(seed1, 1000);
+      await solve(seed4, 1100, { espId: ESP.b });
+
+      const [semi1, semi2] = await scrambles();
+      expect(semi2).toMatchObject({
+        text: 'Semifinal 2 · set 1 · Set E, scramble 1',
+        scramble: { set: 'E', num: 1 },
+      });
+      expect(semi1).toMatchObject({
+        text: 'Semifinal 1 · set 1',
+        scramble: null,
+      });
+      expect(semi1.warning).toMatch(/^Semifinal 2 takes Set E, scramble 1/);
+
+      // Once Semifinal 2's point takes it, Semifinal 1 moves on
+      await solve(seed2, 1000);
+      expect((await scrambles())[0]).toMatchObject({
+        text: 'Semifinal 1 · set 1 · Set E, scramble 2',
+        warning:
+          'Set A is used up, so the next point takes Set E from the spares. Hand it to the scramblers.',
       });
     });
 
