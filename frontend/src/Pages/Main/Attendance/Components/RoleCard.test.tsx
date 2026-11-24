@@ -370,10 +370,40 @@ describe("RoleCard", () => {
         expect(
             screen.queryByRole("button", { name: "Change group" })
         ).toBeNull();
+        // Nothing else is theirs to do here, so no ⋮ menu either
+        expect(
+            screen.queryByRole("button", { name: "More actions for Person e" })
+        ).toBeNull();
         await userEvent.click(
             screen.getByRole("button", { name: "Not coming" })
         );
         expect(props.onSetNoShow).toHaveBeenCalledWith(absent, true);
+    });
+
+    it("lets a stage lead bring back someone not coming in one tap", async () => {
+        vi.mocked(isOrganizerOrDelegate).mockReturnValue(false);
+        const props = handlers();
+        const notComing = activity(
+            "e",
+            "COMPETITOR",
+            StaffActivityStatus.ABSENT,
+            { noShow: true }
+        );
+        render(
+            <RoleCard
+                role="COMPETITOR"
+                title="Competitors"
+                icon={Users}
+                attendance={[notComing]}
+                groupId="333-r1-g1"
+                {...props}
+            />
+        );
+        expect(screen.queryByRole("button", { name: "Not coming" })).toBeNull();
+        await userEvent.click(
+            screen.getByRole("button", { name: "Coming after all" })
+        );
+        expect(props.onSetNoShow).toHaveBeenCalledWith(notComing, false);
     });
 
     it("shows every competitor's place in the previous round", () => {
