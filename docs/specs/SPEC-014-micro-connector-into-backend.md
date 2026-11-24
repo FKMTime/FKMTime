@@ -307,7 +307,9 @@ Replies can only be as fast as the main thread, which today's backend keeps busy
   `perf/enter-attempt-without-wcif-reparse`, stacked on the deadlock fix).
 - **`rooms/progress` keeps the main thread busy for about 23 s per call on the Pi** (2.3 s on
   the Mac), in slices under 1.1 s. Home refetches it whenever a result comes in, so during a
-  round every open Home page adds one of these per attempt.
+  round every open Home page adds one of these per attempt. **Decided (2026-11-24): fixed now with
+  aggregate queries plus a light debounce on Home, measured before and after on the Pi** (branch
+  `perf/rooms-progress-aggregate-queries`).
 - **10 or more simultaneous attempts deadlock the database pool,** and all of them fail after
   7.5 s. `enterAttemptInTransaction` runs queries outside its transaction, which need a second
   connection from pg's pool of 10. **Decided (2026-11-24): fixed now, on its own**
