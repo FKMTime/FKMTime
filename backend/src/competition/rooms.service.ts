@@ -13,9 +13,7 @@ import { IntegratedLiveRoundsService } from 'src/integrated-live/integratedLiveR
 import { SocketController } from 'src/socket/socket.controller';
 import { Competition as Wcif } from 'wcif-helpers';
 
-import { Attempt } from '../generated/prisma/client';
 import { UpdateRoomsDto } from './dto/updateCurrentRound.dto';
-import { calculateGroupProgress, getGroupCompetitorIds } from './groupProgress';
 
 export class RoomsService implements OnModuleInit {
   constructor(
@@ -46,51 +44,6 @@ export class RoomsService implements OnModuleInit {
 
   async getAllRooms() {
     return this.prisma.room.findMany();
-  }
-
-  /** Results entered vs expected for every room's current groups */
-  async getRoomsProgress() {
-    const [rooms, competition] = await Promise.all([
-      this.prisma.room.findMany(),
-      this.prisma.competition.findFirst(),
-    ]);
-    if (!competition) return [];
-    const wcif = competition.wcif as unknown as Wcif;
-
-    return Promise.all(
-      rooms.map(async (room) => ({
-        roomId: room.id,
-        groups: await Promise.all(
-          room.currentGroupIds.map(async (groupId) => {
-            const results = await this.prisma.result.findMany({
-              where: {
-                roundId: groupId.split('-g')[0],
-                person: {
-                  registrantId: { in: getGroupCompetitorIds(wcif, groupId) },
-                },
-              },
-              select: {
-                attempts: true,
-                person: { select: { registrantId: true } },
-              },
-            });
-            // Someone added on site has no registrant id, so no assignment
-            const attemptsByRegistrantId = new Map<number, Attempt[]>(
-              results.flatMap(({ person, attempts }) =>
-                person.registrantId === null
-                  ? []
-                  : [[person.registrantId, attempts]],
-              ),
-            );
-            return calculateGroupProgress(
-              wcif,
-              groupId,
-              attemptsByRegistrantId,
-            );
-          }),
-        ),
-      })),
-    );
   }
 
   async updateRooms(data: UpdateRoomsDto) {

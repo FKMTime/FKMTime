@@ -167,10 +167,13 @@ type RowWhere = {
   status?: { in: StaffActivityStatus[] };
   groupId?: { in?: string[]; startsWith?: string };
 };
+type RowsWhere = RowWhere & { OR?: RowWhere[] };
 /** Applies a staffActivity where clause, refusing filters it doesn't know */
-const matchesRow = (row: Required<TestRow>, where: RowWhere) => {
+const matchesRow = (row: Required<TestRow>, where: RowsWhere) => {
   const known = ['role', 'isAssigned', 'status', 'groupId'];
-  const unknown = Object.keys(where).filter((key) => !known.includes(key));
+  const unknown = Object.keys(where).filter(
+    (key) => !known.includes(key) && where[key] !== undefined,
+  );
   if (unknown.length) throw new Error(`Unmocked filter: ${unknown}`);
   return (
     (where.role === undefined || row.role === where.role) &&
@@ -250,17 +253,30 @@ const setup = ({
       }),
     },
     result: {
-      findMany: jest.fn(async ({ where }) =>
-        state.results.filter(
-          (r) => r.roundId === where.roundId && r.removedAt !== null,
-        ),
+      // Like the database, which leaves removed results out unless asked
+      findMany: jest.fn(
+        async ({
+          where,
+        }: {
+          where: { roundId: { in: string[] }; removedAt?: unknown };
+        }) =>
+          state.results.filter(
+            (r) =>
+              where.roundId.in.includes(r.roundId) &&
+              (where.removedAt ? r.removedAt !== null : !r.removedAt),
+          ),
       ),
     },
     extraGrant: {
-      findMany: jest.fn(async () => freshSetGrantIds.map((id) => ({ id }))),
+      // Open in whichever round is asked about
+      findMany: jest.fn(async ({ where }) =>
+        where.result.roundId.in.flatMap((roundId: string) =>
+          freshSetGrantIds.map((id) => ({ id, result: { roundId } })),
+        ),
+      ),
     },
     staffActivity: {
-      findMany: jest.fn(async ({ where }: { where: RowWhere }) =>
+      findMany: jest.fn(async ({ where }: { where: RowsWhere }) =>
         attendance
           .map((row) => ({
             role: StaffRole.COMPETITOR,
@@ -270,7 +286,11 @@ const setup = ({
             registrantId: Number(row.personId.slice(1)) || null,
             ...row,
           }))
-          .filter((row) => matchesRow(row, where))
+          .filter((row) =>
+            (where.OR ?? [{}]).some((or) =>
+              matchesRow(row, { ...where, OR: undefined, ...or }),
+            ),
+          )
           .map((row) => ({
             ...row,
             person: { registrantId: row.registrantId },
@@ -285,12 +305,7 @@ const setup = ({
   };
   const emit = jest.fn();
   const appGateway = { server: { to: () => ({ emit }) } };
-  const resultService = {
-    // Like the database, which leaves removed results out
-    getAllResultsByRound: jest.fn(async (roundId: string) =>
-      state.results.filter((r) => r.roundId === roundId && !r.removedAt),
-    ),
-  };
+  const resultService = {};
   const socketController = { sendServerStatus: jest.fn() };
   const onRoundStarted = jest.fn().mockResolvedValue(undefined);
   const roomsService = new RoomsService(
@@ -950,7 +965,7 @@ describe('automatic group change', () => {
     const roomsProgress = async (competition: Record<string, unknown> = {}) => {
       // Running since before the group; competitor 1 finished at 12:11
       jest.setSystemTime(new Date(at(12, 0)));
-      const { service, prisma, roomsService } = setup({
+      const { service, prisma } = setup({
         wcif: buildWcif(schedule(), assignments),
         rooms: mainAndSide(),
         results: [
@@ -975,29 +990,25 @@ describe('automatic group change', () => {
           { id: 'p2', name: 'Competitor Two', registrantId: 2 },
         ]),
       };
-      jest.spyOn(roomsService, 'getRoomsProgress').mockResolvedValue([
-        {
-          roomId: 'main',
-          groups: [
-            {
-              groupId: '333-r1-g1',
-              roundId: '333-r1',
-              competitors: 2,
-              finished: 1,
-              entered: 3,
-              expected: 6,
-              expectedIsFinal: true,
-            },
-          ],
-        },
-      ]);
       jest.setSystemTime(new Date(at(12, 14)));
       const [main] = await service.getRoomsProgress();
-      return (main.groups[0] as { wait?: unknown }).wait;
+      return main.groups[0];
     };
 
+    it('counts the results entered in the group', async () => {
+      expect(await roomsProgress()).toMatchObject({
+        groupId: '333-r1-g1',
+        roundId: '333-r1',
+        competitors: 2,
+        finished: 1,
+        entered: 3,
+        expected: 6,
+        expectedIsFinal: true,
+      });
+    });
+
     it('says who the group waits for and when it moves on by itself', async () => {
-      expect(await roomsProgress()).toEqual({
+      expect((await roomsProgress()).wait).toEqual({
         state: 'waitingForCompetitors',
         notStarted: [{ personId: 'p2', name: 'Competitor Two' }],
         solving: 0,
@@ -1010,7 +1021,7 @@ describe('automatic group change', () => {
 
     it('gives no time when the room does not move on by itself', async () => {
       expect(
-        await roomsProgress({ shouldChangeGroupsAutomatically: false }),
+        (await roomsProgress({ shouldChangeGroupsAutomatically: false })).wait,
       ).toMatchObject({ state: 'waitingForCompetitors', movesOnAt: null });
     });
   });
