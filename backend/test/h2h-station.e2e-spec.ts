@@ -29,7 +29,7 @@ import {
 const SUFFIX = 'h2h-station';
 
 // Invented hardware ids and RFID card numbers, unique to this spec
-const ESP = { a: 781001, b: 781002, otherRound: 781003 };
+const ESP = { a: 781001, b: 781002, otherRound: 781003, bothRounds: 781004 };
 const CARD = {
   seed1: 7810011,
   seed2: 7810012,
@@ -186,17 +186,39 @@ describe('Stations in a head-to-head round (e2e)', () => {
         shouldResetTime: true,
       }),
     });
-  /** Refused with nothing saved; the station keeps the time to send again */
-  const refused = (message: string) =>
+  /**
+   * Refused with nothing saved. The station keeps the time only of a solve
+   * a point ahead, to send again once the opponent catches up.
+   */
+  const refused = (message: string, shouldResetTime = true) =>
     expect.objectContaining({
       type: 'Error',
       data: expect.objectContaining({
         message,
         status: 409,
         error: true,
-        shouldResetTime: false,
+        shouldResetTime,
       }),
     });
+  const scan = (person: Person, espId = ESP.a) =>
+    station.request('PersonInfo', {
+      cardId: person.cardId,
+      espId,
+      isCompetitor: true,
+    });
+  const scanRefused = (
+    person: Person,
+    key: string,
+    shouldResetTime: boolean,
+  ) => ({
+    type: 'Error',
+    data: {
+      message: getTranslation(key, person.countryIso2 ?? defaultLocale),
+      status: 400,
+      error: true,
+      shouldResetTime,
+    },
+  });
 
   const clean = async () => {
     // Points hold their attempts and scrambles, so the bracket goes first
@@ -391,7 +413,10 @@ describe('Stations in a head-to-head round (e2e)', () => {
 
     const reply = await solve(seed1, 1300);
 
-    expect(reply).toEqual(refused(textsFor(seed1).t('h2hWaitingForOpponent')));
+    // Raced on point 3, which waits for the opponent: the judge sends it again
+    expect(reply).toEqual(
+      refused(textsFor(seed1).t('h2hWaitingForOpponent'), false),
+    );
     expect(await attemptsOf(seed1)).toHaveLength(2);
     const points = matchOf(await getView(), 1).sets[0].points;
     expect(points).toHaveLength(2);
@@ -400,9 +425,11 @@ describe('Stations in a head-to-head round (e2e)', () => {
   });
 
   it('answers a resent solve as entered and fills no second slot', async () => {
-    const [seed1] = seeds;
+    const [seed1, , , seed4] = seeds;
     await start(1);
-    const data = solveData(seed1, 1000);
+    await solve(seed1, 1000);
+    // Both are in on point 1: entered again, B's would open point 2
+    const data = solveData(seed4, 1100, { espId: ESP.b });
     await station.request('EnterAttempt', data);
 
     const resent = await station.request('EnterAttempt', data);
@@ -417,33 +444,53 @@ describe('Stations in a head-to-head round (e2e)', () => {
         error: true,
       },
     });
-    expect(await attemptsOf(seed1)).toHaveLength(1);
+    expect(await attemptsOf(seed4)).toHaveLength(1);
     const points = matchOf(await getView(), 1).sets[0].points;
     expect(points).toHaveLength(1);
-    expect(points[0].attemptB).toBeNull();
+    expect(points[0].attemptB?.value).toBe(1100);
+  });
+
+  it('refuses a queued station solve a delegate has typed in from the paper meanwhile', async () => {
+    const [seed1, , , seed4] = seeds;
+    await start(1);
+    // The station lost its connection; the judge's paper goes in by hand
+    await request(server())
+      .post('/attempt')
+      .set(as(users.DELEGATE))
+      .send({
+        attemptNumber: 1,
+        value: 1000,
+        penalty: 0,
+        roundId,
+        competitorId: seed1.id,
+        status: 'STANDARD',
+        type: 'STANDARD_ATTEMPT',
+      })
+      .expect(201);
+
+    // The station reconnects and sends the solve it kept
+    expect(await solve(seed1, 1000)).toEqual(
+      refused(textsFor(seed1).t('attemptAlreadyEntered')),
+    );
+    expect(await attemptsOf(seed1)).toHaveLength(1);
+    expect(matchOf(await getView(), 1).sets[0].points).toHaveLength(1);
+
+    // A different time is the next point's, as usual
+    await solve(seed4, 1100, { espId: ESP.b });
+    expect(await solve(seed1, 1200)).toEqual(
+      ok(textsFor(seed1).t('h2hWaitingForOpponent')),
+    );
   });
 
   it('refuses a competitor with no playing match at the card scan and at the solve, saving nothing', async () => {
-    // Semifinal 2 (seeds 2 and 3) hasn't started
+    // Semifinal 2 (seeds 2 and 3) is ready but hasn't started
     const seed2 = seeds[1];
     await start(1);
 
-    const scan = await station.request('PersonInfo', {
-      cardId: seed2.cardId,
-      espId: ESP.a,
-      isCompetitor: true,
-    });
-    expect(scan).toMatchObject({
-      type: 'Error',
-      data: {
-        message: getTranslation(
-          'h2hNoMatchInProgress',
-          seed2.countryIso2 ?? defaultLocale,
-        ),
-        status: 400,
-        error: true,
-      },
-    });
+    // Solved before the scan: the time stays for once the match is started
+    expect(await scan(seed2)).toMatchObject(
+      scanRefused(seed2, 'h2hNoMatchInProgress', false),
+    );
 
     expect(await solve(seed2, 1000)).toEqual(
       refused(textsFor(seed2).t('h2hNoMatchInProgress')),
@@ -451,6 +498,68 @@ describe('Stations in a head-to-head round (e2e)', () => {
     expect(
       await db.result.count({ where: { personId: seed2.id, roundId } }),
     ).toBe(0);
+  });
+
+  it('drops the time of a competitor whose match is over, at the scan and at the solve', async () => {
+    const [seed1, , , seed4] = seeds;
+    await start(1);
+    await solve(seed1, 1000);
+    await solve(seed4, 1100, { espId: ESP.b });
+    // Seed 1 retires: seed 4 goes to the final, which waits for semifinal 2
+    await request(server())
+      .post(`/h2h/match/${matchOf(await getView(), 1).id}/retire`)
+      .set(as(users.DELEGATE))
+      .send({ side: 'A', comment: 'Hurt wrist' })
+      .expect(200);
+
+    expect(await scan(seed4)).toMatchObject(
+      scanRefused(seed4, 'h2hNoMatchInProgress', true),
+    );
+    expect(await solve(seed4, 1200, { espId: ESP.b })).toEqual(
+      refused(textsFor(seed4).t('h2hNoMatchInProgress')),
+    );
+    expect(await attemptsOf(seed4)).toHaveLength(1);
+  });
+
+  it('offers only the rounds that can take the solve on a station running several', async () => {
+    const [seed1, seed2] = seeds;
+    const eventId = roundId.split('-r')[0];
+    const room = await fixtures.createRoom('both-rounds', [
+      groupId,
+      `${eventId}-r1-g1`,
+    ]);
+    await fixtures.createDevice('station-both', ESP.bothRounds, room.id);
+    await start(1);
+
+    const playing = await scan(seed1, ESP.bothRounds);
+    expect(
+      playing.data.possibleGroups.map((g: { groupId: string }) => g.groupId),
+    ).toEqual(expect.arrayContaining([groupId, `${eventId}-r1-g1`]));
+
+    const notPlaying = await scan(seed2, ESP.bothRounds);
+    expect(notPlaying.type).toBe('PersonInfoResp');
+    expect(
+      notPlaying.data.possibleGroups.map((g: { groupId: string }) => g.groupId),
+    ).toEqual([`${eventId}-r1-g1`]);
+  });
+
+  it('refuses a station solve with no scramble left for the point', async () => {
+    const [seed1, , , seed4] = seeds;
+    // Set A keeps one scramble, and every other set is in the plan
+    await db.scramble.deleteMany({
+      where: {
+        scrambleSet: { roundId, set: 'A' },
+        NOT: { num: 1, isExtra: false },
+      },
+    });
+    await start(1);
+    await solve(seed1, 1000);
+    await solve(seed4, 1100, { espId: ESP.b });
+
+    expect(await solve(seed1, 1000)).toEqual(
+      refused(textsFor(seed1).t('h2hNoScrambleLeft')),
+    );
+    expect(await attemptsOf(seed1)).toHaveLength(1);
   });
 
   it('turns the station inspection off in the head-to-head round only, and names the next point', async () => {
@@ -500,6 +609,8 @@ describe('Stations in a head-to-head round (e2e)', () => {
     });
     const [incident] = await attemptsOf(seed1);
     expect(incident.status).toBe(AttemptStatus.UNRESOLVED);
+    // Seed 4 still has point 1 to race
+    expect((await scan(seed4, ESP.b)).type).toBe('PersonInfoResp');
     expect(await solve(seed4, 1100, { espId: ESP.b })).toEqual(
       ok(textsFor(seed4).t('h2hWaitingForDelegate')),
     );
@@ -508,6 +619,9 @@ describe('Stations in a head-to-head round (e2e)', () => {
     expect(point.attemptA?.id).toBe(incident.id);
 
     // The point may be raced again, so nobody moves on before the delegate
+    expect(await scan(seed4, ESP.b)).toMatchObject(
+      scanRefused(seed4, 'h2hWaitingForDelegate', true),
+    );
     expect(await solve(seed4, 1200, { espId: ESP.b })).toEqual(
       refused(textsFor(seed4).t('h2hWaitingForDelegate')),
     );
@@ -629,6 +743,7 @@ describe('Stations in a head-to-head round (e2e)', () => {
           isExtra: boolean;
         } | null;
         text: string;
+        warning: string | null;
       }[];
 
     it("lists every playing match with its set and the next point's scramble", async () => {
@@ -663,6 +778,17 @@ describe('Stations in a head-to-head round (e2e)', () => {
         pointNumber: 2,
         text: 'Semifinal 1 · set 1 · Set A, scramble 2',
       });
+    });
+
+    it("keeps an incident point's scramble, with a warning to wait", async () => {
+      const [seed1, , , seed4] = seeds;
+      await start(1);
+      await solve(seed1, 1000, { isDelegate: true });
+      await solve(seed4, 1100, { espId: ESP.b });
+
+      const [semi] = await scrambles();
+      expect(semi.text).toBe('Semifinal 1 · set 1 · Set A, scramble 1');
+      expect(semi.warning).toMatch(/^An incident on point 1 is open/);
     });
 
     it('refuses a round that is not head-to-head', async () => {

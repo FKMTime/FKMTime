@@ -3,6 +3,7 @@
  * Plain functions over a Prisma client, called with the round locked.
  */
 import {
+  AttemptStatus,
   H2hBracketStatus,
   H2hMatchEnd,
   H2hMatchStatus,
@@ -11,7 +12,7 @@ import {
   Prisma,
 } from '../generated/prisma/client';
 import { NOT_STARTED } from './bracketStore';
-import { walkoverWinner } from './matchEngine';
+import { placeAttempt, walkoverWinner } from './matchEngine';
 import { nextPointNumber } from './stationText';
 
 type Db = Prisma.TransactionClient;
@@ -219,9 +220,23 @@ export const playingMatchOf = (db: Db, roundId: string, personId: string) =>
     select: { id: true },
   });
 
+/** The competitor's match in the round that is ready but not started */
+export const readyMatchOf = (db: Db, roundId: string, personId: string) =>
+  db.h2hMatch.findFirst({
+    where: {
+      bracket: { roundId },
+      status: H2hMatchStatus.READY,
+      OR: [{ entrantA: { personId } }, { entrantB: { personId } }],
+    },
+    select: { id: true },
+  });
+
 /**
  * The set and point the competitor plays next in their playing match, as
  * the station shows it at the card scan. Null without a playing match.
+ * `waitingForDelegate` when that point would be a new one while an
+ * incident in the match is open: recording refuses it until it is
+ * resolved.
  */
 export const nextPointOf = async (
   db: Db,
@@ -240,7 +255,11 @@ export const nextPointOf = async (
           setNumber: true,
           winnerSide: true,
           points: {
-            select: { pointNumber: true, attemptAId: true, attemptBId: true },
+            select: {
+              pointNumber: true,
+              attemptA: { select: { status: true } },
+              attemptB: { select: { status: true } },
+            },
           },
         },
       },
@@ -249,15 +268,22 @@ export const nextPointOf = async (
   const set = match.sets.find((s) => s.winnerSide === null);
   if (!set) return null;
   const side = match.entrantA?.personId === personId ? H2hSide.A : H2hSide.B;
+  const slots = set.points.map((point) => ({
+    pointNumber: point.pointNumber,
+    a: point.attemptA !== null,
+    b: point.attemptB !== null,
+  }));
+  const incidentOpen = match.sets.some((s) =>
+    s.points.some((point) =>
+      [point.attemptA, point.attemptB].some(
+        (attempt) => attempt?.status === AttemptStatus.UNRESOLVED,
+      ),
+    ),
+  );
   return {
     setNumber: set.setNumber,
-    pointNumber: nextPointNumber(
-      set.points.map((point) => ({
-        pointNumber: point.pointNumber,
-        a: point.attemptAId !== null,
-        b: point.attemptBId !== null,
-      })),
-      side,
-    ),
+    pointNumber: nextPointNumber(slots, side),
+    waitingForDelegate:
+      incidentOpen && placeAttempt(slots, side).kind === 'new',
   };
 };

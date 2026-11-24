@@ -11,7 +11,7 @@ import { getStationGroupIds } from 'src/device/stationRounds';
 import { isInTutorial, TUTORIAL_GROUP_ID } from 'src/device/tutorial';
 import { eventsData, getMaxPenalty } from 'src/events';
 import { isH2hRound } from 'src/h2h/h2hRound';
-import { nextPointOf, playingMatchOf } from 'src/h2h/matchStore';
+import { nextPointOf, readyMatchOf } from 'src/h2h/matchStore';
 import {
   attemptTimeWithPenalty,
   checkCutoff,
@@ -44,6 +44,11 @@ const useInspectionFor = (groupId: string, wcif: WCIF) =>
   !isH2hRound(groupId.split('-g')[0], wcif) &&
   (eventsData.find((e) => e.id === groupId.split('-')[0])?.useInspection ??
     true);
+
+interface H2hScanRefusal {
+  key: 'h2hNoMatchInProgress' | 'h2hWaitingForDelegate';
+  shouldResetTime: boolean;
+}
 
 @Injectable()
 export class PersonForDeviceService {
@@ -140,22 +145,16 @@ export class PersonForDeviceService {
 
     // A head-to-head round takes a solve only into the competitor's playing
     // match (SPEC-001): told at the scan, before they solve
-    const noMatchInProgress = {
-      message: getTranslation(
-        'h2hNoMatchInProgress',
-        person.countryIso2 ?? defaultLocale,
-      ),
-      shouldResetTime: true,
+    const h2hRefusals = isCompetitor
+      ? await this.h2hScanRefusals(possibleGroups, wcif, person.id)
+      : new Map<string, H2hScanRefusal>();
+    const refuse = (refusal: H2hScanRefusal) => ({
+      message: getTranslation(refusal.key, person.countryIso2 ?? defaultLocale),
+      shouldResetTime: refusal.shouldResetTime,
       status: 400,
       error: true,
-      errorDetails: {
-        key: 'h2hNoMatchInProgress',
-        competitorName: person.name,
-      },
-    };
-    const notPlayingRoundIds = isCompetitor
-      ? await this.h2hRoundsNotPlaying(possibleGroups, wcif, person.id)
-      : [];
+      errorDetails: { key: refusal.key, competitorName: person.name },
+    });
 
     if (possibleGroups.length === 1) {
       const currentRoundId = possibleGroups[0].split('-g')[0];
@@ -176,9 +175,8 @@ export class PersonForDeviceService {
               )
             : finishedRoundsIds.includes(currentRoundId);
 
-          if (notPlayingRoundIds.includes(currentRoundId)) {
-            return noMatchInProgress;
-          }
+          const h2hRefusal = h2hRefusals.get(currentRoundId);
+          if (h2hRefusal) return refuse(h2hRefusal);
           if (hasNoAttemptsLeft) {
             return {
               message: getTranslation(
@@ -231,11 +229,14 @@ export class PersonForDeviceService {
       })
       .filter((g) => !finishedRoundsIds.includes(g.split('-g')[0]));
     const offeredGroups = finalGroups.filter(
-      (g) => !notPlayingRoundIds.includes(g.split('-g')[0]),
+      (g) => !h2hRefusals.has(g.split('-g')[0]),
     );
-    // Only head-to-head rounds were left, and no match of theirs is playing
-    if (offeredGroups.length === 0 && finalGroups.length > 0) {
-      return noMatchInProgress;
+    // Only head-to-head rounds were left, and none can take a solve now
+    const [firstRefused] = finalGroups.flatMap(
+      (g) => h2hRefusals.get(g.split('-g')[0]) ?? [],
+    );
+    if (offeredGroups.length === 0 && firstRefused) {
+      return refuse(firstRefused);
     }
     const groups = offeredGroups.map(async (g) => {
       const eventId = g.split('-')[0];
@@ -260,21 +261,37 @@ export class PersonForDeviceService {
     };
   }
 
-  /** The head-to-head rounds among these groups with no playing match */
-  private async h2hRoundsNotPlaying(
+  /**
+   * Why each head-to-head round among these groups can't take the
+   * competitor's solve now, by round id: no playing match, or the next
+   * point waits for an open incident. A station may let them solve before
+   * scanning, so the time is kept only when their match is ready and the
+   * stage leader just hasn't started it: it can go in once they have.
+   */
+  private async h2hScanRefusals(
     groupIds: string[],
     wcif: WCIF,
     personId: string,
   ) {
     const roundIds = [...new Set(groupIds.map((g) => g.split('-g')[0]))];
-    const notPlaying: string[] = [];
+    const refusals = new Map<string, H2hScanRefusal>();
     for (const roundId of roundIds) {
       if (!isH2hRound(roundId, wcif)) continue;
-      if (!(await playingMatchOf(this.prisma, roundId, personId))) {
-        notPlaying.push(roundId);
+      const next = await nextPointOf(this.prisma, roundId, personId);
+      if (next?.waitingForDelegate) {
+        refusals.set(roundId, {
+          key: 'h2hWaitingForDelegate',
+          shouldResetTime: true,
+        });
+      } else if (!next) {
+        const ready = await readyMatchOf(this.prisma, roundId, personId);
+        refusals.set(roundId, {
+          key: 'h2hNoMatchInProgress',
+          shouldResetTime: ready === null,
+        });
       }
     }
-    return notPlaying;
+    return refusals;
   }
 
   /** The person with the one tutorial group, labelled in their language */

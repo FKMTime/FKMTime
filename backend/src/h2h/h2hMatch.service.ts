@@ -45,7 +45,9 @@ export type H2hRefusalKey =
   | 'h2hNoMatchInProgress'
   | 'h2hWaitingForOpponent'
   | 'h2hWaitingForDelegate'
-  | 'h2hNoScrambleLeft';
+  | 'h2hNoScrambleLeft'
+  /** A station's queued solve that was typed in by hand meanwhile */
+  | 'attemptAlreadyEntered';
 
 export class H2hRefusal extends ConflictException {
   constructor(
@@ -95,9 +97,11 @@ const toOption = (set: ScrambleSetRow): ScrambleSetOption => ({
 
 const attemptResultSelect = {
   id: true,
+  attemptNumber: true,
   value: true,
   penalty: true,
   status: true,
+  deviceId: true,
 } as const;
 
 /** A match with everything scoring it needs */
@@ -266,6 +270,12 @@ export class H2hMatchService {
       personId: string;
       resultId: string;
       create: (attemptNumber: number, type: AttemptType) => Promise<T>;
+      /**
+       * A station's solve: refused when the competitor's last attempt in
+       * the match was typed in by hand with this time. The station queued
+       * it while offline, and a delegate entered it from the judge's paper.
+       */
+      fromStation?: { value: number; penalty: number };
     },
   ): Promise<{
     attempt: T;
@@ -295,6 +305,26 @@ export class H2hMatchService {
     }
     const side =
       match.entrantA?.personId === input.personId ? H2hSide.A : H2hSide.B;
+    if (input.fromStation) {
+      const last = match.sets
+        .flatMap((s) => s.points)
+        .flatMap((point) => {
+          const attempt = side === H2hSide.A ? point.attemptA : point.attemptB;
+          return attempt ? [attempt] : [];
+        })
+        .sort((x, y) => y.attemptNumber - x.attemptNumber)[0];
+      if (
+        last &&
+        last.deviceId === null &&
+        last.value === input.fromStation.value &&
+        last.penalty === input.fromStation.penalty
+      ) {
+        throw new H2hRefusal(
+          'attemptAlreadyEntered',
+          'This attempt has already been entered',
+        );
+      }
+    }
     const set = match.sets.find((s) => s.winnerSide === null);
     if (!set) {
       throw new Error(`Match ${match.id} is playing with every set decided`);

@@ -171,20 +171,9 @@ describe('h2hStationText', () => {
       { matchWon: true, point: 'won', ...score },
       { matchWon: false, point: 'lost', ...score },
     ];
-    // The refusals too, shown as errors
-    const refusals = [
-      'h2hNoMatchInProgress',
-      'h2hWaitingForOpponent',
-      'h2hWaitingForDelegate',
-      'h2hNoScrambleLeft',
-    ];
     for (const locale of ['en', 'pl']) {
-      const texts = [
-        ...outcomes.map((outcome) => text(outcome, locale)),
-        ...refusals.map((key) => getTranslation(key, locale)),
-      ];
-      for (const shown of texts) {
-        const words = shown.split(' ');
+      for (const outcome of outcomes) {
+        const words = text(outcome, locale).split(' ');
         const lines = [words.slice(0, 2), words.slice(2)].map((w) =>
           w.join(' '),
         );
@@ -192,6 +181,25 @@ describe('h2hStationText', () => {
           expect(line.length).toBeLessThanOrEqual(16);
           expect(line).toMatch(/^[\x20-\x7e]*$/);
         }
+      }
+    }
+  });
+
+  // A refusal is an error: the station shows "Error" on the top line and the
+  // whole text below, scrolling when it is longer than 16 characters, as
+  // the other error texts do
+  it('keeps the refusals in ASCII, on the one line an error gets', () => {
+    const refusals = [
+      'h2hNoMatchInProgress',
+      'h2hWaitingForOpponent',
+      'h2hWaitingForDelegate',
+      'h2hNoScrambleLeft',
+    ];
+    for (const locale of ['en', 'pl']) {
+      for (const key of refusals) {
+        const shown = getTranslation(key, locale);
+        expect(shown).not.toBe(key);
+        expect(shown).toMatch(/^[\x20-\x7e]+$/);
       }
     }
   });

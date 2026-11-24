@@ -589,8 +589,8 @@ export class ResultFromDeviceService {
    * match through the point engine, in this transaction and under its
    * locks: the first empty slot of the current set, or a new point. The
    * reply says where the match stands. A solve with nowhere to go is
-   * refused and nothing is saved; the station keeps the time, so the judge
-   * can send it again once the match can take it.
+   * refused and nothing is saved. The station keeps the time only of a
+   * solve a point ahead, to send again once the opponent catches up.
    */
   private async enterH2hAttempt(
     data: EnterAttemptDto,
@@ -617,6 +617,7 @@ export class ResultFromDeviceService {
         roundId: result.roundId,
         personId: competitor.id,
         resultId: result.id,
+        fromStation: { value: finalData.value, penalty: finalData.penalty },
         create: (attemptNumber, type) =>
           this.createOrUpdateScrambledAttempt(
             data,
@@ -633,7 +634,10 @@ export class ResultFromDeviceService {
       if (!(e instanceof H2hRefusal)) throw e;
       throw new RefusedSolve({
         message: getTranslation(e.key, locale),
-        shouldResetTime: false,
+        // Only a solve a point ahead may be sent again as it is: it was
+        // raced on the next point, which waits for the opponent. Any other
+        // refused solve was raced on no point the match can give it now
+        shouldResetTime: e.key !== 'h2hWaitingForOpponent',
         status: 409,
         error: true,
         errorDetails: { key: e.key, competitorName: competitor.name },
