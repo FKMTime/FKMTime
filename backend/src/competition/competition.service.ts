@@ -34,9 +34,9 @@ import { DbService } from '../db/db.service';
 import { StoredWcifService } from '../db/storedWcif.service';
 import { eventsData, isUnofficialEvent } from '../events';
 import {
+  Attempt,
   HardwareVersion,
   SendingResultsFrequency,
-  StaffRole,
 } from '../generated/prisma/client';
 import { SocketController } from '../socket/socket.controller';
 import { WcaService } from '../wca/wca.service';
@@ -48,14 +48,15 @@ import {
   getGroupStatus as getGroupStatusFromResults,
   getMovesOnAt,
   getNextGroupsInRoom,
-  GroupChangeResult,
   GroupState,
+  GroupStatus,
   isGroupQuiet,
   planNextGroups,
 } from './groupChange';
-import { getGroupCompetitorIds } from './groupProgress';
+import { calculateGroupProgress, getGroupCompetitorIds } from './groupProgress';
 import { getIntegratedLiveConnectionState } from './integratedLiveConnection.service';
 import { RoomsService } from './rooms.service';
+import { loadRoundStates, roundIdOf, RoundState } from './roundState';
 
 /** How long a room's checks after attempts wait to take in a burst */
 export const GROUP_CHANGE_CHECK_DELAY_MS = 5_000;
@@ -681,8 +682,16 @@ export class CompetitionService implements OnModuleDestroy {
     const now = Date.now();
     const leaving: string[] = [];
     const stuck: string[] = [];
+    const roundState = await loadRoundStates(this.prisma, [
+      ...new Set(room.currentGroupIds.map(roundIdOf)),
+    ]);
     for (const groupId of room.currentGroupIds) {
-      const status = await this.getGroupStatus(groupId, room.name, wcif);
+      const status = this.getGroupStatus(
+        groupId,
+        room.name,
+        wcif,
+        roundState(roundIdOf(groupId)),
+      );
       const enteredAt = this.roomsService.getGroupEnteredAt(room.id, groupId);
       if (canLeaveGroup(status, trigger, now, enteredAt)) {
         leaving.push(groupId);
@@ -722,48 +731,55 @@ export class CompetitionService implements OnModuleDestroy {
 
   /** Results entered and what each running group waits for, per room */
   async getRoomsProgress() {
-    const [progress, rooms, competition] = await Promise.all([
-      this.roomsService.getRoomsProgress(),
-      this.prisma.room.findMany({ select: { id: true, name: true } }),
+    const [rooms, competition] = await Promise.all([
+      this.prisma.room.findMany({
+        select: { id: true, name: true, currentGroupIds: true },
+      }),
       this.prisma.competition.findFirst(),
     ]);
-    if (!competition) return progress;
+    if (!competition) return [];
     const wcif = competition.wcif as unknown as Competition;
     const isAutomatic =
       competition.useFkmTimeDevices &&
       competition.shouldChangeGroupsAutomatically;
-    return Promise.all(
-      progress.map(async (room) => {
-        const roomName = rooms.find((r) => r.id === room.roomId)?.name;
-        if (!roomName) return room;
+    // Every running group's numbers come from one read of its round
+    const roundState = await loadRoundStates(this.prisma, [
+      ...new Set(rooms.flatMap((room) => room.currentGroupIds.map(roundIdOf))),
+    ]);
+    const attemptsByRegistrantId = new Map<string, Map<number, Attempt[]>>();
+    const attemptsOf = (roundId: string) => {
+      let byRegistrantId = attemptsByRegistrantId.get(roundId);
+      if (!byRegistrantId) {
+        // Someone added on site has no registrant id, so no assignment
+        byRegistrantId = new Map(
+          roundState(roundId).results.flatMap(({ person, attempts }) =>
+            person.registrantId === null
+              ? []
+              : [[person.registrantId, attempts]],
+          ),
+        );
+        attemptsByRegistrantId.set(roundId, byRegistrantId);
+      }
+      return byRegistrantId;
+    };
+    const roomGroups = rooms.map((room) => ({
+      room,
+      groups: room.currentGroupIds.map((groupId) => {
+        const roundId = roundIdOf(groupId);
         return {
-          ...room,
-          groups: await Promise.all(
-            room.groups.map(async (group) => ({
-              ...group,
-              wait: await this.getGroupWait(
-                room.roomId,
-                roomName,
-                group.groupId,
-                wcif,
-                isAutomatic,
-              ),
-            })),
+          progress: calculateGroupProgress(wcif, groupId, attemptsOf(roundId)),
+          status: this.getGroupStatus(
+            groupId,
+            room.name,
+            wcif,
+            roundState(roundId),
           ),
         };
       }),
+    }));
+    const notStarted = roomGroups.flatMap(({ groups }) =>
+      groups.flatMap(({ status }) => status.blockers.notStarted),
     );
-  }
-
-  private async getGroupWait(
-    roomId: string,
-    roomName: string,
-    groupId: string,
-    wcif: Competition,
-    isAutomatic: boolean,
-  ): Promise<GroupWait> {
-    const status = await this.getGroupStatus(groupId, roomName, wcif);
-    const { notStarted, solving, incidents, extras } = status.blockers;
     const persons = notStarted.length
       ? await this.prisma.person.findMany({
           where: {
@@ -787,6 +803,31 @@ export class CompetitionService implements OnModuleDestroy {
           select: { id: true, name: true, registrantId: true },
         })
       : [];
+    return roomGroups.map(({ room, groups }) => ({
+      roomId: room.id,
+      groups: groups.map(({ progress, status }) => ({
+        ...progress,
+        wait: this.getGroupWait(
+          room.id,
+          progress.groupId,
+          status,
+          persons,
+          wcif,
+          isAutomatic,
+        ),
+      })),
+    }));
+  }
+
+  private getGroupWait(
+    roomId: string,
+    groupId: string,
+    status: GroupStatus,
+    persons: { id: string; name: string; registrantId: number | null }[],
+    wcif: Competition,
+    isAutomatic: boolean,
+  ): GroupWait {
+    const { notStarted, solving, incidents, extras } = status.blockers;
     const movesOnAt = isAutomatic
       ? getMovesOnAt(
           status,
@@ -821,65 +862,30 @@ export class CompetitionService implements OnModuleDestroy {
   }
 
   /** Where one of the room's current groups stands (see getGroupStatus) */
-  private async getGroupStatus(
+  private getGroupStatus(
     groupId: string,
     roomName: string,
     wcif: Competition,
+    round: RoundState,
   ) {
-    const roundId = groupId.split('-g')[0];
+    const roundId = roundIdOf(groupId);
     const hasNextGroup = !!getNextGroupInRoom(groupId, roomName, wcif);
-    const round = getActivityInfoFromScheduleWithRoom(roundId, roomName, wcif);
+    const roundActivity = getActivityInfoFromScheduleWithRoom(
+      roundId,
+      roomName,
+      wcif,
+    );
     const roomRoundGroupIds = hasNextGroup
       ? [groupId]
-      : (round?.childActivities ?? []).map((group) => group.activityCode);
-    const [results, removed, freshSetGrants, attendance] = await Promise.all([
-      this.resultService.getAllResultsByRound(roundId),
-      // Asked for by name, as result queries leave removed results out
-      this.prisma.result.findMany({
-        where: { roundId, removedAt: { not: null } },
-        select: { personId: true, person: { select: { registrantId: true } } },
-      }),
-      this.prisma.extraGrant.findMany({
-        where: {
-          useFreshSet: true,
-          restoredAt: null,
-          result: { roundId, removedAt: null },
-        },
-        select: { id: true },
-      }),
-      // Every group of the round: a competitor moved on the competitor page
-      // shows up here before the stored WCIF knows
-      this.prisma.staffActivity.findMany({
-        where: {
-          groupId: { startsWith: `${roundId}-g` },
-          role: StaffRole.COMPETITOR,
-        },
-        select: {
-          personId: true,
-          groupId: true,
-          isAssigned: true,
-          status: true,
-          noShow: true,
-          person: { select: { registrantId: true } },
-        },
-      }),
-    ]);
+      : (roundActivity?.childActivities ?? []).map(
+          (group) => group.activityCode,
+        );
     return getGroupStatusFromResults({
       groupId,
-      results: results as unknown as GroupChangeResult[],
+      results: round.results,
       assignedRegistrantIds: getGroupCompetitorIds(wcif, groupId),
-      competitorRows: attendance.map((row) => ({
-        personId: row.personId,
-        registrantId: row.person.registrantId,
-        groupId: row.groupId,
-        isAssigned: row.isAssigned,
-        status: row.status,
-        noShow: row.noShow,
-      })),
-      removed: removed.map((r) => ({
-        personId: r.personId,
-        registrantId: r.person.registrantId,
-      })),
+      competitorRows: round.competitorRows,
+      removed: round.removed,
       roomRoundRegistrantIds: roomRoundGroupIds.flatMap((id) =>
         getGroupCompetitorIds(wcif, id),
       ),
@@ -887,7 +893,7 @@ export class CompetitionService implements OnModuleDestroy {
       rules: {
         maxAttempts: getNumberOfAttemptsForRound(roundId, wcif),
         cutoff: getRoundInfoFromWcif(roundId, wcif)?.cutoff,
-        freshSetGrantIds: freshSetGrants.map((grant) => grant.id),
+        freshSetGrantIds: round.freshSetGrantIds,
         hasNextGroup,
       },
     });

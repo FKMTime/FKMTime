@@ -13,6 +13,16 @@ export const roomsProgressQuery = backendQuery<RoomProgress[]>(
     "competition/rooms/progress"
 );
 
+/**
+ * How often, at most, results coming in refetch the rooms' progress. The
+ * first result refetches at once and the rest of a burst is taken in one
+ * refetch at the end, so the cards never lag by more than this. That is
+ * less than a single solve takes, while a busy competition (a result every
+ * second or two) costs the backend one progress read per open page every
+ * five seconds instead of one per result.
+ */
+export const PROGRESS_REFRESH_INTERVAL_MS = 5_000;
+
 export const updateCurrentRound = async (rooms: Room[]) => {
     const response = await backendRequest("competition/rooms", "PUT", true, {
         rooms,

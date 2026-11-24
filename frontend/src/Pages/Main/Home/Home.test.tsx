@@ -1,13 +1,15 @@
-import { screen, waitFor, within } from "@testing-library/react";
+import { act, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { createStore, Provider } from "jotai";
 import { MemoryRouter } from "react-router-dom";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { competitionAtom } from "@/lib/atoms";
 import { Competition, Room } from "@/lib/interfaces";
 import { clearQueryCache } from "@/lib/queryCache";
+import { PROGRESS_REFRESH_INTERVAL_MS } from "@/lib/rooms";
 import { ConfirmProvider } from "@/providers/ConfirmProvider";
+import { socket } from "@/socket";
 import { renderWithQueryClient } from "@/test/queryClient";
 
 import Home from "./Home";
@@ -18,6 +20,7 @@ const backend = vi.hoisted(() => ({
     progress: [] as unknown[],
     nextGroups: {} as Record<string, string[]>,
     puts: [] as { path: string; body: unknown }[],
+    progressReads: 0,
 }));
 
 /** Answers like the backend would; a PUT updates only the rooms sent */
@@ -42,8 +45,10 @@ const fakeRequest = vi.hoisted(
             }
             if (path === "competition/rooms")
                 return json(backend.rooms.map((r) => ({ ...r })));
-            if (path === "competition/rooms/progress")
+            if (path === "competition/rooms/progress") {
+                backend.progressReads++;
                 return json(backend.progress);
+            }
             const next = /^competition\/rooms\/(.+)\/next-groups/.exec(path);
             if (next) return json(backend.nextGroups[next[1]] ?? []);
             return json([]);
@@ -171,7 +176,9 @@ describe("Home", () => {
         ];
         backend.nextGroups = { main: ["333-r1-g3"], side: ["333-r1-g4"] };
         backend.puts = [];
+        backend.progressReads = 0;
     });
+    afterEach(() => vi.useRealTimers());
 
     it("starts the next group in one room without touching the others", async () => {
         await renderHome();
@@ -201,5 +208,41 @@ describe("Home", () => {
             ["333-r1-g3"],
             ["333-r1-g4"],
         ]);
+    });
+
+    it("refetches the rooms' progress at most once per interval while results come in", async () => {
+        await renderHome();
+        await waitFor(() => expect(backend.progressReads).toBe(1));
+        vi.useFakeTimers({ shouldAdvanceTime: true });
+        const listeners = vi.mocked(socket.on).mock.calls as unknown as [
+            string,
+            () => void,
+        ][];
+        const resultEntered = listeners
+            .filter(([event]) => event === "resultEntered")
+            .at(-1)?.[1];
+        if (!resultEntered) throw new Error("Home doesn't listen for results");
+
+        // Ten stations enter an attempt at once
+        act(() => {
+            for (let i = 0; i < 10; i++) resultEntered();
+        });
+        // The first shows at once
+        await waitFor(() => expect(backend.progressReads).toBe(2));
+
+        act(() => {
+            vi.advanceTimersByTime(PROGRESS_REFRESH_INTERVAL_MS - 100);
+        });
+        expect(backend.progressReads).toBe(2);
+
+        // The rest of the burst, in one refetch at the end of the interval
+        act(() => {
+            vi.advanceTimersByTime(100);
+        });
+        await waitFor(() => expect(backend.progressReads).toBe(3));
+        act(() => {
+            vi.advanceTimersByTime(PROGRESS_REFRESH_INTERVAL_MS * 3);
+        });
+        expect(backend.progressReads).toBe(3);
     });
 });

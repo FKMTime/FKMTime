@@ -10,6 +10,7 @@ import { useLiveQuery } from "@/hooks/useLiveQuery";
 import { useSocketEvents } from "@/hooks/useSocketEvents";
 import { useSocketRoom } from "@/hooks/useSocketRoom";
 import { useStationTutorial } from "@/hooks/useStationTutorial";
+import { useThrottledCallback } from "@/hooks/useThrottledCallback";
 import { useToast } from "@/hooks/useToast";
 import { competitionAtom, quickEntryAtom } from "@/lib/atoms";
 import { recentAttemptsQuery } from "@/lib/attempt";
@@ -33,6 +34,7 @@ import { toQueryOptions } from "@/lib/queryCache";
 import { queryClient } from "@/lib/queryClient";
 import {
     isGroupDone,
+    PROGRESS_REFRESH_INTERVAL_MS,
     roomsProgressQuery,
     roomsQuery,
     updateCurrentRound,
@@ -64,12 +66,18 @@ const invalidatePaths = (matches: (path: string) => boolean) =>
             typeof path === "string" && matches(path),
     });
 
-const refreshResults = () =>
+const refreshProgress = () =>
+    invalidatePaths((path) => path === roomsProgressQuery.key);
+
+const refreshRecentAttempts = () =>
     invalidatePaths(
-        (path) =>
-            path === roomsProgressQuery.key ||
-            (path.startsWith("attempt/round/") && path.endsWith("/recent"))
+        (path) => path.startsWith("attempt/round/") && path.endsWith("/recent")
     );
+
+const refreshResults = () => {
+    refreshProgress();
+    refreshRecentAttempts();
+};
 
 const refreshRooms = () =>
     invalidatePaths(
@@ -185,10 +193,18 @@ const Home = () => {
             ),
     });
 
+    const refreshProgressSoon = useThrottledCallback(
+        refreshProgress,
+        PROGRESS_REFRESH_INTERVAL_MS
+    );
+
     // The layout keeps the incidents room joined; ResultsRoom joins each
     // running round's results room
     useSocketEvents({
-        resultEntered: refreshResults,
+        resultEntered: () => {
+            refreshRecentAttempts();
+            refreshProgressSoon();
+        },
         newIncident: () => void invalidateIncidentLists(),
         attemptUpdated: () => void invalidateIncidentLists(),
         // Sent when the backend changes a room's groups by itself
