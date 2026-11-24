@@ -203,6 +203,17 @@ describe("Schedule", () => {
         expect(timeLimit.className).not.toContain("truncate");
     });
 
+    it("shows long activity names in full in the mobile list", async () => {
+        renderPage();
+        await screen.findAllByText("Lunch");
+
+        // Phones have no tooltip, so a cut-off name could not be read at all
+        const name = within(screen.getByRole("list")).getByText(
+            "3x3x3 Cube · Round 1"
+        );
+        expect(name.className).not.toContain("truncate");
+    });
+
     it("links rounds to their results for delegates only", async () => {
         vi.mocked(isDelegate).mockReturnValue(true);
         renderPage();

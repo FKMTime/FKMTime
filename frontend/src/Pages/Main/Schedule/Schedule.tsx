@@ -53,14 +53,8 @@ interface Loaded {
 const isOngoing = (activity: Activity, now: Date) =>
     new Date(activity.startTime) <= now && now < new Date(activity.endTime);
 
-const ActivityName = ({
-    activity,
-    wrap = false,
-}: {
-    activity: Activity;
-    /** Wrap a long name onto more lines instead of cutting it off */
-    wrap?: boolean;
-}) => {
+/** A long name wraps onto more lines rather than being cut off */
+const ActivityName = ({ activity }: { activity: Activity }) => {
     const isOther = activity.activityCode.startsWith("other");
     return (
         <span className="flex min-w-0 items-center gap-2 font-semibold">
@@ -73,9 +67,7 @@ const ActivityName = ({
                     )}
                 />
             )}
-            <span className={wrap ? undefined : "truncate"}>
-                {getActivityName(activity).replace(", ", " · ")}
-            </span>
+            <span>{getActivityName(activity).replace(", ", " · ")}</span>
         </span>
     );
 };
@@ -316,7 +308,7 @@ const Schedule = () => {
                                 <span className="text-muted-foreground tabular-nums">
                                     {real}
                                 </span>
-                                <ActivityName activity={activity} wrap />
+                                <ActivityName activity={activity} />
                                 <span className="text-muted-foreground">
                                     {details?.format}
                                 </span>
