@@ -345,6 +345,12 @@ Done on 2026-11-23, see [Measurements](#measurements): the station thread (go) a
 with simulated stations (go, 0.9 s). Still to run: ciao, Bluetooth, `iw` and host networking,
 which need real stations and the instance on the Pi stopped.
 
+**Decided (2026-11-24): finish phase 0 before deciding on the port.** The hardware spikes
+run in a dev instance created in fim from the `dev` template, with 2–3 real stations. Other
+instances stay installed, but none can run at the same time, since the dev template also
+takes port 80 and port 8081 on the host network. The dev instance's connector is stopped
+while a spike needs port 8081, the mDNS name or the Bluetooth adapter.
+
 | Spike | Go if |
 |---|---|
 | ciao: one service per address, link brought up after start, router reboot | Real stations find it in every case, as fast as with the connector |
