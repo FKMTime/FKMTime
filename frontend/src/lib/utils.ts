@@ -376,13 +376,26 @@ export const officialResultsDestinationName = (
     }
 };
 
+/**
+ * A scramble set's letter as TNoodle and the WCA name it: A to Z, then AA,
+ * AB, … (bijective base 26), so set 27 is "AA"
+ */
 export const numberToLetter = (number: number) => {
-    return String.fromCharCode(64 + number);
+    let letters = "";
+    let rest = number;
+    while (rest > 0) {
+        letters = String.fromCharCode(65 + ((rest - 1) % 26)) + letters;
+        rest = Math.floor((rest - 1) / 26);
+    }
+    return letters;
 };
 
-export const letterToNumber = (letter: string) => {
-    return letter.charCodeAt(0) - 64;
-};
+/** A scramble set's number from its letter: A = 1, Z = 26, AA = 27 */
+export const letterToNumber = (letters: string) =>
+    [...letters.toUpperCase()].reduce(
+        (number, letter) => number * 26 + letter.charCodeAt(0) - 64,
+        0
+    );
 
 export const decryptText = (encryptedText: string, password: string) => {
     return CryptoJS.AES.decrypt(encryptedText, password).toString(

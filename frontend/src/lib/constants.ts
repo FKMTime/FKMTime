@@ -45,7 +45,17 @@ export const roundFormats = [
         numberOfAttempts: 5,
         name: "Best of 5",
     },
+    {
+        // A bracket of matches (SPEC-001): no fixed number of attempts
+        format: "h",
+        numberOfAttempts: null,
+        name: "Head to head",
+    },
 ];
+/** Unofficial events can't run head-to-head rounds */
+export const UNOFFICIAL_ROUND_FORMATS = roundFormats.filter(
+    (format) => format.format !== "h"
+);
 export const CUTOFF_ALLOWED = ["a", "m"];
 export const GITHUB_URL = "https://github.com/FKMTime/FKMTime";
 // Also read by the pre-paint theme script in index.html
