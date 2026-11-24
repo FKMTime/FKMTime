@@ -70,14 +70,23 @@ export const suggestBracketSize = (
 
 const isSuccess = (value: number) => value > 0;
 
-/** Whether a ranked result of the previous round advances (9p) */
+type Ranked = Result & { ranking: number };
+
+/**
+ * Whether a ranked result of the previous round advances: it meets the
+ * round's condition, and at least 25% of the round is eliminated (9p1).
+ * A tie that would take more than 75% of the round through drops out whole.
+ */
 const advances = (
-  result: Result & { ranking: number },
+  result: Ranked,
   condition: ResultCondition | null,
-  rankedCount: number,
+  ranked: Ranked[],
 ) => {
   if (!isSuccess(result.best)) return false;
+  const atOrAbove = ranked.filter((r) => r.ranking <= result.ranking).length;
+  if (atOrAbove > Math.floor(ranked.length * 0.75)) return false;
   if (condition === null) return true;
+  const rankedCount = ranked.length;
   switch (condition.type) {
     case 'ranking':
       return result.ranking <= condition.value;
@@ -128,7 +137,7 @@ export const seedFromPreviousRound = (
   }
   const previousName = activityCodeToName(source.round.id);
   const ranked = (source.round.results ?? []).filter(
-    (result): result is Result & { ranking: number } =>
+    (result): result is Ranked =>
       result.ranking !== null && result.ranking !== undefined,
   );
   if (ranked.length === 0) {
@@ -138,7 +147,7 @@ export const seedFromPreviousRound = (
     };
   }
   const advancing = ranked.filter((result) =>
-    advances(result, source.condition, ranked.length),
+    advances(result, source.condition, ranked),
   );
   const byRanking = new Map<number, number[]>();
   for (const result of advancing) {

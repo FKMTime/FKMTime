@@ -1,10 +1,11 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import {
     H2hBracket,
     H2hPlanRow,
     planRowChanges,
     sideLabel,
+    updateSeeds,
     validateSetsToWin,
 } from "@/lib/h2h";
 
@@ -109,5 +110,22 @@ describe("sideLabel", () => {
                 bracket
             )
         ).toBe("Winner of Quarterfinal 2");
+    });
+});
+
+describe("updateSeeds without a connection", () => {
+    it("says the server can't be reached instead of throwing", async () => {
+        const fetch = vi
+            .spyOn(globalThis, "fetch")
+            .mockRejectedValue(new TypeError("Failed to fetch"));
+        try {
+            await expect(updateSeeds("333oh-r2", [])).resolves.toEqual({
+                ok: false,
+                message:
+                    "Couldn't reach FKMTime. Check the connection and try again.",
+            });
+        } finally {
+            fetch.mockRestore();
+        }
     });
 });

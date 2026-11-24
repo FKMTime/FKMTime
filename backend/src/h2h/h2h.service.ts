@@ -261,6 +261,8 @@ export class H2hService {
     }
 
     await runInTransaction(this.prisma, async (tx) => {
+      // Before the check, so a second request at the same moment gets a 409
+      await lockBracket(tx.db, roundId);
       if (await tx.db.h2hBracket.findUnique({ where: { roundId } })) {
         throw new ConflictException('This round already has a bracket');
       }

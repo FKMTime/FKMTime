@@ -93,8 +93,9 @@ const ScramblePlanTab = ({ roundId }: ScramblePlanTabProps) => {
             <section className="flex flex-col gap-1 rounded-mobile-card border bg-card p-4 text-sm md:rounded-2xl md:p-5">
                 <p>{plan.instruction}</p>
                 <p className="text-muted-foreground">
-                    Sets are matched in match order when scrambles are imported.
-                    Sets you change here stay as you set them.
+                    Importing scrambles for this round, or deleting one of its
+                    sets, fills the rows that have no set, in match order. Rows
+                    with a set keep it.
                 </p>
                 {missing.length > 0 && (
                     <p role="status" className="text-warning">

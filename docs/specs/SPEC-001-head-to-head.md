@@ -348,10 +348,10 @@ model H2hScrambleAssignment {
 
 - **Rows.** Creating the bracket adds one row for every set a match could
   need, 2X − 1 per match (first to X sets).
-- **Automatic matching.** "Match scrambles automatically" fills the rows in
-  match order, then set order, with the round's sets in letter order. With the
-  8-player example below, QF 1 gets A, QF 2 gets B, …, and the final gets
-  sets H, I and J for its sets 1–3. This runs on its own after scrambles are
+- **Automatic matching.** FKMTime fills the rows in match order, then set
+  order, with the round's sets in letter order; there is no button for it.
+  With the 8-player example below, QF 1 gets A, QF 2 gets B, …, and the
+  final gets sets H, I and J for its sets 1–3. This runs on its own after scrambles are
   imported, or after the bracket is created, whichever comes second.
 - **Editing the plan.** The **Scrambles** tab of the bracket setup shows the
   plan as a table (Match · Set · Scramble set), and each row can be changed
@@ -409,8 +409,7 @@ The plan check needs the bracket, so it applies once the bracket exists;
 before that only the other two run. "No sets at all" means the round is in
 the file with no sets. A file without the round at all keeps the usual
 "There are no scrambles for …" warning, so a file for the other events can
-still be imported. When sets are added to a round later, only the
-scrambles-per-set check runs.
+still be imported.
 
 **On the day.** The staff Matches screen and the scrambling device show, for
 each playing match, which set is in use and which point's scramble is next
@@ -718,6 +717,7 @@ such as `10.20`.
 | `PUT /h2h/:roundId/seeds` | delegate/organiser | Reorder or replace entrants (until the first match starts) |
 | `PUT /h2h/:roundId` | delegate/organiser | Change `wcaRoundId`; change sets to win while no match of that stage has started |
 | `DELETE /h2h/:roundId` | delegate/organiser | Delete the bracket, only while no attempt is linked |
+| `PUT /h2h/:roundId/scrambles` | delegate/organiser | Change rows of the scramble plan (raced rows are locked) |
 | `POST /h2h/match/:id/start` | stage leader+ | Start a `READY` match |
 | `POST /h2h/match/:id/withdraw` | delegate | Walkover for one side before the match starts (body: side) |
 | `POST /h2h/match/:id/retire` | delegate | End a playing match for one side (body: side, comment) |
@@ -742,7 +742,7 @@ are built, its tabs are Bracket, Scrambles (the plan table from
 *Scrambles*) and Results (the existing results table). The Matches tab comes
 with the station flow (rollout step 3).
 
-It sits under the existing Results
+Once those are built, it sits under the existing Results
 tabs and has three tabs:
 
 - **Bracket:** the same bracket as the public view, plus setup (size, sets to
@@ -893,7 +893,8 @@ All copy uses task language: "Start match", "Extra granted", "Withdraw",
   `useInspection` for H2H groups.
 - **Delivery:** in PRs, each usable alone:
   1. Schema, `buildBracket`, scoring and ranking functions with unit tests.
-  2. Bracket setup and the staff Matches screen, with manual entry only.
+  2. Bracket setup: seeds, sets to win and the scramble plan. The staff
+     Matches screen moved to step 3, with the station flow.
   3. Station flow for H2H rounds.
   4. CSV export.
   5. Public bracket, scoreboard and TV.

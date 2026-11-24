@@ -220,7 +220,17 @@ const send = async (
     method: string,
     body?: unknown
 ): Promise<MutationResult> => {
-    const response = await backendRequest(path, method, true, body);
+    // Venue Wi-Fi drops: say so instead of leaving the button waiting
+    const response = await backendRequest(path, method, true, body).catch(
+        () => null
+    );
+    if (!response) {
+        return {
+            ok: false,
+            message:
+                "Couldn't reach FKMTime. Check the connection and try again.",
+        };
+    }
     if (!response.ok) {
         const data = await response.json().catch(() => null);
         const message = data?.message;

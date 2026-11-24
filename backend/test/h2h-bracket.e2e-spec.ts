@@ -173,7 +173,7 @@ describe('Head-to-head bracket setup (e2e)', () => {
       where: { registrantId: { in: registrantIds } },
       orderBy: { registrantId: 'asc' },
     });
-    expect(registered.length).toBeGreaterThanOrEqual(14);
+    expect(registered.length).toBeGreaterThanOrEqual(16);
   }, 30000);
 
   beforeEach(async () => {
@@ -203,10 +203,10 @@ describe('Head-to-head bracket setup (e2e)', () => {
   describe('creating', () => {
     it('seeds from the previous ranking, limited to who advanced, and flags a broken tie', async () => {
       const ids = registered.map((p) => found(p.registrantId, 'registrant'));
-      // 14 ranked; the 3rd place is shared; the top 12 advance
+      // 16 ranked, so 12 may advance (9p1); the 3rd place is shared
       await rankPreviousRound(
         ids
-          .slice(0, 14)
+          .slice(0, 16)
           .map((id, i): [number, number] => [id, i === 3 ? 3 : i + 1]),
       );
 
@@ -339,6 +339,14 @@ describe('Head-to-head bracket setup (e2e)', () => {
       await create({ size: 8 }).expect(409);
     });
 
+    it('refuses the second of two creates sent at once', async () => {
+      const statuses = (
+        await Promise.all([create({ size: 8 }), create({ size: 8 })])
+      ).map((res) => res.status);
+
+      expect(statuses.sort()).toEqual([201, 409]);
+    });
+
     it('is for delegates and organisers only', async () => {
       await request(server())
         .post(`/h2h/${roundId}`)
@@ -405,6 +413,10 @@ describe('Head-to-head bracket setup (e2e)', () => {
         [ids[5], 6],
         [ids[6], 7],
         [ids[7], 8],
+        // So that 8 of the round may advance (9p1)
+        [ids[8], 9],
+        [ids[9], 10],
+        [ids[10], 11],
       ]);
       const created = found(
         ((await create({ size: 8 }).expect(201)).body as View).bracket,

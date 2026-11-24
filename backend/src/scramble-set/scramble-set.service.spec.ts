@@ -20,6 +20,7 @@ describe('ScrambleSetService', () => {
               findMany: jest.fn(),
               delete: jest.fn(),
               deleteMany: jest.fn(),
+              findUnique: jest.fn().mockResolvedValue({ roundId: '333-r1' }),
             },
             // No head-to-head bracket, so no scramble plan to match
             h2hBracket: {

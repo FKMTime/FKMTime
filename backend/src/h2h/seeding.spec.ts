@@ -84,7 +84,7 @@ describe('suggestBracketSize', () => {
 
 describe('seedFromPreviousRound', () => {
   it('seeds by the previous ranking, limited to the people who advanced', () => {
-    const wcif = competition(rankedInOrder(10));
+    const wcif = competition(rankedInOrder(12));
 
     const seeding = seedFromPreviousRound('333oh-r2', wcif, 8);
 
@@ -94,7 +94,7 @@ describe('seedFromPreviousRound', () => {
   });
 
   it('orders people by ranking, not by the order of the results', () => {
-    const wcif = competition([...rankedInOrder(8)].reverse());
+    const wcif = competition([...rankedInOrder(11)].reverse());
 
     expect(ids(seedFromPreviousRound('333oh-r2', wcif, 8))).toEqual([
       1, 2, 3, 4, 5, 6, 7, 8,
@@ -102,7 +102,7 @@ describe('seedFromPreviousRound', () => {
   });
 
   it('breaks a tie randomly and flags everyone in it', () => {
-    const results = rankedInOrder(8);
+    const results = rankedInOrder(11);
     results[3].ranking = 3; // people 3 and 4 share 3rd place
     const wcif = competition(results);
 
@@ -119,7 +119,7 @@ describe('seedFromPreviousRound', () => {
   });
 
   it('leaves out people with no successful result', () => {
-    const results = rankedInOrder(4);
+    const results = rankedInOrder(6);
     results[2].best = -1;
     const wcif = competition(results, {
       type: 'ranking',
@@ -136,7 +136,7 @@ describe('seedFromPreviousRound', () => {
   });
 
   it('takes the top of the bracket when a tie lets more people advance', () => {
-    const results = rankedInOrder(9);
+    const results = rankedInOrder(12);
     results[8].ranking = 8;
     const wcif = competition(results);
 
@@ -155,11 +155,14 @@ describe('seedFromPreviousRound', () => {
       value: 60,
     });
 
-    expect(seedFromPreviousRound('333oh-r2', wcif, 12).seeds).toHaveLength(12);
+    const seeding = seedFromPreviousRound('333oh-r2', wcif, 16);
+
+    expect(ids(seeding)).toEqual(rankedInOrder(12).map((r) => r.personId));
+    expect(seeding.notice).toContain('Only 12 competitors advanced');
   });
 
   it('applies a result advancement on the chosen scope', () => {
-    const results = rankedInOrder(6).map((r) => ({
+    const results = rankedInOrder(10).map((r) => ({
       ...r,
       average: 1000 * r.personId,
     }));
@@ -169,9 +172,27 @@ describe('seedFromPreviousRound', () => {
       value: 4500,
     });
 
-    expect(ids(seedFromPreviousRound('333oh-r2', wcif, 4))).toEqual([
+    expect(ids(seedFromPreviousRound('333oh-r2', wcif, 8))).toEqual([
       1, 2, 3, 4,
     ]);
+  });
+
+  it('lets at most 75% of the previous round through (9p1)', () => {
+    const wcif = competition(rankedInOrder(10));
+
+    const seeding = seedFromPreviousRound('333oh-r2', wcif, 8);
+
+    expect(ids(seeding)).toEqual([1, 2, 3, 4, 5, 6, 7]);
+    expect(seeding.notice).toContain('Only 7 competitors advanced');
+  });
+
+  it('drops a tie that would take more than 75% of the round through', () => {
+    const results = rankedInOrder(8);
+    results[6].ranking = 6; // people 6 and 7 share 6th place; 6 may advance
+
+    const seeding = seedFromPreviousRound('333oh-r2', competition(results), 8);
+
+    expect(ids(seeding)).toEqual([1, 2, 3, 4, 5]);
   });
 
   it('gives no seeds, and says so, when the previous round has no ranking', () => {
@@ -202,7 +223,7 @@ describe('seedFromPreviousRound', () => {
   });
 
   it('falls back to the round before when the WCIF has no participation ruleset', () => {
-    const wcif = competition(rankedInOrder(4), null, {
+    const wcif = competition(rankedInOrder(6), null, {
       participationRuleset: null,
     });
 

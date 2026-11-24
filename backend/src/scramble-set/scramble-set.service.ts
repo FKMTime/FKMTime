@@ -1,7 +1,7 @@
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { activityCodeToName } from '@wca/helpers';
 import { DbService } from 'src/db/db.service';
-import { rematchScramblePlan } from 'src/h2h/bracketStore';
+import { lockBracket, rematchScramblePlan } from 'src/h2h/bracketStore';
 
 import { ImportScramblesDto } from './dto/import-scrambles.dto';
 
@@ -89,14 +89,21 @@ export class ScrambleSetService {
 
   async deleteScrambleSet(id: string) {
     await this.prisma.$transaction(async (tx) => {
+      const set = await tx.scrambleSet.findUnique({
+        where: { id },
+        select: { roundId: true },
+      });
+      // Before the delete clears its plan row, in the order a plan edit
+      // takes them, so the two can't deadlock
+      if (set) await lockBracket(tx, set.roundId);
       // An unknown id throws P2025, which the global filter turns into a 404
-      const { roundId } = await tx.scrambleSet.delete({
+      await tx.scrambleSet.delete({
         where: {
           id,
         },
       });
       // The plan row it was in takes a spare set, if there is one
-      await rematchScramblePlan(tx, roundId);
+      if (set) await rematchScramblePlan(tx, set.roundId);
     });
     return {
       message: 'Scramble set deleted successfully',
@@ -105,6 +112,7 @@ export class ScrambleSetService {
 
   async deleteScrambleSetsByRoundId(roundId: string) {
     await this.prisma.$transaction(async (tx) => {
+      await lockBracket(tx, roundId);
       await tx.scrambleSet.deleteMany({
         where: {
           roundId,
@@ -119,10 +127,12 @@ export class ScrambleSetService {
 
   async deleteAllScrambleSets() {
     await this.prisma.$transaction(async (tx) => {
-      await tx.scrambleSet.deleteMany();
       const brackets = await tx.h2hBracket.findMany({
         select: { roundId: true },
+        orderBy: { roundId: 'asc' },
       });
+      for (const { roundId } of brackets) await lockBracket(tx, roundId);
+      await tx.scrambleSet.deleteMany();
       for (const { roundId } of brackets) {
         await rematchScramblePlan(tx, roundId);
       }
