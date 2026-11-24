@@ -570,12 +570,19 @@ export class ResultFromDeviceService {
       // A device still showing a scramble whose solve the station has since
       // entered. Numbers are never reused, so a new scrambled attempt would
       // sit next to the solved one for good
-      const alreadyEntered = new HttpException(
-        `${data.isExtra ? 'Extra' : 'Attempt'} ${data.attemptNumber} was already entered`,
-        HttpStatus.CONFLICT,
-      );
+      // The key tells this refusal apart from other conflicts on this
+      // endpoint, such as a competitor removed from the round
+      const alreadyEntered = () =>
+        new HttpException(
+          {
+            statusCode: HttpStatus.CONFLICT,
+            key: 'attemptAlreadyEntered',
+            message: `${data.isExtra ? 'Extra' : 'Attempt'} ${data.attemptNumber} was already entered`,
+          },
+          HttpStatus.CONFLICT,
+        );
       if (existing.some((a) => a.status !== AttemptStatus.SCRAMBLED)) {
-        throw alreadyEntered;
+        throw alreadyEntered();
       }
       const signed = {
         scramblerId: data.scramblerId,
@@ -590,7 +597,7 @@ export class ResultFromDeviceService {
           data: signed,
         });
         if (count === 0) {
-          throw alreadyEntered;
+          throw alreadyEntered();
         }
         return tx.db.attempt.findUniqueOrThrow({ where: { id: scrambled.id } });
       }

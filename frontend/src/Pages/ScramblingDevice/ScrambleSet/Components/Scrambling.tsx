@@ -96,7 +96,10 @@ const Scrambling = ({ roundId, groupId, scrambles }: ScramblingProps) => {
         if (response.status === 201) {
             setLastSigned(`${competitor.person.name} · ${scrambleName}`);
             setCompetitor(null);
-        } else if (response.status === 409) {
+        } else if (
+            response.status === 409 &&
+            response.data?.key === "attemptAlreadyEntered"
+        ) {
             // The station entered this solve after the card was scanned
             playScanSound("error");
             setCompetitor(null);

@@ -629,7 +629,10 @@ describe('Scrambling device flow (e2e)', () => {
         })
         .expect(409);
 
-      expect(res.body.message).toBe('Attempt 1 was already entered');
+      expect(res.body).toMatchObject({
+        key: 'attemptAlreadyEntered',
+        message: 'Attempt 1 was already entered',
+      });
       const attempts = await db.attempt.findMany({
         where: {
           result: { personId: competitor.id, roundId: ROUND_ID },
@@ -697,10 +700,36 @@ describe('Scrambling device flow (e2e)', () => {
         })
         .expect(409);
 
-      expect(res.body.message).toBe('Extra 1 was already entered');
+      expect(res.body).toMatchObject({
+        key: 'attemptAlreadyEntered',
+        message: 'Extra 1 was already entered',
+      });
       expect(await scrambledAttempts(AttemptType.EXTRA_ATTEMPT)).toHaveLength(
         0,
       );
+    });
+
+    it('answers a sign for a removed competitor without the already-entered key', async () => {
+      await db.result.updateMany({
+        where: { personId: competitor.id, roundId: ROUND_ID },
+        data: { removedAt: new Date() },
+      });
+
+      const res = await asDevice(request(server()).post('/scrambling/scramble'))
+        .send({
+          personId: competitor.id,
+          scramblerId: scrambler.id,
+          roundId: ROUND_ID,
+          attemptNumber: 2,
+          isExtra: true,
+        })
+        .expect(409);
+
+      expect(res.body.key).toBeUndefined();
+      await db.result.updateMany({
+        where: { personId: competitor.id, roundId: ROUND_ID },
+        data: { removedAt: null },
+      });
     });
 
     it('signals that no attempts are left after the last one', async () => {

@@ -273,7 +273,10 @@ describe("Scrambling", () => {
         });
         vi.mocked(createScrambledAttempt).mockResolvedValue({
             status: 409,
-            data: { message: "Attempt 1 was already entered" },
+            data: {
+                key: "attemptAlreadyEntered",
+                message: "Attempt 1 was already entered",
+            },
         });
         renderScrambling();
         scan("Scan the scrambler's card", "100");
@@ -290,6 +293,30 @@ describe("Scrambling", () => {
             screen.getByLabelText("Scan the competitor's card")
         ).toBeTruthy();
         expect(screen.queryByRole("status")).toBeNull();
+    });
+
+    it("keeps the scramble on screen for any other refused sign", async () => {
+        vi.mocked(getPersonByCardId).mockResolvedValue(scrambler);
+        vi.mocked(getScrambleData).mockResolvedValue({
+            status: 200,
+            data: {
+                person: competitor,
+                scrambleData: { num: 1, isExtra: false },
+            },
+        });
+        vi.mocked(createScrambledAttempt).mockResolvedValue({
+            status: 409,
+            data: { message: "Removed from this round (Regulation 9t)" },
+        });
+        renderScrambling();
+        scan("Scan the scrambler's card", "100");
+        await screen.findByText("Sam Scrambler");
+        scan("Scan the competitor's card", "200");
+        fireEvent.click(await screen.findByRole("button", { name: "Sign" }));
+
+        await waitFor(() => expect(createScrambledAttempt).toHaveBeenCalled());
+        expect(await screen.findByText("Casey Competitor")).toBeTruthy();
+        expect(screen.queryByText(/was already solved/)).toBeNull();
     });
 
     it("scans for the set's round even when no group runs in this room", async () => {
