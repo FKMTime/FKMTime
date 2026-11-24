@@ -7,16 +7,21 @@ import { cn } from "@/lib/utils";
 
 import {
     getActivePublicNavId,
+    getPublicNavItems,
     getShortRoundLabel,
-    PUBLIC_NAV_ITEMS,
 } from "./publicNavigation";
 
 interface PublicSidebarProps {
     /** Shown as sub-items under Results */
     liveRoundIds: string[];
+    /** Head-to-head rounds, each with a Bracket item after Results */
+    h2hRoundIds?: string[];
 }
 
-const PublicSidebar = ({ liveRoundIds }: PublicSidebarProps) => {
+const PublicSidebar = ({
+    liveRoundIds,
+    h2hRoundIds = [],
+}: PublicSidebarProps) => {
     const { pathname } = useLocation();
     const activeId = getActivePublicNavId(pathname);
     const roundId = matchPath("/public/results/:id", pathname)?.params.id;
@@ -33,75 +38,80 @@ const PublicSidebar = ({ liveRoundIds }: PublicSidebarProps) => {
                 <span className="px-2.5 pb-1.5 pt-1 text-xs font-semibold text-faint">
                     Public display
                 </span>
-                {PUBLIC_NAV_ITEMS.map(({ id, label, icon: Icon, to }) => {
-                    const isActive = id === activeId;
-                    const rounds = id === "results" ? liveRoundIds : [];
-                    return (
-                        <div key={id} className="flex flex-col gap-0.5">
-                            <Link
-                                to={to}
-                                aria-current={
-                                    isActive && !roundId ? "page" : undefined
-                                }
-                                className={cn(
-                                    "flex h-[38px] items-center gap-2.5 rounded-lg px-2.5 text-sm transition-colors",
-                                    isActive
-                                        ? "bg-primary-soft font-semibold text-primary"
-                                        : "font-medium text-foreground hover:bg-accent"
-                                )}
-                            >
-                                <Icon
+                {getPublicNavItems(h2hRoundIds).map(
+                    ({ id, label, icon: Icon, to }) => {
+                        const isActive = id === activeId;
+                        const rounds = id === "results" ? liveRoundIds : [];
+                        return (
+                            <div key={id} className="flex flex-col gap-0.5">
+                                <Link
+                                    to={to}
+                                    aria-current={
+                                        isActive && !roundId
+                                            ? "page"
+                                            : undefined
+                                    }
                                     className={cn(
-                                        "size-5 shrink-0",
-                                        isActive && "fill-primary/20"
+                                        "flex h-[38px] items-center gap-2.5 rounded-lg px-2.5 text-sm transition-colors",
+                                        isActive
+                                            ? "bg-primary-soft font-semibold text-primary"
+                                            : "font-medium text-foreground hover:bg-accent"
                                     )}
-                                    strokeWidth={isActive ? 2.25 : 2}
-                                />
-                                {label}
-                            </Link>
-                            {rounds.length > 0 && (
-                                <div className="mb-1 ml-5 mt-0.5 flex flex-col gap-0.5 border-l pl-2.5">
-                                    {rounds.map((liveRoundId) => {
-                                        const isRoundActive =
-                                            isActive && liveRoundId === roundId;
-                                        return (
-                                            <Link
-                                                key={liveRoundId}
-                                                to={`/public/results/${liveRoundId}`}
-                                                aria-current={
-                                                    isRoundActive
-                                                        ? "page"
-                                                        : undefined
-                                                }
-                                                className={cn(
-                                                    "flex h-[34px] items-center gap-2 rounded-lg px-2.5 text-[13px] transition-colors",
-                                                    isRoundActive
-                                                        ? "bg-primary-soft font-semibold text-primary"
-                                                        : "font-medium text-foreground hover:bg-accent"
-                                                )}
-                                            >
-                                                <span
-                                                    aria-hidden
+                                >
+                                    <Icon
+                                        className={cn(
+                                            "size-5 shrink-0",
+                                            isActive && "fill-primary/20"
+                                        )}
+                                        strokeWidth={isActive ? 2.25 : 2}
+                                    />
+                                    {label}
+                                </Link>
+                                {rounds.length > 0 && (
+                                    <div className="mb-1 ml-5 mt-0.5 flex flex-col gap-0.5 border-l pl-2.5">
+                                        {rounds.map((liveRoundId) => {
+                                            const isRoundActive =
+                                                isActive &&
+                                                liveRoundId === roundId;
+                                            return (
+                                                <Link
+                                                    key={liveRoundId}
+                                                    to={`/public/results/${liveRoundId}`}
+                                                    aria-current={
+                                                        isRoundActive
+                                                            ? "page"
+                                                            : undefined
+                                                    }
                                                     className={cn(
-                                                        "cubing-icon text-[15px]",
-                                                        getEventIconClass(
-                                                            liveRoundId.split(
-                                                                "-"
-                                                            )[0]
-                                                        )
+                                                        "flex h-[34px] items-center gap-2 rounded-lg px-2.5 text-[13px] transition-colors",
+                                                        isRoundActive
+                                                            ? "bg-primary-soft font-semibold text-primary"
+                                                            : "font-medium text-foreground hover:bg-accent"
                                                     )}
-                                                />
-                                                {getShortRoundLabel(
-                                                    liveRoundId
-                                                )}
-                                            </Link>
-                                        );
-                                    })}
-                                </div>
-                            )}
-                        </div>
-                    );
-                })}
+                                                >
+                                                    <span
+                                                        aria-hidden
+                                                        className={cn(
+                                                            "cubing-icon text-[15px]",
+                                                            getEventIconClass(
+                                                                liveRoundId.split(
+                                                                    "-"
+                                                                )[0]
+                                                            )
+                                                        )}
+                                                    />
+                                                    {getShortRoundLabel(
+                                                        liveRoundId
+                                                    )}
+                                                </Link>
+                                            );
+                                        })}
+                                    </div>
+                                )}
+                            </div>
+                        );
+                    }
+                )}
             </nav>
             <div className="flex flex-col gap-0.5 border-t p-3">
                 <Link
