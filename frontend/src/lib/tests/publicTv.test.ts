@@ -12,6 +12,38 @@ describe("public TV view", () => {
         expect(getTvSlides([])).toEqual([{ type: "live" }]);
     });
 
+    it("leads with a head-to-head round's bracket between its matches", () => {
+        expect(
+            getTvSlides(
+                ["333-r1", "333oh-r2"],
+                [{ roundId: "333oh-r2", playingMatchNumbers: [] }]
+            )
+        ).toEqual([
+            { type: "h2hBracket", roundId: "333oh-r2" },
+            { type: "live" },
+            { type: "results", roundId: "333-r1" },
+        ]);
+    });
+
+    it("replaces the rotation with the scoreboard while a match is played", () => {
+        expect(
+            getTvSlides(
+                ["333-r1", "333oh-r2"],
+                [{ roundId: "333oh-r2", playingMatchNumbers: [5] }]
+            )
+        ).toEqual([{ type: "h2hMatch", roundId: "333oh-r2", matchNumber: 5 }]);
+        // Two matches at once take turns
+        expect(
+            getTvSlides(
+                ["333oh-r2"],
+                [{ roundId: "333oh-r2", playingMatchNumbers: [1, 2] }]
+            )
+        ).toEqual([
+            { type: "h2hMatch", roundId: "333oh-r2", matchNumber: 1 },
+            { type: "h2hMatch", roundId: "333oh-r2", matchNumber: 2 },
+        ]);
+    });
+
     it("steps through slides and wraps around both ways", () => {
         expect(stepSlide(0, 3)).toBe(1);
         expect(stepSlide(2, 3)).toBe(0);

@@ -3,6 +3,8 @@ import { useAtom } from "jotai";
 import { Maximize } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
+import H2hBracket from "@/Components/h2h/H2hBracket";
+import H2hScoreboard from "@/Components/h2h/H2hScoreboard";
 import LoadingPage from "@/Components/LoadingPage";
 import LiveSolvingBoard from "@/Components/shared/LiveSolvingBoard";
 import { StatusDot } from "@/Components/shared/StatusBadge";
@@ -16,14 +18,22 @@ import { useWakeLock } from "@/hooks/useWakeLock";
 import { competitionAtom } from "@/lib/atoms";
 import { getPublicCompetitionInfo, publicRoomsQuery } from "@/lib/competition";
 import { getEventIconClass, getEventName, getEvents } from "@/lib/events";
+import { playingMatches, publicH2hQuery } from "@/lib/h2hPublic";
 import { StationInfo } from "@/lib/liveSolving";
-import { getTvSlides, getTvZoom, stepSlide, TV_SLIDE_MS } from "@/lib/publicTv";
+import {
+    getTvSlides,
+    getTvZoom,
+    stepSlide,
+    TV_SLIDE_MS,
+    TvH2hRound,
+} from "@/lib/publicTv";
 import { toQueryOptions } from "@/lib/queryCache";
 import { publicRoundResultsQuery } from "@/lib/results";
 import { formatClockTime, formatElapsed } from "@/lib/time";
 import { cn } from "@/lib/utils";
 import { socket } from "@/socket";
 
+import { getH2hRoundIds } from "../publicNavigation";
 import TvResultsSlide from "./TvResultsSlide";
 
 const ROOMS_REFRESH_MS = 60_000;
@@ -66,7 +76,35 @@ const PublicTv = () => {
         ],
         [rooms]
     );
-    const slides = useMemo(() => getTvSlides(liveRoundIds), [liveRoundIds]);
+    // A head-to-head round in progress: its bracket, or the match on stage.
+    // One at a time, as a venue runs one such round at once.
+    const h2hRoundId =
+        liveRoundIds.find((id) =>
+            getH2hRoundIds(competition?.wcif).includes(id)
+        ) ?? null;
+    const h2hQuery = publicH2hQuery(h2hRoundId ?? "");
+    const { data: h2hView, dataUpdatedAt: h2hUpdatedAt } = useLiveQuery(
+        h2hQuery,
+        { enabled: !!h2hRoundId }
+    );
+    const h2hRounds = useMemo<TvH2hRound[]>(
+        () =>
+            h2hRoundId && h2hView?.roundId === h2hRoundId
+                ? [
+                      {
+                          roundId: h2hRoundId,
+                          playingMatchNumbers: playingMatches(h2hView).map(
+                              (match) => match.matchNumber
+                          ),
+                      },
+                  ]
+                : [],
+        [h2hRoundId, h2hView]
+    );
+    const slides = useMemo(
+        () => getTvSlides(liveRoundIds, h2hRounds),
+        [liveRoundIds, h2hRounds]
+    );
     const slide = slides[stepSlide(slideIndex, slides.length, 0)];
     const roundId = slide.type === "results" ? slide.roundId : null;
 
@@ -95,6 +133,10 @@ const PublicTv = () => {
     useSocketRoom(roundId ? "Results" : null, {
         params: { roundId: roundId ?? "" },
         invalidateOn: { resultEntered: [resultsQuery.key] },
+    });
+    useSocketRoom(h2hRoundId ? "H2h" : null, {
+        params: { roundId: h2hRoundId ?? "" },
+        invalidateOn: { h2hUpdated: [h2hQuery.key] },
     });
     useSocketEvents({
         currentStations: (data) => {
@@ -126,7 +168,12 @@ const PublicTv = () => {
 
     // The newest of anything that arrived: stations, rooms or results
     const lastUpdate = new Date(
-        Math.max(stationsUpdatedAt, roomsUpdatedAt, resultsUpdatedAt)
+        Math.max(
+            stationsUpdatedAt,
+            roomsUpdatedAt,
+            resultsUpdatedAt,
+            h2hUpdatedAt
+        )
     );
 
     // Rotation, clock, arrow keys and screen size
@@ -185,8 +232,11 @@ const PublicTv = () => {
 
     if (!competition) return <LoadingPage />;
 
-    const eventId =
-        slide.type === "results" ? slide.roundId.split("-r")[0] : "";
+    const eventId = slide.type === "live" ? "" : slide.roundId.split("-r")[0];
+    const h2hMatch =
+        slide.type === "h2hMatch"
+            ? h2hView?.matches.find((m) => m.matchNumber === slide.matchNumber)
+            : undefined;
     const title =
         slide.type === "live"
             ? "Live solving"
@@ -252,7 +302,24 @@ const PublicTv = () => {
                     </span>
                 </header>
 
-                {slide.type === "live" ? (
+                {slide.type === "h2hMatch" ? (
+                    h2hView &&
+                    h2hMatch && (
+                        <H2hScoreboard
+                            view={h2hView}
+                            match={h2hMatch}
+                            stations={Array.from(stations.values())}
+                        />
+                    )
+                ) : slide.type === "h2hBracket" ? (
+                    h2hView && (
+                        <H2hBracket
+                            view={h2hView}
+                            narrow={false}
+                            fit={{ width: 1200, height: 560 }}
+                        />
+                    )
+                ) : slide.type === "live" ? (
                     <div className="[&_h2]:text-2xl">
                         <LiveSolvingBoard
                             stations={Array.from(stations.values())}
