@@ -1003,6 +1003,50 @@ describe('Head-to-head match exceptions (e2e)', () => {
       expect(await waitingForExtra(semi.b)).toHaveLength(0);
     });
 
+    it('counts points found after the end again once an edit means the set reaches them', async () => {
+      await setUpBracket({ SEMIFINAL: 2, THIRD_PLACE: 2, FINAL: 2 });
+      const semi = await sides(1);
+      await start(semi.id);
+      // Set 1 to B; set 2 goes A, A, B, B, B, and B wins the match
+      for (let i = 0; i < 3; i++) await point(semi.a, semi.b, 1200, 1100);
+      await point(semi.a, semi.b, 1000, 1100);
+      await point(semi.a, semi.b, 1000, 1100);
+      for (let i = 0; i < 3; i++) await point(semi.a, semi.b, 1200, 1100);
+      expect(matchOf(await getView(), 1).winnerSide).toBe('B');
+      // B's point 3 in set 2 is made a DNF, and the match reopened
+      const third = found(
+        pointsOf(matchOf(await getView(), 1), 2)[2].attemptB,
+        'attempt',
+      );
+      await edit(third, { penalty: -1 }).expect(200);
+      await reopen(semi.id, 'Point 3 looked like a DNF').expect(200);
+      const reopened = matchOf(await getView(), 1);
+      expect(reopened.status).toBe('IN_PROGRESS');
+      expect(pointsOf(reopened, 2).map((p) => p.afterEnd)).toEqual([
+        false,
+        false,
+        false,
+        true,
+        true,
+      ]);
+
+      // It wasn't: put back before set 3 is raced, set 2 is B's 3-2 again
+      await edit(third, { penalty: 0 }).expect(200);
+
+      const after = matchOf(await getView(), 1);
+      expect(after).toMatchObject({ status: 'FINISHED', winnerSide: 'B' });
+      expect(after.sets.map((set) => set.winnerSide)).toEqual(['B', 'B']);
+      expect(pointsOf(after, 2).map((p) => [p.winnerSide, p.afterEnd])).toEqual(
+        [
+          ['A', false],
+          ['A', false],
+          ['B', false],
+          ['B', false],
+          ['B', false],
+        ],
+      );
+    });
+
     it('still refuses a mid-match edit that ends a set early once reopened', async () => {
       await setUpBracket();
       const semi = await sides(1);

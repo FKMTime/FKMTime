@@ -141,7 +141,6 @@ const SetLog = ({
     onEnter: (competitor: Competitor) => void;
     /** The point that can get an extra: the last one raced, both results in */
     extraPointId?: string | null;
-
     onExtra?: (point: H2hPoint) => void;
 }) => {
     const won = pointsWon(set);

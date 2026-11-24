@@ -286,30 +286,39 @@ describe('scoreMatch', () => {
     ).toThrow(MatchConflict);
   });
 
-  describe('ignoring what was raced after the end (reopening)', () => {
+  describe('points that may come after the end (reopening)', () => {
+    /** Every point may be surplus, as when a match is reopened */
+    const reopening = (sets: MatchInput['sets']) =>
+      sets.map((set) => ({
+        ...set,
+        points: set.points.map((p) => ({ ...p, maySurplus: true })),
+      }));
+
     it('leaves points after the set was over without a winner', () => {
-      const score = scoreMatch({
-        ...input([
-          {
-            setNumber: 1,
-            points: [won(A, 1), won(A, 2), won(A, 3), won(B, 4)],
-          },
-        ]),
-        ignoreSurplus: true,
-      });
+      const score = scoreMatch(
+        input(
+          reopening([
+            {
+              setNumber: 1,
+              points: [won(A, 1), won(A, 2), won(A, 3), won(B, 4)],
+            },
+          ]),
+        ),
+      );
       expect(score.winner).toBe(A);
       expect([...score.sets[0].pointWinners.keys()]).toEqual([1, 2, 3]);
       expect([...score.sets[0].afterEnd]).toEqual([4]);
     });
 
     it('leaves sets after the match was over without winners', () => {
-      const score = scoreMatch({
-        ...input([
-          { setNumber: 1, points: [won(A, 1), won(A, 2), won(A, 3)] },
-          { setNumber: 2, points: [won(B, 1), won(B, 2), won(B, 3)] },
-        ]),
-        ignoreSurplus: true,
-      });
+      const score = scoreMatch(
+        input(
+          reopening([
+            { setNumber: 1, points: [won(A, 1), won(A, 2), won(A, 3)] },
+            { setNumber: 2, points: [won(B, 1), won(B, 2), won(B, 3)] },
+          ]),
+        ),
+      );
       expect(score.winner).toBe(A);
       expect(score.nextSetNumber).toBeNull();
       expect(score.sets[1]).toMatchObject({ outcome: null });
@@ -318,19 +327,100 @@ describe('scoreMatch', () => {
       expect(score.sets[0].afterEnd.size).toBe(0);
     });
 
+    it('counts a point found after the end again once its set reaches it', () => {
+      // Point 3 was a DNF for B, then corrected back: B wins 3-2
+      const score = scoreMatch(
+        input([
+          {
+            setNumber: 1,
+            points: [
+              won(A, 1),
+              won(A, 2),
+              won(B, 3),
+              { ...won(B, 4), maySurplus: true },
+              { ...won(B, 5), maySurplus: true },
+            ],
+          },
+        ]),
+      );
+      expect(score.winner).toBe(B);
+      expect(score.sets[0].afterEnd.size).toBe(0);
+      expect(score.sets[0].pointWinners.get(5)).toBe(B);
+    });
+
+    it('still refuses a point after the end that may not be surplus', () => {
+      expect(() =>
+        scoreMatch(
+          input([
+            {
+              setNumber: 1,
+              points: [
+                won(A, 1),
+                won(A, 2),
+                won(A, 3),
+                { ...won(B, 4), maySurplus: true },
+                won(B, 5),
+              ],
+            },
+          ]),
+        ),
+      ).toThrow(
+        new MatchConflict(
+          'Set 1 would be over after point 3, but point 5 has a result too. Check the times.',
+        ),
+      );
+    });
+
     it('still refuses a set started while the one before would be going on', () => {
       expect(() =>
-        scoreMatch({
-          ...input(
-            [
+        scoreMatch(
+          input(
+            reopening([
               { setNumber: 1, points: [won(A, 1), won(A, 2), won(B, 3)] },
               { setNumber: 2, points: [won(B, 1)] },
-            ],
+            ]),
             2,
           ),
-          ignoreSurplus: true,
-        }),
+        ),
       ).toThrow(MatchConflict);
+    });
+
+    it('leaves points after the end out of the tie-breaks of later sets', () => {
+      // Set 1's point 4 came after the end; B's 5.00 on it would win set
+      // 2's tie-break on the best single in the match
+      const score = scoreMatch(
+        input(
+          [
+            {
+              setNumber: 1,
+              points: [
+                won(A, 1),
+                won(A, 2),
+                won(A, 3),
+                { ...point(4, 1100, 500), maySurplus: true },
+              ],
+            },
+            {
+              setNumber: 2,
+              points: [
+                won(A, 1),
+                won(B, 2),
+                won(A, 3),
+                won(B, 4),
+                point(5, -1, -1),
+                point(6, 1200, 1200),
+                point(7, -2, -1),
+              ],
+            },
+          ],
+          2,
+        ),
+      );
+      expect(score.sets[0].afterEnd).toEqual(new Set([4]));
+      expect(score.sets[1].outcome?.decidedBy).not.toBe(
+        H2hSetDecision.BEST_IN_MATCH,
+      );
+      expect(score.winner).toBe(A);
     });
   });
 });

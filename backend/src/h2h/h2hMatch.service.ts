@@ -384,8 +384,9 @@ export class H2hMatchService {
    * When `reopening` a match on times amended after it, points raced after
    * their set or the match was over don't count rather than being refused:
    * they were raced, and the delegate can't take them back. They are marked
-   * `afterEnd`, and left out of every later decision, which refuses a new
-   * point after a set's end as before.
+   * `afterEnd`. Later decisions accept those points after an end too, and
+   * count one again once an edit means its set reaches it; any other point
+   * after a set's end is refused as before.
    */
   async settle(db: Db, matchId: string, options: { reopening?: boolean } = {}) {
     const reopening = options.reopening ?? false;
@@ -394,9 +395,6 @@ export class H2hMatchService {
       include: matchInclude,
     });
     if (match.status !== H2hMatchStatus.IN_PROGRESS) return;
-    // Reopening decides every point again, those found after the end before
-    const counts = (point: { afterEnd: boolean }) =>
-      reopening || !point.afterEnd;
     const { entrantA, entrantB } = match;
     if (!entrantA || !entrantB) {
       throw new Error(`Match ${matchId} is playing without both competitors`);
@@ -411,14 +409,14 @@ export class H2hMatchService {
         seeds: { a: entrantA.seed, b: entrantB.seed },
         sets: raced.map((set) => ({
           setNumber: set.setNumber,
-          points: set.points.filter(counts).map((point) => ({
+          points: set.points.map((point) => ({
             pointNumber: point.pointNumber,
             a: resultOf(point.attemptA),
             b: resultOf(point.attemptB),
+            maySurplus: reopening || point.afterEnd,
           })),
         })),
         otherMatchResults: await this.otherMatchResults(db, match),
-        ignoreSurplus: reopening,
       });
     } catch (e) {
       if (e instanceof MatchConflict) throw new ConflictException(e.message);
@@ -428,7 +426,7 @@ export class H2hMatchService {
     const now = new Date();
     for (const set of raced) {
       const scored = score.sets.find((s) => s.setNumber === set.setNumber);
-      for (const point of set.points.filter(counts)) {
+      for (const point of set.points) {
         const decided = scored?.pointWinners.has(point.pointNumber) ?? false;
         const winnerSide = scored?.pointWinners.get(point.pointNumber) ?? null;
         const afterEnd = scored?.afterEnd.has(point.pointNumber) ?? false;
@@ -519,6 +517,9 @@ export class H2hMatchService {
             OR: [{ endedBy: null }, { endedBy: { not: H2hMatchEnd.WALKOVER } }],
           },
         },
+        // Nor does a point raced after its set or match was over, as in
+        // the match's own tie-breaks
+        afterEnd: false,
       },
       include: {
         set: {

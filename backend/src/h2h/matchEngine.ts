@@ -134,6 +134,13 @@ export interface ScoredPointInput {
   pointNumber: number;
   a: number | null;
   b: number | null;
+  /**
+   * May have been raced after its set or the match was over, and then
+   * doesn't count instead of being refused: any point when a match is
+   * reopened on amended times, and later the points that reopening found
+   * after the end. A point its set reaches again counts as any other.
+   */
+  maySurplus?: boolean;
 }
 
 export interface ScoredSetInput {
@@ -148,12 +155,6 @@ export interface MatchInput {
   sets: ScoredSetInput[];
   /** Each side's results in the round's other matches */
   otherMatchResults: { a: number[]; b: number[] };
-  /**
-   * Points raced after their set was over, and sets raced after the match
-   * was, don't count instead of being refused: reopening a match whose
-   * times were amended (the 11l exception) can end a set earlier
-   */
-  ignoreSurplus?: boolean;
 }
 
 export interface SetScore {
@@ -162,8 +163,8 @@ export interface SetScore {
   pointWinners: Map<number, H2hSide | null>;
   outcome: { winner: H2hSide; decidedBy: H2hSetDecision } | null;
   /**
-   * With `ignoreSurplus`: the points raced after the set or the match was
-   * over, which don't count. Empty otherwise.
+   * Points raced after the set or the match was over, which don't count;
+   * only ever `maySurplus` ones
    */
   afterEnd: Set<number>;
 }
@@ -185,42 +186,50 @@ const resultsOf = (sets: ScoredSetInput[], side: 'a' | 'b') =>
  * set's (I3b, I3e) and the match's (I3a). Re-run after any attempt in an
  * unfinished match changes, so a typo fixed mid-match re-decides it.
  * Throws a MatchConflict when the points no longer fit the sets played:
- * points after a set would have ended (unless `ignoreSurplus`), or a set
+ * points after a set would have ended (unless `maySurplus`), or a set
  * started after one that would still be going on.
  */
 export const scoreMatch = (input: MatchInput): MatchScore => {
   const sets: SetScore[] = [];
+  /**
+   * Each side's results in the sets scored so far, for the tie-breaks:
+   * points after an end don't count there either
+   */
+  const counted = { a: [] as number[], b: [] as number[] };
+  let overAfter: number | null = null;
   input.sets.forEach((set, index) => {
     const isLast = index === input.sets.length - 1;
-    const over = decideMatch(
-      sets.map((s) => s.outcome?.winner ?? null),
-      input.setsToWin,
+    const sorted = [...set.points].sort(
+      (x, y) => x.pointNumber - y.pointNumber,
     );
-    if (over !== null && input.ignoreSurplus) {
+    if (overAfter !== null) {
       // Raced after the match was over: the set doesn't count
+      if (sorted.some((point) => !point.maySurplus)) {
+        throw new MatchConflict(
+          `The match would be over after set ${overAfter}, but set ${set.setNumber} has been played. Check the times.`,
+        );
+      }
       sets.push({
         setNumber: set.setNumber,
         pointWinners: new Map(),
         outcome: null,
-        afterEnd: new Set(set.points.map((point) => point.pointNumber)),
+        afterEnd: new Set(sorted.map((point) => point.pointNumber)),
       });
       return;
     }
-    const sorted = [...set.points].sort(
-      (x, y) => x.pointNumber - y.pointNumber,
-    );
     const pointWinners = new Map<number, H2hSide | null>();
     const played: PlayedPoint[] = [];
-    const matchSoFar = input.sets.slice(0, index + 1);
-    const matchResults = {
-      a: resultsOf(matchSoFar, 'a'),
-      b: resultsOf(matchSoFar, 'b'),
-    };
-    let outcome: SetScore['outcome'] = null;
     const afterEnd = new Set<number>();
+    let outcome: SetScore['outcome'] = null;
+    let decidedAt = 0;
     for (const [i, point] of sorted.entries()) {
-      // Raced after the set was over: no winner, it doesn't count
-      if (outcome && input.ignoreSurplus) {
+      if (outcome) {
+        // Raced after the set was over: no winner, it doesn't count
+        if (!point.maySurplus) {
+          throw new MatchConflict(
+            `Set ${set.setNumber} would be over after point ${decidedAt}, but point ${point.pointNumber} has a result too. Check the times.`,
+          );
+        }
         afterEnd.add(point.pointNumber);
         continue;
       }
@@ -228,7 +237,11 @@ export const scoreMatch = (input: MatchInput): MatchScore => {
       const winner = decidePoint(point.a, point.b);
       pointWinners.set(point.pointNumber, winner);
       played.push({ a: point.a, b: point.b, winner });
-      if (outcome) continue;
+      const upToHere = sorted.slice(0, i + 1);
+      const matchResults = {
+        a: [...counted.a, ...resultsOf([{ ...set, points: upToHere }], 'a')],
+        b: [...counted.b, ...resultsOf([{ ...set, points: upToHere }], 'b')],
+      };
       outcome = decideSet({
         points: played,
         matchResults,
@@ -238,36 +251,31 @@ export const scoreMatch = (input: MatchInput): MatchScore => {
         },
         seeds: input.seeds,
       });
-      if (outcome && i < sorted.length - 1 && !input.ignoreSurplus) {
-        throw new MatchConflict(
-          `Set ${set.setNumber} would be over after point ${point.pointNumber}, but point ${sorted[i + 1].pointNumber} has a result too. Check the times.`,
-        );
-      }
+      if (outcome) decidedAt = point.pointNumber;
     }
     if (!outcome && !isLast) {
       throw new MatchConflict(
         `Set ${set.setNumber} would not be over yet, but set ${input.sets[index + 1].setNumber} has started. Check the times.`,
       );
     }
+    const kept = sorted.filter((point) => !afterEnd.has(point.pointNumber));
+    counted.a.push(...resultsOf([{ ...set, points: kept }], 'a'));
+    counted.b.push(...resultsOf([{ ...set, points: kept }], 'b'));
     sets.push({ setNumber: set.setNumber, pointWinners, outcome, afterEnd });
+    if (
+      decideMatch(
+        sets.map((s) => s.outcome?.winner ?? null),
+        input.setsToWin,
+      )
+    ) {
+      overAfter = set.setNumber;
+    }
   });
 
-  let winner: H2hSide | null = null;
-  for (const [index, set] of sets.entries()) {
-    winner = decideMatch(
-      sets.slice(0, index + 1).map((s) => s.outcome?.winner ?? null),
-      input.setsToWin,
-    );
-    // Sets raced after the match was over were left out above
-    if (winner && input.ignoreSurplus) {
-      return { sets, winner, nextSetNumber: null };
-    }
-    if (winner && index < sets.length - 1) {
-      throw new MatchConflict(
-        `The match would be over after set ${set.setNumber}, but set ${sets[index + 1].setNumber} has been played. Check the times.`,
-      );
-    }
-  }
+  const winner = decideMatch(
+    sets.map((s) => s.outcome?.winner ?? null),
+    input.setsToWin,
+  );
   const last = sets[sets.length - 1];
   return {
     sets,
