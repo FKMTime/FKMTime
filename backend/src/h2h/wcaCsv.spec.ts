@@ -172,6 +172,65 @@ const resultsLikeWca = (rows: ReturnType<typeof importLikeWca>) => {
   return results;
 };
 
+/**
+ * A match's winner as the WCA results pages work it out from the imported
+ * attempts (`computeMatchScores` in the WCA website's `headToHead.ts`).
+ * Races are the attempts sharing a set attempt number, which the importer
+ * gives by count; a race goes to the better result (DNF over DNS), a set to
+ * whoever won the most races, and the match to whoever won the most sets.
+ */
+const scoresLikeWca = (rows: ReturnType<typeof importLikeWca>) => {
+  const compare = (a: number, b: number) => {
+    if (a > 0 && b > 0) return a - b;
+    if (a > 0) return -1;
+    if (b > 0) return 1;
+    return b - a;
+  };
+  const byMatch = new Map<number, ReturnType<typeof importLikeWca>>();
+  for (const row of rows) {
+    byMatch.set(row.matchNumber, [
+      ...(byMatch.get(row.matchNumber) ?? []),
+      row,
+    ]);
+  }
+  const scores = new Map<
+    number,
+    { winner: number | null; setWins: Map<number, number> }
+  >();
+  for (const [matchNumber, matchRows] of byMatch) {
+    const competitors = [...new Set(matchRows.map((r) => r.registrationId))];
+    const setWins = new Map(competitors.map((c) => [c, 0]));
+    const sets = [...new Set(matchRows.map((r) => r.setNumber))];
+    for (const setNumber of sets) {
+      const raceWins = new Map(competitors.map((c) => [c, 0]));
+      const inSet = matchRows.filter((r) => r.setNumber === setNumber);
+      const races = [...new Set(inSet.map((r) => r.setAttemptNumber))];
+      for (const race of races) {
+        const [best, runnerUp] = inSet
+          .filter((r) => r.setAttemptNumber === race)
+          .sort((x, y) => compare(x.value, y.value));
+        if (runnerUp && compare(best.value, runnerUp.value) === 0) continue;
+        raceWins.set(
+          best.registrationId,
+          (raceWins.get(best.registrationId) ?? 0) + 1,
+        );
+      }
+      const most = Math.max(0, ...raceWins.values());
+      const leaders = competitors.filter((c) => raceWins.get(c) === most);
+      if (most > 0 && leaders.length === 1) {
+        setWins.set(leaders[0], (setWins.get(leaders[0]) ?? 0) + 1);
+      }
+    }
+    const most = Math.max(0, ...setWins.values());
+    const leaders = competitors.filter((c) => setWins.get(c) === most);
+    scores.set(matchNumber, {
+      winner: most > 0 && leaders.length === 1 ? leaders[0] : null,
+      setWins,
+    });
+  }
+  return scores;
+};
+
 describe('formatTimeSeconds', () => {
   it.each([
     [6532, '65.32'],
@@ -423,7 +482,7 @@ describe('buildCsvRows', () => {
     expect(rows.map((row) => row.pointNumber)).toEqual([1, 1]);
   });
 
-  it('keeps points after the end and sets after the match: they are real solves', () => {
+  it('leaves out points after the end and sets after the match', () => {
     const reopened = match(
       1,
       ['e1', 'e2'],
@@ -436,6 +495,7 @@ describe('buildCsvRows', () => {
             point(3, solve(900), solve(1000)),
             // Raced before an amended time ended the set at point 3
             point(4, solve(1000), solve(700), {}, true),
+            point(5, solve(1000), null, {}, true),
           ],
         },
         {
@@ -454,19 +514,13 @@ describe('buildCsvRows', () => {
       [1, 2],
       [1, 3],
       [1, 3],
-      [1, 4],
-      [1, 4],
-      [2, 1],
-      [2, 1],
     ]);
-    // The ranking's best singles count these points (9f16b, 9i4), and the
-    // WCA takes best from the rows: they agree only if the rows have them
-    const results = resultsLikeWca(importLikeWca(toCsv(rows)));
-    expect(results.get(1001)).toEqual({ pos: 1, best: 650 });
-    expect(results.get(1002)).toEqual({ pos: 3, best: 700 });
   });
 
-  it('takes a lone attempt on a point after the end without asking for the other', () => {
+  it('gives the WCA the winner FKMTime decided, after a reopened match', () => {
+    // A, A, no winner, B, B, B; then A's point 3 is amended to a win and
+    // the match reopened: A wins the set 3-0 at point 3, and points 4 to 6
+    // come after its end
     const reopened = match(
       1,
       ['e1', 'e2'],
@@ -476,16 +530,27 @@ describe('buildCsvRows', () => {
           points: [
             point(1, solve(900), solve(1000)),
             point(2, solve(900), solve(1000)),
-            point(3, solve(900), solve(1000)),
-            point(4, solve(1000), null, {}, true),
-            point(5, solve(1000), solve(1100), {}, true),
+            point(3, solve(900), dnf()),
+            point(4, solve(1100), solve(1000), {}, true),
+            point(5, solve(1100), solve(1000), {}, true),
+            point(6, solve(1100), solve(1000), {}, true),
           ],
         },
       ],
     );
+    const fkmTimeWinner = 1001;
 
-    expect(exportBlockers(input([reopened]))).toEqual([]);
-    expect(buildCsvRows(input([reopened]))).toHaveLength(9);
+    const scores = scoresLikeWca(
+      importLikeWca(toCsv(buildCsvRows(input([reopened])))),
+    );
+
+    expect(scores.get(1)).toEqual({
+      winner: fkmTimeWinner,
+      setWins: new Map([
+        [1001, 1],
+        [1002, 0],
+      ]),
+    });
   });
 
   it('leaves out empty points', () => {

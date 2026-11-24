@@ -540,7 +540,7 @@ describe('Head-to-head WCA CSV export (e2e)', () => {
       );
     });
 
-    it("exports points raced after a set's end, which the best single counts", async () => {
+    it("leaves points raced after a set's end out of the file and of the best single", async () => {
       // A, A, B, A: then B's point 3 becomes a DNF, so reopening ends the
       // set at point 3, and point 4, A's best single, comes after the end
       const semi1 = await sides(1);
@@ -591,12 +591,18 @@ describe('Head-to-head WCA CSV export (e2e)', () => {
         ['2', '10.00'],
         ['3', '11.00'],
         ['3', '-1'],
-        ['4', '5.00'],
-        ['4', '10.00'],
       ]);
+      // A's 5.00 on point 4 counts for nothing: neither in the file nor in
+      // the ranking, which the WCA's best and pos would contradict
       // The WCA takes best from the rows and pos as given: the ranking's
-      // best single must be the best of the rows
+      // best single must be the best of the rows (A's is 9.00)
       const view = await getView();
+      expect(
+        found(
+          view.bracket.entrants.find((e) => e.person.id === semi1.a),
+          'entrant A',
+        ).bestSingle,
+      ).toBe(900);
       for (const entrant of view.bracket.entrants) {
         const person = found(seeds.find((p) => p.id === entrant.person.id));
         const solved = rows
