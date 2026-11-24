@@ -2,6 +2,7 @@ import { forwardRef, Inject, Injectable, Logger } from '@nestjs/common';
 import { AppGateway } from 'src/app.gateway';
 import { IntegratedLiveConnectionService } from 'src/competition/integratedLiveConnection.service';
 import { DbService } from 'src/db/db.service';
+import { isH2hRound } from 'src/h2h/h2hRound';
 import { getAttemptsWaitingForExtra } from 'src/result/helpers';
 import { getOfficialResultsDestination } from 'src/results-destination';
 import { WcaService } from 'src/wca/wca.service';
@@ -400,7 +401,23 @@ export class IntegratedLiveRoundsService {
   }
 
   async openRound(roundId: string) {
+    // The WCA takes head-to-head rounds from a CSV, not live (SPEC-001)
+    if (await this.isH2h(roundId)) {
+      return {
+        ok: false,
+        message:
+          'Head-to-head rounds are not sent to WCA Integrated Live Results',
+      };
+    }
     return this.changeRound(roundId, 'PUT', 'open', 'opened');
+  }
+
+  private async isH2h(roundId: string) {
+    const competition = await this.prisma.competition.findFirst();
+    return (
+      !!competition?.wcif &&
+      isH2hRound(roundId, competition.wcif as unknown as Wcif)
+    );
   }
 
   /** Undoes an opening by mistake; the WCA refuses once results are in */
@@ -451,6 +468,13 @@ export class IntegratedLiveRoundsService {
     if (
       !competition ||
       getOfficialResultsDestination(competition) !== 'WCA_INTEGRATED_LIVE'
+    ) {
+      return;
+    }
+    // Never opened, and nothing to suggest: it isn't sent there (SPEC-001)
+    if (
+      competition.wcif &&
+      isH2hRound(roundId, competition.wcif as unknown as Wcif)
     ) {
       return;
     }
