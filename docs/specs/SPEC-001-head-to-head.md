@@ -963,22 +963,29 @@ the WCIF doesn't carry. The WCA website builds the WCIF round `id` as
 - `GET $WCA_ORIGIN/api/v0/competitions/:competitionId/results/:eventId`
   (public, no sign-in) returns `rounds[] { id, roundTypeId, … }`, sorted by
   round number, highest first.
-- The H2H round is the event's last round (9b7b), so it is the first entry.
-- `H2hBracket.wcaRoundId` is filled from it while it is empty: when the
-  bracket is created, and again on the checks and on the export. A value
-  already there, fetched or typed in by the delegate, is never overwritten.
+- The H2H round is the event's last round (9b7b), so it is the first entry,
+  but only when the answer lists as many rounds as the WCIF round's number
+  (`333oh-r2`: two). Any other answer gives no id rather than another
+  round's.
+- `H2hBracket.wcaRoundId` is filled from it while it is empty: in the
+  background when the bracket is created (creating doesn't wait for the
+  WCA; `h2hUpdated` tells the panels once it lands), and again on the
+  checks and on the export. A value already there, fetched or typed in by
+  the delegate, is never overwritten.
 - Loading the bracket doesn't fetch it: every open panel reloads the bracket
   on each `h2hUpdated`, and a WCA call each time would multiply. Creating the
   bracket already fills it in nearly every case.
-- If the call fails (the WCA is down, no internet at the venue), the value
-  stays empty, the checks say so, and the delegate enters it in the Bracket
-  tab's `wcaRoundId` field.
+- If the call fails (the WCA is down, no internet at the venue: a 5 s
+  timeout), the value stays empty, the checks say so, and the delegate
+  enters it in the Bracket tab's `wcaRoundId` field. The bracket's WCA isn't
+  asked again for a minute after a failure, so the checks and the export
+  answer at once at a venue without internet.
 
 The dummy WCA used by e2e tests has this endpoint.
 
-**Rows.** Final data only: one row per counting attempt. Rows are sorted by
-`match_number`, `match_set_number`, point number, then side A before
-side B. Left out:
+**Rows.** Final data only: one row per counting attempt, so every attempt
+raced on a point. Rows are sorted by `match_number`, `match_set_number`,
+point number, then side A before side B. Left out:
 
 - walkover matches (I2h, and a retirement before the competitor's first
   attempt, 9f5b), even when the opponent had solved;
@@ -986,8 +993,16 @@ side B. Left out:
   point counts, as in the WCA Live sync. An extra a retirement called off
   leaves its point empty;
 - empty points;
-- points marked `afterEnd`, and so the sets raced after a match was over;
 - attempts not counting (`EXTRA_GIVEN`, `VOIDED`).
+
+Points marked `afterEnd`, and the sets raced after a match was over, **are**
+exported. They decide nothing, but their attempts are real solves on real
+scrambles (9i4), and the ranking's best single counts them (*Final
+ranking*). The WCA takes each competitor's `best` from these rows and their
+`pos` from the file as it is, so leaving them out would rank a competitor on
+a single the WCA never sees, and could lose a record. The WCA stores only
+attempts per set, not who won a point or a set, so a set with more than
+its deciding points imports like any other.
 
 A retired match keeps its decided points and every submitted attempt of both
 competitors, including the opponent's attempt on the open point. Each column:
@@ -1015,7 +1030,8 @@ never do.
 list the checks give), when:
 
 - a match isn't finished, or a point has only one attempt (except the open
-  point of a retired match: the last point it raced);
+  point of a retired match, the last point it raced, and a point after the
+  end, whose missing result decides nothing);
 - an attempt on an exported point still has an unresolved incident;
 - a competitor with rows has no `wcaRegistrationId`, or, once every match is
   finished, no final position;
@@ -1027,11 +1043,17 @@ and with 403 when the scramble password is wrong. The checks are worded for
 the delegate: "Semifinal 1, set 2, point 3 has an open incident. Resolve it
 first."
 
+**Who.** Both endpoints take delegates and organisers, like the other
+bracket endpoints (`OrganizerGuard`). The panel itself is on the Ranking
+tab, which only delegates open; an organiser can still fetch the file
+through the API.
+
 The code: `wcaCsv.ts` (rows, checks, the file; pure), `H2hExportService`
 (loading, the round id, the password) and `WcaService.getLastRoundId`. A
 unit test parses the generated CSV with the same rules as the WCA rake task
 (columns by name, `round_id.to_i`, `time_seconds.sub(".", "").to_i`,
-attempt numbers from row order) and checks the stored values come out
+attempt numbers from row order, `pos` from a competitor's first row, `best`
+from their rows) and checks the stored values come out
 right. That includes times of 60 s and over, and times with a trailing zero
 such as `10.20`.
 
