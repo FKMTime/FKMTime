@@ -455,10 +455,13 @@ How the scrambling device does it:
 - **Two matches on the spares.** A next point's scramble is only worked
   out: the point takes it when its first result lands. Two playing matches
   past their own sets would both be shown the next spare scramble, and
-  whichever records first takes it. So the first in match order keeps it,
-  with a warning, and the others show no scramble until a result of that
-  match is in, when theirs moves on to the next one. The Matches tab and
-  the scrambling device show the same.
+  whichever records first takes it. So the match that has waited longest
+  for its next point (its last point decided earliest, then match order)
+  keeps it, with a warning: it was shown it first. The others show no
+  scramble, and their text names none, until a result of that match is
+  in, when theirs moves on to the next one. A prediction of a scramble an
+  open point already races (two reads a moment apart) is held the same
+  way. The Matches tab and the scrambling device show the same.
 - **Out of date.** When the device can't reach the server, the match list
   and the scramble page say the scramble may be out of date.
 
@@ -606,10 +609,16 @@ How the station flow is built (`ResultFromDeviceService.enterAttempt`):
   imported.
 - **A solve typed in meanwhile.** A station that lost its connection keeps
   the solve and sends it on reconnecting, while the delegate may have
-  entered the judge's paper by hand already. A station solve whose time
-  and penalty equal the competitor's last attempt in the match, entered by
-  hand, is refused as "This attempt has already been entered" and the
-  station drops it, instead of opening a point with it.
+  entered the judge's paper by hand already. A station solve is refused as
+  "This attempt has already been entered", and the station drops it,
+  instead of opening a point with it, when the competitor's last attempt
+  in the match was typed in (it has no station session, whether or not
+  the form named the station), has the same result, and was typed in
+  after the solve (its `solvedAt` is when it was typed; a minute's leeway
+  covers a station clock running ahead). The same result means the same
+  DNF or DNS whatever time the timer showed, since a DNF typed in has
+  none, or the same time and penalty. A solve after the hand entry is the
+  next point's, even with the same result.
 - **Time limit only.** Format `h` has no cutoff, and a bracket can't be
   created for a cumulative limit, so only the per-attempt limit applies: a
   time over it is entered as a DNF, as today.
