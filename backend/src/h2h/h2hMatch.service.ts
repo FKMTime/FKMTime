@@ -298,30 +298,6 @@ export class H2hMatchService {
     return { attempt, matchId: match.id };
   }
 
-  /**
-   * A set opened while its plan row was empty takes the set the row has
-   * been given since (scrambles imported mid-match), so importing more
-   * sets is what unblocks it. Null while the row is still empty.
-   */
-  private async adoptPlannedSet(
-    db: Db,
-    matchId: string,
-    set: { id: string; setNumber: number },
-  ) {
-    const row = await db.h2hScrambleAssignment.findUnique({
-      where: { matchId_setNumber: { matchId, setNumber: set.setNumber } },
-    });
-    const planned = row?.scrambleSetId ?? null;
-    if (planned === null) return null;
-    const taken = await db.h2hSet.count({ where: { scrambleSetId: planned } });
-    if (taken > 0) return null;
-    await db.h2hSet.update({
-      where: { id: set.id },
-      data: { scrambleSetId: planned },
-    });
-    return planned;
-  }
-
   /** A new point of the set, on the next scramble nobody has raced */
   private async openPoint(
     db: Db,
@@ -330,11 +306,9 @@ export class H2hMatchService {
     pointNumber: number,
   ) {
     const roundId = match.bracket.roundId;
-    const scrambleSetId =
-      set.scrambleSetId ?? (await this.adoptPlannedSet(db, match.id, set));
-    const own = scrambleSetId
+    const own = set.scrambleSetId
       ? await db.scrambleSet.findUnique({
-          where: { id: scrambleSetId },
+          where: { id: set.scrambleSetId },
           select: scrambleOptionSelect,
         })
       : null;
@@ -451,7 +425,8 @@ export class H2hMatchService {
 
   /**
    * Opens a set on the scramble set its plan row has. A row left empty
-   * opens it without one, and its points take scrambles from spare sets.
+   * opens it without one: it gets the set the row is given later (see
+   * rematchScramblePlan), and until then its points take spare sets.
    */
   private async openSet(db: Db, matchId: string, setNumber: number) {
     const row = await db.h2hScrambleAssignment.findUnique({

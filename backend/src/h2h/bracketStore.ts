@@ -177,6 +177,18 @@ export const rematchScramblePlan = async (db: Db, roundId: string) => {
         where: { id: before.id },
         data: { scrambleSetId: row.scrambleSetId },
       });
+      // A set that opened while its row was empty races on what the row
+      // gets now, so importing more sets unblocks it
+      if (row.scrambleSetId !== null) {
+        await db.h2hSet.updateMany({
+          where: {
+            matchId: row.matchId,
+            setNumber: row.setNumber,
+            scrambleSetId: null,
+          },
+          data: { scrambleSetId: row.scrambleSetId },
+        });
+      }
     }
   }
 };
