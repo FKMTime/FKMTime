@@ -308,18 +308,89 @@ Replies can only be as fast as the main thread, which today's backend keeps busy
   1.9 s. Eight stations at once: p50 1.7 s, p99 3.2 s. A reply after 2 s already makes the
   station send a probe ping. Each attempt re-parses the 1.25 MB WCIF: `competition.findFirst()`
   parses the JSON column on every call, and `enterAttemptInTransaction` and
-  `getRemainingAndUsedCumulativeLimit` deep-copy it. **Fixed in #818 (2026-11-24),** scoped to the attempt
-  path. The Pi before/after measurement is still to run.
+  `getRemainingAndUsedCumulativeLimit` deep-copy it. **Fixed in #818 (2026-11-24),** scoped
+  to the attempt path. The Pi before/after measurement is still to run.
 - **`rooms/progress` keeps the main thread busy for about 23 s per call on the Pi** (2.3 s on
   the Mac), in slices under 1.1 s. Home refetches it whenever a result comes in, so during a
-  round every open Home page adds one of these per attempt. **Fixed in #817 (2026-11-24)** with
-  aggregate queries plus a light debounce on Home: 1.7–2.9 s → 64–149 ms of CPU per call on the
-  Mac. The Pi before/after measurement is still to run.
+  round every open Home page adds one of these per attempt. **Fixed in #817 (2026-11-24)**
+  with aggregate queries plus a light debounce on Home: 1.7–2.9 s → 64–149 ms of CPU per call
+  on the Mac. The Pi before/after measurement is still to run.
 - **10 or more simultaneous attempts deadlock the database pool,** and all of them fail after
   7.5 s. `enterAttemptInTransaction` runs queries outside its transaction, which need a second
   connection from pg's pool of 10. **Fixed in #812 (2026-11-24).**
 
 All three hit competitions with today's backend, independent of the rewrite.
+
+### Hardware spikes on the Pi
+
+On 2026-11-25, in a fim dev instance on the Raspberry Pi 4 router, with 3 real stations on
+firmware v3.5.5 (two V3 boards, one V4). The dev instance's connector was stopped while a
+spike needed port 8081, the mDNS name or the Bluetooth adapter. Throwaway scripts, run in
+`node:24-alpine` containers on the host network.
+
+**`iw` station link: go.** Signal, tx bitrate and the packet and retry counters read by
+parsing `iw dev phy1-ap0 station dump` match the raw dump for all three stations, and each is
+matched to its IP through `/proc/net/arp`. The retry percentage swings between 0 and 67% from
+one 10 s interval to the next, because an idle station sends only 6–8 frames per interval. The
+connector computes it the same way, so this isn't a regression, but phase 2 could average it
+over a longer window.
+
+**mDNS with `@homebridge/ciao`: go.** One service per address, using `restrictedAddresses`
+and a 2 s watcher on `os.networkInterfaces()`. The stations connected to a prototype server
+(the station thread prototype on port 8081).
+
+| Case | Connector (baseline) | `ciao` prototype |
+|---|---|---|
+| A station joins Wi-Fi → websocket connected | about 1.0 s | under 1 s (V3); see the V4 finding below |
+| Server restarted, stations reconnect | 1.03 s after it listens | under 1 s after it listens |
+| LAN down for 20 s, then up | — | service withdrawn at once; re-announced 2 s after the link came up; stations back about 4 s after |
+| mDNS process restarted | — | goodbyes for every service, then announced again; open connections unaffected |
+| Pi rebooted | — | announced 1.7 s after start; all stations connected about 10 s later, at the pace of their retries |
+
+- `ciao` probes each host name, and renames a second service that shares one, e.g.
+  `fkmtime-(2).local`. Phase 2 gives each address its own host name
+  (`fkmtime-192-168-3-1.local`), which avoids that. The firmware only reads TXT `ws`.
+- `ciao`'s own interface check runs every 15 s, but the 2 s watcher re-creates a service
+  within 2 s of a link coming up, so the 15 s never showed.
+
+**Bluetooth auto-setup with `node-ble`: go.** Scanning used raw `StartDiscovery` /
+`StopDiscovery` calls, because `node-ble`'s own `startDiscovery()` refuses to start while
+another BlueZ client is scanning. Every step ran under its own time limit, and the disconnect
+ran after every attempt.
+
+| Case | Result |
+|---|---|
+| One station in setup mode | configured in 4.2–5.5 s (connect 0.6–2.3 s, discover 1.2 s, write 10–22 ms, disconnect 2.0–2.4 s); it joined Wi-Fi and connected over mDNS |
+| Two stations in a row | 6.5 s and 9.0 s, the second right after the first |
+| A station that disappeared from BlueZ | `getDevice` fails at once with `Device not found`; the next station goes ahead |
+| A device BlueZ knows but that doesn't answer (4 nearby non-station devices; dummy settings, nothing written) | connect stopped at its 10 s limit, and the disconnect that follows cancelled the pending D-Bus call within 4–9 ms (`br-connection-canceled`); or connect failed on its own in 3.9 s; the next device always went ahead |
+
+So `node-ble`, wrapped in our own per-step time limits, is enough: a step that times out
+doesn't linger into the next device.
+
+**Host networking: not yet, needs a backend change.** `main.ts` calls `app.listen(PORT)` with no
+host, so the backend listens on every address. OpenWrt's `lan` zone accepts input, so under
+host networking port 5000 would answer on the station Wi-Fi. Phase 1 adds the listen-host
+setting described under [Deployment on the router](#deployment-on-the-router), and the check
+moves to phase 3.
+
+**Findings for later phases:**
+
+1. **The V4 station sometimes fails TLS with Node.** Once, after a cold start, it needed 74 s
+   and two handshakes that ended in `ECONNRESET` before it connected. The station sent only 2–3
+   packets, and the server about 5 KB. It connected at once in every other case, and through the
+   connector in about 1 s. Suspected but unproven: the two TLS 1.3 session tickets Node sends
+   after the handshake, which the V4 build's `embedded-tls` buffer may not take. Node has no
+   option to send zero tickets. To compare offline against the connector's rustls handshake
+   before phase 1.
+2. **Stations can connect through the Docker bridge address.** Both the connector and the
+   prototype advertise every local address, including Docker's bridge (`172.18.0.1`), and one
+   station consistently picked it. It works because the Pi routes it. Phase 2 should advertise
+   only the LAN-side addresses.
+3. **Bluetooth doesn't survive a warm reboot of this Pi.** After `reboot`, the BCM chip
+   didn't load its firmware (`Opcode 0x1003 failed`, then reset and baud-rate timeouts), and
+   `hci0` stayed down until the Pi was power-cycled. This affects the connector just the same,
+   so it isn't a rewrite issue. It's an OpenWrt image issue for the router.
 
 ## Acceptance criteria
 
