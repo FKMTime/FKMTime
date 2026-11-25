@@ -110,8 +110,10 @@ The connector is 7.1k lines of Rust with tests and the fake backend. By job:
 | Station link (SPEC-008): signal, bitrate, retries from the access point, matched by IP → MAC | `station_link/` | 0.6k | Parse `iw dev <if> station dump` (`apk add iw`) and `/proc/net/arp`. No maintained netlink library for Node | Medium. It already reports nothing off the router, so a failure is invisible, not fatal |
 | Fake backend for the firmware simulator | `e2e/` | 0.8k | No equivalent: it sits behind the unix socket. See [Firmware simulator](#firmware-simulator) | Medium for firmware work |
 
-Expect about 4–5k lines of TypeScript with tests, and **3–5 weeks for one person**,
-including hardware testing. Phase 0 below narrows that estimate.
+Expect about 4–5k lines of TypeScript with tests, in **about 6 PRs**, one per phase-1 and
+phase-2 job above. Writing them is the small part; what dominates is hardware time: each PR
+that touches mDNS, Bluetooth or the station link needs a session on a Pi with real stations,
+and the rollout needs a mock competition and a real one. Phase 0 below narrows the risk.
 
 ## Design
 
@@ -391,7 +393,7 @@ micro-connector (its `old-fw-update` branch, used for V2 → V3 updates, stays c
 
 - **Move the connector's Rust code into this repository and keep it as a separate process.**
   This fixes the two-repository problem: one PR per protocol change, plus fixtures that test
-  both sides of the unix socket. It takes about two days and has no competition-day risk. It
+  both sides of the unix socket. It is two or three PRs and has no competition-day risk. It
   keeps two languages, the unix socket and the duplicated state, and the station protocol
   still can't be tested from the backend. It is the fallback if phase 0 fails, and worth doing
   in the meantime if the rewrite is a long way off.
