@@ -81,15 +81,29 @@ const Scrambling = ({ roundId, groupId, scrambles }: ScramblingProps) => {
 
     const sign = async () => {
         if (!scrambler || !competitor) return;
+        const somethingWentWrong = () =>
+            toast({
+                title: "Something went wrong",
+                variant: "destructive",
+            });
         setIsSigning(true);
-        const response = await createScrambledAttempt(
-            competitor.person.id,
-            scrambler.id,
-            roundId,
-            competitor.scrambleData.num,
-            competitor.scrambleData.isExtra
-        );
-        setIsSigning(false);
+        let response;
+        try {
+            response = await createScrambledAttempt(
+                competitor.person.id,
+                scrambler.id,
+                roundId,
+                competitor.scrambleData.num,
+                competitor.scrambleData.isExtra
+            );
+        } catch {
+            // No connection, or a reply that isn't JSON. Sign stays
+            // available so the scrambler can try again
+            somethingWentWrong();
+            return;
+        } finally {
+            setIsSigning(false);
+        }
         const { num, isExtra } =
             competitor.scrambleData.scramble ?? competitor.scrambleData;
         const scrambleName = `${isExtra ? "Extra" : "Scramble"} ${num}`;
@@ -107,10 +121,7 @@ const Scrambling = ({ roundId, groupId, scrambles }: ScramblingProps) => {
                 `${scrambleName} was already solved. Scan the competitor's card again.`
             );
         } else {
-            toast({
-                title: "Something went wrong",
-                variant: "destructive",
-            });
+            somethingWentWrong();
         }
     };
 
