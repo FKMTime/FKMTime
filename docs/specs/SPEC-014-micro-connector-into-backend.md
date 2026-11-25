@@ -32,7 +32,7 @@ log parsing. Four things decided whether it works on competition day:
    first needs a listen-host setting, so its HTTP port stays off the station Wi-Fi.
 
 The decision this spec asks for now: **start phase 1** (the gateway core behind
-`STATION_GATEWAY`), after checking the V4 TLS finding offline.
+`STATION_GATEWAY`). Phase 0 left no open risk for the rewrite.
 
 ## Problem
 
@@ -377,13 +377,19 @@ moves to phase 3.
 
 **Findings for later phases:**
 
-1. **The V4 station sometimes fails TLS with Node.** Once, after a cold start, it needed 74 s
-   and two handshakes that ended in `ECONNRESET` before it connected. The station sent only 2–3
-   packets, and the server about 5 KB. It connected at once in every other case, and through the
-   connector in about 1 s. Suspected but unproven: the two TLS 1.3 session tickets Node sends
-   after the handshake, which the V4 build's `embedded-tls` buffer may not take. Node has no
-   option to send zero tickets. To compare offline against the connector's rustls handshake
-   before phase 1.
+1. **One slow TLS handshake with the V4 station: not Node-specific, closed (2026-11-25).**
+   Once, after a cold start, the V4 needed 74 s and two handshakes that ended in `ECONNRESET`
+   before it connected to the Node prototype. It connected at once in every other case. The
+   suspected cause, Node's TLS 1.3 session tickets, is ruled out: compared with
+   `openssl s_client -msg`, the connector's rustls sends the same handshake messages and also
+   two `NewSessionTicket`s (81 B each against Node's 249 B). Both arrive after the station's
+   `Finished`, which the V4 never sent. The server retransmitted its flight several times (about
+   5 KB sent against a flight of about 0.8 KB), so the V4 wasn't acknowledging at the TCP
+   level. The same V4 also dropped its connection right after connecting to the Rust connector
+   later that day (`ws error: Socket`). The trouble is this station's link, not Node's TLS.
+   The firmware also throws away a pending sign key on such a reconnect before an admin accepts
+   it, so a station with a flaky link can't be added. That's a firmware bug, independent of this
+   spec.
 2. **Stations can connect through the Docker bridge address.** Both the connector and the
    prototype advertise every local address, including Docker's bridge (`172.18.0.1`), and one
    station consistently picked it. It works because the Pi routes it. Phase 2 should advertise
