@@ -15,23 +15,24 @@ The micro connector is a separate Rust service. Stations connect to it, and it t
 backend over a unix socket. This spec looks at rewriting it in TypeScript as a NestJS module,
 so stations connect to the backend directly and the connector and the unix socket go away.
 
-**Verdict: feasible and worth doing, but only after spikes on a test instance with real
-stations.** Most of the connector is plain protocol work that ports to TypeScript easily: the
-station websocket, the handshake, OTA updates and log parsing. Four things decide whether it
-works on competition day, and each can be tested before anyone commits to the port:
+**Verdict: feasible and worth doing. Phase 0 is done, and its spikes on a Pi with real
+stations passed** (see [Measurements](#measurements)). Most of the connector is plain protocol
+work that ports to TypeScript easily: the station websocket, the handshake, OTA updates and
+log parsing. Four things decided whether it works on competition day:
 
 1. **mDNS.** Stations find the server only through mDNS, one advertisement per local address.
-   `@homebridge/ciao` can do that, but it has to be proven on a Pi with real stations.
+   `@homebridge/ciao` does that: go on the Pi, cold start, LAN flap and reboot included.
 2. **Event-loop stalls.** A station whose reply is 2 s late sends a ping and drops the
    connection if no pong arrives within 3 s. So station connections run on their own worker
-   thread, which answers pings however busy the rest of the backend is.
+   thread, which answers pings however busy the rest of the backend is: 0 drops with the main
+   thread blocked for 10 s.
 3. **Bluetooth auto-setup.** It goes through BlueZ over D-Bus, using `node-ble`, a library
-   with little recent activity.
-4. **The backend joins the router's host network.** So do nginx and Postgres, or they have
-   to be reached differently.
+   with little recent activity: go, with our own per-step time limits.
+4. **The backend joins the router's host network.** So do nginx and Postgres. The backend
+   first needs a listen-host setting, so its HTTP port stays off the station Wi-Fi.
 
-The decision this spec asks for: **approve phase 0** (the spikes), and decide on the rest once its
-go/no-go results are in.
+The decision this spec asks for now: **start phase 1** (the gateway core behind
+`STATION_GATEWAY`), after checking the V4 TLS finding offline.
 
 ## Problem
 
@@ -394,7 +395,7 @@ moves to phase 3.
 
 ## Acceptance criteria
 
-- [ ] Phase 0's go/no-go results are recorded in this spec (below), and each passed or has an
+- [x] Phase 0's go/no-go results are recorded in this spec (below), and each passed or has an
       agreed fix.
 - [ ] A station on current firmware, with no change, finds the backend over mDNS, connects,
       gets a signed handshake, scans cards, enters attempts, calls a delegate and takes an OTA
