@@ -308,20 +308,18 @@ Replies can only be as fast as the main thread, which today's backend keeps busy
   1.9 s. Eight stations at once: p50 1.7 s, p99 3.2 s. A reply after 2 s already makes the
   station send a probe ping. Each attempt re-parses the 1.25 MB WCIF: `competition.findFirst()`
   parses the JSON column on every call, and `enterAttemptInTransaction` and
-  `getRemainingAndUsedCumulativeLimit` deep-copy it. **Decided (2026-11-24): fixed now, scoped
-  to the attempt path, measured before and after on the Pi** (branch
-  `perf/enter-attempt-without-wcif-reparse`, stacked on the deadlock fix).
+  `getRemainingAndUsedCumulativeLimit` deep-copy it. **Fixed in #818 (2026-11-24),** scoped to the attempt
+  path. The Pi before/after measurement is still to run.
 - **`rooms/progress` keeps the main thread busy for about 23 s per call on the Pi** (2.3 s on
   the Mac), in slices under 1.1 s. Home refetches it whenever a result comes in, so during a
-  round every open Home page adds one of these per attempt. **Decided (2026-11-24): fixed now with
-  aggregate queries plus a light debounce on Home, measured before and after on the Pi** (branch
-  `perf/rooms-progress-aggregate-queries`).
+  round every open Home page adds one of these per attempt. **Fixed in #817 (2026-11-24)** with
+  aggregate queries plus a light debounce on Home: 1.7–2.9 s → 64–149 ms of CPU per call on the
+  Mac. The Pi before/after measurement is still to run.
 - **10 or more simultaneous attempts deadlock the database pool,** and all of them fail after
   7.5 s. `enterAttemptInTransaction` runs queries outside its transaction, which need a second
-  connection from pg's pool of 10. **Decided (2026-11-24): fixed now, on its own**
-  (branch `fix/enter-attempt-pool-deadlock`).
+  connection from pg's pool of 10. **Fixed in #812 (2026-11-24).**
 
-All three hit competitions today, with or without the rewrite, and belong in their own fixes.
+All three hit competitions with today's backend, independent of the rewrite.
 
 ## Acceptance criteria
 
@@ -351,9 +349,9 @@ instance per competition, from a template. Phase 0 adds a throwaway `gateway-spi
 and runs it as a test instance on a Pi 4 with a few real stations and simulated ones for
 load, in sessions between competitions. Each spike is a prototype with a go/no-go:
 
-Done on 2026-11-23, see [Measurements](#measurements): the station thread (go) and the restart
-with simulated stations (go, 0.9 s). Still to run: ciao, Bluetooth, `iw` and host networking,
-which need real stations and the instance on the Pi stopped.
+Results, see [Measurements](#measurements): station thread **go** and restart **go** (2026-11-23);
+`ciao` **go**, `node-ble` **go** and `iw` **go** (2026-11-25); host networking **needs a
+listen-host setting first** (phase 1), then gets checked in phase 3. Phase 0 is done.
 
 **Decided (2026-11-24): finish phase 0 before deciding on the port.** The hardware spikes
 run in a dev instance created in fim from the `dev` template, with 2–3 real stations. Other
@@ -413,7 +411,7 @@ micro-connector (its `old-fw-update` branch, used for V2 → V3 updates, stays c
    (2026-11-23): the server log.** With the station thread, a main-thread stall makes replies
    late but drops no station, and an organizer can't act on it mid-round. The Devices page
    gets a warning only if phase 0 shows long stalls happen.
-3. **`node-ble` or our own thin BlueZ D-Bus client** over `dbus-next`? **Decided (2026-11-23):
-   in the phase 0 Bluetooth spike on the test instance.** Try `node-ble` first. If it can't put
-   a time limit on each step (scan, connect, write, disconnect), or a station that never
-   answers holds up the next one, write our own client: we use four BlueZ calls.
+3. **`node-ble` or our own thin BlueZ D-Bus client** over `dbus-next`? **Decided (2026-11-25):
+   `node-ble`,** wrapped in our own per-step time limits, with raw `StartDiscovery` /
+   `StopDiscovery` calls. In the phase 0 spike, a step that timed out didn't linger into the next
+   device (see [Measurements](#hardware-spikes-on-the-pi)).
