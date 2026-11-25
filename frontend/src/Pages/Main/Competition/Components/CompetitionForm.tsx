@@ -70,7 +70,8 @@ const CompetitionForm = ({
     >({
         resolver: zodResolver(competitionSettingsSchema),
         defaultValues: {
-            scoretakingToken: competition.scoretakingToken,
+            // Unset on a new competition, like the WiFi details below
+            scoretakingToken: competition.scoretakingToken ?? "",
             cubingContestsToken: competition.cubingContestsToken,
             sendingResultsFrequency: competition.sendingResultsFrequency,
             shouldChangeGroupsAutomatically:
@@ -93,7 +94,11 @@ const CompetitionForm = ({
     });
 
     const [isSaving, setIsSaving] = useState(false);
-    const { isDirty, dirtyFields } = form.formState;
+    const { isDirty, dirtyFields, errors } = form.formState;
+    // Errors exist only after a Save that failed validation. Some fields
+    // are hidden (another results tool, devices off), so their own message
+    // can't show: say it here, or Save would look like it did nothing
+    const hasErrors = Object.keys(errors).length > 0;
 
     const onSubmit = async (
         values: z.output<typeof competitionSettingsSchema>
@@ -350,9 +355,18 @@ const CompetitionForm = ({
                         aria-label="Unsaved changes"
                         className="sticky bottom-[calc(max(env(safe-area-inset-bottom),0.375rem)+5rem)] z-10 flex items-center gap-2 rounded-xl border bg-card px-4 py-2.5 shadow-popover md:bottom-4"
                     >
-                        <span className="flex-1 text-[13px] font-semibold text-warning">
-                            Unsaved changes
-                        </span>
+                        {hasErrors ? (
+                            <span
+                                role="alert"
+                                className="flex-1 text-[13px] font-semibold text-destructive"
+                            >
+                                Can't save: some settings aren't valid
+                            </span>
+                        ) : (
+                            <span className="flex-1 text-[13px] font-semibold text-warning">
+                                Unsaved changes
+                            </span>
+                        )}
                         <Button
                             type="button"
                             variant="ghost"

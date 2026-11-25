@@ -306,6 +306,70 @@ describe("CompetitionForm", () => {
         );
     });
 
+    it("saves a freshly imported competition whose optional settings are unset", async () => {
+        const handleSubmit = savesAll();
+        // As the API returns a new competition: the database leaves these
+        // null, and the WCA Live token field is hidden for another tool
+        const fresh = {
+            ...competition,
+            wcaScoretakingSoftware: "external",
+            officialResultsDestination: "NONE",
+            scoretakingToken: null,
+            cubingContestsToken: null,
+            wsUrl: null,
+            wifiSsid: null,
+            wifiPassword: null,
+            defaultLocale: null,
+            hilTesting: null,
+            buzzerVolume: null,
+        } as unknown as Competition;
+        render(
+            <CompetitionForm competition={fresh} handleSubmit={handleSubmit} />
+        );
+
+        await userEvent.click(
+            screen.getByRole("switch", { name: /Change groups automatically/ })
+        );
+        await userEvent.click(screen.getByRole("button", { name: "Save" }));
+
+        await waitFor(() => expect(handleSubmit).toHaveBeenCalledTimes(1));
+        expect(handleSubmit).toHaveBeenCalledWith(
+            expect.objectContaining({
+                shouldChangeGroupsAutomatically: true,
+                scoretakingToken: "",
+            }),
+            { competition: true, devices: false }
+        );
+    });
+
+    it("says why Save did nothing when a hidden setting isn't valid", async () => {
+        const handleSubmit = savesAll();
+        render(
+            <CompetitionForm
+                competition={
+                    {
+                        ...competition,
+                        wcaScoretakingSoftware: "external",
+                        officialResultsDestination: "NONE",
+                        // Not a string, and its field isn't on screen
+                        scoretakingToken: 42,
+                    } as unknown as Competition
+                }
+                handleSubmit={handleSubmit}
+            />
+        );
+
+        await userEvent.click(
+            screen.getByRole("switch", { name: /Change groups automatically/ })
+        );
+        await userEvent.click(screen.getByRole("button", { name: "Save" }));
+
+        expect((await screen.findByRole("alert")).textContent).toBe(
+            "Can't save: some settings aren't valid"
+        );
+        expect(handleSubmit).not.toHaveBeenCalled();
+    });
+
     it("marks only the device part as changed after a device edit", async () => {
         const handleSubmit = savesAll();
         render(
