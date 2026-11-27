@@ -131,6 +131,7 @@ describe('ResultFromDeviceService with a resolved attempt', () => {
         unusedDependency(),
         competitionStub,
         unusedDependency(),
+        unusedDependency(),
       ),
       unusedDependency(),
       competitionStub,
