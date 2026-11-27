@@ -205,20 +205,23 @@ const useLitSide = (match: PublicH2hMatch) => {
         setNumber: last?.setNumber ?? 0,
         pointNumber: last?.point.pointNumber ?? 0,
     };
+    const winner = last?.point.winnerSide ?? null;
     const [lit, setLit] = useState<{
         seen: PointPlace;
+        /** The seen point's winner: a correction can change it in place */
+        seenWinner: H2hSideName | null;
         side: H2hSideName | null;
-    }>({ seen: place, side: null });
+    }>({ seen: place, seenWinner: winner, side: null });
     const isSeen =
         lit.seen.matchNumber === place.matchNumber &&
         lit.seen.setNumber === place.setNumber &&
-        lit.seen.pointNumber === place.pointNumber;
+        lit.seen.pointNumber === place.pointNumber &&
+        lit.seenWinner === winner;
     if (!isSeen) {
         setLit({
             seen: place,
-            side: isLaterPoint(place, lit.seen)
-                ? last?.point.winnerSide ?? null
-                : null,
+            seenWinner: winner,
+            side: isLaterPoint(place, lit.seen) ? winner : null,
         });
     }
     useEffect(() => {

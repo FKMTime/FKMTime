@@ -1,3 +1,5 @@
+import { playingMatches, PublicH2hView } from "@/lib/h2hPublic";
+
 /** How long each TV slide stays up */
 export const TV_SLIDE_MS = 15_000;
 
@@ -17,6 +19,29 @@ export interface TvH2hRound {
     roundId: string;
     playingMatchNumbers: number[];
 }
+
+/**
+ * The head-to-head round in progress, known from the WCIF, so it never
+ * falls back to a results slide. Until its bracket loads (or while it
+ * fails to) it has no playing matches, and the TV shows its bracket slide.
+ */
+export const getTvH2hRounds = (
+    h2hRoundId: string | null,
+    view: Pick<PublicH2hView, "roundId" | "matches"> | undefined
+): TvH2hRound[] =>
+    h2hRoundId
+        ? [
+              {
+                  roundId: h2hRoundId,
+                  playingMatchNumbers:
+                      view?.roundId === h2hRoundId
+                          ? playingMatches(view).map(
+                                (match) => match.matchNumber
+                            )
+                          : [],
+              },
+          ]
+        : [];
 
 /**
  * Live solving first, then each round in progress. A head-to-head round

@@ -1,6 +1,12 @@
 import { describe, expect, it } from "vitest";
 
-import { getTvSlides, getTvZoom, stepSlide } from "@/lib/publicTv";
+import {
+    getTvH2hRounds,
+    getTvSlides,
+    getTvZoom,
+    stepSlide,
+} from "@/lib/publicTv";
+import { buildView, withMatch } from "@/lib/tests/h2hPublicFixtures";
 
 describe("public TV view", () => {
     it("starts with live solving, then each round in progress", () => {
@@ -41,6 +47,31 @@ describe("public TV view", () => {
         ).toEqual([
             { type: "h2hMatch", roundId: "333oh-r2", matchNumber: 1 },
             { type: "h2hMatch", roundId: "333oh-r2", matchNumber: 2 },
+        ]);
+    });
+
+    it("never shows a head-to-head round as results, even before its bracket loads", () => {
+        // Not loaded, failed or not created yet: the bracket slide waits
+        const rounds = getTvH2hRounds("333oh-r2", undefined);
+        expect(rounds).toEqual([
+            { roundId: "333oh-r2", playingMatchNumbers: [] },
+        ]);
+        expect(getTvSlides(["333-r1", "333oh-r2"], rounds)).toEqual([
+            { type: "h2hBracket", roundId: "333oh-r2" },
+            { type: "live" },
+            { type: "results", roundId: "333-r1" },
+        ]);
+        expect(getTvH2hRounds(null, undefined)).toEqual([]);
+    });
+
+    it("takes the playing matches from the round's own bracket", () => {
+        const view = withMatch(buildView(4), 2, { status: "IN_PROGRESS" });
+        expect(getTvH2hRounds(view.roundId, view)).toEqual([
+            { roundId: view.roundId, playingMatchNumbers: [2] },
+        ]);
+        // Another round's bracket, still in the cache: nothing is playing
+        expect(getTvH2hRounds("444-r2", view)).toEqual([
+            { roundId: "444-r2", playingMatchNumbers: [] },
         ]);
     });
 

@@ -18,16 +18,16 @@ import { useWakeLock } from "@/hooks/useWakeLock";
 import { competitionAtom } from "@/lib/atoms";
 import { getPublicCompetitionInfo, publicRoomsQuery } from "@/lib/competition";
 import { getEventIconClass, getEventName, getEvents } from "@/lib/events";
-import { playingMatches, publicH2hQuery } from "@/lib/h2hPublic";
+import { publicH2hQuery } from "@/lib/h2hPublic";
 import { StationInfo } from "@/lib/liveSolving";
 import {
+    getTvH2hRounds,
     getTvSlides,
     getTvZoom,
     stepSlide,
     TV_SLIDE_MS,
-    TvH2hRound,
 } from "@/lib/publicTv";
-import { toQueryOptions } from "@/lib/queryCache";
+import { QueryError, toQueryOptions } from "@/lib/queryCache";
 import { publicRoundResultsQuery } from "@/lib/results";
 import { formatClockTime, formatElapsed } from "@/lib/time";
 import { cn } from "@/lib/utils";
@@ -83,22 +83,13 @@ const PublicTv = () => {
             getH2hRoundIds(competition?.wcif).includes(id)
         ) ?? null;
     const h2hQuery = publicH2hQuery(h2hRoundId ?? "");
-    const { data: h2hView, dataUpdatedAt: h2hUpdatedAt } = useLiveQuery(
-        h2hQuery,
-        { enabled: !!h2hRoundId }
-    );
-    const h2hRounds = useMemo<TvH2hRound[]>(
-        () =>
-            h2hRoundId && h2hView?.roundId === h2hRoundId
-                ? [
-                      {
-                          roundId: h2hRoundId,
-                          playingMatchNumbers: playingMatches(h2hView).map(
-                              (match) => match.matchNumber
-                          ),
-                      },
-                  ]
-                : [],
+    const {
+        data: h2hView,
+        dataUpdatedAt: h2hUpdatedAt,
+        error: h2hError,
+    } = useLiveQuery(h2hQuery, { enabled: !!h2hRoundId });
+    const h2hRounds = useMemo(
+        () => getTvH2hRounds(h2hRoundId, h2hView),
         [h2hRoundId, h2hView]
     );
     const slides = useMemo(
@@ -315,12 +306,19 @@ const PublicTv = () => {
                         />
                     )
                 ) : slide.type === "h2hBracket" ? (
-                    h2hView && (
+                    h2hView?.roundId === slide.roundId ? (
                         <H2hBracket
                             view={h2hView}
                             narrow={false}
                             fit={{ width: 1200, height: 560 }}
                         />
+                    ) : (
+                        <p className="py-24 text-center text-3xl text-muted-foreground">
+                            {h2hError instanceof QueryError &&
+                            h2hError.status === 404
+                                ? "The bracket for this round isn't ready yet."
+                                : "Loading the bracket…"}
+                        </p>
                     )
                 ) : slide.type === "live" ? (
                     <div className="[&_h2]:text-2xl">

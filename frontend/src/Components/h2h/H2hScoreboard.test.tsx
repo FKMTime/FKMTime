@@ -195,6 +195,38 @@ describe("H2hScoreboard", () => {
         ).toBe("true");
     });
 
+    it("puts the light out when a correction gives the lit point to the other side", () => {
+        const zero = playing(0);
+        const { rerender } = render(
+            <H2hScoreboard view={zero} match={zero.matches[0]} stations={[]} />
+        );
+        // B wins set 2's point 2
+        const one = playing(1);
+        rerender(
+            <H2hScoreboard view={one} match={one.matches[0]} stations={[]} />
+        );
+        expect(
+            screen
+                .getByRole("region", { name: "Competitor 4" })
+                .getAttribute("data-lit")
+        ).toBe("true");
+        // A typo fixed at once: the same point now goes to A
+        const corrected = withMatch(one, 1, {
+            sets: [
+                one.matches[0].sets[0],
+                set(2, [point(1, 1000, 900), point(2, 900, 950)]),
+            ],
+        });
+        rerender(
+            <H2hScoreboard
+                view={corrected}
+                match={corrected.matches[0]}
+                stations={[]}
+            />
+        );
+        expect(document.querySelector("[data-lit]")).toBeNull();
+    });
+
     it("never times a competitor with another station's packets", () => {
         // Older firmware: a timer runs while its time grows between packets
         const oldFirmware = (
