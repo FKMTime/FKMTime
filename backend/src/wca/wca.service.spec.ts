@@ -1,3 +1,5 @@
+import { Logger } from '@nestjs/common';
+
 import { WcaService } from './wca.service';
 
 describe('WcaService', () => {
@@ -134,6 +136,92 @@ describe('WcaService', () => {
 
       await expect(
         service.getScoretakingSoftware('ExampleOpen2026'),
+      ).resolves.toBeNull();
+    });
+  });
+
+  describe('getWcaRoundId', () => {
+    it("returns the round's id: the WCA lists the last round first", async () => {
+      fetchMock.mockResolvedValue({
+        ok: true,
+        status: 200,
+        json: jest.fn().mockResolvedValue({
+          id: '333oh',
+          rounds: [
+            { id: 98765, roundTypeId: 'f' },
+            { id: 98764, roundTypeId: '1' },
+          ],
+        }),
+      });
+
+      await expect(
+        service.getWcaRoundId('ExampleOpen2026', '333oh-r2'),
+      ).resolves.toBe(98765);
+      expect(fetchMock).toHaveBeenCalledWith(
+        expect.stringMatching(
+          /\/api\/v0\/competitions\/ExampleOpen2026\/results\/333oh$/,
+        ),
+        expect.anything(),
+      );
+    });
+
+    it.each([
+      ['an error', { ok: false, status: 404 }],
+      [
+        'no rounds',
+        {
+          ok: true,
+          status: 200,
+          json: jest.fn().mockResolvedValue({ id: '333oh', rounds: [] }),
+        },
+      ],
+      [
+        'a different number of rounds than the WCIF has',
+        {
+          ok: true,
+          status: 200,
+          json: jest.fn().mockResolvedValue({
+            id: '333oh',
+            rounds: [
+              { id: 98766, roundTypeId: 'f' },
+              { id: 98765, roundTypeId: '2' },
+              { id: 98764, roundTypeId: '1' },
+            ],
+          }),
+        },
+      ],
+      [
+        'an id that is not a number',
+        {
+          ok: true,
+          status: 200,
+          json: jest.fn().mockResolvedValue({
+            id: '333oh',
+            rounds: [{ id: '333oh-r2' }, { id: '333oh-r1' }],
+          }),
+        },
+      ],
+    ])('returns null when the WCA answers %s', async (_, response) => {
+      fetchMock.mockResolvedValue(response);
+
+      await expect(
+        service.getWcaRoundId('ExampleOpen2026', '333oh-r2'),
+      ).resolves.toBeNull();
+    });
+
+    it('asks nothing for a round id it cannot read', async () => {
+      await expect(
+        service.getWcaRoundId('ExampleOpen2026', 'not-a-round'),
+      ).resolves.toBeNull();
+      expect(fetchMock).not.toHaveBeenCalled();
+    });
+
+    it('returns null when the WCA cannot be reached', async () => {
+      fetchMock.mockRejectedValue(new Error('offline'));
+      jest.spyOn(Logger.prototype, 'error').mockImplementation(() => undefined);
+
+      await expect(
+        service.getWcaRoundId('ExampleOpen2026', '333oh-r2'),
       ).resolves.toBeNull();
     });
   });

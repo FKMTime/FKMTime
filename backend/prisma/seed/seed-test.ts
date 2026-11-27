@@ -134,6 +134,8 @@ export async function seedDb() {
           wcaId: person.wcaId,
           name: person.name,
           registrantId: person.registrantId,
+          // As the import keeps it: the WCA CSV export needs it
+          wcaRegistrationId: registration.wcaRegistrationId ?? null,
           gender: person.gender,
           countryIso2: person.countryIso2,
           canCompete: registration.isCompeting,

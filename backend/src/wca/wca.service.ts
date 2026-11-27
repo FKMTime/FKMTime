@@ -213,6 +213,41 @@ export class WcaService {
   }
 
   /**
+   * The WCA website's numeric id (`rounds.id`) of a WCIF round such as
+   * "333oh-r2", which the head-to-head CSV import needs and the WCIF doesn't
+   * carry. The public results endpoint lists the event's rounds last round
+   * first, so round N is the first entry only when the event has N rounds;
+   * any other answer gives null rather than another round's id. Null too
+   * when the WCA can't be reached in a few seconds.
+   */
+  async getWcaRoundId(
+    competitionId: string,
+    roundId: string,
+  ): Promise<number | null> {
+    const parsed = /^(.+)-r(\d+)$/.exec(roundId);
+    if (!parsed) return null;
+    const [, eventId, number] = parsed;
+    try {
+      const response = await fetch(
+        `${WCA_ORIGIN}/api/v0/competitions/${encodeURIComponent(competitionId)}/results/${encodeURIComponent(eventId)}`,
+        { signal: AbortSignal.timeout(5_000) },
+      );
+      this.wcaLogger.log(`Fetching ${eventId} round ids ${response.status}`);
+      if (!response.ok) return null;
+      const data = await response.json();
+      const rounds: unknown = data?.rounds;
+      if (!Array.isArray(rounds) || rounds.length !== Number(number)) {
+        return null;
+      }
+      const id = rounds[0]?.id;
+      return Number.isInteger(id) && id > 0 ? id : null;
+    } catch (e) {
+      this.wcaLogger.error(`Fetching ${eventId} round ids failed: ${e}`);
+      return null;
+    }
+  }
+
+  /**
    * How the competition's results are entered, per the WCA website
    * (`external`, `wca_live` or `internal`); null when the WCA can't be reached
    */

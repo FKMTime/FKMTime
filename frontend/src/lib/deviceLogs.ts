@@ -1,3 +1,4 @@
+import { saveAttachment } from "./download";
 import { backendRequest } from "./request";
 
 /** Sent when the panel starts watching, and again after the file was reset */
@@ -100,24 +101,11 @@ export const parseAnsi = (line: string): LogSegment[] => {
     return segments;
 };
 
-const fileNameFrom = (disposition: string | null) =>
-    disposition?.match(/filename="([^"]+)"/)?.[1] ?? null;
-
 /** Saves a log file from the backend; returns the response status */
 export const downloadLogFile = async (path: string, fallbackName: string) => {
     const response = await backendRequest(path, "GET", true);
     if (!response.ok) return response.status;
-
-    const url = URL.createObjectURL(await response.blob());
-    const link = document.createElement("a");
-    link.href = url;
-    link.download =
-        fileNameFrom(response.headers.get("Content-Disposition")) ??
-        `${fallbackName}.log`;
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
-    URL.revokeObjectURL(url);
+    await saveAttachment(response, `${fallbackName}.log`);
     return response.status;
 };
 

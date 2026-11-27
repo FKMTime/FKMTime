@@ -14,6 +14,8 @@ import { DNF_VALUE, DNS_VALUE } from "@/lib/constants";
 import { H2hEntrant, h2hRoundQuery, STAGE_LABELS } from "@/lib/h2h";
 import { resultToString } from "@/lib/resultFormatters";
 
+import WcaExportPanel from "./WcaExportPanel";
+
 /** The best single as the WCA writes it, or nothing before any attempt */
 const bestText = (best: number | null) => {
     if (best === null) return "";
@@ -60,44 +62,49 @@ const RankingTab = ({ roundId }: RankingTabProps) => {
     const entrants = [...bracket.entrants].sort(byPosition);
 
     return (
-        <section className="overflow-hidden rounded-mobile-card border bg-card md:rounded-2xl">
-            {bracket.status !== "FINISHED" && (
-                <p className="border-b px-3 py-2 text-sm text-muted-foreground md:px-5">
-                    Positions fill in as competitors are knocked out. The rest
-                    are still playing.
-                </p>
+        <div className="flex flex-col gap-4">
+            {bracket.status === "FINISHED" && (
+                <WcaExportPanel roundId={roundId} />
             )}
-            <Table>
-                <TableHeader>
-                    <TableRow>
-                        <TableHead className="w-12 pl-5">#</TableHead>
-                        <TableHead>Name</TableHead>
-                        <TableHead className="text-right">Best</TableHead>
-                        <TableHead>Stage reached</TableHead>
-                    </TableRow>
-                </TableHeader>
-                <TableBody>
-                    {entrants.map((entrant) => (
-                        <TableRow key={entrant.id}>
-                            <TableCell className="pl-5 text-muted-foreground">
-                                {entrant.position ?? ""}
-                            </TableCell>
-                            <TableCell className="font-semibold">
-                                {entrant.person.name}
-                            </TableCell>
-                            <TableCell className="text-right font-mono">
-                                {bestText(entrant.bestSingle)}
-                            </TableCell>
-                            <TableCell className="text-muted-foreground">
-                                {entrant.stageReached
-                                    ? STAGE_LABELS[entrant.stageReached]
-                                    : ""}
-                            </TableCell>
+            <section className="overflow-hidden rounded-mobile-card border bg-card md:rounded-2xl">
+                {bracket.status !== "FINISHED" && (
+                    <p className="border-b px-3 py-2 text-sm text-muted-foreground md:px-5">
+                        Positions fill in as competitors are knocked out. The
+                        rest are still playing.
+                    </p>
+                )}
+                <Table>
+                    <TableHeader>
+                        <TableRow>
+                            <TableHead className="w-12 pl-5">#</TableHead>
+                            <TableHead>Name</TableHead>
+                            <TableHead className="text-right">Best</TableHead>
+                            <TableHead>Stage reached</TableHead>
                         </TableRow>
-                    ))}
-                </TableBody>
-            </Table>
-        </section>
+                    </TableHeader>
+                    <TableBody>
+                        {entrants.map((entrant) => (
+                            <TableRow key={entrant.id}>
+                                <TableCell className="pl-5 text-muted-foreground">
+                                    {entrant.position ?? ""}
+                                </TableCell>
+                                <TableCell className="font-semibold">
+                                    {entrant.person.name}
+                                </TableCell>
+                                <TableCell className="text-right font-mono">
+                                    {bestText(entrant.bestSingle)}
+                                </TableCell>
+                                <TableCell className="text-muted-foreground">
+                                    {entrant.stageReached
+                                        ? STAGE_LABELS[entrant.stageReached]
+                                        : ""}
+                                </TableCell>
+                            </TableRow>
+                        ))}
+                    </TableBody>
+                </Table>
+            </section>
+        </div>
     );
 };
 

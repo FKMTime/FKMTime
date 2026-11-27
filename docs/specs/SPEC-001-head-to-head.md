@@ -892,7 +892,8 @@ Each takes the round's lock, then the match's, like recording an attempt.
   3-2 again). Any other point after a set's end is still refused with
   "Check the times". Marked points are left out of every tie-break, the
   match's own and other matches' best in the round (I3e), so reopening
-  and later decisions agree; the ranking's best single still counts them.
+  and later decisions agree, and out of the ranking's best single and the
+  WCA CSV (*WCA CSV export*).
   A point after the end can't get an extra, and an extra a retirement
   called off on one stays called off. A set that would no longer be over
   while a later one has been played is still refused.
@@ -905,7 +906,9 @@ Each takes the round's lock, then the match's, like recording an attempt.
   finishes the match again, so the marker goes.
 - **Ranking.** Attempts in a walkover don't count for the best single
   (9f5b), so a competitor whose only attempts were in one has no row. Nor
-  do they count for the round-level tie-break of a set (I3e).
+  do they count for the round-level tie-break of a set (I3e). Attempts on
+  points marked `afterEnd` don't count for the best single either, so it
+  matches the `best` the WCA works out from the CSV.
 
 ### Final ranking (9f16b)
 
@@ -925,6 +928,9 @@ frontend never scores anything itself, because winners are stored:
 - **No attempts at all:** a competitor whose only match was a walkover has no
   attempts and gets no row (9f5b). Attempts in a walkover (a retirement
   before the competitor's first attempt) don't count either.
+- **Points after the end:** attempts on points marked `afterEnd` (raced
+  after their set or the match was over, found by Reopen match) don't count
+  for the best single, as they aren't in the WCA CSV (*WCA CSV export*).
 - **Walkovers and retirements** are lost matches like any other: the
   withdrawn competitor is knocked out at that stage, and in the final stage
   ranks below their opponent whatever their singles.
@@ -934,36 +940,87 @@ The existing results table shows this ranking for H2H rounds. It has columns
 
 ### WCA CSV export
 
-The staff round page gets **Download results for WCA (CSV)** once the bracket
-is `FINISHED`.
+The Ranking tab of the staff round page gets **Download results for WCA
+(CSV)** once the bracket is `FINISHED`.
 
-**Where the work happens.** FKMTime stores scrambles encrypted, and the server
-never has the password: scrambling devices decrypt in the browser. The export
-follows the same rule:
+**Where the work happens.** The file is built on the server (*Decisions*,
+1). FKMTime stores scrambles encrypted with the scramble password, and
+`ScramblingService.unlockScrambleSet` already receives that password to
+check it, so the export does the same:
 
-1. `GET /h2h/:roundId/export` returns the rows with encrypted scrambles, plus
-   checks.
-2. The browser asks for the scramble password (the same unlock as the
-   scrambling device), decrypts, and builds the CSV.
+1. `GET /h2h/:roundId/export/checks` returns what still blocks the file and
+   its name. The tab lists the blocking checks before it asks for anything.
+2. The delegate enters the scramble password (the scrambling device's unlock
+   card) and the browser sends it with `POST /h2h/:roundId/export
+   { password }`.
+3. The backend checks everything again, decrypts the scrambles of the rows,
+   and returns the file as an attachment.
+
+The password decrypts the scrambles for that request only. It is never
+stored or logged, and it isn't checked in the browser. It is checked the
+way `unlockScrambleSet` checks it (`decryptScramble`): a password that
+doesn't decrypt every exported scramble to a scramble is refused with 403
+"Invalid password".
 
 **The WCA round id.** The CSV needs the WCA website's numeric round id, which
 the WCIF doesn't carry. The WCA website builds the WCIF round `id` as
 `"#{event_id}-r#{number}"`. The public API has it instead:
 
 - `GET $WCA_ORIGIN/api/v0/competitions/:competitionId/results/:eventId`
-  returns `rounds[] { id, roundTypeId, … }`, sorted by round number, highest
-  first.
-- The H2H round is the event's last round (9b7b), so it is the first entry.
-- On export, the backend fetches it and stores it in `H2hBracket.wcaRoundId`.
-- The staff screen shows the value and lets the delegate correct it if the
-  call fails.
+  (public, no sign-in) returns `rounds[] { id, roundTypeId, … }`, sorted by
+  round number, highest first.
+- The H2H round is the event's last round (9b7b), so it is the first entry,
+  but only when the answer lists as many rounds as the WCIF round's number
+  (`333oh-r2`: two). Any other answer gives no id rather than another
+  round's.
+- `H2hBracket.wcaRoundId` is filled from it while it is empty: in the
+  background when the bracket is created (creating doesn't wait for the
+  WCA; `h2hUpdated` tells the panels once it lands), and again on the
+  checks and on the export. A value already there, fetched or typed in by
+  the delegate, is never overwritten.
+- Loading the bracket doesn't fetch it: every open panel reloads the bracket
+  on each `h2hUpdated`, and a WCA call each time would multiply. Creating the
+  bracket already fills it in nearly every case.
+- If the call fails (the WCA is down, no internet at the venue: a 5 s
+  timeout), the value stays empty, the checks say so, and the delegate
+  enters it in the Bracket tab's `wcaRoundId` field. The bracket's WCA isn't
+  asked again for a minute after a failure, so the checks and the export
+  answer at once at a venue without internet.
 
-The dummy WCA used by e2e tests gets this endpoint.
+The dummy WCA used by e2e tests has this endpoint.
 
-**Rows.** Final data only: one row per counting attempt. Attempts replaced by
-an extra are left out, as in the WCA Live sync. `is_extra=1` marks a counting
-attempt that was solved on an extra scramble. Rows are sorted by `match_number`, `match_set_number`,
-point number, then side A before side B. Each column:
+**Rows.** Final data only: one row per counting attempt, so every attempt
+raced on a point. Rows are sorted by `match_number`, `match_set_number`,
+point number, then side A before side B. Left out:
+
+- walkover matches (I2h, and a retirement before the competitor's first
+  attempt, 9f5b), even when the opponent had solved;
+- races replaced by an extra (`H2hPointExtra`): only the re-race on the
+  point counts, as in the WCA Live sync. An extra a retirement called off
+  leaves its point empty;
+- empty points;
+- points marked `afterEnd`, and so the sets raced after a match was over;
+- attempts not counting (`EXTRA_GIVEN`, `VOIDED`).
+
+**Why points after the end stay out.** The WCA stores no point, set or match
+winners: its results pages work them out from the attempts
+(`computeMatchScores` in the WCA website's `headToHead.ts`). The importer
+numbers each competitor's attempts in a set by count, the pages pair the
+competitors' attempts with the same number into a race, give a set to
+whoever won the most races, and the match to whoever won the most sets.
+Points that don't count would change those scores. For example, A, A, no
+winner, B, B, B, then A's point 3 amended to a win and the match reopened:
+FKMTime has A winning 3-0 at point 3, but with points 4 to 6 in the file the
+WCA would count 3-3 and show no winner. A lone attempt on such a point
+would also pair the wrong races. So these points stay out of the file, and
+out of the ranking's best single, since the WCA takes `best` from the rows
+while keeping `pos` as given. The cost: those solves are real (9i4), on
+real scrambles, but don't reach the WCA results, so a record set on one
+would be lost. That needs a set to be reopened on amended times, which is
+rare.
+
+A retired match keeps its decided points and every submitted attempt of both
+competitors, including the opponent's attempt on the open point. Each column:
 
 | Column | Value |
 |---|---|
@@ -971,31 +1028,50 @@ point number, then side A before side B. Each column:
 | `match_number` | `H2hMatch.matchNumber` |
 | `match_set_number` | `H2hSet.setNumber` |
 | `set_attempt_number` | Point number; ignored by the importer, but correct |
-| `registration_id` | WCIF `registration.wcaRegistrationId` of the person |
+| `registration_id` | `Person.wcaRegistrationId` (the WCIF `registration.wcaRegistrationId`) |
 | `final_position` | From `rankH2hRound`, the same on every row of a competitor |
-| `time_seconds` | Centiseconds formatted as seconds with two decimals (`6532` → `65.32`); DNF `-1`, DNS `-2` |
+| `time_seconds` | The attempt's result as `toAttemptResult` gives it (+2 added), in seconds with exactly two decimals (`6532` → `65.32`, `1020` → `10.20`, never `m:ss`); DNF `-1`, DNS `-2` |
 | `scramble` | Decrypted text |
-| `scramble_set_number` | The point's scramble's set letter as a number (A = 1, B = 2, …), the same lettering TNoodle and the WCA scrambles page use |
+| `scramble_set_number` | The point's scramble's set letter as a number (A = 1, …, Z = 26, AA = 27), the same lettering TNoodle and the WCA scrambles page use |
 | `scramble_number` | `Scramble.num` of the point's scramble |
 | `is_extra` | `1` if `Scramble.isExtra`, else `0` |
 
-Walkover matches produce no rows. The file is UTF-8 with `\n` line endings and
-a header row, and is named `<competitionId>-<roundId>-h2h.csv`.
+The file is UTF-8 with `\n` line endings and a header row, and is named
+`<competitionId>-<roundId>-h2h.csv` (`Content-Disposition`). A field is
+quoted only when it has a comma, a quote or a line break, which scrambles
+never do.
 
-**The export refuses** (and lists what to fix) when:
+**The export refuses** with 409, listing what to fix (`blockers`, the same
+list the checks give), when:
 
 - a match isn't finished, or a point has only one attempt (except the open
-  point of a retired match);
-- an attempt still has an unresolved incident;
-- a person has no `wcaRegistrationId`;
+  point of a retired match: the last point it raced);
+- an attempt on an exported point still has an unresolved incident;
+- a competitor with rows has no `wcaRegistrationId`, or, once every match is
+  finished, no final position;
 - `wcaRoundId` couldn't be fetched and wasn't entered;
-- a set has no scramble set, or a point's scramble is missing;
-- the scramble password is wrong.
+- a set has no scramble set, a point's scramble is missing, or its set's
+  letter isn't one the WCA can number;
 
-A unit test parses the generated CSV with the same rules as the WCA rake task
-(column by name, `sub(".", "").to_i`) and checks the stored values come out
+and with 403 when the scramble password is wrong. The checks are worded for
+the delegate: "Semifinal 1, set 2, point 3 has an open incident. Resolve it
+first."
+
+**Who.** Both endpoints take delegates and organisers, like the other
+bracket endpoints (`OrganizerGuard`). The panel itself is on the Ranking
+tab, which only delegates open; an organiser can still fetch the file
+through the API.
+
+The code: `wcaCsv.ts` (rows, checks, the file; pure), `H2hExportService`
+(loading, the round id, the password) and `WcaService.getWcaRoundId`. A
+unit test parses the generated CSV with the same rules as the WCA rake task
+(columns by name, `round_id.to_i`, `time_seconds.sub(".", "").to_i`,
+attempt numbers from row order, `pos` from a competitor's first row, `best`
+from their rows) and checks the stored values come out
 right. That includes times of 60 s and over, and times with a trailing zero
-such as `10.20`.
+such as `10.20`. Another works out the match winner the way the WCA results
+pages do (`computeMatchScores`) and checks it is FKMTime's, for a match
+reopened with points after the end.
 
 ### API and real-time updates
 
@@ -1012,7 +1088,8 @@ such as `10.20`.
 | `POST /h2h/match/:id/retire` | delegate | End a playing match for one side (body: side, comment) |
 | `POST /h2h/point/:id/extra` | delegate | Extra granted to both competitors |
 | `POST /h2h/match/:id/reopen` | delegate | Reopen a finished match (comment required) |
-| `GET /h2h/:roundId/export` | delegate/organiser | Export rows and checks |
+| `GET /h2h/:roundId/export/checks` | delegate/organiser | What blocks the CSV, the file name and `wcaRoundId` (fetched first while empty) |
+| `POST /h2h/:roundId/export` | delegate/organiser | The WCA CSV; body `{ password }`, used for this request only. 409 with `blockers`, 403 on a wrong password |
 | `GET /h2h/public/:roundId` | public | Bracket for spectators: names, countries, seeds, set and point scores, times. No card ids |
 | `GET /scrambling/h2h/:roundId` | scrambling device | Each playing match with its set and next point's scramble (*On the day*) |
 
@@ -1213,7 +1290,7 @@ above, they win; each PR that builds a part updates its section.
    `POST /h2h/:roundId/export { password }` returns the file. The reason given
    in *WCA CSV export* for decrypting in the browser doesn't hold:
    `ScramblingService.unlockScrambleSet` already receives the password. The
-   password is used for that request only, and never stored or logged.
+   password is used for that request only, and never stored or logged. *WCA CSV export* now says so.
 2. **The ranking is computed in the backend only.** The H2H API responses
    return each entrant's position and stage reached, and the frontend only
    shows them. There is no shared package (as *Final ranking* says).

@@ -906,19 +906,24 @@ export class H2hMatchService {
   /**
    * Each competitor's best single from their counting attempts, WCA-encoded.
    * Attempts in a walkover don't count: a match where one competitor
-   * started no attempt has no results (9f5b).
+   * started no attempt has no results (9f5b). Nor do attempts on points
+   * raced after their set's or the match's end (`afterEnd`): the WCA CSV
+   * leaves them out, and the WCA takes `best` from the file while keeping
+   * the position given, so the two must count the same attempts.
    */
   async bestSingles(db: Db, roundId: string, personIds: string[]) {
-    const [results, walkoverPoints] = await Promise.all([
+    const [results, uncounted] = await Promise.all([
       db.result.findMany({
         where: { roundId, personId: { in: personIds } },
         include: { attempts: true },
       }),
       db.h2hPoint.findMany({
         where: {
-          set: {
-            match: { bracket: { roundId }, endedBy: H2hMatchEnd.WALKOVER },
-          },
+          set: { match: { bracket: { roundId } } },
+          OR: [
+            { afterEnd: true },
+            { set: { match: { endedBy: H2hMatchEnd.WALKOVER } } },
+          ],
         },
         select: {
           attemptAId: true,
@@ -927,8 +932,8 @@ export class H2hMatchService {
         },
       }),
     ]);
-    const inWalkovers = new Set(
-      walkoverPoints.flatMap((point) =>
+    const notCounting = new Set(
+      uncounted.flatMap((point) =>
         [point, ...point.extras].flatMap((race) =>
           [race.attemptAId, race.attemptBId].filter(
             (id): id is string => id !== null,
@@ -939,7 +944,7 @@ export class H2hMatchService {
     return new Map(
       results.flatMap((result) => {
         const singles = getCountingAttempts(result.attempts)
-          .filter((attempt) => !inWalkovers.has(attempt.id))
+          .filter((attempt) => !notCounting.has(attempt.id))
           .map(toAttemptResult);
         if (singles.length === 0) return [];
         const solved = singles.filter((s) => s > 0);

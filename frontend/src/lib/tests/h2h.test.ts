@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 
 import {
+    downloadH2hCsv,
     H2hBracket,
     H2hEntrant,
     H2hPlanRow,
@@ -184,5 +185,84 @@ describe("rankH2hResults", () => {
             ["Eve Still", null, "SEMIFINAL", null],
             ["Hal Slow", null, "SEMIFINAL", null],
         ]);
+    });
+});
+
+describe("downloadH2hCsv", () => {
+    const answer = (status: number, body: BodyInit, headers = {}) =>
+        vi
+            .spyOn(globalThis, "fetch")
+            .mockResolvedValue(new Response(body, { status, headers }));
+
+    it("sends the password and saves the file under the backend's name", async () => {
+        const fetch = answer(200, "round_id\n", {
+            "Content-Disposition":
+                'attachment; filename="ExampleOpen2026-333oh-r2-h2h.csv"',
+        });
+        const createObjectURL = vi.fn(() => "blob:csv");
+        const revokeObjectURL = vi.fn();
+        vi.stubGlobal("URL", { ...URL, createObjectURL, revokeObjectURL });
+        const click = vi
+            .spyOn(HTMLAnchorElement.prototype, "click")
+            .mockImplementation(function (this: HTMLAnchorElement) {
+                expect(this.download).toBe("ExampleOpen2026-333oh-r2-h2h.csv");
+                expect(this.href).toBe("blob:csv");
+            });
+        try {
+            await expect(downloadH2hCsv("333oh-r2", "secret")).resolves.toEqual(
+                { ok: true }
+            );
+            const [url, init] = fetch.mock.calls[0];
+            expect(String(url)).toMatch(/\/h2h\/333oh-r2\/export$/);
+            expect(init?.method).toBe("POST");
+            expect(JSON.parse(String(init?.body))).toEqual({
+                password: "secret",
+            });
+            expect(click).toHaveBeenCalledOnce();
+            expect(revokeObjectURL).toHaveBeenCalledWith("blob:csv");
+        } finally {
+            fetch.mockRestore();
+            click.mockRestore();
+            vi.unstubAllGlobals();
+        }
+    });
+
+    it("says when the password is wrong", async () => {
+        const fetch = answer(
+            403,
+            JSON.stringify({ statusCode: 403, message: "Invalid password" })
+        );
+        try {
+            await expect(downloadH2hCsv("333oh-r2", "nope")).resolves.toEqual({
+                ok: false,
+                wrongPassword: true,
+                message:
+                    "Wrong password. Use the password of the scramble sets.",
+            });
+        } finally {
+            fetch.mockRestore();
+        }
+    });
+
+    it("passes on what blocks the export", async () => {
+        const fetch = answer(
+            409,
+            JSON.stringify({
+                statusCode: 409,
+                message: "Fix these before downloading the results: …",
+                blockers: ["Final isn't finished"],
+            })
+        );
+        try {
+            await expect(downloadH2hCsv("333oh-r2", "secret")).resolves.toEqual(
+                {
+                    ok: false,
+                    blockers: ["Final isn't finished"],
+                    message: "Fix these first, then download again.",
+                }
+            );
+        } finally {
+            fetch.mockRestore();
+        }
     });
 });

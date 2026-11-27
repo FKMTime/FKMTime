@@ -514,6 +514,14 @@ describe('Head-to-head bracket setup (e2e)', () => {
 
     it('stores the WCA round id, and clears it', async () => {
       await create({ size: 8 }).expect(201);
+      // Creating fetches it from the WCA in the background: let that land
+      // first, so it can't fill the id in again after the clear below
+      for (let i = 0; i < 50; i++) {
+        if (found((await getView()).bracket, 'bracket').wcaRoundId !== null) {
+          break;
+        }
+        await new Promise((resolve) => setTimeout(resolve, 100));
+      }
 
       await put({ wcaRoundId: 4321 }).expect(200);
       expect(found((await getView()).bracket, 'bracket').wcaRoundId).toBe(4321);
