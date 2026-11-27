@@ -12,6 +12,7 @@ import { DbService, runInTransaction } from 'src/db/db.service';
 import { bySetLetter } from 'src/scramble-set/setLetters';
 import { Competition, getRoundInfoFromWcif } from 'wcif-helpers';
 
+import { H2hMatchStatus } from '../generated/prisma/client';
 import {
   getStages,
   isBracketSize,
@@ -35,7 +36,7 @@ import { UpdateScramblePlanDto } from './dto/updateScramblePlan.dto';
 import { UpdateSeedsDto } from './dto/updateSeeds.dto';
 import { H2hMatchService } from './h2hMatch.service';
 import { whyNoBracket } from './h2hRound';
-import { nextScramble } from './matchEngine';
+import { amendedAfter, nextScramble, whyNoReopen } from './matchEngine';
 import { rankH2hRound } from './ranking';
 import { countPlannedSets } from './scramblePlan';
 import { seedFromPreviousRound, suggestBracketSize } from './seeding';
@@ -60,6 +61,7 @@ const scrambleSetSelect = {
       num: true,
       isExtra: true,
       h2hPoint: { select: { id: true } },
+      h2hPointExtra: { select: { id: true } },
     },
   },
 } as const;
@@ -85,6 +87,7 @@ const setViewSelect = {
       pointNumber: true,
       winnerSide: true,
       decidedAt: true,
+      afterEnd: true,
       attemptAId: true,
       attemptBId: true,
       attemptA: { select: attemptViewSelect },
@@ -94,6 +97,14 @@ const setViewSelect = {
           num: true,
           isExtra: true,
           scrambleSet: { select: { set: true } },
+        },
+      },
+      // Races replaced by an extra, oldest first
+      extras: {
+        orderBy: { createdAt: 'asc' },
+        select: {
+          attemptA: { select: attemptViewSelect },
+          attemptB: { select: attemptViewSelect },
         },
       },
     },
@@ -158,6 +169,16 @@ export class H2hService {
               sourceBMatch: { select: { matchNumber: true } },
               scrambleAssignments: { orderBy: { setNumber: 'asc' } },
               sets: { orderBy: { setNumber: 'asc' }, select: setViewSelect },
+              logs: {
+                orderBy: { createdAt: 'asc' },
+                select: {
+                  action: true,
+                  side: true,
+                  comment: true,
+                  createdAt: true,
+                  createdBy: { select: { fullName: true } },
+                },
+              },
             },
           },
         },
@@ -203,6 +224,29 @@ export class H2hService {
       roundId,
       bracket.entrants.map((entrant) => entrant.person.id),
     );
+    const amended = await this.amendedAttemptIds(bracket.matches);
+    const entrantById = new Map(bracket.entrants.map((e) => [e.id, e]));
+    const labelOf = (matchId: string) => labels.get(matchId) ?? 'another match';
+    /** Why Reopen match would be refused, so the tab says so up front */
+    const reopenRefusal = (match: (typeof bracket.matches)[number]) => {
+      if (match.status !== H2hMatchStatus.FINISHED) return null;
+      const refusal = whyNoReopen(
+        match,
+        {
+          a: (match.entrantAId && entrantById.get(match.entrantAId)) || null,
+          b: (match.entrantBId && entrantById.get(match.entrantBId)) || null,
+        },
+        bracket.matches,
+      );
+      if (!refusal) return null;
+      if (refusal.kind === 'fedStarted') {
+        return `${labelOf(refusal.matchId)}, which follows from it, has started`;
+      }
+      const name = entrantById.get(refusal.entrantId)?.person.name;
+      return refusal.matchId
+        ? `${name} withdrew in ${labelOf(refusal.matchId)}: reopen that match instead`
+        : `${name} withdrew earlier: reopen the match they withdrew from instead`;
+    };
     const ranking = rankH2hRound(
       bracket.matches,
       bracket.entrants.map((entrant) => ({
@@ -217,11 +261,17 @@ export class H2hService {
         size: bracket.size,
         status: bracket.status,
         wcaRoundId: bracket.wcaRoundId,
-        seedsLocked: bracket.matches.some(hasStarted),
+        // A withdrawal locks them too: new seeds would drop it
+        seedsLocked:
+          bracket.matches.some(hasStarted) ||
+          bracket.entrants.some((entrant) => entrant.withdrawnAt !== null),
         attemptsLinked: bracket.matches.some((match) =>
           match.sets.some((set) =>
             set.points.some(
-              (point) => point.attemptAId !== null || point.attemptBId !== null,
+              (point) =>
+                point.attemptAId !== null ||
+                point.attemptBId !== null ||
+                point.extras.length > 0,
             ),
           ),
         ),
@@ -241,6 +291,7 @@ export class H2hService {
             seed: entrant.seed,
             seedTieBroken: entrant.seedTieBroken,
             withdrawnAt: entrant.withdrawnAt,
+            withdrawnInMatchId: entrant.withdrawnInMatchId,
             person: entrant.person,
             bestSingle: bestSingles.get(entrant.person.id) ?? null,
             position: ranked?.position ?? null,
@@ -258,6 +309,7 @@ export class H2hService {
           endedBy: match.endedBy,
           startedAt: match.startedAt,
           finishedAt: match.finishedAt,
+          reopenRefusal: reopenRefusal(match),
           score: {
             a: match.sets.filter((set) => set.winnerSide === 'A').length,
             b: match.sets.filter((set) => set.winnerSide === 'B').length,
@@ -272,8 +324,14 @@ export class H2hService {
               pointNumber: point.pointNumber,
               winnerSide: point.winnerSide,
               decided: point.decidedAt !== null,
+              afterEnd: point.afterEnd,
               attemptA: point.attemptA,
               attemptB: point.attemptB,
+              extras: point.extras,
+              // A time changed after the match, which kept its winner (11l1)
+              amendedAfterMatch: [point.attemptAId, point.attemptBId].some(
+                (id) => id !== null && amended.has(id),
+              ),
               scramble: point.scramble && {
                 set: point.scramble.scrambleSet.set,
                 num: point.scramble.num,
@@ -289,6 +347,13 @@ export class H2hService {
                   scrambleSets,
                 )
               : null,
+          log: match.logs.map((entry) => ({
+            action: entry.action,
+            side: entry.side,
+            comment: entry.comment,
+            createdAt: entry.createdAt,
+            createdBy: entry.createdBy?.fullName ?? null,
+          })),
           sideA: {
             entrantId: match.entrantAId,
             source: match.sourceAMatch && {
@@ -316,10 +381,69 @@ export class H2hService {
           extraScramblesCount: set.scrambles.filter((s) => s.isExtra).length,
           raced:
             set.h2hSet !== null ||
-            set.scrambles.some((s) => s.h2hPoint !== null),
+            set.scrambles.some(
+              (s) => s.h2hPoint !== null || s.h2hPointExtra !== null,
+            ),
         })),
       },
     };
+  }
+
+  /**
+   * Attempts on points of finished matches whose time changed after the
+   * match finished: the match kept its winners (11l1), and the staff screen
+   * says so. Worked out from the attempts' edit logs rather than stored.
+   */
+  private async amendedAttemptIds(
+    matches: {
+      finishedAt: Date | null;
+      sets: {
+        points: {
+          attemptA: {
+            id: string;
+            value: number;
+            penalty: number | null;
+          } | null;
+          attemptB: {
+            id: string;
+            value: number;
+            penalty: number | null;
+          } | null;
+        }[];
+      }[];
+    }[],
+  ) {
+    const finishedAtOf = new Map<
+      string,
+      { finishedAt: Date; value: number; penalty: number | null }
+    >();
+    for (const match of matches) {
+      const { finishedAt } = match;
+      if (finishedAt === null) continue;
+      for (const point of match.sets.flatMap((set) => set.points)) {
+        for (const attempt of [point.attemptA, point.attemptB]) {
+          if (attempt) finishedAtOf.set(attempt.id, { ...attempt, finishedAt });
+        }
+      }
+    }
+    if (finishedAtOf.size === 0) return new Set<string>();
+    const logs = await this.prisma.attemptEditLog.findMany({
+      where: { attemptId: { in: [...finishedAtOf.keys()] } },
+      select: { attemptId: true, editedAt: true, value: true, penalty: true },
+    });
+    const logsOf = new Map<string, typeof logs>();
+    for (const log of logs) {
+      const list = logsOf.get(log.attemptId);
+      if (list) list.push(log);
+      else logsOf.set(log.attemptId, [log]);
+    }
+    return new Set(
+      [...finishedAtOf].flatMap(([id, attempt]) =>
+        amendedAfter(attempt.finishedAt, logsOf.get(id) ?? [], attempt)
+          ? [id]
+          : [],
+      ),
+    );
   }
 
   /**
@@ -357,6 +481,7 @@ export class H2hService {
         num: number;
         isExtra: boolean;
         h2hPoint: { id: string } | null;
+        h2hPointExtra: { id: string } | null;
       }[];
     }[],
   ) {
@@ -382,7 +507,7 @@ export class H2hService {
         id: scramble.id,
         num: scramble.num,
         isExtra: scramble.isExtra,
-        used: scramble.h2hPoint !== null,
+        used: scramble.h2hPoint !== null || scramble.h2hPointExtra !== null,
       })),
     });
     const own = scrambleSets.find((s) => s.id === set.scrambleSet?.id);
@@ -484,11 +609,21 @@ export class H2hService {
       }
       if (
         bracket.matches.some(
-          (m) => !NOT_STARTED.includes(m.status) || m.startedAt !== null,
+          (m) =>
+            m.startedAt !== null || m.status === H2hMatchStatus.IN_PROGRESS,
         )
       ) {
         throw new ConflictException(
           "The seeds can't change once a match has started",
+        );
+      }
+      // New seeds would drop the withdrawal, and the walkovers it gave
+      if (
+        bracket.entrants.some((e) => e.withdrawnAt !== null) ||
+        bracket.matches.some((m) => m.status === H2hMatchStatus.FINISHED)
+      ) {
+        throw new ConflictException(
+          "The seeds can't change once a competitor has withdrawn. To start over, delete the bracket and create it again.",
         );
       }
       if (dto.personIds.length > bracket.size) {
@@ -591,7 +726,11 @@ export class H2hService {
       const linked = await tx.db.h2hPoint.count({
         where: {
           set: { match: { bracketId: bracket.id } },
-          OR: [{ attemptAId: { not: null } }, { attemptBId: { not: null } }],
+          OR: [
+            { attemptAId: { not: null } },
+            { attemptBId: { not: null } },
+            { extras: { some: {} } },
+          ],
         },
       });
       if (linked > 0) {

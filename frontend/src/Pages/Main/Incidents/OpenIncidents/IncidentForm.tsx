@@ -22,6 +22,7 @@ import { Label } from "@/Components/ui/label";
 import { useToast } from "@/hooks/useToast";
 import { getEventIdFromRoundId } from "@/lib/activities";
 import { DNF_VALUE } from "@/lib/constants";
+import { EXTRA_REMINDER } from "@/lib/h2h";
 import {
     AttemptStatus,
     AttemptType,
@@ -45,6 +46,11 @@ interface IncidentFormProps {
     canGiveExtra?: boolean;
     /** Noteworthy incidents stay with delegates (SPEC-013) */
     canMarkNoteworthy?: boolean;
+    /**
+     * Raced on a head-to-head point: the choice is an extra for both
+     * competitors or none (SPEC-001, Extra attempts)
+     */
+    isH2hPoint?: boolean;
 }
 
 const IncidentForm = ({
@@ -55,6 +61,7 @@ const IncidentForm = ({
     timeLimit,
     canGiveExtra = true,
     canMarkNoteworthy = true,
+    isH2hPoint = false,
 }: IncidentFormProps) => {
     const { toast } = useToast();
     const [action, setAction] = useState<IncidentAction | null>(null);
@@ -251,13 +258,18 @@ const IncidentForm = ({
                     </span>
                 </Label>
                 <InlineError className="text-[13px]">{error}</InlineError>
+                {isH2hPoint && canGiveExtra && (
+                    <p className="text-sm text-muted-foreground">
+                        {EXTRA_REMINDER}
+                    </p>
+                )}
                 <div className="mt-1 flex flex-col gap-2.5 sm:flex-row sm:flex-wrap">
                     <Button
                         type="submit"
                         disabled={isLoading}
                         onClick={() => setAction(IncidentAction.RESOLVED)}
                     >
-                        Mark as resolved
+                        {isH2hPoint ? "No extra" : "Mark as resolved"}
                     </Button>
                     {canGiveExtra && (
                         <Button
@@ -268,7 +280,9 @@ const IncidentForm = ({
                                 setAction(IncidentAction.EXTRA_GIVEN)
                             }
                         >
-                            Save and give extra
+                            {isH2hPoint
+                                ? "Extra granted (both competitors)"
+                                : "Save and give extra"}
                         </Button>
                     )}
                     {handleDelete && (

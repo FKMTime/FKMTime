@@ -538,9 +538,9 @@ Idempotency is unchanged. A station that reconnects and resends an attempt
 with the same `sessionId` gets the stored response and doesn't fill a second
 slot.
 
-If a station drops mid-match, the judge writes the result on paper. The stage
-leader enters it on the staff screen with the existing manual attempt entry,
-and it goes through the same point logic. The scoreboard shows "waiting for
+If a station drops mid-match, the judge writes the result on paper. A
+delegate enters it on the staff screen (Enter in the Matches tab, or the
+existing manual attempt entry), and it goes through the same point logic. The scoreboard shows "waiting for
 result" for that side until then.
 
 How the point engine is built (`H2hMatchService`, with its pure parts in
@@ -570,7 +570,9 @@ the same code:
   closes again if an edit means the set before isn't over after all. An
   edit that no longer fits the sets played (points after a set would have
   ended, or a set started while the one before would still be going on) is
-  refused with "Check the times", and nothing changes.
+  refused with "Check the times", and nothing changes. Only Reopen match
+  accepts them: the points it finds after a set's or the match's end don't
+  count while they stay after the end (*How the exceptions are built*).
 - **Starting.** A match starts only once every seed has a competitor (the
   bracket is `SEEDED`): seeds lock with the first start, so an empty seed
   would stay empty and its match could never be played.
@@ -617,8 +619,9 @@ On the staff screen the delegate can choose **Extra granted** on a point.
 sides:
 
 - Both attempts go to `EXTRA_GIVEN`.
-- The point is cleared and gets the set's next unused scramble, which by then
-  is usually an extra (*Scrambles*).
+- The point is cleared and gets the set's next unused extra scramble (4b3),
+  and the next unused scramble in the normal order once those run out
+  (*Scrambles*).
 - The next two submissions fill it again.
 
 There is no single-competitor extra for H2H points. The incident flow from the
@@ -684,6 +687,118 @@ Once a match is `FINISHED`, its winners are frozen:
   cheating or fraud (the 11l exception). It unfreezes the match and recomputes
   it, including the matches fed by it, but only while those haven't started.
 
+#### How the exceptions are built
+
+Extra granted, Withdraw, Retire and Reopen match live in
+`H2hMatchActionsService`; ending a match and walkovers in `matchStore.ts`.
+Each takes the round's lock, then the match's, like recording an attempt.
+
+- **Two tables.** `H2hPointExtra` keeps each race a point was given an
+  extra for: its two attempts and its scramble (all `Restrict`, the
+  scramble `@unique`), so the replaced attempts can't be deleted and the
+  scramble is never raced again. `H2hMatchLog` keeps each Withdraw, Retire
+  and Reopen with its side, comment and who did it; the Matches tab shows
+  it on the match.
+- **Extra granted** works on the last point raced in a playing match, once
+  both results are in: the opponent solved the same scramble, so racing it
+  again without them would mix scrambles. When the opponent has started the
+  next point since, the refusal says to delete that lone attempt first.
+- **The point that finished a match.** Recording its second attempt
+  finishes the match, even while that attempt has an open incident, so an
+  extra on it is allowed on a match played to the end (`endedBy = PLAYED`)
+  while none of the matches it fed has started. The match plays again, and
+  those matches take back its result, as Reopen match does. Chosen over
+  keeping a point with an unresolved attempt undecided: scoring and the
+  incident flow stay as they are, and a finished match already goes back
+  into play this way for Reopen match. Once a match it fed has started,
+  the point keeps its result (11l). The point takes the set's next
+  unused **extra** scramble (4b3), and the normal order (*Scrambles*) once
+  those run out. The two attempts that race it again are extra attempts:
+  each replaced attempt's `replacedBy` is set to the new one's number when
+  it lands, so the existing extra mechanism counts it. Until then the old
+  attempts wait for their extra, as any Extra granted does. The point's
+  winner, and the set's if it decided one, are worked out again; a next set
+  opened but not raced yet closes. Delegates only, also from the incident
+  panel: a group's delegate access doesn't cover it, because the extra
+  covers a competitor outside the group's incident. The delegate's comment
+  is added to what the attempts' comments already say, and the incident
+  panel's "noteworthy" mark is saved too.
+- **Deleting a re-race.** The lone re-race of a point given an extra can
+  be deleted like any lone attempt, but the point stays: only its slot
+  empties, so the point keeps its extras and its scramble, and no scramble
+  is raced twice (I4b1). The race it replaced waits for its extra again.
+  `H2hPointExtra` still cascades from its point, because a `Restrict` there
+  would stop a bracket from being deleted.
+- **Not on a point any more.** Reordering, swapping or setting the
+  replacement of an attempt raced on a point, or replaced on one, is
+  refused: their order is the order of the points. Marking one attempt
+  Extra granted is refused with a pointer to Extra granted on the point. A
+  replaced attempt can't be deleted and keeps its status, number and type;
+  its time, penalty and comment can still be corrected, and it can't be
+  given another extra. An edit that finds the attempt taken off its point
+  meanwhile (an extra granted at the same moment) is refused with "Reload
+  and try again".
+- **Withdraw** works on a match not started yet, once every seed has a
+  competitor (before that, change the seeds), and also while the opponent
+  isn't known: the walkover happens when they are. Any match no one has
+  started whose known competitor withdrew becomes a walkover as soon as
+  both sides are known, and so on through the bracket. When both
+  competitors of a match have withdrawn, the one who left later wins it,
+  then the higher seed. `H2hEntrant.withdrawnInMatchId` keeps the match
+  they withdrew or retired from. The seeds can't change once someone has
+  withdrawn (new seeds would drop the withdrawal); deleting and recreating
+  the bracket starts over, and the seed list shows them locked. A mistaken
+  Withdraw on a match whose opponent isn't known yet can be undone only
+  once its walkover has happened, with Reopen match. When reopening an
+  earlier match takes the competitor out of the match they withdrew from
+  (they now lose the semifinal and withdrew from the final), the walkover
+  their withdrawal then gives becomes the match it is undone in.
+- **Retire** removes a set opened but not raced (it was never played),
+  and counts as a walkover when the retiring competitor has no attempt in
+  the match, including one replaced by an extra. An extra granted but not
+  raced yet is called off: the attempts it replaced become `VOIDED`, with
+  an edit log line, so double check, the group change and Integrated Live
+  don't wait for them. Reopening the match puts them back to Extra
+  granted.
+- **Reopen match** puts the match back to Playing (or Ready, for a walkover
+  that never started) and decides it again from its times as they are now,
+  so a delegate corrects the times first: on unchanged times it finishes
+  again straight away. It takes back the matches it fed, and on through
+  walkovers those finished, refusing when any of them has started. It
+  undoes a Retire or Withdraw only when the match ended by it (`endedBy`
+  is `WALKOVER` or `RETIRED`) and the competitor left in this match
+  (`withdrawnInMatchId`): a played match leaves a later withdrawal of its
+  loser alone, and a walkover that follows from a withdrawal elsewhere is
+  reopened there. The Matches tab shows why Reopen match would be refused
+  before it is clicked.
+- **Surplus points after Reopen match.** Times amended for cheating or a
+  DNF can end a set before all its played points (A, A, B, A with B's
+  point 3 turned into a DNF). Reopen match decides every point again and
+  marks those after a set's end, or in a set after the match's end,
+  `H2hPoint.afterEnd`: they keep their attempts, which are real solves,
+  but get no winner, and the Matches tab says they don't count. The engine
+  is told which points may come after an end (any point while reopening,
+  later only the marked ones), not given fewer points: a marked point
+  still after its set's end stays marked, and one an edit makes its set
+  reach again counts and loses the mark (B's point 3 put back, B wins
+  3-2 again). Any other point after a set's end is still refused with
+  "Check the times". Marked points are left out of every tie-break, the
+  match's own and other matches' best in the round (I3e), so reopening
+  and later decisions agree; the ranking's best single still counts them.
+  A point after the end can't get an extra, and an extra a retirement
+  called off on one stays called off. A set that would no longer be over
+  while a later one has been played is still refused.
+- **After each action** the round's `resultEntered` and the group change
+  check run as well as `h2hUpdated`, since double check and the group
+  change depend on who still plays.
+- **Amended after the match** is worked out, not stored: an attempt on a
+  point of a finished match is amended when its time and penalty differ
+  from its last edit log entry at or before `finishedAt`. Reopening
+  finishes the match again, so the marker goes.
+- **Ranking.** Attempts in a walkover don't count for the best single
+  (9f5b), so a competitor whose only attempts were in one has no row. Nor
+  do they count for the round-level tie-break of a set (I3e).
+
 ### Final ranking (9f16b)
 
 `rankH2hRound(matches, entrants)`, a pure backend function. The export uses
@@ -700,7 +815,11 @@ frontend never scores anything itself, because winners are stored:
   no further tie-break, unlike 9f14 for averages, so equal best singles share a
   position (9f15), and the next position is skipped (two at 5th, then 7th).
 - **No attempts at all:** a competitor whose only match was a walkover has no
-  attempts and gets no row (9f5b).
+  attempts and gets no row (9f5b). Attempts in a walkover (a retirement
+  before the competitor's first attempt) don't count either.
+- **Walkovers and retirements** are lost matches like any other: the
+  withdrawn competitor is knocked out at that stage, and in the final stage
+  ranks below their opponent whatever their singles.
 
 The existing results table shows this ranking for H2H rounds. It has columns
 #, Name, Best and Stage reached, and no average.
@@ -803,9 +922,11 @@ socket.io:
 Ranking, Scrambles (the plan table from *Scrambles*) and Results (the
 existing results table, with #, Name, Best and Stage reached). Matches
 starts with the list, Start match, the point-by-point log, the scramble in
-use and manual entry; Extra granted, Withdraw, Retire and the "amended
-after the match" marker come with the step that builds them. The tabs join
-`joinH2h` and refetch on `h2hUpdated`.
+use and manual entry, then Extra granted, Withdraw, Retire, Reopen match
+and the "amended after the match" marker. The tabs join `joinH2h` and
+refetch on `h2hUpdated`. Stage leaders and organisers open an H2H round's
+page with the Matches tab only, where they start matches; everything else
+on it stays with delegates. The public results view links them there.
 
 As designed, it sits under the existing Results
 tabs and has three tabs:

@@ -4,7 +4,12 @@
  * and what the points so far decide. H2hMatchService reads and writes the
  * rows around them.
  */
-import { H2hSetDecision, H2hSide } from '../generated/prisma/client';
+import {
+  H2hMatchEnd,
+  H2hMatchStatus,
+  H2hSetDecision,
+  H2hSide,
+} from '../generated/prisma/client';
 import { decideMatch, decidePoint, decideSet, PlayedPoint } from './scoring';
 
 export const WAITING_FOR_OPPONENT = "Waiting for opponent's result";
@@ -88,11 +93,14 @@ const byLetter = (x: ScrambleSetOption, y: ScrambleSetOption) =>
 /**
  * The scramble a new point races: the next unused one of the H2H set's own
  * scramble set (normal scrambles, then extras), then of the first spare set
- * (one not in the plan). Null when none is left anywhere.
+ * (one not in the plan). A point raced again after an extra takes the own
+ * set's next extra first (Regulation 4b3: extra attempts use extra
+ * scrambles). Null when none is left anywhere.
  */
 export const nextScramble = (
   own: ScrambleSetOption | null,
   spares: ScrambleSetOption[],
+  options: { extra?: boolean } = {},
 ): ChosenScramble | null => {
   const pick = (set: ScrambleSetOption, fromSpare: boolean) => {
     const scramble = inRaceOrder(set.scrambles).find((s) => !s.used);
@@ -107,6 +115,11 @@ export const nextScramble = (
         }
       : null;
   };
+  if (own && options.extra) {
+    const extras = own.scrambles.filter((scramble) => scramble.isExtra);
+    const fromExtras = pick({ ...own, scrambles: extras }, false);
+    if (fromExtras) return fromExtras;
+  }
   const fromOwn = own ? pick(own, false) : null;
   if (fromOwn) return fromOwn;
   for (const spare of [...spares].sort(byLetter)) {
@@ -121,6 +134,13 @@ export interface ScoredPointInput {
   pointNumber: number;
   a: number | null;
   b: number | null;
+  /**
+   * May have been raced after its set or the match was over, and then
+   * doesn't count instead of being refused: any point when a match is
+   * reopened on amended times, and later the points that reopening found
+   * after the end. A point its set reaches again counts as any other.
+   */
+  maySurplus?: boolean;
 }
 
 export interface ScoredSetInput {
@@ -142,6 +162,11 @@ export interface SetScore {
   /** Winners of the points with both attempts in, by point number */
   pointWinners: Map<number, H2hSide | null>;
   outcome: { winner: H2hSide; decidedBy: H2hSetDecision } | null;
+  /**
+   * Points raced after the set or the match was over, which don't count;
+   * only ever `maySurplus` ones
+   */
+  afterEnd: Set<number>;
 }
 
 export interface MatchScore {
@@ -161,30 +186,62 @@ const resultsOf = (sets: ScoredSetInput[], side: 'a' | 'b') =>
  * set's (I3b, I3e) and the match's (I3a). Re-run after any attempt in an
  * unfinished match changes, so a typo fixed mid-match re-decides it.
  * Throws a MatchConflict when the points no longer fit the sets played:
- * points after a set would have ended, or a set started after one that
- * would still be going on.
+ * points after a set would have ended (unless `maySurplus`), or a set
+ * started after one that would still be going on.
  */
 export const scoreMatch = (input: MatchInput): MatchScore => {
   const sets: SetScore[] = [];
+  /**
+   * Each side's results in the sets scored so far, for the tie-breaks:
+   * points after an end don't count there either
+   */
+  const counted = { a: [] as number[], b: [] as number[] };
+  let overAfter: number | null = null;
   input.sets.forEach((set, index) => {
     const isLast = index === input.sets.length - 1;
     const sorted = [...set.points].sort(
       (x, y) => x.pointNumber - y.pointNumber,
     );
+    if (overAfter !== null) {
+      // Raced after the match was over: the set doesn't count
+      if (sorted.some((point) => !point.maySurplus)) {
+        throw new MatchConflict(
+          `The match would be over after set ${overAfter}, but set ${set.setNumber} has been played. Check the times.`,
+        );
+      }
+      sets.push({
+        setNumber: set.setNumber,
+        pointWinners: new Map(),
+        outcome: null,
+        afterEnd: new Set(sorted.map((point) => point.pointNumber)),
+      });
+      return;
+    }
     const pointWinners = new Map<number, H2hSide | null>();
     const played: PlayedPoint[] = [];
-    const matchSoFar = input.sets.slice(0, index + 1);
-    const matchResults = {
-      a: resultsOf(matchSoFar, 'a'),
-      b: resultsOf(matchSoFar, 'b'),
-    };
+    const afterEnd = new Set<number>();
     let outcome: SetScore['outcome'] = null;
+    let decidedAt = 0;
     for (const [i, point] of sorted.entries()) {
+      if (outcome) {
+        // Raced after the set was over: no winner, it doesn't count
+        if (!point.maySurplus) {
+          throw new MatchConflict(
+            `Set ${set.setNumber} would be over after point ${decidedAt}, but point ${point.pointNumber} has a result too. Check the times.`,
+          );
+        }
+        afterEnd.add(point.pointNumber);
+        continue;
+      }
       if (point.a === null || point.b === null) continue;
       const winner = decidePoint(point.a, point.b);
       pointWinners.set(point.pointNumber, winner);
       played.push({ a: point.a, b: point.b, winner });
-      if (outcome) continue;
+      const upToHere = sorted.slice(0, i + 1);
+      const matchResults = {
+        a: [...counted.a, ...resultsOf([{ ...set, points: upToHere }], 'a')],
+        b: [...counted.b, ...resultsOf([{ ...set, points: upToHere }], 'b')],
+      };
       outcome = decideSet({
         points: played,
         matchResults,
@@ -194,36 +251,167 @@ export const scoreMatch = (input: MatchInput): MatchScore => {
         },
         seeds: input.seeds,
       });
-      if (outcome && i < sorted.length - 1) {
-        throw new MatchConflict(
-          `Set ${set.setNumber} would be over after point ${point.pointNumber}, but point ${sorted[i + 1].pointNumber} has a result too. Check the times.`,
-        );
-      }
+      if (outcome) decidedAt = point.pointNumber;
     }
     if (!outcome && !isLast) {
       throw new MatchConflict(
         `Set ${set.setNumber} would not be over yet, but set ${input.sets[index + 1].setNumber} has started. Check the times.`,
       );
     }
-    sets.push({ setNumber: set.setNumber, pointWinners, outcome });
+    const kept = sorted.filter((point) => !afterEnd.has(point.pointNumber));
+    counted.a.push(...resultsOf([{ ...set, points: kept }], 'a'));
+    counted.b.push(...resultsOf([{ ...set, points: kept }], 'b'));
+    sets.push({ setNumber: set.setNumber, pointWinners, outcome, afterEnd });
+    if (
+      decideMatch(
+        sets.map((s) => s.outcome?.winner ?? null),
+        input.setsToWin,
+      )
+    ) {
+      overAfter = set.setNumber;
+    }
   });
 
-  let winner: H2hSide | null = null;
-  for (const [index, set] of sets.entries()) {
-    winner = decideMatch(
-      sets.slice(0, index + 1).map((s) => s.outcome?.winner ?? null),
-      input.setsToWin,
-    );
-    if (winner && index < sets.length - 1) {
-      throw new MatchConflict(
-        `The match would be over after set ${set.setNumber}, but set ${sets[index + 1].setNumber} has been played. Check the times.`,
-      );
-    }
-  }
+  const winner = decideMatch(
+    sets.map((s) => s.outcome?.winner ?? null),
+    input.setsToWin,
+  );
   const last = sets[sets.length - 1];
   return {
     sets,
     winner,
     nextSetNumber: winner === null && last?.outcome ? last.setNumber + 1 : null,
   };
+};
+
+/** A side of a match no one has started, as a withdrawal reads it */
+export interface WalkoverSide {
+  seed: number;
+  withdrawnAt: Date | null;
+}
+
+/**
+ * Who wins a match that hasn't started when a competitor in it has
+ * withdrawn (I2h): the one still in. When both have, the one who left later
+ * went further, so they win, and the higher seed when that is a tie too.
+ * Null while neither has withdrawn.
+ */
+export const walkoverWinner = (
+  a: WalkoverSide,
+  b: WalkoverSide,
+): H2hSide | null => {
+  if (a.withdrawnAt === null && b.withdrawnAt === null) return null;
+  if (a.withdrawnAt === null) return H2hSide.A;
+  if (b.withdrawnAt === null) return H2hSide.B;
+  const later = a.withdrawnAt.getTime() - b.withdrawnAt.getTime();
+  if (later !== 0) return later > 0 ? H2hSide.A : H2hSide.B;
+  return a.seed < b.seed ? H2hSide.A : H2hSide.B;
+};
+
+/** A match as reopening another one reads the graph */
+export interface FedMatch {
+  id: string;
+  status: H2hMatchStatus;
+  startedAt: Date | null;
+  sourceAMatchId: string | null;
+  sourceBMatchId: string | null;
+}
+
+/**
+ * What reopening a match takes back: the matches it fed, and on through
+ * the ones of those that finished as walkovers without starting. `started`
+ * is one of them that has started, which makes reopening impossible: its
+ * competitors are already playing on the old result.
+ */
+export const matchesFedBy = <T extends FedMatch>(
+  matches: T[],
+  matchId: string,
+): { reset: T[]; started: T | null } => {
+  const reset: T[] = [];
+  const queue = [matchId];
+  for (let id = queue.shift(); id !== undefined; id = queue.shift()) {
+    const source = id;
+    for (const fed of matches) {
+      if (fed.sourceAMatchId !== source && fed.sourceBMatchId !== source) {
+        continue;
+      }
+      if (fed.startedAt !== null) return { reset, started: fed };
+      if (reset.includes(fed)) continue;
+      reset.push(fed);
+      if (fed.status === H2hMatchStatus.FINISHED) queue.push(fed.id);
+    }
+  }
+  return { reset, started: null };
+};
+
+/** Why a finished match can't be reopened */
+export type ReopenRefusal =
+  /** A match it fed has started on its result */
+  | { kind: 'fedStarted'; matchId: string }
+  /**
+   * A walkover that follows from a withdrawal in another match (or a
+   * retirement there): that match is the one to reopen
+   */
+  | { kind: 'withdrewElsewhere'; entrantId: string; matchId: string | null };
+
+/** A side of a finished match, as reopening reads it */
+export interface WithdrawnSide {
+  id: string;
+  withdrawnAt: Date | null;
+  withdrawnInMatchId: string | null;
+}
+
+/**
+ * Why reopening a finished match is refused, or null when it can be. A
+ * walkover or retirement is undone only in the match where it happened; a
+ * played match leaves any later withdrawal of its loser alone.
+ */
+export const whyNoReopen = (
+  match: FedMatch & {
+    winnerSide: H2hSide | null;
+    endedBy: H2hMatchEnd | null;
+  },
+  sides: { a: WithdrawnSide | null; b: WithdrawnSide | null },
+  matches: FedMatch[],
+): ReopenRefusal | null => {
+  const { started } = matchesFedBy(matches, match.id);
+  if (started) return { kind: 'fedStarted', matchId: started.id };
+  if (match.endedBy === H2hMatchEnd.PLAYED || match.winnerSide === null) {
+    return null;
+  }
+  const loser = match.winnerSide === H2hSide.A ? sides.b : sides.a;
+  if (loser?.withdrawnAt && loser.withdrawnInMatchId !== match.id) {
+    return {
+      kind: 'withdrewElsewhere',
+      entrantId: loser.id,
+      matchId: loser.withdrawnInMatchId,
+    };
+  }
+  return null;
+};
+
+/** An attempt's time as an edit log entry saved it */
+export interface LoggedTime {
+  editedAt: Date;
+  value: number;
+  penalty: number | null;
+}
+
+/**
+ * Whether an attempt's time is no longer what it was when its match
+ * finished: amended after the match, which keeps its winners (11l1)
+ */
+export const amendedAfter = (
+  finishedAt: Date,
+  logs: LoggedTime[],
+  current: { value: number; penalty: number | null },
+): boolean => {
+  const atFinish = logs
+    .filter((log) => log.editedAt.getTime() <= finishedAt.getTime())
+    .sort((x, y) => x.editedAt.getTime() - y.editedAt.getTime())
+    .at(-1);
+  if (!atFinish) return false;
+  return (
+    atFinish.value !== current.value || atFinish.penalty !== current.penalty
+  );
 };

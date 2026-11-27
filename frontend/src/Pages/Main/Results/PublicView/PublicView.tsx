@@ -1,14 +1,16 @@
 import { useAtomValue } from "jotai";
 import { useEffect, useMemo } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 
 import LoadingPage from "@/Components/LoadingPage";
 import PublicResultsBoard from "@/Components/results/PublicResultsBoard";
+import { Button } from "@/Components/ui/button";
 import { useLiveQuery } from "@/hooks/useLiveQuery";
 import { usePageHeader } from "@/hooks/usePageHeader";
 import { useSocketRoom } from "@/hooks/useSocketRoom";
 import { competitionAtom } from "@/lib/atoms";
 import { Result } from "@/lib/interfaces";
+import { isStageLeaderOrOrganizerOrDelegate } from "@/lib/permissions";
 import { roundResultsQuery } from "@/lib/results";
 import { roomsQuery } from "@/lib/rooms";
 import { shortRoundName } from "@/lib/utils";
@@ -68,15 +70,29 @@ const PublicView = () => {
     }, [roundId, competition, liveRoundIds, navigate]);
 
     if (!competition) return <LoadingPage />;
+    // Stage leaders start a head-to-head round's matches from its page
+    const isH2h =
+        competition.wcif.events
+            .flatMap((event) => event.rounds)
+            .find((round) => round.id === roundId)?.format === "h";
 
     return (
-        <PublicResultsBoard
-            wcif={competition.wcif}
-            roundId={roundId}
-            results={results}
-            liveRoundIds={liveRoundIds ?? []}
-            onRoundChange={(id) => navigate(`/results/public/${id}`)}
-        />
+        <>
+            {isH2h && isStageLeaderOrOrganizerOrDelegate() && (
+                <Button asChild variant="outline" className="self-start">
+                    <Link to={`/results/round/${roundId}?tab=matches`}>
+                        Run the matches
+                    </Link>
+                </Button>
+            )}
+            <PublicResultsBoard
+                wcif={competition.wcif}
+                roundId={roundId}
+                results={results}
+                liveRoundIds={liveRoundIds ?? []}
+                onRoundChange={(id) => navigate(`/results/public/${id}`)}
+            />
+        </>
     );
 };
 

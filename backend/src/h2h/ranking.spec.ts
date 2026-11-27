@@ -145,4 +145,62 @@ describe('rankH2hRound', () => {
       s8: H2hStage.QUARTERFINAL,
     });
   });
+
+  describe('walkovers and retirements', () => {
+    it('leaves out a quarterfinalist who withdrew with no attempt, and ranks the rest from 5th', () => {
+      // s5 withdrew before playing s4: a walkover, and no attempt anywhere
+      const ranked = rankH2hRound(
+        eightPlayed(),
+        entrants({
+          s1: 900,
+          s2: 950,
+          s3: 800,
+          s4: 1000,
+          s5: null,
+          s6: 1050,
+          s7: 1300,
+          s8: 1200,
+        }),
+      );
+
+      expect(positions(ranked)).toMatchObject({
+        s6: 5,
+        s8: 6,
+        s7: 7,
+        s5: null,
+      });
+    });
+
+    it('ranks a semifinalist who withdrew below their third-place opponent, whatever their singles', () => {
+      // s4 retired in the semifinal, so the third-place match was a
+      // walkover for s3, though s4 has the better single
+      const matches = eightPlayed().map((m) =>
+        m.stage === H2hStage.THIRD_PLACE ? { ...m, winnerSide: H2hSide.A } : m,
+      );
+      const ranked = rankH2hRound(
+        matches,
+        entrants({ s1: 900, s2: 950, s3: 1100, s4: 700 }),
+      );
+
+      expect(positions(ranked)).toMatchObject({ s3: 3, s4: 4 });
+    });
+
+    it('ranks a finalist who retired second, whatever their singles', () => {
+      const ranked = rankH2hRound(
+        eightPlayed(H2hSide.A),
+        entrants({ s1: 1500, s2: 700 }),
+      );
+
+      expect(positions(ranked)).toMatchObject({ s1: 1, s2: 2 });
+    });
+
+    it('leaves out a finalist who never solved, as every match of theirs was a walkover', () => {
+      const ranked = rankH2hRound(
+        eightPlayed(H2hSide.A),
+        entrants({ s1: 900, s2: null, s3: 800, s4: 1000 }),
+      );
+
+      expect(positions(ranked)).toMatchObject({ s1: 1, s2: null, s3: 4 });
+    });
+  });
 });

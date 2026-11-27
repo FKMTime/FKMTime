@@ -12,14 +12,14 @@ import { getCountingAttempts, toAttemptResult } from 'src/result/helpers';
 
 import {
   Attempt,
+  AttemptType,
   H2hBracketStatus,
   H2hMatchEnd,
   H2hMatchStatus,
-  H2hOutcome,
   H2hSide,
   Prisma,
 } from '../generated/prisma/client';
-import { lockBracket, matchLabels } from './bracketStore';
+import { labelOfMatch, lockBracket } from './bracketStore';
 import {
   MatchConflict,
   nextScramble,
@@ -28,6 +28,7 @@ import {
   ScrambleSetOption,
   WAITING_FOR_OPPONENT,
 } from './matchEngine';
+import { finishMatch, resolveWalkovers } from './matchStore';
 
 type Db = Prisma.TransactionClient;
 
@@ -49,6 +50,7 @@ const scrambleOptionSelect = {
       num: true,
       isExtra: true,
       h2hPoint: { select: { id: true } },
+      h2hPointExtra: { select: { id: true } },
     },
   },
 } as const;
@@ -64,7 +66,8 @@ const toOption = (set: ScrambleSetRow): ScrambleSetOption => ({
     id: s.id,
     num: s.num,
     isExtra: s.isExtra,
-    used: s.h2hPoint !== null,
+    // Raced on a point, or on one that was given an extra since
+    used: s.h2hPoint !== null || s.h2hPointExtra !== null,
   })),
 });
 
@@ -111,12 +114,8 @@ export class H2hMatchService {
     private readonly appGateway: AppGateway,
   ) {}
 
-  private async labelOf(db: Db, bracketId: string, matchId: string) {
-    const matches = await db.h2hMatch.findMany({
-      where: { bracketId },
-      select: { id: true, stage: true, matchNumber: true },
-    });
-    return matchLabels(matches).get(matchId) ?? 'This match';
+  private labelOf(db: Db, bracketId: string, matchId: string) {
+    return labelOfMatch(db, bracketId, matchId);
   }
 
   /**
@@ -217,18 +216,20 @@ export class H2hMatchService {
    * Puts a new attempt into the competitor's playing match, in the same
    * transaction that creates it: the competitor's first empty slot of the
    * current set, or a new point on the next unused scramble. `create`
-   * writes the attempt with the number it gets: 1..N per competitor across
-   * the round. Then decides whatever the attempt completes.
+   * writes the attempt with the number it gets, 1..N per competitor across
+   * the round, and its type: an extra when it races a point again after an
+   * extra was granted on it. Then decides whatever the attempt completes.
+   * `replaced` is the attempt the extra replaces, now pointing at it.
    */
-  async recordAttempt<T extends { id: string }>(
+  async recordAttempt<T extends { id: string; attemptNumber: number }>(
     tx: Tx,
     input: {
       roundId: string;
       personId: string;
       resultId: string;
-      create: (attemptNumber: number) => Promise<T>;
+      create: (attemptNumber: number, type: AttemptType) => Promise<T>;
     },
-  ): Promise<{ attempt: T; matchId: string }> {
+  ): Promise<{ attempt: T; matchId: string; replaced: Attempt | null }> {
     const db = tx.db;
     // The whole round, before the match: finishing a match writes the
     // matches it feeds and the bracket, and new points draw on the round's
@@ -278,12 +279,29 @@ export class H2hMatchService {
         ? set.points.find((p) => p.pointNumber === placement.pointNumber)?.id
         : await this.openPoint(db, match, set, placement.pointNumber);
     if (!pointId) throw new Error(`No point ${placement.pointNumber}`);
+    // A point raced again after an extra: this side's last race on it is
+    // what the new attempt replaces
+    const lastExtra = await db.h2hPointExtra.findFirst({
+      where: { pointId },
+      orderBy: { createdAt: 'desc' },
+    });
+    const replacedId =
+      lastExtra === null
+        ? null
+        : side === H2hSide.A
+          ? lastExtra.attemptAId
+          : lastExtra.attemptBId;
 
     const last = await db.attempt.aggregate({
       where: { resultId: input.resultId },
       _max: { attemptNumber: true },
     });
-    const attempt = await input.create((last._max.attemptNumber ?? 0) + 1);
+    const attempt = await input.create(
+      (last._max.attemptNumber ?? 0) + 1,
+      replacedId === null
+        ? AttemptType.STANDARD_ATTEMPT
+        : AttemptType.EXTRA_ATTEMPT,
+    );
     await db.h2hPoint.update({
       where: { id: pointId },
       data:
@@ -291,11 +309,18 @@ export class H2hMatchService {
           ? { attemptAId: attempt.id }
           : { attemptBId: attempt.id },
     });
+    const replaced =
+      replacedId === null
+        ? null
+        : await db.attempt.update({
+            where: { id: replacedId },
+            data: { replacedBy: attempt.attemptNumber },
+          });
     await this.settle(db, match.id);
     tx.afterCommit(() =>
       this.appGateway.handleH2hUpdated(match.bracket.roundId, match.id),
     );
-    return { attempt, matchId: match.id };
+    return { attempt, matchId: match.id, replaced };
   }
 
   /** A new point of the set, on the next scramble nobody has raced */
@@ -304,6 +329,25 @@ export class H2hMatchService {
     match: LoadedMatch,
     set: LoadedMatch['sets'][number],
     pointNumber: number,
+  ) {
+    const scrambleId = await this.pickScramble(db, match, set, pointNumber);
+    const point = await db.h2hPoint.create({
+      data: { setId: set.id, pointNumber, scrambleId },
+    });
+    return point.id;
+  }
+
+  /**
+   * The next scramble nobody has raced, for a point of this set: its own
+   * scramble set's, then a spare's; its next extra first for a point raced
+   * again after an extra. Refused when none is left anywhere.
+   */
+  async pickScramble(
+    db: Db,
+    match: { id: string; bracket: { id: string; roundId: string } },
+    set: { setNumber: number; scrambleSetId: string | null },
+    pointNumber: number,
+    options: { extra?: boolean } = {},
   ) {
     const roundId = match.bracket.roundId;
     const own = set.scrambleSetId
@@ -317,7 +361,11 @@ export class H2hMatchService {
       where: { roundId, h2hPlan: { is: null }, h2hSet: { is: null } },
       select: scrambleOptionSelect,
     });
-    const scramble = nextScramble(own && toOption(own), spares.map(toOption));
+    const scramble = nextScramble(
+      own && toOption(own),
+      spares.map(toOption),
+      options,
+    );
     if (!scramble) {
       const label = await this.labelOf(db, match.bracket.id, match.id);
       const ownText = own ? `Set ${own.set} is used up and t` : 'T';
@@ -325,10 +373,7 @@ export class H2hMatchService {
         `${label}, set ${set.setNumber} has no scramble left for point ${pointNumber}. ${ownText}here is no spare set. Import more scramble sets for ${activityCodeToName(roundId)}.`,
       );
     }
-    const point = await db.h2hPoint.create({
-      data: { setId: set.id, pointNumber, scrambleId: scramble.id },
-    });
-    return point.id;
+    return scramble.id;
   }
 
   /**
@@ -336,8 +381,15 @@ export class H2hMatchService {
    * set's and the match's. Opens the next set when one ends, finishes the
    * match and fills the matches it feeds. A finished match is frozen
    * (11l1): nothing here changes it.
+   * When `reopening` a match on times amended after it, points raced after
+   * their set or the match was over don't count rather than being refused:
+   * they were raced, and the delegate can't take them back. They are marked
+   * `afterEnd`. Later decisions accept those points after an end too, and
+   * count one again once an edit means its set reaches it; any other point
+   * after a set's end is refused as before.
    */
-  async settle(db: Db, matchId: string) {
+  async settle(db: Db, matchId: string, options: { reopening?: boolean } = {}) {
+    const reopening = options.reopening ?? false;
     const match = await db.h2hMatch.findUniqueOrThrow({
       where: { id: matchId },
       include: matchInclude,
@@ -361,6 +413,7 @@ export class H2hMatchService {
             pointNumber: point.pointNumber,
             a: resultOf(point.attemptA),
             b: resultOf(point.attemptB),
+            maySurplus: reopening || point.afterEnd,
           })),
         })),
         otherMatchResults: await this.otherMatchResults(db, match),
@@ -376,15 +429,17 @@ export class H2hMatchService {
       for (const point of set.points) {
         const decided = scored?.pointWinners.has(point.pointNumber) ?? false;
         const winnerSide = scored?.pointWinners.get(point.pointNumber) ?? null;
+        const afterEnd = scored?.afterEnd.has(point.pointNumber) ?? false;
         if (
           point.winnerSide === winnerSide &&
-          (point.decidedAt !== null) === decided
+          (point.decidedAt !== null) === decided &&
+          point.afterEnd === afterEnd
         ) {
           continue;
         }
         await db.h2hPoint.update({
           where: { id: point.id },
-          data: { winnerSide, decidedAt: decided ? now : null },
+          data: { winnerSide, decidedAt: decided ? now : null, afterEnd },
         });
       }
       const outcome = scored?.outcome ?? null;
@@ -414,7 +469,14 @@ export class H2hMatchService {
       });
     }
     if (score.winner !== null) {
-      await this.finish(db, match, score.winner);
+      await finishMatch(
+        db,
+        { ...match, bracketId: match.bracket.id },
+        score.winner,
+        H2hMatchEnd.PLAYED,
+      );
+      // A competitor who withdrew may be waiting in a match this one feeds
+      await resolveWalkovers(db, match.bracket.id);
     } else if (
       wanted !== null &&
       !unraced.some((set) => set.setNumber === wanted)
@@ -447,7 +509,17 @@ export class H2hMatchService {
   private async otherMatchResults(db: Db, match: LoadedMatch) {
     const points = await db.h2hPoint.findMany({
       where: {
-        set: { match: { bracketId: match.bracket.id, id: { not: match.id } } },
+        set: {
+          match: {
+            bracketId: match.bracket.id,
+            id: { not: match.id },
+            // A walkover has no results (9f5b), as in bestSingles
+            OR: [{ endedBy: null }, { endedBy: { not: H2hMatchEnd.WALKOVER } }],
+          },
+        },
+        // Nor does a point raced after its set or match was over, as in
+        // the match's own tie-breaks
+        afterEnd: false,
       },
       include: {
         set: {
@@ -471,63 +543,6 @@ export class H2hMatchService {
         return attempt ? [toAttemptResult(attempt)] : [];
       });
     return { a: of(match.entrantA?.id), b: of(match.entrantB?.id) };
-  }
-
-  /**
-   * Ends the match and fills the matches it feeds with its winner and
-   * loser; one with both sides known is ready to start
-   */
-  private async finish(db: Db, match: LoadedMatch, winner: H2hSide) {
-    await db.h2hMatch.update({
-      where: { id: match.id },
-      data: {
-        status: H2hMatchStatus.FINISHED,
-        winnerSide: winner,
-        endedBy: H2hMatchEnd.PLAYED,
-        finishedAt: new Date(),
-      },
-    });
-    const winnerId = winner === H2hSide.A ? match.entrantAId : match.entrantBId;
-    const loserId = winner === H2hSide.A ? match.entrantBId : match.entrantAId;
-    const pick = (outcome: H2hOutcome | null) =>
-      outcome === H2hOutcome.LOSER ? loserId : winnerId;
-    const fed = await db.h2hMatch.findMany({
-      where: {
-        OR: [{ sourceAMatchId: match.id }, { sourceBMatchId: match.id }],
-      },
-    });
-    for (const next of fed) {
-      const entrantAId =
-        next.sourceAMatchId === match.id
-          ? pick(next.sourceAOutcome)
-          : next.entrantAId;
-      const entrantBId =
-        next.sourceBMatchId === match.id
-          ? pick(next.sourceBOutcome)
-          : next.entrantBId;
-      await db.h2hMatch.update({
-        where: { id: next.id },
-        data: {
-          entrantAId,
-          entrantBId,
-          ...(next.status === H2hMatchStatus.WAITING &&
-            entrantAId !== null &&
-            entrantBId !== null && { status: H2hMatchStatus.READY }),
-        },
-      });
-    }
-    const unfinished = await db.h2hMatch.count({
-      where: {
-        bracketId: match.bracket.id,
-        status: { not: H2hMatchStatus.FINISHED },
-      },
-    });
-    if (unfinished === 0) {
-      await db.h2hBracket.update({
-        where: { id: match.bracket.id },
-        data: { status: H2hBracketStatus.FINISHED },
-      });
-    }
   }
 
   /**
@@ -568,13 +583,17 @@ export class H2hMatchService {
   }
 
   /**
-   * Whether an attempt on a point may be deleted. Only the lone attempt of a
-   * playing match's open point may: nothing was decided with it, so the
-   * point goes with it (a result typed for the wrong competitor). Anything
-   * else decided a point, and deleting it is refused.
-   * Returns the point to delete first, or null for an attempt on no point.
+   * Takes an attempt off its point before it is deleted. Only the lone
+   * attempt of a playing match's open point may go: nothing was decided
+   * with it (a result typed for the wrong competitor). Anything else
+   * decided a point, and deleting it is refused.
+   * The point goes with it, unless it was given an extra: then it keeps its
+   * extras and its scramble, and only the attempt's slot empties, so the
+   * scrambles raced on it are never raced again (I4b1).
+   * Returns the point, to settle its match once the attempt is gone, or
+   * null for an attempt on no point.
    */
-  async pointToDeleteWith(db: Db, attemptId: string) {
+  async releaseFromPoint(db: Db, attemptId: string) {
     const point = await this.lockPointOf(db, attemptId);
     if (!point) return null;
     const { match } = point.set;
@@ -590,6 +609,37 @@ export class H2hMatchService {
       alone &&
       later === 0
     ) {
+      // It raced the point again after an extra: the attempt it replaced
+      // waits for its extra again
+      const deleted = await db.attempt.findUniqueOrThrow({
+        where: { id: attemptId },
+        select: { attemptNumber: true, resultId: true },
+      });
+      await db.attempt.updateMany({
+        where: {
+          resultId: deleted.resultId,
+          replacedBy: deleted.attemptNumber,
+          OR: [
+            { h2hExtraAsA: { pointId: point.id } },
+            { h2hExtraAsB: { pointId: point.id } },
+          ],
+        },
+        data: { replacedBy: null },
+      });
+      const extras = await db.h2hPointExtra.count({
+        where: { pointId: point.id },
+      });
+      if (extras > 0) {
+        await db.h2hPoint.update({
+          where: { id: point.id },
+          data:
+            point.attemptAId === attemptId
+              ? { attemptAId: null }
+              : { attemptBId: null },
+        });
+      } else {
+        await db.h2hPoint.delete({ where: { id: point.id } });
+      }
       return point;
     }
     throw new ConflictException(
@@ -597,32 +647,62 @@ export class H2hMatchService {
     );
   }
 
-  /** Refuses when any of these attempts was raced on a point */
-  async assertNotRaced(db: Db, attemptIds: string[], what: string) {
-    if (attemptIds.length === 0) return;
-    const point = await db.h2hPoint.findFirst({
-      where: {
-        OR: [
-          { attemptAId: { in: attemptIds } },
-          { attemptBId: { in: attemptIds } },
-        ],
-      },
-      include: {
-        set: {
-          select: {
-            setNumber: true,
-            match: {
-              select: { id: true, bracket: { select: { id: true } } },
-            },
-          },
+  /**
+   * Where the first of these attempts was raced: on a point, or in a race a
+   * point was given an extra for (`replaced`). Null for attempts on neither.
+   */
+  async findRace(db: Db, attemptIds: string[]) {
+    if (attemptIds.length === 0) return null;
+    const ids = { in: attemptIds };
+    const pointSelect = {
+      pointNumber: true,
+      set: {
+        select: {
+          setNumber: true,
+          match: { select: { id: true, bracketId: true } },
         },
       },
+    } as const;
+    const point = await db.h2hPoint.findFirst({
+      where: { OR: [{ attemptAId: ids }, { attemptBId: ids }] },
+      select: pointSelect,
     });
-    if (!point) return;
-    const { match } = point.set;
-    const label = await this.labelOf(db, match.bracket.id, match.id);
+    const extra = point
+      ? null
+      : await db.h2hPointExtra.findFirst({
+          where: { OR: [{ attemptAId: ids }, { attemptBId: ids }] },
+          select: { point: { select: pointSelect } },
+        });
+    const raced = point ?? extra?.point;
+    if (!raced) return null;
+    const { match } = raced.set;
+    const label = await this.labelOf(db, match.bracketId, match.id);
+    return {
+      label,
+      setNumber: raced.set.setNumber,
+      pointNumber: raced.pointNumber,
+      replaced: point === null,
+    };
+  }
+
+  /** Refuses deleting what has attempts raced on a point */
+  async assertNotRaced(db: Db, attemptIds: string[], what: string) {
+    const race = await this.findRace(db, attemptIds);
+    if (!race) return;
     throw new ConflictException(
-      `${what} can't be deleted: it has attempts raced in ${label}, set ${point.set.setNumber}.`,
+      `${what} can't be deleted: it has attempts raced in ${race.label}, set ${race.setNumber}.`,
+    );
+  }
+
+  /**
+   * Refuses reordering, swapping or replacing attempts raced on a point:
+   * their numbers and extras follow the matches
+   */
+  async assertNotRenumbered(db: Db, attemptIds: string[]) {
+    const race = await this.findRace(db, attemptIds);
+    if (!race) return;
+    throw new ConflictException(
+      `Attempts raced in a head-to-head match keep the order of their points, so they can't be reordered, swapped or given another replacement (${race.label}, set ${race.setNumber}, point ${race.pointNumber}). For an extra, use Extra granted on the point in the Matches tab.`,
     );
   }
 
@@ -635,6 +715,7 @@ export class H2hMatchService {
         OR: [
           { h2hSet: { isNot: null } },
           { scrambles: { some: { h2hPoint: { isNot: null } } } },
+          { scrambles: { some: { h2hPointExtra: { isNot: null } } } },
         ],
       },
       select: { set: true },
@@ -646,7 +727,11 @@ export class H2hMatchService {
     }
   }
 
-  /** People in the round's bracket with a match still to play or playing */
+  /**
+   * People in the round's bracket with a match still to play or playing.
+   * Someone who withdrew has none, even while their walkover waits for the
+   * opponent.
+   */
   async personsStillPlaying(db: Db, roundId: string) {
     const matches = await db.h2hMatch.findMany({
       where: {
@@ -654,30 +739,57 @@ export class H2hMatchService {
         status: { not: H2hMatchStatus.FINISHED },
       },
       select: {
-        entrantA: { select: { personId: true } },
-        entrantB: { select: { personId: true } },
+        entrantA: { select: { personId: true, withdrawnAt: true } },
+        entrantB: { select: { personId: true, withdrawnAt: true } },
       },
     });
     return new Set(
       matches.flatMap((m) =>
-        [m.entrantA?.personId, m.entrantB?.personId].filter(
-          (id): id is string => id !== undefined,
+        [m.entrantA, m.entrantB].flatMap((entrant) =>
+          entrant && entrant.withdrawnAt === null ? [entrant.personId] : [],
         ),
       ),
     );
   }
 
-  /** Each competitor's best single from their counting attempts, WCA-encoded */
+  /**
+   * Each competitor's best single from their counting attempts, WCA-encoded.
+   * Attempts in a walkover don't count: a match where one competitor
+   * started no attempt has no results (9f5b).
+   */
   async bestSingles(db: Db, roundId: string, personIds: string[]) {
-    const results = await db.result.findMany({
-      where: { roundId, personId: { in: personIds } },
-      include: { attempts: true },
-    });
+    const [results, walkoverPoints] = await Promise.all([
+      db.result.findMany({
+        where: { roundId, personId: { in: personIds } },
+        include: { attempts: true },
+      }),
+      db.h2hPoint.findMany({
+        where: {
+          set: {
+            match: { bracket: { roundId }, endedBy: H2hMatchEnd.WALKOVER },
+          },
+        },
+        select: {
+          attemptAId: true,
+          attemptBId: true,
+          extras: { select: { attemptAId: true, attemptBId: true } },
+        },
+      }),
+    ]);
+    const inWalkovers = new Set(
+      walkoverPoints.flatMap((point) =>
+        [point, ...point.extras].flatMap((race) =>
+          [race.attemptAId, race.attemptBId].filter(
+            (id): id is string => id !== null,
+          ),
+        ),
+      ),
+    );
     return new Map(
       results.flatMap((result) => {
-        const singles = getCountingAttempts(result.attempts).map(
-          toAttemptResult,
-        );
+        const singles = getCountingAttempts(result.attempts)
+          .filter((attempt) => !inWalkovers.has(attempt.id))
+          .map(toAttemptResult);
         if (singles.length === 0) return [];
         const solved = singles.filter((s) => s > 0);
         const best =

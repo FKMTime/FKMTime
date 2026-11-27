@@ -235,14 +235,17 @@ export class AttemptService {
           roundId: data.roundId,
           personId: data.competitorId,
           resultId: result.id,
-          create: (attemptNumber) =>
+          create: (attemptNumber, type) =>
             tx.db.attempt.create({
-              data: this.attemptCreateData(
-                data,
-                userId,
-                result.id,
-                attemptNumber,
-              ),
+              data: {
+                ...this.attemptCreateData(
+                  data,
+                  userId,
+                  result.id,
+                  attemptNumber,
+                ),
+                type,
+              },
             }),
         });
         await this.attemptEditLogService.log(
@@ -252,6 +255,15 @@ export class AttemptService {
           'Manually entered',
           tx,
         );
+        if (recorded.replaced) {
+          await this.attemptEditLogService.log(
+            recorded.replaced as AttemptSnapshot,
+            new Date(),
+            userId,
+            `Replaced by extra ${recorded.attempt.attemptNumber}`,
+            tx,
+          );
+        }
         await this.attendanceService.markCompetitorAsPresent(
           data.competitorId,
           groupId,
@@ -377,6 +389,7 @@ export class AttemptService {
     resultId: string,
     userId: string,
   ) {
+    await this.h2hMatchService.assertNotRenumbered(this.prisma, attemptIds);
     // Two-pass update to avoid any transient number conflicts
     for (let i = 0; i < attemptIds.length; i++) {
       await this.prisma.attempt.update({
@@ -411,6 +424,7 @@ export class AttemptService {
   ) {
     const attempt = await this.prisma.attempt.findUnique({ where: { id } });
     if (!attempt) throw new HttpException('Attempt not found', 404);
+    await this.h2hMatchService.assertNotRenumbered(this.prisma, [id]);
 
     const newStatus =
       replacedByExtraNumber !== null
@@ -1072,6 +1086,10 @@ export class AttemptService {
     if (!firstAttempt || !secondAttempt) {
       throw new HttpException('Attempt not found', 404);
     }
+    await this.h2hMatchService.assertNotRenumbered(this.prisma, [
+      attemptId,
+      secondAttemptId,
+    ]);
 
     const updatedFirst = await this.prisma.attempt.update({
       where: { id: attemptId },
@@ -1144,7 +1162,24 @@ export class AttemptService {
       }
       if (data.status === AttemptStatus.EXTRA_GIVEN) {
         throw new HttpException(
-          'Extras in head-to-head rounds are granted on the point, for both competitors',
+          'In a head-to-head round an extra goes to both competitors. Use Extra granted on the point in the Matches tab.',
+          400,
+        );
+      }
+    }
+    // Replaced by an extra on a point: it stays out of play for good
+    const race = point
+      ? null
+      : await this.h2hMatchService.findRace(this.prisma, [id]);
+    if (race?.replaced) {
+      // Extra granted, or voided when its match ended before the re-race
+      if (
+        data.status !== attemptToUpdate.status ||
+        data.attemptNumber !== attemptToUpdate.attemptNumber ||
+        data.type !== attemptToUpdate.type
+      ) {
+        throw new HttpException(
+          `This attempt was replaced by an extra on ${race.label}, set ${race.setNumber}, point ${race.pointNumber}, so its status, number and type stay as they are. Its time, penalty and comment can still be corrected.`,
           400,
         );
       }
@@ -1165,8 +1200,11 @@ export class AttemptService {
       );
     }
 
-    const replacedBy =
-      data.status !== AttemptStatus.EXTRA_GIVEN || data.replacedBy === 0
+    // A replaced head-to-head race points at the attempt that raced the
+    // point again, whatever the form says
+    const replacedBy = race?.replaced
+      ? attemptToUpdate.replacedBy
+      : data.status !== AttemptStatus.EXTRA_GIVEN || data.replacedBy === 0
         ? null
         : data.replacedBy;
     const dataToUpdate = {
@@ -1213,14 +1251,20 @@ export class AttemptService {
     const attempt = point
       ? await runInTransaction(this.prisma, async (tx) => {
           const locked = await this.h2hMatchService.lockPointOf(tx.db, id);
-          const updated = await write(tx);
-          if (locked) {
-            const { match } = locked.set;
-            await this.h2hMatchService.settle(tx.db, match.id);
-            tx.afterCommit(() =>
-              this.appGateway.handleH2hUpdated(match.bracket.roundId, match.id),
+          // Taken off its point meanwhile (an extra granted on it): what
+          // was checked above no longer holds
+          if (!locked) {
+            throw new HttpException(
+              'This attempt changed while you were editing it. Reload and try again.',
+              409,
             );
           }
+          const updated = await write(tx);
+          const { match } = locked.set;
+          await this.h2hMatchService.settle(tx.db, match.id);
+          tx.afterCommit(() =>
+            this.appGateway.handleH2hUpdated(match.bracket.roundId, match.id),
+          );
           return updated;
         })
       : await write();
@@ -1304,11 +1348,17 @@ export class AttemptService {
     }
 
     // An attempt raced on a head-to-head point decided it, so only the lone
-    // attempt of a playing match's open point can go, and its point with it
-    if (await this.h2hMatchService.pointOf(this.prisma, id)) {
+    // attempt of a playing match's open point can go
+    const race = await this.h2hMatchService.findRace(this.prisma, [id]);
+    if (race?.replaced) {
+      throw new HttpException(
+        `This attempt was replaced by an extra on ${race.label}, set ${race.setNumber}, point ${race.pointNumber}. It stays as the record of that race, so it can't be deleted.`,
+        409,
+      );
+    }
+    if (race) {
       await runInTransaction(this.prisma, async (tx) => {
-        const point = await this.h2hMatchService.pointToDeleteWith(tx.db, id);
-        if (point) await tx.db.h2hPoint.delete({ where: { id: point.id } });
+        const point = await this.h2hMatchService.releaseFromPoint(tx.db, id);
         await tx.db.attempt.delete({ where: { id } });
         if (point) {
           const { match } = point.set;
@@ -1399,6 +1449,8 @@ export class AttemptService {
             person: publicPersonSelect,
           },
         },
+        h2hPointAsA: { select: { id: true } },
+        h2hPointAsB: { select: { id: true } },
       },
     });
     if (!attempt) throw new HttpException('Attempt not found', 404);
@@ -1424,8 +1476,13 @@ export class AttemptService {
         },
       },
     });
+    const { h2hPointAsA, h2hPointAsB, ...rest } = attempt;
     return {
-      attempt,
+      // An attempt on a head-to-head point gets its extra on the point
+      attempt: {
+        ...rest,
+        h2hPointId: (h2hPointAsA ?? h2hPointAsB)?.id ?? null,
+      },
       previousIncidents,
     };
   }

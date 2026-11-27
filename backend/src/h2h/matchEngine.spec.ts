@@ -1,11 +1,19 @@
-import { H2hSetDecision, H2hSide } from '../generated/prisma/client';
 import {
+  H2hMatchStatus,
+  H2hSetDecision,
+  H2hSide,
+} from '../generated/prisma/client';
+import {
+  amendedAfter,
+  FedMatch,
   MatchConflict,
+  matchesFedBy,
   MatchInput,
   nextScramble,
   placeAttempt,
   scoreMatch,
   ScrambleSetOption,
+  walkoverWinner,
 } from './matchEngine';
 
 const { A, B } = H2hSide;
@@ -67,6 +75,28 @@ describe('nextScramble', () => {
       isExtra,
       used,
     })),
+  });
+
+  it("takes the set's next extra first for a point raced again after an extra", () => {
+    const own = set('C', [
+      [1, false, true],
+      [2, false, false],
+      [1, true, true],
+      [2, true, false],
+    ]);
+    expect(nextScramble(own, [], { extra: true })).toMatchObject({
+      id: 'CE2',
+      isExtra: true,
+    });
+    const noExtraLeft = set('C', [
+      [1, false, true],
+      [2, false, false],
+      [1, true, true],
+    ]);
+    expect(nextScramble(noExtraLeft, [], { extra: true })).toMatchObject({
+      id: 'C2',
+      isExtra: false,
+    });
   });
 
   it("takes the set's normal scrambles in order first", () => {
@@ -254,5 +284,283 @@ describe('scoreMatch', () => {
         ]),
       ),
     ).toThrow(MatchConflict);
+  });
+
+  describe('points that may come after the end (reopening)', () => {
+    /** Every point may be surplus, as when a match is reopened */
+    const reopening = (sets: MatchInput['sets']) =>
+      sets.map((set) => ({
+        ...set,
+        points: set.points.map((p) => ({ ...p, maySurplus: true })),
+      }));
+
+    it('leaves points after the set was over without a winner', () => {
+      const score = scoreMatch(
+        input(
+          reopening([
+            {
+              setNumber: 1,
+              points: [won(A, 1), won(A, 2), won(A, 3), won(B, 4)],
+            },
+          ]),
+        ),
+      );
+      expect(score.winner).toBe(A);
+      expect([...score.sets[0].pointWinners.keys()]).toEqual([1, 2, 3]);
+      expect([...score.sets[0].afterEnd]).toEqual([4]);
+    });
+
+    it('leaves sets after the match was over without winners', () => {
+      const score = scoreMatch(
+        input(
+          reopening([
+            { setNumber: 1, points: [won(A, 1), won(A, 2), won(A, 3)] },
+            { setNumber: 2, points: [won(B, 1), won(B, 2), won(B, 3)] },
+          ]),
+        ),
+      );
+      expect(score.winner).toBe(A);
+      expect(score.nextSetNumber).toBeNull();
+      expect(score.sets[1]).toMatchObject({ outcome: null });
+      expect(score.sets[1].pointWinners.size).toBe(0);
+      expect([...score.sets[1].afterEnd]).toEqual([1, 2, 3]);
+      expect(score.sets[0].afterEnd.size).toBe(0);
+    });
+
+    it('counts a point found after the end again once its set reaches it', () => {
+      // Point 3 was a DNF for B, then corrected back: B wins 3-2
+      const score = scoreMatch(
+        input([
+          {
+            setNumber: 1,
+            points: [
+              won(A, 1),
+              won(A, 2),
+              won(B, 3),
+              { ...won(B, 4), maySurplus: true },
+              { ...won(B, 5), maySurplus: true },
+            ],
+          },
+        ]),
+      );
+      expect(score.winner).toBe(B);
+      expect(score.sets[0].afterEnd.size).toBe(0);
+      expect(score.sets[0].pointWinners.get(5)).toBe(B);
+    });
+
+    it('still refuses a point after the end that may not be surplus', () => {
+      expect(() =>
+        scoreMatch(
+          input([
+            {
+              setNumber: 1,
+              points: [
+                won(A, 1),
+                won(A, 2),
+                won(A, 3),
+                { ...won(B, 4), maySurplus: true },
+                won(B, 5),
+              ],
+            },
+          ]),
+        ),
+      ).toThrow(
+        new MatchConflict(
+          'Set 1 would be over after point 3, but point 5 has a result too. Check the times.',
+        ),
+      );
+    });
+
+    it('still refuses a set started while the one before would be going on', () => {
+      expect(() =>
+        scoreMatch(
+          input(
+            reopening([
+              { setNumber: 1, points: [won(A, 1), won(A, 2), won(B, 3)] },
+              { setNumber: 2, points: [won(B, 1)] },
+            ]),
+            2,
+          ),
+        ),
+      ).toThrow(MatchConflict);
+    });
+
+    it('leaves points after the end out of the tie-breaks of later sets', () => {
+      // Set 1's point 4 came after the end; B's 5.00 on it would win set
+      // 2's tie-break on the best single in the match
+      const score = scoreMatch(
+        input(
+          [
+            {
+              setNumber: 1,
+              points: [
+                won(A, 1),
+                won(A, 2),
+                won(A, 3),
+                { ...point(4, 1100, 500), maySurplus: true },
+              ],
+            },
+            {
+              setNumber: 2,
+              points: [
+                won(A, 1),
+                won(B, 2),
+                won(A, 3),
+                won(B, 4),
+                point(5, -1, -1),
+                point(6, 1200, 1200),
+                point(7, -2, -1),
+              ],
+            },
+          ],
+          2,
+        ),
+      );
+      expect(score.sets[0].afterEnd).toEqual(new Set([4]));
+      expect(score.sets[1].outcome?.decidedBy).not.toBe(
+        H2hSetDecision.BEST_IN_MATCH,
+      );
+      expect(score.winner).toBe(A);
+    });
+  });
+});
+
+describe('walkoverWinner', () => {
+  const at = (minute: number) => new Date(2026, 0, 1, 10, minute);
+
+  it('has no winner while nobody has withdrawn', () => {
+    expect(
+      walkoverWinner(
+        { seed: 1, withdrawnAt: null },
+        { seed: 2, withdrawnAt: null },
+      ),
+    ).toBeNull();
+  });
+
+  it('gives the match to the competitor still in', () => {
+    expect(
+      walkoverWinner(
+        { seed: 1, withdrawnAt: at(5) },
+        { seed: 2, withdrawnAt: null },
+      ),
+    ).toBe(B);
+    expect(
+      walkoverWinner(
+        { seed: 1, withdrawnAt: null },
+        { seed: 2, withdrawnAt: at(5) },
+      ),
+    ).toBe(A);
+  });
+
+  it('gives it to the one who left later when both have, then to the higher seed', () => {
+    expect(
+      walkoverWinner(
+        { seed: 1, withdrawnAt: at(5) },
+        { seed: 2, withdrawnAt: at(9) },
+      ),
+    ).toBe(B);
+    expect(
+      walkoverWinner(
+        { seed: 3, withdrawnAt: at(5) },
+        { seed: 2, withdrawnAt: at(5) },
+      ),
+    ).toBe(B);
+  });
+});
+
+describe('matchesFedBy', () => {
+  const match = (
+    id: string,
+    sources: [string | null, string | null],
+    status: H2hMatchStatus = H2hMatchStatus.WAITING,
+    startedAt: Date | null = null,
+  ): FedMatch => ({
+    id,
+    status,
+    startedAt,
+    sourceAMatchId: sources[0],
+    sourceBMatchId: sources[1],
+  });
+  const { WAITING, READY, IN_PROGRESS, FINISHED } = H2hMatchStatus;
+
+  it('takes back the matches a semifinal feeds while none has started', () => {
+    const matches = [
+      match('sf1', [null, null], FINISHED, new Date()),
+      match('sf2', [null, null], IN_PROGRESS, new Date()),
+      match('third', ['sf1', 'sf2'], WAITING),
+      match('final', ['sf1', 'sf2'], WAITING),
+    ];
+    const { reset, started } = matchesFedBy(matches, 'sf1');
+    expect(started).toBeNull();
+    expect(reset.map((m) => m.id)).toEqual(['third', 'final']);
+  });
+
+  it('goes on through walkovers that finished without starting', () => {
+    const matches = [
+      match('qf1', [null, null], FINISHED, new Date()),
+      match('sf1', ['qf1', null], FINISHED),
+      match('final', ['sf1', null], READY),
+    ];
+    expect(matchesFedBy(matches, 'qf1').reset.map((m) => m.id)).toEqual([
+      'sf1',
+      'final',
+    ]);
+  });
+
+  it('names a match it feeds that has started', () => {
+    const matches = [
+      match('qf1', [null, null], FINISHED, new Date()),
+      match('sf1', ['qf1', null], FINISHED),
+      match('final', ['sf1', null], IN_PROGRESS, new Date()),
+    ];
+    expect(matchesFedBy(matches, 'qf1').started?.id).toBe('final');
+  });
+});
+
+describe('amendedAfter', () => {
+  const finishedAt = new Date(2026, 0, 1, 12, 0);
+  const log = (minute: number, value: number, penalty: number | null = 0) => ({
+    editedAt: new Date(2026, 0, 1, 11 + Math.floor(minute / 60), minute % 60),
+    value,
+    penalty,
+  });
+
+  it('is false for a time as it was when the match finished', () => {
+    expect(
+      amendedAfter(finishedAt, [log(10, 1000)], { value: 1000, penalty: 0 }),
+    ).toBe(false);
+  });
+
+  it('is true for a time changed after the match', () => {
+    expect(
+      amendedAfter(finishedAt, [log(10, 1000), log(70, 1200)], {
+        value: 1200,
+        penalty: 0,
+      }),
+    ).toBe(true);
+  });
+
+  it('counts a penalty change, and not an edit made during the match', () => {
+    expect(
+      amendedAfter(finishedAt, [log(10, 1000), log(30, 1100)], {
+        value: 1100,
+        penalty: 0,
+      }),
+    ).toBe(false);
+    expect(
+      amendedAfter(finishedAt, [log(10, 1000), log(70, 1000, -1)], {
+        value: 1000,
+        penalty: -1,
+      }),
+    ).toBe(true);
+  });
+
+  it('is false for a time changed back to what it was', () => {
+    expect(
+      amendedAfter(finishedAt, [log(10, 1000), log(70, 1200), log(80, 1000)], {
+        value: 1000,
+        penalty: 0,
+      }),
+    ).toBe(false);
   });
 });

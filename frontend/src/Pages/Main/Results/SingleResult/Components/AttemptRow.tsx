@@ -152,7 +152,14 @@ const AttemptRow = ({
                             {
                                 label: "Give extra attempt",
                                 icon: MessageSquarePlus,
-                                hidden: isRemoved || !access.can("GIVE_EXTRA"),
+                                // A head-to-head point's extra covers both
+                                // competitors, which stays with delegates
+                                hidden:
+                                    isRemoved ||
+                                    !access.can("GIVE_EXTRA") ||
+                                    !!attempt.h2hReplaced ||
+                                    (!!attempt.h2hPointId &&
+                                        !access.isDelegate),
                                 onSelect: () =>
                                     setIsOpenGiveExtraAttemptModal(true),
                             },
@@ -183,6 +190,7 @@ const AttemptRow = ({
                 isOpen={isOpenGiveExtraAttemptModal}
                 onClose={handleCloseModal}
                 attempt={attempt}
+                roundId={result.roundId}
             />
         </>
     );

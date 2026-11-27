@@ -134,7 +134,8 @@ const SeedRow = ({
 
 /**
  * The seeds in order: drag to reorder, pick to swap a competitor (I1c,
- * I1d). Locked once a match has started.
+ * I1d). Locked once a match has started or ended in a walkover, or a
+ * competitor has withdrawn.
  */
 const SeedList = ({ roundId, bracket, candidates }: SeedListProps) => {
     const { toast } = useToast();
@@ -198,7 +199,8 @@ const SeedList = ({ roundId, bracket, candidates }: SeedListProps) => {
         <div className="flex flex-col gap-3">
             {locked && (
                 <p className="text-sm text-muted-foreground">
-                    A match has started, so the seeds can't change.
+                    A match has started or a competitor has withdrawn, so the
+                    seeds can't change.
                 </p>
             )}
             <DndContext

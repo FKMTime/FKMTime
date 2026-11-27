@@ -13,6 +13,8 @@ import { useToast } from "@/hooks/useToast";
 import { activityCodeToName } from "@/lib/activities";
 import { competitionAtom } from "@/lib/atoms";
 import { deleteAttempt, getIncidentById, updateAttempt } from "@/lib/attempt";
+import { grantExtra } from "@/lib/h2h";
+import { saveAttemptAsNoteworthyIncident } from "@/lib/incidents";
 import {
     ApplicationQuickAction,
     AttemptStatus,
@@ -115,11 +117,27 @@ const IncidentPanel = ({ id, onClose, onDone }: IncidentPanelProps) => {
             });
         }
         setIsLoading(true);
-        const { status, message } = await updateAttempt(
-            data,
-            isNoteworthy,
-            doNotRequireCards
-        );
+        // On a head-to-head point an extra goes to both competitors, on the
+        // point (SPEC-001)
+        const pointId = incident?.h2hPointId;
+        const { status, message } =
+            pointId && data.status === AttemptStatus.EXTRA_GIVEN
+                ? await grantExtra(
+                      data.result.roundId,
+                      pointId,
+                      data.comment ?? ""
+                  ).then(async (granted) => {
+                      // The point's extra takes only the comment, so the
+                      // noteworthy mark is saved on its own
+                      if (granted.ok && isNoteworthy) {
+                          await saveAttemptAsNoteworthyIncident(data.id);
+                      }
+                      return {
+                          status: granted.ok ? 200 : 409,
+                          message: granted.message,
+                      };
+                  })
+                : await updateAttempt(data, isNoteworthy, doNotRequireCards);
         setIsLoading(false);
         if (status === 200) {
             toast({ title: "Incident saved", variant: "success" });
@@ -172,6 +190,10 @@ const IncidentPanel = ({ id, onClose, onDone }: IncidentPanelProps) => {
     };
 
     if (!incident) return <LoadingPage />;
+    // A head-to-head point's extra covers both competitors, which stays
+    // with delegates
+    const canGiveExtra =
+        access.can("GIVE_EXTRA") && (!incident.h2hPointId || access.isDelegate);
 
     return (
         <section
@@ -208,7 +230,7 @@ const IncidentPanel = ({ id, onClose, onDone }: IncidentPanelProps) => {
                 <div className="flex flex-wrap gap-2">
                     <QuickActions
                         handleQuickAction={handleQuickAction}
-                        canGiveExtra={access.can("GIVE_EXTRA")}
+                        canGiveExtra={canGiveExtra}
                     />
                 </div>
             </div>
@@ -230,8 +252,9 @@ const IncidentPanel = ({ id, onClose, onDone }: IncidentPanelProps) => {
                 handleDelete={
                     access.can("DELETE_ATTEMPT") ? handleDelete : undefined
                 }
-                canGiveExtra={access.can("GIVE_EXTRA")}
+                canGiveExtra={canGiveExtra}
                 canMarkNoteworthy={access.isDelegate}
+                isH2hPoint={!!incident.h2hPointId}
             />
             <ResultPageLink
                 resultId={incident.result.id}

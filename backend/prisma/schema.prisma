@@ -31,6 +31,7 @@ model User {
   ManualIncident             ManualIncident[]
   attemptEditLogs            AttemptEditLog[]
   extraGrants                ExtraGrant[]
+  h2hMatchLogs               H2hMatchLog[]
   removedResults             Result[]             @relation("result_removed_by")
   devicesPointedAtRound      Device[]             @relation("device_custom_round_set_by")
   devicesInTutorial          Device[]             @relation("device_tutorial_started_by")
@@ -242,6 +243,8 @@ model Attempt {
   replacedByInGrant  Int?                 @map("replaced_by_in_grant")
   h2hPointAsA        H2hPoint?            @relation("h2h_point_attempt_a")
   h2hPointAsB        H2hPoint?            @relation("h2h_point_attempt_b")
+  h2hExtraAsA        H2hPointExtra?       @relation("h2h_extra_attempt_a")
+  h2hExtraAsB        H2hPointExtra?       @relation("h2h_extra_attempt_b")
 
   @@map("attempt")
 }
@@ -377,16 +380,16 @@ model QuickAction {
 }
 
 model ScramblingDevice {
-  id                   String   @id @default(uuid())
+  id                   String    @id @default(uuid())
   name                 String
-  encryptedToken       String?  @map("encrypted_token")
-  encryptedOneTimeCode String?  @map("encrypted_one_time_code")
+  encryptedToken       String?   @map("encrypted_token")
+  encryptedOneTimeCode String?   @map("encrypted_one_time_code")
   /// A pairing code stops working after this
   oneTimeCodeExpiresAt DateTime? @map("one_time_code_expires_at")
-  roomId               String   @map("room_id")
-  room                 Room     @relation(fields: [roomId], references: [id])
-  createdAt            DateTime @default(now()) @map("created_at")
-  updatedAt            DateTime @updatedAt @map("updated_at")
+  roomId               String    @map("room_id")
+  room                 Room      @relation(fields: [roomId], references: [id])
+  createdAt            DateTime  @default(now()) @map("created_at")
+  updatedAt            DateTime  @updatedAt @map("updated_at")
 
   @@map("scrambling_device")
 }
@@ -406,15 +409,16 @@ model ScrambleSet {
 }
 
 model Scramble {
-  id                String      @id @default(uuid())
-  scrambleSetId     String      @map("scramble_set_id")
-  scrambleSet       ScrambleSet @relation(fields: [scrambleSetId], references: [id], onDelete: Cascade)
-  num               Int         @map("num")
-  isExtra           Boolean     @default(false) @map("is_extra")
-  encryptedScramble String      @map("encrypted_scramble")
-  createdAt         DateTime    @default(now()) @map("created_at")
-  updatedAt         DateTime    @updatedAt @map("updated_at")
+  id                String         @id @default(uuid())
+  scrambleSetId     String         @map("scramble_set_id")
+  scrambleSet       ScrambleSet    @relation(fields: [scrambleSetId], references: [id], onDelete: Cascade)
+  num               Int            @map("num")
+  isExtra           Boolean        @default(false) @map("is_extra")
+  encryptedScramble String         @map("encrypted_scramble")
+  createdAt         DateTime       @default(now()) @map("created_at")
+  updatedAt         DateTime       @updatedAt @map("updated_at")
   h2hPoint          H2hPoint?
+  h2hPointExtra     H2hPointExtra?
 
   @@map("scramble")
 }
@@ -440,19 +444,23 @@ model H2hBracket {
 }
 
 model H2hEntrant {
-  id            String     @id @default(uuid())
-  bracketId     String     @map("bracket_id")
-  bracket       H2hBracket @relation(fields: [bracketId], references: [id], onDelete: Cascade)
-  personId      String     @map("person_id")
-  person        Person     @relation(fields: [personId], references: [id], onDelete: Cascade)
+  id                 String     @id @default(uuid())
+  bracketId          String     @map("bracket_id")
+  bracket            H2hBracket @relation(fields: [bracketId], references: [id], onDelete: Cascade)
+  personId           String     @map("person_id")
+  person             Person     @relation(fields: [personId], references: [id], onDelete: Cascade)
   /// 1 is the highest seed
-  seed          Int
+  seed               Int
   /// Tied with another competitor in the previous round and ordered randomly
   /// (Regulation I1d)
-  seedTieBroken Boolean    @default(false) @map("seed_tie_broken")
-  withdrawnAt   DateTime?  @map("withdrawn_at")
-  matchesAsA    H2hMatch[] @relation("h2h_match_entrant_a")
-  matchesAsB    H2hMatch[] @relation("h2h_match_entrant_b")
+  seedTieBroken      Boolean    @default(false) @map("seed_tie_broken")
+  withdrawnAt        DateTime?  @map("withdrawn_at")
+  /// The match they withdrew or retired from: only reopening that one
+  /// undoes it
+  withdrawnInMatchId String?    @map("withdrawn_in_match_id")
+  withdrawnInMatch   H2hMatch?  @relation("h2h_entrant_withdrawn_in", fields: [withdrawnInMatchId], references: [id], onDelete: SetNull)
+  matchesAsA         H2hMatch[] @relation("h2h_match_entrant_a")
+  matchesAsB         H2hMatch[] @relation("h2h_match_entrant_b")
 
   @@unique([bracketId, seed])
   @@unique([bracketId, personId])
@@ -490,6 +498,8 @@ model H2hMatch {
   finishedAt          DateTime?               @map("finished_at")
   sets                H2hSet[]
   scrambleAssignments H2hScrambleAssignment[]
+  logs                H2hMatchLog[]
+  withdrawals         H2hEntrant[]            @relation("h2h_entrant_withdrawn_in")
 
   @@unique([bracketId, matchNumber])
   @@map("h2h_match")
@@ -514,23 +524,63 @@ model H2hSet {
 /// One race: the two attempts solved on the same scramble. An attempt on a
 /// point can't be deleted, so the bracket never loses what decided it
 model H2hPoint {
-  id          String    @id @default(uuid())
-  setId       String    @map("set_id")
-  set         H2hSet    @relation(fields: [setId], references: [id], onDelete: Cascade)
-  pointNumber Int       @map("point_number")
-  attemptAId  String?   @unique @map("attempt_a_id")
-  attemptA    Attempt?  @relation("h2h_point_attempt_a", fields: [attemptAId], references: [id], onDelete: Restrict)
-  attemptBId  String?   @unique @map("attempt_b_id")
-  attemptB    Attempt?  @relation("h2h_point_attempt_b", fields: [attemptBId], references: [id], onDelete: Restrict)
+  id          String          @id @default(uuid())
+  setId       String          @map("set_id")
+  set         H2hSet          @relation(fields: [setId], references: [id], onDelete: Cascade)
+  pointNumber Int             @map("point_number")
+  attemptAId  String?         @unique @map("attempt_a_id")
+  attemptA    Attempt?        @relation("h2h_point_attempt_a", fields: [attemptAId], references: [id], onDelete: Restrict)
+  attemptBId  String?         @unique @map("attempt_b_id")
+  attemptB    Attempt?        @relation("h2h_point_attempt_b", fields: [attemptBId], references: [id], onDelete: Restrict)
   /// Unique, so no scramble is raced twice in the round (Regulation I4b1)
-  scrambleId  String?   @unique @map("scramble_id")
-  scramble    Scramble? @relation(fields: [scrambleId], references: [id], onDelete: Restrict)
+  scrambleId  String?         @unique @map("scramble_id")
+  scramble    Scramble?       @relation(fields: [scrambleId], references: [id], onDelete: Restrict)
   /// Null once both attempts are in means the point had no winner (I3d)
-  winnerSide  H2hSide?  @map("winner_side")
-  decidedAt   DateTime? @map("decided_at")
+  winnerSide  H2hSide?        @map("winner_side")
+  decidedAt   DateTime?       @map("decided_at")
+  /// Raced after its set or match was over, found when a match is reopened
+  /// on amended times: no winner, and it doesn't count from then on
+  afterEnd    Boolean         @default(false) @map("after_end")
+  extras      H2hPointExtra[]
 
   @@unique([setId, pointNumber])
   @@map("h2h_point")
+}
+
+/// An extra granted on a point (Regulation 11k1): the race it replaced. Both
+/// attempts are Extra granted and the point is raced again on a fresh
+/// scramble; these attempts and this scramble stay out of play for good
+model H2hPointExtra {
+  id         String    @id @default(uuid())
+  pointId    String    @map("point_id")
+  point      H2hPoint  @relation(fields: [pointId], references: [id], onDelete: Cascade)
+  attemptAId String    @unique @map("attempt_a_id")
+  attemptA   Attempt   @relation("h2h_extra_attempt_a", fields: [attemptAId], references: [id], onDelete: Restrict)
+  attemptBId String    @unique @map("attempt_b_id")
+  attemptB   Attempt   @relation("h2h_extra_attempt_b", fields: [attemptBId], references: [id], onDelete: Restrict)
+  /// Raced already, so never raced again (Regulation I4b1)
+  scrambleId String?   @unique @map("scramble_id")
+  scramble   Scramble? @relation(fields: [scrambleId], references: [id], onDelete: Restrict)
+  createdAt  DateTime  @default(now()) @map("created_at")
+
+  @@map("h2h_point_extra")
+}
+
+/// What a delegate did to a match besides its points, and why: a
+/// withdrawal, a retirement, reopening it
+model H2hMatchLog {
+  id          String         @id @default(uuid())
+  matchId     String         @map("match_id")
+  match       H2hMatch       @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  action      H2hMatchAction
+  /// The side that withdrew or retired
+  side        H2hSide?
+  comment     String?
+  createdById String?        @map("created_by_id")
+  createdBy   User?          @relation(fields: [createdById], references: [id], onDelete: SetNull)
+  createdAt   DateTime       @default(now()) @map("created_at")
+
+  @@map("h2h_match_log")
 }
 
 /// The scramble plan: which TNoodle set each set a match could need will use,
@@ -586,6 +636,12 @@ enum H2hMatchEnd {
   PLAYED
   WALKOVER
   RETIRED
+}
+
+enum H2hMatchAction {
+  WITHDRAW
+  RETIRE
+  REOPEN
 }
 
 /// How a set's winner was found (Regulations I3b, I3e)

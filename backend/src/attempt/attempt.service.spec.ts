@@ -24,6 +24,8 @@ const competitionStub = {
 const noH2hPoints = () =>
   ({
     pointOf: jest.fn().mockResolvedValue(null),
+    findRace: jest.fn().mockResolvedValue(null),
+    assertNotRenumbered: jest.fn().mockResolvedValue(undefined),
   }) as unknown as H2hMatchService;
 
 describe('AttemptService extras for all attempts', () => {
