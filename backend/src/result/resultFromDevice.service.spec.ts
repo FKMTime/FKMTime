@@ -56,6 +56,7 @@ describe('ResultFromDeviceService cutoff check', () => {
       competitionStub,
       notTutorial,
       unusedDependency(),
+      unusedDependency(),
     );
   });
 
@@ -136,6 +137,7 @@ describe('ResultFromDeviceService with a resolved attempt', () => {
       unusedDependency(),
       competitionStub,
       notTutorial,
+      unusedDependency(),
       unusedDependency(),
     );
   });
@@ -301,6 +303,7 @@ describe('ResultFromDeviceService tutorial solves (SPEC-012)', () => {
       unusedDependency(),
       competitionStub,
       tutorialFromDevice as unknown as TutorialFromDeviceService,
+      unusedDependency(),
       unusedDependency(),
     );
     const data = { espId: 7, groupId: 'tutorial' } as never;
